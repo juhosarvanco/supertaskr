@@ -705,3 +705,63 @@ wrong implementation through. It is noted, not assigned.
 - My own commits touch `docs/tasks/` only, and the graph indexes no
   `.md` (201 files: 92 `.ts`, 59 `.rs`, 50 `.tsx`), so this verdict adds
   nothing to that obligation.
+
+### Verdict addendum — the four suites at MY OWN tip, and the schema proved structurally
+
+Written after the verdict commit, because a count in prose is a claim
+about a tree and my own commit changed the tree it counts. **Every
+figure here is measured at `fab75450dd34a8ad86b92faee0a34994b3add0ea`**
+— the verdict commit — through the blessed runner from the bench root,
+never at the commit I was sent. The runner stamps the ref itself, so
+each line below can be checked against its own token.
+
+| suite | command | exit | bodies | ref |
+|---|---|---|---|---|
+| parser | `node tools/e2e/scripts/gate-run.mjs parser` | **0** | **389**, 1 target, GREEN | `fab7545` |
+| app | `node tools/e2e/scripts/gate-run.mjs app` | **0** | **1163**, 1 target, GREEN | `fab7545` |
+| rust | `node tools/e2e/scripts/gate-run.mjs rust` | **0** | **649**, 18 targets, GREEN | `fab7545` |
+| e2e | `SUPERTASKR_E2E_PORT=25167 node tools/e2e/scripts/gate-run.mjs e2e` | **0** | **706**, 1 target, GREEN | `fab7545` |
+
+The rust suite's 649 is the runner's body count; the raw output is
+**645 passed / 0 failed / 4 ignored** across 18 targets, which is the
+executor's own workspace figure exactly, and the crate-scope subset I
+measured separately is 274 / 0 / 2. The DOCS GATE fires on this
+verdict's two `docs/tasks/` paths (exit **1**, a verdict rather than a
+failure) and names parser, app and e2e; all three are above, and rust is
+run beside them because this bench holds a Rust lane.
+
+**No gate my prose could move is left unrun**, which is the point of
+running them here rather than quoting the executor's: this verdict adds
+a card (`T-167-s15`) and 400-odd lines to another, and the parser
+census, the board readers and the landing gate all read `docs/tasks/`
+(STATE's own hazard, T-274).
+
+**AND THE SCHEMA IS PROVED STRUCTURALLY, NOT ONLY BY BYTES.**
+Regenerating on the untruncated bench tree and comparing against the
+committed `docs/architecture/graph.json` object-by-object:
+
+- top-level keys **identical** — `schema, root, languages, files,
+  packages, edges, unresolved, stats`;
+- `stats` keys **identical** — `{edges, files, symbols}` both sides, and
+  no `truncated_*` member appears anywhere;
+- file and symbol keys **identical** — `exported, hash, id, kind, lang,
+  loc, name, path, range, symbols`;
+- **no file added, none removed**, and exactly three entries changed:
+  `check.rs`, `emit.rs`, `lib.rs` — this lane's own three sources.
+
+So the byte delta at the tip (1 193 357 against 1 192 822) is content
+and nothing else. **C3's declined member is declined in the emitted
+document as well as in the prose.**
+
+**THE D-SERIES, dispositions.** D1/D2/D3 are in the drill table above.
+The rest: **D4** (a budget nothing can meet, every array emptied) is
+already `the_named_list_is_bounded_…`'s own fixture, `max_graph_bytes:
+1`. **D6** (a budget that thins nothing) is `the_named_files_…`'s ROOMY
+arm, asserted as untruncated before its zero is read. **D5** (the
+boundary and one byte below) is subsumed, far past what the attack set
+asked, by ASSIGNED CORRECTION 2's body: it sweeps **every** budget from
+0 to the full document length, so the boundary is not one case among
+many but 9 000 of them. **D7** (emptied by the budget AND already empty
+in the committed graph) has no body and needs none here — every
+committed-vs-fresh implementation dies before D7 could decide it (M2,
+M2b) — so it is noted and not assigned.
