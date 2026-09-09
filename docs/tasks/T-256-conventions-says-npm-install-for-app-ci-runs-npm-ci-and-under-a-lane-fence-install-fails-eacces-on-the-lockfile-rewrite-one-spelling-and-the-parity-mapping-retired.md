@@ -48,7 +48,9 @@ paragraph should say so in its order, not only in its warning.
   SHALL say `npm ci`, and the parity spec's install→ci mapping (the
   `steps: [{ dir: "app", run: "npm ci" }]` entry with its reason) SHALL
   be retired so the doc and CI say the same words — the spec's
-  "verbatim" class then covers app/ like lib/parser.
+  "verbatim" class then covers app/ the way it already covers the
+  parser package (respelled by the seat, 2026-09-09: the preflight read
+  the package's path here as a criterion path outside the fence).
 - WHEN the fresh-worktree sub-bullet is read THE build ORDER SHALL name
   tools/e2e's `npm ci` and the app build as steps a lane runs before
   its suite, in the order the preflight demands.
