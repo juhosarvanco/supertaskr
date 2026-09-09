@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **756 behaviours** — 754 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **764 behaviours** — 762 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -106,6 +106,14 @@ Census: **756 behaviours** — 754 extracted sentences + 2 named-not-extracted (
 - THE DRY RUN PRINTS THE PLAN IN ORDER AND WRITES NOTHING
 - A CHECKOUT THAT IS NOT THE INTEGRATION ONE IS REFUSED BEFORE THE RITUAL'S FIRST STEP
 - THE RITUAL IS A NAMED ARM — its dials mean nothing without it, and it refuses the acts it performs
+- THE CONTEXT PACK CARRIES THE METHOD FILES, THE CITED BULLETS AND THE COMPONENTS — and says whose read the whole document is
+- THE PACK'S BULLET SET IS DERIVED FROM THE GATES' OWN CITATIONS, never listed here
+- A LONG BULLET IS CITED BY ADDRESS AND A SHORT ONE IS TRANSCRIBED BYTE-EXACT — both arms driven
+- A PACK WITH NO BULLET SAYS SO — and NO GATE SOURCE and NO CITATION are said apart
+- THE ROLE FILES SEND THE SEAT TO THE PACK, and the pack is what stands where the document stood
+- THE PACK'S DENOMINATOR IS THE DOCUMENT'S OWN — a gate citation the derivation cannot REACH is disclosed, never dropped
+- THE PACK'S COMPONENT ENTRIES ARE THE TOUCHED SLUGS' AND NOTHING ELSE
+- THE BRIEF DOES NOT SAY BOTH THINGS ABOUT docs/CONVENTIONS.md — ROW 3's applied set and the pack agree
 
 ## card-figures
 

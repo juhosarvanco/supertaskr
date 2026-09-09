@@ -498,11 +498,13 @@ and T-236 (2026-09-02, whose pre-compaction text is
 ## Gotchas
 - method/ is the generic, product-agnostic convention — nothing
   supertaskr-specific goes in it; product docs live in docs/. Changes to
-  method/ formats are version-bumped (currently v0.1.11) and noted here.
+  method/ formats are version-bumped (currently v0.1.12) and noted here.
   **A VERSION'S NOTE HERE IS ITS DATE, ITS CARD AND ITS THEME; WHAT
   MOVED IS THE RELEASE'S OWN RECORD** (ADR-019's law applied to this
   changelog at T-162): the per-clause itemisation is RECORD-shaped, and
   the AUTHORITY for what a version says is `method/` itself at that tag.
+  v0.1.12 (T-254, 2026-09-09) — the CONTEXT PACK release: the seats read
+  the brief's pack, not CONVENTIONS whole; itemised on T-254's card.
   v0.1.11 (T-241, 2026-09-09) — the SEAT release: the architect's hand
   work ships as a skill pack the kit carries; itemised on T-241's card.
   v0.1.10 (T-265, 2026-09-08) — the RENAME release: the kit, its

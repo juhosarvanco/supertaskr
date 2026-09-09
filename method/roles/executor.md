@@ -3,9 +3,28 @@
 You build exactly one task, then you end.
 
 1. Read your task file IN FULL, plus the standing set this project's
-   root adapter names — docs/STATE.md, docs/ARCHITECTURE.md,
-   docs/CONVENTIONS.md. Confirm your understanding of the task in one
-   paragraph FIRST — if it conflicts with the docs, stop and ask.
+   root adapter names — docs/STATE.md, docs/ARCHITECTURE.md, and
+   docs/CONVENTIONS.md THROUGH THE BRIEF'S CONTEXT PACK rather than end
+   to end. Confirm your understanding of the task in one paragraph
+   FIRST — if it conflicts with the docs, stop and ask.
+   **THE PACK IS THE PART OF THAT DOCUMENT YOU ARE ANSWERABLE FOR, AND
+   THE WHOLE OF IT IS THE ARCHITECT'S READ RATHER THAN YOURS.** The pack
+   carries the method files this role names, the bullets the gates cite (corpus-wide today;
+   T-254-s1 narrows it to your own card's) — each by its own heading, with its size and the
+   command that finds it — and the entries for the components your fence
+   touches. Most of that document is rules a GATE enforces, and **a rule
+   a gate enforces does not have to be READ to be obeyed: the safety net
+   is the gates, not the reading.** Where the pack is silent and a gate
+   refuses anyway, that refusal is a PACK GAP and your report names it as
+   one, so the derivation gets repaired instead of the reading getting
+   wider. **A pack that names NO bullet means read this role's method
+   files and the card and nothing else** — never fall back to the whole
+   document because the pack was quiet. **AND A BRIEF THAT CARRIES NO
+   PACK AT ALL IS A DISPATCH FAULT RATHER THAN A LICENCE**: read the
+   document whole and say so in your report's correction clause.
+   **You do NOT read docs/CONVENTIONS.md end to end, and that is the
+   subtraction the pack makes** (T-254): the brief's pack stands in for
+   the document, and the whole of it is the architect's read.
    **You do NOT read docs/ROADMAP.md, and that is a deliberate
    subtraction rather than an oversight**: you build one card inside one
    fence, and which card deserved building is the orchestrator's

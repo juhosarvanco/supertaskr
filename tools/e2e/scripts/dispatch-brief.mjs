@@ -2635,6 +2635,384 @@ function deriveCorrection(ctx, row) {
   ];
 }
 
+/* ────────────────────────────────────────────────────────────────────
+ * THE CONTEXT PACK (T-254).
+ *
+ * AN EXECUTOR'S STANDING READ IS ITS CARD PLUS docs/STATE.md,
+ * docs/ARCHITECTURE.md AND docs/CONVENTIONS.md — and three quarters of
+ * that is the last document, most of which is rules a GATE enforces. A
+ * rule a gate enforces does not have to be READ to be obeyed: the fence
+ * hook refuses the write, the landing gate refuses the merge, the push
+ * guard refuses the push, whatever the seat happened to remember. So the
+ * pack names the bullets that actually bind THIS card and leaves the rest
+ * to the architect, and **THE SAFETY NET IS THE GATES RATHER THAN THE
+ * READING** — a bullet the pack omits still refuses, loudly, and that
+ * refusal is reported as a PACK GAP rather than quietly absorbed.
+ *
+ * **THE BULLET SET IS DERIVED, NEVER HAND-LISTED**, and the derivation is
+ * the gates' OWN CITATIONS: every tracked `.mjs` under `.claude/hooks/`
+ * and `tools/e2e/scripts/` — the files that ARE the gates in this
+ * repository — is searched for each bullet's own HEADING, and the
+ * headings are themselves read off docs/CONVENTIONS.md by `standingGates`
+ * and `namedDisciplines` above rather than typed here. A hand list would
+ * go stale the day a gate stops citing a rule and would never say so;
+ * this one moves with both documents at once, and an EMPTY answer is
+ * reported rather than filled in.
+ *
+ * **AND A LONG BULLET IS CITED RATHER THAN TRANSCRIBED**, by the law the
+ * two long passages above already keep (T-225-s2): a pack that copies a
+ * fifteen-kilobyte bullet into the brief has MOVED the cost rather than
+ * removed it, and the brief is the thing the seat reads first. Short
+ * bullets are transcribed FLATTENED, the way every other quotation in
+ * this command is; long ones get the address the citation machinery above
+ * already builds — heading, size at this ref, opening capitals, and a
+ * command that finds them across the hard wrap.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/**
+ * The two directories whose files ARE the gates here: the PreToolUse and
+ * PreToolUse-adjacent hooks that refuse a write, a push and a merge, and
+ * the scripts the gate bullets themselves name.
+ */
+export const GATE_SOURCE_DIRS = Object.freeze([".claude/hooks/", "tools/e2e/scripts/"]);
+
+/**
+ * The size at which a bullet stops being TRANSCRIBED and starts being
+ * CITED BY ADDRESS.
+ *
+ * It is a DECLARED constant rather than a derivation because there is
+ * nothing in either document to derive it from: what it encodes is a
+ * judgement about this brief's own budget, and a figure invented out of
+ * the tree to look derived would be worse than one stated plainly. The
+ * spec drives BOTH arms, so neither is a branch nobody has met — and the
+ * two passages T-225-s2 was written for sit an order of magnitude above
+ * it while the gate bullets the pack transcribes sit below.
+ */
+export const PACK_TRANSCRIPTION_LIMIT = 2_000;
+
+/**
+ * The gates' own sources, as text. TRACKED files only, so the corpus is a
+ * function of the TREE rather than of whatever a checkout happens to hold
+ * — an untracked scratch `.mjs` dropped in either directory would
+ * otherwise add citations nobody committed.
+ *
+ * **AN EMPTY CORPUS IS AN ANSWER, NOT A FAILURE, AND THE PACK SAYS WHICH
+ * ZERO IT IS.** `method/` is product-agnostic and this assembler runs
+ * against any project's root — the method eval gate's own fixture root is
+ * exactly such a project, with a live `method/` and no hooks directory at
+ * all. So this throws nothing and hands back an empty list; `packRecs`
+ * distinguishes *no gate source exists here* from *the gates cite nothing*
+ * in as many words, because those are two different facts and a single
+ * silent zero would be neither.
+ *
+ * @param {string} root
+ * @returns {{ rel: string, text: string }[]}
+ */
+export function gateSources(root = repoRoot) {
+  return trackedFiles(root)
+    .filter((rel) => GATE_SOURCE_DIRS.some((d) => rel.startsWith(d)) && rel.endsWith(".mjs"))
+    .sort()
+    .map((rel) => ({ rel, text: readDoc(rel, root) }));
+}
+
+/**
+ * The bullet of docs/CONVENTIONS.md that OPENS with a heading.
+ *
+ * `rawBullet` above finds a bullet CONTAINING a phrase, which is right
+ * for a phrase chosen to identify one paragraph and wrong for a heading:
+ * "GRAPH REGEN" appears in five bullets and "DOCS GATE" in four, so a
+ * containment reader throws where the document is perfectly well formed.
+ * The headings this module spends were READ OFF THE OPENERS, so the
+ * opener is what they address.
+ *
+ * @param {string} md
+ * @param {string} heading
+ * @returns {string}
+ */
+export function bulletByOpening(md, heading) {
+  const found = md
+    .split(/\n(?=- )/)
+    .filter((b) => b.startsWith("- "))
+    .filter((b) => {
+      // A BOLDED opener is the same opener: `- **THE RULE** …` opens with
+      // THE RULE (T-254's verdict, correction 1). The character after the
+      // heading may not continue the word, or "THE GATE" would also
+      // open "THE GATE-RUNNER" bullets.
+      const flat = b.replace(/\s+/g, " ");
+      for (const prefix of [`- ${heading}`, `- **${heading}`]) {
+        if (flat.startsWith(prefix) && !/[A-Za-z0-9]/.test(flat.charAt(prefix.length))) return true;
+      }
+      return false;
+    });
+  if (found.length !== 1) {
+    throw new Error(
+      `dispatch-brief: ${found.length} bullets of docs/CONVENTIONS.md OPEN with ` +
+        `${JSON.stringify(heading)}, expected exactly one — the pack quotes the bullet a heading ` +
+        "names, and a heading naming none or two is a pack quoting the wrong rule at a seat that " +
+        "cannot tell.",
+    );
+  }
+  return /** @type {string} */ (found[0]);
+}
+
+/**
+ * Every heading docs/CONVENTIONS.md gives a rule of its own, read off the
+ * document by the two enumerations this command already keeps: the
+ * standing gates (with and without a merge-diff trigger) and the named
+ * disciplines. NOT a list — the whole point is that a bullet renamed in
+ * the document is renamed here in the same commit.
+ *
+ * @param {string} conventionsMd
+ * @returns {string[]}
+ */
+export function conventionHeadings(conventionsMd) {
+  const { gates, named } = standingGates(conventionsMd);
+  const skip = [...gates.map((g) => g.name), ...named];
+  const enumerated = [
+    ...gates.map((g) => g.name),
+    ...named,
+    ...namedDisciplines(conventionsMd, skip).map((d) => d.name),
+  ];
+  return [...enumerated, ...boldedOpeners(conventionsMd, enumerated)];
+}
+
+/**
+ * THE DOCUMENT'S OWN SHOUTED OPENERS (T-254's verdict, correction 1). The
+ * two enumerations above address 25 of docs/CONVENTIONS.md's 58 top-level
+ * bullets; every bullet whose opener is BOLDED — the shouted, most
+ * load-bearing class, four of them cited by a gate today — was not a
+ * candidate at all, so a gate that cited one was answered with silence
+ * rather than with a pack entry. Read off the document, never listed: a
+ * bullet renamed there is renamed here in the same commit. An opener the
+ * enumerations already address (either the longer or the shorter
+ * spelling) is theirs, so the pack carries a bullet ONCE.
+ *
+ * @param {string} conventionsMd
+ * @param {string[]} enumerated
+ * @returns {string[]}
+ */
+export function boldedOpeners(conventionsMd, enumerated) {
+  /** @type {string[]} */
+  const out = [];
+  for (const b of conventionsMd.split(/\n(?=- )/).filter((x) => x.startsWith("- "))) {
+    const flat = b.replace(/\s+/g, " ").trim().slice(2);
+    const m = /^\*\*([A-Z][A-Z'`’ ,\-]{7,70})/.exec(flat);
+    if (m === null) continue;
+    const opener = /** @type {string} */ (m[1]).replace(/[ ,\-]+$/, "").trim();
+    if (enumerated.some((h) => opener.startsWith(h) || h.startsWith(opener))) continue;
+    if (!out.includes(opener)) out.push(opener);
+  }
+  return out;
+}
+
+/**
+ * The bullets the gates CITE, each with the sources that cite it, in the
+ * document's own order.
+ *
+ * TWO SPELLINGS OF ONE BULLET'S OPENER ARE ONE BULLET. The gate
+ * enumeration captures an opener up to `GATE` or `REGEN` and the
+ * discipline enumeration captures the whole of it, so THE BLESSED GATE
+ * and THE BLESSED GATE-RUNNER address the same paragraph; the pack
+ * carries it ONCE, under the longer name, with both spellings' citers
+ * merged. A pack that printed one bullet twice would be a pack whose byte
+ * figure lies about what it costs to read.
+ *
+ * @param {string} conventionsMd
+ * @param {{ rel: string, text: string }[]} sources
+ * @returns {{ heading: string, raw: string, citedBy: string[] }[]}
+ */
+export function citedConventionBullets(conventionsMd, sources) {
+  /** @type {Map<string, { heading: string, raw: string, citedBy: string[] }>} */
+  const byBullet = new Map();
+  for (const heading of conventionHeadings(conventionsMd)) {
+    const citedBy = sources.filter((s) => s.text.includes(heading)).map((s) => s.rel);
+    if (citedBy.length === 0) continue;
+    const raw = bulletByOpening(conventionsMd, heading);
+    const held = byBullet.get(raw);
+    if (held === undefined) {
+      byBullet.set(raw, { heading, raw, citedBy: [...citedBy] });
+      continue;
+    }
+    if (heading.length > held.heading.length) held.heading = heading;
+    for (const c of citedBy) if (!held.citedBy.includes(c)) held.citedBy.push(c);
+  }
+  return [...byBullet.values()].sort(
+    (a, b) => conventionsMd.indexOf(a.raw) - conventionsMd.indexOf(b.raw),
+  );
+}
+
+/** The first segment a method reference may carry, as MF-04 spells it. */
+export const METHOD_REFERENCE_DIRS = "roles|tasks|interview|rooms|runtime|adapters|docs-templates";
+
+/**
+ * The method files a role file NAMES, resolved and sized.
+ *
+ * THE RESOLUTION IS THE METHOD'S OWN, not the filesystem's: role files
+ * write `../lane-protocol.md` for the method root and `tasks/TASK-FORMAT.md`
+ * for a sibling directory, so a plain `path.join` against `method/roles/`
+ * resolves the second one to a file that does not exist. The grammar here
+ * is the one `tools/method-evals/evals/mf-04-method-crossrefs.mjs`
+ * already enforces across the whole method, so the pack and that eval
+ * agree about what a method reference IS.
+ *
+ * EXISTENCE IS ASKED OF GIT, not of `stat`: a placeholder like
+ * `tasks/T-NNN-slug.md` names a SHAPE and must not become a pack entry,
+ * and an untracked file is not part of the method the kit ships.
+ *
+ * @param {string} roleMd
+ * @param {string} roleRel  the role file's own repository-relative path
+ * @param {string} root
+ * @returns {{ rel: string, spelling: string, bytes: number }[]}
+ */
+export function methodNamed(roleMd, roleRel, root = repoRoot) {
+  const tracked = new Set(trackedFiles(root));
+  const reference = new RegExp(
+    String.raw`(?<![\w./-])((?:\.\./)?(?:method/)?(?:(?:${METHOD_REFERENCE_DIRS})/)?[\w.-]+\.md)(?![\w])`,
+    "g",
+  );
+  /** @type {{ rel: string, spelling: string, bytes: number }[]} */
+  const out = [];
+  for (const m of roleMd.matchAll(reference)) {
+    const spelling = /** @type {string} */ (m[1]);
+    const rel = `method/${spelling.replace(/^\.\.\//, "").replace(/^method\//, "")}`;
+    if (rel === roleRel || !tracked.has(rel) || out.some((e) => e.rel === rel)) continue;
+    out.push({ rel, spelling, bytes: Buffer.byteLength(readDoc(rel, root), "utf8") });
+  }
+  return out.sort((a, b) => a.rel.localeCompare(b.rel));
+}
+
+/**
+ * THE PACK, as records. Emitted after the contract's rows and outside
+ * them: the contract table is NORMATIVE and a fourteenth row would be a
+ * method version bump, which is not this command's to take.
+ *
+ * @param {Ctx} ctx
+ * @returns {Rec[]}
+ */
+export function packRecs(ctx) {
+  const sources = gateSources(ctx.root);
+  const bullets = citedConventionBullets(ctx.conventions, sources);
+  const roleRel = `method/roles/${ctx.role}.md`;
+  const method = methodNamed(ctx.roleMd, roleRel, ctx.root);
+  const packBytes = bullets.reduce((n, b) => n + Buffer.byteLength(b.raw, "utf8"), 0);
+  /** @type {Rec[]} */
+  const recs = [
+    note(
+      "THE CONTEXT PACK — what this seat reads INSTEAD of docs/CONVENTIONS.md end to end; the " +
+        "WHOLE document is the ARCHITECT'S read, never the seat's",
+    ),
+    value(
+      `pack: docs/CONVENTIONS.md is ${Buffer.byteLength(ctx.conventions, "utf8")} bytes at this ` +
+        `ref, and the pack names ${bullets.length} of its bullets — ${packBytes} bytes of rule ` +
+        "this seat is answerable for, and the rest is the architect's",
+      tree(ctx, "docs/CONVENTIONS.md, measured at this ref"),
+    ),
+    value(
+      `pack derivation: each bullet below is named by a GATE'S OWN SOURCE — ${sources.length} ` +
+        `tracked .mjs file(s) under ${GATE_SOURCE_DIRS.join(" and ")}, searched for the heading ` +
+        "docs/CONVENTIONS.md's own bullet opener gives each rule; nothing here is hand-listed",
+      tree(ctx, `${GATE_SOURCE_DIRS.join(" + ")} against docs/CONVENTIONS.md's bullet openers`),
+    ),
+  ];
+  for (const m of method) {
+    recs.push(
+      value(
+        `pack method file: ${m.rel} (${m.bytes} bytes), named by ${roleRel} as ${JSON.stringify(m.spelling)}`,
+        tree(ctx, `${roleRel}, and ${m.rel} for its size`),
+      ),
+    );
+  }
+  if (method.length === 0) {
+    recs.push(note("this role file names no other method file, so the pack carries none"));
+  }
+  for (const b of bullets) {
+    const flat = b.raw.replace(/\s+/g, " ").trim();
+    const cited = `cited by ${b.citedBy.join(", ")}`;
+    if (Buffer.byteLength(flat, "utf8") <= PACK_TRANSCRIPTION_LIMIT) {
+      recs.push(
+        value(
+          `pack bullet: ${b.heading} — TRANSCRIBED, ${cited}: ${flat}`,
+          tree(ctx, `docs/CONVENTIONS.md ${b.heading} bullet, verbatim`),
+        ),
+      );
+      continue;
+    }
+    recs.push(
+      citedRule(ctx, {
+        label: `pack bullet: ${b.heading} — ${cited}`,
+        source: `docs/CONVENTIONS.md ${b.heading} bullet`,
+        file: "docs/CONVENTIONS.md",
+        raw: ctx.conventions,
+        flat,
+      }),
+    );
+  }
+  /** @type {string[]} */
+  const slugsTouched = [];
+  for (const entry of ctx.card === undefined ? [] : fieldList(ctx.card.fields, "touches")) {
+    const expanded = expandFenceEntry(entry, ctx.slugs, ctx.comps);
+    if (expanded.kind !== "slug" || slugsTouched.includes(entry)) continue;
+    slugsTouched.push(entry);
+    for (const id of ctx.slugs.get(entry) ?? []) {
+      const comp = ctx.comps.find((c) => c.id === id);
+      if (comp === undefined) continue;
+      recs.push(
+        value(
+          `pack component: ${comp.file} — ${comp.id}, reached by the touched slug ${entry}, ` +
+            `paths ${comp.paths.join(" ")}`,
+          tree(ctx, `${comp.file} frontmatter, through each component's own touch_slugs field`),
+        ),
+      );
+    }
+  }
+  if (slugsTouched.length === 0) {
+    recs.push(
+      note(
+        ctx.card === undefined
+          ? "no card was named, so the pack carries no component entry"
+          : "this card's fence names no component SLUG — its touches are bare paths — so the " +
+            "pack carries no component entry",
+      ),
+    );
+  }
+  if (bullets.length === 0) {
+    // TWO DIFFERENT ZEROS, SAID APART. A project with no gate source has
+    // nothing to derive a pack FROM; a project whose gates cite no rule
+    // has a derivation that ran and came back empty. Collapsing them
+    // would make the commonest deployment of this method — a fresh
+    // project carrying method/ and no hooks — look like a repository
+    // whose gates had quietly stopped citing anything.
+    recs.push(
+      value(
+        sources.length === 0
+          ? `pack: this checkout tracks NO gate source under ${GATE_SOURCE_DIRS.join(" or ")}, ` +
+            `so none of the ${conventionHeadings(ctx.conventions).length} named bullets of ` +
+            "docs/CONVENTIONS.md can be cited by one — the derivation had nothing to read, " +
+            "which is not the same as gates that cite nothing"
+          : `pack: the ${sources.length} gate source(s) cite NONE of the ` +
+            `${conventionHeadings(ctx.conventions).length} named bullets of ` +
+            "docs/CONVENTIONS.md — the derivation ran and came back empty",
+        tree(ctx, `${GATE_SOURCE_DIRS.join(" + ")} against docs/CONVENTIONS.md's bullet openers`),
+      ),
+      note(
+        "so the pack names no bullet: read this role's method files above and the card, and " +
+          "nothing else — never fall back to the whole document because the pack was quiet",
+      ),
+    );
+  }
+  recs.push(
+    note(
+      "a bullet this pack omits is still ENFORCED — the safety net is the gates, not the " +
+        "reading; when one refuses, report it as a PACK GAP rather than widening the read by hand",
+    ),
+    note(
+      "the pack is an INDEX over docs/CONVENTIONS.md and the document is the authority: where a " +
+        "quotation and the file differ, the file wins and the seat says so",
+    ),
+  );
+  return recs;
+}
+
 /**
  * THE DERIVERS, keyed by the row LABEL the table itself carries. Binding
  * on the label rather than the number is what survives a row being
@@ -2783,6 +3161,11 @@ export function assembleBrief(ctx) {
     }
     recs.push(blank());
   }
+  // THE PACK, AFTER THE ROWS AND OUTSIDE THEM (T-254). The contract table
+  // is normative and a fourteenth row is a method version bump; the pack
+  // is what the rows' own sources add up to for THIS card, so it sits
+  // where the advisory line sits — below the contract, plainly labelled.
+  for (const rec of packRecs(ctx)) recs.push(rec);
   const labels = new Set(rows.map((r) => r.key));
   for (const key of DERIVERS.keys()) {
     if (labels.has(key)) continue;
