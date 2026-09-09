@@ -8,7 +8,7 @@ priority: 2
 status: building
 suggested_by: "@human (2026-09-09): decision C of the backlog review — \"Are the parked cards still in the priority queue in some way or are they just forgotten?\" — they are forgotten; ruled yes to a machine-read wake condition"
 blocked_by: [T-282]
-touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, method/tasks/TASK-FORMAT.md]
+touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, method/tasks/TASK-FORMAT.md, tools/e2e/scripts/brief.mjs]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by:
