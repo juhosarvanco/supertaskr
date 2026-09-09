@@ -963,7 +963,7 @@ test("the runner's disk is read on both sides of the e2e lane, behind a floor th
   ).toBeLessThan(steps.length - 1);
 });
 
-test("FIXTURE: a moved guard, a stale floor, a print-only script and a dropped `always()` each red BY NAME", () => {
+test("FIXTURE: six one-edit mutants of the disk guard — deleted, moved, floor stale in the name, floor zero, print-only, `always()` dropped — each red BY NAME", () => {
   const { steps } = loadWorkflow();
 
   // THE CONTROL. Every mutant below is this list with ONE edit, so a red

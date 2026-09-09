@@ -60,3 +60,27 @@ an hour.
 ## Classification (2026-09-08)
 
 The failed job was re-run once (`gh run rerun 34242106460 --failed`): **completed success, linux=success**. Same tree, same runner class, six reds then zero — an INTERMITTENT of the timing class, not a deterministic red. Main is green on CI at f9ec5eb. The card stands: a wait that passes on the second try is a wait whose budget was never derived.
+
+## Corroboration (2026-09-09, executor claude-opus-5@subagent @T-278, at `6fe5a23`)
+
+Three more runs on main, all `7 failed / 699 passed`: **34300080330**
+(`a6355bb`), **34304932475** (`5775ac0`), **34306871214** (`6c46872`).
+Six of the seven reds are this card's class — `shell-frame.spec.ts:232`
+at all three viewports, `window-contract.spec.ts:364` and `:442` at two
+— and the seventh is T-278's ENOSPC in `brief.spec.ts:3272`.
+
+**Deterministic here, where T-267's own instance was intermittent.**
+34242106460 re-ran green; these six red on three consecutive runs of
+three different trees. That is evidence about the budget rather than
+about the day.
+
+**And they are NOT the ENOSPC.** T-278's card attributes them to *"a dev
+server on a full disk"*; the logs refute a dead server. In run
+34306871214, body 651 (session-economics, browser) and bodies 655-657
+(shell-frame, browser) pass on either side of the red 652-654, and
+673-674 pass immediately before the red 675-677 — a server that had died
+would have taken all of them. In run 34304932475 one of the six reports
+`expect(locator).toHaveAttribute(expected) failed`, not the harness
+sentence at all, so the six are not even one message. The disk red is
+one body, ninety seconds into the lane; this class is six bodies,
+sixteen minutes in.

@@ -293,22 +293,32 @@ jobs:
       # instead of a spec file's path — before any body can wear a failure
       # that was never its own.
       #
-      # WHERE THE NUMBER COMES FROM, a MEASUREMENT carrying the platform
-      # it was taken on: the lane's whole temp-directory footprint was
-      # sampled every 5 s through a full local `gate-run e2e` at this
-      # ref — macOS 15 arm64, the same 706 bodies — by diffing the temp
-      # directory's entries against a pre-run snapshot and `du`-ing what
-      # was new. It PEAKS at 228 MB, during brief.spec's ritual fixtures,
-      # which is the same neighbourhood the runner reds in, and falls back
-      # to a few hundred KB after: the fixtures do tear themselves down
-      # (tools/e2e/tests/git-fixture.ts). So the lane does not need
-      # gigabytes, and 2 GiB is ~9x the measured peak — margin for the
-      # vite dev server, the browser profile and every fixture that grows
-      # later, while staying an order of magnitude under what a healthy
-      # ubuntu-24.04 runner has free at this point in the job. THE FIRST
-      # GREEN RUN AFTER THIS LANDS PRINTS THE RUNNER'S REAL FIGURE, which
-      # is the reading nobody has ever had: re-derive the floor from that,
-      # not from this paragraph.
+      # WHERE THE NUMBER COMES FROM, and it is DERIVED rather than
+      # chosen. The lane's whole temp-directory footprint was sampled
+      # every 5 s through two full local `gate-run e2e` runs — macOS
+      # 26.6.2, arm64, node v22.22.0, 742 bodies — by snapshotting the
+      # names in the temp directory before the run and `du`-ing, at each
+      # sample, exactly the entries that were not in the snapshot. It
+      # PEAKS at 223 MiB (228,420 KiB, and 224,684 KiB on the second run)
+      # about a minute in, during brief.spec's ritual fixtures — the same
+      # neighbourhood the runner reds in — and the graded run ended with
+      # 25 entries totalling 1,000 KiB, none larger than 144 KiB. The
+      # fixtures DO tear themselves down (tools/e2e/tests/git-fixture.ts),
+      # so the lane's need is bounded by its largest fixture and not by
+      # the sum of them.
+      #
+      # THAT BOUND IS WHAT SIZES THE FLOOR. The runner redded ~90 s in,
+      # having spent at most that peak, with nothing left — so its free
+      # space BEFORE the lane was at most ~223 MiB. 2 GiB is an order of
+      # magnitude above what the lane was measured to need AND an order of
+      # magnitude above what those four runners actually had, so the floor
+      # fires on every one of the four red runs while asking for headroom
+      # no healthy runner should miss.
+      #
+      # WHAT IT IS NOT is a reading of the runner: the free figure at this
+      # point in the job has never been printed. THE FIRST RUN AFTER THIS
+      # LANDS PRINTS IT — re-derive the floor from that reading rather
+      # than from this paragraph (T-278-s1).
       #
       # `df -i` costs one line and is here because ENOSPC is ALSO what an
       # exhausted inode table returns — a `df -h` showing gigabytes free
