@@ -226,7 +226,25 @@ export interface BriefRowView {
   readonly residual: string | null;
 }
 
-/** The assembler's typed answer, as this layer consumes it. */
+/**
+ * What the drawer has to show for one card's brief.
+ *
+ * **THE FIRST FIVE ARMS ARE THE ASSEMBLER'S ANSWER AND THE LAST TWO ARE
+ * THE DOOR'S, which is a distinction with a reason rather than a tidy
+ * grouping (`T-112-s5`).** Every assembler arm is a fact about a CARD;
+ * the two below them are facts about the APP, and the whole reason
+ * C-15's `DispatchBriefWire` wraps the outcome in a `noProject` of its
+ * own is that collapsing the two would tell a user with no project open
+ * that their card does not exist. **The same collapse is available one
+ * layer up and is the one this card had to refuse**: a caller that meets
+ * a closed door and simply passes `undefined` gets *"the assembler has
+ * not answered for this card yet"*, which promises an answer that is
+ * never coming. These two arms are what such a caller says instead.
+ *
+ * Wire-compatible in the direction that matters: C-15's
+ * `BriefOutcomeWire` stays assignable to this type, so the door hands
+ * its answer over unchanged and this layer still imports nothing.
+ */
 export type BriefOutcomeView =
   | {
       readonly kind: "assembled";
@@ -245,7 +263,15 @@ export type BriefOutcomeView =
       readonly kind: "unassemblable";
       readonly rows: readonly { readonly number: number; readonly source: string; readonly path: string }[];
     }
-  | { readonly kind: "noSuchCard"; readonly taskId: string };
+  | { readonly kind: "noSuchCard"; readonly taskId: string }
+  /** The app has no project open, so the assembler has nothing to read.
+   * Mirrors `DispatchBriefWire`'s own `noProject` arm, and is NOT a fact
+   * about the card. */
+  | { readonly kind: "noProject" }
+  /** The request never reached the assembler — `invoke` rejected instead
+   * of answering. A defect in the app's own boundary, and the one
+   * outcome here that is nobody's opinion about the card. */
+  | { readonly kind: "boundaryFailed"; readonly detail: string };
 
 /**
  * What the panel puts on screen.
@@ -352,6 +378,10 @@ function refusalSentence(outcome: BriefOutcomeView): string {
       return `the normative table in ${outcome.source} could not be parsed, so the row set is unknown — a shorter brief would be a brief whose missing rows the session fills in by guessing`;
     case "noSuchCard":
       return `no card on this board carries the id ${outcome.taskId}`;
+    case "noProject":
+      return "no project is open, so the assembler has no files to read — this is a fact about the app and not about this card";
+    case "boundaryFailed":
+      return `the request for this brief never reached the assembler: ${outcome.detail} — the app's own boundary failed, so nothing here is an answer about the card`;
     case "unassemblable":
       return (
         "the brief is incomplete and is therefore not shown — a brief with a silently missing row is worse than no brief. " +

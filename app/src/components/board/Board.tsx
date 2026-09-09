@@ -57,8 +57,18 @@ const DENSE_CARD_THRESHOLD = 40;
  * where the `noProject` fact belongs), and the two files that render
  * `<Board>` — `App.tsx` and `genesis/BoardCrescendo.tsx` — are C-05's
  * `app-shell`, which no `[app-board]` fence reaches (`T-126-s9`). So the
- * block still does not render outside a suite, and `T-112-s5` carries
- * the account.
+ * block still does not render outside a suite.
+ *
+ * **AND `T-112-s5` CLOSED THE `brief` HALF OF THAT ACCOUNT WITHOUT
+ * TOUCHING THIS FILE'S RULE.** The threading below is unchanged and this
+ * file still decides nothing: `brief` no longer NEEDS a filler from
+ * above, because `TaskDetailPanel` now asks `dispatch_brief` for its own
+ * `taskRef` (ruled at the 2026-08-31 sitting, shape 3 — fetching HERE
+ * was refused on this file's own design note one paragraph up). The prop
+ * stays, and stays authoritative when supplied, as the seam
+ * `app/test/board-truth.test.tsx` drives. **`dispatch` is the half that
+ * is still open** and it is the half that gates the block, so the
+ * sentence above still holds unchanged.
  */
 export function Board({
   model,
