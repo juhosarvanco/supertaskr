@@ -910,3 +910,17 @@ from the injection scan. The e2e run above already had `T-205-s20` on
 disk while it walked the board, so the twelve board-reading bodies saw
 the card this amendment adds and stayed green. A figure without its ref
 is wrong the moment anybody writes again, including me.
+
+**AND THE GAP IS CLOSED RATHER THAN ONLY DISCLOSED.** `parser` and `app`
+are the two board-reading suites that ran BEFORE `T-205-s20` existed on
+disk, so both were re-run at the final commit and the token records the
+new ref: `gate-verdict suite=parser exit=0 bodies=389 targets=1
+ref=4b6f51b3ecfbd9cc6002c2cb5bcbea6911514b49 verdict=GREEN` and
+`gate-verdict suite=app exit=0 bodies=1163 targets=1
+ref=4b6f51b3ecfbd9cc6002c2cb5bcbea6911514b49 verdict=GREEN`. Identical
+body counts, so the added card changed no body's answer. `rust` reads no
+card and `e2e` already saw the card; `method-evals` and `--selftest` are
+both exit 0 at `4b6f51b` as well, MF-10 there reporting `21 board
+citation(s) in 580 card(s)` — the 21st being this verdict's own.
+Everything after this paragraph is one line of body prose, which adds no
+frontmatter and moves no reader.
