@@ -147,6 +147,34 @@ and T-236 (2026-09-02, whose pre-compaction text is
   beside a live `npm run tauri dev` writes docs/NORTH_STAR.md twice
   within milliseconds under the human's board. RUN THE LANE IN A
   WORKTREE and it touches nothing the human sees.
+- `npx supertaskr <verb>` (T-244, C-02) IS A FRONT, NEVER A FIFTH
+  PACKAGE. `node tools/e2e/bin/supertaskr.mjs --help` at the repo root
+  lists the verbs; each dispatches to a command this section already
+  names and EXITS WITH THE CHILD'S CODE, unchanged — a front that
+  summarised an exit could turn a red gate green.
+  **THIS BULLET DELIBERATELY CARRIES NO `run from <dir>/:` MARKER AND
+  THAT IS NOT AN OVERSIGHT**: the CI-parity derivation reads those
+  markers, and giving this one a marker would demand a workflow step for
+  a command whose whole job is to run another command CI already runs —
+  one cause, two red steps. The shape is the one
+  `tools/e2e/tests/workflow-parity.spec.ts` names as invisible by
+  construction, chosen here on purpose and pinned by a fixture there.
+  WHAT IT ADDS over typing the underlying command is two refusals it
+  makes BEFORE spawning anything: a verb needing an install says so with
+  the one command that builds it, derived from the four command bullets
+  above; and a verb whose script resolves its own repository root is
+  REFUSED from an installed copy rather than answering confidently about
+  `node_modules/`. THE VERB SET IS NOT TRANSCRIBED HERE — it is the table
+  in `tools/e2e/scripts/cli.mjs`, checked against this document, against
+  `brief.mjs`'s own arms and against docs/ARCHITECTURE.md's C-02 line by
+  `tools/e2e/tests/cli.spec.ts`, which also NAMES the two C-02 verbs
+  nothing fronts (`init` is genesis, ADR-017; `verify` is the two-spawn
+  bench). TWO VERBS ARE NEW RATHER THAN FRONTS: `undo <card>` reverts a
+  card's merge with `git revert -m 1` after listing every later merge on
+  the same fence and refusing while one is unnamed, and `merge <card>`
+  walks the integrator's ritual in its order and stops with the merge
+  STAGED. Publishing the package is @human's (T-266); the proof that it
+  installs is a local `npm pack` tarball, run inside the lane.
 - THE BLESSED GATE-RUNNER (T-202): `node tools/e2e/scripts/gate-run.mjs
   parser|app|rust|e2e` from the repo root is the ONE spelling for a
   graded reading; its `gate-verdict` line carries the exit code, the

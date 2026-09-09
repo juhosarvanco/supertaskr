@@ -7,6 +7,13 @@
   "engines": {
     "node": ">=22"
   },
+  "bin": {
+    "supertaskr": "bin/supertaskr.mjs"
+  },
+  "files": [
+    "bin/",
+    "scripts/"
+  ],
   "scripts": {
     "test": "playwright test",
     "typecheck": "tsc --noEmit",
@@ -17,7 +24,8 @@
     "capabilities:check": "node scripts/capabilities.mjs --check",
     "session:check": "node scripts/checkout-currency.mjs",
     "boot:check": "node scripts/tauri-boot-check.mjs",
-    "boot:orphan-drill": "node scripts/orphan-drill.mjs"
+    "boot:orphan-drill": "node scripts/orphan-drill.mjs",
+    "cli": "node bin/supertaskr.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.62.1",

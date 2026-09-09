@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **706 behaviours** — 704 extracted sentences + 2 named-not-extracted (listed at the end) — across 38 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **740 behaviours** — 738 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -235,6 +235,43 @@ Census: **706 behaviours** — 704 extracted sentences + 2 named-not-extracted (
 - every holder state is reachable in one fixture, and a live OTHER session is the only one that refuses
 - the DEAD holder is proved with a pid that genuinely does not exist, and the live one with a pid that does
 - the identity derivation is named in the artifact's own header, with the harness it is a fact about
+
+## cli
+
+- npx supertaskr dispatches every verb to a target this tree already carries, resolved on disk
+- the front relabels no exit code — the child's status is the command's status
+- an unknown verb is refused with the whole verb list, and nothing is spawned
+- every verb that hands its target --root fronts a script whose own flags carry it
+- the verb set covers the seat's own arms and NAMES the C-02 verbs nothing fronts
+- each verb sourced from docs/CONVENTIONS.md quotes a command that document really carries
+- the front reads every command bullet docs/CONVENTIONS.md carries, and reads it verbatim
+- a verb needing an install says which command builds it, and runs nothing
+- a verb whose script resolves its own repository root is refused from an installed copy
+- the project root is found by walking up, and its absence is said rather than guessed
+- the installer targets Claude Code and Codex, and a third harness is one adapter entry
+- the docs gate sees the CLI package as a derived reader of docs/
+- npx supertaskr runs out of a packed tarball installed into a project that is not this repository
+- undo refuses while a later merge stands on the card's fence, and names it
+- undo names the revert it would run when nothing has landed on the fence since
+- a --force naming a commit that is not a later merge is a usage error, never a licence
+- a card's fence is read off its own touches line and compared by path domain
+- a merge bringing app or lib sources reinstalls and rebuilds BEFORE any suite step
+- a merge that moves the committed graph runs the dogfood bodies before the stop
+- a merge carrying neither built sources nor the graph plans neither step
+- the front reaches nothing outside its own package that it does not name
+- the caller's own arguments reach the child verbatim, in order, and nothing is added
+- undo EXECUTES the revert it printed, and it reverts onto the merge's first parent
+- a card whose fence expands to NOTHING is refused, never reverted
+- a card id is matched on a token boundary, so one card cannot select another's merge
+- undo refuses when the ref it scans is not the ref the revert would rewrite
+- the merge's clean-tree precondition is graded on its OUTPUT, and a dirty tree stops it
+- a graph-moving merge re-derives the pins into a dated line carrying the graph's own counts
+- the merge stamps done by the card's own status line, and fills only an empty seat
+- the installer refuses a destination it would clobber, and --force is the named choice
+- every command the skills' own cards name is a verb this package exposes
+- a fence with ANY unresolved token is refused, never called clear
+- a merge STAGES the census and the graph it regenerated, by the argv it runs
+- the done stamp fills only an empty built_by, not only an empty verified_by
 
 ## crescendo
 
