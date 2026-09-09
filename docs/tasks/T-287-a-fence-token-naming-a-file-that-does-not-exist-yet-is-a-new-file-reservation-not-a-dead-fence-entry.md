@@ -5,12 +5,12 @@ feature: F-04
 milestone: 4
 size: S
 priority: 2
-status: planned
+status: building
 suggested_by: "the architect seat, 2026-09-09, applying @human's ruling E (narrow fences at triage): the dry run's preflight refused T-242's `tools/e2e/tests/interview-skill.spec.ts` and T-207's `.claude/hooks/checkpoint-gate.mjs` as DEAD FENCE ENTRIES"
 blocked_by: []
 touches: [tools/e2e/scripts/card-preflight.mjs, tools/e2e/tests/card-preflight.spec.ts]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
