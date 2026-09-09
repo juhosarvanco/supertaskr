@@ -685,3 +685,36 @@ injection scan reports **0 hits**. Those three suites are re-run at the
 tip THIS verdict creates, and the figures are recorded in the commit that
 carries them — the figures in section 1 are stamped at `cbc24d4` and stay
 true there forever.
+
+### FOOT — the gates re-run at the tip THIS VERDICT created
+
+The verdict commit is `f57802a409b7ffd0cce8af217600b1f807debc48`. It and
+the two filed cards are writes under `docs/tasks/`, and `docs-gate.mjs`
+named three suites owed. All three, through the blessed runner from the
+bench root, **at `f57802a`**:
+
+| leg | exit | bodies | ref |
+|---|---|---|---|
+| `gate-run.mjs parser` | **0** | **389** | `f57802a` | GREEN |
+| `gate-run.mjs app` | **1** | **1170** | `f57802a` | RED — the same two pins |
+| `gate-run.mjs e2e` | **0** | **706** | `f57802a` | GREEN |
+
+`npx vitest run` from app/ at `f57802a` names the failures:
+**1168 passed | 2 failed (1170), 49 of 51 files** — byte for byte the two
+`app-map` dogfood pins that were red at `cbc24d4`, and nothing else. **My
+commit moved no count and added no red**, which is the whole reason this
+foot exists.
+
+`rust` is not owed: the docs gate names `npm test from app/`, `npm test
+from tools/e2e/` and `npx vitest run from lib/parser/`, and no `.rs` or
+`app/src-tauri/**` path is touched by this verdict; its figure stays
+stamped at `cbc24d4` (645 bodies, exit 0, GREEN).
+
+**AND THIS RECORDING COMMIT IS ITSELF A WRITE, WHICH IS THE REGRESS THE
+RULE ACKNOWLEDGES RATHER THAN SOLVES.** It adds prose inside a card whose
+frontmatter is unchanged and already parsed; after it, `docs-gate.mjs`
+still answers *"every live task card's frontmatter parses, with a legal
+status"* with **0** frontmatter issues and **0** injection hits, and the
+parser suite — the one a card's own fence has redded before (T-274) — is
+re-run at the final tip. Every figure above carries the ref it was
+measured at, which is the form that stays true.
