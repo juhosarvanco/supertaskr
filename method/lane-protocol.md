@@ -250,6 +250,20 @@ this file is a project's actual name.
    running nothing for any probe to find.** A declaration reaches a
    holder that is thinking; a probe reaches only one that is executing.
    The probe stays unbuilt, and this sentence is why.
+   **AND HOW OFTEN A LANE RUNS ITS OWN SUITES IS A DIFFERENT QUESTION
+   FROM WHERE IT RUNS THEM.** This rule partitions the RUNNERS: which
+   checkout a suite may run in, and whose certification a second runner
+   corrupts. **The ORDER of a lane's own runs — and the one commit that
+   is exempt from them — is stated once in roles/executor.md's ordered
+   last four moves, and is deliberately not second-spelled here**, for
+   the reason this protocol gives everywhere else: two descriptions of
+   one rule are two rules the day one of them is corrected. What THIS
+   rule contributes to that section is the measurement above. A suite
+   run is the surface that CERTIFIES, so a lane that grades one tree
+   twice is not merely spending the wall time twice — it produces two
+   certificates of the same tree, and a later reader cannot tell which
+   run graded which commit without going back to the refs. One tree, one
+   reading per seat.
 
 5. **Concurrent lanes have disjoint `touches:`** — the orchestrator's
    guardrail (tasks/TASK-FORMAT.md), and the executor's too. An executor
