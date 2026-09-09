@@ -589,8 +589,8 @@ test("the file extension is read off the BASENAME, and a leading dot is not one"
     '"settings" carries no file extension',
   );
 
-  // A LEADING DOT IS NOT AN EXTENSION. `.nputerignore` is this shape on
-  // the live board (T-020, T-264), and T-287-s1 is the card that argues
+  // A LEADING DOT IS NOT AN EXTENSION. The project's own dot-ignore file
+  // is this shape on the live board (T-020, T-264), and T-287-s1 is the card that argues
   // about it — so the rule this pins is the one that card must move.
   const dotfile = newFileReservation("app/.vscode/.newrc", oracle);
   expect(dotfile.reserved, "a dotfile's own leading dot was counted as an extension").toBe(false);
