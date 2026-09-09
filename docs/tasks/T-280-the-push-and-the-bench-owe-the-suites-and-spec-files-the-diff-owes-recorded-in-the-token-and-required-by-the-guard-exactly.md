@@ -549,3 +549,416 @@ of a real limitation the executor was not obliged to find.
 **RE-ENTRY.** Per the method a rejection re-enters by a NEW phase-2
 spawn (T-248). The one thing owed is the fallback's spec axis; the body
 that decides it is committed on this bench and is RED at `cc7905d`.
+
+### 2026-09-09 — claude-opus-5@subagent (verifier, phase 2, fresh after the fix pass) — APPROVED WITH ASSIGNED CORRECTIONS
+
+Tip judged `4d2d9522e18d49da316d5e4f3510aabf97d47952`, base
+`a1bb590b2aaac92aad23aa0879075f23608dbad1`, on the detached bench
+`../nputer-V-T-280`. A FRESH phase-2 spawn per T-248: I am not the
+verifier who wrote the entry above and I inherit none of its approvals.
+Sealed inputs cited by hash, all five verified before anything else was
+opened:
+
+- attack set `sha256:62e883997be83f16e2ccec3bfbfe569c229f54540cb73e60f91d71b2faea9d0c`
+- ground truths `sha256:92dab9107ebea92df1fde0ae09ecfaa4baa9ca5a9730eb3c424a47f16306f1b0`
+- ground addendum `sha256:bb331656bf64e83edb96f6675a3038acce5c9b50b1478d62dd55b6da10224053`
+- the previous verdict `sha256:42db632392511d94136c95b5090061ac1db965e5dc22f37a4706c999eca22530`
+- the executor's fix report `sha256:a4d5b6ba57baed2d31441bf58340ee82765569ef6f62f0320f6b87de6d70251e`
+
+**THE FRAME I ACTUALLY HAD.** Phase 1's set was written tool-less at the
+base by an earlier spawn and was already sealed and hashed before this
+lane's first commit; its hash matched the dispatcher's stamp. **The
+brief is HAND-WRITTEN BY THE SEAT AND CARRIES NO CONTEXT PACK** — I say
+so as the role requires, and I read `docs/CONVENTIONS.md` AT THE BASE by
+the bullets I needed rather than end to end, plus STATE and the card at
+the base and `method/roles/verifier.md` at the bench. The brief names
+executor-derived specifics before the diff — the 612-of-810 / 16-of-39
+figures, the 95 / 69 counts, the `--range` leg counts, the 794 s wall,
+the 138098 bytes, the CAPABILITIES numbers — so **phase 1 was broken
+above the line for my orientation and I report it rather than pretend
+otherwise**. Every one of those I re-measured on this bench, and where I
+did I say so; where a figure is the report's and I did not re-derive it,
+I say that too. The two reports and the card's notes were opened ONLY
+after my findings were written out
+(`findings-T-280-fix.md` in this bench's scratch directory, written and
+timestamped before the first report was opened).
+
+**THE VERDICT IS APPROVED WITH TWO ASSIGNED CORRECTIONS.** The defect
+the entry above rejected is FIXED — I re-forged it and it is refused —
+and no new defect of that class survives. The two corrections are
+properties the implementation HAS and no body PINS, both in the
+narrowing direction, both killed by a one-line mutant that survived
+every one of the lane's 69 `gate-run.spec.ts` bodies.
+
+**(i) THE REJECTED REGRESSION, RE-FORGED — REFUSED, WITH THE BASE
+CONTROL ACCEPTING THE SAME FORGERY.** On a `git clone --shared` at the
+tip, on a branch with no upstream, so `pushRange` answers
+`{"problem":"this branch names no upstream…"}` and the guard passes no
+owed set — the fallback, and the guard's own comment calls this "THE
+ORDINARY CASE ON A LANE":
+
+| token | at the base `a1bb590` | at the tip `4d2d952` |
+|---|---|---|
+| four UNSCOPED `GREEN` legs (the control) | `token-green` | `token-green` |
+| the same four, `e2e` carrying `scope` of 16 spec files | **`token-green`** | **`token-partial`** |
+| the same four, `e2e` carrying `scope` of ONE spec file | `token-green` | `token-partial` |
+
+The base ACCEPTS what the tip REFUSES, and both accept the unscoped
+control — so the arming difference is the `scope` field and nothing
+else (K1, run where the arming is absent). K2: `push-guard.mjs` at the
+base exports no `pushRange` at all, so the arm really is new. The
+refusal reads *"the verdict token's e2e entry graded 16 spec file(s)
+rather than the whole leg, and no owed set could be derived for this
+push"*.
+
+**(ii) THE FIFTH CONDITION — `scopable.verdict === GREEN` — BUYS NO
+HOLE, AND I READ IT CHARACTER BY CHARACTER.** Every verdict word other
+than exactly `GREEN`, on an entry carrying a `scope`:
+
+| word | fallback (no owed set) | derived path |
+|---|---|---|
+| `GREEN` | `token-partial` | `token-partial` |
+| `SCOPED-GREEN` | `token-red` | `token-partial` |
+| `green` | `token-red` | `token-partial` |
+| `GREEN ` / ` GREEN` | `token-red` | `token-partial` |
+| absent / `""` | `token-red` | `token-partial` |
+| `REFUSED` | `token-unmeasured` | `token-partial` |
+
+`GREEN` is a frozen `"GREEN"` and the comparison is `===`, byte-identical
+to the base; the red/unmeasured partition at the end of `judgeToken` is
+exhaustive over non-`GREEN`, so the ONE word the new check does not
+cover is the one every other check already refuses. **The executor's
+stated reason for the clause is TRUE and I measured it rather than
+accepting it**: removing `scopable.verdict === GREEN` (a one-line
+mutant, landing read from `git diff`) gives `gate-run.spec.ts`
+**68 passed / 1 failed**, and the death is T-271's own body
+*"the push guard refuses a scoped verdict as the token, so a lane's
+subset run can never mint one"* at `gate-run.spec.ts:1412`. Safety is
+identical either way; the clause keeps that body's naming. **That body
+is GREEN at the tip** — `gate-run.spec.ts` alone reads 69 passed.
+
+**(iii) THE SWEEP, RE-DERIVED BY ME RATHER THAN READ.** `judgeToken` has
+exactly ONE production caller (`push-guard.mjs:3537`); `readToken` has
+two (that call site, and `writeToken`'s merge); no file outside
+`gate-token.mjs` and `gate-run.mjs` carries token logic. Every field
+`judgeToken` reads and where: `suites[s]` presence (both paths — absent
+members are `token-incomplete` on the fallback and folded into
+`token-partial` on the derived path); `suites.e2e.scope` (**both paths
+now**); `suites.e2e.verdict` (the new check); `entry.tree` (stale),
+`entry.dirty` and `entry.treeAtWrite` (unkeyed), `entry.verdict`,
+`exit`, `bodies`, `reason` (red / unmeasured) — every one of those in a
+loop over `need`, asked identically on both paths. **The executor's "no
+second instance" claim holds FOR FIELDS.** It does not hold one level
+up, and that is worth stating: every check is quantified over `need`,
+and `need` can be EMPTY — `T-280-s3` is exactly that case and I
+re-measured it (below). `token.owed` is read by NO branch of the guard
+(grep: 0 hits), and forging it to `[]` on a four-green token changes
+nothing.
+
+**(iv) THE CORRECTION BODY, RUN BY ME AT BOTH ENDS.** Not read from a
+report:
+
+| ref | what it is | `push-guard.spec.ts` alone |
+|---|---|---|
+| `62f4342` | `cc7905d`'s hooks + the body | **94 passed, 1 failed** |
+| `4d2d952` | the fix | **95 passed, exit 0** |
+
+The single failure at `62f4342` is the body itself, at the scoped-token
+line, its control line (four UNSCOPED legs must still be allowed)
+passing first. A mutant at the site — `owed === undefined` to
+`owed !== undefined` in the new check's condition — reproduces it on the
+fixed tree: 94 passed / 1 failed, and nothing else dies. **The body is
+the lane's now and it is a discrimination, not a construction**: it
+plants the same four suites twice, once without a `scope` and once with
+one, and asserts the answers differ.
+
+**CORRECTION 1 — the package roots' SEGMENT BOUNDARY is unpinned, and
+losing it turns the whole battery into one leg.** `suiteOfPath` matches
+`rel === dir || rel.startsWith(dir + "/")`, longest root wins. Replace
+that with a bare `rel.startsWith(dir)` and **all 69 bodies still pass**.
+The mutant is live in the narrowing direction:
+
+| path | as shipped | with the boundary lost |
+|---|---|---|
+| `lib/parser2/x.ts` | unplaceable, owes the WHOLE battery | `parser`, `failClosed` none |
+| `apples/x.ts` | unplaceable, WHOLE battery | `app` |
+| `tools/e2e2/x.mjs` | unplaceable, WHOLE battery | `e2e` |
+| `app/src-tauri-notes/x.md` | `app` | `rust` |
+
+`deriveOwed({changed:["lib/parser2/x.ts"]})` moves from
+`suites: [app,e2e,parser,rust]` with a `failClosed` reason to
+`suites: ["parser"]` with none. The body above it
+(*"a path is placed by the roots the derivation was GIVEN…"*) cannot see
+this: every path it names is either a real child of a root or claimed by
+no root at all.
+
+**CORRECTION 2 — DELETIONS in the range's path set are unpinned, and
+losing them owes NOTHING.** `rangeChanged` shells
+`git diff --name-only <base> <tip> --`. Slip a `--diff-filter=d` in and
+**all 69 bodies still pass**. Measured on a real fixture repo, a range
+whose only change is a deleted task card:
+
+    as shipped:  changed ["docs/tasks/T-280-s2-….md"]  suites [app, e2e, parser]  e2e over 5 specs
+    mutated:     changed []                            suites []                  nothing owed
+
+An empty path set is the largest narrowing this derivation can make, and
+deletions are ordinary here — a card is deleted, a script retired. The
+existing `rangeChanged` body exercises an ADDITION, the ancestry refusal
+and the shell refusal, and never a removal.
+
+**THE READINGS ON BOTH BODIES**, `tools/e2e/tests/gate-run.spec.ts`,
+from `tools/e2e/`, `SUPERTASKR_E2E_PORT=25280`:
+
+- **GREEN against the implementation carrying both properties** (the tip
+  as submitted): **71 passed** — the lane's 69 and these two.
+- **RED against an implementation lacking each** — the two mutants
+  planted one at a time, each landing read from `git diff` at the site
+  named: the boundary mutant gives **70 passed / 1 failed**, the failure
+  being correction 1's body ALONE; the deletion mutant gives **70 passed
+  / 1 failed**, the failure being correction 2's body ALONE. **Neither
+  kill set contains the other** (2b), and each body carries a control
+  run where its own arming is absent — a real child still placing, an
+  addition still named — so neither is satisfied by a function that
+  answers nothing.
+
+The bodies are COMMITTED on this bench in the commit after this verdict.
+
+```mutant
+correction: the package roots' segment boundary
+file: tools/e2e/scripts/gate-run.mjs
+spec: tools/e2e/tests/gate-run.spec.ts
+body: a directory whose NAME merely begins with a package root is not INSIDE it, so a sibling fails CLOSED to the whole battery instead of placing under its neighbour
+message: a sibling of lib/parser is not inside lib/parser
+--- old
+if (rel !== dir && !rel.startsWith(`${dir}/`)) continue;
+--- new
+if (!rel.startsWith(dir)) continue;
+```
+
+```mutant
+correction: deletions in the range's path set
+file: tools/e2e/scripts/gate-run.mjs
+spec: tools/e2e/tests/gate-run.spec.ts
+body: a DELETED path is IN the range's path set, because a removal is a change and an empty path set owes nothing at all
+message: a removal is a change, and the path set must carry it
+--- old
+"diff", "--name-only", base, tip, "--"
+--- new
+"diff", "--name-only", "--diff-filter=d", base, tip, "--"
+```
+
+Both `--- old` anchors match their file exactly once, and both `--- new`
+texts are unique in the file after the swap (T-281-s9) — checked, not
+assumed. Two corrections, two blocks.
+
+**THREE THINGS I CONSIDERED REJECTING FOR AND DID NOT, with the
+reasoning rather than the conclusion**, because the seat's standing rule
+on this card is that "we could not tell" resolving to a smaller set is a
+rejection and each of these is adjacent to it.
+
+1. **The empty owed set** (already `T-280-s3`, filed by the verifier
+   above; I re-measured it fresh). A push whose range moves no path is
+   ALLOWED against a token recording every suite `RED`: `need` is empty
+   and every loop is vacuous, answering `token-green` with the detail
+   *"0 graded suite(s)…"*. The same token on the fallback path is
+   `token-red`. **Phase 1 pre-committed against exactly this** (its
+   L2-B: "what I will not accept is a token that says GREEN for nothing
+   and a guard that agrees"). I do not reject, for two measured reasons:
+   the guard derives its OWN range and never the runner's, so
+   `--range HEAD..HEAD` fed to the runner buys an attacker nothing; and
+   `rangeChanged` is a two-TREE diff (`git diff --name-only A B --`), so
+   an empty path set means the pushed tree IS the upstream tree and the
+   push publishes no content the remote did not already carry. The rule
+   is sound and undocumented, which is what `T-280-s3` asks the seat to
+   rule on. I second it.
+2. **`pushRange` is `@{upstream}..HEAD` whatever the command says.**
+   `git push origin HEAD:main` from a branch tracking a ref that is 63
+   files ahead of `main` derives `suites [e2e, rust]`, e2e over 11 spec
+   files. The guard already parses the destination (`pushTargetBranch`
+   returns `{branch:"main"}`) and uses it only for the CI arm. I do not
+   reject because the ordinary composition covers it — the upstream tip
+   itself reached a remote through this guard — and the residual cases
+   are unusual. Filed as **T-280-s5** with the measurement and the two
+   places the composition breaks.
+3. **`packageDependents`' `catch { continue }` conflates ENOENT with a
+   manifest that will not parse.** With `app/package.json` malformed, the
+   SAME range over a `lib/parser/` change moves from `["app","parser"]`
+   to `["parser"]` — the cross-package edge this card's criteria name,
+   gone, with `failClosed` empty. Phase 1's C3 meta-test pre-committed
+   against a swallowed exception. I do not reject because the catch is
+   REQUIRED for the normal case (`app/src-tauri` has no `package.json`
+   at all — I checked) and because neither route to a broken manifest
+   reaches a push: a tracked change to it is either IN the range, which
+   owes `app` anyway (measured), or leaves the tree dirty, which
+   `writeToken` records as `dirty: true` and `judgeToken` refuses as
+   `token-unkeyed` (measured). Filed as **T-280-s6**.
+
+**CRITERION BY CRITERION.**
+
+1. **MET.** `--range` derives and grades exactly the owed set and writes
+   the token with the set, the range and the inputs. Re-derived on real
+   commits at this tip.
+2. **MET.** One function, two callers, no copy: grep for
+   `deriveOwed|suiteOfPath|PACKAGE_ROOTS|owningSpecs|specReach|packageDependents`
+   over `push-guard.mjs` returns 0; the guard SPAWNS the runner at
+   `OWED_SET_PATH`, and `OWED_SET_FLAGS` and `SCOPABLE_SUITE` are pinned
+   to the runner's own constants by a body. `token-partial` is additive
+   and names the missing suites AND the missing spec files (measured: one
+   spec short of the owed set is refused and the missing name appears in
+   the detail). **All seven reason codes that existed at the base survive
+   byte-identical** — `token-green`, `token-incomplete`, `token-missing`,
+   `token-red`, `token-stale`, `token-unkeyed`, `token-unmeasured` — and
+   the guard's own `block(...)` codes diff IDENTICAL against the base.
+   No test body was renamed or removed anywhere in the diff.
+3. **MET.** Fail-closed holds in the runner and now at the guard's
+   fallback on BOTH axes. Confirmed the whole battery on: a `Makefile`, a
+   new top-level directory, a filename carrying a space and non-ASCII
+   (git's own quoting makes it unparseable and it fails CLOSED), and the
+   fallback's spec axis. The two unpinned narrowings above are the
+   corrections, not a failure of this criterion.
+4. **MET IN THE MECHANISM.** CONVENTIONS puts the bench's run and the
+   integrator's on the owed set; `method/roles/verifier.md` was another
+   lane's armed fence and the executor filed `T-280-s2` rather than
+   breach it. I second the previous verdict's note to the seat that
+   `T-280-s1` is a prerequisite for criterion 4's safety, and add that
+   `T-280-s5`'s `@{upstream}` question lands on the integrator's push
+   specifically.
+5. **MET.** `PACKAGE_ROOTS` is `Object.fromEntries` over the registry's
+   own `cwd`s — a body pins it, and moving one root's `cwd` in the
+   registry (a DATA mutant, landing read from `git diff`) reds *"a path
+   is placed by the roots the derivation was GIVEN"* alone: 68 passed /
+   1 failed. The card's own DATA mutant is real and lands in DATA: one
+   `import` statement removed and restored in a real fixture spec, the
+   owed set moving `{whole:true,specs:[]}` to
+   `{whole:false,specs:[owner.spec.ts]}`, with a second body doing the
+   docs-read face. Both readings are asserted, so neither is a
+   construction. No hand-listed set found.
+6. **MET.** The bullet states the owed set, the derivation's three arms,
+   the fail-closed case and that CI still runs the whole battery, in
+   those words, and now states what "the whole battery" means on both
+   axes. `ci.yml` and `workflow-parity.spec.ts` untouched. Bytes 133876
+   at the base to **138100 at `4d2d952`** (138098 at `aceec12` — the
+   report's figure, correct at its own ref; the notes commit re-wrapped
+   one line) against an UNCHANGED warn of 146878, and `docs-scan.mjs` is
+   byte-identical to the base, so no budget was raised to fit the prose.
+7. **FIRST HALF MET BY NOT TOUCHING IT** — `health-bands.config.mjs`,
+   `health-bands.mjs` and `health-bands.spec.ts` are untouched, so
+   `suite/e2e-seconds` still reads the whole battery. **The checkpoint
+   half is the SEAT'S act and is NOT faked into this diff**: no
+   checkpoint file, no invented minutes — the only occurrences of the
+   word are prose. Reported as owed to the seat.
+
+**SECURITY SWEEP — NO FINDINGS.** Injection: `RANGE_RE` gates the string
+before either endpoint reaches git, ancestry is checked BEFORE the diff
+runs, and every git call is `spawnSync` with an argv array and a `--`
+separator. I ran `HEAD; touch /tmp/pwn-T280`, `HEAD..$(id)`,
+`--output=/tmp/pwn2-T280..HEAD`, `HEAD..HEAD;id`,
+`main..HEAD --output=/tmp/x-T280` and `../foo..HEAD` — every one a JSON
+`problem`, **0 files created**. No `import()`, `require()`, `eval` or
+`execSync` of any repo-controlled path in any of the three changed
+programs; the graph is a static text parse. `maxBuffer` is 32 MiB and an
+overrun is a `problem`, so it lands on the whole battery. An untracked
+planted file under another package root does not move the owed set. The
+guard decides NOTHING from `token.owed`. `writeToken` builds a fresh
+entry object per write, so a stale `scope` cannot survive an unscoped
+re-run — I confirmed the whole-battery run at this tip wrote an `e2e`
+entry with no `scope`. No secrets, no dependency additions.
+
+**THE VOCABULARY QUESTION (phase 1's §6), ANSWERED FRESH.** Outcome (a),
+one vocabulary, and the feared single-character relaxation did not
+happen: `judgeToken`'s accepted string is still `entry.verdict === GREEN`
+with `GREEN = "GREEN"`, and a `SCOPED-GREEN` entry is still `token-red`
+at the tip. `REQUIRED_SUITES` survives in exactly the role phase 1
+demanded, as the fail-closed fallback. The second axis phase 1 did not
+anticipate — the `scope` field — is now read on both paths, which is
+what the entry above was spent on.
+
+**FENCE — CLEAN.** `git diff --name-only a1bb590..4d2d952` is
+`gate-token.mjs`, `push-guard.mjs`, `CONVENTIONS.md`, `gate-run.mjs`,
+`gate-run.spec.ts`, `push-guard.spec.ts` and `docs/tasks/` — nothing
+else. `docs-scan.mjs` is in the fence and UNTOUCHED. None of `ci.yml`,
+`workflow-parity.spec.ts`, `health-bands.*`, `dispatch-brief.mjs`,
+`brief.spec.ts`, `agent_runner.rs`, `agent/mod.rs`, `executor.md`,
+`verifier.md`, `lane-protocol.md`, `cli.mjs` or `cli.spec.ts` appears.
+The method stamp inside the lane still reads `0.1.14`. The REJECTED
+entry above is byte-identical to the sealed copy of it — the record was
+not rewritten.
+
+**THE REPORT'S CLAIMS, RE-DERIVED.** `push-guard.spec.ts` 95 and
+`gate-run.spec.ts` 69 alone: CONFIRMED at my own tip. The four-line
+form's 68/1 and the body it reds: CONFIRMED by planting the mutant
+myself. The two false artefacts corrected in `push-guard.mjs` and
+CONVENTIONS: read and correct. The 138098 bytes: correct at `aceec12`,
+138100 at the tip. `docs/CAPABILITIES.md` STALE: the integrator's, per
+the seat's ground rule — not a finding, and not re-measured. **The one
+figure I did not re-derive is the report's 794 s wall at `aceec12`** —
+that is a different ref under different contention and I do not repeat
+it as measured. **The report says "Mutants run: 0" for this pass. I ran
+six, and two of them survived** — which is the whole of what these two
+corrections are.
+
+**WHAT IS GOOD, SAID PLAINLY.** The fix is the right size for what was
+owed: it hoists one read, changes no behaviour on the derived path, and
+declines to grow past its verdict — and the executor filed `T-280-s4`
+for the widening it did NOT do rather than doing it quietly, which is
+the disclosure this method exists to produce. The fifth condition it
+added beyond the verdict's candidate is a real improvement and it was
+MEASURED in both directions before it was claimed. The derivation
+underneath remains the strongest part of the lane and I attacked it
+hard: package roots segment-safe with longest-match, the cross-package
+edge READ from the manifests in the right direction, deletions placed,
+injection closed at the character class, and an unparseable filename
+failing closed. The two corrections are gaps in the BODIES, not in the
+code.
+
+**WHAT I RAN** (bench `../nputer-V-T-280`, detached at `4d2d952`;
+`node_modules` and both `dist/` were already installed and built, so no
+`npm ci` was needed this pass; `SUPERTASKR_E2E_PORT=25280` throughout,
+and never 1420, 14520, 15280 or 25285):
+
+| run | ref | exit | count |
+|---|---|---|---|
+| `gate-run.mjs parser` | `4d2d952` | 0 | 389 (1 target) |
+| `gate-run.mjs app` | `4d2d952` | 0 | 1171 (1 target) |
+| `gate-run.mjs rust` | `4d2d952` | 0 | 654 (18 targets) |
+| `gate-run.mjs e2e` (WHOLE leg) | `4d2d952` | 0 | **811** (1 target) |
+| whole battery wall | `4d2d952` | — | 15:10:42Z→15:24:51Z = **849 s** (e2e 804 s of it) |
+| `gate-run.mjs --range a1bb590..4d2d952` | `4d2d952` | **0** | parser 389, app 1171, rust 654, e2e **613** with `scope=` naming 16 of 39 spec files |
+| range-form wall | `4d2d952` | — | 15:40:13Z→15:52:24Z = **731 s** |
+| `push-guard.spec.ts` alone | `4d2d952` | 0 | **95 passed** |
+| `push-guard.spec.ts` alone | `62f4342` (pre-fix) | 1 | **94 passed, 1 failed** |
+| `gate-run.spec.ts` alone | `4d2d952` | 0 | **69 passed** |
+| `gate-run.spec.ts` + my two bodies | `4d2d952` | 0 | **71 passed** |
+
+Both forms were run per the brief's rule (c): the four legs WHOLE (T-262)
+and the lane's own range form over base..tip. **The e2e leg is 811 bodies
+whole — the previous verdict measured 810 at `cc7905d`, and the +1 is the
+correction body it committed.** My wall figures are not comparable to the
+report's 794 s: this machine carried the integration checkout and other
+benches throughout, and the direction is all I claim. **The range form's
+own narrowing, measured at this tip: e2e 613 of 811 bodies over 16 of 39
+spec files — 198 bodies and 23 spec files did not run**, and the other
+three legs ran whole because the range owes them whole.
+
+**SIX MUTANTS, EACH LANDING READ FROM `git diff` AT THE SITE I NAMED**
+(the fix pass's own report says "Mutants run: 0"):
+
+| mutant | site | result |
+|---|---|---|
+| the scope check drops `verdict === GREEN` | `gate-token.mjs` | DIED — `gate-run.spec.ts` 68/1, T-271's naming body |
+| the scope check fires only when `owed !== undefined` | `gate-token.mjs` | DIED — `push-guard.spec.ts` 94/1, the correction body alone |
+| the rust root's registry `cwd` moved (DATA) | `gate-run.mjs` | DIED — `gate-run.spec.ts` 68/1, the roots body alone |
+| the fail-closed return hands back the PARTIAL set | `gate-run.mjs` | DIED — `gate-run.spec.ts` 68/1, the fail-closed body alone |
+| `startsWith(dir)` — the segment boundary lost | `gate-run.mjs` | **SURVIVED all 69** → correction 1 |
+| `--diff-filter=d` — deletions dropped | `gate-run.mjs` | **SURVIVED all 69** → correction 2 |
+
+**ONE DISCLOSURE ABOUT MY OWN RUN.** The two cards I filed sat untracked
+in `docs/tasks/` for roughly ninety seconds while the range form's e2e
+leg was running, which could have moved a body that reads the live
+board. I noticed and moved them out; the leg finished GREEN over all 613
+bodies, so nothing was contaminated and no re-run was owed.
+
+**RE-ENTRY.** Two corrections, two mutant blocks, both bodies committed
+on this bench in the commit after this verdict, both RED and GREEN
+recorded above. The seat has `T-280-s5` and `T-280-s6` from this pass and
+`T-280-s1`…`s4` from the earlier ones; none of them blocks the merge.
