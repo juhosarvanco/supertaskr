@@ -209,3 +209,262 @@ the merge on the `.ts` in this diff and is the integrator's.
 
 
 ## Verdicts
+
+### 2026-09-09 — claude-opus-5@subagent (verifier, phase 2) — REJECTED
+
+Tip judged `cc7905dc21c0c094079b1f0adab245725218641d`, base
+`a1bb590b2aaac92aad23aa0879075f23608dbad1`, on the detached bench
+`../nputer-V-T-280`. Sealed inputs cited by hash:
+
+- attack set `sha256:62e883997be83f16e2ccec3bfbfe569c229f54540cb73e60f91d71b2faea9d0c`
+- ground truths `sha256:92dab9107ebea92df1fde0ae09ecfaa4baa9ca5a9730eb3c424a47f16306f1b0`
+- ground addendum `sha256:bb331656bf64e83edb96f6675a3038acce5c9b50b1478d62dd55b6da10224053`
+
+**THE FRAME I ACTUALLY HAD.** Two spawns. Phase 1 wrote the attack set
+tool-less at the base, before this lane's first commit; its hash and the
+two ground-truth files' hashes matched the dispatcher's stamps exactly
+before anything else was opened. The brief is HAND-WRITTEN BY THE SEAT
+AND CARRIES NO CONTEXT PACK — I say so as the role requires; I read
+CONVENTIONS at the base by the bullets I needed (push, DOCS GATE,
+BLESSED RUNNER, RANGE RULE) rather than end to end, plus STATE and the
+card at the base. The brief's duties section names executor-derived
+specifics (the `--range a1bb590..dc5d08d` figures, the 16-of-39 spec
+count, the two battery wall times, the `--root`→`--tree` story). Those
+reached me BEFORE the diff and I report it rather than pretend
+otherwise: phase 1's set was already sealed and hashed by then, so the
+attack set is uncontaminated, but my phase-2 orientation was not blind
+to those numbers. Every one of them I re-measured; where I did, I say so.
+
+**THE VERDICT IS REJECTED FOR ONE DEFECT**, and it is the one this
+card's own posture names: a place where "we could not tell" resolves to
+accepting a smaller measurement than the base required.
+
+**THE DEFECT — the fail-closed fallback does not require a WHOLE
+end-to-end leg, so a scoped GREEN passes as a battery.**
+
+`judgeToken` nests the entire spec-file coverage check inside
+`if (owed !== undefined)`. The guard passes `owed` only when
+`owedSetForPush` succeeds; when it cannot derive a range it passes
+none, and `need` falls back to `REQUIRED_SUITES` — four legs on the
+SUITE axis, with the SPEC axis never examined.
+
+Before this card that was sound, because a plain `GREEN` `e2e` entry
+could only have come from a whole leg: the one form that graded a
+subset wore `SCOPED-GREEN`, which this guard refuses as `token-red`.
+`--range` now mints a plain `GREEN` for a NARROWED leg and records what
+it graded in `scope`. The invariant "four suites GREEN at this tree ==
+the battery ran" is gone, and the fallback is the one path that does not
+notice.
+
+Reproduce (a `git clone --shared` at the tip, on a branch with no
+upstream — never the real checkout):
+
+    node $S/repro-guard-T-280.mjs <clone>
+
+    pushRange -> {"problem":"this branch names no upstream, ..."}
+    A) four UNSCOPED legs (the control):     allow   graph-current
+    B) same token, e2e graded 1 of 39 specs: allow   graph-current
+
+Expected at B: `block` / `token-partial`. Actual: `allow`. At the judge
+alone (`$S/probe-judge-T-280.mjs`), the same token with no `owed`
+answers `{"state":"fresh","code":"token-green"}`, while the same token
+WITH an `owed` naming the leg whole answers `token-partial` correctly.
+
+**THE CONTROL (K1), run where the arming is absent.** The same probe
+against the base `a1bb590`: a partly-graded leg there is `SCOPED-GREEN`
+and the base answers `token-red` — REFUSED. So the base refuses what
+the tip accepts; this is a regression against the base on the spec
+axis, not merely an unbuilt check. (K2: the base runner rejects
+`--range` as an unknown suite, exit 2 — the arm really is new.)
+
+**WHY THIS IS NOT A CORRECTION.** Two of the lane's own artefacts state
+the property absolutely and are false as implemented. `push-guard.mjs`:
+"THE FALLBACK IS SILENT ON PURPOSE: it is STRICTER than the derivation,
+so it leaves nothing unverified" — on the spec axis it is weaker, and
+silence is what makes it unnoticeable. CONVENTIONS, in the bullet this
+card adds: "...no upstream to range against, a runner this checkout does
+not have, an answer the guard cannot parse — every one of them makes the
+owed set THE WHOLE BATTERY." And the lane's own `gate-run.spec.ts` body
+"the RANGE arm grades the owed set..." constructs a fixture whose
+`stranger.spec.ts` ALWAYS FAILS, then asserts the scoped run is
+`verdict=GREEN` while `expect(whole.status, "the leg really reaches the
+stranger").toBe(EXIT.RED)`. That is a tree on which the token reads as
+four green legs and the end-to-end leg fails. `push-guard.mjs`'s own
+comment calls the no-upstream case "THE ORDINARY CASE ON A LANE".
+
+**WHY NO BODY CATCHES IT.** The section header says the fallback is
+"BEING EXERCISED BY NINETY-ODD BODIES" — true on the suite axis; every
+one of those fixtures plants an UNSCOPED token. `plantSuites` already
+takes a `scope` parameter, but it is never passed on a no-upstream
+fixture. The body "every way the owed set cannot be derived lands on the
+WHOLE battery, and none of them narrows a push" plants only
+`["parser"]`, so it stops at `token-incomplete` and never reaches the
+four-green-with-scope case.
+
+**THE BODY IS COMMITTED ON THIS BENCH**, after this verdict, in
+`tools/e2e/tests/push-guard.spec.ts`. Both readings recorded below.
+
+**THE READINGS ON THE BODY.** `tools/e2e/tests/push-guard.spec.ts`, body
+*"a token whose end-to-end entry graded PART of the leg is refused even
+when no owed set could be derived, because a scoped GREEN is not a whole
+leg"*, from `tools/e2e/`, `SUPERTASKR_E2E_PORT=25280`:
+
+- **RED against the implementation lacking the property** — the tip as
+  submitted: `94 passed, 1 failed`, the failure being this body,
+  `Expected: "block" / Received: "allow"` at the scoped-token line. Its
+  control line (four UNSCOPED legs must still be allowed) passes first,
+  so the redness is the scope field and nothing else.
+- **GREEN against an implementation carrying it** — with a candidate fix
+  that lifts the `scope` check out of `if (owed !== undefined)` and
+  refuses a scoped `e2e` entry when no owed set was derived: this body
+  passes, and the WHOLE file passes `95 passed`. The fix is four lines
+  and breaks none of the ninety-four. The fix is NOT committed; the tip
+  is judged as submitted.
+
+**NO MUTANT BLOCK IS EMITTED, AND THAT IS SAID RATHER THAN OMITTED.**
+T-281's grammar requires `--- old` text matching the named file EXACTLY
+ONCE, and the site that would carry this property does not exist at the
+judged tip — the fallback has no scope check to mutate. A block naming a
+site the lane has not yet written would have rotted before the
+integrator read it. The pin is the committed body, and its redness at
+the tip IS the finding.
+
+**WHAT I RAN** (bench `../nputer-V-T-280`, detached at the tip, cold
+checkout: `npm ci` + `npm run build` in `lib/parser`, `app`,
+`tools/e2e`, all exit 0):
+
+| run | exit | bodies |
+|---|---|---|
+| `gate-run.mjs parser` | 0 | 389 (1 target) |
+| `gate-run.mjs app` | 0 | 1171 (1 target) |
+| `gate-run.mjs rust` | 0 | 654 (18 targets) |
+| `gate-run.mjs e2e` (whole) | 0 | **810** (1 target) |
+| whole battery wall | — | 13:42:06Z→14:12:43Z = **1837 s** |
+| `gate-run.mjs --range a1bb590..cc7905d` | **0** | parser 389, app 1171, rust 654, e2e **612** `scope=` 16 spec files |
+| range-form wall | — | 14:13:11Z→14:26:34Z = **803 s** |
+| `gate-run.spec.ts` alone | 0 | 69 passed (57 at the base; +12) |
+| `push-guard.spec.ts` alone, tip as submitted | 1 | 94 passed, 1 failed (my body) |
+| `push-guard.spec.ts` alone, with the candidate fix | 0 | 95 passed |
+
+Both forms were run per the brief's rule (c): the four legs whole
+(T-262) AND the lane's own range form over base..tip. **The range form's
+own narrowing, measured here: e2e 612 of 810 bodies, 16 of 39 spec
+files — 198 bodies and 23 spec files did not run.** My wall figures are
+not comparable to the report's 930 s / 1113 s: this machine was carrying
+the integration checkout's battery and another bench concurrently. The
+direction agrees; the absolute numbers are contended and I say so rather
+than quoting them as a saving.
+
+**THE REPORT'S CLAIMS, RE-DERIVED.** `--range` grading parser 389 / app
+1171 / rust 654 / e2e 612 across 16 of 39 specs at exit 0: CONFIRMED at
+my own tip. The token keyed with an `owed` record: CONFIRMED (`owed.range`
+= `a1bb590..cc7905d`, `e2e.whole=false`, 16 specs, the ten input fields).
+The `--root`→`--tree` story: CORROBORATED — `cli.spec.ts` is untouched,
+its body *"every verb that hands its target --root fronts a script whose
+own flags carry it"* tests `/"--root"/` against the target's source,
+`gate-run.mjs` at the tip contains no quoted `"--root"`, and that body is
+green inside my 810. The one claim I could not re-derive is the
+`c67f52e` pair (930 s / 1113 s, same single red) — that content is not in
+my range; I did not re-run it and I do not repeat it as measured.
+**Criterion 3's report line — "Outside: no upstream... Each lands on the
+whole battery" — is the claim this verdict falsifies.**
+
+**CRITERION BY CRITERION.**
+
+1. **MET.** `--range` derives and grades exactly the owed set; the token
+   records the set, the range and the inputs. Verified on real commits.
+2. **MET.** One function, two callers: the guard holds NO copy — grep for
+   `deriveOwed|suiteOfPath|PACKAGE_ROOTS|owningSpecs|specReach` over
+   `push-guard.mjs` is empty; it spawns the ASK arm, and `OWED_SET_FLAGS`
+   and `SCOPABLE_SUITE` are pinned to the runner's own constants by
+   bodies. `token-partial` is additive and names missing suites AND
+   missing spec files; all five earlier reasons keep their names, asserted
+   by a body and re-checked by me.
+3. **NOT MET.** Fail-closed holds everywhere INSIDE the runner — I
+   confirmed the whole battery on: a `Makefile`, a `method/` path, a
+   filename carrying a space and non-ASCII, a docs path never asked, a
+   reader under no package root, an unresolvable import edge. It does not
+   hold at the guard's own fallback on the SPEC axis. THE DEFECT.
+4. **MET IN THE MECHANISM, FILED FOR THE ROLE FILE.** CONVENTIONS now
+   puts the bench's run and the integrator's on the owed set;
+   `method/roles/verifier.md` was T-283's armed fence and the executor
+   filed T-280-s2 rather than breach it — the right call. NOTE FOR THE
+   SEAT: criterion 4 puts THE BENCH'S ONE RUN on the owed set, and
+   T-280-s1 (the lane's own disclosure) shows the owed set is short in a
+   named class — a spec that READS a placed path at runtime rather than
+   importing it. A bench running the owed set would therefore skip the
+   spec that asserts about the changed file. That raises T-280-s1 from an
+   improvement to a prerequisite for criterion 4's safety, and the seat
+   should weigh promoting it before benches are moved onto this form.
+5. **MET.** `PACKAGE_ROOTS` is `Object.fromEntries` over the registry's
+   own `cwd`s; the `file:` edges are READ from manifests, with a control
+   body proving a tree without the specifier has no edge. The DATA mutant
+   is real and lands in DATA: one `import` statement removed and restored
+   in a real fixture spec, the owed set read moving `{whole:true,specs:[]}`
+   → `{whole:false,specs:[owner.spec.ts]}`; a second does the docs face.
+   The two kill sets do not contain one another. No hand-listed set found.
+6. **MET.** The bullet states the owed set, the derivation (three arms),
+   the fail-closed case and that CI still runs the whole battery, in those
+   words. `workflow-parity` and `ci.yml` untouched. Bytes 133876 → 137263
+   against an UNCHANGED warn of 146878 — `docs-scan.mjs` was not touched,
+   so no budget was raised to fit the prose.
+7. **FIRST HALF MET BY NOT TOUCHING IT** — `health-bands.config.mjs`,
+   `health-bands.mjs` and `health-bands.spec.ts` are untouched, so
+   `suite/e2e-seconds` still reads the whole battery. The checkpoint half
+   is the SEAT'S ACT and is NOT faked into this diff — I checked: no
+   checkpoint file, no invented minutes. Reported as owed to the seat.
+
+**SECURITY SWEEP — no findings.** Injection: `RANGE_RE` gates the string
+and both git calls are `spawnSync` with argv arrays; ancestry is checked
+BEFORE `git diff` runs, so a leading-`-` endpoint never reaches the diff.
+I ran `HEAD; touch /tmp/pwn-t280`, `--output=/tmp/pwn2..HEAD`,
+`HEAD..$(id)`, `main..HEAD --output=/tmp/x` and `../foo..HEAD` — all
+refused as a JSON `problem`, no file created. No dynamic `import()` or
+`require()` of any repo-controlled path in the derivation; the graph is a
+static text parse and `docs-scan` reads with `readFileSync` plus
+`git ls-files -z` through `execFileSync` arrays. The guard decides
+NOTHING from `token.owed` — it is carried through `readToken` and read by
+no branch. An untracked planted file under another root does not move the
+owed set. 4000 paths in one range derive in 1 s with the right answer —
+no `E2BIG`, no hang. `treeAtWrite`/`dirty` are untouched, and each write
+builds a fresh entry object so a stale `scope` cannot survive an unscoped
+re-run. No secrets; no dependency additions.
+
+**THE VOCABULARY QUESTION (my §6), ANSWERED.** Outcome (a), with a
+twist the set did not anticipate: ONE vocabulary is kept —
+`judgeToken`'s accepted string is still `entry.verdict === GREEN` with
+`GREEN = "GREEN"`, byte-identical to the base, and I confirmed a
+`SCOPED-GREEN` entry is still refused as `token-red` at the tip.
+`REQUIRED_SUITES` survives in exactly the role the set demanded, as the
+fail-closed fallback (`required ?? (owed === undefined ? REQUIRED_SUITES
+: ...)`). The feared single-character relaxation did NOT happen. But the
+card introduced a SECOND safety axis — the `scope` field — orthogonal to
+the verdict word, and the fallback checks the word and not the field.
+The laundering my §6 predicted through the string comparison arrives
+instead through the axis that comparison does not cover.
+
+**FENCE — CLEAN.** `ci.yml`, `workflow-parity.spec.ts`,
+`health-bands.*`, `dispatch-brief.mjs`, `brief.spec.ts`, `brief.mjs`,
+`TASK-FORMAT.md` (T-285), `agent_runner.rs`, `agent/mod.rs` (T-281-s8),
+`executor.md`, `verifier.md`, `lane-protocol.md` (T-283), `cli.mjs`,
+`cli.spec.ts` and `docs-scan.mjs` are ALL untouched by
+`git diff --name-only a1bb590..cc7905d`. The diff is the seven fenced
+files minus `docs-scan.mjs`, plus `docs/tasks/`. Method stamp still reads
+`0.1.14`. No breach.
+
+**WHAT IS GOOD, SAID PLAINLY**, because a rejection over one defect
+should not read as a rejection of the work: the derivation is the
+strongest part and I attacked it hard. Package roots are segment-safe
+with longest-match (`app/src-tauri/src/agent_runner.rs` → rust, not
+app); the cross-package edge is READ from the manifests in the right
+direction and closed transitively; deletions place correctly; a filename
+with a space and non-ASCII fails CLOSED to the whole battery. The bodies
+carry controls almost everywhere, and the `--range` body is the best on
+the bench: it builds a fixture whose stranger spec always fails and
+asserts the narrow run GREEN while the whole leg is RED, which is a
+discrimination and not a construction. T-280-s1 is an honest disclosure
+of a real limitation the executor was not obliged to find.
+
+**RE-ENTRY.** Per the method a rejection re-enters by a NEW phase-2
+spawn (T-248). The one thing owed is the fallback's spec axis; the body
+that decides it is committed on this bench and is RED at `cc7905d`.
