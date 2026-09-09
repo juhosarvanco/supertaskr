@@ -4950,8 +4950,8 @@
       "id": "f:app/src-tauri/src/agent/kit.rs",
       "path": "app/src-tauri/src/agent/kit.rs",
       "lang": "rust",
-      "hash": "blake3:c1999db6a8acfef6834f526bd306c16cac6c19b7d1234ed8d5f927780936762b",
-      "loc": 899,
+      "hash": "blake3:8f1788ba74da74024da7eb8ff70fc30bdad5e6897d43eb4127f55496a2c15c1f",
+      "loc": 1175,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/agent/kit.rs#COLD_START_GAPS_HEADING",
@@ -4959,8 +4959,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            372,
-            372
+            407,
+            407
           ]
         },
         {
@@ -4969,8 +4969,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            63,
-            120
+            68,
+            155
           ]
         },
         {
@@ -4999,8 +4999,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            126,
-            131
+            161,
+            166
           ]
         },
         {
@@ -5019,8 +5019,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            396,
-            416
+            431,
+            451
           ]
         },
         {
@@ -5029,8 +5029,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            256,
-            258
+            291,
+            293
           ]
         },
         {
@@ -5039,8 +5039,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            332,
-            338
+            367,
+            373
           ]
         },
         {
@@ -5049,8 +5049,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            341,
-            347
+            376,
+            382
           ]
         },
         {
@@ -5059,8 +5059,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            261,
-            274
+            296,
+            309
           ]
         },
         {
@@ -5069,8 +5069,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            304,
-            306
+            339,
+            341
           ]
         },
         {
@@ -5079,8 +5079,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            309,
-            327
+            344,
+            362
           ]
         },
         {
@@ -5089,8 +5089,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            356,
-            367
+            391,
+            402
           ]
         },
         {
@@ -5099,8 +5099,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            284,
-            288
+            319,
+            323
           ]
         },
         {
@@ -5109,8 +5109,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            141,
-            147
+            176,
+            182
           ]
         },
         {
@@ -5119,8 +5119,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            155,
-            174
+            190,
+            209
           ]
         },
         {
@@ -5129,8 +5129,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            133,
-            138
+            168,
+            173
           ]
         },
         {
@@ -5139,8 +5139,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            222,
-            241
+            257,
+            276
           ]
         },
         {
@@ -5149,8 +5149,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            419,
-            899
+            454,
+            1175
           ]
         },
         {
@@ -5159,8 +5159,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            179,
-            198
+            214,
+            233
           ]
         }
       ]

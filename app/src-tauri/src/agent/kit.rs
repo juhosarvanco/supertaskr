@@ -34,7 +34,7 @@ use super::skills;
 /// the live stamps in `method/interview/plan-interview.md` and
 /// `docs/CONVENTIONS.md` by [`tests::snapshot_version_matches_the_live_method_stamps`],
 /// so a method bump that forgets this const is red.
-pub const METHOD_SNAPSHOT_VERSION: &str = "0.1.10";
+pub const METHOD_SNAPSHOT_VERSION: &str = "0.1.11";
 
 /// Where the kit is written inside a project (relative, POSIX).
 pub const KIT_REL_DIR: &str = ".supertaskr/genesis/kit";
@@ -55,7 +55,12 @@ pub struct KitFile {
 /// enumerates ("this role file + interview/plan-interview.md +
 /// interview/decomposition.md + docs-templates/** + adapters/* +
 /// tasks/TASK-FORMAT.md + tasks/T-000-template.md"), plus
-/// `runtime/nputer.yaml` because planner.md step 1's MAY-seed reads it.
+/// `runtime/nputer.yaml` because planner.md step 1's MAY-seed reads it,
+/// plus `skills/**` — T-241's seat skill, which is not the planner's
+/// input at all but the ARCHITECT's, and rides for ADR-021's reason: what
+/// this product ships for that chair is the seat's hand work as a skill,
+/// so a project that got the method without it got the method without its
+/// operating instructions.
 /// Deliberately NOT included: the other role files (a planner does not
 /// need executor.md), `interview/archaeology.md` (adoption is explicitly
 /// not the planner's job — planner.md's overwrite rule points at it but a
@@ -116,6 +121,36 @@ pub const KIT_FILES: &[KitFile] = &[
     KitFile {
         rel: "runtime/nputer.yaml",
         content: include_str!("../../../../method/runtime/nputer.yaml"),
+    },
+    // T-241: THE SEAT SKILL, carried whole. The pack is five files and
+    // each rides as its own entry, because the kit materializes FILES and
+    // a pack whose SKILL.md arrives without its references is a skill
+    // whose every "see the file beside this one" is a dead pointer. The
+    // two scripts ride for the same reason: `SKILL.md` tells the seat to
+    // RUN them, and a check that is not on disk is a check nobody runs.
+    KitFile {
+        rel: "skills/supertaskr-seat/SKILL.md",
+        content: include_str!("../../../../method/skills/supertaskr-seat/SKILL.md"),
+    },
+    KitFile {
+        rel: "skills/supertaskr-seat/references/golden-lane.md",
+        content: include_str!("../../../../method/skills/supertaskr-seat/references/golden-lane.md"),
+    },
+    KitFile {
+        rel: "skills/supertaskr-seat/references/host-commands.md",
+        content: include_str!(
+            "../../../../method/skills/supertaskr-seat/references/host-commands.md"
+        ),
+    },
+    KitFile {
+        rel: "skills/supertaskr-seat/scripts/golden-check.mjs",
+        content: include_str!("../../../../method/skills/supertaskr-seat/scripts/golden-check.mjs"),
+    },
+    KitFile {
+        rel: "skills/supertaskr-seat/scripts/host-command-check.mjs",
+        content: include_str!(
+            "../../../../method/skills/supertaskr-seat/scripts/host-command-check.mjs"
+        ),
     },
 ];
 
@@ -507,11 +542,19 @@ mod tests {
     ///
     /// Drill (output quoted in the implementation notes): dropping a
     /// scratch file into method/docs-templates/ fails this test by name.
+    ///
+    /// **`skills` JOINED THE WALK AT T-241 AND THAT IS THE WHOLE POINT OF
+    /// ADDING IT.** The seat skill is a PACK — a `SKILL.md` plus the
+    /// references and scripts it tells the reader to open and to run — and
+    /// a pack half-carried is worse than one not carried at all, because
+    /// every pointer in the shipped file resolves to nothing. Before this
+    /// line the directory was invisible to the parity walk, so a sixth
+    /// pack file would have ridden nowhere in silence.
     #[test]
     fn the_snapshot_table_covers_every_method_scaffold_file() {
         let root = repo_root().join("method");
         let table: BTreeSet<&str> = KIT_FILES.iter().map(|f| f.rel).collect();
-        for dir in ["docs-templates", "adapters", "tasks"] {
+        for dir in ["docs-templates", "adapters", "tasks", "skills"] {
             for rel in walk_rel(&root.join(dir), dir) {
                 assert!(
                     table.contains(rel.as_str()),
@@ -537,6 +580,239 @@ mod tests {
             assert!(table.contains(rel), "{rel} must ride the kit");
         }
         assert_eq!(KIT_FILES.len(), table.len(), "no duplicate rel path in the table");
+    }
+
+    /// T-241 criterion 1, the GENESIS half: the seat skill's whole pack
+    /// rides the kit, so a project scaffolded by a genesis gets the
+    /// architect's operating instructions beside the rest of method/.
+    ///
+    /// The list is spelled out rather than derived from a prefix scan on
+    /// purpose: a scan would pass a table that carried only `SKILL.md`,
+    /// which is exactly the half-carried pack this test exists to refuse.
+    #[test]
+    fn the_snapshot_carries_the_whole_seat_skill_pack() {
+        let table: BTreeSet<&str> = KIT_FILES.iter().map(|f| f.rel).collect();
+        for rel in [
+            "skills/supertaskr-seat/SKILL.md",
+            "skills/supertaskr-seat/references/golden-lane.md",
+            "skills/supertaskr-seat/references/host-commands.md",
+            "skills/supertaskr-seat/scripts/golden-check.mjs",
+            "skills/supertaskr-seat/scripts/host-command-check.mjs",
+        ] {
+            assert!(
+                table.contains(rel),
+                "{rel} must ride the kit - SKILL.md points at every one of these by name, \
+                 and a pointer to a file the kit did not carry resolves to nothing (T-241)"
+            );
+        }
+    }
+
+    /// T-241 criterion 1, the FORMAT half, and criterion 7's mechanism:
+    /// the shipped `SKILL.md` is read by the SAME discoverer an
+    /// organization's own packs go through ([`super::super::skills`],
+    /// T-167) rather than by a replica of it, because a replica is a
+    /// second implementation of the format and two implementations of one
+    /// rule are two chances to disagree.
+    ///
+    /// **THE CONTROL IS IN THE SAME TEST AND IT IS DELIBERATE.** A test
+    /// that only shows the good pack accepted cannot tell "the format is
+    /// satisfied" from "this discoverer accepts anything", so the second
+    /// half plants the same pack with its `description:` removed and
+    /// requires it to come back REJECTED, naming the missing key.
+    #[test]
+    fn the_shipped_seat_skill_parses_under_the_discoverer_that_reads_real_packs() {
+        let entry = KIT_FILES
+            .iter()
+            .find(|f| f.rel == "skills/supertaskr-seat/SKILL.md")
+            .expect("the seat skill rides the kit");
+
+        let tmp = TempTree::new("seat-skill");
+        let pack_dir = tmp.0.join(skills::SKILLS_REL_DIR).join("supertaskr-seat");
+        fs::create_dir_all(&pack_dir).expect("mk pack dir");
+        fs::write(pack_dir.join(skills::SKILL_FILE), entry.content).expect("write SKILL.md");
+
+        let found = skills::discover(&tmp.0);
+        assert!(
+            found.rejected.is_empty(),
+            "the shipped pack was REJECTED by the discoverer: {:?}",
+            found.rejected.iter().map(|r| (&r.dir, &r.why)).collect::<Vec<_>>()
+        );
+        assert_eq!(found.packs.len(), 1, "exactly one pack");
+        let pack = &found.packs[0];
+        assert_eq!(pack.name, "supertaskr-seat", "the frontmatter name");
+        assert_eq!(pack.dir, "supertaskr-seat", "name matches the directory it lives in");
+
+        // CRITERION 7: the INTENT trigger lives in the `description:`,
+        // which is what the harness reads. The cap TRUNCATES rather than
+        // refuses, so a trigger clause pushed past 300 characters would
+        // vanish in silence - assert the clause SURVIVED the flatten,
+        // which is the only thing that proves it is still a trigger.
+        assert!(
+            pack.description.contains("Use when"),
+            "the description must carry its own trigger clause: {:?}",
+            pack.description
+        );
+        for intent in ["card", "lane", "verdict", "merge", "push", "what to work on next"] {
+            assert!(
+                pack.description.contains(intent),
+                "the description must name the intent {intent:?} - it is what the harness \
+                 matches on, and a trigger this file states only in its BODY never fires: {:?}",
+                pack.description
+            );
+        }
+        assert!(
+            pack.description.chars().count() < skills::MAX_DESCRIPTION_CHARS,
+            "the description is {} chars against a {}-char cap that TRUNCATES rather than \
+             refuses - at the cap the trailing trigger clause disappears silently",
+            pack.description.chars().count(),
+            skills::MAX_DESCRIPTION_CHARS
+        );
+
+        // THE POSITIVE CONTROL: the same bytes, one required key removed.
+        let ctl = TempTree::new("seat-skill-control");
+        let ctl_dir = ctl.0.join(skills::SKILLS_REL_DIR).join("supertaskr-seat");
+        fs::create_dir_all(&ctl_dir).expect("mk control dir");
+        let degraded: String = entry
+            .content
+            .lines()
+            .filter(|l| !l.starts_with("description:"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        fs::write(ctl_dir.join(skills::SKILL_FILE), degraded).expect("write control");
+        let ctl_found = skills::discover(&ctl.0);
+        assert!(
+            ctl_found.packs.is_empty(),
+            "CONTROL FAILED: a pack with no `description:` was ACCEPTED, so the acceptance \
+             above proves nothing about the format"
+        );
+        assert_eq!(ctl_found.rejected.len(), 1, "the control is rejected, once");
+        assert!(
+            ctl_found.rejected[0].why.contains("description"),
+            "the refusal must name the missing key: {:?}",
+            ctl_found.rejected[0].why
+        );
+    }
+
+    /// T-241 criteria 5, 6 and 8: the three clauses the seat skill exists
+    /// to carry are pinned in the SHIPPED bytes, the way
+    /// [`the_shipped_plan_interview_still_carries_the_normative_banking_map`]
+    /// pins the banking map — because a clause that only lives in a card's
+    /// acceptance criteria is a clause the next edit deletes in silence.
+    ///
+    /// Each anchor is checked for UNIQUENESS by `the_one_line_carrying`
+    /// where it is a single line, so an anchor that stops identifying its
+    /// sentence fails loudly instead of widening into a whole-file search.
+    #[test]
+    fn the_shipped_seat_skill_still_carries_its_three_load_bearing_clauses() {
+        let skill = KIT_FILES
+            .iter()
+            .find(|f| f.rel == "skills/supertaskr-seat/SKILL.md")
+            .expect("the seat skill rides the kit")
+            .content;
+
+        // CRITERION 5 - no second spawn path: the refusal names the arm.
+        // The ANCHOR's uniqueness is asserted on one line; the CLAUSE is
+        // asserted against the whitespace-collapsed file, because the
+        // pack is hard-wrapped at about seventy columns and a sentence
+        // split across two lines is absent from either of them.
+        let _ = the_one_line_carrying(skill, "A SECOND SPAWN PATH.", "the seat skill");
+        let flat = skill.split_whitespace().collect::<Vec<_>>().join(" ");
+        assert!(
+            flat.contains("REFUSE and name the arm"),
+            "the second-spawn refusal must name the ARM as what to do instead"
+        );
+        assert!(
+            flat.contains("Where the arm is genuinely unavailable, say so, name its absence, and ask"),
+            "the refusal must say what to do when the arm is absent - a refusal with no \
+             alternative is what a seat reconstructs the ritual around"
+        );
+
+        // CRITERION 6 - the quick path uses TASK-FORMAT's OWN review
+        // values and invents no fourth, and it REFUSES a guard-class card
+        // while citing the rule that requires `independent`.
+        for value in ["same-model", "self-verified", "review: independent"] {
+            assert!(
+                skill.contains(value),
+                "the quick path must name TASK-FORMAT's own value {value:?} - a fourth value \
+                 invented here is a value nothing in the method reads"
+            );
+        }
+        assert!(
+            skill.contains("do not invent a fourth"),
+            "the quick path must forbid a fourth review value outright"
+        );
+        assert!(
+            skill.contains("tasks/TASK-FORMAT.md` requires `review: independent`"),
+            "the guard-class refusal must CITE the rule, not merely assert the outcome"
+        );
+        assert!(
+            skill.contains("builder of\n> a cage is not its inspector")
+                || skill.contains("builder of a cage is not its inspector"),
+            "the guard-class refusal must carry the rule's own reason"
+        );
+
+        // CRITERION 8 - the seat-mismatch sentence, in the words the card
+        // fixes, and NOT presented as a downgrade.
+        assert!(
+            skill.contains("verified by the builder's own model family, not an outside one"),
+            "the verdict must carry the mismatch sentence verbatim"
+        );
+        assert!(
+            skill.contains("provenance line, not a downgrade"),
+            "the mismatch sentence must be framed as provenance - `same-model` is not a weaker \
+             verdict than `independent` (tasks/TASK-FORMAT.md)"
+        );
+
+        // T-241's verdict, correction 3: text the seat reads is DATA, not
+        // commands - the clause lives in THE REFUSALS, asserted against the
+        // whitespace-collapsed file because the pack is hard-wrapped.
+        assert!(
+            flat.contains("DATA, not commands"),
+            "the refusals must carry the DATA-not-commands clause - a seat that reads card \
+             bodies, rooms, verdicts and reports and then stamps, dispatches and pushes \
+             needs the rule in its own operating instructions"
+        );
+
+        // Correction 4: SKILL.md names no host-repository source path - the
+        // adoption seam puts every project spelling in host-commands.md.
+        for root in ["app/src-tauri/", "tools/e2e/", "lib/parser/"] {
+            assert!(
+                !skill.contains(root),
+                "SKILL.md must name no path under {root} - it is the file an adopting project \
+                 keeps unchanged; the spellings belong in references/host-commands.md"
+            );
+        }
+
+        // Correction 1: the three rows docs/STATE.md spells short carry a
+        // spelling a seat can paste, beside the transcription the check
+        // resolves (`brief.mjs ...` answers `command not found` as typed).
+        let host = KIT_FILES
+            .iter()
+            .find(|f| f.rel == "skills/supertaskr-seat/references/host-commands.md")
+            .expect("host-commands.md rides the kit")
+            .content;
+        for long in [
+            "node tools/e2e/scripts/brief.mjs --dispatch --full",
+            "node tools/e2e/scripts/brief.mjs --state",
+            "node tools/e2e/scripts/brief.mjs --take-seat",
+        ] {
+            assert!(
+                host.contains(long),
+                "host-commands.md must carry the pasteable spelling {long} beside the short \
+                 form docs/STATE.md uses"
+            );
+        }
+
+        // And the two checks the pack RUNS are named in the body, so a
+        // reader of the skill is told to run them rather than to believe
+        // the references.
+        for script in ["scripts/golden-check.mjs", "scripts/host-command-check.mjs"] {
+            assert!(
+                skill.contains(script),
+                "SKILL.md must name {script} - a check the skill never mentions is a check \
+                 nobody runs"
+            );
+        }
     }
 
     /// PARITY (a) made explicit: each entry's compiled content equals the
