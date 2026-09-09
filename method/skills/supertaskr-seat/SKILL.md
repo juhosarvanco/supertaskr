@@ -1,6 +1,6 @@
 ---
 name: supertaskr-seat
-description: Hold the architect's seat on a Supertaskr project from inside your agent app: the cold-start read, the dispatch view, one-command dispatch of a lane and bench, blind verification, the verdict, the merge, the push. Use when a card, lane, verdict, merge or push is in play, or when asked what is next.
+description: Hold the architect's seat on a Supertaskr project: the cold-start read, the dispatch view, one-command dispatch of a lane and bench, blind verification, the verdict, the merge, the push. Use when a card, lane, verdict, merge or push is in play, or when asked what to work on next.
 when: A Supertaskr project is open (docs/STATE.md and method/ exist) AND the conversation is about dispatching, building, verifying, merging or pushing a card — including when the user has not named this skill and is simply cutting a lane, stamping a card or folding a verdict.
 ---
 
@@ -256,19 +256,62 @@ is one, however small its diff.
 - **A RELAYED FACT.** Say whose claim it is. And never relay the attack
   set — not to the executor, not in a summary.
 
-## The golden — check what you landed against it
+## The two checks this pack RUNS — not two things it asserts
+
+**A PROSE CLAIM IS NOT A CHECK.** Both files beside this one are backed
+by a program that reads THEM at run time and answers, and both are zero
+dependency and no install, so they work against a bare checkout.
+
+### The golden — check what you landed against it
 
 At the end of a turn, compare the files you landed against
 `references/golden-lane.md`, FIELD BY FIELD. It carries the shape of the
 four things a dispatch leaves — the stamp, the fence manifest, the lane
-and the verdict — derived from a real hand-driven lane at a pinned ref.
+and the verdict — derived from a real hand-driven lane at a pinned ref
+that is an ancestor of the arm's own merge, so the instance it was
+derived from cannot have been shaped by the arm.
 
-**A prose claim that the files match is not the check.** The comparison
-is per field, and a field that differs is either a defect in this turn
-or a change the golden has not caught up with — say which, and never
-leave it unsaid.
+    node <pack>/scripts/golden-check.mjs --repo <checkout> --root <repo root> \
+      --stamp <the dispatch stamp's sha> \
+      --manifest <the lane>/.supertaskr/lane-fence.json \
+      --card <the card> --branch <the lane's ref> --worktree <the lane>
+
+It compares only the artifacts you hand it and SKIPS the rest by name, so
+a dispatch turn and a verdict turn each get a real answer. A field that
+differs is either a defect in this turn or a change the golden has not
+caught up with — **say which, and never leave it unsaid.**
+
+`--selftest` runs the comparison against sixteen artifacts that each LACK
+one of the properties and requires every one to be caught; a case it
+passes is a selftest failure, because a check nobody has watched fail is
+a claim.
+
+### The host commands — check that this pack invented none
+
+`references/host-commands.md` claims every command in it is one the
+project's own documents already name, WITH the directory it runs in.
+
+    node <pack>/scripts/host-command-check.mjs --repo <checkout>
+
+It resolves each row's commands against THAT ROW'S OWN named authority
+file, whitespace collapsed on both sides, and each row's `CWD>` against
+the authority corpus; a row that names a command no bullet names, or a
+directory no bullet states, is a finding. `--selftest` has its own
+degradations. **Run it after any edit to that reference** — it is the
+thing that keeps the transcription a transcription.
 
 ## When this skill offers itself
+
+**THE TRIGGER LIVES IN THE FRONTMATTER `description:` ABOVE, AND THAT IS
+NOT A STYLE CHOICE.** In this pack format the description is what the
+harness reads to decide whether a skill applies — the `Use when …` clause
+in it is the mechanism, and this section is its expansion for a reader
+rather than a second copy of it (`app/src-tauri/src/agent/skills.rs`'s
+own header states the same thing about the format, and accepts an
+optional `when:` beside it without ever requiring one). **A description
+is capped at 300 characters and the cap TRUNCATES rather than refuses**,
+so a trigger clause pushed past it disappears silently: this pack's
+description is measured against that cap by a test rather than by eye.
 
 You do not wait for the slash command. Offer this skill — in one line,
 and then do what the user says — the moment the conversation shows any
@@ -284,3 +327,25 @@ The trigger is the STATE of the conversation, not a keyword. If the
 project on disk is not a Supertaskr project — no `docs/STATE.md`, no
 `method/` — say so instead of guessing at a ritual the folder does not
 have.
+
+## Where this pack goes — ONE file, TWO harnesses, both MEASURED
+
+**THERE IS NO SEPARATE CODEX FORM, AND THAT IS A MEASUREMENT RATHER THAN
+AN ASSUMPTION.** The same `SKILL.md` bytes are read by both harnesses;
+only the directory differs.
+
+| harness | put the pack directory at | how it was measured |
+|---|---|---|
+| Claude | `<project>/.claude/skills/supertaskr-seat/` | the shipped bytes run through T-167's own discoverer by a test in the kit's snapshot module, with a control that lacks `description:` and must be REJECTED |
+| Codex | `<project>/.codex/skills/supertaskr-seat/`, `<project>/.agents/skills/supertaskr-seat/`, or `~/.codex/skills/supertaskr-seat/` | planted in a scratch directory and read back out of `codex debug prompt-input`'s own `<skills_instructions>` block, against a negative-control directory in which it does not appear |
+
+`<project>/skills/<name>/` is NOT a Codex discovery location — probed,
+not found — so the kit's materialized copy under
+`.supertaskr/genesis/kit/skills/` is a CARRIED copy and never an
+installed one. Copy or link it into one of the paths above to install it.
+
+**THE DESCRIPTION IS WHAT BOTH HARNESSES READ.** Codex renders it
+verbatim into every turn's prompt beside the pack's absolute path, which
+is why the trigger clause lives there rather than in this body. Codex
+applies no length cap of its own; the 300-character cap belongs to the
+Supertaskr discoverer, so the shorter of the two is the one to write to.
