@@ -4071,3 +4071,41 @@ test("every way the owed set cannot be derived lands on the WHOLE battery, and n
   expect(laneDecision.verdict, "a lane owes the battery, exactly as before").toBe("block");
   expect(laneDecision.code).toBe("token-incomplete");
 });
+
+test("a token whose end-to-end entry graded PART of the leg is refused even when no owed set could be derived, because a scoped GREEN is not a whole leg", () => {
+  // THE FALLBACK'S OTHER AXIS, AND THE ONE THIS ARM ADDED.
+  //
+  // Before this card a plain GREEN `e2e` entry could only have come from
+  // a WHOLE leg: the one form that graded a subset wore `SCOPED-GREEN`,
+  // which this guard refuses as a token. `--range` now mints a plain
+  // GREEN for a NARROWED leg and records what it graded in `scope`, so
+  // "four suites GREEN at this tree" no longer implies "the battery
+  // ran". The suite axis and the spec axis are two separate claims, and
+  // a fallback that checks only the first accepts a leg that ran in
+  // part.
+  //
+  // THE ARMING IS THE ABSENCE OF A RANGE, which is the case the header
+  // above says ninety-odd bodies exercise — every one of them with an
+  // unscoped token, so none of them can see this.
+  const lane = fixture("owed-scope-fallback", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    token: "missing",
+  });
+  expect("problem" in pushRange(lane.root), "the arming: no range is derivable here").toBe(true);
+
+  // THE CONTROL, WHERE THE PROPERTY UNDER TEST IS ABSENT: the same four
+  // suites with NO scope really did grade whole legs, and that push must
+  // still pass. Without this line the expectation below is satisfied by
+  // a guard that refuses everything.
+  plantSuites(lane.root, [...REQUIRED_SUITES]);
+  expect(
+    decideFor(lane).verdict,
+    "the control: a genuine whole four-leg battery still passes",
+  ).toBe("allow");
+
+  // AND NOW THE SAME TOKEN, THE SAME TREE, ONE LEG GRADED IN PART.
+  plantSuites(lane.root, [...REQUIRED_SUITES], "tools/e2e/tests/cli.spec.ts");
+  const decision = decideFor(lane);
+  expect(decision.verdict, "a leg graded in part is not the battery").toBe("block");
+  expect(decision.code).toBe("token-partial");
+  expect(decision.reason, "and the refusal says which leg was short").toContain("e2e");
+});
