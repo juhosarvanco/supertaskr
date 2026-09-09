@@ -8,6 +8,10 @@ priority: 4
 size: S
 blocked_by: []
 touches: [.claude/hooks/landing-gate.mjs]
+builder:
+verifier:
+built_by:
+verified_by:
 review: independent
 suggested_by: verifier claude-opus-5@subagent @V-223
 ---
