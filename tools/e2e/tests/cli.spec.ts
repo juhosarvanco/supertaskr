@@ -1062,17 +1062,34 @@ test("every command the skills' own cards name is a verb this package exposes", 
   const quoted = cards.flatMap((c) => [...c.matchAll(/`([^`\n]+)`/g)].map((m) => m[1] ?? ""));
   const commands = quoted.filter((q) => /\.mjs\b/.test(q));
   expect(commands.length, "the cards really name commands").toBeGreaterThan(0);
-  const reachable = VERBS.flatMap((v) => {
-    if (v.target.kind === "script") return [v.target.file, ...v.target.args, v.positionalFlag ?? ""];
-    if (v.target.kind === "project") return [v.target.file, ...v.target.args];
-    return [];
-  }).join(" ");
+
+  // EXACT MEMBERSHIP, NEVER A SUBSTRING. A mutant that repointed the
+  // `evals` verb at `gate-run.mjs` survived a `toContain("run.mjs")`
+  // check, because one script's name is inside another's — the same
+  // class the verifier's R2 found in `undo`'s id matching.
+  const files = new Set(
+    VERBS.flatMap((v) =>
+      v.target.kind === "script" || v.target.kind === "project" ? [v.target.file] : [],
+    ),
+  );
+  const arms = new Set(
+    VERBS.flatMap((v) =>
+      v.target.kind === "script" || v.target.kind === "project"
+        ? [...v.target.args, ...(v.positionalFlag === undefined ? [] : [v.positionalFlag])]
+        : [],
+    ),
+  );
   for (const command of commands) {
-    const script = /([\w.-]+\.mjs)/.exec(command)?.[1] ?? "";
-    expect(reachable, `${command} is reachable — some verb fronts ${script}`).toContain(script);
+    const script = /([\w./-]*[\w-]+\.mjs)/.exec(command)?.[1] ?? "";
+    expect(script, `${command} names a script`).not.toBe("");
+    expect(
+      files.has(script) || files.has(path.basename(script)),
+      `${command} is reachable — some verb's target IS ${script}, exactly`,
+    ).toBe(true);
     const arm = /\s(--[a-z-]+)/.exec(command)?.[1];
-    if (arm !== undefined) expect(reachable, `and its arm ${arm}`).toContain(arm);
+    if (arm !== undefined) expect(arms.has(arm), `and its arm ${arm} is reached`).toBe(true);
   }
   // NOT VACUOUS: a command no verb fronts is not silently reachable.
-  expect(reachable).not.toContain("definitely-not-a-script.mjs");
+  expect(files.has("definitely-not-a-script.mjs")).toBe(false);
+  expect(files.has("tools/method-evals/run.mjs"), "the evals target is exact").toBe(true);
 });
