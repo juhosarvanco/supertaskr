@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 size: S
 priority: 10
-status: suggested
+status: planned
 suggested_by: "the architect seat, 2026-09-09, at the push of a6355bb (CI run 34300080330, FAILED; re-run requested)"
 blocked_by: []
 touches: [.github/workflows/ci.yml, tools/e2e/tests/workflow-parity.spec.ts]
