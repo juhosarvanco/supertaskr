@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 size: M
 priority: 2
-status: building
+status: verifying
 suggested_by: "@human (2026-09-09): decision 1 of the seat's review of the outside review (docs/research/the-model-for-an-outside-review-2026-09-09.md) — \"1 yes\""
 blocked_by: []
 touches: [method/roles/verifier.md, method/roles/integrator.md, tools/e2e/scripts/merge.mjs, tools/e2e/tests/cli.spec.ts]
