@@ -5,12 +5,12 @@ feature: F-01
 milestone: 4
 size: S
 priority: 3
-status: planned
+status: building
 suggested_by: "the T-247 executor seat, 2026-09-08 (row 13 of its report): the brief's build row transcribes CONVENTIONS' `npm install` for app/, which rewrites app/package-lock.json outside the lane's fence and is refused EACCES; `npm ci` works — and tools/e2e/tests/workflow-parity.spec.ts already maps the doc's `npm install` to CI's `npm ci` with a written reason"
 blocked_by: []
 touches: [docs/CONVENTIONS.md, tools/e2e/tests/workflow-parity.spec.ts]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
