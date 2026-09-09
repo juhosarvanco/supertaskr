@@ -648,16 +648,94 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
     // write to the shared file, and `app/src` silently regains the whole
     // write surface with every suite still green. That is the defect
     // this card fixed, one level up, so both facts are pinned instead of
-    // trusted. Parsed rather than string-matched: the include list is
-    // read out of the JSON, and the surface is read from the
-    // DECLARATIONS, so neither assertion can be satisfied by a comment.
-    const included = /"include"\s*:\s*\[([^\]]*)\]/.exec(readFileSync(resolve("tsconfig.json"), "utf8"));
-    expect(included, "app/tsconfig.json must declare an include list").not.toBeNull();
+    // trusted. The surface half is read from the DECLARATIONS, so it
+    // cannot be satisfied by a comment.
+    //
+    // **AND THE INCLUDE HALF NOW IS TOO — IT IS READ OUT OF THE PARSED
+    // JSON, WHICH IS WHAT THIS COMMENT ALREADY CLAIMED BEFORE T-229-s10
+    // MADE IT TRUE.** The sentence here used to read "Parsed rather than
+    // string-matched: the include list is read out of the JSON ... so
+    // neither assertion can be satisfied by a comment", and only the
+    // DECLARATIONS half of that was ever true. The include list was
+    // `/"include"\s*:\s*\[([^\]]*)\]/` run over the WHOLE TEXT of the
+    // file with the FIRST match taken — `docs/CONVENTIONS.md`'s POISON
+    // DRILL shape EIGHT, *an assertion that SEARCHES a corpus has no
+    // uniqueness floor* — and `app/tsconfig.json` carries block
+    // comments, so a comment was exactly what could satisfy it. A claim
+    // that outlives its mechanism is worse than no claim: it is what
+    // stops the next reader looking.
+    //
+    // MEASURED at `900fbfa`, on a detached scratch worktree, one side
+    // only, restored and sha256-proved: with a decoy `"include": ["src",
+    // "test/node-builtins.d.ts"]` planted inside the `/* */` comment
+    // above the real key AND the real key widened to `["src", "test"]` —
+    // the shape an editor complaint invites, named four lines up — the
+    // whole app suite from `app/` exited 0, 51 files / 1163 bodies, with
+    // `app/src` holding the entire `test` tree. THE KILL SET WAS EMPTY.
+    //
+    // WHY THE STRIP IS A SCANNER AND NOT A REGEX: a regex cannot do it.
+    // `"@/*"` and `"./src/*"` in the `paths` block of that file CONTAIN
+    // `/*`, so a naive block-comment strip opens a comment inside a
+    // STRING and eats forward to the next `*/` — which is the one
+    // closing `/* Bundler mode */` — destroying the JSON rather than
+    // cleaning it. The scanner tracks string state, so it does not.
+    //
+    // WHY THE UNIQUENESS FLOOR IS STILL HERE once the read is a real
+    // parse: `JSON.parse` resolves a DUPLICATE key to the LAST one in
+    // silence, so a second real `"include"` would move this pin onto a
+    // key it did not choose. Asserting the key exactly once on the
+    // comment-stripped text is shape EIGHT's own remedy, and it is the
+    // half that reds on the duplicate the parse would otherwise swallow.
+    const stripJsonComments = (text: string): string => {
+      let out = "";
+      let inString = false;
+      let inLineComment = false;
+      let inBlockComment = false;
+      for (let i = 0; i < text.length; i += 1) {
+        const c = text.charAt(i);
+        const next = text.charAt(i + 1);
+        if (inLineComment) {
+          // Newlines are kept so a JSON.parse error still names a line.
+          if (c === "\n") {
+            inLineComment = false;
+            out += c;
+          }
+        } else if (inBlockComment) {
+          if (c === "*" && next === "/") {
+            inBlockComment = false;
+            i += 1;
+          } else if (c === "\n") out += c;
+        } else if (inString) {
+          out += c;
+          if (c === "\\") {
+            out += next;
+            i += 1;
+          } else if (c === '"') inString = false;
+        } else if (c === '"') {
+          inString = true;
+          out += c;
+        } else if (c === "/" && next === "/") {
+          inLineComment = true;
+          i += 1;
+        } else if (c === "/" && next === "*") {
+          inBlockComment = true;
+          i += 1;
+        } else out += c;
+      }
+      return out;
+    };
+
+    const withoutComments = stripJsonComments(readFileSync(resolve("tsconfig.json"), "utf8"));
     expect(
-      included![1]!
-        .split(",")
-        .map((entry) => entry.trim().replace(/^"|"$/g, ""))
-        .filter((entry) => entry.length > 0),
+      withoutComments.split('"include"').length - 1,
+      'app/tsconfig.json must carry the "include" key exactly ONCE outside its comments — ' +
+        "JSON.parse resolves a duplicate to the LAST one in silence, so a second copy would " +
+        "leave this pin reading a key it did not choose",
+    ).toBe(1);
+    const appProgram = JSON.parse(withoutComments) as { include?: unknown };
+    expect(
+      appProgram.include,
+      "app/tsconfig.json must declare the include list T-073 restored, read off the parsed JSON",
     ).toEqual(["src", "test/node-builtins.d.ts"]);
 
     const declared = (file: string): string[] =>

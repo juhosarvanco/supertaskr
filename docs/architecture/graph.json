@@ -20485,8 +20485,8 @@
       "id": "f:app/test/crescendo-dom.test.tsx",
       "path": "app/test/crescendo-dom.test.tsx",
       "lang": "ts",
-      "hash": "blake3:7983ba4d0634c6e8c77aa469bde9507d4a1c2c31f36e1df1b3bcb897415e497f",
-      "loc": 763,
+      "hash": "blake3:00847d33722b3630cd3f73e99b04b9a1ce6cfdc95c2b7316012953b7a91a5b26",
+      "loc": 841,
       "symbols": [
         {
           "id": "s:app/test/crescendo-dom.test.tsx#App",
