@@ -31,9 +31,10 @@
  * on main plus a re-run of `--write-fence` (`T-211`).
  *
  * ── THE PROPERTY THIS RESTS ON, STATED AS THE PROPERTY IT ACTUALLY IS ─
- * **`<integration>` is the ref the lane's own COMMITS cannot move**
- * (`T-223`). That is the whole of what the paragraph above needs and the
- * whole of what git guarantees here: committing on a lane branch
+ * **WHILE `HEAD` NAMES THE LANE BRANCH, `<integration>` is the ref the
+ * lane's own COMMITS cannot move** (`T-223`; the opening clause is
+ * `T-223-s4`). That is the whole of what the paragraph above needs and
+ * the whole of what git guarantees here: committing on a lane branch
  * advances the LANE branch, so no commit a lane makes — including one
  * that rewrites its own card's `touches:`, and including one that
  * rewrites the manifest — changes what `<integration>` NAMES. Two bodies
@@ -41,6 +42,43 @@
  * `landing-gate.spec.ts`'s *"a manifest edited INSIDE the lane does not
  * widen this gate"* and *"a lane editing its OWN card's `touches:` does
  * not widen this gate either"*.
+ *
+ * **THE OPENING CLAUSE IS THE WHOLE OF THE REPAIR AND IT IS NOT
+ * PEDANTRY: WITHOUT IT THE SENTENCE IS AGAIN AN ABSOLUTE, AND AGAIN A
+ * FALSE ONE** (`T-223-s4`). The premise is that `HEAD` names the lane
+ * branch; the conclusion was stated over every commit a lane makes. But
+ * `HEAD` is itself a ref, a lane may write it, and what a commit
+ * advances is whatever `HEAD` named at the moment it was made. Measured
+ * in a throwaway repository, git **2.50.1 (Apple Git-155)**, Darwin
+ * 25.6.0 arm64 — `<integration>` checked out in worktree A, the lane
+ * branch in worktree B, every command run from B and every exit read
+ * from `$?` unpiped:
+ *
+ *     git checkout main                     -> fatal, exit 128: 'main'
+ *                                              is already used by
+ *                                              worktree …
+ *     git symbolic-ref HEAD refs/heads/main -> exit 0, empty stderr
+ *                                              (no checked-out-elsewhere
+ *                                              guard)
+ *     git add -A && git commit -m "…"       -> exit 0
+ *     main moved:  bf256b47… -> 168a2dec…, and the lane branch stayed
+ *                  exactly where it was
+ *
+ * It is `git branch -f` against `update-ref` one level up: the PORCELAIN
+ * that re-points `HEAD` carries the checked-out-elsewhere guard and the
+ * PLUMBING that re-points it does not. **So the commit that moved
+ * `<integration>` was an ORDINARY one** — no plumbing inside it, no
+ * `--no-verify`, nothing any diff could show — and the ref write that
+ * decided where it landed happened before it and left no commit at all.
+ * That is limit 6's class reached through `HEAD` instead of through
+ * `refs/heads/<integration>`, which is why limit 6 below is now stated
+ * over ANY ref write that decides what a commit advances. The floor is
+ * unchanged for limit 6's own reason: a seat that will run this could
+ * run `git push --no-verify` instead. **AND THE CONTROL RUNS IN THE SAME
+ * DRILL**: with `HEAD` left alone, the identical `add`/`commit` pair
+ * advances the lane branch and leaves `main` on the byte it started on,
+ * which is the sentence above holding under its premise rather than
+ * merely being asserted.
  *
  * **IT IS NOT "a ref the lane cannot move", WHICH IS WHAT THIS HEADER
  * SAID UNTIL `T-223`.** `integrationRefCandidates` tries the LOCAL
@@ -226,19 +264,35 @@
  *    write-time guard compares (`method/lane-protocol.md`'s fast path A:
  *    "character for character"), and a reader that normalised whitespace
  *    here would be a second opinion about what a fence says.
- * 6. **A LOCAL REF REWRITE MOVES THE FENCE, AND THE LOCAL NAME IS TRIED
- *    FIRST.** `integrationRefCandidates` resolves the bare branch name
- *    ahead of either remote spelling, and `git update-ref
- *    refs/heads/<integration>` is accepted from inside a lane worktree
- *    where `git branch -f` is refused — measured above. A lane that runs
- *    it points this gate at a commit of its own choosing, and the
- *    `touches:` on THAT commit is the fence this gate then enforces.
- *    Preferring the remote-tracking ref does not close it, and the
- *    paragraph above measures why not. **The disclosure IS the fix**
- *    (`T-223`): the route costs a deliberate plumbing command that no
- *    ordinary lane runs, and the same seat could `--no-verify` past this
- *    hook entirely — so what was owed was an honest limit rather than a
- *    guard rebuilt around a threat it cannot reach.
+ * 6. **ANY REF WRITE THAT DECIDES WHAT A COMMIT ADVANCES MOVES THE
+ *    FENCE, AND THE LOCAL NAME IS TRIED FIRST.** The limit is stated
+ *    over the CLASS and not over one command, because it WAS written as
+ *    one command and a second member was found inside a week
+ *    (`T-223-s4`). Two are measured, both from a lane worktree with
+ *    `<integration>` checked out in another, and each has a PORCELAIN
+ *    twin that is refused in exactly that state:
+ *    (i) THE REF ITSELF — `git update-ref refs/heads/<integration> <sha>`
+ *    exits 0 where `git branch -f` is refused (`T-223`, measured above);
+ *    (ii) THE REF `HEAD` NAMES — `git symbolic-ref HEAD
+ *    refs/heads/<integration>` exits 0 where `git checkout <integration>`
+ *    is refused, after which an ORDINARY commit advances `<integration>`
+ *    and not the lane branch (`T-223-s4`, measured in the property
+ *    section above).
+ *    `integrationRefCandidates` resolves the bare branch name ahead of
+ *    either remote spelling, so either route points this gate at a commit
+ *    of the lane's own choosing, and the `touches:` on THAT commit is the
+ *    fence this gate then enforces. Preferring the remote-tracking ref
+ *    closes NEITHER, and the section above measures why not. **The
+ *    disclosure IS the fix** (`T-223`): each route costs a deliberate
+ *    plumbing command that no ordinary lane runs, and the same seat could
+ *    `--no-verify` past this hook entirely — so what was owed was an
+ *    honest limit rather than a guard rebuilt around a threat it cannot
+ *    reach. **WHAT THE CLASS WORDING BUYS is that the THIRD route is
+ *    disclosed before anybody measures it.** A limit naming one command
+ *    reads as closed against every command it does not name, which is the
+ *    reading that made (ii) a finding rather than a footnote; a limit
+ *    naming the class says the true thing, which is that a lane deciding
+ *    what its own commits advance decides this fence.
  * 7. **THE DEPENDENCY CHECK READS FOUR MANIFEST FORMATS BY HAND, TAKES
  *    THE REGISTRY'S WORD, AND ITS BASE URL IS AN ENVIRONMENT VARIABLE**
  *    (`T-247`). The section below states all three costs and why each
@@ -322,7 +376,8 @@
  * So a move is exonerated when the TIP's line is character for character
  * the line the same card carries ON THE INTEGRATION BRANCH — the lane arm
  * reads that at `rev`, the merge arm at the FIRST PARENT, the two
- * endpoints no lane's commits can write. **That exoneration opens
+ * endpoints no lane's commits can write while `HEAD` names the lane
+ * branch (limit 6, which states the exception over the class). **That exoneration opens
  * nothing**: the fence in force is read from that same copy, so a line
  * the lane merely re-states there widens the fence by exactly zero. The
  * only way to make the two agree in the lane's favour is to move the
