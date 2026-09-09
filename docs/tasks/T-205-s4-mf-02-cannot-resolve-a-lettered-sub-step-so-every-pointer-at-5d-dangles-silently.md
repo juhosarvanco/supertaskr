@@ -267,18 +267,20 @@ because the near miss is the bullet's whole argument.
 
 ### Gates, DERIVED from the diff
 
-Derived against the tree this lane's tip WILL have — the two eval files
-plus this card — so the figure does not move when this notes commit
-lands.
+DERIVED ON **4 PATHS**, `git diff --name-only 52fdbc3e..8eaa013`: the two
+eval files under `tools/method-evals/evals/`, this card, and the
+suggestion card `T-205-s16`. That is the tree the tip HAS, not a
+forecast, and a further commit correcting these notes touches only a
+path already in the set, so the derivation does not move.
 
 - **GRAPH REGEN** — NOT OWED. The trigger is `*.ts/*.tsx/*.js/*.jsx` or
   `*.rs` outside `docs/`. This diff is 2 `.mjs` files under `tools/` and
-  1 `.md` under `docs/tasks/`: 0 of 3 paths match, and the bullet's own
+  2 `.md` under `docs/tasks/`: 0 of 4 paths match, and the bullet's own
   measured note (T-054, T-058) is that a diff confined to `tools/**`
   cannot move the graph by construction because `.supertaskrignore`
   excludes `tools/`.
 - **BOOT GATE** — NOT OWED. Nothing under `app/src-tauri/**` or
-  `app/src/**`, neither manifest. 0 of 3 paths.
+  `app/src/**`, neither manifest. 0 of 4 paths.
 - **DOCS GATE** — FIRES, on **2** paths: this card and the suggestion
   card `T-205-s16`, both under `docs/tasks/`, which twelve derived
   readers in three suites parse. `node tools/e2e/scripts/docs-gate.mjs`
@@ -291,7 +293,9 @@ lands.
   live tree — which is the check both new cards could have broken.
 - **METHOD EVAL GATE** — NOT OWED BY ITS TRIGGER and RUN ANYWAY: the
   diff touches no `method/**` path and adds no line matching the
-  citation grammar under `docs/tasks/` (0 of 3 paths), but the suite is
+  citation grammar under `docs/tasks/` — `git diff 52fdbc3e..8eaa013 --
+  docs/tasks` adds **0** lines matching `attack set: sha256:<64 hex>`, so
+  0 of 4 paths trigger it — but the suite is
   this lane's SUBJECT, so it was run at every step above.
 
 ### Where the brief was wrong
