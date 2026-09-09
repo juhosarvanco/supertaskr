@@ -2994,9 +2994,19 @@
       "id": "f:app/src-tauri/crates/supertaskr-index/src/walk.rs",
       "path": "app/src-tauri/crates/supertaskr-index/src/walk.rs",
       "lang": "rust",
-      "hash": "blake3:ee69ee36daf4c2849ccfcb251a510c072b5730ec04def83c781464dadfc738f0",
-      "loc": 865,
+      "hash": "blake3:9d73aad861df2fdb68f9ae46e0a2782a944e40bfa94c36da57927928482ddfeb",
+      "loc": 1267,
       "symbols": [
+        {
+          "id": "s:app/src-tauri/crates/supertaskr-index/src/walk.rs#CACHEDIR_TAG_SIGNATURE",
+          "name": "CACHEDIR_TAG_SIGNATURE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            32,
+            32
+          ]
+        },
         {
           "id": "s:app/src-tauri/crates/supertaskr-index/src/walk.rs#WalkedFile",
           "name": "WalkedFile",
@@ -3008,13 +3018,23 @@
           ]
         },
         {
+          "id": "s:app/src-tauri/crates/supertaskr-index/src/walk.rs#carries_cachedir_tag",
+          "name": "carries_cachedir_tag",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            60,
+            97
+          ]
+        },
+        {
           "id": "s:app/src-tauri/crates/supertaskr-index/src/walk.rs#relative_posix",
           "name": "relative_posix",
           "kind": "fn",
           "exported": true,
           "range": [
-            31,
-            38
+            108,
+            115
           ]
         },
         {
@@ -3023,8 +3043,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            333,
-            865
+            456,
+            1267
           ]
         },
         {
@@ -3033,8 +3053,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            50,
-            330
+            130,
+            453
           ]
         }
       ]
@@ -3698,17 +3718,37 @@
       "id": "f:app/src-tauri/crates/supertaskr-index/tests/containment.rs",
       "path": "app/src-tauri/crates/supertaskr-index/tests/containment.rs",
       "lang": "rust",
-      "hash": "blake3:dd207cfc700a96f5e84f823c867f8a364a9fdc64e0af859da1accd9c87070dfd",
-      "loc": 86,
+      "hash": "blake3:1e193b371936adb3838160ef8bb332ae3246b32f3bdeae88c97f0ceb786e0634",
+      "loc": 179,
       "symbols": [
+        {
+          "id": "s:app/src-tauri/crates/supertaskr-index/tests/containment.rs#CARGO_CACHEDIR_TAG",
+          "name": "CARGO_CACHEDIR_TAG",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            81,
+            83
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/supertaskr-index/tests/containment.rs#a_cargo_target_directory_under_a_chosen_name_never_enters_the_graph",
+          "name": "a_cargo_target_directory_under_a_chosen_name_never_enters_the_graph",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            86,
+            156
+          ]
+        },
         {
           "id": "s:app/src-tauri/crates/supertaskr-index/tests/containment.rs#a_symlinked_root_anchors_to_the_canonical_path_and_stays_contained",
           "name": "a_symlinked_root_anchors_to_the_canonical_path_and_stays_contained",
           "kind": "fn",
           "exported": false,
           "range": [
-            51,
-            63
+            63,
+            75
           ]
         },
         {
@@ -3717,8 +3757,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            5,
-            5
+            17,
+            17
           ]
         },
         {
@@ -3727,8 +3767,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            66,
-            86
+            159,
+            179
           ]
         },
         {
@@ -3737,8 +3777,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            9,
-            15
+            21,
+            27
           ]
         },
         {
@@ -3747,8 +3787,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            19,
-            47
+            31,
+            59
           ]
         }
       ]
@@ -4055,8 +4095,8 @@
       "id": "f:app/src-tauri/crates/supertaskr-index/tests/perf.rs",
       "path": "app/src-tauri/crates/supertaskr-index/tests/perf.rs",
       "lang": "rust",
-      "hash": "blake3:2c827b78148d61b5466b1d6e1c2b74ee4712fe3816972c1e7bfd5397eeb98bd0",
-      "loc": 99,
+      "hash": "blake3:42b918bb0180f821bd2478c6df752cb36ac0535c4735b0a43174803a8ba42059",
+      "loc": 119,
       "symbols": [
         {
           "id": "s:app/src-tauri/crates/supertaskr-index/tests/perf.rs#common",
@@ -4074,8 +4114,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            20,
-            44
+            37,
+            64
           ]
         },
         {
@@ -4084,8 +4124,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            46,
-            50
+            66,
+            70
           ]
         },
         {
@@ -4094,8 +4134,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            54,
-            99
+            74,
+            119
           ]
         }
       ]
@@ -45064,7 +45104,7 @@
   ],
   "stats": {
     "files": 201,
-    "symbols": 2543,
+    "symbols": 2547,
     "edges": 2441
   }
 }

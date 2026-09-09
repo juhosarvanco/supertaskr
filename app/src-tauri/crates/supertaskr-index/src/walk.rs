@@ -19,6 +19,83 @@ pub(crate) struct WalkedFile {
     pub lang: Lang,
 }
 
+/// The 43 bytes every `CACHEDIR.TAG` opens with
+/// (<https://bford.info/cachedir/>), and the whole first line cargo writes
+/// into every target directory it creates — the two lines after it are
+/// comments naming cargo and the spec.
+///
+/// **THE SIGNATURE IS THE KEY BECAUSE THE NAME CANNOT BE** (`T-111-s11`,
+/// `T-153-s3`). It is not cargo-specific and deliberately so: the
+/// criterion asks for an exclusion that holds "for a target directory
+/// created under any name by any tool that writes the same tag", and
+/// every conforming writer writes exactly these bytes.
+const CACHEDIR_TAG_SIGNATURE: &[u8] = b"Signature: 8a477f597d28d172789f06886806bc55";
+
+/// Does `dir` carry a cache-directory tag — the marker cargo drops into
+/// every build directory it creates, WHATEVER that directory is NAMED?
+///
+/// **THIS IS THE ONLY REFUSAL IN THIS FILE KEYED ON A DIRECTORY'S
+/// CONTENTS RATHER THAN ON ITS NAME OR ITS METADATA, AND THAT IS THE
+/// WHOLE POINT.** `.gitignore` carries `target/` and nothing else, so
+/// until this function existed a `CARGO_TARGET_DIR` placed inside a
+/// walked tree under any other name was indexed as repository content
+/// and `index --check` answered CONFIDENTLY AND WRONGLY — CURRENT over
+/// twelve build-script outputs in one lane (`T-153-s3`), STALE over three
+/// in another (`T-111`), a phantom `+3` in a third (`T-110`). The name is
+/// what today's rule cannot pin, because CONVENTIONS' POISON DRILL sends
+/// a drill to build inside its own worktree while `T-092` requires every
+/// artefact to carry the lane's derived stem: obeying both produces a
+/// build directory that is deliberately NOT called `target`. Arm (a) of
+/// `T-111-s10` moved the drill to `<scratch>/target` and fixed today's
+/// readers; this is the class, and the two are not alternatives.
+///
+/// **THE READ IS BOUNDED, AND A FAILURE TO READ IS A `false`.** One
+/// `open` attempt per directory the walk descends is the cost; a tag file
+/// whose first line runs past the buffer is not the signature and is
+/// answered without reading the rest of it. Every I/O error answers
+/// "untagged", which is the direction that keeps a file rather than
+/// dropping it silently — the walk's three error arms one screen down
+/// have no word for "I could not tell", and this one does not add a
+/// fourth way to lose a file to an unreadable byte.
+fn carries_cachedir_tag(dir: &Path) -> bool {
+    use std::io::Read;
+
+    let tag = dir.join("CACHEDIR.TAG");
+    // A TAG IS A REGULAR FILE, AND ASKING BEFORE OPENING IS WHAT KEEPS
+    // THIS PROBE FROM BLOCKING. `File::open` on a FIFO with no writer
+    // never returns, and this is the ONLY construct in `walk_root` that
+    // opens a path instead of deciding on its type first — which is why a
+    // FIFO named `pipe.ts` is merely dropped while one named
+    // `CACHEDIR.TAG` stopped the walk outright. `metadata` stats rather
+    // than opens, so it cannot block, and it follows a symlink (a link to
+    // a real tag is still a tag). Anything that is not a regular file
+    // answers "untagged" — the same direction every other arm here takes.
+    if !std::fs::metadata(&tag).is_ok_and(|m| m.is_file()) {
+        return false;
+    }
+    let Ok(mut file) = std::fs::File::open(&tag) else {
+        return false;
+    };
+    // One byte past the signature, so a first line that merely STARTS
+    // with it is distinguishable from one that IS it.
+    let mut head = [0u8; CACHEDIR_TAG_SIGNATURE.len() + 1];
+    let mut filled = 0;
+    while filled < head.len() {
+        match file.read(&mut head[filled..]) {
+            Ok(0) => break,
+            Ok(n) => filled += n,
+            Err(_) => return false,
+        }
+    }
+    let head = &head[..filled];
+    let line = match head.iter().position(|b| *b == b'\n') {
+        Some(end) => &head[..end],
+        None => head,
+    };
+    let line = line.strip_suffix(b"\r").unwrap_or(line);
+    line == CACHEDIR_TAG_SIGNATURE
+}
+
 /// Join path components with `/` regardless of platform (T-003 pattern).
 ///
 /// **AND IT IS A CONTAINMENT PREDICATE, NOT ONLY A FORMATTER** (T-186).
@@ -44,9 +121,12 @@ pub(crate) fn relative_posix(path: &Path, base: &Path) -> Option<String> {
 /// Ignore input set, exactly: in-tree `.gitignore` + in-tree
 /// `.supertaskrignore` (gitignore syntax, any directory level, highest
 /// ignore-file precedence). `.git` and `node_modules` are hard-skipped
-/// unconditionally, regardless of ignore files. All machine-local
-/// sources — global gitignore, `.git/info/exclude`, ignore files above
-/// the root, generic `.ignore` — are OFF.
+/// unconditionally, regardless of ignore files, and so is any directory
+/// carrying a conforming `CACHEDIR.TAG` — a cargo target directory under
+/// ANY name (`T-111-s11`, `T-153-s3`; `carries_cachedir_tag` above holds
+/// the argument). All machine-local sources — global gitignore,
+/// `.git/info/exclude`, ignore files above the root, generic `.ignore` —
+/// are OFF.
 pub(crate) fn walk_root(canon_root: &Path, languages: &[Lang]) -> Vec<WalkedFile> {
     let mut files: Vec<WalkedFile> = Vec::new();
 
@@ -82,10 +162,40 @@ pub(crate) fn walk_root(canon_root: &Path, languages: &[Lang]) -> Vec<WalkedFile
     builder.add_custom_ignore_filename(".supertaskrignore");
     builder.filter_entry(|entry| {
         let name = entry.file_name();
-        name != ".git" && name != "node_modules"
+        if name == ".git" || name == "node_modules" {
+            return false;
+        }
+        // THE CACHE-DIRECTORY SKIP (`T-111-s11`, `T-153-s3`) — the hard
+        // skip's sibling, and the only one of the two that a chosen name
+        // cannot walk around. `carries_cachedir_tag` above says why the
+        // key is the tag FILE.
+        //
+        // **THE DIRECTORY TEST IS LOAD-BEARING TWICE OVER.** It keeps the
+        // read off every FILE the walk meets — the tag can only sit
+        // inside a directory — and, with `follow_links(false)` above,
+        // `file_type()` describes the ENTRY rather than what it points
+        // at, so a SYMLINK to a tagged directory is not a directory here
+        // and is refused by gate A and gate B instead. This skip never
+        // reads through a link.
+        //
+        // **NO DEPTH GUARD IS WRITTEN HERE AND NONE IS NEEDED, WHICH IS
+        // MEASURED RATHER THAN ASSUMED.** `ignore` 0.4.33 does not offer
+        // this predicate the ROOT entry, so a tag on the walk root itself
+        // refuses nothing and the root stays what the caller declared the
+        // tree to be. That is the behaviour this skip wants — the defect
+        // is a build directory INSIDE a walked tree — but it belongs to
+        // the LIBRARY and not to this closure, so a version bump could
+        // move it silently. Pinned, at the limit rather than at the
+        // property: `a_tag_on_the_walk_root_itself_does_not_empty_the_walk`.
+        // The first draft of this comment asserted the opposite and the
+        // probe that became that body is what caught it.
+        if entry.file_type().is_some_and(|ft| ft.is_dir()) && carries_cachedir_tag(entry.path()) {
+            return false;
+        }
+        true
     });
 
-    // THE FIVE LETTERED GATES, OF ELEVEN MECHANISMS IN THIS FUNCTION THAT
+    // THE FIVE LETTERED GATES, OF TWELVE MECHANISMS IN THIS FUNCTION THAT
     // CAN DROP A FILE — AND THE KEY THAT MAPS THEM ONTO THE LEDGER BELOW.
     //
     // **THE UNIT IS A MECHANISM, NOT A SITE, AND SAYING SO IS THE WHOLE
@@ -95,10 +205,17 @@ pub(crate) fn walk_root(canon_root: &Path, languages: &[Lang]) -> Vec<WalkedFile
     // OMISSION from a UNIT MISMATCH, which is the one job the count was
     // added to do. Both counts, so either recount lands:
     //
-    //   ELEVEN MECHANISMS = 3 builder settings + 8 in-loop mechanisms.
-    //   THIRTEEN SITES    = the same 3 builder settings + 10 `continue`
-    //                       statements. FOURTEEN counting `dedup_by`,
+    //   TWELVE MECHANISMS = 4 builder settings + 8 in-loop mechanisms.
+    //   FOURTEEN SITES    = the same 4 builder settings + 10 `continue`
+    //                       statements. FIFTEEN counting `dedup_by`,
     //                       which is not a refusal at all.
+    //
+    // **THE COUNTS MOVED BY ONE AT `T-153-s3`**, which added the
+    // CACHE-DIRECTORY SKIP beside the hard skip in `filter_entry` — a
+    // builder-side mechanism and a builder-side site, so both totals rose
+    // and the in-loop halves did not. They were ELEVEN and THIRTEEN
+    // before it; a reader meeting an older citation is reading a valid
+    // count of a smaller function.
     //
     // The whole difference is **gate C**: one mechanism, the allowlist,
     // spelled as THREE `continue`s (no extension, no language for it, the
@@ -125,7 +242,7 @@ pub(crate) fn walk_root(canon_root: &Path, languages: &[Lang]) -> Vec<WalkedFile
     // COMPLETENESS AND WAS NOT COMPLETE** (`T-196`, the sweep `T-194` asked
     // for after its own accounting headed *complete* omitted
     // `canonicalize()` and became `T-208`). It read "THE REFUSALS, IN
-    // SOURCE ORDER" over five letters. **SIX MORE CONSTRUCTS CAN DROP A
+    // SOURCE ORDER" over five letters. **SEVEN MORE CONSTRUCTS CAN DROP A
     // FILE HERE AND NONE OF THEM IS LETTERED**, in source order:
     //
     //   - the IGNORE FILES — `git_ignore(true)` plus the `.supertaskrignore`
@@ -137,6 +254,12 @@ pub(crate) fn walk_root(canon_root: &Path, languages: &[Lang]) -> Vec<WalkedFile
     //     NAME, unconditionally. Pinned:
     //     `git_and_node_modules_are_hard_skipped_even_when_not_ignored`,
     //     and load-bearing for gate A's own fixture.
+    //   - the CACHE-DIRECTORY SKIP in the same closure (`T-153-s3`) — any
+    //     directory carrying a conforming `CACHEDIR.TAG`, keyed on the tag
+    //     FILE and never on the directory's NAME. It is the construct that
+    //     moved both totals above by one. Pinned:
+    //     `a_cargo_target_directory_is_skipped_under_any_name_by_its_cachedir_tag`
+    //     and `a_cachedir_tag_whose_first_line_is_not_the_signature_never_skips`.
     //   - `let Ok(entry) = result else` — a walk error drops the entry.
     //   - `entry.depth() == 0` — the root itself, and it is SHADOWED: the
     //     root is a directory, so gate B refuses it one operand later.
@@ -400,6 +523,285 @@ mod tests {
         t.write("nested/node_modules/x.ts", "export const x = 1;");
         // No .gitignore at all — the skip must be unconditional.
         assert_eq!(rels(t.root()), vec!["real.ts"]);
+    }
+
+    /// A cargo `CACHEDIR.TAG`, byte for byte as cargo writes it, typed as
+    /// a LITERAL rather than derived from the constant under test.
+    ///
+    /// **A FIXTURE BUILT FROM `CACHEDIR_TAG_SIGNATURE` WOULD PIN
+    /// NOTHING** — CONVENTIONS' *A TEST PARAMETRISED BY THE CONSTANT IT
+    /// CHECKS CANNOT PIN THAT CONSTANT*: change the constant to
+    /// `Signature: hello` and a derived fixture changes with it and stays
+    /// green. These 43 bytes were read off a real cargo target directory
+    /// on this machine and are the spec's own
+    /// (<https://bford.info/cachedir/>); the two comment lines are
+    /// cargo's.
+    const CARGO_CACHEDIR_TAG: &str = "Signature: 8a477f597d28d172789f06886806bc55\n\
+         # This file is a cache directory tag created by cargo.\n\
+         # For information about cache directory tags see https://bford.info/cachedir/\n";
+
+    #[test]
+    fn a_cargo_target_directory_is_skipped_under_any_name_by_its_cachedir_tag() {
+        // THE CLASS FIX (`T-111-s11`, routed there by `T-111-s10`'s third
+        // criterion; this card is `T-153-s3`). CONVENTIONS' POISON DRILL
+        // sends a drill to build INSIDE its own worktree and `T-092`
+        // requires every artefact to carry the lane's derived stem, so
+        // the one thing a drill's build directory is guaranteed NOT to be
+        // called is `target` — which is the only name `.gitignore`
+        // excludes. The name is therefore exactly what cannot be keyed
+        // on, and this body is written with a chosen stem to say so.
+        let t = TempTree::new("walk-cachedir");
+        t.write("real.ts", "export const r = 1;");
+        // The build directory, under a stem no ignore rule mentions.
+        t.write(".t153s3-target/CACHEDIR.TAG", CARGO_CACHEDIR_TAG);
+        // The two shapes actually measured in the graph when this was
+        // live: a build-script `out/` TypeScript emit and a nested `.js`.
+        // Both are allowlisted extensions in a requested language, so
+        // every predicate downstream of the skip accepts them.
+        t.write(
+            ".t153s3-target/debug/build/pkg-1a2b3c/out/generated.ts",
+            "export const generated = 1;",
+        );
+        t.write(
+            ".t153s3-target/debug/build/tauri-9f8e7d/out/__global-api-script.js",
+            "var api = 1;",
+        );
+        // A SECOND TAGGED DIRECTORY, NESTED, because the criterion says
+        // ANY directory and a fixture that only ever tags a top-level one
+        // cannot tell "any" from "at depth 1" — derived from the criteria
+        // with the pins closed (CONVENTIONS, poison shape SEVEN).
+        t.write(
+            "crates/inner/.t153s3-inner-target/CACHEDIR.TAG",
+            CARGO_CACHEDIR_TAG,
+        );
+        t.write(
+            "crates/inner/.t153s3-inner-target/debug/deps/inner.ts",
+            "export const inner = 1;",
+        );
+        t.write("crates/inner/kept.ts", "export const kept = 1;");
+
+        // THE FIXTURE'S STATE, asserted before anything is exercised.
+        // Together these are the argument that ONLY the tag can be what
+        // refuses this subtree.
+        let dir = t.root().join(".t153s3-target");
+        assert!(dir.is_dir(), "the fixture is not a directory");
+        assert_ne!(
+            dir.file_name().and_then(|n| n.to_str()),
+            Some("target"),
+            "the stem must be one no ignore rule names — that is the case"
+        );
+        assert!(
+            !t.root().join(".gitignore").exists() && !t.root().join(".supertaskrignore").exists(),
+            "no ignore file may exist here, or the refusal could be an ignore rule's"
+        );
+        let tag = std::fs::read_to_string(dir.join("CACHEDIR.TAG")).expect("read the tag");
+        assert_eq!(
+            tag.lines().next(),
+            Some("Signature: 8a477f597d28d172789f06886806bc55"),
+            "the fixture's first line is not the signature"
+        );
+        let buried = dir.join("debug/build/pkg-1a2b3c/out/generated.ts");
+        let buried_meta = std::fs::symlink_metadata(&buried).expect("lstat the buried file");
+        assert!(buried_meta.is_file(), "the buried entry is not a real file");
+        assert!(
+            !buried_meta.file_type().is_symlink(),
+            "the buried entry must not be a link — that would test gate B"
+        );
+
+        // The refusal: both subtrees pruned whole, at both depths, while
+        // the ordinary file beside the nested one is kept.
+        assert_eq!(rels(t.root()), vec!["crates/inner/kept.ts", "real.ts"]);
+
+        // POSITIVE CONTROL, and it isolates the TAG rather than the
+        // directory: the same stems, the same depths, the same three
+        // artefacts, with ONLY the two tag files removed. Without this,
+        // "expected the two kept paths, got the two kept paths" is
+        // satisfied equally by a walk that refused the stems for their
+        // leading dot, by one that never descended that far, and by one
+        // that found nothing there.
+        std::fs::remove_file(dir.join("CACHEDIR.TAG")).expect("rm tag");
+        std::fs::remove_file(
+            t.root()
+                .join("crates/inner/.t153s3-inner-target/CACHEDIR.TAG"),
+        )
+        .expect("rm nested tag");
+        assert_eq!(
+            rels(t.root()),
+            vec![
+                ".t153s3-target/debug/build/pkg-1a2b3c/out/generated.ts",
+                ".t153s3-target/debug/build/tauri-9f8e7d/out/__global-api-script.js",
+                "crates/inner/.t153s3-inner-target/debug/deps/inner.ts",
+                "crates/inner/kept.ts",
+                "real.ts",
+            ],
+            "untagged, the same tree is walked — which is the defect this skip closes"
+        );
+    }
+
+    #[test]
+    fn a_cachedir_tag_whose_first_line_is_not_the_signature_never_skips() {
+        // THE KEY IS THE SIGNATURE LINE, NOT THE FILE'S NAME. A skip
+        // triggered by the mere PRESENCE of a `CACHEDIR.TAG` would pass
+        // the body above and would drop any directory holding a file of
+        // that name — so this body drives the discriminator from both
+        // sides in one tree, which is the only way either side is
+        // evidence about the other.
+        let t = TempTree::new("walk-cachedir-signature");
+        t.write("real.ts", "export const r = 1;");
+        t.write(
+            "build-out/CACHEDIR.TAG",
+            "Signature: 00000000000000000000000000000000\n\
+             # A tag file that is not a conforming one.\n",
+        );
+        t.write("build-out/emitted.ts", "export const e = 1;");
+
+        let tag = t.root().join("build-out/CACHEDIR.TAG");
+        assert!(tag.is_file(), "the near-miss tag is not a file");
+        assert_ne!(
+            std::fs::read_to_string(&tag).expect("read").lines().next(),
+            Some("Signature: 8a477f597d28d172789f06886806bc55"),
+            "the near-miss fixture must not carry the real signature"
+        );
+
+        // The file's NAME alone refuses nothing.
+        assert_eq!(rels(t.root()), vec!["build-out/emitted.ts", "real.ts"]);
+
+        // AND THE SIGNATURE IS NOT CARGO'S PRIVATE MARKER — the criterion
+        // asks for an exclusion that holds "for a target directory
+        // created under any name by any tool that writes the same tag",
+        // so the same 43 bytes under somebody else's comment lines must
+        // refuse identically. Cargo's own comments are absent here on
+        // purpose.
+        t.write(
+            "build-out/CACHEDIR.TAG",
+            "Signature: 8a477f597d28d172789f06886806bc55\n\
+             # This file is a cache directory tag created by some other tool.\n",
+        );
+        assert_eq!(rels(t.root()), vec!["real.ts"]);
+
+        // POSITIVE CONTROL from the other direction, built the way the
+        // producer builds it: the same path, rewritten with cargo's own
+        // bytes. Same tree, same name, same everything but the comments.
+        t.write("build-out/CACHEDIR.TAG", CARGO_CACHEDIR_TAG);
+        assert_eq!(rels(t.root()), vec!["real.ts"]);
+    }
+
+    #[test]
+    fn a_tag_on_the_walk_root_itself_does_not_empty_the_walk() {
+        // THE SKIP'S LIMIT, PINNED WHERE THE PROPERTY IS NOT. The
+        // cache-directory skip is written with no depth guard, and the
+        // reason it needs none is a fact about `ignore` rather than about
+        // this crate: the crate does not offer `filter_entry` the ROOT
+        // entry, so a root that carries a tag is still walked. That is
+        // the behaviour wanted — `--root` is the caller declaring what
+        // the tree IS, and the defect being fixed is a build directory
+        // INSIDE one — but nothing in this repository would notice if a
+        // future `ignore` started pruning the root, and the walk would
+        // then return an empty graph for a tree that has files in it.
+        //
+        // **WHAT THIS BODY KILLS, since a body that cannot red is a
+        // finding rather than a test**: the mutant that extends the skip
+        // to the root — an explicit root check in `walk_root`, or a
+        // library that begins offering the root to the predicate. It
+        // reds ALONE under that mutation and no other body in this crate
+        // moves. It is deliberately NOT a second copy of the body above:
+        // that one pins the refusal, this one pins where the refusal
+        // stops.
+        let t = TempTree::new("walk-cachedir-root");
+        t.write("real.ts", "export const r = 1;");
+        t.write("CACHEDIR.TAG", CARGO_CACHEDIR_TAG);
+
+        // The fixture's state: the root really is tagged, by the same
+        // bytes the body above proves are refusing.
+        let tag = std::fs::read_to_string(t.root().join("CACHEDIR.TAG")).expect("read the tag");
+        assert_eq!(
+            tag.lines().next(),
+            Some("Signature: 8a477f597d28d172789f06886806bc55"),
+            "the root's tag is not the conforming one"
+        );
+
+        assert_eq!(rels(t.root()), vec!["real.ts"]);
+    }
+
+    #[test]
+    fn a_cachedir_tag_whose_signature_is_not_at_offset_zero_never_skips() {
+        // THE SIGNATURE'S POSITION IS PART OF THE KEY, AND NOTHING ELSE
+        // PINS IT. The cache-directory spec (<https://bford.info/cachedir/>)
+        // puts the 43 bytes at offset 0; a file that merely CONTAINS them
+        // is not a tag. Replacing the first-line comparison with a
+        // substring search over the same bounded head leaves every other
+        // body in this crate green — measured — while silently pruning a
+        // directory over bytes sitting one newline down.
+        let t = TempTree::new("walk-cachedir-offset");
+        t.write("real.ts", "export const r = 1;");
+        t.write(
+            "offset/CACHEDIR.TAG",
+            "\nSignature: 8a477f597d28d172789f06886806bc55\n",
+        );
+        t.write("offset/emitted.ts", "export const e = 1;");
+        assert_eq!(
+            rels(t.root()),
+            vec!["offset/emitted.ts", "real.ts"],
+            "the signature one newline down is not a conforming tag"
+        );
+
+        // THE CONTROL, built the way the producer builds it: the SAME
+        // bytes with the leading newline gone ARE a conforming tag and do
+        // refuse, so the walk above is the offset's doing and not the
+        // fixture's.
+        t.write("offset/CACHEDIR.TAG", CARGO_CACHEDIR_TAG);
+        assert_eq!(rels(t.root()), vec!["real.ts"]);
+    }
+
+    #[test]
+    fn a_cachedir_tag_that_is_not_a_readable_regular_file_never_hides_a_directory() {
+        // THE PROBE OPENS A NAME, AND A NAME IS NOT ALWAYS A REGULAR
+        // FILE. Every other refusal in `walk_root` decides on an entry's
+        // TYPE before touching its contents — a FIFO called `pipe.ts` is
+        // dropped by gate B and never opened. This probe is the one
+        // construct that opens a path, so both shapes an unreadable tag
+        // takes are pinned here, and both must leave the directory
+        // INDEXED: keeping a file is the direction this file's error arms
+        // already take.
+        let t = TempTree::new("walk-cachedir-unreadable");
+        t.write("real.ts", "export const r = 1;");
+        t.write("dirtag/kept.ts", "export const k = 1;");
+        std::fs::create_dir_all(t.root().join("dirtag/CACHEDIR.TAG")).expect("mkdir tag");
+        assert_eq!(
+            rels(t.root()),
+            vec!["dirtag/kept.ts", "real.ts"],
+            "a directory wearing the tag's name is not a tag"
+        );
+
+        // AND A TAG THAT BLOCKS ON `open` MUST NOT HANG THE WALK. A FIFO
+        // with no writer blocks `File::open` forever; the walk has no
+        // timeout, `index --check` is a gate, and a gate that hangs is a
+        // stop rather than a wrong answer. The wait is BOUNDED on purpose
+        // — an implementation without the type guard FAILS this body
+        // instead of running until somebody kills it.
+        #[cfg(unix)]
+        {
+            t.write("fifodir/kept.ts", "export const k = 1;");
+            let fifo = t.root().join("fifodir/CACHEDIR.TAG");
+            let made = std::process::Command::new("mkfifo")
+                .arg(&fifo)
+                .status()
+                .expect("run mkfifo");
+            assert!(made.success(), "mkfifo did not create the blocking tag");
+            let root = t.root().to_path_buf();
+            let (tx, rx) = std::sync::mpsc::channel();
+            std::thread::spawn(move || {
+                let _ = tx.send(rels(&root));
+            });
+            let walked = rx
+                .recv_timeout(std::time::Duration::from_secs(20))
+                .expect("the walk did not finish in 20s - a blocking CACHEDIR.TAG hung it");
+            assert_eq!(
+                walked,
+                vec!["dirtag/kept.ts", "fifodir/kept.ts", "real.ts"],
+                "a tag that cannot be read is not a tag"
+            );
+        }
     }
 
     #[test]
