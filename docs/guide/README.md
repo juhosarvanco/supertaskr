@@ -19,6 +19,7 @@ This guide is four short pages. Read them in order the first time.
 | [The Loop](the-loop.md) | How a card travels from an idea to a merge, step by step, and what you do along the way. |
 | [Features](features.md) | What Supertaskr does today, by area, in plain sentences. |
 | [Glossary](glossary.md) | The house terms, each mapped to the standard word. |
+| [The Lifecycle](the-lifecycle.md) | The industry's lifecycle phases and methodologies, and what Supertaskr does at each — including where it differs on purpose. |
 
 Three words carry most of the weight:
 
