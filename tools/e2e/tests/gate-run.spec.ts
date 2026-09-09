@@ -1817,6 +1817,49 @@ test("a path is placed by the roots the derivation was GIVEN, so the same path o
   expect(suiteOfPath("method/roots.md"), "no root claims it").toBeUndefined();
 });
 
+test("a directory whose NAME merely begins with a package root is not INSIDE it, so a sibling fails CLOSED to the whole battery instead of placing under its neighbour", () => {
+  // THE BOUNDARY IS A PATH SEGMENT AND NOT A STRING PREFIX, and the body
+  // above cannot see the difference: every path it names is either a real
+  // child of a root or claimed by no root at all. Drop the `/` from the
+  // match and `lib/parser2/` becomes the parser's, `apples/` the app's,
+  // `tools/e2e2/` the end-to-end leg's — each of them PLACING a path this
+  // derivation is supposed to fail closed on, which turns the whole
+  // battery into one leg with nothing said. That is the narrowing
+  // direction, so it is the direction this card owes a body.
+  //
+  // THE CONTROL FIRST, run where the property under test is absent from
+  // the question: a real child still places and the longest root still
+  // wins. Without these three lines every expectation below is satisfied
+  // by a matcher that places NOTHING.
+  expect(suiteOfPath("lib/parser/src/x.ts"), "the control: a real child places").toBe("parser");
+  expect(suiteOfPath("app/src-tauri/src/lib.rs"), "the control: the longest root wins").toBe(
+    "rust",
+  );
+  expect(suiteOfPath("app/src-tauri"), "the control: a root is its own suite's").toBe("rust");
+
+  // AND NOW THE SIBLINGS, one per root, each of which a prefix match
+  // would swallow.
+  expect(
+    suiteOfPath("lib/parser2/x.ts"),
+    "a sibling of lib/parser is not inside lib/parser",
+  ).toBeUndefined();
+  expect(suiteOfPath("apples/x.ts"), "a sibling of app is not inside app").toBeUndefined();
+  expect(
+    suiteOfPath("tools/e2e2/x.mjs"),
+    "a sibling of tools/e2e is not inside tools/e2e",
+  ).toBeUndefined();
+  expect(
+    suiteOfPath("app/src-tauri-notes/x.md"),
+    "a sibling of app/src-tauri belongs to the APP, which does contain it",
+  ).toBe("app");
+
+  // THE CONSEQUENCE THAT MAKES THIS A SAFETY PROPERTY AND NOT A NAMING
+  // ONE: being unplaceable is what makes a sibling fail CLOSED.
+  const sibling = deriveOwed({ changed: ["lib/parser2/x.ts"], reach: {} });
+  expect(sibling.suites, "an unplaceable sibling owes the WHOLE battery").toEqual([...ALL_SUITES]);
+  expect(sibling.failClosed ?? "", "and the answer says why").toContain("lib/parser2/x.ts");
+});
+
 test("planting a reader in a spec GROWS the owed set, over real files and the real graph", () => {
   // THE DATA MUTANT THE CARD ASKS FOR (criterion 5), in its import face.
   // The subject is not the derivation's code — it is the DATA the
@@ -2025,6 +2068,59 @@ test("the range is refused when its left endpoint is not an ancestor of its righ
     const shell = rangeChanged("HEAD~1..HEAD; rm -rf /", root);
     expect("problem" in shell).toBe(true);
     expect("problem" in shell ? shell.problem : "").toContain("two-dot range");
+  } finally {
+    cleanup();
+  }
+});
+
+test("a DELETED path is IN the range's path set, because a removal is a change and an empty path set owes nothing at all", () => {
+  // THE LARGEST NARROWING THIS DERIVATION CAN MAKE IS AN EMPTY PATH SET:
+  // no path, no owed suite, and a push the guard then asks the token
+  // nothing about. A `--diff-filter` that dropped deletions would produce
+  // exactly that for a range whose only change is a removal — and
+  // removals are ordinary here: a card is deleted, a script is retired, a
+  // spec is folded into another. Deleting a task card moves the parser's
+  // census; deleting a source file moves what still compiles.
+  const { root, cleanup } = makeArmFixture("41");
+  try {
+    const git = (...args: string[]) =>
+      execFileSync("git", ["-C", root, ...NO_BACKGROUND_MAINTENANCE, ...args], {
+        encoding: "utf8",
+        stdio: "pipe",
+      }).trim();
+    const commit = (m: string) => {
+      git("add", "-A");
+      git("-c", "user.email=t280@example.invalid", "-c", "user.name=t280", "commit", "-qm", m);
+    };
+    const doomed = path.join(root, "tools/e2e/scripts/doomed.mjs");
+    writeFileSync(doomed, "export const GONE = 1;\n");
+    commit("plant the file this range will remove");
+    const base = git("rev-parse", "HEAD");
+
+    // THE CONTROL, where the arming is absent: the SAME fixture and the
+    // same reader over an ADDITION already names its path, so a reader
+    // that named nothing at all could not pass this line.
+    writeFileSync(path.join(root, "tools/e2e/scripts/added.mjs"), "export const NEW = 2;\n");
+    commit("an addition");
+    const added = rangeChanged(`${base}..HEAD`, root);
+    expect("paths" in added ? added.paths : [], "the control: an addition is named").toEqual([
+      "tools/e2e/scripts/added.mjs",
+    ]);
+
+    // AND THE DELETION, which is the reading this body exists for.
+    const afterAdd = git("rev-parse", "HEAD");
+    rmSync(doomed);
+    commit("remove it");
+    const seen = rangeChanged(`${afterAdd}..HEAD`, root);
+    expect(
+      "paths" in seen ? seen.paths : [],
+      "a removal is a change, and the path set must carry it",
+    ).toEqual(["tools/e2e/scripts/doomed.mjs"]);
+
+    // THE CONSEQUENCE: the deleted path still owes the suite whose root
+    // contained it, rather than owing nothing.
+    const owed = deriveOwed({ changed: "paths" in seen ? seen.paths : [], reach: {} });
+    expect(owed.suites, "a deletion under a package root owes that suite").toEqual(["e2e"]);
   } finally {
     cleanup();
   }
