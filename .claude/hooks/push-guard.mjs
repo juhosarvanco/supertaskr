@@ -2030,10 +2030,15 @@ export function runCheapChecks(root) {
  *
  * A BRANCH WITH NO UPSTREAM HAS NO DERIVABLE RANGE AND THAT IS THE
  * ORDINARY CASE ON A LANE. It is a `problem`, the caller falls back to
- * the whole battery, and NOTHING IS ANNOUNCED: the fallback is stricter
- * than the derivation, so it leaves nothing unverified, and this file's
- * standing rule is that only an allow which left something unverified
- * says anything.
+ * the whole battery, and NOTHING IS ANNOUNCED: the fallback requires the
+ * four suites AND refuses any leg the token records as graded in PART,
+ * so it leaves nothing unverified, and this file's standing rule is that
+ * only an allow which left something unverified says anything. THE
+ * SECOND HALF OF THAT SENTENCE IS NOT DECORATION and it is here because
+ * the sentence was once written without it: a fallback that asks only
+ * "are the four suite entries GREEN" accepts a `--range` token that
+ * graded a fraction of the end-to-end leg, which is an ALLOW that left
+ * plenty unverified and announced nothing.
  *
  * THE ENDPOINTS ARE RESOLVED TO OBJECT IDS. A symbolic name is a moving
  * target between this reading and the runner's, and the runner validates
@@ -3513,8 +3518,19 @@ function decideWith(request, check, cheap, gh, holder, notices) {
     // When it cannot be derived — no upstream, no runner in this
     // checkout, an answer this cannot read — `owed` is simply not passed
     // and `judgeToken` requires the whole battery, which is what this
-    // guard required before this arm existed. THE FALLBACK IS SILENT ON
-    // PURPOSE: it is STRICTER than the derivation, so it leaves nothing
+    // guard required before this arm existed.
+    //
+    // AND "THE WHOLE BATTERY" MEANS FOUR WHOLE LEGS, on the SUITE axis
+    // and on the SPEC axis both. That clause is the bench's phase-2
+    // correction and it is written out because its absence is exactly
+    // what a rejection was spent on: this arm gave `--range` the power
+    // to mint a plain `GREEN` for a NARROWED end-to-end leg, recording
+    // what it graded in `scope`, and the fallback read only the verdict
+    // WORD. A token whose `e2e` entry had graded 16 of 39 spec files —
+    // 612 of 810 bodies — passed here as a battery. `judgeToken` now
+    // refuses a scoped entry as `token-partial` whether or not an owed
+    // set was derived, so THE FALLBACK IS SILENT ON PURPOSE: it is
+    // STRICTER than the derivation on both axes, so it leaves nothing
     // unverified, and only an allow that left something unverified
     // announces itself in this file.
     const owedRead = owedSetForPush(root);

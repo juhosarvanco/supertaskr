@@ -546,11 +546,17 @@ export const SCOPABLE_SUITE = "e2e";
  * set THIS RANGE owes", and it names the missing members AND, for the
  * one leg that can be graded in part, the missing SPEC FILES.
  *
- * OMIT `owed` AND EVERY ANSWER IS EXACTLY WHAT IT WAS. That is not
- * politeness about compatibility: a caller that cannot derive an owed
- * set — because git would not answer, because the runner is not in this
- * checkout — must land on the whole battery, and the way it does that is
- * by not passing one.
+ * OMIT `owed` AND THE REQUIRED SET IS THE WHOLE BATTERY, WHICH IS WHAT
+ * IT WAS — but the whole battery is FOUR WHOLE LEGS, and that is the one
+ * thing this function had to learn (the bench's phase-2 correction).
+ * A caller that cannot derive an owed set — because git would not
+ * answer, because the runner is not in this checkout — must land on the
+ * whole battery, and the way it does that is by not passing one; what
+ * it lands on is now the four suites AND a refusal of any leg the token
+ * records as graded in PART, because a `GREEN` entry carrying a `scope`
+ * is a narrowed run and no longer implies the leg ran. So omitting
+ * `owed` is STRICTER than passing one on both axes, which is what the
+ * word "fail closed" was always claiming.
  *
  * @param {{ token?: Token, problem?: string, tree: string, required?: readonly string[], owed?: OwedSet }} input
  * @returns {TokenJudgement}
@@ -578,6 +584,57 @@ export function judgeToken({ token, problem, tree, required, owed }) {
         'are green" is not one of the things it says',
     };
   }
+  // ── THE SPEC AXIS IS READ WHETHER OR NOT A RANGE WAS DERIVED ───────
+  // (T-280, the bench's phase-2 correction — the defect that rejected
+  // this card's first pass.)
+  //
+  // `scope` is a SECOND safety axis and it is orthogonal to the verdict
+  // WORD. `GREEN` says nothing failed among what ran; `scope` says what
+  // ran was PART of the leg. Before this card the two could not come
+  // apart — the only form that graded a subset wore `SCOPED-GREEN`,
+  // which the RED check below refuses — so reading the word alone was
+  // sound. `--range` mints a plain `GREEN` for a NARROWED leg, and the
+  // invariant "four suites GREEN at this tree == the battery ran" went
+  // with it.
+  //
+  // SO THE FIELD IS READ ON BOTH PATHS, and the fallback is the one
+  // that had to change. A fallback that requires the whole battery must
+  // require a WHOLE LEG too, or it is stricter only on the axis it
+  // happens to look at: measured on a bench, the guard ALLOWED a push
+  // whose `e2e` entry had graded 16 of 39 spec files — 612 of 810
+  // bodies — because no range was derivable and the word was `GREEN`.
+  // A SCOPED GREEN IS NEVER A WHOLE LEG, and that sentence does not
+  // depend on whether a range could be derived.
+  const scopable = token.suites[SCOPABLE_SUITE];
+  const graded =
+    scopable !== undefined && scopable !== null && typeof scopable === "object" &&
+      typeof scopable.scope === "string" && scopable.scope !== ""
+      ? scopable.scope.split(",").map((s) => s.trim()).filter((s) => s !== "")
+      : undefined;
+  //
+  // IT ASKS ONLY OF AN ENTRY WHOSE WORD WOULD OTHERWISE PASS, and that
+  // is a sentence-quality decision rather than a safety one. T-271's
+  // `--owning` form ALSO carries a `scope`, and its word is
+  // `SCOPED-GREEN` / `SCOPED-RED` — already refused by the verdict check
+  // at the end of this function, which names the word the seat actually
+  // saw. Firing here first would refuse the same push with a vaguer
+  // sentence and would break the body that pins that naming. The hole
+  // this closes is the entry whose word is plain `GREEN`: nothing else
+  // in this function looks at it twice.
+  if (
+    owed === undefined && graded !== undefined && need.includes(SCOPABLE_SUITE) &&
+    scopable !== undefined && scopable !== null && scopable.verdict === GREEN
+  ) {
+    return {
+      state: "partial",
+      code: "token-partial",
+      detail:
+        `the verdict token's ${SCOPABLE_SUITE} entry graded ${graded.length} spec file(s) rather ` +
+        "than the whole leg, and no owed set could be derived for this push — so the WHOLE " +
+        "battery is required and a leg graded in PART does not carry it. A scoped GREEN says " +
+        "nothing failed among the spec files it ran; it does not say the leg ran",
+    };
+  }
   if (owed !== undefined) {
     // ── THE COVERAGE QUESTION, IN TWO FACES AND ONE REASON (T-280) ──
     // A suite the range owes that the token never measured, and a SPEC
@@ -592,25 +649,19 @@ export function judgeToken({ token, problem, tree, required, owed }) {
     /** @type {string[]} */
     const uncovered = [];
     for (const s of missing) uncovered.push(`${s} was never measured in this checkout`);
-    const entry = token.suites[SCOPABLE_SUITE];
-    if (entry !== undefined && entry !== null && typeof entry === "object") {
-      const graded = typeof entry.scope === "string" && entry.scope !== ""
-        ? entry.scope.split(",").map((s) => s.trim()).filter((s) => s !== "")
-        : undefined;
-      if (graded !== undefined && need.includes(SCOPABLE_SUITE)) {
-        if (owed.e2e.whole) {
+    if (graded !== undefined && need.includes(SCOPABLE_SUITE)) {
+      if (owed.e2e.whole) {
+        uncovered.push(
+          `${SCOPABLE_SUITE} is owed WHOLE for this range and the token records a run over ` +
+            `${graded.length} spec file(s) instead`,
+        );
+      } else {
+        const short = owed.e2e.specs.filter((s) => !graded.includes(s));
+        if (short.length > 0) {
           uncovered.push(
-            `${SCOPABLE_SUITE} is owed WHOLE for this range and the token records a run over ` +
-              `${graded.length} spec file(s) instead`,
+            `${SCOPABLE_SUITE} graded ${graded.length} spec file(s) and this range owes ` +
+              `${owed.e2e.specs.length}, missing: ${short.join(", ")}`,
           );
-        } else {
-          const short = owed.e2e.specs.filter((s) => !graded.includes(s));
-          if (short.length > 0) {
-            uncovered.push(
-              `${SCOPABLE_SUITE} graded ${graded.length} spec file(s) and this range owes ` +
-                `${owed.e2e.specs.length}, missing: ${short.join(", ")}`,
-            );
-          }
         }
       }
     }

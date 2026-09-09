@@ -258,8 +258,19 @@ and T-236 (2026-09-02, whose pre-compaction text is
   will not resolve, no upstream to range against, a runner this checkout
   does not have, an answer the guard cannot parse — every one of them
   makes the owed set THE WHOLE BATTERY, with the reason recorded in the
-  token and printed at the refusal. This mechanism can only ever be
-  wrong by owing too MUCH. A docs path NOTHING reads is the one positive
+  token and printed at the refusal. **AND "THE WHOLE BATTERY" MEANS FOUR
+  WHOLE LEGS, WHICH IS A CLAIM ON TWO AXES AND NOT ONE.** The SUITE axis
+  is which legs ran; the SPEC axis is whether the one scopable leg ran
+  whole. This arm gave the range form the power to mint a plain `GREEN`
+  for a NARROWED end-to-end leg — recording what it graded in the
+  entry's `scope` — so "four suites GREEN at this tree" stopped implying
+  "the battery ran". A token whose end-to-end entry carries a `scope` is
+  therefore refused as **`token-partial`** EVEN WHERE NO RANGE COULD BE
+  DERIVED: a scoped GREEN says nothing failed among the spec files it
+  ran, and it never says the leg ran. That sentence cost a rejection —
+  the fallback shipped reading the verdict word alone, and a bench
+  measured it passing a push whose end-to-end entry had graded 16 of 39
+  spec files. This mechanism can only ever be wrong by owing too MUCH. A docs path NOTHING reads is the one positive
   empty answer: the reader map is derived from the whole source corpus,
   so "no code suite reads this document" is a measurement, not a gap —
   and it is exactly the case the dozen wasted batteries were.
