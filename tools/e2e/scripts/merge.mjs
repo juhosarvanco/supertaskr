@@ -577,6 +577,27 @@ export function runMutantDrill(input) {
     err(`      ${block.correction}: ${runner.problem}`);
     return EXIT.CANNOT_RUN;
   }
+  // THE BODY HAS TO BE ON THE MERGED TREE BEFORE ANYTHING IS PLANTED.
+  // The verifier commits its bodies on the bench AFTER the verdict commit
+  // (`method/roles/verifier.md` step 5b), so what gets merged is the
+  // bench TIP and not the verdict sha the figures were measured at. Pass
+  // the verdict commit and the bodies never land — and the drill would
+  // then report "the named body did not red" after a whole spec run,
+  // which reads like a defect in the correction rather than a merge that
+  // left the body behind. This says which it is, in one read.
+  const specFile = path.join(projectRoot, block.spec);
+  if (!existsSync(specFile)) {
+    err(`      ${block.correction}: ${block.spec} is not in this tree, so its body cannot be run`);
+    return EXIT.CANNOT_RUN;
+  }
+  if (!readFileSync(specFile, "utf8").includes(block.body)) {
+    err(
+      `      ${block.correction}: ${JSON.stringify(block.body)} is NOT in ${block.spec} on the ` +
+        "merged tree. The verifier commits its bodies AFTER the verdict commit, so what is merged " +
+        "is the BENCH TIP — a merge given the verdict sha leaves them behind",
+    );
+    return EXIT.FOUND;
+  }
   const pristine = readFileSync(file, "utf8");
   const before = sha256(pristine);
   const planted = plantMutant({ source: pristine, block });
@@ -958,7 +979,11 @@ export function preludePlan(input) {
       id: "branch:move",
       kind: "git",
       title: `move ${lane} to ${verdict.slice(0, 12)}`,
-      why: "room 17: the verdict commit is what gets merged, not the tip the executor left",
+      why:
+        "room 17: the verdict commit is what gets merged, not the tip the executor left — and " +
+        "since T-281 the verifier commits its correction BODIES after that commit, so the sha to " +
+        "pass is the BENCH TIP. The drill step checks each named body is really on the merged " +
+        "tree rather than trusting this sentence",
       run: { command: "git", argv: ["-C", projectRoot, "branch", "-f", lane, verdict], cwd: projectRoot },
     },
     {

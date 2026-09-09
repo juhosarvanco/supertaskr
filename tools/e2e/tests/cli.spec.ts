@@ -1517,6 +1517,13 @@ test("the whole drill plants, runs, restores and PROVES the restore by sha256 â€
     const source = "export function f() {\n  return enumerated;\n}\n";
     mkdirSync(path.join(root, "src"), { recursive: true });
     writeFileSync(path.join(root, "src", "a.mjs"), source);
+    // The spec the block names, carrying the body it names: the drill
+    // reads both off the MERGED tree before it plants anything.
+    mkdirSync(path.join(root, "tools", "e2e", "tests"), { recursive: true });
+    writeFileSync(
+      path.join(root, "tools", "e2e", "tests", "brief.spec.ts"),
+      'test("the body that pins it", () => {});\n',
+    );
     const block = {
       correction: "C1 â€” the denominator is silent",
       file: "src/a.mjs",
@@ -1592,6 +1599,26 @@ test("the whole drill plants, runs, restores and PROVES the restore by sha256 â€
     expect(stale, "an anchor matching nothing stops before anything is planted").toBe(EXIT.FOUND);
     expect(ran, "and the spec is never run").toBe(false);
     expect(readFileSync(path.join(root, "src", "a.mjs"), "utf8")).toBe(source);
+
+    // A BODY THE MERGED TREE DOES NOT CARRY IS THE MERGE'S FAULT, NOT THE
+    // CORRECTION'S. The verifier commits its bodies AFTER the verdict
+    // commit, so a merge given the verdict sha rather than the bench tip
+    // leaves them behind â€” and without this the drill would report "the
+    // named body did not red" after a whole spec run, which reads like a
+    // defect in the correction.
+    let ranForAbsent = false;
+    const absent = runMutantDrill({
+      block: { ...block, body: "a body the merged tree does not carry" },
+      projectRoot: root,
+      err: (s) => survivorSaid.push(s),
+      run: () => {
+        ranForAbsent = true;
+        return { code: 0, output: "" };
+      },
+    });
+    expect(absent, "a body that is not on the merged tree stops the merge").toBe(EXIT.FOUND);
+    expect(ranForAbsent, "and the spec is never run for it").toBe(false);
+    expect(survivorSaid.join("\n")).toContain("is NOT in tools/e2e/tests/brief.spec.ts");
 
     // A spec no package in this project owns is SAID to be, never guessed.
     expect(
