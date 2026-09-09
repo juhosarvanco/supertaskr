@@ -5,12 +5,12 @@ feature: F-04
 milestone: 4
 size: M
 priority: 2
-status: planned
+status: building
 suggested_by: "@human (2026-09-08): \"I'm thinking ways how to reduce token use and time. If there is any sense for them to only read what is relevant to their task\" — and \"This sounds good\" on the seat's one-sentence suggestion (rooms/loop-efficiency.md item 28)"
 blocked_by: []
 touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, method/roles/executor.md, method/roles/verifier.md]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
