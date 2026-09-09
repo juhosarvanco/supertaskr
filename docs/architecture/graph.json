@@ -862,8 +862,8 @@
       "id": "f:app/src-tauri/crates/supertaskr-index/src/check.rs",
       "path": "app/src-tauri/crates/supertaskr-index/src/check.rs",
       "lang": "rust",
-      "hash": "blake3:1b1ad0256bccc388365374789ddad4df50f41c667f71a37e912b838e1e7b1a4a",
-      "loc": 1556,
+      "hash": "blake3:f3a74246f9c5e1a412c8df45ec38d031053c1c20ea8c8fdf324918d4ee22721e",
+      "loc": 1942,
       "symbols": [
         {
           "id": "s:app/src-tauri/crates/supertaskr-index/src/check.rs#CheckReport",
@@ -872,7 +872,7 @@
           "exported": true,
           "range": [
             44,
-            95
+            116
           ]
         },
         {
@@ -901,8 +901,18 @@
           "kind": "const",
           "exported": true,
           "range": [
-            413,
-            413
+            442,
+            442
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/supertaskr-index/src/check.rs#bounded",
+          "name": "bounded",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            791,
+            794
           ]
         },
         {
@@ -911,8 +921,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            270,
-            289
+            299,
+            318
           ]
         },
         {
@@ -921,8 +931,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            109,
-            183
+            130,
+            212
           ]
         },
         {
@@ -931,8 +941,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            530,
-            556
+            592,
+            638
           ]
         },
         {
@@ -941,8 +951,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            699,
-            710
+            796,
+            807
           ]
         },
         {
@@ -951,8 +961,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            311,
-            339
+            340,
+            368
           ]
         },
         {
@@ -961,8 +971,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            445,
-            510
+            474,
+            539
           ]
         },
         {
@@ -971,8 +981,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            97,
-            101
+            118,
+            122
           ]
         },
         {
@@ -981,8 +991,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            713,
-            719
+            810,
+            816
           ]
         },
         {
@@ -991,8 +1001,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            191,
-            255
+            220,
+            284
           ]
         },
         {
@@ -1001,8 +1011,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            608,
-            648
+            690,
+            730
           ]
         },
         {
@@ -1011,8 +1021,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            650,
-            697
+            732,
+            779
           ]
         },
         {
@@ -1021,8 +1031,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            579,
-            606
+            661,
+            688
           ]
         },
         {
@@ -1031,8 +1041,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            722,
-            1556
+            819,
+            1942
           ]
         }
       ]
@@ -1309,8 +1319,8 @@
       "id": "f:app/src-tauri/crates/supertaskr-index/src/emit.rs",
       "path": "app/src-tauri/crates/supertaskr-index/src/emit.rs",
       "lang": "rust",
-      "hash": "blake3:99199c4f880fd58c0d6e9484951c27cf0c1bcf0583c0753267a87adeba816b97",
-      "loc": 395,
+      "hash": "blake3:9f54205588ab2fa6577b0ace7ccd6aae04588fc1352003ac55751769cf8a97b5",
+      "loc": 524,
       "symbols": [
         {
           "id": "s:app/src-tauri/crates/supertaskr-index/src/emit.rs#apply_budget",
@@ -1318,8 +1328,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            68,
-            139
+            87,
+            160
           ]
         },
         {
@@ -1328,8 +1338,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            168,
-            178
+            189,
+            199
           ]
         },
         {
@@ -1338,8 +1348,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            161,
-            164
+            182,
+            185
           ]
         },
         {
@@ -1348,8 +1358,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            180,
-            188
+            201,
+            209
           ]
         },
         {
@@ -1358,8 +1368,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            16,
-            25
+            17,
+            26
           ]
         },
         {
@@ -1368,8 +1378,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            191,
-            395
+            212,
+            524
           ]
         },
         {
@@ -1378,8 +1388,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            32,
-            59
+            33,
+            60
           ]
         }
       ]
@@ -1882,8 +1892,8 @@
       "id": "f:app/src-tauri/crates/supertaskr-index/src/lib.rs",
       "path": "app/src-tauri/crates/supertaskr-index/src/lib.rs",
       "lang": "rust",
-      "hash": "blake3:736bd84a9638f3179c5d9d3b233fa6ca3b46c82f358b4bffbc719c3ab89515fa",
-      "loc": 528,
+      "hash": "blake3:c9dabf1f759feb966aea33af4dc886521803a8dcd8a92804a9d591a12911e127",
+      "loc": 556,
       "symbols": [
         {
           "id": "s:app/src-tauri/crates/supertaskr-index/src/lib.rs#GRAPH_REL_PATH",
@@ -2031,8 +2041,18 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            258,
-            400
+            264,
+            266
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/supertaskr-index/src/lib.rs#index_with_drops",
+          "name": "index_with_drops",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            284,
+            428
           ]
         },
         {
@@ -2071,8 +2091,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            405,
-            410
+            433,
+            438
           ]
         },
         {
@@ -2081,8 +2101,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            432,
-            528
+            460,
+            556
           ]
         },
         {
@@ -2101,8 +2121,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            419,
-            429
+            447,
+            457
           ]
         },
         {
@@ -2131,8 +2151,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            415,
-            417
+            443,
+            445
           ]
         }
       ]
@@ -27832,6 +27852,7 @@
       "to": "p:cargo:std",
       "kind": "import",
       "symbols": [
+        "BTreeSet",
         "Path"
       ]
     },
@@ -45288,7 +45309,7 @@
   ],
   "stats": {
     "files": 201,
-    "symbols": 2558,
+    "symbols": 2560,
     "edges": 2453
   }
 }
