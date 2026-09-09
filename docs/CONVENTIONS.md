@@ -186,6 +186,26 @@ and T-236 (2026-09-02, whose pre-compaction text is
   parser|app|rust|e2e` from the repo root is the ONE spelling for a
   graded reading; its `gate-verdict` line carries the exit code, the
   BODY COUNT and the ref. READ THE COUNT, NEVER THE CODE.
+  **AND SINCE T-271 ONE SEAT MAY GRADE NARROWER THAN A LEG — THE
+  EXECUTOR, WHILE IT ITERATES, AND NO OTHER** (the browser leg is ten of
+  the battery's eleven minutes, measured on T-224's fix passes). Give
+  that command `e2e --owning <changed path>...` and it grades ONLY the
+  spec files that OWN those paths: every spec that reads a changed file,
+  over a STATIC IMPORT GRAPH rooted at the specs and NEVER a spec's
+  name, plus the docs-walk bodies the DOCS GATE's own reader map names
+  when a docs path moved. Same refusals, and a verdict line naming the
+  SUBSET beside its body count rather than the leg's name alone.
+  **THE VERIFIER'S ONE RUN IS THE FULL FOUR LEGS, AND THE INTEGRATOR
+  RUNS THE FULL BATTERY LAST**, on merged main before the push: a
+  cross-spec red — the class T-264's executor found four of by running
+  everything — must land inside the lane's ceremony, not on merged main
+  where the answer is the revert play. The subset's verdict word is
+  `SCOPED-GREEN` or `SCOPED-RED`, which the push guard REFUSES as a
+  token, so a push still owes that battery and a scoped run POISONS a
+  stale green rather than leaving it standing. A changed path the
+  derivation CANNOT PLACE is exit 2 naming the path, and the full leg is
+  owed: this form can only ever be wrong by running too MUCH. The other
+  three legs are seconds each and are still run whole.
 - **AND IT NOW MINTS A TOKEN THAT GATES YOUR PUSH** (T-203). Each run
   also writes that same verdict to a token beside the fence manifest in
   `.supertaskr/`, keyed on `HEAD^{tree}` per suite, and `push-guard.mjs`
@@ -1591,6 +1611,16 @@ and T-236 (2026-09-02, whose pre-compaction text is
   prints the site census, the reader set with the arm that found each,
   the root-anchor classification and the residual, and cannot be stale
   because it is not written down.
+  **AND SINCE T-271 THIS READER MAP IS ALSO THE SCOPED LEG'S OWN
+  DERIVATION.** When an EXECUTOR grades narrower than a leg (the blessed
+  runner's own bullet above, its `--owning` form), the docs-walk bodies a
+  changed docs path owes come from THIS map — the runner reuses it and derives no
+  second one, which is T-057's rule applied where it would have bitten
+  hardest — composed with the runner's own static import graph, because a
+  reader here may be a SCRIPT rather than a body and the spec that owns
+  THAT is the one importing it. **THE NARROWING IS THE EXECUTOR'S
+  ALONE**: the verifier's one run is the full four legs, and the
+  integrator runs the full battery last, on merged main before the push.
   THE FOUR SUITES the derived readers sit in, listed so a reader knows
   the shape and re-derivable so nobody quotes them: `npm test from app/`
   (the two dogfood bodies), `npx vitest run from lib/parser/` (its own

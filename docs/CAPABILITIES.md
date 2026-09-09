@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **783 behaviours** — 781 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **794 behaviours** — 792 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -440,6 +440,17 @@ Census: **783 behaviours** — 781 extracted sentences + 2 named-not-extracted (
 - a token entry written before this field existed is refused rather than read as clean, because an unrecorded moment is not a measurement
 - a REFUSED verdict carries the tree and the dirt read BEFORE the spawn, because the card's own specimen was a refusal keyed to a later tree
 - a tree dirty when the suite STARTS and clean when the token is written keeps its dirt in the entry, so the judgement is unkeyed rather than a clean read
+- the scoped run is RED on a planted defect in the owning spec's subject and GREEN on the pristine hook
+- the scoped run grades ONLY the owning spec, and a spec that merely shares the changed file's name is not one
+- the push guard refuses a scoped verdict as the token, so a lane's subset run can never mint one
+- a changed path the derivation cannot place REFUSES the scoped run at the usage code, naming the path and saying the full leg is owed
+- the scoped form belongs to the e2e leg alone, and an empty path list is refused rather than graded as nothing
+- the scoped verdict line names the subset beside its body count, and a whole-leg line still carries no scope at all
+- a docs path is placed by the DOCS GATE's own reader map, composed with the import graph rather than re-derived
+- the live reader map really places this document, and the subset it owes is smaller than the leg
+- every relative import in this lane's own tree resolves, because a dropped edge would make a subset SHORT
+- a fixture program written as a STRING is not this file's own import list
+- the scoped arm's own CLI path prints the subset's verdict, writes it to the token and answers with the subset's own exit code
 
 ## genesis-screen
 
