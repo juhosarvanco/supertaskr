@@ -261,7 +261,8 @@ export const STANDING_BANDS = [
     measured: {
       at: "3ff7f30; the first suggestion card was added 2026-08-14, the amnesty ran 2026-08-29",
       reason:
-        "15 DAYS IS NOT A ROUND NUMBER — it is the amnesty's own worst reading. The board's " +
+        "15 DAYS IS NOT A ROUND NUMBER — it is the amnesty's own worst reading " +
+        "(docs/checkpoints/2026-08-29-amnesty-triage.md). The board's " +
         "first suggestion card arrived on 2026-08-14 and was still untriaged when the " +
         "sitting that cleared 140 of them was finally called on 2026-08-29. The breach line " +
         "is therefore the exact age at which this project has already proved a backlog " +
