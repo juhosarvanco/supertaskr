@@ -655,6 +655,52 @@ export const CHEAP_CHECKS_EXIT = Object.freeze({
   COULD_NOT_RUN: 3,
 });
 
+/**
+ * THE BLESSED RUNNER, ASKED RATHER THAN IMPORTED (T-280).
+ *
+ * The owed set for a push range is derived by ONE function, and that
+ * function lives in the runner: it composes the runner's own suite
+ * registry, the specs' static import graph and the docs gate's reader
+ * map, and it walks a corpus to do it. This file may not import that —
+ * its `Bash` matcher fires on EVERY tool call in a session and the whole
+ * module load must cost node's startup and nothing else. So the guard
+ * SPAWNS the program that owns the answer, exactly as it spawns the
+ * cheap checks and `index --check`, and passes `--tree` so the answer is
+ * about the tree being pushed rather than about the checkout this hook
+ * was loaded from.
+ *
+ * `--tree` AND NOT `--root`, WHICH IS THIS REPOSITORY'S USUAL SPELLING
+ * FOR A FLAG LIKE THIS. `--root` means "the project root the target
+ * OPERATES ON": the `supertaskr` front hands it, and `cli.spec.ts` pins
+ * the two directions to each other — a verb that hands `--root` fronts a
+ * script that takes it, and a script that takes it is fronted with it.
+ * The runner does not operate on the tree this flag names. It reads the
+ * derivation's INPUTS there and still runs every suite from the
+ * registry's own directories, so `--root` would have promised a
+ * relocation the runner does not perform AND made that pin false for a
+ * flag the front cannot hand. Measured: the first spelling of this flag
+ * was `--root`, and the whole battery redded one body in `cli.spec.ts`
+ * saying so.
+ *
+ * A SECOND COPY OF THE RULE HERE WOULD BE THE DEFECT THIS CARD IS
+ * ABOUT: a guard requiring one set while the runner grades another is a
+ * push refused for work that was done, or accepted for work that was
+ * not.
+ */
+export const OWED_SET_PATH = fileURLToPath(
+  new URL("../../tools/e2e/scripts/gate-run.mjs", import.meta.url),
+);
+
+/** The flags that arm's own CLI publishes. `gate-run.spec.ts` compares
+ *  these against the runner's own exported constants, so a rename there
+ *  reds a body here by name rather than turning this arm quiet.
+ *  @see OWED_SET_PATH */
+export const OWED_SET_FLAGS = Object.freeze({
+  ask: "--owed-set",
+  range: "--range",
+  tree: "--tree",
+});
+
 /* ═════════════ T-237 — THE RUN THAT IS ALREADY RUNNING ══════════════
  *
  * The constants this arm reads CI with. Every one of them is compared
@@ -1968,6 +2014,183 @@ export function runCheapChecks(root) {
     stdout: String(out.stdout ?? ""),
     stderr: String(out.stderr ?? ""),
   };
+}
+
+/* ═════════════ T-280 — THE OWED SET FOR THE PUSH RANGE ══════════════ */
+
+/**
+ * The two commits a push would move, as `<base>..<tip>`.
+ *
+ * ── THE BASE IS THE UPSTREAM, AND IT IS ASKED FOR RATHER THAN GUESSED
+ * What a push adds to the remote is what this branch has that its
+ * upstream does not. `@{upstream}` is git's own answer to that question
+ * and it accounts for a remote and a branch name this guard would
+ * otherwise have to parse out of the command line — which it already
+ * does, imperfectly and for a different purpose, in `pushTargetBranch`.
+ *
+ * A BRANCH WITH NO UPSTREAM HAS NO DERIVABLE RANGE AND THAT IS THE
+ * ORDINARY CASE ON A LANE. It is a `problem`, the caller falls back to
+ * the whole battery, and NOTHING IS ANNOUNCED: the fallback is stricter
+ * than the derivation, so it leaves nothing unverified, and this file's
+ * standing rule is that only an allow which left something unverified
+ * says anything.
+ *
+ * THE ENDPOINTS ARE RESOLVED TO OBJECT IDS. A symbolic name is a moving
+ * target between this reading and the runner's, and the runner validates
+ * what it is handed against a character class — two reasons to hand it
+ * something that cannot move or surprise.
+ *
+ * @param {string} root
+ * @returns {{ range: string } | { problem: string }}
+ */
+export function pushRange(root) {
+  /** @param {string[]} argv @returns {{ out: string } | { problem: string }} */
+  const git = (argv) => {
+    /** @type {ReturnType<typeof spawnSync>} */
+    let r;
+    try {
+      r = spawnSync("git", ["-C", root, ...argv], {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+    } catch (err) {
+      return { problem: `git could not be started (${err instanceof Error ? err.message : String(err)})` };
+    }
+    if (r.status !== 0) {
+      return {
+        problem: `git ${argv.join(" ")} exited ${String(r.status)} in ${root}`,
+      };
+    }
+    return { out: String(r.stdout ?? "").trim() };
+  };
+  const upstream = git(["rev-parse", "--verify", "--quiet", "@{upstream}^{commit}"]);
+  if ("problem" in upstream || !/^[0-9a-f]{40}$/.test(upstream.out)) {
+    return {
+      problem:
+        "this branch names no upstream, so what a push would ADD to the remote is not derivable " +
+        `from this checkout (${"problem" in upstream ? upstream.problem : `git answered ${JSON.stringify(upstream.out)}`})`,
+    };
+  }
+  const head = git(["rev-parse", "--verify", "--quiet", "HEAD^{commit}"]);
+  if ("problem" in head || !/^[0-9a-f]{40}$/.test(head.out)) {
+    return {
+      problem: `git would not name HEAD's commit in ${root} (${
+        "problem" in head ? head.problem : `it answered ${JSON.stringify(head.out)}`
+      })`,
+    };
+  }
+  return { range: `${upstream.out}..${head.out}` };
+}
+
+/**
+ * @typedef {object} OwedSet
+ * @property {string} range
+ * @property {string[]} suites
+ * @property {{ whole: boolean, specs: string[] }} e2e
+ * @property {string | undefined} [failClosed]
+ */
+
+/**
+ * Ask the runner what this range owes.
+ *
+ * EVERY INABILITY IS A `problem` AND THE CALLER FAILS CLOSED TO THE
+ * WHOLE BATTERY. There is no arm here that can make a push owe LESS by
+ * going wrong: a runner that is absent, that will not start, that exits
+ * non-zero, that prints something this cannot parse, or that answers a
+ * shape without the fields this reads, all land on the same sentence and
+ * the same four legs. That is the card's third criterion applied one
+ * process boundary out — the derivation fails closed inside the runner,
+ * and the ASKING fails closed here.
+ *
+ * @param {string} root
+ * @param {string} range
+ * @returns {{ owed: OwedSet } | { problem: string }}
+ */
+export function runOwedSet(root, range) {
+  if (!existsSync(OWED_SET_PATH)) {
+    return { problem: `${OWED_SET_PATH} is not present in this checkout` };
+  }
+  /** @type {ReturnType<typeof spawnSync>} */
+  let out;
+  try {
+    out = spawnSync(
+      process.execPath,
+      [
+        OWED_SET_PATH,
+        OWED_SET_FLAGS.ask,
+        OWED_SET_FLAGS.range,
+        range,
+        OWED_SET_FLAGS.tree,
+        root,
+      ],
+      { cwd: root, encoding: "utf8", maxBuffer: 32 * 1024 * 1024 },
+    );
+  } catch (err) {
+    return {
+      problem: `the owed-set derivation could not be started (${
+        err instanceof Error ? err.message : String(err)
+      })`,
+    };
+  }
+  if ((out.error !== undefined && out.error !== null) || out.status !== 0) {
+    const said = String(out.stdout ?? "").trim() || String(out.stderr ?? "").trim();
+    return {
+      problem:
+        `the owed-set derivation exited ${String(out.status)} for ${range}` +
+        (said === "" ? "" : `: ${said.split("\n").slice(0, 4).join(" ")}`),
+    };
+  }
+  /** @type {unknown} */
+  let parsed;
+  try {
+    parsed = JSON.parse(String(out.stdout ?? ""));
+  } catch (err) {
+    return {
+      problem: `the owed-set derivation did not answer in JSON (${
+        err instanceof Error ? err.message : String(err)
+      })`,
+    };
+  }
+  const obj = /** @type {Record<string, unknown>} */ (
+    parsed === null || typeof parsed !== "object" || Array.isArray(parsed) ? {} : parsed
+  );
+  const suites = obj["suites"];
+  const e2e = /** @type {Record<string, unknown>} */ (obj["e2e"] ?? {});
+  if (
+    !Array.isArray(suites) ||
+    !suites.every((s) => typeof s === "string") ||
+    typeof e2e["whole"] !== "boolean" ||
+    !Array.isArray(e2e["specs"])
+  ) {
+    return {
+      problem:
+        "the owed-set derivation answered a shape this guard does not recognise — an unreadable " +
+        "claim is not a measurement, and the whole battery is owed",
+    };
+  }
+  return {
+    owed: {
+      range,
+      suites: /** @type {string[]} */ (suites),
+      e2e: {
+        whole: e2e["whole"] === true,
+        specs: /** @type {string[]} */ (e2e["specs"]).filter((s) => typeof s === "string"),
+      },
+      ...(typeof obj["failClosed"] === "string" ? { failClosed: obj["failClosed"] } : {}),
+    },
+  };
+}
+
+/**
+ * The owed set for what this checkout would push, or the reason there is
+ * none. @see runOwedSet
+ * @param {string} root
+ * @returns {{ owed: OwedSet } | { problem: string }}
+ */
+export function owedSetForPush(root) {
+  const range = pushRange(root);
+  if ("problem" in range) return range;
+  return runOwedSet(root, range.range);
 }
 
 /* ═════════════ T-237 — THE RUN THAT IS ALREADY RUNNING ══════════════ */
@@ -3285,17 +3508,40 @@ function decideWith(request, check, cheap, gh, holder, notices) {
     );
   } else {
     const read = readToken(root);
+    // ── WHAT THIS PUSH OWES (T-280) ─────────────────────────────────
+    // Derived from the push's own range by the runner's own function.
+    // When it cannot be derived — no upstream, no runner in this
+    // checkout, an answer this cannot read — `owed` is simply not passed
+    // and `judgeToken` requires the whole battery, which is what this
+    // guard required before this arm existed. THE FALLBACK IS SILENT ON
+    // PURPOSE: it is STRICTER than the derivation, so it leaves nothing
+    // unverified, and only an allow that left something unverified
+    // announces itself in this file.
+    const owedRead = owedSetForPush(root);
     const judgement = judgeToken({
       ...("token" in read ? { token: read.token } : { problem: read.problem }),
       tree,
+      ...("owed" in owedRead ? { owed: owedRead.owed } : {}),
     });
     if (judgement.state !== "fresh") {
+      const owedLine =
+        "owed" in owedRead
+          ? `  THIS PUSH'S OWN RANGE OWES ${owedRead.owed.suites.join(", ")}` +
+            (owedRead.owed.e2e.whole || owedRead.owed.e2e.specs.length === 0
+              ? ""
+              : ` (e2e over ${owedRead.owed.e2e.specs.length} spec file(s))`) +
+            `, derived from ${owedRead.owed.range}. The narrow run is:\n` +
+            `    node tools/e2e/scripts/gate-run.mjs --range ${owedRead.owed.range}\n`
+          : `  THE OWED SET FOR THIS PUSH COULD NOT BE DERIVED (${owedRead.problem}), so the ` +
+            "WHOLE battery is required — this guard fails closed and never narrows by " +
+            "accident.\n";
       return block(
         judgement.code,
         `PUSH REFUSED: ${judgement.detail}.\n` +
           "  A push is a claim that the gates were run. This guard is what makes that a FACT " +
           "rather than a claim — three commits landed on this project in one night after a gate " +
           "that had already failed, each time because the exit was read AFTER the commit.\n" +
+          owedLine +
           "  Run the blessed gate-runner from the repository root, then push:\n" +
           "    node tools/e2e/scripts/gate-run.mjs --all\n" +
           `  It writes ${TOKEN_REL_PATH}, keyed by the tree it ran against. RUN IT LAST: a commit ` +

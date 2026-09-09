@@ -1295,6 +1295,465 @@ export function scopeVerdict(v, scope) {
   };
 }
 
+// ── THE OWED SET (T-280) ─────────────────────────────────────────────
+//
+// ── WHAT THIS IS, AND HOW IT DIFFERS FROM `--owning` ABOVE ───────────
+// `--owning` takes a path list a SEAT typed and answers one question:
+// which spec files own it. It is the executor's iteration form, its
+// verdict wears `SCOPED-` so it can never mint a push token, and it
+// grades the end-to-end leg and nothing else.
+//
+// THIS derives its own path list FROM A RANGE — the push range, or a
+// bench's `base..tip` — and answers the whole question: which of the
+// GRADED SUITES that range owes, and for the end-to-end leg, which SPEC
+// FILES. Nothing about the set is typed by anybody, which is what makes
+// a verdict over it mintable: the push guard re-derives the same set
+// from the same range with this same function and requires the token to
+// cover it.
+//
+// ── THREE ARMS, COMPOSED, AND NOT ONE OF THEM IS A LIST ──────────────
+//   THE PACKAGE ROOTS come off the registry's own `cwd` fields
+//     (`PACKAGE_ROOTS`), so adding a graded suite moves this derivation
+//     with it and a hand-kept copy cannot drift from the runner.
+//   THE IMPORT GRAPH is T-271's, unchanged and CALLED rather than
+//     re-implemented: `owningSpecs` over `specReach`.
+//   THE DOCS GATE'S READER MAP is `docs-scan.mjs`'s, likewise called.
+//     A docs path's readers are FILES; each file is placed through the
+//     package roots, which is how a document read by the parser's census
+//     owes the parser suite without anybody writing that down.
+//
+// ── AND THE `file:` EDGE, WHICH THE PACKAGE ROOTS ALONE WOULD MISS ───
+// `app/package.json` depends on the parser at `file:../lib/parser`, so a
+// change under `lib/parser/` can red the APP suite while lying under the
+// parser's root alone. The edge is READ from the manifests
+// (`packageDependents`) rather than asserted here, and closed
+// transitively, so a second `file:` dependency added tomorrow is carried
+// by this function on the day it lands.
+//
+// ── FAIL CLOSED, AND THE ONLY DIRECTION THIS MAY BE WRONG IN ─────────
+// A path under no package root that no spec reaches and that the docs
+// gate cannot place makes the owed set THE WHOLE BATTERY, and the reason
+// travels with it into the token. So does an unresolvable import edge,
+// which would make the spec subset SHORT. This derivation can be wrong
+// by owing too MUCH; it must never be wrong by owing too little.
+//
+// A DOCS PATH NOTHING READS IS PLACED, NOT UNPLACEABLE, and that is the
+// one asymmetry against `--owning` worth stating. There, the question is
+// "which spec owns this" and "none" is an inability. Here the question is
+// "what does this range owe" and the docs gate answering "no code suite
+// reads it" is a POSITIVE answer over a map derived from the whole source
+// corpus — it is the instrument the DOCS GATE itself is made of. Half
+// the batteries this card was written about were pushes of exactly those
+// paths.
+
+/**
+ * The package root each graded suite owns, DERIVED from the registry's
+ * own `cwd` and never written down a second time.
+ * @type {Readonly<Record<string, string>>}
+ */
+export const PACKAGE_ROOTS = Object.freeze(
+  Object.fromEntries(Object.values(GRADED_SUITES).map((s) => [s.id, s.cwd])),
+);
+
+/** Every graded suite, which is what "the whole battery" means here. */
+export const ALL_SUITES = Object.freeze(Object.keys(GRADED_SUITES).sort());
+
+/**
+ * The suite whose package root contains this path — the LONGEST one,
+ * because `app/src-tauri` lies inside `app` and a Rust file is the rust
+ * suite's, not the app suite's.
+ * @param {string} rel
+ * @param {Readonly<Record<string, string>>} [roots]
+ * @returns {string | undefined}
+ */
+export function suiteOfPath(rel, roots = PACKAGE_ROOTS) {
+  /** @type {string | undefined} */
+  let best;
+  for (const [id, dir] of Object.entries(roots)) {
+    if (rel !== dir && !rel.startsWith(`${dir}/`)) continue;
+    if (best === undefined || dir.length > (roots[best] ?? "").length) best = id;
+  }
+  return best;
+}
+
+/**
+ * suite -> every suite whose package DEPENDS on it, read off the
+ * manifests' `file:` specifiers and closed transitively.
+ *
+ * A MANIFEST THIS CANNOT READ CONTRIBUTES NO EDGE AND IS NOT AN ERROR:
+ * `app/src-tauri` is a Cargo workspace with no `package.json`, and both
+ * its crates lie under one root, so there is no cross-root edge for this
+ * function to find there.
+ *
+ * @param {string} [root]
+ * @param {Readonly<Record<string, string>>} [roots]
+ * @returns {Record<string, string[]>}
+ */
+export function packageDependents(root = repoRoot, roots = PACKAGE_ROOTS) {
+  /** @type {Record<string, Set<string>>} */
+  const out = {};
+  for (const id of Object.keys(roots)) out[id] = new Set();
+  for (const [id, dir] of Object.entries(roots)) {
+    /** @type {unknown} */
+    let pkg;
+    try {
+      pkg = JSON.parse(readFileSync(path.join(root, dir, "package.json"), "utf8"));
+    } catch {
+      continue;
+    }
+    const obj = /** @type {Record<string, unknown>} */ (pkg ?? {});
+    /** @type {Record<string, unknown>} */
+    const deps = {
+      .../** @type {Record<string, unknown>} */ (obj["dependencies"] ?? {}),
+      .../** @type {Record<string, unknown>} */ (obj["devDependencies"] ?? {}),
+    };
+    for (const spec of Object.values(deps)) {
+      if (typeof spec !== "string" || !spec.startsWith("file:")) continue;
+      const target = path.posix.normalize(path.posix.join(dir, spec.slice("file:".length)));
+      for (const [otherId, otherDir] of Object.entries(roots)) {
+        if (otherDir === target && otherId !== id) {
+          /** @type {Set<string>} */ (out[otherId]).add(id);
+        }
+      }
+    }
+  }
+  // TRANSITIVE CLOSURE. One edge exists today; a chain of two would make
+  // a single-hop reading silently short, and the fixed point is cheap.
+  for (let moved = true; moved; ) {
+    moved = false;
+    for (const id of Object.keys(out)) {
+      const here = /** @type {Set<string>} */ (out[id]);
+      for (const dep of [...here]) {
+        for (const further of out[dep] ?? new Set()) {
+          if (further !== id && !here.has(further)) {
+            here.add(further);
+            moved = true;
+          }
+        }
+      }
+    }
+  }
+  return Object.fromEntries(Object.entries(out).map(([id, s]) => [id, [...s].sort()]));
+}
+
+/**
+ * @typedef {object} OwedDerivation
+ * @property {string[]} suites   the graded suites this range owes, sorted.
+ * @property {{ whole: boolean, specs: string[] }} e2e  the end-to-end
+ *   leg's own scope: `whole` when the leg is owed by a path the import
+ *   graph cannot narrow, otherwise exactly the spec files owed.
+ * @property {{ path: string, suites: string[], specs: string[], why: string[] }[]} byPath
+ * @property {{ path: string, why: string }[]} unplaceable
+ * @property {string | undefined} failClosed  the sentence that says WHY
+ *   the whole battery is owed, or `undefined` when the set is derived.
+ */
+
+/**
+ * THE RULE, AND IT IS A PURE FUNCTION OF ITS NAMED INPUTS.
+ *
+ * @param {object} input
+ * @param {string[]} input.changed  repo-relative paths the range moved
+ * @param {Record<string, string[]>} input.reach  from `specReach`
+ * @param {Readonly<Record<string, string>>} [input.roots]
+ * @param {Record<string, string[]>} [input.dependents]  from `packageDependents`
+ * @param {Record<string, string[]>} [input.docsReadersByPath]  docs path ->
+ *   the repo-relative files the DOCS GATE's reader map says read it
+ * @param {string[]} [input.docsAsked]  every docs path the gate was ASKED
+ *   about. A docs path missing from this list was never put to the map,
+ *   and an empty reader list for it would be an unasked question wearing
+ *   an answer's costume.
+ * @param {string[]} [input.unresolved]  from `specReach`
+ * @returns {OwedDerivation}
+ */
+export function deriveOwed({
+  changed,
+  reach,
+  roots = PACKAGE_ROOTS,
+  dependents = {},
+  docsReadersByPath = {},
+  docsAsked = [],
+  unresolved = [],
+}) {
+  const asked = new Set(docsAsked);
+  // T-271's rule, CALLED. Its `unplaceable` is deliberately not read:
+  // this function's placement question is wider than that one's, and the
+  // header above states the case where the two answers differ.
+  const owning = owningSpecs({ changed, reach, docsReadersByPath });
+  const specsFor = new Map(owning.byPath.map((e) => [e.path, e.specs]));
+  /** @type {Set<string>} */
+  const suites = new Set();
+  /** @type {Set<string>} */
+  const specs = new Set();
+  let whole = false;
+  /** @type {{ path: string, suites: string[], specs: string[], why: string[] }[]} */
+  const byPath = [];
+  /** @type {{ path: string, why: string }[]} */
+  const unplaceable = [];
+
+  for (const p of changed) {
+    /** @type {Set<string>} */
+    const mine = new Set();
+    /** @type {string[]} */
+    const why = [];
+    const ownedSpecs = specsFor.get(p) ?? [];
+    let placed = false;
+    /** @param {string} id @param {string} because */
+    const owe = (id, because) => {
+      mine.add(id);
+      why.push(`${id} — ${because}`);
+      for (const d of dependents[id] ?? []) {
+        mine.add(d);
+        why.push(`${d} — its package depends on ${id}'s through a file: specifier`);
+      }
+    };
+
+    const pkg = suiteOfPath(p, roots);
+    if (pkg !== undefined) {
+      placed = true;
+      owe(pkg, `lies under the ${roots[pkg]}/ package root, which that suite grades`);
+    }
+    if (ownedSpecs.length > 0) {
+      placed = true;
+      owe(SCOPED_SUITE, `${ownedSpecs.length} spec file(s) own it over the static import graph`);
+      for (const s of ownedSpecs) specs.add(s);
+    }
+    if (p === "docs" || p.startsWith("docs/")) {
+      if (!asked.has(p)) {
+        unplaceable.push({
+          path: p,
+          why:
+            "the DOCS GATE's reader map was never asked about it, and an unasked question is " +
+            "not an answer",
+        });
+        continue;
+      }
+      const readers = docsReadersByPath[p] ?? [];
+      if (readers.length === 0) {
+        placed = true;
+        why.push(
+          "no suite — the DOCS GATE's own reader map says no code suite reads this document",
+        );
+      }
+      let mapped = true;
+      for (const r of readers) {
+        const rs = suiteOfPath(r, roots);
+        if (rs === undefined) {
+          unplaceable.push({
+            path: p,
+            why:
+              `the DOCS GATE says ${r} reads it, and that reader lies under no package root — ` +
+              "so this derivation cannot say which suite would run it",
+          });
+          mapped = false;
+          break;
+        }
+        placed = true;
+        owe(rs, `the DOCS GATE says ${r} reads it, and ${r} lies under ${roots[rs]}/`);
+      }
+      if (!mapped) continue;
+    }
+    if (!placed) {
+      unplaceable.push({
+        path: p,
+        why:
+          "it lies under no package root, no spec reaches it through a static import, and it is " +
+          "not a document the DOCS GATE maps",
+      });
+      continue;
+    }
+    // THE END-TO-END LEG IS OWED WHOLE WHENEVER IT IS OWED BY A PATH THE
+    // IMPORT GRAPH NAMED NO SPEC FOR — `tools/e2e/package.json`, say, or
+    // a script nothing imports. A subset chosen for a path no spec owns
+    // would be a subset chosen for a different path.
+    if (mine.has(SCOPED_SUITE) && ownedSpecs.length === 0) whole = true;
+    for (const id of mine) suites.add(id);
+    byPath.push({ path: p, suites: [...mine].sort(), specs: ownedSpecs, why });
+  }
+
+  /** @type {string | undefined} */
+  let failClosed;
+  if (unresolved.length > 0) {
+    failClosed =
+      "the static import graph has an edge it could not land on a file, so any spec subset would " +
+      `be SHORT: ${unresolved.join("; ")}`;
+  } else if (unplaceable.length > 0) {
+    failClosed = `the derivation cannot place ${unplaceable
+      .map((u) => `${u.path} (${u.why})`)
+      .join("; ")}`;
+  }
+  if (failClosed !== undefined) {
+    return {
+      suites: [...ALL_SUITES],
+      e2e: { whole: true, specs: [] },
+      byPath,
+      unplaceable,
+      failClosed,
+    };
+  }
+  return {
+    suites: [...suites].sort(),
+    e2e: { whole, specs: whole ? [] : [...specs].sort() },
+    byPath,
+    unplaceable,
+    failClosed,
+  };
+}
+
+/** The two-dot form this derivation takes, and the characters a revision
+ *  may be spelled with. A range is handed to `git`, so it is validated
+ *  before it goes anywhere near one. */
+export const RANGE_RE = /^([0-9A-Za-z._/@^~-]{1,200})\.\.([0-9A-Za-z._/@^~-]{1,200})$/;
+
+/**
+ * The paths a range moved, with THE RANGE RULE's own pair enforced.
+ *
+ * TWO DOTS, AND THE LEFT ENDPOINT MUST BE AN ANCESTOR OF THE RIGHT.
+ * docs/CONVENTIONS.md's RANGE RULE bans `<merge-base>..<tip>` and bans
+ * `<main>..HEAD` between two DIVERGENT tips — `git diff A..B` is `git
+ * diff A B`, so main's own newer work comes back reversed, and a
+ * docs-only lane reads as having rewritten a crate. Both callers this
+ * function has are the shape the rule permits: a push's upstream is an
+ * ancestor of what is being pushed, and a lane's base is an ancestor of
+ * its tip. So the ancestry is CHECKED rather than assumed, and a
+ * divergence is a refusal instead of a wrong answer.
+ *
+ * @param {string} range
+ * @param {string} [root]
+ * @returns {{ paths: string[], base: string, tip: string } | { problem: string }}
+ */
+export function rangeChanged(range, root = repoRoot) {
+  const m = RANGE_RE.exec(String(range ?? "").trim());
+  if (m === null) {
+    return {
+      problem:
+        `${JSON.stringify(range)} is not a two-dot range of two plain revisions — this ` +
+        "derivation takes <base>..<tip> and hands both to git",
+    };
+  }
+  const base = /** @type {string} */ (m[1]);
+  const tip = /** @type {string} */ (m[2]);
+  const ancestor = spawnSync("git", ["-C", root, "merge-base", "--is-ancestor", base, tip], {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  if (ancestor.status !== 0) {
+    return {
+      problem:
+        `${base} is not an ancestor of ${tip} in ${root} (git exited ` +
+        `${String(ancestor.status)}), and a two-dot diff between divergent tips returns the ` +
+        "OTHER side's work in reverse — docs/CONVENTIONS.md, THE RANGE RULE",
+    };
+  }
+  const out = spawnSync("git", ["-C", root, "diff", "--name-only", base, tip, "--"], {
+    encoding: "utf8",
+    maxBuffer: 32 * 1024 * 1024,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  if (out.status !== 0) {
+    return {
+      problem: `git would not diff ${range} in ${root} (${
+        String(out.stderr ?? "").trim().split("\n")[0] || `exit ${String(out.status)}`
+      })`,
+    };
+  }
+  return {
+    base,
+    tip,
+    paths: String(out.stdout ?? "")
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l !== ""),
+  };
+}
+
+/**
+ * The derivation as a caller runs it: the readings taken, then the rule,
+ * then the INPUTS said out loud so the token can carry them.
+ *
+ * THE DOCS SCAN IS PAID FOR ONLY WHEN A DOCS PATH MOVED, exactly as in
+ * `deriveOwning`: it walks the whole source corpus, and a range that
+ * moved one script should not pay for it.
+ *
+ * @param {string} range
+ * @param {string} [root]
+ * @returns {(OwedDerivation & { range: string, changed: string[], inputs: Record<string, unknown> }) | { problem: string }}
+ */
+export function owedForRange(range, root = repoRoot) {
+  const diff = rangeChanged(range, root);
+  if ("problem" in diff) return diff;
+  const changed = diff.paths.map((p) => normaliseChanged(p, root));
+  const { reach, unresolved } = specReach(root);
+  const dependents = packageDependents(root);
+  /** @type {Record<string, string[]>} */
+  const docsReadersByPath = {};
+  /** @type {string[]} */
+  let docsAsked = [];
+  let readerCount = 0;
+  if (changed.some((p) => p === "docs" || p.startsWith("docs/"))) {
+    const readers = docsReaders(root);
+    readerCount = readers.length;
+    const gate = docsGate(changed, readers);
+    docsAsked = gate.docsPaths;
+    for (const entry of gate.byPath) docsReadersByPath[entry.path] = entry.readers;
+  }
+  const derived = deriveOwed({
+    changed,
+    reach,
+    dependents,
+    docsReadersByPath,
+    docsAsked,
+    unresolved,
+  });
+  return {
+    ...derived,
+    range,
+    changed,
+    // THE INPUTS THE DERIVATION READ, so the token records not only the
+    // answer but what it was computed over — a set nobody can re-derive
+    // is a set nobody can check.
+    inputs: {
+      base: diff.base,
+      tip: diff.tip,
+      root,
+      packageRoots: { ...PACKAGE_ROOTS },
+      packageDependents: dependents,
+      specFiles: Object.keys(reach).length,
+      unresolvedImports: unresolved,
+      docsReaderMapConsulted: docsAsked.length > 0,
+      docsReaders: readerCount,
+      docsReadersByPath,
+    },
+  };
+}
+
+/**
+ * The owed set as runnable suites, in the registry's own order.
+ *
+ * The end-to-end leg arrives SCOPED to its owed spec files unless the
+ * derivation owes it whole. It is NOT re-worded by `scopeVerdict`: that
+ * word exists to make a HAND-TYPED subset unmintable, and this subset is
+ * derived from a range the guard re-derives for itself.
+ *
+ * @param {OwedDerivation} owed
+ * @returns {Suite[]}
+ */
+export function owedSuites(owed) {
+  const registry = /** @type {Record<string, Suite>} */ (GRADED_SUITES);
+  /** @type {Suite[]} */
+  const out = [];
+  for (const id of Object.keys(GRADED_SUITES)) {
+    if (!owed.suites.includes(id)) continue;
+    const entry = registry[id];
+    if (entry === undefined) continue;
+    if (id === SCOPED_SUITE && !owed.e2e.whole && owed.e2e.specs.length > 0) {
+      out.push(scopedSuite(owed.e2e.specs, entry));
+    } else {
+      out.push(entry);
+    }
+  }
+  return out;
+}
+
 // ── THE TOKEN ────────────────────────────────────────────────────────
 
 /**
@@ -1318,13 +1777,20 @@ export function scopeVerdict(v, scope) {
  * `--all` spans tens of minutes, so one tree for the batch would be the
  * same mistake as one tree for the write.
  *
+ * AND THE OWED SET IS RECORDED BESIDE THEM WHEN THERE IS ONE (T-280).
+ * It is evidence rather than a requirement — the guard derives its own
+ * from the range it is judging — but a token that said which suites ran
+ * without saying which were OWED would leave a reader unable to tell a
+ * complete narrow run from an abandoned wide one.
+ *
  * @param {Verdict[]} verdicts
  * @param {string} [root]
+ * @param {import("../../../.claude/hooks/gate-token.mjs").OwedRecord} [owed]
  * @returns {{ written: boolean, message: string }}
  */
-export function recordVerdicts(verdicts, root = repoRoot) {
+export function recordVerdicts(verdicts, root = repoRoot, owed = undefined) {
   try {
-    const { path: tokenFile } = writeToken(root, verdicts);
+    const { path: tokenFile } = writeToken(root, verdicts, owed === undefined ? {} : { owed });
     const message = `gate-run: verdict token written to ${tokenFile}\n`;
     process.stderr.write(message);
     return { written: true, message };
@@ -1345,6 +1811,27 @@ export function recordVerdicts(verdicts, root = repoRoot) {
 export const OWNING_FLAG = "--owning";
 export const SCOPED_SUITE = "e2e";
 
+/** The range form (T-280) and the flag that asks only for its answer. */
+export const RANGE_FLAG = "--range";
+export const OWED_SET_FLAG = "--owed-set";
+
+/**
+ * The tree the DERIVATION reads, for a caller judging a checkout that is
+ * not the one this module was loaded from — the push guard's case.
+ *
+ * `--tree` AND DELIBERATELY NOT `--root`, WHICH IS THIS REPOSITORY'S
+ * USUAL SPELLING. `--root` means "the project root the target OPERATES
+ * ON"; the `supertaskr` front hands it, and `cli.spec.ts` pins the two
+ * directions to each other. This runner does not operate on the tree
+ * this flag names — it reads the derivation's inputs there and still
+ * runs every suite from the registry's own directories — so `--root`
+ * would promise a relocation that does not happen, and would falsify
+ * that pin for a flag the front cannot hand. Measured rather than
+ * guessed: the first spelling was `--root`, and the battery redded that
+ * body by name.
+ */
+export const TREE_FLAG = "--tree";
+
 const USAGE = `gate-run.mjs — the one sanctioned way to run a graded suite (T-202)
 
   node tools/e2e/scripts/gate-run.mjs <suite>...   run the named suites
@@ -1356,6 +1843,15 @@ const USAGE = `gate-run.mjs — the one sanctioned way to run a graded suite (T-
       verifier's one run and the integrator's run before the push stay
       the full four legs, and this form's ${SCOPED_PREFIX}* verdict cannot
       mint the push token. A path the derivation cannot place is exit 2.
+  node tools/e2e/scripts/gate-run.mjs ${RANGE_FLAG} <base>..<tip>
+                                                  the OWED SET (T-280):
+      the suites that range's own paths owe, with the end-to-end leg
+      narrowed to the spec files they own. A path the derivation cannot
+      place makes the owed set the whole battery, and the token says why.
+  node tools/e2e/scripts/gate-run.mjs ${OWED_SET_FLAG} ${RANGE_FLAG} <base>..<tip> [${TREE_FLAG} <dir>]
+                                                  the same derivation as
+      JSON, running NOTHING. This is what the push guard asks, so that
+      the set it requires and the set a run grades are ONE function.
 
 suites: ${Object.keys(GRADED_SUITES).join(", ")}
 
@@ -1429,6 +1925,122 @@ function mainOwning(argv) {
   return scoped.verdict === `${SCOPED_PREFIX}GREEN` ? EXIT.GREEN : EXIT.RED;
 }
 
+/**
+ * The value of a `--flag <value>` pair, or undefined.
+ * @param {string[]} argv @param {string} flag @returns {string | undefined}
+ */
+function flagValue(argv, flag) {
+  const at = argv.indexOf(flag);
+  if (at < 0) return undefined;
+  const next = argv[at + 1];
+  return next === undefined || next.startsWith("--") ? undefined : next;
+}
+
+/**
+ * The ASK arm (T-280): derive the owed set and print it as JSON, running
+ * nothing at all.
+ *
+ * THE PUSH GUARD IS THIS ARM'S CALLER, and that is why it exists as a
+ * separate spelling rather than as a flag on a run. The guard may not
+ * import this module — it loads on every Bash call in a session and this
+ * file walks a corpus — so it asks the same question by spawning the
+ * program that owns the answer, exactly as it asks the graph and the
+ * cheap checks. One function, two callers, no second copy of the rule.
+ *
+ * IT ALWAYS PRINTS JSON, INCLUDING WHEN IT REFUSES. A caller that had to
+ * parse a refusal out of English would be a caller that fails open by
+ * accident; `{ "problem": … }` at exit 2 is a machine-readable inability.
+ *
+ * @param {string[]} argv
+ * @returns {number}
+ */
+function mainOwedSet(argv) {
+  const range = flagValue(argv, RANGE_FLAG);
+  const root = flagValue(argv, TREE_FLAG) ?? repoRoot;
+  if (range === undefined) {
+    process.stdout.write(
+      `${JSON.stringify({ problem: `${OWED_SET_FLAG} needs ${RANGE_FLAG} <base>..<tip>` })}\n`,
+    );
+    return EXIT.USAGE;
+  }
+  const owed = owedForRange(range, root);
+  process.stdout.write(`${JSON.stringify(owed, null, 2)}\n`);
+  return "problem" in owed ? EXIT.USAGE : EXIT.GREEN;
+}
+
+/**
+ * The RANGE arm (T-280): grade exactly the set the range owes.
+ *
+ * ── WHY THIS VERDICT IS MINTABLE AND `--owning`'S IS NOT ─────────────
+ * The subset here is not a seat's opinion about what changed; it is a
+ * function of two commit ids, and the push guard recomputes it from the
+ * same two before it accepts anything. So the end-to-end leg's verdict
+ * keeps the word it earned — GREEN or RED — and carries `scope=` naming
+ * the spec files it graded, which is what the guard's coverage check
+ * reads. A hand-typed `--owning` list has no such second reader, which
+ * is exactly why it wears `SCOPED-` and can mint nothing.
+ *
+ * A REFUSAL IS NOT A NARROWER RUN. Every way the derivation can fail
+ * lands on the whole battery with the reason recorded, never on a
+ * shorter set — so this arm's failure mode is a longer run.
+ *
+ * @param {string[]} argv
+ * @returns {number}
+ */
+function mainRange(argv) {
+  const range = flagValue(argv, RANGE_FLAG);
+  if (range === undefined) {
+    process.stderr.write(`gate-run: ${RANGE_FLAG} needs a <base>..<tip> argument\n${USAGE}\n`);
+    return EXIT.USAGE;
+  }
+  const owed = owedForRange(range);
+  if ("problem" in owed) {
+    process.stderr.write(
+      `gate-run: the owed set for ${range} could not be derived — ${owed.problem}. ` +
+        "NOTHING WAS GRADED: run the whole battery with --all.\n",
+    );
+    return EXIT.USAGE;
+  }
+  if (owed.failClosed !== undefined) {
+    process.stderr.write(
+      `gate-run: THE WHOLE BATTERY IS OWED — ${owed.failClosed}\n`,
+    );
+  }
+  for (const entry of owed.byPath) {
+    process.stderr.write(`gate-run: ${entry.path} owes\n  ${entry.why.join("\n  ")}\n`);
+  }
+  process.stderr.write(
+    `gate-run: ${range} moved ${owed.changed.length} path(s) and owes ` +
+      `${owed.suites.join(", ")}${
+        owed.e2e.whole || owed.e2e.specs.length === 0
+          ? ""
+          : ` (${SCOPED_SUITE} over ${owed.e2e.specs.length} spec file(s))`
+      }\n`,
+  );
+  /** @type {Verdict[]} */
+  const verdicts = [];
+  for (const suite of owedSuites(owed)) {
+    const { verdict, outputPath } = runSuite(suite);
+    verdicts.push(
+      suite.id === SCOPED_SUITE && !owed.e2e.whole && owed.e2e.specs.length > 0
+        ? { ...verdict, scope: owed.e2e.specs.join(",") }
+        : verdict,
+    );
+    if (outputPath) process.stderr.write(`gate-run: ${suite.id} output at ${outputPath}\n`);
+  }
+  recordVerdicts(verdicts, repoRoot, {
+    range,
+    suites: owed.suites,
+    e2e: owed.e2e,
+    ...(owed.failClosed === undefined ? {} : { failClosed: owed.failClosed }),
+    inputs: owed.inputs,
+  });
+  for (const v of verdicts) process.stdout.write(`${formatVerdict(v)}\n`);
+  if (verdicts.some((v) => v.verdict === "REFUSED")) return EXIT.REFUSED;
+  if (verdicts.some((v) => v.verdict === "RED")) return EXIT.RED;
+  return EXIT.GREEN;
+}
+
 /** @param {string[]} argv @returns {number} */
 function main(argv) {
   const bad = validateRegistry();
@@ -1448,6 +2060,8 @@ function main(argv) {
     }
     return EXIT.GREEN;
   }
+  if (argv.includes(OWED_SET_FLAG)) return mainOwedSet(argv);
+  if (argv.includes(RANGE_FLAG)) return mainRange(argv);
   if (argv.includes(OWNING_FLAG)) return mainOwning(argv);
   /** @type {string[]} */
   const names = argv.includes("--all") ? Object.keys(GRADED_SUITES) : argv;

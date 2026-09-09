@@ -185,6 +185,22 @@ export const GREEN = "GREEN";
  *                             landed while the suite ran (T-203-s1)
  * @property {boolean} dirty   were TRACKED files modified when this ran?
  * @property {string} at       ISO time the entry was written
+ * @property {string | undefined} [scope]  the SPEC FILES this entry
+ *   graded, comma-joined, when it graded part of a leg rather than the
+ *   leg (T-280). ABSENT MEANS THE WHOLE LEG, which is why a token minted
+ *   before this field existed is covered by any owed subset rather than
+ *   refused: a whole-leg run really does cover every spec in it.
+ */
+
+/**
+ * @typedef {object} OwedRecord
+ * @property {string} range      the `<base>..<tip>` the set was derived for
+ * @property {string[]} suites   the graded suites that range owes
+ * @property {{ whole: boolean, specs: string[] }} e2e
+ * @property {string | undefined} [failClosed]  why the whole battery is
+ *   owed, when the derivation could not place something
+ * @property {Record<string, unknown> | undefined} [inputs]  what the
+ *   derivation READ — a set nobody can re-derive is a set nobody can check
  */
 
 /**
@@ -193,6 +209,11 @@ export const GREEN = "GREEN";
  * @property {string} writtenAt
  * @property {string} writtenFrom
  * @property {Record<string, SuiteEntry>} suites
+ * @property {OwedRecord | undefined} [owed]  the last range-derived owed
+ *   set written into this token (T-280). It is a RECORD and never this
+ *   judge's input: the push guard re-derives the owed set for the range
+ *   it is actually judging, because a token that carried its own
+ *   requirement could satisfy itself.
  */
 
 /** @param {string} root @returns {string} */
@@ -342,12 +363,20 @@ export function readToken(root) {
   if (suites === null || typeof suites !== "object" || Array.isArray(suites)) {
     return { problem: `${TOKEN_REL_PATH} carries no \`suites\` object` };
   }
+  const owed = obj["owed"];
   return {
     token: {
       version: TOKEN_VERSION,
       writtenAt: typeof obj["writtenAt"] === "string" ? obj["writtenAt"] : "",
       writtenFrom: typeof obj["writtenFrom"] === "string" ? obj["writtenFrom"] : "",
       suites: /** @type {Record<string, SuiteEntry>} */ (suites),
+      // CARRIED THROUGH AND NEVER VALIDATED INTO A REQUIREMENT (T-280).
+      // It is a record of what some run derived, kept so a reader can
+      // see the set and its range; nothing downstream decides anything
+      // from it.
+      ...(owed === null || typeof owed !== "object" || Array.isArray(owed)
+        ? {}
+        : { owed: /** @type {OwedRecord} */ (owed) }),
     },
   };
 }
@@ -379,9 +408,18 @@ export function readToken(root) {
  * overwritten, because a tree seen dirty at either end of a run was dirt
  * this key does not name.
  *
+ * ── AND ONE ENTRY MAY HAVE GRADED PART OF A LEG (T-280) ─────────────
+ * `scope` travels from the verdict into the entry unchanged, and its
+ * ABSENCE is the meaningful value: a whole-leg run records no scope and
+ * therefore covers every spec any owed subset could name. A scoped entry
+ * records exactly what it graded, and the push guard requires that list
+ * to cover the subset IT derives for the range being pushed — which is
+ * how a narrower run can mint a token without narrowing what the token
+ * claims.
+ *
  * @param {string} root
- * @param {{ suite: string, exit: number, bodies: number, targets: number, verdict: string, reason: string, ref: string, tree?: string | undefined, dirty?: boolean | undefined }[]} verdicts
- * @param {{ tree?: string, treeAtWrite?: string, dirty?: boolean, now?: () => string }} [opts]
+ * @param {{ suite: string, exit: number, bodies: number, targets: number, verdict: string, reason: string, ref: string, tree?: string | undefined, dirty?: boolean | undefined, scope?: string | undefined }[]} verdicts
+ * @param {{ tree?: string, treeAtWrite?: string, dirty?: boolean, now?: () => string, owed?: OwedRecord }} [opts]
  * @returns {{ path: string, ignoreFile: string, token: Token }}
  */
 export function writeToken(root, verdicts, opts = {}) {
@@ -411,10 +449,29 @@ export function writeToken(root, verdicts, opts = {}) {
       treeAtWrite,
       dirty: v.dirty === true ? true : batchDirty,
       at,
+      // ABSENT AND EMPTY MUST NOT BE THE SAME THING (T-280): absent means
+      // the whole leg, so an empty string is normalised away rather than
+      // written as a scope that names no spec.
+      ...(v.scope === undefined || v.scope === "" ? {} : { scope: v.scope }),
     };
   }
+  const priorOwed = "token" in prior ? prior.token.owed : undefined;
   /** @type {Token} */
-  const token = { version: TOKEN_VERSION, writtenAt: at, writtenFrom: root, suites };
+  const token = {
+    version: TOKEN_VERSION,
+    writtenAt: at,
+    writtenFrom: root,
+    suites,
+    // MERGED LIKE THE SUITES, AND FOR THE SAME REASON: a later run of one
+    // leg does not un-derive the set an earlier range-derived run
+    // recorded. It carries its own range, so a reader can always tell
+    // which question it answered.
+    ...(opts.owed !== undefined
+      ? { owed: opts.owed }
+      : priorOwed !== undefined
+        ? { owed: priorOwed }
+        : {}),
+  };
   // ARM THE DIRECTORY BEFORE PUTTING ANYTHING IN IT. Ordering matters
   // only for a reader that races this write, but the direction is free
   // and one of them leaves a committable token on disk for a moment.
@@ -426,10 +483,27 @@ export function writeToken(root, verdicts, opts = {}) {
 
 /**
  * @typedef {object} TokenJudgement
- * @property {"fresh"|"missing"|"incomplete"|"stale"|"unkeyed"|"red"|"unmeasured"} state
+ * @property {"fresh"|"missing"|"incomplete"|"partial"|"stale"|"unkeyed"|"red"|"unmeasured"} state
  * @property {string} code    a stable, greppable name for WHY
  * @property {string} detail  the sentence a refused seat reads
  */
+
+/**
+ * @typedef {object} OwedSet
+ * @property {string} range
+ * @property {string[]} suites
+ * @property {{ whole: boolean, specs: string[] }} e2e
+ * @property {string | undefined} [failClosed]
+ */
+
+/**
+ * The one suite whose entry may have graded a SUBSET, which is the only
+ * place a spec-file coverage question can arise. Held here rather than
+ * imported for this file's own standing reason — it may cost node's
+ * startup and nothing else — and `gate-run.spec.ts` pins it against the
+ * runner's own `SCOPED_SUITE`.
+ */
+export const SCOPABLE_SUITE = "e2e";
 
 /**
  * Judge a token against the tree a push would carry.
@@ -461,10 +535,28 @@ export function writeToken(root, verdicts, opts = {}) {
  * opinion about whether a suite passed would be a guard the seat learns
  * to override.
  *
- * @param {{ token?: Token, problem?: string, tree: string, required?: readonly string[] }} input
+ * ── AND SINCE T-280 THE REQUIRED SET MAY BE DERIVED ─────────────────
+ * Pass `owed` — the set `gate-run.mjs` derived for the range being
+ * pushed — and the required set becomes ITS suites instead of all four,
+ * with a missing member refused as `token-partial` rather than as
+ * `token-incomplete`. The two are not the same sentence and the split is
+ * deliberate: `token-incomplete` says "this token does not carry the
+ * whole battery", which is the right sentence when the whole battery is
+ * what was required; `token-partial` says "this token does not cover the
+ * set THIS RANGE owes", and it names the missing members AND, for the
+ * one leg that can be graded in part, the missing SPEC FILES.
+ *
+ * OMIT `owed` AND EVERY ANSWER IS EXACTLY WHAT IT WAS. That is not
+ * politeness about compatibility: a caller that cannot derive an owed
+ * set — because git would not answer, because the runner is not in this
+ * checkout — must land on the whole battery, and the way it does that is
+ * by not passing one.
+ *
+ * @param {{ token?: Token, problem?: string, tree: string, required?: readonly string[], owed?: OwedSet }} input
  * @returns {TokenJudgement}
  */
-export function judgeToken({ token, problem, tree, required = REQUIRED_SUITES }) {
+export function judgeToken({ token, problem, tree, required, owed }) {
+  const need = required ?? (owed === undefined ? REQUIRED_SUITES : [...owed.suites].sort());
   if (token === undefined) {
     return {
       state: "missing",
@@ -472,23 +564,75 @@ export function judgeToken({ token, problem, tree, required = REQUIRED_SUITES })
       detail: problem ?? `no readable verdict token at ${TOKEN_REL_PATH}`,
     };
   }
-  const missing = required.filter((s) => {
+  const missing = need.filter((s) => {
     const e = token.suites[s];
     return e === undefined || e === null || typeof e !== "object";
   });
-  if (missing.length > 0) {
+  if (owed === undefined && missing.length > 0) {
     return {
       state: "incomplete",
       code: "token-incomplete",
       detail:
         `the verdict token records no run of ${missing.join(", ")} — it is a claim about ` +
-        `${required.length - missing.length} of ${required.length} graded suites, and "the gates ` +
+        `${need.length - missing.length} of ${need.length} graded suites, and "the gates ` +
         'are green" is not one of the things it says',
     };
   }
+  if (owed !== undefined) {
+    // ── THE COVERAGE QUESTION, IN TWO FACES AND ONE REASON (T-280) ──
+    // A suite the range owes that the token never measured, and a SPEC
+    // FILE the range owes that the recorded run did not grade. Both are
+    // "the measured set does not cover the owed set", both name what is
+    // missing, and both are cleared by the same one command — so they
+    // are one code with two sentences rather than two codes.
+    //
+    // AN ENTRY WITH NO `scope` GRADED THE WHOLE LEG and covers any
+    // subset. That is what makes this additive rather than a new demand
+    // on every token that already exists.
+    /** @type {string[]} */
+    const uncovered = [];
+    for (const s of missing) uncovered.push(`${s} was never measured in this checkout`);
+    const entry = token.suites[SCOPABLE_SUITE];
+    if (entry !== undefined && entry !== null && typeof entry === "object") {
+      const graded = typeof entry.scope === "string" && entry.scope !== ""
+        ? entry.scope.split(",").map((s) => s.trim()).filter((s) => s !== "")
+        : undefined;
+      if (graded !== undefined && need.includes(SCOPABLE_SUITE)) {
+        if (owed.e2e.whole) {
+          uncovered.push(
+            `${SCOPABLE_SUITE} is owed WHOLE for this range and the token records a run over ` +
+              `${graded.length} spec file(s) instead`,
+          );
+        } else {
+          const short = owed.e2e.specs.filter((s) => !graded.includes(s));
+          if (short.length > 0) {
+            uncovered.push(
+              `${SCOPABLE_SUITE} graded ${graded.length} spec file(s) and this range owes ` +
+                `${owed.e2e.specs.length}, missing: ${short.join(", ")}`,
+            );
+          }
+        }
+      }
+    }
+    if (uncovered.length > 0) {
+      return {
+        state: "partial",
+        code: "token-partial",
+        detail:
+          `the verdict token does not cover what ${owed.range} owes: ${uncovered.join("; ")}. ` +
+          `The owed set is ${need.join(", ")}` +
+          (owed.e2e.whole || owed.e2e.specs.length === 0
+            ? ""
+            : ` with ${SCOPABLE_SUITE} narrowed to ${owed.e2e.specs.length} spec file(s)`) +
+          (owed.failClosed === undefined || owed.failClosed === ""
+            ? ", derived from the range's own paths"
+            : `, and it is the WHOLE battery because ${owed.failClosed}`),
+      };
+    }
+  }
   /** @type {string[]} */
   const stale = [];
-  for (const s of required) {
+  for (const s of need) {
     const entry = /** @type {SuiteEntry} */ (token.suites[s]);
     if (entry.tree !== tree) {
       stale.push(`${s} ran against tree ${entry.tree || "(none recorded)"}`);
@@ -524,7 +668,7 @@ export function judgeToken({ token, problem, tree, required = REQUIRED_SUITES })
   // trusted to a boolean somebody could compute wrong.
   /** @type {string[]} */
   const unkeyed = [];
-  for (const s of required) {
+  for (const s of need) {
     const entry = /** @type {SuiteEntry} */ (token.suites[s]);
     if (entry.dirty === true) unkeyed.push(`${s} ran with tracked files modified`);
     else if (entry.dirty !== false) unkeyed.push(`${s} did not record whether the tree was clean`);
@@ -560,7 +704,7 @@ export function judgeToken({ token, problem, tree, required = REQUIRED_SUITES })
   const red = [];
   /** @type {string[]} */
   const unmeasured = [];
-  for (const s of required) {
+  for (const s of need) {
     const entry = /** @type {SuiteEntry} */ (token.suites[s]);
     if (entry.verdict === GREEN) continue;
     const detail = `exit=${entry.exit} bodies=${entry.bodies} reason=${entry.reason}`;
@@ -590,7 +734,7 @@ export function judgeToken({ token, problem, tree, required = REQUIRED_SUITES })
     state: "fresh",
     code: "token-green",
     detail:
-      `${required.length} graded suite(s) recorded ${GREEN} against HEAD's own tree ${tree} ` +
-      `(${required.map((s) => `${s}=${/** @type {SuiteEntry} */ (token.suites[s]).bodies}`).join(" ")} bodies)`,
+      `${need.length} graded suite(s) recorded ${GREEN} against HEAD's own tree ${tree} ` +
+      `(${need.map((s) => `${s}=${/** @type {SuiteEntry} */ (token.suites[s]).bodies}`).join(" ")} bodies)`,
   };
 }
