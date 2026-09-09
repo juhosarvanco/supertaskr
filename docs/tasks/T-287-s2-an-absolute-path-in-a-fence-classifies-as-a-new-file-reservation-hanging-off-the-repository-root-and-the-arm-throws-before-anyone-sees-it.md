@@ -46,10 +46,12 @@ this repository.
 
 `fence.ts` does not save it. `normalizeFenceToken` splits on `/` and
 rejoins, so a leading empty segment survives; `DOT_DOMAIN` catches `..`
-and `.` but not `/`; and `looksLikePath` accepts the token because it
-carries a slash. Longer absolute paths are saved only by accident —
-`/etc/passwd.txt` is dead because `/etc` is not a tracked directory HERE,
-which is a fact about this checkout rather than a rule.
+and `.` but not a leading slash; and `looksLikePath` accepts the token
+because it carries a slash. Longer absolute paths are saved only by
+accident — the one below is dead because its parent is not a tracked
+directory HERE, which is a fact about this checkout rather than a rule:
+
+    /etc/passwd.txt
 
 ## Why it is filed rather than corrected, and why it still needs a card
 
@@ -58,13 +60,26 @@ an absolute path never gets as far as the fence loop: `ignoredTokens`
 shells out to `git check-ignore`, which exits 128 on a path outside the
 repository, and the preflight THROWS.
 
-    ignoredTokens(root, ["/evil.ts"])
-      -> Error: card-preflight: git check-ignore answered 128 in <root> …
+    ignoredTokens(root, ["/evil.ts"])       -> throws, status 128
+    ignoredTokens(root, ["lib/../../x.ts"])  -> throws, status 128
+      Error: card-preflight: git check-ignore answered 128 in <root> …
 
 Measured at the tip AND at `T-287`'s base, on code `T-287` does not touch.
 So no card can be dispatched on an absolute path today, no manifest can
 carry one, and nothing the write hook permits is widened by the
 misclassification.
+
+**THE THROW IS WIDER THAN THE MISCLASSIFICATION, AND THAT IS THE HALF
+WORTH FIXING FIRST.** `git check-ignore --stdin` answers 128 on any token
+it reads as outside the repository, which is TWO classes: an absolute
+path, and one that CLIMBS. So a card whose prose merely MENTIONS a
+climbing token — this file's own subject matter — takes the whole
+preflight down with it, and the verdict that filed this card met exactly
+that: its security-sweep paragraph named the climbing tokens `fence.ts`
+refuses, and the arm answered 3 until they were written indented. That is
+the trap in its purest form: **the class is unreachable as a FENCE and
+fully reachable as PROSE**, and the second reading is the one a card
+cannot avoid when the card is about the first.
 
 **That is exactly what makes it a card and not a shrug.** The two halves
 protect each other, and each is independently worth fixing:

@@ -130,8 +130,12 @@ that permits the sibling, and the one-card board that reads `DISJOINT`.
 ### 2026-09-09 — claude-opus-5@subagent (verifier, phase 2) — APPROVED WITH ASSIGNED CORRECTIONS
 
 Tip judged `6ff8201107ac57e42db94d974512febc6abeed00`; base
-`8cd11020e631f195952b4921c045a622b3df7809`. Bench:
-`/Users/ujju/Projects/nputer-V-T-287`, detached.
+`8cd11020e631f195952b4921c045a622b3df7809`. The bench is a detached
+worktree, and its root is written INDENTED because a card's path arm hands
+every prose token to `git check-ignore`, which answers 128 on an absolute
+one — the very defect F-3 files, met here by the verdict that files it:
+
+    /Users/ujju/Projects/nputer-V-T-287
 
 attack set: sha256:ac5cc2d5c0faee9d9f7426f3d85134a1d511c52b529eff3199b33351d1751a6b (attack-set-T-287.md)
 ground truths: sha256:ba5d72c69007ae40963cbe4e8dd8be590a609e9acf5bb548aae7521663a120bd (ground-T-287.md)
@@ -272,10 +276,15 @@ parser's own expansion — and asks only its own two questions of
 raw token text, and calls no git per token. Nothing in the new code path
 reaches a shell.
 
-**The security sweep, run rather than reasoned.** `../outside.ts`,
-`a/../../outside.ts`, `lib/../../x.ts`, `..` and `.` never reach the
-classifier — `fence.ts`'s `DOT_DOMAIN` refuses them upstream as UNUSABLE.
-Globs (`*`, `?`, `[`, `]`, `!`) likewise. `.supertaskr` holds no tracked
+**The security sweep, run rather than reasoned.** Every climbing token
+below never reaches the classifier — `fence.ts`'s `DOT_DOMAIN` refuses
+them upstream as UNUSABLE — and they are written INDENTED for F-3's
+reason, since `git check-ignore` answers 128 on a token that climbs out
+of the repository exactly as it does on an absolute one:
+
+    ../outside.ts   a/../../outside.ts   lib/../../x.ts   ..   .
+
+Globs (`*`, `?`, `[`, `]`, `!`) are refused upstream likewise. `.supertaskr` holds no tracked
 file, so **a lane cannot reserve the manifest the hook reads** — the
 self-widening fence is closed, and closed for a real reason. Gitignored
 paths (`node_modules/x.js`, `dist/out.js`, `lib/parser/dist/x.js`) all
@@ -306,8 +315,12 @@ blocks, one body, and the counts are stated so no shortfall is implied.
 
 **F-3 (finding — suggested card `T-287-s2`, filed, not a correction) — an
 absolute path at the filesystem root classifies as a reservation.**
-`newFileReservation("/evil.ts", oracle)` returns
-`{ reserved: true, parent: "" }`, because `lastIndexOf("/") === 0` makes
+the classifier answers `{ reserved: true, parent: "" }` for a token this
+verdict must itself write indented —
+
+    newFileReservation("/evil.ts", oracle)
+
+— because `lastIndexOf("/") === 0` makes
 `parent` the empty string — the very sentinel the genuine repository-root
 case uses — so the parent check is skipped and the render says the token
 hangs off "the repository root, which is tracked". **I did not make this a
@@ -320,8 +333,11 @@ manifest can carry it, and nothing the hook permits is widened; the
 default posture that a wrongly-widened token is REJECT-class is rebutted
 here by the fact that the widening cannot be reached. It is a latent
 defect in a newly exported helper, and it becomes live the moment that
-throw is fixed or another consumer calls the helper. Both halves are in
-the card.
+throw is fixed or another consumer calls the helper. The throw is also
+WIDER than the misclassification — `git check-ignore` answers 128 on a
+CLIMBING token too, so a card whose prose merely mentions one takes the
+arm down, which this very verdict did until the tokens above were
+indented. All of it is in the card.
 
 **Notes, neither correction nor card.** A brace glob
 (`tools/e2e/tests/{a,b}.spec.ts`) is not in `fence.ts`'s `GLOB_CHARS` and
