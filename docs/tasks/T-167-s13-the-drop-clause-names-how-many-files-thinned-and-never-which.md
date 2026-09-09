@@ -316,3 +316,34 @@ this card's fence and deliberately outside its four criteria.
 regen belongs to the integrator (T-211): `docs/architecture/graph.json`
 is outside this fence and was not touched. The three files the delta
 names are exactly this lane's three source files and nothing else.
+
+### Addendum — the suites the DOCS GATE named, and the figures at the tip
+
+Written after the notes commit above, because the gate that names these
+suites is derived from a path list that INCLUDES that commit — the
+merge-tree forecast the RANGE RULE prescribes, which is why the
+derivation does not move when a later notes commit lands. The path list
+is the same five paths either way.
+
+`node tools/e2e/scripts/docs-gate.mjs <the five forecast paths>` — exit
+**1** (the gate HAS a verdict): 2 paths under `docs/` are code inputs,
+and it names three suites. All three run, all three green:
+
+| command | exit | bodies |
+|---|---|---|
+| `npx vitest run` from `lib/parser/` | 0 | 389 passed, 16 files |
+| `npm run build` from `app/` | 0 | — (`npm test` needs `app/dist`) |
+| `npm test` from `app/` | 0 | 1163 passed, 51 files |
+| `SUPERTASKR_E2E_PORT=15167 npm test` from `tools/e2e/` | 0 | 706 passed (12.6m) |
+
+The port was read to zero rows before and after the lane run, and 1420
+was never probed — only read. The app dogfood pins are green because
+this lane did not touch `docs/architecture/graph.json`: they pin the
+COMMITTED graph, which is unmoved, and the staleness lives between that
+file and a FRESH index.
+
+At the tip `2cb7c09c4c22e79915c1e6dee85d8a5b502e63ff`, working tree
+clean: `cargo test -p supertaskr-index --no-fail-fast` exit **0**, 274
+passed / 0 failed / 2 ignored; `cargo run -q -p supertaskr-index --
+index --check --root ../..` exit **1**, STALE, the same three-file delta
+recorded above.
