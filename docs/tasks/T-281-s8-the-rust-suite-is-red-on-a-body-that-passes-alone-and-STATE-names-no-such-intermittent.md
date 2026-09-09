@@ -5,12 +5,12 @@ feature: F-01
 milestone: 4
 size: S
 priority: 1
-status: planned
+status: building
 suggested_by: "verifier claude-opus-5@subagent @T-281, 2026-09-09, at d086c73"
 blocked_by: []
 touches: [app/src-tauri/tests/agent_runner.rs, app/src-tauri/src/agent/mod.rs]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
