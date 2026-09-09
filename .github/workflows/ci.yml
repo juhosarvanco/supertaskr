@@ -65,8 +65,46 @@ jobs:
           # Linux contact, redded all three exactly this way.
           fetch-depth: 0
 
+      # ---- the disk ledger (T-278-s2) ----------------------------------
+      # WHAT A RED FLOOR CANNOT SAY. T-278's pair of readings below answers
+      # "was there room for the lane" and "what did the lane spend", and
+      # neither answers the question the ENOSPC runs actually raise: WHICH
+      # step consumed a runner that started the job with room. Runs
+      # 34332162937 (c8d49b3) and 34334103318 (cc41ff3) both reached the
+      # floor with about 184 MiB free on a 72G disk; the four runs before
+      # them reached the same step with about 4.3 GiB. The diffs between
+      # them are docs-only and both caches hit the same keys at the same
+      # sizes, so the one differing input was the RUNNER IMAGE
+      # (20260831.293.1 against 20260907.300.1) — and this job could not
+      # say so, because nothing read the disk between the checkout and the
+      # floor.
+      #
+      # SO EVERY STEP THAT CAN CONSUME THE DISK IS FOLLOWED BY ONE LINE.
+      # The reading is IDENTICAL at every site and carries no label of its
+      # own: the STEP NAME is the label, which is how `gh` and the log
+      # already group it, and a reading that re-states its own site is a
+      # second place for that site's name to go stale. What attributes is
+      # the INTERVAL between two consecutive readings.
+      #
+      # THIS FIRST ONE IS THE IMAGE'S OWN ARRIVAL, and it prints the image
+      # version beside the figure because "the image arrives 4.2 GiB
+      # fuller" is a claim about the MACHINE rather than about the job —
+      # the one reading no step of ours can be blamed for.
+      #
+      # tools/e2e/tests/workflow-parity.spec.ts derives that every heavy
+      # step is followed by one of these, so a step added without a
+      # reading reds rather than going unattributed.
+      - name: disk at job start
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+          echo "runner image: ${ImageVersion:-unknown} (${ImageOS:-unknown})"
+
       - name: Linux prerequisites (Tauri v2 webkit2gtk set + xvfb)
         run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev xvfb
+
+      - name: disk after the apt prerequisites
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
@@ -76,6 +114,10 @@ jobs:
             lib/parser/package-lock.json
             app/package-lock.json
             tools/e2e/package-lock.json
+
+      - name: disk after the node toolchain and its npm cache
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
 
       - name: Record rust toolchain (runner-preinstalled stable, no third-party action)
         run: rustc --version && cargo --version
@@ -90,11 +132,19 @@ jobs:
             app/src-tauri/target
           key: cargo-${{ runner.os }}-${{ hashFiles('app/src-tauri/Cargo.lock') }}
 
+      - name: disk after the cargo cache
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+
       - name: Cache playwright browsers
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('tools/e2e/package-lock.json') }}
+
+      - name: disk after the playwright cache
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
 
       # ---- token lint (zero-dep; runs before any install) --------------
       # T-054 (T-045-s1): the DOCUMENTED command, not a second spelling of
@@ -114,6 +164,11 @@ jobs:
       - name: parser install
         working-directory: lib/parser
         run: npm ci
+
+      - name: disk after the parser install
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+
       - name: parser suite
         working-directory: lib/parser
         run: npx vitest run
@@ -128,6 +183,11 @@ jobs:
       - name: app install
         working-directory: app
         run: npm ci
+
+      - name: disk after the app install
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+
       - name: app build
         working-directory: app
         run: npm run build
@@ -139,6 +199,10 @@ jobs:
       - name: cargo suite (both workspace crates; incl. the T-018 sentinel live tests)
         working-directory: app/src-tauri
         run: cargo test
+
+      - name: disk after the cargo suite's target
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
 
       # ---- graph currency (T-054) --------------------------------------
       # THE GATE THIS JOB NEVER HAD. Bare `cargo test` above SKIPS
@@ -174,6 +238,11 @@ jobs:
         # pushes included, at this step. A restored binary is the happy
         # path, not an error.
         run: command -v cargo-audit >/dev/null 2>&1 || cargo install cargo-audit --locked
+
+      - name: disk after the cargo-audit install
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+
       - name: cargo audit
         working-directory: app/src-tauri
         run: cargo audit
@@ -182,6 +251,10 @@ jobs:
       - name: e2e install
         working-directory: tools/e2e
         run: npm ci
+
+      - name: disk after the e2e install
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
 
       # ---- docs gate (T-090) -------------------------------------------
       # THE THIRD STANDING GATE, ARRIVING AS A STEP. `docs/` is a CODE
@@ -271,6 +344,113 @@ jobs:
       - name: e2e browsers
         working-directory: tools/e2e
         run: npx playwright install --with-deps chromium
+
+      - name: disk after the browser download
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+
+      # ---- make the room the image did not bring (T-278-s2) ------------
+      # THE REMEDY, and it is a remedy for the MACHINE rather than for the
+      # job. On image 20260831.293.1 this runner reaches this point with
+      # about 184 MiB free on a 72G disk (runs 34332162937 and 34334103318,
+      # both on main, both red at the floor below, both with the ledger's
+      # own readings still to be taken for the first time); on
+      # 20260907.300.1 it reaches it with about 4.3 GiB. Attribution alone
+      # leaves main RED on every push, so the job makes its own room: it
+      # removes preinstalled toolchains THIS WORKFLOW NEVER INVOKES.
+      #
+      # WHY EACH CANDIDATE IS ONE — read the steps above, which are the
+      # whole of what this job invokes: apt, node, npm, cargo, cargo-audit,
+      # playwright and xvfb, and nothing else.
+      #   /usr/share/dotnet            eleven .NET SDKs; no step runs dotnet.
+      #   /usr/local/lib/android       the Android SDK and its NDKs; no step runs it.
+      #   /opt/ghc, /usr/local/.ghcup  the Haskell toolchain; no step runs ghc.
+      #   /opt/hostedtoolcache/CodeQL  the CodeQL bundle; this repo runs no code scanning.
+      #   /usr/share/swift             Swift; no step runs swiftc.
+      #   and the docker images the image ships; no step runs a container.
+      # The list is the IMAGE'S, taken from actions/runner-images' own
+      # software manifest for ubuntu24/20260831.293 — the version the two
+      # red runs report. A candidate absent on some other image is SKIPPED
+      # with one line and never an error, so this step stays honest on an
+      # image it was not written against.
+      #
+      # WHAT IT MAY NEVER TOUCH is declared beside the candidates rather
+      # than left to the reader: the checkout, the two caches this job
+      # restores, the npm cache setup-node restores, the rust toolchain,
+      # cargo-audit's own binary under ~/.cargo/bin, the node toolcache,
+      # and /usr/lib — where the apt step's Tauri prerequisites land, and
+      # which is why /usr/lib/jvm is NOT a candidate here despite being one
+      # of the larger trees on the image.
+      #
+      # AND THE REFUSAL IS AT RUN TIME AS WELL AS IN THE SPEC. The parity
+      # spec derives that no candidate overlaps a protected path — but its
+      # red arrives from the lane, and this step runs BEFORE the lane, so a
+      # bad edit would have deleted the cache on the very run that reports
+      # it. The script refuses the overlap itself; the spec's job is to red
+      # the COMMIT, not to be the only thing standing between an edit and
+      # ~/.cargo.
+      #
+      # IT NEVER FAILS THE JOB. Freeing disk is not a gate — the floor
+      # below is the gate, and what it reads is the disk this step leaves.
+      # A candidate that will not remove is one line and a carry-on.
+      #
+      # THE READING IN THE LOG IS THE REMEDY'S OWN MEASUREMENT: `df` before,
+      # `du -sh` per candidate, `df` after, and the bytes freed. WHAT NO
+      # SEAT COULD MEASURE HERE is that freed figure — it is a property of
+      # the runner, and no local run produces it. The first run after this
+      # lands is the reading (T-278-s1's fourth).
+      - name: free runner disk before the floor (toolchains this job never invokes)
+        env:
+          # THE CANDIDATES AND THE PROTECTED SET, EACH WRITTEN ONCE.
+          # The script reads these two keys and nothing else, so the
+          # parity spec derives the policy from the same bytes the
+          # shell runs rather than from a second copy of the list.
+          E2E_DISK_CANDIDATES: |
+            /usr/share/dotnet
+            /usr/local/lib/android
+            /opt/ghc
+            /usr/local/.ghcup
+            /opt/hostedtoolcache/CodeQL
+            /usr/share/swift
+          E2E_DISK_PROTECTED: |
+            ${{ github.workspace }}
+            ~/.cargo
+            ~/.rustup
+            ~/.npm
+            ~/.cache/ms-playwright
+            /opt/hostedtoolcache/node
+            /usr/lib
+        run: |
+          df -h /
+          before_kib=$(df -Pk / | awk 'NR==2 { print $4 }')
+          for candidate in $E2E_DISK_CANDIDATES; do
+            refused=""
+            case "$candidate" in
+              /*/*) ;;
+              *) refused="it names fewer than two path segments" ;;
+            esac
+            for guarded in $E2E_DISK_PROTECTED; do
+              guarded=${guarded/#\~/$HOME}
+              case "${guarded}/" in "${candidate}"/*) refused="it contains the protected ${guarded}" ;; esac
+              case "${candidate}/" in "${guarded}"/*) refused="it is inside the protected ${guarded}" ;; esac
+            done
+            if [ -n "$refused" ]; then
+              echo "REFUSED ${candidate}: ${refused}"
+            elif [ ! -e "$candidate" ]; then
+              echo "absent on this image, skipped: ${candidate}"
+            else
+              du -sh "$candidate" 2>/dev/null || echo "${candidate}: du declined"
+              sudo rm -rf "$candidate" || echo "${candidate}: rm declined, carrying on"
+            fi
+          done
+          if command -v docker >/dev/null 2>&1; then
+            docker image prune -af || echo "docker image prune declined, carrying on"
+          else
+            echo "absent on this image, skipped: the docker images the image ships"
+          fi
+          after_kib=$(df -Pk / | awk 'NR==2 { print $4 }')
+          echo "freed $(( after_kib - before_kib )) KiB on / (${before_kib} KiB free before, ${after_kib} KiB after)"
+          df -h /
 
       # ---- the runner's disk, read and floored (T-278) -----------------
       # THE RED THIS PAIR OF STEPS EXISTS TO RENAME. Four consecutive runs

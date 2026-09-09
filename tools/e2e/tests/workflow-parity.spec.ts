@@ -1,5 +1,14 @@
 import { spawnSync } from "node:child_process";
-import { chmodSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
@@ -492,6 +501,24 @@ const INFRASTRUCTURE_STEPS: { match: RegExp; why: string }[] = [
       "bullets cannot be about. What each of the two steps has to look like is " +
       "derived by `diskGuardProblems` below, so this entry accounts for them " +
       "without becoming the place their shape is written down.",
+  },
+  {
+    match: /^df -Pk \//,
+    why:
+      "T-278-s2: the disk LEDGER — one identical reading after every step that can " +
+      "consume the runner's disk, so the interval between two of them attributes " +
+      "what a red floor cannot. A reading of the MACHINE, like the pair above, and " +
+      "for the same reason not a CONVENTIONS command. Which steps owe one, and that " +
+      "they all read the disk the same way, is derived by `diskLedgerProblems` below.",
+  },
+  {
+    match: /^df -h \/\n/,
+    why:
+      "T-278-s2: the step that FREES the runner's disk before the floor reads it — " +
+      "the one step of this job that changes the machine rather than reading it, " +
+      "which is why it is listed apart from the readings above. What it may remove, " +
+      "what it may never touch, and that it cannot fail the job are derived by " +
+      "`freeDiskProblems` below.",
   },
 ];
 
@@ -1101,6 +1128,690 @@ test("FIXTURE: six one-edit mutants of the disk guard — deleted, moved, floor 
     ["unconditional", conditional],
   ] as const) {
     expect(diskGuardProblems(mutated), `the ${what} mutant reds on ONE property`).toHaveLength(1);
+  }
+});
+
+// ── the disk ledger, and the room the image did not bring (T-278-s2) ───
+//
+// WHAT THE PAIR ABOVE COULD NOT SAY. T-278's two readings bracket the
+// LANE, so a red floor names the lane and nothing else: not the apt
+// install, not the cargo target, not the browser download. Two runs on
+// main — 34332162937 (c8d49b3) and 34334103318 (cc41ff3) — reached that
+// floor with about 184 MiB free on a 72G disk while the four before them
+// reached it with about 4.3 GiB, and the log could not attribute the
+// difference to any step, because nothing read the disk between the
+// checkout and the floor. The one differing input was the runner IMAGE.
+//
+// So ci.yml now carries two more things, and this section is their
+// keeper:
+//
+//  1. A LEDGER. Every step that can consume the disk is followed by one
+//     identical reading, and the step's NAME is the label. What
+//     attributes is the interval between two consecutive readings, so
+//     the property pinned here is COVERAGE — a heavy step whose
+//     successor is not a reading is a step whose consumption nobody can
+//     see — plus the reading being the SAME one at every site, since a
+//     ledger that drifts is a ledger whose deltas are not comparable.
+//
+//  2. A FREE-DISK STEP, immediately before the floor. Attribution alone
+//     leaves main red on every push, so the job removes preinstalled
+//     toolchains it never invokes. THE DANGER IS THE OBVIOUS ONE: a
+//     candidate list that grows to include something the job needs. So
+//     the two lists live in the step's `env:`, written once, and the
+//     derivation below reads THOSE BYTES — the same ones the shell runs
+//     — and refuses any overlap between them, refuses a candidate the
+//     workflow's own `actions/cache` steps restore, and refuses one
+//     under a toolchain the job invokes. NOTHING HERE TRANSCRIBES THE
+//     CANDIDATE LIST: what is pinned is that the list and the protected
+//     set are disjoint and that the protected set covers what the
+//     workflow itself declares, so adding a candidate stays a one-line
+//     edit to ci.yml and adding a DANGEROUS one reds.
+//
+// AND THE SPEC IS NOT THE ONLY GUARD, on purpose. This body's red
+// arrives from the e2e lane, which runs AFTER the free-disk step — so on
+// the run that reports the bad edit, the cache is already gone. The step
+// refuses the overlap itself at run time; that refusal is exercised by
+// the executing arm below, against a sandbox and never against the real
+// candidate list.
+
+/** A ledger reading's NAME. The step it closes is the label. */
+const LEDGER_NAME = /^disk (at job start|after )/;
+
+/**
+ * What makes a step able to consume the runner's disk: it installs, it
+ * restores a cache, or it builds. DERIVED from the step's own text
+ * rather than listed, so a heavy step added tomorrow is classified
+ * without editing this file — and reds if it arrives without a reading.
+ */
+const HEAVY_RUN = /\b(apt-get install|npm ci|cargo test|cargo install|playwright install)\b/;
+const HEAVY_USES = /^actions\/(cache|setup-node)@/;
+
+const isLedger = (s: WorkflowStep): boolean => s.name !== undefined && LEDGER_NAME.test(s.name);
+const isHeavy = (s: WorkflowStep): boolean =>
+  (s.run !== undefined && HEAVY_RUN.test(s.run)) ||
+  (s.uses !== undefined && HEAVY_USES.test(s.uses));
+
+/** The first line of a run block — a ledger step's whole reading. */
+const firstLine = (run: string): string => (run.split("\n")[0] ?? "").trim();
+const lastLine = (run: string): string => {
+  const kept = run.split("\n").filter((l) => l.trim() !== "");
+  return (kept[kept.length - 1] ?? "").trim();
+};
+
+/**
+ * Where the disk ledger has come apart. `problems` empty is the
+ * assertion; each entry names the step it is about and what to do.
+ * Takes the STEP LIST so a fixture can feed it a mutated copy.
+ */
+export function diskLedgerProblems(steps: WorkflowStep[]): string[] {
+  const heavy = steps.map((s, i) => ({ s, i })).filter(({ s }) => isHeavy(s));
+  const ledger = steps.map((s, i) => ({ s, i })).filter(({ s }) => isLedger(s));
+
+  // THE CENSUS BEFORE ITS ZERO, both ways. A classifier that matched no
+  // step would make every check below pass by having nothing to check,
+  // and a workflow with no readings is the state T-278-s2 exists to end.
+  if (heavy.length === 0) {
+    return [
+      "no step in .github/workflows/ci.yml classifies as able to consume the disk " +
+        `(${String(HEAVY_RUN)} over a step's run, ${String(HEAVY_USES)} over its ` +
+        "`uses:`). This job installs three node trees, restores two caches and " +
+        "builds a cargo target, so an empty classification is a broken classifier " +
+        "rather than a job that writes nothing — and it would make every check " +
+        "below vacuous.",
+    ];
+  }
+  if (ledger.length === 0) {
+    return [
+      "NO step in .github/workflows/ci.yml is a disk reading (a name matching " +
+        `${String(LEDGER_NAME)}). That is the state the four ENOSPC runs were in: ` +
+        "the job can say the lane had no room and never which step took it.",
+    ];
+  }
+
+  const problems: string[] = [];
+  const reading = firstLine(ledger[0]!.s.run ?? "");
+  if (!/^df\b/.test(reading)) {
+    problems.push(
+      `the first ledger step \`${String(ledger[0]!.s.name)}\` opens with \`${reading}\`, ` +
+        "which does not read the disk. The reading is the first line of the block, " +
+        "and every other ledger step is required to match it — so a first step that " +
+        "reads nothing makes the whole ledger read nothing.",
+    );
+  }
+
+  // 1. THE FIRST READING IS THE IMAGE'S ARRIVAL. It has to come before
+  //    anything of ours has written, or "the image arrives fuller" is
+  //    not a claim this job can support.
+  if (ledger[0]!.i > heavy[0]!.i) {
+    problems.push(
+      `the first disk reading sits at index ${String(ledger[0]!.i)}, after the first ` +
+        `step that consumes the disk (\`${String(heavy[0]!.s.name ?? heavy[0]!.s.uses)}\` ` +
+        `at index ${String(heavy[0]!.i)}). The arrival figure is the one reading no ` +
+        "step of ours can be blamed for, and taken later it is a reading of this job " +
+        "instead of of the image.",
+    );
+  }
+
+  // 2. ...and the LEDGER names the image, because that is the input the
+  //    two red runs differed by and the only one a log cannot re-derive.
+  //    Asked of the ledger rather than of its first step ON PURPOSE:
+  //    where the arrival reading SITS is check 1's property, and a
+  //    derivation that reds twice for one edit cannot say which of the
+  //    two it was pinning (method/roles/verifier.md 2b).
+  if (!ledger.some(({ s }) => (s.run ?? "").includes("ImageVersion"))) {
+    problems.push(
+      "no disk reading in this job prints `ImageVersion`. The runner image is the " +
+        "input runs 34332162937 and 34334103318 differed from their green " +
+        "predecessors by, and it is the one fact about the machine that no later " +
+        "step can reconstruct from the log.",
+    );
+  }
+
+  // 3. EVERY HEAVY STEP IS FOLLOWED BY A READING. This is the coverage
+  //    property: an unread interval is an unattributable one.
+  for (const { s, i } of heavy) {
+    const next = steps[i + 1];
+    if (next === undefined || !isLedger(next)) {
+      problems.push(
+        `\`${String(s.name ?? s.uses)}\` (index ${String(i)}) can consume the runner's ` +
+          "disk and is not followed by a reading — it is followed by " +
+          (next === undefined ? "the end of the job" : `\`${String(next.name ?? next.uses)}\``) +
+          ". Its consumption lands inside somebody else's interval, which is exactly " +
+          "how 4.2 GiB went unattributed across twenty-two steps.",
+      );
+    }
+  }
+
+  // 4. ONE READING, TAKEN THE SAME WAY EVERYWHERE. Deltas between two
+  //    different measurements are not deltas.
+  for (const { s } of ledger) {
+    const line = firstLine(s.run ?? "");
+    if (line !== reading) {
+      problems.push(
+        `\`${String(s.name)}\` reads the disk as \`${line}\` while the ledger's first ` +
+          `step reads it as \`${reading}\`. The ledger's whole value is the DIFFERENCE ` +
+          "between two of its readings, and two spellings are two measurements.",
+      );
+    }
+  }
+
+  // 5. A NAME REPEATED IS A STEP THE PUSH GUARD CANNOT PLACE, and the
+  //    ledger is where repetition is easiest to write by copying.
+  const seen = new Set<string>();
+  for (const { s } of ledger) {
+    const name = String(s.name);
+    if (seen.has(name)) {
+      problems.push(
+        `two ledger steps are both named \`${name}\`. \`gh\` reports a failing step by ` +
+          "NAME and push-guard.mjs looks that name up, so a duplicate is a reading " +
+          "nobody can place — and in a ledger the site IS the label.",
+      );
+    }
+    seen.add(name);
+  }
+
+  return problems;
+}
+
+test("every step that can consume the runner's disk is followed by a reading, taken the same way", () => {
+  const { steps } = loadWorkflow();
+  expect(
+    diskLedgerProblems(steps),
+    "T-278-s2: ci.yml reads the runner's disk after every step that can consume it, " +
+      "so the interval between two readings attributes what a red floor cannot",
+  ).toEqual([]);
+});
+
+test("FIXTURE: four one-edit mutants of the ledger — a reading dropped, one drifted, the image version gone, the arrival taken late — each red BY NAME", () => {
+  const { steps } = loadWorkflow();
+  expect(diskLedgerProblems(steps), "the real workflow derives clean").toEqual([]);
+
+  const firstHeavy = steps.findIndex((s) => isHeavy(s));
+  expect(firstHeavy, "the job has a step that consumes the disk").toBeGreaterThanOrEqual(0);
+  const afterFirstHeavy = firstHeavy + 1;
+  expect(isLedger(steps[afterFirstHeavy]!), "and a reading follows it").toBe(true);
+
+  // (1) A READING DROPPED — the state every step of the job was in
+  //     before this lane, one step at a time.
+  const dropped = steps.filter((_, i) => i !== afterFirstHeavy);
+  expect(diskLedgerProblems(dropped).join("\n"), "an unread heavy step is named").toContain(
+    "can consume the runner's disk and is not followed by a reading",
+  );
+
+  // (2) ONE READING DRIFTED. `df -h` instead of the ledger's own line:
+  //     still a disk reading, no longer a comparable one.
+  const drifted = steps.map((s, i) =>
+    i === afterFirstHeavy ? { ...s, run: "df -h /\n" } : s,
+  );
+  expect(diskLedgerProblems(drifted).join("\n"), "a second spelling is named").toContain(
+    "two spellings are two measurements",
+  );
+
+  // (3) THE IMAGE VERSION GONE from the arrival reading — the mutant
+  //     that leaves a complete-looking ledger and takes away the one
+  //     fact the two red runs actually differed by.
+  const firstLedger = steps.findIndex((s) => isLedger(s));
+  const unversioned = steps.map((s, i) =>
+    i === firstLedger ? { ...s, run: firstLine(s.run ?? "") } : s,
+  );
+  expect(diskLedgerProblems(unversioned).join("\n"), "a ledger with no image is named").toContain(
+    "no disk reading in this job prints `ImageVersion`",
+  );
+
+  // (4) THE ARRIVAL TAKEN LATE. Moving the first reading past the apt
+  //     install keeps every interval covered and destroys the only
+  //     figure that is about the MACHINE.
+  const late = steps.filter((_, i) => i !== firstLedger);
+  late.splice(afterFirstHeavy, 0, steps[firstLedger]!);
+  expect(diskLedgerProblems(late).join("\n"), "a late arrival reading is named").toContain(
+    "after the first step that consumes the disk",
+  );
+
+  // EACH MUTANT IS ALONE (method/roles/verifier.md 2b): four edits, four
+  // problem lists, one entry each — a derivation that reds for two
+  // reasons at once cannot say which property it was pinning.
+  for (const [what, mutated] of [
+    ["dropped reading", dropped],
+    ["drifted reading", drifted],
+    ["unversioned arrival", unversioned],
+    ["late arrival", late],
+  ] as const) {
+    expect(diskLedgerProblems(mutated), `the ${what} mutant reds on ONE property`).toHaveLength(1);
+  }
+});
+
+// ── the free-disk step ─────────────────────────────────────────────────
+
+/** The free-disk step's NAME. */
+const FREE_NAME = /^free runner disk before the floor\b/;
+
+/** The two keys ci.yml writes the policy in, once each. */
+const FREE_CANDIDATES = "E2E_DISK_CANDIDATES";
+const FREE_PROTECTED = "E2E_DISK_PROTECTED";
+
+/**
+ * The workspace as the WORKFLOW spells it. Actions expands this before
+ * the shell sees it; the YAML parser does not, so this is the literal
+ * the derivation meets and the sentinel it normalizes to.
+ */
+const WORKSPACE_EXPR = "${{ github.workspace }}";
+
+/** A path list written one per line in an `env:` block scalar. */
+const listOf = (value: string | undefined): string[] =>
+  (value ?? "")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l !== "");
+
+/**
+ * One spelling for two homes and one workspace, so a comparison is a
+ * string comparison. `~` is what ci.yml writes and what the step's own
+ * script expands; the workspace is an Actions expression.
+ */
+function canonical(p: string): string {
+  if (p === WORKSPACE_EXPR) return "<workspace>";
+  if (p === "~") return "<home>";
+  if (p.startsWith("~/")) return `<home>/${p.slice(2)}`;
+  if (p.startsWith("/")) return p.replace(/\/+$/, "");
+  return `<workspace>/${p.replace(/^\.\//, "")}`;
+}
+
+/** a is b, or one is inside the other — the only comparison that matters here. */
+const overlaps = (a: string, b: string): boolean =>
+  a === b || a.startsWith(`${b}/`) || b.startsWith(`${a}/`);
+
+/** a is b or inside b: what "protected covers this" means. */
+const covers = (guard: string, p: string): boolean => p === guard || p.startsWith(`${guard}/`);
+
+/**
+ * Toolchains the job INVOKES, each conditional on the job actually
+ * invoking it, so this table is a derivation and not a wish list: drop
+ * every cargo step and the rust entry stops being owed.
+ */
+const TOOLCHAIN_GUARDS: { keeps: string; when: RegExp; why: string }[] = [
+  {
+    keeps: "<home>/.rustup",
+    when: /^(cargo|rustc)\b/m,
+    why:
+      "the rust toolchain every cargo step in this job runs on, and the one the " +
+      "`Record rust toolchain` step exists to print",
+  },
+  {
+    keeps: "/opt/hostedtoolcache/node",
+    when: /^(npm|npx)\b/m,
+    why:
+      "the node the setup-node step selects; every npm and npx step in this job " +
+      "resolves through the tool cache, and removing it removes the interpreter " +
+      "the next step needs",
+  },
+  {
+    keeps: "/usr/lib",
+    when: /apt-get install/,
+    why:
+      "where the apt step's Tauri v2 prerequisites land — and the reason " +
+      "/usr/lib/jvm is not a candidate here despite being a large tree",
+  },
+];
+
+/**
+ * Where the free-disk step has come apart. `problems` empty is the
+ * assertion. Takes the STEP LIST so a fixture can feed it a mutated
+ * copy — no body in this file writes to `.github/`.
+ */
+export function freeDiskProblems(steps: WorkflowStep[]): string[] {
+  const floorIndex = steps.findIndex((s) => s.name !== undefined && DISK_BEFORE_NAME.test(s.name));
+  if (floorIndex < 0) {
+    return [
+      ".github/workflows/ci.yml has no floor step (a name matching " +
+        `${String(DISK_BEFORE_NAME)}), so there is nothing for the free-disk step to ` +
+        "sit before. `diskGuardProblems` above owns that absence; this derivation " +
+        "is about the step that makes the room the floor then reads.",
+    ];
+  }
+
+  const problems: string[] = [];
+  const found = steps.findIndex((s) => s.name !== undefined && FREE_NAME.test(s.name));
+  if (found < 0) {
+    return [
+      "NO step in .github/workflows/ci.yml frees the runner's disk (a name matching " +
+        `${String(FREE_NAME)}). That is the state ci.yml was in for runs 34332162937 ` +
+        "and 34334103318: the floor fires, correctly, and main stays red on every " +
+        "push until the image gets bigger or the job makes its own room.",
+    ];
+  }
+  if (found !== floorIndex - 1) {
+    problems.push(
+      `the free-disk step sits at index ${String(found)} and the floor reads the disk ` +
+        `at index ${String(floorIndex)}. It belongs immediately before the floor: the ` +
+        "reading the floor judges must be the disk this step LEFT, and a step that " +
+        "frees after the floor has read frees it for nobody.",
+    );
+  }
+
+  const free = steps[found]!;
+  const candidates = listOf(free.env?.[FREE_CANDIDATES]).map(canonical);
+  const guarded = listOf(free.env?.[FREE_PROTECTED]).map(canonical);
+  const run = free.run ?? "";
+
+  if (candidates.length === 0) {
+    problems.push(
+      `\`${String(free.name)}\` declares no \`${FREE_CANDIDATES}\`, so it removes ` +
+        "nothing. A free-disk step that frees nothing is the vacuous keeper this " +
+        "suite exists to refuse: it runs, it prints, it exits 0, and the floor " +
+        "behind it fires exactly as before.",
+    );
+  }
+  if (guarded.length === 0) {
+    problems.push(
+      `\`${String(free.name)}\` declares no \`${FREE_PROTECTED}\`, so nothing in the ` +
+        "job is named as off limits. The protected set is the only thing standing " +
+        "between a widened candidate list and the caches this workflow restores.",
+    );
+  }
+
+  for (const c of candidates) {
+    if (!c.startsWith("/") && !c.startsWith("<home>/")) {
+      problems.push(
+        `\`${c}\` is not an absolute path or a path under the home directory. A ` +
+          "relative candidate resolves against whatever directory the step happens " +
+          "to run in, which for this step is the CHECKOUT.",
+      );
+      continue;
+    }
+    if (c.split("/").filter((seg) => seg !== "").length < 2) {
+      problems.push(
+        `\`${c}\` names fewer than two path segments. \`rm -rf\` on a first-level ` +
+          "directory is not a toolchain removal, and the shape is one character away " +
+          "from the root itself.",
+      );
+    }
+  }
+
+  for (const c of candidates) {
+    for (const g of guarded) {
+      if (overlaps(c, g)) {
+        problems.push(
+          `\`${c}\` is a removal candidate and overlaps the protected \`${g}\`. The ` +
+            "two lists are declared together in this step's `env:` precisely so that " +
+            "one can be checked against the other — and this red arrives from the e2e " +
+            "lane, which runs AFTER the step, so the step refuses the overlap itself " +
+            "at run time as well.",
+        );
+      }
+    }
+  }
+
+  // THE CACHES ARE DERIVED, NEVER LISTED. Whatever this workflow tells
+  // actions/cache to restore is a path this step may not remove, and a
+  // cache added tomorrow is protected without editing this file.
+  for (const s of steps) {
+    if (s.uses === undefined || !/^actions\/cache@/.test(s.uses)) continue;
+    for (const entry of listOf(String(s.with?.path ?? "")).map(canonical)) {
+      if (!guarded.some((g) => covers(g, entry))) {
+        problems.push(
+          `this workflow restores \`${entry}\` into the runner (an \`actions/cache\` ` +
+            `step's \`path:\`) and the free-disk step's \`${FREE_PROTECTED}\` does not ` +
+            "cover it. A restored cache that the next step deletes is a cache the job " +
+            "paid for twice and used never.",
+        );
+      }
+    }
+  }
+
+  // ...and setup-node's own cache, which is declared by a KEY rather
+  // than by a path, so the path is the one thing this file must say.
+  for (const s of steps) {
+    if (s.uses === undefined || !/^actions\/setup-node@/.test(s.uses)) continue;
+    if (s.with?.cache !== "npm") continue;
+    if (!guarded.some((g) => covers(g, "<home>/.npm"))) {
+      problems.push(
+        "the setup-node step declares `cache: npm`, which restores the npm cache to " +
+          `\`~/.npm\`, and the free-disk step's \`${FREE_PROTECTED}\` does not cover ` +
+          "it. This is the one cache path the workflow does not spell, so it is the " +
+          "one this derivation has to.",
+      );
+    }
+  }
+
+  for (const guard of TOOLCHAIN_GUARDS) {
+    if (!steps.some((s) => guard.when.test(s.run ?? ""))) continue;
+    if (!guarded.some((g) => covers(g, guard.keeps))) {
+      problems.push(
+        `this job invokes what lives at \`${guard.keeps}\` (${guard.why}) and the ` +
+          `free-disk step's \`${FREE_PROTECTED}\` does not cover it.`,
+      );
+    }
+  }
+
+  // THE SCRIPT ITSELF. What it must do is what the log has to show:
+  // the disk before, each candidate's size, the disk after, the delta.
+  if (!run.includes(FREE_CANDIDATES) || !run.includes(FREE_PROTECTED)) {
+    problems.push(
+      `\`${String(free.name)}\` does not read both \`${FREE_CANDIDATES}\` and ` +
+        `\`${FREE_PROTECTED}\` in its script, so at least one of the two lists is ` +
+        "decorative: declared in the `env:`, derived from here, and never consulted " +
+        "by the shell that does the removing.",
+    );
+  }
+  if (!run.includes("du -sh")) {
+    problems.push(
+      `\`${String(free.name)}\` never runs \`du -sh\`, so the log says what was ` +
+        "removed and never what it was worth. The freed total is one number; the " +
+        "per-candidate sizes are what tell the next seat which candidate to keep.",
+    );
+  }
+  if (!/^df\b/.test(firstLine(run)) || !/^df\b/.test(lastLine(run))) {
+    problems.push(
+      `\`${String(free.name)}\` does not open and close with \`df\`. The reading in ` +
+        "the log is the remedy's own measurement, and one taken on only one side of " +
+        "the removals measures nothing.",
+    );
+  }
+  if (!run.includes("freed ")) {
+    problems.push(
+      `\`${String(free.name)}\` never prints what it freed. Two \`df\` tables are two ` +
+        "tables; the bytes between them are the claim, and a reader should not have " +
+        "to subtract.",
+    );
+  }
+  if (!run.includes("docker image prune")) {
+    problems.push(
+      `\`${String(free.name)}\` never prunes the docker images the runner image ` +
+        "ships. No step of this job runs a container, and they are the one candidate " +
+        "that is not a path on disk this step can `du`.",
+    );
+  }
+  if (/\bexit\s+[0-9]/.test(run)) {
+    problems.push(
+      `\`${String(free.name)}\` can exit non-zero. Freeing disk is NOT a gate — the ` +
+        "floor immediately after it is the gate, and it reads the disk this step " +
+        "leaves. A candidate that will not remove is one line and a carry-on; a " +
+        "step that reds here reds the job for the housekeeping rather than for the " +
+        "condition.",
+    );
+  }
+
+  return problems;
+}
+
+test("the runner's disk is freed before the floor reads it, and never where the job would miss it", () => {
+  const { steps } = loadWorkflow();
+  expect(
+    freeDiskProblems(steps),
+    "T-278-s2: ci.yml removes toolchains this job never invokes before the floor " +
+      "reads the disk — these are the ways that step has come apart",
+  ).toEqual([]);
+});
+
+test("FIXTURE: six one-edit mutants of the free-disk step — deleted, moved after the floor, a protected path among the candidates, an unprotected cache, `du` dropped, and a step that can fail the job — each red BY NAME", () => {
+  const { steps } = loadWorkflow();
+  expect(freeDiskProblems(steps), "the real workflow derives clean").toEqual([]);
+  const at = steps.findIndex((s) => s.name !== undefined && FREE_NAME.test(s.name));
+  expect(at, "the free-disk step is found").toBeGreaterThan(0);
+  const free = steps[at]!;
+
+  // (1) THE STEP DELETED — the state ci.yml was in for both red runs.
+  const deleted = steps.filter((_, i) => i !== at);
+  expect(freeDiskProblems(deleted).join("\n"), "a deleted step is named as absent").toContain(
+    "NO step in .github/workflows/ci.yml frees the runner's disk",
+  );
+
+  // (2) THE STEP MOVED past the floor, where it frees the disk for a
+  //     reading that has already been taken.
+  const moved = steps.filter((_, i) => i !== at);
+  moved.splice(at + 1, 0, free);
+  expect(freeDiskProblems(moved).join("\n"), "a moved step is named by index").toContain(
+    "frees after the floor has read",
+  );
+
+  // (3) A PROTECTED PATH AMONG THE CANDIDATES. /usr/lib/jvm is the
+  //     tempting one — a large tree this job never invokes — and it is
+  //     also where the apt step's Tauri prerequisites live.
+  const overlapping = steps.map((s, i) =>
+    i === at
+      ? {
+          ...s,
+          env: {
+            ...s.env,
+            [FREE_CANDIDATES]: `${String(s.env?.[FREE_CANDIDATES])}/usr/lib/jvm\n`,
+          },
+        }
+      : s,
+  );
+  expect(freeDiskProblems(overlapping).join("\n"), "an overlapping candidate is named").toContain(
+    "overlaps the protected",
+  );
+
+  // (4) A CACHE LEFT UNPROTECTED. One line out of the protected set and
+  //     the browser cache this workflow restores becomes removable.
+  const unprotected = steps.map((s, i) =>
+    i === at
+      ? {
+          ...s,
+          env: {
+            ...s.env,
+            [FREE_PROTECTED]: String(s.env?.[FREE_PROTECTED])
+              .split("\n")
+              .filter((l) => !l.includes("ms-playwright"))
+              .join("\n"),
+          },
+        }
+      : s,
+  );
+  expect(freeDiskProblems(unprotected).join("\n"), "an unprotected cache is named").toContain(
+    "does not cover it",
+  );
+
+  // (5) `du -sh` DROPPED. The step still frees; the log stops saying
+  //     what each candidate was worth, which is the measurement the
+  //     next seat needs to decide which candidate to stop removing.
+  const unmeasured = steps.map((s, i) =>
+    i === at ? { ...s, run: (s.run ?? "").replace("du -sh", "du -s") } : s,
+  );
+  expect(freeDiskProblems(unmeasured).join("\n"), "an unmeasured removal is named").toContain(
+    "never runs `du -sh`",
+  );
+
+  // (6) A STEP THAT CAN FAIL THE JOB. One `|| exit 1` and the
+  //     housekeeping starts reding runs the floor would have passed.
+  const fallible = steps.map((s, i) =>
+    i === at
+      ? {
+          ...s,
+          run: (s.run ?? "").replace(
+            '|| echo "docker image prune declined, carrying on"',
+            "|| exit 1",
+          ),
+        }
+      : s,
+  );
+  expect(freeDiskProblems(fallible).join("\n"), "a fallible step is named").toContain(
+    "can exit non-zero",
+  );
+
+  // EACH MUTANT IS ALONE (method/roles/verifier.md 2b).
+  for (const [what, mutated] of [
+    ["deleted", deleted],
+    ["moved", moved],
+    ["overlapping candidate", overlapping],
+    ["unprotected cache", unprotected],
+    ["unmeasured removal", unmeasured],
+    ["fallible", fallible],
+  ] as const) {
+    expect(freeDiskProblems(mutated), `the ${what} mutant reds on ONE property`).toHaveLength(1);
+  }
+});
+
+test("THE EXECUTING ARM: the free-disk step's own script measures, removes, refuses a protected path and skips an absent one — in a sandbox, and never against the real candidate list", () => {
+  const { steps } = loadWorkflow();
+  const free = steps.find((s) => s.name !== undefined && FREE_NAME.test(s.name));
+  expect(free, "the free-disk step is present").toBeDefined();
+
+  // THE DERIVATION ABOVE READS THE SCRIPT; this runs it. `diskGuardProblems`
+  // learned the same lesson at T-278's verdict — a token can be present
+  // and unreachable — and the shape here is worse, because a candidate
+  // loop that silently removes nothing looks exactly like one that has
+  // nothing to remove.
+  //
+  // WHAT IS NOT EXERCISED, said rather than left to be discovered: the
+  // REAL candidate list. This body overrides both env keys with paths
+  // inside a temp directory, and `sudo` and `docker` are stubs on PATH,
+  // so no line of it can reach /usr/share/dotnet or a docker daemon.
+  // The real list is the static derivation's to police.
+  const sandbox = mkdtempSync(path.join(tmpdir(), "t278s2-free-disk-"));
+  try {
+    const stubs = path.join(sandbox, "bin");
+    const home = path.join(sandbox, "home");
+    const present = path.join(sandbox, "toolchain-present", "deep");
+    const absent = path.join(sandbox, "toolchain-absent");
+    const keep = path.join(sandbox, "restored-cache");
+    for (const d of [stubs, home, present, keep]) {
+      mkdirSync(d, { recursive: true });
+    }
+    writeFileSync(path.join(present, "payload"), "x".repeat(64 * 1024));
+    writeFileSync(path.join(keep, "payload"), "the cache this job restored");
+    // `sudo` runs its argument as ourselves; `docker` answers without a
+    // daemon. Both are stubs so this body cannot escalate or reach one.
+    writeFileSync(path.join(stubs, "sudo"), '#!/bin/sh\nexec "$@"\n');
+    writeFileSync(path.join(stubs, "docker"), '#!/bin/sh\necho "docker stub: $*"\n');
+    chmodSync(path.join(stubs, "sudo"), 0o755);
+    chmodSync(path.join(stubs, "docker"), 0o755);
+
+    const runIt = () =>
+      spawnSync("bash", ["-e", "-c", free!.run ?? ""], {
+        cwd: sandbox,
+        env: {
+          ...process.env,
+          PATH: `${stubs}:${process.env.PATH ?? ""}`,
+          HOME: home,
+          [FREE_CANDIDATES]: [path.dirname(present), absent, keep, "relative/path"].join("\n"),
+          [FREE_PROTECTED]: [keep, "~/.cargo"].join("\n"),
+        },
+        encoding: "utf8",
+      });
+
+    const first = runIt();
+    const said = `${first.stdout}${first.stderr}`;
+    expect(first.status, `the step never fails the job: ${said}`).toBe(0);
+    expect(existsSync(path.dirname(present)), "a candidate is actually removed").toBe(false);
+    expect(existsSync(keep), "a protected path is NOT removed").toBe(true);
+    expect(said, "the removed candidate was measured first").toMatch(/\d\s*K?\s*\S*toolchain-present/);
+    expect(said, "an absent candidate is one line, never an error").toContain("absent on this image, skipped");
+    expect(said, "a protected path is refused BY NAME").toContain("REFUSED");
+    expect(said, "and a relative candidate is refused before it can resolve").toContain(
+      "fewer than two path segments",
+    );
+    expect(said, "the step says what it freed").toMatch(/freed -?\d+ KiB/);
+
+    // IDEMPOTENT: the second run has nothing left to remove and is still
+    // a clean exit — the property a re-run of a job depends on.
+    const again = runIt();
+    expect(again.status, `a second run is still clean: ${again.stdout}${again.stderr}`).toBe(0);
+    expect(again.stdout, "and now reports the removed candidate as absent").toContain(
+      "absent on this image, skipped",
+    );
+  } finally {
+    rmSync(sandbox, { recursive: true, force: true });
   }
 });
 
