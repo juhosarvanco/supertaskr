@@ -5,12 +5,12 @@ feature: F-06
 milestone: 4
 size: S
 priority: 2
-status: planned
+status: building
 suggested_by: "@human (2026-09-09): decision C of the backlog review — \"Are the parked cards still in the priority queue in some way or are they just forgotten?\" — they are forgotten; ruled yes to a machine-read wake condition"
 blocked_by: [T-282]
 touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, method/tasks/TASK-FORMAT.md]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
