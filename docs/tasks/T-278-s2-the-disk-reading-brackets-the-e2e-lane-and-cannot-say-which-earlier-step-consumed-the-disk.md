@@ -5,12 +5,12 @@ feature: F-04
 milestone: 4
 size: S
 priority: 2
-status: planned
+status: building
 suggested_by: "executor claude-opus-5@subagent @T-278, 2026-09-09, at 6fe5a23"
 blocked_by: []
 touches: [.github/workflows/ci.yml, tools/e2e/tests/workflow-parity.spec.ts]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review:
