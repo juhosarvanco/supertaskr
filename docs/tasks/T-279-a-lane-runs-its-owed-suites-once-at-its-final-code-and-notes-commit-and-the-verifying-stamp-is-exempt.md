@@ -426,3 +426,28 @@ names neither fenced file, and the snapshot-coverage test walks only `docs-templ
   exemption sentence, so the one checklist a seat fills top to bottom
   prompts for the count and not for *"no suite was re-run for the stamp"*.
 
+
+#### Step 7 — the gates my OWN commits could move, re-run at MY tip
+
+The verdict above and the three cards are a commit, `28af1e3`, and prose
+is a code input here. Re-run at `28af1e3` (not at the commit I was sent):
+
+    node tools/method-evals/run.mjs                    exit 0   10 model-free eval(s)
+    node tools/method-evals/run.mjs --selftest         exit 0   10, POSITIVE CONTROL
+    node tools/e2e/scripts/docs-gate.mjs <my 4 paths>  exit 1   FIRES — the answer, not a failure;
+                                                               injection scan 0 hits, every live
+                                                               card's frontmatter parses with a
+                                                               legal status, budgets hold
+    gate-verdict suite=parser exit=0 bodies=389  targets=1 ref=28af1e3… verdict=GREEN
+    gate-verdict suite=app    exit=0 bodies=1171 targets=1 ref=28af1e3… verdict=GREEN
+    gate-verdict suite=e2e    exit=0 bodies=764  targets=1 ref=28af1e3… verdict=GREEN
+
+The rust leg is not owed by a docs-only diff and was not re-run here; it
+was green at `7b9f2ee` (654 bodies, 18 targets) in the battery above.
+
+**THE FIGURE CASE, DISCLOSED RATHER THAN HIDDEN.** The commit that
+carries THIS section is one more prose commit to this same card — the
+class the docs gate has already fired on, with no frontmatter moved. The
+`parser` census, which reads every card, was re-run after it and is
+recorded beside the bench shas in `verdict-T-279.md`; `app` and `e2e`
+stand at `28af1e3`, and the integrator re-derives at the merge as usual.
