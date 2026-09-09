@@ -153,6 +153,7 @@ import {
   value,
   withMargin,
   triageClusterRecs,
+  wakeRecs,
 } from "./dispatch-brief.mjs";
 import {
   HOLDER_CODES,
@@ -913,6 +914,15 @@ async function main(argv) {
     // T-282's triage clusters — the section criterion 1 names, rendered
     // from the same context the report reads (the wiring T-282-s1 owed).
     if (full) say(render(triageClusterRecs(dctx)));
+    // T-285's woken parked cards — the section criterion 2 names,
+    // rendered from the same context. UNGUARDED, unlike the clusters
+    // above, and the difference is the question each answers: this
+    // command's default view is *what can I start?*, a parked card whose
+    // condition now holds is a candidate for exactly that, and the
+    // failure the card was filed against is cards being FORGOTTEN. So
+    // `wakeRecs` spends `ctx.full` itself — one counted line by default,
+    // the page behind the flag.
+    say(render(wakeRecs(dctx)));
   }
 
   /**

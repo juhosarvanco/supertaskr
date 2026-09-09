@@ -15,6 +15,9 @@ size: M                  # S | M | L — sets the ceremony tier
 status: planned          # suggested | planned | building | verifying |
                          # rejected | merging | done | parked
 blocked_by: [T-015]
+wake:                    # PARKED cards only: the event that brings this card
+                         # back, in a field instead of only in prose. Its three
+                         # forms and its default are under "Triage encoding".
 touches: [C-03, src/egress/]   # expected blast radius; orchestrator never
                                # parallelizes tasks with overlapping touches
 suggested_by:            # role, model@session, or human — set on suggestions;
@@ -356,6 +359,54 @@ the parser agree:
   its needle at its own ref, and where the ask no longer holds it says
   so in writing and parks it back with a NEW condition. Parking twice
   with the same note is how a shelf forms.
+
+  **AND THE CONDITION IS WRITTEN IN A FIELD, NOT ONLY IN PROSE, BECAUSE
+  A PROSE CONDITION IS ONE NOBODY READS.** The rule above was written,
+  obeyed and inert: measured on this method's own project on 2026-09-09,
+  a hundred and twenty-nine parked cards carried thirty-nine prose
+  conditions between them and NOT ONE was ever checked by anything, so a
+  parked card resurfaced only when a human re-read the whole folder —
+  which happened once, in an amnesty, for a hundred and forty cards. The
+  encoding is one optional frontmatter key:
+
+      wake: T-014        # a CARD: holds once that card's status is done
+      wake: 2026-11-01   # an ISO DATE: holds once the clock reaches that day
+      wake: fence        # THE DEFAULT: holds once a lane is dispatched whose
+                         # expanded fence overlaps this card's own touches:
+
+  **THE DEFAULT IS THE FENCE AND AN ABSENT FIELD MEANS IT** — that is the
+  paragraph above, spelled as a value, so a card that says nothing still
+  has the condition that paragraph gives it. The prose note STAYS: the
+  field is the machine-readable half of the same sentence, never a
+  replacement for the human-readable one, and a note explaining WHY is
+  not derivable from a value.
+
+  **EXISTING PARKED CARDS ARE NOT REWRITTEN FOR THIS.** Their prose
+  conditions stand as written, and the field is added by the seat at the
+  next triage that touches the card — a hundred-and-twenty-nine-card
+  frontmatter sweep is a commit nobody can review, and it would restate
+  in a field what its author already wrote in a sentence.
+
+  **A CONDITION THE READER CANNOT PLACE IS REPORTED, NEVER DEFAULTED.**
+  A `wake:` value that is neither a card id, nor a day on the calendar,
+  nor the word `fence` — including the key written and left blank — is
+  not the default: the author was reaching for something else, and
+  answering `fence` would hide a half-written card behind a
+  correct-looking answer.
+
+  **AND A CARD WITH NEITHER THE FIELD NOR A PROSE CONDITION IS FLAGGED,
+  WHICH IS THIS RULE'S ONLY ENFORCEMENT.** The prose test is deliberately
+  narrow and is stated here so that an author and a reader are looking at
+  one sentence: **a line of the card's BODY — never its frontmatter —
+  carrying the word `unpark` or the word `wake`, case-insensitively,
+  bounded on the left** (so `awake` is not a condition, and neither is
+  the `parked` every parking note spells about itself; and `un-park`, the
+  hyphenated spelling the amnesty triage's own `**UN-PARK WHEN:**` template
+  writes on nine live parked cards, IS `unpark`). It is not a parse
+  of the condition and must never become one; the machine-readable half
+  is the FIELD. The flag is a count and a list of ids for a human to
+  read — never a closure, never a status change, and the remedy is the
+  field at the next triage that touches the card.
 - Rejected: the file MOVES to `docs/tasks/rejected/`, keeping
   `status: rejected` plus a dated one-line reasoning. The task globs
   are deliberately flat, so nothing under rejected/ is a model input.

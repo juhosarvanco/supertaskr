@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **807 behaviours** — 805 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **816 behaviours** — 814 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -125,6 +125,15 @@ Census: **807 behaviours** — 805 extracted sentences + 2 named-not-extracted (
 - T-283 C2 — `inside the fence` is determined by the dispatch-time MANIFEST, in both files that say it
 - T-283 C3 — a LISTED follow-through is checked against the limits, never waved through for being listed
 - T-283 C4 — the file carrying the BASE-REF ruling names the follow-through carve-out that amends it
+- A `wake:` NAMING A CARD HOLDS ONCE THAT CARD IS DONE, and the same board with it unfinished wakes nothing
+- A `wake:` NAMING A DATE HOLDS ON BOTH SIDES OF THE CLOCK, and the clock is the only thing that moves
+- THE DEFAULT CONDITION IS THE FENCE, and it holds exactly where a live lane's expanded fence overlaps
+- THE THREE FORMS ARE READ OFF THE FIELD, and a value none of them place is REPORTED rather than defaulted
+- PARKED WITHOUT A CONDITION COUNTS AND NAMES THE CARDS, and the prose test is the one TASK-FORMAT states
+- THE WAKE VIEW'S DEFAULT IS ONE COUNTED LINE AND `--full` IS THE PAGE, and every line carries its stamp
+- THE WAKE VIEW IS A READ — it derives the live board and writes nothing into it
+- THE WOKEN SECTION REACHES THE RENDERED ANSWER — `--dispatch` carries the counted line and `--full` the page
+- THE PROSE TEST SEES THE BOARD'S OWN `UN-PARK WHEN:` SPELLING — nine live parked cards write the condition that way and the flag calls them conditionless
 
 ## card-figures
 

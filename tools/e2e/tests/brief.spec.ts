@@ -25,10 +25,15 @@ import {
   DispatchLaneFinding,
   EXIT,
   GATE_SOURCE_DIRS,
+  NO_GROUND,
   PACK_TRANSCRIPTION_LIMIT,
+  PARKED_STATUS,
   PIPE_BUFFER_BYTES,
+  PROSE_WAKE_PATTERN,
   SPAWNSYNC_DEFAULT_MAXBUFFER,
   TRIAGE_STATUSES,
+  WAKE_FENCE,
+  WOKEN_BY_STATUS,
   architectureText,
   assembleBrief,
   boardCensus,
@@ -50,6 +55,7 @@ import {
   fenceOverlaps,
   fencePaths,
   fieldList,
+  fieldScalar,
   findableNeedle,
   frontmatterFields,
   gateSources,
@@ -69,13 +75,16 @@ import {
   note,
   packRecs,
   packageCommands,
+  parkedBoard,
   parseWorktreePorcelain,
   readAdditions,
   readDoc,
+  readWake,
   readSubtractions,
   render,
   resolveIntegrationRef,
   roleText,
+  ruleWake,
   runDispatchLane,
   sharedGround,
   slugMapFromFields,
@@ -91,6 +100,7 @@ import {
   triageClusters,
   unstampedLines,
   value,
+  wakeRecs,
   withMargin,
   worktreePorcelain,
 } from "../scripts/dispatch-brief.mjs";
@@ -4989,4 +4999,503 @@ test("T-283 C4 — the file carrying the BASE-REF ruling names the follow-throug
       "notes AT THE TIP — the ruling must name the `In-fence follow-through` carve-out and the ref " +
       "it is read at, or the two files contradict each other on their face",
   ).toMatch(/In-fence follow-through/);
+});
+
+// ── §THE WAKE CONDITION (T-285) ──────────────────────────────────────
+//
+// A park is a CONDITION, not a shelf — `method/roles/orchestrator.md`
+// has said so since it was written, and nothing read the condition, so
+// a hundred and twenty-nine parked cards sat unread until a human went
+// through the folder by hand. Every body below drives the derivation
+// over a FIXTURE board and asserts a PROPERTY, never a tally off the
+// live board: the count moves with every triage and the rules do not.
+//
+// AND EVERY BODY CARRIES ITS OWN NEGATIVE BOARD. The criterion asks
+// that each be "seen red on a board that lacks the arrangement", so the
+// arrangement and its absence are two fixtures inside one body: the
+// named card done and not done, the clock on both sides of the date,
+// the lane overlapping and not. A body with only the positive arm
+// passes against a derivation that answers WOKEN to everything.
+
+/** One fixture card, spelled the way `cardIndex` hands one over. */
+type WakeFixture = {
+  id: string;
+  status: string;
+  wake?: string | string[];
+  touches?: string[];
+  title?: string;
+  body?: string;
+};
+
+/**
+ * A fixture board and its bodies. The frontmatter is REAL text so that
+ * `parkedBoard` runs the same `cardBody` split the live board takes —
+ * which is what makes the "a wake word in the frontmatter is not a prose
+ * condition" arm below a measurement rather than an assertion about a
+ * function nobody called.
+ */
+function wakeBoard(fixtures: WakeFixture[]): {
+  cards: Map<string, { id: string; file: string; title: string; fields: Record<string, string | string[]> }>;
+  readText: (file: string) => string;
+} {
+  const cards = new Map<
+    string,
+    { id: string; file: string; title: string; fields: Record<string, string | string[]> }
+  >();
+  const bodies = new Map<string, string>();
+  for (const f of fixtures) {
+    const file = `docs/tasks/${f.id}-fixture.md`;
+    const fields: Record<string, string | string[]> = { id: f.id, status: f.status };
+    if (f.title !== undefined) fields["title"] = f.title;
+    if (f.wake !== undefined) fields["wake"] = f.wake;
+    if (f.touches !== undefined) fields["touches"] = f.touches;
+    cards.set(f.id, { id: f.id, file, title: f.title ?? `${f.id} fixture`, fields });
+    const frontmatter = [`id: ${f.id}`, `status: ${f.status}`, ...(f.title === undefined ? [] : [`title: ${f.title}`])];
+    bodies.set(file, `---\n${frontmatter.join("\n")}\n---\n\n${f.body ?? "Parked. Nothing else written down."}\n`);
+  }
+  return { cards, readText: (file) => bodies.get(file) ?? "" };
+}
+
+/** One component, so the SLUG face of a fence is exercised and not assumed. */
+const WAKE_COMPS = [
+  {
+    id: "C-08",
+    file: "docs/architecture/components/C-08-fixture.md",
+    slugs: ["app-board"],
+    paths: ["app/src/components/board/"],
+  },
+];
+const WAKE_SLUGS = slugMapFromFields(WAKE_COMPS);
+
+/** The rendered `--full` section over a fixture world. */
+function wakeAnswer(
+  fixtures: WakeFixture[],
+  lanes: { taskId: string }[],
+  at = "2026-09-09T00:00:00.000Z",
+): string {
+  const { cards, readText } = wakeBoard(fixtures);
+  return render(
+    wakeRecs(
+      { root: repoRoot, ref: "abc1234", at, host: "fixture", full: true },
+      { cards, readText, lanes, slugs: WAKE_SLUGS, comps: WAKE_COMPS },
+    ),
+  );
+}
+
+/** One card's ruling over a fixture world — the derivation under the render. */
+function wakeRulingOf(
+  id: string,
+  fixtures: WakeFixture[],
+  lanes: { taskId: string }[],
+  today = "2026-09-09",
+): { state: string; why: string; record: string } {
+  const { cards, readText } = wakeBoard(fixtures);
+  const board = parkedBoard({ cards, readText });
+  const card = board.find((c) => c.id === id);
+  if (card === undefined) throw new Error(`${id} is not a parked card on this fixture board`);
+  const ruled = ruleWake(card, {
+    cards,
+    lanes,
+    slugs: WAKE_SLUGS,
+    comps: WAKE_COMPS,
+    today,
+  });
+  return { state: ruled.state, why: ruled.why, record: ruled.record };
+}
+
+test("A `wake:` NAMING A CARD HOLDS ONCE THAT CARD IS DONE, and the same board with it unfinished wakes nothing", () => {
+  // KILLED BY: a reader that treats the presence of the field as the
+  // condition — which is the whole failure mode of a machine-read park,
+  // because a card that wakes on every run is a card nobody reads twice.
+  const board = (namedStatus: string): WakeFixture[] => [
+    { id: "T-500", status: "parked", wake: "T-700", touches: ["docs/NORTH_STAR.md"] },
+    { id: "T-700", status: namedStatus, touches: ["docs/NORTH_STAR.md"] },
+  ];
+
+  const woken = wakeRulingOf("T-500", board("done"), []);
+  expect(woken.state, "the named card is done, so the condition holds").toBe("held");
+  expect(woken.record).toContain("T-700 is done");
+
+  // THE BOARD THAT LACKS THE ARRANGEMENT. Same card, same field, same
+  // clock — only the named card's status moves, and the answer must move
+  // with it.
+  const still = wakeRulingOf("T-500", board("building"), []);
+  expect(still.state, "the named card is not done, so the condition does not hold").toBe("waiting");
+  expect(still.record).toContain("T-700 is building");
+
+  // AND A CARD NOBODY CAN FIND IS NOT A CONDITION THAT FAILED. `unknown`
+  // is `fenceLedger`'s own vocabulary — no wake proved and none ruled
+  // out — and folding it into `waiting` is how a card stays parked
+  // because a file could not be opened.
+  const blind = wakeRulingOf("T-500", [board("done")[0] as WakeFixture], []);
+  expect(blind.state).toBe("unknown");
+  expect(blind.why).toBe("no-such-card");
+
+  // THE RENDERED ANSWER CARRIES BOTH, in the section a triage seat reads.
+  expect(wakeAnswer(board("done"), [])).toContain("T-500 — wake: T-700 — HELD: T-700 is done");
+  expect(wakeAnswer(board("building"), [])).not.toContain("T-500 — wake: T-700 — HELD");
+});
+
+test("A `wake:` NAMING A DATE HOLDS ON BOTH SIDES OF THE CLOCK, and the clock is the only thing that moves", () => {
+  // KILLED BY: comparing anything but the day — a lexical `>=` over two
+  // `YYYY-MM-DD` strings IS the numeric ordering for that shape, and the
+  // boundary is the arm that catches a `>` written for a `>=`.
+  const board: WakeFixture[] = [
+    { id: "T-501", status: "parked", wake: "2026-09-09", touches: ["docs/NORTH_STAR.md"] },
+  ];
+
+  expect(wakeRulingOf("T-501", board, [], "2026-09-10").state, "the clock is past the day").toBe("held");
+  expect(wakeRulingOf("T-501", board, [], "2026-09-09").state, "the day names its own start").toBe("held");
+  // THE BOARD THAT LACKS THE ARRANGEMENT: one day earlier, nothing else.
+  expect(wakeRulingOf("T-501", board, [], "2026-09-08").state, "the clock has not reached the day").toBe(
+    "waiting",
+  );
+
+  // A DATE-SHAPED VALUE THAT NAMES NO DAY IS REPORTED, NEVER WAITED ON:
+  // a condition the clock can never reach reads as a park with a plan.
+  const impossible = wakeRulingOf(
+    "T-501",
+    [{ ...(board[0] as WakeFixture), wake: "2026-02-30" }],
+    [],
+    "2027-01-01",
+  );
+  expect(impossible.state).toBe("unknown");
+  expect(impossible.why).toBe("unreadable");
+
+  // AND THE CLOCK IS A LIVE FACT, so the row carries a time and a host
+  // and never a commit (this module's contract rule 3). The card form
+  // above is a read of the BOARD and carries the ref instead.
+  const rendered = wakeAnswer(board, [], "2026-09-10T00:00:00.000Z");
+  const row = rendered.split("\n").find((l) => l.startsWith("T-501 —")) ?? "";
+  expect(row, "a clock reading is stamped live").toContain("<- read 2026-09-10T00:00:00.000Z on fixture ;");
+  expect(row).not.toContain("<- @ abc1234");
+});
+
+test("THE DEFAULT CONDITION IS THE FENCE, and it holds exactly where a live lane's expanded fence overlaps", () => {
+  // KILLED BY: a second spelling of the fence rule. This asks
+  // `fenceOverlaps` — the same pair the dispatch order and the triage
+  // clusters spend — so the SLUG face works without being taught: the
+  // parked card fences a slug, the lane fences a path inside the
+  // component that slug expands to, and they overlap.
+  const parked: WakeFixture = { id: "T-502", status: "parked", touches: ["app-board"] };
+  const overlapping: WakeFixture = {
+    id: "T-800",
+    status: "building",
+    touches: ["app/src/components/board/TaskCard.tsx"],
+  };
+  const elsewhere: WakeFixture = { id: "T-801", status: "building", touches: ["docs/NORTH_STAR.md"] };
+
+  const held = wakeRulingOf("T-502", [parked, overlapping], [{ taskId: "T-800" }]);
+  expect(held.state, "a lane was dispatched on ground this card reserves").toBe("held");
+  expect(held.record).toContain("lane T-800 was dispatched on overlapping ground");
+  expect(held.record, "the shared tokens come out of the overlap's own answer").toContain(
+    "app-board against app/src/components/board/TaskCard.tsx",
+  );
+
+  // THE BOARD THAT LACKS THE ARRANGEMENT, twice: a lane somewhere else,
+  // and no lane at all.
+  expect(wakeRulingOf("T-502", [parked, elsewhere], [{ taskId: "T-801" }]).state).toBe("waiting");
+  expect(wakeRulingOf("T-502", [parked], []).record).toBe("no lane is live");
+
+  // AN ABSENT FIELD AND THE WORD ITSELF ARE ONE CONDITION — the default
+  // orchestrator.md names, spelled as a value.
+  const spelled = wakeRulingOf(
+    "T-502",
+    [{ ...parked, wake: "fence" }, overlapping],
+    [{ taskId: "T-800" }],
+  );
+  expect(spelled.state).toBe("held");
+  expect(spelled.record).toBe(held.record);
+
+  // A LANE WHOSE CARD THIS CHECKOUT CANNOT READ HOLDS AN UNKNOWN FENCE,
+  // NEVER AN EMPTY ONE (T-143 criteria 1 and 2, the sentence
+  // `fenceLedger` above carries): with the lane's card off the board the
+  // answer is `unknown` NAMING the lane, and never `waiting`.
+  const blind = wakeRulingOf("T-502", [parked], [{ taskId: "T-800" }]);
+  expect(blind.state).toBe("unknown");
+  expect(blind.why).toBe("blind-lane");
+  expect(blind.record).toContain("T-800");
+
+  // AND A CARD WITH NO FENCE GIVES THE DEFAULT NO GROUND, which is its
+  // own class: the sentence is identical on every member, so the view
+  // COUNTS it rather than printing it once per card.
+  const groundless = wakeRulingOf("T-502", [{ ...parked, touches: [] }, overlapping], [{ taskId: "T-800" }]);
+  expect(groundless.state).toBe("unknown");
+  expect(groundless.why).toBe(NO_GROUND);
+
+  const rendered = wakeAnswer([parked, overlapping], [{ taskId: "T-800" }]);
+  expect(rendered).toContain("T-502 — wake: fence (the default, no field) — HELD: lane T-800");
+  expect(rendered, "a lane list is a LIVE read and is stamped with a time and a host").toContain(
+    "<- read 2026-09-09T00:00:00.000Z on fixture ;",
+  );
+});
+
+test("THE THREE FORMS ARE READ OFF THE FIELD, and a value none of them place is REPORTED rather than defaulted", () => {
+  // KILLED BY: a reader that falls back to the default on anything it
+  // cannot parse. The default is what the ABSENCE of the field means; an
+  // author who typed the key was reaching for something else, and
+  // answering `fence` hides a half-written card behind a correct-looking
+  // answer.
+  expect(readWake({ id: "T-1" })).toEqual({ form: WAKE_FENCE, raw: "", declared: false, why: "" });
+  expect(readWake({ wake: "fence" })).toEqual({ form: WAKE_FENCE, raw: "fence", declared: true, why: "" });
+  expect(readWake({ wake: "T-14" }).form).toBe("card");
+  expect(readWake({ wake: "T-14" }).raw, "an id is normalised through the ONE normaliser").toBe("T-014");
+  expect(readWake({ wake: "T-205-s16" }).raw, "the suffix is part of the id, never a slug").toBe("T-205-s16");
+  expect(readWake({ wake: '"T-014"' }).form, "a quoted scalar is the same scalar").toBe("card");
+  expect(readWake({ wake: "2026-11-01" })).toEqual({
+    form: "date",
+    raw: "2026-11-01",
+    declared: true,
+    why: "",
+  });
+
+  for (const [value, hint] of [
+    ["soonish", "none of the three forms"],
+    ["", "field nobody finished"],
+    ["2026-02-30", "no day on the calendar"],
+  ] as [string, string][]) {
+    const read = readWake({ wake: value });
+    expect(read.form, `${JSON.stringify(value)} is not a condition this view can place`).toBe("unreadable");
+    expect(read.declared, "and it was still DECLARED — the report says so").toBe(true);
+    expect(read.why).toContain(hint);
+  }
+  const listed = readWake({ wake: ["T-014", "T-015"] });
+  expect(listed.form, "a wake condition is ONE event").toBe("unreadable");
+  expect(listed.why).toContain("list");
+
+  // THE STATUS WORDS ARE THE PARSER'S OWN, never a list retyped here —
+  // the licence `TRIAGE_STATUSES` takes above, for the same reason.
+  const vocabulary = taskStatuses(repoRoot);
+  expect(vocabulary, "the column this view rules on is a status the parser knows").toContain(PARKED_STATUS);
+  expect(vocabulary, "the status a named card must reach is one the parser knows").toContain(WOKEN_BY_STATUS);
+});
+
+test("PARKED WITHOUT A CONDITION COUNTS AND NAMES THE CARDS, and the prose test is the one TASK-FORMAT states", () => {
+  // KILLED BY: a prose test that reads the frontmatter, or one loose
+  // enough to see a condition in the word every parking note already
+  // spells about itself. The failure that matters is the CONFIDENT one —
+  // a card whose author wrote a condition, reported as having written
+  // none — so both boundaries are driven here.
+  const board: WakeFixture[] = [
+    { id: "T-510", status: "parked", body: "Parked at the ninth triage. Unpark with the second adapter." },
+    { id: "T-511", status: "parked", body: "Parked at the ninth triage. Too early to build." },
+    { id: "T-512", status: "parked", wake: "2026-12-01", body: "Parked at the ninth triage." },
+    { id: "T-513", status: "parked", title: "the wake field on parked cards", body: "Parked. Nothing here." },
+    { id: "T-514", status: "parked", body: "Parked while the runner is awake and the disk is full." },
+    { id: "T-515", status: "planned", body: "Not parked, so not this view's business at all." },
+  ];
+  const answer = wakeAnswer(board, []);
+  const line = answer.split("\n").find((l) => l.includes("state no condition at all")) ?? "";
+
+  expect(line, "the count is the criterion's own word, and the ids are beside it").toContain(
+    "3 parked card(s) state no condition at all",
+  );
+  expect(line, "no field and no prose").toContain("T-511");
+  expect(line, "a wake word in the FRONTMATTER is not a prose condition — the test reads the BODY").toContain(
+    "T-513",
+  );
+  expect(line, "`awake` is not `wake`: the test is bounded on the left").toContain("T-514");
+  expect(line, "a prose condition is a condition, and this view rewrites no card to prove it").not.toContain(
+    "T-510",
+  );
+  expect(line, "a card carrying the field states a condition").not.toContain("T-512");
+  expect(line, "a card that is not parked is not in this view").not.toContain("T-515");
+
+  // THE FLAG SAYS WHAT IT IS. The criterion's own words are on the page a
+  // triage seat reads, not only in a comment nobody opens.
+  expect(answer).toContain("PARKED WITHOUT A CONDITION");
+  expect(answer).toContain("NEVER A CLOSURE");
+  expect(answer).toContain("CHANGES NO CARD");
+
+  // AND THE METHOD TEXT STATES THE SAME TEST, so an author and this
+  // reader are looking at one sentence rather than two that drift.
+  const taskFormat = readDoc("method/tasks/TASK-FORMAT.md");
+  expect(taskFormat, "the encoding is stated in the method text").toContain("wake: fence");
+  expect(taskFormat, "the prose test is stated, not left to be guessed").toContain(
+    "carrying the word `unpark` or the word `wake`",
+  );
+  expect(taskFormat, "and existing cards are not rewritten for it").toContain(
+    "EXISTING PARKED CARDS ARE NOT REWRITTEN",
+  );
+  expect(PROSE_WAKE_PATTERN.test("Unpark with the second adapter.")).toBe(true);
+  expect(PROSE_WAKE_PATTERN.test("Parked at the ninth triage.")).toBe(false);
+  expect(PROSE_WAKE_PATTERN.test("the runner is awake")).toBe(false);
+});
+
+test("THE WAKE VIEW'S DEFAULT IS ONE COUNTED LINE AND `--full` IS THE PAGE, and every line carries its stamp", () => {
+  // KILLED BY: rendering the whole page at every verbosity — the
+  // regression T-225 already paid for once on this same command, where
+  // the answer's own size turned out to be the triage queue's capacity.
+  const board: WakeFixture[] = [
+    { id: "T-520", status: "parked", wake: "T-700", touches: ["docs/NORTH_STAR.md"] },
+    { id: "T-521", status: "parked", wake: "2030-01-01", touches: ["docs/NORTH_STAR.md"] },
+    { id: "T-700", status: "done", touches: ["docs/NORTH_STAR.md"] },
+  ];
+  const { cards, readText } = wakeBoard(board);
+  const ctx = { root: repoRoot, ref: "abc1234", at: "2026-09-09T00:00:00.000Z", host: "fixture" };
+  const deps = { cards, readText, lanes: [], slugs: WAKE_SLUGS, comps: WAKE_COMPS };
+
+  const short = render(wakeRecs({ ...ctx, full: false }, deps));
+  expect(short).toContain("1 of 2 parked card(s) have woken");
+  expect(short).toContain("add --full");
+  expect(short, "the counted line is the whole of the default view").not.toContain("T-520 —");
+
+  const full = render(wakeRecs({ ...ctx, full: true }, deps));
+  for (const heading of ["WOKEN", "STILL PARKED", "PARKED WITHOUT A CONDITION"]) {
+    expect(full, `the full view carries ${heading}`).toContain(heading);
+  }
+  expect(full).toContain("T-520 — wake: T-700 — HELD:");
+  expect(full).toContain("1 parked card(s) carry a condition that does not hold");
+
+  // THE PROVENANCE FLOOR, on both arms: every rendered line that is not a
+  // note ends in the stamp saying which tree, or which clock, it was read
+  // at. And the floor is only worth its line if the detector can see —
+  // strip the stamps and it must name every line it took one from.
+  expect(unstampedLines(short)).toEqual([]);
+  expect(unstampedLines(full)).toEqual([]);
+  const stamped = full.split("\n").filter((l) => l.includes("  <- ")).length;
+  expect(stamped).toBeGreaterThan(3);
+  expect(unstampedLines(full.split("\n").map((l) => l.replace(/ {2}<- .*$/, "")).join("\n")).length).toBe(
+    stamped,
+  );
+});
+
+test("THE WAKE VIEW IS A READ — it derives the live board and writes nothing into it", () => {
+  // KILLED BY: any write. The criterion's claim is that waking is the
+  // SEAT'S act, and a view that promoted a card would be the worst
+  // available failure: a disposition nobody decided, wearing a report's
+  // clothes. The same guard the triage clusters keep over docs/tasks/.
+  const before = spawnSync("git", ["status", "--porcelain", "docs/tasks/"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+  }).stdout;
+  const ctx = context({ full: true });
+  const recs = wakeRecs(ctx);
+  const after = spawnSync("git", ["status", "--porcelain", "docs/tasks/"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+  }).stdout;
+  expect(after).toBe(before);
+
+  // AND THE LIVE ANSWER IS INTERNALLY CONSISTENT, asserted as a shape
+  // rather than as a tally: every card it rules on is a live PARKED card,
+  // every one lands in exactly one state, and the flagged set is a subset
+  // of the parked set.
+  const board = parkedBoard({ cards: ctx.cards, readText: (file) => readDoc(file, ctx.root) });
+  const parked = [...ctx.cards.values()]
+    .filter((c) => fieldScalar(c.fields, "status") === PARKED_STATUS)
+    .map((c) => c.id);
+  expect(board.map((c) => c.id).sort(byCardId)).toEqual([...parked].sort(byCardId));
+  const today = ctx.at.slice(0, 10);
+  for (const card of board) {
+    const ruled = ruleWake(card, {
+      cards: ctx.cards,
+      lanes: ctx.lanes,
+      slugs: ctx.slugs,
+      comps: ctx.comps,
+      today,
+    });
+    expect(["held", "waiting", "unknown"], `${card.id} landed in no state`).toContain(ruled.state);
+    expect(ruled.record, `${card.id} was ruled without a record`).not.toBe("");
+  }
+  expect(unstampedLines(render(recs))).toEqual([]);
+});
+
+test("THE WOKEN SECTION REACHES THE RENDERED ANSWER — `--dispatch` carries the counted line and `--full` the page", () => {
+  // T-285 criterion 2 names the RENDER SITE: "WHEN `brief.mjs --dispatch
+  // --full` renders THE view SHALL carry a WOKEN section". The lane built
+  // the derivation (`wakeRecs`) and the bodies above inside its fence,
+  // and the one-line call that puts the section into the answer lives in
+  // `brief.mjs` — outside the fence as dispatched, widened by the seat's
+  // grant, exactly as T-282-s1 had to be. This body is the one that
+  // wiring owes: the section's own headings, as `wakeRecs` spells them,
+  // must be IN the bytes the command writes. Measured through a file,
+  // never a pipe, so the assertion is over the whole answer (T-225-s1).
+  const dir = mkdtempSync(path.join(os.tmpdir(), "t285-wiring-"));
+  try {
+    const answer = (argv: string[]): string => {
+      const out = path.join(dir, `${argv.length}.txt`);
+      const fd = openSync(out, "w");
+      let status: number | null;
+      try {
+        status = spawnSync(process.execPath, argv, { cwd: repoRoot, stdio: ["ignore", fd, "ignore"] }).status;
+      } finally {
+        closeSync(fd);
+      }
+      expect(status, `${argv.join(" ")} did not answer cleanly`).toBe(EXIT.CLEAN);
+      return readFileSync(out, "utf8");
+    };
+    const full = answer([CLI, "--dispatch", "--full"]);
+    for (const heading of [
+      "THE WOKEN PARKED CARDS",
+      "WOKEN — the condition holds",
+      "PARKED WITHOUT A CONDITION",
+      "CHANGES NO CARD",
+    ]) {
+      expect(full, `the full view carries the section's own line ${JSON.stringify(heading)}`).toContain(heading);
+    }
+    expect(full).toMatch(/^\d+ of \d+ parked card\(s\) have woken {2}<- read /m);
+
+    // THE POSITIVE CONTROL, and it is the other half of the criterion
+    // rather than a duplicate of the arm above: the DEFAULT view carries
+    // the counted line — a woken parked card is a candidate for exactly
+    // the question that view answers — and NOT the page behind --full.
+    const plain = answer([CLI, "--dispatch"]);
+    expect(plain, "the default view says how many woke").toContain("parked card(s) have woken");
+    expect(plain, "and the page is the triage seat's read").not.toContain("PARKED WITHOUT A CONDITION");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("THE PROSE TEST SEES THE BOARD'S OWN `UN-PARK WHEN:` SPELLING — nine live parked cards write the condition that way and the flag calls them conditionless", () => {
+  // ASSIGNED CORRECTION (verifier, phase 2, 2026-09-09, measured at
+  // ce46115). The flag's own stated failure mode is the CONFIDENT one —
+  // "a card whose author wrote a condition reported as having written
+  // none" — and the rule as dispatched has exactly that: `\b(?:unpark|
+  // wake)` cannot see `UN-PARK`, and `**UN-PARK WHEN:**` is the amnesty
+  // triage's own template. Nine of the ninety cards the live view flags
+  // carry it IN BOLD: T-031-s2, T-033-s1, T-033-s9, T-110-s2, T-123-s2,
+  // T-124-s2, T-127-s3, T-135-s1, T-135-s2.
+  //
+  // AND THE WIDENING STOPS HERE, WHICH IS MEASURED RATHER THAN CHOSEN:
+  // `resurface` fires on 69 of those same 90, because TASK-FORMAT's own
+  // "resurfacing condition" sentence is quoted in the parking
+  // boilerplate — widening to it would empty the flag instead of
+  // sharpening it. One spelling, the one the board actually uses.
+  expect(
+    PROSE_WAKE_PATTERN.test("Real and still true; not now. **UN-PARK WHEN:** C-08 declares C-10."),
+    "the board's own hyphenated spelling is a condition",
+  ).toBe(true);
+  expect(PROSE_WAKE_PATTERN.test("Unpark with the second adapter."), "and the unhyphenated one still is").toBe(
+    true,
+  );
+  expect(
+    PROSE_WAKE_PATTERN.test("Parked at the ninth triage."),
+    "the word every parking note spells about itself is still not a condition",
+  ).toBe(false);
+  expect(PROSE_WAKE_PATTERN.test("the runner is awake"), "and the rule is still bounded on the left").toBe(false);
+  expect(
+    PROSE_WAKE_PATTERN.test("a parking note carries a resurfacing condition"),
+    "the boilerplate quote is still not a condition — widening to it would empty the flag",
+  ).toBe(false);
+
+  // DRIVEN THROUGH THE VIEW, never asserted about a regex nobody calls:
+  // the flag must drop the card that spells it and keep the one that
+  // says nothing.
+  const board: WakeFixture[] = [
+    { id: "T-530", status: "parked", body: "Real and still true; not now. **UN-PARK WHEN:** C-08 declares C-10." },
+    { id: "T-531", status: "parked", body: "Parked at the ninth triage. Too early to build." },
+  ];
+  const line = wakeAnswer(board, []).split("\n").find((l) => l.includes("state no condition at all")) ?? "";
+  expect(line, "the hyphenated spelling is a condition").not.toContain("T-530");
+  expect(line, "and a card that states nothing is still flagged").toContain("T-531");
+  expect(line).toContain("1 parked card(s) state no condition at all");
+
+  // AND THE METHOD TEXT STATES THE SPELLING IT ACCEPTS, so the author
+  // writing `UN-PARK WHEN:` and this reader are looking at one sentence.
+  expect(
+    readDoc("method/tasks/TASK-FORMAT.md"),
+    "the hyphenated spelling is stated where the card author reads it",
+  ).toMatch(/un-park/i);
 });

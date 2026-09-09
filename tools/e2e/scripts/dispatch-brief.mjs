@@ -3717,6 +3717,533 @@ export function triageClusterRecs(ctx, deps = {}) {
 }
 
 
+/* ────────────────────────────────────────────────────────────────────
+ * THE WAKE CONDITION (T-285) — a park is a condition, not a shelf.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/**
+ * WHY THIS SECTION EXISTS, IN ONE MEASUREMENT. At the third sitting of
+ * 2026-09-09 the board carried a hundred and twenty-nine parked cards.
+ * `method/roles/orchestrator.md` already says PARKED IS A CONDITION, NOT
+ * A SHELF, and `method/tasks/TASK-FORMAT.md` already says a parking note
+ * *"CARRIES A RESURFACING CONDITION OR IT IS A REJECTION NOBODY WROTE
+ * DOWN"* — and every one of those conditions was written in PROSE, so
+ * nothing read them. A parked card resurfaced only when a human re-read
+ * the folder, which happened once, in the amnesty of 2026-08-29, for a
+ * hundred and forty cards. The rule was right and unenforced; this is
+ * the reader it was missing.
+ *
+ * ── IT CHANGES NO CARD, AND THAT IS THE DESIGN AND NOT A LIMITATION ──
+ * Waking is the SEAT'S act. The two moves a woken card can take —
+ * promote it, or re-park it with a NEW condition — are both dispositions,
+ * and disposition belongs to triage by the same single-writer rule that
+ * governs every other placement field. So this derivation reads the
+ * board, the clock and the lane list, and writes nothing anywhere. A
+ * view that promoted a card would be a disposition nobody decided,
+ * wearing a report's clothes — which is the sentence the triage clusters
+ * above already carry, for the same reason.
+ *
+ * ── THE FIELD NEEDS NO PARSER CHANGE ────────────────────────────────
+ * `lib/parser/src/task.ts` preserves unknown frontmatter keys, so `wake:`
+ * rides along in the fields this module already reads. Nothing here
+ * re-parses frontmatter by hand: `frontmatterFields` is the one reader
+ * and `readWake` only INTERPRETS what it hands back.
+ *
+ * ── AND THE FENCE FORM BORROWS THE EXPANDER, NEVER A SECOND ONE ─────
+ * The default condition is *"a lane is dispatched whose expanded fence
+ * overlaps this card's"*, which is a fence question — so it is answered
+ * by `fenceOverlaps` over `expandFenceEntry`, the same pair the dispatch
+ * order and the triage clusters spend. `dispatch-order.mjs`'s own header
+ * records what a fourth spelling of that rule costs: an architect
+ * hand-rolled the expansion an hour before T-137 was dispatched, left a
+ * path token as itself, and reported two cards disjoint that overlap by
+ * containment.
+ */
+
+/** The status word whose column this view rules on. Pinned by the spec. */
+export const PARKED_STATUS = "parked";
+
+/** The status a NAMED card must reach for a `wake: T-NNN` to hold. Pinned by the spec. */
+export const WOKEN_BY_STATUS = "done";
+
+/** The one word that spells the default form explicitly. */
+export const WAKE_FENCE = "fence";
+
+/**
+ * The reason code for the class the view COUNTS rather than spells: a default
+ * fence condition on a card that declares no fence. Named here so the section
+ * and the ruling agree by construction and never by a matched sentence.
+ */
+export const NO_GROUND = "no-ground";
+
+/** The card-id form of a `wake:` value. */
+const WAKE_CARD_SHAPE = /^T-?\d+(?:-s\d+)?$/i;
+
+/** The ISO-date form. A DAY, and never a timestamp: a park is not scheduled to the second. */
+const WAKE_DATE_SHAPE = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * THE PROSE TEST, NARROW AND STATED HERE RATHER THAN LEFT TO BE GUESSED.
+ *
+ * A card counts as carrying a prose condition when a line of its BODY —
+ * never its frontmatter — contains the word `unpark` or the word `wake`,
+ * case-insensitively, bounded on the LEFT so that `awake` is not a
+ * condition and neither is the `parked` every parking note spells about
+ * itself. It is deliberately the cheap shape: this predicate feeds ONE
+ * flag for a human to read, and the failure it must not have is the
+ * confident one — a card whose author wrote a condition reported as
+ * having written none.
+ *
+ * IT IS NOT A PARSE OF THE CONDITION AND MUST NEVER BECOME ONE. What the
+ * machine reads is the `wake:` FIELD; this is only the question *did
+ * anybody say anything at all*, which is what the criterion's "neither a
+ * `wake:` field nor a prose condition" asks. The same definition is
+ * written beside the encoding in `method/tasks/TASK-FORMAT.md`, so the
+ * card author and this reader are looking at one sentence.
+ */
+export const PROSE_WAKE_PATTERN = /\b(?:un-?park|wake)/i;
+
+/**
+ * The card's body — everything after the closing frontmatter fence.
+ *
+ * WHETHER THERE IS FRONTMATTER AT ALL IS `frontmatterBlock`'s RULING and
+ * is not re-decided here; this only walks to the fence that reader
+ * already proved exists. A card with no frontmatter is all body, which is
+ * the reading that cannot hide a condition somebody wrote.
+ *
+ * @param {string} content
+ * @returns {string}
+ */
+export function cardBody(content) {
+  if (frontmatterBlock(content) === null) return content;
+  const lines = content.split(/\r?\n/);
+  let fences = 0;
+  for (let i = 0; i < lines.length; i += 1) {
+    if (!/^\uFEFF?---[ \t]*$/.test(/** @type {string} */ (lines[i]))) continue;
+    fences += 1;
+    if (fences === 2) return lines.slice(i + 1).join("\n");
+  }
+  return "";
+}
+
+/** @param {string} s @returns {string} */
+function unquote(s) {
+  const m = /^(['"])([\s\S]*)\1$/.exec(s);
+  return m === null ? s : /** @type {string} */ (m[2]);
+}
+
+/**
+ * Is this an ISO date that names a DAY ON THE CALENDAR? `2026-02-30` is
+ * date-shaped and is not a date, and a condition that can never be
+ * reached is worse than one nobody wrote: it reads as a park with a plan.
+ *
+ * @param {string} raw
+ * @returns {boolean}
+ */
+function isCalendarDate(raw) {
+  const [y, m, d] = raw.split("-").map(Number);
+  const probe = new Date(Date.UTC(/** @type {number} */ (y), /** @type {number} */ (m) - 1, d));
+  return (
+    probe.getUTCFullYear() === y && probe.getUTCMonth() === /** @type {number} */ (m) - 1 && probe.getUTCDate() === d
+  );
+}
+
+/**
+ * @typedef {object} WakeCondition
+ * @property {"card" | "date" | "fence" | "unreadable"} form
+ * @property {string} raw       the field's own text, normalised; "" when absent
+ * @property {boolean} declared whether a `wake:` field was written at all
+ * @property {string} why       why an unreadable value could not be placed
+ */
+
+/**
+ * The `wake:` field, INTERPRETED. Three forms and a default, and every
+ * other value is REPORTED rather than folded into one of them.
+ *
+ * ── THE DEFAULT IS THE FENCE, AND IT IS NOT INVENTED HERE ───────────
+ * `method/roles/orchestrator.md` names the default event — the card's
+ * fence's component is NEXT DISPATCHED — and `TASK-FORMAT.md` repeats it
+ * in the triage encoding. An absent field therefore reads as `fence`,
+ * which is the sentence those documents already carry, spelled once.
+ *
+ * ── A FIELD NOBODY FINISHED IS NOT THE DEFAULT ──────────────────────
+ * `wake:` written and left blank comes back UNREADABLE rather than as the
+ * default, and so does a list. The distinction matters because the
+ * default is what the ABSENCE of the field means: an author who typed the
+ * key was reaching for something else, and silently answering `fence`
+ * would hide the half-written card behind the correct-looking answer.
+ *
+ * @param {Record<string, string | string[]>} fields
+ * @returns {WakeCondition}
+ */
+export function readWake(fields) {
+  if (!Object.prototype.hasOwnProperty.call(fields, "wake")) {
+    return { form: WAKE_FENCE, raw: "", declared: false, why: "" };
+  }
+  const held = fields["wake"];
+  if (Array.isArray(held)) {
+    return {
+      form: "unreadable",
+      raw: held.join(", "),
+      declared: true,
+      why: "a wake condition is ONE event and this field carries a list",
+    };
+  }
+  const raw = unquote(String(held ?? "").trim());
+  if (raw === "") {
+    return {
+      form: "unreadable",
+      raw: "",
+      declared: true,
+      why:
+        "the field is written and left blank — an empty condition is not the default, it is a " +
+        "field nobody finished",
+    };
+  }
+  if (raw.toLowerCase() === WAKE_FENCE) {
+    return { form: WAKE_FENCE, raw: WAKE_FENCE, declared: true, why: "" };
+  }
+  if (WAKE_CARD_SHAPE.test(raw)) {
+    return { form: "card", raw: normaliseTaskId(raw), declared: true, why: "" };
+  }
+  if (WAKE_DATE_SHAPE.test(raw)) {
+    if (!isCalendarDate(raw)) {
+      return {
+        form: "unreadable",
+        raw,
+        declared: true,
+        why: "it is date-shaped and names no day on the calendar, so the clock can never pass it",
+      };
+    }
+    return { form: "date", raw, declared: true, why: "" };
+  }
+  return {
+    form: "unreadable",
+    raw,
+    declared: true,
+    why: `it is none of the three forms — a card id, an ISO date, or the word ${WAKE_FENCE}`,
+  };
+}
+
+/**
+ * @typedef {object} ParkedCard
+ * @property {string} id
+ * @property {string} file
+ * @property {string[]} entries     the card's own fence tokens, unexpanded
+ * @property {WakeCondition} cond
+ * @property {boolean} prose        does the BODY state a condition in prose
+ */
+
+/**
+ * The board this view rules on: one entry per live PARKED card, with its
+ * fence tokens, its interpreted condition and whether its prose says
+ * anything at all.
+ *
+ * @param {{ cards: Map<string, Card>, readText: (file: string) => string }} io
+ * @returns {ParkedCard[]}
+ */
+export function parkedBoard({ cards, readText }) {
+  /** @type {ParkedCard[]} */
+  const out = [];
+  for (const card of cards.values()) {
+    if (fieldScalar(card.fields, "status") !== PARKED_STATUS) continue;
+    out.push({
+      id: card.id,
+      file: card.file,
+      entries: fieldList(card.fields, "touches"),
+      cond: readWake(card.fields),
+      prose: PROSE_WAKE_PATTERN.test(cardBody(readText(card.file))),
+    });
+  }
+  return out.sort((a, b) => byCardId(a.id, b.id));
+}
+
+/**
+ * @typedef {object} WakeWorld
+ * @property {Map<string, Card>} cards
+ * @property {{ taskId: string, entries?: string[] }[]} lanes
+ * @property {Map<string, string[]>} slugs
+ * @property {Component[]} comps
+ * @property {string} today   the ISO DAY the clock reads, in UTC
+ */
+
+/**
+ * @typedef {ParkedCard & { state: "held" | "waiting" | "unknown", why: string,
+ *   record: string }} WakeRuling  `why` is the REASON CODE — the shape of the answer
+ *   rather than its prose — so the view can count one class without matching on a
+ *   sentence, and a reworded record cannot silently empty a section.
+ */
+
+/**
+ * One card's condition, RULED, with the record that decided it.
+ *
+ * ── THERE ARE THREE ANSWERS AND NOT TWO, AND THE THIRD IS THE POINT ──
+ * `unknown` is *"no wake PROVED and none ruled out"* — the vocabulary is
+ * `fenceLedger`'s and the parser's `unusable`, borrowed rather than
+ * invented. A lane whose card this checkout cannot read holds an UNKNOWN
+ * fence, never an empty one (T-143 criteria 1 and 2), so a fence
+ * condition measured against a board with a hole in it comes back
+ * unknown and NAMES the hole. The alternative — folding it into
+ * `waiting` — is how a card stays parked because a file could not be
+ * opened, which is the shelf this whole section exists to stop.
+ *
+ * ── THE DATE IS COMPARED AS A DAY, LEXICALLY, IN UTC ────────────────
+ * A `wake:` date names a DAY, so the condition holds from the start of
+ * that day and the comparison is `today >= raw` over two `YYYY-MM-DD`
+ * strings — which is exactly the numeric ordering for that shape and
+ * needs no timezone arithmetic to be right. The clock is a LIVE fact and
+ * is stamped as one; `world.today` is injected rather than read here so a
+ * body can drive both sides of it.
+ *
+ * @param {ParkedCard} card
+ * @param {WakeWorld} world
+ * @returns {WakeRuling}
+ */
+export function ruleWake(card, world) {
+  const { cond } = card;
+  if (cond.form === "unreadable") {
+    return { ...card, state: "unknown", why: "unreadable", record: `the wake: value cannot be placed — ${cond.why}` };
+  }
+  if (cond.form === "card") {
+    const named = world.cards.get(cond.raw);
+    if (named === undefined) {
+      return {
+        ...card,
+        state: "unknown",
+        why: "no-such-card",
+        record:
+          `no live card declares ${cond.raw}, so this checkout cannot tell whether it is ` +
+          `${WOKEN_BY_STATUS} — a condition naming a card nobody can find is not a condition ` +
+          "that failed",
+      };
+    }
+    const status = fieldScalar(named.fields, "status");
+    return status === WOKEN_BY_STATUS
+      ? { ...card, state: "held", why: "card", record: `${cond.raw} is ${WOKEN_BY_STATUS}, per ${named.file}` }
+      : { ...card, state: "waiting", why: "card", record: `${cond.raw} is ${status}` };
+  }
+  if (cond.form === "date") {
+    return {
+      ...card,
+      state: world.today >= cond.raw ? "held" : "waiting",
+      why: "clock",
+      record: `the clock reads ${world.today}`,
+    };
+  }
+  if (card.entries.length === 0) {
+    return {
+      ...card,
+      state: "unknown",
+      why: NO_GROUND,
+      record: "the card declares no fence, so the default condition names no ground",
+    };
+  }
+  const me = { id: card.id, entries: card.entries };
+  /** @type {string[]} */
+  const blind = [];
+  for (const lane of world.lanes) {
+    if (lane.taskId === card.id) continue;
+    const laneCard = world.cards.get(lane.taskId);
+    if (laneCard === undefined) {
+      if (!blind.includes(lane.taskId)) blind.push(lane.taskId);
+      continue;
+    }
+    const found = fenceOverlaps(
+      me,
+      { id: lane.taskId, entries: fieldList(laneCard.fields, "touches") },
+      world.slugs,
+      world.comps,
+    );
+    const first = found[0];
+    if (first === undefined) continue;
+    // THE TOKENS ARE TAKEN OUT OF THE OVERLAP'S OWN ANSWER, never
+    // re-derived: `fenceOverlaps` spells each side as `<id> <entry>` and
+    // this drops the id, which the row already carries. A second walk of
+    // the two fences to name the shared tokens would be the fourth
+    // spelling of the expansion rule `dispatch-order.mjs`'s header
+    // records the cost of.
+    return {
+      ...card,
+      state: "held",
+      why: "fence",
+      record:
+        `lane ${lane.taskId} was dispatched on overlapping ground — ` +
+        `${first.left.slice(card.id.length + 1)} against ${first.right.slice(lane.taskId.length + 1)}`,
+    };
+  }
+  if (blind.length > 0) {
+    const many = blind.length > 1;
+    return {
+      ...card,
+      state: "unknown",
+      why: "blind-lane",
+      record:
+        `no live lane this checkout can read overlaps, and it has no card for ${blind.join(", ")}, ` +
+        `so ${many ? "those fences" : "that fence"} could not be expanded and no overlap can be ruled out`,
+    };
+  }
+  const live = world.lanes.map((l) => l.taskId);
+  return {
+    ...card,
+    state: "waiting",
+    why: "fence",
+    record: live.length === 0 ? "no lane is live" : `no live lane overlaps: ${live.join(", ")}`,
+  };
+}
+
+/**
+ * THE SECTION, AS RECORDS. Same shape as the triage clusters beside it:
+ * it needs `{root, ref, at, host, full}` and nothing else, so both of
+ * this project's context shapes can hand it one, and every collaborator
+ * is injectable so a body can drive a fixture board.
+ *
+ * `full` is the same dial the rest of the dispatch answer spends. WITHOUT
+ * IT THIS IS ONE COUNTED LINE, and that line is deliberately in the
+ * DEFAULT view rather than behind the flag: the default answers *"what
+ * can I start?"*, a woken parked card is a candidate for exactly that,
+ * and the failure this card was filed against is cards being FORGOTTEN.
+ * One line is what it costs to stop forgetting them; the page behind
+ * `--full` is the triage seat's read.
+ *
+ * ── WHICH STAMP EACH ROW CARRIES IS A FUNCTION OF ITS FORM ──────────
+ * Rule 3 of this module's contract: a tree fact carries a ref, a live
+ * fact carries a time and a host. A `card` condition is a read of the
+ * board and is a TREE fact. A `date` condition is a read of the CLOCK and
+ * a `fence` condition is a read of the LANE LIST, and neither is a
+ * function of the tree — so both are stamped live. The picker below is
+ * the whole of that rule and there is no second copy of it.
+ *
+ * @param {{ root?: string, ref: string, at?: string, host?: string, full?: boolean,
+ *   cards?: Map<string, Card>, comps?: Component[], slugs?: Map<string, string[]>,
+ *   lanes?: { taskId: string }[] }} ctx
+ * @param {{ cards?: Map<string, Card>, comps?: Component[], slugs?: Map<string, string[]>,
+ *   lanes?: { taskId: string }[], readText?: (file: string) => string,
+ *   board?: ParkedCard[] }} [deps]
+ * @returns {Rec[]}
+ */
+export function wakeRecs(ctx, deps = {}) {
+  const root = ctx.root ?? repoRoot;
+  const cards = deps.cards ?? ctx.cards ?? cardIndex(root);
+  const comps = deps.comps ?? ctx.comps ?? components(root);
+  const slugs = deps.slugs ?? ctx.slugs ?? slugMapFromFields(comps);
+  /** @param {string} file @returns {string} */
+  const readText = deps.readText ?? ((file) => readDoc(file, root));
+  const lanes =
+    deps.lanes ??
+    ctx.lanes ??
+    laneWorktrees(worktreePorcelain(root), laneSpellings(conventionsText(root)));
+  const board = deps.board ?? parkedBoard({ cards, readText });
+  const at = ctx.at ?? new Date().toISOString();
+  const host = ctx.host ?? hostName();
+  const today = at.slice(0, 10);
+  const rulings = board.map((c) => ruleWake(c, { cards, lanes, slugs, comps, today }));
+
+  const boardVia =
+    "the flat docs/tasks/T-*.md field status, with each card's own wake: field and its body";
+  const clockVia = "the clock, against the card's own wake: field";
+  const laneVia =
+    "git worktree list --porcelain filtered on the branch, with each lane's card touches expanded " +
+    "through the component registry's own touch_slugs";
+  const mixedVia =
+    "the flat docs/tasks/T-*.md parked column, each card's wake: condition, the clock and the " +
+    "live lane list";
+  /** @param {string} via @returns {Prov} */
+  const tree = (via) => treeProv(ctx.ref, via);
+  /** @param {string} via @returns {Prov} */
+  const live = (via) => liveProv(at, host, via);
+  /** @param {WakeRuling} r @returns {Prov} */
+  const provOf = (r) =>
+    r.cond.form === "date" ? live(clockVia) : r.cond.form === WAKE_FENCE ? live(laneVia) : tree(boardVia);
+  /** @param {WakeRuling} r @returns {string} */
+  const conditionOf = (r) =>
+    r.cond.declared ? `wake: ${r.cond.raw}` : `wake: ${WAKE_FENCE} (the default, no field)`;
+
+  const held = rulings.filter((r) => r.state === "held");
+  const waiting = rulings.filter((r) => r.state === "waiting");
+  // THE ONE CLASS THAT IS COUNTED RATHER THAN SPELLED, and it is counted
+  // because its sentence is IDENTICAL on every member: the default
+  // condition is the card's FENCE, and a card with no `touches:` gives it
+  // no ground to be about. Measured on this board at 488e495: ninety-six
+  // of a hundred and twenty-nine parked cards, each of which would print
+  // the same two-hundred-byte sentence — the per-card byte cost T-225
+  // proved is this answer's real capacity. The ids are still NAMED, on
+  // one line, because the remedy is per card.
+  const noGround = rulings.filter((r) => r.why === NO_GROUND);
+  const unknown = rulings.filter((r) => r.state === "unknown" && r.why !== NO_GROUND);
+  const bare = rulings.filter((r) => !r.cond.declared && !r.prose);
+
+  /** @type {Rec[]} */
+  const recs = [
+    note("THE WOKEN PARKED CARDS — a park is a CONDITION, not a shelf, and this reads the"),
+    note("condition rather than waiting for a human to re-read the folder."),
+    note("THIS VIEW CHANGES NO CARD: waking is the seat's act — promote it, or re-park it"),
+    note("with a NEW condition."),
+    value(
+      `${held.length} of ${rulings.length} parked card(s) have woken` +
+        (ctx.full === true
+          ? ""
+          : " — add --full for the conditions, the records that satisfied them, and the parked " +
+            "cards carrying no condition at all"),
+      live(mixedVia),
+    ),
+  ];
+  if (ctx.full !== true) return recs;
+
+  recs.push(
+    blank(),
+    note("WOKEN — the condition holds. Each row names the condition and the record that satisfied"),
+    note("it. A row is an ASK for a triage move, never a move."),
+  );
+  if (held.length === 0) {
+    recs.push(value("no parked card's condition holds", live(mixedVia)));
+  }
+  for (const r of held) {
+    recs.push(value(`${r.id} — ${conditionOf(r)} — HELD: ${r.record}`, provOf(r)));
+  }
+
+  recs.push(
+    blank(),
+    note("STILL PARKED — the condition was read and does not hold. Counted, not listed: these are"),
+    note("the cards the park is working for."),
+    value(`${waiting.length} parked card(s) carry a condition that does not hold`, live(mixedVia)),
+    blank(),
+    note("THE DEFAULT CONDITION NAMES NO GROUND — the default is the card's own fence, and these"),
+    note("cards declare none, so no lane can ever satisfy it. The remedy is a wake: field at the"),
+    note("next triage that touches the card, and this view rewrites none of them."),
+    value(
+      `${noGround.length} parked card(s) declare no fence` +
+        (noGround.length === 0 ? "" : `: ${noGround.map((r) => r.id).join(", ")}`),
+      tree(boardVia),
+    ),
+    blank(),
+    note("COULD NOT BE RULED — a wake: value this view cannot place, a card it names that nothing"),
+    note("on the board declares, or a lane whose own card this checkout cannot read. NOT a"),
+    note("condition that failed: no wake proved and none ruled out."),
+  );
+  if (unknown.length === 0) {
+    recs.push(value("every other parked card's condition could be ruled", live(mixedVia)));
+  }
+  for (const r of unknown) {
+    recs.push(value(`${r.id} — ${conditionOf(r)} — ${r.record}`, provOf(r)));
+  }
+
+  recs.push(
+    blank(),
+    note("PARKED WITHOUT A CONDITION — neither a wake: field nor a prose line naming the event that"),
+    note("brings the card back. TASK-FORMAT says a parking note with no resurfacing condition is a"),
+    note("rejection nobody wrote down; this is that sentence, counted and named. A FLAG FOR THE"),
+    note("HUMAN AND NEVER A CLOSURE — the fix is a wake: field at the next triage that touches the"),
+    note("card, and no existing card is rewritten for this view."),
+    value(
+      `${bare.length} parked card(s) state no condition at all` +
+        (bare.length === 0 ? "" : `: ${bare.map((r) => r.id).join(", ")}`),
+      tree(boardVia),
+    ),
+  );
+  return recs;
+}
+
+
 /**
  * ARM TWO. The same command answers both arms because the lane list is
  * the row both consumers get wrong.
