@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
@@ -1575,4 +1575,139 @@ test("a fixture program written as a STRING is not this file's own import list",
   expect(importSpecifiers('export { a } from "./re-export.mjs";\n')).toEqual(["./re-export.mjs"]);
   expect(importSpecifiers('import * as ns from "./ns.mjs";\n')).toEqual(["./ns.mjs"]);
   expect(importSpecifiers('// import { z } from "./commented-out.mjs";\n')).toEqual([]);
+});
+
+/**
+ * ── THE SCOPED ARM AS A SEAT MEETS IT: THE CLI PATH, RUN TO COMPLETION ──
+ *
+ * Every body above stops short of it. Two drive `runSuite`/`scopeVerdict`
+ * by hand; two drive the CLI only into its REFUSALS, which return before
+ * anything spawns. Nothing ran the arm's own TAIL — the spawn, the
+ * re-wording, THE TOKEN WRITE and the exit code — and a drill proved the
+ * gap rather than guessed it: deleting `recordVerdicts([scoped])`,
+ * replacing the exit mapping with a constant `EXIT.GREEN`, and deleting
+ * the verdict line ALL THREE left this suite green.
+ *
+ * THE MIDDLE ONE IS THE DANGEROUS ONE. A scoped run reporting exit 0 over
+ * a RED subset is a green-only instrument — the defect §POSITIVE CONTROL
+ * at the top of this file exists to refuse, one layer in and unguarded.
+ * The first one is the laundering hole: without the token write a standing
+ * GREEN `e2e` entry outlives a scoped run at a new tree.
+ *
+ * IT CANNOT BE DRIVEN AT THIS CHECKOUT'S ROOT, WHICH IS WHY NOBODY DID:
+ * `--owning` takes the e2e leg's SOLO LOCK — held by the leg running this
+ * body — and would write THIS checkout's token. So the fixture is a
+ * repository of its own holding a COPY of the runner and its import
+ * closure, copied AT RUN TIME so that a mutant planted in the real file
+ * travels into it.
+ */
+const ARM_CLOSURE = [
+  "tools/e2e/scripts/gate-run.mjs",
+  "tools/e2e/scripts/docs-scan.mjs",
+  "tools/e2e/scripts/token-scan.mjs",
+  ".claude/hooks/gate-token.mjs",
+  ".claude/hooks/lane-fence.mjs",
+];
+
+function makeArmFixture(answer: string): { root: string; cleanup: () => void } {
+  // REALPATH, AND IT IS LOAD-BEARING: macOS resolves /var/folders to
+  // /private/var, and this runner only runs `main` when `import.meta.url`
+  // — always a real path — matches `process.argv[1]`. Handed the /var
+  // spelling the module loads, does NOTHING, and exits 0 with no output:
+  // a silent pass that would make every assertion below vacuous.
+  const root = realpathSync(mkdtempSync(path.join(tmpdir(), "t271-arm-")));
+  mkdirSync(path.join(root, "tools", "e2e", "scripts"), { recursive: true });
+  mkdirSync(path.join(root, "tools", "e2e", "tests"), { recursive: true });
+  mkdirSync(path.join(root, ".claude", "hooks"), { recursive: true });
+  for (const rel of ARM_CLOSURE) {
+    writeFileSync(path.join(root, rel), readFileSync(path.join(repoRoot, rel), "utf8"));
+  }
+  symlinkSync(
+    path.join(repoRoot, "tools/e2e/node_modules"),
+    path.join(root, "tools/e2e/node_modules"),
+    "dir",
+  );
+  writeFileSync(
+    path.join(root, "tools/e2e/playwright.config.ts"),
+    'export default { testDir: "./tests", reporter: [["list"]], workers: 1, retries: 0 };\n',
+  );
+  writeFileSync(
+    path.join(root, "tools/e2e/scripts/subject.mjs"),
+    `export const ANSWER = ${answer};\n`,
+  );
+  writeFileSync(
+    path.join(root, "tools/e2e/tests/owner.spec.ts"),
+    "import { test, expect } from '@playwright/test';\n" +
+      "import { ANSWER } from '../scripts/subject.mjs';\n" +
+      "test('the subject answers what its owner expects', () => { expect(ANSWER).toBe(41); });\n",
+  );
+  writeFileSync(
+    path.join(root, "tools/e2e/tests/stranger.spec.ts"),
+    "import { test, expect } from '@playwright/test';\n" +
+      "test('the stranger nothing owns, and it always fails', () => { expect(1).toBe(2); });\n",
+  );
+  const git = (...args: string[]) =>
+    execFileSync("git", ["-C", root, ...NO_BACKGROUND_MAINTENANCE, ...args], { stdio: "pipe" });
+  git("init", "-q", "-b", "main");
+  git("add", "-A");
+  git("-c", "user.email=t271@example.invalid", "-c", "user.name=t271", "commit", "-qm", "base");
+  return { root, cleanup: () => rmSync(root, { recursive: true, force: true }) };
+}
+
+/** Drive the copied runner's scoped arm and read back everything it owes. */
+function runArm(root: string): { status: number | null; line: string; token: string; bodies: number } {
+  const r = spawnSync(
+    process.execPath,
+    [path.join(root, "tools/e2e/scripts/gate-run.mjs"), "e2e", "--owning", "tools/e2e/scripts/subject.mjs"],
+    { cwd: root, encoding: "utf8" },
+  );
+  const line =
+    `${r.stdout ?? ""}`
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l.startsWith(`${VERDICT_TOKEN} `))
+      .at(-1) ?? "";
+  let token = "";
+  let bodies = -1;
+  try {
+    const parsed = JSON.parse(readFileSync(path.join(root, TOKEN_REL_PATH), "utf8"));
+    token = String(parsed?.suites?.["e2e"]?.verdict ?? "");
+    bodies = Number(parsed?.suites?.["e2e"]?.bodies ?? -1);
+  } catch {
+    token = "NO TOKEN WRITTEN";
+  }
+  return { status: r.status, line, token, bodies };
+}
+
+test("the scoped arm's own CLI path prints the subset's verdict, writes it to the token and answers with the subset's own exit code", () => {
+  // THE GREEN ARM — a subset that really passes.
+  const green = makeArmFixture("41");
+  try {
+    const g = runArm(green.root);
+    expect(g.status, "a passing subset answers at the GREEN code").toBe(EXIT.GREEN);
+    expect(g.line, "the arm printed a verdict line at all").not.toBe("");
+    expect(g.line).toContain(`verdict=${CRITERION_3_SCOPED_GREEN}`);
+    expect(g.line).toContain("scope=tools/e2e/tests/owner.spec.ts");
+    expect(g.line, "one body, because one spec owns the change").toContain("bodies=1");
+    expect(g.token, "the arm WROTE the subset's verdict into the token").toBe(
+      CRITERION_3_SCOPED_GREEN,
+    );
+    expect(g.bodies, "and recorded the SUBSET's count, never the leg's").toBe(1);
+  } finally {
+    green.cleanup();
+  }
+
+  // THE RED ARM — the same fixture with one character of the SUBJECT moved.
+  // A scoped run that answered GREEN here would be a green-only instrument.
+  const red = makeArmFixture("42");
+  try {
+    const r = runArm(red.root);
+    expect(r.status, "a RED subset may NEVER answer at the GREEN code").toBe(EXIT.RED);
+    expect(r.line).toContain(`verdict=${CRITERION_3_SCOPED_RED}`);
+    expect(r.token, "and the token records the red rather than a stale green").toBe(
+      CRITERION_3_SCOPED_RED,
+    );
+  } finally {
+    red.cleanup();
+  }
 });
