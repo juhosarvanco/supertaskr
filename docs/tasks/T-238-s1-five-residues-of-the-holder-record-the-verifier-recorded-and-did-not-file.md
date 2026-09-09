@@ -823,3 +823,28 @@ than quietly edited; and when the control next reds, `said()` puts the
 code and the notices in the failure message, so the fifth lane to meet it
 will not have to enumerate the reachable states by hand.
 
+
+#### STEP 7 — the gates my OWN commits could move, re-run at the tip I created
+
+A verdict is a WRITE, and prose is a code input here: the docs gate names
+this card a code input for three suites. Re-run at `b689d74`, which is the
+commit the entry above created and which nobody had tested:
+
+| gate | exit | count | ref |
+|---|---|---|---|
+| `gate-run parser` (the census reads every card) | 0 | 389 GREEN | b689d74 |
+| `gate-run app` | 0 | 1171 GREEN | b689d74 |
+| the five e2e specs that read `docs/tasks` — cli, landing-gate, push-checks, shell-frame, window-contract | 0 | 108 passed | b689d74 |
+| `docs-gate.mjs <this card>` | 1 = FIRES, its normal answer | frontmatter parses with a legal status; injection scan 0 hits in 7 patterns | b689d74 |
+
+The METHOD EVAL gate is NOT owed and I checked rather than assumed: this
+verdict touches no `method/**` file, and there is no `attack set:`
+frontmatter grammar in the tree for it to match — the phrase appears only
+in a `dispatch-brief.mjs` comment. The GRAPH is unmoved (`index --check`
+CURRENT at the tip, and `docs/` is `.supertaskrignore`d). `npm run
+capabilities` remains owed IN THE MERGE COMMIT for the lane's eight new
+test names, unchanged by anything here.
+
+This addendum is itself a write, so the census was asked once more after
+it; that run is quoted in the completion message rather than here, because
+a figure that describes the commit it sits inside can never be true.
