@@ -563,6 +563,50 @@ test("the reservation is read off the TRACKED tree and nothing else — four ver
   expect(orphan.reserved === false && orphan.why).toContain("holds no tracked file at HEAD either");
 });
 
+test("the file extension is read off the BASENAME, and a leading dot is not one", () => {
+  /* THE EXTENSION TEST HAS TWO BOUNDARIES AND THE PARENT RULE HIDES BOTH
+   * (T-287, assigned by the verifier). `newFileReservation` asks two
+   * questions in order — does the LEAF carry an extension, and is the
+   * PARENT tracked — and on this board almost every token that would
+   * separate them fails the second question anyway, so a reading of the
+   * WHOLE token instead of the leaf, or one that counts a dotfile's own
+   * leading dot, changes no answer anybody can see. The arrangement that
+   * makes them decidable is a tracked directory whose NAME carries a dot:
+   * `app/.vscode` is one in this repository and is planted here, so the
+   * parent rule cannot be what refuses the two negatives below. */
+  const fx = makeFixture({ files: [{ rel: "app/.vscode/settings.json", content: "{}\n" }] });
+  const oracle = pathOracle(fx.repo);
+  expect(oracle.dirs.has("app/.vscode"), "the dotted parent this body needs is not tracked").toBe(
+    true,
+  );
+
+  // A DOT IN THE DIRECTORY PART IS NOT THE LEAF'S EXTENSION. Read over
+  // the whole token this is a file; read over the basename it is the
+  // directory token it actually is, and stays dead.
+  const dottedDirectory = newFileReservation("app/.vscode/settings", oracle);
+  expect(dottedDirectory.reserved, "a dotted DIRECTORY made the leaf look extended").toBe(false);
+  expect(dottedDirectory.reserved === false && dottedDirectory.why).toContain(
+    '"settings" carries no file extension',
+  );
+
+  // A LEADING DOT IS NOT AN EXTENSION. `.nputerignore` is this shape on
+  // the live board (T-020, T-264), and T-287-s1 is the card that argues
+  // about it — so the rule this pins is the one that card must move.
+  const dotfile = newFileReservation("app/.vscode/.newrc", oracle);
+  expect(dotfile.reserved, "a dotfile's own leading dot was counted as an extension").toBe(false);
+  expect(dotfile.reserved === false && dotfile.why).toContain(
+    '".newrc" carries no file extension',
+  );
+
+  // THE HALF THAT KEEPS THE TWO ABOVE FROM BEING A RULE THAT REFUSES
+  // EVERYTHING: the same tracked dotted directory, a leaf that really
+  // does carry an extension, and it reserves.
+  expect(newFileReservation("app/.vscode/tasks.json", oracle)).toEqual({
+    reserved: true,
+    parent: "app/.vscode",
+  });
+});
+
 test("the ARM's exit is unchanged by a reservation and changed by a dead entry", async () => {
   // Criterion five, and it is the exit code rather than the text: the
   // dispatch arm's step three runs this command and reads a NUMBER, so a
