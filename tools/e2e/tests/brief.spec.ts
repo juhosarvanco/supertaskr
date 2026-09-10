@@ -7159,7 +7159,7 @@ test("A FORBIDDEN COMBINATION REFUSES THE WHOLE ARM, before a row is assembled o
       template,
       readFileSync(template, "utf8").replace(
         /^(\s+)switches:.*$/m,
-        "$1switches:\n      record.whole_suite_net: every-push",
+        "$1switches:\n    record.whole_suite_net: every-push",
       ),
     );
     const before = inventory(fx.root);
