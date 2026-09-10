@@ -112,3 +112,7 @@ Each is a mechanical step with an exit, run by the arm or the executor; each nam
 9. **Meters into the bands automatically** (seconds): the executor's and verifier's `## Meters` blocks are read by the arm at the merge and appended to the bands, so F is fed without anyone typing figures.
 
 Together under ten minutes across a lane, none on the cycle's critical path except 7, which is the cost of not starting a lane that cannot land.
+
+## Fourth amendment (2026-09-10): the whole suite still runs somewhere, on a clock
+
+The owed set replaces the whole battery at the bench (standard tier), at the push and in CI. What that gives up is the cross-spec red — a body outside the owed set that reds because of the change — which T-262 made the verifier run whole to catch inside the lane's ceremony after T-264's executor found four by running everything. Under this form the guarded tier still runs whole; the standard and bounded tiers accept the class, and the net is a whole four-suite run at every checkpoint and nightly in CI on main, with a red there filed as a finding against the merge that caused it and fixed forward by a bounded lane. The other real reduction is the seat no longer reading every verdict whole; the arm carries each verdict's findings by class into the bands so the checkpoint still sees the pattern.
