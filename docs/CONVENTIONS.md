@@ -641,11 +641,13 @@ and T-236 (2026-09-02, whose pre-compaction text is
 ## Gotchas
 - method/ is the generic, product-agnostic convention — nothing
   supertaskr-specific goes in it; product docs live in docs/. Changes to
-  method/ formats are version-bumped (currently v0.1.19) and noted here.
+  method/ formats are version-bumped (currently v0.1.20) and noted here.
   **A VERSION'S NOTE HERE IS ITS DATE, ITS CARD AND ITS THEME; WHAT
   MOVED IS THE RELEASE'S OWN RECORD** (ADR-019's law applied to this
   changelog at T-162): the per-clause itemisation is RECORD-shaped, and
   the AUTHORITY for what a version says is `method/` itself at that tag.
+  v0.1.20 (T-295, 2026-09-10) — the ARM MERGES release: `brief.mjs --merge <id>` performs the
+  integrator's ritual from the verdict and stops with the merge staged; integrator.md states the widening beside the re-drill.
   v0.1.19 (T-307, 2026-09-10) — the PROPOSE-BEFORE-RECORDING release: a room or decision
   entry is shown to the owner verbatim and appended on a yes; entries paraphrase and never quote; an eval holds it.
   v0.1.18 (T-293, 2026-09-10) — the STANDING READ release: a seat reads STATE and a
@@ -752,6 +754,52 @@ and T-236 (2026-09-02, whose pre-compaction text is
   authorization is not the permission system's consent. Ordinary
   commits at @human's explicit direction are not merges and do not
   contend with this gate.
+- THE ARM MERGES, AND THE SEAT RULES (T-295, ADR-024 decisions 3 and 4):
+  `node tools/e2e/scripts/brief.mjs --merge <T-NNN>` is the ONE spelling
+  for the integrator's ritual, and it performs the steps in this order
+  with every step's exit printed: the fence WIDENED on the integration
+  branch for any spec the newest verdict's MUTANT BLOCKs name that the
+  card does not already admit (its own commit, ahead of the merge,
+  because the landing gate reads a merge's fence from its FIRST PARENT
+  — T-281-s10); the lane branch moved to the BENCH TIP, which is the
+  detached `-V-<id>` worktree's HEAD and NOT the verdict sha, since the
+  verifier commits its correction bodies after writing the verdict;
+  `git merge --no-ff --no-commit`; the conflicts, which get exactly
+  three answers and no fourth — this card's own file taken from the
+  LANE, a single end-of-file append whose MERGE BASE is empty kept from
+  both sides with the closing restored, and everything else NAMED as a
+  fence finding and stopped, never resolved; the `done` stamp; each
+  assigned correction applied as the block's `old` text where the tree
+  carries its `new`; the four cheap keepers; the method stamp when
+  method text moved; the census and the graph AFTER the corrections and
+  never before; the docs gate, whose FIRES is NEWS and whose STALE
+  stops; the re-drill of every block, scoped by the FIX DIFF — the
+  block's own spec, with the specs the fix diff OWNS derived and READ
+  (a block whose spec is not among them pins a property the correction
+  did not move, which is said), and `--drill-wide` to run that whole
+  owning set instead: the stronger RED ALONE claim, priced at eight
+  minutes for one block over thirteen specs against a ritual whose
+  target is five; the counts graded against the ones the verdict claims; the
+  message written FROM the verdict's own sentences; and the `## Meters`
+  blocks appended to `docs/checkpoints/meters.jsonl`, one JSON object
+  per line carrying the card, its size, its tier, the seat, the source,
+  the merge and the block's own text whole. **IT STOPS WITH THE MERGE
+  STAGED AND IT NEVER PUSHES**: the commit, the checkpoint and the push
+  stay the seat's, and a step it refuses is the seat's to rule rather
+  than the verb's to work around. Every dial is DERIVED — the lane
+  branch off `git for-each-ref`, the worktree off `git worktree list`
+  and never off this document's spelling (a lane cut before a rename
+  was not found by a script that read the bullet), the seats off the
+  card's own fields — so the seat types one card id. **THE FOUR CHEAP
+  KEEPERS, each a step with its own exit**: a line this merge REMOVES
+  under `method/` or `docs/` that a spec pins VERBATIM (thirty
+  characters is the floor); a line it ADDS carrying a forbidden
+  spelling — the rename scanner's own classifier, a secret shape, an
+  email address, this machine's home directory, or the seat's whole
+  account or git name; an `XS` card whose diff outside its own card file
+  exceeds FORTY changed lines (the bound is stated here so the tier work
+  has something to read, and it is a number to be moved by measurement);
+  and the card's own `--preflight`.
 - A CITATION NAMES A SYMBOL, NOT A LINE (fourth triage, 2026-08-19):
   line numbers drift downward under later merges while the finding's
   substance reproduces, so a stale line reads as "this was fixed". Cite

@@ -3,7 +3,7 @@
  * THE BRIEF COMMAND (T-133) — the runnable half of `dispatch-brief.mjs`.
  *
  * THE ONE SPELLING, run from the repo ROOT and by a dispatcher with no
- * lane. Every arm but THREE is a read, and all three writers are NAMED
+ * lane. Every arm but FOUR is a read, and all four writers are NAMED
  * ARMS: `--write-fence` writes the lane's manifest SOMEWHERE ELSE, into
  * the lane worktree it is handed, and `--take-seat` (T-238) writes the
  * holder record into the checkout `--root` names — which is the point of
@@ -80,6 +80,23 @@
  * The identity, the measurement it rests on and every limit are
  * `checkout-currency.mjs`'s, next to the catcher that already answers
  * *which checkout is this session in*.
+ *
+ * **THE FOURTH WRITER IS `--merge` (T-295) AND IT IS THE ARM AT THE
+ * OTHER END OF THE LOOP.** Where `--dispatch-lane` performs the eight
+ * hand steps that OPEN a lane, `--merge` performs the twelve that close
+ * one: the fence widened on the integration branch for a verdict-named
+ * spec outside it, the lane branch moved to the BENCH TIP, the merge
+ * staged, the conflicts answered in the only three ways they may be
+ * answered, the card stamped, each assigned correction applied off its
+ * own MUTANT BLOCK, the four cheap keepers, the method stamp when
+ * method text moved, the census and the graph AFTER the corrections,
+ * the docs gate, the re-drill scoped to the fix diff, the counts graded
+ * against the verdict's, the message written from the verdict and the
+ * meters appended to the bands' readings. **It stops with the merge
+ * STAGED and it never pushes**, so the seat rules and does not edit. The
+ * derivation and the runner are `merge.mjs`'s; this wrapper derives the
+ * dials off git and renders one line per step, which is what the seat
+ * reads.
  *
  * ARM NINE (`--dispatch-lane`, T-239) is the RITUAL — the eight hand
  * steps of a dispatch, performed in the order orchestrator 5b, 5c and
@@ -169,6 +186,7 @@ import {
 } from "./checkout-currency.mjs";
 import { dispatchContext, dispatchReport, listedCards } from "./dispatch-order.mjs";
 import { LaneFenceFinding, buildLaneFence, writeLaneFence } from "./lane-fence.mjs";
+import { main as mergeMain, mergeDials } from "./merge.mjs";
 import { LaneLockFinding, applyLaneLock } from "./lane-lock.mjs";
 import { seatRecs } from "./session-economics.mjs";
 
@@ -185,6 +203,11 @@ const FLAGS = Object.freeze([
   "--take-seat",
   "--release-seat",
   "--dispatch-lane",
+  "--merge",
+  "--bump",
+  "--meters",
+  "--tier",
+  "--blocks-absent",
   "--slug",
   "--executor",
   "--verifier",
@@ -279,7 +302,9 @@ async function main(argv) {
           "[--dispatch] [--card <T-NNN>] [--audit <path>] [--preflight] " +
           "[--write-fence <worktree>] [--take-seat] [--release-seat] " +
           "[--dispatch-lane <T-NNN> --slug <slug> [--executor <seat>] [--verifier <seat>] " +
-          "[--scratch <dir>] [--dry-run]] [--full] [--root <path>]",
+          "[--scratch <dir>] [--dry-run]] " +
+          "[--merge <T-NNN> [--bump <old>..<new>] [--meters <path>] [--tier <tier>] " +
+          "[--blocks-absent <sha>] [--dry-run]] [--full] [--root <path>]",
       );
       return EXIT.CLEAN;
     }
@@ -325,6 +350,8 @@ async function main(argv) {
   const fenceWorktree = opts["write-fence"] ?? "";
   const laneId = opts["dispatch-lane"] ?? "";
   const wantsDispatchLane = laneId !== "";
+  const mergeId = opts["merge"] ?? "";
+  const wantsMerge = mergeId !== "";
   /**
    * THE RITUAL'S OWN DIALS, AND EVERY ONE OF THEM IS MEANINGLESS ALONE.
    * A `--slug` with no `--dispatch-lane` is a lane name for a lane nobody
@@ -334,7 +361,29 @@ async function main(argv) {
    */
   const laneDials = ["slug", "executor", "verifier", "scratch"];
   const strayDials = laneDials.filter((d) => opts[d] !== undefined);
-  if (!wantsDispatchLane && (strayDials.length > 0 || dryRun)) {
+  /**
+   * THE MERGE ARM'S OWN DIALS, held to the same rule as the lane's: a
+   * flag this command accepted and ignored is a seat believing it said
+   * something it did not.
+   */
+  const mergeDialNames = ["bump", "meters", "tier", "blocks-absent"];
+  const strayMergeDials = mergeDialNames.filter((d) => opts[d] !== undefined);
+  if (!wantsMerge && strayMergeDials.length > 0) {
+    console.error(
+      `brief: ${strayMergeDials.map((d) => `--${d}`).join(", ")} only mean something to ` +
+        "--merge <T-NNN>, and nothing else on this command reads them.",
+    );
+    return EXIT.USAGE;
+  }
+  if (wantsMerge && wantsDispatchLane) {
+    console.error(
+      "brief: --dispatch-lane opens a lane and --merge closes one, and they are opposite ends of " +
+        "the same loop. One invocation cannot do both — a command that did would decide by " +
+        "argument order which end of the loop this seat was at.",
+    );
+    return EXIT.USAGE;
+  }
+  if (!wantsDispatchLane && !wantsMerge && (strayDials.length > 0 || dryRun)) {
     console.error(
       `brief: ${[...strayDials.map((d) => `--${d}`), ...(dryRun ? ["--dry-run"] : [])].join(", ")} ` +
         "only mean something to --dispatch-lane <T-NNN>, and nothing else on this command reads " +
@@ -399,7 +448,8 @@ async function main(argv) {
     !wantsPreflight &&
     !wantsTakeSeat &&
     !wantsReleaseSeat &&
-    !wantsDispatchLane
+    !wantsDispatchLane &&
+    !wantsMerge
   ) {
     console.error(
       "brief: nothing asked for — give --task <T-NNN> for a dispatch brief, --state for the " +
@@ -471,7 +521,7 @@ async function main(argv) {
    */
   const sessionFindings = [];
   /** Every invocation that ARMS a lane, and therefore owes the catcher below. */
-  const arming = wantsPreflight || fenceWorktree !== "" || wantsDispatchLane;
+  const arming = wantsPreflight || fenceWorktree !== "" || wantsDispatchLane || wantsMerge;
   const session = arming ? sessionCheckout() : undefined;
   if (arming && session === undefined) {
     // NEITHER SIGNAL RESOLVED: no `CLAUDE_PROJECT_DIR`, and this command's
@@ -874,6 +924,132 @@ async function main(argv) {
     }
   }
 
+  /**
+   * ARM TEN — THE MERGE (T-295), the ritual at the CLOSING end of the loop.
+   *
+   * The two refusals ahead of its first step are the dispatch arm's, for
+   * the same reason: a merge is an act IN the integration checkout, and a
+   * checkout another live session holds is `method/lane-protocol.md`
+   * rule 4's collision at the one moment it is cheap to refuse.
+   *
+   * EVERY DIAL IS DERIVED. The lane branch off `git for-each-ref`, the
+   * lane WORKTREE off `git worktree list` and never off a document's
+   * bullet, the BENCH TIP off the detached bench worktree beside it, and
+   * the two seats off the card's own fields. The seat types one card id.
+   *
+   * @type {string[]}
+   */
+  const mergeFindings = [];
+  if (wantsMerge) {
+    const h = /** @type {NonNullable<typeof holder>} */ (holder);
+    say("");
+    if (h.state === "not-integration") {
+      say(
+        render([
+          note("THE MERGE — REFUSED before its first step, and nothing was written"),
+          value(
+            `--merge was asked of ${ctx.root}, which is not the integration checkout`,
+            liveProv(ctx.at, ctx.host, "git symbolic-ref HEAD, read in that checkout"),
+          ),
+        ]),
+      );
+      mergeFindings.push(
+        `--merge was asked of a checkout that is not the integration one — ${h.detail} A lane ` +
+          "merges nothing (method/lane-protocol.md rule 6): it reports ready-to-merge and leaves " +
+          "its worktree standing for the holder.",
+      );
+    } else if (h.state === "held") {
+      say(
+        render([
+          note("THE MERGE — REFUSED, and the sentence above says by whom"),
+          value(
+            `--merge was refused: another live session holds ${ctx.root}`,
+            liveProv(ctx.at, ctx.host, `${HOLDER_REL_PATH}, and the process table`),
+          ),
+        ]),
+      );
+    } else {
+      const dials = mergeDials({ root: ctx.root, id: mergeId });
+      if ("problem" in dials) {
+        say(
+          render([
+            note("THE MERGE — the dials could not be derived, so no step ran"),
+            value(dials.problem, liveProv(ctx.at, ctx.host, "git, read in the integration checkout")),
+          ]),
+        );
+        mergeFindings.push(`--merge ${mergeId}: ${dials.problem}`);
+      } else {
+        say(
+          render([
+            note("THE MERGE — every dial DERIVED, and the seat typed one card id"),
+            ...dials.how.map((line) =>
+              value(line, liveProv(ctx.at, ctx.host, "git's own administration, in this checkout")),
+            ),
+          ]),
+        );
+        /** @type {{ id: string, title: string, exit: number }[]} */
+        const ledger = [];
+        /** @type {string[]} */
+        const transcript = [];
+        const code = mergeMain(
+          [
+            mergeId,
+            "--slug",
+            dials.slug,
+            "--verdict",
+            dials.benchTip,
+            "--root",
+            ctx.root,
+            ...(dryRun ? ["--dry-run"] : ["--built-by", dials.builtBy, "--verified-by", dials.verifiedBy]),
+            ...(opts["bump"] === undefined ? [] : ["--bump", opts["bump"]]),
+            ...(opts["meters"] === undefined ? [] : ["--meters", opts["meters"]]),
+            ...(opts["tier"] === undefined ? [] : ["--tier", opts["tier"]]),
+            ...(opts["blocks-absent"] === undefined ? [] : ["--blocks-absent", opts["blocks-absent"]]),
+          ],
+          {
+            cwd: ctx.root,
+            ledger,
+            out: (s) => transcript.push(s),
+            err: (s) => transcript.push(s),
+          },
+        );
+        // THE WHOLE TRANSCRIPT FIRST, THEN THE ONE LINE PER STEP. The
+        // transcript is what a seat reads when a step refuses; the
+        // ledger is what it reads when nothing did, and the card asks
+        // for the second without giving up the first.
+        for (const line of transcript) say(line);
+        say("");
+        say(
+          render([
+            note("THE SEAT'S RETURN — one line per step, in the order they ran"),
+            ...ledger.map((s) =>
+              value(
+                `${s.id} exit ${String(s.exit)}`,
+                liveProv(ctx.at, ctx.host, "the step's own exit, recorded as it ran"),
+              ),
+            ),
+            ...(code === EXIT.CLEAN
+              ? [
+                  note("THE MERGE IS STAGED AND NOT COMMITTED, and this command NEVER PUSHES."),
+                  note("The commit, the checkpoint and the push are the seat's — it rules, it"),
+                  note("does not edit."),
+                ]
+              : [
+                  note("THE RUN STOPPED. The step above with a non-zero exit says where, and the"),
+                  note("transcript says why. The tree is left as it stands for the seat to rule."),
+                ]),
+          ]),
+        );
+        if (code !== EXIT.CLEAN) {
+          mergeFindings.push(
+            `--merge ${mergeId} stopped at ${ledger.at(-1)?.id ?? "its first step"} — the merge is ` +
+              "left for the seat to rule and nothing was committed or pushed.",
+          );
+        }
+      }
+    }
+  }
+
   if (taskId !== "") {
     if (ctx.card === undefined) {
       console.error(
@@ -1186,6 +1362,7 @@ async function main(argv) {
     ...sessionFindings,
     ...holderFindings,
     ...laneFindings,
+    ...mergeFindings,
     ...preflightFindings,
     ...fenceFindings,
     ...cardFindings,

@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **870 behaviours** — 868 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **896 behaviours** — 894 extracted sentences + 2 named-not-extracted (listed at the end) — across 40 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -726,6 +726,35 @@ Census: **870 behaviours** — 868 extracted sentences + 2 named-not-extracted (
 ## map-retarget
 
 - map pane: node opens MapPanel; touching-task row re-targets to the real TaskDetailPanel
+
+## merge
+
+- a mutant block written at a MARGIN is read, and the margin comes off its old and new text
+- a mutant block QUOTED inside another code fence is not read, so a verdict may explain the layout
+- a correction is the block's OLD text, applied where the merged tree carries its NEW
+- the corrections are planned BEFORE every regeneration, and the keepers before the commit
+- the re-drill's scope is the FIX DIFF, through the owning-spec rule, and its own spec alone when nothing was fixed
+- a mutant that reds MORE than its own body is a refusal that names the other bodies
+- method text that moved owes the three stamp files, the pin test, the half-bump drill and the eval gate
+- a method stamp is bumped at exactly one anchor per file, and a stamp that is not there refuses
+- the pinned-sentence keeper refuses a removed doc line a spec pins VERBATIM, and lets an addition through
+- the forbidden-spelling keeper refuses each class it names on a planted instance, and a clean diff on none
+- the personal name this keeper looks for is DERIVED whole, and never split into its own words
+- the XS-bound keeper refuses an XS card over the bound and judges no card of any other size
+- the verb refuses to commit on a count that moved, and says which legs it could not judge
+- the merge message is written from the verdict's own sentences and counts, never composed
+- every `## Meters` block reaches the bands' readings, whole, in the stated shape
+- a conflict gets one of three answers: the lane's card, a kept end-of-file append, or a fence finding
+- a verdict-named spec outside the lane's fence widens the card on the integration branch BEFORE the merge
+- the verb derives every dial off git — the lane branch, the worktree and both seats — and never off a document
+- the verb performs the ritual on a fixture, applies the correction off the verdict, and STOPS with the merge staged
+- a same-file end-of-file append is resolved by keeping both sides, and any other conflict stops the verb as a fence finding
+- the bound, the floor and the readings path this file computes are the ones docs/CONVENTIONS.md publishes
+- the verb never pushes, and the keeper steps it plans are the four the card names
+- the card arm takes ITS OWN card and no other, so a SUGGESTED card of the same lane is a fence finding
+- a correction is applied whenever the tree carries its NEW text once, even where the OLD text also occurs elsewhere
+- a forbidden-spelling refusal names the file and the class and REDACTS the value, on every class it carries
+- a merge is what an APPROVED verdict authorises, so a REJECTED newest verdict refuses the drill
 
 ## no-plan-card
 
