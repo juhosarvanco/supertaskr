@@ -127,6 +127,16 @@ the two disagree. `stampCard` gained a per-key, anchored creation opt-in
 so the field can be written onto a card whose template does not carry it;
 every other missing key still refuses exactly as before.
 
+**THE CLOSING BATTERY FOUND ONE RED AND IT WAS MINE.** The guard-class
+map spelled `gate-run.mjs`, and `gate-run.spec.ts` requires
+docs/CONVENTIONS.md to name the blessed runner in exactly ONE place — a
+body in a file this fence does not name, redding on a line this fence
+does. The map now matches the runner by SHAPE (a trailing `*` prefix
+token) rather than by filename, which is the honester statement anyway:
+what makes a file guard-class is being a gate runner. The trap is now
+pinned where the map is written, so the next lane to touch it learns
+before its battery rather than after.
+
 **In-fence follow-through**
 
 - `tools/e2e/tests/brief.spec.ts`, "the tier line is CREATED where a card
@@ -172,7 +182,8 @@ version to move to.
   renderers and the bench 30 min; the bodies 15 min; the drill and the
   battery 20 min.
 - tier: guarded (the fence names method text and five guard-class paths).
-- the self-drill: 15 mutants, 15 red, 15 restored and proved by sha256 —
-  one of them only after the body it drilled was corrected.
+- the self-drill: 16 mutants, 16 red, 16 restored and proved by sha256 —
+  one of them only after the body it drilled was corrected, which is the
+  drill earning its place rather than confirming it.
 
 ## Verdicts

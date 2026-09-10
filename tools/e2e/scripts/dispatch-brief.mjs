@@ -4753,15 +4753,29 @@ export function guardClassMap(conventionsMd, ids) {
 /**
  * Does one path token cover one repository path?
  *
- * A token ending in `/` is a DIRECTORY and covers everything under it; any
- * other token is a file, and covers itself and anything under it — a file
- * token that later becomes a directory keeps guarding what it named.
+ * A token ending in `/` is a DIRECTORY and covers everything under it; a
+ * token ending in `*` is a PREFIX and covers every path that starts with
+ * it; any other token is a file, and covers itself and anything under it
+ * — a file token that later becomes a directory keeps guarding what it
+ * named.
+ *
+ * **THE PREFIX FORM IS NOT A CONVENIENCE, IT IS A CONSTRAINT THIS
+ * PROJECT PUT ON ITS OWN DOCUMENT.** docs/CONVENTIONS.md names the
+ * blessed gate-runner in EXACTLY ONE PLACE and a body requires exactly
+ * that, so a guard-class map that spelled the runner's filename would red
+ * the body that keeps one spelling one spelling. The map names the SHAPE
+ * instead, which is also the honester statement: what makes a file
+ * guard-class is being a gate runner, not being that particular file.
  *
  * @param {string} token
  * @param {string} rel
  * @returns {boolean}
  */
 export function guardTokenCovers(token, rel) {
+  if (token.endsWith("*")) {
+    const prefix = token.slice(0, -1);
+    return prefix !== "" && rel.startsWith(prefix);
+  }
   const t = token.replace(/\/+$/, "");
   if (t === "") return false;
   return rel === t || rel.startsWith(`${t}/`);

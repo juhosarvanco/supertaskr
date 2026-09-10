@@ -819,9 +819,13 @@ and T-236 (2026-09-02, whose pre-compaction text is
   builder of a cage is not its inspector, and a one-line change to a
   guard can retire the guard in silence. Classes OVERLAP by design (a
   class says what a file DOES, and `.claude/` holds several kinds); the
-  arm reports every class a path hits. **THE MAP:**
+  arm reports every class a path hits. A token ending in `*` is a PREFIX,
+  and the blessed gate-runner is matched by that shape rather than by its
+  filename BECAUSE THIS DOCUMENT NAMES THAT RUNNER EXACTLY ONCE and a
+  body requires exactly that — which is also the honester statement, since
+  what makes a file guard-class is being a gate runner. **THE MAP:**
   `agent-hooks`: `.claude/`;
-  `gate-runners`: `tools/e2e/scripts/gate-run.mjs`,
+  `gate-runners`: `tools/e2e/scripts/gate-*`,
   `tools/e2e/scripts/docs-gate.mjs`, `tools/e2e/scripts/push-checks.mjs`;
   `fences-and-locks`: `tools/e2e/scripts/lane-fence.mjs`,
   `tools/e2e/scripts/lane-lock.mjs`;

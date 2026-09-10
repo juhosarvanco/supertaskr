@@ -68,6 +68,7 @@ import {
   guardClassHits,
   guardClassIds,
   guardClassMap,
+  guardTokenCovers,
   insideRepository,
   keeperVerdict,
   integrationRefCandidates,
@@ -5811,6 +5812,28 @@ test("the guard-class CLASSES are the method's and the PATHS are the project's, 
   // project about under the new name.
   const renamed = taskFormat.replace("- `ci-workflow` — ", "- `runner-instructions` — ");
   expect(guardClassIds(renamed), "the program answers the document").toContain("runner-instructions");
+
+  // THE BLESSED RUNNER IS MATCHED BY SHAPE AND NOT BY NAME, and that is a
+  // CONSTRAINT rather than a style: `gate-run.spec.ts` requires this
+  // document to name that runner in exactly ONE place, so a map that
+  // spelled its filename would red a body in another file entirely — and
+  // the lane that wrote it would learn only from the closing battery.
+  // This body is where that trap is stated where the map is written.
+  const runner = blessedRunner(conventions).script;
+  const gateTokens = map.get("gate-runners") ?? [];
+  expect(
+    gateTokens.some((t) => t === runner),
+    "the guard-class map spells the blessed runner's filename, which is this document's SECOND " +
+      "naming of it — match its shape with a trailing `*` instead",
+  ).toBe(false);
+  expect(
+    guardClassHits([runner], map).length,
+    "and matching by shape still has to COVER it, or the constraint was met by dropping the class",
+  ).toBe(1);
+  // The prefix form is exercised where a body can see it fail, too.
+  expect(guardTokenCovers("tools/e2e/scripts/gate-*", "tools/e2e/scripts/gate-run.mjs")).toBe(true);
+  expect(guardTokenCovers("tools/e2e/scripts/gate-*", "tools/e2e/scripts/lane-lock.mjs")).toBe(false);
+  expect(guardTokenCovers("*", "anything"), "a bare star covers nothing, deliberately").toBe(false);
 });
 
 test("EVERY GUARD-CLASS FILE THIS TREE CARRIES IS COVERED, and the derivation that finds them never reads the map", () => {

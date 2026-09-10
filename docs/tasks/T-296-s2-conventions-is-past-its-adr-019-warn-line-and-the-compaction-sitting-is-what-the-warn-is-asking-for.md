@@ -17,7 +17,7 @@ review:
 ---
 
 Measured in this lane: the document was 145031 bytes at the base, under
-its 146878-byte warn line, and 147299 bytes at the tip — 421 over. The
+its 146878-byte warn line, and 147605 bytes at the tip — 727 over. The
 gate exits 0 (the fail line is 176253) and this is a WARN doing its job,
 reported rather than absorbed.
 
