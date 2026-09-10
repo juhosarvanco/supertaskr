@@ -6660,3 +6660,106 @@ test("THE DISPATCH STEP STATES WHERE THE MODEL COMES FROM, and the waiting step 
   expect(waiting, "nor say that reaching the ceiling is reported").toContain("REACHING THE CEILING IS AN ANSWER");
   expect(waiting, "nor refuse the hand-typed sleep it replaces").toContain("A HAND-TYPED SLEEP IS NOT A WAIT");
 });
+
+/* ────────────────────────────────────────────────────────────────────
+ * T-298 — THE VERIFIER'S ASSIGNED CORRECTIONS (phase 2 verdict).
+ *
+ * Three properties the lane's own bodies could not see. Two of them the
+ * implementation already keeps and nothing pinned; the third it does not
+ * keep, and the verdict names the line of the reader that goes beside
+ * this body. Each is drilled by one mutant block in the verdict.
+ * ──────────────────────────────────────────────────────────────────── */
+
+test("EVERY ROLE THIS METHOD SHIPS RESOLVES A MODEL, and the checklist is the TREE'S rather than the arm's own map", () => {
+  // T-298 CORRECTION 1. KILLED BY: a role file this arm can no longer
+  // name a model for — dropped from ROLE_TEMPLATE_KEYS, or arriving in
+  // method/roles/ with no key there. The body above cannot see either,
+  // because it takes its checklist of "every role" from the very map
+  // under test, and a map that has lost a role satisfies itself. The
+  // denominator here is `git ls-files`, so a role that arrives in the
+  // TREE arrives in this assertion.
+  const roles = trackedFiles(repoRoot)
+    .filter((f) => /^method\/roles\/[a-z-]+\.md$/.test(f))
+    .map((f) => path.basename(f, ".md"));
+  expect(roles.length, "the tree carries no role files to check at all").toBeGreaterThan(1);
+  // THE ONE ARGUED ABSENCE, and it is named HERE so that dropping any
+  // OTHER role reds: the orchestrator is the standing seat that
+  // dispatches and is never itself dispatched, so no template default is
+  // read for it (dispatch-brief.mjs, ROLE_TEMPLATE_KEYS).
+  const STANDING = "orchestrator";
+  expect(roles, "the argued absence names a role file this tree does not carry").toContain(STANDING);
+  const dispatched = Object.keys(ROLE_TEMPLATE_KEYS);
+  expect(dispatched, "the standing seat acquired a template key, so it is being dispatched").not.toContain(
+    STANDING,
+  );
+  const models = roleModels(runtimeTemplateText(repoRoot));
+  for (const role of roles) {
+    if (role === STANDING) continue;
+    expect(dispatched, `method/roles/${role}.md is a role this arm can name no model for`).toContain(role);
+    expect(roleModel(models, role).model, `the ${role} seat resolves no model`).toBe(OPUS_5_SEAT);
+  }
+});
+
+test("THE TRIAGE RULE CARRIES BOTH ITS HALVES — the test cycle AND the fresh reviewer's gate, and the split is an instruction", () => {
+  // T-298 CORRECTION 2, and it is a DATA mutant's target because the
+  // property lives in prose (method/roles/verifier.md 2b). KILLED BY:
+  // the live role file losing the clause that says WHO the size is for.
+  // The body above pins a needle that stops at the test cycle, so
+  // `AND IS WORTH A FRESH REVIEWER'S GATE` — one of the criterion's three
+  // clauses — can be deleted from the shipped file in silence. The
+  // whitespace is flattened because the rule wraps across lines and a pin
+  // that depended on where it wrapped would red on a re-flow.
+  const md = roleText("orchestrator", repoRoot);
+  const flat = md.replace(/\s+/g, " ");
+  const triage = numberedStep(md, 2).replace(/\s+/g, " ");
+  expect(triage, "the rule names no test cycle").toContain(
+    "THE SMALLEST UNIT THAT CARRIES ITS OWN TEST CYCLE",
+  );
+  expect(triage, "the rule drops the half that says who the size is for").toContain(
+    "IS WORTH A FRESH REVIEWER'S GATE",
+  );
+  expect(triage, "the rule states no instruction for a card larger than that").toContain(
+    "Anything larger is SPLIT before it is dispatched",
+  );
+  // AND STILL ONCE, over the WHOLE file: the clause the body above cannot
+  // see is also a clause its occurrence count cannot see, so T-057's
+  // second-copy failure is closed for both halves rather than one.
+  expect(
+    flat.split("IS WORTH A FRESH REVIEWER'S GATE").length - 1,
+    "the reviewer's-gate clause is stated a number of times other than once",
+  ).toBe(1);
+});
+
+test("A TEMPLATE VALUE THAT IS ONLY A COMMENT IS AN ABSENT DEFAULT, and so is an empty quoted one", () => {
+  // T-298 CORRECTION 3, and this one needs a line of the reader beside
+  // the body — the verdict names it. KILLED BY: a reader that takes
+  // whatever follows the colon as the model. `builder: # pick one` and
+  // `builder: ""` are NULL to every YAML reader there is, so both are the
+  // ABSENT DEFAULT the card's second criterion says REFUSES the dispatch
+  // — and reading them as a value dispatches a seat on the string
+  // `# pick one`, which is the inheritance that criterion forbids wearing
+  // a different hat.
+  const absent: ReadonlyArray<readonly [string, string]> = [
+    ["a value that is only a comment", "roles:\n  builder: # pick one later\n"],
+    ["a comment with no space after the colon", "roles:\n  builder:# pick one later\n"],
+    ["an empty double-quoted value", 'roles:\n  builder: ""\n'],
+    ["an empty single-quoted value", "roles:\n  builder: ''\n"],
+  ];
+  for (const [what, yaml] of absent) {
+    let refused: unknown;
+    try {
+      roleModel(roleModels(yaml), "executor");
+    } catch (err) {
+      refused = err;
+    }
+    expect(refused, `${what} was read as a model instead of refused`).toBeInstanceOf(ModelFinding);
+  }
+  // THE POSITIVE CONTROL: a real value with a trailing comment — the
+  // shape the SHIPPED template actually uses on two of its five lines —
+  // still resolves, so the refusals above are about emptiness rather than
+  // about this reader refusing every line that carries a `#`.
+  expect(
+    roleModel(roleModels("roles:\n  builder: a-model@seat   # why\n"), "executor").model,
+    "the control: a value with a trailing comment is still a value",
+  ).toBe("a-model@seat");
+});
