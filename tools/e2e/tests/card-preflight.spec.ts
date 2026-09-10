@@ -133,6 +133,12 @@ interface Planted {
   /** The frontmatter fence, verbatim. */
   touches?: string;
   /**
+   * A hand-written `tier:` value (T-296). The field is DERIVED — the arm
+   * writes it at the dispatch stamp — so a card carrying one before it is
+   * dispatched is an author's guess, and this is what plants that guess.
+   */
+  tier?: string;
+  /**
    * The OTHER live card's fence, verbatim. The board needs two cards
    * whose fences a body can aim at each other — a reservation only
    * collides with another card's, never with its own (T-287).
@@ -194,6 +200,7 @@ function cardText(planted: Planted): string {
     "milestone: 4",
     "priority: 30",
     "size: M",
+    ...(planted.tier === undefined ? [] : [`tier: ${planted.tier}`]),
     "status: planned",
     `blocked_by: ${planted.blockedBy ?? "[]"}`,
     planted.touches ?? `touches: [${SLUG}]`,
@@ -2660,4 +2667,34 @@ test("the two arms are opposite acts and are refused in one invocation", () => {
   expect(String(both.stderr)).toContain("opposite acts");
   expect(String(cli(["--help"]).stdout)).toContain("--take-seat");
   expect(String(cli(["--help"]).stdout)).toContain("--release-seat");
+});
+
+test("a HAND-WRITTEN tier on an undispatched card is a finding, and a card without one is silent about it", async () => {
+  // T-296: `tier:` is DERIVED — a function of the card's size, its fence
+  // against the guard-class list and whether a keeper already pins the
+  // property — and the arm writes it at the dispatch stamp. Before the
+  // dispatch a value there was written by an author with nothing behind
+  // it, and this is the last moment deleting a line is the whole fix.
+  //
+  // KILLED BY: a preflight that says nothing about the field (an author's
+  // guess then rides the dispatch and only the OVERWRITE note ever
+  // mentions it), and by one that reports the field's ABSENCE — which is
+  // how every correctly written card arrives and would make the finding
+  // fire on the normal case.
+  const guessed = await run(makeFixture({ tier: "bounded" }));
+  const hit = guessed.findings.filter((f) => f.includes("HAND-WRITTEN DERIVED FIELD"));
+  expect(hit, "an author's tier is a finding, once").toHaveLength(1);
+  expect(joined(hit), "and the finding says what to do about it").toContain("Delete the line");
+
+  // THE CLEAN TWIN, asserted non-vacuous: the same fixture with no tier
+  // raises nothing of this class, and the report still SAYS the field is
+  // unset rather than omitting the row — a class that reports nothing on
+  // the clean case is a class nobody can tell ran.
+  const clean = await run(makeFixture());
+  expect(
+    clean.findings.filter((f) => f.includes("HAND-WRITTEN DERIVED FIELD")),
+    "a card that leaves the field out is how a card is supposed to arrive",
+  ).toEqual([]);
+  expect(clean.text, "and the report still names the class it checked").toContain("THE DERIVED FIELD tier");
+  expect(clean.text, "reporting the absence as the absence").toContain("unset, which is how an author leaves it");
 });

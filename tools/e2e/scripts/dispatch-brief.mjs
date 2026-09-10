@@ -73,11 +73,13 @@
  */
 
 import { execFileSync, spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { closeSync, mkdirSync, openSync, readFileSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  INDEXED_DOCS,
   conventionsText,
   frontmatterBlock,
   liveTaskCards,
@@ -4362,7 +4364,7 @@ export function stateReport(ctx) {
 }
 
 /* ══════════════════════════════════════════════════════════════════════
- * THE DISPATCH RITUAL, PERFORMED (T-239) — eight steps, in the order the
+ * THE DISPATCH RITUAL, PERFORMED (T-239) — eleven steps, in the order the
  * documents fix, refusing at the first that fails.
  *
  * ── WHAT WAS WRONG ───────────────────────────────────────────────────
@@ -4380,7 +4382,7 @@ export function stateReport(ctx) {
  * brief. `docs/CONVENTIONS.md`'s serial-ritual bullet — cut ONE worktree,
  * arm it, READ THE MANIFEST BACK, then cut the next, and stamp
  * `building` BEFORE you cut. `method/roles/orchestrator.md` 5c — cut the
- * verifier's bench when you cut the lane. The eight steps below are that
+ * verifier's bench when you cut the lane. The eleven steps below are that
  * order, and `DISPATCH_STEPS` is the only place it is written down.
  *
  * ── WHAT THIS SECTION MAY AND MAY NOT DO ─────────────────────────────
@@ -4390,7 +4392,7 @@ export function stateReport(ctx) {
  * no more. `runDispatchLane` is the single function that acts, and every
  * process it starts and every byte it writes goes through the `DispatchIo`
  * it is handed — which is what lets a body drive a real failure at any
- * one of the eight steps without cutting eight worktrees. This is the
+ * one of the eleven steps without cutting eleven worktrees. This is the
  * module header's rule 6 kept rather than broken: the derivers still
  * write nothing, and the acting function is never called at import.
  *
@@ -4567,6 +4569,994 @@ export function laneScratchStem(taskId, sp) {
 }
 
 /* ────────────────────────────────────────────────────────────────────
+ * THE TIER — a function of the card and the tree, never of judgment
+ * (T-296, ADR-024 decision 1).
+ * ──────────────────────────────────────────────────────────────────── */
+
+/** The three tiers, in the order the method's own table gives them. */
+export const TIERS = Object.freeze(["bounded", "standard", "guarded"]);
+
+/** The bullet that publishes this project's ONE spelling of a graded reading. */
+export const BLESSED_RUNNER_PHRASE = "THE BLESSED GATE-RUNNER (T-202):";
+
+/**
+ * THE KEEPER RUN, DERIVED FROM THE DOCUMENT AND NEVER TYPED.
+ *
+ * The blessed gate-runner bullet is the one place this project names its
+ * runner, and a body requires exactly that — so the keeper step reads the
+ * spelling out of the document rather than carrying a fifth copy of a
+ * path this file already refuses to invent.
+ *
+ * @param {string} conventionsMd
+ * @returns {{ script: string, suite: string, owningFlag: string, verdictToken: string }}
+ */
+export function blessedRunner(conventionsMd) {
+  const flat = rawBullet(conventionsMd, BLESSED_RUNNER_PHRASE).replace(/\s+/g, " ");
+  const runs = [...flat.matchAll(/`([^`]+)`/g)].map((m) => /** @type {string} */ (m[1]));
+  const spelling = runs.find((r) => /^node \S+\.mjs\b/.test(r));
+  const scoped = runs.find((r) => r.includes("--owning"));
+  // THE VERDICT TOKEN IS READ TOO, and the keeper step reads the OUTPUT
+  // rather than the exit code because of it: an exit tells a caller that
+  // something went wrong, and only the verdict line tells it whether a
+  // suite was GRADED at all. That distinction is the whole difference
+  // between a red baseline and a derivation that could not place a path.
+  const token = runs.find((r) => /^[a-z]+-verdict$/.test(r));
+  if (spelling === undefined || scoped === undefined || token === undefined) {
+    throw new Error(
+      `dispatch-brief: the bullet containing ${JSON.stringify(BLESSED_RUNNER_PHRASE)} no longer ` +
+        "spells a `node <script>` runner, a scoped `--owning` form and its verdict token, so this " +
+        "module cannot derive the keeper run from it. A runner typed here would be the invented " +
+        "path that bullet's neighbour forbids.",
+    );
+  }
+  const script = /** @type {string} */ (/^node (\S+\.mjs)\b/.exec(spelling)?.[1]);
+  const suite = /** @type {string} */ (/(\S+) --owning/.exec(scoped)?.[1]);
+  return { script, suite, owningFlag: "--owning", verdictToken: token };
+}
+
+/**
+ * WHAT THE KEEPER RUN ACTUALLY SAID, read off its OUTPUT.
+ *
+ * THREE ANSWERS AND NEVER TWO. *Graded and green*, *graded and red*, and
+ * *nothing was graded* are three different facts, and a caller that read
+ * only the exit code would fold the third into the second: the scoped
+ * derivation REFUSES rather than grades when it cannot place a fenced
+ * path — a fence naming method text is the ordinary case — and a dispatch
+ * that reported that as a red baseline would refuse every guarded card
+ * this project cuts. An exit 0 over nothing is not a pass either, which
+ * is the same sentence this method's run-hygiene sections already make.
+ *
+ * @param {{ status: number, stdout: string, stderr: string, token: string }} r
+ * @returns {{ graded: boolean, green: boolean, detail: string }}
+ */
+export function keeperVerdict(r) {
+  const lines = `${r.stdout}\n${r.stderr}`
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.includes(r.token));
+  if (lines.length === 0) {
+    const said = `${r.stdout}\n${r.stderr}`.trim().split(/\r?\n/)[0] ?? "";
+    return {
+      graded: false,
+      green: false,
+      detail:
+        `the runner published no ${r.token} line (exit ${String(r.status)}), so no suite was ` +
+        `graded here${said === "" ? "" : ` — it said: ${said}`}`,
+    };
+  }
+  // THE VERDICT WORD IS ON THE LINE THIS READER WENT LOOKING FOR, and a
+  // reader that greps for that line and then decides from the process
+  // exit has not read it. `gate-run.mjs`'s own header says REFUSED "is
+  // never a green run and never a red one" — it means nothing was graded,
+  // which is the third answer this function exists to keep apart from the
+  // second, and reading it as red refuses a dispatch over a baseline
+  // nobody measured.
+  if (lines.some((l) => /\bverdict=REFUSED\b/.test(l))) {
+    return {
+      graded: false,
+      green: false,
+      detail: `exit ${String(r.status)} — ${lines.join(" / ")}`,
+    };
+  }
+  return {
+    graded: true,
+    green: r.status === 0,
+    detail: `exit ${String(r.status)} — ${lines.join(" / ")}`,
+  };
+}
+
+/**
+ * The heading in `method/tasks/TASK-FORMAT.md` under which the guard-class
+ * CLASSES are declared. The method is product-agnostic and names no path,
+ * so this side of the derivation reads NAMES and the other side reads the
+ * project's own mapping of them.
+ */
+export const GUARD_CLASS_HEADING = "### The guard-class list";
+
+/** The bullet in the project's conventions that maps those classes. */
+export const GUARD_CLASS_PHRASE = "GUARD-CLASS PATHS, IN THIS PROJECT'S OWN SPELLING";
+
+/** The sentinel after which that bullet is a MAP and not prose. */
+export const GUARD_CLASS_MAP_SENTINEL = "THE MAP:";
+
+/**
+ * The guard-class NAMES the method declares, in its own order.
+ *
+ * READ, NOT LISTED. A class enumeration typed into this file would be the
+ * hand-kept list the method's own last paragraph argues against, and it
+ * would go stale in the direction nobody notices — the class somebody
+ * added to the document and not to the program.
+ *
+ * @param {string} taskFormatMd
+ * @returns {string[]}
+ */
+export function guardClassIds(taskFormatMd) {
+  const text = section(taskFormatMd, GUARD_CLASS_HEADING);
+  /** @type {string[]} */
+  const ids = [];
+  for (const line of text.split(/\r?\n/)) {
+    const m = /^- `([a-z][a-z0-9-]*)` — /.exec(line.trim());
+    if (m === null) continue;
+    const id = /** @type {string} */ (m[1]);
+    if (!ids.includes(id)) ids.push(id);
+  }
+  if (ids.length === 0) {
+    throw new Error(
+      `dispatch-brief: method/tasks/TASK-FORMAT.md's ${JSON.stringify(GUARD_CLASS_HEADING)} ` +
+        "section declares no class in the published form (a bullet opening with a backticked " +
+        "name). An empty class list would classify every card as ungarded, which is the one " +
+        "answer this derivation must never reach by accident.",
+    );
+  }
+  return ids;
+}
+
+/**
+ * The project's mapping of those classes onto ITS OWN paths.
+ *
+ * BOTH DIRECTIONS ARE HARD FAILURES. A class the method declares and the
+ * project has not mapped would silently stop guarding whatever it named;
+ * a name mapped here that the method never declared is a class somebody
+ * invented at the project's end, where no other project can inherit it.
+ *
+ * @param {string} conventionsMd
+ * @param {string[]} ids the method's own class names
+ * @returns {Map<string, string[]>} class -> the project's path tokens
+ */
+export function guardClassMap(conventionsMd, ids) {
+  const flat = rawBullet(conventionsMd, GUARD_CLASS_PHRASE).replace(/\s+/g, " ");
+  const at = flat.indexOf(GUARD_CLASS_MAP_SENTINEL);
+  if (at < 0) {
+    throw new Error(
+      `dispatch-brief: the bullet containing ${JSON.stringify(GUARD_CLASS_PHRASE)} carries no ` +
+        `${JSON.stringify(GUARD_CLASS_MAP_SENTINEL)} sentinel, so this reader cannot tell the ` +
+        "map from the prose around it and will not guess which backticked runs are paths.",
+    );
+  }
+  /** @type {Map<string, string[]>} */
+  const map = new Map();
+  const body = flat.slice(at + GUARD_CLASS_MAP_SENTINEL.length);
+  for (const m of body.matchAll(/`([a-z][a-z0-9-]*)`:\s*((?:`[^`]+`(?:,\s*)?)+)/g)) {
+    const id = /** @type {string} */ (m[1]);
+    const tokens = [...(/** @type {string} */ (m[2])).matchAll(/`([^`]+)`/g)].map(
+      (t) => /** @type {string} */ (t[1]),
+    );
+    map.set(id, tokens);
+  }
+  const unmapped = ids.filter((id) => !map.has(id));
+  if (unmapped.length > 0) {
+    throw new Error(
+      `dispatch-brief: the method declares guard-class ${unmapped.join(", ")} and ` +
+        "docs/CONVENTIONS.md's guard-class bullet maps none of them onto this project's paths. " +
+        "A class with no mapping guards nothing, and a classifier that skipped it would answer " +
+        "`standard` for exactly the files the class exists to protect.",
+    );
+  }
+  const invented = [...map.keys()].filter((id) => !ids.includes(id));
+  if (invented.length > 0) {
+    throw new Error(
+      `dispatch-brief: docs/CONVENTIONS.md maps guard-class ${invented.join(", ")}, which ` +
+        "method/tasks/TASK-FORMAT.md does not declare. The classes are the METHOD's and the " +
+        "paths are the project's; a class invented at the project's end is one no other project " +
+        "inherits and one this program cannot explain.",
+    );
+  }
+  return map;
+}
+
+/**
+ * Does one path token cover one repository path?
+ *
+ * A token ending in `/` is a DIRECTORY and covers everything under it; a
+ * token ending in `*` is a PREFIX and covers every path that starts with
+ * it; any other token is a file, and covers itself and anything under it
+ * — a file token that later becomes a directory keeps guarding what it
+ * named.
+ *
+ * **THE PREFIX FORM IS NOT A CONVENIENCE, IT IS A CONSTRAINT THIS
+ * PROJECT PUT ON ITS OWN DOCUMENT.** docs/CONVENTIONS.md names the
+ * blessed gate-runner in EXACTLY ONE PLACE and a body requires exactly
+ * that, so a guard-class map that spelled the runner's filename would red
+ * the body that keeps one spelling one spelling. The map names the SHAPE
+ * instead, which is also the honester statement: what makes a file
+ * guard-class is being a gate runner, not being that particular file.
+ *
+ * @param {string} token
+ * @param {string} rel
+ * @returns {boolean}
+ */
+export function guardTokenCovers(token, rel) {
+  // BOTH DIRECTIONS, BECAUSE A FENCE NAMES A REGION AND SO DOES A CLASS.
+  // A fenced path may sit UNDER the class's token, and it may equally
+  // CONTAIN it: `tools/e2e/scripts/` is a tracked directory holding the
+  // gate runners and `lib/` holds the parser, so a card fencing either is
+  // a card editing them. Asking only the first question answered
+  // `standard` for a fence over five mapped guards. A leading `./` is the
+  // same path written the way a relative path usually is written, and is
+  // stripped before either question is asked.
+  const r = rel.replace(/^\.\//, "").replace(/\/+$/, "");
+  if (r === "") return false;
+  if (token.endsWith("*")) {
+    const prefix = token.slice(0, -1);
+    return prefix !== "" && (r.startsWith(prefix) || prefix.startsWith(`${r}/`));
+  }
+  const t = token.replace(/\/+$/, "");
+  if (t === "") return false;
+  return r === t || r.startsWith(`${t}/`) || t.startsWith(`${r}/`);
+}
+
+/**
+ * Every guard class each path hits — and a path may hit more than one,
+ * because a class says what a file DOES and one file can do two of these
+ * things. The answer is `guarded` on the first hit either way; the LIST is
+ * what the arm prints, so a reader can see WHY.
+ *
+ * @param {string[]} paths
+ * @param {Map<string, string[]>} map
+ * @returns {{ path: string, classes: string[] }[]} only the paths that hit
+ */
+export function guardClassHits(paths, map) {
+  /** @type {{ path: string, classes: string[] }[]} */
+  const hits = [];
+  for (const rel of paths) {
+    /** @type {string[]} */
+    const classes = [];
+    for (const [id, tokens] of map) {
+      if (tokens.some((t) => guardTokenCovers(t, rel))) classes.push(id);
+    }
+    if (classes.length > 0) hits.push({ path: rel, classes });
+  }
+  return hits;
+}
+
+/**
+ * A CARD THIS ARM CANNOT CLASSIFY — never a guess, and the message names
+ * which of the three unreadable things it was.
+ */
+export class TierFinding extends Error {}
+
+/**
+ * @typedef {object} TierInput
+ * @property {string} size            the card's own `size:`, verbatim
+ * @property {string[]} fencePaths    the fence, expanded
+ * @property {string[]} unresolved    fence entries that expanded to nothing
+ * @property {string[]} untracked     fenced paths this tree does not track
+ * @property {Map<string, string[]>} guardMap
+ * @property {{ pinned: boolean, answered: boolean, why: string }} keeper
+ */
+
+/**
+ * @typedef {object} TierVerdict
+ * @property {string} tier
+ * @property {string} reason  one sentence, printed on the dispatch's output
+ */
+
+/**
+ * THE CLASSIFIER. A function of the card and the tree, and of nothing a
+ * seat believes.
+ *
+ * The order below is the rule and not an optimisation: a guard-class path
+ * outranks every size, because guard-class is a property of what the file
+ * DOES and a one-line change to a guard can retire the guard in silence.
+ *
+ * @param {TierInput} input
+ * @returns {TierVerdict}
+ */
+export function classifyTier(input) {
+  const size = input.size.trim().toUpperCase();
+  if (size === "") {
+    throw new TierFinding(
+      "dispatch-brief: this card declares no `size:`, and size is one of the three inputs the " +
+        "tier is a function of. A tier guessed for a card with no size is a verification bought " +
+        "on nothing.",
+    );
+  }
+  if (input.unresolved.length > 0) {
+    throw new TierFinding(
+      `dispatch-brief: this card's fence entries ${input.unresolved.join(", ")} expand to no path ` +
+        "at all, so the arm cannot test them against the guard-class list. An unresolvable fence " +
+        "is a fence nobody can place, and a tier derived over the paths that DID resolve would " +
+        "be answering about a different card.",
+    );
+  }
+  const hits = guardClassHits(input.fencePaths, input.guardMap);
+  if (hits.length > 0) {
+    const named = hits.map((h) => `${h.path} (${h.classes.join(", ")})`).join(", ");
+    return {
+      tier: "guarded",
+      reason: `the fence names guard-class path(s): ${named} — guard-class outranks size`,
+    };
+  }
+  if (size === "L") {
+    return { tier: "guarded", reason: "size L, and every L card takes the guarded tier" };
+  }
+  if (size !== "XS") {
+    return {
+      tier: "standard",
+      reason: `size ${size}, no guard-class path in a fence of ${String(input.fencePaths.length)} path(s)`,
+    };
+  }
+  // ── SIZE XS: the only size that can reach `bounded`, and the only one
+  //    whose classification depends on a question a suite has to answer.
+  if (!input.keeper.answered) {
+    throw new TierFinding(
+      `dispatch-brief: this card is size XS with no guard-class path, so whether a keeper already ` +
+        `pins what it changes is what decides bounded against standard — and that question was ` +
+        `not answered: ${input.keeper.why}. A bounded card is the one tier with no verifier, so ` +
+        "an unanswered keeper question is refused rather than resolved downward.",
+    );
+  }
+  if (input.untracked.length > 0) {
+    return {
+      tier: "standard",
+      reason:
+        `size XS, but ${input.untracked.join(", ")} is not tracked in this tree, so the fence is ` +
+        "not wholly inside a tracked one and the card is not bounded",
+    };
+  }
+  if (!input.keeper.pinned) {
+    return {
+      tier: "standard",
+      reason: `size XS inside a tracked fence, but no keeper pins it: ${input.keeper.why}`,
+    };
+  }
+  return {
+    tier: "bounded",
+    reason:
+      "size XS, every fenced path tracked, no guard-class path, and a keeper already pins it: " +
+      input.keeper.why,
+  };
+}
+
+/* ────────────────────────────────────────────────────────────────────
+ * PHASE 1, RENDERED BY THE ARM — and the blindness is the property the
+ * rendering must not spend (roles/orchestrator.md 5e).
+ * ──────────────────────────────────────────────────────────────────── */
+
+/**
+ * The line the seat pastes, and the sentence saying why the arm cannot
+ * paste it itself. A dispatcher that reads *"the arm spawns phase 1"* and
+ * waits for a session that will never appear has lost the whole saving to
+ * one word.
+ */
+export const PHASE1_SPAWN_NOTE =
+  "AN ARM CANNOT SPAWN A SEAT. Spawn phase 1 tool-less — no file, git or shell tools — with the " +
+  "contents of this file as its WHOLE prompt, and save what it returns:";
+
+/**
+ * @typedef {object} Phase1Input
+ * @property {string} taskId
+ * @property {string} tier
+ * @property {string} base       the ref the card was read at
+ * @property {string} card       the card's repository-relative path
+ * @property {string} cardText   the card AS IT STOOD AT THE BASE, verbatim
+ * @property {string} verifierMd this method's verifier role file
+ * @property {string} attackSetFile where the seat saves the return
+ */
+
+/**
+ * RENDER PHASE 1 — from the card at the base and the tier, and from
+ * NOTHING ELSE.
+ *
+ * **THE PARAMETER LIST IS THE GUARANTEE.** This function is handed no
+ * root, no diff, no notes, no branch and no commit later than the base,
+ * so there is nothing in scope for it to leak even by accident. Every
+ * other blindness rule in this method is a seat declining to look; this
+ * one is a function that cannot.
+ *
+ * @param {Phase1Input} input
+ * @returns {string}
+ */
+export function renderPhase1(input) {
+  return [
+    "# VERIFIER, PHASE 1 — the attack set, written before the work exists",
+    "",
+    `You are the verifier's phase 1 for ${input.taskId}, tier ${input.tier}. You hold NO file,`,
+    "git or shell tools, and that is the point: what you cannot see is the guarantee this pass",
+    "buys. You return ONE artifact and nothing else.",
+    "",
+    "## What you return",
+    "",
+    "An ATTACK SET: for every acceptance criterion below, at least one attack naming a way to",
+    "satisfy that criterion's LETTER while failing its PURPOSE. Under that floor this is a",
+    "refusal and is handled as one. A generic or empty set is trivially uncontaminated and worth",
+    "nothing.",
+    "",
+    "You may also return a LIST OF MEASUREMENTS you want taken — a card asserting anything about",
+    "a platform, a tool or an exit code owes a ground truth, and a spawn with no shell cannot",
+    "take one. The dispatcher takes them AT THE BASE REF, where no lane branch exists to shape",
+    "the answer. Anything else you cannot reach is a REFUSAL naming what you need and why.",
+    "",
+    "## The card, at the base and verbatim",
+    "",
+    `Read at ${input.base}, from ${input.card}. This is the card as it stood when the lane was`,
+    "cut: it carries no implementation notes, no diff and no figure measured after that commit,",
+    "because none of those existed yet.",
+    "",
+    "```markdown",
+    input.cardText.replace(/\r?\n$/, ""),
+    "```",
+    "",
+    "## Your role file, at the same ref",
+    "",
+    "```markdown",
+    input.verifierMd.replace(/\r?\n$/, ""),
+    "```",
+    "",
+    "## What must not reach you, and has not",
+    "",
+    "The diff, the executor's notes, its report, the commit log, and every figure measured after",
+    `${input.base}. This prompt was rendered from the card at that commit and from the role file`,
+    "above; nothing else was in scope for the program that wrote it.",
+    "",
+    `The dispatcher saves your return to ${input.attackSetFile} and hashes it. Phase 2's verdict`,
+    "cites that hash, and a verdict whose hash does not match the saved file is refused.",
+    "",
+  ].join("\n");
+}
+
+/* ────────────────────────────────────────────────────────────────────
+ * PHASE 2 — the ground taken by a script, the inputs sealed, the brief
+ * rendered (roles/orchestrator.md 5e).
+ * ──────────────────────────────────────────────────────────────────── */
+
+/** The line the seat pastes for phase 2, and why the arm cannot paste it. */
+export const PHASE2_SPAWN_NOTE =
+  "AN ARM CANNOT SPAWN A SEAT. Spawn phase 2 FRESH — a NEW spawn and never a continuation of " +
+  "phase 1, which would keep everything it was later shown — with the contents of this file as " +
+  "its WHOLE prompt:";
+
+/** The heading the ground file's hand-written addendum goes under. */
+export const GROUND_ADDENDUM_HEADING = "## The seat's addendum";
+
+/** @param {string} text @returns {string} */
+export function sha256(text) {
+  return createHash("sha256").update(Buffer.from(text, "utf8")).digest("hex");
+}
+
+/**
+ * THE BODY NAMES A SPEC DECLARES, off its own source.
+ *
+ * A COUNT WITHOUT NAMES IS NOT A GROUND TRUTH. The verifier is judging
+ * whether a body it is shown measures anything, and *"this file had 41
+ * bodies"* cannot tell it which one arrived with the diff. The names are
+ * what a later reading is compared against.
+ *
+ * @param {string} specText
+ * @returns {string[]}
+ */
+export function specBodies(specText) {
+  /** @type {string[]} */
+  const names = [];
+  for (const m of specText.matchAll(/\btest(?:\.\w+)?\(\s*(?:"((?:[^"\\]|\\.)*)"|`([^`]*)`)/g)) {
+    const name = /** @type {string} */ (m[1] ?? m[2] ?? "");
+    if (name !== "") names.push(name);
+  }
+  return names;
+}
+
+/**
+ * The behaviour census's own section for one spec file, by the slug the
+ * census keys on: `tools/e2e/tests/<slug>.spec.ts` is `## <slug>`.
+ *
+ * @param {string} capabilitiesMd
+ * @param {string} specRel
+ * @returns {{ heading: string, count: number, present: boolean }}
+ */
+export function censusSection(capabilitiesMd, specRel) {
+  const slug = path.basename(specRel).replace(/\.spec\.tsx?$/, "");
+  const heading = `## ${slug}`;
+  const lines = capabilitiesMd.split(/\r?\n/);
+  const at = lines.findIndex((l) => l.trim() === heading);
+  if (at < 0) return { heading, count: 0, present: false };
+  let count = 0;
+  for (let i = at + 1; i < lines.length; i += 1) {
+    const line = /** @type {string} */ (lines[i]);
+    if (line.startsWith("## ")) break;
+    if (line.startsWith("- ")) count += 1;
+  }
+  return { heading, count, present: true };
+}
+
+/**
+ * @typedef {object} GroundFile
+ * @property {string} rel
+ * @property {string} blob   git's own object id at the base
+ * @property {number} bytes
+ * @property {string[]} [bodies] for a spec file, its body names at the base
+ * @property {{ heading: string, count: number, present: boolean }} [census]
+ */
+
+/**
+ * THE GROUND, AS A DOCUMENT — taken at the BASE, where no lane branch
+ * exists to shape the answer (roles/verifier.md step 0).
+ *
+ * It is a pure function of what the caller measured, so a body can drive
+ * it with planted figures and the arm can drive it with real ones, and
+ * neither has to reach the other's world to do it.
+ *
+ * @param {{ taskId: string, tier: string, base: string, card: string, files: GroundFile[], preflight: { exit: number, findings: string[] } }} input
+ * @returns {string}
+ */
+export function groundDocument(input) {
+  /** @type {string[]} */
+  const out = [
+    `# GROUND TRUTHS for ${input.taskId}, taken at the base`,
+    "",
+    `Tier ${input.tier}. Every figure below was measured at ${input.base} — the commit the lane`,
+    "was cut from — and NOT at the lane's tip. A ground truth taken before the diff cannot be",
+    "shaped by what the implementation happens to do; the same measurement taken afterwards is",
+    "indistinguishable from one chosen to fit.",
+    "",
+    `## The fenced files at ${input.base}`,
+    "",
+    "| path | blob | bytes |",
+    "|---|---|---|",
+  ];
+  for (const f of input.files) {
+    out.push(`| ${f.rel} | ${f.blob} | ${String(f.bytes)} |`);
+  }
+  out.push("", "## The fenced specs, their census sections and their body names", "");
+  const specs = input.files.filter((f) => f.bodies !== undefined);
+  if (specs.length === 0) {
+    out.push("This card's fence names no spec file, so there is no body list to take.");
+  }
+  for (const f of specs) {
+    const census = f.census ?? { heading: "", count: 0, present: false };
+    out.push(
+      `### ${f.rel} — ${String((f.bodies ?? []).length)} body/bodies at the base`,
+      "",
+      census.present
+        ? `Census section ${census.heading}: ${String(census.count)} sentence(s).`
+        : `The behaviour census carries NO section for this spec — a spec whose sentences the ` +
+          "census does not publish is a fact about the census, and it is said rather than left out.",
+      "",
+    );
+    for (const name of f.bodies ?? []) out.push(`- ${name}`);
+    out.push("");
+  }
+  out.push(
+    "## The arm's own preflight, at the base",
+    "",
+    `Exit ${String(input.preflight.exit)} over ${String(input.preflight.findings.length)} finding(s).`,
+    "",
+  );
+  for (const f of input.preflight.findings) out.push(`- ${f}`);
+  out.push(
+    "",
+    GROUND_ADDENDUM_HEADING,
+    "",
+    "Nothing has been added by hand. On the GUARDED tier the seat's answers to phase 1's further",
+    "asks belong here, under this heading, marked as the seat's — on the STANDARD tier this file",
+    "is the whole ground and this section stays as it is.",
+    "",
+  );
+  return out.join("\n");
+}
+
+/**
+ * THE SEAL — the three inputs, by sha256, in one file.
+ *
+ * WHY THREE. The attack set is what phase 2 pre-committed to; the ground
+ * is what it judges on; the card at the base is the contract both were
+ * written against. A verdict citing an attack set alone can still be a
+ * verdict written against a card that moved.
+ *
+ * @param {{ taskId: string, tier: string, base: string, tip: string, inputs: { what: string, file: string, digest: string }[] }} input
+ * @returns {string}
+ */
+export function sealDocument(input) {
+  return [
+    `# SEALED INPUTS for ${input.taskId}`,
+    "",
+    `tier: ${input.tier}`,
+    `base: ${input.base}`,
+    `tip: ${input.tip}`,
+    "",
+    ...input.inputs.map((i) => `sha256:${i.digest}  ${i.what}  (${i.file})`),
+    "",
+    "The verdict cites these digests. A verdict whose cited hash does not match the saved file is",
+    "REFUSED — not read, not weighed, and the pass is re-run — because an input editable after the",
+    "diff is open is an input assembled after the fact, and it is indistinguishable from an honest",
+    "one to every later reader including its author.",
+    "",
+  ].join("\n");
+}
+
+/**
+ * @typedef {object} Phase2Input
+ * @property {string} taskId
+ * @property {string} tier
+ * @property {string} base
+ * @property {string} tip
+ * @property {string} bench    the detached worktree phase 2 judges in
+ * @property {string} card
+ * @property {string} cardText the card AT THE BASE — the contract, not the notes
+ * @property {string} attackSetFile
+ * @property {string} groundFile
+ * @property {string} stampsFile
+ * @property {string} suites   the command this pass owes
+ */
+
+/**
+ * RENDER PHASE 2 — from the card, the tier, the tip and the sealed
+ * digests. Unlike phase 1 this spawn HOLDS tools and is meant to: it is
+ * the half that reads the diff.
+ *
+ * @param {Phase2Input} input
+ * @returns {string}
+ */
+export function renderPhase2(input) {
+  return [
+    `# VERIFIER, PHASE 2 — ${input.taskId}, tier ${input.tier}`,
+    "",
+    `You are a FRESH spawn. Phase 1 wrote the attack set at ${input.attackSetFile} without tools`,
+    "and without the diff; you hold tools and you read the diff. You are not a continuation of it,",
+    "and you cannot return to its frame — which is why it was a separate spawn.",
+    "",
+    "## Your bench and your range",
+    "",
+    `bench worktree: ${input.bench} (detached at the lane's tip)`,
+    `base: ${input.base}`,
+    `tip:  ${input.tip}`,
+    `the suites this pass owes: ${input.suites}`,
+    "",
+    "## Your sealed inputs",
+    "",
+    `- the attack set: ${input.attackSetFile}`,
+    `- the ground, taken at the base by a script: ${input.groundFile}`,
+    `- the digests of both, and of the card at the base: ${input.stampsFile}`,
+    "",
+    "Cite those digests in your verdict. A verdict whose cited hash does not match the saved file",
+    "is refused and the pass is re-run.",
+    "",
+    "## The mode",
+    "",
+    input.tier === "guarded"
+      ? "GUARDED: your role file entire — the rubric, the whole suites, and the seat's answers to " +
+        "phase 1's further asks under the ground file's addendum heading."
+      : "STANDARD: your role file's `The standard mode, stated once` section, which is the ONE " +
+        "place that says what this pass is. Read it there rather than from this brief.",
+    "",
+    "**THE DIFF BEFORE THE EXECUTOR'S NOTES**, and a row per acceptance criterion with its",
+    "evidence in the verdict. A correction you assign is a body you commit on this bench after the",
+    "verdict, with a mutant block per correction in the layout your role file publishes.",
+    "",
+    "## The card, at the base and verbatim",
+    "",
+    `Read at ${input.base}, from ${input.card}. This is the contract both phases were written`,
+    "against, and it is the copy the seal covers.",
+    "",
+    "```markdown",
+    input.cardText.replace(/\r?\n$/, ""),
+    "```",
+    "",
+  ].join("\n");
+}
+
+/**
+ * @typedef {object} BenchPlan
+ * @property {string} root
+ * @property {string} taskId
+ * @property {string} card
+ * @property {string} cardFile
+ * @property {string} bench
+ * @property {string} tier
+ * @property {string[]} fencePaths
+ * @property {string} groundFile
+ * @property {string} stampsFile
+ * @property {string} phase2File
+ * @property {string} attackSetFile
+ * @property {string[]} preflightArgv
+ * @property {string} suites
+ */
+
+/**
+ * Derive everything the bench ritual needs. Reads the tree; writes
+ * nothing; starts no process — the same split `dispatchLanePlan` takes.
+ *
+ * @param {Ctx} ctx
+ * @param {{ taskId: string, scratch?: string, tier?: string }} opts
+ * @returns {BenchPlan}
+ */
+export function benchPlan(ctx, opts) {
+  const taskId = normaliseTaskId(opts.taskId);
+  const card = ctx.cards.get(taskId);
+  if (card === undefined) {
+    throw new DispatchLaneFinding(
+      `dispatch-brief: no live card declares id ${taskId}, so there is no contract for a bench to ` +
+        "seal. The board is read off the tree (flat docs/tasks/T-*.md).",
+    );
+  }
+  const sp = dispatchSpellings(ctx.conventions);
+  const repo = mainWorktree(ctx.porcelain);
+  if (repo.path === "") {
+    throw new DispatchLaneFinding(`dispatch-brief: ${repo.reason}`);
+  }
+  const scratch = opts.scratch === undefined || opts.scratch === "" ? os.tmpdir() : opts.scratch;
+  // THE TIER IS READ OFF THE CARD, where the dispatch derived and stamped
+  // it. A bench that let a seat retype the tier would hand back the dial
+  // the classifier exists to remove.
+  const tier = opts.tier ?? fieldScalar(card.fields, "tier");
+  if (tier === "") {
+    throw new DispatchLaneFinding(
+      `dispatch-brief: ${taskId} carries no \`tier:\`, and the bench's shape is a function of it ` +
+        "— which suites, which mode, and whether a phase 1 exists at all. The tier is written by " +
+        "the arm at the dispatch stamp (method/tasks/TASK-FORMAT.md, The tier); a card cut before " +
+        "that field existed is the seat's to name explicitly rather than this arm's to guess.",
+    );
+  }
+  const runner = blessedRunner(ctx.conventions);
+  return {
+    root: ctx.root,
+    taskId,
+    card: card.file,
+    cardFile: path.join(ctx.root, card.file),
+    bench: path.resolve(repo.path, sp.benchPattern.replace("T-NNN", taskId)),
+    tier,
+    fencePaths: fencePaths({ entries: fieldList(card.fields, "touches") }, ctx.slugs, ctx.comps),
+    groundFile: path.resolve(scratch, laneScratchName("ground", "md", taskId, sp)),
+    stampsFile: path.resolve(scratch, laneScratchName("stamps", "txt", taskId, sp)),
+    phase2File: path.resolve(scratch, laneScratchName("phase2", "txt", taskId, sp)),
+    attackSetFile: path.resolve(scratch, laneScratchName("attack-set", "md", taskId, sp)),
+    preflightArgv: [process.execPath, BRIEF_CLI, "--task", taskId, "--preflight", "--root", ctx.root],
+    suites:
+      tier === "guarded"
+        ? `${runner.script} parser|app|rust|e2e — the whole battery, which the guarded tier keeps`
+        : `${runner.script} ${runner.suite} --range <base>..<tip> — the owed set of the range`,
+  };
+}
+
+/**
+ * @typedef {object} BenchResult
+ * @property {number} code
+ * @property {StepResult[]} done
+ * @property {string[]} findings
+ * @property {string[]} notes
+ * @property {string} base
+ * @property {string} tip
+ */
+
+/**
+ * THE BENCH RITUAL — the ground, the seal, the brief, in that order.
+ *
+ * The ORDER is the rule: a seal taken before the ground exists seals
+ * nothing, and a phase 2 brief rendered before the seal would name
+ * digests that had not been computed.
+ *
+ * @param {BenchPlan} plan
+ * @param {DispatchIo} io
+ * @returns {BenchResult}
+ */
+export function runBench(plan, io) {
+  /** @type {StepResult[]} */
+  const done = [];
+  /** @type {string[]} */
+  const findings = [];
+  /** @type {string[]} */
+  const notes = [];
+
+  /** @param {string[]} argv @returns {{ ok: boolean, out: string, err: string, status: number }} */
+  const run = (argv) => {
+    const r = io.run(argv, { cwd: plan.root });
+    return { ok: r.status === 0, out: r.stdout, err: r.stderr, status: r.status };
+  };
+
+  // ── THE TWO REFS, DERIVED. The tip is the BENCH's own HEAD (the
+  //    detached `-V-<id>` worktree), which is where the verifier's own
+  //    correction commits land; the base is the merge base of that tip
+  //    against the integration branch.
+  const tipRun = run(["git", "-C", plan.bench, "rev-parse", "HEAD"]);
+  if (!tipRun.ok) {
+    findings.push(
+      `the bench worktree at ${plan.bench} could not be read (${tipRun.err.trim()}), so there is ` +
+        "no tip to seal against. The bench is cut WITH the lane (method/roles/orchestrator.md 5c); " +
+        "a card whose bench has been removed is one this arm cannot serve.",
+    );
+    return { code: EXIT.FOUND, done, findings, notes, base: "", tip: "" };
+  }
+  const tip = tipRun.out.trim();
+  const baseRun = run(["git", "-C", plan.root, "merge-base", tip, "HEAD"]);
+  const base = baseRun.ok ? baseRun.out.trim() : "";
+  if (base === "") {
+    findings.push(
+      `the base of ${tip} against this checkout's HEAD could not be derived ` +
+        `(${baseRun.err.trim()}), and every figure in the ground is a figure AT the base. A ` +
+        "ground taken at an unknown ref is a ground nobody can re-derive.",
+    );
+    return { code: EXIT.FOUND, done, findings, notes, base: "", tip };
+  }
+
+  // ── THE GROUND ────────────────────────────────────────────────────
+  /** @type {GroundFile[]} */
+  const files = [];
+  // THE CENSUS IS READ AT THE BASE AND THROUGH GIT, not off the working
+  // tree — every other figure in this file is at the base, and a census
+  // read from the tree would be the one line of the ground measured
+  // somewhere else. Its NAME comes from `INDEXED_DOCS`, which is the one
+  // place this project enumerates the documents its index carries.
+  const censusRel = INDEXED_DOCS.find((d) => d.toUpperCase().includes("CAPABILITIES")) ?? "";
+  const censusRun = censusRel === "" ? undefined : run(["git", "-C", plan.root, "show", `${base}:${censusRel}`]);
+  const capabilities = censusRun !== undefined && censusRun.ok ? censusRun.out : "";
+  if (capabilities === "") {
+    notes.push(
+      "this checkout publishes no behaviour census at the base, so the ground carries no census " +
+        "section for any fenced spec. Said rather than left blank: a missing census and a spec " +
+        "the census does not name look the same in a file that omits both.",
+    );
+  }
+  for (const rel of plan.fencePaths) {
+    const blobRun = run(["git", "-C", plan.root, "rev-parse", `${base}:${rel}`]);
+    if (!blobRun.ok) {
+      files.push({ rel, blob: "(absent at the base)", bytes: 0 });
+      continue;
+    }
+    const blob = blobRun.out.trim();
+    const sizeRun = run(["git", "-C", plan.root, "cat-file", "-s", blob]);
+    /** @type {GroundFile} */
+    const entry = { rel, blob, bytes: sizeRun.ok ? Number(sizeRun.out.trim()) : 0 };
+    if (/\.spec\.tsx?$/.test(rel)) {
+      const textRun = run(["git", "-C", plan.root, "show", `${base}:${rel}`]);
+      entry.bodies = textRun.ok ? specBodies(textRun.out) : [];
+      entry.census = censusSection(capabilities, rel);
+    }
+    files.push(entry);
+  }
+  const pre = io.run(plan.preflightArgv, { cwd: plan.root });
+  const ground = groundDocument({
+    taskId: plan.taskId,
+    tier: plan.tier,
+    base,
+    card: plan.card,
+    files,
+    preflight: {
+      exit: pre.status,
+      findings: pre.stderr
+        .split("\n")
+        .map((l) => l.trim())
+        .filter((l) => l !== ""),
+    },
+  });
+  try {
+    io.write(plan.groundFile, ground);
+  } catch (err) {
+    findings.push(
+      `the ground could not be written to ${plan.groundFile} — ` +
+        `${err instanceof Error ? err.message : String(err)}`,
+    );
+    return { code: EXIT.CANNOT_RUN, done, findings, notes, base, tip };
+  }
+  done.push({
+    n: 1,
+    id: "ground",
+    ran: `write ${plan.groundFile}`,
+    exit: EXIT.CLEAN,
+    detail: `${String(files.length)} fenced file(s) at ${base}, preflight exit ${String(pre.status)}`,
+  });
+
+  // ── THE SEAL ──────────────────────────────────────────────────────
+  const cardAtBase = run(["git", "-C", plan.root, "show", `${base}:${plan.card}`]);
+  /** @type {{ what: string, file: string, digest: string }[]} */
+  const inputs = [];
+  /** @type {string} */
+  let attackSet = "";
+  try {
+    attackSet = io.read(plan.attackSetFile);
+  } catch {
+    findings.push(
+      `no attack set at ${plan.attackSetFile}. Phase 1 is rendered at DISPATCH and its return is ` +
+        "saved there (method/roles/orchestrator.md 5e); a bench sealed without one would seal two " +
+        "inputs and call it three, and the verdict's citation would cover a file nobody wrote.",
+    );
+    return { code: EXIT.FOUND, done, findings, notes, base, tip };
+  }
+  inputs.push({ what: "the attack set", file: plan.attackSetFile, digest: sha256(attackSet) });
+  inputs.push({ what: "the ground", file: plan.groundFile, digest: sha256(ground) });
+  inputs.push({
+    what: `the card at ${base}`,
+    file: plan.card,
+    digest: sha256(cardAtBase.ok ? cardAtBase.out : ""),
+  });
+  const seal = sealDocument({ taskId: plan.taskId, tier: plan.tier, base, tip, inputs });
+  try {
+    io.write(plan.stampsFile, seal);
+  } catch (err) {
+    findings.push(
+      `the seal could not be written to ${plan.stampsFile} — ` +
+        `${err instanceof Error ? err.message : String(err)}`,
+    );
+    return { code: EXIT.CANNOT_RUN, done, findings, notes, base, tip };
+  }
+  done.push({
+    n: 2,
+    id: "seal",
+    ran: `write ${plan.stampsFile}`,
+    exit: EXIT.CLEAN,
+    detail: `${String(inputs.length)} input(s) sealed by sha256`,
+  });
+
+  // ── THE BRIEF ─────────────────────────────────────────────────────
+  const phase2 = renderPhase2({
+    taskId: plan.taskId,
+    tier: plan.tier,
+    base,
+    tip,
+    bench: plan.bench,
+    card: plan.card,
+    cardText: cardAtBase.ok ? cardAtBase.out : "",
+    attackSetFile: plan.attackSetFile,
+    groundFile: plan.groundFile,
+    stampsFile: plan.stampsFile,
+    suites: plan.suites,
+  });
+  try {
+    io.write(plan.phase2File, phase2);
+  } catch (err) {
+    findings.push(
+      `the phase 2 brief could not be written to ${plan.phase2File} — ` +
+        `${err instanceof Error ? err.message : String(err)}`,
+    );
+    return { code: EXIT.CANNOT_RUN, done, findings, notes, base, tip };
+  }
+  notes.push(`${PHASE2_SPAWN_NOTE} ${plan.phase2File}`);
+  done.push({
+    n: 3,
+    id: "brief",
+    ran: `write ${plan.phase2File}`,
+    exit: EXIT.CLEAN,
+    detail: `${plan.phase2File} — tier ${plan.tier}, sealed against ${String(inputs.length)} input(s)`,
+  });
+  return { code: EXIT.CLEAN, done, findings, notes, base, tip };
+}
+
+/**
+ * The bench ritual's own block of facts, for the seat that has to paste
+ * one line and read three files.
+ *
+ * @param {Ctx} ctx
+ * @param {BenchPlan} plan
+ * @param {BenchResult | undefined} result
+ * @returns {Rec[]}
+ */
+export function benchRecs(ctx, plan, result) {
+  const machine = liveProv(ctx.at, ctx.host, "the scratch directory this bench was given");
+  const moving = liveProv(ctx.at, ctx.host, "git rev-parse in the bench worktree, and git merge-base against this checkout");
+  return [
+    note("THE BENCH — the sealed inputs the verifier judges on, and the line the seat pastes"),
+    value(`task: ${plan.taskId}`, treeProv(ctx.ref, "the card named by this bench, and nothing else")),
+    value(`tier: ${plan.tier}`, treeProv(ctx.ref, `${plan.taskId} frontmatter field tier, written by the arm at dispatch`)),
+    value(`bench worktree: ${plan.bench}`, liveProv(ctx.at, ctx.host, "docs/CONVENTIONS.md's bench spelling, resolved against the repository's main worktree")),
+    value(`base: ${result === undefined ? "<derived at the bench's first step>" : result.base}`, moving),
+    value(`tip: ${result === undefined ? "<derived at the bench's first step>" : result.tip}`, moving),
+    value(`attack set: ${plan.attackSetFile}`, machine),
+    value(`ground: ${plan.groundFile}`, machine),
+    value(`stamps: ${plan.stampsFile}`, machine),
+    value(`phase 2 brief: ${plan.phase2File}`, machine),
+    value(`the suites this pass owes: ${plan.suites}`, treeProv(ctx.ref, "the tier, against docs/CONVENTIONS.md's blessed gate-runner bullet")),
+  ];
+}
+
+/* ────────────────────────────────────────────────────────────────────
  * THE STAMP — step one's write, and the read-back that makes it a fact.
  * ──────────────────────────────────────────────────────────────────── */
 
@@ -4590,11 +5580,21 @@ export class DispatchLaneFinding extends Error {}
  * is asked to stamp and cannot find is a REFUSAL, and a line is replaced
  * whole rather than patched.
  *
+ * **AND ONE KEY MAY BE CREATED, BY NAME AND NEVER BY DEFAULT** (T-296).
+ * `tier:` is written by the arm and left out by the author, so the card
+ * the arm stamps commonly has no line to anchor on — and the refusal
+ * above, applied to it, would make every un-dispatched card unstampable.
+ * The opt-in is per key and carries the key it goes AFTER, so a created
+ * line lands where the format publishes it rather than at the end of the
+ * block; a key not named in `insertAfter` still refuses exactly as
+ * before, which is the property the body above pins.
+ *
  * @param {string} text the card, verbatim
  * @param {Record<string, string>} fields key -> value; "" writes a bare `key:`
+ * @param {{ insertAfter?: Record<string, string> }} [opts] keys that may be CREATED, each naming its anchor
  * @returns {{ text: string, changed: string[] }}
  */
-export function stampCard(text, fields) {
+export function stampCard(text, fields, opts = {}) {
   const block = frontmatterBlock(text);
   if (block === null) {
     throw new DispatchLaneFinding(
@@ -4613,8 +5613,22 @@ export function stampCard(text, fields) {
   const lines = block.split(/\r?\n/);
   /** @type {string[]} */
   const changed = [];
+  const insertAfter = opts.insertAfter ?? {};
   for (const [key, want] of Object.entries(fields)) {
-    const at = lines.findIndex((l) => new RegExp(`^${key}:(?:[ \\t]|$)`).test(l));
+    let at = lines.findIndex((l) => new RegExp(`^${key}:(?:[ \\t]|$)`).test(l));
+    if (at < 0 && Object.prototype.hasOwnProperty.call(insertAfter, key)) {
+      const anchor = /** @type {string} */ (insertAfter[key]);
+      const after = lines.findIndex((l) => new RegExp(`^${anchor}:(?:[ \\t]|$)`).test(l));
+      if (after < 0) {
+        throw new DispatchLaneFinding(
+          `dispatch-brief: ${JSON.stringify(`${key}:`)} may be created on this card, but the ` +
+            `anchor it goes after (${JSON.stringify(`${anchor}:`)}) is not in the frontmatter ` +
+            "either, so this writer has no published place to put it and will not append blind.",
+        );
+      }
+      lines.splice(after + 1, 0, `${key}:`);
+      at = after + 1;
+    }
     if (at < 0) {
       throw new DispatchLaneFinding(
         `dispatch-brief: the card has no ${JSON.stringify(`${key}:`)} line in its frontmatter. A ` +
@@ -4724,7 +5738,7 @@ export function manifestVerdict(text, want) {
  */
 
 /**
- * THE EIGHT STEPS, IN ORDER, WRITTEN DOWN ONCE.
+ * THE STEPS, IN ORDER, WRITTEN DOWN ONCE.
  *
  * The order is orchestrator 5b (stamp, commit, THEN cut, THEN brief), the
  * serial-ritual bullet (cut one, arm it, read the manifest back) and
@@ -4732,25 +5746,53 @@ export function manifestVerdict(text, want) {
  * reports). Nothing here may be reordered without moving those documents
  * first.
  *
+ * **THE KEEPER AND THE TIER COME BEFORE THE STAMP, AND THAT ORDER IS THE
+ * WHOLE OF WHAT THEY BUY** (T-296, ADR-024 decision 1). A red baseline
+ * refused after the stamp has already written a commit and cut two
+ * worktrees for a lane that cannot land; refused here it costs a suite
+ * run and nothing else. The tier is next because the stamp WRITES it —
+ * `tier:` reaches the lane in its base exactly as `status:` does, and a
+ * tier stamped afterwards would be a field the lane never inherited.
+ *
+ * **AND PHASE 1 COMES LAST, BESIDE THE BUILD** (orchestrator 5c and 5e):
+ * it is rendered from the card at the base, so it could have run at any
+ * point — and it goes at the end because a dispatcher reads the spawn
+ * line last and pastes it immediately.
+ *
  * @type {readonly DispatchStep[]}
  */
 export const DISPATCH_STEPS = Object.freeze([
   Object.freeze({
     n: 1,
+    id: "keeper",
+    what: "run the fence's own keeper spec at the base and refuse a red baseline, naming the body",
+  }),
+  Object.freeze({
+    n: 2,
+    id: "tier",
+    what: "classify the card bounded, standard or guarded, and print the tier with its reason",
+  }),
+  Object.freeze({
+    n: 3,
     id: "stamp",
     what: "stamp the card on the integration branch, commit it, and read the stamp back out of the commit",
   }),
   Object.freeze({
-    n: 2,
+    n: 4,
     id: "cut",
     what: "cut the lane worktree on its task branch at that commit, as a sibling and absolutely",
   }),
-  Object.freeze({ n: 3, id: "preflight", what: "re-derive the card's own claims at that commit" }),
-  Object.freeze({ n: 4, id: "fence", what: "expand the fence into the lane as its manifest" }),
-  Object.freeze({ n: 5, id: "manifest", what: "read that manifest back and check it governs this lane" }),
-  Object.freeze({ n: 6, id: "bench", what: "cut the verifier's bench, detached, at the same commit" }),
-  Object.freeze({ n: 7, id: "brief", what: "assemble the brief into the lane's own scratch file" }),
-  Object.freeze({ n: 8, id: "port", what: "derive the lane's port and scratch stem, and prove the port is free" }),
+  Object.freeze({ n: 5, id: "preflight", what: "re-derive the card's own claims at that commit" }),
+  Object.freeze({ n: 6, id: "fence", what: "expand the fence into the lane as its manifest" }),
+  Object.freeze({ n: 7, id: "manifest", what: "read that manifest back and check it governs this lane" }),
+  Object.freeze({ n: 8, id: "bench", what: "cut the verifier's bench, detached, at the same commit" }),
+  Object.freeze({ n: 9, id: "brief", what: "assemble the brief into the lane's own scratch file" }),
+  Object.freeze({ n: 10, id: "port", what: "derive the lane's port and scratch stem, and prove the port is free" }),
+  Object.freeze({
+    n: 11,
+    id: "phase1",
+    what: "render the tool-less phase 1 brief from the card at the base and print the line the seat pastes",
+  }),
 ]);
 
 /**
@@ -4777,7 +5819,12 @@ export const DISPATCH_STEPS = Object.freeze([
  * @property {string} portVariable
  * @property {string} scratchStem
  * @property {string} briefFile
+ * @property {string} phase1File   the tool-less phase 1 brief the arm renders
+ * @property {string} attackSetFile where the seat saves phase 1's return
  * @property {string} manifestFile
+ * @property {TierInput} tierInput  everything the classifier reads off the TREE
+ * @property {string[]} keeperArgv  the fence's keeper run, at the base
+ * @property {string} keeperVerdictToken the token a graded reading prints
  * @property {Record<string, string>} stamp
  * @property {string[]} createArgv  the published create command, substituted
  * @property {readonly DispatchStep[]} steps
@@ -4838,6 +5885,38 @@ export function dispatchLanePlan(ctx, opts) {
   if (opts.executor !== undefined && opts.executor !== "") stamp["builder"] = opts.executor;
   if (opts.verifier !== undefined && opts.verifier !== "") stamp["verifier"] = opts.verifier;
   const scratch = opts.scratch === undefined || opts.scratch === "" ? os.tmpdir() : opts.scratch;
+
+  // ── THE TIER'S TREE-SIDE INPUTS (T-296) ────────────────────────────
+  // Everything the classifier reads off the TREE is derived here, where
+  // the plan is pure; the one input that needs a process — whether a
+  // keeper already pins what this card changes — is taken by step one and
+  // handed in at step two.
+  const entries = fieldList(card.fields, "touches");
+  const paths = fencePaths({ entries }, ctx.slugs, ctx.comps);
+  const unresolved = entries.filter(
+    (/** @type {string} */ e) => expandFenceEntry(e, ctx.slugs, ctx.comps).paths.length === 0,
+  );
+  const tracked = new Set(
+    git(ctx.root, ["ls-files", "-z"])
+      .split("\0")
+      .filter((l) => l !== ""),
+  );
+  // A PATH IS TRACKED IF THE TREE TRACKS IT **OR ANYTHING UNDER IT** — a
+  // fence naming a directory is naming the files in it, and a fence
+  // naming a file that does not exist yet under a tracked directory is
+  // the NEW-FILE RESERVATION T-287 ruled on rather than a dead entry.
+  const isTracked = (/** @type {string} */ rel) => {
+    const t = rel.replace(/\/+$/, "");
+    if (tracked.has(t)) return true;
+    if ([...tracked].some((f) => f.startsWith(`${t}/`))) return true;
+    const parent = t.includes("/") ? t.slice(0, t.lastIndexOf("/")) : "";
+    return parent !== "" && [...tracked].some((f) => f.startsWith(`${parent}/`));
+  };
+  // THE CLASSES ARE THE METHOD'S AND THE PATHS ARE THE PROJECT'S, so the
+  // two arguments come from two documents and never from one.
+  const guardMap = guardClassMap(ctx.conventions, guardClassIds(taskFormatText(ctx.root)));
+  const runner = blessedRunner(ctx.conventions);
+
   return {
     root: ctx.root,
     taskId,
@@ -4852,7 +5931,25 @@ export function dispatchLanePlan(ctx, opts) {
     portVariable: sp.portVariable,
     scratchStem: laneScratchStem(taskId, sp),
     briefFile: path.resolve(scratch, laneScratchName("brief", "txt", taskId, sp)),
+    phase1File: path.resolve(scratch, laneScratchName("phase1", "txt", taskId, sp)),
+    attackSetFile: path.resolve(scratch, laneScratchName("attack-set", "md", taskId, sp)),
     manifestFile: path.join(worktree, ".supertaskr", "lane-fence.json"),
+    tierInput: {
+      size: fieldScalar(card.fields, "size"),
+      fencePaths: paths,
+      unresolved,
+      untracked: paths.filter((p) => !isTracked(p)),
+      guardMap,
+      keeper: { pinned: false, answered: false, why: "step one has not run yet" },
+    },
+    keeperArgv: [
+      process.execPath,
+      path.join(ctx.root, runner.script),
+      runner.suite,
+      runner.owningFlag,
+      ...paths,
+    ],
+    keeperVerdictToken: runner.verdictToken,
     stamp,
     createArgv: createLaneArgv(ctx, { branchName, worktree }),
     steps: DISPATCH_STEPS,
@@ -5024,6 +6121,16 @@ export function runDispatchLane(plan, io) {
   /** @type {string[]} */
   const removed = [];
   let base = "";
+  // THE STAMP THIS RUN ACTUALLY WRITES, which is the plan's plus the one
+  // field the plan cannot know: the TIER is a function of a suite's
+  // answer, and step one is what takes it.
+  /** @type {Record<string, string>} */
+  const stamp = { ...plan.stamp };
+  /** @type {{ pinned: boolean, answered: boolean, why: string }} */
+  let keeper = { ...plan.tierInput.keeper };
+  let tier = "";
+  /** @type {string} */
+  let cardAtBase = "";
 
   /**
    * Undo what THIS RUN cut, and nothing else. The stamp stays: it is a
@@ -5085,10 +6192,156 @@ export function runDispatchLane(plan, io) {
   };
 
   for (const step of plan.steps) {
+    if (step.id === "keeper") {
+      const ran = spellCommand(plan.keeperArgv);
+      // THE RUNNER HAS TO BE THERE, and a project that publishes none is
+      // told so rather than silently skipped: the tier's keeper question
+      // then has no answer, and step two refuses any card whose tier
+      // depends on one.
+      let publishes = true;
+      try {
+        io.read(/** @type {string} */ (plan.keeperArgv[1]));
+      } catch {
+        publishes = false;
+      }
+      if (!publishes) {
+        keeper = {
+          pinned: false,
+          answered: false,
+          why: `this checkout publishes no keeper runner at ${String(plan.keeperArgv[1])}`,
+        };
+        notes.push(
+          `the keeper step found no runner at ${String(plan.keeperArgv[1])}, so no keeper was run ` +
+            "at the base and the tier's keeper question is UNANSWERED. That is stated rather than " +
+            "skipped: a gate nobody ran and a gate that passed look identical afterwards.",
+        );
+        done.push({ n: step.n, id: step.id, ran, exit: EXIT.CLEAN, detail: keeper.why });
+        continue;
+      }
+      const r = io.run(plan.keeperArgv, { cwd: plan.root });
+      const v = keeperVerdict({
+        status: r.status,
+        stdout: r.stdout,
+        stderr: r.stderr,
+        token: plan.keeperVerdictToken,
+      });
+      if (v.graded && !v.green) {
+        return stopAt(
+          step,
+          ran,
+          r.status,
+          `the fence's own keeper is RED at the base — ${v.detail}. A lane cut here inherits a red ` +
+            "it did not cause and its fence usually forbids it to fix, so the baseline is repaired " +
+            "before a seat is spent on it.",
+        );
+      }
+      keeper = { pinned: v.graded && v.green, answered: v.graded, why: v.detail };
+      if (!v.graded) {
+        notes.push(
+          `the keeper run graded nothing — ${v.detail}. The tier's keeper question is UNANSWERED, ` +
+            "which refuses any card whose tier depends on it and is a note for every other card.",
+        );
+      }
+      done.push({ n: step.n, id: step.id, ran, exit: EXIT.CLEAN, detail: v.detail });
+      continue;
+    }
+
+    if (step.id === "tier") {
+      const ran = `classify ${plan.taskId}`;
+      /** @type {TierVerdict} */
+      let verdict;
+      try {
+        verdict = classifyTier({ ...plan.tierInput, keeper });
+      } catch (err) {
+        return stopAt(
+          step,
+          ran,
+          err instanceof TierFinding ? EXIT.FOUND : EXIT.CANNOT_RUN,
+          err instanceof Error ? err.message : String(err),
+        );
+      }
+      tier = verdict.tier;
+      // THE FIELD IS DERIVED, SO AN AUTHOR'S VALUE HAS NO STANDING — but
+      // a silent overwrite would teach nobody anything, and the author is
+      // the one person who can stop writing it.
+      let already = "";
+      try {
+        already = fieldScalar(frontmatterFields(io.read(plan.cardFile)), "tier");
+      } catch {
+        already = "";
+      }
+      if (already !== "" && already !== tier) {
+        notes.push(
+          `the card arrived carrying \`tier: ${already}\` and the derivation answers ${tier}. The ` +
+            "field is DERIVED, so the stamp OVERWRITES it rather than refusing the dispatch " +
+            "(method/tasks/TASK-FORMAT.md, The tier) — and it is announced here because a hand " +
+            "written tier is a line an author can stop writing.",
+        );
+      }
+      stamp["tier"] = tier;
+      done.push({
+        n: step.n,
+        id: step.id,
+        ran,
+        exit: EXIT.CLEAN,
+        detail: `${tier} — ${verdict.reason}`,
+      });
+      continue;
+    }
+
+    if (step.id === "phase1") {
+      const ran = `render ${plan.phase1File}`;
+      if (tier === "bounded") {
+        notes.push(
+          "the bounded tier takes no verifier at all (method/tasks/TASK-FORMAT.md, The tier), so " +
+            "no phase 1 was rendered and none is owed. Said out loud, because a phase this arm " +
+            "skipped on purpose and a phase it forgot look the same on disk.",
+        );
+        done.push({
+          n: step.n,
+          id: step.id,
+          ran,
+          exit: EXIT.CLEAN,
+          detail: "not owed at the bounded tier",
+        });
+        continue;
+      }
+      /** @type {string} */
+      let verifierMd;
+      try {
+        verifierMd = roleText("verifier", plan.root);
+      } catch (err) {
+        return stopAt(step, ran, EXIT.CANNOT_RUN, err instanceof Error ? err.message : String(err));
+      }
+      const text = renderPhase1({
+        taskId: plan.taskId,
+        tier,
+        base,
+        card: plan.card,
+        cardText: cardAtBase,
+        verifierMd,
+        attackSetFile: plan.attackSetFile,
+      });
+      try {
+        io.write(plan.phase1File, text);
+      } catch (err) {
+        return stopAt(step, ran, EXIT.CANNOT_RUN, err instanceof Error ? err.message : String(err));
+      }
+      notes.push(`${PHASE1_SPAWN_NOTE} ${plan.phase1File}`);
+      done.push({
+        n: step.n,
+        id: step.id,
+        ran,
+        exit: EXIT.CLEAN,
+        detail: `${plan.phase1File} — rendered from ${plan.card} at ${base} and nothing else`,
+      });
+      continue;
+    }
+
     if (step.id === "stamp") {
       let stamped;
       try {
-        stamped = stampCard(io.read(plan.cardFile), plan.stamp);
+        stamped = stampCard(io.read(plan.cardFile), stamp, { insertAfter: { tier: "size" } });
       } catch (err) {
         return stopAt(
           step,
@@ -5099,12 +6352,12 @@ export function runDispatchLane(plan, io) {
       }
       if (stamped.changed.length === 0) {
         notes.push(
-          `the card already carried every field this dispatch stamps (${Object.keys(plan.stamp).join(", ")}), ` +
+          `the card already carried every field this dispatch stamps (${Object.keys(stamp).join(", ")}), ` +
             "so no stamp commit was made and the lane is cut at the integration tip.",
         );
       } else {
         io.write(plan.cardFile, stamped.text);
-        const message = `${plan.taskId}: dispatch stamp — ${Object.entries(plan.stamp)
+        const message = `${plan.taskId}: dispatch stamp — ${Object.entries(stamp)
           .map(([k, v]) => `${k}: ${v === "" ? "(empty)" : v}`)
           .join(", ")}`;
         // THE PATHSPEC IS LOAD-BEARING. The integration checkout is shared
@@ -5131,7 +6384,12 @@ export function runDispatchLane(plan, io) {
       if (shown.status !== 0) {
         return stopAt(step, spellCommand(showArgv), shown.status, shown.stderr.trim());
       }
-      const wrong = stampVerdict(shown.stdout, plan.stamp);
+      // THE CARD AS THE COMMIT CARRIES IT IS WHAT PHASE 1 IS RENDERED
+      // FROM, and it is taken HERE rather than at the phase 1 step: this
+      // read is of the stamp commit, before any lane branch exists, which
+      // is exactly the blindness bound orchestrator 5d names.
+      cardAtBase = shown.stdout;
+      const wrong = stampVerdict(shown.stdout, stamp);
       if (wrong.length > 0) {
         return stopAt(
           step,
@@ -5147,7 +6405,7 @@ export function runDispatchLane(plan, io) {
         id: step.id,
         ran: spellCommand(showArgv),
         exit: EXIT.CLEAN,
-        detail: `${plan.card} carries ${Object.entries(plan.stamp).map(([k, v]) => `${k}: ${v}`).join(", ")} at ${base}`,
+        detail: `${plan.card} carries ${Object.entries(stamp).map(([k, v]) => `${k}: ${v}`).join(", ")} at ${base}`,
       });
       continue;
     }
@@ -5355,6 +6613,25 @@ export function dispatchLaneRecs(ctx, plan, result) {
     ),
     value(
       `brief path: ${plan.briefFile}`,
+      liveProv(
+        ctx.at,
+        ctx.host,
+        "the scratch directory this dispatch was given, with the SCRATCH RULE's own file name in it",
+      ),
+    ),
+    value(
+      `tier: ${
+        result === undefined
+          ? "<derived at the tier step, from the card and the tree>"
+          : (result.done.find((s) => s.id === "tier")?.detail ?? "<not reached>")
+      }`,
+      treeProv(
+        ctx.ref,
+        "the card's size and fence against method/tasks/TASK-FORMAT.md's guard-class list, mapped by docs/CONVENTIONS.md",
+      ),
+    ),
+    value(
+      `phase 1 brief: ${plan.phase1File}`,
       liveProv(
         ctx.at,
         ctx.host,

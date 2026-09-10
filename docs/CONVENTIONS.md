@@ -641,11 +641,13 @@ and T-236 (2026-09-02, whose pre-compaction text is
 ## Gotchas
 - method/ is the generic, product-agnostic convention — nothing
   supertaskr-specific goes in it; product docs live in docs/. Changes to
-  method/ formats are version-bumped (currently v0.1.20) and noted here.
+  method/ formats are version-bumped (currently v0.1.21) and noted here.
   **A VERSION'S NOTE HERE IS ITS DATE, ITS CARD AND ITS THEME; WHAT
   MOVED IS THE RELEASE'S OWN RECORD** (ADR-019's law applied to this
   changelog at T-162): the per-clause itemisation is RECORD-shaped, and
   the AUTHORITY for what a version says is `method/` itself at that tag.
+  v0.1.21 (T-296, 2026-09-10) — the THREE TIERS release: bounded, standard and guarded chosen by the arm from
+  the card against the guard-class list; phase 1 and phase 2 rendered by the arm; the standard verifier's mode stated once.
   v0.1.20 (T-295, 2026-09-10) — the ARM MERGES release: `brief.mjs --merge <id>` performs the
   integrator's ritual from the verdict and stops with the merge staged; integrator.md states the widening beside the re-drill.
   v0.1.19 (T-307, 2026-09-10) — the PROPOSE-BEFORE-RECORDING release: a room or decision
@@ -800,6 +802,47 @@ and T-236 (2026-09-02, whose pre-compaction text is
   exceeds FORTY changed lines (the bound is stated here so the tier work
   has something to read, and it is a number to be moved by measurement);
   and the card's own `--preflight`.
+  **AND SINCE T-296 THE XS-BOUND KEEPER BUMPS RATHER THAN REFUSES.** Its
+  subject is a MIS-SIZING and not a defect — the card was classified
+  `bounded` before the work existed and the work turned out bigger, and
+  nothing about the merged tree is wrong — so the step passes, says the
+  card is bumped, and the reading appended to the bands carries
+  `standard` rather than the tier the dispatch stamped. Refusing here
+  would stop a finished lane at its last step over a fact for the NEXT
+  triage. The other three still refuse, and a card of any other size is
+  still not this keeper's to judge.
+- GUARD-CLASS PATHS, IN THIS PROJECT'S OWN SPELLING (T-296, ADR-024
+  decision 1): `method/tasks/TASK-FORMAT.md` names the guard-class
+  CLASSES and is product-agnostic, so the mapping onto this repository
+  lives here, beside the slug map. The arm reads BOTH and refuses when
+  they disagree, either way round: a declared class this bullet does not
+  map, or a name mapped here the method never declared. A fenced path
+  under any of these makes a card `guarded` whatever its size — the
+  builder of a cage is not its inspector, and a one-line change to a
+  guard can retire the guard in silence. Classes OVERLAP by design (a
+  class says what a file DOES, and `.claude/` holds several kinds); the
+  arm reports every class a path hits. A token ending in `*` is a PREFIX,
+  and the blessed gate-runner is matched by that shape rather than by its
+  filename BECAUSE THIS DOCUMENT NAMES THAT RUNNER EXACTLY ONCE and a
+  body requires exactly that — which is also the honester statement, since
+  what makes a file guard-class is being a gate runner. **THE MAP:**
+  `agent-hooks`: `.claude/`;
+  `gate-runners`: `tools/e2e/scripts/gate-*`,
+  `tools/e2e/scripts/docs-gate.mjs`, `tools/e2e/scripts/push-checks.mjs`;
+  `fences-and-locks`: `tools/e2e/scripts/lane-fence.mjs`,
+  `tools/e2e/scripts/lane-lock.mjs`;
+  `landing-and-push-guards`: `.claude/hooks/landing-gate.mjs`,
+  `.claude/hooks/push-guard.mjs`, `tools/e2e/scripts/merge.mjs`;
+  `parser`: `lib/parser/`;
+  `method-text`: `method/`;
+  `ci-workflow`: `.github/workflows/`.
+  **KEPT BY A BODY, NOT BY A MEMORY**: the e2e suite derives this
+  repository's guard-class CANDIDATES from the tree by a rule that never
+  reads this map — every tracked file under `.claude/`,
+  `.github/workflows/`, `method/` or `lib/parser/src/`, plus every
+  tracked script under `tools/e2e/scripts/` whose own name carries
+  `gate`, `guard`, `fence`, `lock`, `push` or `landing` — and reds
+  naming any candidate no class covers.
 - A CITATION NAMES A SYMBOL, NOT A LINE (fourth triage, 2026-08-19):
   line numbers drift downward under later merges while the finding's
   substance reproduces, so a stale line reads as "this was fixed". Cite

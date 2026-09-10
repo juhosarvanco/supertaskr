@@ -952,11 +952,12 @@ export function keeperSteps(input) {
       kind: "gate",
       action: "keeper",
       keeper: "xs-bound",
-      title: `an XS card's diff stays inside the XS bound of ${String(XS_CHANGED_LINE_BOUND)} changed line(s)`,
+      title: `an XS card past the XS bound of ${String(XS_CHANGED_LINE_BOUND)} changed line(s) is BUMPED to ${BUMPED_TIER}`,
       why:
-        "T-295 criterion 4. The board's parser knows S, M and L today and XS is T-296's tier; " +
-        "the bound has to exist before the tier that reads it, or the tier arrives with nothing " +
-        "to enforce. A card of any other size is NOT judged and the step says so",
+        "T-295 criterion 4, in the shape T-296 gives it. The bound had to exist before the tier " +
+        "that reads it, and a bound with nothing to do about a breach can only refuse; now that " +
+        "the tiers exist the subject is a MIS-SIZING and not a defect, so this step BUMPS and " +
+        "passes. A card of any other size is NOT judged and the step says so",
       run: null,
     },
     {
@@ -2043,17 +2044,49 @@ export function forbiddenSpellingFindings(input) {
 export const XS_CHANGED_LINE_BOUND = 40;
 
 /**
- * @param {{ size: string, changed: number, bound?: number }} input
- * @returns {string | null}
+ * The tier this file falls back to when nothing else says one, and the
+ * tier a bumped card is merged and recorded as. **THAT THEY ARE THE SAME
+ * WORD IS NOT A COINCIDENCE**: standard is the floor for any card that
+ * takes a verifier at all, so it is both the safe default and the only
+ * place a bump can land — bumping to `guarded` would buy a whole bench at
+ * the last step of a lane that has already been verified.
  */
-export function xsBoundFinding(input) {
+export const DEFAULT_TIER = "standard";
+
+/** The tier a bumped card is merged and recorded as. */
+export const BUMPED_TIER = DEFAULT_TIER;
+
+/**
+ * THE BUMP, AND IT REPLACES A REFUSAL BY NAME (T-296, ADR-024 decision 1).
+ *
+ * T-295 wrote this as `xsBoundFinding`, a finding that STOPPED the merge,
+ * and that was the right shape while the tiers did not exist: the bound
+ * had to exist before the tier that reads it, and a bound with nothing to
+ * do about a breach can only refuse. Now that the tiers do exist, the
+ * subject of this keeper is a MIS-SIZING and not a defect — the card was
+ * classified `bounded` before the work existed, the work turned out
+ * bigger, and nothing about the merged tree is wrong. So the step passes,
+ * the printed line says the card is bumped, and the reading appended to
+ * the bands carries the bumped tier. A merge that refused here would stop
+ * a finished lane at its last step to report a fact for the NEXT triage.
+ *
+ * WHAT DOES NOT CHANGE: a card of any other size is still not this
+ * keeper's to judge, the bound is still forty changed lines outside the
+ * card's own file, and the bound is still a number to be moved by
+ * measurement.
+ *
+ * @param {{ size: string, changed: number, bound?: number }} input
+ * @returns {string | null} the bump notice, or null where nothing is bumped
+ */
+export function xsBoundBump(input) {
   const bound = input.bound ?? XS_CHANGED_LINE_BOUND;
   if (input.size.trim().toUpperCase() !== "XS") return null;
   if (input.changed <= bound) return null;
   return (
     `this card declares size XS and the merge changes ${String(input.changed)} line(s), over the ` +
-    `XS bound of ${String(bound)}. Either the card is the wrong size or the lane outgrew it; ` +
-    "both are the seat's to rule, and neither is a thing a merge decides quietly"
+    `XS bound of ${String(bound)} — so it is BUMPED to ${BUMPED_TIER} for this merge, and the ` +
+    "reading appended to the bands carries that tier rather than the one the dispatch stamped. " +
+    "The card was mis-sized, which is a fact for the next triage"
   );
 }
 
@@ -2544,7 +2577,11 @@ export function main(argv, io = {}) {
   let bump;
   /** @type {string[]} */
   const meterFiles = [];
-  let tier = "standard";
+  // EMPTY UNTIL SOMETHING SAYS OTHERWISE. `--tier` is the seat's
+  // override; absent it the tier is read off the card, where the dispatch
+  // derived and stamped it (T-296); absent both it is the default this
+  // file has always used, and the step that prints it says which.
+  let tier = "";
   /** @type {string | undefined} */
   let messagePath;
   /** @type {string | undefined} */
@@ -2757,7 +2794,7 @@ export function main(argv, io = {}) {
     verdictSha,
     lane,
     benchTip: verdictSha,
-    tier,
+    tier: tier !== "" ? tier : cardTier(readCard(root, card.file) ?? "") || DEFAULT_TIER,
     meterFiles,
     drillWide,
     ...(tipVerdict === undefined ? {} : { verdict: tipVerdict }),
@@ -3089,6 +3126,23 @@ export function specCorpus(root) {
  */
 export function cardSize(text) {
   const hit = /^size:[ \t]*(\S+)[ \t]*$/m.exec(text);
+  return hit === null ? "" : /** @type {string} */ (hit[1]);
+}
+
+/**
+ * THE TIER THE DISPATCH STAMPED, off the card's own frontmatter (T-296).
+ *
+ * The field is DERIVED at the dispatch stamp, so by the time a merge runs
+ * the answer is already on the card and nobody should be typing it again.
+ * `--tier` stays as the seat's override — a merge of a card cut before
+ * the field existed has to say something — and an empty field falls back
+ * to the same default this file has always used.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+export function cardTier(text) {
+  const hit = /^tier:[ \t]*(\S+)[ \t]*$/m.exec(text);
   return hit === null ? "" : /** @type {string} */ (hit[1]);
 }
 
@@ -3456,7 +3510,7 @@ function applyCorrectionStep(step, io) {
 
 /**
  * @param {Step} step
- * @param {{ out: (s: string) => void, err: (s: string) => void, projectRoot: string, id: string, card: string }} io
+ * @param {{ out: (s: string) => void, err: (s: string) => void, projectRoot: string, id: string, card: string, tier?: string | undefined }} io
  * @returns {number}
  */
 function keeperStep(step, io) {
@@ -3497,14 +3551,19 @@ function keeperStep(step, io) {
   // count before the bound is applied — a card whose notes ran long is
   // not a card that outgrew its tier.
   const changed = lines.changed - (lines.byPath[io.card] ?? 0);
-  const finding = xsBoundFinding({ size, changed });
+  const bump = xsBoundBump({ size, changed });
   io.out(
     `      size ${size.length === 0 ? "(none on the card)" : size}, ${String(changed)} changed ` +
-      `line(s) outside the card itself, bound ${String(XS_CHANGED_LINE_BOUND)}`,
+      `line(s) outside the card itself, bound ${String(XS_CHANGED_LINE_BOUND)}, tier ` +
+      `${io.tier ?? DEFAULT_TIER}`,
   );
-  if (finding === null) return EXIT.CLEAN;
-  io.err(`      ${finding}`);
-  return EXIT.FOUND;
+  if (bump === null) return EXIT.CLEAN;
+  // THE BUMP IS A WRITE, AND IT IS THE ONE THING THIS STEP DOES BESIDES
+  // PRINT. The readings step reads `tier` off this same object, so the
+  // bumped tier reaches the bands without anybody typing `--tier`.
+  io.tier = BUMPED_TIER;
+  io.out(`      ${bump}`);
+  return EXIT.CLEAN;
 }
 
 /**
@@ -3716,7 +3775,7 @@ function metersStep(io) {
   const lines = readingsLines({
     id: io.id,
     size: cardSize(cardText),
-    tier: io.tier ?? "standard",
+    tier: io.tier ?? DEFAULT_TIER,
     merge: io.benchTip ?? "",
     at: new Date().toISOString(),
     sources,

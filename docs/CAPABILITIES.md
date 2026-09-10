@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **896 behaviours** — 894 extracted sentences + 2 named-not-extracted (listed at the end) — across 40 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **912 behaviours** — 910 extracted sentences + 2 named-not-extracted (listed at the end) — across 40 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -88,17 +88,20 @@ Census: **896 behaviours** — 894 extracted sentences + 2 named-not-extracted (
 - A SUFFIXED LANE BRANCH JOINS TO ITS OWN CARD IN THE `--state` LANE LIST, NOT ITS PARENT'S
 - THE REPOSITORY'S ROOT IS DERIVED FROM GIT, and a repository with no working tree is REFUSED
 - THE SWEEP: no derived row moves when only the dispatching checkout moves, and the movers are named
-- THE ARM LEAVES EXACTLY WHAT THE EIGHT HAND STEPS LEAVE, file for file
+- THE ARM LEAVES EXACTLY WHAT THE HAND STEPS LEAVE, file for file, plus the one file no hand can type
 - THE RITUAL FIXTURE CARRIES ITS OWN GIT IDENTITY, so a git that inherits none can still commit in it
-- THE RITUAL STOPS AT STEP 1 (stamp) and performs no later step
-- THE RITUAL STOPS AT STEP 2 (cut) and performs no later step
-- THE RITUAL STOPS AT STEP 3 (preflight) and performs no later step
-- THE RITUAL STOPS AT STEP 4 (fence) and performs no later step
-- THE RITUAL STOPS AT STEP 5 (manifest) and performs no later step
-- THE RITUAL STOPS AT STEP 6 (bench) and performs no later step
-- THE RITUAL STOPS AT STEP 7 (brief) and performs no later step
-- THE RITUAL STOPS AT STEP 8 (port) and performs no later step
-- THE RITUAL READS THE STAMP BACK OUT OF THE COMMIT, and a commit that does not carry it stops it at step one
+- THE RITUAL STOPS AT STEP 1 (keeper) and performs no later step
+- THE RITUAL STOPS AT STEP 2 (tier) and performs no later step
+- THE RITUAL STOPS AT STEP 3 (stamp) and performs no later step
+- THE RITUAL STOPS AT STEP 4 (cut) and performs no later step
+- THE RITUAL STOPS AT STEP 5 (preflight) and performs no later step
+- THE RITUAL STOPS AT STEP 6 (fence) and performs no later step
+- THE RITUAL STOPS AT STEP 7 (manifest) and performs no later step
+- THE RITUAL STOPS AT STEP 8 (bench) and performs no later step
+- THE RITUAL STOPS AT STEP 9 (brief) and performs no later step
+- THE RITUAL STOPS AT STEP 10 (port) and performs no later step
+- THE RITUAL STOPS AT STEP 11 (phase1) and performs no later step
+- THE RITUAL READS THE STAMP BACK OUT OF THE COMMIT, and a commit that does not carry it stops it at the stamp
 - A STAMP ANCHORED ON A KEY THE CARD DOES NOT CARRY IS A REFUSAL, never a silent no-op
 - THE MANIFEST IS READ BACK, and a manifest for another lane is not this lane's fence
 - THE PORT, THE SCRATCH STEM AND THE BENCH FOLLOW THE SPELLINGS CONVENTIONS PUBLISHES
@@ -136,6 +139,17 @@ Census: **896 behaviours** — 894 extracted sentences + 2 named-not-extracted (
 - THE PROSE TEST SEES THE BOARD'S OWN `UN-PARK WHEN:` SPELLING — nine live parked cards write the condition that way and the flag calls them conditionless
 - T-307 C1 — MF-11 refuses a quotation attributed to the owner HOWEVER LONG it is
 - T-307 C2 — MF-11 refuses an entry that attributes a ruling to the owner by HANDLE
+- the guard-class CLASSES are the method's and the PATHS are the project's, and a disagreement either way is a hard failure
+- EVERY GUARD-CLASS FILE THIS TREE CARRIES IS COVERED, and the derivation that finds them never reads the map
+- the classifier answers from the card and the tree, and what it cannot read it REFUSES rather than guesses
+- THE KEEPER RUN IS READ OFF ITS OUTPUT, so a derivation that graded nothing is not a red baseline
+- A FENCE NAMING A DIRECTORY NAMES THE GUARDS INSIDE IT, and a leading ./ is not a different path
+- A KEEPER RUN THAT PUBLISHED `verdict=REFUSED` GRADED NOTHING, and a dispatch does not call that a red baseline
+- THE PHASE 1 BRIEF IS RENDERED FROM THE CARD AT THE BASE AND CARRIES NOTHING FROM THE LANE
+- the bench takes the ground at the base, seals three inputs by sha256, and renders phase 2 from the seal
+- the tier line is CREATED where a card has none, and no other field may be created by a stamp
+- THE BENCH ARM TAKES THE GROUND, SEALS THREE INPUTS AND RENDERS PHASE 2, against a real dispatch
+- the arm renders phase 1 from the card AS THE COMMIT CARRIES IT, never off the working tree
 
 ## card-figures
 
@@ -227,6 +241,7 @@ Census: **896 behaviours** — 894 extracted sentences + 2 named-not-extracted (
 - no manifest is written for a lane while another live session holds the integration checkout
 - a lane holds no seat: both arms say so, write nothing, and the arming steps are unaffected
 - the two arms are opposite acts and are refused in one invocation
+- a HAND-WRITTEN tier on an undispatched card is a finding, and a card without one is silent about it
 
 ## checkout-currency
 
@@ -740,7 +755,8 @@ Census: **896 behaviours** — 894 extracted sentences + 2 named-not-extracted (
 - the pinned-sentence keeper refuses a removed doc line a spec pins VERBATIM, and lets an addition through
 - the forbidden-spelling keeper refuses each class it names on a planted instance, and a clean diff on none
 - the personal name this keeper looks for is DERIVED whole, and never split into its own words
-- the XS-bound keeper refuses an XS card over the bound and judges no card of any other size
+- the XS-bound keeper BUMPS an XS card over the bound to standard and judges no card of any other size
+- the tier a merge records is the one the DISPATCH stamped, unless the seat overrides it
 - the verb refuses to commit on a count that moved, and says which legs it could not judge
 - the merge message is written from the verdict's own sentences and counts, never composed
 - every `## Meters` block reaches the bands' readings, whole, in the stated shape

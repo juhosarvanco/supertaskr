@@ -12,6 +12,9 @@ feature: F-03            # story map column
 milestone: 2             # above/below the slice line
 priority: 2              # position in column; 1 = top = next
 size: M                  # S | M | L — sets the ceremony tier
+tier:                    # DERIVED — bounded | standard | guarded, written by
+                         # the arm at the dispatch stamp and never by an
+                         # author. Read "The tier" below before typing one
 status: planned          # suggested | planned | building | verifying |
                          # rejected | merging | done | parked
 blocked_by: [T-015]
@@ -612,6 +615,97 @@ the rule of thumb and the boundary is discipline, not enforcement.
 State which it is when you dispatch. The rule of thumb: **docs, method
 and tooling self-integrate; anything a user could run does not.**
 A card that cannot be placed is an M.
+
+## The tier
+
+**THE CEREMONY TABLE ABOVE SAYS WHICH SEATS A CARD OWES; THE TIER SAYS
+HOW HARD THE VERIFYING ONE LOOKS.** They are two axes and neither
+replaces the other: an M card takes a verifier by its row, and its tier
+is what decides whether that verifier is one pass at the tip or the
+blind two-phase bench with the whole suites behind it.
+
+| Tier | Admits | Verification |
+|---|---|---|
+| bounded | size XS; every fenced path inside a tracked fence; no guard-class path; no method text; a keeper already pins the property | none beyond the keeper: the executor runs the keeper scoped and the push owes its range |
+| standard | S and M with no guard-class path and no method text | one verifier at the tip, in the mode `roles/verifier.md` states |
+| guarded | any card whose fence names a guard-class path or method text; every L | the blind two-phase bench, the seat's further ground asks answered by hand, and the whole suites |
+
+**`tier:` IS A DERIVED FIELD AND THE ARM WRITES IT AT THE DISPATCH
+STAMP.** It is a function of the card and the tree — the size, the fence
+against the guard-class list below, and whether a keeper already pins
+what the card changes — so it is exactly the kind of value a program
+answers and a person guesses at. The arm writes it into the same commit
+as `status: building` (`roles/orchestrator.md` 5b), which is the commit
+the lane inherits in its base, and it PRINTS the tier with the reason it
+derived it from.
+
+**AN AUTHOR LEAVES THE FIELD OUT, AND THE TWO HALVES OF THAT RULE ARE
+ENFORCED IN DIFFERENT PLACES ON PURPOSE.** Before the dispatch, a
+`tier:` on the card is an author's guess with nothing behind it, and the
+card preflight REPORTS it — that is where a person still has the cheap
+move of deleting a line. At the dispatch, the arm OVERWRITES whatever is
+there with the value it derived, and says so when the two disagree. It
+overwrites rather than refuses because the field is derived: an author's
+value has no standing against the derivation, and refusing the dispatch
+would make a stray line cost a cut lane instead of a printed note.
+
+**A CARD THE ARM CANNOT CLASSIFY IS REFUSED, NAMING WHAT IT COULD NOT
+READ.** No size on the card, a fence entry that does not resolve, or a
+keeper question the project's own runner could not answer are each a
+refusal that says which of the three it was. **The tier is never
+guessed**, and it is never a dial the dispatching seat turns: a seat that
+could choose the tier is a seat that can buy a cheaper verification for
+its own card, which is the whole failure the derivation removes.
+
+**A DIFF THAT OUTGROWS ITS SIZE IS BUMPED AT THE MERGE, NEVER REFUSED
+THERE.** The classifier reads the card before the work exists, so the
+one thing it cannot see is how big the work turned out to be. A bounded
+card whose merge diff passes the project's XS bound is bumped to
+standard at the merge, and the bump is recorded rather than argued: the
+card was mis-sized, which is a fact for the next triage and not a reason
+to stop a finished lane at its last step.
+
+### The guard-class list
+
+**GUARD-CLASS IS A PROPERTY OF WHAT A FILE DOES, NOT OF HOW BIG THE
+CHANGE IS.** A guard is anything whose job is to REFUSE, and the builder
+of a cage is not its inspector (`roles/orchestrator.md` 5b says the same
+thing about `review:`). A one-line change to a guard can retire the
+guard silently, and every other rung of this method rests on the guards
+holding — so the classes below buy the most expensive verification there
+is, on the smallest cards.
+
+**THESE ARE CLASSES, NOT PATHS. `method/` IS PRODUCT-AGNOSTIC AND HAS NO
+PATHS TO NAME**, so the same split this file already takes for the
+ceremony boundary is taken here: the CLASSES are stated once, here, and
+the PROJECT maps each one onto its own paths in its own conventions,
+beside its slug map. A class the project has not mapped is a class the
+arm refuses to classify against, and a mapping naming a class this list
+does not declare is the same failure from the other side.
+
+- `agent-hooks` — the agent harness's own hooks and their settings: what
+  runs before or after a seat's tool call, and what may refuse one.
+- `gate-runners` — the programs that GRADE a tree and publish a verdict
+  a seat is then allowed to quote.
+- `fences-and-locks` — what refuses a write outside a lane's declared
+  paths, and what stops two runners grading one tree at once.
+- `landing-and-push-guards` — what stands between a commit and the
+  integration branch, or between a tree and a remote.
+- `parser` — the library every reading of the board goes through, so a
+  defect there is a defect in every seat's world at once.
+- `method-text` — the method itself: the roles, the formats and the
+  protocols every seat is dispatched under.
+- `ci-workflow` — the runner's own instructions, which no local battery
+  executes and no local green covers.
+
+**THE LIST IS KEPT BY A TEST, WHICH IS THE ONLY REASON IT CAN BE
+TRUSTED.** A hand-kept enumeration of what matters goes stale the day
+something new arrives, and it goes stale SILENTLY — the file that nobody
+added is exactly the file nobody thinks about. So the project's own
+suite derives its guard-class candidates FROM THE TREE by a rule that
+does not read the mapping, and reds naming any candidate no class
+covers. The derivation and the mapping are two independent readings of
+one question, which is what makes their agreement worth anything.
 
 ## Ceremony by blast radius — ADVISORY
 

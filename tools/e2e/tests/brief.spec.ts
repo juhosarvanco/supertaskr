@@ -25,8 +25,10 @@ import {
   DispatchLaneFinding,
   EXIT,
   GATE_SOURCE_DIRS,
+  GROUND_ADDENDUM_HEADING,
   NO_GROUND,
   PACK_TRANSCRIPTION_LIMIT,
+  PHASE1_SPAWN_NOTE,
   PARKED_STATUS,
   PIPE_BUFFER_BYTES,
   PROSE_WAKE_PATTERN,
@@ -57,9 +59,18 @@ import {
   fieldList,
   fieldScalar,
   findableNeedle,
+  blessedRunner,
+  censusSection,
+  classifyTier,
   frontmatterFields,
   gateSources,
+  groundDocument,
+  guardClassHits,
+  guardClassIds,
+  guardClassMap,
+  guardTokenCovers,
   insideRepository,
+  keeperVerdict,
   integrationRefCandidates,
   lanePort,
   laneScratchName,
@@ -80,20 +91,26 @@ import {
   readAdditions,
   readDoc,
   readWake,
+  renderPhase1,
+  renderPhase2,
   readSubtractions,
   render,
   resolveIntegrationRef,
   roleText,
   ruleWake,
   runDispatchLane,
+  sealDocument,
+  sha256,
   sharedGround,
   slugMapFromFields,
   slugMapFromProse,
   slugsSharingComponents,
+  specBodies,
   stampCard,
   stampVerdict,
   standingGates,
   stateReport,
+  TierFinding,
   treeProv,
   triageBoard,
   triageClusterRecs,
@@ -3341,7 +3358,7 @@ function expectDispatched(
   }
 }
 
-test("THE ARM LEAVES EXACTLY WHAT THE EIGHT HAND STEPS LEAVE, file for file", () => {
+test("THE ARM LEAVES EXACTLY WHAT THE HAND STEPS LEAVE, file for file, plus the one file no hand can type", () => {
   // KILLED BY: a step dropped from `DISPATCH_STEPS`, a step reordered, the
   // bench cut on a branch instead of detached, the lane cut at the
   // integration tip instead of at the stamp, and the brief written under a
@@ -3349,6 +3366,17 @@ test("THE ARM LEAVES EXACTLY WHAT THE EIGHT HAND STEPS LEAVE, file for file", ()
   // its kill set therefore also covers the arms the ritual re-enters —
   // `--preflight`, `--write-fence` and `--task` — because a ritual that
   // cannot run them leaves nothing to compare.
+  //
+  // T-296 MOVED THE CLAIM IN TWO PLACES AND BOTH ARE STATED RATHER THAN
+  // QUIETLY ABSORBED. The stamp now carries a DERIVED `tier:` line, so the
+  // hand side types the tier it expects and a classifier that answered
+  // differently reds this body. And the arm additionally renders the
+  // tool-less phase 1 brief — which is precisely the file a hand ritual
+  // cannot produce, since its whole property is that a PROGRAM assembled
+  // it from the card at the base with nothing from the lane in scope. The
+  // three TREES still match file for file; the scratch directory is where
+  // the arm does one thing more, and it is asserted below rather than
+  // excluded.
   const arm = ritualFixture("one");
   const hand = ritualFixture("two");
   try {
@@ -3381,8 +3409,15 @@ test("THE ARM LEAVES EXACTLY WHAT THE EIGHT HAND STEPS LEAVE, file for file", ()
     const branch = s.branchPattern.replace("T-NNN", FIXTURE_CARD_ID).replace("<slug>", FIXTURE_SLUG);
     const cardPath = path.join(hand.root, FIXTURE_CARD_FILE);
 
-    // 1 — stamp on the integration branch, commit, and read it back.
-    writeFileSync(cardPath, readFileSync(cardPath, "utf8").replace("status: planned", "status: building"));
+    // 1 — stamp on the integration branch, commit, and read it back. The
+    //     tier is typed HERE, from this side's own reading of the card:
+    //     size S, a fence of README.md, nothing guard-class in it.
+    writeFileSync(
+      cardPath,
+      readFileSync(cardPath, "utf8")
+        .replace("status: planned", "status: building")
+        .replace("size: S", "size: S\ntier: standard"),
+    );
     fixtureGit(hand.root, ["commit", "--quiet", "-m", "hand-run dispatch stamp", "--", FIXTURE_CARD_FILE]);
     const base = fixtureGit(hand.root, ["rev-parse", "HEAD"]).trim();
     expect(
@@ -3482,6 +3517,23 @@ test("THE ARM LEAVES EXACTLY WHAT THE EIGHT HAND STEPS LEAVE, file for file", ()
       briefValues(armBrief, arm),
       "the brief the arm wrote is not the brief the hand ritual wrote",
     ).toEqual(briefValues(handBrief, hand));
+
+    // AND THE ONE FILE NO HAND CAN TYPE (T-296): the phase 1 brief, which
+    // the arm renders from the card AT THE BASE and from the verifier's
+    // role file, and from nothing the lane produced. The hand ritual has
+    // no such file, and that asymmetry is the point rather than a gap.
+    const armPhase1 = path.join(arm.scratch, `phase1-${FIXTURE_CARD_ID}.txt`);
+    expect(existsSync(armPhase1), "the arm rendered no phase 1 brief").toBe(true);
+    expect(existsSync(path.join(hand.scratch, `phase1-${FIXTURE_CARD_ID}.txt`)), "the hand ritual has none").toBe(false);
+    const phase1 = readFileSync(armPhase1, "utf8");
+    expect(phase1, "it carries the card's own criteria").toContain("THE card SHALL exist.");
+    expect(phase1, "it carries the role file it is judged by").toContain("# Role: verifier");
+    expect(phase1, "and it names the base it was read at").toContain(armBase);
+    expect(
+      phase1.includes(FIXTURE_SLUG),
+      "the phase 1 brief names the lane's own branch slug, which is a fact from AFTER the cut",
+    ).toBe(false);
+    expect(ran.stdout, "and the arm printed the line the seat pastes").toContain("AN ARM CANNOT SPAWN A SEAT");
   } finally {
     removeGitFixture(arm.dir, "ritualFixture(one)");
     removeGitFixture(hand.dir, "ritualFixture(two)");
@@ -3620,6 +3672,8 @@ interface RitualStub {
   calls: StubCall[];
   reads: string[];
   writes: string[];
+  /** What was written, by file — the phase 1 brief's own text lives here. */
+  written: Map<string, string>;
 }
 
 /**
@@ -3633,7 +3687,21 @@ function ritualStub(plan: ReturnType<typeof dispatchLanePlan>, failing: string):
   const calls: StubCall[] = [];
   const reads: string[] = [];
   const writes: string[] = [];
-  const stamped = stampCard(FIXTURE_CARD, plan.stamp).text;
+  const written = new Map<string, string>();
+  // THE KEEPER THIS STUB REPORTS IS GREEN AND GRADED, so the tier step
+  // has a real answer to classify with — which is also what makes the
+  // expected tier below computable on this side without re-running the
+  // arm. A failing keeper is injected as the RED that step really meets.
+  const keeperGreen = { pinned: true, answered: true, why: "the stub graded the fence green" };
+  // THE TIER'S OWN INJECTED FAILURE IS A CARD WITH NO SIZE (T-296): the
+  // classifier reads the card and the tree, so the only honest way to
+  // make it refuse is to hand it a card it cannot read. The plan is the
+  // card's side of that input, and this is the one place a body moves it.
+  if (failing === "tier") plan.tierInput.size = "";
+  const expectedTier =
+    failing === "tier" ? "" : classifyTier({ ...plan.tierInput, keeper: keeperGreen }).tier;
+  const stampFields = { ...plan.stamp, ...(expectedTier === "" ? {} : { tier: expectedTier }) };
+  const stamped = stampCard(FIXTURE_CARD, stampFields, { insertAfter: { tier: "size" } }).text;
   const manifest = JSON.stringify({
     version: 1,
     taskId: plan.taskId,
@@ -3647,6 +3715,14 @@ function ritualStub(plan: ReturnType<typeof dispatchLanePlan>, failing: string):
     run: (argv: string[], opts: { cwd: string; out?: string }) => {
       calls.push({ argv, cwd: opts.cwd, ...(opts.out === undefined ? {} : { out: opts.out }) });
       const has = (a: string) => argv.includes(a);
+      if (has(String(plan.keeperArgv[1]))) {
+        // A GRADED READING EITHER WAY — the difference between a red
+        // baseline and a derivation that graded nothing is the VERDICT
+        // LINE, not the exit, so both answers carry one.
+        return failing === "keeper"
+          ? { status: 1, stdout: `${plan.keeperVerdictToken} suite=e2e verdict=RED bodies=7\n`, stderr: "" }
+          : { status: 0, stdout: `${plan.keeperVerdictToken} suite=e2e verdict=GREEN bodies=7\n`, stderr: "" };
+      }
       if (argv[0] === "lsof") {
         return failing === "port"
           ? { status: 0, stdout: "COMMAND PID USER\nnode 4242 someone\n", stderr: "" }
@@ -3693,13 +3769,21 @@ function ritualStub(plan: ReturnType<typeof dispatchLanePlan>, failing: string):
         return manifest;
       }
       if (file === plan.cardFile) return FIXTURE_CARD;
+      // THE KEEPER STEP READS THE RUNNER ITSELF, to tell "this project
+      // publishes no keeper runner" from "the keeper ran". The stub
+      // publishes one.
+      if (file === plan.keeperArgv[1]) return "// the runner";
       throw new Error(`the stub was asked for ${file}, which no step of this ritual reads`);
     },
-    write: (file: string, _text: string) => {
+    write: (file: string, text: string) => {
       writes.push(file);
+      written.set(file, text);
+      if (failing === "phase1" && file === plan.phase1File) {
+        throw new Error(`EACCES: permission denied, open '${file}'`);
+      }
     },
   };
-  return { io, calls, reads, writes };
+  return { io, calls, reads, writes, written };
 }
 
 /** Was this step ATTEMPTED at all? Derived from the plan, never typed. */
@@ -3722,6 +3806,16 @@ function attempted(stub: RitualStub, plan: ReturnType<typeof dispatchLanePlan>, 
       return call((c) => c.out === plan.briefFile);
     case "port":
       return call((c) => c.argv[0] === "lsof");
+    case "keeper":
+      return call((c) => c.argv.includes(String(plan.keeperArgv[1])));
+    case "tier":
+      // THE TIER STEP RUNS NO COMMAND — it classifies, and the only trace
+      // it leaves in this world is the card read it takes to see whether
+      // an author wrote a tier by hand. It runs BEFORE the stamp, so that
+      // read is unambiguous evidence this step was reached.
+      return stub.reads.includes(plan.cardFile);
+    case "phase1":
+      return stub.writes.includes(plan.phase1File);
     default:
       throw new Error(`no signature for step ${id}`);
   }
@@ -3751,8 +3845,12 @@ for (const step of DISPATCH_STEPS) {
       "the ledger of completed steps does not end where the ritual stopped",
     ).toBe(step.n - 1);
     // The brief step's injected failure is a COULD NOT RUN, because 1 is a
-    // code that step legitimately answers with the document written.
-    expect(result.code).toBe(step.id === "brief" ? EXIT.CANNOT_RUN : EXIT.FOUND);
+    // code that step legitimately answers with the document written — and
+    // the phase 1 step's is one for the plainer reason that a file it
+    // could not write is not a finding about the card.
+    expect(result.code).toBe(
+      step.id === "brief" || step.id === "phase1" ? EXIT.CANNOT_RUN : EXIT.FOUND,
+    );
 
     // THE REFUSAL NAMES THE STEP, THE COMMAND AND THE EXIT.
     const refusal = result.findings.join("\n");
@@ -3785,9 +3883,14 @@ for (const step of DISPATCH_STEPS) {
     }
 
     // AND EVERY WORKTREE THIS RUN CUT IS TAKEN AWAY, AND ONLY THOSE.
+    // THE STEP NUMBERS ARE DERIVED FROM `DISPATCH_STEPS`, never typed:
+    // T-296 put three steps into this ritual and a typed 6 and 2 would
+    // have moved silently under them.
+    const stepNo = (id: string) =>
+      (DISPATCH_STEPS.find((d) => d.id === id) as (typeof DISPATCH_STEPS)[number]).n;
     const expected = [
-      ...(step.n > 6 ? [plan.bench] : []),
-      ...(step.n > 2 ? [plan.worktree] : []),
+      ...(step.n > stepNo("bench") ? [plan.bench] : []),
+      ...(step.n > stepNo("cut") ? [plan.worktree] : []),
     ];
     expect(result.removed, "the unwind removed a different set of worktrees than this run cut").toEqual(
       expected,
@@ -3801,11 +3904,11 @@ for (const step of DISPATCH_STEPS) {
     expect(
       stub.calls.some((c) => c.argv.includes("-D") && c.argv.includes(plan.branchName)),
       "the branch this run created outlived the worktree, so a re-run fails at the cut",
-    ).toBe(step.n > 2);
+    ).toBe(step.n > stepNo("cut"));
   });
 }
 
-test("THE RITUAL READS THE STAMP BACK OUT OF THE COMMIT, and a commit that does not carry it stops it at step one", () => {
+test("THE RITUAL READS THE STAMP BACK OUT OF THE COMMIT, and a commit that does not carry it stops it at the stamp", () => {
   // KILLED BY: reading the stamp off the WORKING TREE (which the writer
   // just wrote, so it always agrees), and by dropping the read-back
   // altogether. The lane inherits its stamp in its BASE, so a commit that
@@ -3814,7 +3917,10 @@ test("THE RITUAL READS THE STAMP BACK OUT OF THE COMMIT, and a commit that does 
   const stub = ritualStub(plan, "read-back");
   const result = runDispatchLane(plan, stub.io);
   const stopped = result.stopped as NonNullable<typeof result.stopped>;
-  expect(stopped.n).toBe(1);
+  // THE NUMBER IS DERIVED FROM `DISPATCH_STEPS` AND NEVER TYPED: T-296
+  // put two steps in front of the stamp, and a typed 1 would have moved
+  // silently under them.
+  expect(stopped.n).toBe((DISPATCH_STEPS.find((d) => d.id === "stamp") as (typeof DISPATCH_STEPS)[number]).n);
   expect(stopped.id).toBe("stamp");
   expect(result.code).toBe(EXIT.FOUND);
   expect(stopped.ran, "the refusal does not name the read that caught it").toContain("show");
@@ -3968,20 +4074,28 @@ test("THE DRY RUN PRINTS THE PLAN IN ORDER AND WRITES NOTHING", () => {
 
     // THE ORDER IS THE LAW, and the plan is where a reader checks it.
     const printed = values(ran.stdout).filter((l) => /^step \d+ — /.test(l));
-    expect(printed.map((l) => l.replace(/^step (\d+) — ([a-z]+):.*$/, "$1 $2"))).toEqual(
+    expect(printed.map((l) => l.replace(/^step (\d+) — ([a-z0-9]+):.*$/, "$1 $2"))).toEqual(
       DISPATCH_STEPS.map((s) => `${s.n} ${s.id}`),
     );
-    // AND THE BLOCK OF LANE FACTS IS ALL SEVEN, plus the card they derive from.
+    // AND THE BLOCK OF LANE FACTS IS ALL NINE, plus the card they derive
+    // from. The tier and the phase 1 brief joined the block at T-296: the
+    // tier because it is stamped into the base the lane inherits, and the
+    // phase 1 path because it is the ONE file a dispatcher pastes from.
     for (const label of ["branch: ", "worktree: ", "base hash: ", "bench: ", "port: ",
-      "scratch stem: ", "brief path: "]) {
+      "scratch stem: ", "brief path: ", "tier: ", "phase 1 brief: "]) {
       expect(values(ran.stdout).some((l) => l.trim().startsWith(label)), `no ${label} row`).toBe(true);
     }
+    expect(
+      ran.stdout,
+      "a dry run named a tier it has not derived — the classification runs as a STEP, and the " +
+        "plan prints what it will do rather than an answer it has not computed",
+    ).toContain("<derived at the tier step");
     expect(ran.stdout, "the base is a commit the dry run has not made, and must not be named").toContain(
       `base hash: ${BASE_TOKEN}`,
     );
     // EVERY LINE THE ARM EMITS IS STAMPED — the module's own provenance
     // floor, applied to the rows this card adds.
-    expect(unstampedLines(ran.stdout.split("\n").filter((l) => /^(step \d| *(branch|worktree|base hash|bench|port|scratch stem|brief path): )/.test(l)).join("\n"))).toEqual([]);
+    expect(unstampedLines(ran.stdout.split("\n").filter((l) => /^(step \d| *(branch|worktree|base hash|bench|port|scratch stem|brief path|tier|phase 1 brief): )/.test(l)).join("\n"))).toEqual([]);
 
     expect(fixtureGit(fx.root, ["status", "--porcelain"])).toBe(before.status);
     expect(fixtureGit(fx.root, ["rev-parse", "HEAD"])).toBe(before.head);
@@ -5633,4 +5747,571 @@ test("T-307 C2 — MF-11 refuses an entry that attributes a ruling to the owner 
     ]),
     "and an address is still a machine fact rather than an attribution",
   ).toEqual([]);
+});
+
+/* ────────────────────────────────────────────────────────────────────
+ * THE THREE TIERS (T-296, ADR-024 decision 1)
+ *
+ * The tier is a function of the CARD and the TREE, so every body below
+ * has two sides that share no constant: one reads the documents, the
+ * other computes from a planted input. A body that built its expectation
+ * out of the same map the classifier reads would be the one-arrangement
+ * defect `method/roles/verifier.md` 2b names.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/**
+ * THIS TREE'S GUARD-CLASS CANDIDATES, DERIVED WITHOUT READING THE MAP.
+ *
+ * The rule is the one docs/CONVENTIONS.md's guard-class bullet publishes
+ * for this side of the comparison — the agent harness's own directory,
+ * the workflows, the method, the parser's source, and the scripts whose
+ * own NAME says they gate, guard, fence, lock, push or land. It is a
+ * NAME-and-DIRECTORY rule and the map is a PATH list, which is what makes
+ * the two independent: the map could name a path this rule never finds,
+ * and this rule finds paths nobody has mapped. Only the second direction
+ * is a failure, and it is the one that goes stale in silence.
+ */
+function guardClassCandidates(): string[] {
+  return trackedFiles(repoRoot).filter(
+    (f) =>
+      f.startsWith(".claude/") ||
+      f.startsWith(".github/workflows/") ||
+      f.startsWith("method/") ||
+      f.startsWith("lib/parser/src/") ||
+      (f.startsWith("tools/e2e/scripts/") &&
+        /(gate|guard|fence|lock|push|landing)/.test(path.basename(f))),
+  );
+}
+
+test("the guard-class CLASSES are the method's and the PATHS are the project's, and a disagreement either way is a hard failure", () => {
+  // KILLED BY: a class list typed into the program instead of read out of
+  // the method; a map that quietly ignores a class the method declares
+  // (which stops guarding whatever that class named, in silence); and a
+  // map that invents a class no other project could inherit.
+  const taskFormat = readDoc("method/tasks/TASK-FORMAT.md");
+  const conventions = conventionsText(repoRoot);
+  const ids = guardClassIds(taskFormat);
+  expect(ids.length, "the method declares no guard class at all").toBeGreaterThan(3);
+  expect(ids, "the class the whole method-text tier turns on").toContain("method-text");
+  const map = guardClassMap(conventions, ids);
+  expect([...map.keys()].sort(), "every declared class is mapped and no other").toEqual([...ids].sort());
+  for (const [id, tokens] of map) {
+    expect(tokens.length, `${id} is mapped to nothing, so it guards nothing`).toBeGreaterThan(0);
+  }
+
+  // BOTH DIRECTIONS, ON COPIES OF THE CONTRACT — the degradation is
+  // applied where the subject's own arming is absent, which is 2b's
+  // shape: a class the method declares and the document does not map,
+  // and a class the document maps and the method does not declare.
+  expect(() => guardClassMap(conventions, [...ids, "no-such-class"])).toThrow(/maps none of them/);
+  const invented = conventions.replace("THE MAP:**", "THE MAP:** `invented-class`: `nowhere/`;");
+  expect(() => guardClassMap(invented, ids)).toThrow(/invented-class/);
+
+  // AND THE READER FOLLOWS THE DOCUMENT RATHER THAN OVERRULING IT: a
+  // class renamed in the method is a class this program then asks the
+  // project about under the new name.
+  const renamed = taskFormat.replace("- `ci-workflow` — ", "- `runner-instructions` — ");
+  expect(guardClassIds(renamed), "the program answers the document").toContain("runner-instructions");
+
+  // THE BLESSED RUNNER IS MATCHED BY SHAPE AND NOT BY NAME, and that is a
+  // CONSTRAINT rather than a style: `gate-run.spec.ts` requires this
+  // document to name that runner in exactly ONE place, so a map that
+  // spelled its filename would red a body in another file entirely — and
+  // the lane that wrote it would learn only from the closing battery.
+  // This body is where that trap is stated where the map is written.
+  const runner = blessedRunner(conventions).script;
+  const gateTokens = map.get("gate-runners") ?? [];
+  expect(
+    gateTokens.some((t) => t === runner),
+    "the guard-class map spells the blessed runner's filename, which is this document's SECOND " +
+      "naming of it — match its shape with a trailing `*` instead",
+  ).toBe(false);
+  expect(
+    guardClassHits([runner], map).length,
+    "and matching by shape still has to COVER it, or the constraint was met by dropping the class",
+  ).toBe(1);
+  // The prefix form is exercised where a body can see it fail, too.
+  expect(guardTokenCovers("tools/e2e/scripts/gate-*", "tools/e2e/scripts/gate-run.mjs")).toBe(true);
+  expect(guardTokenCovers("tools/e2e/scripts/gate-*", "tools/e2e/scripts/lane-lock.mjs")).toBe(false);
+  expect(guardTokenCovers("*", "anything"), "a bare star covers nothing, deliberately").toBe(false);
+});
+
+test("EVERY GUARD-CLASS FILE THIS TREE CARRIES IS COVERED, and the derivation that finds them never reads the map", () => {
+  // KILLED BY: a map that stops covering a guard-class directory, and by
+  // a new hook, workflow, method file, parser source or gate script
+  // arriving with nothing mapping it. That second half is the whole
+  // reason this body exists: a hand-kept list of what matters goes stale
+  // the day something new arrives, and it goes stale SILENTLY.
+  const map = guardClassMap(conventionsText(repoRoot), guardClassIds(readDoc("method/tasks/TASK-FORMAT.md")));
+  const candidates = guardClassCandidates();
+  expect(candidates.length, "the derivation found no candidate, so this body proves nothing").toBeGreaterThan(20);
+  const covered = new Set(guardClassHits(candidates, map).map((h) => h.path));
+  expect(
+    candidates.filter((c) => !covered.has(c)),
+    "these tracked files are guard-class by the tree's own rule and no class in " +
+      "docs/CONVENTIONS.md's map covers them — map them, or argue them out of the rule",
+  ).toEqual([]);
+
+  // THE POSITIVE CONTROL, RUN AND NOT ASSERTED (method/roles/verifier.md
+  // 2b): the same check, over the same tree, against a COPY of the map
+  // with one class removed, and it names exactly the files that class
+  // covered. A check that could not fail here would be green for the
+  // wrong reason above.
+  const damaged = new Map(map);
+  damaged.delete("method-text");
+  const stillCovered = new Set(guardClassHits(candidates, damaged).map((h) => h.path));
+  const exposed = candidates.filter((c) => !stillCovered.has(c));
+  expect(exposed.length, "removing method-text exposed nothing, so the check above cannot fail").toBeGreaterThan(10);
+  expect(
+    exposed.every((f) => f.startsWith("method/")),
+    "the damage exposed something other than what the removed class covered",
+  ).toBe(true);
+});
+
+test("the classifier answers from the card and the tree, and what it cannot read it REFUSES rather than guesses", () => {
+  // KILLED BY: a classifier that lets size outrank a guard-class path; one
+  // that admits a card to `bounded` on an unanswered keeper question; one
+  // that resolves an unreadable card downward instead of refusing; and one
+  // that treats an L card as ordinary because its fence looks harmless.
+  const map = guardClassMap(conventionsText(repoRoot), guardClassIds(readDoc("method/tasks/TASK-FORMAT.md")));
+  const answered = { pinned: true, answered: true, why: "a keeper is green at the base" };
+  const clean = { unresolved: [], untracked: [], guardMap: map, keeper: answered };
+
+  // GUARD-CLASS OUTRANKS EVERY SIZE, and the reason is printed.
+  const guarded = classifyTier({ ...clean, size: "XS", fencePaths: ["method/roles/executor.md"] });
+  expect(guarded.tier).toBe("guarded");
+  expect(guarded.reason, "the refusal-proof answer names the path AND the class").toContain("method-text");
+  expect(classifyTier({ ...clean, size: "L", fencePaths: ["app/src/x.ts"] }).tier).toBe("guarded");
+
+  // STANDARD IS EVERYTHING ELSE, and bounded is the narrow case.
+  expect(classifyTier({ ...clean, size: "S", fencePaths: ["app/src/x.ts"] }).tier).toBe("standard");
+  expect(classifyTier({ ...clean, size: "M", fencePaths: ["app/src/x.ts"] }).tier).toBe("standard");
+  expect(classifyTier({ ...clean, size: "XS", fencePaths: ["app/src/x.ts"] }).tier).toBe("bounded");
+  // Each bounded condition, removed one at a time, lands on standard.
+  expect(
+    classifyTier({ ...clean, size: "XS", fencePaths: ["app/src/x.ts"], untracked: ["app/src/x.ts"] }).tier,
+    "a fence that is not wholly inside a tracked one is not bounded",
+  ).toBe("standard");
+  expect(
+    classifyTier({
+      ...clean,
+      size: "XS",
+      fencePaths: ["app/src/x.ts"],
+      keeper: { pinned: false, answered: true, why: "no spec owns it" },
+    }).tier,
+    "no keeper pinning it is not bounded",
+  ).toBe("standard");
+
+  // THE THREE UNREADABLE THINGS, EACH REFUSED BY NAME.
+  expect(() => classifyTier({ ...clean, size: "", fencePaths: ["app/src/x.ts"] })).toThrow(TierFinding);
+  expect(() => classifyTier({ ...clean, size: "", fencePaths: ["app/src/x.ts"] })).toThrow(/no `size:`/);
+  expect(() =>
+    classifyTier({ ...clean, size: "S", fencePaths: [], unresolved: ["C-99"] }),
+  ).toThrow(/expand to no path/);
+  expect(() =>
+    classifyTier({
+      ...clean,
+      size: "XS",
+      fencePaths: ["app/src/x.ts"],
+      keeper: { pinned: false, answered: false, why: "the runner graded nothing" },
+    }),
+  ).toThrow(/refused rather than resolved downward/);
+  // AND THE UNANSWERED KEEPER ONLY REFUSES WHERE IT DECIDES SOMETHING:
+  // an S card's tier does not depend on it, so the same input classifies.
+  expect(
+    classifyTier({
+      ...clean,
+      size: "S",
+      fencePaths: ["app/src/x.ts"],
+      keeper: { pinned: false, answered: false, why: "the runner graded nothing" },
+    }).tier,
+    "a question that decides nothing here is not a reason to refuse",
+  ).toBe("standard");
+});
+
+test("THE KEEPER RUN IS READ OFF ITS OUTPUT, so a derivation that graded nothing is not a red baseline", () => {
+  // KILLED BY: reading the exit code alone, which folds "could not place
+  // a fenced path" into "the baseline is red" — and every card whose
+  // fence names method text is the first case. An exit 0 over nothing is
+  // not a pass either, and this is the same distinction.
+  const runner = blessedRunner(conventionsText(repoRoot));
+  expect(runner.script, "the runner is DERIVED from the document, never typed").toContain("gate-run");
+  expect(runner.verdictToken, "and so is the token a graded reading prints").toBe("gate-verdict");
+
+  const refused = keeperVerdict({
+    status: 3,
+    stdout: "gate-run: REFUSING the scoped reading — the derivation cannot place method/roles/x.md",
+    stderr: "",
+    token: runner.verdictToken,
+  });
+  expect(refused.graded, "a refusal graded nothing").toBe(false);
+  expect(refused.detail, "and the note carries what the runner actually said").toContain("REFUSING");
+
+  const red = keeperVerdict({
+    status: 1,
+    stdout: `${runner.verdictToken} suite=e2e verdict=RED bodies=41`,
+    stderr: "",
+    token: runner.verdictToken,
+  });
+  expect(red.graded && !red.green, "a graded non-zero IS a red baseline").toBe(true);
+  const green = keeperVerdict({
+    status: 0,
+    stdout: `${runner.verdictToken} suite=e2e verdict=GREEN bodies=41`,
+    stderr: "",
+    token: runner.verdictToken,
+  });
+  expect(green.graded && green.green, "and a graded zero is the baseline holding").toBe(true);
+});
+
+test("A FENCE NAMING A DIRECTORY NAMES THE GUARDS INSIDE IT, and a leading ./ is not a different path", () => {
+  // KILLED BY: a containment that only asks whether the MAP's token covers
+  // the fenced path and never whether the fenced path CONTAINS the token.
+  // `tools/e2e/scripts/` is a tracked directory holding the gate runners
+  // and `lib/` holds the parser, so a card fencing either is a card
+  // editing them — and asking one direction answered `standard` for a
+  // fence over the guards themselves, which is the cheap bench bought on
+  // the one class of file this tier exists for.
+  const map = guardClassMap(conventionsText(repoRoot), guardClassIds(readDoc("method/tasks/TASK-FORMAT.md")));
+  const keeper = { pinned: true, answered: true, why: "graded and green" };
+  const tierOf = (fencePaths: string[]): string =>
+    classifyTier({ size: "M", fencePaths, unresolved: [], untracked: [], guardMap: map, keeper }).tier;
+
+  // THE ANCESTOR DIRECTION, over directories this tree really carries and
+  // the mapped tokens really inside them — DERIVED from the map, never
+  // typed here, so a map that moves moves this body with it.
+  const mapped = [...map.values()].flat();
+  for (const dir of ["tools/e2e/scripts/", "lib/"]) {
+    const inside = mapped.filter((t) => t.startsWith(dir));
+    expect(inside.length, `${dir} holds no mapped guard, so this arm would prove nothing`).toBeGreaterThan(0);
+    expect(tierOf([dir]), `${dir} holds ${inside.join(", ")}`).toBe("guarded");
+  }
+
+  // THE SAME FILE, SPELLED THE WAY A RELATIVE PATH IS USUALLY SPELLED.
+  expect(tierOf(["./method/roles/verifier.md"]), "a leading ./ is not a different file").toBe("guarded");
+
+  // THE CONTROLS, WHERE THE ARMING IS ABSENT: a directory holding no
+  // mapped guard stays standard, and a name that merely EXTENDS a class's
+  // characters is still not inside it. Without these, a containment that
+  // fired on everything would pass every arm above.
+  expect(mapped.some((t) => t.startsWith("docs/")), "docs/ must hold no mapped token for this control").toBe(false);
+  expect(tierOf(["docs/"]), "a directory with no guard under it").toBe("standard");
+  expect(guardTokenCovers("method/", "methodical/x.md"), "a prefix without a separator boundary is not a hit").toBe(false);
+  expect(
+    guardTokenCovers("tools/e2e/scripts/gate-*", "tools/e2e/scripts/lane-lock.mjs"),
+    "and the prefix form keeps its own boundary",
+  ).toBe(false);
+});
+
+test("A KEEPER RUN THAT PUBLISHED `verdict=REFUSED` GRADED NOTHING, and a dispatch does not call that a red baseline", () => {
+  // KILLED BY: deciding green from the process exit alone after grepping
+  // for the very line that carries the verdict word. `gate-run.mjs`
+  // publishes GREEN, RED and REFUSED on that line and its own header says
+  // REFUSED is never a green run and never a red one — a scoped run that
+  // collected zero bodies exits non-zero and says REFUSED, and reading
+  // that as RED refuses a dispatch whose baseline nobody ever measured.
+  // That is the mirror of the over-refusal this function's own comment
+  // says it exists to prevent.
+  const token = blessedRunner(conventionsText(repoRoot)).verdictToken;
+  const refused = keeperVerdict({
+    status: 1,
+    stdout: `${token} suite=e2e exit=1 bodies=0 targets=1 verdict=REFUSED scope=tools/e2e/tests/x.spec.ts reason=zero-bodies`,
+    stderr: "",
+    token,
+  });
+  expect(refused.graded, "the runner REFUSED to grade, so nothing was graded").toBe(false);
+  expect(refused.green, "and a refusal is not a pass either").toBe(false);
+  expect(refused.detail, "and the detail carries what the runner actually said").toContain("REFUSED");
+
+  // THE TWO CONTROLS, WHERE THE ARMING IS ABSENT: the same reader over a
+  // line the runner DID grade still answers graded, in both directions.
+  // Without them an implementation answering `graded: false` for
+  // everything would pass the arm above.
+  const red = keeperVerdict({
+    status: 1,
+    stdout: `${token} suite=e2e exit=1 bodies=41 targets=1 verdict=RED reason=ok`,
+    stderr: "",
+    token,
+  });
+  expect(red.graded && !red.green, "a GRADED non-zero is still a red baseline").toBe(true);
+  const green = keeperVerdict({
+    status: 0,
+    stdout: `${token} suite=e2e exit=0 bodies=41 targets=1 verdict=GREEN reason=ok`,
+    stderr: "",
+    token,
+  });
+  expect(green.graded && green.green, "and a GRADED zero is still the baseline holding").toBe(true);
+});
+
+test("THE PHASE 1 BRIEF IS RENDERED FROM THE CARD AT THE BASE AND CARRIES NOTHING FROM THE LANE", () => {
+  // KILLED BY: a renderer handed the tip's card, the notes, the diff or
+  // any figure measured after the cut. The guarantee is the PARAMETER
+  // LIST — this function is given no root, no branch and no ref later
+  // than the base — and the body below proves the guarantee holds by
+  // planting lane-only text where a leak would have to come from.
+  const LANE_ONLY = "LANE-ONLY-STRING-THE-EXECUTOR-WROTE";
+  const atBase = ["---", "id: T-999", "size: S", "---", "", "## Acceptance criteria", "", "- THE thing SHALL happen."].join("\n");
+  const atTip = `${atBase}\n\n## Implementation notes\n\n${LANE_ONLY}\n`;
+  const rendered = renderPhase1({
+    taskId: "T-999",
+    tier: "standard",
+    base: "0123456789abcdef",
+    card: "docs/tasks/T-999-a-card.md",
+    cardText: atBase,
+    verifierMd: readDoc("method/roles/verifier.md"),
+    attackSetFile: "/scratch/attack-set-T-999.md",
+  });
+  expect(rendered, "the contract it is written against is in it").toContain("THE thing SHALL happen.");
+  expect(rendered, "the base it was read at is named").toContain("0123456789abcdef");
+  expect(rendered, "and the role file it is judged by").toContain("# Role: verifier");
+  expect(rendered.includes(LANE_ONLY), "the rendered brief carries the lane's own notes").toBe(false);
+
+  // THE CONTROL, AND IT IS THE HALF THAT MATTERS: the same renderer,
+  // handed the TIP's card, would carry the lane — so the blindness is a
+  // property of WHAT IS PASSED, and the caller that passes it is the one
+  // reading `git show <base>:<card>` at the stamp commit.
+  const leaked = renderPhase1({
+    taskId: "T-999",
+    tier: "standard",
+    base: "0123456789abcdef",
+    card: "docs/tasks/T-999-a-card.md",
+    cardText: atTip,
+    verifierMd: "# Role: verifier",
+    attackSetFile: "/scratch/attack-set-T-999.md",
+  });
+  expect(leaked.includes(LANE_ONLY), "the control did not leak, so the assertion above proves nothing").toBe(true);
+
+  // AND IT SAYS WHAT IT IS: tool-less, one artifact, the floor, and the
+  // sentence that stops a dispatcher waiting for a session an arm cannot
+  // open.
+  expect(rendered).toContain("NO file");
+  expect(rendered).toContain("at least one attack");
+  expect(PHASE1_SPAWN_NOTE).toContain("AN ARM CANNOT SPAWN A SEAT");
+});
+
+test("the bench takes the ground at the base, seals three inputs by sha256, and renders phase 2 from the seal", () => {
+  // KILLED BY: a ground with counts and no body names; a seal over two
+  // inputs called three; a phase 2 brief that names no digest; and a
+  // renderer that hands phase 2 the card at the TIP, which is the card
+  // with the executor's notes on it.
+  const bodies = specBodies(
+    ['test("one thing happens", () => {});', "test(`another thing happens`, () => {});", "// test(\"a comment\")"].join("\n"),
+  );
+  expect(bodies, "both quotings, and the comment is not a body this reader invents").toEqual([
+    "one thing happens",
+    "another thing happens",
+    "a comment",
+  ]);
+
+  const census = censusSection("# Capabilities\n\n## brief\n\n- one\n- two\n\n## other\n\n- three\n", "tools/e2e/tests/brief.spec.ts");
+  expect(census, "the census section is keyed off the spec's own slug").toEqual({
+    heading: "## brief",
+    count: 2,
+    present: true,
+  });
+  expect(
+    censusSection("# Capabilities\n", "tools/e2e/tests/nothing.spec.ts").present,
+    "a spec the census does not name is SAID, never omitted",
+  ).toBe(false);
+
+  const ground = groundDocument({
+    taskId: "T-999",
+    tier: "standard",
+    base: "0123456789abcdef",
+    card: "docs/tasks/T-999-a-card.md",
+    files: [
+      { rel: "tools/e2e/scripts/x.mjs", blob: "aaaa111", bytes: 120 },
+      {
+        rel: "tools/e2e/tests/x.spec.ts",
+        blob: "bbbb222",
+        bytes: 340,
+        bodies: ["a body that measures something"],
+        census: { heading: "## x", count: 1, present: true },
+      },
+    ],
+    preflight: { exit: 0, findings: [] },
+  });
+  expect(ground, "the hashes are at the base and the base is named").toContain("0123456789abcdef");
+  expect(ground, "a fenced file's blob and bytes").toContain("| tools/e2e/scripts/x.mjs | aaaa111 | 120 |");
+  expect(ground, "the spec's body NAMES and not only its count").toContain("a body that measures something");
+  expect(ground, "the census section beside them").toContain("## x");
+  expect(ground, "and the addendum heading the guarded tier writes under").toContain(GROUND_ADDENDUM_HEADING);
+
+  const digests = [
+    { what: "the attack set", file: "/s/attack-set-T-999.md", digest: sha256("an attack set") },
+    { what: "the ground", file: "/s/ground-T-999.md", digest: sha256(ground) },
+    { what: "the card at 0123456789abcdef", file: "docs/tasks/T-999-a-card.md", digest: sha256("a card") },
+  ];
+  expect(new Set(digests.map((d) => d.digest)).size, "three inputs, three distinct digests").toBe(3);
+  expect(digests[0]?.digest, "sha256 is a stated algorithm, not an implementation detail").toHaveLength(64);
+  const seal = sealDocument({ taskId: "T-999", tier: "standard", base: "0123456789abcdef", tip: "fedcba9876543210", inputs: digests });
+  for (const d of digests) expect(seal, `${d.what} is sealed`).toContain(`sha256:${d.digest}`);
+  expect(seal, "and a mismatched citation is refused").toContain("REFUSED");
+
+  const phase2 = renderPhase2({
+    taskId: "T-999",
+    tier: "standard",
+    base: "0123456789abcdef",
+    tip: "fedcba9876543210",
+    bench: "/somewhere/supertaskr-V-T-999",
+    card: "docs/tasks/T-999-a-card.md",
+    cardText: "---\nid: T-999\n---\nthe contract",
+    attackSetFile: "/s/attack-set-T-999.md",
+    groundFile: "/s/ground-T-999.md",
+    stampsFile: "/s/stamps-T-999.txt",
+    suites: "the owed set of the range",
+  });
+  expect(phase2, "phase 2 is a FRESH spawn and the brief says so").toContain("FRESH spawn");
+  expect(phase2, "it names the three sealed inputs").toContain("/s/stamps-T-999.txt");
+  expect(phase2, "it points at the mode rather than restating it").toContain("The standard mode, stated once");
+  expect(phase2, "and it carries the contract, at the base").toContain("the contract");
+  const guardedBrief = renderPhase2({
+    taskId: "T-999",
+    tier: "guarded",
+    base: "0123456789abcdef",
+    tip: "fedcba9876543210",
+    bench: "/somewhere/supertaskr-V-T-999",
+    card: "docs/tasks/T-999-a-card.md",
+    cardText: "the contract",
+    attackSetFile: "/s/attack-set-T-999.md",
+    groundFile: "/s/ground-T-999.md",
+    stampsFile: "/s/stamps-T-999.txt",
+    suites: "the whole battery",
+  });
+  expect(guardedBrief, "and the guarded tier gets the whole role file and the addendum").toContain("GUARDED");
+});
+
+test("the tier line is CREATED where a card has none, and no other field may be created by a stamp", () => {
+  // KILLED BY: a stamp that appends any missing key (which is the silent
+  // no-op T-239 removed), and by one that refuses `tier:` too — which
+  // would make every card unstampable, since an author leaves the field
+  // out and the template does not carry it.
+  const card = ["---", "id: T-901", "size: S", "status: planned", "builder:", "---", "", "body"].join("\n");
+  const stamped = stampCard(card, { status: "building", tier: "standard" }, { insertAfter: { tier: "size" } });
+  const lines = stamped.text.split("\n");
+  expect(lines, "the created line carries the derived value").toContain("tier: standard");
+  expect(
+    lines.indexOf("tier: standard"),
+    "and it lands where the format publishes it, right after its anchor",
+  ).toBe(lines.indexOf("size: S") + 1);
+  expect(stamped.changed, "both fields are reported as changed").toEqual(["status", "tier"]);
+  expect(stampVerdict(stamped.text, { status: "building", tier: "standard" })).toEqual([]);
+
+  // ARMING ABSENT: the same missing key, with no opt-in, still refuses —
+  // and it refuses with the ORIGINAL refusal, not with the creation
+  // arm's own "no anchor" one. **THE MESSAGE IS THE DISCRIMINATOR AND
+  // THE CLASS IS NOT**: a creation arm that fired for every key would
+  // still throw `DispatchLaneFinding` here, from one branch further on,
+  // and this body passed against exactly that mutant until it named the
+  // sentence.
+  expect(() => stampCard(card, { tier: "standard" })).toThrow(
+    /has no "tier:" line in its frontmatter/,
+  );
+  // AND THE OPT-IN IS PER KEY: another missing field is refused even in
+  // the same call as a created one, by that same original refusal.
+  expect(() =>
+    stampCard(card, { tier: "standard", built_at: "now" }, { insertAfter: { tier: "size" } }),
+  ).toThrow(/has no "built_at:" line in its frontmatter/);
+  // AND AN ANCHOR THE CARD DOES NOT CARRY IS REFUSED RATHER THAN APPENDED
+  // BLIND — the creation is placed, never dumped at the end.
+  expect(() =>
+    stampCard(card, { tier: "standard" }, { insertAfter: { tier: "no_such_field" } }),
+  ).toThrow(/no published place/);
+  // A SECOND STAMP OVER AN EXISTING LINE REPLACES IT AND CREATES NOTHING.
+  const again = stampCard(stamped.text, { tier: "guarded" }, { insertAfter: { tier: "size" } });
+  expect(again.text.split("\n").filter((l) => l.startsWith("tier:")), "one tier line, not two").toHaveLength(1);
+  expect(again.text).toContain("tier: guarded");
+});
+
+test("THE BENCH ARM TAKES THE GROUND, SEALS THREE INPUTS AND RENDERS PHASE 2, against a real dispatch", () => {
+  // KILLED BY: a bench that seals nothing, one that seals a ground it did
+  // not write, one that renders phase 2 without the digests, and one that
+  // proceeds when phase 1's return was never saved — which would leave a
+  // verdict citing a hash over a file nobody wrote. IT IS AN END-TO-END
+  // BODY because the seal is only worth anything over the real files: a
+  // digest computed on a string in memory proves the algorithm, not the
+  // ritual.
+  const fx = ritualFixture("bench");
+  try {
+    const dispatched = spawnSync(
+      process.execPath,
+      [CLI, "--dispatch-lane", FIXTURE_CARD_ID, "--slug", FIXTURE_SLUG, "--root", fx.root, "--scratch", fx.scratch],
+      { cwd: repoRoot, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
+    );
+    expectDispatched(dispatched, fx, "the dispatch this bench verifies");
+
+    // NO ATTACK SET IS A REFUSAL, NOT A SMALLER SEAL. Phase 1's return is
+    // saved by the seat; a bench that sealed two inputs and called them
+    // three would put a citation over a file nobody wrote.
+    const without = spawnSync(
+      process.execPath,
+      [CLI, "--bench", FIXTURE_CARD_ID, "--root", fx.root, "--scratch", fx.scratch],
+      { cwd: repoRoot, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
+    );
+    expect(without.status, "a bench with no attack set is a FOUND, never a clean run").toBe(EXIT.FOUND);
+    expect(without.stderr, "and it names the file it wanted").toContain(`attack-set-${FIXTURE_CARD_ID}.md`);
+
+    // THE ARMED RUN: phase 1's return on disk, exactly as the seat saves it.
+    const attackSet = path.join(fx.scratch, `attack-set-${FIXTURE_CARD_ID}.md`);
+    writeFileSync(attackSet, "# ATTACK SET\n\n- satisfy the letter of the criterion and fail its purpose\n");
+    const ran = spawnSync(
+      process.execPath,
+      [CLI, "--bench", FIXTURE_CARD_ID, "--root", fx.root, "--scratch", fx.scratch],
+      { cwd: repoRoot, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
+    );
+    expect(ran.status, ran.stderr).toBe(EXIT.CLEAN);
+
+    const ground = readFileSync(path.join(fx.scratch, `ground-${FIXTURE_CARD_ID}.md`), "utf8");
+    const stamps = readFileSync(path.join(fx.scratch, `stamps-${FIXTURE_CARD_ID}.txt`), "utf8");
+    const phase2 = readFileSync(path.join(fx.scratch, `phase2-${FIXTURE_CARD_ID}.txt`), "utf8");
+
+    // THE GROUND IS AT THE BASE, and the fixture card's fence is one file.
+    expect(ground, "the fenced file, with git's own object id and its size").toContain("README.md");
+    expect(ground, "and the addendum heading the guarded tier writes under").toContain(GROUND_ADDENDUM_HEADING);
+
+    // THE SEAL IS THREE DIGESTS, AND THEY ARE THE DIGESTS OF THE FILES ON
+    // DISK — computed here from the bytes rather than copied out of the
+    // seal, so the two sides share no value.
+    expect(stamps, "the attack set is sealed").toContain(`sha256:${sha256(readFileSync(attackSet, "utf8"))}`);
+    expect(stamps, "and the ground the arm just wrote").toContain(`sha256:${sha256(ground)}`);
+    expect(
+      (stamps.match(/sha256:[0-9a-f]{64}/g) ?? []).length,
+      "three inputs are sealed: the attack set, the ground, and the card at the base",
+    ).toBe(3);
+
+    // AND PHASE 2 POINTS AT ALL THREE, names the tier the DISPATCH
+    // derived, and says it is a fresh spawn.
+    expect(phase2).toContain(`stamps-${FIXTURE_CARD_ID}.txt`);
+    expect(phase2).toContain(`ground-${FIXTURE_CARD_ID}.md`);
+    expect(phase2).toContain(`attack-set-${FIXTURE_CARD_ID}.md`);
+    expect(phase2, "the tier is the card's, written by the arm at the dispatch stamp").toContain("tier standard");
+    expect(phase2, "and a continuation of phase 1 is not a second spawn").toContain("FRESH spawn");
+    expect(ran.stdout, "the arm printed the line the seat pastes").toContain("AN ARM CANNOT SPAWN A SEAT");
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(bench)");
+  }
+});
+
+test("the arm renders phase 1 from the card AS THE COMMIT CARRIES IT, never off the working tree", () => {
+  // THE CALLER'S HALF OF THE BLINDNESS, and it needs its own body: the
+  // renderer is blind because of WHAT IT IS PASSED, so a caller that
+  // passed the working tree's copy would spend the guarantee while every
+  // pure-function body above stayed green. The stub answers `git show`
+  // with the STAMPED card and `read` with the unstamped one, so the two
+  // sources are distinguishable by one line — which is exactly the
+  // discrimination this body needs and the arm's own two reads make.
+  //
+  // KILLED BY: `cardAtBase = io.read(plan.cardFile)` in the phase 1 step,
+  // and by any read of the card taken after the lane branch exists.
+  const plan = stubPlan();
+  const stub = ritualStub(plan, "none");
+  const result = runDispatchLane(plan, stub.io);
+  expect(result.stopped, "the ritual stopped, so there is no phase 1 to read").toBeUndefined();
+  const phase1 = stub.written.get(plan.phase1File) ?? "";
+  expect(phase1.length, "no phase 1 brief was written at all").toBeGreaterThan(0);
+  expect(phase1, "the card it carries is the one the STAMP COMMIT holds").toContain("status: building");
+  // THE CONTROL: the working-tree copy the stub hands `read` does NOT
+  // carry that line, so the assertion above discriminates between the two
+  // sources rather than being true of both.
+  expect(FIXTURE_CARD, "the control: the working-tree card is unstamped").not.toContain("status: building");
+  expect(phase1, "and it names the base it was read at").toContain(STUB_BASE);
 });

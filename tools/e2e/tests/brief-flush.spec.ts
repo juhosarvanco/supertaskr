@@ -699,6 +699,10 @@ const NOT_AN_ARM: ReadonlyArray<{ flag: string; why: string }> = [
     why: "THE OTHER WRITER THAT COMMITS (T-295). It widens a card's fence on the integration branch as its own commit, stages a merge, stamps a card and appends to the bands' readings — so a guard that measured its size would perform a merge every time this suite ran, which is `--dispatch-lane`'s argument at the closing end of the loop. `merge.spec.ts` drives it end to end against scratch repositories instead.",
   },
   {
+    flag: "--bench",
+    why: "THE THIRD WRITER (T-296). It takes the verifier's ground by a script, seals the three inputs by sha256 and writes the ground, the stamps and the phase 2 brief into the lane's scratch directory — so a guard that measured its size would perform the bench ritual every time this suite ran, which is `--dispatch-lane`'s argument at the verification end of the loop. `brief.spec.ts` drives it end to end against scratch repositories instead.",
+  },
+  {
     flag: "--bump",
     why: "a MODIFIER of --merge: which method version the three stamp files move to. It is meaningless without --merge and this command refuses it alone.",
   },
