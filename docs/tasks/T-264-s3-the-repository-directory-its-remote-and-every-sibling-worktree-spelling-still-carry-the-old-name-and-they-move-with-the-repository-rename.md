@@ -540,8 +540,8 @@ nine in a `git clone --shared`, never in a worktree of the host:
 Nine for nine. I also walked the KEEPER at every commit with the module
 rather than the suite, because the notes disclose a red window and a
 disclosure is a claim: `every enumerated survivor class is occupied` is
-RED from `ad141755` through `e772ce87` (`method-source` empties at the
-first commit, `repository-directory` at the third) and GREEN from
+RED from `ad141755` through `e772ce87` — `method-source` empties at
+`ad141755` and `repository-directory` at `142e32d3` — and GREEN from
 `e432b793` on. The disclosure is accurate and the window is exactly as
 stated. **And the OTHER keeper never reds: unclassified survivors are
 zero at every one of the nine commits and at the base.**
@@ -752,6 +752,29 @@ sentence; the notes declare it as a restatement of the wordmark note, and
 that reading is defensible, so it stands. `docs/reference/12-genesis.md`
 line 25 lost its column alignment inside a code fence when the name grew;
 cosmetic. The card's title still says 97.
+
+## Step 7 — the gates my own writes moved, run at my own tip
+
+Appending a verdict and filing three cards is a commit, and the docs gate
+FIRES on four paths under `docs/` — it named the app, parser and e2e
+suites, and all three are green at the tip my verdict commit and my
+correction commit created, `22718fbbe32e5e881ac3ba815178d5c2019af901`:
+
+    parser  exit 0  bodies 389  GREEN  ref 22718fbb
+    app     exit 0  bodies 1171 GREEN  ref 22718fbb
+    e2e     exit 0  bodies 845  GREEN  ref 22718fbb  (844 plus the correction's body)
+
+**And the gate caught me, which is why this step exists.** The card's
+preflight was exit 0 before I wrote and exit 1 after: my own prose said a
+class emptied "at the first commit", and the preflight reads that as an
+ordinal census claim over this repository's whole history — the same
+class the card's own PREFLIGHT RULING paragraph above was written for.
+Reworded to name the two commits by hash instead; the preflight is exit 0
+again. The three cards I filed are `status: suggested` and their preflight
+is exit 3, which is what a suggested card gets — a card the schedule does
+not draw has no dispatch ruling. That is not a property of these cards: I
+ran the same command against `T-264-s4` and `T-264-s5`, untouched by this
+lane and suggested since before it, and both answer exit 3 too.
 
 ## Verdict
 
