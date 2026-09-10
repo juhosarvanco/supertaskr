@@ -151,11 +151,36 @@ test("the corpus reaches every tree the criteria name — a root that drops take
     100,
   );
 
-  // T-264's own roots, then the ones T-265-s3 added: `method/`, the
-  // prose trees T-265's `touches:` line names, and `bin/` — the launcher
-  // a human runs by hand, which sat outside the corpus while it carried
-  // the 34th `NPUTER_*` variable and nothing here could see it.
-  for (const root of SCAN_ROOTS) {
+  // THE ROOTS ARE LISTED HERE, NOT READ OFF `SCAN_ROOTS`, and the first
+  // cut of this body did read them — which made it a tautology: a root
+  // deleted from the module deleted its own assertion, and a drill that
+  // dropped `method/` passed nine of nine. This is the same failure
+  // `rename-scan.mjs`'s own header names for the class table, and the
+  // same answer: an expectation learned from the thing it judges agrees
+  // with it by construction.
+  const REQUIRED_ROOTS = [
+    // T-264's first acceptance criterion
+    "app/",
+    "lib/",
+    "tools/",
+    ".claude/",
+    ".github/",
+    // T-264-s2's launcher, the one a human runs by hand
+    "bin/",
+    // T-265-s3's own criterion
+    "method/",
+    // the prose trees T-265's `touches:` line names
+    "docs/architecture/",
+    "docs/business/",
+    "docs/design/",
+    "docs/guide/",
+    "docs/reference/",
+  ];
+  for (const root of REQUIRED_ROOTS) {
+    expect(
+      SCAN_ROOTS,
+      `the criteria name the root \`${root}\` and the module's own list has dropped it`,
+    ).toContain(root);
     expect(
       corpus.some((f) => f.startsWith(root)),
       `the corpus names the root \`${root}\` and walks no tracked file under it`,
