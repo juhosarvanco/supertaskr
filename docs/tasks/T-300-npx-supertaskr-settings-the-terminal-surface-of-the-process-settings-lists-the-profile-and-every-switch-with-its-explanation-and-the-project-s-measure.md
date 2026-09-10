@@ -1,6 +1,6 @@
 ---
 id: T-300
-title: `npx supertaskr settings` — the terminal surface of the process settings: lists the profile and every switch with its explanation and the project's measured cost, and edits the runtime template's section with the schema's constraints enforced
+title: "`npx supertaskr settings` — the terminal surface of the process settings: lists the profile and every switch with its explanation and the project's measured cost, and edits the runtime template's section with the schema's constraints enforced"
 feature: F-04
 milestone: 4
 size: S
