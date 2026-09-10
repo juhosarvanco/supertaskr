@@ -9,7 +9,7 @@ status: parked
 wake: T-296
 suggested_by: "the owner, 2026-09-09 (decision D of the backlog review: later, when the time is right) and 2026-09-10 (the timing: after the first standard-tier lane proves the new form)"
 blocked_by: []
-touches: [docs/tasks/]
+touches: []
 builder:
 verifier:
 built_by:
