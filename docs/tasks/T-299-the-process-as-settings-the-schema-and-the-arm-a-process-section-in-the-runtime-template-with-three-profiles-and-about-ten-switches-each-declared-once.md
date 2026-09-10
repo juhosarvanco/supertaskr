@@ -4,13 +4,14 @@ title: The process as settings, the schema and the arm — a `process:` section 
 feature: F-01
 milestone: 4
 size: M
+tier: guarded
 priority: 2
-status: planned
+status: building
 suggested_by: "@human (2026-09-10): \"Rule the loop room, A to I as amended: yes\" — docs/rooms/loop-cost-and-speed.md, ADR-024"
 blocked_by: [T-296]
 touches: [method/runtime/supertaskr.yaml, method/runtime/process-schema.yaml, tools/e2e/scripts/brief.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/merge.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
