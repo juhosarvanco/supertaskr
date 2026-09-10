@@ -22,7 +22,7 @@ import { CI_WORKFLOW_REL_PATH, stepWorkingDirectory } from "../../../.claude/hoo
 // stay quiet. It is also why a change to gate-run.mjs now owes this
 // spec through the owning-spec map: the dependency is real, so it is
 // recorded the way every other one is.
-import { ALL_SUITES } from "../scripts/gate-run.mjs";
+import { ALL_SUITES, GRADED_SUITES, SCOPED_SUITE } from "../scripts/gate-run.mjs";
 // ...and the argv the runner's own derivation step sends, so the
 // criterion's spelling is READ from the sender rather than retyped.
 import { owedSetArgv } from "../scripts/ci-owed.mjs";
@@ -3178,4 +3178,53 @@ test("FIXTURE: an absent package, an unreadable step, an unnamed one and one rea
   const unnamedSaid = stepPackageProblems([unnamed]).problems.join("\n");
   expect(unnamedSaid, "the site is named even without a step name").toContain("(UNNAMED)");
   expect(unnamedSaid).toContain("has no `name:`");
+});
+
+test("the end-to-end job is the ONLY one a matrix expands — the solo-lock legs run one runner each", () => {
+  const { jobs } = loadWorkflow();
+
+  // ── WHY THIS IS A BODY AND NOT A READING (T-294 criterion 1) ───────
+  // `GRADED_SUITES` marks TWO suites solo, and they are solo for
+  // different reasons. The end-to-end leg is solo because its wall time
+  // is a health band — splitting its SPEC FILES across separate runners
+  // is what this card is for, and each runner still runs one lane. The
+  // rust leg is solo because T-088-s4's cache cliff reds `startup_arm`
+  // under contention: a matrix over THAT job would put N cargo builds
+  // on N runners against one cache key, which is the contention the flag
+  // names. Nothing else in this file could see that happen — the disk
+  // ledger, the job graph and the command parity are all satisfied by a
+  // job that runs four times.
+  expect(
+    jobs.filter((j) => j.body["strategy"] !== undefined).map((j) => j.id),
+    "one matrix, and it is the leg the owning-spec map splits",
+  ).toEqual([E2E_JOB]);
+
+  // AND THE SUITES THE MATRIX MAY NOT REACH ARE READ OFF THE REGISTRY
+  // rather than named here, so a suite that gains `solo: true` arrives
+  // with this check rather than without it.
+  const soloElsewhere = Object.values(GRADED_SUITES).filter(
+    (s) => s.solo === true && s.id !== SCOPED_SUITE,
+  );
+  expect(
+    soloElsewhere.map((s) => s.id),
+    "the registry's own solo set, less the leg the shards split",
+  ).toEqual(["rust"]);
+
+  for (const suite of soloElsewhere) {
+    const hosts = jobs.filter((j) =>
+      j.steps.some(
+        (s) =>
+          s["working-directory"] === suite.cwd && (s.run ?? "").startsWith(String(suite.argv[0])),
+      ),
+    );
+    expect(hosts.length, `some job runs the \`${suite.id}\` leg`).toBeGreaterThan(0);
+    for (const host of hosts) {
+      expect(
+        host.body["strategy"],
+        `job \`${host.id}\` runs the SOLO \`${suite.id}\` leg under a matrix — its ` +
+          "registry entry says a run beside another measures the contention rather " +
+          "than the suite",
+      ).toBeUndefined();
+    }
+  }
 });

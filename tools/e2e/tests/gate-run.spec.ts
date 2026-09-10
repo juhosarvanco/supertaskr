@@ -14,6 +14,7 @@ import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import {
   DEFAULT_SHARD_COUNT,
   SHARD_COUNT_ENV,
+  askOwedSet,
   ciPlan,
   outputLines,
   owedSetArgv,
@@ -2569,4 +2570,100 @@ test("the shard count comes from the workflow's own env, and a nonsense value is
   for (const bad of ["0", "-2", "two", "", "2.5"]) {
     expect(shardCountFromEnv({ [SHARD_COUNT_ENV]: bad }), bad).toBe(DEFAULT_SHARD_COUNT);
   }
+});
+
+test("a derivation that FAILED CLOSED arms the boot check too, because a path nobody could place is a path nobody can clear the app of", () => {
+  // ── THE INVARIANT, AND THE ONE LEG THAT IS OUTSIDE IT ──────────────
+  // `ci-owed.mjs`'s own header states the rule: every inability lands on
+  // MORE work, never on less. The graded suites obey it — a path the
+  // derivation cannot place makes `suites` the whole battery and
+  // `e2e.whole` true, and the reason travels into `why`. THE BOOT SWITCH
+  // IS DECIDED BY A SECOND RULE, `changed.some(...)` over the package
+  // roots, and an unplaceable path lies under no package root BY
+  // DEFINITION — so the very input that owes everything is the input
+  // that second rule answers `false` for.
+  //
+  // MEASURED, at the base of this body: a push whose only changed path
+  // is the workflow file derives `suites` app,e2e,parser,rust with
+  // `e2e-whole` true and `run-boot` FALSE, where the same push before
+  // the job graph existed ran the boot step unconditionally.
+  const unplaceable = ".github/workflows/ci.yml";
+  expect(suiteOfPath(unplaceable), "it lies under no package root").toBe(undefined);
+
+  const closed = ciPlan({
+    owed: {
+      suites: [...ALL_SUITES],
+      e2e: { whole: true, specs: [] },
+      failClosed: `the derivation cannot place ${unplaceable}`,
+    },
+    changed: [unplaceable],
+    allSpecs: specFiles(),
+  });
+  expect(closed.suites, "the whole battery, which is what failing closed means").toEqual([
+    ...ALL_SUITES,
+  ]);
+  expect(closed.e2eWhole, "and the leg whole with it").toBe(true);
+  expect(
+    closed.boot,
+    "and the boot check with it — a fail-closed answer may owe too much and never too little",
+  ).toBe(true);
+
+  // THE CONTROL, and the arming is the fail-closed sentence and nothing
+  // else: the SAME shape without it, over a changed path outside app/
+  // and app/src-tauri/, still owes no boot check. So this body cannot be
+  // satisfied by making the switch unconditional.
+  const derived = ciPlan({
+    owed: { suites: ["e2e"], e2e: { whole: false, specs: [] } },
+    changed: ["tools/e2e/tests/x.spec.ts"],
+    allSpecs: specFiles(),
+  });
+  expect(
+    derived.boot,
+    "a DERIVED answer over a path under neither boot root owes no boot check",
+  ).toBe(false);
+});
+
+test("the seam between the derivation and the plan refuses every answer that is not a set", () => {
+  // ── WHERE A FAIL-CLOSED PROPERTY DIES ─────────────────────────────
+  // The derivation fails closed in its own process and says so in its
+  // own words; this file reads that across a SPAWN and a JSON parse.
+  // Every shape that is not a set has to arrive here as a `problem`,
+  // because `derive` turns a problem into THE WHOLE BATTERY and turns
+  // anything it accepts into the plan. A caller that read "no suites"
+  // out of a crash would owe NOTHING on the push that owed everything.
+  const range = `${"a".repeat(40)}..${"b".repeat(40)}`;
+  /** @param stdout what the spawned derivation printed */
+  const answering = (stdout: string, status: number | null = 0, stderr = "") =>
+    () => ({ status, stdout, stderr });
+
+  const good = askOwedSet(
+    range,
+    repoRoot,
+    answering(JSON.stringify({ suites: ["parser"], e2e: { whole: false, specs: [] } })),
+  );
+  expect("owed" in good, "a well-formed set is the one shape that becomes a plan").toBe(true);
+
+  const notASet: [string, Parameters<typeof askOwedSet>[2]][] = [
+    ["a derivation that printed nothing at all", answering("")],
+    ["a derivation that printed prose", answering("cannot place x\n", 2)],
+    ["a derivation that answered a problem", answering(JSON.stringify({ problem: "refused" }))],
+    ["an answer carrying no `suites` at all", answering(JSON.stringify({ e2e: { whole: true } }))],
+    ["an answer whose `suites` is not an array", answering(JSON.stringify({ suites: "parser" }))],
+    ["a spawn that never ran", answering("", null, "spawn ENOENT")],
+    ["an answer that is JSON but not an object", answering("null")],
+  ];
+  for (const [name, spawn] of notASet) {
+    const answer = askOwedSet(range, repoRoot, spawn);
+    expect("problem" in answer, `${name} must arrive as a problem`).toBe(true);
+  }
+
+  // AND THE ARGV THIS SEAM SENDS IS THE ONE THE CRITERION SPELLS — read
+  // off the call rather than off the function that builds it, so a seam
+  // that assembled its own command would red here.
+  let sent: string[] = [];
+  askOwedSet(range, repoRoot, (a) => {
+    sent = a;
+    return { status: 0, stdout: JSON.stringify({ suites: [] }), stderr: "" };
+  });
+  expect(sent).toEqual(owedSetArgv(range, repoRoot));
 });
