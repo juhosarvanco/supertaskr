@@ -28,6 +28,12 @@ its enforcing copy.>**
 <One short paragraph: replaced each checkpoint from this template;
 narrative lives in the record; derive at your own ref. Cite ADR-019.>
 
+<AND ONE SENTENCE POINTING AT THE INDEX, which is the other half of the
+standing read (ADR-024 decision 2): this file plus docs/INDEX.md is
+everything a seat reads before working, and the index is GENERATED —
+`npm run capabilities` from tools/e2e/ — so it is pointed at, never
+summarised here.>
+
 ## Live right now — derive, never quote
 
 - LANES: <the two derive commands, and the reading stamped with ref

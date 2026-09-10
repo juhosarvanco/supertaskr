@@ -139,8 +139,10 @@ import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
 import {
   DOC_BUDGETS,
+  INDEX_DOC,
   ROOT_ANCHOR_LEDGER,
   docsGate,
+  docsIndexStale,
   docsReaders,
   liveTaskCards,
   normalisePaths,
@@ -787,6 +789,33 @@ function main(argv) {
     );
     for (const r of staleAgainst) console.error(`  ${r}`);
     found += staleAgainst.length;
+  }
+
+  // T-293, ADR-024 decision 2: THE STANDING READ'S INDEX, AND IT IS THE
+  // SAME SHAPE AS THE TWO CHECKS ABOVE — a derived document that has
+  // fallen behind the source it is derived from. Every line of
+  // docs/INDEX.md is a function of the four governing documents' own
+  // openers, so a stale committed index is a sentence a seat reads
+  // standing that its document has stopped saying. WHOLE-TREE, like the
+  // frontmatter, budget and STATE halves: the index goes stale from a
+  // document this diff need not have touched, and a check that only ran
+  // when the diff named docs/INDEX.md would only ever fire on the fix.
+  //
+  // THE DERIVATION IS `docs-scan.mjs`'s AND ONLY THE REPORT IS HERE, for
+  // the reason `staleStateRecords` gives twenty lines above: it has two
+  // readers — this gate and `capabilities.mjs --check`, which is the
+  // command that regenerates it — and a rule written twice is two
+  // chances to disagree (T-057).
+  const indexStale = docsIndexStale(repoRoot);
+  if (indexStale !== null) {
+    console.error(
+      `\ndocs-gate: ${INDEX_DOC} is STALE against the documents it indexes — ` +
+        `${indexStale.committed === null ? "it is not committed at all" : `committed ${Buffer.byteLength(indexStale.committed)} bytes`}, ` +
+        `a fresh generation is ${Buffer.byteLength(indexStale.fresh)} bytes ` +
+        "(ADR-024 decision 2: it is GENERATED — run `npm run capabilities` from tools/e2e/, " +
+        "the same command that regenerates the census, and commit what it wrote).",
+    );
+    found += 1;
   }
 
   // THE CENSUS'S VERDICT IS THE LAST WORD, AND IT NAMES THE HALF IT DID

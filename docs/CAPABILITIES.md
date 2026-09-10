@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **860 behaviours** — 858 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **868 behaviours** — 866 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -411,6 +411,14 @@ Census: **860 behaviours** — 858 extracted sentences + 2 named-not-extracted (
 - THE GATE'S PRINTED HITS ARE THE SCAN'S OWN, over this repository's live docs/ corpus
 - EVERY hit in one file is printed, not only the first — three hits on three lines under two patterns, each with its file, line and pattern name
 - THE ADVISORY RESIDUAL, NAMED: no exit assertion on this tree can catch a scan made blocking
+- the indexed set is the RULING's own four, read out of the decision rather than remembered
+- every index line is DERIVED from its own document — the heading, the contract sentence and the sections
+- the committed docs/INDEX.md is CURRENT, and a PLANTED STALE LINE is what reds
+- the DOCS GATE is what carries that red — the check is wired into its exit, not left in the module
+- THE STANDING READ IS MEASURED AT THIS REF, and it is under 10,000 tokens
+- both root adapters say it in the same words, and so do the kit's two
+- the index tells a seat what to do when the pack did not hand it the rule, and names the case
+- the adapter reader keeps the boundary the DISPATCH BRIEF's own reader keeps, stop and all
 
 ## front-door
 

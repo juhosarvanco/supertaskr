@@ -7,9 +7,13 @@ import { parse as parseYaml } from "yaml";
 import { repoRoot } from "../preflight";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import {
+  BYTES_PER_TOKEN,
   CALL_SAMPLES,
   DISPOSITION_RULING,
   DOCS_EXCLUDED_FILES,
+  INDEXED_DOCS,
+  INDEX_DOC,
+  INDEX_RULING,
   PLANTED_READERS,
   RESOLVE_SAMPLES,
   ROOT_ANCHOR_LEDGER,
@@ -17,12 +21,19 @@ import {
   SITE_SAMPLES,
   SUITES,
   TASK_STATUS_SOURCE,
+  adapterNamedDocs,
   callSelftest,
   conventionsBullet,
   conventionsText,
+  docOpener,
+  docSections,
   docsGate,
+  docsIndexStale,
   docsReaders,
   docsSites,
+  renderDocsIndex,
+  ruledIndexedDocs,
+  standingRead,
   siteCensus,
   siteSelftest,
   frontmatterBlock,
@@ -1924,4 +1935,345 @@ test("THE ADVISORY RESIDUAL, NAMED: no exit assertion on this tree can catch a s
     firesBranch,
     "the branch above really does move the counter, so this search can find one",
   ).toMatch(/\bfound\b/);
+});
+
+// ── 6. the standing read's index (T-293, ADR-024 decision 2) ─────────
+//
+// Every seat used to be ordered to read five governing documents before
+// working. Measured on 2026-09-09 for docs/rooms/loop-cost-and-speed.md:
+// 242,673 bytes, about 61K tokens at the room's own bytes/4 ratio, paid
+// by a one-line change and a guard rewrite alike — while the CONTEXT
+// PACK already hands a lane the bullets its own fence implicates. The
+// ruling cut the standing read to docs/STATE.md plus a ONE-LINE index of
+// the other four, and these bodies are what keeps that true: the set is
+// read off the ruling, every line is derived from its own document, the
+// committed index cannot go stale unnoticed, and the cost is MEASURED at
+// the tip rather than asserted once and remembered.
+
+/** The four indexed documents plus the ruling they are named in — the
+ *  whole of what `renderDocsIndex` reads, copied into a scratch root so
+ *  a plant can move a document without touching this checkout. */
+function indexRoot(): string {
+  const dir = mkdtempSync(path.join(tmpdir(), "docs-index-"));
+  for (const rel of [...INDEXED_DOCS, INDEX_RULING.file]) {
+    const dest = path.join(dir, rel);
+    mkdirSync(path.dirname(dest), { recursive: true });
+    writeFileSync(dest, readFileSync(path.join(repoRoot, rel), "utf8"));
+  }
+  writeFileSync(path.join(dir, INDEX_DOC), renderDocsIndex(dir));
+  return dir;
+}
+
+test("the indexed set is the RULING's own four, read out of the decision rather than remembered", () => {
+  // A LIST IS A THING THAT DRIFTS. `INDEXED_DOCS` is data — the render
+  // needs an order and a decision cannot supply a path — so it is
+  // checked against the sentence it came from, the treatment `SUITES`
+  // gets against CONVENTIONS' own command bullet twenty tests above.
+  const ruled = ruledIndexedDocs();
+  expect(
+    ruled.length,
+    `${INDEX_RULING.file} named no document after ${JSON.stringify(INDEX_RULING.phrase)} — the ` +
+      "set below would then be checked against nothing",
+  ).toBeGreaterThan(0);
+  expect(INDEXED_DOCS.map((rel) => path.basename(rel, ".md"))).toEqual(ruled);
+  // AND THE READER IS NOT A CONSTANT EITHER: a decision naming a
+  // different set yields a different answer, so the equality above is a
+  // reading rather than two copies of one list.
+  const moved = mkdtempSync(path.join(tmpdir(), "docs-ruling-"));
+  try {
+    const rel = INDEX_RULING.file;
+    mkdirSync(path.join(moved, path.dirname(rel)), { recursive: true });
+    writeFileSync(
+      path.join(moved, rel),
+      `${INDEX_RULING.phrase} ALPHA, BETA and GAMMA; everything else arrives through the pack.\n`,
+    );
+    expect(ruledIndexedDocs(moved)).toEqual(["ALPHA", "BETA", "GAMMA"]);
+  } finally {
+    rmSync(moved, { recursive: true, force: true });
+  }
+  // A ruling this reader cannot find is a HARD failure, never an empty set.
+  const gone = mkdtempSync(path.join(tmpdir(), "docs-ruling-"));
+  try {
+    mkdirSync(path.join(gone, path.dirname(INDEX_RULING.file)), { recursive: true });
+    writeFileSync(path.join(gone, INDEX_RULING.file), "# A decision that says something else\n");
+    expect(() => ruledIndexedDocs(gone)).toThrow(/no longer carries/);
+  } finally {
+    rmSync(gone, { recursive: true, force: true });
+  }
+});
+
+test("every index line is DERIVED from its own document — the heading, the contract sentence and the sections", () => {
+  // THE PROPERTY THE WHOLE CARD RESTS ON. A hand-kept description of a
+  // document is the failure mode docs/CAPABILITIES.md exists to remove
+  // for behaviour, and the paragraph this index replaced was exactly
+  // that: five glosses in CLAUDE.md that nothing derived and nothing
+  // checked. So each half of each line is MOVED in a scratch document
+  // and the line has to follow it.
+  const dir = indexRoot();
+  try {
+    const rel = INDEXED_DOCS[0] ?? "";
+    const before = readFileSync(path.join(dir, rel), "utf8");
+    const opener = docOpener(before, rel);
+    expect(opener.heading, "the document under test has no heading to move").not.toBe("");
+    expect(opener.contract, "and no contract sentence").not.toBe("");
+    expect(renderDocsIndex(dir)).toContain(opener.contract);
+
+    // ONE SIDE ONLY, three times: the DOCUMENT moves and nothing in the
+    // module does. A description typed into the generator would answer
+    // the same for all three.
+    const headingMoved = before.replace(`# ${opener.heading}`, "# A Different Name");
+    expect(headingMoved).not.toBe(before);
+    writeFileSync(path.join(dir, rel), headingMoved);
+    expect(renderDocsIndex(dir)).toContain("**A Different Name**");
+    expect(renderDocsIndex(dir)).not.toContain(`**${opener.heading}**`);
+
+    // THE SENTENCE IS MOVED BY A WORD OF ITS OWN, chosen because the
+    // sentence the derivation returns is WHITESPACE-COLLAPSED and the
+    // document wraps it across lines — so the collapsed form is not a
+    // substring of the file, and a naive replace moves nothing and
+    // asserts nothing. The word is derived from the sentence and
+    // required to be unique in the document, so this stays a one-side
+    // change.
+    const word = (opener.contract.match(/[A-Za-z-]{9,}/g) ?? []).find(
+      (w) => before.split(w).length === 2,
+    );
+    expect(
+      word,
+      "no word of the contract sentence occurs exactly once in the document, so it cannot be moved " +
+        "one side only",
+    ).toBeDefined();
+    const contractMoved = before.split(word ?? "").join("SENTINELWORD");
+    expect(contractMoved).not.toBe(before);
+    writeFileSync(path.join(dir, rel), contractMoved);
+    expect(renderDocsIndex(dir)).toContain("SENTINELWORD");
+    expect(renderDocsIndex(dir)).not.toContain(opener.contract);
+
+    const sections = docSections(before);
+    const last = sections[sections.length - 1] ?? "";
+    expect(last, "the document under test has no section to move").not.toBe("");
+    const sectionMoved = before.split(`\n## ${last}`).join("\n## A Renamed Section");
+    expect(sectionMoved).not.toBe(before);
+    writeFileSync(path.join(dir, rel), sectionMoved);
+    expect(docSections(sectionMoved)).toContain("A Renamed Section");
+    expect(renderDocsIndex(dir)).toContain("A Renamed Section");
+
+    // AND A DOCUMENT THAT STOPPED SAYING WHAT IT IS IS A HARD FAILURE,
+    // never a blank half: an index entry with an empty description is the
+    // hand-kept summary wearing a generator's costume.
+    writeFileSync(path.join(dir, rel), "# Only A Heading\n\n## A section\n");
+    expect(() => renderDocsIndex(dir)).toThrow(/no prose paragraph/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("the committed docs/INDEX.md is CURRENT, and a PLANTED STALE LINE is what reds", () => {
+  // THE NEGATIVE FIRST, then the control that makes it evidence. "The
+  // committed index matches a fresh generation" is satisfied equally by
+  // a working currency check and by one that compares nothing.
+  expect(
+    docsIndexStale(),
+    "docs/INDEX.md is stale in this checkout — run `npm run capabilities` from tools/e2e/ and " +
+      "commit what it wrote; it is GENERATED (ADR-024 decision 2)",
+  ).toBeNull();
+  const dir = indexRoot();
+  try {
+    expect(docsIndexStale(dir), "the scratch root starts CURRENT, or the plant below proves nothing").toBeNull();
+    const fresh = readFileSync(path.join(dir, INDEX_DOC), "utf8");
+    const lines = fresh.split("\n").filter((l) => l.startsWith("- **"));
+    expect(lines.length, "the index carries no derived line to plant against").toBe(INDEXED_DOCS.length);
+    // A DATA MUTANT: one line of the generated document loses its tail,
+    // which is exactly the shape a stale commit takes — a line that was
+    // true when it was written and is not true now.
+    const planted = fresh.replace(lines[0] ?? "", (lines[0] ?? "").slice(0, -12));
+    expect(planted).not.toBe(fresh);
+    writeFileSync(path.join(dir, INDEX_DOC), planted);
+    const verdict = docsIndexStale(dir);
+    expect(verdict, "a planted stale line did NOT red — the currency check has no teeth").not.toBeNull();
+    expect(verdict?.committed).toBe(planted);
+    expect(verdict?.fresh).toBe(fresh);
+    // An index that is not committed at all is stale, not absent.
+    rmSync(path.join(dir, INDEX_DOC));
+    expect(docsIndexStale(dir)?.committed, "a missing index reads as MISSING, never as current").toBeNull();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("the DOCS GATE is what carries that red — the check is wired into its exit, not left in the module", () => {
+  // The body above proves the derivation has teeth; this one proves the
+  // gate BITES with them. The shape is the injection scan's, two tests
+  // above: read the gate's own source, find the call, and require the
+  // block around it to move the counter that decides the exit — with a
+  // positive control, because "the window moves `found`" is satisfied by
+  // a window picked out of the wrong part of the file.
+  const source = readFileSync(path.join(repoRoot, "tools/e2e/scripts/docs-gate.mjs"), "utf8");
+  const anchor = "docsIndexStale(repoRoot)";
+  const from = source.indexOf(anchor);
+  expect(from, `docs-gate.mjs no longer calls ${anchor} — the stale index reds nowhere`).toBeGreaterThan(-1);
+  const window = stripComments(source.slice(from, from + 900));
+  expect(window, "the stripped window still holds the call").toContain(anchor);
+  expect(
+    window,
+    "the gate reads the index's currency and does nothing with it — a check whose finding cannot " +
+      "reach the exit code is a check nobody runs",
+  ).toMatch(/\bfound \+= 1\b/);
+  expect(
+    stripComments(source.slice(0, from)),
+    "the positive control: this search CAN come back empty, so the match above is a reading",
+  ).not.toContain(anchor);
+  // AND THE COMMAND THAT REGENERATES IT IS THE CENSUS'S OWN (the card's
+  // second criterion): one command, two generated documents.
+  const census = readFileSync(path.join(repoRoot, "tools/e2e/scripts/capabilities.mjs"), "utf8");
+  expect(
+    stripComments(census),
+    "`npm run capabilities` no longer writes the index — the card's one-command rule is gone",
+  ).toContain("writeDocsIndex()");
+  expect(
+    stripComments(census),
+    "`npm run capabilities --check` no longer judges the index",
+  ).toContain("docsIndexStale()");
+});
+
+test("THE STANDING READ IS MEASURED AT THIS REF, and it is under 10,000 tokens", () => {
+  // THE CARD'S FIRST CRITERION, and it is measured rather than asserted
+  // once and remembered. The set is DERIVED the way the dispatch brief's
+  // row 3 derives it — every `docs/<NAME>.md` the root adapter names,
+  // anywhere in its text — because that list, not the sentence a human
+  // reads, is what a seat is handed.
+  const read = standingRead();
+  const named = read.docs.map((d) => d.path);
+  expect(named, "the adapter no longer names STATE — the baton is out of the standing read").toContain(
+    "docs/STATE.md",
+  );
+  expect(named, "the adapter no longer names the index — the other four reach nobody").toContain(INDEX_DOC);
+  for (const rel of INDEXED_DOCS) {
+    expect(
+      named,
+      `${rel} is named by the root adapter again, so every seat reads it standing whatever the ` +
+        "sentence says — the index exists so that it does not",
+    ).not.toContain(rel);
+  }
+  expect(
+    read.tokens,
+    `the standing read is ${read.bytes} bytes = ${read.tokens} tokens at ${BYTES_PER_TOKEN} bytes ` +
+      "per token, over the 10,000-token ceiling ADR-024 decision 2 set",
+  ).toBeLessThan(10_000);
+
+  // THE POSITIVE CONTROL, and it is the measurement this card was cut
+  // over: the reading order this one replaced is over the ceiling by
+  // more than a factor of five, so the assertion above is a property of
+  // THIS tree rather than of any tree.
+  const wasBytes = ["docs/STATE.md", ...INDEXED_DOCS]
+    .map((rel) => Buffer.byteLength(readFileSync(path.join(repoRoot, rel), "utf8")))
+    .reduce((a, b) => a + b, 0);
+  expect(
+    Math.ceil(wasBytes / BYTES_PER_TOKEN),
+    "the five-document reading order is under the ceiling too, so passing it proves nothing",
+  ).toBeGreaterThan(10_000);
+  process.stdout.write(
+    `\n  standing read: ${read.docs.map((d) => `${d.path} ${d.bytes}`).join("; ")} = ${read.bytes} ` +
+      `bytes = ${read.tokens} tokens; the five-document order it replaced = ${wasBytes} bytes = ` +
+      `${Math.ceil(wasBytes / BYTES_PER_TOKEN)} tokens.\n`,
+  );
+});
+
+test("both root adapters say it in the same words, and so do the kit's two", () => {
+  // T-159-s3's standing hazard: the two root files are twins below their
+  // first line and there is no gate but this one. The kit's pair are
+  // twins of each other below their own opening comment, and BOTH pairs
+  // have to carry the new order or a project scaffolded tomorrow
+  // inherits the reading order this card retired.
+  const claude = readFileSync(path.join(repoRoot, "CLAUDE.md"), "utf8");
+  const agents = readFileSync(path.join(repoRoot, "AGENTS.md"), "utf8");
+  expect(agents, "the two root adapters have drifted apart").toBe(claude);
+  expect(
+    claude,
+    "the root adapter dropped the sentence that says a role file's reading step wins (T-159-s3)",
+  ).toContain("where the two differ, the role file wins");
+
+  const kit = ["method/adapters/CLAUDE.md", "method/adapters/AGENTS.md"].map((rel) =>
+    readFileSync(path.join(repoRoot, rel), "utf8"),
+  );
+  const body = (text: string): string => text.slice(text.indexOf("-->") + 3);
+  expect(body(kit[1] ?? ""), "the kit's two adapters have drifted apart below their comment").toBe(
+    body(kit[0] ?? ""),
+  );
+  for (const text of [claude, ...kit]) {
+    expect(adapterNamedDocs(text), "an adapter that does not name the index").toContain(INDEX_DOC);
+    for (const rel of INDEXED_DOCS) {
+      expect(
+        adapterNamedDocs(text),
+        `an adapter names ${rel}, which puts it back in every seat's standing read`,
+      ).not.toContain(rel);
+      // AND THE RAW TEXT TOO, which is a STRICTLY STRONGER question than
+      // the derivation's. `adapterNamedDocs` mirrors the dispatch brief's
+      // own reader, dot and all, so a path written at the end of a
+      // sentence reads as `docs/X.md.` and is dropped by BOTH of them —
+      // and a seat reading the adapter with its eyes still opens it.
+      // Measured at T-293 by a mutant that survived the line above.
+      expect(text, `an adapter spells ${rel}, and a seat that reads it will open it`).not.toContain(rel);
+    }
+  }
+});
+
+test("the index tells a seat what to do when the pack did not hand it the rule, and names the case", () => {
+  // THE CARD'S THIRD CRITERION. The rule is ASK or OPEN AT THE SECTION,
+  // never guess — and the instance is named because a rule with no cost
+  // attached to breaking it is a rule people read past. T-138: an
+  // architect session spent a working day rebuilding a belief the
+  // roadmap's own entry would have corrected in a sentence.
+  const index = readFileSync(path.join(repoRoot, INDEX_DOC), "utf8");
+  expect(index, "the index does not tell a seat to ask").toContain("ask file");
+  expect(index, "the index does not tell a seat to open the document at its section").toMatch(
+    /open the\s+document below AT THE SECTION/,
+  );
+  expect(index, "the rule against guessing is gone").toContain("NEITHER IS GUESSING");
+  expect(index, "the instance the rule was written from is no longer named").toContain("T-138");
+  // AND EVERY LINE IS THERE, each naming its document and where to open
+  // it — a preamble with no lines under it would satisfy everything above.
+  for (const rel of INDEXED_DOCS) {
+    const line = index.split("\n").find((l) => l.startsWith("- ") && l.includes(`\`${rel}\``));
+    expect(line, `the index carries no line for ${rel}`).toBeDefined();
+    expect(line, `${rel}'s line does not say where to open it`).toContain("**Open it at:**");
+  }
+});
+
+test("the adapter reader keeps the boundary the DISPATCH BRIEF's own reader keeps, stop and all", () => {
+  // THE BOUNDARY THE MODULE ALREADY KEEPS AND NOTHING COULD SEE.
+  // `adapterNamedDocs` exists to answer what the standing read COSTS, and
+  // it is only worth answering while it agrees with the reader that hands
+  // a seat its read-first set — the brief's own, whose run of characters
+  // for a path includes the DOT and which therefore drops a path written
+  // at the END of a sentence and keeps the same path one word earlier.
+  // The module says so in its own comment and calls it deliberate; no
+  // body asked. So a later reader who takes the drop for a bug and
+  // "repairs" it would make this module answer a question the brief does
+  // not ask, silently, on the one figure this card is measured by — every
+  // other body here stays green through that change, which is exactly why
+  // this one is written.
+  expect(
+    adapterNamedDocs("Before any work: read docs/STATE.md, then docs/INDEX.md."),
+    "a path carrying its sentence's stop is not a path this reader returns",
+  ).toEqual(["docs/STATE.md"]);
+  expect(
+    adapterNamedDocs("docs/INDEX.md is one GENERATED line per governing document, and it is read."),
+    "and the same path one word earlier is kept, which is the other half of the boundary",
+  ).toEqual([INDEX_DOC]);
+  expect(
+    adapterNamedDocs("the map is at docs/architecture/graph.md and nowhere else"),
+    "a nested path is not a candidate at all — the run this reader takes stops before a slash",
+  ).toEqual([]);
+  // AND THE LIVE ADAPTER IS ON THE KEPT SIDE ONLY BECAUSE IT SAYS THE
+  // NAME TWICE. Its first mention closes a sentence; strike the later
+  // ones and the index leaves the answer, which is what makes the
+  // boundary above a fact about this tree rather than about a string.
+  const claude = readFileSync(path.join(repoRoot, "CLAUDE.md"), "utf8");
+  expect(adapterNamedDocs(claude), "the live adapter no longer names the index").toContain(INDEX_DOC);
+  const firstOnly = claude.slice(0, claude.indexOf(INDEX_DOC) + INDEX_DOC.length + 1);
+  expect(
+    adapterNamedDocs(firstOnly),
+    "the adapter's FIRST mention of the index closes a sentence, so it alone does not carry it — " +
+      "if this ever passes, the boundary above has stopped being load-bearing here",
+  ).not.toContain(INDEX_DOC);
 });

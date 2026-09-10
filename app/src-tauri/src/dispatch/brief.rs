@@ -2546,16 +2546,83 @@ mod tests {
         // addressed to every seat and the role file to one, so where they
         // differ the ROLE FILE WINS — and the failure class is a brief
         // whose every row is individually faithful and which is
-        // internally inconsistent. Here the adapter names ROADMAP and
-        // the executor's role file subtracts it.
+        // internally inconsistent.
+        //
+        // **THE CONTROL IS THE HALF THAT HAD TO MOVE.** It used to read
+        // the live adapter for the very document the executor's role file
+        // subtracts; T-293 retired that five-file order, so the adapter
+        // names the generated index instead and an assertion about the
+        // roadmap here would be a green over an empty set. The live tree
+        // still supplies a control that survives — the adapter names the
+        // index, the applied set carries it, and none of the four
+        // documents the index stands in for reaches a seat through this
+        // row — and the subtraction is proved in arm two against adapter
+        // text this body supplies.
         let live = live_files();
         let adapter = live.read_text("CLAUDE.md").expect("the root adapter");
         assert!(
-            docs_named(&adapter).contains(&"docs/ROADMAP.md".to_string()),
-            "the positive control: the adapter really does name ROADMAP"
+            docs_named(&adapter).contains(&"docs/INDEX.md".to_string()),
+            "the positive control: the adapter really does name the index"
         );
         let brief = assembled(assemble(&live, &a_card(), Role::Executor, &no_lanes()));
         let row3 = brief.rows.iter().find(|r| r.number == 3).expect("row 3");
+        let applied = row3
+            .lines
+            .iter()
+            .find(|l| l.label.starts_with("READ FIRST"))
+            .expect("the applied list");
+        assert!(
+            applied.text.contains("docs/INDEX.md"),
+            "what the adapter named survives into the applied set: {}",
+            applied.text
+        );
+        assert!(
+            applied.text.contains("docs/STATE.md"),
+            "the rest of the adapter's list survives: {}",
+            applied.text
+        );
+        assert!(
+            applied.text.contains("TASK-FORMAT.md"),
+            "the role file's own addition is applied: {}",
+            applied.text
+        );
+        for gone in [
+            "docs/ROADMAP.md",
+            "docs/ARCHITECTURE.md",
+            "docs/CONVENTIONS.md",
+            "docs/CAPABILITIES.md",
+        ] {
+            assert!(
+                !applied.text.contains(gone),
+                "{} is back in the standing read this card retired: {}",
+                gone,
+                applied.text
+            );
+        }
+
+        // ARM TWO — THE SUBTRACTION, against an adapter this body writes,
+        // because the live one no longer names anything the role file
+        // removes. What is supplied here is the LIST; the sentence that
+        // strikes a document out of it is still read off the live role
+        // file, so the rule under test is nobody's constant.
+        let files = OverlayFiles {
+            inner: live_files(),
+            path: "CLAUDE.md".to_string(),
+            text: "Before any work: read docs/STATE.md, then docs/ROADMAP.md, and stop."
+                .to_string(),
+        };
+        let brief = assembled(assemble(&files, &a_card(), Role::Executor, &no_lanes()));
+        let row3 = brief.rows.iter().find(|r| r.number == 3).expect("row 3");
+        let named = row3
+            .lines
+            .iter()
+            .find(|l| l.label == "the adapter names")
+            .expect("what the adapter itself named");
+        assert!(
+            named.text.contains("docs/ROADMAP.md"),
+            "the control: this adapter DOES name what the role file subtracts: {}",
+            named.text
+        );
         let applied = row3
             .lines
             .iter()
@@ -2569,11 +2636,6 @@ mod tests {
         assert!(
             applied.text.contains("docs/STATE.md"),
             "the rest of the adapter's list survives: {}",
-            applied.text
-        );
-        assert!(
-            applied.text.contains("TASK-FORMAT.md"),
-            "the role file's own addition is applied: {}",
             applied.text
         );
     }

@@ -4950,7 +4950,7 @@
       "id": "f:app/src-tauri/src/agent/kit.rs",
       "path": "app/src-tauri/src/agent/kit.rs",
       "lang": "rust",
-      "hash": "blake3:43ef60402223c202afc7c2fa7d45bcbd7a22d7ed66a96186fd488f313d87ef2b",
+      "hash": "blake3:e4ae3c6ca936bea88e3a8aeacea33eb379675805a0876a9fadda868d2b269fb0",
       "loc": 1175,
       "symbols": [
         {
@@ -7482,8 +7482,8 @@
       "id": "f:app/src-tauri/src/dispatch/brief.rs",
       "path": "app/src-tauri/src/dispatch/brief.rs",
       "lang": "rust",
-      "hash": "blake3:2eac5307c057588f5d0bc01b61f9ed4fcd72834f089dd4505b7c1722bbe52ce8",
-      "loc": 3572,
+      "hash": "blake3:2734388fa11c52ca600aca2c5b3bc05d61ce865135d64c0fb33f902afdc2976a",
+      "loc": 3634,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/dispatch/brief.rs#ADAPTER_FILES",
@@ -8312,7 +8312,7 @@
           "exported": false,
           "range": [
             2055,
-            3572
+            3634
           ]
         },
         {

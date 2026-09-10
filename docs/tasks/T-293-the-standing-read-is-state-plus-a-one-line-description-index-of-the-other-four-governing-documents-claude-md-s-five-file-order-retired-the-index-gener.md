@@ -5,14 +5,14 @@ feature: F-01
 milestone: 4
 size: S
 priority: 1
-status: building
+status: done
 suggested_by: "@human (2026-09-10): \"Rule the loop room, A to I as amended: yes\" — docs/rooms/loop-cost-and-speed.md, ADR-024"
 blocked_by: []
 touches: [CLAUDE.md, AGENTS.md, method/adapters/, docs/INDEX.md, docs/STATE.md, docs/STATE-template.md, method/docs-templates/STATE.md, tools/e2e/scripts/docs-scan.mjs, tools/e2e/scripts/capabilities.mjs, tools/e2e/scripts/docs-gate.mjs, tools/e2e/tests/docs-input-gate.spec.ts, tools/e2e/tests/brief.spec.ts, app/src-tauri/src/dispatch/brief.rs]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
-built_by:
-verified_by:
+built_by: claude-opus-5@subagent
+verified_by: claude-opus-5@subagent
 review: independent
 ---
 
@@ -28,6 +28,553 @@ Every seat is ordered to read five documents first: 242,673 bytes, about 61K tok
 - The five documents SHALL keep their contract and budgets (ADR-019, ADR-023); this card moves the ORDER of reading, not a byte of their content.
 
 ## Implementation notes
-<!-- executor appends before finishing -->
+
+Built at base cbdafa4e9d9853291eacf9d9bd39134cf4204a76 in the lane
+worktree on branch task/T-293-the-standing-read. Every figure below was
+re-derived here; where it differs from the card's own text, the tree
+wins and the difference is stated.
+
+**THE RATIO.** Tokens are bytes divided by 4 throughout — the measure
+docs/rooms/loop-cost-and-speed.md used for the 61K figure this card was
+cut over, kept in one place as `BYTES_PER_TOKEN` so the before and the
+after are the same measurement rather than two.
+
+**THE STANDING READ, BEFORE AND AFTER.** The five documents CLAUDE.md
+ordered at the base: 243,468 bytes = 60,867 tokens. The card and the
+room say 242,673, measured at an earlier ref; the documents grew between
+that measurement and this base, and 243,468 is what `git cat-file -s`
+gives at cbdafa4e. Counted the way the dispatch brief actually derives a
+read-first set — every `docs/<NAME>.md` the adapter names — the base
+figure is 248,400 bytes = 62,100 tokens, because the adapter also named
+docs/NORTH_STAR.md. After: docs/STATE.md 8,449 + docs/INDEX.md 2,425 +
+docs/NORTH_STAR.md 4,932 = 15,806 bytes = 3,952 tokens. Under the
+10,000-token ceiling by a factor of two and a half, and the two halves
+the card names it for are 10,874 bytes = 2,719 tokens on their own.
+
+**WHAT MOVES THE ORDER.** CLAUDE.md and AGENTS.md are byte-identical and
+now name docs/STATE.md, docs/INDEX.md and docs/NORTH_STAR.md and nothing
+else. That is not a stylistic choice: row 3 of the brief contract
+collects every `docs/<NAME>.md` the adapter mentions ANYWHERE in its
+text and hands the result to a seat, so a governing document's path in
+that file is that document back in the standing read whatever the
+sentence around it says. Both kit adapters under method/adapters/ carry
+the same words, placeholdered, with the hedge the adapter already used
+for the census: "once this project generates it".
+
+**THE INDEX IS DERIVED, NOT TYPED.** Each line is a function of its own
+document's first heading, the sentence its opening paragraph uses to say
+what it is (the "The contract:" sentence where ADR-019's compaction put
+one, the paragraph's first sentence where it did not), and its section
+headings, capped at six with the overflow counted. The set of documents
+is DATA in `INDEXED_DOCS` and is checked against ADR-024 decision 2's own
+sentence by `ruledIndexedDocs`, so a fifth document promoted into the
+standing read reds on the day the decision says so. THE INDEX CARRIES NO
+FIGURE: a byte count in a line would restale the file on every edit to
+any of the four and turn the gate into a nuisance, so what a document
+costs to open is a `wc -c` the preamble names.
+
+**ONE COMMAND, TWO GENERATED DOCUMENTS.** `npm run capabilities` from
+tools/e2e/ now writes docs/CAPABILITIES.md and docs/INDEX.md, and
+`--check` judges both. The whole derivation lives in
+tools/e2e/scripts/docs-scan.mjs — the side-effect-free module the gate
+already reads its budgets and its reader map out of — and both entry
+points hold a THIN CALL and no logic, which is T-057 applied to a rule
+that now has two readers.
+
+**THE DOCS GATE REDS ON A STALE INDEX**, whole-tree like the budget and
+the stale-record halves beside it, because the index goes stale from a
+document the diff need not have touched. Measured by hand at this tree
+with a DATA mutant — one generated line lost its tail:
+
+    docs-gate: docs/INDEX.md is STALE against the documents it indexes —
+    committed 2415 bytes, a fresh generation is 2425 bytes
+    node tools/e2e/scripts/docs-gate.mjs --census   exit 1
+    node tools/e2e/scripts/capabilities.mjs --check exit 1
+
+restored, sha256 verified, both back to exit 0.
+
+**STATE AND THE TWO TEMPLATES** gained one sentence pointing at the
+index and nothing else. docs/STATE.md is 8,449 bytes against its
+8,465-byte warn line: 16 bytes of headroom, and the next checkpoint that
+regenerates it from docs/STATE-template.md should expect to warn. That
+is the honest state of the band, not a problem this card created.
+
+**IN-FENCE FOLLOW-THROUGH: T-159-s3 IS DONE HERE.** Its whole body is
+one paragraph copied out of method/adapters/CLAUDE.md into the two root
+adapters, its fence is CLAUDE.md and AGENTS.md, and its disposition hint
+says to hand it to the next lane holding either file. Copied VERBATIM
+(diffed against the paragraph at the base), and the adapter keeper now
+holds it. Its card still reads `status: planned`; stamping another
+card's status is not this lane's, so the integrator should close it.
+
+**THE METHOD EVAL GATE FIRES** (the diff touches method/**), and the
+method stamp does NOT move in this lane. `node tools/method-evals/run.mjs`
+exit 0, `--selftest` exit 0, 10 model-free evals each. The block the
+fourth obligation asks for, should the integrator bump the stamp:
+
+    Method evals: model-free exit 0, model-in-loop exit 3.
+    Corpus: 10 model-free, 4 model-in-loop.
+    Runner: NONE
+    THE MODEL-IN-LOOP SET DID NOT RUN, so this bump is NOT gated on it.
+    Say that in the commit rather than omitting the line: a bump whose
+    eval result is absent and one whose eval was skipped read the same.
+    Pass rates and token spend are in the run above, at this ref. Do not
+    transcribe them from an earlier run — that is the corpus's own RC-04.
+
+**GRAPH REGEN fires and is a no-op**: the walk excludes tools/ and docs/
+by the root ignore file, and this diff adds no indexed file and moves
+none, so the integrator's regeneration proves it rather than changing
+anything.
+
+**WHAT THIS CARD BREAKS, NAMED.** Three live positive controls pin the
+retired reading order by asserting that the root adapter really does
+name the document the acting role file subtracts. They lose their
+subject by construction here, and every one of them is outside this
+fence: `tools/e2e/tests/brief.spec.ts` (two bodies) and
+`app/src-tauri/src/dispatch/brief.rs` (one). A widening was asked for at
+the start of the lane and granted for the two thin-call files; a second
+ask naming these three went unanswered, so the lane took the option that
+ask declared: land, report the reds by name, file the card. That card is
+T-293-s3, and its repair is ten lines in each file.
+
+**CARDS FILED**: T-293-s1 (the merge ritual stages the census and not
+the index, and its trigger cannot see a governing document's opener),
+T-293-s2 (the kit promises a generated index and the genesis has no step
+that generates one), T-293-s3 (the three positive controls above).
+
+**THE SUITES, RUN ONCE AT fcd5c706 THROUGH THE BLESSED RUNNER.**
+`node tools/e2e/scripts/gate-run.mjs --range cbdafa4e..HEAD` derived the
+set — 16 paths moved, owing app, e2e, parser and rust, the end-to-end leg
+whole — and graded it, exit 1 overall:
+
+    parser  exit 0   389 bodies  GREEN  ref fcd5c706
+    app     exit 0  1171 bodies  GREEN  ref fcd5c706
+    rust    exit 101 655 bodies  RED    ref fcd5c706  1 body
+    e2e     exit 1   852 bodies  RED    ref fcd5c706  2 bodies, 850 passed
+
+The three red bodies are the three named above and NOTHING else:
+`row_three_applies_the_role_files_reading_step_rather_than_printing_it_beside_the_list`
+(277 passed, 1 failed in the lib target, panicking on its own message
+"the positive control: the adapter really does name ROADMAP"), and
+brief.spec.ts's `ROW 3 APPLIES the role file's reading step, and still
+shows what the adapter itself named` and `the subtraction and the
+addition FOLLOW the role file — no clause leaves the adapter's list
+unchanged`. T-293-s3 is the card; the repair is outside this fence.
+
+**GATES, DERIVED FROM THIS DIFF.** DOCS GATE FIRES — six paths under
+docs/ are code inputs, owing the app, e2e and parser suites, all run
+here; its injection scan found 0 hits in 6 paths against 7 patterns.
+METHOD EVAL GATE FIRES — run and selftest both exit 0. GRAPH REGEN fires
+by trigger and is a NO-OP, asked rather than predicted: `index --check`
+exit 0, graph CURRENT at 201 files, 2561 symbols, 2453 edges. BOOT GATE
+IS NOT OWED — nothing under app/src/, app/src-tauri/ or either manifest.
+
+**OWED AT THE MERGE, AND NOT DONE HERE**: `npm run capabilities` from
+tools/e2e/. Seven spec names were added, so the census is stale by 623
+bytes (`capabilities:check` exit 1, committed 74,663, fresh 75,286), and
+docs/CAPABILITIES.md is outside this fence. Modelled the regeneration
+against the index at this tree: the index is UNCHANGED by it, because
+each line reads its document's first heading, first prose paragraph and
+section headings, and new sentences under an existing topic move none of
+the three. `npm run lint:docs` is exit 0 at this tip.
+
+**ONE MEASURED QUIRK, DISCLOSED**: the read-first derivation treats a dot
+as part of a path, so a document written at the END of a sentence reads
+as `docs/X.md.` and is DROPPED, while the same path mid-sentence is
+kept. The JS mirror inherits it deliberately — a mirror that disagrees
+with the list a seat is handed is worthless — and the adapter keeper
+closes the gap by asking the RAW text as well. Found by a mutant that
+survived; the mutant was re-cut and both spellings now red.
+
+### FIX PASS — the three positive controls, repaired in TEST CODE ONLY
+
+**THE SECOND ASK WAS GRANTED AFTER THE STAMP, OPTION 1** (the seat,
+2026-09-10T11:43:05Z; the seat records the miss as its own watcher's,
+now fixed). The fence gained `tools/e2e/tests/brief.spec.ts` and
+`app/src-tauri/src/dispatch/brief.rs`; this card's `touches:` line
+carries both — the seat wrote it, and this lane commits it unedited —
+and the manifest in this lane re-expands to the same set. The three
+bodies the lane landed RED are repaired here.
+
+**NO PRODUCTION CODE MOVED.** Every line this pass touches is inside
+`#[cfg(test)]` or inside a spec file. `row_read_first` in the rust
+module and `deriveReadFirst` in the JS mirror are byte for byte what
+they were at 17fec1c5, and the diff of this pass names two files plus
+this card and T-293-s3.
+
+**WHAT THE REPAIR IS.** Each of the three asserted, as its positive
+control, that the LIVE root adapter really does name the document the
+acting role file subtracts. This card is what takes that document out
+of the adapter, so the control loses its subject correctly and the
+assertion turns into a red about this project's standing read rather
+than about row 3. Each control now has a subject that survives, and the
+half the live tree can no longer decide is decided against text the
+body itself supplies.
+
+- `row_three_applies_the_role_files_reading_step_rather_than_printing_it_beside_the_list`
+  in `app/src-tauri/src/dispatch/brief.rs`. ARM ONE reads the LIVE
+  adapter and asserts it names `docs/INDEX.md`, that the applied set
+  carries the index, `docs/STATE.md` and the role file's own addition,
+  and that NONE of the four documents the index stands in for is back in
+  the applied set — this card's own property, stated where the old
+  control stood. ARM TWO supplies the adapter through the module's
+  existing `OverlayFiles` source: a list naming `docs/ROADMAP.md`, the
+  LIVE role file's subtraction sentence applied to it, and the document
+  gone from the applied set. What the body supplies is the LIST; the
+  sentence that strikes a document out of it is still read off the role
+  file, so the rule under test is nobody's constant.
+- `ROW 3 APPLIES the role file's reading step, and still shows what the
+  adapter itself named` in `tools/e2e/tests/brief.spec.ts`. The control
+  is now DERIVED and holds no document name of its own: at least one
+  document the adapter names is one this role file leaves alone, so
+  every presence the body asserts afterwards is decided by the adapter
+  rather than by an empty set. The subtraction half keeps both live
+  assertions — the row SAYS what it removed, and removes what it says —
+  and the not-vacuous half moves to the sibling body, which is where the
+  swap already lived.
+- `the subtraction and the addition FOLLOW the role file — no clause
+  leaves the adapter's list unchanged` in the same file. The swap arm
+  becomes the whole of the subject: the role file is rewritten in memory
+  to subtract the last document the adapter names that it does not
+  already subtract, that document leaves the applied set, and then the
+  same rewritten role file with its subtraction and addition sentences
+  struck out hands the adapter's list back WHOLE. That is the property
+  the old arm stated, measured on a document the adapter really names.
+
+No body was deleted and no test name moved: both e2e names are pinned
+verbatim in `docs/CAPABILITIES.md`, which is outside this fence, and the
+rust name is cited by this card and by T-293-s3.
+
+**THE FIX-PASS DRILL — one mutant per repaired arm, one side only, each
+restored and the restore proved by sha256.**
+
+| # | mutant | owning body | exit | restored |
+|---|---|---|---|---|
+| 1 | `row_read_first` drops the subtraction filter | rust row 3 | 101 | yes, `523b8c31` |
+| 2 | the adapter names `docs/ROADMAP.md` again, mid-sentence | rust row 3 | 0 — SURVIVED | yes, `313fa36c` |
+| 2b | the adapter names `docs/ARCHITECTURE.md` again, mid-sentence | rust row 3 | 101 | yes, `313fa36c` |
+| 3 | both root adapters name ONLY documents this role file subtracts | the two e2e bodies | 1 | yes, `313fa36c` |
+
+Mutant 1 reds arm two on its own message, *"the role file's subtraction
+was not applied"*, over the overlaid list. **MUTANT 2 SURVIVED AND WAS
+RE-CUT, and the survival is worth the sentence**: the executor role file
+subtracts the roadmap whatever the adapter says, so putting that path
+back cannot reach the applied set and the retired-four loop stays green.
+The two documents that loop really guards are the two no role file
+subtracts, which is what mutant 2b cuts — and it reds, naming the
+document that came back. Mutant 3 is the vacuity itself, made on
+purpose: with every document the adapters name also subtracted, both
+repaired e2e bodies red on their NEW controls and on nothing else —
+*"the adapter names nothing this role file leaves alone, so every
+presence below proves nothing"* and *"the adapter names only the
+subtracted documents, so nothing can be swapped"*. That is the
+demonstration that the repaired controls are live rather than decided by
+the same arrangement as their subject.
+
+**GATES, RE-DERIVED FOR THIS PASS, AND ONE OF THEM FLIPS.** BOOT GATE
+NOW FIRES and the derivation recorded above is corrected: this pass
+moves `app/src-tauri/src/dispatch/brief.rs`, which is under
+`app/src-tauri/`, so the gate's trigger is met for the first time in
+this lane. GRAPH REGEN still fires by trigger. DOCS GATE and METHOD EVAL
+GATE are unchanged — this pass moves no path under `method/` and no path
+under `docs/` but two cards. The results are recorded with the fix
+pass's battery below.
+
+**THE FIX PASS'S OWN BATTERY, AND WHICH DERIVATION IT IS.** A fix pass is
+a new tree and owes a run at its own tip, of the suites the FIX'S OWN
+paths owe, scoped where this project can scope them. Asked rather than
+assumed — `gate-run.mjs --owed-set --range 17fec1c5..HEAD` answers that 4
+paths moved and owe app, e2e, parser and rust, e2e over 6 spec files. So
+the owed set is WIDER than the two legs that redded (the two card writes
+pull the board readers into app and parser) and NARROWER on e2e, which is
+scoped rather than whole. The whole-lane form still says e2e WHOLE; that
+is the merge's question, and the battery at fcd5c706 recorded above is
+its reading. Run ONCE, through the blessed runner, at 37964699:
+
+    parser  exit 0   389 bodies   1 target   GREEN
+    app     exit 0  1171 bodies   1 target   GREEN
+    rust    exit 0   655 bodies  18 targets  GREEN
+    e2e     exit 0   208 bodies   1 target   GREEN, over the 6 owning specs
+
+The runner's own overall exit is 0. The three bodies this lane landed red
+are green by name: the rust leg's 655 include
+`row_three_applies_the_role_files_reading_step_rather_than_printing_it_beside_the_list`,
+and the e2e leg's 208 include both brief.spec.ts names. No body was lost:
+brief.spec.ts still collects 86.
+
+**THE GATES AT THIS TIP, EACH ASKED.**
+
+- **BOOT GATE — FIRES for the first time in this lane, and was RUN.**
+  `SUPERTASKR_BOOT_PORT=15393 npm run boot:check` from tools/e2e, exit
+  **0**, both startup lines seen: the project-folder line naming this
+  lane's worktree, and the `window "main" created` line. Port read free
+  before the spawn; the process tree was stopped on SIGTERM and left no
+  listener.
+- **GRAPH REGEN — FIRES, and IS NO LONGER A NO-OP.** The derivation
+  recorded above was true of the tree it was made on and is not true of
+  this one: `index --check` is exit **1** here, naming exactly one moved
+  file, this pass's rust file, as a CONTENT change. The graph is
+  201 files, 2561 symbols, 2453 edges, and the fresh index is 1198942
+  bytes against a budget of 2145959. `docs/architecture/graph.json` is
+  outside this fence and the gate's own bullet puts the regeneration in
+  the CHECKPOINT, so this is OWED AT THE MERGE and named here loudly
+  rather than performed.
+- **DOCS GATE — FIRES and was RUN**, fed the range rule's own path list
+  built by a merge-tree forecast against the integration tip: 7 paths
+  under docs/ are code inputs, owing the app, e2e and parser suites.
+  App and parser are green above; the e2e leg at this tip is the SCOPED
+  one, and the whole-suite reading the gate's wording asks for is the
+  battery at fcd5c706. Injection scan 0 hits in 0 of 7 paths against 7
+  patterns, advisory, exit unmoved. `npm run lint:docs` is exit 0.
+- **METHOD EVAL GATE — FIRES by the lane's earlier diff and was RE-RUN.**
+  Both sets exit 0, 10 model-free each, the second a POSITIVE CONTROL.
+  The method stamp does not move in this lane.
+
+**OWED AT THE MERGE, ADDED BY THIS PASS**: the graph regeneration above,
+beside the census regeneration already recorded. Both are the
+checkpoint's, and both name files outside this fence.
+
+**THE STAMP.** `status:` was already `verifying` and stays there; this
+commit re-affirms it and carries the fix pass's battery record, and it
+RE-RAN NOTHING — the numbers above were all measured at 37964699, the
+commit before it.
 
 ## Verdicts
+
+### 2026-09-10 — claude-opus-5@subagent (verifier, phase 2) — APPROVED WITH ASSIGNED CORRECTIONS
+
+Tip judged: `6d904bf72ca0dc57cd674c419c898b7f3f8f293c`. Base: `cbdafa4e9d9853291eacf9d9bd39134cf4204a76`.
+Every figure below is measured at the tip unless it names another ref.
+
+**SEALED INPUTS, verified by sha256 before anything else was opened.**
+
+    bdfbb6aecd1a07ad60d25e1e25c278032d4b0c908dca0531ab1abf51940da515  attack-set-T-293.md
+    a38ecf7a1dd2df7019e568371184de38a5ba940202115e471768eeca0b02419b  ground-T-293.md
+    062e8d71714da45a77232f598e0b34b0a8436a688b5e1004ae727ddea006173c  ground-T-293-addendum.md
+
+**THE FRAME I ACTUALLY HAD, said plainly because the file asks.** Two
+spawns: phase 1 wrote the attack set tool-less against the card at the
+base, and this pass verified the three hashes before opening a file. The
+dispatching brief was HAND-WRITTEN by the seat and CARRIED NO CONTEXT
+PACK, which `method/roles/verifier.md` step 0 calls a dispatch fault; so
+I opened `docs/CONVENTIONS.md` by the bullets I needed rather than end to
+end, plus its whole METHOD-bump region for the K-7 control, and I say so
+here rather than pretending otherwise. The brief named no
+executor-derived specific — no mutant number, no path count, no suite
+figure — so phase 1 was not broken above the line. Findings were written
+and saved before the executor's report, the fix-pass report or the card's
+notes were opened.
+
+#### Criterion by criterion
+
+**C-1 — the order, and a body that MEASURES the standing read. MET.**
+`CLAUDE.md` and `AGENTS.md` are the SAME BLOB at the tip (`de88179b`),
+so "the same words" is identity rather than resemblance; the kit's pair
+are identical to each other below their opening comment and differ from
+the root pair only by the two placeholder clauses the kit already carried
+at the base. Neither root file was ever a pointer — both were 1,477-byte
+twins — so the by-reference reading did not arise.
+
+Re-measured here, not taken from the notes: the standing read is
+`docs/STATE.md` 8,449 + `docs/INDEX.md` 2,425 + `docs/NORTH_STAR.md`
+4,932 = **15,806 bytes = 3,952 tokens** at the room's own bytes/4, and
+the file list is DERIVED — every `docs/<NAME>.md` the root adapter names,
+which is the calculus `docs_named` in the dispatch brief uses, read at
+the BASE to be sure. The five-document order it replaced is 243,536 bytes
+= 60,884 tokens at this tip (243,468 = 60,867 at the base).
+
+Three ways this measure could have been faked, each checked:
+the body stats the committed files rather than asserting a constant —
+inflating the index to 40,000 bytes takes it to 13,346 tokens;
+the ratio is the room's, used on both sides, and the pass does not depend
+on it (at 3.5 bytes per token, 4,516; at 3, 5,269);
+and the numerator excludes `CLAUDE.md` itself, which I recomputed WITH it
+— 17,564 bytes = **4,391 tokens** — so the exclusion moves no verdict and
+has a reason: the set measured is the one a seat is HANDED. At STATE's
+FAIL ceiling of 10,158 the read is 17,515 bytes = 4,379 tokens, so the
+body will not red on a future checkpoint.
+
+"Nothing else standing" is LITERAL in the four files: no re-entry
+vocabulary, and none of the four documents named. It is NOT literal in
+the wider seat-facing corpus, and that is a finding for a card rather
+than a failure of this criterion, whose subject is these four files —
+`T-293-s4` carries it with the measurement.
+
+**C-2 — one command, and a gate that reds on a planted stale line. MET,
+AND LITERALLY.** Run in a clone at this tip, the census command wrote BOTH
+generated documents in one invocation, and it writes the census ahead of
+the index so the index derives from a fresh one, and the index came back a ZERO-BYTE diff. The
+census is stale by 623 bytes — exactly the seven new body names, 845 to
+852 — and that regeneration is the integrator's.
+
+At the gate, in this tree, each planted and each restored:
+
+    a stale CONVENTIONS line   docs-gate: docs/INDEX.md is STALE ... committed 2142 bytes,
+                               a fresh generation is 2425 bytes           exit 1
+    ARCHITECTURE's WHOLE line deleted                                     exit 1
+    a FIFTH line naming a document that does not exist                    exit 1
+    the file deleted entirely  "it is not committed at all"               exit 1
+
+`docs/INDEX.md`'s sha256 was UNCHANGED on disk after each run: the gate
+does not rewrite the file it is checking. The hiding attack — delete a
+whole line so a document goes invisible — is CLOSED, because the
+comparison is whole-file bytes rather than line by line, and the same
+property closes the injection channel of an added line.
+
+**AND IT IS DERIVED RATHER THAN TYPED, which is what makes the red mean
+anything.** Moving ONE side only, in a scratch root, with no regeneration:
+each of the four documents' first heading, a section heading, and a single
+word of a contract sentence — every one reds. A document that loses its
+prose paragraph, or its top-level heading, makes the derivation THROW and
+the gate answer CANNOT RUN; there is no silent default line, which is the
+honest choice. At the base neither mutant can red at all, so the arming
+differs and the differential is the proof.
+
+**C-3 — ask or open at the section, never guess, with the case named.
+MET.** The rule is in the index's own preamble, generated with it; the
+T-138 instance is named in substance and now lives in ONE place only,
+so the two-copy drift I went looking for does not exist. Every line
+carries its where-to-open half. What that half is WORTH for
+`docs/CONVENTIONS.md` is the weakest thing on this card and I measured it:
+that document has exactly two headings and no sub-headings, so its line
+resolves to a 98,573-byte section. The derivation reports everything the
+document has and is not at fault; `T-293-s6` carries it.
+
+**C-4 — not a byte of their content. MET, BY BLOB HASH.** `ROADMAP`,
+`ARCHITECTURE`, `CONVENTIONS` and `CAPABILITIES` are blob-identical base
+to tip — not byte-count identical, which a same-length edit would pass.
+`DOC_BUDGETS` is byte-identical: no band widened, no goalpost moved.
+`docs/STATE.md` gained exactly one sentence, 8,381 to 8,449 against a
+warn line of 8,465 — **SIXTEEN bytes of headroom**, and the pointer is in
+all three places, so the next regeneration keeps it and should expect to
+warn. `T-294`'s five fence files are blob-identical: no cross-lane breach.
+ADR-024 and the room are untouched.
+
+#### Security sweep
+
+Nothing at REJECTED level. The generator uses `readFileSync` and never
+shells out, and its document set is a FIXED literal checked against the
+decision's own sentence rather than a `docs/` glob — a glob would have
+made any file dropped into that directory part of every seat's first
+read, and there is none. The kit's adapters and the kit's STATE template
+carry no card id, no path of ours, no budget of ours and no command of
+ours — only placeholders — so a project scaffolded from them inherits
+none of our text. The gate's injection scan covers the new file: fed
+`docs/INDEX.md` it reports scanning one path against seven patterns. The
+residual I will name rather than wave at: one contract sentence per
+document flows VERBATIM and UNTRUNCATED into a file every seat reads
+first, inside a fixed frame; it is bounded in practice by the token body
+and by that scan, and it is the price of deriving rather than typing.
+
+#### The row-3 question, and the three repaired controls
+
+Retiring the four names from the adapter is the criterion's own mechanical
+consequence, not an over-reach: read at the BASE, the brief's reader
+collects every `docs/<NAME>.md` the adapter mentions ANYWHERE and hands
+the result to a seat, so a path in that file is that document back in the
+standing read whatever the sentence says. The fix pass moves no production
+line — every changed line in the rust file is inside its test module.
+Each repaired control is decided by an arrangement its own body does not
+also control: the live adapter for one, body-supplied adapter text for another,
+and a derived non-empty set naming no document for the last, with
+the round trip (the document leaves the applied set and comes back when
+the clause goes) carrying the not-vacuous half.
+
+#### Suites, at MY tip, through the blessed runner
+
+    parser  exit 0    389 bodies  GREEN
+    app     exit 0   1171 bodies  GREEN
+    rust    exit 0    655 bodies  GREEN
+    e2e     exit 1    852 bodies  RED, 1 failed / 851 passed   (leg A)
+    e2e     exit 0    852 bodies  GREEN                        (leg B)
+
+**THE ONE RED, ATTRIBUTED AS FAR AS THE EVIDENCE GOES.** The body was
+`the hand-run gate's exit codes hold, and an EMPTY path list is 2 and not
+0`, failing where it expects a code-only path list to answer 0 and got 1.
+Following STATE's own rule: the spec alone is 60 of 60 green, a repeat
+whole leg is 852 green, and a sampler ran that exact invocation against
+this tree in a loop beside that repeat leg for its whole duration,
+appending to a log on any exit but 0; the log it wrote is empty. No spec in the corpus writes into the live docs tree or
+checks out the live worktree. So it is UNATTRIBUTED and I do not charge
+it to this diff. What I did find is the mechanism that could reach it:
+inverting the new comparison reds SIX bodies, five of them pre-existing
+exit-code assertions that know nothing about the index — the coupling is
+the gate's own architecture, but this card added its most sensitive
+contributor. Recorded, with both halves, as `T-293-s7`.
+
+`npm run lint:docs` is exit 0 at this tip.
+
+#### The correction
+
+One, and it is the shape this bench keeps finding: a boundary the
+implementation already keeps that no body could see. The new reader that
+answers what the standing read costs is a MIRROR of the brief's own, and
+its own comment says the mirror is deliberate down to the quirk — the run
+of characters a path is read as includes the stop, so a document written
+at the END of a sentence is dropped and the same path one word earlier is
+kept. Nothing asked. Measured: with that drop "repaired", the entire spec
+stays green — 60 of 60 — while the module silently starts answering a
+question the brief does not ask, on the one figure this card is measured
+by. I wrote the body, ran it RED against the repaired module (1 failed,
+60 passed, on its own message and nothing else) and GREEN against the
+module as it stands, and I commit it after this verdict.
+
+    ```mutant
+    correction: the adapter reader keeps the dispatch brief's own boundary
+    file: tools/e2e/scripts/docs-scan.mjs
+    spec: tools/e2e/tests/docs-input-gate.spec.ts
+    body: the adapter reader keeps the boundary the DISPATCH BRIEF's own reader keeps, stop and all
+    message: a path carrying its sentence's stop is not a path this reader returns
+    --- old
+        if (hit.endsWith(".md") && !found.includes(hit)) found.push(hit);
+    --- new
+        const named = hit.replace(/\.$/, "");
+        if (named.endsWith(".md") && !found.includes(named)) found.push(named);
+    ```
+
+#### Findings that are not failures
+
+Filed as cards rather than folded in here: `T-293-s4` (three role files
+still re-list the standing set inline, and two of the names are documents
+the adapter no longer names), `T-293-s5` (three of the five role files
+have no brief type, so the adapter's "everything else arrives through the
+pack" is not true for them), `T-293-s6` (the where-to-open half for the
+largest document resolves to a 98,573-byte section), `T-293-s7` (the
+code-only exit's new whole-tree dependency, with the unattributed
+intermittent above). The lane's own `T-293-s1`, `T-293-s2` and `T-293-s3`
+are honest filings and I add nothing to them; `T-293-s3` is discharged in
+its own body with the status left alone, which is the correct handling.
+
+The in-fence follow-through is declared and is T-159-s3's whole body —
+one paragraph, copied verbatim from the kit adapter into the two root
+files, both inside this manifest, adding no criterion, and now pinned by
+a body. Within the three limits. The method bump is correctly NOT taken:
+this fence reaches none of the three stamps, the card says so, and the
+eval block the fourth obligation asks for is on the card for the
+integrator.
+
+Owed at the merge and named on the card: the census regeneration and the
+graph regeneration. Both are the integrator's.
+
+#### Step 7 — the gates my own commits could move, at the tip I made
+
+Appending a verdict and filing cards is a write, and prose is a code
+input here. At `66a03aeb54438666da7b6a2e3a2b9d6e2a591eb9`:
+
+    parser      exit 0   389 bodies  GREEN
+    app         exit 0  1171 bodies  GREEN
+    docs gate   over the five paths I wrote: 0 frontmatter issue(s),
+                budgets hold (4 gated), injection scan 0 hits in 5 paths
+    lint:docs   exit 0
+    docs-input-gate.spec.ts, carrying the correction body: 61 passed, exit 0
+
+**AND IT CAUGHT ME.** The card preflight refused a sentence in the
+verdict above on the first run: a bare ordinal reads as a claim about
+this repository's whole history with no stamp behind it. Three sentences
+were rewritten to name the measurement instead, and the refusal is gone.
+The one finding left is the bench's own `[guard-surface-behind]` — a
+detached verification checkout sitting at the lane's tip is behind main
+on the hooks directory by construction, and syncing it would destroy the
+tree every figure above was measured at. The four suggested cards refuse
+at exit 3 for the reason every suggested card does — the board's schedule
+draws no dispatch candidate for them — which the lane's own three do too.
