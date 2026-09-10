@@ -186,6 +186,37 @@ project can scope them and whole where it cannot, and the fix section of
 your report names them with the ref they ran at. The run that graded the
 tree before the fix says nothing about the tree after it.
 
+## The criteria echo, and the self-drill block
+
+Two obligations that cost a lane minutes and remove a class of failure
+each. Both are stated HERE and once; the steps above point at this
+section rather than carrying a second copy of either.
+
+**THE CRITERIA ECHO COMES BEFORE THE CODE.** Restate every acceptance
+criterion as a checklist — in your own words, one line each, in the
+notes — before you write a line of the implementation. It is a minute of
+work and it catches the two failures a lane cannot recover from cheaply:
+the criterion you read as a different criterion, and the criterion you
+never examined at all. **Writing it AFTER the build is worth nothing**,
+because by then the checklist is a description of what you did; the
+whole value is that it is written while the card is the only thing you
+have seen. The verifier's own pass carries the matching obligation from
+the other side — a row per criterion with its evidence
+(`roles/verifier.md`, the standard mode) — so a criterion neither seat
+named is visible in both records at once.
+
+**THE SELF-DRILL BLOCK IS PART OF THE REPORT, NOT AN EXTRA.** For every
+body this lane adds: one mutant, planted at the site the property lives,
+shown RED, restored, and the restoration PROVED BY SHA256. The report's
+`Every drill` row already states how a drill is judged and what proves a
+restore; what this section adds is that the drill is OWED for each new
+body and that the block appears in the report as a block, so a reader
+can count the mutants against the bodies without reconstructing them
+from prose. **A body whose mutant nobody could make red is a body that
+measures nothing**, and the cheapest moment to discover that is the one
+where you still have the file open. The verifier re-runs one of them at
+random, which is what makes the block a claim rather than a courtesy.
+
 ## Run hygiene
 
 Set the model and the effort dial at session START and never switch

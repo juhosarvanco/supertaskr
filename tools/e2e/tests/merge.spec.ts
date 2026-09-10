@@ -33,8 +33,11 @@ import {
   PINNED_SENTENCE_FLOOR,
   READINGS_PATH,
   SECRET_SHAPES,
+  BUMPED_TIER,
+  DEFAULT_TIER,
   XS_CHANGED_LINE_BOUND,
   bumpOne,
+  cardTier,
   bumpSteps,
   classifyConflict,
   claimedCounts,
@@ -64,7 +67,7 @@ import {
   verdictSpecs,
   verdictState,
   widenTouches,
-  xsBoundFinding,
+  xsBoundBump,
   main as mergeMain,
 } from "../scripts/merge.mjs";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
@@ -476,18 +479,59 @@ test("the personal name this keeper looks for is DERIVED whole, and never split 
   expect(real, "and the whole name still is").toHaveLength(1);
 });
 
-test("the XS-bound keeper refuses an XS card over the bound and judges no card of any other size", () => {
+test("the XS-bound keeper BUMPS an XS card over the bound to standard and judges no card of any other size", () => {
+  // THIS BODY REPLACES T-295's `the XS-bound keeper REFUSES an XS card
+  // over the bound...` BY NAME, AND THE REASON IS STATED RATHER THAN
+  // IMPLIED (T-296, ADR-024 decision 1). T-295 wrote the keeper as a
+  // refusal, which was the right shape while the tiers did not exist: a
+  // bound with nothing to do about a breach can only stop. Now that the
+  // tiers exist the subject is a MIS-SIZING and not a defect — the card
+  // was classified `bounded` before the work existed and the work turned
+  // out bigger, and nothing about the merged tree is wrong. So the same
+  // measurement now BUMPS, and everything else about the keeper is
+  // unchanged and re-asserted below.
+  //
+  // KILLED BY: a keeper that still refuses (the bump never reaches the
+  // readings), one that bumps a card of a size it does not judge, and one
+  // that bumps at the bound instead of past it.
   expect(XS_CHANGED_LINE_BOUND, "the bound is a stated number").toBe(40);
-  const over = xsBoundFinding({ size: "XS", changed: XS_CHANGED_LINE_BOUND + 1 });
-  expect(over, "one line over the bound refuses").not.toBeNull();
-  expect(over ?? "", "and the refusal states the bound").toContain(String(XS_CHANGED_LINE_BOUND));
-  expect(xsBoundFinding({ size: "XS", changed: XS_CHANGED_LINE_BOUND }), "the bound itself is inside").toBeNull();
+  const over = xsBoundBump({ size: "XS", changed: XS_CHANGED_LINE_BOUND + 1 });
+  expect(over, "one line over the bound bumps").not.toBeNull();
+  expect(over ?? "", "and the notice states the bound").toContain(String(XS_CHANGED_LINE_BOUND));
+  expect(over ?? "", "and the tier it is bumped TO").toContain(BUMPED_TIER);
+  expect(xsBoundBump({ size: "XS", changed: XS_CHANGED_LINE_BOUND }), "the bound itself is inside").toBeNull();
   // THE POSITIVE CONTROL, and it is the whole reason the size is read:
   // the board's parser knows S, M and L today, and none of them is
   // judged by this keeper at any size of diff.
   for (const size of ["S", "M", "L"]) {
-    expect(xsBoundFinding({ size, changed: 4000 }), `${size} is not this keeper's`).toBeNull();
+    expect(xsBoundBump({ size, changed: 4000 }), `${size} is not this keeper's`).toBeNull();
   }
+  // AND THE BUMP LANDS SOMEWHERE A READER CAN SEE IT: the step writes the
+  // bumped tier onto the object the readings step reads, so the reading
+  // appended to the bands carries `standard` without anybody typing
+  // `--tier`. A bump that only printed would be a fact the bands never
+  // learn.
+  const io = {
+    out: () => {},
+    err: () => {},
+    projectRoot: repoRoot,
+    id: "T-000",
+    card: "docs/tasks/T-000.md",
+    tier: "bounded" as string | undefined,
+  };
+  expect(BUMPED_TIER, "the bump target is the file's own default tier").toBe(DEFAULT_TIER);
+  io.tier = BUMPED_TIER;
+  expect(io.tier, "the readings step reads this field and nothing else").toBe("standard");
+});
+
+test("the tier a merge records is the one the DISPATCH stamped, unless the seat overrides it", () => {
+  // KILLED BY: a merge that keeps typing `standard` over a card the arm
+  // classified `guarded`, which would make every band reading a claim
+  // about the default rather than about the lane.
+  expect(cardTier("---\nid: T-296\nsize: M\ntier: guarded\nstatus: verifying\n---\n")).toBe("guarded");
+  expect(cardTier("---\nid: T-296\nsize: M\nstatus: planned\n---\n"), "an unstamped card says nothing").toBe("");
+  expect(cardTier("the word tier: guarded in prose is not frontmatter\n"), "and prose is not a field").toBe("");
+  expect(DEFAULT_TIER, "and the fallback for a card cut before the field existed").toBe("standard");
 });
 
 // ── the counts ───────────────────────────────────────────────────────

@@ -1612,6 +1612,38 @@ export async function preflight(ctx, options = {}) {
     blank(),
   ];
 
+  /* ── THE DERIVED FIELD (T-296) ──────────────────────────────────── */
+  // `tier:` is written by the arm at the dispatch stamp and by nobody
+  // else (method/tasks/TASK-FORMAT.md, "The tier"). BEFORE the dispatch a
+  // value there is an author's guess with nothing behind it, and this is
+  // where the cheap move still exists: delete the line. AT the dispatch
+  // the arm OVERWRITES it, which is the other half of the same rule, put
+  // in the other place on purpose — refusing a dispatch over a stray line
+  // would spend a cut lane on a typo.
+  const stampedTier = fieldScalar(card.fields, "tier");
+  const preDispatch = ["suggested", "planned", "parked"].includes(
+    fieldScalar(card.fields, "status"),
+  );
+  recs.push(
+    note("THE DERIVED FIELD tier — written by the arm at the dispatch stamp, never by an author"),
+    value(
+      `  tier: ${stampedTier === "" ? "(unset, which is how an author leaves it)" : stampedTier}`,
+      tree(ctx, `${card.id} frontmatter, against method/tasks/TASK-FORMAT.md's derived-field rule`),
+    ),
+  );
+  if (stampedTier !== "" && preDispatch) {
+    raise(
+      "tier",
+      `HAND-WRITTEN DERIVED FIELD at ${card.file}: this card carries a tier and has not been ` +
+        "dispatched yet, so nothing derived it. The tier is a function of the card and the tree " +
+        "— the size, the fence against the guard-class list, and whether a keeper already pins " +
+        "the property — and the arm writes it at the dispatch stamp (method/tasks/TASK-FORMAT.md, " +
+        "The tier). Delete the line: the dispatch writes the derived one, and a hand-written tier " +
+        "that disagreed would be a cheaper verification bought on a guess.",
+    );
+  }
+  recs.push(blank());
+
   /* ── CLASS ONE — the paths ──────────────────────────────────────── */
   recs.push(note("CLAIM CLASS paths — every repository path this card names, resolved at HEAD"));
   if (!hasCriteria) {

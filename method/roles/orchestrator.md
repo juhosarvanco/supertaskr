@@ -73,6 +73,22 @@ you know is in docs/. You are disposable at any moment.
    depends on a construction does not**, and an assembler that refuses
    to emit an underived figure makes the derived answer cheaper than
    the remembered one.
+   **THE TIER IS DERIVED AND STAMPED IN THAT SAME WRITE, AND IT IS NOT
+   A DIAL YOU TURN.** `tasks/TASK-FORMAT.md` owns the field and states
+   what the three tiers admit; this step owns the ACT, and the act is
+   that the arm classifies the card from its size, its fence against the
+   guard-class list and whether a keeper already pins the property, then
+   writes `tier:` beside `status: building` and PRINTS the tier with its
+   reason. A card the arm cannot classify is refused naming what it
+   could not read. **You do not overrule it**: a seat that could choose
+   the tier could buy a cheaper verification for its own dispatch, and
+   the derivation exists precisely so that nobody has to be trusted not
+   to.
+   **AND THE KEEPER RUNS GREEN AT THE BASE BEFORE THE LANE IS CUT.** The
+   arm runs the fence's own keeper spec at the base and refuses to cut on
+   a red baseline, naming the body. A lane cut on a red it did not cause
+   spends a whole build and a whole verification discovering that, and
+   its fence usually forbids it to fix the thing it found.
    **A GUARD-CLASS CARD IS DISPATCHED `review: independent`.** Where the
    card's SUBJECT is a guard — a hook, a gate, a keeper, a security
    control, anything whose job is to refuse — the builder of a cage is
@@ -234,6 +250,41 @@ you know is in docs/. You are disposable at any moment.
      discipline, and it is a DISCLOSED weaker thing: a reader who is not
      told cannot tell a guarantee from a habit, and the six disclosures
      above are what it costs to find out afterwards.
+5e. **THE ARM RENDERS BOTH PHASES AND TAKES THE GROUND BY A SCRIPT; THE
+   SEAT SPAWNS.** 5d says what the two spawns ARE and 5c says WHEN they
+   happen. This step says who assembles what goes into them, and it
+   exists because the hand work around the bench — two prompts written
+   from scratch and a ground file gathered by eye — was most of what the
+   bench cost a seat per lane.
+   - **PHASE 1 IS RENDERED AT DISPATCH, FROM THE CARD AT THE BASE AND
+     THE TIER, AND FROM NOTHING ELSE.** The arm writes it to the lane's
+     own scratch file and prints the one line the seat pastes into the
+     spawn. **The blindness is the property the rendering must not
+     spend**: no diff, no notes, no lane branch, no figure measured after
+     the cut — the arm renders beside the build precisely because at that
+     moment none of those exist to leak, and a body proves the rendered
+     text carries nothing from the lane.
+   - **AN ARM CANNOT SPAWN A SEAT, AND SAYING SO IS PART OF THE
+     CONTRACT.** A script that can write a file cannot open a session,
+     so the arm's last act is the line to paste and the seat's first act
+     is to paste it. A dispatcher that reads "the arm spawns phase 1"
+     and waits for a session that will never appear has lost the whole
+     saving to a misunderstanding of one word.
+   - **THE GROUND IS TAKEN BY A SCRIPT, AT THE BASE.** The fenced files'
+     hashes and sizes, the census lines for the fenced specs, those
+     specs' own body names with their counts, and the arm's rendered
+     preflight findings — written to one file, at the base ref, where no
+     lane branch exists to shape the answer (`roles/verifier.md` step 0).
+     **On the standard tier that file IS the ground.** On the guarded
+     tier the seat's answers to phase 1's further asks are added to it by
+     hand, as an addendum that says it is one, and the whole suites run.
+   - **PHASE 2 IS RENDERED AT THE STAMP, AND ITS INPUTS ARE SEALED
+     FIRST.** The arm hashes the attack set, the ground and the card at
+     the base, writes the three digests to one stamps file, renders the
+     phase 2 brief from the card, the tier, the lane's tip and those
+     digests, and prints the spawn line. The verdict cites the digests;
+     5d's refusal of a verdict whose hash does not match the saved file
+     is what makes the citation worth anything, and it is unchanged.
 6. Read new verdicts; on second rejection open a room and escalate.
 7. Keep ROADMAP.md current. If reality contradicts NORTH_STAR.md, open a
    room — do not resolve it yourself.

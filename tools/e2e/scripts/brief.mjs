@@ -156,6 +156,8 @@ import {
   blank,
   context,
   defaultDispatchIo,
+  benchPlan,
+  benchRecs,
   dispatchLanePlan,
   dispatchLaneRecs,
   dispatchLedgerRecs,
@@ -164,6 +166,7 @@ import {
   mainWorktree,
   note,
   render,
+  runBench,
   runDispatchLane,
   stateReport,
   treeProv,
@@ -204,6 +207,7 @@ const FLAGS = Object.freeze([
   "--release-seat",
   "--dispatch-lane",
   "--merge",
+  "--bench",
   "--bump",
   "--meters",
   "--tier",
@@ -304,7 +308,8 @@ async function main(argv) {
           "[--dispatch-lane <T-NNN> --slug <slug> [--executor <seat>] [--verifier <seat>] " +
           "[--scratch <dir>] [--dry-run]] " +
           "[--merge <T-NNN> [--bump <old>..<new>] [--meters <path>] [--tier <tier>] " +
-          "[--blocks-absent <sha>] [--dry-run]] [--full] [--root <path>]",
+          "[--blocks-absent <sha>] [--dry-run]] [--bench <T-NNN> [--scratch <dir>]] " +
+          "[--full] [--root <path>]",
       );
       return EXIT.CLEAN;
     }
@@ -352,6 +357,8 @@ async function main(argv) {
   const wantsDispatchLane = laneId !== "";
   const mergeId = opts["merge"] ?? "";
   const wantsMerge = mergeId !== "";
+  const benchId = opts["bench"] ?? "";
+  const wantsBench = benchId !== "";
   /**
    * THE RITUAL'S OWN DIALS, AND EVERY ONE OF THEM IS MEANINGLESS ALONE.
    * A `--slug` with no `--dispatch-lane` is a lane name for a lane nobody
@@ -360,7 +367,13 @@ async function main(argv) {
    * said something it did not.
    */
   const laneDials = ["slug", "executor", "verifier", "scratch"];
-  const strayDials = laneDials.filter((d) => opts[d] !== undefined);
+  // `--scratch` IS SHARED WITH THE BENCH ARM, because both write into the
+  // ONE directory the lane owns (docs/CONVENTIONS.md's SCRATCH RULE): the
+  // phase 1 brief the dispatch renders and the phase 2 brief the bench
+  // renders are two files with the same stem, and a bench pointed at a
+  // different directory could not find the attack set the dispatch's own
+  // brief named.
+  const strayDials = laneDials.filter((d) => opts[d] !== undefined && !(wantsBench && d === "scratch"));
   /**
    * THE MERGE ARM'S OWN DIALS, held to the same rule as the lane's: a
    * flag this command accepted and ignored is a seat believing it said
@@ -380,6 +393,15 @@ async function main(argv) {
       "brief: --dispatch-lane opens a lane and --merge closes one, and they are opposite ends of " +
         "the same loop. One invocation cannot do both — a command that did would decide by " +
         "argument order which end of the loop this seat was at.",
+    );
+    return EXIT.USAGE;
+  }
+  if (wantsBench && (wantsMerge || wantsDispatchLane)) {
+    console.error(
+      "brief: --bench arms the VERIFICATION of a lane that is already built, and --dispatch-lane " +
+        "and --merge are the two ends of the loop around it. One invocation cannot do two of the " +
+        "three, for the reason the sentence above gives: argument order would decide which stage " +
+        "of the loop this seat was at.",
     );
     return EXIT.USAGE;
   }
@@ -925,6 +947,49 @@ async function main(argv) {
   }
 
   /**
+   * ARM ELEVEN — THE BENCH (T-296), the ritual BETWEEN the two ends.
+   *
+   * `--dispatch-lane` renders phase 1 from the card at the base; this arm
+   * renders phase 2 at the stamp: it takes the ground by a script at the
+   * base, seals the three inputs by sha256, renders the brief from the
+   * card, the tier, the tip and those digests, and prints the one line
+   * the seat pastes. An arm cannot spawn a seat, which is why the last
+   * thing it does is hand over a line rather than a session.
+   *
+   * IT TAKES NO SEAT REFUSAL OF ITS OWN, and that is a difference worth
+   * stating: it writes into the lane's scratch directory and reads two
+   * worktrees, and it commits nothing anywhere. The two arms around it
+   * refuse a checkout that is not the integration one because they STAMP
+   * on the integration branch; this one has nothing to stamp.
+   *
+   * @type {string[]}
+   */
+  const benchFindings = [];
+  if (wantsBench) {
+    say("");
+    try {
+      const plan = benchPlan(ctx, {
+        taskId: benchId,
+        ...(opts["scratch"] === undefined ? {} : { scratch: opts["scratch"] }),
+      });
+      const result = runBench(plan, defaultDispatchIo());
+      say(render(benchRecs(ctx, plan, result)));
+      for (const n of result.notes) say(render([note(n)]));
+      for (const f of result.findings) benchFindings.push(f);
+      if (result.code === EXIT.CANNOT_RUN) {
+        console.error("brief: COULD NOT RUN");
+        for (const f of result.findings) console.error(`  ${f}`);
+        flush();
+        return EXIT.CANNOT_RUN;
+      }
+    } catch (err) {
+      if (err instanceof DispatchLaneFinding) {
+        benchFindings.push(err.message);
+      } else throw err;
+    }
+  }
+
+  /**
    * ARM TEN — THE MERGE (T-295), the ritual at the CLOSING end of the loop.
    *
    * The two refusals ahead of its first step are the dispatch arm's, for
@@ -1362,6 +1427,7 @@ async function main(argv) {
     ...sessionFindings,
     ...holderFindings,
     ...laneFindings,
+    ...benchFindings,
     ...mergeFindings,
     ...preflightFindings,
     ...fenceFindings,

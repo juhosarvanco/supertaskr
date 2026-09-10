@@ -237,6 +237,57 @@ to catch.
    they create a tip nobody has tested. **A ROLE THAT WRITES TO THE TREE
    OWES THE TREE'S GATES, EVEN WHEN WHAT IT WROTE WAS PROSE.**
 
+## The standard mode, stated once
+
+**NOT EVERY CARD BUYS THE WHOLE OF THE ABOVE, AND WHICH ONE A CARD BUYS
+IS THE TIER** (`tasks/TASK-FORMAT.md`, "The tier"). The GUARDED tier is
+this file entire: the two-spawn bench, the seat's answers to phase 1's
+further asks, and the whole suites. The STANDARD tier is one verifier at
+the tip, and this section is the ONE place that says what that pass is —
+every other file points here rather than keeping a second copy of it
+(T-057, and the same reason `roles/orchestrator.md` 5d owns the bench).
+
+**ONE PASS, AND IT IS NOT A LIGHTER READING OF THE DIFF.** What standard
+drops is the seat's hand work around the pass, never the pass's own
+rigour: the arm renders phase 1 and takes the ground by a script, so the
+pre-commitment and the sealed inputs survive with nobody typing them.
+Five things are owed, and none of them is optional:
+
+- **THE DIFF BEFORE THE EXECUTOR'S NOTES.** Step 0's blindness holds in
+  this tier exactly as it holds in the guarded one — the attack set is
+  written and hashed against the card at its base, and the notes are
+  read only afterwards, with the diff, as part of what is being graded.
+  A pass that opened the notes first has verified what was done instead
+  of what was asked, and the tier does not change that.
+- **THE RUBRIC**, which is steps 2, 2b and 3 run in order and not
+  summarised here: every EARS criterion taken LITERALLY, then the
+  boundaries and the malformed inputs the criteria imply, then a mutant
+  per property with a DATA mutant wherever the property lives in data,
+  then the security sweep — which is mandatory in this tier, since a
+  cheaper ceremony is not a smaller attack surface.
+- **A ROW PER CRITERION, WITH ITS EVIDENCE.** The verdict carries a
+  table with one row for every acceptance criterion and, in that row,
+  the command, body or reading that decided it. It is the cheapest
+  possible defence against the two failures this pass exists to catch —
+  a criterion nobody examined, and a criterion somebody read as a
+  different criterion — and a verdict that says APPROVED without one has
+  not said which criteria it is approving.
+- **CORRECTIONS AS COMMITTED BODIES WITH MUTANT BLOCKS.** Step 5b in
+  full, unchanged: the body committed on the bench after the verdict,
+  both readings recorded, one block per correction in the layout that
+  step publishes.
+- **THE SUITES THE RANGE OWES**, rather than the whole battery. The
+  guarded tier keeps the whole run; here the owed set is what a verdict
+  quotes, and the net that catches what a scoped set cannot is the
+  project's own whole-suite clock rather than this seat's wall time.
+
+**AND THE TIER IS NOT YOURS TO CHOOSE.** It is derived by the arm at
+dispatch from the card and the tree and printed on the brief. Where the
+brief names no tier at all, that is a dispatch fault of exactly the kind
+`roles/executor.md`'s brief rules already name: say so in the verdict
+and verify as though the card were guarded, because the expensive
+mistake is the cheap pass on a guard.
+
 ## Run hygiene
 
 Set the model and the effort dial at session START and never switch
