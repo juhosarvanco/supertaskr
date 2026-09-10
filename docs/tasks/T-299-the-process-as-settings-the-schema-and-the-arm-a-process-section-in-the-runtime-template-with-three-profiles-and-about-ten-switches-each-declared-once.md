@@ -30,3 +30,5 @@ The runtime template already carries role defaults; the loop's options ruled in 
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+**The switch inventory** — every step of the ceremony as a switch with its old and ruled values, costs and constraints — is recorded in docs/rooms/loop-cost-and-speed.md (appended 2026-09-10) and is this card's input; the schema SHALL carry every row and the floor.

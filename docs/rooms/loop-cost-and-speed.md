@@ -150,3 +150,47 @@ The owed set replaces the whole battery at the bench (standard tier), at the pus
 **6 Universality.** Every mechanism reads its configuration from the runtime template (the suites and how to run them, the smoke command, the guard-class paths, the bands, the names, the languages); the CLI packages the scripts and hooks (T-244) and the genesis installs them; the v1 acceptance criterion is a project that is not supertaskr, in another language, taken through a whole card by the loop.
 
 **7 The order of landing.** The standing read and the index; CI; the merge verb with the cheap keepers; the tiers as an ADR; the bands and right-sizing; the settings; the universality audit and the second project. Each measured against its budget at the checkpoint that follows it.
+
+## The switch inventory (appended 2026-09-10 on @human's question: "Do we have the process steps settings options recorded somewhere? Our old full scale ceremony as options you can choose") — the input to T-299's schema
+
+Every step of the ceremony as it stood on 2026-09-09, as a switch: its id, what it does, its value under the **old** profile (the full-scale ceremony, kept as the profile `guarded-everything`), its value under the **ruled** profile (`standard`, ADR-024), its measured cost where one exists, and its constraint. The floor — switches that cannot be turned off in any profile — is listed last. The profile `fast` is `standard` with the whole-suite net nightly only, push batching on and the standing read at the index; T-299 may refine the three profiles, never the floor.
+
+| id | what it does | old (guarded-everything) | ruled (standard) | measured cost | constraint |
+|---|---|---|---|---|---|
+| read.standing | what every seat reads before working | the five governing documents whole (~61K tokens) | STATE + the one-line index (<10K) | ~50K tokens per seat | none |
+| dispatch.keeper_at_base | the fence's keeper spec run at the base before a lane is cut | off | on | 1–3 min | none |
+| dispatch.model_per_role | the model of every dispatch read from the runtime template | by hand | from the template (Opus 5 default) | — | needs the template's roles section |
+| dispatch.ask_watcher | the derived watcher over the live lanes' ask and report files | on | on | — | none |
+| build.suites | what the executor runs at its final commit | the suites the fence owes, once (T-279/T-271) | the owed set of its range (T-280) | 5–15 min | needs push.token |
+| build.self_drill | one mutant per new body, red, restored, proved, in the report | practised, not required | required block | minutes in the lane | none |
+| build.criteria_echo | the criteria restated as a checklist before coding | off | on | 1 min | none |
+| build.preflight_before_stamp | the card preflight on the executor's own prose | off | on | seconds | none |
+| verify.tier | how a card is verified | guarded for every card | bounded / standard / guarded by the arm's classifier | see the tiers' budgets | needs fence.hook, push.token, the guard-class list |
+| verify.phase1 | the tool-less attack set written from the card before the diff | on, spawned by the seat | on for standard and guarded, spawned by the arm; off for bounded | ~60K tokens, 4 min beside the build | none |
+| verify.ground | the ground truths at the base phase 2 judges on | taken by the seat by hand | by a script; the seat's further asks only in guarded | 10–15 min of the seat | none |
+| verify.sealed_inputs | the attack set and grounds hashed and cited | on | on for standard and guarded | seconds | none |
+| verify.separate_bench | phase 2 on a detached worktree at the tip | on | on for standard and guarded | a worktree | none |
+| verify.suites | what the verifier runs at the tip | the whole four legs (T-262) | the owed set of the range; whole in guarded | 15–20 min → 5 | needs record.whole_suite_net when not whole |
+| verify.mutants | data mutants where the property is data, code mutants for containment | on | on | inside phase 2 | none |
+| verify.corrections_as_bodies | a correction is a body the verifier commits plus a MUTANT BLOCK | on | on | — | none |
+| verify.reads_notes_last | the diff before the executor's notes | on | on | — | floor for any tier with a verifier |
+| merge.by | who runs the ritual | the seat, by hand | the arm (`--merge`); the seat rules only | 15–21 min → ~5 | needs T-295 |
+| merge.redrill | the re-drill of the verdict's blocks | every block over the whole spec | scoped to the fix diff | minutes | none |
+| merge.regen_graph | the code graph regenerated when a source under the walk moved | at the merge, by the seat | at the merge, by the arm; checked in CI | ~3 min when it fires | none |
+| merge.regen_census | the behaviour census regenerated when a spec name moved | at the merge, by the seat | at the merge, by the arm; checked in CI | ~1 min when it fires | none |
+| merge.keepers | pinned-sentence, forbidden-content, secret and diff-size checks, the card preflight | off | on | seconds | none |
+| merge.meters_to_bands | the reports' meters appended to the bands at the merge | off | on | seconds | needs record.bands |
+| merge.message | the merge message | composed by the seat | written from the verdict | — | none |
+| push.owed | what a push must have graded | the whole four legs, last | the range's owed set (T-280) | 15 min → 1–5 | floor: push.token |
+| push.batching | several merges per push | off (one push per merge) | on | fewer CI runs | needs ci.per_push_runs |
+| push.wait_previous_run | the guard refuses a push while a run is in flight | on | off (a red concluded run is announced) | up to 35 min | none |
+| ci.owed | what CI runs per push | everything | the owed set of the pushed range | 34 min → ~10 | needs record.whole_suite_net |
+| ci.sharding | the e2e lane split across runners by owning spec | off | on | 21 min → ~5 | none |
+| ci.regen_check | graph and census currency checked on the runner | on | on | seconds | none |
+| record.whole_suite_net | the whole four suites run on a clock | at every push (implicit) | at every checkpoint and nightly in CI | 15 min per run | floor when any suites switch is not whole |
+| record.bands | cycle time and tokens per size and tier, with budgets | off | on | seconds | none |
+| record.checkpoint | the record and STATE regenerated at a sitting | on | on | 20 min per sitting | floor |
+
+**The floor (no profile turns these off):** the fence and its write hook (`fence.hook`); the card preflight at dispatch; the owed-set token and the push guard (`push.token`); the landing gate; the docs gate; the method stamp and its eval gate when method text moves; records never rewritten; a verifier that reads the diff before the notes whenever a verifier runs.
+
+**Profiles as rows of this table:** `guarded-everything` = the old column exactly; `standard` = the ruled column; `fast` = the ruled column with record.whole_suite_net nightly only, push.batching on. A project's own readings (record.bands) stand beside each row once they exist.
