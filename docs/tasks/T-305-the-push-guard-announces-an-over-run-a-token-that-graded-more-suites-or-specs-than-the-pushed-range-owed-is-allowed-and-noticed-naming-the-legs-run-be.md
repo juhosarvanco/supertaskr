@@ -3,7 +3,7 @@ id: T-305
 title: The push guard announces an over-run — a token that graded more suites or specs than the pushed range owed is allowed and NOTICED, naming the legs run beyond the owed set, so a seat that still runs the whole battery by habit is told
 feature: F-04
 milestone: 4
-size: XS
+size: S
 priority: 3
 status: planned
 suggested_by: "@human (2026-09-10): \"Rule the loop room, A to I as amended: yes\" — docs/rooms/loop-cost-and-speed.md, ADR-024"
