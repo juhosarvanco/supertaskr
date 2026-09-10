@@ -5,7 +5,7 @@ feature: F-01
 milestone: 4
 size: S
 priority: 2
-status: building
+status: verifying
 suggested_by: "the owner, 2026-09-10: the seat had appended sections to rooms on its own judgment and quoted the owner's messages; the owner asked to be shown what will be added before it is added, endorsed the proposed-then-appended form as the right model, and asked for it as a rule"
 blocked_by: []
 touches: [method/roles/orchestrator.md, method/rooms/ROOM-FORMAT.md, method/docs-templates/decisions/000-template.md, tools/method-evals/]
