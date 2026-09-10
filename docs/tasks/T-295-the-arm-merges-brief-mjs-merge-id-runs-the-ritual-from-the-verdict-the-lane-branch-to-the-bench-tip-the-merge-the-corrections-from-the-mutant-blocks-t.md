@@ -369,8 +369,8 @@ message: a REJECTED verdict is a refusal, not a clean drill
 
 ## Meters
 
-- wall clock, by phase: sealed inputs and the standing read 8 min; the diff, the fence and the static attacks 11 min; the shared-clone fixtures and the four runtime reproductions 14 min; the four bodies, five corrections and the RED-ALONE drill 22 min; the suites 34 min wall, overlapped with the reading; the verdict and the cards 12 min. About 1 h 40 m end to end.
-- context consumed: roughly 270k tokens of a 1M window.
+- wall clock: 16:28Z to 17:01Z, 33 minutes end to end, read off the session's own timestamps rather than estimated. By phase, with the long runs detached and overlapped: the three sealed inputs and the standing read 8 min; the diff, the fence and the static attacks 11 min; the shared-clone fixtures and the four runtime reproductions 12 min, overlapping the suites; the four bodies, the five corrections and the RED-ALONE drill 13 min; the verdict, the cards and step 7 8 min. The range form ran 15 min detached from 16:30Z, inside the reading.
+- context consumed: about 319,000 tokens of the 15,000,000 budget at dispatch.
 - model: claude-opus-5@subagent, effort set at session start and never switched.
 - suites run: the RANGE FORM through `gate-run.mjs` at 46c33c07..9331fbc8 (parser 389 / app 1171 / rust 655 / e2e 890, every leg exit 0 and GREEN, gate exit 0); `merge.spec.ts`, `cli.spec.ts` and `brief-flush.spec.ts` each alone by name; `tools/method-evals/run.mjs` (10 model-free evals, exit 0); and `merge.spec.ts` a further eleven times across the RED, GREEN and five RED-ALONE drill runs.
 - bodies graded: 22 of the lane's own in `merge.spec.ts`, 48 in `cli.spec.ts`, 6 in `brief-flush.spec.ts`, plus the 4 this bench committed.
