@@ -83,6 +83,11 @@ it, and that disposing of the card is triage's move and not a lane's.
 This section is that record; the commit is named in the line below,
 which the same lane's stamp commit appends.
 
+**THE COMMIT THAT DID IT: `37964699` on `task/T-293-the-standing-read`**,
+whose own battery — parser, app, rust and e2e, graded once at that ref
+through this project's blessed runner — is GREEN on all four legs, the
+e2e leg scoped to the six specs the fix's own paths own.
+
 Against the three acceptance criteria above:
 
 - **A control the retiring card cannot make vacuous again — MET.** The

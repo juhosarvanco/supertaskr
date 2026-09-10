@@ -280,4 +280,63 @@ GATE are unchanged — this pass moves no path under `method/` and no path
 under `docs/` but two cards. The results are recorded with the fix
 pass's battery below.
 
+**THE FIX PASS'S OWN BATTERY, AND WHICH DERIVATION IT IS.** A fix pass is
+a new tree and owes a run at its own tip, of the suites the FIX'S OWN
+paths owe, scoped where this project can scope them. Asked rather than
+assumed — `gate-run.mjs --owed-set --range 17fec1c5..HEAD` answers that 4
+paths moved and owe app, e2e, parser and rust, e2e over 6 spec files. So
+the owed set is WIDER than the two legs that redded (the two card writes
+pull the board readers into app and parser) and NARROWER on e2e, which is
+scoped rather than whole. The whole-lane form still says e2e WHOLE; that
+is the merge's question, and the battery at fcd5c706 recorded above is
+its reading. Run ONCE, through the blessed runner, at 37964699:
+
+    parser  exit 0   389 bodies   1 target   GREEN
+    app     exit 0  1171 bodies   1 target   GREEN
+    rust    exit 0   655 bodies  18 targets  GREEN
+    e2e     exit 0   208 bodies   1 target   GREEN, over the 6 owning specs
+
+The runner's own overall exit is 0. The three bodies this lane landed red
+are green by name: the rust leg's 655 include
+`row_three_applies_the_role_files_reading_step_rather_than_printing_it_beside_the_list`,
+and the e2e leg's 208 include both brief.spec.ts names. No body was lost:
+brief.spec.ts still collects 86.
+
+**THE GATES AT THIS TIP, EACH ASKED.**
+
+- **BOOT GATE — FIRES for the first time in this lane, and was RUN.**
+  `SUPERTASKR_BOOT_PORT=15393 npm run boot:check` from tools/e2e, exit
+  **0**, both startup lines seen: the project-folder line naming this
+  lane's worktree, and the `window "main" created` line. Port read free
+  before the spawn; the process tree was stopped on SIGTERM and left no
+  listener.
+- **GRAPH REGEN — FIRES, and IS NO LONGER A NO-OP.** The derivation
+  recorded above was true of the tree it was made on and is not true of
+  this one: `index --check` is exit **1** here, naming exactly one moved
+  file, this pass's rust file, as a CONTENT change. The graph is
+  201 files, 2561 symbols, 2453 edges, and the fresh index is 1198942
+  bytes against a budget of 2145959. `docs/architecture/graph.json` is
+  outside this fence and the gate's own bullet puts the regeneration in
+  the CHECKPOINT, so this is OWED AT THE MERGE and named here loudly
+  rather than performed.
+- **DOCS GATE — FIRES and was RUN**, fed the range rule's own path list
+  built by a merge-tree forecast against the integration tip: 7 paths
+  under docs/ are code inputs, owing the app, e2e and parser suites.
+  App and parser are green above; the e2e leg at this tip is the SCOPED
+  one, and the whole-suite reading the gate's wording asks for is the
+  battery at fcd5c706. Injection scan 0 hits in 0 of 7 paths against 7
+  patterns, advisory, exit unmoved. `npm run lint:docs` is exit 0.
+- **METHOD EVAL GATE — FIRES by the lane's earlier diff and was RE-RUN.**
+  Both sets exit 0, 10 model-free each, the second a POSITIVE CONTROL.
+  The method stamp does not move in this lane.
+
+**OWED AT THE MERGE, ADDED BY THIS PASS**: the graph regeneration above,
+beside the census regeneration already recorded. Both are the
+checkpoint's, and both name files outside this fence.
+
+**THE STAMP.** `status:` was already `verifying` and stays there; this
+commit re-affirms it and carries the fix pass's battery record, and it
+RE-RAN NOTHING — the numbers above were all measured at 37964699, the
+commit before it.
+
 ## Verdicts
