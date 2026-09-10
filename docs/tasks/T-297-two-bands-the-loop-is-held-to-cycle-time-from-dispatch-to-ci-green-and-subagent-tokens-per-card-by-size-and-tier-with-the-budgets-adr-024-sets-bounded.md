@@ -4,13 +4,14 @@ title: Two bands the loop is held to — cycle time from dispatch to CI green an
 feature: F-06
 milestone: 4
 size: S
+tier: standard
 priority: 2
-status: planned
+status: building
 suggested_by: "@human (2026-09-10): \"Rule the loop room, A to I as amended: yes\" — docs/rooms/loop-cost-and-speed.md, ADR-024"
 blocked_by: [T-295]
 touches: [tools/e2e/scripts/health-bands.mjs, tools/e2e/tests/health-bands.spec.ts, docs/CONVENTIONS.md, docs/checkpoints/TEMPLATE.md]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
