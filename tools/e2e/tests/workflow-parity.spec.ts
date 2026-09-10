@@ -14,6 +14,18 @@ import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { parse } from "yaml";
 import { CI_WORKFLOW_REL_PATH, stepWorkingDirectory } from "../../../.claude/hooks/push-guard.mjs";
+// THE REGISTRY OF GRADED SUITES, IMPORTED RATHER THAN TRANSCRIBED
+// (T-294). This workflow now has a job per suite, gated on an output
+// named after it, so "which suites exist" is a fact THIS file depends
+// on — a fifth graded suite that arrived with no job would be a leg
+// nothing ran, and the import is what makes that red here rather than
+// stay quiet. It is also why a change to gate-run.mjs now owes this
+// spec through the owning-spec map: the dependency is real, so it is
+// recorded the way every other one is.
+import { ALL_SUITES, GRADED_SUITES, SCOPED_SUITE } from "../scripts/gate-run.mjs";
+// ...and the argv the runner's own derivation step sends, so the
+// criterion's spelling is READ from the sender rather than retyped.
+import { owedSetArgv } from "../scripts/ci-owed.mjs";
 import { repoRoot } from "../preflight";
 
 /**
@@ -130,6 +142,10 @@ interface WorkflowStep {
   // The disk reading taken after the lane is only worth a step while it
   // runs after a RED one, and `if:` is where that is written.
   if?: string;
+  // T-294: a step's `id:` is what makes its outputs referenceable — a
+  // job's `outputs:` are written as `steps.<id>.outputs.<key>`, and an
+  // `id` that is not there makes every one of them the empty string.
+  id?: string;
 }
 
 /** A workflow step's identity for parity purposes: what it runs, where. */
@@ -382,7 +398,24 @@ const CI_SEQUENCE: Correspondence[] = [
       "DIVERGENCE 2: the local one-time form is `npx playwright install " +
       "chromium`; `--with-deps` adds the Linux system libs a fresh runner lacks.",
   },
-  { kind: "verbatim", dir: "tools/e2e", cmd: "npm test" },
+  // THE SHARDED LANE (T-294). The doc's command is `npm test`; CI runs
+  // it once per SHARD with that shard's own spec files appended, so the
+  // 21-minute leg becomes N concurrent runners. The spec list is not
+  // typed anywhere — `ci-owed.mjs` derives it from the pushed range
+  // through T-271's owning-spec map and hands it to the matrix — and the
+  // `--` is load-bearing: npm eats a bare argument after a script name.
+  {
+    kind: "mapped",
+    dir: "tools/e2e",
+    cmd: "npm test",
+    steps: [{ dir: "tools/e2e", run: "npm test -- ${{ matrix.specs }}" }],
+    why:
+      "T-294: the end-to-end leg is SHARDED across runner jobs by owning spec. " +
+      "One job definition, N runners, each given its own spec list by the matrix " +
+      "`ci-owed.mjs` emits — so the free-disk step and the floor beside it are " +
+      "configured once and hold on every shard. A shard is never handed an empty " +
+      "list: `ci-owed.mjs` emits a shard only when it has specs for it.",
+  },
   {
     kind: "mapped",
     dir: "tools/e2e",
@@ -510,6 +543,26 @@ const INFRASTRUCTURE_STEPS: { match: RegExp; why: string }[] = [
       "what a red floor cannot. A reading of the MACHINE, like the pair above, and " +
       "for the same reason not a CONVENTIONS command. Which steps owe one, and that " +
       "they all read the disk the same way, is derived by `diskLedgerProblems` below.",
+  },
+  {
+    match: /^node tools\/e2e\/scripts\/ci-owed\.mjs$/,
+    why:
+      "T-294: the step that asks what this push OWES. It is not a CONVENTIONS " +
+      "command and deliberately not one — it runs no suite and grades nothing; it " +
+      "spawns `gate-run.mjs --owed-set --range <base>..<tip>`, the derivation the " +
+      "push guard already requires a token to cover, and turns the answer into " +
+      "this workflow's own `if:` conditions and shard matrix. What it must send, " +
+      "and that the SUITES it names are the jobs that run, is derived by " +
+      "`owedJobProblems` below.",
+  },
+  {
+    match: /^echo "THE NIGHTLY WHOLE RUN IS RED/,
+    why:
+      "T-294: the nightly red's own finding. It runs no suite either — it PRINTS " +
+      "the bisection that attributes a cross-spec red to the merge whose lane " +
+      "never ran it, because filing the card itself would need a write grant this " +
+      "workflow does not carry (the `permissions:` block argues that). Its shape " +
+      "is derived by `nightlyFindingProblems` below.",
   },
   {
     match: /^df -h \/\n/,
@@ -669,14 +722,69 @@ const APT_PACKAGES = [
   "xvfb",
 ];
 
-function loadWorkflow(): { raw: string; doc: Record<string, unknown>; steps: WorkflowStep[] } {
+/**
+ * THE JOBS THIS FILE DECLARES, IN ORDER (T-294).
+ *
+ * ONE JOB BECAME A GRAPH, and every derivation below had to learn the
+ * difference. `owed` answers what the pushed range owes; each leg is a
+ * `needs:` on that answer and runs on a runner of its own; `e2e` is a
+ * MATRIX over the shards `ci-owed.mjs` built.
+ *
+ * ORDER IS STILL A FACT ABOUT THIS WORKFLOW — it is the order the doc's
+ * commands are expected in WITHIN a job — so it is written here, and
+ * `every CONVENTIONS command is a step` below reads it. What order can
+ * no longer mean is "across jobs": these run concurrently, and the only
+ * cross-job ordering that exists is `needs:`, which is checked as
+ * itself.
+ */
+const JOB_ORDER = ["owed", "checks", "parser", "app", "native", "e2e", "nightly-finding"] as const;
+
+/** The job that runs the end-to-end leg, one runner per shard. */
+const E2E_JOB = "e2e";
+
+/** The job every other job waits on for its `if:`. */
+const OWED_JOB = "owed";
+
+interface WorkflowJob {
+  id: string;
+  body: Record<string, unknown>;
+  steps: WorkflowStep[];
+}
+
+function loadWorkflow(): {
+  raw: string;
+  doc: Record<string, unknown>;
+  jobs: WorkflowJob[];
+  steps: WorkflowStep[];
+} {
   const file = path.join(repoRoot, ".github", "workflows", "ci.yml");
   const raw = readFileSync(file, "utf8");
   const doc = parse(raw) as Record<string, unknown>;
-  const jobs = doc.jobs as Record<string, { steps: WorkflowStep[] }>;
-  const jobNames = Object.keys(jobs);
-  expect(jobNames, "one ubuntu job (plan §7)").toEqual(["linux"]);
-  return { raw, doc, steps: jobs.linux!.steps };
+  const jobs = Object.entries((doc.jobs ?? {}) as Record<string, Record<string, unknown>>).map(
+    ([id, body]) => ({ id, body, steps: (body["steps"] ?? []) as WorkflowStep[] }),
+  );
+  if (jobs.length === 0) {
+    throw new Error(
+      ".github/workflows/ci.yml declares no jobs — every derivation in this file " +
+        "reads them, and an empty enumeration would make each one pass by having " +
+        "nothing to check.",
+    );
+  }
+  return { raw, doc, jobs, steps: jobs.flatMap((j) => j.steps) };
+}
+
+/** One named job's steps, or a hard failure naming what is there instead. */
+function jobSteps(id: string): WorkflowStep[] {
+  const { jobs } = loadWorkflow();
+  const found = jobs.find((j) => j.id === id);
+  if (found === undefined) {
+    throw new Error(
+      `.github/workflows/ci.yml has no job \`${id}\` — it declares ` +
+        `${jobs.map((j) => `\`${j.id}\``).join(", ")}. A derivation aimed at a job that ` +
+        "is not there would derive nothing and pass.",
+    );
+  }
+  return found.steps;
 }
 
 function runSteps(steps: WorkflowStep[]): Step[] {
@@ -687,22 +795,530 @@ function runSteps(steps: WorkflowStep[]): Step[] {
 
 // ── the tests ──────────────────────────────────────────────────────────
 
-test("ci.yml is valid YAML with the one pinned ubuntu job", () => {
-  const { doc, steps } = loadWorkflow();
+// ── THE JOB GRAPH (T-294) ─────────────────────────────────────────────
+//
+// WHAT A SUITE THAT SILENTLY DOES NOT RUN LOOKS LIKE, and it is the one
+// failure this design may not have. Every leg is gated on an `if:`
+// reading an output of the `owed` job. GitHub evaluates an expression
+// naming an output that does not exist as the EMPTY STRING — no error,
+// no warning — so `needs.owed.outputs.run-rust` misspelled as
+// `run_rust` makes the rust job skip on every push, for ever, with the
+// run reporting a cheerful green. The derivation below is the keeper
+// for exactly that: every `needs.<job>.outputs.<key>` the file reads is
+// compared against the keys that job DECLARES, and every graded suite
+// in the registry is required to have a switch some job reads.
+
+/** The runner every job pins, and the shape a timeout has to be. */
+const PINNED_RUNNER = "ubuntu-24.04";
+
+/** The jobs that legitimately run whatever the range owes. */
+const UNGATED_JOBS = new Set(["owed", "checks", "nightly-finding"]);
+
+/** `needs.<job>.outputs.<key>` — every reference the file makes. */
+const OUTPUT_REF_RE = /needs\.([A-Za-z0-9_-]+)\.outputs\.([A-Za-z0-9_-]+)/g;
+
+/**
+ * Where the job graph disagrees with itself. `problems` empty is the
+ * assertion; each entry names the job it is about and what to do.
+ *
+ * Takes the parsed document AND its bytes, so a fixture can feed it a
+ * mutated copy — no body in this file writes to `.github/`.
+ */
+export function jobGraphProblems(doc: Record<string, unknown>, raw: string): string[] {
+  const problems: string[] = [];
+  const jobs = (doc["jobs"] ?? {}) as Record<string, Record<string, unknown>>;
+  const ids = Object.keys(jobs);
+
+  if (JSON.stringify(ids) !== JSON.stringify([...JOB_ORDER])) {
+    problems.push(
+      `.github/workflows/ci.yml declares ${JSON.stringify(ids)} where this spec expects ` +
+        `${JSON.stringify([...JOB_ORDER])}. The set and its ORDER are both facts about ` +
+        "this workflow — the order is the order the doc's commands are expected in " +
+        "within a job — so a job added, removed or moved is a deliberate update here.",
+    );
+  }
+
+  for (const [id, body] of Object.entries(jobs)) {
+    if (body["runs-on"] !== PINNED_RUNNER) {
+      problems.push(
+        `job \`${id}\` runs on ${JSON.stringify(body["runs-on"])} rather than ` +
+          `\`${PINNED_RUNNER}\`. A \`-latest\` label moves under the job without a commit, ` +
+          "and the two red-disk runs differed by nothing else but the image.",
+      );
+    }
+    const timeout = body["timeout-minutes"];
+    if (typeof timeout !== "number" || !Number.isInteger(timeout) || timeout <= 0) {
+      problems.push(
+        `job \`${id}\` declares \`timeout-minutes: ${String(timeout)}\`, which is not a ` +
+          "positive whole number of minutes. A job with no timeout hangs for six hours " +
+          "on the account's own budget, and a shard that hangs holds the run.",
+      );
+    }
+    const needs = body["needs"];
+    const needed = needs === undefined ? [] : Array.isArray(needs) ? needs.map(String) : [String(needs)];
+    if (id !== OWED_JOB && !UNGATED_JOBS.has(id) && !needed.includes(OWED_JOB)) {
+      problems.push(
+        `job \`${id}\` does not \`needs: ${OWED_JOB}\`. Its \`if:\` reads that job's ` +
+          "outputs, and an expression over a job this one does not wait for is read " +
+          "before the answer exists — which evaluates EMPTY and skips the leg.",
+      );
+    }
+    if (!UNGATED_JOBS.has(id) && typeof body["if"] !== "string") {
+      problems.push(
+        `job \`${id}\` carries no \`if:\`, so it runs whatever the range owes. Either ` +
+          `gate it on an output of \`${OWED_JOB}\`, or add it to UNGATED_JOBS here with ` +
+          "the reason it runs unconditionally — the owed set is the whole point of the " +
+          "graph, and a leg that ignores it is the 34-minute run coming back one job " +
+          "at a time.",
+      );
+    }
+  }
+
+  // EVERY OUTPUT READ IS AN OUTPUT DECLARED. This is the check the
+  // silent-skip failure needs: a reference GitHub cannot resolve is the
+  // empty string, and the empty string is never `'true'`.
+  const declaredBy = new Map<string, Set<string>>();
+  for (const [id, body] of Object.entries(jobs)) {
+    declaredBy.set(id, new Set(Object.keys((body["outputs"] ?? {}) as Record<string, unknown>)));
+  }
+  const read = new Set<string>();
+  for (const m of raw.matchAll(OUTPUT_REF_RE)) {
+    const job = String(m[1]);
+    const key = String(m[2]);
+    read.add(`${job}.${key}`);
+    const declared = declaredBy.get(job);
+    if (declared === undefined) {
+      problems.push(
+        `the file reads \`needs.${job}.outputs.${key}\` and there is no job \`${job}\`. ` +
+          "GitHub reads that as the EMPTY STRING rather than as an error, so whatever " +
+          "it gates never runs and the run is green.",
+      );
+      continue;
+    }
+    if (!declared.has(key)) {
+      problems.push(
+        `the file reads \`needs.${job}.outputs.${key}\`, which job \`${job}\` does not ` +
+          `declare — it declares ${[...declared].map((k) => `\`${k}\``).join(", ") || "nothing"}. ` +
+          "An undeclared output is the empty string, never `'true'`, so the leg gated " +
+          "on it is SKIPPED on every run and nothing says so.",
+      );
+    }
+  }
+
+  // ...AND EVERY GRADED SUITE HAS ONE. Read off the registry rather than
+  // listed here, so a fifth suite arrives with this red rather than with
+  // a leg nobody runs.
+  for (const id of ALL_SUITES) {
+    if (!read.has(`${OWED_JOB}.run-${id}`)) {
+      problems.push(
+        `no job's \`if:\` reads \`needs.${OWED_JOB}.outputs.run-${id}\`, so the graded ` +
+          `suite \`${id}\` has no switch in this workflow. Either it runs on every push ` +
+          "whatever the range owes, or — the failure that matters — it runs on none.",
+      );
+    }
+  }
+
+  return problems;
+}
+
+test("ci.yml is valid YAML, and its job graph gates every graded suite on an output that exists", () => {
+  const { doc, raw, steps, jobs } = loadWorkflow();
 
   // `on:` parses as YAML true — normalize.
   const on = (doc.on ?? doc[true as unknown as string]) as Record<string, unknown>;
-  expect(Object.keys(on).sort()).toEqual(["pull_request", "push", "workflow_dispatch"]);
+  expect(Object.keys(on).sort()).toEqual([
+    "pull_request",
+    "push",
+    "schedule",
+    "workflow_dispatch",
+  ]);
   expect((on.push as { branches: string[] }).branches).toEqual(["main"]);
 
+  // THE NIGHTLY WHOLE RUN (T-294 criterion 3, ADR-024 decision 4). A
+  // schedule trigger runs on the DEFAULT BRANCH by GitHub's own rule,
+  // which is what makes "nightly on main" a property of the trigger
+  // rather than of an `if:` somebody can drop.
+  const schedule = on.schedule as { cron: string }[];
+  expect(schedule.length, "exactly one nightly cron").toBe(1);
+  expect(schedule[0]!.cron, "a five-field cron expression").toMatch(
+    /^\S+ \S+ \S+ \S+ \S+$/,
+  );
+
+  // ONE RUN PER PUSH, KEYED BY ITS COMMIT (T-294 criterion 2). The group
+  // was `github.ref`, and under that key a second push to main cancelled
+  // the run measuring the first — the behaviour the push guard's
+  // in-flight refusal existed to prevent by making seats WAIT. Keyed by
+  // the commit, two pushes hold two groups and neither can cancel the
+  // other. `cancel-in-progress` STAYS true and now means only that a
+  // second run over the SAME commit supersedes the first, which measures
+  // a byte-identical tree.
   const concurrency = doc.concurrency as { group: string; "cancel-in-progress": boolean };
-  expect(concurrency.group).toContain("${{ github.ref }}");
+  expect(concurrency.group, "the group is the COMMIT").toContain("${{ github.sha }}");
+  expect(concurrency.group, "and never the ref, which is what made pushes cancel").not.toContain(
+    "${{ github.ref }}",
+  );
   expect(concurrency["cancel-in-progress"]).toBe(true);
 
-  const job = (doc.jobs as Record<string, Record<string, unknown>>).linux!;
-  expect(job["runs-on"], "pinned runner, not -latest").toBe("ubuntu-24.04");
-  expect(job["timeout-minutes"]).toBe(45);
+  expect(
+    jobGraphProblems(doc, raw),
+    "T-294: every leg is gated on an output of `owed` that job actually declares — " +
+      "an undeclared output reads as the empty string and SKIPS the leg silently",
+  ).toEqual([]);
+
+  expect(jobs.length).toBe(JOB_ORDER.length);
   expect(steps.length).toBeGreaterThan(0);
+});
+
+test("FIXTURE: four one-edit mutants of the job graph — an output misspelled, a `needs` dropped, a suite left with no switch, an unpinned runner — each red BY NAME", () => {
+  const { doc, raw } = loadWorkflow();
+  expect(jobGraphProblems(doc, raw), "the real workflow derives clean").toEqual([]);
+
+  const clone = (): Record<string, unknown> => JSON.parse(JSON.stringify(doc)) as Record<string, unknown>;
+  const jobsOf = (d: Record<string, unknown>): Record<string, Record<string, unknown>> =>
+    d["jobs"] as Record<string, Record<string, unknown>>;
+
+  // (1) THE OUTPUT MISSPELLED — the silent skip, and the whole reason
+  //     this derivation exists.
+  expect(
+    jobGraphProblems(doc, raw.replace("needs.owed.outputs.run-rust", "needs.owed.outputs.run_rust")).join("\n"),
+    "a misspelled output is named, with what it does",
+  ).toContain("which job `owed` does not declare");
+
+  // (2) THE `needs:` DROPPED — the `if:` then reads an answer that does
+  //     not exist yet.
+  const noNeeds = clone();
+  delete jobsOf(noNeeds)["parser"]!["needs"];
+  expect(jobGraphProblems(noNeeds, raw).join("\n")).toContain(
+    "job `parser` does not `needs: owed`",
+  );
+
+  // (3) A GRADED SUITE WITH NO SWITCH — the fifth-suite case, today.
+  const noSwitch = raw.replace(/needs\.owed\.outputs\.run-e2e/g, "needs.owed.outputs.run-parser");
+  expect(jobGraphProblems(doc, noSwitch).join("\n")).toContain(
+    "no job's `if:` reads `needs.owed.outputs.run-e2e`",
+  );
+
+  // (4) THE RUNNER UNPINNED.
+  const floating = clone();
+  jobsOf(floating)["e2e"]!["runs-on"] = "ubuntu-latest";
+  expect(jobGraphProblems(floating, raw).join("\n")).toContain("rather than `ubuntu-24.04`");
+
+  // THE POSITIVE CONTROL: the same clone, unedited, still derives clean —
+  // so each red above is the one edit and never the round trip.
+  expect(jobGraphProblems(clone(), raw)).toEqual([]);
+});
+
+// ── THE OWED SET, ASKED ON THE RUNNER (T-294 criterion 1) ────────────
+
+/** The step that asks, and the program it asks with. */
+const OWED_STEP_RUN = "node tools/e2e/scripts/ci-owed.mjs";
+
+/** The two commit ids the event carries, as `env:` keys and never as `${{ }}` in a script. */
+const OWED_ENV = ["CI_PUSH_BEFORE", "CI_PR_BASE_SHA"] as const;
+
+/**
+ * Where the `owed` job has come apart. `problems` empty is the
+ * assertion. Takes the job so a fixture can feed it a mutated copy.
+ */
+export function owedJobProblems(job: WorkflowJob | undefined): string[] {
+  if (job === undefined) {
+    return [
+      `.github/workflows/ci.yml has no \`${OWED_JOB}\` job. Every leg's \`if:\` reads ` +
+        "its outputs, so without it nothing runs and the run is green.",
+    ];
+  }
+  const problems: string[] = [];
+  // FOUND BY PREFIX, not by equality: a step that runs the program with
+  // an extra argument is still the step that asks, and the checks below
+  // — the `id:`, the `env:` bindings, the interpolation — are exactly
+  // the ones such an edit would need to meet.
+  const asking = job.steps.find((s) => (s.run ?? "").trim().startsWith(OWED_STEP_RUN));
+  if (asking === undefined) {
+    problems.push(
+      `the \`${OWED_JOB}\` job never runs \`${OWED_STEP_RUN}\`. That step is the whole ` +
+        "of the job: it spawns `gate-run.mjs --owed-set --range <base>..<tip>` and " +
+        "writes the answer to the job's outputs. Without it every output is empty " +
+        "and every leg is skipped.",
+    );
+  } else {
+    if (typeof asking.id !== "string" || asking.id === "") {
+      problems.push(
+        "the step that asks carries no `id:`, so its outputs cannot be referenced. " +
+          "A job's `outputs:` are written as `steps.<id>.outputs.<key>`, and an " +
+          "`id` that is not there makes every one of them the empty string.",
+      );
+    }
+    for (const key of OWED_ENV) {
+      if (asking.env?.[key] === undefined) {
+        problems.push(
+          `the step that asks does not bind \`${key}\` in its \`env:\`. The two commit ` +
+            "ids arrive from the event payload; an `env:` binding hands each to the " +
+            "process as a VALUE, while `${{ }}` inside the script splices it into the " +
+            "shell's own text.",
+        );
+      }
+    }
+    if ((asking.run ?? "").includes("${{")) {
+      problems.push(
+        "the step that asks interpolates `${{ }}` into its script. The payload it " +
+          "reads is attacker-influenced on a pull request, and a splice into the " +
+          "script text is the shape that runs it. Bind it in `env:` instead — " +
+          "`ci-owed.mjs` shape-checks both ids against a commit id before either " +
+          "reaches `git`.",
+      );
+    }
+  }
+
+  const outputs = (job.body["outputs"] ?? {}) as Record<string, string>;
+  if (Object.keys(outputs).length === 0) {
+    problems.push(
+      `the \`${OWED_JOB}\` job declares no \`outputs:\`, so its answer never leaves it.`,
+    );
+  }
+  for (const [key, expr] of Object.entries(outputs)) {
+    if (!/^\$\{\{\s*steps\.[A-Za-z0-9_-]+\.outputs\.[A-Za-z0-9_-]+\s*\}\}$/.test(expr)) {
+      problems.push(
+        `the output \`${key}\` is \`${expr}\`, which does not read a step's output. An ` +
+          "output computed anywhere but from the step that derived it is a second " +
+          "answer to the question this job exists to answer once.",
+      );
+      continue;
+    }
+    if (!expr.includes(`.outputs.${key}`)) {
+      problems.push(
+        `the output \`${key}\` reads \`${expr}\` — a DIFFERENT key. A job output that ` +
+          "renames what it forwards is how a leg ends up gated on another leg's " +
+          "answer, and both would still be the string `true` often enough to look " +
+          "like it works.",
+      );
+    }
+  }
+
+  const checkout = job.steps.find((s) => (s.uses ?? "").startsWith("actions/checkout@"));
+  if (checkout === undefined || (checkout.with ?? {})["fetch-depth"] !== 0) {
+    problems.push(
+      `the \`${OWED_JOB}\` job does not check out with \`fetch-depth: 0\`. It DIFFS TWO ` +
+        "COMMITS; a shallow clone has neither end of the range, so the derivation " +
+        "fails closed to the whole battery on every push — a correct answer to a " +
+        "question nobody asked, and the 34-minute run back in full.",
+    );
+  }
+  return problems;
+}
+
+test("the owed set is derived ON THE RUNNER, and its answer is what gates every leg", () => {
+  const { jobs } = loadWorkflow();
+  expect(
+    owedJobProblems(jobs.find((j) => j.id === OWED_JOB)),
+    "T-294 criterion 1: the workflow derives the owed set from the pushed range with " +
+      "`gate-run.mjs --owed-set --range <base>..<tip>` and runs the suites it names",
+  ).toEqual([]);
+
+  // AND THE SPELLING IS THE CRITERION'S, taken from the program that
+  // SENDS it rather than retyped here. `owedSetArgv` builds the argv the
+  // runner issues, so the command in the log and the command a seat can
+  // re-run at home are ONE derivation — the mirror failure T-045 already
+  // took out of this file once, in the other direction.
+  const argv = owedSetArgv("BASE..TIP", "/tree");
+  expect(argv[0], "it asks the ONE program that owns the derivation").toMatch(
+    /(^|\/)gate-run\.mjs$/,
+  );
+  expect(
+    argv.slice(1),
+    "`gate-run.mjs --owed-set --range <base>..<tip>`, the criterion's own spelling",
+  ).toEqual(["--owed-set", "--range", "BASE..TIP", "--tree", "/tree"]);
+});
+
+test("FIXTURE: three one-edit mutants of the owed job — the id dropped, a payload spliced into the script, a renamed output — each red BY NAME", () => {
+  const { jobs } = loadWorkflow();
+  const owed = jobs.find((j) => j.id === OWED_JOB)!;
+  expect(owedJobProblems(owed), "the real job derives clean").toEqual([]);
+
+  const clone = (): WorkflowJob => JSON.parse(JSON.stringify(owed)) as WorkflowJob;
+
+  const noId = clone();
+  delete noId.steps.find((s) => (s.run ?? "").trim() === OWED_STEP_RUN)!.id;
+  expect(owedJobProblems(noId).join("\n")).toContain("carries no `id:`");
+
+  const spliced = clone();
+  spliced.steps.find((s) => (s.run ?? "").trim() === OWED_STEP_RUN)!.run =
+    `${OWED_STEP_RUN} --before \${{ github.event.before }}`;
+  expect(owedJobProblems(spliced).join("\n")).toContain("interpolates `${{ }}` into its script");
+
+  const renamed = clone();
+  (renamed.body["outputs"] as Record<string, string>)["run-rust"] =
+    "${{ steps.plan.outputs.run-parser }}";
+  expect(owedJobProblems(renamed).join("\n")).toContain("a DIFFERENT key");
+
+  // THE POSITIVE CONTROL: the round trip alone changes nothing.
+  expect(owedJobProblems(clone())).toEqual([]);
+});
+
+// ── THE SHARDS (T-294 criterion 1) ───────────────────────────────────
+
+/**
+ * Where the sharded end-to-end job has come apart. `problems` empty is
+ * the assertion.
+ */
+export function shardProblems(job: WorkflowJob | undefined): string[] {
+  if (job === undefined) {
+    return [`.github/workflows/ci.yml has no \`${E2E_JOB}\` job, so nothing runs the leg.`];
+  }
+  const problems: string[] = [];
+  const strategy = (job.body["strategy"] ?? {}) as Record<string, unknown>;
+  const matrix = (strategy["matrix"] ?? {}) as Record<string, unknown>;
+  const include = String(matrix["include"] ?? "");
+  if (!include.includes(`needs.${OWED_JOB}.outputs.shards`)) {
+    problems.push(
+      `the \`${E2E_JOB}\` job's matrix reads \`${include}\` rather than the shard list ` +
+        `\`${OWED_JOB}\` derived. A matrix written by hand is a split that cannot follow ` +
+        "the owed set — it would run the same spec files whatever the range moved.",
+    );
+  }
+  if (!include.includes("fromJSON")) {
+    problems.push(
+      "the matrix does not pass that output through `fromJSON`. A job output is a " +
+        "STRING; without the parse the matrix is one entry whose value is the JSON " +
+        "text, and the shard runs a spec file named after a bracket.",
+    );
+  }
+  if (strategy["fail-fast"] !== false) {
+    problems.push(
+      `the \`${E2E_JOB}\` job declares \`fail-fast: ${String(strategy["fail-fast"])}\`. ` +
+        "Left true, one red shard CANCELS the others, and a cancelled shard reports " +
+        "no verdict at all — one red body would become N-1 runs nobody can read.",
+    );
+  }
+  const lane = job.steps.find(isLaneStep);
+  if (lane === undefined) {
+    problems.push(`the \`${E2E_JOB}\` job runs no lane step.`);
+  } else if (!(lane.run ?? "").includes("${{ matrix.specs }}")) {
+    problems.push(
+      `the lane step runs \`${String(lane.run)}\`, which never reads \`matrix.specs\` — ` +
+        "so every shard runs the WHOLE leg and the split costs N times the runners " +
+        "for the same 21 minutes.",
+    );
+  }
+  const name = String(job.body["name"] ?? "");
+  if (!name.includes("matrix.shard")) {
+    problems.push(
+      `the \`${E2E_JOB}\` job's display name is \`${name}\`, which does not name the ` +
+        "shard. `gh run view --json jobs` reports a failing job BY NAME and " +
+        "push-guard.mjs prints it at the seat; N jobs sharing one name is N reds " +
+        "nobody can tell apart.",
+    );
+  }
+  // THE FLOOR IS IN THIS JOB, which is what makes it hold on EVERY
+  // shard: one step list expanded across N runners.
+  problems.push(...diskGuardProblems(job.steps).map((p) => `on every shard: ${p}`));
+  problems.push(...freeDiskProblems(job.steps).map((p) => `on every shard: ${p}`));
+  return problems;
+}
+
+test("the end-to-end leg is sharded by owning spec, and the free-disk floor holds on every shard", () => {
+  const { jobs } = loadWorkflow();
+  expect(
+    shardProblems(jobs.find((j) => j.id === E2E_JOB)),
+    "T-294 criteria 1 and 4: the leg is split across runner jobs by the owning-spec " +
+      "map, and the T-278-s2 floor is configured once inside the job the matrix " +
+      "expands — so no shard exists that lacks it",
+  ).toEqual([]);
+});
+
+test("FIXTURE: three one-edit mutants of the shard job — the matrix hand-written, `fromJSON` dropped, the spec list unread — each red BY NAME", () => {
+  const { jobs } = loadWorkflow();
+  const e2e = jobs.find((j) => j.id === E2E_JOB)!;
+  expect(shardProblems(e2e), "the real job derives clean").toEqual([]);
+
+  const clone = (): WorkflowJob => JSON.parse(JSON.stringify(e2e)) as WorkflowJob;
+  const matrixOf = (j: WorkflowJob): Record<string, unknown> =>
+    ((j.body["strategy"] as Record<string, unknown>)["matrix"] ?? {}) as Record<string, unknown>;
+
+  const byHand = clone();
+  matrixOf(byHand)["include"] = "[{ shard: 1, shards: 1, specs: tests/brief.spec.ts }]";
+  expect(shardProblems(byHand).join("\n")).toContain("rather than the shard list");
+
+  const raw = clone();
+  matrixOf(raw)["include"] = "${{ needs.owed.outputs.shards }}";
+  expect(shardProblems(raw).join("\n")).toContain("does not pass that output through `fromJSON`");
+
+  const unread = clone();
+  unread.steps.find(isLaneStep)!.run = "npm test";
+  expect(shardProblems(unread).join("\n")).toContain("never reads `matrix.specs`");
+
+  // THE POSITIVE CONTROL: the round trip alone changes nothing.
+  expect(shardProblems(clone())).toEqual([]);
+});
+
+// ── THE NIGHTLY'S RED (T-294 criterion 3) ────────────────────────────
+
+/** Where the nightly finding job has come apart. */
+export function nightlyFindingProblems(job: WorkflowJob | undefined, jobIds: string[]): string[] {
+  if (job === undefined) {
+    return [
+      ".github/workflows/ci.yml has no `nightly-finding` job. The nightly whole run " +
+        "is where the cross-spec red the owed set gives up is caught, and a red with " +
+        "no attribution is a red nobody can route.",
+    ];
+  }
+  const problems: string[] = [];
+  const cond = String(job.body["if"] ?? "");
+  if (!cond.includes("failure()")) {
+    problems.push(
+      `the nightly finding job's \`if:\` is \`${cond}\`, which never says \`failure()\`. ` +
+        "A green nightly has nothing to say, and a recipe printed every night is a " +
+        "recipe nobody reads on the night it matters.",
+    );
+  }
+  if (!cond.includes("schedule")) {
+    problems.push(
+      `the nightly finding job's \`if:\` is \`${cond}\`, which never restricts it to the ` +
+        "SCHEDULE. A push's red belongs to that push; only the nightly's red belongs " +
+        "to a merge nobody's owed set covered.",
+    );
+  }
+  const needs = job.body["needs"];
+  const needed = new Set(Array.isArray(needs) ? needs.map(String) : needs === undefined ? [] : [String(needs)]);
+  for (const id of jobIds) {
+    if (id === job.id || id === OWED_JOB) continue;
+    if (!needed.has(id)) {
+      problems.push(
+        `the nightly finding job does not \`needs: ${id}\`, so a red in that job leaves ` +
+          "it un-run. `failure()` is evaluated over the jobs this one WAITS FOR, and " +
+          "a leg outside that set can go red in silence.",
+      );
+    }
+  }
+  const script = job.steps.map((s) => s.run ?? "").join("\n");
+  for (const owed of ["--owed-set", "--range"]) {
+    if (!script.includes(owed)) {
+      problems.push(
+        `the nightly finding prints no \`${owed}\`. The bisection IS the owed set, run ` +
+          "per merge commit in the range since the last green nightly; a finding that " +
+          "named no method would be a sentence rather than a route.",
+      );
+    }
+  }
+  if (!/\bexit 1\b/.test(script)) {
+    problems.push(
+      "the nightly finding never exits non-zero, so the run it explains reports " +
+        "green. Printing the route makes it findable; the criterion is that the RUN " +
+        "says a finding is owed.",
+    );
+  }
+  return problems;
+}
+
+test("a red nightly prints the bisection that names the merge it belongs to", () => {
+  const { jobs } = loadWorkflow();
+  expect(
+    nightlyFindingProblems(
+      jobs.find((j) => j.id === "nightly-finding"),
+      jobs.map((j) => j.id),
+    ),
+    "T-294 criterion 3: a red in the nightly whole run opens a finding naming the " +
+      "merge commit that bisection by the owed set attributes it to",
+  ).toEqual([]);
 });
 
 test("the expected commands derive cleanly from docs/CONVENTIONS.md", () => {
@@ -720,20 +1336,42 @@ test("the expected commands derive cleanly from docs/CONVENTIONS.md", () => {
   expect(steps.length, "derived step count").toBeGreaterThanOrEqual(19);
 });
 
-test("every CONVENTIONS command is a step, verbatim and in CI order", () => {
+test("every CONVENTIONS command is a step, verbatim and in CI order within its job", () => {
   const { steps: expected } = deriveExpectedSteps(readConventions());
-  const actual = runSteps(loadWorkflow().steps);
+  const { jobs } = loadWorkflow();
+  const actual = runSteps(jobs.flatMap((j) => j.steps));
 
-  // Every derived command appears verbatim as its own step...
+  // Every derived command appears verbatim as its own step, SOMEWHERE in
+  // the graph...
   for (const want of expected) {
     const found = actual.some((s) => s.dir === want.dir && s.run === want.run);
     expect.soft(found, `missing verbatim step: ${stepKey(want)}`).toBe(true);
   }
 
-  // ...and in order: filtering the workflow's run steps to the expected
-  // set must reproduce the expected sequence exactly.
-  const filtered = actual.filter((s) => expected.some((w) => w.dir === s.dir && w.run === s.run));
-  expect(filtered).toEqual(expected);
+  // ...and in order WITHIN EACH JOB, which is the only place order still
+  // means anything (T-294). The jobs run CONCURRENTLY, so a single
+  // sequence across them would be a fact about the file's layout rather
+  // than about the pipeline — and a job that legitimately repeats a
+  // prerequisite the doc also lists (`lib/parser` `npm ci` before the
+  // app's build, in four jobs) would break an equality for no property.
+  //
+  // WHAT THE PER-JOB RULE STILL PINS is every ordering CONVENTIONS
+  // actually argues: the token lint ahead of every `npm ci`, the docs
+  // gate after tools/e2e's install and before the browser download, the
+  // census check after the types, the graph gate after the cargo suite,
+  // the boot check last. Each of those pairs lives inside ONE job.
+  const rank = new Map(expected.map((w, i) => [stepKey(w), i]));
+  for (const job of jobs) {
+    const mine = runSteps(job.steps)
+      .filter((s) => rank.has(stepKey(s)))
+      .map((s) => ({ key: stepKey(s), at: rank.get(stepKey(s))! }));
+    const sorted = [...mine].sort((a, b) => a.at - b.at);
+    expect(
+      mine.map((m) => m.key),
+      `job \`${job.id}\` runs the documented commands out of CI order — CONVENTIONS' ` +
+        "own sequence is what each of them is placed by",
+    ).toEqual(sorted.map((m) => m.key));
+  }
 });
 
 test("the workflow runs nothing beyond the derived commands and its infrastructure", () => {
@@ -772,7 +1410,7 @@ test("every `uses:` is pinned by a full 40-hex commit SHA", () => {
   }
 });
 
-test("the xvfb boot step runs the documented boot check with the webkit workaround", () => {
+test("the xvfb boot step runs the documented boot check with the webkit workaround, LAST in its own job", () => {
   const { steps } = loadWorkflow();
   const boot = steps.find((s) => s.run?.includes("boot:check"));
   expect(boot, "boot step present").toBeDefined();
@@ -780,8 +1418,25 @@ test("the xvfb boot step runs the documented boot check with the webkit workarou
   expect(boot!.run).toBe("xvfb-run -a npm run boot:check");
   expect(boot!["working-directory"], "npm resolves the script from tools/e2e").toBe("tools/e2e");
   expect(boot!.env?.WEBKIT_DISABLE_DMABUF_RENDERER).toBe("1");
-  // LAST step — the cargo cache from the test step warms its build.
-  expect(steps[steps.length - 1]).toBe(boot);
+
+  // ONE STEP AND ONE JOB (T-294). It used to be the last step of the one
+  // job; it is now the last step of `native`, which is where the cargo
+  // cache it warms its build from is restored — so the placement
+  // argument is unchanged and its SITE is what moved.
+  expect(steps.filter((s) => s.run?.includes("boot:check")).length, "exactly one").toBe(1);
+  const native = jobSteps("native");
+  expect(
+    native[native.length - 1],
+    "LAST in `native` — the cargo cache warms its build",
+  ).toEqual(boot);
+
+  // AND IT IS GATED ON THE BOOT TRIGGER, never on the rust suite's own
+  // switch. BOOT GATE fires on app/src-tauri/**, app/src/** or either
+  // manifest — a WIDER trigger than the rust suite's package root — so a
+  // change under app/src/ owes the boot check while owing no cargo test.
+  expect(boot!.if, "the boot half carries its own condition").toContain(
+    `needs.${OWED_JOB}.outputs.run-boot`,
+  );
 });
 
 test("the apt step installs the Tauri v2 webkit2gtk set + xvfb", () => {
@@ -826,6 +1481,17 @@ test("the apt step installs the Tauri v2 webkit2gtk set + xvfb", () => {
 
 /** The e2e lane step itself — the anchor both disk steps are placed against. */
 const LANE_STEP: Step = { dir: "tools/e2e", run: "npm test" };
+
+/**
+ * ...MATCHED BY PREFIX SINCE T-294, because the lane step now carries
+ * its shard's own spec list (`npm test -- ${{ matrix.specs }}`). The
+ * anchor is the LEG, not the argument list: a derivation that demanded
+ * the bare command would have lost the floor the moment the leg was
+ * sharded, which is the run the floor exists for.
+ */
+const LANE_RUN = /^npm test\b/;
+const isLaneStep = (s: WorkflowStep): boolean =>
+  s["working-directory"] === LANE_STEP.dir && LANE_RUN.test((s.run ?? "").trim());
 
 /** The one place ci.yml writes the floor down. */
 const DISK_FLOOR_ENV = "E2E_DISK_FLOOR_GIB";
@@ -920,9 +1586,7 @@ function diskFloorProblems(step: WorkflowStep, name: string): string[] {
  */
 export function diskGuardProblems(steps: WorkflowStep[]): string[] {
   const problems: string[] = [];
-  const laneIndex = steps.findIndex(
-    (s) => s["working-directory"] === LANE_STEP.dir && s.run?.trim() === LANE_STEP.run,
-  );
+  const laneIndex = steps.findIndex(isLaneStep);
   if (laneIndex < 0) {
     return [
       `.github/workflows/ci.yml has no \`[${String(LANE_STEP.dir)}] ${LANE_STEP.run}\` ` +
@@ -988,25 +1652,27 @@ export function diskGuardProblems(steps: WorkflowStep[]): string[] {
 }
 
 test("the runner's disk is read on both sides of the e2e lane, behind a floor that can fire", () => {
-  const { steps } = loadWorkflow();
+  const steps = jobSteps(E2E_JOB);
   expect(
     diskGuardProblems(steps),
     "T-278: ci.yml reads the runner's disk before and after the e2e lane and refuses " +
       "below a floor it states once — these are the ways that guard has come apart",
   ).toEqual([]);
 
-  // AND THE PAIR IS NOT THE JOB'S TAIL. The boot step stays last (pinned
-  // by the xvfb body above), so the after-reading sits BETWEEN the lane
-  // and the boot check. Appending it instead would have been the obvious
-  // spelling and the wrong one: `always()` at the end of the job reads a
-  // disk the boot check had already moved.
-  const laneIndex = steps.findIndex(
-    (s) => s["working-directory"] === LANE_STEP.dir && s.run?.trim() === LANE_STEP.run,
-  );
+  // AND NOTHING RUNS AFTER THE READING (T-294 restating T-278's clause
+  // for the graph). It used to say the opposite — that the pair was NOT
+  // the job's tail, because the boot check followed it and `always()` at
+  // the very end would have read a disk the boot check had already
+  // moved. The boot check now runs on its own runner, so the property
+  // that keeps the reading honest is the OTHER one: this is the last
+  // step of the shard, so what it measures is the lane's own spend and
+  // nothing else's.
+  const laneIndex = steps.findIndex(isLaneStep);
   expect(
     laneIndex + 1,
-    "the after-reading is not the job's last step — the boot check follows it",
-  ).toBeLessThan(steps.length - 1);
+    `the after-reading is the last step of \`${E2E_JOB}\` — a step after it would ` +
+      "move the disk this reading is supposed to attribute to the lane",
+  ).toBe(steps.length - 1);
 
   // THE EXECUTING ARM (T-278's verdict, correction 2): `diskGuardProblems`
   // derives that the step CARRIES an `exit 1`; whether the floor can FIRE
@@ -1053,14 +1719,12 @@ test("the runner's disk is read on both sides of the e2e lane, behind a floor th
 });
 
 test("FIXTURE: six one-edit mutants of the disk guard — deleted, moved, floor stale in the name, floor zero, print-only, `always()` dropped — each red BY NAME", () => {
-  const { steps } = loadWorkflow();
+  const steps = jobSteps(E2E_JOB);
 
   // THE CONTROL. Every mutant below is this list with ONE edit, so a red
   // is the edit and never the scaffolding (method/roles/verifier.md 2b).
   expect(diskGuardProblems(steps), "the real workflow derives clean").toEqual([]);
-  const laneIndex = steps.findIndex(
-    (s) => s["working-directory"] === LANE_STEP.dir && s.run?.trim() === LANE_STEP.run,
-  );
+  const laneIndex = steps.findIndex(isLaneStep);
   expect(laneIndex, "the e2e lane step is found").toBeGreaterThan(0);
   const before = steps[laneIndex - 1]!;
   const after = steps[laneIndex + 1]!;
@@ -1313,17 +1977,44 @@ export function diskLedgerProblems(steps: WorkflowStep[]): string[] {
   return problems;
 }
 
-test("every step that can consume the runner's disk is followed by a reading, taken the same way", () => {
-  const { steps } = loadWorkflow();
+test("every step that can consume the runner's disk is followed by a reading, taken the same way, IN EVERY JOB", () => {
+  const { jobs } = loadWorkflow();
+
+  // ONE LEDGER PER JOB (T-294). Each job is a FRESH RUNNER — its own
+  // image, its own arrival figure, its own installs — so "the interval
+  // between two readings" is only ever a fact inside one of them, and a
+  // ledger derived over the concatenation would be measuring intervals
+  // between different machines.
+  //
+  // THE CENSUS FIRST, so this loop cannot pass by iterating nothing: a
+  // job that installs, caches or builds owes a ledger, and the graph has
+  // several. A workflow whose jobs all stopped consuming disk would be a
+  // broken classifier long before it was a job that writes nothing.
+  const owing = jobs.filter((j) => j.steps.some((s) => isHeavy(s)));
   expect(
-    diskLedgerProblems(steps),
-    "T-278-s2: ci.yml reads the runner's disk after every step that can consume it, " +
-      "so the interval between two readings attributes what a red floor cannot",
-  ).toEqual([]);
+    owing.map((j) => j.id),
+    "the jobs that install, cache or build — an empty set here is a broken " +
+      "classifier, and it would make every check below vacuous",
+  ).toEqual(["owed", "checks", "parser", "app", "native", "e2e"]);
+
+  for (const job of owing) {
+    expect(
+      diskLedgerProblems(job.steps),
+      `T-278-s2 in job \`${job.id}\`: it reads the runner's disk after every step that ` +
+        "can consume it, so the interval between two readings attributes what a red " +
+        "floor cannot",
+    ).toEqual([]);
+  }
+
+  // AND A JOB THAT OWES NO LEDGER OWES NO READING. `nightly-finding`
+  // checks nothing out and installs nothing; requiring a disk reading
+  // there would be ceremony rather than a measurement.
+  const idle = jobs.filter((j) => !j.steps.some((s) => isHeavy(s)));
+  expect(idle.map((j) => j.id)).toEqual(["nightly-finding"]);
 });
 
 test("FIXTURE: four one-edit mutants of the ledger — a reading dropped, one drifted, the image version gone, the arrival taken late — each red BY NAME", () => {
-  const { steps } = loadWorkflow();
+  const steps = jobSteps(E2E_JOB);
   expect(diskLedgerProblems(steps), "the real workflow derives clean").toEqual([]);
 
   const firstHeavy = steps.findIndex((s) => isHeavy(s));
@@ -1687,7 +2378,7 @@ export function freeDiskProblems(steps: WorkflowStep[]): string[] {
 }
 
 test("the runner's disk is freed before the floor reads it, and never where the job would miss it", () => {
-  const { steps } = loadWorkflow();
+  const steps = jobSteps(E2E_JOB);
   expect(
     freeDiskProblems(steps),
     "T-278-s2: ci.yml removes toolchains this job never invokes before the floor " +
@@ -1696,7 +2387,7 @@ test("the runner's disk is freed before the floor reads it, and never where the 
 });
 
 test("FIXTURE: six one-edit mutants of the free-disk step — deleted, moved after the floor, a protected path among the candidates, an unprotected cache, `du` dropped, and a step that can fail the job — each red BY NAME", () => {
-  const { steps } = loadWorkflow();
+  const steps = jobSteps(E2E_JOB);
   expect(freeDiskProblems(steps), "the real workflow derives clean").toEqual([]);
   const at = steps.findIndex((s) => s.name !== undefined && FREE_NAME.test(s.name));
   expect(at, "the free-disk step is found").toBeGreaterThan(0);
@@ -1795,7 +2486,7 @@ test("FIXTURE: six one-edit mutants of the free-disk step — deleted, moved aft
 });
 
 test("THE EXECUTING ARM: the free-disk step's own script measures, removes, refuses a protected path and skips an absent one — in a sandbox, and never against the real candidate list", () => {
-  const { steps } = loadWorkflow();
+  const steps = jobSteps(E2E_JOB);
   const free = steps.find((s) => s.name !== undefined && FREE_NAME.test(s.name));
   expect(free, "the free-disk step is present").toBeDefined();
 
@@ -2487,4 +3178,53 @@ test("FIXTURE: an absent package, an unreadable step, an unnamed one and one rea
   const unnamedSaid = stepPackageProblems([unnamed]).problems.join("\n");
   expect(unnamedSaid, "the site is named even without a step name").toContain("(UNNAMED)");
   expect(unnamedSaid).toContain("has no `name:`");
+});
+
+test("the end-to-end job is the ONLY one a matrix expands — the solo-lock legs run one runner each", () => {
+  const { jobs } = loadWorkflow();
+
+  // ── WHY THIS IS A BODY AND NOT A READING (T-294 criterion 1) ───────
+  // `GRADED_SUITES` marks TWO suites solo, and they are solo for
+  // different reasons. The end-to-end leg is solo because its wall time
+  // is a health band — splitting its SPEC FILES across separate runners
+  // is what this card is for, and each runner still runs one lane. The
+  // rust leg is solo because T-088-s4's cache cliff reds `startup_arm`
+  // under contention: a matrix over THAT job would put N cargo builds
+  // on N runners against one cache key, which is the contention the flag
+  // names. Nothing else in this file could see that happen — the disk
+  // ledger, the job graph and the command parity are all satisfied by a
+  // job that runs four times.
+  expect(
+    jobs.filter((j) => j.body["strategy"] !== undefined).map((j) => j.id),
+    "one matrix, and it is the leg the owning-spec map splits",
+  ).toEqual([E2E_JOB]);
+
+  // AND THE SUITES THE MATRIX MAY NOT REACH ARE READ OFF THE REGISTRY
+  // rather than named here, so a suite that gains `solo: true` arrives
+  // with this check rather than without it.
+  const soloElsewhere = Object.values(GRADED_SUITES).filter(
+    (s) => s.solo === true && s.id !== SCOPED_SUITE,
+  );
+  expect(
+    soloElsewhere.map((s) => s.id),
+    "the registry's own solo set, less the leg the shards split",
+  ).toEqual(["rust"]);
+
+  for (const suite of soloElsewhere) {
+    const hosts = jobs.filter((j) =>
+      j.steps.some(
+        (s) =>
+          s["working-directory"] === suite.cwd && (s.run ?? "").startsWith(String(suite.argv[0])),
+      ),
+    );
+    expect(hosts.length, `some job runs the \`${suite.id}\` leg`).toBeGreaterThan(0);
+    for (const host of hosts) {
+      expect(
+        host.body["strategy"],
+        `job \`${host.id}\` runs the SOLO \`${suite.id}\` leg under a matrix — its ` +
+          "registry entry says a run beside another measures the contention rather " +
+          "than the suite",
+      ).toBeUndefined();
+    }
+  }
 });

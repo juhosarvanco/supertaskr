@@ -5,6 +5,25 @@ import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { repoRoot } from "../preflight";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
+// THE CI SIDE OF THE SAME DERIVATION (T-294). `ci-owed.mjs` is what the
+// runner runs: it turns an event into a RANGE, asks this module's own
+// `--owed-set` arm about it, and turns the answer into the workflow's
+// `if:` switches and its shard matrix. Its pure halves are bodied here
+// rather than next door in workflow-parity.spec.ts, because what they
+// are ABOUT is this derivation — the workflow's own SHAPE is that file's.
+import {
+  DEFAULT_SHARD_COUNT,
+  SHARD_COUNT_ENV,
+  askOwedSet,
+  ciPlan,
+  outputLines,
+  owedSetArgv,
+  rangeForEvent,
+  BOOT_SUITES,
+  shardCountFromEnv,
+  shardSpecs,
+  specsFromLegDir,
+} from "../scripts/ci-owed.mjs";
 import {
   ALL_SUITES,
   EXIT,
@@ -2347,4 +2366,304 @@ test("a token that does not cover what the range owes is refused as token-partia
   } finally {
     dropRepo(repo);
   }
+});
+
+
+// ── THE CI SIDE: EVENT -> RANGE -> PLAN -> SHARDS (T-294) ────────────
+
+test("the argv the runner sends is the criterion's own spelling, built once", () => {
+  // THE COMMAND IN THE RUNNER'S LOG AND THE COMMAND A SEAT RE-RUNS AT
+  // HOME ARE ONE DERIVATION. `ci-owed.mjs` spawns this module rather
+  // than importing it precisely so the log carries a line somebody can
+  // paste, and the flags come off this module's own constants — a
+  // retyped `--owed-set` is a second spelling waiting to drift.
+  const argv = owedSetArgv("BASE..TIP", "/some/tree");
+  expect(argv[0]).toMatch(/(^|\/)gate-run\.mjs$/);
+  expect(argv.slice(1)).toEqual([OWED_SET_FLAG, RANGE_FLAG, "BASE..TIP", TREE_FLAG, "/some/tree"]);
+});
+
+test("every event either names THE RANGE RULE's own pair or owes the whole battery, with the reason", () => {
+  const A = "a".repeat(40);
+  const B = "b".repeat(40);
+
+  // A PUSH IS THE INTEGRATOR'S ROW OF THE RANGE RULE'S TABLE. GitHub's
+  // `before` is the branch's tip BEFORE this push, so `before..sha` is
+  // what the push ADDED — never `<merge-base>..<tip>`, never
+  // `<main>..HEAD` between divergent tips.
+  expect(rangeForEvent({ eventName: "push", before: A, sha: B })).toEqual({ range: `${A}..${B}` });
+
+  // A PULL REQUEST'S BASE IS AN ANCESTOR OF THE MERGE REF GitHub builds.
+  expect(rangeForEvent({ eventName: "pull_request", baseSha: A, sha: B })).toEqual({
+    range: `${A}..${B}`,
+  });
+
+  // EVERY OTHER ANSWER IS THE WHOLE BATTERY, AND CARRIES ITS REASON.
+  // This is the derivation's own fail-closed direction, inherited: it
+  // may be wrong by owing too MUCH and never by owing too little.
+  const wholes: [Record<string, string>, RegExp][] = [
+    [{ eventName: "schedule", sha: B }, /nightly net/],
+    [{ eventName: "push", before: "0".repeat(40), sha: B }, /all-zero `before`/],
+    [{ eventName: "push", before: "not-a-sha", sha: B }, /not a commit id/],
+    [{ eventName: "push", before: A, sha: "" }, /not a commit id/],
+    [{ eventName: "pull_request", baseSha: "", sha: B }, /not a commit id/],
+    [{ eventName: "workflow_dispatch", sha: B }, /no pair of commits/],
+    [{ eventName: "release", sha: B }, /no pair of commits/],
+  ];
+  for (const [event, why] of wholes) {
+    const answer = rangeForEvent(event);
+    expect("whole" in answer, `${JSON.stringify(event)} owes the whole battery`).toBe(true);
+    expect("whole" in answer ? answer.whole : "", JSON.stringify(event)).toMatch(why);
+  }
+
+  // AND THE EMPTY CALL IS NOT A RANGE EITHER — the shape a missing
+  // environment produces, which is the one an `if:` would silently read
+  // as "nothing owed".
+  expect("whole" in rangeForEvent()).toBe(true);
+  expect("whole" in rangeForEvent({})).toBe(true);
+});
+
+test("the shard split is deterministic, covers every spec exactly once, and never emits an empty shard", () => {
+  const specs = ["e", "a", "d", "b", "c"];
+  const three = shardSpecs(specs, 3);
+  expect(three, "round robin over the SORTED list, so the split is a function of the set").toEqual([
+    ["a", "d"],
+    ["b", "e"],
+    ["c"],
+  ]);
+  // THE SAME SET GIVES THE SAME SPLIT, whatever order it arrives in —
+  // which is what makes a re-run of one shard mean the same thing.
+  expect(shardSpecs([...specs].reverse(), 3)).toEqual(three);
+
+  // A PARTITION: every spec once, none invented, none dropped.
+  expect(three.flat().sort()).toEqual([...specs].sort());
+
+  // FEWER SPECS THAN SHARDS YIELDS FEWER SHARDS, never an idle runner
+  // holding an empty argument list — `npm test --` with no paths runs
+  // the WHOLE leg, which is the safe direction and not the asked one.
+  expect(shardSpecs(["only"], 4)).toEqual([["only"]]);
+  expect(shardSpecs([], 4)).toEqual([]);
+  for (const bad of [0, -3, Number.NaN]) {
+    expect(shardSpecs(["a", "b"], bad), `${String(bad)} shards is one shard`).toEqual([["a", "b"]]);
+  }
+
+  // AND THE PATHS ARE SPELLED FROM THE LEG'S OWN DIRECTORY, by the same
+  // function that scopes a lane's reading — never by a second strip.
+  expect(specsFromLegDir([`${GRADED_SUITES.e2e.cwd}/tests/x.spec.ts`])).toEqual([
+    "tests/x.spec.ts",
+  ]);
+});
+
+test("the plan runs the suites the range owes, and the whole battery when it owes one", () => {
+  const owed = {
+    suites: ["e2e", "parser"],
+    e2e: { whole: false, specs: [`${GRADED_SUITES.e2e.cwd}/tests/b.spec.ts`, `${GRADED_SUITES.e2e.cwd}/tests/a.spec.ts`] },
+  };
+  const plan = ciPlan({ owed, range: "A..B", shardCount: 2 });
+  expect(plan.suites).toEqual(["e2e", "parser"]);
+  expect(plan.e2eWhole).toBe(false);
+  expect(plan.specCount).toBe(2);
+  expect(plan.shards).toEqual([
+    { shard: 1, shards: 2, specs: "tests/a.spec.ts" },
+    { shard: 2, shards: 2, specs: "tests/b.spec.ts" },
+  ]);
+
+  // THE BOOT CHECK IS DERIVED FROM THE CHANGED PATHS, and it is a
+  // SUPERSET of BOOT GATE's own trigger by construction: every path that
+  // trigger names lies under the app or rust package root, so a changed
+  // path this derivation places into either suite covers all of them.
+  // Wrong in the permitted direction, never in the other.
+  expect(plan.boot, "no changed path lies under app/ or app/src-tauri/").toBe(false);
+  for (const p of [
+    "app/src/App.tsx",
+    "app/src-tauri/src/lib.rs",
+    "app/package.json",
+    "app/src-tauri/Cargo.toml",
+  ]) {
+    expect(ciPlan({ owed, changed: [p] }).boot, `${p} owes the boot check`).toBe(true);
+  }
+
+  // AND THE PATHS, NOT THE SUITES — the case a suite-keyed test calls
+  // equivalent and is not. The DOCS GATE's reader map owes the APP suite
+  // for a change under docs/tasks/, because the app's dogfood bodies
+  // parse the live cards; keyed to the suite, EVERY records-only push
+  // dragged in the apt prerequisites, the cargo cache and a tauri build.
+  expect(
+    ciPlan({ owed: { ...owed, suites: ["app", "parser"] }, changed: ["docs/tasks/T-1-x.md"] }).boot,
+    "a records-only push owes the app suite and NOT the boot check",
+  ).toBe(false);
+  expect(BOOT_SUITES.every((id) => ALL_SUITES.includes(id))).toBe(true);
+  for (const id of BOOT_SUITES) {
+    const dir = PACKAGE_ROOTS[id];
+    expect(suiteOfPath(`${String(dir)}/x`), `${String(dir)} places into ${id}`).toBe(id);
+  }
+
+  // THE WHOLE BATTERY: every graded suite, and the leg's WHOLE spec set
+  // sharded — a nightly that ran a subset would be the same subset the
+  // pushes already ran.
+  const all = ciPlan({
+    owed: undefined,
+    why: "a schedule trigger",
+    shardCount: 3,
+    allSpecs: specFiles(),
+  });
+  expect(all.suites).toEqual([...ALL_SUITES]);
+  expect(all.whole).toBe(true);
+  expect(all.e2eWhole).toBe(true);
+  expect(all.boot).toBe(true);
+  expect(all.why).toContain("a schedule trigger");
+  expect(all.specCount, "every spec in the tree").toBe(specFiles().length);
+  expect(all.shards.length).toBe(3);
+  expect(
+    all.shards.flatMap((sh) => sh.specs.split(" ")).sort(),
+    "the whole leg, partitioned across the shards",
+  ).toEqual(specsFromLegDir(specFiles()).sort());
+
+  // A LEG THAT IS NOT OWED STILL EMITS ONE ENTRY, so the matrix expands
+  // to something — the job's own `if:` is what skips it, and a matrix
+  // that expands to nothing is a workflow-level error.
+  const noLeg = ciPlan({ owed: { suites: ["parser"], e2e: { whole: false, specs: [] } } });
+  expect(noLeg.shards).toEqual([{ shard: 1, shards: 1, specs: "" }]);
+  expect(noLeg.specCount).toBe(0);
+
+  // AND A FAIL-CLOSED DERIVATION CARRIES ITS REASON INTO THE PLAN.
+  const closed = ciPlan({
+    owed: { suites: [...ALL_SUITES], e2e: { whole: true, specs: [] }, failClosed: "it cannot place x" },
+    allSpecs: specFiles(),
+  });
+  expect(closed.why).toBe("it cannot place x");
+});
+
+test("the job switches the workflow reads are one per graded suite, and every one is emitted", () => {
+  // THE SILENT-SKIP FAILURE, FROM THIS SIDE. GitHub reads an `if:` over
+  // an output that was never written as the EMPTY STRING, which is never
+  // `'true'` — so a suite whose switch this program forgets to emit is a
+  // suite that never runs again, on every push, silently. The keys are
+  // DERIVED from the registry so a fifth suite arrives with its own.
+  const plan = ciPlan({ owed: { suites: ["parser"], e2e: { whole: false, specs: [] } }, range: "A..B" });
+  const lines = outputLines(plan);
+  const keys = lines.filter((l) => !l.startsWith("CI_OWED_EOF")).map((l) => l.split(/[=<]/)[0]);
+  for (const id of ALL_SUITES) {
+    expect(keys, `a switch for the graded suite ${id}`).toContain(`run-${id}`);
+  }
+  expect(lines).toContain("run-parser=true");
+  expect(lines).toContain("run-e2e=false");
+  expect(lines).toContain("range=A..B");
+  expect(lines).toContain("shard-count=0");
+
+  // A REASON IS ONE LINE, ALWAYS. GitHub's `key=value` output form ends
+  // at a newline, so a multi-line reason spliced in raw would truncate
+  // the plan — and everything after it would be read as more keys.
+  const wordy = ciPlan({
+    owed: undefined,
+    why: "line one\nline two\n  and three",
+    allSpecs: specFiles(),
+  });
+  const why = outputLines(wordy).find((l) => l.startsWith("why="));
+  expect(why, "the reason is emitted").toBeDefined();
+  expect(String(why)).toBe("why=line one line two and three");
+  expect(outputLines(wordy).every((l) => !l.includes("\n"))).toBe(true);
+});
+
+test("the shard count comes from the workflow's own env, and a nonsense value is the default", () => {
+  expect(shardCountFromEnv({})).toBe(DEFAULT_SHARD_COUNT);
+  expect(shardCountFromEnv({ [SHARD_COUNT_ENV]: "6" })).toBe(6);
+  for (const bad of ["0", "-2", "two", "", "2.5"]) {
+    expect(shardCountFromEnv({ [SHARD_COUNT_ENV]: bad }), bad).toBe(DEFAULT_SHARD_COUNT);
+  }
+});
+
+test("a derivation that FAILED CLOSED arms the boot check too, because a path nobody could place is a path nobody can clear the app of", () => {
+  // ── THE INVARIANT, AND THE ONE LEG THAT IS OUTSIDE IT ──────────────
+  // `ci-owed.mjs`'s own header states the rule: every inability lands on
+  // MORE work, never on less. The graded suites obey it — a path the
+  // derivation cannot place makes `suites` the whole battery and
+  // `e2e.whole` true, and the reason travels into `why`. THE BOOT SWITCH
+  // IS DECIDED BY A SECOND RULE, `changed.some(...)` over the package
+  // roots, and an unplaceable path lies under no package root BY
+  // DEFINITION — so the very input that owes everything is the input
+  // that second rule answers `false` for.
+  //
+  // MEASURED, at the base of this body: a push whose only changed path
+  // is the workflow file derives `suites` app,e2e,parser,rust with
+  // `e2e-whole` true and `run-boot` FALSE, where the same push before
+  // the job graph existed ran the boot step unconditionally.
+  const unplaceable = ".github/workflows/ci.yml";
+  expect(suiteOfPath(unplaceable), "it lies under no package root").toBe(undefined);
+
+  const closed = ciPlan({
+    owed: {
+      suites: [...ALL_SUITES],
+      e2e: { whole: true, specs: [] },
+      failClosed: `the derivation cannot place ${unplaceable}`,
+    },
+    changed: [unplaceable],
+    allSpecs: specFiles(),
+  });
+  expect(closed.suites, "the whole battery, which is what failing closed means").toEqual([
+    ...ALL_SUITES,
+  ]);
+  expect(closed.e2eWhole, "and the leg whole with it").toBe(true);
+  expect(
+    closed.boot,
+    "and the boot check with it — a fail-closed answer may owe too much and never too little",
+  ).toBe(true);
+
+  // THE CONTROL, and the arming is the fail-closed sentence and nothing
+  // else: the SAME shape without it, over a changed path outside app/
+  // and app/src-tauri/, still owes no boot check. So this body cannot be
+  // satisfied by making the switch unconditional.
+  const derived = ciPlan({
+    owed: { suites: ["e2e"], e2e: { whole: false, specs: [] } },
+    changed: ["tools/e2e/tests/x.spec.ts"],
+    allSpecs: specFiles(),
+  });
+  expect(
+    derived.boot,
+    "a DERIVED answer over a path under neither boot root owes no boot check",
+  ).toBe(false);
+});
+
+test("the seam between the derivation and the plan refuses every answer that is not a set", () => {
+  // ── WHERE A FAIL-CLOSED PROPERTY DIES ─────────────────────────────
+  // The derivation fails closed in its own process and says so in its
+  // own words; this file reads that across a SPAWN and a JSON parse.
+  // Every shape that is not a set has to arrive here as a `problem`,
+  // because `derive` turns a problem into THE WHOLE BATTERY and turns
+  // anything it accepts into the plan. A caller that read "no suites"
+  // out of a crash would owe NOTHING on the push that owed everything.
+  const range = `${"a".repeat(40)}..${"b".repeat(40)}`;
+  /** @param stdout what the spawned derivation printed */
+  const answering = (stdout: string, status: number | null = 0, stderr = "") =>
+    () => ({ status, stdout, stderr });
+
+  const good = askOwedSet(
+    range,
+    repoRoot,
+    answering(JSON.stringify({ suites: ["parser"], e2e: { whole: false, specs: [] } })),
+  );
+  expect("owed" in good, "a well-formed set is the one shape that becomes a plan").toBe(true);
+
+  const notASet: [string, Parameters<typeof askOwedSet>[2]][] = [
+    ["a derivation that printed nothing at all", answering("")],
+    ["a derivation that printed prose", answering("cannot place x\n", 2)],
+    ["a derivation that answered a problem", answering(JSON.stringify({ problem: "refused" }))],
+    ["an answer carrying no `suites` at all", answering(JSON.stringify({ e2e: { whole: true } }))],
+    ["an answer whose `suites` is not an array", answering(JSON.stringify({ suites: "parser" }))],
+    ["a spawn that never ran", answering("", null, "spawn ENOENT")],
+    ["an answer that is JSON but not an object", answering("null")],
+  ];
+  for (const [name, spawn] of notASet) {
+    const answer = askOwedSet(range, repoRoot, spawn);
+    expect("problem" in answer, `${name} must arrive as a problem`).toBe(true);
+  }
+
+  // AND THE ARGV THIS SEAM SENDS IS THE ONE THE CRITERION SPELLS — read
+  // off the call rather than off the function that builds it, so a seam
+  // that assembled its own command would red here.
+  let sent: string[] = [];
+  askOwedSet(range, repoRoot, (a) => {
+    sent = a;
+    return { status: 0, stdout: JSON.stringify({ suites: [] }), stderr: "" };
+  });
+  expect(sent).toEqual(owedSetArgv(range, repoRoot));
 });

@@ -126,7 +126,8 @@ ADR-014/015).
   supertaskr-index` = C-07 (workspace inside app/src-tauri) · `tools/e2e/`
   = the real-input lane + the docs-gate/token-lint/brief analysers,
   dev tooling under no component, `.supertaskrignore`d out of the map ·
-  `.github/workflows/` = one CI job, a thin invoker of CONVENTIONS'
+  `.github/workflows/` = a job graph over the owed set the pushed range
+  owes (T-294), each job a thin invoker of CONVENTIONS'
   commands, ENFORCING since the first push (2026-08-29; green end to
   end since run 33274798983). No root workspace (ADR-011,
   reaffirmed). docs/ stays the brain — and since T-084 the brain is a

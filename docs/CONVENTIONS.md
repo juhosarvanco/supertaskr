@@ -318,20 +318,25 @@ and T-236 (2026-09-02, whose pre-compaction text is
 - **THIS SHELL'S `grep` IS A SHIM.** It carries `-I` and REJECTS
   `--include`, so a habit-formed invocation fails on a flag that works
   everywhere else. Use `command grep`; sweep NULs with `perl -0777`.
-- **A PUSH CANCELS THE RUNNING CI JOB.** Commit stamps freely; BATCH THE
-  PUSH — and with T-203's token gate each push wants a fresh four-suite
-  battery anyway. **Since T-237 the push guard HOLDS this**: a push while
-  a run for the branch is in flight is REFUSED, naming the run, and
-  `SUPERTASKR_CANCEL_CI=<that run's id>` is the acknowledgement that cancels
-  it knowingly.
+- **A PUSH NO LONGER CANCELS THE RUNNING CI JOB (T-294), AND NOBODY
+  WAITS ON IT.** ci.yml's concurrency group is the COMMIT, so two pushes
+  hold two groups: each pushed tree gets its own run and its own verdict.
+  **T-237's REFUSAL IS RETIRED WITH THE CANCELLATION IT WAS ABOUT**, and
+  so is `SUPERTASKR_CANCEL_CI` — there is nothing left to acknowledge, and
+  a variable that clears a refusal nothing raises is the override hatch
+  this guard ships none of. The guard now ANNOUNCES a run in flight,
+  naming it and its head sha: **two verdicts are live at once and they
+  arrive in whatever order they finish**, so read them BY HEAD SHA and
+  never by their order. Batching still buys something — with T-203's
+  token gate each push owes its own range's owed set — but it buys
+  tokens, not a queue.
 - **AND THEN READ IT.** `gh run list --limit 5` after a batch, and
   `gh run view <id> --log-failed` on anything red (`--attempt 1` when a
   red was re-run green). **Since T-237 the guard ANNOUNCES the newest
   verdict at every push** — run id, failing step, and whether the pushed
   tree reaches that step's package — and discloses an unreachable `gh`;
-  the reading is still yours. Batching exists so CI
-  gets to FINISH, which buys nothing if nobody looks: main sat RED for
-  roughly five hours across two distinct failures while a seat pushed
+  the reading is still yours, and it buys nothing if nobody looks: main
+  sat RED for roughly five hours across two failures while a seat pushed
   over both, reporting "all four suites green" — true locally, and not
   the claim that mattered (the 2026-09-01 records). **A LOCAL BATTERY
   AND CI ARE DIFFERENT MEASUREMENTS AND ONLY ONE OF THEM RUNS ON A
@@ -525,10 +530,37 @@ and T-236 (2026-09-02, whose pre-compaction text is
   `npx playwright install
   --with-deps chromium` in place of the one-time local `npx playwright
   install chromium` — the Linux system libs a fresh runner lacks. IT IS
-  AN ENVIRONMENT DIFFERENCE, and that is the whole list (T-054 closed
-  the two that were only CI spelling a documented command a second way,
-  T-045-s1; T-256 closed app/'s install, which was never an environment
-  difference at all — the doc now says the `npm ci` CI always ran).
+  AN ENVIRONMENT DIFFERENCE, and that is the whole list (T-054 and
+  T-045-s1 closed the two that were only CI spelling a documented
+  command twice; T-256 closed app/'s install).
+  SINCE T-294 CI IS A JOB GRAPH, NOT ONE JOB, AND WHAT IT RUNS IS THE
+  OWED SET OF THE PUSHED RANGE (ADR-024 decision 4). The first job spawns
+  the blessed gate-runner's own `--owed-set --range <base>..<tip>` arm on
+  the runner — cited by description, because that runner is NAMED once in
+  this file and a body requires exactly that; it is the SAME derivation
+  the push guard requires a token to cover — and every
+  leg is a `needs:` on that answer, so a suite the range does not owe is
+  a SKIPPED JOB rather than a job that starts and finds nothing to do.
+  THE END-TO-END LEG IS SHARDED across runner jobs BY OWNING SPEC
+  (T-271's map): one matrix, one runner per shard, and the lane step is
+  `npm test -- ${{ matrix.specs }}` — the doc's own `npm test` with that
+  shard's spec files appended. The rust leg and the boot check are NEVER
+  split and share one runner: their cost is a cargo build that sharding
+  would pay N times. The `checks` job — the token lint, the docs gate,
+  the types and the census check — runs on EVERY push whatever the range
+  owes, because each reads the whole tree rather than a package. ONE RUN
+  PER PUSH, KEYED BY ITS COMMIT: the concurrency group is `github.sha`,
+  so two pushes hold two groups and neither can cancel the other, and
+  nobody waits on the previous run; `cancel-in-progress` stays true and
+  now supersedes only a second run over the SAME commit, whose tree is
+  byte-identical. THE WHOLE FOUR SUITES RUN NIGHTLY ON MAIN, on a
+  schedule trigger — the owed set gives up the CROSS-SPEC RED and that
+  is where the class is caught. A RED NIGHTLY OPENS A FINDING naming the
+  merge commit the bisection attributes it to, and the bisection is
+  `--owed-set` per merge commit in the range since the last GREEN
+  nightly: the run prints that recipe and a seat files the card, because
+  filing it needs a write grant this workflow deliberately does not
+  carry.
   The token lint runs as `npm run lint:tokens -- --selftest`
   then `npm run lint:tokens` from tools/e2e — the job's FIRST step,
   ahead of every `npm ci`, because `npm run` needs no installed
@@ -538,14 +570,13 @@ and T-236 (2026-09-02, whose pre-compaction text is
   position — do not "fix" the ordering (T-090): `docs-gate.mjs` imports
   `yaml`, the SAME package lib/parser parses task cards with so a block
   parses for both or for neither (T-057), so it sits immediately after
-  tools/e2e's `npm ci` and ahead of the 250MB browser download;
-  `scripts/docs-scan.mjs` stays zero-dependency so the constraint
-  belongs to the wrapper alone. The boot check runs as
+  tools/e2e's `npm ci`; `scripts/docs-scan.mjs` stays zero-dependency
+  so the constraint belongs to the wrapper alone. The boot check runs as
   `xvfb-run -a npm run boot:check` from tools/e2e — a real wrapper,
   since a headless runner has no display, around the documented command.
   CI also runs
   `command -v cargo-audit >/dev/null 2>&1 || cargo install cargo-audit --locked`
-  (the dev-tool setup above — guarded, because the cargo cache restores
+  (the dev-tool setup above — guarded: the cargo cache restores
   ~/.cargo/bin and a restored binary is the happy path, T-153-s13), and
   it deliberately does NOT run `npm run tauri dev` or
   `npm run tauri build` — one opens a window and the other packages a
@@ -558,19 +589,13 @@ and T-236 (2026-09-02, whose pre-compaction text is
   exact-set census, T-127), nor
   `cargo run -p supertaskr-index -- arch blast <path|slug> --root ../..`,
   which reports like `arch` (T-135), nor `npm run boot:orphan-drill`
-  (T-061-s5, ruled here): it opens a window and builds the app, roughly
-  DOUBLING the boot step's cost, and it deliberately SIGKILLs a process
-  mid-boot — a REGRESSION drill rather than a release gate, whose
-  property cannot drift without somebody editing
-  `tauri-boot-check.mjs`'s exit path.
+  (T-061-s5, ruled here): a REGRESSION drill rather than a release
+  gate, and it doubles the boot step's cost.
   THE CENSUS-CURRENCY GATE runs as `npm run capabilities:check` from
-  tools/e2e, immediately AFTER `npm run typecheck` and BEFORE the browser
-  download (T-153-s8, each placement decided by a measurement on that
-  card): not in the token lint's bare-checkout position, because it
-  IMPORTS a `.mjs` out of tests/ where scripts import `yaml`; before the
-  browser download by `index --check`'s own argument; after
-  `npm run typecheck` because the generator reads the same spec files
-  `tsc` validates. CI deliberately does NOT run `npm run capabilities`,
+  tools/e2e, immediately AFTER `npm run typecheck` (T-153-s8): not in
+  the token lint's bare-checkout position, because it IMPORTS a `.mjs`
+  out of tests/ where scripts import `yaml`; after `npm run typecheck`
+  because the generator reads the same spec files `tsc` validates. CI deliberately does NOT run `npm run capabilities`,
   the GENERATOR: run in the runner it rewrites the file the check
   judges, exits 0, and certifies its own output. The regeneration stays
   a hand run, and `--check` prints it by name.
@@ -585,14 +610,11 @@ and T-236 (2026-09-02, whose pre-compaction text is
   this clause NAMES that character without typing it, the section's
   in-parenthetical legends use commas, and the tools/e2e bullet's own
   `Exit 0 booted` legend sits after its LAST command. THE COST is a
-  DELTA: a separator inside the `index --check` parenthetical drops the
-  section's exposed commands by FIVE (T-054, T-078, ADR-019 phase 5).
+  DELTA of FIVE exposed commands (T-054, T-078, ADR-019 phase 5).
   AND THE TRUNCATION IS NOT MOSTLY SILENT: the derivation runs in BOTH
-  directions, so every command the SPEC claims and the doc stops
-  exposing reds BY NAME, and **a command the DOC gains that the spec
-  does not yet claim is the case it is LOUDEST about** —
-  `deriveExpectedSteps`' `for (const key of doc.keys())` loop names the
-  command and both dispositions open to it (the sentence that once said
+  directions, so a command the SPEC claims and the doc stops exposing
+  reds BY NAME, and **a command the DOC gains that the spec does not yet
+  claim is the case it is LOUDEST about** (the sentence that once said
   the opposite here is retracted, T-090 absorbing T-084-s2). **WHAT IS
   SILENT IS A SHAPE, NEVER A DIRECTION**: a command the derivation
   cannot SEE — an INDENTED bullet and a fenced block, both named by

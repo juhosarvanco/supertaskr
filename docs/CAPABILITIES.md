@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **845 behaviours** — 843 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **860 behaviours** — 858 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -491,6 +491,14 @@ Census: **845 behaviours** — 843 extracted sentences + 2 named-not-extracted (
 - the RANGE arm grades the owed set, records the set and its range in the token, and its e2e entry names the specs it graded
 - the owed set becomes runnable suites in the registry's own order, with the end-to-end leg scoped only when it is narrowed
 - a token that does not cover what the range owes is refused as token-partial, and the five earlier reasons keep their names
+- the argv the runner sends is the criterion's own spelling, built once
+- every event either names THE RANGE RULE's own pair or owes the whole battery, with the reason
+- the shard split is deterministic, covers every spec exactly once, and never emits an empty shard
+- the plan runs the suites the range owes, and the whole battery when it owes one
+- the job switches the workflow reads are one per graded suite, and every one is emitted
+- the shard count comes from the workflow's own env, and a nonsense value is the default
+- a derivation that FAILED CLOSED arms the boot check too, because a path nobody could place is a path nobody can clear the app of
+- the seam between the derivation and the plan refuses every answer that is not a set
 
 ## genesis-screen
 
@@ -804,9 +812,9 @@ Census: **845 behaviours** — 843 extracted sentences + 2 named-not-extracted (
 - the guard is wired into .claude/settings.json on the Bash matcher
 - the two commands this arm runs are the ones docs/CONVENTIONS.md publishes
 - a failing step's package is READ out of the workflow, in this repository and in a fixture
-- a run still in flight refuses the push, and unguarded that same push lands
+- a run still in flight is ANNOUNCED and the push LANDS — the refusal is retired with the cancellation it was about
 - the same push lands once that run is completed — the positive control
-- the acknowledgement names the run, and nothing else acknowledges anything
+- the acknowledgement is RETIRED, and no environment variable moves this guard's CI arm
 - a red CI is ANNOUNCED with its failing step, and is never a refusal
 - the newest COMPLETED run is not the question — cancellations are skipped and counted
 - `gh` absent announces that CI was not asked and allows — reachable is the control
@@ -829,9 +837,9 @@ Census: **845 behaviours** — 843 extracted sentences + 2 named-not-extracted (
 - the `gh` bound is a ratio over a MEASUREMENT, and the measurement is said where CI can read it
 - an ordinary push pays ONE round trip, and only a red pays the second
 - the branch a push LANDS on is read off the refspec, and doubt is declared
-- a refspec push from a LANE checkout is judged on the branch it lands on, and is refused there
+- a refspec push from a LANE checkout is judged on the branch it lands on, and is ANNOUNCED there
 - a lane pushing `HEAD:refs/heads/main` is STILL not the integration checkout (T-238's fifth criterion)
-- `--all` and `--mirror` are REFUSED against a live run — they push HEAD's branch too
+- `--all` and `--mirror` are JUDGED against a live run — they push HEAD's branch too
 - `--repo` does not move the positional grammar, and the reader is measured against git's own parser
 - a destination that would read as an OPTION never reaches `gh`, and the push is allowed
 - a push whose range moves one package's source owes only that package's suite, and a token recording only it is ACCEPTED
@@ -931,16 +939,22 @@ Census: **845 behaviours** — 843 extracted sentences + 2 named-not-extracted (
 
 ## workflow-parity
 
-- ci.yml is valid YAML with the one pinned ubuntu job
+- ci.yml is valid YAML, and its job graph gates every graded suite on an output that exists
+- FIXTURE: four one-edit mutants of the job graph — an output misspelled, a `needs` dropped, a suite left with no switch, an unpinned runner — each red BY NAME
+- the owed set is derived ON THE RUNNER, and its answer is what gates every leg
+- FIXTURE: three one-edit mutants of the owed job — the id dropped, a payload spliced into the script, a renamed output — each red BY NAME
+- the end-to-end leg is sharded by owning spec, and the free-disk floor holds on every shard
+- FIXTURE: three one-edit mutants of the shard job — the matrix hand-written, `fromJSON` dropped, the spec list unread — each red BY NAME
+- a red nightly prints the bisection that names the merge it belongs to
 - the expected commands derive cleanly from docs/CONVENTIONS.md
-- every CONVENTIONS command is a step, verbatim and in CI order
+- every CONVENTIONS command is a step, verbatim and in CI order within its job
 - the workflow runs nothing beyond the derived commands and its infrastructure
 - every `uses:` is pinned by a full 40-hex commit SHA
-- the xvfb boot step runs the documented boot check with the webkit workaround
+- the xvfb boot step runs the documented boot check with the webkit workaround, LAST in its own job
 - the apt step installs the Tauri v2 webkit2gtk set + xvfb
 - the runner's disk is read on both sides of the e2e lane, behind a floor that can fire
 - FIXTURE: six one-edit mutants of the disk guard — deleted, moved, floor stale in the name, floor zero, print-only, `always()` dropped — each red BY NAME
-- every step that can consume the runner's disk is followed by a reading, taken the same way
+- every step that can consume the runner's disk is followed by a reading, taken the same way, IN EVERY JOB
 - FIXTURE: four one-edit mutants of the ledger — a reading dropped, one drifted, the image version gone, the arrival taken late — each red BY NAME
 - the runner's disk is freed before the floor reads it, and never where the job would miss it
 - FIXTURE: six one-edit mutants of the free-disk step — deleted, moved after the floor, a protected path among the candidates, an unprotected cache, `du` dropped, and a step that can fail the job — each red BY NAME
@@ -958,6 +972,7 @@ Census: **845 behaviours** — 843 extracted sentences + 2 named-not-extracted (
 - every workflow step's package is readable by the push guard and is in the tree
 - FIXTURE: renaming a step in a copy of ci.yml degrades the guard's lookup BY NAME
 - FIXTURE: an absent package, an unreadable step, an unnamed one and one read out of a run block each red BY NAME
+- the end-to-end job is the ONLY one a matrix expands — the solo-lock legs run one runner each
 
 ## workflow-permissions
 
