@@ -3684,7 +3684,20 @@ function ritualStub(plan: ReturnType<typeof dispatchLanePlan>, failing: string):
   const calls: StubCall[] = [];
   const reads: string[] = [];
   const writes: string[] = [];
-  const stamped = stampCard(FIXTURE_CARD, plan.stamp).text;
+  // THE KEEPER THIS STUB REPORTS IS GREEN AND GRADED, so the tier step
+  // has a real answer to classify with — which is also what makes the
+  // expected tier below computable on this side without re-running the
+  // arm. A failing keeper is injected as the RED that step really meets.
+  const keeperGreen = { pinned: true, answered: true, why: "the stub graded the fence green" };
+  // THE TIER'S OWN INJECTED FAILURE IS A CARD WITH NO SIZE (T-296): the
+  // classifier reads the card and the tree, so the only honest way to
+  // make it refuse is to hand it a card it cannot read. The plan is the
+  // card's side of that input, and this is the one place a body moves it.
+  if (failing === "tier") plan.tierInput.size = "";
+  const expectedTier =
+    failing === "tier" ? "" : classifyTier({ ...plan.tierInput, keeper: keeperGreen }).tier;
+  const stampFields = { ...plan.stamp, ...(expectedTier === "" ? {} : { tier: expectedTier }) };
+  const stamped = stampCard(FIXTURE_CARD, stampFields, { insertAfter: { tier: "size" } }).text;
   const manifest = JSON.stringify({
     version: 1,
     taskId: plan.taskId,
@@ -3698,6 +3711,14 @@ function ritualStub(plan: ReturnType<typeof dispatchLanePlan>, failing: string):
     run: (argv: string[], opts: { cwd: string; out?: string }) => {
       calls.push({ argv, cwd: opts.cwd, ...(opts.out === undefined ? {} : { out: opts.out }) });
       const has = (a: string) => argv.includes(a);
+      if (has(String(plan.keeperArgv[1]))) {
+        // A GRADED READING EITHER WAY — the difference between a red
+        // baseline and a derivation that graded nothing is the VERDICT
+        // LINE, not the exit, so both answers carry one.
+        return failing === "keeper"
+          ? { status: 1, stdout: `${plan.keeperVerdictToken} suite=e2e verdict=RED bodies=7\n`, stderr: "" }
+          : { status: 0, stdout: `${plan.keeperVerdictToken} suite=e2e verdict=GREEN bodies=7\n`, stderr: "" };
+      }
       if (argv[0] === "lsof") {
         return failing === "port"
           ? { status: 0, stdout: "COMMAND PID USER\nnode 4242 someone\n", stderr: "" }
@@ -3744,10 +3765,17 @@ function ritualStub(plan: ReturnType<typeof dispatchLanePlan>, failing: string):
         return manifest;
       }
       if (file === plan.cardFile) return FIXTURE_CARD;
+      // THE KEEPER STEP READS THE RUNNER ITSELF, to tell "this project
+      // publishes no keeper runner" from "the keeper ran". The stub
+      // publishes one.
+      if (file === plan.keeperArgv[1]) return "// the runner";
       throw new Error(`the stub was asked for ${file}, which no step of this ritual reads`);
     },
     write: (file: string, _text: string) => {
       writes.push(file);
+      if (failing === "phase1" && file === plan.phase1File) {
+        throw new Error(`EACCES: permission denied, open '${file}'`);
+      }
     },
   };
   return { io, calls, reads, writes };
@@ -3773,6 +3801,16 @@ function attempted(stub: RitualStub, plan: ReturnType<typeof dispatchLanePlan>, 
       return call((c) => c.out === plan.briefFile);
     case "port":
       return call((c) => c.argv[0] === "lsof");
+    case "keeper":
+      return call((c) => c.argv.includes(String(plan.keeperArgv[1])));
+    case "tier":
+      // THE TIER STEP RUNS NO COMMAND — it classifies, and the only trace
+      // it leaves in this world is the card read it takes to see whether
+      // an author wrote a tier by hand. It runs BEFORE the stamp, so that
+      // read is unambiguous evidence this step was reached.
+      return stub.reads.includes(plan.cardFile);
+    case "phase1":
+      return stub.writes.includes(plan.phase1File);
     default:
       throw new Error(`no signature for step ${id}`);
   }
@@ -3802,8 +3840,12 @@ for (const step of DISPATCH_STEPS) {
       "the ledger of completed steps does not end where the ritual stopped",
     ).toBe(step.n - 1);
     // The brief step's injected failure is a COULD NOT RUN, because 1 is a
-    // code that step legitimately answers with the document written.
-    expect(result.code).toBe(step.id === "brief" ? EXIT.CANNOT_RUN : EXIT.FOUND);
+    // code that step legitimately answers with the document written — and
+    // the phase 1 step's is one for the plainer reason that a file it
+    // could not write is not a finding about the card.
+    expect(result.code).toBe(
+      step.id === "brief" || step.id === "phase1" ? EXIT.CANNOT_RUN : EXIT.FOUND,
+    );
 
     // THE REFUSAL NAMES THE STEP, THE COMMAND AND THE EXIT.
     const refusal = result.findings.join("\n");
@@ -3836,9 +3878,14 @@ for (const step of DISPATCH_STEPS) {
     }
 
     // AND EVERY WORKTREE THIS RUN CUT IS TAKEN AWAY, AND ONLY THOSE.
+    // THE STEP NUMBERS ARE DERIVED FROM `DISPATCH_STEPS`, never typed:
+    // T-296 put three steps into this ritual and a typed 6 and 2 would
+    // have moved silently under them.
+    const stepNo = (id: string) =>
+      (DISPATCH_STEPS.find((d) => d.id === id) as (typeof DISPATCH_STEPS)[number]).n;
     const expected = [
-      ...(step.n > 6 ? [plan.bench] : []),
-      ...(step.n > 2 ? [plan.worktree] : []),
+      ...(step.n > stepNo("bench") ? [plan.bench] : []),
+      ...(step.n > stepNo("cut") ? [plan.worktree] : []),
     ];
     expect(result.removed, "the unwind removed a different set of worktrees than this run cut").toEqual(
       expected,
@@ -3852,7 +3899,7 @@ for (const step of DISPATCH_STEPS) {
     expect(
       stub.calls.some((c) => c.argv.includes("-D") && c.argv.includes(plan.branchName)),
       "the branch this run created outlived the worktree, so a re-run fails at the cut",
-    ).toBe(step.n > 2);
+    ).toBe(step.n > stepNo("cut"));
   });
 }
 

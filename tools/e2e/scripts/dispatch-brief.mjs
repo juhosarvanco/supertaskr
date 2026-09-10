@@ -5869,7 +5869,9 @@ export function dispatchLanePlan(ctx, opts) {
     const parent = t.includes("/") ? t.slice(0, t.lastIndexOf("/")) : "";
     return parent !== "" && [...tracked].some((f) => f.startsWith(`${parent}/`));
   };
-  const guardMap = guardClassMap(taskFormatText(ctx.root), guardClassIds(taskFormatText(ctx.root)));
+  // THE CLASSES ARE THE METHOD'S AND THE PATHS ARE THE PROJECT'S, so the
+  // two arguments come from two documents and never from one.
+  const guardMap = guardClassMap(ctx.conventions, guardClassIds(taskFormatText(ctx.root)));
   const runner = blessedRunner(ctx.conventions);
 
   return {
