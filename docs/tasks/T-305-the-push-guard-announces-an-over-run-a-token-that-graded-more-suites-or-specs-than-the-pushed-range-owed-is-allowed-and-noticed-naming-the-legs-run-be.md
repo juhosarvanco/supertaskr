@@ -4,13 +4,14 @@ title: The push guard announces an over-run — a token that graded more suites 
 feature: F-04
 milestone: 4
 size: S
+tier: guarded
 priority: 3
-status: planned
+status: building
 suggested_by: "@human (2026-09-10): \"Rule the loop room, A to I as amended: yes\" — docs/rooms/loop-cost-and-speed.md, ADR-024"
 blocked_by: [T-294]
 touches: [.claude/hooks/push-guard.mjs, tools/e2e/tests/push-guard.spec.ts]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
