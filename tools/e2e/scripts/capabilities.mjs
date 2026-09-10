@@ -36,6 +36,13 @@
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+// T-293, ADR-024 decision 2. THE STANDING READ'S INDEX RIDES WITH THE
+// CENSUS, and this import is the whole of that: every line of the index
+// is derived in `docs-scan.mjs`, the side-effect-free module the docs
+// gate already reads its budgets and its reader map out of. Two
+// generated documents, ONE command — because a second command is a
+// second thing to forget, and the card that put the index here says so.
+import { docsIndexStale, writeDocsIndex } from "./docs-scan.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const e2eRoot = path.resolve(here, "..");
@@ -470,6 +477,8 @@ try {
     console.log(
       `capabilities: wrote ${path.relative(repoRoot, outPath)} (${Buffer.byteLength(fresh)} bytes)`,
     );
+    const index = writeDocsIndex();
+    console.log(`capabilities: wrote ${index.path} (${index.bytes} bytes) — the standing read's index`);
     process.exit(0);
   }
   /** @type {string | null} */
@@ -482,14 +491,30 @@ try {
     );
     process.exit(1);
   }
-  if (committed === fresh) {
-    console.log(`capabilities: CURRENT (${Buffer.byteLength(fresh)} bytes)`);
+  // THE INDEX IS THE SECOND HALF OF THE SAME QUESTION, and both halves
+  // are reported before the exit rather than the first one short-
+  // circuiting: a session told only that the census is stale regenerates
+  // and meets the index's red on the next command.
+  const indexStale = docsIndexStale();
+  if (committed === fresh && indexStale === null) {
+    console.log(
+      `capabilities: CURRENT (${Buffer.byteLength(fresh)} bytes), and docs/INDEX.md is CURRENT`,
+    );
     process.exit(0);
   }
-  console.error(
-    `capabilities: STALE — committed ${Buffer.byteLength(committed)} bytes, ` +
-      `a fresh generation is ${Buffer.byteLength(fresh)} bytes; run npm run capabilities`,
-  );
+  if (committed !== fresh) {
+    console.error(
+      `capabilities: STALE — committed ${Buffer.byteLength(committed)} bytes, ` +
+        `a fresh generation is ${Buffer.byteLength(fresh)} bytes; run npm run capabilities`,
+    );
+  }
+  if (indexStale !== null) {
+    console.error(
+      "capabilities: docs/INDEX.md is STALE — " +
+        `committed ${indexStale.committed === null ? "MISSING" : `${Buffer.byteLength(indexStale.committed)} bytes`}, ` +
+        `a fresh generation is ${Buffer.byteLength(indexStale.fresh)} bytes; run npm run capabilities`,
+    );
+  }
   process.exit(1);
 } catch (err) {
   console.error(

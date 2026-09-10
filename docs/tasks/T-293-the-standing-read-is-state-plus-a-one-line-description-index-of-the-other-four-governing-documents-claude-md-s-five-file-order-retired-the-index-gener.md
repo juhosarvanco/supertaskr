@@ -8,7 +8,7 @@ priority: 1
 status: building
 suggested_by: "@human (2026-09-10): \"Rule the loop room, A to I as amended: yes\" — docs/rooms/loop-cost-and-speed.md, ADR-024"
 blocked_by: []
-touches: [CLAUDE.md, AGENTS.md, method/adapters/, docs/INDEX.md, docs/STATE.md, docs/STATE-template.md, method/docs-templates/STATE.md, tools/e2e/scripts/docs-scan.mjs, tools/e2e/tests/docs-input-gate.spec.ts]
+touches: [CLAUDE.md, AGENTS.md, method/adapters/, docs/INDEX.md, docs/STATE.md, docs/STATE-template.md, method/docs-templates/STATE.md, tools/e2e/scripts/docs-scan.mjs, tools/e2e/scripts/capabilities.mjs, tools/e2e/scripts/docs-gate.mjs, tools/e2e/tests/docs-input-gate.spec.ts]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by:
@@ -28,6 +28,126 @@ Every seat is ordered to read five documents first: 242,673 bytes, about 61K tok
 - The five documents SHALL keep their contract and budgets (ADR-019, ADR-023); this card moves the ORDER of reading, not a byte of their content.
 
 ## Implementation notes
-<!-- executor appends before finishing -->
+
+Built at base cbdafa4e9d9853291eacf9d9bd39134cf4204a76 in the lane
+worktree on branch task/T-293-the-standing-read. Every figure below was
+re-derived here; where it differs from the card's own text, the tree
+wins and the difference is stated.
+
+**THE RATIO.** Tokens are bytes divided by 4 throughout — the measure
+docs/rooms/loop-cost-and-speed.md used for the 61K figure this card was
+cut over, kept in one place as `BYTES_PER_TOKEN` so the before and the
+after are the same measurement rather than two.
+
+**THE STANDING READ, BEFORE AND AFTER.** The five documents CLAUDE.md
+ordered at the base: 243,468 bytes = 60,867 tokens. The card and the
+room say 242,673, measured at an earlier ref; the documents grew between
+that measurement and this base, and 243,468 is what `git cat-file -s`
+gives at cbdafa4e. Counted the way the dispatch brief actually derives a
+read-first set — every `docs/<NAME>.md` the adapter names — the base
+figure is 248,400 bytes = 62,100 tokens, because the adapter also named
+docs/NORTH_STAR.md. After: docs/STATE.md 8,449 + docs/INDEX.md 2,425 +
+docs/NORTH_STAR.md 4,932 = 15,806 bytes = 3,952 tokens. Under the
+10,000-token ceiling by a factor of two and a half, and the two halves
+the card names it for are 10,874 bytes = 2,719 tokens on their own.
+
+**WHAT MOVES THE ORDER.** CLAUDE.md and AGENTS.md are byte-identical and
+now name docs/STATE.md, docs/INDEX.md and docs/NORTH_STAR.md and nothing
+else. That is not a stylistic choice: row 3 of the brief contract
+collects every `docs/<NAME>.md` the adapter mentions ANYWHERE in its
+text and hands the result to a seat, so a governing document's path in
+that file is that document back in the standing read whatever the
+sentence around it says. Both kit adapters under method/adapters/ carry
+the same words, placeholdered, with the hedge the adapter already used
+for the census: "once this project generates it".
+
+**THE INDEX IS DERIVED, NOT TYPED.** Each line is a function of its own
+document's first heading, the sentence its opening paragraph uses to say
+what it is (the "The contract:" sentence where ADR-019's compaction put
+one, the paragraph's first sentence where it did not), and its section
+headings, capped at six with the overflow counted. The set of documents
+is DATA in `INDEXED_DOCS` and is checked against ADR-024 decision 2's own
+sentence by `ruledIndexedDocs`, so a fifth document promoted into the
+standing read reds on the day the decision says so. THE INDEX CARRIES NO
+FIGURE: a byte count in a line would restale the file on every edit to
+any of the four and turn the gate into a nuisance, so what a document
+costs to open is a `wc -c` the preamble names.
+
+**ONE COMMAND, TWO GENERATED DOCUMENTS.** `npm run capabilities` from
+tools/e2e/ now writes docs/CAPABILITIES.md and docs/INDEX.md, and
+`--check` judges both. The whole derivation lives in
+tools/e2e/scripts/docs-scan.mjs — the side-effect-free module the gate
+already reads its budgets and its reader map out of — and both entry
+points hold a THIN CALL and no logic, which is T-057 applied to a rule
+that now has two readers.
+
+**THE DOCS GATE REDS ON A STALE INDEX**, whole-tree like the budget and
+the stale-record halves beside it, because the index goes stale from a
+document the diff need not have touched. Measured by hand at this tree
+with a DATA mutant — one generated line lost its tail:
+
+    docs-gate: docs/INDEX.md is STALE against the documents it indexes —
+    committed 2415 bytes, a fresh generation is 2425 bytes
+    node tools/e2e/scripts/docs-gate.mjs --census   exit 1
+    node tools/e2e/scripts/capabilities.mjs --check exit 1
+
+restored, sha256 verified, both back to exit 0.
+
+**STATE AND THE TWO TEMPLATES** gained one sentence pointing at the
+index and nothing else. docs/STATE.md is 8,449 bytes against its
+8,465-byte warn line: 16 bytes of headroom, and the next checkpoint that
+regenerates it from docs/STATE-template.md should expect to warn. That
+is the honest state of the band, not a problem this card created.
+
+**IN-FENCE FOLLOW-THROUGH: T-159-s3 IS DONE HERE.** Its whole body is
+one paragraph copied out of method/adapters/CLAUDE.md into the two root
+adapters, its fence is CLAUDE.md and AGENTS.md, and its disposition hint
+says to hand it to the next lane holding either file. Copied VERBATIM
+(diffed against the paragraph at the base), and the adapter keeper now
+holds it. Its card still reads `status: planned`; stamping another
+card's status is not this lane's, so the integrator should close it.
+
+**THE METHOD EVAL GATE FIRES** (the diff touches method/**), and the
+method stamp does NOT move in this lane. `node tools/method-evals/run.mjs`
+exit 0, `--selftest` exit 0, 10 model-free evals each. The block the
+fourth obligation asks for, should the integrator bump the stamp:
+
+    Method evals: model-free exit 0, model-in-loop exit 3.
+    Corpus: 10 model-free, 4 model-in-loop.
+    Runner: NONE
+    THE MODEL-IN-LOOP SET DID NOT RUN, so this bump is NOT gated on it.
+    Say that in the commit rather than omitting the line: a bump whose
+    eval result is absent and one whose eval was skipped read the same.
+    Pass rates and token spend are in the run above, at this ref. Do not
+    transcribe them from an earlier run — that is the corpus's own RC-04.
+
+**GRAPH REGEN fires and is a no-op**: the walk excludes tools/ and docs/
+by the root ignore file, and this diff adds no indexed file and moves
+none, so the integrator's regeneration proves it rather than changing
+anything.
+
+**WHAT THIS CARD BREAKS, NAMED.** Three live positive controls pin the
+retired reading order by asserting that the root adapter really does
+name the document the acting role file subtracts. They lose their
+subject by construction here, and every one of them is outside this
+fence: `tools/e2e/tests/brief.spec.ts` (two bodies) and
+`app/src-tauri/src/dispatch/brief.rs` (one). A widening was asked for at
+the start of the lane and granted for the two thin-call files; a second
+ask naming these three went unanswered, so the lane took the option that
+ask declared: land, report the reds by name, file the card. That card is
+T-293-s3, and its repair is ten lines in each file.
+
+**CARDS FILED**: T-293-s1 (the merge ritual stages the census and not
+the index, and its trigger cannot see a governing document's opener),
+T-293-s2 (the kit promises a generated index and the genesis has no step
+that generates one), T-293-s3 (the three positive controls above).
+
+**ONE MEASURED QUIRK, DISCLOSED**: the read-first derivation treats a dot
+as part of a path, so a document written at the END of a sentence reads
+as `docs/X.md.` and is DROPPED, while the same path mid-sentence is
+kept. The JS mirror inherits it deliberately — a mirror that disagrees
+with the list a seat is handed is worthless — and the adapter keeper
+closes the gap by asking the RAW text as well. Found by a mutant that
+survived; the mutant was re-cut and both spellings now red.
 
 ## Verdicts

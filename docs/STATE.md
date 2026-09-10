@@ -28,6 +28,7 @@ record re-touches this file. STATE keeps the MECHANISM; the INSTANCE is
 in the record. A figure appears here only with its derive command.
 **When the byte band warns, content MOVES to the record — a hazard is
 never deleted to fit.** The commit subject opens with `Checkpoint:`.
+**THE OTHER HALF OF THE STANDING READ IS docs/INDEX.md** (ADR-024).
 
 ## Live right now — derive, never quote
 

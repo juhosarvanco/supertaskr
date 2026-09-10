@@ -221,7 +221,7 @@
  *    the safe direction here, exactly as it is for GRAPH REGEN.
  */
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { regexEnd } from "./token-scan.mjs";
@@ -2737,4 +2737,346 @@ export function liveTaskCards(root = repoRoot) {
   return trackedFiles(root)
     .filter(isTaskCardPath)
     .map((rel) => ({ path: rel, content: readFileSync(path.join(root, rel), "utf8") }));
+}
+
+// ── THE STANDING READ'S INDEX (T-293, ADR-024 decision 2) ────────────
+//
+// Every seat used to be ordered to read five governing documents before
+// working — 243,468 bytes at this card's base, about 61K tokens at the
+// room's own bytes/4 ratio — and the pack already carries a lane the
+// bullets its fence implicates. ADR-024 decision 2 cut the standing read
+// to docs/STATE.md plus a ONE-LINE description index of the other four,
+// and this is where that index is DERIVED.
+//
+// NOT ONE LINE OF IT IS TYPED BY HAND, which is the property worth
+// having and the reason the generation lives beside the census rather
+// than in a document somebody edits. Each line is a function of its own
+// document's FIRST HEADING, the sentence its opening paragraph uses to
+// say what it is, and its section headings — so a line is false only
+// while this file is STALE, and stale is what the gate refuses. The
+// failure mode of the paragraph it replaces (a hand-kept summary that
+// drifts) is the same one docs/CAPABILITIES.md exists to remove for
+// behaviour, applied to the documents themselves.
+//
+// AND IT CARRIES NO FIGURE. A byte count in a line would restale this
+// file on every edit to any of the four, which would make the gate below
+// a nuisance rather than a keeper; the cost of opening a document is a
+// `wc -c` the preamble names instead. What restales the index is exactly
+// what the card says restales it: an OPENER that moved.
+
+/** The generated index, repo-relative. A NEW-FILE reservation at T-293. */
+export const INDEX_DOC = "docs/INDEX.md";
+
+/**
+ * The four documents the index carries a line for, IN THE ORDER ADR-024
+ * decision 2 names them.
+ *
+ * DATA, and checked against the ruling rather than trusted: the decision
+ * is a sentence in an accepted ADR, `ruledIndexedDocs` reads the four
+ * names out of it, and the spec asserts the two agree. A fifth document
+ * promoted into the standing read therefore reds here on the day the ADR
+ * says so, instead of being remembered.
+ */
+export const INDEXED_DOCS = Object.freeze([
+  "docs/ROADMAP.md",
+  "docs/ARCHITECTURE.md",
+  "docs/CONVENTIONS.md",
+  "docs/CAPABILITIES.md",
+]);
+
+/** The ruling the set above answers to, and the phrase that finds it. */
+export const INDEX_RULING = Object.freeze({
+  file: "docs/decisions/024-the-proportionate-loop.md",
+  phrase: "Every seat reads STATE and a one-line index of",
+});
+
+/**
+ * The document NAMES ADR-024 decision 2 puts in the index, read out of
+ * the decision's own sentence.
+ *
+ * Throws when the phrase names no sentence — a renamed or re-worded
+ * decision is a hard failure here, never an empty expectation, for the
+ * reason `conventionsBullet` gives two hundred lines above.
+ *
+ * @param {string} [root]
+ * @returns {string[]}
+ */
+export function ruledIndexedDocs(root = repoRoot) {
+  const text = readFileSync(path.join(root, INDEX_RULING.file), "utf8");
+  const at = text.indexOf(INDEX_RULING.phrase);
+  if (at < 0) {
+    throw new Error(
+      `docs-scan: ${INDEX_RULING.file} no longer carries ${JSON.stringify(INDEX_RULING.phrase)} — ` +
+        "the indexed set is checked against the ruling it came from, so a re-worded decision is a " +
+        "hard failure rather than a silently unchecked constant.",
+    );
+  }
+  const rest = text.slice(at + INDEX_RULING.phrase.length);
+  const clause = rest.split(";")[0] ?? "";
+  return clause
+    .split(/,|\band\b/)
+    .map((piece) => piece.trim())
+    .filter((piece) => /^[A-Z][A-Z_]+$/.test(piece));
+}
+
+/** How many section headings one line shows before it says how many more. */
+export const INDEX_SECTION_CAP = 6;
+
+/**
+ * Split collapsed prose into sentences.
+ *
+ * A period, then whitespace, then something a sentence can START with —
+ * a capital, an emphasis marker, a backtick or an opening bracket. The
+ * lookbehind is what keeps `docs/CAPABILITIES.md (generated` and
+ * `2026-08-27` from splitting: neither has whitespace after the period.
+ *
+ * @param {string} paragraph
+ * @returns {string[]}
+ */
+export function sentences(paragraph) {
+  return paragraph
+    .split(/(?<=[.!?])\s+(?=[A-Z*_`"([])/)
+    .map((s) => s.trim())
+    .filter((s) => s !== "");
+}
+
+/**
+ * One document's OPENER: the first heading, and the sentence its opening
+ * paragraph uses to say what the document is.
+ *
+ * The paragraph is the first PROSE block under the `# ` heading — HTML
+ * comments (docs/CAPABILITIES.md opens with a five-line one), blank
+ * lines, sub-headings, lists, tables and fences are skipped, because
+ * none of them is the document telling you what it is. The sentence is
+ * the one containing "The contract:" where the document writes one — the
+ * three compacted documents do, under ADR-019 — and the paragraph's
+ * first sentence where it does not.
+ *
+ * THROWS rather than returning an empty line. An index entry with a
+ * blank half is the hand-maintained summary this file exists to replace,
+ * wearing a generator's costume.
+ *
+ * @param {string} text
+ * @param {string} [rel]  the path, for the message
+ * @returns {{ heading: string, contract: string }}
+ */
+export function docOpener(text, rel = "a document") {
+  const lines = text.split("\n");
+  let i = lines.findIndex((l) => /^#\s+\S/.test(l));
+  if (i < 0) {
+    throw new Error(`docs-scan: ${rel} has no top-level heading — the index line has no name to carry.`);
+  }
+  const heading = /** @type {string} */ (lines[i]).replace(/^#\s+/, "").trim();
+  /** @type {string[]} */
+  const para = [];
+  for (i += 1; i < lines.length; i += 1) {
+    const line = /** @type {string} */ (lines[i]);
+    if (para.length === 0) {
+      if (line.trim() === "") continue;
+      if (line.trimStart().startsWith("<!--")) {
+        while (i < lines.length && !/** @type {string} */ (lines[i]).includes("-->")) i += 1;
+        continue;
+      }
+      if (/^\s*(#|[-*+]\s|\||```|>|<)/.test(line)) continue;
+      para.push(line.trim());
+      continue;
+    }
+    if (line.trim() === "" || /^\s*(#|```|\|)/.test(line)) break;
+    para.push(line.trim());
+  }
+  if (para.length === 0) {
+    throw new Error(
+      `docs-scan: ${rel} has no prose paragraph under its heading — the index line is DERIVED from ` +
+        "that paragraph, and a document that stopped saying what it is cannot be indexed by guessing.",
+    );
+  }
+  const flat = para.join(" ").replace(/\s+/g, " ").trim();
+  const split = sentences(flat);
+  const contract = split.find((s) => s.includes("The contract:")) ?? split[0];
+  if (contract === undefined || contract === "") {
+    throw new Error(`docs-scan: ${rel}'s opening paragraph yielded no sentence.`);
+  }
+  return { heading, contract };
+}
+
+/**
+ * One document's section headings, each cut back to its NAME — the part
+ * before a parenthetical or a dash gloss — because a line that answers
+ * "when do I open this" wants the question, not the heading's footnote.
+ *
+ * @param {string} text
+ * @returns {string[]}
+ */
+export function docSections(text) {
+  return text
+    .split("\n")
+    .filter((l) => /^##\s+\S/.test(l))
+    .map((l) => l.replace(/^##\s+/, "").trim())
+    .map((h) => /** @type {string} */ (h.split(/\s+\(|\s+—\s+|\s+-\s+/)[0]).trim())
+    .filter((h) => h !== "");
+}
+
+/** The "open it at" half of one line: the sections, capped and counted. */
+/**
+ * @param {string[]} sections
+ * @param {number} [cap]
+ * @returns {string}
+ */
+export function indexWhere(sections, cap = INDEX_SECTION_CAP) {
+  if (sections.length === 0) return "it has no sections — read it whole";
+  const shown = sections.slice(0, cap);
+  const rest = sections.length - shown.length;
+  return shown.join(" · ") + (rest > 0 ? ` · +${rest} more` : "");
+}
+
+/** One document's index line, DERIVED. */
+/**
+ * @param {string} rel
+ * @param {string} text
+ * @returns {string}
+ */
+export function indexLine(rel, text) {
+  const { heading, contract } = docOpener(text, rel);
+  // The contract sentence carries em-dashes of its own, so the second
+  // half is introduced by a LABEL rather than by another dash — and the
+  // sentence is closed first, because a derived sentence that lost its
+  // period would otherwise run into the label.
+  const said = /[.!?]$/.test(contract) ? contract : `${contract}.`;
+  return `- **${heading}** (\`${rel}\`) — ${said} **Open it at:** ${indexWhere(docSections(text))}`;
+}
+
+/**
+ * The whole of docs/INDEX.md.
+ *
+ * DETERMINISTIC — no timestamp, the documents in the ruling's own order,
+ * every line a function of the tree — so the currency check below is a
+ * byte comparison and a clean regeneration is a 0-byte diff. The same
+ * contract `capabilities.mjs` states for the census, for the same reason
+ * and enforced by the same command.
+ *
+ * @param {string} [root]
+ * @returns {string}
+ */
+export function renderDocsIndex(root = repoRoot) {
+  const out = [
+    "# Index",
+    "",
+    "<!-- GENERATED — do not edit by hand (T-293, ADR-024 decision 2).",
+    "     Regenerate:  npm run capabilities   (from tools/e2e/ — the same",
+    "                  command that regenerates the behaviour census)",
+    "     Currency:    npm run lint:docs      (the docs gate reds while the",
+    "                  committed index is stale against the documents below)",
+    "     Source: each document's own first heading, the sentence its",
+    "     opening paragraph uses to say what it is, and its section",
+    "     headings. No line here is typed by hand, so a line is false only",
+    "     while this file is stale — and stale is what the gate refuses. -->",
+    "",
+    "The standing read is docs/STATE.md and this file. Everything else",
+    "reaches a seat through its brief's context pack.",
+    "",
+    "**WHEN THE PACK DID NOT HAND YOU THE RULE, YOU HAVE TWO MOVES AND",
+    "NEITHER IS GUESSING.** Write the ask file your lane names",
+    "(`<scratch>/ask-<card id>.md`), park it and keep building; or open the",
+    "document below AT THE SECTION its line names and read that section.",
+    "An architect session once spent a working day rebuilding a belief",
+    "about `blocked_by` that the roadmap's own F-06 entry would have",
+    "corrected in a sentence (T-138).",
+    "",
+    "What opening one COSTS is a measurement, not a figure kept here:",
+    "`wc -c` the paths below.",
+    "",
+  ];
+  for (const rel of INDEXED_DOCS) {
+    out.push(indexLine(rel, readFileSync(path.join(root, rel), "utf8")));
+  }
+  out.push("");
+  return out.join("\n");
+}
+
+/**
+ * The committed index against a fresh generation.
+ *
+ * `null` when they agree — including when neither the file nor the
+ * generation can be produced, which cannot happen: `renderDocsIndex`
+ * throws before it returns a half-derived document.
+ *
+ * @param {string} [root]
+ * @returns {{ committed: string | null, fresh: string } | null}
+ */
+export function docsIndexStale(root = repoRoot) {
+  const fresh = renderDocsIndex(root);
+  /** @type {string | null} */
+  let committed = null;
+  try {
+    committed = readFileSync(path.join(root, INDEX_DOC), "utf8");
+  } catch {
+    committed = null;
+  }
+  return committed === fresh ? null : { committed, fresh };
+}
+
+/**
+ * Write the index. Returns what was written, in bytes.
+ *
+ * @param {string} [root]
+ * @returns {{ path: string, bytes: number }}
+ */
+export function writeDocsIndex(root = repoRoot) {
+  const fresh = renderDocsIndex(root);
+  writeFileSync(path.join(root, INDEX_DOC), fresh);
+  return { path: INDEX_DOC, bytes: Buffer.byteLength(fresh) };
+}
+
+/**
+ * Every `docs/<NAME>.md` a root adapter names, first mention wins.
+ *
+ * THE SAME CALCULUS THE DISPATCH BRIEF'S ROW 3 USES, deliberately: the
+ * brief's `docs_named` (app/src-tauri/src/dispatch/brief.rs) collects
+ * every such path the adapter mentions ANYWHERE in its text and hands
+ * the result to a seat as its read-first set. So "what does the standing
+ * read cost" is answered by this list and not by the sentence a human
+ * reads — and a document whose path wanders back into the adapter's
+ * prose is back in every seat's standing read whether or not the
+ * sentence says so.
+ *
+ * AND IT INHERITS THAT DERIVATION'S ONE QUIRK ON PURPOSE, MEASURED AT
+ * T-293: the run of characters a path is read as includes the DOT, and
+ * the result must end `.md` — so a path written at the END OF A SENTENCE
+ * reads as `docs/X.md.` and is DROPPED, while the same path mid-sentence
+ * is kept. A human reading the adapter sees both. Correcting it here
+ * would make this function disagree with the list a seat is actually
+ * handed, which is the one thing it is for; the gap is closed in the
+ * adapter keeper instead, which ALSO asks the raw text.
+ *
+ * @param {string} text
+ * @returns {string[]}
+ */
+export function adapterNamedDocs(text) {
+  /** @type {string[]} */
+  const found = [];
+  for (const m of text.matchAll(/docs\/[A-Za-z0-9_.-]+/g)) {
+    const hit = m[0];
+    if (hit.endsWith(".md") && !found.includes(hit)) found.push(hit);
+  }
+  return found;
+}
+
+/** The bytes/4 ratio docs/rooms/loop-cost-and-speed.md measured the old
+ *  standing read with, kept in one place so the before and the after are
+ *  the same measurement. */
+export const BYTES_PER_TOKEN = 4;
+
+/**
+ * What the standing read COSTS at this tree: every document the root
+ * adapter names, with its bytes, and the total in tokens.
+ *
+ * @param {string} [root]
+ * @param {string} [adapter]
+ * @returns {{ docs: { path: string, bytes: number }[], bytes: number, tokens: number }}
+ */
+export function standingRead(root = repoRoot, adapter = "CLAUDE.md") {
+  const named = adapterNamedDocs(readFileSync(path.join(root, adapter), "utf8"));
+  const docs = named.map((rel) => ({ path: rel, bytes: statSync(path.join(root, rel)).size }));
+  const bytes = docs.reduce((a, d) => a + d.bytes, 0);
+  return { docs, bytes, tokens: Math.ceil(bytes / BYTES_PER_TOKEN) };
 }
