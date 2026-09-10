@@ -221,9 +221,9 @@ discriminator is real: the sentinel exists nowhere else in the tree.
 **C2 was run in BOTH directions and only running both separated them.** Deleting the
 load-bearing clause: the lane's own body stays GREEN (too loose — this is correction 2).
 Applying a meaning-preserving paraphrase of the whole sentence: the lane's body and this
-seat's both go RED. The second reading is the direction this project chooses deliberately —
-its own standing note rules that a paraphrase of a spec-pinned sentence is a regression — so
-it is recorded and it is not a finding. The first is.
+seat's both go RED. That paraphrase reading is the direction chosen deliberately here — the
+standing note rules that a paraphrase of a spec-pinned sentence is a regression — so it is
+recorded and it is not a finding. The DELETION reading is.
 
 #### The three assigned corrections
 
