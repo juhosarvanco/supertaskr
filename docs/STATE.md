@@ -1,20 +1,21 @@
 # State
 
-Updated: 2026-09-09 at the third sitting by the architect seat — the
-newest file in docs/checkpoints/ is **the third sitting record** (five lanes merged:
-T-279, T-281, T-278-s2, T-271, T-282; three live). **LANES ARE LIVE
-(derive: LANES).** **CI IS A SEPARATE CLAIM FROM A LOCAL BATTERY AND
+Updated: 2026-09-10 at the rename sitting by the architect seat — the
+newest file in docs/checkpoints/ is **the rename sitting record** (the
+repository, the directory and the living tree spell supertaskr;
+T-264-s3 merged as the batch of five; method 0.1.17; no lane live).
+**LANES ARE LIVE ONLY IF DERIVED (derive: LANES).** **CI IS A SEPARATE CLAIM FROM A LOCAL BATTERY AND
 MUST BE READ**: `gh run list` before believing the tree — **main is
-GREEN on the runner since 6ee2eab (run 34348711057)** after four reds at
-T-278's disk floor; the free-disk step (T-278-s2) freed 27 GiB on the
-older image and the ledger attributes the disk per step (the record).
+GREEN on the runner since 6ee2eab** (four reds at T-278's disk floor
+before it; the free-disk step T-278-s2 holds the floor); the rename
+merge's run is the reading to take next.
 
 **NOTHING IS BROKEN LOCALLY.** Designed non-zero: `npm run health` **3**
 while bands await keepers (T-156-s1, T-262) — never read it as clean,
 never "fix" it; triage/live-suggestions BREACHES at 109 against 46/92
-(T-282 re-derived the band; the loop filed ~30 today — TRIAGE IS DUE). **ONE RUST INTERMITTENT, named**: agent_runner's
-`a_hostile_session_id…never_recorded` reds under the full run, passes
-alone (T-281-s8 live) — re-run alone before attributing. **AN EXIT MAY MEAN THE GATE NEVER
+(T-282 re-derived the band; TRIAGE IS DUE). **THE RUST INTERMITTENT IS
+CLOSED** (T-281-s8 merged: 655 under the full run) — a new one is
+re-run alone, then attributed by name. **AN EXIT MAY MEAN THE GATE NEVER
 RAN**: `docs-gate.mjs`'s `CANNOT_RUN: 3` sits in a catch inside
 `main()`. **READ THE OUTPUT, NOT THE CODE.** **Re-run a suspect ONCE,
 then ATTRIBUTE by NAME at the base.**
@@ -74,23 +75,25 @@ never deleted to fit.** The commit subject opens with `Checkpoint:`.
 1. **DERIVE IT** — `brief.mjs --dispatch --full` (the triage clusters
    render under `--full` since T-282; parked cards are still invisible
    until T-285).
-2. **THE LIVE LANES LAND FIRST**: T-283 (verifying — the bump to
-   0.1.15 at its merge), T-280 and T-281-s8 (building); T-285 then
-   T-284 next (they share TASK-FORMAT.md).
-3. **THE NEXT CI RUN IS A READING** onto T-278-s1; a green run judges
-   the seven kept lane branches.
+2. **@human RULES THE LOOP ROOM** (docs/rooms/loop-cost-and-speed.md,
+   A–H as amended) before the next sitting's cards are cut; the
+   public-repository room opens after it (the history cut, the license).
+3. **THE NEXT LANE IS CUT AT `../supertaskr-T-<id>`** — the first one
+   proves the renamed bullet; T-284 and the pruning sitting wait on the
+   ruling; T-290 waits on T-287-s1.
 4. **A LANE RUNS ITS SUITES ONCE** (T-279), scoped with `--owning`
    (T-271); since T-280 the push and the bench owe the set their own
    range owes (`--range <base>..<tip>`; the guard re-derives it).
 5. **ASK THE DOCS GATE WHAT A CHANGE OWES** — `docs-gate.mjs <paths>`;
-   a fence token for a file not yet in the tree is DEAD until T-287.
+   a token for a file under a tracked directory is a NEW-FILE
+   RESERVATION (T-287); a directory with nothing under it stays DEAD.
 6. **@human holds; no card is cut from these** — the pruning sitting
    (D), the ROADMAP heading and ARCHITECTURE front-door labels, section
    fences (G), charter entry 32, T-173, the stray f.txt/g.txt.
 
 ## Standing hazards — the section that saves the hour
 
-- **THREE HAZARDS MOVED TO THE THIRD SITTING'S RECORD to hold this file's band**: the seat's own shell (cd, set -e, pipestatus, nullglob, perl, `${R}:`, `path`, no GNU timeout, no `kill`), a bench older than a sibling lane (attribute at the base), and the headroom bands' drift (a sentence added owes a cut).
+- **SHELL AND BENCH HAZARDS: the third sitting's record.** **AFTER A DIRECTORY RENAME CLEAR CARGO'S BUILD-SCRIPT OUTPUTS that name the old path** in EVERY checkout (`cargo clean -p` does not reach them) — the rename record.
 - **A COMMAND HERE CARRIES ITS CWD AND ITS ARGUMENT.** `npm run
   boot:check` runs FROM `tools/e2e/`; `npm run health -- --readings
   <FILE>` needs the `--` and the RUNNER'S OWN CAPTURE — in zsh pass the
@@ -102,9 +105,8 @@ never deleted to fit.** The commit subject opens with `Checkpoint:`.
   THE LANE BRANCH UNTIL THE PUSH IS JUDGED** — the landing arm resolves
   the card by the branch at the merge's second parent.
 - **A LOCAL GREEN IS NOT A RUNNER GREEN**: the runner has no git
-  identity and no login (T-239-s4), and its disk filled four times at
-  a6355bb…6c46872 (T-278 landed the reading); read the run log,
-  attribute by name, file the card.
+  identity and no login (T-239-s4) and its disk has a floor (T-278);
+  read the run log, attribute by name, file the card.
 - **THREE WRITES THAT RED THE TREE AND NO CHEAP GATE SEES**: a test
   rename owes `npm run capabilities` (in the merge commit); any .ts
   moved owes the graph regen; a prose commit stales the push token.
@@ -122,8 +124,8 @@ never deleted to fit.** The commit subject opens with `Checkpoint:`.
 - **A RELAYED FACT IS A CLAIM**: say whose; never relay the attack set.
   **A PHASE-2 DISPATCH WAITS FOR THE EXECUTOR'S REPORT** (rooms 21–22).
   **MOVE THE LANE BRANCH TO THE VERDICT COMMIT BEFORE MERGING** (room
-  17). **A FENCE TOKEN FOR A FILE THE CARD CREATES IS A DEAD ENTRY**:
-  fence the parent that exists.
+  17). **A LANE THAT RENAMES A SPELLING THE ARM DERIVES FROM IS CUT AT THE
+  OLD ONE**: tell the merge ritual the real worktree path.
 - **POISON DRILLS**: kill-set containment, the site the property lives,
   a DATA mutant where the property is data (verifier.md 2b).
 - **BOOT GATE AND HEALTH BANDS ARE OWED AT EVERY CHECKPOINT** (T-046,
@@ -132,7 +134,7 @@ never deleted to fit.** The commit subject opens with `Checkpoint:`.
 
 ## The records
 
-- docs/checkpoints/ — append-only; the third sitting record is the
+- docs/checkpoints/ — append-only; the rename sitting record is the
   newest. Pre-compaction: 2026-08-27-backfill-STATE.md.
 - docs/rooms/governing-docs.md + ADR-019 — this file's contract.
 - Every earlier version: `git log -- docs/STATE.md`.
