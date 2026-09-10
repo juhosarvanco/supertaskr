@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 size: M
 priority: 1
-status: building
+status: verifying
 suggested_by: "@human (2026-09-10): \"Rule the loop room, A to I as amended: yes\" — docs/rooms/loop-cost-and-speed.md, ADR-024"
 blocked_by: []
 touches: [.github/, tools/e2e/scripts/gate-run.mjs, tools/e2e/scripts/ci-owed.mjs, tools/e2e/tests/gate-run.spec.ts, tools/e2e/tests/workflow-parity.spec.ts, tools/e2e/tests/push-guard.spec.ts, .claude/hooks/push-guard.mjs, docs/CONVENTIONS.md]
