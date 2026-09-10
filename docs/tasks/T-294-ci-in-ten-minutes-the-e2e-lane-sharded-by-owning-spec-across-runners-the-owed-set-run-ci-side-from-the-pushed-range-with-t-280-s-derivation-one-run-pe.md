@@ -76,12 +76,23 @@ should carry a line a seat can paste at home; and a derivation that
 crashed inside this program would be this program's failure, while a
 spawn's non-zero exit is the derivation's, in its own words.
 
-THE BOOT CHECK IS DERIVED FROM THE SUITES, not from a second copy of
-BOOT GATE's trigger. Every path that trigger names lies under `app/`, so
-every one of them owes the app suite or the rust suite through the
-package roots the derivation already read — which makes "app or rust is
-owed" a superset of the trigger, computed from an answer this program
-was handed. Wrong only in the permitted direction.
+THE BOOT CHECK IS DERIVED FROM THE CHANGED PATHS, not from a second
+copy of BOOT GATE's trigger. Every path that trigger names lies under
+the app or rust package root, so "a changed path this derivation places
+into either suite" is a superset of the trigger, computed from the
+package roots the derivation already read. Wrong only in the permitted
+direction.
+
+AND IT IS THE PATHS, NOT THE SUITES, WHICH LOOKED EQUIVALENT AND WAS
+NOT. The first spelling asked "is the app suite owed", and the DOCS
+GATE's reader map owes the app suite for a change under `docs/tasks/`
+because the app's own dogfood bodies parse the live cards — so EVERY
+records-only push dragged in the boot check, and with it the apt
+prerequisites, the cargo cache and a tauri build, on the one push shape
+criterion 1 exists to bring under five minutes. Caught by deriving a
+real records-only range rather than by a body: the suite test says boot,
+the path test says no boot, and BOOT GATE's own trigger matches nothing
+in it. Both spellings are now drilled, one mutant each.
 
 ### C2's concurrency choice, and why it is this one
 
@@ -133,15 +144,27 @@ figures are the integrator's to read after the merge, from `gh run view
 its slowest job, and each shard job carries its own spec list in its
 display name.
 
-What was measured locally instead, at this lane's own tip: the
-derivation itself answers in about a second over the whole tree; the
-range this lane's base added owes all four suites and 39 spec files,
-which the default four shards split 10/10/10/9. The end-to-end leg's
+What was measured locally instead, at this lane's own tip. THE
+DERIVATION ANSWERS IN 1.7 TO 1.8 SECONDS of wall clock over the whole
+tree, which is the whole cost the first job adds. A REAL RECORDS-ONLY
+RANGE (one task card, `a5f3e89..fb72014` on main) owes app, e2e and
+parser, the end-to-end leg over 5 spec files, with the rust job and the
+boot check both SKIPPED — against the whole battery and 39 spec files
+this lane's own range owes, because `.github/` is a path the derivation
+cannot place. A SCHEDULE owes all four suites, the boot check and all 39
+specs, which the default four shards split 10/10/10/9. The end-to-end leg's
 whole run is 21 minutes on the runner by this card's own measurement, so
 four shards put the leg's own share at about five, and each shard pays a
 setup its job actually needs — the shard job runs no apt step and no
 cargo cache, because the lane drives the vite DEV server and needs
 neither.
+
+THE FIVE-MINUTE CLAIM IS NOT YET MEASURED AND ITS RISK IS NAMED. A
+records-only push still runs `checks`, `parser`, `app` and four e2e
+shards over 5 spec files, and each of those jobs pays a fresh runner's
+own checkout and install. The npm cache is what has to make that cheap;
+if it does not, the `app` job and the shards are where the minutes will
+be, and the shard count is the lever with the least to lose.
 
 ### Two things a reader should know before the first run
 
@@ -170,7 +193,7 @@ reports the budgets holding.
 
 ### Self-drill
 
-Fifteen mutants, one per new body and one per rewritten one, each shown
+Sixteen mutants, one per new body and one per rewritten one, each shown
 RED and restored, with the restoration proved by sha256 over the whole
 file rather than by a re-read of the line. Every mutant is a ONE-EDIT
 change to a SOURCE file, never to a spec, so a red is the edit and never
@@ -186,7 +209,8 @@ the scaffolding. The log is at the lane's scratch stem.
     the derivation's flags reach it in the wrong order   1 body RED
     an all-zero `before` is read as a commit             1 body RED
     the shard split stops sorting                        1 body RED
-    the boot switch forgets the rust suite               1 body RED
+    the boot switch reads the SUITES again instead of paths  1 body RED
+    the boot switch forgets the rust package root        1 body RED
     a switch is emitted only for the owed suites         1 body RED
     a shard count of zero is accepted                    1 body RED
     the in-flight sentence claims a cancellation         1 body RED
