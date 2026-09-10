@@ -6094,13 +6094,21 @@ test("the tier line is CREATED where a card has none, and no other field may be 
   expect(stamped.changed, "both fields are reported as changed").toEqual(["status", "tier"]);
   expect(stampVerdict(stamped.text, { status: "building", tier: "standard" })).toEqual([]);
 
-  // ARMING ABSENT: the same missing key, with no opt-in, still refuses.
-  expect(() => stampCard(card, { tier: "standard" })).toThrow(DispatchLaneFinding);
+  // ARMING ABSENT: the same missing key, with no opt-in, still refuses —
+  // and it refuses with the ORIGINAL refusal, not with the creation
+  // arm's own "no anchor" one. **THE MESSAGE IS THE DISCRIMINATOR AND
+  // THE CLASS IS NOT**: a creation arm that fired for every key would
+  // still throw `DispatchLaneFinding` here, from one branch further on,
+  // and this body passed against exactly that mutant until it named the
+  // sentence.
+  expect(() => stampCard(card, { tier: "standard" })).toThrow(
+    /has no "tier:" line in its frontmatter/,
+  );
   // AND THE OPT-IN IS PER KEY: another missing field is refused even in
-  // the same call as a created one.
+  // the same call as a created one, by that same original refusal.
   expect(() =>
     stampCard(card, { tier: "standard", built_at: "now" }, { insertAfter: { tier: "size" } }),
-  ).toThrow(/built_at:/);
+  ).toThrow(/has no "built_at:" line in its frontmatter/);
   // AND AN ANCHOR THE CARD DOES NOT CARRY IS REFUSED RATHER THAN APPENDED
   // BLIND — the creation is placed, never dumped at the end.
   expect(() =>
