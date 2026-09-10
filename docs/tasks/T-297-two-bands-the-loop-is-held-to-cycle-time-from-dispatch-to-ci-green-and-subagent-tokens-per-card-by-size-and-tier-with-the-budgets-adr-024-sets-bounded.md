@@ -6,7 +6,7 @@ milestone: 4
 size: S
 tier: standard
 priority: 2
-status: building
+status: verifying
 suggested_by: "@human (2026-09-10): \"Rule the loop room, A to I as amended: yes\" — docs/rooms/loop-cost-and-speed.md, ADR-024"
 blocked_by: [T-295]
 touches: [tools/e2e/scripts/health-bands.mjs, tools/e2e/scripts/health-bands.config.mjs, tools/e2e/tests/health-bands.spec.ts, docs/CONVENTIONS.md, docs/checkpoints/TEMPLATE.md]
