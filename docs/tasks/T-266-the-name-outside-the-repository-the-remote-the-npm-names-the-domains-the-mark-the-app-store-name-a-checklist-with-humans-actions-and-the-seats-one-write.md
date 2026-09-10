@@ -5,10 +5,11 @@ feature: F-01
 milestone: 4
 size: S
 priority: 6
-status: planned
+status: parked
 suggested_by: "@human's ruling of 2026-09-08 (ADR-022); the sweep in docs/rooms/naming.md"
 blocked_by: []
 touches: [.github/, docs/CONVENTIONS.md, README.md]
+wake: 2026-10-01
 builder:
 verifier:
 built_by:
@@ -44,3 +45,4 @@ the repository rename: the remote URL in CI, CONVENTIONS and the README.
 - 2026-09-10 — the npm placeholder `supertaskr@0.0.1` published by @human ("it is out"); `npm view supertaskr` answers with the reserved description; the README's CLI paragraph says the name is reserved and not yet the CLI (criterion 2 met).
 - Open: the domains, the mark search. The App Store name: the seat recommends striking it until a store release is a decision — a Tauri app ships as a notarised download from GitHub Releases, which needs no store name.
 - 2026-09-10 — the trademark search for the new spelling done by @human: "the trademark search came out with no results" — no conflict, the room does not reopen. The domains: @human, later.
+- 2026-09-10 — PARKED by the seat with `wake: 2026-10-01`: every act inside the repository is done (the rename, the README's reserved-name sentence), the placeholder is published and the mark search found no conflict; what remains is @human's domains ("I will get the domains later"). The card resurfaces on 1 October to record them; the App Store name is struck unless a store release is ruled.
