@@ -4,13 +4,14 @@ title: Right-sizing at triage, the model per role from the runtime template, and
 feature: F-04
 milestone: 4
 size: S
+tier: guarded
 priority: 2
-status: planned
+status: building
 suggested_by: "@human (2026-09-10): \"Rule the loop room, A to I as amended: yes\" — docs/rooms/loop-cost-and-speed.md, ADR-024"
 blocked_by: [T-296]
 touches: [method/roles/orchestrator.md, method/runtime/supertaskr.yaml, tools/e2e/scripts/brief.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
