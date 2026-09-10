@@ -8,7 +8,7 @@ priority: 1
 status: building
 suggested_by: executor claude-opus-5@subagent, at T-264's lane, 2026-09-08 — enumerated as the `repository-directory` survivor class while landing the identifier rename
 blocked_by: []
-touches: [app/, lib/, tools/, .claude/, .github/, bin/, method/, docs/reference/, docs/design/, docs/business/, docs/guide/, README.md, CLAUDE.md, AGENTS.md, .gitignore, docs/CONVENTIONS.md, docs/NORTH_STAR.md, docs/STATE.md, docs/future.md]
+touches: [app/, lib/, tools/, .claude/, .github/, bin/, method/, docs/reference/, docs/design/, docs/business/, docs/guide/, README.md, CLAUDE.md, AGENTS.md, .gitignore, docs/CONVENTIONS.md, docs/NORTH_STAR.md, docs/STATE.md, docs/future.md, docs/architecture/components/C-07-nputer-index.md, docs/architecture/components/C-07-supertaskr-index.md]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by:
