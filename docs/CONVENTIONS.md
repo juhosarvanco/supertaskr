@@ -1229,13 +1229,13 @@ and T-236 (2026-09-02, whose pre-compaction text is
   and who removes the worktree; it deliberately leaves every NAME to the
   project, and these are this project's:
   - integration branch `main`; branch `task/T-NNN-<slug>`; worktree
-    `../nputer-T-NNN`, a sibling of the repo root and never a path
-    inside it; bench worktree `../nputer-V-T-NNN`, the verifier's, cut
+    `../supertaskr-T-NNN`, a sibling of the repo root and never a path
+    inside it; bench worktree `../supertaskr-V-T-NNN`, the verifier's, cut
     DETACHED at the same base and never on a branch — a detached entry
     is not a lane and holds no fence, which is what keeps it out of the
     lane list (T-239 published this spelling; every bench on this
     machine already wore it and nothing stated it). Created with
-    `git worktree add ../nputer-T-NNN -b task/T-NNN-<slug> <base>`, and
+    `git worktree add ../supertaskr-T-NNN -b task/T-NNN-<slug> <base>`, and
     the base is the bullet below. **BOTH BRANCH SPELLINGS ARE LIVE IN
     THIS REPO and the older `tNNN-…` one is not a mistake to fix**: the
     two sets overlap rather than succeed each other, so there is no
@@ -1251,7 +1251,7 @@ and T-236 (2026-09-02, whose pre-compaction text is
     entry is not a lane — a poison-drill checkout holds no fence and is
     named after no card — so filter on the branch and expect other
     lanes' scratch worktrees beside yours. **ONE DETACHED ENTRY IS
-    PERMANENT — THE HUMAN'S APP CHECKOUT `../nputer-app`** (T-052; the
+    PERMANENT — THE HUMAN'S APP CHECKOUT `../supertaskr-app`** (T-052; the
     bullet below has the account): detached ON PURPOSE, no fence, no
     card, NOT a lane; never count it or remove it after a merge. **DERIVE
     WHETHER IT EXISTS FROM `git worktree list`, NEVER FROM THIS FILE** —
@@ -1497,7 +1497,7 @@ and T-236 (2026-09-02, whose pre-compaction text is
   **A PROBE OR SCRATCH FILE IN THE MAIN CHECKOUT IS A VIOLATION** (the
   unexplained `zz-scope-probe.ts` of instance 9), **and a lane worktree
   parked INSIDE the tree is the same violation in a larger shape**:
-  `git worktree add ../nputer-T-NNN` typed while the shell sits in
+  `git worktree add ../supertaskr-T-NNN` typed while the shell sits in
   `tools/e2e` lands in `tools/`, silently. Cut worktrees with an
   ABSOLUTE path, or verify the cwd first. **NAME YOUR PATHS; never
   `git add -A` and never `git commit -a` in the main checkout** — a
@@ -1514,21 +1514,21 @@ and T-236 (2026-09-02, whose pre-compaction text is
   target-dir THROUGHPUT channel, and the detached checkout closes both.
   Setup, when the tree is quiet:
 
-      git worktree add --detach ../nputer-app main
+      git worktree add --detach ../supertaskr-app main
 
   then the fresh-clone ORDER at the top of this file, inside it; it
   updates with one command, when the human chooses:
 
-      git -C ../nputer-app checkout --detach main
+      git -C ../supertaskr-app checkout --detach main
 
   **BEING DETACHED IS THE FEATURE** — the app's code cannot move on its
   own, so the pipeline may merge all night; the app still OPENS
-  `/Users/ujju/Projects/nputer` as its project. Whether it exists,
+  `/Users/ujju/Projects/supertaskr` as its project. Whether it exists,
   where 1420's holder runs from, and the two target-dir mtimes are
-  LIVE-ENVIRONMENT facts — re-derive them (`git -C ../nputer-app
+  LIVE-ENVIRONMENT facts — re-derive them (`git -C ../supertaskr-app
   rev-parse HEAD`, `lsof -p <pid>`), never quote them. **AND IT EXCUSES
   NOTHING ABOVE**: every rule in this bullet binds whether or not
-  `../nputer-app` exists.
+  `../supertaskr-app` exists.
 - DISPATCH FROM THE LAST CHECKPOINT, never from a merge commit
   (T-014-s3, seven-for-seven): cut a task branch from the newest
   `Checkpoint:` commit on main. **READ THE REASON, NOT ONLY THE

@@ -125,7 +125,7 @@ function gateFixture(targets: readonly string[]): { root: string; wrapper: strin
   // directory is shared between concurrent sessions, and
   // docs/CONVENTIONS.md's POISON DRILL bullet measured four of them
   // picking one literal path and losing each other's files.
-  const root = mkdtempSync(path.join(os.tmpdir(), "nputer-T-216-s4-token-scan-"));
+  const root = mkdtempSync(path.join(os.tmpdir(), "supertaskr-T-216-s4-token-scan-"));
   SCRATCH.push(root);
   for (const dir of TOKEN_ROOT_DIRS) mkdirSync(path.join(root, dir), { recursive: true });
   for (const relative of [...GATE_IMPLEMENTATION, ...targets]) {

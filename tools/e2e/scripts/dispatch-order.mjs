@@ -284,7 +284,7 @@ function unmetBlockers(rulings) {
  * ── WHAT THIS IS ABOUT, IN BYTES ────────────────────────────────────
  * The parser writes a lane into a reason as `laneName` spells it —
  * `T-202-s1 (refs/heads/task/T-202-s1-solo-lock-whole-path-key at
- * /Users/ujju/Projects/nputer-T-202-s1)` — and `--full` prints one reason
+ * /Users/ujju/Projects/supertaskr-T-202-s1)` — and `--full` prints one reason
  * per held card, so the branch and the absolute worktree path of every
  * live lane are re-spelled once per card. Measured on this repository at
  * `cde65b5` with five lanes live and fifty-five cards fenced out: 252

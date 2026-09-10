@@ -2224,8 +2224,8 @@ test("`-C` is followed and the options that re-point a repository are not", () =
   for (const t of ['"$X"', "~/x", "$(pwd)", "a*b", "`x`", "a'b'", "{a,b}"]) {
     expect(UNRESOLVABLE_TOKEN_RE.test(t), t).toBe(true);
   }
-  expect(UNRESOLVABLE_TOKEN_RE.test("/Users/x/Projects/nputer-T-216")).toBe(false);
-  expect(UNRESOLVABLE_TOKEN_RE.test("../nputer-T-216")).toBe(false);
+  expect(UNRESOLVABLE_TOKEN_RE.test("/Users/x/Projects/supertaskr-T-216")).toBe(false);
+  expect(UNRESOLVABLE_TOKEN_RE.test("../supertaskr-T-216")).toBe(false);
 });
 
 test("the guard is wired into .claude/settings.json on the Bash matcher", () => {

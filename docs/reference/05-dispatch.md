@@ -118,15 +118,12 @@ in one sitting carried a false assertion and every preflight ran green.
    the integration branch and commit it, stage-and-commit in one
    motion, leaving nothing staged.
 2. Cut the lane from that commit: `git worktree add
-   ../nputer-T-NNN -b task/T-NNN-<slug> <base hash>`. The worktree is a
-   sibling directory with an absolute path; the base is a green
-   commit stated as a hash, never a merge commit. The lane and bench
-   spellings below still carry the pre-rename name: they are siblings of
-   the repository DIRECTORY, which is @human's to rename (ADR-022
-   decision 4, T-266), and they move with it in T-264-s3 — not here.
+   ../supertaskr-T-NNN -b task/T-NNN-<slug> <base hash>`. The worktree
+   is a sibling directory with an absolute path; the base is a green
+   commit stated as a hash, never a merge commit.
 3. Arm the fence: `--write-fence`, then read the manifest back.
 4. Cut the verifier's bench at the same moment: a detached sibling
-   worktree (`nputer-V-T-NNN`) at the same base, holding no manifest.
+   worktree (`supertaskr-V-T-NNN`) at the same base, holding no manifest.
    Phase 1 of verification consumes nothing the executor produces, so
    running it later is serial dead time at the end of every lane.
 5. Hand the brief to a fresh session. Phase 1 of the bench runs in

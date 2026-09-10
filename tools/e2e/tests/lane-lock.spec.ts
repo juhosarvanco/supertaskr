@@ -80,7 +80,7 @@ test.afterAll(() => {
  * picking the same literal scratch path and losing each other's files.
  */
 function scratchRoot(): string {
-  const dir = mkdtempSync(path.join(os.tmpdir(), "nputer-T-210-lane-lock-"));
+  const dir = mkdtempSync(path.join(os.tmpdir(), "supertaskr-T-210-lane-lock-"));
   SCRATCH.push(dir);
   return dir;
 }
@@ -274,7 +274,7 @@ function makeFixture(touchesLine = TOUCHES): Fixture {
   // answer CANNOT RUN rather than exercising the arm under test.
   git(repo, ["commit", "-m", "Checkpoint: fixture base", "--quiet"]);
 
-  const lane = path.join(root, `nputer-${ID}`);
+  const lane = path.join(root, `supertaskr-${ID}`);
   git(repo, ["worktree", "add", "--quiet", "-b", `task/${ID}-physical-layer`, lane]);
   return { root, repo, lane };
 }
@@ -557,7 +557,7 @@ test("POSITIVE CONTROL — the protocol's own writes all still succeed under the
 
 test("the layer ARMS LANES AND NOTHING ELSE — the integration checkout and a detached tree are refused", async () => {
   const fx = makeFixture();
-  const drill = path.join(fx.root, `nputer-${ID}-drill`);
+  const drill = path.join(fx.root, `supertaskr-${ID}-drill`);
   git(fx.repo, ["worktree", "add", "--quiet", "--detach", drill]);
   // The lane is armed with a real manifest so the control at the end of
   // this body is the lane arm SUCCEEDING and not a second missing-manifest

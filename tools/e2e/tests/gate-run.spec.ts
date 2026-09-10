@@ -622,8 +622,8 @@ test("two checkouts whose paths differ only BEFORE their last eight bytes get DI
   // THAN ONE DIRECTION. A SUFFIX key collides on the first pair; a
   // BASENAME key survives that pair and collides on the third; neither
   // reads the whole path, and one arm each is what tells them apart.
-  const lane = "/x/nputer-T-223-s3";
-  const bench = "/x/nputer-V-T-223-s3";
+  const lane = "/x/supertaskr-T-223-s3";
+  const bench = "/x/supertaskr-V-T-223-s3";
   expect(lockPath(lane)).not.toBe(lockPath(bench));
   // ...while ONE root twice is ONE lock, or the guard above stops being
   // a guard. (Symmetric on purpose, and its control is assertion-side:
@@ -633,7 +633,7 @@ test("two checkouts whose paths differ only BEFORE their last eight bytes get DI
   // A parent directory is part of the path as much as a basename is:
   // two checkouts of the same NAME under different parents are two
   // checkouts, and a key reading only the last segment merges them.
-  expect(lockPath("/a/nputer-T-223-s3")).not.toBe(lockPath("/b/nputer-T-223-s3"));
+  expect(lockPath("/a/supertaskr-T-223-s3")).not.toBe(lockPath("/b/supertaskr-T-223-s3"));
   // AND THE FILE ITSELF DOES NOT MOVE. Nothing at the base asserted the
   // lock's directory or its name shape, so a key change could have
   // carried the file out of tmpdir() — where `acquireSolo` and the
@@ -651,7 +651,7 @@ test("two checkouts whose paths differ only BEFORE their last eight bytes get DI
   // home directory two projects deep. A sha256's 64 hex characters put
   // the basename at 85 bytes for EVERY root, so the deep root below
   // fits with exactly the room the shallow one has.
-  const deep = `/x/${"deep-".repeat(40)}nputer-T-223-s3`;
+  const deep = `/x/${"deep-".repeat(40)}supertaskr-T-223-s3`;
   expect(path.basename(lockPath(deep)).length).toBeLessThan(255);
 });
 

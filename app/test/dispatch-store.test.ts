@@ -84,7 +84,7 @@ const lane = (taskId: string, name: string): LaneRegistration => ({
   name,
   taskId,
   branch: `task/${taskId}-slug`,
-  worktreePath: `/Users/x/Projects/nputer-${taskId}`,
+  worktreePath: `/Users/x/Projects/supertaskr-${taskId}`,
   existsOnDisk: true,
 });
 
@@ -121,7 +121,7 @@ describe("hydrateJoin: the wire's array becomes the Map ADR-009 requires", () =>
     // leaves an always-empty Map, which is the exact gutting T-190's
     // verifier proved survives the whole app suite and both `tsc`
     // programs when no collected body imports this module.
-    const join = hydrateJoin(joined([row("T-100", "live", [lane("T-100", "nputer-T-100")]), row("T-200", "died")]));
+    const join = hydrateJoin(joined([row("T-100", "live", [lane("T-100", "supertaskr-T-100")]), row("T-200", "died")]));
 
     expect(join.kind).toBe("joined");
     if (join.kind !== "joined") return;
@@ -135,7 +135,7 @@ describe("hydrateJoin: the wire's array becomes the Map ADR-009 requires", () =>
     expect(join.rows.get("T-200")?.state).toBe("died");
     // The row is carried WHOLE, not rebuilt: `lanes` is the field whose
     // own doc comment forbids dropping a second lane for one id.
-    expect(join.rows.get("T-100")?.lanes.map((l) => l.name)).toEqual(["nputer-T-100"]);
+    expect(join.rows.get("T-100")?.lanes.map((l) => l.name)).toEqual(["supertaskr-T-100"]);
     // A key this module never invents. The states are carried across from
     // `join.rs` verbatim, so a Map keyed by anything else would be a
     // classification, which this file's header says it does not do.
@@ -285,7 +285,7 @@ const scanned = (entries: readonly WorktreeEntry[], truncated: boolean): LaneSca
 
 describe("joinLanes: the four states, one body each", () => {
   it("`live` — the card is stamped in flight and git has the lane", () => {
-    const join = joinLanes(scanned([lane("T-100", "nputer-T-100")], false), [
+    const join = joinLanes(scanned([lane("T-100", "supertaskr-T-100")], false), [
       stamp("T-100", "building"),
     ]);
 
@@ -295,7 +295,7 @@ describe("joinLanes: the four states, one body each", () => {
     // The card is carried, not just its id: a row that lost its stamp
     // could not tell a reader WHICH status put it in flight.
     expect(join.rows.get("T-100")?.card).toEqual({ id: "T-100", status: "building" });
-    expect(join.rows.get("T-100")?.lanes.map((l) => l.name)).toEqual(["nputer-T-100"]);
+    expect(join.rows.get("T-100")?.lanes.map((l) => l.name)).toEqual(["supertaskr-T-100"]);
   });
 
   it("`died` — the card is stamped in flight and there is NO lane", () => {
@@ -311,7 +311,7 @@ describe("joinLanes: the four states, one body each", () => {
   });
 
   it("`stampSkipped` — git has a lane and the card is NOT stamped in flight", () => {
-    const join = joinLanes(scanned([lane("T-300", "nputer-T-300")], false), [
+    const join = joinLanes(scanned([lane("T-300", "supertaskr-T-300")], false), [
       stamp("T-300", "planned"),
     ]);
 
@@ -339,7 +339,7 @@ describe("joinLanes: the halves that are not one row of the table", () => {
     // one would be satisfied by a join that emits a row for every lane
     // unconditionally, which is a different function.
     const join = joinLanes(
-      scanned([lane("T-500", "nputer-T-500")], false),
+      scanned([lane("T-500", "supertaskr-T-500")], false),
       [stamp("T-100", "done")],
     );
 
@@ -348,7 +348,7 @@ describe("joinLanes: the halves that are not one row of the table", () => {
     expect([...join.rows.keys()]).toEqual(["T-100", "T-500"]);
     expect(join.rows.get("T-500")?.state).toBe("stampSkipped");
     expect(join.rows.get("T-500")?.card).toBeNull();
-    expect(join.rows.get("T-500")?.lanes.map((l) => l.name)).toEqual(["nputer-T-500"]);
+    expect(join.rows.get("T-500")?.lanes.map((l) => l.name)).toEqual(["supertaskr-T-500"]);
     // And the carded row is untouched by the second pass.
     expect(join.rows.get("T-100")?.state).toBe("notDispatched");
   });
@@ -359,15 +359,15 @@ describe("joinLanes: the halves that are not one row of the table", () => {
     // built the case. Both `existsOnDisk` values are TRUE here, so the
     // body is about MULTIPLICITY and nothing else.
     const join = joinLanes(
-      scanned([lane("T-600", "nputer-T-600-a"), lane("T-600", "nputer-T-600-b")], false),
+      scanned([lane("T-600", "supertaskr-T-600-a"), lane("T-600", "supertaskr-T-600-b")], false),
       [stamp("T-600", "merging")],
     );
 
     expect(join.kind).toBe("joined");
     if (join.kind !== "joined") return;
     expect(join.rows.get("T-600")?.lanes.map((l) => l.name)).toEqual([
-      "nputer-T-600-a",
-      "nputer-T-600-b",
+      "supertaskr-T-600-a",
+      "supertaskr-T-600-b",
     ]);
     expect(join.rows.get("T-600")?.state).toBe("live");
   });
@@ -378,7 +378,7 @@ describe("joinLanes: the halves that are not one row of the table", () => {
     // fixture is deliberately in neither ASCII nor numeric order, and
     // `T-110` before `T-9` is the ASCII promise stated rather than the
     // numeric one nobody made.
-    const join = joinLanes(scanned([lane("T-9", "nputer-T-9")], false), [
+    const join = joinLanes(scanned([lane("T-9", "supertaskr-T-9")], false), [
       stamp("T-9", "building"),
       stamp("T-300", "done"),
       stamp("T-110", "done"),
@@ -411,7 +411,7 @@ describe("joinLanes: the halves that are not one row of the table", () => {
     // `notLanes` WHOLE, and it must not have been mistaken for a lane —
     // a join that pushed it into `lanesByTask` would satisfy the first
     // assertion below and fail the second.
-    const join = joinLanes(scanned([notALane, lane("T-800", "nputer-T-800")], false), [
+    const join = joinLanes(scanned([notALane, lane("T-800", "supertaskr-T-800")], false), [
       stamp("T-800", "building"),
     ]);
 

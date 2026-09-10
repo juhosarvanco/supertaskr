@@ -544,7 +544,7 @@ export const GIT_REPOINTING_ENV_RE =
  * What makes a token's VALUE unknowable without running the shell.
  *
  * THIS IS THE LINE BETWEEN READING AND GUESSING, and it is drawn wide on
- * purpose. `cd /Users/ujju/Projects/nputer-T-216` is not a parse: it is
+ * purpose. `cd /Users/ujju/Projects/supertaskr-T-216` is not a parse: it is
  * one literal word whose value is itself. `cd "$LANE"`, `cd ~/x`,
  * `cd $(pwd)` and `cd lane-*` are values only a shell knows, and
  * `T-025-s4` ruled that a `PreToolUse` hook cannot be the shell. A token

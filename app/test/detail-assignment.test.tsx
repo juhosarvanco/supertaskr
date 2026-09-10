@@ -183,7 +183,7 @@ const HELD: DispatchReading = {
           {
             taskId: "T-961",
             branch: "task/T-961-lane",
-            worktreePath: "/tmp/nputer-T-961",
+            worktreePath: "/tmp/supertaskr-T-961",
             existsOnDisk: true,
           },
         ],

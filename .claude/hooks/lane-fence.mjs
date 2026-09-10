@@ -52,7 +52,7 @@
  * own fence is the only reason anybody found out (T-190, then T-199).
  *
  * MEASURED AT THE LIVE CONFIGURATION BEFORE THE CHANGE, dispatching seat
- * at `<repo>/.claude/worktrees/<name>` and lane at `../nputer-T-199`:
+ * at `<repo>/.claude/worktrees/<name>` and lane at `../supertaskr-T-199`:
  * writes to that lane's `docs/ROADMAP.md`, `app/src/main.tsx`,
  * `docs/NORTH_STAR.md` and `.claude/hooks/lane-fence.mjs` — three of the
  * four far outside its `touches: [.claude, tools/e2e]` — ALL FOUR
@@ -60,7 +60,7 @@
  *
  * SO `decide` NOW RESOLVES THE **TARGET PATH'S** REPOSITORY and applies
  * THAT repository's fences, wherever the writer happens to sit. A write
- * into `…/nputer-T-NNN/x` is judged by the lane living there because the
+ * into `…/supertaskr-T-NNN/x` is judged by the lane living there because the
  * TARGET belongs to it — which is what limit 2's own intent (*"do not
  * police unrelated files on the machine"*) actually wanted all along.
  * The writer's cwd keeps exactly one job: resolving a RELATIVE target,
@@ -285,7 +285,7 @@
  *    verification, on this card: merging it and then editing
  *    `.claude/hooks/lane-fence.mjs`, `tools/e2e/…` or
  *    `docs/CONVENTIONS.md` from the integration checkout is refused
- *    while `nputer-T-154-s2` stands. The route is to remove the
+ *    while `supertaskr-T-154-s2` stands. The route is to remove the
  *    worktree before the reconciling writes; the guard has a term for
  *    "on disk" and none for "merged".
  * 7. CONTAINMENT IS CASE-SENSITIVE AND THIS PROJECT'S VOLUME IS NOT.

@@ -89,7 +89,7 @@ test.afterAll(() => {
 
 /** A scratch root, stem DERIVED from the lane (docs/CONVENTIONS.md, POISON DRILL). */
 function scratchRoot(): string {
-  const dir = mkdtempSync(path.join(os.tmpdir(), "nputer-T-160-card-preflight-"));
+  const dir = mkdtempSync(path.join(os.tmpdir(), "supertaskr-T-160-card-preflight-"));
   SCRATCH.push(dir);
   return dir;
 }
@@ -319,7 +319,7 @@ function makeFixture(planted: Planted = {}): Fixture {
   // fixture without one is a fixture the CLI arm cannot run in.
   git(repo, ["commit", "-m", "Checkpoint: fixture base", "--quiet"]);
 
-  const lane = path.join(root, `nputer-${OTHER_ID}`);
+  const lane = path.join(root, `supertaskr-${OTHER_ID}`);
   git(repo, ["worktree", "add", "--quiet", "-b", `task/${OTHER_ID}-a-live-lane`, lane]);
   return { repo, lane };
 }
@@ -1251,7 +1251,7 @@ const CLI = path.join(repoRoot, "tools", "e2e", "scripts", "brief.mjs");
  * catcher's own discrimination stays measured in the file whose subject
  * it is — where a wiring that reported STALE unconditionally still reds.
  */
-const NO_SESSION_CHECKOUT = mkdtempSync(path.join(os.tmpdir(), "nputer-T-238-no-session-"));
+const NO_SESSION_CHECKOUT = mkdtempSync(path.join(os.tmpdir(), "supertaskr-T-238-no-session-"));
 SCRATCH.push(NO_SESSION_CHECKOUT);
 
 function cli(args: string[], cwd = repoRoot): ReturnType<typeof spawnSync> {

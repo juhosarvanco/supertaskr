@@ -687,7 +687,7 @@ export function judge({ status, count, ref, suite, tree, dirty }) {
  * its last sixteen hex characters — the last EIGHT BYTES of the path —
  * and a suffix cannot tell apart two paths that agree on it. Every card
  * id this method issues is exactly eight characters, so a lane
- * `…/nputer-T-223-s3` and its verifier bench `…/nputer-V-T-223-s3` end
+ * `…/supertaskr-T-223-s3` and its verifier bench `…/supertaskr-V-T-223-s3` end
  * in the same eight bytes and produced the identical key
  * (`542d3232332d7333`). The two seats the method deliberately runs side
  * by side were therefore serialised on every eight-character card, each

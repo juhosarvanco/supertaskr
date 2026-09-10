@@ -434,7 +434,7 @@ mod tests {
         // equally satisfied by a classifier that always says died.
         register(
             &root,
-            "nputer-T-110",
+            "supertaskr-T-110",
             &branch_head("task/T-110-lane-reader"),
             true,
         );
@@ -761,7 +761,7 @@ mod tests {
         let root = repo_with_worktrees_dir("fields");
         let worktree = register(
             &root,
-            "nputer-T-110",
+            "supertaskr-T-110",
             &branch_head("task/T-110-lane-reader"),
             true,
         );
@@ -774,7 +774,7 @@ mod tests {
             panic!("one lane, got {:?}", row.lanes)
         };
 
-        assert_eq!(lane.name, "nputer-T-110");
+        assert_eq!(lane.name, "supertaskr-T-110");
         assert_eq!(lane.task_id, "T-110");
         assert_eq!(lane.branch, "task/T-110-lane-reader");
         assert_eq!(lane.worktree_path, worktree.to_string_lossy());

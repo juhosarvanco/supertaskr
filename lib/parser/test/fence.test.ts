@@ -199,7 +199,7 @@ describe('normalizeFenceToken — one spelling, and a declared ceiling', () => {
     expect(normalizeFenceToken('.')).toBe('.');
     expect(normalizeFenceToken('./.')).toBe('.');
     expect(normalizeFenceToken('..')).toBe('..');
-    expect(normalizeFenceToken('../nputer-app')).toBe('../nputer-app');
+    expect(normalizeFenceToken('../supertaskr-app')).toBe('../supertaskr-app');
     expect(normalizeFenceToken('../../etc')).toBe('../../etc');
     // and the two spellings that normalise to NOTHING still do.
     expect(normalizeFenceToken('./')).toBe('');
@@ -208,10 +208,10 @@ describe('normalizeFenceToken — one spelling, and a declared ceiling', () => {
     // (b) A CLIMB THAT SURVIVES RESOLUTION IS THE SAME DOMAIN REACHED BY
     // ARITHMETIC INSTEAD OF BY SPELLING, and it is left for the same
     // refusal rather than dropped. Dropping the uncancelled `..` would
-    // turn `lib/../../nputer-app` into `nputer-app` — a fence quietly
+    // turn `lib/../../supertaskr-app` into `supertaskr-app` — a fence quietly
     // reserving a domain the card never named, which is worse than the
     // silence this card removes.
-    expect(normalizeFenceToken('lib/../../nputer-app')).toBe('../nputer-app');
+    expect(normalizeFenceToken('lib/../../supertaskr-app')).toBe('../supertaskr-app');
     expect(normalizeFenceToken('lib/../..')).toBe('..');
     expect(normalizeFenceToken('a/b/../../../c')).toBe('../c');
     // and a climb that lands EXACTLY on the root reaches the empty
@@ -954,10 +954,10 @@ describe('T-219-s2 — the repository ROOT has two spellings and only one of the
     // THE CLASS, NOT THE SPELLING — which is this card's parent's own
     // lesson turned on its residual: T-219 exists because `docs/tasks`
     // was refused while the `docs` containing it was waved through, a
-    // rule built for one spelling of one fence. `..` and `../nputer-app`
+    // rule built for one spelling of one fence. `..` and `../supertaskr-app`
     // have the identical symptom as `.`: a domain no repository-relative
     // path can sit inside, reserved in silence.
-    for (const raw of ['..', '../nputer-app', '../../etc']) {
+    for (const raw of ['..', '../supertaskr-app', '../../etc']) {
       const fence = expandFence(synthetic('T-932', [raw]), components);
       expect(fence.tokens[0]?.kind, `${raw} resolved`).toBe('unresolved');
       expect(fence.paths, `${raw} reserved a domain`).toEqual([]);
@@ -1131,7 +1131,7 @@ describe('T-219-s6 — an INTERIOR dot segment reserved a domain nothing could m
     // THE CEILING, WHERE IT MOVED TO. Resolution does not make every
     // token nameable — it makes the UNNAMEABLE ones arrive at the
     // refusal already spelled as what they are.
-    for (const raw of ['lib/../../nputer-app', 'a/b/../../../c']) {
+    for (const raw of ['lib/../../supertaskr-app', 'a/b/../../../c']) {
       const fence = expandFence(synthetic('T-951', [raw]), components);
       expect(fence.tokens[0]?.kind, `${raw} resolved to a domain`).toBe('unresolved');
       expect(fence.paths, `${raw} reserved a domain`).toEqual([]);
@@ -1246,7 +1246,7 @@ describe('the live board, censused through the expansion', () => {
     // matches anything — which is the failure mode a zero-count census
     // has and a non-empty one does not.
     const planted: string[] = [];
-    for (const task of [...project.tasks, synthetic('T-940', ['.', '../nputer-app'])]) {
+    for (const task of [...project.tasks, synthetic('T-940', ['.', '../supertaskr-app'])]) {
       if (task.id === undefined) continue;
       for (const raw of task.touches) {
         const normalized = normalizeFenceToken(raw);
@@ -1255,7 +1255,7 @@ describe('the live board, censused through the expansion', () => {
     }
     expect(planted, 'the census predicate found nothing even with a card planted for it').toEqual([
       'T-940 . -> .',
-      'T-940 ../nputer-app -> ../nputer-app',
+      'T-940 ../supertaskr-app -> ../supertaskr-app',
     ]);
 
     // AND NOW THE LIVE BOARD, through the same predicate: nobody has ever

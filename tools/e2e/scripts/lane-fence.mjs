@@ -419,7 +419,7 @@ export function laneDisjointness(input) {
   for (const entry of entries) {
     // A DETACHED ENTRY IS NOT A LANE, and that is the POSITIVE CONTROL
     // rule 5 names: the integrator, the coordinating seat, @human's
-    // `../nputer-app` and every scratch drill hold no fence, so a check
+    // `../supertaskr-app` and every scratch drill hold no fence, so a check
     // that refused them would be a check that refuses everything.
     if (entry.branch === "") continue;
     const laneId = laneIdOf(entry.branch, spellings.branchRe);

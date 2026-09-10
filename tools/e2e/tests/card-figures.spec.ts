@@ -467,7 +467,7 @@ test("CONTENTION SAYS UNKNOWN, NEVER FREE, ABOUT A LANE WHOSE CARD IT CANNOT REA
       "branch refs/heads/main",
       "",
       ...blindIds.flatMap((id, i) => [
-        `worktree /Users/x/nputer-${id}`,
+        `worktree /Users/x/supertaskr-${id}`,
         `HEAD ${String(i + 2).repeat(40)}`,
         `branch refs/heads/task/${id}-a-card-this-checkout-cannot-read`,
         "",

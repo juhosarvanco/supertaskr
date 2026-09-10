@@ -2627,7 +2627,7 @@ mod tests {
         assert!(row4
             .lines
             .iter()
-            .any(|l| l.label == "worktree" && l.text.contains("nputer-T-900")));
+            .any(|l| l.label == "worktree" && l.text.contains("supertaskr-T-900")));
     }
 
     /// **THE INTEGRATION BRANCH IS READ BY ITS LABEL, NEVER BY POSITION**
@@ -2909,7 +2909,7 @@ mod tests {
             "../supertaskr-a-planted-worktree",
             |b| b.contains("../"),
             "worktree",
-            "../nputer-T-900",
+            "../supertaskr-T-900",
         );
     }
 
@@ -2932,7 +2932,7 @@ mod tests {
             "git worktree add --detach /tmp/supertaskr-a-planted-tree main",
             |b| b.starts_with("git worktree add"),
             "create",
-            "git worktree add ../nputer-T-900 -b task/T-900-<slug> <base>",
+            "git worktree add ../supertaskr-T-900 -b task/T-900-<slug> <base>",
         );
     }
 
@@ -3175,10 +3175,10 @@ mod tests {
         let live = live_files();
         let scan = LaneScan::Scanned {
             entries: vec![WorktreeEntry::Lane {
-                name: "nputer-T-999".to_string(),
+                name: "supertaskr-T-999".to_string(),
                 task_id: "T-999".to_string(),
                 branch: "task/T-999-no-card".to_string(),
-                worktree_path: "/tmp/nputer-T-999".to_string(),
+                worktree_path: "/tmp/supertaskr-T-999".to_string(),
                 exists_on_disk: true,
             }],
             truncated: false,
@@ -3449,7 +3449,7 @@ mod tests {
         // THE HAND DISPATCH: what the create command leaves on disk.
         fixtures::register(
             &root,
-            "nputer-T-901",
+            "supertaskr-T-901",
             &fixtures::branch_head("task/T-901-a-card"),
             true,
         );

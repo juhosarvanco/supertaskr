@@ -104,7 +104,7 @@ test.afterAll(() => {
  * and the card id makes an orphan attributable.
  */
 function scratchRoot(): string {
-  const dir = mkdtempSync(path.join(os.tmpdir(), "nputer-T-154-lane-fence-"));
+  const dir = mkdtempSync(path.join(os.tmpdir(), "supertaskr-T-154-lane-fence-"));
   SCRATCH.push(dir);
   return dir;
 }
@@ -227,9 +227,9 @@ function makeFixture(touchesLine = FIXTURE_TOUCHES): Fixture {
   git(repo, ["add", "-A"]);
   git(repo, ["commit", "-m", "fixture base", "--quiet"]);
 
-  const lane = path.join(root, `nputer-${FIXTURE_ID}`);
+  const lane = path.join(root, `supertaskr-${FIXTURE_ID}`);
   git(repo, ["worktree", "add", "--quiet", "-b", `task/${FIXTURE_ID}-guard-fixture`, lane]);
-  const drill = path.join(root, `nputer-${FIXTURE_ID}-drill`);
+  const drill = path.join(root, `supertaskr-${FIXTURE_ID}-drill`);
   git(repo, ["worktree", "add", "--quiet", "--detach", drill]);
   return { repo, lane, drill };
 }
@@ -301,7 +301,7 @@ async function cutLane(fx: Fixture, id: string, touchesLine: string): Promise<st
   );
   git(fx.repo, ["add", "-A"]);
   git(fx.repo, ["commit", "-m", `fixture lane ${id}`, "--quiet"]);
-  const lane = path.join(path.dirname(fx.lane), `nputer-${id}`);
+  const lane = path.join(path.dirname(fx.lane), `supertaskr-${id}`);
   git(fx.repo, ["worktree", "add", "--quiet", "-b", `task/${id}-sibling`, lane]);
   return lane;
 }
@@ -2656,7 +2656,7 @@ test("a card with an EMPTY `touches:` is refused rather than dispatched with the
 test("a DETACHED worktree holds no fence, however much of the tree it is sitting on", async () => {
   // The enumeration's own positive control, and rule 5 names it: a
   // checkout that is not on a task branch is ALLOWED — the integrator,
-  // the coordinating seat, @human's `../nputer-app` and every scratch
+  // the coordinating seat, @human's `../supertaskr-app` and every scratch
   // drill. Lane-ness is decided by the BRANCH and never by the path or by
   // the presence of a manifest, so a drill carrying one changes nothing.
   const fx = makeFixture("touches: [tools/e2e]");
