@@ -457,6 +457,12 @@ function main(argv, env) {
   return EXIT.OK;
 }
 
+// `process.exitCode` AND NOT `process.exit()`. A command that ends at
+// `process.exit()` drops whatever stdout has not drained — invisible to
+// a file and to a TTY, silent to a pipe — and this program's whole
+// output is the plan a later step reads. Setting the code lets node
+// leave when the writes are done. `brief-flush.spec.ts` keeps that
+// class, and it named this file the moment it existed.
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  process.exit(main(process.argv.slice(2), process.env));
+  process.exitCode = main(process.argv.slice(2), process.env);
 }

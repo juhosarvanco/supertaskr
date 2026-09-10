@@ -3,7 +3,7 @@ id: T-294-s3
 title: "The nightly red's bisection is printed into a step log a seat has to open, while the run's own SUMMARY is one click from the run page and needs no grant this workflow lacks"
 feature: F-04
 milestone: 4
-size: XS
+size: S
 priority: 3
 status: suggested
 suggested_by: "executor claude-opus-5@subagent @T-294, 2026-09-10"
@@ -42,6 +42,13 @@ the card itself.
 It was left out of T-294 because that card's criterion is that the run
 SAYS a finding is owed and names the bisection, which the step does; the
 surface it says it on is a separate, smaller question.
+
+## A note on the size field
+
+Sized `S` rather than `XS`, which is what ADR-024's bounded tier calls
+this shape: the parser's own schema accepts `S | M | L` today and reds
+the live-tree smoke bodies on anything else, and the field's widening is
+T-296's. Re-size it when that lands.
 
 ## Acceptance criteria
 

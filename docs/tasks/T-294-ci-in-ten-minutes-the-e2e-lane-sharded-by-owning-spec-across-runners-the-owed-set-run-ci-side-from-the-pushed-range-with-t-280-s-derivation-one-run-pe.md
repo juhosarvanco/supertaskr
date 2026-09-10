@@ -206,6 +206,35 @@ under the app's source trees or either manifest. DOCS GATE fires on
 EVAL GATE does not fire: no `method/` path moved and no citation-grammar
 line was added under `docs/tasks/`.
 
+### What the first whole battery caught, and it is this card's own class
+
+The owed set for this lane's range is the WHOLE BATTERY — `.github/` is
+a path the derivation cannot place, so it fails closed (T-294-s1 is that
+finding). Run once at the first code-and-notes commit `2447bdae`, it
+came back parser RED / app RED / rust GREEN / e2e RED, and BOTH reds
+were real:
+
+1. A CROSS-SPEC RED, which is exactly the class ADR-024's fourth
+   amendment says the owed set gives up and the whole run catches.
+   `brief-flush.spec.ts` — a spec no import of this lane's reaches —
+   keeps the class of commands that end at `process.exit()` after
+   writing, which drops whatever stdout has not drained: invisible to a
+   file and to a TTY, silent to a pipe. `ci-owed.mjs` joined that class
+   the moment it existed, and its whole output IS a plan a later step
+   reads. Fixed in fence: `process.exitCode`, with the reason at the
+   site.
+
+2. THE PARSER'S SIZE SCHEMA IS `S | M | L`. T-294-s3 was filed as `XS`,
+   which ADR-024's bounded tier calls this shape and the parser does not
+   accept yet (its widening is T-296's). It redded the parser and app
+   smoke bodies by name and pushed the app shell's live parse-error
+   count from 60 to 61, redding four `shell-frame` bodies with it —
+   four UI bodies reporting a frontmatter defect, which is the shape
+   worth remembering. Re-sized `S`, with a note on the card.
+
+Both fixes landed in a second commit and the battery was re-run whole
+against that tip; the figures for both runs are in the lane's report.
+
 ### Suggested cards filed
 
 T-294-s1, T-294-s2, T-294-s3 — see their own files.
