@@ -55,3 +55,34 @@ Kept deliberately: the fence and the write hook; the blind bench for guard-class
 ## What the room needs
 
 @human — a ruling on A–G, each yes / no / later. A becomes an ADR and a CLAUDE.md change at once; B, C and D become ADRs with their cards; E, F and G are cards for the next triage.
+
+## The proposed process, final form (appended 2026-09-10 at @human's ask: "can we create the final form for the process?")
+
+**Three tiers, chosen by the arm from the card, never by judgment.**
+
+| Tier | Admits | Verification | Budget (F) |
+|---|---|---|---|
+| Bounded | size XS; every path inside a tracked fence; no guard-class path; no method text; a keeper already pins the property | none beyond the keeper: the executor runs the keeper spec scoped and the push owes its range | 20 min, 80K tokens |
+| Standard | S and M with no guard-class path and no method text | one verifier at the tip: reads the diff BEFORE the executor's notes, carries the rubric (each criterion literally, boundaries, data mutants, the security sweep), may assign corrections as committed bodies with MUTANT BLOCKs | 75 min, 250K tokens |
+| Guarded | any card touching hooks, gates, fences, the parser, the push/landing/gate scripts or method text; every L | the blind two-phase bench as today: a tool-less attack set from the card, a separate bench at the tip, mutants, sealed inputs | 100 min, 450K tokens |
+
+Guard-class paths are a list in the method, kept by a test; the arm refuses to classify a card whose fence it cannot place.
+
+**The stages, every tier.**
+
+1. **Triage** — a card, right-sized to the smallest unit that carries its own test cycle (G); the arm stamps size and tier.
+2. **Dispatch** — the arm cuts the worktree, writes the fence manifest, assembles the brief (the card, the pack of the CONVENTIONS bullets its fence implicates, the commands, the tier), names the model tier, arms the ask watcher. Nobody reads the tree.
+3. **Build** — the executor reads the brief and the fenced files, builds, runs the keeper scoped while iterating, runs the owed set once at its final commit, stamps. It returns a file and a line count; an ask is a file.
+4. **Verify** — per tier. The verifier's return is a file; the seat reads its verdict line, not its work.
+5. **Merge** — the arm: the ritual, the corrections from the verdict's blocks, the re-drill scoped to the fix diff, the method bump when method text moved, the message from the verdict. The seat rules on a conflict or a refusal and never edits code.
+6. **Push** — the range's owed set (T-280), the token, the guard; no waiting on the previous run.
+7. **CI** — sharded, the owed set, one run per commit, under twelve minutes; the code graph and the behaviour census regenerated and checked here (D).
+8. **Record** — the card done; the checkpoint at the sitting; the cycle-time and token bands read (F).
+
+**What every seat reads standing (A):** docs/STATE.md and a one-line description index of ROADMAP, ARCHITECTURE, CONVENTIONS and CAPABILITIES; everything else on demand through the pack. Target under 10K tokens.
+
+**The seat's rights, unchanged and written down:** records, rulings, grants, checkpoints, and text-only fast edits (a README, a wording); never code or method text — those take the bounded lane.
+
+**What stays, by name:** the fence and its write hook; the keeper specs; mutants where the property is data; the owed-set token and the push guard; the landing gate; the docs gate as ADR-023's keeper; the method stamp; records never rewritten.
+
+**The order of landing, one sitting after the rename merge:** A first (CLAUDE.md's order and the index — a text change plus a keeper for the index); then E (CI); then C and D together (the merge verb, T-281-s10's second half); then B (TASK-FORMAT's tier field, the arm's classifier, verifier.md's single-verifier mode — an ADR); then F and G (the bands; right-sizing at triage). Each is measured against the table's budgets at the checkpoint that follows it.
