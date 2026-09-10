@@ -468,6 +468,13 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { LANE_BRANCH_RE, frontmatterLineOf, within } from "./lane-fence.mjs";
+// THE VERDICT READER IS THE MERGE VERB'S OWN, never a second copy of the
+// grammar (method/lane-protocol.md rule 5's reason, applied to a reader):
+// `merge.mjs` defines the MUTANT BLOCK layout and this hook only asks it
+// which specs a verdict names. That module's whole import chain is node
+// builtins and this repository's own files — no package, which is what a
+// PreToolUse hook running in a worktree cut ninety seconds ago requires.
+import { newestVerdict, verdictSpecs } from "../../tools/e2e/scripts/merge.mjs";
 
 /**
  * This project's integration branch, held here and COMPARED rather than
@@ -762,6 +769,66 @@ export function cardAt(root, rev, ids, git = runGit) {
  * @property {string[]} outside every changed path outside the fence
  * @property {string[]} inside  every changed path the fence admits
  */
+
+/**
+ * THE SPECS A CARD'S NEWEST VERDICT NAMES, as committed at one revision.
+ *
+ * T-281-s10: T-281's grammar has the VERIFIER commit each correction's
+ * body "in the spec file the property lives in", and for a lane whose
+ * fence is method text that spec is outside the fence BY CONSTRUCTION —
+ * the pins on `executor.md` live in `brief.spec.ts`, which reads it.
+ * T-283's merge carried four such bodies and this gate refused the push
+ * with a message that could not say WHOSE write had escaped.
+ *
+ * The two remedies are different, which is why the label is worth its
+ * lines: a VERDICT-NAMED spec is widened on the integration branch ahead
+ * of the merge (the merge verb's own step since T-295), while a LANE
+ * write is a dispatch error and takes the route below.
+ *
+ * IT NEVER THROWS AND IT NEVER DECIDES ANYTHING. A card this cannot read
+ * yields an empty set, and every path is then labelled as it was before
+ * this existed. The refusal's WORDING is all that moves.
+ *
+ * @param {string} root
+ * @param {string} rev the revision whose card carries the verdict — the LANE end
+ * @param {string} file the card's path
+ * @param {(root: string, args: string[]) => Ran} [git]
+ * @returns {string[]}
+ */
+export function verdictNamedSpecs(root, rev, file, git = runGit) {
+  try {
+    const shown = git(root, ["show", `${rev}:${file}`]);
+    if (shown.status !== 0) return [];
+    const verdict = newestVerdict(shown.stdout);
+    if ("problem" in verdict) return [];
+    return verdictSpecs(verdict.text);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * EACH OUT-OF-FENCE PATH WITH WHOSE WRITE IT IS.
+ *
+ * @param {readonly string[]} outside
+ * @param {readonly string[]} specs
+ * @param {string} indent
+ * @returns {string}
+ */
+export function labelOutside(outside, specs, indent) {
+  return outside
+    .map(
+      (p) =>
+        `${indent}${p}${
+          specs.includes(p)
+            ? "   (a VERDICT-NAMED spec — the VERIFIER's correction body, not a lane write. The " +
+              "remedy is the widening on the integration branch, which `brief.mjs --merge` " +
+              "performs as its own step ahead of the merge)"
+            : "   (a LANE write)"
+        }\n`,
+    )
+    .join("");
+}
 
 /**
  * The one-directional containment question, asked once per changed path.
@@ -2087,8 +2154,8 @@ export function laneLandingVerdict(root, headRef, opts = {}) {
         fenceReport(read.touchesLine, read.fence) +
         `  the range judged: ${range.mergeBase}..HEAD (merge-base-to-tip, never base-at-cut-to-tip, ` +
         "so a checkpoint sync is not charged with main's own paths)\n" +
-        "  the paths refused:\n" +
-        judged.outside.map((p) => `    ${p}\n`).join("") +
+        "  the paths refused, each labelled with WHOSE write it is (T-281-s10):\n" +
+        labelOutside(judged.outside, verdictNamedSpecs(root, "HEAD", card.file, git), "    ") +
         `  ${ROUTE}`,
     );
   }
@@ -2333,7 +2400,14 @@ export function mergeLandingVerdict(root, headRef, opts = {}) {
     if (judged.outside.length > 0 && read.fence.unusable.length === 0) {
       refusals.push(
         `    ${merge} (${card.id}, fence ${read.touchesLine} read from first parent ${first}):\n` +
-          judged.outside.map((p) => `      ${p}\n`).join("").replace(/\n$/, ""),
+          labelOutside(
+            judged.outside,
+            // THE VERDICT ARRIVES WITH THE LANE, so it is read at the
+            // SECOND parent — the fence beside it is still the first
+            // parent's, for the reason this module's header gives.
+            verdictNamedSpecs(root, second, card.file, git),
+            "      ",
+          ).replace(/\n$/, ""),
       );
       continue;
     }

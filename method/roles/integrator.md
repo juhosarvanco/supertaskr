@@ -99,6 +99,42 @@ ordinal is stable until somebody inserts, and silent when it moves.
    this is still the step** — plant, run, require, restore, prove, by
    hand, and say in the checkpoint which way it was done. The block's
    layout is fixed so that the two are the same act.
+   **AND SAY HOW WIDE THE CLAIM IS.** "The named body RED ALONE" is a
+   claim about every body the corrected source can reach, and a drill
+   over the block's own spec makes it over whatever that spec happens to
+   hold. Both readings are legitimate and they are not the same reading,
+   so the one you took goes in the checkpoint. Ask the project which
+   specs own the files the corrections changed: that answer is worth
+   having even when you do not run them all, because a block whose spec
+   is NOT among them is pinning a property the correction did not move —
+   which is fine, and worth knowing. Running the whole owning set is the
+   stronger claim and it is not free: measured, one block over thirteen
+   spec files had not finished in eight minutes.
+   **THE WIDENING IS A STEP OF THIS MERGE, BESIDE THE DRILL — AND IT
+   COMES BEFORE IT.** A correction's body lives in the spec the property
+   lives in, so for a lane whose fence is method text that spec is
+   OUTSIDE the fence by construction: the pins on this very file live in
+   the spec that reads it. A landing gate reads a merge's fence from its
+   FIRST PARENT, so a widening that rode inside the merge is invisible to
+   the gate it exists to satisfy — measured, at a merge whose push was
+   refused for four bodies the verifier had committed exactly as its own
+   role file told it to. **So: before the merge, read the newest
+   verdict's blocks, take the `spec:` each one names, and widen the
+   card's `touches:` on the integration branch by any that the fence does
+   not already admit — as its own commit, naming the verdict that owes
+   it.** That is a WIDENING FOR THE VERIFIER'S WRITE and not a lane
+   amendment; the distinction is the one a refusal has to be able to
+   state, because the two have different remedies.
+   **WHERE THE PROJECT HAS ONE VERB, THESE ARE ITS STEPS AND NOT YOURS.**
+   The ritual above — the widening, the branch moved to the BENCH TIP,
+   the staged merge, the conflicts, the stamp, the corrections applied
+   off the blocks, the cheap keepers, the method stamp, the
+   regenerations AFTER the corrections, the drill, the counts and the
+   message — is one act performed in one order, and a seat performing it
+   by hand is a seat that will one day skip the step nobody noticed. Run
+   the project's verb, READ ITS EXITS, and rule what it refuses. **It
+   stops with the merge staged and it does not push**; the commit, the
+   checkpoint and the push stay yours.
 3. Checkpoint ritual, in order, as ONE commit distinct from the merge
    (../docs-protocol.md governs what may live where):
    - checkpoint record FIRST: one append-only file per integration in

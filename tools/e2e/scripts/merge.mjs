@@ -67,10 +67,13 @@
 
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildCommandFor, conventionCommandsFor } from "./cli.mjs";
+import { deriveOwning } from "./gate-run.mjs";
+import { carriesLegacy, classifyLegacy } from "./rename-scan.mjs";
 import { cardFile, git, repoRoot } from "./undo.mjs";
 
 export const EXIT = Object.freeze({ CLEAN: 0, FOUND: 1, USAGE: 2, CANNOT_RUN: 3 });
@@ -91,8 +94,10 @@ export const CONVENTIONS_PATH = path.join(repoRoot, "docs", "CONVENTIONS.md");
  * @property {"precondition" | "git" | "setup" | "regen" | "suite" | "gate" | "stop"} kind
  * @property {string} title
  * @property {string} why
- * @property {{ command: string, argv: string[], cwd: string, env?: Record<string, string>, assert?: "empty-output" } | null} run
- * @property {"graph-pins" | "stamp-done" | "mutant-drill"} [action] work the runner does AFTER the command
+ * @property {{ command: string, argv: string[], cwd: string, env?: Record<string, string>, assert?: "empty-output", tolerate?: boolean, quiet?: boolean } | null} run
+ * @property {"graph-pins" | "stamp-done" | "mutant-drill" | "apply-correction" | "widen-fence" | "resolve-conflicts" | "keeper" | "method-bump" | "half-bump-drill" | "counts" | "message" | "meters" | "docs-gate"} [action] work the runner does AFTER the command
+ * @property {"pinned-sentence" | "forbidden-spelling" | "xs-bound"} [keeper] which cheap keeper this step is
+ * @property {{ from: string, to: string }} [bump] the method stamp move this step performs
  * @property {MutantBlock} [block] the correction this step re-drills
  * @property {string} [problem] why this step cannot be performed at all
  * @property {string} [warning] news the step prints and does not stop for
@@ -379,33 +384,86 @@ export function readMutantBlocks(text) {
   const blocks = [];
   /** @type {string[]} */
   const problems = [];
+  /**
+   * The code fence this scan is currently INSIDE, or null. A fence of
+   * any other kind is what makes a `mutant` line beneath it an EXAMPLE
+   * rather than a block, and tracking it is what lets the margin below
+   * be forgiven without forgiving a quotation.
+   *
+   * @type {{ ticks: string } | null}
+   */
+  let outer = null;
   for (let i = 0; i < lines.length; i += 1) {
-    // AT COLUMN ZERO, both fences. An INDENTED fence is a markdown code
-    // block inside something else — a list item, a quoted example of this
-    // very layout — and a reader that took those would refuse a whole
-    // verdict because the verifier explained the shape it was using. An
-    // indented block is therefore not a block; a verdict that assigns
-    // corrections and yields none is refused by `drillSteps`, so the
-    // mistake is loud rather than silent.
-    if (lines[i] !== `\`\`\`${MUTANT_FENCE}`) continue;
+    const fence = FENCE_LINE.exec(lines[i] ?? "");
+    if (fence === null) continue;
+    const indent = /** @type {string} */ (fence[1]);
+    const ticks = /** @type {string} */ (fence[2]);
+    const info = /** @type {string} */ (fence[3] ?? "");
+    if (outer !== null) {
+      // A CLOSING FENCE IS BARE AND AT LEAST AS LONG as the one that
+      // opened — CommonMark's own rule, and the reason a verdict may
+      // quote this very layout inside a ````` fence without being read.
+      if (info.length === 0 && ticks.length >= outer.ticks.length) outer = null;
+      continue;
+    }
+    if (info !== MUTANT_FENCE) {
+      outer = { ticks };
+      continue;
+    }
     let end = -1;
     for (let j = i + 1; j < lines.length; j += 1) {
-      if (lines[j] === "```") {
-        end = j;
-        break;
-      }
+      const close = FENCE_LINE.exec(lines[j] ?? "");
+      if (close === null) continue;
+      if (/** @type {string} */ (close[3] ?? "").length > 0) continue;
+      if (/** @type {string} */ (close[2]).length < ticks.length) continue;
+      end = j;
+      break;
     }
     if (end === -1) {
       problems.push(`a \`\`\`${MUTANT_FENCE} block is never closed`);
       break;
     }
-    const one = readOneBlock(lines.slice(i + 1, end));
+    // THE MARGIN IS THE FENCE'S OWN AND IT IS TAKEN OFF (T-295). The
+    // measured fault, at the T-293 merge: a verifier wrote its block
+    // indented four spaces inside its verdict entry, the reader took a
+    // fence at column zero only, and the merged tree's own re-drill
+    // reported `blocks read: 0` over a verdict that assigned a
+    // correction. The refusal downstream was loud, and the seat still
+    // drilled that correction by hand at the exact line. A block's
+    // `old` and `new` text are EXACT, so the indent has to come off the
+    // body as well as be tolerated on the fence — otherwise every
+    // anchor in an indented block carries four spaces the tree does not.
+    const one = readOneBlock(dedentBlock(lines.slice(i + 1, end), indent));
     if ("problem" in one) problems.push(one.problem);
     else blocks.push(one.block);
     i = end;
   }
   if (problems.length > 0) return { problem: problems.join("; ") };
   return { blocks };
+}
+
+/**
+ * A FENCE LINE, AT WHATEVER MARGIN IT WAS WRITTEN AT: its indent, its
+ * run of backticks, and its info string.
+ */
+const FENCE_LINE = /^([ \t]*)(`{3,})[ \t]*(\S*)[ \t]*$/;
+
+/**
+ * A BLOCK'S BODY WITH THE FENCE'S OWN MARGIN TAKEN OFF.
+ *
+ * A line that does not carry the whole margin loses whatever leading
+ * whitespace it has instead of keeping a partial one — a body line
+ * indented LESS than its fence is malformed markdown either way, and
+ * leaving it half-indented would put the difference into a `old` anchor
+ * where it would silently match nothing.
+ *
+ * @param {readonly string[]} lines
+ * @param {string} indent
+ * @returns {string[]}
+ */
+export function dedentBlock(lines, indent) {
+  if (indent.length === 0) return [...lines];
+  return lines.map((l) => (l.startsWith(indent) ? l.slice(indent.length) : l.replace(/^[ \t]+/, "")));
 }
 
 /**
@@ -527,25 +585,65 @@ export function gradeDrill(input) {
  * @returns {{ command: string, argv: string[], cwd: string } | { problem: string }}
  */
 export function specRunner(spec, projectRoot) {
-  /** @type {{ dir: string, argv: (rel: string) => string[] }[]} */
-  const packages = [
-    { dir: "tools/e2e", argv: (rel) => ["playwright", "test", rel, "--reporter=line"] },
-    { dir: "lib/parser", argv: (rel) => ["vitest", "run", rel] },
-    { dir: "app", argv: (rel) => ["vitest", "run", rel] },
-  ];
-  for (const pkg of packages) {
-    if (!spec.startsWith(`${pkg.dir}/`)) continue;
-    return {
-      command: "npx",
-      argv: pkg.argv(spec.slice(pkg.dir.length + 1)),
-      cwd: path.join(projectRoot, ...pkg.dir.split("/")),
-    };
+  const many = specRunners([spec], projectRoot);
+  if ("problem" in many) return many;
+  const one = many.runners[0];
+  if (one === undefined) return { problem: `no runner was derived for ${spec}` };
+  return one;
+}
+
+/** This project's three test packages, and the argv each takes for a SET. */
+const SPEC_PACKAGES = Object.freeze([
+  { dir: "tools/e2e", argv: (/** @type {string[]} */ r) => ["playwright", "test", ...r, "--reporter=line"] },
+  { dir: "lib/parser", argv: (/** @type {string[]} */ r) => ["vitest", "run", ...r] },
+  { dir: "app", argv: (/** @type {string[]} */ r) => ["vitest", "run", ...r] },
+]);
+
+/**
+ * THE RUNNERS FOR A SET OF SPECS, one per package they fall in (T-295).
+ *
+ * A scope derived from a fix diff can name specs in two packages at
+ * once — a correction to a script under tools/ is owned by an e2e spec,
+ * and the same correction to a source under app/ by a vitest one — and
+ * two packages are two runs. Grouping them here rather than at the call
+ * site keeps the drill's "RED ALONE" reading a reading over the whole
+ * scope instead of over whichever package happened to be first.
+ *
+ * @param {readonly string[]} specs from the project root
+ * @param {string} projectRoot
+ * @returns {{ runners: { command: string, argv: string[], cwd: string, specs: string[] }[] } | { problem: string }}
+ */
+export function specRunners(specs, projectRoot) {
+  /** @type {Map<string, string[]>} */
+  const byPackage = new Map();
+  for (const spec of specs) {
+    const pkg = SPEC_PACKAGES.find((p) => spec.startsWith(`${p.dir}/`));
+    if (pkg === undefined) {
+      return {
+        problem:
+          `no runner in this project owns ${spec} — the packages that run specs are ` +
+          `${SPEC_PACKAGES.map((p) => p.dir).join(", ")}, and a spec outside all three cannot be ` +
+          "drilled here",
+      };
+    }
+    const list = byPackage.get(pkg.dir) ?? [];
+    if (!list.includes(spec)) list.push(spec);
+    byPackage.set(pkg.dir, list);
   }
-  return {
-    problem:
-      `no runner in this project owns ${spec} — the packages that run specs are ` +
-      `${packages.map((p) => p.dir).join(", ")}, and a spec outside all three cannot be drilled here`,
-  };
+  /** @type {{ command: string, argv: string[], cwd: string, specs: string[] }[]} */
+  const runners = [];
+  for (const [dir, list] of byPackage) {
+    const pkg = /** @type {{ dir: string, argv: (r: string[]) => string[] }} */ (
+      SPEC_PACKAGES.find((p) => p.dir === dir)
+    );
+    runners.push({
+      command: "npx",
+      argv: pkg.argv(list.map((s) => s.slice(dir.length + 1))),
+      cwd: path.join(projectRoot, ...dir.split("/")),
+      specs: [...list],
+    });
+  }
+  return { runners };
 }
 
 /** @param {string} text @returns {string} */
@@ -575,7 +673,14 @@ function spawnSpec(runner) {
  * PLANT, RUN, RESTORE, PROVE, GRADE — and the restore happens BEFORE the
  * grade so a grade that throws still leaves the site as it was.
  *
- * @param {{ block: MutantBlock, projectRoot: string, out?: (s: string) => void, err?: (s: string) => void, run?: (r: { command: string, argv: string[], cwd: string }) => { code: number, output: string } }} input
+ * SCOPED, SINCE T-295. `scope` is the set of spec files the drill's
+ * reading is taken over, and it defaults to the block's own spec —
+ * exactly the old behaviour, said out loud. The caller derives a wider
+ * one from the FIX DIFF (`drillScope`), because "the mutant reds more
+ * than its own body" is a claim about every body the corrected source
+ * can reach and not only about the spec the block happens to name.
+ *
+ * @param {{ block: MutantBlock, projectRoot: string, scope?: readonly string[], out?: (s: string) => void, err?: (s: string) => void, observe?: (e: { specs: string[], cwd: string, code: number, counts: { passed: number, failed: number } | null }) => void, run?: (r: { command: string, argv: string[], cwd: string }) => { code: number, output: string } }} input
  * @returns {number} 0 the drill holds - 1 it does not - 3 it could not run
  */
 export function runMutantDrill(input) {
@@ -587,11 +692,19 @@ export function runMutantDrill(input) {
     err(`      ${block.correction}: ${block.file} is not in this tree, so no mutant can be planted`);
     return EXIT.CANNOT_RUN;
   }
-  const runner = specRunner(block.spec, projectRoot);
+  const scope = input.scope === undefined || input.scope.length === 0 ? [block.spec] : input.scope;
+  const runner = specRunners(scope, projectRoot);
   if ("problem" in runner) {
     err(`      ${block.correction}: ${runner.problem}`);
     return EXIT.CANNOT_RUN;
   }
+  out(
+    `      scope: ${String(scope.length)} spec(s) — ${scope.join(", ")}` +
+      (scope.length === 1
+        ? ". RED ALONE is a claim over THIS spec; --drill-wide takes it over every spec the fix " +
+          "diff owns, and prices it"
+        : ". RED ALONE is a claim over every spec the FIX DIFF owns"),
+  );
   // THE BODY HAS TO BE ON THE MERGED TREE BEFORE ANYTHING IS PLANTED.
   // The verifier commits its bodies on the bench AFTER the verdict commit
   // (`method/roles/verifier.md` step 5b), so what gets merged is the
@@ -622,9 +735,22 @@ export function runMutantDrill(input) {
   }
   writeFileSync(file, planted.text);
   /** @type {{ code: number, output: string }} */
-  let result;
+  let result = { code: 0, output: "" };
   try {
-    result = (input.run ?? spawnSpec)(runner);
+    // ONE RUN PER PACKAGE, and the readings are UNIONED. A scope that
+    // spans two packages is two runners, and a drill that graded only
+    // the first would report RED ALONE over half its own scope.
+    const runOne = input.run ?? spawnSpec;
+    for (const one of runner.runners) {
+      const got = runOne(one);
+      if (input.observe !== undefined) {
+        input.observe({ specs: one.specs, cwd: one.cwd, code: got.code, counts: runCounts(got.output) });
+      }
+      result = {
+        code: result.code === 0 ? got.code : result.code,
+        output: `${result.output}${got.output}`,
+      };
+    }
   } finally {
     writeFileSync(file, pristine);
   }
@@ -772,6 +898,93 @@ export function drillSteps(input) {
 }
 
 /**
+ * THE CHEAP KEEPERS AS STEPS WITH EXITS (T-295 criterion 4).
+ *
+ * Each is a step because the card says so, and the reason is the seat's:
+ * a check folded into another step's exit is a check nobody can see
+ * refuse. The first three are PURE functions of the staged diff and the
+ * runner performs them; the fourth is the card's own preflight, which is
+ * a command and is spelled as one.
+ *
+ * @param {{ projectRoot: string, id: string, card: string }} input
+ * @returns {Step[]}
+ */
+export function keeperSteps(input) {
+  const brief = path.join(input.projectRoot, "tools", "e2e", "scripts", "brief.mjs");
+  /** @type {Step[]} */
+  const steps = [
+    {
+      id: "keeper:pinned-sentence",
+      kind: "gate",
+      action: "keeper",
+      keeper: "pinned-sentence",
+      title: "no line this merge REMOVES under method/ or docs/ is pinned VERBATIM by a spec",
+      why:
+        "T-295 criterion 4, and the T-285 merge is the instance: the seat reworded a clause in " +
+        "TASK-FORMAT.md while applying an assigned correction and broke a sentence a lane's body " +
+        "asserted word for word. Grepping the specs by the text that is going away is the " +
+        "cheapest check that would have caught it",
+      run: null,
+    },
+    {
+      id: "keeper:forbidden-spelling",
+      kind: "gate",
+      action: "keeper",
+      keeper: "forbidden-spelling",
+      title:
+        "no line this merge ADDS carries a forbidden spelling — the rename classes, a personal " +
+        "name, an email, a home path or a secret shape",
+      why:
+        "T-295 criterion 4. The rename half is not hypothetical: a merge on 2026-09-10 carried a " +
+        "comment spelling the retired identifier and the keeper spec redded it after the fact. " +
+        "The classifier is rename-scan.mjs's own, so a spelling that file keeps is kept here",
+      run: null,
+    },
+    {
+      id: "keeper:xs-bound",
+      kind: "gate",
+      action: "keeper",
+      keeper: "xs-bound",
+      title: `an XS card's diff stays inside the XS bound of ${String(XS_CHANGED_LINE_BOUND)} changed line(s)`,
+      why:
+        "T-295 criterion 4. The board's parser knows S, M and L today and XS is T-296's tier; " +
+        "the bound has to exist before the tier that reads it, or the tier arrives with nothing " +
+        "to enforce. A card of any other size is NOT judged and the step says so",
+      run: null,
+    },
+    {
+      id: "keeper:preflight",
+      kind: "gate",
+      title: `the card's own preflight — brief.mjs --task ${input.id} --preflight`,
+      why:
+        "T-295 criterion 4: a card whose claims no longer hold against the merged tree is a card " +
+        "the merge is about to make the record. The preflight is the existing arm and this step " +
+        "spends it at the one moment the merged tree exists and the commit does not",
+      run: existsSync(brief)
+        ? {
+            command: process.execPath,
+            argv: [brief, "--task", input.id, "--preflight", "--root", input.projectRoot],
+            cwd: input.projectRoot,
+            // QUIET WHILE IT HOLDS, WHOLE WHEN IT DOES NOT. The preflight
+            // renders a card's entire brief, and sixteen kilobytes of
+            // context pack in the middle of a merge's ledger is a step
+            // nobody reads the exit of. On a refusal every byte goes out.
+            quiet: true,
+          }
+        : null,
+      ...(existsSync(brief)
+        ? {}
+        : {
+            problem:
+              `${path.relative(input.projectRoot, brief)} is not in this project, so this card's ` +
+              "claims cannot be re-derived here — news, never silence",
+          }),
+    },
+  ];
+  return steps;
+}
+
+/**
  * The setup steps, in docs/CONVENTIONS.md's fresh-clone ORDER: the
  * parser FIRST — its `npm ci` and its build — then the app, because the
  * app resolves `@supertaskr/parser` through the parser's own
@@ -835,13 +1048,32 @@ export function setupSteps(projectRoot) {
  * spec, so every setup step has to precede it, and it decides whether
  * the commit may happen at all, so nothing may follow it but the stop.
  *
- * @param {{ paths: readonly string[], projectRoot: string, id: string, cardText?: string | undefined, verdictSha?: string | undefined, blocksAbsent?: string | undefined }} input
+ * @param {{ paths: readonly string[], projectRoot: string, id: string, cardText?: string | undefined, verdictSha?: string | undefined, blocksAbsent?: string | undefined, blocks?: readonly MutantBlock[] | undefined, card?: string | undefined, bumpFrom?: string | undefined, bumpTo?: string | undefined }} input
  * @returns {Step[]}
  */
 export function tailPlan(input) {
   const { paths, projectRoot, id } = input;
   /** @type {Step[]} */
   const steps = [];
+  // THE CORRECTIONS COME FIRST AND THE REGENERATIONS AFTER THEM (T-295
+  // criterion 2), which is an ORDER rather than a set: a census or a
+  // graph rebuilt ahead of a correction describes the tree that was
+  // there, and the commit then carries a generated file disagreeing with
+  // the source beside it.
+  const blocks = input.blocks ?? [];
+  if (blocks.length > 0) steps.push(...correctionSteps({ blocks }));
+  steps.push(...keeperSteps({ projectRoot, id, card: input.card ?? "" }));
+  const bump = bumpSteps({
+    paths,
+    projectRoot,
+    ...(input.bumpTo === undefined ? {} : { version: input.bumpTo }),
+    ...(input.bumpFrom === undefined ? {} : { from: input.bumpFrom }),
+  });
+  steps.push(...bump);
+  // THE BUMP MOVES kit.rs, WHICH IS UNDER THE WALK. So a merge that
+  // bumps owes the graph even when its own paths carry no indexed
+  // source — derived here rather than left to the reminder at the foot.
+  const bumped = bump.some((s) => s.id === "bump:stamps");
   if (bringsBuiltSources(paths)) steps.push(...setupSteps(projectRoot));
   if (movesSpecNames(paths)) {
     steps.push({
@@ -867,7 +1099,7 @@ export function tailPlan(input) {
       },
     });
   }
-  if (movesIndexedSource(paths)) {
+  if (movesIndexedSource(paths) || bumped) {
     steps.push({
       id: "graph:regen",
       kind: "regen",
@@ -911,7 +1143,7 @@ export function tailPlan(input) {
       run: { command: "git", argv: ["-C", projectRoot, "add", "docs/architecture"], cwd: projectRoot },
     });
   }
-  if (movesGraph(paths) || movesIndexedSource(paths)) {
+  if (movesGraph(paths) || movesIndexedSource(paths) || bumped) {
     steps.push({
       id: "dogfood",
       kind: "suite",
@@ -945,11 +1177,23 @@ export function tailPlan(input) {
         ? {
             id: "docs-gate",
             kind: "gate",
+            action: "docs-gate",
             title: `docs-gate.mjs on ${String(docsPaths.length)} path(s) under docs/`,
             why:
               "docs/CONVENTIONS.md DOCS GATE: docs/ is a CODE INPUT and neither other trigger " +
-              "can see it",
-            run: { command: process.execPath, argv: [gate, ...docsPaths], cwd: projectRoot },
+              "can see it. A gate that FIRES is NEWS — it names the suites this merge owes at " +
+              "the push, and every merge carrying a card fires it — so the run goes on and the " +
+              "owed set joins the message. Anything else it says STOPS the run",
+            run: {
+              command: process.execPath,
+              argv: [gate, ...docsPaths],
+              cwd: projectRoot,
+              // TOLERATED so the ACTION reads the answer. The gate exits 1
+              // on FIRES and on STALE alike and only its OUTPUT tells them
+              // apart; grading this step on the exit alone would stop every
+              // merge that carries a card, which is every merge.
+              tolerate: true,
+            },
           }
         : {
             id: "docs-gate:absent",
@@ -970,6 +1214,41 @@ export function tailPlan(input) {
       verdictSha: input.verdictSha,
       blocksAbsent: input.blocksAbsent,
     }),
+  );
+  steps.push(
+    {
+      id: "counts",
+      kind: "gate",
+      action: "counts",
+      title: "the counts this merge's own runs read, against the counts the verdict claims",
+      why:
+        "2d6d354: a merge script that committed on an exit code while the count under it had " +
+        "moved landed main red. READ THE COUNT AS WELL AS THE EXIT — an exit 0 over zero bodies " +
+        "is not a pass — and refuse before the commit when the two disagree",
+      run: null,
+    },
+    {
+      id: "message",
+      kind: "stop",
+      action: "message",
+      title: "the merge message, written FROM the verdict's own sentences and counts",
+      why:
+        "T-295 criterion 5: a message a seat composes is a summary of what the seat remembers, " +
+        "and two messages on 2026-09-09 named a count that had moved. Every sentence here comes " +
+        "out of the verdict or out of a figure this run measured",
+      run: null,
+    },
+    {
+      id: "meters",
+      kind: "stop",
+      action: "meters",
+      title: `the lane's and the verifier's \`## Meters\` blocks, appended to ${READINGS_PATH}`,
+      why:
+        "T-295 criterion 5, and T-297 is blocked on it: the meters blocks exist in every report " +
+        "and verdict on this board and are read by nobody. This is the capture; the bands own " +
+        "the parse",
+      run: null,
+    },
   );
   steps.push({
     id: "stop",
@@ -996,11 +1275,12 @@ export function tailPlan(input) {
 /**
  * THE PRELUDE — the git half, which is the same on every card.
  *
- * @param {{ projectRoot: string, id: string, branch: string, lane: string, verdict: string, worktree: string | null }} input
+ * @param {{ projectRoot: string, id: string, branch: string, lane: string, verdict: string, worktree: string | null, widen?: readonly string[] | null }} input
  * @returns {Step[]}
  */
 export function preludePlan(input) {
   const { projectRoot, id, branch, lane, verdict, worktree } = input;
+  const widen = input.widen ?? null;
   /** @type {Step[]} */
   const steps = [
     {
@@ -1031,6 +1311,24 @@ export function preludePlan(input) {
       },
     },
   ];
+  if (widen !== null && widen.length > 0) {
+    steps.push({
+      id: "fence:widen",
+      kind: "git",
+      action: "widen-fence",
+      title:
+        `widen ${id}'s fence on ${branch} by ${String(widen.length)} verdict-named spec(s) ` +
+        `BEFORE the merge — ${widen.join(", ")}`,
+      why:
+        "T-281-s10, absorbed by T-295. T-281's grammar has the verifier commit each correction's " +
+        "body in the spec the property lives in, and for a lane whose fence is method text that " +
+        "spec is outside the fence BY CONSTRUCTION. T-283's merge carried four such bodies and " +
+        "the landing gate refused the push, because it reads the fence from the merge's FIRST " +
+        "PARENT — so the widening has to be its own commit on the integration branch, ahead of " +
+        "the merge, and it names the verdict that owes it",
+      run: null,
+    });
+  }
   if (worktree !== null) {
     steps.push({
       id: "worktree:remove",
@@ -1059,12 +1357,20 @@ export function preludePlan(input) {
     {
       id: "merge",
       kind: "git",
+      action: "resolve-conflicts",
       title: `git merge --no-ff --no-commit ${lane}`,
-      why: "the prototype's step 4: the merge is staged so the integrator's own writes join it",
+      why:
+        "the prototype's step 4: the merge is staged so the integrator's own writes join it. A " +
+        "CONFLICT here gets exactly three answers and no fourth (T-295): this card's own file is " +
+        "taken from the LANE, a single end-of-file append keeps both sides and restores the " +
+        "closing, and everything else is named as a FENCE finding and stops the run — two lanes " +
+        "writing the same lines of one file is a fence that was not disjoint, and no merge may " +
+        "resolve that on their behalf",
       run: {
         command: "git",
         argv: ["-C", projectRoot, "merge", "--no-ff", "--no-commit", lane],
         cwd: projectRoot,
+        tolerate: true,
       },
     },
     {
@@ -1138,13 +1444,1039 @@ export function stampDone(input) {
     .replace(/^verified_by:[ \t]*$/m, `verified_by: ${input.verifiedBy}`);
 }
 
+// ── THE VERB'S OWN HALF (T-295) ──────────────────────────────────────
+//
+// Everything below joins the ritual the file above already performs, and
+// every piece of it is here because a SEAT did it by hand at one of the
+// merges of 2026-09-09 and 2026-09-10 and the hand slipped. The record
+// of each slip is on the function that closes it; the two that cost a
+// red main are the correction reader that found no block because the
+// fence was indented, and the doc clause whose rewording broke a
+// sentence a lane's body pinned verbatim.
+//
+// THE DIVISION OF LABOUR IS THE CARD'S: the verb performs, the seat
+// RULES. So every one of these is a STEP with an exit rather than a
+// silent fixup, a refusal names the step and the reason, and the tree is
+// left staged for the seat to judge.
+
+/**
+ * ONE CORRECTION, DECIDED FROM THE TREE RATHER THAN FROM THE VERDICT'S
+ * PROSE.
+ *
+ * A MUTANT BLOCK's `old` is the text the drill requires to be IN the
+ * tree, because the drill plants `new` over it and requires the named
+ * body RED. So the two halves are not interchangeable and only one of
+ * them can be the correction: when the merged tree carries the block's
+ * `new` text, the tree carries the DEFECT and the `old` text is the fix.
+ *
+ * WHICH SIDE THE TREE IS ON IS ASKED OF THE TREE. A verdict says the
+ * correction is assigned; it does not say whether the lane's own fix
+ * pass already landed it, and at four of the merges it had. So `old` is
+ * looked for FIRST: a tree that already carries it is already corrected,
+ * and applying anything there would be this file editing a tree that
+ * agrees with it.
+ *
+ * THE OVERLAP CASE IS WHY THE ORDER MATTERS. A `new` text is often a
+ * substring of its own `old` (a clause deleted, a guard dropped), so
+ * counting `new` on an already-corrected tree returns 1 and a reader
+ * that asked that question first would "correct" a correct tree back to
+ * the mutant. Asking for `old` first cannot make that mistake.
+ *
+ * @param {{ source: string, block: MutantBlock }} input
+ * @returns {{ text: string } | { already: string } | { problem: string }}
+ */
+export function correctionFor(input) {
+  const { source, block } = input;
+  const hasOld = occurrences(source, block.old);
+  if (hasOld > 0) {
+    return {
+      already:
+        `${block.correction}: ${block.file} already carries the block's \`old\` text, so this ` +
+        "correction is in the merged tree and nothing was written. The re-drill below is what " +
+        "says whether the body still pins it",
+    };
+  }
+  const hasNew = occurrences(source, block.new);
+  if (hasNew !== 1) {
+    return {
+      problem:
+        `${block.correction}: ${block.file} carries the block's \`old\` text 0 time(s) and its ` +
+        `\`new\` text ${String(hasNew)} time(s), so this merge cannot tell whether the correction ` +
+        "is owed or already made. An anchor that names no site, or names several, is not a " +
+        "correction — the merge stops here rather than guessing",
+    };
+  }
+  return { text: source.replace(block.new, () => block.old) };
+}
+
+/**
+ * THE CORRECTION STEPS, ONE PER BLOCK, BEFORE EVERY REGENERATION.
+ *
+ * ORDER IS THE PROPERTY the card names in its own words — "regenerate
+ * after the corrections, never before". A census or a graph rebuilt
+ * ahead of a correction describes the tree that was there, and the
+ * commit then carries a generated file that disagrees with the source
+ * beside it. That is the same class as T-018-s5's stale bundle, one
+ * directory over.
+ *
+ * @param {{ blocks: readonly MutantBlock[] }} input
+ * @returns {Step[]}
+ */
+export function correctionSteps(input) {
+  return input.blocks.map((block, n) => ({
+    id: `correction:${String(n + 1)}`,
+    kind: /** @type {const} */ ("git"),
+    action: /** @type {const} */ ("apply-correction"),
+    block,
+    title:
+      `apply ${block.correction} in ${block.file} — the block's \`old\` text where the tree ` +
+      "carries its `new`",
+    why:
+      "T-295 criterion 2: a correction assigned by a verdict is the block's own `old` text, and " +
+      "the drill that follows requires exactly that text to be in the tree. Applying it here, " +
+      "before every regeneration, is what keeps a generated file describing the corrected source",
+    run: null,
+  }));
+}
+
+/**
+ * THE RE-DRILL'S SCOPE — THE FIX DIFF, THROUGH THE OWNING-SPEC RULE, AND
+ * IT IS NARROW BY DEFAULT BECAUSE THE WIDE ONE WAS MEASURED.
+ *
+ * The scope is derived from the FIX DIFF — the files the corrections
+ * just wrote — through `gate-run.mjs`'s `deriveOwning`, the same rule
+ * `--owning` grades a lane's range with. Nothing here is typed.
+ *
+ * **WHAT THE DERIVATION IS FOR, BY DEFAULT, IS THE CHECK AND NOT THE
+ * RUN.** A block's `spec` should be one the fix diff OWNS: the body that
+ * pins a correction is expected to reach the source the correction
+ * changed. When it does not, that is worth saying — and saying it costs
+ * nothing, while running the whole owning set costs minutes. Measured on
+ * this card's own fixture: a correction to one script under `tools/e2e`
+ * was owned by THIRTEEN e2e spec files, and one block's drill over that
+ * set had not finished after eight minutes — against a ritual whose
+ * whole target is about five.
+ *
+ * So the default run is the block's own spec, which is what the seat's
+ * hand ritual did, with the ownership stated as a reading beside it.
+ * `wide` takes the whole owning set instead: that is the stronger claim
+ * — "RED ALONE" over every body the corrected source can reach rather
+ * than over one spec — and it is the guarded profile's, priced at the
+ * figure above.
+ *
+ * @param {{ block: MutantBlock, fixed: readonly string[], wide?: boolean, owning?: (paths: string[]) => string[] }} input
+ * @returns {{ specs: string[], owned: string[], ownsTheBlock: boolean }}
+ */
+export function drillScope(input) {
+  const { block } = input;
+  const fixed = [...input.fixed];
+  /** @type {string[]} */
+  let owned = [];
+  if (fixed.length > 0 && input.owning !== undefined) {
+    try {
+      owned = input.owning(fixed);
+    } catch {
+      // A SCOPE THAT COULD NOT BE DERIVED IS THE BLOCK'S OWN SPEC, never
+      // a silently wider or narrower run. The derivation walks a graph
+      // and can fail on a tree mid-merge; failing back to the spec the
+      // block names keeps the drill a drill.
+      owned = [];
+    }
+  }
+  /** @type {string[]} */
+  const specs = [block.spec];
+  if (input.wide === true) for (const s of owned) if (!specs.includes(s)) specs.push(s);
+  return { specs, owned, ownsTheBlock: owned.includes(block.spec) };
+}
+
+// ── THE CONFLICTS (T-295) ────────────────────────────────────────────
+
+/**
+ * THE THREE ANSWERS A CONFLICTED PATH GETS, and there is no fourth.
+ *
+ * `card` — the merge's own card, both sides of which are the same card
+ * with two different stamps. The lane's copy is the one that carries the
+ * verdict and the lane's own notes, so it wins; the stamp step then
+ * writes `done` over whichever status it carries.
+ *
+ * `append` — a file both sides APPENDED to at its end. Two lanes adding
+ * a body to the end of a shared spec is the commonest conflict on this
+ * board and it was resolved by hand at two merges: keep both sides, in
+ * lane order, and restore the closing the second side's marker ate.
+ *
+ * `fence` — everything else. Two lanes writing the same lines of the
+ * same file is a FENCE failure: the fences were not disjoint and no
+ * merge may paper over that. The verb names it and stops.
+ */
+export const CONFLICT_KINDS = Object.freeze(["card", "append", "fence"]);
+
+/** The markers git leaves in a conflicted working file. */
+const OURS_MARK = /^<{7}(?: |$)/;
+const BASE_MARK = /^\|{7}(?: |$)/;
+const THEIRS_MARK = /^={7}$/;
+const END_MARK = /^>{7}(?: |$)/;
+
+/**
+ * CLASSIFY ONE CONFLICTED PATH.
+ *
+ * The card arm is a PATH question and is answered first, because a card
+ * conflicted at its end would otherwise read as an append.
+ *
+ * @param {{ path: string, id: string, text: string }} input
+ * @returns {{ kind: "card" | "append" | "fence", why: string }}
+ */
+export function classifyConflict(input) {
+  const { path: rel, id, text } = input;
+  if (new RegExp(`^docs/tasks/${id}(?:-|\\.)`).test(rel)) {
+    return {
+      kind: "card",
+      why:
+        `${rel} is ${id}'s OWN card and both sides stamped it. The lane's copy carries the ` +
+        "verdict and the implementation notes, so it is the one taken",
+    };
+  }
+  const hunks = conflictHunks(text);
+  const one = hunks[0];
+  if (hunks.length === 1 && one !== undefined && one.atEnd) {
+    // AN APPEND IS A CLAIM ABOUT THE MERGE BASE, NOT ABOUT THE END OF A
+    // FILE, and the two came apart on a fixture the first time this was
+    // run: a one-line file that BOTH sides rewrote is also one hunk at
+    // the end, and a resolver that kept both sides there would silently
+    // concatenate two rewrites of the same line. So the base section
+    // decides: both sides ADDED where the base had nothing, or this is
+    // not an append. The section is only there under `--conflict=diff3`,
+    // which is what the runner re-materialises the file with; a file
+    // carrying no base section is refused rather than guessed at.
+    if (!one.hasBase) {
+      return {
+        kind: "fence",
+        why:
+          `${rel} is conflicted in one hunk at its end, but its conflict carries NO merge-base ` +
+          "section, so whether both sides ADDED there or both REWROTE the same lines cannot be " +
+          "told apart. Re-materialise it with --conflict=diff3, or rule it by hand",
+      };
+    }
+    if (one.base.every((l) => l.trim().length === 0)) {
+      return {
+        kind: "append",
+        why:
+          `${rel} is conflicted in ONE hunk at its END whose MERGE BASE is empty — both sides ` +
+          "only ADDED there, which is the shape two lanes appending a body to a shared spec " +
+          "make. Both sides are kept, in lane order, and the closing the second marker ate is " +
+          "restored",
+      };
+    }
+    return {
+      kind: "fence",
+      why:
+        `${rel} is conflicted in one hunk at its end and its merge base is NOT empty — both ` +
+        `sides REWROTE ${String(one.base.length)} line(s) that were already there. That is two ` +
+        "lanes writing the same lines of one file, so the fences were not disjoint",
+    };
+  }
+  return {
+    kind: "fence",
+    why:
+      `${rel} is conflicted in ${String(hunks.length)} hunk(s) that are not a single end-of-file ` +
+      "append, which means two lanes wrote the same lines of one file. That is a FENCE finding — " +
+      "the fences were not disjoint — and no merge may resolve it on their behalf",
+  };
+}
+
+/**
+ * THE CONFLICT HUNKS IN ONE FILE, with the one fact the append arm needs:
+ * whether the hunk closes the file.
+ *
+ * @param {string} text
+ * @returns {{ ours: string[], theirs: string[], base: string[], hasBase: boolean, start: number, end: number, atEnd: boolean }[]}
+ */
+export function conflictHunks(text) {
+  const lines = text.split("\n");
+  /** @type {{ ours: string[], theirs: string[], base: string[], hasBase: boolean, start: number, end: number, atEnd: boolean }[]} */
+  const hunks = [];
+  for (let i = 0; i < lines.length; i += 1) {
+    if (!OURS_MARK.test(lines[i] ?? "")) continue;
+    /** @type {string[]} */
+    const ours = [];
+    /** @type {string[]} */
+    const theirs = [];
+    /** @type {string[]} */
+    const base = [];
+    let hasBase = false;
+    /** @type {"ours" | "base" | "theirs"} */
+    let side = "ours";
+    let end = -1;
+    for (let j = i + 1; j < lines.length; j += 1) {
+      const line = /** @type {string} */ (lines[j] ?? "");
+      if (BASE_MARK.test(line)) {
+        side = "base";
+        hasBase = true;
+        continue;
+      }
+      if (THEIRS_MARK.test(line)) {
+        side = "theirs";
+        continue;
+      }
+      if (END_MARK.test(line)) {
+        end = j;
+        break;
+      }
+      if (side === "ours") ours.push(line);
+      else if (side === "base") base.push(line);
+      else if (side === "theirs") theirs.push(line);
+    }
+    if (end === -1) break;
+    // AT THE END means nothing but blank lines follow the closing
+    // marker. A trailing newline leaves one empty string behind, which
+    // is a file that ends properly and not content.
+    const rest = lines.slice(end + 1);
+    hunks.push({ ours, theirs, base, hasBase, start: i, end, atEnd: rest.every((l) => l.trim().length === 0) });
+    i = end;
+  }
+  return hunks;
+}
+
+/**
+ * KEEP BOTH SIDES OF AN END-OF-FILE APPEND, AND RESTORE THE CLOSING.
+ *
+ * The measured shape, twice by hand: two lanes each append a body to the
+ * end of a shared spec, and git's conflict eats the file's closing
+ * newline into the second side's marker line. Keeping both sides in lane
+ * order — ours, then theirs — and restoring exactly one trailing newline
+ * is what the seat did, and it is the only resolution that loses no
+ * body.
+ *
+ * IT REFUSES ANY OTHER SHAPE. Called on a file whose conflict is not one
+ * end-of-file append it returns a problem rather than a best effort:
+ * this is the ONE conflict the verb resolves, and a resolver that
+ * stretched would be resolving the fence findings the card says it must
+ * never touch.
+ *
+ * @param {string} text
+ * @returns {{ text: string } | { problem: string }}
+ */
+export function resolveAppendConflict(text) {
+  const hunks = conflictHunks(text);
+  const one = hunks[0];
+  if (hunks.length !== 1 || one === undefined) {
+    return {
+      problem:
+        `an end-of-file append is ONE conflicted hunk and this file has ${String(hunks.length)} — ` +
+        "nothing was written",
+    };
+  }
+  if (!one.atEnd) {
+    return { problem: "the conflicted hunk does not close the file, so it is not an append" };
+  }
+  if (!one.hasBase || one.base.some((l) => l.trim().length > 0)) {
+    return {
+      problem:
+        "the conflicted hunk's MERGE BASE is absent or not empty, so both sides did not merely " +
+        "add at the end — nothing was written",
+    };
+  }
+  const lines = text.split("\n");
+  const kept = [
+    ...lines.slice(0, one.start),
+    ...one.ours,
+    ...one.theirs,
+  ];
+  // THE CLOSING, RESTORED: exactly one trailing newline and no blank
+  // line before it. `join` puts the newlines between the lines, so the
+  // final empty string is the file's own closing.
+  while (kept.length > 0 && (kept[kept.length - 1] ?? "").trim().length === 0) kept.pop();
+  kept.push("");
+  return { text: kept.join("\n") };
+}
+
+// ── THE FENCE WIDENING (T-281-s10, absorbed by T-295) ────────────────
+
+/**
+ * THE SPECS A VERDICT'S OWN BLOCKS NAME.
+ *
+ * T-281's grammar has the verifier commit each correction's body "in the
+ * spec file the property lives in". For a lane whose fence is method
+ * text that spec is outside the fence BY CONSTRUCTION — the pins on
+ * `executor.md` live in `brief.spec.ts`, which reads it — so T-283's
+ * merge carried four such bodies and the landing gate refused the push.
+ *
+ * @param {string} verdictText
+ * @returns {string[]} distinct spec paths, in the order the blocks name them
+ */
+export function verdictSpecs(verdictText) {
+  const read = readMutantBlocks(verdictText);
+  if ("problem" in read) return [];
+  /** @type {string[]} */
+  const specs = [];
+  for (const b of read.blocks) if (!specs.includes(b.spec)) specs.push(b.spec);
+  return specs;
+}
+
+/**
+ * THE `touches:` LINE, WIDENED BY THE PATHS A VERDICT OWES.
+ *
+ * PURE, and it writes the fence in the card's own spelling: the flow
+ * sequence `[a, b, c]` the whole board uses. A path already inside the
+ * fence is not added twice — the comparison is on the literal entry,
+ * because a token that RESOLVES to the same domain is the fence
+ * expander's question and not this one's.
+ *
+ * @param {{ text: string, specs: readonly string[] }} input
+ * @returns {{ text: string, added: string[] } | { problem: string }}
+ */
+export function widenTouches(input) {
+  const line = /^touches:[ \t]*\[(.*)\][ \t]*$/m.exec(input.text);
+  if (line === null) {
+    return {
+      problem:
+        "the card carries no single-line `touches: [...]` fence this widening can extend — a " +
+        "fence written some other way is the seat's to widen, and this step refuses rather than " +
+        "rewriting a line it cannot read",
+    };
+  }
+  const present = /** @type {string} */ (line[1])
+    .split(",")
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0);
+  const added = input.specs.filter((s) => !present.includes(s));
+  if (added.length === 0) return { text: input.text, added: [] };
+  const widened = `touches: [${[...present, ...added].join(", ")}]`;
+  return { text: input.text.replace(line[0], widened), added };
+}
+
+// ── THE CHEAP KEEPERS (T-295 criterion 4) ────────────────────────────
+
+/**
+ * THE SHORTEST CHANGED LINE THE PINNED-SENTENCE KEEPER WILL JUDGE.
+ *
+ * A keeper over every removed line would match on `}`, on a blank
+ * comment marker and on every list bullet a spec happens to quote, and a
+ * keeper that cries at every merge is one nobody reads by the third one.
+ * Thirty characters is the shortest line in this repository's own specs
+ * that is pinned as a SENTENCE rather than as a token — measured by
+ * eye over the verbatim strings `brief.spec.ts` and `cli.spec.ts` assert
+ * against method and docs text.
+ */
+export const PINNED_SENTENCE_FLOOR = 30;
+
+/**
+ * A CHANGED LINE UNDER method/ OR docs/ THAT A SPEC PINS VERBATIM.
+ *
+ * THE MEASURED FAULT, at the T-285 merge: the seat reworded a clause in
+ * `TASK-FORMAT.md` while applying an assigned correction, and the
+ * rewording broke a sentence a lane's body asserted verbatim. Nothing in
+ * the ritual looked, and the spec that owned it was not in the merge's
+ * owed set. The remedy is the cheapest possible one — grep the specs by
+ * the text that is going AWAY.
+ *
+ * IT JUDGES REMOVALS, NOT ADDITIONS, and that is the whole rule: a line
+ * a spec pins is safe while it is in the tree and unsafe the moment it
+ * leaves. An addition cannot break a verbatim pin.
+ *
+ * @param {{ removed: readonly { path: string, line: string }[], specs: ReadonlyMap<string, string>, floor?: number }} input
+ * @returns {string[]} one finding per pinned line, naming the line and the spec
+ */
+export function pinnedSentenceFindings(input) {
+  const floor = input.floor ?? PINNED_SENTENCE_FLOOR;
+  /** @type {string[]} */
+  const findings = [];
+  for (const entry of input.removed) {
+    if (!/^(?:method|docs)\//.test(entry.path)) continue;
+    const text = entry.line.trim();
+    if (text.length < floor) continue;
+    for (const [spec, body] of input.specs) {
+      if (!body.includes(text)) continue;
+      findings.push(
+        `${entry.path}: a line this merge REMOVES is pinned VERBATIM by ${spec} — ` +
+          `${JSON.stringify(text.length > 120 ? `${text.slice(0, 117)}...` : text)}. ` +
+          "Restore the sentence or move the pin; a merge that lands this reds that body",
+      );
+      break;
+    }
+  }
+  return findings;
+}
+
+/**
+ * THE SPELLINGS NO DIFF MAY CARRY, as SHAPES rather than as a word list.
+ *
+ * Four classes, and every one of them is a thing that has reached a
+ * tracked file on some project: a credential, an address, the seat's own
+ * home directory, and the identifier ADR-022 retired. The fifth input —
+ * a personal name — is DERIVED BY THE CALLER from this machine's own
+ * git identity and account rather than typed here, because a name list
+ * in a repository is itself the leak.
+ */
+export const SECRET_SHAPES = Object.freeze([
+  { id: "private-key", re: /-{5}BEGIN [A-Z ]*PRIVATE KEY-{5}/, why: "a private key block" },
+  { id: "aws-key", re: /\bAKIA[0-9A-Z]{16}\b/, why: "an AWS access key id" },
+  { id: "token-sk", re: /\bsk-[A-Za-z0-9_-]{20,}\b/, why: "a bearer token in the `sk-` shape" },
+  { id: "token-gh", re: /\bgh[pousr]_[A-Za-z0-9]{20,}\b/, why: "a forge token in the `gh*_` shape" },
+]);
+
+/** An address, narrow enough that this board's `model@kind` seats are not one. */
+export const EMAIL_SHAPE = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}\b/;
+
+/**
+ * A FORBIDDEN SPELLING IN THE LINES A MERGE ADDS.
+ *
+ * ADDITIONS ONLY, for the mirror of the reason the keeper above judges
+ * removals only: a secret is a thing that ARRIVES, and judging the whole
+ * tree would refuse every merge for whatever the tree already carries.
+ *
+ * The rename class is `rename-scan.mjs`'s own — its classifier, not a
+ * second copy of the pattern — so a spelling that file learns to allow
+ * is allowed here on the same day. **The classifier is what makes this
+ * usable at all**: the retired identifier survives in quoted human
+ * sentences and in historical records, and a keeper that could not tell
+ * those from a fresh one would have to be turned off.
+ *
+ * @param {{ added: readonly { path: string, line: string }[], home?: string, names?: readonly string[], classify?: (line: string, file: string) => { kept: boolean } | null }} input
+ * @returns {string[]}
+ */
+export function forbiddenSpellingFindings(input) {
+  /** @type {Map<string, string>} */
+  const findings = new Map();
+  const home = (input.home ?? "").trim();
+  const names = (input.names ?? []).filter((n) => n.trim().length > 2);
+  /**
+   * ONE FINDING PER FILE PER CLASS, never one per line. A merge that
+   * adds forty lines carrying a home path is ONE thing to fix in one
+   * file, and forty copies of the same sentence is a refusal a seat
+   * scrolls past — which is the same failure mode as a keeper nobody
+   * turned on. The key is what makes it one.
+   *
+   * @param {string} rel @param {string} id @param {string} text
+   */
+  const found = (rel, id, text) => {
+    if (!findings.has(`${rel}:${id}`)) findings.set(`${rel}:${id}`, text);
+  };
+  for (const entry of input.added) {
+    const { path: rel, line } = entry;
+    for (const shape of SECRET_SHAPES) {
+      if (shape.re.test(line)) {
+        found(
+          rel,
+          shape.id,
+          `${rel}: this merge ADDS a line matching ${shape.why} (${shape.id}). A credential in a ` +
+            "tracked file is a credential published; rotate it and take the line out",
+        );
+      }
+    }
+    if (EMAIL_SHAPE.test(line)) {
+      found(
+        rel,
+        "email",
+        `${rel}: this merge ADDS a line carrying an email address — ` +
+          `${JSON.stringify(EMAIL_SHAPE.exec(line)?.[0] ?? "")}. An address in a tracked file is ` +
+          "an address published",
+      );
+    }
+    if (home.length > 0 && line.includes(home)) {
+      found(
+        rel,
+        "home",
+        `${rel}: this merge ADDS a line carrying THIS MACHINE'S OWN home directory. A home path ` +
+          "is a fact about one seat's disk and it names its owner; spell the path from the " +
+          "repository root, or derive it",
+      );
+    }
+    for (const name of names) {
+      if (new RegExp(`\\b${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(line)) {
+        found(
+          rel,
+          `name:${name}`,
+          `${rel}: this merge ADDS a line carrying the seat's own account or git name ` +
+            `(${JSON.stringify(name)}). A personal name reaches a tracked file by accident far ` +
+            "more often than on purpose",
+        );
+      }
+    }
+    if (input.classify !== undefined) {
+      const verdict = input.classify(line, rel);
+      if (verdict !== null && !verdict.kept) {
+        found(
+          rel,
+          "rename",
+          `${rel}: this merge ADDS a line spelling the identifier ADR-022 retired, in a place ` +
+            "the rename scanner's own classifier does not keep. The keeper scans comments too — " +
+            "one reached a merge that way on 2026-09-10",
+        );
+      }
+    }
+  }
+  return [...findings.values()];
+}
+
+/**
+ * THE XS BOUND, IN CHANGED LINES, AND IT IS A STATED NUMBER.
+ *
+ * The board's parser knows S, M and L today; XS is the tier T-296 adds,
+ * and a bound has to exist before the tier that reads it does or the
+ * tier arrives with nothing to enforce. FORTY CHANGED LINES — additions
+ * plus removals over the merge's whole diff, the card's own file
+ * excluded because a card's prose is not the work.
+ *
+ * Why forty: the smallest merges of 2026-09-09 and 2026-09-10 that a
+ * seat would have called XS on sight — a single guard, a single clause,
+ * a single new keeper line with its body — each landed between eleven
+ * and thirty-four changed lines. Forty is the first round number above
+ * all of them, and it is a number to be MOVED by measurement rather than
+ * defended: the tier work owns it from here.
+ */
+export const XS_CHANGED_LINE_BOUND = 40;
+
+/**
+ * @param {{ size: string, changed: number, bound?: number }} input
+ * @returns {string | null}
+ */
+export function xsBoundFinding(input) {
+  const bound = input.bound ?? XS_CHANGED_LINE_BOUND;
+  if (input.size.trim().toUpperCase() !== "XS") return null;
+  if (input.changed <= bound) return null;
+  return (
+    `this card declares size XS and the merge changes ${String(input.changed)} line(s), over the ` +
+    `XS bound of ${String(bound)}. Either the card is the wrong size or the lane outgrew it; ` +
+    "both are the seat's to rule, and neither is a thing a merge decides quietly"
+  );
+}
+
+// ── THE COUNTS (2d6d354's class, T-295 criterion 5) ──────────────────
+
+/** The legs this board grades, as a merge message and a verdict spell them. */
+export const LEGS = Object.freeze(["parser", "app", "rust", "e2e"]);
+
+/**
+ * THE COUNTS A VERDICT CLAIMS, off its own sentences.
+ *
+ * `parser 389 / app 1171 / rust 655 exit 0 and e2e 852` is how the
+ * verdicts on this board write them, so the grammar is a leg name and
+ * the nearest number after it, and a `N passed` beside a leg is read the
+ * same way. Nothing is inferred from a leg the verdict does not mention.
+ *
+ * @param {string} text
+ * @returns {Record<string, number>}
+ */
+export function claimedCounts(text) {
+  /** @type {Record<string, number>} */
+  const counts = {};
+  for (const leg of LEGS) {
+    const re = new RegExp(`\\b${leg}\\b[^\\dA-Za-z]{0,4}(\\d{2,6})\\b`, "i");
+    const hit = re.exec(text);
+    if (hit === null) continue;
+    counts[leg] = Number(hit[1]);
+  }
+  return counts;
+}
+
+/**
+ * THE COUNT A RUN PRINTED, in either dialect this repository runs.
+ *
+ * READ THE COUNT AS WELL AS THE EXIT: an exit 0 over zero bodies is not
+ * a pass, and a script that committed on an exit alone landed `2d6d354`
+ * red. This is the reading that makes the guard below possible.
+ *
+ * @param {string} output
+ * @returns {{ passed: number, failed: number } | null}
+ */
+export function runCounts(output) {
+  // THE ESCAPE IS SPELLED, NEVER TYPED, for the reason failingBodies
+  // above gives: a literal U+001B in tracked text is a CONTROL
+  // violation the token lint reds by byte offset, and this line was
+  // exactly that on its first write.
+  const clean = output.replace(/\u001b\[[0-9;]*m/g, "");
+  const passed = /(\d+)\s+passed/i.exec(clean);
+  const failed = /(\d+)\s+failed/i.exec(clean);
+  if (passed === null && failed === null) return null;
+  return { passed: passed === null ? 0 : Number(passed[1]), failed: failed === null ? 0 : Number(failed[1]) };
+}
+
+/**
+ * GRADE THE COUNTS THIS RUN READ AGAINST THE COUNTS THE VERDICT CLAIMS.
+ *
+ * THE REFUSAL IS THE POINT. `2d6d354` was a merge script that committed
+ * on an exit code while the count underneath it had moved, and main went
+ * red for it. A leg the verdict does not claim is NOT judged and says
+ * so; a leg this run produced no count for is not judged either. Three
+ * answers, never two.
+ *
+ * @param {{ claimed: Record<string, number>, observed: Record<string, number> }} input
+ * @returns {{ findings: string[], judged: string[], unjudged: string[] }}
+ */
+export function gradeCounts(input) {
+  /** @type {string[]} */
+  const findings = [];
+  /** @type {string[]} */
+  const judged = [];
+  /** @type {string[]} */
+  const unjudged = [];
+  for (const leg of LEGS) {
+    const claim = input.claimed[leg];
+    const seen = input.observed[leg];
+    if (claim === undefined && seen === undefined) continue;
+    if (claim === undefined) {
+      unjudged.push(`${leg}: this run read ${String(seen)} and the verdict claims no count for it`);
+      continue;
+    }
+    if (seen === undefined) {
+      unjudged.push(`${leg}: the verdict claims ${String(claim)} and this run produced no count`);
+      continue;
+    }
+    if (seen === claim) {
+      judged.push(`${leg}: ${String(seen)}, the count the verdict claims`);
+      continue;
+    }
+    findings.push(
+      `${leg}: THE COUNT MOVED — the verdict claims ${String(claim)} and this merge's own run ` +
+        `read ${String(seen)}. A merge that commits on an exit code while the count under it ` +
+        "moved is 2d6d354, which landed main red",
+    );
+  }
+  return { findings, judged, unjudged };
+}
+
+// ── THE METHOD BUMP (T-295 criterion 3) ──────────────────────────────
+
+/**
+ * THE THREE FILES THAT CARRY THE METHOD STAMP, each with the anchor its
+ * own spelling uses. A bump that moved two of them is a HALF BUMP, and
+ * the pin test in `kit.rs` is what reds on one.
+ */
+export const METHOD_STAMP_FILES = Object.freeze([
+  {
+    path: "docs/CONVENTIONS.md",
+    anchor: (/** @type {string} */ v) => `method/ formats are version-bumped (currently v${v}) and noted here.`,
+  },
+  { path: "method/interview/plan-interview.md", anchor: (/** @type {string} */ v) => `(v${v};` },
+  {
+    path: "app/src-tauri/src/agent/kit.rs",
+    anchor: (/** @type {string} */ v) => `pub const METHOD_SNAPSHOT_VERSION: &str = "${v}";`,
+  },
+]);
+
+/** @param {readonly string[]} paths @returns {boolean} */
+export function movesMethodText(paths) {
+  return paths.some((p) => p === "method" || p.startsWith("method/"));
+}
+
+/**
+ * THE BUMP AS STEPS, AND IT IS A REFUSAL RATHER THAN A WRITE.
+ *
+ * The verb does NOT invent the next version. Which number a release
+ * takes and what its note says are the seat's ruling — the notes on this
+ * board name a release ("the RENAME release", "the STANDING READ
+ * release") — and a program that picked one would be filing a release
+ * note nobody wrote. So when method text moved and `--bump <version>`
+ * was not given, this is one step that STOPS and says what is owed; with
+ * a version it is the four graded steps the seat's script performs.
+ *
+ * WHEN METHOD TEXT DID NOT MOVE THERE IS NO STEP AT ALL, which is the
+ * card's second half: the stamp is untouched.
+ *
+ * @param {{ paths: readonly string[], projectRoot: string, version?: string | undefined, from?: string | undefined }} input
+ * @returns {Step[]}
+ */
+export function bumpSteps(input) {
+  if (!movesMethodText(input.paths)) return [];
+  const moved = input.paths.filter((p) => p.startsWith("method/"));
+  if (input.version === undefined || input.from === undefined) {
+    return [
+      {
+        id: "bump:owed",
+        kind: "gate",
+        title:
+          `THE METHOD STAMP IS OWED — this merge moves ${String(moved.length)} file(s) under ` +
+          "method/ and no --bump <from>..<to> was named",
+        why:
+          "docs/CONVENTIONS.md's method stamp: method/ formats are version-bumped and noted, in " +
+          "three files at once. WHICH number the release takes and what its note says are the " +
+          "seat's ruling, so this step refuses rather than inventing one. Re-run with " +
+          "--bump <old>..<new>, or rule that this merge's method text is not a release",
+        problem:
+          `method text moved (${moved.slice(0, 4).join(", ")}${moved.length > 4 ? ", ..." : ""}) ` +
+          "and the three stamp files were not bumped",
+        run: null,
+      },
+    ];
+  }
+  const from = input.from;
+  const to = input.version;
+  /** @type {Step[]} */
+  const steps = [
+    {
+      id: "bump:stamps",
+      kind: "regen",
+      action: "method-bump",
+      bump: { from, to },
+      title: `bump the three method stamp files ${from} to ${to}`,
+      why:
+        "the seat's own bump script, as run at T-264-s3's and T-293's merges: CONVENTIONS' " +
+        "`currently v<x>` line, plan-interview.md's `(v<x>;` and kit.rs's " +
+        "METHOD_SNAPSHOT_VERSION, each anchored ONCE and refused where it is not",
+      run: null,
+    },
+    {
+      id: "bump:pin",
+      kind: "suite",
+      title: "the kit pin test on the bumped tree",
+      why:
+        "the pin test is what says the three stamps agree; a bump whose own test is red is a " +
+        "release nobody may make",
+      run: {
+        command: "cargo",
+        argv: ["test", "-q", "--lib", "--", "agent::kit::tests"],
+        cwd: path.join(input.projectRoot, "app", "src-tauri"),
+      },
+    },
+    {
+      id: "bump:drill",
+      kind: "gate",
+      action: "half-bump-drill",
+      bump: { from, to },
+      title: "the HALF-BUMP drill — the const alone moved back must red the pin test by name",
+      why:
+        "a pin test that is green on a half bump pins nothing. The drill moves kit.rs's const " +
+        "back to the old version ALONE, requires the pin test RED, restores the file and proves " +
+        "the restore by sha256 — the same shape the mutant drill uses, on the one property a " +
+        "bump can silently break",
+      run: null,
+    },
+    {
+      id: "bump:evals",
+      kind: "gate",
+      title: "the METHOD EVAL GATE — method/ moved",
+      why:
+        "docs/CONVENTIONS.md METHOD EVAL GATE: any merge whose diff touches method/** runs the " +
+        "model-free evals, and this merge does",
+      run: {
+        command: process.execPath,
+        argv: [path.join(input.projectRoot, "tools", "method-evals", "run.mjs")],
+        cwd: input.projectRoot,
+      },
+    },
+  ];
+  return steps;
+}
+
+/**
+ * THE BUMP APPLIED TO ONE FILE'S TEXT — pure, and anchored ONCE.
+ *
+ * @param {{ text: string, path: string, from: string, to: string }} input
+ * @returns {{ text: string } | { problem: string }}
+ */
+export function bumpOne(input) {
+  const entry = METHOD_STAMP_FILES.find((f) => f.path === input.path);
+  if (entry === undefined) {
+    return { problem: `${input.path} is not one of this project's three method stamp files` };
+  }
+  const anchor = entry.anchor(input.from);
+  const hits = occurrences(input.text, anchor);
+  if (hits !== 1) {
+    return {
+      problem:
+        `${input.path}: the stamp anchor ${JSON.stringify(anchor)} matches ${String(hits)} ` +
+        "time(s). A stamp that is not in exactly one place cannot be bumped by a program",
+    };
+  }
+  return { text: input.text.replace(anchor, () => entry.anchor(input.to)) };
+}
+
+// ── THE MESSAGE (T-295 criterion 5) ──────────────────────────────────
+
+/**
+ * THE MERGE MESSAGE, WRITTEN FROM THE VERDICT AND NEVER COMPOSED.
+ *
+ * Every sentence below comes out of the verdict the merge is acting on,
+ * or out of a figure this run measured. NOTHING is written freehand, and
+ * that is the criterion rather than a style: a message a seat composes
+ * is a summary of what the seat remembers, and the two merges of
+ * 2026-09-09 whose messages named a count that had moved were both
+ * composed that way.
+ *
+ * WHAT IT TAKES FROM THE VERDICT: the verdict's own heading (its state
+ * and its date), the sentence the verdict opens with, the counts it
+ * claims, and the corrections it assigned by name. WHAT IT TAKES FROM
+ * THE RUN: the lane branch, the bench tip, the path count, and the
+ * regenerations that fired.
+ *
+ * @param {{ id: string, lane: string, benchTip: string, verdictSha: string, verdict: { heading: string, text: string }, paths: readonly string[], corrections: readonly string[], regenerated: readonly string[], counts: Record<string, number> }} input
+ * @returns {string}
+ */
+export function mergeMessage(input) {
+  const state = verdictState(input.verdict.heading);
+  const opener = verdictOpener(input.verdict.text);
+  const countLine = LEGS.filter((l) => input.counts[l] !== undefined)
+    .map((l) => `${l} ${String(input.counts[l])}`)
+    .join(" / ");
+  const subject =
+    `Merge ${input.id} (${state} at ${input.verdictSha.slice(0, 8)}, bench tip ` +
+    `${input.benchTip.slice(0, 8)}): ${opener}`;
+  /** @type {string[]} */
+  const body = [];
+  body.push(
+    `What landed (lane ${input.lane}, ${String(input.paths.length)} path(s) staged): the verdict's ` +
+      `own words above, and nothing this merge composed. Verdict entry: ${input.verdict.heading}`,
+  );
+  if (input.corrections.length > 0) {
+    body.push(
+      `The assigned corrections, applied at the merge and re-drilled on the merged tree: ` +
+        `${input.corrections.join("; ")}.`,
+    );
+  } else {
+    body.push("The verdict assigns no correction, so none was applied and none was re-drilled.");
+  }
+  if (input.regenerated.length > 0) {
+    body.push(`Regenerated after the corrections: ${input.regenerated.join(", ")}.`);
+  }
+  if (countLine.length > 0) {
+    body.push(`The counts the verdict claims, re-read at this merge: ${countLine}.`);
+  }
+  return [subject, "", ...body.map((p) => p), ""].join("\n");
+}
+
+/** @param {string} heading @returns {string} */
+export function verdictState(heading) {
+  const hit = /\b(APPROVED(?:\s+WITH\s+ASSIGNED\s+CORRECTIONS?)?|REJECTED|ACCEPTED)\b/i.exec(heading);
+  return hit === null ? "verdict" : /** @type {string} */ (hit[1]);
+}
+
+/**
+ * THE VERDICT'S OWN OPENING SENTENCE — the first line of prose under the
+ * entry's heading that is not a heading, a fence, a list marker or a
+ * blank. That line is what a verdict on this board leads with, and it is
+ * the one sentence a message may take whole.
+ *
+ * @param {string} verdictText
+ * @returns {string}
+ */
+export function verdictOpener(verdictText) {
+  const lines = verdictText.split("\n").slice(1);
+  /** @type {string[]} */
+  const collected = [];
+  let fenced = false;
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (/^`{3,}/.test(line)) {
+      fenced = !fenced;
+      continue;
+    }
+    if (fenced) continue;
+    if (line.length === 0) {
+      if (collected.length > 0) break;
+      continue;
+    }
+    if (/^#{1,6}\s/.test(line) || /^[-*+]\s/.test(line) || /^\|/.test(line)) {
+      if (collected.length > 0) break;
+      continue;
+    }
+    collected.push(line);
+  }
+  const sentence = collected.join(" ").trim();
+  if (sentence.length === 0) {
+    return "the verdict carries no opening sentence a message may take, and this one invents none";
+  }
+  const stop = /^(.{40,400}?[.;:])\s/.exec(sentence);
+  return stop === null ? sentence : /** @type {string} */ (stop[1]);
+}
+
+// ── THE METERS, INTO THE BANDS' READINGS (T-295 criterion 5) ─────────
+
+/**
+ * WHERE THE READINGS GO, AND IT IS A RECORD RATHER THAN A DOCUMENT.
+ *
+ * `docs/checkpoints/` is this project's append-only records directory,
+ * and a readings file is exactly that: one line per seat per merge,
+ * never rewritten, read at the checkpoint. JSON Lines because the reader
+ * is a program (T-297's two bands) and because an append is one write
+ * with no parse of what is already there — a merge must not be able to
+ * corrupt the history by failing halfway through rewriting it.
+ */
+export const READINGS_PATH = "docs/checkpoints/meters.jsonl";
+
+/**
+ * THE `## Meters` BLOCKS IN A DOCUMENT.
+ *
+ * Every report and every verdict on this board closes with one, and
+ * until now they were read by nobody (T-297's own first sentence). The
+ * block runs to the next heading of the same level or to the end.
+ *
+ * @param {string} text
+ * @returns {string[]} the block bodies, without their heading
+ */
+export function metersBlocks(text) {
+  const lines = text.split("\n");
+  /** @type {string[]} */
+  const blocks = [];
+  for (let i = 0; i < lines.length; i += 1) {
+    const open = /^(#{1,6})\s+Meters\s*$/i.exec(lines[i] ?? "");
+    if (open === null) continue;
+    const level = /** @type {string} */ (open[1]).length;
+    /** @type {string[]} */
+    const body = [];
+    for (let j = i + 1; j < lines.length; j += 1) {
+      const head = /^(#{1,6})\s+\S/.exec(lines[j] ?? "");
+      if (head !== null && /** @type {string} */ (head[1]).length <= level) {
+        i = j - 1;
+        break;
+      }
+      body.push(/** @type {string} */ (lines[j] ?? ""));
+      i = j;
+    }
+    const trimmed = body.join("\n").trim();
+    if (trimmed.length > 0) blocks.push(trimmed);
+  }
+  return blocks;
+}
+
+/**
+ * THE READINGS THIS MERGE APPENDS, one object per seat that wrote a
+ * block. The SHAPE, stated here because T-297 is blocked on it:
+ *
+ *     {"at":"<ISO-8601>","card":"T-295","size":"L","tier":"standard",
+ *      "seat":"executor"|"verifier","source":"<relative path or card>",
+ *      "merge":"<bench tip sha>","meters":"<the block's own text>"}
+ *
+ * The block's text is carried WHOLE and not parsed into fields. A meters
+ * block is a seat's own prose — wall clock, context consumed, model,
+ * seat — and every attempt to normalise it at write time would be this
+ * file guessing at a vocabulary the bands have not settled. T-297 owns
+ * the parse; this owns the capture, and a capture that loses nothing is
+ * the only one a later parser can be written against.
+ *
+ * @param {{ id: string, size: string, tier: string, merge: string, at: string, sources: readonly { seat: string, source: string, text: string }[] }} input
+ * @returns {string[]} JSON Lines, each already newline-free
+ */
+export function readingsLines(input) {
+  /** @type {string[]} */
+  const lines = [];
+  for (const entry of input.sources) {
+    for (const meters of metersBlocks(entry.text)) {
+      lines.push(
+        JSON.stringify({
+          at: input.at,
+          card: input.id,
+          size: input.size,
+          tier: input.tier,
+          seat: entry.seat,
+          source: entry.source,
+          merge: input.merge,
+          meters,
+        }),
+      );
+    }
+  }
+  return lines;
+}
+
 /** @returns {string} */
 export function usageText() {
   return [
     "usage: supertaskr merge <T-NNN> --slug <slug> --verdict <sha>",
     "                      --built-by <m@k> --verified-by <m@k>",
     "                      [--root <path>] [--branch <name>] [--dry-run]",
-    "                      [--blocks-absent <verdict sha>]",
+    "                      [--blocks-absent <verdict sha>] [--bump <old>..<new>]",
+    "                      [--meters <path>]... [--tier <tier>] [--no-widen] [--drill-wide]",
+    "                      [--message <path>] [--readings <path>]",
     "",
     "  The integrator's ritual in its order, stopping with the merge STAGED.",
     "  The tail is derived from the merge's own paths: a merge bringing app/ or lib/",
@@ -1155,13 +2487,21 @@ export function usageText() {
     "  anchor that does not match exactly once. A verdict that assigns corrections and",
     "  carries no block is REFUSED; --blocks-absent naming that verdict's own sha accepts it",
     "  as news instead — it is not a blanket, and blocks that are present are drilled anyway.",
+    "  Since T-295 it also widens the card's fence on the integration branch for a",
+    "  verdict-named spec outside it (the ONE commit this verb makes, because the landing",
+    "  gate reads a merge's fence from its first parent), applies each block's correction",
+    "  BEFORE every regeneration, runs the four cheap keepers as steps with exits, bumps",
+    "  the three method stamp files when method text moved, grades the counts its own runs",
+    "  read against the counts the verdict claims, writes the merge message FROM the",
+    "  verdict's own sentences, and appends every `## Meters` block to the bands' readings.",
+    "  IT NEVER PUSHES.",
     "  exit: 0 staged · 1 a step failed · 2 called wrong · 3 could not run",
   ].join("\n");
 }
 
 /**
  * @param {string[]} argv
- * @param {{ cwd?: string, out?: (s: string) => void, err?: (s: string) => void }} [io]
+ * @param {{ cwd?: string, out?: (s: string) => void, err?: (s: string) => void, ledger?: { id: string, title: string, exit: number }[] }} [io]
  * @returns {number}
  */
 export function main(argv, io = {}) {
@@ -1184,6 +2524,17 @@ export function main(argv, io = {}) {
   let verifiedBy;
   /** @type {string | undefined} */
   let blocksAbsent;
+  /** @type {string | undefined} */
+  let bump;
+  /** @type {string[]} */
+  const meterFiles = [];
+  let tier = "standard";
+  /** @type {string | undefined} */
+  let messagePath;
+  /** @type {string | undefined} */
+  let readingsPath;
+  let widenAllowed = true;
+  let drillWide = false;
   for (let i = 0; i < argv.length; i += 1) {
     const a = /** @type {string} */ (argv[i]);
     if (a === "--help") {
@@ -1212,6 +2563,35 @@ export function main(argv, io = {}) {
     }
     if (a === "--blocks-absent") {
       blocksAbsent = argv[++i];
+      continue;
+    }
+    if (a === "--bump") {
+      bump = argv[++i];
+      continue;
+    }
+    if (a === "--meters") {
+      const file = argv[++i];
+      if (file !== undefined) meterFiles.push(path.resolve(cwd, file));
+      continue;
+    }
+    if (a === "--tier") {
+      tier = argv[++i] ?? tier;
+      continue;
+    }
+    if (a === "--message") {
+      messagePath = argv[++i];
+      continue;
+    }
+    if (a === "--readings") {
+      readingsPath = argv[++i];
+      continue;
+    }
+    if (a === "--no-widen") {
+      widenAllowed = false;
+      continue;
+    }
+    if (a === "--drill-wide") {
+      drillWide = true;
       continue;
     }
     if (a === "--built-by") {
@@ -1258,7 +2638,60 @@ export function main(argv, io = {}) {
   const verdictSha = resolved.out.trim();
   const worktree = laneWorktree(root, lane);
 
-  const prelude = preludePlan({ projectRoot: root, id, branch, lane, verdict: verdictSha, worktree });
+  /** @type {{ from: string, to: string } | undefined} */
+  let bumpMove;
+  if (bump !== undefined) {
+    const move = /^(\d+\.\d+\.\d+)\.\.(\d+\.\d+\.\d+)$/.exec(bump);
+    if (move === null) {
+      err(
+        `merge ${id}: --bump is spelled <old>..<new>, both as three-part versions — ${bump} is ` +
+          "not. The verb refuses to guess which number a release takes",
+      );
+      return EXIT.USAGE;
+    }
+    bumpMove = { from: /** @type {string} */ (move[1]), to: /** @type {string} */ (move[2]) };
+  }
+
+  // THE VERDICT IS READ AT THE BENCH TIP, BEFORE THE MERGE, because the
+  // widening has to be committed on the integration branch AHEAD of the
+  // merge and the integration branch's own copy of the card has no
+  // verdict on it yet. After the merge the verdict is re-read off the
+  // merged tree, which is the copy every later step acts on.
+  const atTip = git(root, ["show", `${verdictSha}:${card.file}`]);
+  /** @type {{ heading: string, text: string } | undefined} */
+  let tipVerdict;
+  if (atTip.ok) {
+    const read = newestVerdict(atTip.out);
+    if (!("problem" in read)) tipVerdict = read;
+  }
+  /** @type {MergeState} */
+  const state = {
+    fixed: [],
+    corrections: [],
+    regenerated: [],
+    observed: {},
+    claimed: tipVerdict === undefined ? {} : claimedCounts(tipVerdict.text),
+    widen: [],
+    shas: {},
+  };
+  if (widenAllowed && tipVerdict !== undefined) {
+    const onMain = readCard(root, card.file);
+    const specs = verdictSpecs(tipVerdict.text);
+    if (onMain !== undefined && specs.length > 0) {
+      const tried = widenTouches({ text: onMain, specs });
+      if (!("problem" in tried)) state.widen = tried.added;
+    }
+  }
+
+  const prelude = preludePlan({
+    projectRoot: root,
+    id,
+    branch,
+    lane,
+    verdict: verdictSha,
+    worktree,
+    widen: state.widen,
+  });
   out(`merge ${id}  (${card.file})`);
   out(`  lane ${lane} · verdict ${verdictSha.slice(0, 12)} · onto ${branch}`);
   for (const step of prelude) printStep(out, step);
@@ -1275,13 +2708,18 @@ export function main(argv, io = {}) {
         `${verdictSha.slice(0, 12)}\` (${String(paths.length)} path(s)); a real run derives it ` +
         "from the STAGED merge.",
     );
+    const dryCard = atTip.ok ? atTip.out : readCard(root, card.file);
+    const dryRead = tipVerdict === undefined ? { blocks: [] } : readMutantBlocks(tipVerdict.text);
     for (const step of tailPlan({
       paths,
       projectRoot: root,
       id,
-      cardText: readCard(root, card.file),
+      cardText: dryCard,
       verdictSha,
       blocksAbsent,
+      card: card.file,
+      blocks: "problem" in dryRead ? [] : dryRead.blocks,
+      ...(bumpMove === undefined ? {} : { bumpFrom: bumpMove.from, bumpTo: bumpMove.to }),
     })) {
       printStep(out, step);
     }
@@ -1289,6 +2727,8 @@ export function main(argv, io = {}) {
     return EXIT.CLEAN;
   }
 
+  /** @type {{ id: string, title: string, exit: number }[]} */
+  const ledger = io.ledger ?? [];
   const stepIo = {
     out,
     err,
@@ -1297,9 +2737,22 @@ export function main(argv, io = {}) {
     card: card.file,
     builtBy: builtBy ?? "",
     verifiedBy: verifiedBy ?? "",
+    state,
+    verdictSha,
+    lane,
+    benchTip: verdictSha,
+    tier,
+    meterFiles,
+    drillWide,
+    ...(tipVerdict === undefined ? {} : { verdict: tipVerdict }),
+    ...(messagePath === undefined ? {} : { messagePath: path.resolve(root, messagePath) }),
+    ...(readingsPath === undefined ? {} : { readingsPath: path.resolve(root, readingsPath) }),
   };
   for (const step of prelude) {
+    printStep(out, step);
     const code = runStep(step, stepIo);
+    ledger.push({ id: step.id, title: step.title, exit: code });
+    out(`      exit ${String(code)}`);
     if (code !== 0) {
       err(`merge ${id}: stopped at ${step.id} (exit ${String(code)}).`);
       return EXIT.FOUND;
@@ -1316,14 +2769,38 @@ export function main(argv, io = {}) {
   // steps come off arrives WITH the lane's branch, so a copy read before
   // the merge would be the integration branch's older card.
   const cardText = readCard(root, card.file);
-  for (const step of tailPlan({ paths, projectRoot: root, id, cardText, verdictSha, blocksAbsent })) {
+  // THE MERGED TREE'S OWN VERDICT, which is the copy every step below
+  // acts on. `tipVerdict` was the same entry read one commit earlier so
+  // the widening could be committed ahead of the merge; re-reading here
+  // is what keeps the drill and the message anchored on what LANDED.
+  const mergedVerdict = cardText === undefined ? { problem: "the merged card could not be read" } : newestVerdict(cardText);
+  if (!("problem" in mergedVerdict)) {
+    stepIo.verdict = mergedVerdict;
+    if (Object.keys(state.claimed).length === 0) state.claimed = claimedCounts(mergedVerdict.text);
+  }
+  const merged = "problem" in mergedVerdict ? { blocks: [] } : readMutantBlocks(mergedVerdict.text);
+  for (const step of tailPlan({
+    paths,
+    projectRoot: root,
+    id,
+    cardText,
+    verdictSha,
+    blocksAbsent,
+    card: card.file,
+    blocks: "problem" in merged ? [] : merged.blocks,
+    ...(bumpMove === undefined ? {} : { bumpFrom: bumpMove.from, bumpTo: bumpMove.to }),
+  })) {
     printStep(out, step);
     const code = runStep(step, stepIo);
+    ledger.push({ id: step.id, title: step.title, exit: code });
+    out(`      exit ${String(code)}`);
     if (code !== 0) {
       err(`merge ${id}: stopped at ${step.id} (exit ${String(code)}). The merge stays staged.`);
       return EXIT.FOUND;
     }
   }
+  out("  THE VERB STOPS HERE AND NEVER PUSHES: the merge is staged, the message is written,");
+  out("  and the commit, the checkpoint and the push are the seat's.");
   return EXIT.CLEAN;
 }
 
@@ -1344,6 +2821,128 @@ function readCard(root, rel) {
   } catch {
     return undefined;
   }
+}
+
+/**
+ * EVERY DIAL A MERGE NEEDS, DERIVED — nothing here is typed and nothing
+ * here is read out of a document's bullet (T-295 ground rule 7).
+ *
+ * THE MEASURED FAULT: the seat's own `merge-lane.sh` composed the lane
+ * worktree path out of the CONVENTIONS bullet's spelling, a lane had
+ * been cut at the spelling before a rename, and the script did not find
+ * it. Git's worktree administration is the only thing that knows where
+ * a worktree actually is, so it is the only thing asked.
+ *
+ * THE BENCH TIP IS NOT THE VERDICT SHA and this is where that is
+ * settled. The verifier commits its correction BODIES on the bench after
+ * writing the verdict (`method/roles/verifier.md` step 5b), so a merge
+ * given the verdict sha leaves them behind and the re-drill then reports
+ * "the named body did not red" over a body that never landed. The bench
+ * is a DETACHED worktree beside the lane; its HEAD is what gets merged.
+ *
+ * @param {{ root: string, id: string }} input
+ * @returns {{ slug: string, lane: string, worktree: string | null, benchTip: string, benchWorktree: string | null, builtBy: string, verifiedBy: string, how: string[] } | { problem: string }}
+ */
+export function mergeDials(input) {
+  const { root, id } = input;
+  /** @type {string[]} */
+  const how = [];
+  const branches = git(root, [
+    "for-each-ref",
+    "--format=%(refname:short)",
+    `refs/heads/task/${id}-*`,
+  ]);
+  if (!branches.ok) return { problem: `the lane branches could not be listed — ${branches.err}` };
+  const lanes = branches.out.split("\n").filter((l) => l.length > 0);
+  if (lanes.length === 0) {
+    return {
+      problem:
+        `no branch under refs/heads/task/${id}-* exists in this checkout, so there is no lane to ` +
+        "merge. A lane is a BRANCH; the board's `status:` is not one",
+    };
+  }
+  if (lanes.length > 1) {
+    return {
+      problem:
+        `${String(lanes.length)} branches match refs/heads/task/${id}-* (${lanes.join(", ")}), so ` +
+        "which lane this card means is ambiguous. Name the slug rather than letting a merge pick",
+    };
+  }
+  const lane = /** @type {string} */ (lanes[0]);
+  const slug = lane.slice(`task/${id}-`.length);
+  how.push(`lane ${lane}, from git for-each-ref refs/heads/task/${id}-*`);
+  const worktree = laneWorktree(root, lane);
+  how.push(
+    worktree === null
+      ? "no live worktree is on that branch, from git worktree list --porcelain"
+      : `lane worktree ${worktree}, from git worktree list --porcelain — never from a document's bullet`,
+  );
+  const bench = benchWorktree(root, id);
+  let benchTip = "";
+  if (bench !== null) {
+    benchTip = bench.head;
+    how.push(`bench tip ${benchTip.slice(0, 12)}, the HEAD of the detached bench ${bench.path}`);
+  } else {
+    const tip = git(root, ["rev-parse", lane]);
+    if (!tip.ok) return { problem: `${lane} does not resolve — ${tip.err}` };
+    benchTip = tip.out.trim();
+    how.push(
+      `bench tip ${benchTip.slice(0, 12)} — NO detached bench worktree for ${id} is live, so the ` +
+        "lane branch's own tip is taken and SAID to be. A verifier that committed correction " +
+        "bodies on a bench this checkout cannot see would be left behind by this",
+    );
+  }
+  const file = cardFile(id, path.join(root, "docs", "tasks"));
+  if ("problem" in file) return { problem: file.problem };
+  const text = readFileSync(path.join(root, file.file), "utf8");
+  const builtBy = frontmatterValue(text, "builder");
+  const verifiedBy = frontmatterValue(text, "verifier");
+  how.push(`built by ${builtBy || "(empty on the card)"} / verified by ${verifiedBy || "(empty on the card)"}, from the card's own fields`);
+  return { slug, lane, worktree, benchTip, benchWorktree: bench === null ? null : bench.path, builtBy, verifiedBy, how };
+}
+
+/** @param {string} text @param {string} key @returns {string} */
+function frontmatterValue(text, key) {
+  const hit = new RegExp(`^${key}:[ \\t]*(.*)$`, "m").exec(text);
+  return hit === null ? "" : /** @type {string} */ (hit[1]).trim();
+}
+
+/**
+ * THE DETACHED BENCH BESIDE A LANE, off git's own administration.
+ *
+ * `docs/STATE.md` spells the bench `../supertaskr-V-<id>` and spells it
+ * DETACHED on purpose, so the match is on the directory's own suffix
+ * and on the entry carrying no branch — a worktree on a task branch is
+ * a lane, never a bench, whatever it is called.
+ *
+ * @param {string} root @param {string} id
+ * @returns {{ path: string, head: string } | null}
+ */
+export function benchWorktree(root, id) {
+  const listed = git(root, ["worktree", "list", "--porcelain"]);
+  if (!listed.ok) return null;
+  /** @type {{ path: string, head: string, detached: boolean } | null} */
+  let current = null;
+  /** @type {{ path: string, head: string } | null} */
+  let found = null;
+  const finish = () => {
+    if (current === null || !current.detached) return;
+    if (!current.path.endsWith(`-V-${id}`)) return;
+    found = { path: current.path, head: current.head };
+  };
+  for (const line of listed.out.split("\n")) {
+    if (line.startsWith("worktree ")) {
+      finish();
+      current = { path: line.slice("worktree ".length), head: "", detached: false };
+      continue;
+    }
+    if (current === null) continue;
+    if (line.startsWith("HEAD ")) current.head = line.slice("HEAD ".length);
+    if (line === "detached") current.detached = true;
+    if (line.startsWith("branch ")) current.detached = false;
+  }
+  finish();
+  return found;
 }
 
 /** @param {string} root @param {string} lane @returns {string | null} */
@@ -1372,20 +2971,144 @@ function printStep(out, step) {
 }
 
 /**
+ * WHAT A MERGE LEARNS AS IT RUNS, and every field of it is a reading
+ * this run took rather than a thing anybody typed.
+ *
+ * @typedef {object} MergeState
+ * @property {string[]} fixed       the files the corrections wrote
+ * @property {string[]} corrections what each applied correction is called
+ * @property {string[]} regenerated which regenerations fired
+ * @property {Record<string, number>} observed the counts this run's own suites printed
+ * @property {Record<string, number>} claimed  the counts the verdict claims
+ * @property {string[]} widen       the verdict-named specs outside the fence
+ * @property {Record<string, string>} shas restore proofs, by path
+ */
+
+/**
+ * The leg a package directory grades under, as the merge messages spell
+ * them. A directory outside the four is the empty string rather than a
+ * guess — an unattributed count is not a count.
+ *
+ * @param {string} cwd
+ * @returns {string}
+ */
+export function legForCwd(cwd) {
+  const norm = cwd.split(path.sep).join("/");
+  if (norm.endsWith("/tools/e2e")) return "e2e";
+  if (norm.endsWith("/lib/parser")) return "parser";
+  if (norm.endsWith("/app/src-tauri")) return "rust";
+  if (norm.endsWith("/app")) return "app";
+  return "";
+}
+
+/**
+ * THE STAGED DIFF AS LINES, which is what three of the four cheap
+ * keepers judge. `-U0` because a keeper about lines a merge CHANGES must
+ * not be handed the context lines it did not.
+ *
+ * @param {string} root
+ * @returns {{ added: { path: string, line: string }[], removed: { path: string, line: string }[], changed: number, byPath: Record<string, number> }}
+ */
+export function stagedLines(root) {
+  const diff = git(root, ["diff", "--cached", "--no-color", "-U0"]);
+  /** @type {{ path: string, line: string }[]} */
+  const added = [];
+  /** @type {{ path: string, line: string }[]} */
+  const removed = [];
+  /** @type {Record<string, number>} */
+  const byPath = {};
+  if (!diff.ok) return { added, removed, changed: 0, byPath };
+  let current = "";
+  for (const line of diff.out.split("\n")) {
+    const head = /^\+\+\+ b\/(.*)$/.exec(line);
+    if (head !== null) {
+      current = /** @type {string} */ (head[1]);
+      continue;
+    }
+    if (/^(?:diff |index |--- |@@ |new file|deleted file|similarity|rename |old mode|new mode)/.test(line)) {
+      continue;
+    }
+    if (line.startsWith("+")) {
+      added.push({ path: current, line: line.slice(1) });
+      byPath[current] = (byPath[current] ?? 0) + 1;
+    } else if (line.startsWith("-")) {
+      removed.push({ path: current, line: line.slice(1) });
+      byPath[current] = (byPath[current] ?? 0) + 1;
+    }
+  }
+  return { added, removed, changed: added.length + removed.length, byPath };
+}
+
+/**
+ * THE SPEC FILES OF THIS PROJECT, read off git rather than off a
+ * directory name — `docs/CONVENTIONS.md`'s NEVER TYPE A PATH YOU CAN
+ * DERIVE, applied to the corpus the pinned-sentence keeper greps.
+ *
+ * @param {string} root
+ * @returns {Map<string, string>}
+ */
+export function specCorpus(root) {
+  /** @type {Map<string, string>} */
+  const corpus = new Map();
+  const listed = git(root, ["ls-files"]);
+  if (!listed.ok) return corpus;
+  for (const rel of listed.out.split("\n")) {
+    if (!/\.(?:spec|test)\.(?:ts|tsx)$/.test(rel)) continue;
+    try {
+      corpus.set(rel, readFileSync(path.join(root, rel), "utf8"));
+    } catch {
+      // A SPEC THIS RUN CANNOT OPEN IS NOT A SPEC THAT PINS NOTHING; it
+      // is simply not in the corpus, and the keeper's own step prints
+      // the size of the corpus it grepped so the reader can see it.
+    }
+  }
+  return corpus;
+}
+
+/**
+ * The card's `size:`, or the empty string when it carries none.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+export function cardSize(text) {
+  const hit = /^size:[ \t]*(\S+)[ \t]*$/m.exec(text);
+  return hit === null ? "" : /** @type {string} */ (hit[1]);
+}
+
+/**
  * @param {Step} step
- * @param {{ out: (s: string) => void, err: (s: string) => void, projectRoot: string, id: string, card: string, builtBy: string, verifiedBy: string }} io
+ * @param {{ out: (s: string) => void, err: (s: string) => void, projectRoot: string, id: string, card: string, builtBy: string, verifiedBy: string, state: MergeState, verdict?: { heading: string, text: string } | undefined, verdictSha?: string | undefined, lane?: string | undefined, benchTip?: string | undefined, messagePath?: string | undefined, readingsPath?: string | undefined, meterFiles?: readonly string[] | undefined, tier?: string | undefined, drillWide?: boolean | undefined }} io
  * @returns {number}
  */
 function runStep(step, io) {
+  if (step.problem !== undefined && step.action !== "mutant-drill") {
+    io.err(`      ${step.problem}`);
+    return EXIT.FOUND;
+  }
   if (step.run === null && step.action === undefined) {
     io.out(`      (no command — this step is the seat's own work)`);
     return 0;
   }
+  /** @type {string} */
+  let said = "";
   if (step.run !== null) {
     const graded = step.run.assert === "empty-output";
+    const tolerate = step.run.tolerate === true;
+    // CAPTURED WHERE THIS RUN HAS TO READ IT, ECHOED EITHER WAY. The
+    // counts guard below is a reading over a suite's own output, and an
+    // output that went straight to the terminal is an output no guard
+    // saw — which is precisely 2d6d354's shape.
+    const quiet = step.run.quiet === true;
+    // EVERY STEP IS CAPTURED, and the first fixture run is why. A step
+    // whose stdio was INHERITED wrote straight past the caller that
+    // collects this run's answer — so the docs gate refused, the ledger
+    // said `exit 1`, and the gate's own sentence was nowhere in the
+    // transcript the seat was handed. A verb whose whole job is to be
+    // read cannot have a step that writes somewhere else.
     const r = spawnSync(step.run.command, step.run.argv, {
       cwd: step.run.cwd,
-      stdio: graded ? "pipe" : "inherit",
+      stdio: "pipe",
       encoding: "utf8",
       ...(step.run.env === undefined ? {} : { env: { ...process.env, ...step.run.env } }),
     });
@@ -1393,14 +3116,28 @@ function runStep(step, io) {
       io.err(`      ${step.run.command} could not be started — ${r.error.message}`);
       return 3;
     }
+    said = `${String(r.stdout ?? "")}${String(r.stderr ?? "")}`;
+    if (!graded && !quiet && said.trim().length > 0) io.out(said.replace(/\n$/, ""));
+    if (quiet && (r.status ?? 3) !== 0) io.err(said.replace(/\n$/, ""));
+    if (quiet && (r.status ?? 3) === 0) {
+      io.out(`      it holds, and its ${String(said.split("\n").length)} line(s) are not reprinted here`);
+    }
+    if (step.kind === "suite") {
+      const counts = runCounts(said);
+      const leg = legForCwd(step.run.cwd);
+      if (counts !== null && leg.length > 0) {
+        io.state.observed[leg] = (io.state.observed[leg] ?? 0) + counts.passed;
+        io.out(`      counts read: ${leg} ${String(counts.passed)} passed, ${String(counts.failed)} failed`);
+      }
+    }
     if (graded) {
-      const said = `${String(r.stdout ?? "")}${String(r.stderr ?? "")}`.trim();
-      if (said.length > 0) {
-        io.err(`      the tree is NOT clean — this step is graded on its output, not its exit:\n${said}`);
+      const trimmed = said.trim();
+      if (trimmed.length > 0) {
+        io.err(`      the tree is NOT clean — this step is graded on its output, not its exit:\n${trimmed}`);
         return 1;
       }
     }
-    if ((r.status ?? 3) !== 0) return r.status ?? 3;
+    if ((r.status ?? 3) !== 0 && !tolerate) return r.status ?? 3;
   }
   if (step.action === "stamp-done") {
     const file = path.join(io.projectRoot, io.card);
@@ -1415,6 +3152,16 @@ function runStep(step, io) {
     const added = spawnSync("git", ["-C", io.projectRoot, "add", "--", io.card], { encoding: "utf8" });
     return added.status ?? 3;
   }
+  if (step.action === "docs-gate") return docsGateStep(said, io);
+  if (step.action === "widen-fence") return widenFenceStep(io);
+  if (step.action === "resolve-conflicts") return resolveConflictsStep(io);
+  if (step.action === "apply-correction") return applyCorrectionStep(step, io);
+  if (step.action === "keeper") return keeperStep(step, io);
+  if (step.action === "method-bump") return methodBumpStep(step, io);
+  if (step.action === "half-bump-drill") return halfBumpDrillStep(step, io);
+  if (step.action === "counts") return countsStep(io);
+  if (step.action === "message") return messageStep(io);
+  if (step.action === "meters") return metersStep(io);
   if (step.action === "mutant-drill") {
     if (step.problem !== undefined) {
       io.err(`      ${step.problem}`);
@@ -1430,9 +3177,34 @@ function runStep(step, io) {
       io.out("      the newest verdict assigns no correction — nothing to re-drill");
       return EXIT.CLEAN;
     }
+    const block = step.block;
+    const scoped = drillScope({
+      block,
+      fixed: io.state.fixed,
+      wide: io.drillWide === true,
+      owning: (paths) => deriveOwning(paths, io.projectRoot).specs,
+    });
+    // THE OWNERSHIP READING, WHICH COSTS NOTHING AND IS WORTH SAYING. A
+    // block whose spec is not owned by what the correction changed is
+    // pinning a property the correction did not move — legitimate (a
+    // boundary the implementation already kept), and worth a line so the
+    // seat can tell the two apart.
+    if (io.state.fixed.length > 0 && !scoped.ownsTheBlock) {
+      io.out(
+        `      NOTE: ${block.spec} is NOT among the ${String(scoped.owned.length)} spec(s) the ` +
+          "FIX DIFF owns, so this block pins a property the correction did not move",
+      );
+    }
     return runMutantDrill({
-      block: step.block,
+      block,
       projectRoot: io.projectRoot,
+      scope: scoped.specs,
+      observe: (e) => {
+        const leg = legForCwd(e.cwd);
+        if (e.counts !== null && leg.length > 0) {
+          io.state.observed[leg] = Math.max(io.state.observed[leg] ?? 0, e.counts.passed);
+        }
+      },
       out: io.out,
       err: io.err,
     });
@@ -1451,9 +3223,505 @@ function runStep(step, io) {
       io.err(`      ${GRAPH_PATH} did not parse — ${e instanceof Error ? e.message : String(e)}`);
       return 3;
     }
+    io.state.regenerated.push("the graph, and the dogfood pins re-derived");
     io.out(`      ${graphPinLine({ graph, id: io.id, at: new Date() })}`);
   }
   return 0;
+}
+
+/**
+ * THE DOCS GATE'S THREE ANSWERS, TOLD APART BY ITS OWN WORDS.
+ *
+ * The gate exits 1 both when it FIRES — docs/ paths are code inputs and
+ * these suites are owed at the push — and when something is STALE, and
+ * only its output says which. Every merge carries at least a card under
+ * docs/tasks/, so a step graded on the exit alone would stop every merge
+ * this project ever makes, which is how a gate becomes a flag somebody
+ * passes by habit.
+ *
+ * FIRES is NEWS and the owed suites join the message. STALE, or a gate
+ * that could not run, STOPS.
+ *
+ * @param {string} said @param {{ out: (s: string) => void, err: (s: string) => void, state: MergeState }} io
+ * @returns {number}
+ */
+function docsGateStep(said, io) {
+  const stale = /\bSTALE\b/.test(said);
+  const fires = /docs-gate: FIRES\b/.test(said);
+  const cannot = /CANNOT_RUN|could not be started/.test(said);
+  if (cannot) {
+    io.err("      THE DOCS GATE COULD NOT RUN — a skipped gate is news, never silence");
+    return EXIT.CANNOT_RUN;
+  }
+  if (stale) {
+    io.err(
+      "      THE DOCS GATE FOUND SOMETHING STALE. That is not a merge this verb may stage past: " +
+        "a generated document disagreeing with its source is exactly what the regenerations " +
+        "above exist to prevent",
+    );
+    return EXIT.FOUND;
+  }
+  if (fires) {
+    const owed = said
+      .split("\n")
+      .filter((l) => /^\s{2}(?:npm |npx |cargo )/.test(l))
+      .map((l) => l.trim());
+    io.state.regenerated.push(
+      `the docs gate FIRES: ${owed.length === 0 ? "the suites it names" : owed.join("; ")} are owed at the push`,
+    );
+    io.out(
+      `      NEWS: the gate FIRES and names ${String(owed.length)} suite(s) this merge owes at ` +
+        "the push. That is what it is for, and the run goes on",
+    );
+    return EXIT.CLEAN;
+  }
+  io.out("      the gate is clean — no path under docs/ in this merge is a code input");
+  return EXIT.CLEAN;
+}
+
+/**
+ * THE WIDENING, AND IT IS THE ONE COMMIT THIS VERB MAKES.
+ *
+ * Everything else the verb does is staged and handed back. This is
+ * committed because the landing gate reads a merge's fence from its
+ * FIRST PARENT, so a widening that rode inside the merge would be
+ * invisible to the gate it exists to satisfy (T-281-s10, at T-283's
+ * refused push). It is announced as a commit, it names the verdict that
+ * owes it, and it happens BEFORE the merge — which is also why it can be
+ * a commit at all: the tree is clean, by the step above it.
+ *
+ * @param {{ out: (s: string) => void, err: (s: string) => void, projectRoot: string, id: string, card: string, state: MergeState, verdictSha?: string | undefined }} io
+ * @returns {number}
+ */
+function widenFenceStep(io) {
+  const file = path.join(io.projectRoot, io.card);
+  const before = readFileSync(file, "utf8");
+  const widened = widenTouches({ text: before, specs: io.state.widen });
+  if ("problem" in widened) {
+    io.err(`      ${widened.problem}`);
+    return EXIT.FOUND;
+  }
+  if (widened.added.length === 0) {
+    io.out("      the fence already covers every verdict-named spec — nothing was written");
+    return EXIT.CLEAN;
+  }
+  writeFileSync(file, widened.text);
+  const sha = io.verdictSha === undefined ? "the newest verdict" : io.verdictSha.slice(0, 12);
+  const message =
+    `${io.id} fence widened for the verifier's correction bodies (${sha}): ` +
+    `${widened.added.join(", ")}\n\n` +
+    "T-281's grammar has the verifier commit each correction's body in the spec the property " +
+    "lives in, which for this lane is outside its own fence. The landing gate reads a merge's " +
+    "fence from its FIRST PARENT, so the widening is this commit and not a line inside the " +
+    "merge (T-281-s10, absorbed by T-295).\n";
+  const added = spawnSync("git", ["-C", io.projectRoot, "add", "--", io.card], { encoding: "utf8" });
+  if ((added.status ?? 3) !== 0) {
+    io.err("      the widened card could not be staged");
+    return EXIT.FOUND;
+  }
+  const committed = spawnSync("git", ["-C", io.projectRoot, "commit", "-m", message], {
+    encoding: "utf8",
+  });
+  if ((committed.status ?? 3) !== 0) {
+    io.err(`      the widening could not be committed — ${String(committed.stderr ?? "").trim()}`);
+    return EXIT.FOUND;
+  }
+  io.out(`      widened and COMMITTED on the integration branch: ${widened.added.join(", ")}`);
+  return EXIT.CLEAN;
+}
+
+/**
+ * THE THREE ANSWERS A CONFLICT GETS, performed.
+ *
+ * @param {{ out: (s: string) => void, err: (s: string) => void, projectRoot: string, id: string }} io
+ * @returns {number}
+ */
+function resolveConflictsStep(io) {
+  const listed = git(io.projectRoot, ["diff", "--name-only", "--diff-filter=U"]);
+  if (!listed.ok) {
+    io.err(`      the conflicted paths could not be read — ${listed.err}`);
+    return EXIT.CANNOT_RUN;
+  }
+  const conflicted = listed.out.split("\n").filter((l) => l.length > 0);
+  if (conflicted.length === 0) {
+    io.out("      the merge staged with no conflict");
+    return EXIT.CLEAN;
+  }
+  /** @type {string[]} */
+  const fence = [];
+  for (const rel of conflicted) {
+    const file = path.join(io.projectRoot, rel);
+    // RE-MATERIALISED WITH THE MERGE BASE VISIBLE. `merge.conflictStyle`
+    // is machine config and its default shows two sides only, and two
+    // sides cannot tell an APPEND from two rewrites of the same lines —
+    // which is the difference between the one conflict this verb may
+    // resolve and the one it must never touch.
+    spawnSync("git", ["-C", io.projectRoot, "checkout", "--merge", "--conflict=diff3", "--", rel], {
+      encoding: "utf8",
+    });
+    const text = existsSync(file) ? readFileSync(file, "utf8") : "";
+    const kind = classifyConflict({ path: rel, id: io.id, text });
+    if (kind.kind === "fence") {
+      fence.push(kind.why);
+      continue;
+    }
+    if (kind.kind === "card") {
+      const taken = spawnSync("git", ["-C", io.projectRoot, "checkout", "--theirs", "--", rel], {
+        encoding: "utf8",
+      });
+      if ((taken.status ?? 3) !== 0) {
+        io.err(`      ${rel}: the lane's copy could not be taken — ${String(taken.stderr ?? "").trim()}`);
+        return EXIT.FOUND;
+      }
+      spawnSync("git", ["-C", io.projectRoot, "add", "--", rel], { encoding: "utf8" });
+      io.out(`      ${rel}: took the LANE's copy — ${kind.why}`);
+      continue;
+    }
+    const resolved = resolveAppendConflict(text);
+    if ("problem" in resolved) {
+      fence.push(`${rel}: ${resolved.problem}`);
+      continue;
+    }
+    writeFileSync(file, resolved.text);
+    spawnSync("git", ["-C", io.projectRoot, "add", "--", rel], { encoding: "utf8" });
+    io.out(`      ${rel}: kept BOTH sides of the end-of-file append and restored the closing`);
+  }
+  if (fence.length > 0) {
+    io.err(
+      `      ${String(fence.length)} CONFLICT(S) THIS VERB WILL NOT RESOLVE — each is a FENCE ` +
+        "FINDING, not a merge decision:",
+    );
+    for (const f of fence) io.err(`        ${f}`);
+    io.err(
+      "      The merge is left conflicted for the seat to rule. Two lanes writing the same " +
+        "lines of one file means the fences were not disjoint, and that is a thing to record " +
+        "against the cards rather than a thing to resolve here.",
+    );
+    return EXIT.FOUND;
+  }
+  return EXIT.CLEAN;
+}
+
+/**
+ * @param {Step} step
+ * @param {{ out: (s: string) => void, err: (s: string) => void, projectRoot: string, state: MergeState }} io
+ * @returns {number}
+ */
+function applyCorrectionStep(step, io) {
+  const block = step.block;
+  if (block === undefined) return EXIT.CLEAN;
+  const file = path.join(io.projectRoot, block.file);
+  if (!existsSync(file)) {
+    io.err(`      ${block.correction}: ${block.file} is not in the merged tree`);
+    return EXIT.CANNOT_RUN;
+  }
+  const source = readFileSync(file, "utf8");
+  const decided = correctionFor({ source, block });
+  if ("problem" in decided) {
+    io.err(`      ${decided.problem}`);
+    return EXIT.FOUND;
+  }
+  if ("already" in decided) {
+    io.out(`      ${decided.already}`);
+    io.state.corrections.push(`${block.correction} (already in the merged tree)`);
+    return EXIT.CLEAN;
+  }
+  writeFileSync(file, decided.text);
+  const added = spawnSync("git", ["-C", io.projectRoot, "add", "--", block.file], { encoding: "utf8" });
+  if ((added.status ?? 3) !== 0) {
+    io.err(`      ${block.file} could not be staged after the correction`);
+    return EXIT.FOUND;
+  }
+  if (!io.state.fixed.includes(block.file)) io.state.fixed.push(block.file);
+  io.state.corrections.push(block.correction);
+  io.out(`      applied: ${block.correction} — ${block.file} now carries the block's \`old\` text`);
+  return EXIT.CLEAN;
+}
+
+/**
+ * @param {Step} step
+ * @param {{ out: (s: string) => void, err: (s: string) => void, projectRoot: string, id: string, card: string }} io
+ * @returns {number}
+ */
+function keeperStep(step, io) {
+  const lines = stagedLines(io.projectRoot);
+  if (step.keeper === "pinned-sentence") {
+    const specs = specCorpus(io.projectRoot);
+    const findings = pinnedSentenceFindings({ removed: lines.removed, specs });
+    io.out(
+      `      ${String(lines.removed.length)} removed line(s) against ${String(specs.size)} spec ` +
+        `file(s), at the ${String(PINNED_SENTENCE_FLOOR)}-character floor`,
+    );
+    if (findings.length === 0) return EXIT.CLEAN;
+    for (const f of findings) io.err(`      ${f}`);
+    return EXIT.FOUND;
+  }
+  if (step.keeper === "forbidden-spelling") {
+    const names = personalNames(io.projectRoot);
+    const findings = forbiddenSpellingFindings({
+      added: lines.added,
+      home: os.homedir(),
+      names,
+      classify: (line, file) => (carriesLegacy(line) ? { kept: classifyLegacy(line, file) !== null } : null),
+    });
+    io.out(
+      `      ${String(lines.added.length)} added line(s) against ` +
+        `${String(SECRET_SHAPES.length)} secret shape(s), an address, this machine's home and ` +
+        `${String(names.length)} derived name(s), plus the rename scanner's own classifier`,
+    );
+    if (findings.length === 0) return EXIT.CLEAN;
+    for (const f of findings) io.err(`      ${f}`);
+    return EXIT.FOUND;
+  }
+  const cardText = existsSync(path.join(io.projectRoot, io.card))
+    ? readFileSync(path.join(io.projectRoot, io.card), "utf8")
+    : "";
+  const size = cardSize(cardText);
+  // THE CARD'S OWN FILE IS NOT THE WORK, so its lines are taken off the
+  // count before the bound is applied — a card whose notes ran long is
+  // not a card that outgrew its tier.
+  const changed = lines.changed - (lines.byPath[io.card] ?? 0);
+  const finding = xsBoundFinding({ size, changed });
+  io.out(
+    `      size ${size.length === 0 ? "(none on the card)" : size}, ${String(changed)} changed ` +
+      `line(s) outside the card itself, bound ${String(XS_CHANGED_LINE_BOUND)}`,
+  );
+  if (finding === null) return EXIT.CLEAN;
+  io.err(`      ${finding}`);
+  return EXIT.FOUND;
+}
+
+/**
+ * THE NAMES THIS KEEPER LOOKS FOR, DERIVED FROM THE MACHINE.
+ *
+ * Never a list in the repository, which would itself be the leak. The
+ * account this process runs as and the git identity this checkout
+ * commits under are the two names that reach a tracked file by accident.
+ *
+ * @param {string} root
+ * @returns {string[]}
+ */
+export function personalNames(root) {
+  /** @type {string[]} */
+  const names = [];
+  try {
+    const account = os.userInfo().username;
+    if (account.length > 2) names.push(account);
+  } catch {
+    // A process with no resolvable account is not a process with a name
+    // to leak; the step prints how many names it derived.
+  }
+  // THE GIT IDENTITY IS ONE NAME AND IS NOT SPLIT INTO ITS WORDS. The
+  // first fixture run split `T-295 fixture` and then refused every line
+  // carrying a card id or the word "fixture" — a keeper that fires on
+  // ordinary vocabulary is a keeper that gets turned off. A whole name
+  // is specific enough to be worth looking for and general enough not to
+  // collide, which a single word out of one is not.
+  const configured = git(root, ["config", "user.name"]);
+  if (configured.ok) {
+    const whole = configured.out.trim();
+    if (whole.length > 2 && !names.includes(whole)) names.push(whole);
+  }
+  return names;
+}
+
+/**
+ * @param {Step} step
+ * @param {{ out: (s: string) => void, err: (s: string) => void, projectRoot: string, state: MergeState }} io
+ * @returns {number}
+ */
+function methodBumpStep(step, io) {
+  const move = step.bump;
+  if (move === undefined) {
+    io.err("      the bump step carries no version move");
+    return EXIT.CANNOT_RUN;
+  }
+  /** @type {string[]} */
+  const written = [];
+  for (const entry of METHOD_STAMP_FILES) {
+    const file = path.join(io.projectRoot, entry.path);
+    if (!existsSync(file)) {
+      io.err(`      ${entry.path} is not in this project — the three stamps move together or not at all`);
+      return EXIT.CANNOT_RUN;
+    }
+    const before = readFileSync(file, "utf8");
+    const bumped = bumpOne({ text: before, path: entry.path, from: move.from, to: move.to });
+    if ("problem" in bumped) {
+      // THE FILES ALREADY WRITTEN ARE PUT BACK. A half-bump left on disk
+      // is exactly the state the drill below exists to catch, and
+      // leaving one behind on the way out would be this step planting it.
+      for (const done of written) {
+        writeFileSync(path.join(io.projectRoot, done), io.state.shas[`before:${done}`] ?? "");
+      }
+      io.err(`      ${bumped.problem}`);
+      return EXIT.FOUND;
+    }
+    io.state.shas[`before:${entry.path}`] = before;
+    writeFileSync(file, bumped.text);
+    io.state.shas[entry.path] = sha256(bumped.text);
+    written.push(entry.path);
+    spawnSync("git", ["-C", io.projectRoot, "add", "--", entry.path], { encoding: "utf8" });
+  }
+  io.state.regenerated.push(`the method stamp ${move.from} to ${move.to}, in three files`);
+  io.out(`      bumped and staged: ${written.join(", ")}`);
+  return EXIT.CLEAN;
+}
+
+/**
+ * THE HALF-BUMP DRILL — the one property a bump can silently break.
+ *
+ * The const alone moved back must red the pin test BY NAME. Plant,
+ * run, restore, prove by sha256: the same shape the mutant drill uses,
+ * and for the same reason — a pin test that is green on a half bump
+ * pins nothing at all.
+ *
+ * @param {Step} step
+ * @param {{ out: (s: string) => void, err: (s: string) => void, projectRoot: string, state: MergeState }} io
+ * @returns {number}
+ */
+function halfBumpDrillStep(step, io) {
+  const move = step.bump;
+  if (move === undefined) return EXIT.CANNOT_RUN;
+  const entry = /** @type {{ path: string, anchor: (v: string) => string }} */ (
+    METHOD_STAMP_FILES[METHOD_STAMP_FILES.length - 1]
+  );
+  const file = path.join(io.projectRoot, entry.path);
+  const pristine = readFileSync(file, "utf8");
+  const before = sha256(pristine);
+  const half = pristine.replace(entry.anchor(move.to), () => entry.anchor(move.from));
+  if (half === pristine) {
+    io.err(`      ${entry.path} does not carry the bumped stamp, so no half bump can be planted`);
+    return EXIT.FOUND;
+  }
+  writeFileSync(file, half);
+  /** @type {{ status: number | null, stdout?: string, stderr?: string }} */
+  let r;
+  try {
+    r = spawnSync("cargo", ["test", "-q", "--lib", "--", "agent::kit::tests"], {
+      cwd: path.join(io.projectRoot, "app", "src-tauri"),
+      encoding: "utf8",
+      stdio: "pipe",
+    });
+  } finally {
+    writeFileSync(file, pristine);
+  }
+  const after = sha256(readFileSync(file, "utf8"));
+  if (after !== before) {
+    io.err(`      THE SITE WAS NOT RESTORED — ${entry.path} is ${after} and was ${before}`);
+    return EXIT.FOUND;
+  }
+  io.out(`      restored and PROVED by sha256: ${entry.path} ${before}`);
+  if ((r.status ?? 3) === 0) {
+    io.err(
+      "      THE HALF BUMP SURVIVED — the pin test is GREEN with the const alone moved back, so " +
+        "it does not pin the three stamps agreeing. The bump is refused",
+    );
+    return EXIT.FOUND;
+  }
+  io.out(`      the half bump RED the pin test (exit ${String(r.status ?? 3)}), which is what pins it`);
+  return EXIT.CLEAN;
+}
+
+/**
+ * @param {{ out: (s: string) => void, err: (s: string) => void, state: MergeState }} io
+ * @returns {number}
+ */
+function countsStep(io) {
+  const graded = gradeCounts({ claimed: io.state.claimed, observed: io.state.observed });
+  for (const j of graded.judged) io.out(`      ${j}`);
+  for (const u of graded.unjudged) io.out(`      not judged — ${u}`);
+  if (graded.judged.length === 0 && graded.findings.length === 0) {
+    io.out(
+      "      no leg was judged: this merge ran no suite that printed a count, or the verdict " +
+        "claims none. That is said rather than read as a pass",
+    );
+  }
+  if (graded.findings.length === 0) return EXIT.CLEAN;
+  for (const f of graded.findings) io.err(`      ${f}`);
+  io.err("      The merge stays staged and is NOT committed.");
+  return EXIT.FOUND;
+}
+
+/**
+ * @param {{ out: (s: string) => void, err: (s: string) => void, projectRoot: string, id: string, state: MergeState, verdict?: { heading: string, text: string } | undefined, verdictSha?: string | undefined, lane?: string | undefined, benchTip?: string | undefined, messagePath?: string | undefined }} io
+ * @returns {number}
+ */
+function messageStep(io) {
+  if (io.verdict === undefined) {
+    io.err(
+      "      this merge has no verdict to write a message from, and this command composes none " +
+        "by hand",
+    );
+    return EXIT.FOUND;
+  }
+  const staged = git(io.projectRoot, ["diff", "--cached", "--name-only"]);
+  const text = mergeMessage({
+    id: io.id,
+    lane: io.lane ?? "",
+    benchTip: io.benchTip ?? "",
+    verdictSha: io.verdictSha ?? "",
+    verdict: io.verdict,
+    paths: staged.ok ? staged.out.split("\n").filter((l) => l.length > 0) : [],
+    corrections: io.state.corrections,
+    regenerated: io.state.regenerated,
+    counts: io.state.observed,
+  });
+  const file = io.messagePath ?? path.join(io.projectRoot, ".git", "MERGE_MSG");
+  try {
+    writeFileSync(file, text);
+  } catch (e) {
+    io.err(`      the message could not be written to ${file} — ${e instanceof Error ? e.message : String(e)}`);
+    return EXIT.CANNOT_RUN;
+  }
+  io.out(`      written to ${file}, from the verdict's own sentences:`);
+  for (const line of text.split("\n").slice(0, 2)) io.out(`        ${line}`);
+  return EXIT.CLEAN;
+}
+
+/**
+ * @param {{ out: (s: string) => void, err: (s: string) => void, projectRoot: string, id: string, card: string, state: MergeState, verdict?: { heading: string, text: string } | undefined, benchTip?: string | undefined, readingsPath?: string | undefined, meterFiles?: readonly string[] | undefined, tier?: string | undefined }} io
+ * @returns {number}
+ */
+function metersStep(io) {
+  const cardPath = path.join(io.projectRoot, io.card);
+  const cardText = existsSync(cardPath) ? readFileSync(cardPath, "utf8") : "";
+  /** @type {{ seat: string, source: string, text: string }[]} */
+  const sources = [];
+  if (io.verdict !== undefined) {
+    sources.push({ seat: "verifier", source: io.card, text: io.verdict.text });
+  }
+  for (const file of io.meterFiles ?? []) {
+    if (!existsSync(file)) {
+      io.err(`      ${file} is not readable, so the seat's own meters are NOT in this reading`);
+      continue;
+    }
+    sources.push({ seat: "executor", source: path.basename(file), text: readFileSync(file, "utf8") });
+  }
+  const lines = readingsLines({
+    id: io.id,
+    size: cardSize(cardText),
+    tier: io.tier ?? "standard",
+    merge: io.benchTip ?? "",
+    at: new Date().toISOString(),
+    sources,
+  });
+  if (lines.length === 0) {
+    io.out(
+      "      no `## Meters` block was found in the verdict or in any file named by --meters — " +
+        "nothing was appended, and that is said rather than left to look like a clean run",
+    );
+    return EXIT.CLEAN;
+  }
+  const file = io.readingsPath ?? path.join(io.projectRoot, ...READINGS_PATH.split("/"));
+  try {
+    mkdirSync(path.dirname(file), { recursive: true });
+    appendFileSync(file, `${lines.join("\n")}\n`);
+  } catch (e) {
+    io.err(`      the readings could not be appended to ${file} — ${e instanceof Error ? e.message : String(e)}`);
+    return EXIT.CANNOT_RUN;
+  }
+  io.out(`      appended ${String(lines.length)} reading(s) to ${path.relative(io.projectRoot, file)}`);
+  return EXIT.CLEAN;
 }
 
 // The same bootstrap `gate-run.mjs` and `undo.mjs` use: execution lives

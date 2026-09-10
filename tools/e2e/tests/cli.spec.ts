@@ -1367,17 +1367,46 @@ test("the mutant block's layout is FIXED — order, both markers, and a mutant t
     "problem",
   );
 
-  // AN INDENTED FENCE IS NOT A BLOCK: `method/roles/verifier.md` prints
-  // this layout as an indented example, and a verdict quoting it must not
-  // become a parse failure. The refusal for a forgotten block is
-  // `drillSteps`', which the sibling body drives.
+  // AN INDENTED FENCE IS A BLOCK SINCE T-295, AND THE TRADE WAS MEASURED
+  // BOTH WAYS. This body used to require the opposite, because
+  // `method/roles/verifier.md` prints the layout as an INDENTED example
+  // and a verdict quoting it must not become a parse failure. Then a
+  // verifier wrote its real block indented four spaces inside its verdict
+  // entry, the merged tree's own re-drill reported `blocks read: 0`, and
+  // the seat drilled that correction by hand at the exact line — a
+  // SILENT miss over a correction a verdict had assigned.
+  //
+  // So the discriminator moved from the MARGIN to the ENCLOSURE: a fence
+  // inside another code fence is a quotation, which is CommonMark's own
+  // rule, and a fence at any margin outside one is a block. The residual
+  // risk is a verdict that quotes the layout indented and UNFENCED — and
+  // that risk is LOUD where the old one was silent, because such a
+  // quotation either drills its placeholder anchors and refuses, or
+  // fails to parse and refuses the whole read.
   const indented = good
     .split("\n")
     .map((l) => `    ${l}`)
     .join("\n");
-  const quoted = readMutantBlocks(indented);
-  expect("problem" in quoted, "an indented example parses as nothing at all").toBe(false);
-  if (!("problem" in quoted)) expect(quoted.blocks).toHaveLength(0);
+  const atMargin = readMutantBlocks(indented);
+  expect("problem" in atMargin, "an indented block parses").toBe(false);
+  if (!("problem" in atMargin)) {
+    expect(atMargin.blocks, "and it is ONE block, not none").toHaveLength(1);
+    // THE MARGIN COMES OFF EVERY FIELD. The anchors are exact text, so a
+    // block read with its fence's indent still on it matches nothing in
+    // the tree — which turns a silent miss into a confident wrong
+    // answer. The comparison is against the SAME block at column zero,
+    // so this asserts equality rather than the absence of a space: an
+    // anchor legitimately indented INSIDE its own file keeps that.
+    const atZero = readMutantBlocks(good);
+    expect("problem" in atZero).toBe(false);
+    if (!("problem" in atZero)) {
+      expect(atMargin.blocks[0], "the margin changes nothing about the block").toEqual(atZero.blocks[0]);
+    }
+  }
+  // AND THE ENCLOSURE IS WHAT STILL EXCUSES A QUOTATION.
+  const fenced = readMutantBlocks(["````markdown", good, "````"].join("\n"));
+  expect("problem" in fenced, "a quoted example is not a parse failure").toBe(false);
+  if (!("problem" in fenced)) expect(fenced.blocks, "and it is not a block").toHaveLength(0);
 });
 
 test("a mutant anchor that does not match its file exactly once names no site, and planting refuses", () => {
@@ -1640,6 +1669,10 @@ test("the whole drill plants, runs, restores and PROVES the restore by sha256 �
       command: "npx",
       argv: ["vitest", "run", "test/fence.test.ts"],
       cwd: path.join(root, "lib", "parser"),
+      // THE SET THIS RUNNER COVERS, carried since T-295: a drill scoped
+      // to the fix diff can name several specs at once, and a runner
+      // that did not say which it was running could not be graded.
+      specs: ["lib/parser/test/fence.test.ts"],
     });
   } finally {
     removeGitFixture(root, FIXTURE);
@@ -1780,7 +1813,27 @@ test("the mutant drill is the LAST step before the merge's STOP, on every shape 
     const stop = plan.findIndex((s) => s.kind === "stop");
     expect(drill, `the drill is planned for ${paths.join(", ")}`).toBeGreaterThanOrEqual(0);
     expect(drill, "it comes before the stop that hands the commit back").toBeLessThan(stop);
-    expect(drill, "and it is the LAST step before it — nothing runs after the drill").toBe(stop - 1);
+    // THE PROPERTY IS "NOTHING RUNS A SPEC AFTER IT", AND SINCE T-295 THAT
+    // IS WHAT THIS ASSERTS RATHER THAN A POSITION. The drill used to be
+    // literally the last step before the stop; three steps now follow it
+    // — the counts guard, which is a pure READING of output that has
+    // already been produced, and the two writes that render the message
+    // and the readings. None of them runs a spec, so the drill is still
+    // the last measurement the merge takes, which is the thing the
+    // original position was standing in for.
+    const after = plan.slice(drill + 1);
+    expect(after.length, "steps do follow the drill").toBeGreaterThan(0);
+    expect(
+      after.some((s) => s.kind === "suite" || s.id.startsWith("drill:")),
+      "and not one of them runs a spec",
+    ).toBe(false);
+    expect(after.map((s) => s.id), "they are the counts, the message, the meters and the stops").toEqual([
+      "counts",
+      "message",
+      "meters",
+      "stop",
+      "after",
+    ]);
     const lastSetup = plan.map((s) => s.kind).lastIndexOf("setup");
     expect(lastSetup, "every setup step precedes it, because it runs a spec").toBeLessThan(drill);
   }
