@@ -11,7 +11,7 @@ seven-job graph); the T-295 merge's run is the reading to take next.
 **NOTHING IS BROKEN LOCALLY.** Designed non-zero: `npm run health` **3**
 while bands await keepers (T-156-s1, T-262) — never read it as clean,
 never "fix" it; triage/live-suggestions BREACHES (T-306 wakes: T-297 landed). **`--merge` STOPS AT THE FORBIDDEN-SPELLING KEEPER ON PLANTED
-FIXTURES until T-295-s4** (the hand ritual is the fallback). **AN EXIT MAY MEAN THE GATE NEVER RAN**:
+FIXTURES until T-295-s4.** **AN EXIT MAY MEAN THE GATE NEVER RAN**:
 `docs-gate.mjs`'s `CANNOT_RUN: 3` sits in a catch inside `main()`.
 **READ THE OUTPUT, NOT THE CODE.** **Re-run a suspect ONCE, then
 ATTRIBUTE by NAME.**
