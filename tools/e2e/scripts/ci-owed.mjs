@@ -55,6 +55,7 @@ import {
   repoRoot,
   scopedSuite,
   specFiles,
+  suiteOfPath,
 } from "./gate-run.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -71,6 +72,13 @@ export const SHARD_COUNT_ENV = "E2E_SHARD_COUNT";
 /** A commit id as the event payload spells it, and the one that is not one. */
 const SHA_RE = /^[0-9a-f]{7,64}$/;
 const ZERO_SHA_RE = /^0+$/;
+
+/**
+ * The package roots BOOT GATE's own trigger lies inside — read as SUITE
+ * IDS, because that is the vocabulary `suiteOfPath` answers in and the
+ * registry is where those roots are written down once.
+ */
+export const BOOT_SUITES = Object.freeze(["app", "rust"]);
 
 /** exit codes, in this file's own words. */
 export const EXIT = Object.freeze({ OK: 0, REFUSED: 3 });
@@ -228,27 +236,46 @@ export function specsFromLegDir(specs) {
 /**
  * THE PLAN, AND IT IS A PURE FUNCTION OF ITS NAMED INPUTS.
  *
- * ── WHY THE BOOT CHECK IS DERIVED FROM THE SUITES AND NOT FROM ITS OWN
- * TRIGGER. BOOT GATE fires on `app/src-tauri/**`, `app/src/**` and the
- * two manifests (docs/CONVENTIONS.md). EVERY ONE OF THOSE PATHS LIES
- * UNDER `app/`, so every one of them owes the app suite or the rust
- * suite through the package roots the derivation already read — which
- * makes "app or rust is owed" a SUPERSET of that trigger, computed from
- * an answer this file was handed rather than from a second copy of a
- * rule that lives in a document. The superset is the permitted
- * direction: a change to a README under app/ runs the boot check it did
- * not strictly owe, and no change that owes it is ever missed.
+ * ── WHY THE BOOT CHECK IS DERIVED FROM THE CHANGED PATHS AND NOT FROM
+ * ITS OWN TRIGGER. BOOT GATE fires on `app/src-tauri/**`, `app/src/**`
+ * and the two manifests (docs/CONVENTIONS.md). EVERY ONE OF THOSE PATHS
+ * LIES UNDER THE APP OR RUST PACKAGE ROOT, so "a changed path this
+ * derivation places into the app or rust suite" is a SUPERSET of that
+ * trigger, computed from the package roots the derivation already read
+ * rather than from a second copy of a rule that lives in a document.
+ * The superset is the permitted direction: a change to a README under
+ * app/ runs the boot check it did not strictly owe, and no change that
+ * owes it is ever missed.
+ *
+ * AND IT IS THE PATHS, NOT THE SUITES, FOR A MEASURED REASON. Asking
+ * "is the app suite owed" looked equivalent and is not: the DOCS GATE's
+ * reader map owes the app suite for a change under `docs/tasks/`,
+ * because the app's own dogfood bodies parse the live cards. Keyed to
+ * the suite, EVERY records-only push dragged in the boot check — and
+ * with it the apt prerequisites, the cargo cache and a tauri build, on
+ * the one push shape this card exists to bring under five minutes.
+ * Measured on a real records-only range (one task card, a5f3e89..fb72014):
+ * the suite test says boot, the path test says no boot, and BOOT GATE's
+ * own trigger matches nothing in it.
  *
  * @param {object} input
  * @param {{ suites: string[], e2e: { whole: boolean, specs: string[] }, failClosed?: string | undefined } | undefined} input.owed
  *   the derivation's answer, or undefined when the whole battery is owed
+ * @param {string[]} [input.changed]  the repo-relative paths the range moved
  * @param {string} [input.range]
  * @param {string} [input.why]     why the whole battery is owed
  * @param {number} [input.shardCount]
  * @param {string[]} [input.allSpecs]  every spec file, for the whole case
  * @returns {CiPlan}
  */
-export function ciPlan({ owed, range = "", why = "", shardCount = DEFAULT_SHARD_COUNT, allSpecs = [] }) {
+export function ciPlan({
+  owed,
+  changed = [],
+  range = "",
+  why = "",
+  shardCount = DEFAULT_SHARD_COUNT,
+  allSpecs = [],
+}) {
   const whole = owed === undefined;
   const suites = whole ? [...ALL_SUITES] : [...owed.suites].sort();
   const e2eOwed = suites.includes(SCOPED_SUITE);
@@ -276,7 +303,7 @@ export function ciPlan({ owed, range = "", why = "", shardCount = DEFAULT_SHARD_
     why: whole ? why : (owed?.failClosed ?? ""),
     suites,
     e2eWhole,
-    boot: suites.includes("app") || suites.includes("rust"),
+    boot: whole || changed.some((p) => BOOT_SUITES.includes(String(suiteOfPath(p)))),
     shards,
     specCount: specs.length,
   };
@@ -410,13 +437,19 @@ export function derive(env, root = repoRoot) {
       said,
     };
   }
-  const owed = /** @type {{ suites: string[], e2e: { whole: boolean, specs: string[] }, failClosed?: string }} */ (
+  const owed = /** @type {{ suites: string[], e2e: { whole: boolean, specs: string[] }, failClosed?: string, changed?: string[] }} */ (
     answer.owed
   );
   if (typeof owed.failClosed === "string" && owed.failClosed !== "") {
     said.push(`THE DERIVATION FAILED CLOSED — ${owed.failClosed}`);
   }
-  const plan = ciPlan({ owed, range: chosen.range, shardCount, allSpecs: specFiles(root) });
+  const plan = ciPlan({
+    owed,
+    changed: Array.isArray(owed.changed) ? owed.changed : [],
+    range: chosen.range,
+    shardCount,
+    allSpecs: specFiles(root),
+  });
   said.push(
     `${chosen.range} owes ${plan.suites.join(", ") || "no graded suite"}` +
       (plan.suites.includes(SCOPED_SUITE)

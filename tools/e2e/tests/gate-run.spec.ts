@@ -18,6 +18,7 @@ import {
   outputLines,
   owedSetArgv,
   rangeForEvent,
+  BOOT_SUITES,
   shardCountFromEnv,
   shardSpecs,
   specsFromLegDir,
@@ -2465,20 +2466,34 @@ test("the plan runs the suites the range owes, and the whole battery when it owe
     { shard: 2, shards: 2, specs: "tests/b.spec.ts" },
   ]);
 
-  // THE BOOT CHECK IS DERIVED FROM THE SUITES, and it is a SUPERSET of
-  // BOOT GATE's own trigger by construction: every path that trigger
-  // names lies under app/, so every one of them owes the app suite or
-  // the rust suite through the package roots. Wrong in the permitted
-  // direction, never in the other.
-  expect(plan.boot, "neither app nor rust is owed here").toBe(false);
-  expect(ciPlan({ owed: { ...owed, suites: ["app"] } }).boot).toBe(true);
-  expect(ciPlan({ owed: { ...owed, suites: ["rust"] } }).boot).toBe(true);
-  for (const dir of Object.values(PACKAGE_ROOTS)) {
-    if (!dir.startsWith("app")) continue;
-    expect(
-      ciPlan({ owed: { ...owed, suites: [String(suiteOfPath(`${dir}/x`))] } }).boot,
-      `${dir} owes the boot check`,
-    ).toBe(true);
+  // THE BOOT CHECK IS DERIVED FROM THE CHANGED PATHS, and it is a
+  // SUPERSET of BOOT GATE's own trigger by construction: every path that
+  // trigger names lies under the app or rust package root, so a changed
+  // path this derivation places into either suite covers all of them.
+  // Wrong in the permitted direction, never in the other.
+  expect(plan.boot, "no changed path lies under app/ or app/src-tauri/").toBe(false);
+  for (const p of [
+    "app/src/App.tsx",
+    "app/src-tauri/src/lib.rs",
+    "app/package.json",
+    "app/src-tauri/Cargo.toml",
+  ]) {
+    expect(ciPlan({ owed, changed: [p] }).boot, `${p} owes the boot check`).toBe(true);
+  }
+
+  // AND THE PATHS, NOT THE SUITES — the case a suite-keyed test calls
+  // equivalent and is not. The DOCS GATE's reader map owes the APP suite
+  // for a change under docs/tasks/, because the app's dogfood bodies
+  // parse the live cards; keyed to the suite, EVERY records-only push
+  // dragged in the apt prerequisites, the cargo cache and a tauri build.
+  expect(
+    ciPlan({ owed: { ...owed, suites: ["app", "parser"] }, changed: ["docs/tasks/T-1-x.md"] }).boot,
+    "a records-only push owes the app suite and NOT the boot check",
+  ).toBe(false);
+  expect(BOOT_SUITES.every((id) => ALL_SUITES.includes(id))).toBe(true);
+  for (const id of BOOT_SUITES) {
+    const dir = PACKAGE_ROOTS[id];
+    expect(suiteOfPath(`${String(dir)}/x`), `${String(dir)} places into ${id}`).toBe(id);
   }
 
   // THE WHOLE BATTERY: every graded suite, and the leg's WHOLE spec set
