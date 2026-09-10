@@ -47,6 +47,8 @@ route to, a directory named after the repository. Moving the spellings
 first names siblings of a repository directory that does not exist;
 moving the repository first makes each spelling a one-line follow.
 
+PREFLIGHT RULING (2026-09-10): "first names siblings of a repository" and "repository first" are the ORDER of two moves (the directory before its spellings), not an ordinal count over this repository's history; the move happened on 2026-09-10 and the paragraph stands as the record of why it went first.
+
 **Absorbs:** T-264-s2, T-265-s1, T-265-s3, T-269 (the rename sitting of 2026-09-10, ruling B of the backlog review: cards sharing a fence are ONE lane; each absorbed card's criteria are kept whole below).
 
 **PRECONDITION MET (2026-09-10):** @human renamed the GitHub repository to juhosarvanco/supertaskr, the repository directory to supertaskr and the app checkout to supertaskr-app; the seat re-pointed the remote and repaired the worktree. T-266's precondition is this rename; its remaining items (the npm placeholder, the domain, the mark, the App Store name) are @human's and stay on T-266 — its one seat write (the spellings of the old remote in .github/, CONVENTIONS and the README) is performed HERE. The census at 10f3676 with the records excluded (docs/checkpoints, docs/rooms, docs/tasks, docs/decisions, docs/research): 318 occurrences in 55 files. Records are never rewritten; the identifier-rename keeper's enumerated survivor classes shrink to what a ruling still holds (criterion 2 here, T-265-s3's last criterion).
