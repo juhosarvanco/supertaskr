@@ -471,14 +471,16 @@ async function main(argv) {
     !wantsTakeSeat &&
     !wantsReleaseSeat &&
     !wantsDispatchLane &&
-    !wantsMerge
+    !wantsMerge &&
+    !wantsBench
   ) {
     console.error(
       "brief: nothing asked for — give --task <T-NNN> for a dispatch brief, --state for the " +
         "sections of docs/STATE.md a command can answer, --dispatch for what is startable now " +
         "and why the rest are not, --card <T-NNN> for the figures a card author would " +
         "otherwise type, --take-seat or --release-seat for the integration checkout's holder, " +
-        "--dispatch-lane <T-NNN> --slug <slug> to perform the whole dispatch ritual, " +
+        "--dispatch-lane <T-NNN> --slug <slug> to perform the whole dispatch ritual, --bench " +
+        "<T-NNN> to take the verifier's ground and render its phase 2 brief, " +
         "or any combination.\n" +
         "  An empty request is not a clean run; it is a question this command was never asked.",
     );

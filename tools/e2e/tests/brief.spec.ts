@@ -3903,7 +3903,7 @@ for (const step of DISPATCH_STEPS) {
   });
 }
 
-test("THE RITUAL READS THE STAMP BACK OUT OF THE COMMIT, and a commit that does not carry it stops it at step one", () => {
+test("THE RITUAL READS THE STAMP BACK OUT OF THE COMMIT, and a commit that does not carry it stops it at the stamp", () => {
   // KILLED BY: reading the stamp off the WORKING TREE (which the writer
   // just wrote, so it always agrees), and by dropping the read-back
   // altogether. The lane inherits its stamp in its BASE, so a commit that
@@ -3912,7 +3912,10 @@ test("THE RITUAL READS THE STAMP BACK OUT OF THE COMMIT, and a commit that does 
   const stub = ritualStub(plan, "read-back");
   const result = runDispatchLane(plan, stub.io);
   const stopped = result.stopped as NonNullable<typeof result.stopped>;
-  expect(stopped.n).toBe(1);
+  // THE NUMBER IS DERIVED FROM `DISPATCH_STEPS` AND NEVER TYPED: T-296
+  // put two steps in front of the stamp, and a typed 1 would have moved
+  // silently under them.
+  expect(stopped.n).toBe((DISPATCH_STEPS.find((d) => d.id === "stamp") as (typeof DISPATCH_STEPS)[number]).n);
   expect(stopped.id).toBe("stamp");
   expect(result.code).toBe(EXIT.FOUND);
   expect(stopped.ran, "the refusal does not name the read that caught it").toContain("show");
@@ -4066,7 +4069,7 @@ test("THE DRY RUN PRINTS THE PLAN IN ORDER AND WRITES NOTHING", () => {
 
     // THE ORDER IS THE LAW, and the plan is where a reader checks it.
     const printed = values(ran.stdout).filter((l) => /^step \d+ — /.test(l));
-    expect(printed.map((l) => l.replace(/^step (\d+) — ([a-z]+):.*$/, "$1 $2"))).toEqual(
+    expect(printed.map((l) => l.replace(/^step (\d+) — ([a-z0-9]+):.*$/, "$1 $2"))).toEqual(
       DISPATCH_STEPS.map((s) => `${s.n} ${s.id}`),
     );
     // AND THE BLOCK OF LANE FACTS IS ALL NINE, plus the card they derive
