@@ -5,12 +5,12 @@ feature: F-01
 milestone: 4
 size: S
 priority: 1
-status: planned
+status: building
 suggested_by: "@human (2026-09-10): \"Rule the loop room, A to I as amended: yes\" — docs/rooms/loop-cost-and-speed.md, ADR-024"
 blocked_by: []
 touches: [CLAUDE.md, AGENTS.md, method/adapters/, docs/INDEX.md, docs/STATE.md, docs/STATE-template.md, method/docs-templates/STATE.md, tools/e2e/scripts/docs-scan.mjs, tools/e2e/tests/docs-input-gate.spec.ts]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
