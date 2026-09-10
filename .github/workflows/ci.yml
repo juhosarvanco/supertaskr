@@ -131,8 +131,8 @@ jobs:
             ~/.cargo/bin
             app/src-tauri/target
           # supertaskr- prefix since 2026-09-10: the cache built under the pre-rename runner path
-          # (/home/runner/work/nputer/nputer) carries that path in its build-script outputs and
-          # fails every cargo build after the repository rename; a new key builds a fresh cache.
+          # carries that path in its build-script outputs and fails every cargo build after the
+          # repository rename; a new key builds a fresh cache.
           key: cargo-supertaskr-${{ runner.os }}-${{ hashFiles('app/src-tauri/Cargo.lock') }}
 
       - name: disk after the cargo cache
