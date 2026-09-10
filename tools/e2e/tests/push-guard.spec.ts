@@ -17,7 +17,6 @@ import {
   ACTIVE_RUN_STATUSES,
   ANNOUNCED_ALLOW_CODES,
   ANNOUNCED_RED_CONCLUSIONS,
-  CANCEL_CI_ENV,
   CHEAP_CHECKS_EXIT,
   CHECK_ARGV,
   CHECK_DIR_REL_PATH,
@@ -43,7 +42,6 @@ import {
   RUN_LIST_REQUIRED_FIELDS,
   RUN_VIEW_JSON_FIELDS,
   UNRESOLVABLE_TOKEN_RE,
-  acknowledgedRunIds,
   classifyGhFailure,
   commandOf,
   decide,
@@ -2361,53 +2359,62 @@ test("a failing step's package is READ out of the workflow, in this repository a
   expect(reachesPackage(["README.md"], undefined)).toBe(true);
 });
 
-test("a run still in flight refuses the push, and unguarded that same push lands", () => {
-  // THE DEFECT, REPRODUCED. Without the guard the push goes out and the
-  // run measuring the previous tree is cancelled — four times on
-  // 2026-09-01, and main was red for five hours behind it.
+test("a run still in flight is ANNOUNCED and the push LANDS — the refusal is retired with the cancellation it was about", () => {
+  // ── WHAT MOVED, AND WHY THIS BODY SAYS THE OPPOSITE OF WHAT IT DID ──
+  // Until T-294 this body pinned a REFUSAL, and the refusal was right:
+  // `.github/workflows/ci.yml` keyed its concurrency group on
+  // `github.ref`, so a push landed in the running run's own group and
+  // cancelled it — four times on 2026-09-01, with main red for five
+  // hours behind it. The price was that a seat waited out a 35-minute
+  // run before it could push at all.
+  //
+  // THE GROUP IS THE COMMIT NOW, so two pushes hold two groups and
+  // neither cancels the other. The premise is gone, and this body pins
+  // what replaced it: the push is ALLOWED, the live run is NAMED, and
+  // the sentence says out loud that it is not being cancelled.
   const live = [runRow({ status: "in_progress", conclusion: "", databaseId: 7001 })];
-  const unguarded = fixture("ci-live-unguarded", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
-    ci: { list: listOf(live) },
-  });
-  expect(remoteTip(unguarded), "the remote must start one commit behind").not.toBe(
-    unguarded.unpushed,
-  );
-  execFileSync(
-    "git",
-    [
-      "-C",
-      unguarded.root,
-      ...NO_BACKGROUND_MAINTENANCE,
-      "push",
-      "-q",
-      "origin",
-      "HEAD:refs/heads/main",
-    ],
-    { stdio: "pipe" },
-  );
-  expect(remoteTip(unguarded), "unguarded, the cancelling push lands — this is the red").toBe(
-    unguarded.unpushed,
-  );
-
-  // WITH the guard, through the command settings.json wires.
   const guarded = fixture("ci-live-guarded", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
     ci: { list: listOf(live) },
   });
-  const before = remoteTip(guarded);
+  expect(remoteTip(guarded), "the remote must start one commit behind").not.toBe(guarded.unpushed);
   const { refused, pushed } = pushThroughGuard(guarded);
-  expect(refused, "a live run must refuse the push").toBe(true);
-  expect(pushed).toBe(false);
-  expect(remoteTip(guarded), "the cancelling push must NOT have landed").toBe(before);
+  expect(refused, "a live run no longer refuses the push").toBe(false);
+  expect(pushed).toBe(true);
+  expect(remoteTip(guarded), "the push lands, and the running run keeps running").toBe(
+    guarded.unpushed,
+  );
 
-  const { stderr } = runWiredHook(guarded, "git push origin main");
-  expect(stderr).toContain("PUSH REFUSED");
-  expect(stderr, "the refusal must name the run").toContain("7001");
-  expect(stderr).toContain("would CANCEL it");
-  expect(stderr, "the remedy is the run, waited for").toContain(`${GH_BIN} run watch 7001`);
-  expect(stderr, "and the acknowledgement names the run").toContain(`${CANCEL_CI_ENV}=7001`);
-  expect(stderr, "the elapsed time is the card's, and is not `an unreadable time`").toMatch(
+  const { status, stderr } = runWiredHook(guarded, "git push origin main");
+  expect(status, "an announcement, at exit 0").toBe(0);
+  expect(stderr, "never a refusal").not.toContain("PUSH REFUSED");
+  expect(stderr, "the sentence must name the run").toContain("7001");
+  expect(stderr, "and say plainly what does NOT happen to it").toContain("DOES NOT CANCEL IT");
+  expect(stderr, "the run is still watchable").toContain(`${GH_BIN} run watch 7001`);
+  expect(stderr, "the elapsed time is real, and is not `an unreadable time`").toMatch(
     /running for \d+[smh]/,
   );
+
+  // AND THE PREMISE IS READ OFF THE WORKFLOW, not asserted here. If CI
+  // ever went back to cancelling by REF, this sentence would be a lie
+  // and this body is where that is caught.
+  const workflow = readFileSync(path.join(repoRoot, CI_WORKFLOW_REL_PATH), "utf8");
+  expect(workflow, "the concurrency group is the COMMIT").toContain("${{ github.sha }}");
+  expect(workflow, "and never the ref, which is what made pushes cancel").not.toContain(
+    "group: ci-${{ github.ref }}",
+  );
+
+  // THE POSITIVE CONTROL, from the other side: the announcement is
+  // caused by the LIVE run and is not something this guard says on every
+  // push. Same builder, same wired hook, same run id — the one
+  // difference is a `completed` status with a verdict behind it.
+  const quiet = fixture("ci-live-control", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    ci: {
+      list: listOf([
+        runRow({ status: COMPLETED_RUN_STATUS, conclusion: "success", databaseId: 7001 }),
+      ]),
+    },
+  });
+  expect(runWiredHook(quiet, "git push origin main").stderr, "a green CI is silent").toBe("");
 });
 
 test("the same push lands once that run is completed — the positive control", () => {
@@ -2431,32 +2438,46 @@ test("the same push lands once that run is completed — the positive control", 
   expect(runWiredHook(fx, "git push origin main").stderr).toBe("");
 });
 
-test("the acknowledgement names the run, and nothing else acknowledges anything", () => {
+test("the acknowledgement is RETIRED, and no environment variable moves this guard's CI arm", () => {
+  // ── WHY THIS BODY IS A PROHIBITION NOW ───────────────────────────
+  // `SUPERTASKR_CANCEL_CI=<run id>` existed to clear the in-flight
+  // refusal by naming the run the push was about to cancel. It cleared
+  // one refusal and could not outlive it, because the value had to EQUAL
+  // a live run's id. With the refusal retired there is nothing to
+  // acknowledge — and a variable that clears a refusal nothing raises is
+  // a hatch waiting for the next refusal to be attached to it, which is
+  // exactly how an override flag is born in a file that ships none.
+  //
+  // So the property is now the ABSENCE, and it is pinned two ways: the
+  // guard behaves identically with the variable set, and the name is
+  // BOUND nowhere in the hook's source.
+  const ACK = "SUPERTASKR" + "_CANCEL_CI";
   const live = listOf([runRow({ status: "queued", conclusion: "", databaseId: 7002 })]);
   const fx = fixture("ci-ack", CHECK_EXIT.CURRENT, CURRENT_REPORT, { ci: { list: live } });
 
-  // The control FIRST: unacknowledged, this push is refused.
-  expect(runWiredHook(fx, "git push origin main").status).toBe(2);
+  // The control FIRST: with nothing named, a live run is announced and
+  // the push is allowed.
+  const plain = runWiredHook(fx, "git push origin main");
+  expect(plain.status, "a live run allows the push").toBe(0);
+  expect(plain.stderr).toContain("DOES NOT CANCEL IT");
 
-  const named = runWiredHook(fx, `${CANCEL_CI_ENV}=7002 git push origin main`);
-  expect(named.status, "a seat that names the run may cancel it").toBe(0);
-  expect(named.stderr).toContain("WILL CANCEL IT");
-  expect(named.stderr).toContain("7002");
+  // ...and naming a run changes NOTHING — not the exit, not the sentence.
+  const named = runWiredHook(fx, `${ACK}=7002 git push origin main`);
+  expect(named.status, "the variable moves no verdict").toBe(plain.status);
+  expect(named.stderr, "and it moves no sentence either").toBe(plain.stderr);
+  expect(named.stderr, "there is no cancellation left to acknowledge").not.toContain("CANCEL IT —");
 
-  // A DIFFERENT id is not an acknowledgement of THIS run, which is what
-  // makes the hatch unable to outlive the run it was for.
-  expect(runWiredHook(fx, `${CANCEL_CI_ENV}=7001 git push origin main`).status).toBe(2);
-  // Nor is the name appearing somewhere that is not an environment
-  // prefix on the push's own segment.
-  expect(runWiredHook(fx, `echo ${CANCEL_CI_ENV}=7002 && git push origin main`).status).toBe(2);
-  expect(runWiredHook(fx, `git push origin main ${CANCEL_CI_ENV}=7002`).status).toBe(2);
-
-  // The reader under it, driven directly over the shapes above.
-  expect(acknowledgedRunIds(`${CANCEL_CI_ENV}=9 git push`, {})).toEqual(["9"]);
-  expect(acknowledgedRunIds("git push", { [CANCEL_CI_ENV]: "9" })).toEqual(["9"]);
-  expect(acknowledgedRunIds(`echo ${CANCEL_CI_ENV}=9 && git push`, {})).toEqual([]);
-  expect(acknowledgedRunIds(`${CANCEL_CI_ENV}=9 git push --dry-run`, {})).toEqual([]);
-  expect(acknowledgedRunIds("git push", {})).toEqual([]);
+  // AND THE NAME IS BOUND NOWHERE IN THE HOOK. It survives in the
+  // header's retirement record and in the marker at the constant's old
+  // site, because a reader searching for it is owed the reason — but
+  // nothing READS it, so the hatch cannot be re-opened by accident.
+  const source = readFileSync(path.join(repoRoot, ".claude", "hooks", "push-guard.mjs"), "utf8");
+  const code = source
+    .split("\n")
+    .filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l))
+    .join("\n");
+  expect(code, "no line of code names the retired acknowledgement").not.toContain(ACK);
+  expect(source, "and the reason is still where a reader will look for it").toContain(ACK);
 });
 
 test("a red CI is ANNOUNCED with its failing step, and is never a refusal", () => {
@@ -2627,8 +2648,14 @@ test("`gh` absent announces that CI was not asked and allows — reachable is th
     ci: { list: listOf([runRow({ status: "in_progress", conclusion: "", databaseId: 7200 })]) },
   });
   const asked = runHook(reachable, "git push origin main");
-  expect(asked.status, "reachable, the same run refuses").toBe(2);
+  // THE CONTROL IS THE SENTENCE, NOT THE EXIT (T-294). Both halves allow
+  // the push now — an unaskable CI always did, and a live run does since
+  // the refusal was retired — so what tells a reachable `gh` from an
+  // absent one is WHICH sentence arrives: the run, named, against `CI
+  // WAS NOT ASKED`.
+  expect(asked.status, "reachable, the same run allows too").toBe(0);
   expect(asked.stderr).not.toContain("CI WAS NOT ASKED");
+  expect(asked.stderr, "reachable, the live run is named").toContain("7200");
   expect(ghCalls(reachable).length, "and it was actually asked").toBeGreaterThan(0);
 });
 
@@ -2758,9 +2785,12 @@ test("a running run's EMPTY conclusion is read, never rejected as an unreadable 
     ci: { list: listOf([runRow({ status: "in_progress", conclusion: "", databaseId: 7300 })]) },
   });
   const { status, stderr } = runHook(fx, "git push origin main");
-  expect(status).toBe(2);
-  // THE DISCRIMINATION: it is refused as a LIVE RUN and never as a shape.
-  expect(stderr).toContain("would CANCEL it");
+  expect(status, "a live run allows the push since T-294").toBe(0);
+  // THE DISCRIMINATION, UNCHANGED BY THE RETIREMENT: it is read as a
+  // LIVE RUN and never as a shape this guard cannot parse. What moved is
+  // the verdict the reading reaches, not the reading.
+  expect(stderr).toContain("DOES NOT CANCEL IT");
+  expect(stderr).toContain("7300");
   expect(stderr).not.toContain("cannot read the answer");
 });
 
@@ -2780,11 +2810,21 @@ test("a status this guard does not recognise is disclosed, and does not refuse",
   const { status, stderr } = runHook(fx, "git push origin main");
   expect(status, "an unknown status is this guard's ignorance, not a verdict").toBe(0);
   expect(stderr).toContain("CI'S NEWEST RUN WAS NOT JUDGED");
-  // The control: a status it DOES recognise, in the same fixture shape.
+  expect(stderr, "and it is not read as a run in flight").not.toContain("DOES NOT CANCEL IT");
+
+  // THE CONTROL: a status it DOES recognise, in the same fixture shape.
+  // Both allow the push since T-294, so the discriminator is the
+  // SENTENCE and no longer the exit code — which is the whole reason
+  // this control is spelled out rather than left to the code.
   const known = fixture("ci-known-status", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
     ci: { list: listOf([runRow({ status: "queued", conclusion: "" })]) },
   });
-  expect(runHook(known, "git push origin main").status).toBe(2);
+  const recognised = runHook(known, "git push origin main");
+  expect(recognised.status, "a recognised live status allows the push too").toBe(0);
+  expect(recognised.stderr, "but it is named as running, not as unjudgeable").toContain(
+    "DOES NOT CANCEL IT",
+  );
+  expect(recognised.stderr).not.toContain("CI'S NEWEST RUN WAS NOT JUDGED");
 });
 
 test("the branch reaches `gh` as ONE argument, through no shell", () => {
@@ -2854,11 +2894,18 @@ test("CI is not asked for a push the LOCAL arms already refused", () => {
   expect(run.stderr, "the local arm answers first").toContain("A push is a claim that the gates");
   expect(ghCalls(refused), "and nothing was asked of the remote").toEqual([]);
 
-  // THE CONTROL: the same fixture with a fresh token reaches the arm.
+  // THE CONTROL: the same fixture with a fresh token REACHES the arm.
+  // Since T-294 reaching it is not visible in the exit code — a live run
+  // allows — so the observable is the round trip itself and the sentence
+  // it produces.
   const reached = fixture("ci-order-reached", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
     ci: { list: listOf([runRow({ status: "in_progress", conclusion: "" })]) },
   });
-  expect(runHook(reached, "git push origin main").status).toBe(2);
+  const arm = runHook(reached, "git push origin main");
+  expect(arm.status, "the local arms pass, and the CI arm allows").toBe(0);
+  expect(arm.stderr, "and the arm was reached — it said what is in flight").toContain(
+    "DOES NOT CANCEL IT",
+  );
   expect(ghCalls(reached).length).toBeGreaterThan(0);
 
   // And a command that is not a push asks nothing at all.
@@ -3623,11 +3670,17 @@ test("the branch a push LANDS on is read off the refspec, and doubt is declared"
   }
 });
 
-test("a refspec push from a LANE checkout is judged on the branch it lands on, and is refused there", () => {
+test("a refspec push from a LANE checkout is judged on the branch it lands on, and is ANNOUNCED there", () => {
   // THE DEFECT T-237-s6 MEASURED, AND ITS FIX, IN ONE FIXTURE. A lane
   // worktree pushing `HEAD:refs/heads/main` used to be asked about
   // `task/T-901-a-real-lane` — a branch with no runs — so it went out in
-  // SILENCE while the identical push from a `main` checkout was refused.
+  // SILENCE while the identical push from a `main` checkout was judged.
+  //
+  // WHAT T-294 MOVED IS THE OBSERVABLE, NEVER THE PROPERTY. The live run
+  // is announced rather than refused, so this body reads the SENTENCE
+  // and the branch `gh` was actually asked about; the defect it closes —
+  // asking about the wrong branch — is caught by exactly the same two
+  // assertions it always was.
   const live = listOf([runRow({ status: "in_progress", conclusion: "", databaseId: 9001 })]);
   const fx = laneFixture("s2-refspec-lane", { fence: ["docs/architecture"] });
   armGh(fx, { listByBranch: { main: live }, list: { stdout: "[]" } });
@@ -3638,20 +3691,20 @@ test("a refspec push from a LANE checkout is judged on the branch it lands on, a
       .map((call) => String(call[call.indexOf("--branch") + 1]));
 
   const before = remoteTip(fx);
-  const refused = runWiredHook(fx, "git push origin HEAD:refs/heads/main", fx.lane);
-  expect(refused.status, "a live run on the branch this push LANDS on must refuse it").toBe(2);
-  expect(refused.stderr).toContain("PUSH REFUSED");
-  expect(refused.stderr, "the run it would cancel").toContain("9001");
-  expect(refused.stderr, "named for the branch the push lands on").toContain("`main`");
+  const judged = runWiredHook(fx, "git push origin HEAD:refs/heads/main", fx.lane);
+  expect(judged.status, "a live run on the branch this push LANDS on allows it").toBe(0);
+  expect(judged.stderr, "never a refusal").not.toContain("PUSH REFUSED");
+  expect(judged.stderr, "the run that keeps running").toContain("9001");
+  expect(judged.stderr, "named for the branch the push lands on").toContain("`main`");
   expect(branchOf(fx), "the remote was asked about the branch the push lands on").toContain("main");
   expect(
     branchOf(fx),
     "and never about the lane's own branch, which is the defect this closes",
   ).not.toContain("task/T-901-a-real-lane");
 
-  // AND NOTHING REACHED THE REMOTE — the property this file measures for
-  // every arm it has, rather than an exit code.
-  expect(remoteTip(fx), "the cancelling push must not have landed").toBe(before);
+  // AND THE HOOK REACHED NO REMOTE OF ITS OWN — this runs the guard, not
+  // the push, which is the arrangement every arm in this file measures.
+  expect(remoteTip(fx), "the guard moved nothing").toBe(before);
   expect(remoteTip(fx)).not.toBe(fx.laneTip);
 
   // THE DISCRIMINATING CONTROL: the SAME lane, the SAME command, the SAME
@@ -3680,7 +3733,12 @@ test("a refspec push from a LANE checkout is judged on the branch it lands on, a
   const bare = laneFixture("s2-refspec-bare", { fence: ["docs/architecture"] });
   armGh(bare, { listByBranch: { "task/T-901-a-real-lane": live }, list: { stdout: "[]" } });
   const fellBack = runWiredHook(bare, "git push", bare.lane);
-  expect(fellBack.status, "no refspec means HEAD's branch, and that run is live").toBe(2);
+  expect(fellBack.status, "a live run allows the push since T-294").toBe(0);
+  expect(
+    fellBack.stderr,
+    "no refspec means HEAD's branch, and that run is named as live",
+  ).toContain("`task/T-901-a-real-lane`");
+  expect(fellBack.stderr).toContain("DOES NOT CANCEL IT");
   expect(branchOf(bare)).toEqual(["task/T-901-a-real-lane"]);
 });
 
@@ -3716,15 +3774,18 @@ test("a lane pushing `HEAD:refs/heads/main` is STILL not the integration checkou
   expect(onMain.stderr).toContain("HELD BY ANOTHER LIVE SESSION");
 });
 
-test("`--all` and `--mirror` are REFUSED against a live run — they push HEAD's branch too", () => {
+test("`--all` and `--mirror` are JUDGED against a live run — they push HEAD's branch too", () => {
   // THE FIX PASS. A verifier measured this against the base: from a
-  // `main` checkout with one `in_progress` run on `main`,
-  // `git push --mirror origin` and `git push origin --all` were REFUSED
-  // at 763548c and ALLOWED at this card's first tip — a live run let
-  // through where the PRE-CARD guard refused it, which is this file's own
-  // disqualifying test. The first spelling put both flags on the
-  // "unresolved" list beside `--delete`, and `ciVerdict` returns from
-  // there without asking `gh` anything.
+  // `main` checkout with one `in_progress` run on `main`, both spellings
+  // were JUDGED at 763548c and went UNASKED at that card's first tip —
+  // a live run let through UNSEEN where the pre-card guard had seen it,
+  // which is this file's own disqualifying test. The first spelling put
+  // both flags on the "unresolved" list beside `--delete`, and
+  // `ciVerdict` returns from there without asking `gh` anything.
+  //
+  // SINCE T-294 THE JUDGEMENT IS A SENTENCE RATHER THAN A REFUSAL, so
+  // what this body reads is that the arm ASKED and NAMED the run — the
+  // property the defect actually broke.
   //
   // Both flags push a set that CONTAINS HEAD's own branch — that is what
   // they mean — so HEAD's is a REAL target and a refusal keyed to it can
@@ -3735,10 +3796,11 @@ test("`--all` and `--mirror` are REFUSED against a live run — they push HEAD's
     armGh(fx, { listByBranch: { main: live }, list: { stdout: "[]" } });
     const before = remoteTip(fx);
     const { status, stderr } = runWiredHook(fx, command);
-    expect(status, `${command} must be refused while a run for its branch is live`).toBe(2);
-    expect(stderr).toContain("PUSH REFUSED");
-    expect(stderr, "naming the run it would cancel").toContain("9301");
+    expect(status, `${command} is allowed while a run for its branch is live`).toBe(0);
+    expect(stderr, "never a refusal").not.toContain("PUSH REFUSED");
+    expect(stderr, "naming the run that keeps running").toContain("9301");
     expect(stderr, "and the branch it asked about").toContain("`main`");
+    expect(stderr, "and saying plainly that it is not cancelled").toContain("DOES NOT CANCEL IT");
     // AND THE SET IT DID NOT ASK ABOUT IS DISCLOSED, because HEAD's is
     // one target of many here and the arm asks about one.
     expect(stderr, "the branches this line does not name are said").toContain("CI WAS ASKED ABOUT");
@@ -3746,8 +3808,10 @@ test("`--all` and `--mirror` are REFUSED against a live run — they push HEAD's
   }
 
   // THE CONTROL, in the same fixture shape: the same two spellings with
-  // the run COMPLETED push, so the refusal above is keyed to the run and
-  // not to the flag.
+  // the run COMPLETED, so the sentence above is keyed to the RUN'S
+  // STATUS and not to the flag. Both allow, so the control is on the
+  // sentence — which is the whole shape of every control in this file
+  // since the refusal was retired.
   for (const command of ["git push --mirror origin", "git push origin --all"]) {
     const fx = fixture(`s2-fix-control-${command.includes("mirror") ? "mirror" : "all"}`, CHECK_EXIT.CURRENT, CURRENT_REPORT);
     armGh(fx, {
@@ -3756,7 +3820,12 @@ test("`--all` and `--mirror` are REFUSED against a live run — they push HEAD's
       },
       list: { stdout: "[]" },
     });
-    expect(runWiredHook(fx, command).status, `${command} over a green CI must push`).toBe(0);
+    const control = runWiredHook(fx, command);
+    expect(control.status, `${command} over a green CI must push`).toBe(0);
+    expect(
+      control.stderr,
+      `${command} over a green CI says nothing about a run in flight`,
+    ).not.toContain("DOES NOT CANCEL IT");
   }
 
   // AND THE OTHER HALF OF THE SPLIT: a DELETION still asks nothing, and

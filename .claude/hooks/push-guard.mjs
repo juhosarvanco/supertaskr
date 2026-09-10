@@ -186,10 +186,21 @@
  * So this arm asks `gh` two things about the branch the pushed checkout
  * is on, and each answer has a DIFFERENT shape on purpose:
  *
- *   IS A RUN STILL RUNNING? — a REFUSAL. Pushing now cancels it and the
- *     tree it was measuring never gets a verdict, which is how a red main
- *     is found two pushes late. The refusal names the run, its elapsed
- *     time and `gh run watch`.
+ *   IS A RUN STILL RUNNING? — an ANNOUNCEMENT SINCE T-294, and it was a
+ *     REFUSAL until then. THE REFUSAL WAS RIGHT FOR A WORKFLOW THAT
+ *     CANCELLED: with `concurrency.group` keyed by `github.ref`, a push
+ *     landed in the running run's own group and superseded it, so the
+ *     tree that run was measuring never got a verdict — which is how a
+ *     red main is found two pushes late, and why this arm made a seat
+ *     WAIT up to a 35-minute run before it could push. THE GROUP IS NOW
+ *     THE COMMIT (`github.sha`), so two pushes hold two groups: the
+ *     running run finishes and the new push starts a run of its own. The
+ *     premise of the refusal is gone, and a guard that kept refusing
+ *     would be enforcing a cancellation that no longer happens — the
+ *     most expensive kind of stale rule, because it is paid in wall
+ *     clock by every seat. What survives is the SENTENCE: the run is
+ *     named, with its elapsed time and `gh run watch`, so a seat still
+ *     knows what is in flight over which tree.
  *   WHAT DID CI LAST ACTUALLY SAY? — an ANNOUNCEMENT, never a refusal.
  *     Pushing over a red is the ORDINARY way a red gets fixed, so a
  *     refusal here would block the remedy. It names the run, the failing
@@ -224,18 +235,19 @@
  * stricter test would refuse every live run, which is the one state this
  * arm exists to catch.
  *
- * ── THE ACKNOWLEDGEMENT NAMES THE RUN, AND THAT IS THE WHOLE DESIGN ──
- * `SUPERTASKR_CANCEL_CI=<run id>` — as an environment prefix on the push's
- * own segment, or in this hook's own environment — lets a seat cancel a
- * run KNOWINGLY. It is not an override flag and this file's standing
- * refusal of those is intact: an override flag is a claim that the guard
- * is wrong, and this is a claim about ONE RUN, checked against the id the
- * remote just gave us. **A value left in a shell outlives the run it was
- * for; a value that must EQUAL the run id cannot**, because the next run
- * has a different id and the guard refuses again with the new one. The
- * acknowledgement retires ONLY the refusal: the announcement arm still
- * runs, so a seat that cancels a run knowingly still hears what the last
- * completed one said.
+ * ── THE ACKNOWLEDGEMENT IS RETIRED WITH THE REFUSAL IT WAS FOR (T-294)
+ * `SUPERTASKR_CANCEL_CI=<run id>` let a seat clear the in-flight refusal
+ * by naming the run its push was about to cancel. It was never an
+ * override flag — this file refuses those and says so twice — because an
+ * override flag is a standing claim that the guard is wrong, while that
+ * was a claim about ONE RUN, checked against the id the remote had just
+ * handed us. IT IS GONE BECAUSE THERE IS NOTHING LEFT TO ACKNOWLEDGE: a
+ * push no longer cancels a run for a different commit, so a seat naming
+ * a run id would be acknowledging a cancellation that does not happen.
+ * KEEPING IT WOULD HAVE BEEN WORSE THAN REMOVING IT — an environment
+ * variable that clears a refusal nothing raises is a hatch waiting for
+ * the next refusal to be attached to it, which is precisely how an
+ * override flag gets born in a file that refuses them.
  *
  * ── WHICH BRANCH, AND WHY NOT THE INTEGRATION BRANCH BY NAME ─────────
  * This card's criterion says *"a push to the integration branch"*,
@@ -603,11 +615,13 @@ export const ANNOUNCED_ALLOW_CODES = Object.freeze([
 // nothing consults, and a census with dead rows is a census a reader
 // stops trusting. Each is greppable by its own opening sentence instead.
 // T-237 ADDS FIVE SENTENCES AND NO ROW, for that same reason twice over.
-// `ci-run-in-flight` and `ci-unreadable` are BLOCKS, and this list is
-// consulted only where a returned Decision might or might not deserve
-// saying — a refusal always deserves saying, and the runner prints one
-// whatever this list holds. The CI arm's `CI WAS NOT ASKED`, `CI'S
-// NEWEST RUN WAS NOT JUDGED`, `WILL CANCEL IT` and `CI IS RED UNDER THIS
+// `ci-unreadable` is a BLOCK — and since T-294 it is that arm's ONLY
+// one, the in-flight refusal having been retired with the cancellation
+// it was about — and this list is consulted only where a returned
+// Decision might or might not deserve saying: a refusal always deserves
+// saying, and the runner prints one whatever this list holds. The CI
+// arm's `CI WAS NOT ASKED`, `CI'S NEWEST RUN WAS NOT JUDGED`, `DOES NOT
+// CANCEL IT` and `CI IS RED UNDER THIS
 // PUSH` are NOTICES, printed whatever verdict the arms below reach, and
 // that is the property they are for: a red CI must survive a push the
 // graph arm then refuses, because the two facts are about different
@@ -952,15 +966,21 @@ export function ghRunViewArgv(runId) {
 }
 
 /**
- * The statuses that mean A RUN IS STILL GOING, so a push would cancel it.
+ * The statuses that mean A RUN IS STILL GOING.
  *
  * NAMED RATHER THAN DERIVED FROM `!== "completed"`, and the direction of
  * the failure is why. A negated test treats every status GitHub invents
- * as running and refuses pushes nobody can clear; this list treats an
- * unknown status as UNKNOWN and announces it, which is this file's rule
- * for a question it could not answer. The cost of the choice is stated:
- * a future status meaning "running" that is not on this list goes
- * unrefused until somebody adds it, which is the pre-guard state.
+ * as running and says so about runs that are not; this list treats an
+ * unknown status as UNKNOWN and announces THAT, which is this file's
+ * rule for a question it could not answer. The cost of the choice is
+ * stated: a future status meaning "running" that is not on this list
+ * goes unmentioned until somebody adds it.
+ *
+ * T-294 TOOK THE REFUSAL OFF THIS LIST AND LEFT THE LIST STANDING. It
+ * decided a block while a push cancelled the run it names; it decides a
+ * SENTENCE now, and the sentence is still worth being right about — a
+ * seat reading two verdicts out of order needs to know a second run is
+ * live over a different tree.
  */
 export const ACTIVE_RUN_STATUSES = Object.freeze([
   "queued",
@@ -1052,16 +1072,17 @@ export const ANNOUNCED_RED_CONCLUSIONS = Object.freeze([
   "action_required",
 ]);
 
-/**
- * The acknowledgement that lets a seat cancel a run KNOWINGLY.
- *
- * ITS VALUE MUST BE THE RUN'S OWN ID. This is not an override flag —
- * this file refuses those and says so twice — because an override flag
- * is a standing claim that the guard is wrong, while this is a claim
- * about ONE RUN checked against the id the remote just handed us. A
- * value left in a shell cannot outlive the run it was for.
- */
-export const CANCEL_CI_ENV = "SUPERTASKR_CANCEL_CI";
+// T-294 RETIRED THE ACKNOWLEDGEMENT AND THE FUNCTION THAT READ IT.
+// `SUPERTASKR_CANCEL_CI=<run id>` existed to clear the in-flight
+// REFUSAL by naming the run the push was about to cancel. The workflow's
+// concurrency group is the COMMIT now, so a push cancels no run for a
+// different commit and there is nothing for a seat to acknowledge. The
+// name is deliberately left nowhere in this file: a variable that clears
+// a refusal nothing raises is a hatch waiting for the next refusal, and
+// this file's standing rule is that it ships no override. The header's
+// acknowledgement section is where the argument lives; this is the
+// marker at the site, so the next reader looking for the constant meets
+// the reason rather than a silence.
 
 /**
  * `gh`'s exit codes, to the extent it publishes any — and the point of
@@ -2696,46 +2717,11 @@ export function reachesPackage(paths, dir) {
   return paths.some((p) => p === norm || p.startsWith(`${norm}/`));
 }
 
-/**
- * Every run id this command line, or this hook's own environment,
- * acknowledges.
- *
- * READ FROM THE PUSH'S OWN SEGMENT AND ONLY BEFORE THE WORD `git`, which
- * is what an environment PREFIX is. `echo SUPERTASKR_CANCEL_CI=1 && git push`
- * does not acknowledge anything, and neither does a `--message` that
- * happens to quote the name. The process environment is read too, because
- * a human running a session with the variable exported is making the same
- * statement — and it is safe to honour precisely because the VALUE must
- * be the live run's id, so an exported acknowledgement expires by itself.
- *
- * @param {string} command
- * @param {Record<string, string | undefined>} env
- * @returns {string[]}
- */
-export function acknowledgedRunIds(command, env) {
-  /** @type {string[]} */
-  const values = [];
-  const fromEnv = env[CANCEL_CI_ENV];
-  if (typeof fromEnv === "string" && fromEnv.trim() !== "") values.push(fromEnv.trim());
-  const pushSegments = new Set(
-    gitInvocations(command)
-      .filter(
-        (inv) =>
-          inv.subcommand === "push" && !inv.tokens.some((t) => NON_PUSHING_FLAGS.includes(t)),
-      )
-      .map((inv) => inv.segment),
-  );
-  const segs = segments(command);
-  for (const s of pushSegments) {
-    const seg = segs[s];
-    if (seg === undefined) continue;
-    for (const tok of seg.tokens) {
-      if (tok === "git") break;
-      if (tok.startsWith(`${CANCEL_CI_ENV}=`)) values.push(tok.slice(CANCEL_CI_ENV.length + 1).trim());
-    }
-  }
-  return values;
-}
+// T-294: `acknowledgedRunIds` lived here. It read an environment prefix
+// off the push's own segment — only before the word `git`, so an `echo`
+// of the same text acknowledged nothing — and its whole purpose was to
+// clear a refusal this arm no longer raises. See the constant's own
+// marker above for why the name is gone rather than kept unused.
 
 /**
  * When a run STARTED — `startedAt`, falling back to `createdAt`.
@@ -2792,11 +2778,10 @@ export function elapsedSince(iso, nowMs) {
  * @param {string} command
  * @param {(root: string, argv: string[]) => CheckResult} gh
  * @param {string[]} notices
- * @param {Record<string, string | undefined>} env
  * @param {number} nowMs
  * @returns {Decision | undefined}
  */
-export function ciVerdict(root, headRef, command, gh, notices, env, nowMs) {
+export function ciVerdict(root, headRef, command, gh, notices, nowMs) {
   // ── WHICH BRANCH IS THIS PUSH LANDING ON? (T-237-s2) ───────────────
   // NOT `readHeadRef(root)` alone, which is the branch the CHECKOUT is
   // on and not the branch the push lands on. `pushTargetBranch` reads
@@ -2885,39 +2870,32 @@ export function ciVerdict(root, headRef, command, gh, notices, env, nowMs) {
   const newest = /** @type {Run} */ (runs[0]);
 
   /** @type {Decision | undefined} */
-  let verdict = undefined;
+  const verdict = undefined;
   if (ACTIVE_RUN_STATUSES.includes(newest.status)) {
-    if (acknowledgedRunIds(command, env).includes(newest.id)) {
-      notices.push(
-        `CI RUN ${newest.id} IS ${newest.status.toUpperCase()} AND THIS PUSH WILL CANCEL IT — ` +
-          `acknowledged by ${CANCEL_CI_ENV}=${newest.id}. It has been running for ` +
-          `${elapsedSince(runStartedAt(newest), nowMs)} and the tree it was measuring gets no ` +
-          "verdict.",
-      );
-    } else {
-      verdict = block(
-        "ci-run-in-flight",
-        `PUSH REFUSED: CI run ${newest.id} for \`${branch}\` is ${newest.status} and this push ` +
-          "would CANCEL it.\n" +
-          (newest.title === "" ? "" : `    ${newest.title}\n`) +
-          `    running for ${elapsedSince(runStartedAt(newest), nowMs)}` +
-          (newest.headSha === "" ? "" : `, over ${newest.headSha.slice(0, 12)}`) +
-          "\n" +
-          (newest.url === "" ? "" : `    ${newest.url}\n`) +
-          "  docs/CONVENTIONS.md: A PUSH CANCELS THE RUNNING CI JOB — BATCH THE PUSH. The tree " +
-          "that run is measuring never gets a verdict, which is how a red main is discovered two " +
-          "pushes late: four runs were superseded this way on 2026-09-01 and main sat red for " +
-          "roughly five hours.\n" +
-          "  A GREEN LOCAL BATTERY IS NOT THIS MEASUREMENT. Only one of the two machines is " +
-          "yours, so the T-203 token this guard just accepted says nothing about this run.\n" +
-          "  Wait for it, then push:\n" +
-          `    ${GH_BIN} run watch ${newest.id}\n` +
-          "  Or cancel it knowingly, by naming the run you are cancelling:\n" +
-          `    ${CANCEL_CI_ENV}=${newest.id} git push …\n` +
-          "  That is not an override flag — this guard ships none. It names ONE RUN, so it " +
-          "cannot outlive the run it was for: the next run has a different id.",
-      );
-    }
+    // A SENTENCE, NOT A REFUSAL (T-294). This branch refused until the
+    // workflow's concurrency group became the COMMIT: a push landed in
+    // the running run's own group and superseded it, so refusing was the
+    // only way to keep the tree that run was measuring from losing its
+    // verdict — at a cost of up to a 35-minute wait per push. Two pushes
+    // now hold two groups and neither cancels the other, so what is left
+    // to say is WHAT IS IN FLIGHT AND OVER WHICH TREE. It is worth
+    // saying: this push starts a second run, and the two verdicts arrive
+    // in whatever order they finish.
+    notices.push(
+      `CI RUN ${newest.id} FOR \`${branch}\` IS ${newest.status.toUpperCase()} AND THIS PUSH ` +
+        "DOES NOT CANCEL IT.\n" +
+        (newest.title === "" ? "" : `    ${newest.title}\n`) +
+        `    running for ${elapsedSince(runStartedAt(newest), nowMs)}` +
+        (newest.headSha === "" ? "" : `, over ${newest.headSha.slice(0, 12)}`) +
+        "\n" +
+        (newest.url === "" ? "" : `    ${newest.url}\n`) +
+        "  ci.yml keys its concurrency group on the COMMIT, so this push starts a run of its " +
+        "own and that one finishes: one run per push, and no waiting on the previous one " +
+        "(docs/CONVENTIONS.md, the CI bullet).\n" +
+        "  TWO VERDICTS ARE NOW IN FLIGHT AND THEY ARRIVE IN WHATEVER ORDER THEY FINISH — read " +
+        "them by their head sha rather than by their order:\n" +
+        `    ${GH_BIN} run watch ${newest.id}`,
+    );
   } else if (newest.status !== COMPLETED_RUN_STATUS) {
     notices.push(
       `CI'S NEWEST RUN WAS NOT JUDGED: run ${newest.id} for \`${branch}\` reports status ` +
@@ -3578,7 +3556,11 @@ function decideWith(request, check, cheap, gh, holder, notices) {
   // one. It returns a verdict only for a live run or an unreadable
   // answer; everything else it has to say goes into `notices`, so a red
   // CI is heard even when the graph then refuses.
-  const ci = ciVerdict(root, headRef, command, gh, notices, process.env, Date.now());
+  // T-294 DROPPED THE `env` ARGUMENT. It was read for one thing —
+  // `SUPERTASKR_CANCEL_CI` — and that acknowledgement is retired with
+  // the refusal it cleared. A parameter kept for a reader that no longer
+  // exists is the next reader's wrong guess about what this arm consults.
+  const ci = ciVerdict(root, headRef, command, gh, notices, Date.now());
   if (ci !== undefined) return ci;
 
   // ── CAN THIS LANE EVEN CLEAR A GRAPH REFUSAL? ──────────────────────

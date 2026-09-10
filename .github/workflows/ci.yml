@@ -1,42 +1,68 @@
-# T-020: the repo's one CI job — a thin invoker of the CONVENTIONS-
+# T-020: the repo's one CI workflow — a thin invoker of the CONVENTIONS-
 # verbatim per-package commands (docs/CONVENTIONS.md "Build & test" is
 # the one source of truth; tools/e2e/tests/workflow-parity.spec.ts pins
 # validity, command parity, SHA pins, and the xvfb boot step, so drift
 # between this file and CONVENTIONS fails the lane).
 #
-# Committed COMPLETE and DORMANT: no remote exists today (plan §1). It
-# activates at the repo's first GitHub push — the Linux halves of
-# T-001/T-003's criteria close at that activation and remain honestly
-# open until it. First run to watch: the full job, and specifically the
-# three T-018 sentinel live tests inside `cargo test` — ubuntu's inotify
-# watches inodes, the first backend where replaced-wholesale /
-# deleted-recreated handles can actually die (T-018-s3 fold).
+# ── WHAT T-294 CHANGED: ONE JOB BECAME A JOB GRAPH ────────────────────
+# Measured on the runner before this card: 34 to 36 minutes a run — the
+# end-to-end lane 21, cargo 5, the runner's own setup 8 — and every push
+# paid all of it whatever it moved. ADR-024 decision 4 ruled the OWED
+# SET into CI and the whole four suites onto a clock.
+#
+# So the first job DERIVES what this push owes, with T-280's own
+# function, and every other job is a `needs:` on that answer:
+#
+#   owed ──┬── checks   the lints and the two currency gates, ALWAYS
+#          ├── parser   if the range owes the parser suite
+#          ├── app      if it owes the app suite
+#          ├── native   if it owes the rust suite, or the boot gate fires
+#          └── e2e      if it owes the end-to-end leg — ONE JOB PER
+#                       SHARD, split by OWNING SPEC (T-271's map)
+#
+# THE LEGS RUN ON DIFFERENT RUNNERS, WHICH IS WHAT MAKES THE SOLO LOCK
+# STILL TRUE. `gate-run.mjs` marks the rust and end-to-end legs `solo`
+# because their readings are timing-sensitive under contention; here no
+# two legs share a machine at all, and each shard is a whole runner of
+# its own. The rust leg is never split: its cost is one cargo build that
+# sharding would pay N times.
+#
+# THE SETUP IS REPEATED IN EVERY JOB AND THAT IS THE PRICE. A fresh
+# runner has nothing, so each job checks out, installs what its own leg
+# needs, and reads its own disk — and the caches are what keep that
+# cheap. What it buys is wall clock: the legs are concurrent.
 #
 # Every `uses:` is pinned by full commit SHA (tag noted beside it).
 name: ci
 
 # LEAST PRIVILEGE for the one credential this workflow carries (T-036 —
 # ADR-012's discipline applied to CI: the minimum is the default, and
-# every addition is argued in place). This job checks out, installs,
-# builds, runs three suites, lints, audits, runs the E2E lane and boots
-# under xvfb — it writes nothing back, opens no PR, uploads nothing, so
+# every addition is argued in place). These jobs check out, install,
+# build, run the suites, lint, audit, run the E2E lane and boot under
+# xvfb — they write nothing back, open no PR, upload nothing, so
 # `contents: read` is the whole of what GITHUB_TOKEN needs. Declared
 # here because WITHOUT this block the token's scope is whatever the
 # repository's default workflow-permission setting says: a checkbox in a
 # web UI, not a fact in this repo (the machine-local invisible input
 # T-009 §3 exterminated from the graph).
 #
+# AND IT IS WHY THE NIGHTLY RED OPENS ITS FINDING BY HAND. A job that
+# filed the card itself would need `contents: write` or an issues grant,
+# which is a standing credential bought for a job that runs once a
+# night; what this workflow does instead is print the exact bisection,
+# and a seat opens the card. The grant is the thing not worth having.
+#
 # THE RULE, at the point of temptation: WHEN a future step genuinely
 # needs more, add the grant at THAT JOB's scope with its reason recorded
 # beside it — a `permissions:` key on the job that needs it, naming
-# `contents: read` plus the one extra scope — and NEVER by widening this
-# workflow default, which would hand the extra scope to every job and
-# every step in the file. tools/e2e/tests/workflow-permissions.spec.ts
-# fails loudly on any widening, top-level or per-job, in THIS file or any
-# other workflow (T-045 generalised the rule off ci.yml's hard-coded
-# path). A genuinely needed grant is argued twice — here, and as a row in
-# that spec's EXCEPTIONS table carrying file, scope and reason. The
-# failure is the conversation, not an obstacle to route around.
+# what and why — and add the row to workflow-permissions.spec.ts's
+# EXCEPTIONS table. Never by widening this block, which hands the scope
+# to every job in the file. That spec enumerates .github/workflows/*.yml
+# and holds every workflow to it, not only this one (T-045 generalised
+# the rule off ci.yml's hard-coded path). A genuinely needed grant is
+# argued twice — here, and as a row in that spec's EXCEPTIONS table
+# carrying file, scope and reason. The failure is the conversation, not
+# an obstacle to route around.
 permissions:
   contents: read
 
@@ -45,110 +71,137 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  # THE WHOLE SUITE ON A CLOCK (ADR-024 decision 4, T-294). The owed set
+  # gives up the CROSS-SPEC RED — a body outside the set that reds
+  # because of the change — and this is where that class is caught
+  # instead. A schedule trigger runs on the default branch only, which
+  # is what makes "nightly on main" a property of the trigger rather
+  # than of an `if:` somebody can drop. `ci-owed.mjs` answers a schedule
+  # with the WHOLE BATTERY by construction, so nothing here has to
+  # remember to widen it.
+  schedule:
+    - cron: "17 6 * * *"
 
+# ONE RUN PER PUSH, KEYED BY ITS COMMIT (T-294, criterion 2).
+#
+# THE GROUP IS THE COMMIT AND NOT THE REF, AND THAT IS THE WHOLE
+# CHANGE. Keyed by `github.ref`, a second push to main landed in the
+# same group and CANCELLED the run measuring the first — four runs were
+# superseded that way on 2026-09-01 and main sat red for roughly five
+# hours behind them, which is what the push guard's in-flight refusal
+# then existed to prevent by making seats WAIT up to 35 minutes. Keyed
+# by the commit, two pushes hold two different groups: neither can
+# cancel the other, every pushed tree gets its own verdict, and nobody
+# waits.
+#
+# `cancel-in-progress` STAYS TRUE, deliberately, and now means the one
+# thing it should: a SECOND run over the SAME commit — a re-trigger, or
+# an event arriving for a sha a run already covers — supersedes the
+# first. Those two runs measure a byte-identical tree, so the cancelled
+# one loses no judgement that the survivor does not reach. A cancelled
+# run must never read as a judgement, and `.claude/hooks/push-guard.mjs`
+# is what holds that: `cancelled` is in its NON_VERDICT_CONCLUSIONS, so
+# the guard walks PAST a cancellation to the newest run that actually
+# concluded something rather than reporting the cancellation as CI's
+# answer.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.sha }}
   cancel-in-progress: true
 
+env:
+  # HOW MANY RUNNERS THE END-TO-END LEG IS SPLIT ACROSS. Written once,
+  # here, because it is the one number in this design that is worth
+  # tuning from a measurement: `ci-owed.mjs` reads it, shards the owed
+  # spec list by it, and the matrix below is whatever it produced. Four
+  # against a 21-minute whole leg is the first setting; the figure to
+  # re-derive it from is the shard job's own duration in
+  # `gh run view --json jobs`, not this comment.
+  E2E_SHARD_COUNT: "4"
+
 jobs:
-  linux:
+  # ── WHAT THIS PUSH OWES ────────────────────────────────────────────
+  # The one job every other job waits on, and it runs no suite at all.
+  # It spawns `gate-run.mjs --owed-set --range <base>..<tip>` — the
+  # SAME derivation the push guard requires a token to cover and a
+  # bench runs at its tip (T-280) — and turns the answer into the `if:`
+  # conditions and the shard matrix below. One function, three callers,
+  # no second copy of the rule.
+  owed:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 10
+    outputs:
+      range: ${{ steps.plan.outputs.range }}
+      whole: ${{ steps.plan.outputs.whole }}
+      why: ${{ steps.plan.outputs.why }}
+      suites: ${{ steps.plan.outputs.suites }}
+      run-parser: ${{ steps.plan.outputs.run-parser }}
+      run-app: ${{ steps.plan.outputs.run-app }}
+      run-rust: ${{ steps.plan.outputs.run-rust }}
+      run-e2e: ${{ steps.plan.outputs.run-e2e }}
+      run-boot: ${{ steps.plan.outputs.run-boot }}
+      e2e-whole: ${{ steps.plan.outputs.e2e-whole }}
+      spec-count: ${{ steps.plan.outputs.spec-count }}
+      shard-count: ${{ steps.plan.outputs.shard-count }}
+      shards: ${{ steps.plan.outputs.shards }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # Full history, not depth 1: three e2e specs READ the repository's
-          # own git history as their input (brief.spec's two-Checkpoint read,
-          # range-rule's `<hash>^` parent walks, docs-input-gate's range
-          # scenarios), and a shallow clone hands them a repository that has
-          # exactly one commit — CI run 33259394002, the e2e lane's first
-          # Linux contact, redded all three exactly this way.
+          # Full history, not depth 1: this job DIFFS TWO COMMITS. A
+          # shallow clone has neither end of the range and the
+          # derivation would fail closed to the whole battery on every
+          # push — a correct answer to a question nobody asked.
           fetch-depth: 0
-
-      # ---- the disk ledger (T-278-s2) ----------------------------------
-      # WHAT A RED FLOOR CANNOT SAY. T-278's pair of readings below answers
-      # "was there room for the lane" and "what did the lane spend", and
-      # neither answers the question the ENOSPC runs actually raise: WHICH
-      # step consumed a runner that started the job with room. Runs
-      # 34332162937 (c8d49b3) and 34334103318 (cc41ff3) both reached the
-      # floor with about 184 MiB free on a 72G disk; the four runs before
-      # them reached the same step with about 4.3 GiB. The diffs between
-      # them are docs-only and both caches hit the same keys at the same
-      # sizes, so the one differing input was the RUNNER IMAGE
-      # (20260831.293.1 against 20260907.300.1) — and this job could not
-      # say so, because nothing read the disk between the checkout and the
-      # floor.
-      #
-      # SO EVERY STEP THAT CAN CONSUME THE DISK IS FOLLOWED BY ONE LINE.
-      # The reading is IDENTICAL at every site and carries no label of its
-      # own: the STEP NAME is the label, which is how `gh` and the log
-      # already group it, and a reading that re-states its own site is a
-      # second place for that site's name to go stale. What attributes is
-      # the INTERVAL between two consecutive readings.
-      #
-      # THIS FIRST ONE IS THE IMAGE'S OWN ARRIVAL, and it prints the image
-      # version beside the figure because "the image arrives 4.2 GiB
-      # fuller" is a claim about the MACHINE rather than about the job —
-      # the one reading no step of ours can be blamed for.
-      #
-      # tools/e2e/tests/workflow-parity.spec.ts derives that every heavy
-      # step is followed by one of these, so a step added without a
-      # reading reds rather than going unattributed.
       - name: disk at job start
         run: |
           df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
           echo "runner image: ${ImageVersion:-unknown} (${ImageOS:-unknown})"
-
-      - name: Linux prerequisites (Tauri v2 webkit2gtk set + xvfb)
-        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev xvfb
-
-      - name: disk after the apt prerequisites
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+      - name: disk after the node toolchain and its npm cache
         run: |
           df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+      # THE TWO IDS ARRIVE THROUGH THE ENVIRONMENT AND NEVER THROUGH THE
+      # SHELL. `${{ }}` interpolation splices the payload into the script
+      # text; an `env:` binding hands it to the process as a value, and
+      # `ci-owed.mjs` shape-checks both against a commit id before either
+      # reaches `git`.
+      - name: what this push owes
+        id: plan
+        env:
+          CI_PUSH_BEFORE: ${{ github.event.before }}
+          CI_PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node tools/e2e/scripts/ci-owed.mjs
 
+  # ── THE LINTS AND THE TWO CURRENCY GATES ───────────────────────────
+  # ALWAYS, whatever the range owes. Every one of these reads the WHOLE
+  # TREE rather than a package — the token lint walks the corpus, the
+  # docs gate takes its census, the capabilities check compares a
+  # generated file against a fresh generation — so "what does this range
+  # owe" is not the question they answer, and a push that skipped them
+  # would be a push nobody checked the regenerations of (ADR-024's third
+  # amendment: the arm regenerates at the merge, CI is the backstop that
+  # reds if it did not).
+  checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: disk at job start
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+          echo "runner image: ${ImageVersion:-unknown} (${ImageOS:-unknown})"
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: |
-            lib/parser/package-lock.json
-            app/package-lock.json
             tools/e2e/package-lock.json
-
       - name: disk after the node toolchain and its npm cache
         run: |
           df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
-
-      - name: Record rust toolchain (runner-preinstalled stable, no third-party action)
-        run: rustc --version && cargo --version
-
-      - name: Cache cargo + target
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            ~/.cargo/bin
-            app/src-tauri/target
-          # supertaskr- prefix since 2026-09-10: the cache built under the pre-rename runner path
-          # carries that path in its build-script outputs and fails every cargo build after the
-          # repository rename; a new key builds a fresh cache.
-          key: cargo-supertaskr-${{ runner.os }}-${{ hashFiles('app/src-tauri/Cargo.lock') }}
-
-      - name: disk after the cargo cache
-        run: |
-          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
-
-      - name: Cache playwright browsers
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('tools/e2e/package-lock.json') }}
-
-      - name: disk after the playwright cache
-        run: |
-          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
-
       # ---- token lint (zero-dep; runs before any install) --------------
       # T-054 (T-045-s1): the DOCUMENTED command, not a second spelling of
       # it. `npm run` needs no installed node_modules — it only extends
@@ -162,16 +215,69 @@ jobs:
       - name: Token lint
         working-directory: tools/e2e
         run: npm run lint:tokens
+      - name: e2e install
+        working-directory: tools/e2e
+        run: npm ci
+      - name: disk after the e2e install
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+      # THE DOCS GATE (T-090), immediately after tools/e2e's install — the
+      # earliest slot its own dependency allows. It CANNOT hold the token
+      # lint's bare-checkout position: `token-scan.mjs` is zero-dependency
+      # and `npm run` only extends PATH, while `docs-gate.mjs` imports
+      # `yaml`, chosen because it is the same package lib/parser parses
+      # cards with (T-057). The step runs the gate's WHOLE-TREE half and
+      # judges no diff — a workflow has no "merge's diff" to be handed.
+      - name: docs gate (whole-tree half)
+        working-directory: tools/e2e
+        run: npm run lint:docs
+      - name: e2e types
+        working-directory: tools/e2e
+        run: npm run typecheck
+      # THE CENSUS-CURRENCY GATE (T-153-s8), immediately after the types.
+      # docs/CAPABILITIES.md is GENERATED from the test names in this
+      # directory and nothing on the merge path ever asked whether the
+      # committed bytes still matched a fresh generation: the census went
+      # stale, was regenerated by hand at a checkpoint, and went stale
+      # again with no instrument in between. It cannot hold the token
+      # lint's bare-checkout seat either — `capabilities.mjs` imports no
+      # package, but it resolves a templated test name's iterable by
+      # importing a `.mjs` out of tests/, and scripts there import `yaml`,
+      # so the bare-checkout property belongs to the SPEC TREE and a spec
+      # edit could take it away from three layers off.
+      - name: capabilities census currency (docs/CAPABILITIES.md)
+        working-directory: tools/e2e
+        run: npm run capabilities:check
 
-      # ---- lib/parser (ADR-011 order: parser before app) ---------------
+  # ── C-06's SUITE ───────────────────────────────────────────────────
+  parser:
+    needs: owed
+    if: needs.owed.outputs.run-parser == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: disk at job start
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+          echo "runner image: ${ImageVersion:-unknown} (${ImageOS:-unknown})"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            lib/parser/package-lock.json
+      - name: disk after the node toolchain and its npm cache
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
       - name: parser install
         working-directory: lib/parser
         run: npm ci
-
       - name: disk after the parser install
         run: |
           df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
-
       - name: parser suite
         working-directory: lib/parser
         run: npx vitest run
@@ -182,15 +288,52 @@ jobs:
         working-directory: lib/parser
         run: npm run build
 
-      # ---- app ----------------------------------------------------------
+  # ── C-05's SUITE ───────────────────────────────────────────────────
+  # ADR-011's build ORDER is why this job installs the parser first: the
+  # app resolves `@supertaskr/parser` through `file:../lib/parser`, its
+  # build needs the parser's dist/ (a clear TS2307 without it), and the
+  # symlink resolves the parser's deps through the parser's own
+  # node_modules — so the parser's `npm ci` must have run. The app's own
+  # build is ordered before its suite for the same reason a hand-run
+  # lane discovers late: several app test files read the built bundle.
+  app:
+    needs: owed
+    if: needs.owed.outputs.run-app == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: disk at job start
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+          echo "runner image: ${ImageVersion:-unknown} (${ImageOS:-unknown})"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            lib/parser/package-lock.json
+            app/package-lock.json
+      - name: disk after the node toolchain and its npm cache
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+      - name: parser install
+        working-directory: lib/parser
+        run: npm ci
+      - name: disk after the parser install
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+      - name: parser build
+        working-directory: lib/parser
+        run: npm run build
       - name: app install
         working-directory: app
         run: npm ci
-
       - name: disk after the app install
         run: |
           df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
-
       - name: app build
         working-directory: app
         run: npm run build
@@ -198,160 +341,229 @@ jobs:
         working-directory: app
         run: npm test
 
-      # ---- rust workspace ----------------------------------------------
+  # ── THE RUST SUITE AND THE BOOT GATE, ONE RUNNER ───────────────────
+  # Both need the apt prerequisites and the cargo cache, and paying for
+  # that twice would cost more than either leg. Each half keeps its own
+  # `if:`, and the JOB admits the union of them: the rust suite is owed
+  # by a path under app/src-tauri, and BOOT GATE fires on
+  # app/src-tauri/**, app/src/** or either manifest — a wider trigger,
+  # which is why the boot half can be owed while the cargo half is not.
+  #
+  # THE CARGO CACHE KEY CARRIES THE `supertaskr-` PREFIX and must keep
+  # it: a cache built under the pre-rename runner path carries that path
+  # in its build-script outputs and fails every cargo build after the
+  # repository rename.
+  native:
+    needs: owed
+    if: needs.owed.outputs.run-rust == 'true' || needs.owed.outputs.run-boot == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: disk at job start
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+          echo "runner image: ${ImageVersion:-unknown} (${ImageOS:-unknown})"
+      - name: Linux prerequisites (Tauri v2 webkit2gtk set + xvfb)
+        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev xvfb
+      - name: disk after the apt prerequisites
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            lib/parser/package-lock.json
+            app/package-lock.json
+            tools/e2e/package-lock.json
+      - name: disk after the node toolchain and its npm cache
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+      - name: Record rust toolchain (runner-preinstalled stable, no third-party action)
+        run: rustc --version && cargo --version
+      - name: Cache cargo + target
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin
+            app/src-tauri/target
+          # supertaskr- prefix since 2026-09-10: the cache built under the pre-rename runner path
+          # carries that path in its build-script outputs and fails every cargo build after the
+          # repository rename; a new key builds a fresh cache.
+          key: cargo-supertaskr-${{ runner.os }}-${{ hashFiles('app/src-tauri/Cargo.lock') }}
+      - name: disk after the cargo cache
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+      - name: parser install
+        working-directory: lib/parser
+        run: npm ci
+      - name: disk after the parser install
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+      - name: parser build
+        working-directory: lib/parser
+        run: npm run build
+      - name: app install
+        working-directory: app
+        run: npm ci
+      - name: disk after the app install
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+      - name: app build
+        working-directory: app
+        run: npm run build
       - name: cargo suite (both workspace crates; incl. the T-018 sentinel live tests)
+        if: needs.owed.outputs.run-rust == 'true'
         working-directory: app/src-tauri
         run: cargo test
-
       - name: disk after the cargo suite's target
         run: |
           df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
-
-      # ---- graph currency (T-054) --------------------------------------
-      # THE GATE THIS JOB NEVER HAD. Bare `cargo test` above SKIPS
-      # `#[ignore]`d tests, and `self_graph_is_current` — the only
-      # byte-comparison against the committed docs/architecture/graph.json
-      # — is `#[ignore]`d on purpose, so local `cargo test` stays hermetic
-      # to unrelated TypeScript edits. Until this step existed a stale
-      # graph passed CI green: the dogfood fixtures assert against the
-      # COMMITTED graph, and a stale graph agrees perfectly with fixtures
-      # that match it. Twenty-nine regens were held up by a written ritual
-      # and conscientious integrators, nothing else.
-      #
-      # Exit 1 = STALE (regenerate: SUPERTASKR_UPDATE_GOLDEN=1 cargo test -p
-      # supertaskr-index --test self_graph -- --ignored). 3 = the gate could
-      # not run. `--root ../..` is NOT a CI adaptation: without it the
-      # root defaults to the current directory and the check reports the
-      # graph MISSING and exits 1, a false red that reads like staleness.
+      # THE GRAPH-CURRENCY GATE (T-054), placed immediately after the
+      # cargo suite: the suite is what builds the crate, and a stale
+      # graph is news before the audit spends a minute installing a
+      # tool. The `--root ../..` is part of the documented command, not a
+      # CI adaptation: without it the default root is the current
+      # directory and the check reports the graph MISSING and exits 1,
+      # which is a FALSE RED that reads exactly like staleness.
       - name: graph currency (supertaskr-index index --check)
+        if: needs.owed.outputs.run-rust == 'true'
         working-directory: app/src-tauri
         run: cargo run -p supertaskr-index -- index --check --root ../..
-
-      # ---- advisory audit (T-009-s3): dev tool, never a repo dep -------
-      # HARD fail on an advisory against the exact pins — a red run with
-      # no code change is the FEATURE (deliberate re-pin + re-review at
-      # the stop-and-consult gate), never continue-on-error. Fetches the
-      # RUSTSEC advisory DB — the one network-touching step.
       - name: install cargo-audit
+        if: needs.owed.outputs.run-rust == 'true'
         working-directory: app/src-tauri
-        # Idempotent on purpose (T-153-s13): the cargo cache saves
-        # ~/.cargo/bin, so the run AFTER the first install restores the
-        # binary and a bare `cargo install` refuses with "binary already
-        # exists" — which stopped every run on this Cargo.lock, main
-        # pushes included, at this step. A restored binary is the happy
-        # path, not an error.
         run: command -v cargo-audit >/dev/null 2>&1 || cargo install cargo-audit --locked
-
       - name: disk after the cargo-audit install
         run: |
           df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
-
       - name: cargo audit
+        if: needs.owed.outputs.run-rust == 'true'
         working-directory: app/src-tauri
         run: cargo audit
-
-      # ---- real-input E2E lane -----------------------------------------
       - name: e2e install
         working-directory: tools/e2e
         run: npm ci
-
       - name: disk after the e2e install
         run: |
           df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
-
-      # ---- docs gate (T-090) -------------------------------------------
-      # THE THIRD STANDING GATE, ARRIVING AS A STEP. `docs/` is a CODE
-      # INPUT and neither of the other two triggers can see it: a commit
-      # whose whole diff is `docs/tasks/*.md` matches neither, and twice
-      # such a commit turned a suite red — 9c64cd8 (two card titles opened
-      # with a backtick, so two cards stopped parsing and a
-      # scroll-containment body reported Expected "60") and fede266 (a
-      # `status:` outside the parser's vocabulary took the app suite to
-      # 830 of 831). Both were found three layers from the cause.
-      #
-      # It runs the WHOLE-TREE half — every live card's frontmatter, the
-      # root-anchor account, the unlinkable-reader tripwire — and judges NO
-      # diff: a workflow has no "merge's diff" to be handed, and this gate
-      # deliberately computes no range of its own. The DIFF half stays the
-      # integrator's hand run, spelled in CONVENTIONS' DOCS GATE bullet.
-      #
-      # WHY IT IS NOT FIRST. The token lint runs ahead of every `npm ci`
-      # because token-scan.mjs is zero-dependency and `npm run` only
-      # extends PATH. docs-gate.mjs imports `yaml` — the same package
-      # lib/parser parses cards with, so a block parses for both or for
-      # neither (T-057) — so it needs tools/e2e installed and CANNOT hold
-      # that position. This is the earliest slot its own dependency allows,
-      # and still ahead of the 250MB browser download. Do not "fix" it.
-      #
-      # Exit 0 clean, 1 the gate HAS a verdict, 2 called wrong, 3 the gate
-      # could not run. The frozen EXIT object in the script owns those
-      # numbers and nothing here re-types them.
-      - name: docs gate (whole-tree half)
+      # ---- xvfb tauri boot (LAST — the cargo cache above warms it) -----
+      # WEBKIT_DISABLE_DMABUF_RENDERER: known webkit2gtk-in-headless-CI
+      # rendering workaround; the check asserts startup lines, not pixels.
+      # The xvfb WRAPPER is a real environment need — a headless runner
+      # has no display — but what it wraps is the documented command. The
+      # script resolves the repo root from import.meta.url, never
+      # process.cwd(), so running it through npm from tools/e2e is
+      # behaviourally identical to a repo-root invocation.
+      - name: xvfb tauri boot
+        if: needs.owed.outputs.run-boot == 'true'
         working-directory: tools/e2e
-        run: npm run lint:docs
+        env:
+          WEBKIT_DISABLE_DMABUF_RENDERER: "1"
+        run: xvfb-run -a npm run boot:check
 
-      # T-045: CONVENTIONS lists `npm run typecheck` for tools/e2e and this
-      # job never ran it — the hole that appears the moment the step list is
-      # DERIVED from the doc instead of mirrored. Placed before the browser
-      # download: it costs seconds, and a type error should not wait on
-      # 250MB of Chromium.
-      - name: e2e types
+  # ── THE END-TO-END LANE, ONE JOB PER SHARD ─────────────────────────
+  # THE SPLIT IS BY OWNING SPEC, and it is the same map T-271 built for
+  # a lane's scoped reading: Playwright's own unit of parallelism is the
+  # spec FILE, and the owning-spec map already answers in spec files, so
+  # nothing here has to invent a second notion of a test id.
+  #
+  # `matrix.specs` IS NEVER EMPTY WHILE THIS JOB RUNS. `ci-owed.mjs`
+  # emits a shard only when it has specs to give it, and the one
+  # specless entry it emits when the leg is NOT owed exists so the
+  # matrix expands to something — this job's own `if:` is what skips it.
+  #
+  # THE FREE-DISK STEP AND THE FLOOR ARE IN THIS JOB, which is what
+  # makes them hold on EVERY SHARD: a matrix expands one step list
+  # across N runners, so there is no shard that can be configured
+  # without them (T-278-s2, T-294 criterion 4).
+  e2e:
+    needs: owed
+    if: needs.owed.outputs.run-e2e == 'true'
+    name: e2e shard ${{ matrix.shard }} of ${{ matrix.shards }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      # EVERY SHARD RUNS TO ITS OWN END. `fail-fast: true` would cancel
+      # the other shards the moment one redded, and a cancelled shard
+      # reports no verdict at all — which would turn one red body into
+      # N-1 runs nobody can read, the exact confusion this card took the
+      # cancellation out of the concurrency group to end.
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.owed.outputs.shards) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Full history, not depth 1: three e2e specs READ the
+          # repository's own git history as their input (brief.spec's
+          # two-Checkpoint read, range-rule's `<hash>^` parent walks,
+          # docs-input-gate's range scenarios), and a shallow clone hands
+          # them a repository that has exactly one commit — CI run
+          # 33259394002, the e2e lane's first Linux contact, redded all
+          # three exactly this way.
+          fetch-depth: 0
+      - name: disk at job start
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+          echo "runner image: ${ImageVersion:-unknown} (${ImageOS:-unknown})"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            lib/parser/package-lock.json
+            app/package-lock.json
+            tools/e2e/package-lock.json
+      - name: disk after the node toolchain and its npm cache
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+      - name: Cache playwright browsers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('tools/e2e/package-lock.json') }}
+      - name: disk after the playwright cache
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+      # THE LANE'S OWN PRECONDITIONS, and tools/e2e's preflight refuses at
+      # config load naming whichever is missing: the parser installed and
+      # BUILT (the dev bundle imports its dist/pure.js), then the app
+      # installed. The app's own BUILD is not here — the lane drives the
+      # vite DEV server, so `app/dist` is the app suite's need and not
+      # this leg's, and a build nobody reads is two minutes a shard.
+      - name: parser install
+        working-directory: lib/parser
+        run: npm ci
+      - name: disk after the parser install
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+      - name: parser build
+        working-directory: lib/parser
+        run: npm run build
+      - name: app install
+        working-directory: app
+        run: npm ci
+      - name: disk after the app install
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+      - name: e2e install
         working-directory: tools/e2e
-        run: npm run typecheck
-
-      # ---- capabilities census currency (T-153-s8) ---------------------
-      # THE KEEPER docs/CAPABILITIES.md NEVER HAD. That file is GENERATED
-      # from the test names in tools/e2e/tests/, and CLAUDE.md sends every
-      # session to it first on the strength of its being generated — "a
-      # sentence in it is false the moment its test reds and nobody keeps
-      # it true by hand". The generation was real; the KEEPER was not.
-      # Nothing in this job, in CONVENTIONS' command bullets, or in any
-      # spec ever asked whether the committed bytes still matched a fresh
-      # generation, so the census went stale, was regenerated by hand at a
-      # checkpoint, and went stale again with nothing in between able to
-      # say so. The occasions are enumerated on T-153-s8's card.
-      #
-      # WHY HERE, and every leg of it measured rather than assumed:
-      #  - AFTER tools/e2e's `npm ci`. Not because the script imports a
-      #    package — it imports none, and on an uninstalled worktree it
-      #    ran and answered CURRENT — but because it resolves a templated
-      #    test name's iterable by IMPORTING a `.mjs` out of tests/, and
-      #    scripts there import `yaml`. The bare-checkout property is a
-      #    fact about what the SPECS pull, so a spec edit could falsify it
-      #    from three layers away. It cannot hold the token lint's seat.
-      #  - AFTER `npm run typecheck`: the generator reads the same spec
-      #    files tsc validates, and a file that does not compile should be
-      #    named by the step that can say why.
-      #  - BEFORE the 250MB browser download and the lane, by the same
-      #    argument that puts `index --check` ahead of the audit: a stale
-      #    census costs under a second to find out about.
-      #
-      # Exit 0 CURRENT, 1 STALE, 2 called wrong, 3 the gate could not run
-      # — the script's own contract, re-typed nowhere. STALE fails this
-      # job and its message names `npm run capabilities`, which is the
-      # whole fix; a gate that COULD NOT RUN fails it too and says so in
-      # those words, so the two are never read for each other.
-      #
-      # THE GENERATOR IS DELIBERATELY NOT A STEP. Run here it would
-      # rewrite the very file this check judges, exit 0, and certify its
-      # own output. The regeneration belongs in a commit — the SAME commit
-      # as whatever moved a test name.
-      #
-      # AND NO CENSUS FIGURE APPEARS IN THIS FILE, which is the point of
-      # having a step at all: a number transcribed beside a gate is the
-      # thing with no keeper. Ask `npm run capabilities:check`.
-      - name: capabilities census currency (docs/CAPABILITIES.md)
-        working-directory: tools/e2e
-        run: npm run capabilities:check
-
+        run: npm ci
+      - name: disk after the e2e install
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
       - name: e2e browsers
         working-directory: tools/e2e
         run: npx playwright install --with-deps chromium
-
       - name: disk after the browser download
         run: |
           df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
-
       # ---- make the room the image did not bring (T-278-s2) ------------
       # THE REMEDY, and it is a remedy for the MACHINE rather than for the
       # job. On image 20260831.293.1 this runner reaches this point with
@@ -381,9 +593,9 @@ jobs:
       # than left to the reader: the checkout, the two caches this job
       # restores, the npm cache setup-node restores, the rust toolchain,
       # cargo-audit's own binary under ~/.cargo/bin, the node toolcache,
-      # and /usr/lib — where the apt step's Tauri prerequisites land, and
-      # which is why /usr/lib/jvm is NOT a candidate here despite being one
-      # of the larger trees on the image.
+      # and /usr/lib — where a Tauri prerequisite installed by apt lands
+      # on the job that installs them, and which is why /usr/lib/jvm is NOT
+      # a candidate here despite being one of the larger trees on the image.
       #
       # AND THE REFUSAL IS AT RUN TIME AS WELL AS IN THE SPEC. The parity
       # spec derives that no candidate overlaps a protected path — but its
@@ -454,7 +666,6 @@ jobs:
           after_kib=$(df -Pk / | awk 'NR==2 { print $4 }')
           echo "freed $(( after_kib - before_kib )) KiB on / (${before_kib} KiB free before, ${after_kib} KiB after)"
           df -h /
-
       # ---- the runner's disk, read and floored (T-278) -----------------
       # THE RED THIS PAIR OF STEPS EXISTS TO RENAME. Four consecutive runs
       # on main died inside the lane of ENOSPC and this job never printed
@@ -532,9 +743,14 @@ jobs:
             fi
           done
 
+      # THE SHARD'S OWN SPEC LIST, and the ONE divergence from the
+      # documented `npm test`: the paths come from the matrix entry
+      # `ci-owed.mjs` built, spelled from the leg's own directory by the
+      # same function `gate-run.mjs` uses to scope a lane's reading. The
+      # `--` is load-bearing: npm eats a bare argument after a script name.
       - name: e2e lane
         working-directory: tools/e2e
-        run: npm test
+        run: npm test -- ${{ matrix.specs }}
 
       # THE OTHER HALF OF THE READING, and `always()` is the whole of why
       # it is worth a step: the run this exists for is the one where the
@@ -552,17 +768,45 @@ jobs:
           echo "the twenty largest entries left in /tmp:"
           du -sk /tmp/* 2>/dev/null | sort -n | tail -20 || true
 
-      # ---- xvfb tauri boot (LAST — the cargo cache above warms it) -----
-      # WEBKIT_DISABLE_DMABUF_RENDERER: known webkit2gtk-in-headless-CI
-      # rendering workaround; the check asserts startup lines, not pixels.
-      # T-054 (T-045-s1): the xvfb WRAPPER is a real environment need — a
-      # headless runner has no display — but what it wraps is now the
-      # documented command rather than a second spelling of it. The script
-      # resolves the repo root from import.meta.url, never process.cwd(),
-      # so running it through npm from tools/e2e is behaviourally
-      # identical to the old repo-root `node tools/e2e/scripts/…` form.
-      - name: xvfb tauri boot
-        working-directory: tools/e2e
-        env:
-          WEBKIT_DISABLE_DMABUF_RENDERER: "1"
-        run: xvfb-run -a npm run boot:check
+
+  # ── THE NIGHTLY'S RED, AND THE FINDING IT OPENS ────────────────────
+  # The owed set gives up the CROSS-SPEC RED — a body outside the set
+  # that reds because of the change — and the nightly whole run is where
+  # that class is caught instead (ADR-024's fourth amendment). A red
+  # there is a body nobody's own push ran, so it belongs to a MERGE
+  # rather than to a push, and this job's whole output is the bisection
+  # that names which one.
+  #
+  # IT FILES NOTHING ITSELF, on purpose: filing would need a write grant
+  # this workflow does not carry and would not be worth carrying for a
+  # job that runs once a night (see the `permissions:` block above). It
+  # PRINTS the range and the per-merge command, and a seat opens the
+  # card — the criterion's words, in docs/CONVENTIONS.md.
+  #
+  # `failure()` AND NOT `always()`: a green nightly has nothing to say,
+  # and a job that printed a recipe every night is a job nobody reads on
+  # the night it matters. A SKIPPED need is not a failure, so this stays
+  # silent on the pushes where the legs were simply not owed.
+  nightly-finding:
+    needs: [checks, parser, app, native, e2e]
+    if: failure() && github.event_name == 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: the nightly whole run is RED — the finding this opens
+        run: |
+          echo "THE NIGHTLY WHOLE RUN IS RED over ${GITHUB_SHA}."
+          echo "This is a body no push's own owed set ran, so it belongs to a MERGE."
+          echo
+          echo "1. The range to bisect is the merges since the last GREEN nightly:"
+          echo "     gh run list --workflow ci --event schedule --status success --limit 1"
+          echo "   Take that run's headSha as <last-green>."
+          echo "2. Attribute it, one merge commit at a time, with the same derivation"
+          echo "   this workflow runs per push:"
+          echo "     for m in \$(git log --first-parent --merges --format=%H <last-green>..${GITHUB_SHA}); do"
+          echo "       node tools/e2e/scripts/gate-run.mjs --owed-set --range \${m}^1..\${m}"
+          echo "     done"
+          echo "   The merge whose owed set does NOT contain the red body is the merge"
+          echo "   whose lane never ran it — that is the one the finding names."
+          echo "3. Open the finding against that merge and fix it forward in a bounded lane."
+          exit 1
