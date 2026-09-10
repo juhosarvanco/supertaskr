@@ -616,3 +616,34 @@ The four suite figures, the 205, the 33 and every forged-payload answer
 are at **4c9f7d7d**. The three correction bodies are committed on this
 bench AFTER this entry, so the counts above name the tree they were
 taken from and not the tree this entry creates.
+
+#### Addendum, found while running step 7 — correction 6's second site
+
+Running the card preflight at my own tip, as step 7 requires, turned up
+the same class again in the lane's REPORT rather than in the record. The
+report's command table lists
+
+    brief.mjs --task T-294-s1 --preflight   exit 0
+    brief.mjs --task T-294-s2 --preflight   exit 0
+    brief.mjs --task T-294-s3 --preflight   exit 0
+
+and none of the three reproduces. At **6a1a52aa**, the executor's own
+ref, and again at my tip, that command answers **exit 3 — COULD NOT
+RUN** for every one of them, in its own words: the preflight draws its
+candidates from the schedule, a card whose status is `suggested` is not
+one, *"so this run is a claim about the command and not about the
+card"*. The same command answers **exit 0** for T-294 itself at both
+refs, which is what makes the three look measured. **The cards
+themselves are fine** — I read all four frontmatters and they carry a
+legal status, a legal size, `suggested_by` and `touches:`; what did not
+happen is the preflight that was reported as having happened.
+
+This is correction 6's second site and does not raise the count: figures
+in a record that do not reproduce at their own ref. It costs nothing to
+fix and it is the only kind of claim a later seat has no way to check
+except by re-running it, which is why it is worth the ink.
+
+**Measured at 32f5fd17 (this bench, after the correction bodies):**
+`gate-run.mjs parser` exit 0, **389 bodies, GREEN** — the live-board
+census reads every card and my two commits wrote four. The card
+preflight on T-294 itself: **exit 0**.
