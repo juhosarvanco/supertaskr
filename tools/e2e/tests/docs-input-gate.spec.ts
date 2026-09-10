@@ -2238,3 +2238,42 @@ test("the index tells a seat what to do when the pack did not hand it the rule, 
     expect(line, `${rel}'s line does not say where to open it`).toContain("**Open it at:**");
   }
 });
+
+test("the adapter reader keeps the boundary the DISPATCH BRIEF's own reader keeps, stop and all", () => {
+  // THE BOUNDARY THE MODULE ALREADY KEEPS AND NOTHING COULD SEE.
+  // `adapterNamedDocs` exists to answer what the standing read COSTS, and
+  // it is only worth answering while it agrees with the reader that hands
+  // a seat its read-first set — the brief's own, whose run of characters
+  // for a path includes the DOT and which therefore drops a path written
+  // at the END of a sentence and keeps the same path one word earlier.
+  // The module says so in its own comment and calls it deliberate; no
+  // body asked. So a later reader who takes the drop for a bug and
+  // "repairs" it would make this module answer a question the brief does
+  // not ask, silently, on the one figure this card is measured by — every
+  // other body here stays green through that change, which is exactly why
+  // this one is written.
+  expect(
+    adapterNamedDocs("Before any work: read docs/STATE.md, then docs/INDEX.md."),
+    "a path carrying its sentence's stop is not a path this reader returns",
+  ).toEqual(["docs/STATE.md"]);
+  expect(
+    adapterNamedDocs("docs/INDEX.md is one GENERATED line per governing document, and it is read."),
+    "and the same path one word earlier is kept, which is the other half of the boundary",
+  ).toEqual([INDEX_DOC]);
+  expect(
+    adapterNamedDocs("the map is at docs/architecture/graph.md and nowhere else"),
+    "a nested path is not a candidate at all — the run this reader takes stops before a slash",
+  ).toEqual([]);
+  // AND THE LIVE ADAPTER IS ON THE KEPT SIDE ONLY BECAUSE IT SAYS THE
+  // NAME TWICE. Its first mention closes a sentence; strike the later
+  // ones and the index leaves the answer, which is what makes the
+  // boundary above a fact about this tree rather than about a string.
+  const claude = readFileSync(path.join(repoRoot, "CLAUDE.md"), "utf8");
+  expect(adapterNamedDocs(claude), "the live adapter no longer names the index").toContain(INDEX_DOC);
+  const firstOnly = claude.slice(0, claude.indexOf(INDEX_DOC) + INDEX_DOC.length + 1);
+  expect(
+    adapterNamedDocs(firstOnly),
+    "the adapter's FIRST mention of the index closes a sentence, so it alone does not carry it — " +
+      "if this ever passes, the boundary above has stopped being load-bearing here",
+  ).not.toContain(INDEX_DOC);
+});
