@@ -66,3 +66,7 @@ than by taste:
 
 Whichever lands owes a body of the shape T-280's own DATA mutant has:
 plant a runtime read in a fixture spec and watch the owed set grow.
+
+## Corroboration (the seat, 2026-09-10)
+
+A second instance of the class: the range fb720147..10195e49 moved one file (a new card under docs/tasks fencing the tasks directory) and the derivation owed app, rust and e2e but NOT the parser leg, whose live-board census in lib/parser/test/fence.test.ts reads every card at runtime; the runner redded (2 failed / 387 passed) where the local range check had read green. Fixed forward at 418d3245 (the fence removed); the reader that the derivation cannot see is the parser package's test over docs/tasks, and it should be placed by the same rule the docs gate uses for its 32 readers.
