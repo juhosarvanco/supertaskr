@@ -72,6 +72,14 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildCommandFor, conventionCommandsFor } from "./cli.mjs";
+// THE PROCESS AS SETTINGS (T-299, ADR-024 decision 6). The schema and
+// its resolution live beside the dispatch arm because the dispatch arm
+// is where the runtime template is already read; the merge reads the
+// SAME resolution rather than a second copy of it, which is the whole
+// point of declaring a switch once.
+import { PROCESS_SCHEMA, loadProcess, switchValue } from "./dispatch-brief.mjs";
+
+/** @typedef {import("./dispatch-brief.mjs").ProcessSettings} ProcessSettings */
 import { deriveOwning } from "./gate-run.mjs";
 import { carriesLegacy, classifyLegacy } from "./rename-scan.mjs";
 import { cardFile, git, repoRoot } from "./undo.mjs";
@@ -905,6 +913,44 @@ export function drillSteps(input) {
 }
 
 /**
+ * WHERE A REGENERATION HAPPENS, as a function of the setting (T-299,
+ * ADR-024 decision 6).
+ *
+ * `merge.regen_graph` and `merge.regen_census` say whether the arm
+ * rebuilds a generated file inside the merge plan — with its own exit,
+ * its currency check and its staging — or whether the plan carries a
+ * STOP naming what the seat owes and the regeneration happens off the
+ * ledger. The second is the ceremony as it stood: the T-112-s6 merge
+ * left main red on the app suite for forty minutes because a graph the
+ * seat was going to regenerate had not been.
+ *
+ * @param {ProcessSettings | undefined} settings
+ * @param {"graph" | "census"} which
+ * @returns {{ byTheArm: boolean, why: string }}
+ */
+export function regenPlace(settings, which) {
+  if (settings === undefined) {
+    return {
+      byTheArm: true,
+      why: "no process settings were passed, so the arm regenerates as it did before the switch existed",
+    };
+  }
+  const id = which === "graph" ? "merge.regen_graph" : "merge.regen_census";
+  const how = which === "graph"
+    ? switchValue(settings, "merge.regen_graph")
+    : switchValue(settings, "merge.regen_census");
+  if (how === "by-the-arm") {
+    return { byTheArm: true, why: `${id} is by-the-arm: the regeneration is a step with its own exit` };
+  }
+  return {
+    byTheArm: false,
+    why:
+      `${id} is by-the-seat: this plan names what is owed and STOPS, and the regeneration happens ` +
+      "off the ledger where nothing grades it",
+  };
+}
+
+/**
  * THE CHEAP KEEPERS AS STEPS WITH EXITS (T-295 criterion 4).
  *
  * Each is a step because the card says so, and the reason is the seat's:
@@ -913,11 +959,20 @@ export function drillSteps(input) {
  * runner performs them; the fourth is the card's own preflight, which is
  * a command and is spelled as one.
  *
- * @param {{ projectRoot: string, id: string, card: string }} input
+ * AND THREE OF THE FOUR ARE A SWITCH (T-299, ADR-024 decision 6). The
+ * card's own preflight is FLOOR — `dispatch.preflight` is in the set no
+ * profile turns off — so it is planned whatever `merge.keepers` says;
+ * the pinned-sentence, forbidden-spelling and diff-size checks are the
+ * cheap keepers that switch went on, and a project running the ceremony
+ * as it stood on 2026-09-09 has them off.
+ *
+ * @param {{ projectRoot: string, id: string, card: string, process?: ProcessSettings | undefined }} input
  * @returns {Step[]}
  */
 export function keeperSteps(input) {
   const brief = path.join(input.projectRoot, "tools", "e2e", "scripts", "brief.mjs");
+  const cheap =
+    input.process === undefined ? "on" : switchValue(input.process, "merge.keepers");
   /** @type {Step[]} */
   const steps = [
     {
@@ -989,7 +1044,26 @@ export function keeperSteps(input) {
           }),
     },
   ];
-  return steps;
+  if (cheap === "on") return steps;
+  // OFF IS ANNOUNCED, NEVER SILENT. A merge that simply planned three
+  // steps fewer would look exactly like a merge whose plan had lost
+  // them, and the pinned-sentence keeper exists because a seat reworded
+  // a sentence a body asserted word for word and nobody saw it go.
+  const floor = steps.filter((st) => st.id === "keeper:preflight");
+  return [
+    {
+      id: "keeper:off",
+      kind: "gate",
+      title: `the cheap keepers are OFF — merge.keepers is ${cheap} in this project's process settings`,
+      why:
+        "T-299: the pinned-sentence, forbidden-spelling and diff-size checks are a SWITCH, and " +
+        `this project has it off (${PROCESS_SCHEMA}). The card's own preflight below is FLOOR and ` +
+        "is planned anyway. This step is a note rather than a silence, because a plan that lost " +
+        "three steps and a plan that was set to skip them look the same in a ledger",
+      run: null,
+    },
+    ...floor,
+  ];
 }
 
 /**
@@ -1056,7 +1130,14 @@ export function setupSteps(projectRoot) {
  * spec, so every setup step has to precede it, and it decides whether
  * the commit may happen at all, so nothing may follow it but the stop.
  *
- * @param {{ paths: readonly string[], projectRoot: string, id: string, cardText?: string | undefined, verdictSha?: string | undefined, blocksAbsent?: string | undefined, blocks?: readonly MutantBlock[] | undefined, card?: string | undefined, bumpFrom?: string | undefined, bumpTo?: string | undefined }} input
+ * AND WHICH STEPS THERE ARE AT ALL IS A SETTING (T-299, ADR-024
+ * decision 6): `merge.keepers` decides the cheap keepers and
+ * `merge.regen_graph` / `merge.regen_census` decide whether a
+ * regeneration is a graded step here or a STOP naming what the seat
+ * owes. A caller that passes no settings gets the plan this function
+ * built before the switches existed, byte for byte.
+ *
+ * @param {{ paths: readonly string[], projectRoot: string, id: string, cardText?: string | undefined, verdictSha?: string | undefined, blocksAbsent?: string | undefined, blocks?: readonly MutantBlock[] | undefined, card?: string | undefined, bumpFrom?: string | undefined, bumpTo?: string | undefined, process?: ProcessSettings | undefined }} input
  * @returns {Step[]}
  */
 export function tailPlan(input) {
@@ -1070,7 +1151,16 @@ export function tailPlan(input) {
   // the source beside it.
   const blocks = input.blocks ?? [];
   if (blocks.length > 0) steps.push(...correctionSteps({ blocks }));
-  steps.push(...keeperSteps({ projectRoot, id, card: input.card ?? "" }));
+  steps.push(
+    ...keeperSteps({
+      projectRoot,
+      id,
+      card: input.card ?? "",
+      ...(input.process === undefined ? {} : { process: input.process }),
+    }),
+  );
+  const censusPlace = regenPlace(input.process, "census");
+  const graphPlace = regenPlace(input.process, "graph");
   const bump = bumpSteps({
     paths,
     projectRoot,
@@ -1083,7 +1173,16 @@ export function tailPlan(input) {
   // source — derived here rather than left to the reminder at the foot.
   const bumped = bump.some((s) => s.id === "bump:stamps");
   if (bringsBuiltSources(paths)) steps.push(...setupSteps(projectRoot));
-  if (movesSpecNames(paths)) {
+  if (movesSpecNames(paths) && !censusPlace.byTheArm) {
+    steps.push({
+      id: "capabilities:owed",
+      kind: "stop",
+      title: "THE CENSUS IS OWED AND THIS PLAN DOES NOT REGENERATE IT — a spec name moved",
+      why: censusPlace.why,
+      run: null,
+    });
+  }
+  if (movesSpecNames(paths) && censusPlace.byTheArm) {
     steps.push({
       id: "capabilities",
       kind: "regen",
@@ -1107,7 +1206,16 @@ export function tailPlan(input) {
       },
     });
   }
-  if (movesIndexedSource(paths) || bumped) {
+  if ((movesIndexedSource(paths) || bumped) && !graphPlace.byTheArm) {
+    steps.push({
+      id: "graph:owed",
+      kind: "stop",
+      title: "THE GRAPH IS OWED AND THIS PLAN DOES NOT REGENERATE IT — indexed source moved",
+      why: graphPlace.why,
+      run: null,
+    });
+  }
+  if ((movesIndexedSource(paths) || bumped) && graphPlace.byTheArm) {
     steps.push({
       id: "graph:regen",
       kind: "regen",
@@ -1151,7 +1259,7 @@ export function tailPlan(input) {
       run: { command: "git", argv: ["-C", projectRoot, "add", "docs/architecture"], cwd: projectRoot },
     });
   }
-  if (movesGraph(paths) || movesIndexedSource(paths) || bumped) {
+  if ((movesGraph(paths) || movesIndexedSource(paths) || bumped) && graphPlace.byTheArm) {
     steps.push({
       id: "dogfood",
       kind: "suite",
@@ -2691,6 +2799,29 @@ export function main(argv, io = {}) {
   const verdictSha = resolved.out.trim();
   const worktree = laneWorktree(root, lane);
 
+  // THE PROCESS SETTINGS, READ ONCE AND BEFORE ANY STEP IS PLANNED
+  // (T-299, ADR-024 decision 6). A combination the schema forbids
+  // refuses the whole verb HERE — before a worktree is removed, a branch
+  // is moved or a merge is staged — because a merge run under a
+  // configuration nobody can satisfy is a merge whose ledger means
+  // nothing. A project whose tree carries no schema gets `null` and the
+  // plan below is the one this verb built before the switches existed.
+  /** @type {ProcessSettings | null} */
+  let settings = null;
+  try {
+    const loaded = loadProcess(root);
+    settings = loaded === null ? null : loaded.settings;
+    if (loaded !== null) {
+      out(
+        `  process: profile ${loaded.settings.profile}, ` +
+          `${String(loaded.schema.switches.size)} switch(es) read from ${PROCESS_SCHEMA}`,
+      );
+    }
+  } catch (e) {
+    err(`merge ${id}: CANNOT RUN — ${e instanceof Error ? e.message : String(e)}`);
+    return EXIT.CANNOT_RUN;
+  }
+
   /** @type {{ from: string, to: string } | undefined} */
   let bumpMove;
   if (bump !== undefined) {
@@ -2773,6 +2904,7 @@ export function main(argv, io = {}) {
       card: card.file,
       blocks: "problem" in dryRead ? [] : dryRead.blocks,
       ...(bumpMove === undefined ? {} : { bumpFrom: bumpMove.from, bumpTo: bumpMove.to }),
+      ...(settings === null ? {} : { process: settings }),
     })) {
       printStep(out, step);
     }
@@ -2842,6 +2974,7 @@ export function main(argv, io = {}) {
     card: card.file,
     blocks: "problem" in merged ? [] : merged.blocks,
     ...(bumpMove === undefined ? {} : { bumpFrom: bumpMove.from, bumpTo: bumpMove.to }),
+    ...(settings === null ? {} : { process: settings }),
   })) {
     printStep(out, step);
     const code = runStep(step, stepIo);

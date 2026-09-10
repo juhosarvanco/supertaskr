@@ -828,6 +828,34 @@ and T-236 (2026-09-02, whose pre-compaction text is
   that is not a number, the process group or the broadcast pid, and any
   attempt to share the invocation with another arm. The arm's own child
   processes carry no ceiling yet (T-298-s2).
+- THE PROCESS IS SETTINGS, AND EVERY SWITCH IS DECLARED ONCE (T-299,
+  ADR-024 decision 6): `method/runtime/process-schema.yaml` is the ONE
+  source. It declares each step of the loop as a SWITCH with what it
+  does, how it changes the loop, which arm symbol reads it, what it needs
+  on, whether it may be turned off, which band measures it, what this
+  project measured it to cost, and its value under each of the three
+  profiles — `guarded-everything` (the ceremony as it stood on
+  2026-09-09), `standard` (what the ADR ruled) and `fast`. The runtime
+  template's `process:` section names which profile this project runs,
+  which profiles exist, and the switches it DEPARTS from; it carries no
+  explanation of its own, because a second copy is a copy that goes
+  stale. **THE ARM READS IT AT DISPATCH AND AT MERGE**: the tier rules,
+  the phase-1 spawn, the whole-suite net, the regenerations' place, the
+  cheap keepers and the model per role all branch on a switch, and a
+  combination the schema's constraints forbid REFUSES the dispatch and
+  the merge naming both switches and both values. **THE FLOOR IS NOT
+  REFINABLE** — the fence and its write hook, the card preflight at
+  dispatch, the owed-set token and the push guard, the landing gate, the
+  docs gate, the method stamp and its eval gate, records never rewritten,
+  the template's own roles block, a verifier that reads the diff before
+  the notes, and the checkpoint: an override that turns one off is
+  refused by name. **KEPT BY A BODY, NOT BY A MEMORY**: the e2e suite
+  parses the schema with a real YAML library and requires that reading to
+  agree with the arm's hand parser, derives each switch's read site from
+  the arm's own source rather than from a table, and reds per switch when
+  the arm stops reading it. The switch inventory the schema was built
+  from — every row with its old and ruled value, its measured cost and
+  its constraint — is in `docs/rooms/loop-cost-and-speed.md`.
 - GUARD-CLASS PATHS, IN THIS PROJECT'S OWN SPELLING (T-296, ADR-024
   decision 1): `method/tasks/TASK-FORMAT.md` names the guard-class
   CLASSES and is product-agnostic, so the mapping onto this repository
