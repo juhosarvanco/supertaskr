@@ -185,3 +185,194 @@ adds — is the body the same commit turned green, and no other body in
 that file moved: the file's six bodies pass alone as well.
 
 ## Verdicts
+### VERDICT 2026-09-10 — APPROVED WITH ASSIGNED CORRECTIONS — claude-opus-5@subagent (verifier, phase 2)
+
+The arm merges, it stops with the merge staged, and the one commit it makes is the fence widening the landing gate has to read from a first parent — measured on a shared clone, not argued: `.git/MERGE_HEAD` stood at the end of every run, exactly one commit appeared on the integration branch and it was the widening, and the control with every verdict-named spec already inside the fence made none. Five corrections are assigned, each carried by a body committed on this bench and drilled RED ALONE.
+
+**The frame.** Blind two-phase: the attack set was written tool-less at the base before any file was opened, and this phase cites all three sealed inputs by hash — attack set `sha256:ce31efdfa586d7f04ee887209d3e7b976cc76cc1ca52ef0912f2636c10c60a9d`, ground truths `sha256:624cc2dc24283427df461dc308b7476e8a8f41365375f566e3c3da7fa9d25310`, ground addendum `sha256:04763f80949e418304d5f0ff14c47f0dc9be08be0d40e1e71bbf3790ffa66af5`. All three verified against `stamps-T-295.txt` before anything else was opened. **This brief was hand-written by the seat and carried no context pack**, so the standing documents were read at the base by the bullets the fence implicates. `method/roles/verifier.md` at the bench does not spell the four suite legs, so ADR-024 decision 4 governs and the RANGE FORM through `gate-run.mjs` is this verifier's run. The executor's report, the ask file, the card's notes and the commit messages were opened only after every finding below was written; every figure they claim was re-measured here.
+
+**The fence.** `git diff --name-only 46c33c07..9331fbc8` moves twelve paths and every one is inside the fence: the eight fenced files the lane touched, plus `docs/tasks/` for its own card and three NEW suggested cards. `dispatch-brief.mjs`, `rename-scan.mjs` and `gate-run.mjs` are fenced and UNTOUCHED — which settles the attack set's own conflict (ii): the four new forbidden classes live in `merge.mjs`, the shared scanner's `KEPT_CLASSES` did not move, and the rename class rides that file's own classifier rather than a second copy. `docs/checkpoints/meters.jsonl` does not appear in the lane's diff, as the verb creates it at merge time. The method stamp does not move in the lane, which settles conflict (i): `integrator.md` moved, so the merge owes a bump, and the bump is the verb's `--bump` dial rather than a lane write.
+
+**Criterion 1 — the ritual, and the stop.** There is exactly ONE `git commit` in the whole of `merge.mjs`, in `widenFenceStep`, and it is the widening. `git merge` runs `--no-ff --no-commit`; there is no `--amend`, no `--continue`, no `--allow-empty`, no `push` in any argv. Every git and npm call is `spawnSync` with an argv ARRAY — no `execSync`, no shell string, nowhere. On a `git clone --shared` fixture under scratch (`T-950`, a lane, a verdict carrying one block at a four-space margin), the verb committed `dcb925b4` — the widening, naming the verdict that owed it — then staged the merge and left `.git/MERGE_HEAD` standing. **The control is what makes that finding mean something**: the same fixture with the verdict-named spec already in `touches:` planned no `fence:widen` step at all and made ZERO commits on the integration branch. The widening is conditional, not unconditional, which was the attack set's load-bearing control C-2.6.
+
+Ancestry is checked BEFORE the branch moves — `precondition:verdict` runs `merge-base --is-ancestor <lane> <verdict>` in that order, and `branch:move` is the step after it — so a refusal leaves the branch unmoved (S-5). The lane worktree is DISCOVERED: `laneWorktree` matches `branch refs/heads/<lane>` out of `git worktree list --porcelain` and never constructs a path from the card id, so the recorded fault of a lane cut at an old worktree spelling cannot recur. The clean-tree precondition is graded on OUTPUT, not exit, and it treats UNTRACKED files as dirty — settling the attack set's conflict (iii): this is correct and consistent with `integrator.md`'s rule that an unexplained file in the integration checkout is evidence, but the seat must clear stray untracked files before merging, and this is an operational fact rather than a defect.
+
+**Criterion 2 — the old/new direction, which was the highest-stakes judgment on this bench.** `correctionFor` returns `source.replace(block.new, () => block.old)`: the block's `old` text is written where the tree carries its `new`. Proven twice — as a function, and end to end on the fixture, where `tools/probe/guard.mjs` came out of the merge carrying `return n > 0;`, the corrected text. The three-way answer the seat ruled for is exactly what is implemented: applied where the tree carries `new`, nothing written and SAID OUT LOUD where the tree already carries `old`, a refusal naming the block otherwise. The replacement is a FUNCTION replacer, which is what stops a `$&` or `$1` in a subagent-written block from being expanded — a real injection defence and an easy one to miss. Corrections are planned ahead of every regeneration in `tailPlan`, and the drill is scoped by the fix diff through `gate-run.mjs`'s own `deriveOwning`, narrow by default with the ownership stated as a reading beside it.
+
+The parse cross-check the attack set most wanted is present and is the best thing in the diff: a verdict that ASSIGNS corrections and yields zero blocks is REFUSED, and the way through — `--blocks-absent <sha>` — must name the run's own verdict sha at seven characters or more. It is not a blanket. That closes the whole silent-miss class, not just the indentation that produced it.
+
+**Criterion 3 and 4.** The bump is four operations with four exits, and it is not derived from the diff but taken as an explicit `<old>..<new>` dial the verb refuses to guess at. All four keepers are steps with their own exits. The XS bound of 40 and the pinned-sentence floor of 30 are both ARGUED at their definition — forty as the first round number above the largest merge a seat would have called XS on sight, thirty as the shortest verbatim-pinned SENTENCE in this repository's own specs — and both are published in `docs/CONVENTIONS.md`, where a reader looks, and pinned against those publishing sentences by a body. The pinned-sentence keeper judges REMOVALS, which is the right half of the fault class. `docs/CONVENTIONS.md` grows 140,462 → 143,653 bytes, inside the 146,878 warn bound with 3,225 bytes of headroom.
+
+**The security sweep.** A block's `file:`/`spec:` is confined at PARSE time — absolute paths and anything normalising to `..` are refused before any write, and the refusal names the path. The nested-fence attack — the one the attack set called the most likely real vulnerability, where a lenient dedent composes with an ignored enclosure so a documented example block gets executed — does NOT work: a ```mutant fence inside another code fence reads as ZERO blocks, while the identical block unfenced is refused for its `/etc/hosts` path. The two leniencies do not compose. The message is written to a FILE and never passed on a command line. Three things the sweep did find are assigned below: two refusals that publish the value they exist to suppress, and a merge that proceeds on a REJECTED verdict.
+
+**What is NOT confined, and is a finding rather than a correction**: `file:` is confined to the project ROOT but not excluded from `.git/`. A block naming `.git/hooks/pre-commit` parses, and `applyCorrectionStep` writes the file BEFORE the `git add` that would refuse it. Exploitation needs the hook to already exist and to carry the block's `new` text verbatim, so it is narrow — but the write ordering is the wrong way round and the classifier is one clause short. Filed as T-295-s6.
+
+**Regressions.** `cli.spec.ts` carries 48 bodies at the base and 48 at the tip with an IDENTICAL body-name set — nothing renamed, nothing removed. (The sealed ground truth lists fifty for this file; two of its entries are its own extraction artefacts, not bodies.) `brief-flush.spec.ts` carries 6 bodies at both ends and none moved; the five new flags are argued into `NOT_AN_ARM` beside `--dispatch-lane` and the sweep body is green. `integrator.md`'s diff is ADDITIONS ONLY, so no sentence a spec pins verbatim could have been broken by it. No added line in the whole diff carries an absolute path, an arrow, or the retired identifier.
+
+**The suites, re-measured at 9331fbc8 on this bench.** The range form through the blessed runner: `parser 389 GREEN exit 0 / app 1171 GREEN exit 0 / rust 655 GREEN exit 0 / e2e 890 GREEN exit 0`, gate exit 0. Scoped: `cli.spec.ts` 48 passed exit 0; `brief-flush.spec.ts` 6 passed exit 0; `tools/method-evals/run.mjs` 10 model-free evals exit 0. `merge.spec.ts` is 22 passed / 4 failed at this tip, and the four failures are the verifier's own bodies below, red by design until the corrections are applied — with all five applied it is 26 passed, exit 0. Every figure the executor's report claims was reproduced.
+
+**One measured fact that is nobody's failure and belongs on the record.** Run against its own card on the shared clone, the verb REFUSES its own merge: `merge T-295: stopped at keeper:forbidden-spelling (exit 1)`, because the keeper's own committed fixtures in `merge.spec.ts` plant a credential-shaped token and an example address, and those are lines this diff ADDS. The keeper is doing exactly what criterion 4 tells it to, so the criterion is met and this is not a correction — but the address class and the credential class carry no exemption the way the rename class rides `rename-scan.mjs`'s classifier, so the next card that commits a fixture of that shape has no way through. It is also the compounding case for corrections 3 and 4: the refusal printed the fixture address into the transcript. In practice T-295's own merge is performed by the integration checkout's script, which predates this arm, so nothing is blocked today. Filed as T-295-s4.
+
+**Credit where the lane declined to fake it.** Three of the attack set's pre-committed findings-against-the-CARD were found by the lane first and filed rather than papered over: `XS` is T-296's tier and the parser knows S/M/L, so the bound exists ahead of the tier that reads it and a card of any other size is explicitly NOT judged; the wide re-drill is priced and unwired (T-295-s1); and the counts guard can seldom judge because a verdict states its counts in prose (T-295-s3). Criterion 5's "refusing to commit" is read honestly as refusing to leave the staged tree ready, which is the only reading available once the verb never commits.
+
+---
+
+#### CORRECTION 1 — the card arm takes ITS OWN card and no other
+
+`classifyConflict` anchors the card arm on `^docs/tasks/<id>(?:-|\.)`, and every suggested card a lane files is spelled `<id>-s<n>-...`, so its path matches too. Reproduced on the shared clone: a conflict in `docs/tasks/T-950-s1-a-sibling-card.md`, written by both sides, was resolved to the LANE's copy and the integration branch's copy discarded without a word, under a printed sentence reading "is T-950's OWN card" — which it is not. Criterion 1's word is ITS and criterion 6 says everything else STOPS as a fence finding. RED at 25 passed / 1 failed with the mutant planted, GREEN at 26 passed with the correction applied, restore proved by sha256.
+
+```mutant
+correction: the card arm takes ITS OWN card and no other
+file: tools/e2e/scripts/merge.mjs
+spec: tools/e2e/tests/merge.spec.ts
+body: the card arm takes ITS OWN card and no other, so a SUGGESTED card of the same lane is a fence finding
+message: a SUGGESTED card of the same lane is NOT this card
+--- old
+  const mine = new RegExp(`^docs/tasks/${id}(?:-|\\.)`).test(rel);
+  const suggested = new RegExp(`^docs/tasks/${id}-s\\d`).test(rel);
+  if (mine && !suggested) {
+--- new
+  if (new RegExp(`^docs/tasks/${id}(?:-|\\.)`).test(rel)) {
+```
+
+#### CORRECTION 2 — a correction is applied wherever its NEW text names a site OUTSIDE its OLD text
+
+`correctionFor` asks whether the `old` text occurs AT ALL before it asks where the `new` text is, so a block whose `old` text also appears somewhere else in the same file is answered "already carries the block's `old` text" — and the defect the verdict assigned a correction for is left in the merged tree, reported as a correction already made.
+
+**The lane's ordering is not arbitrary and this correction keeps its reason.** The notes argue the order because a block's `new` text is often a SUBSTRING of its own `old`, and there a tree carrying `old` carries `new` inside it — "already" is then the right answer. Confirmed on this bench: `old: "  return n > 0 && n < 10;"` with `new: "  return n > 0"` answers `already` today and must keep doing so. **The two cases are indistinguishable by COUNTING** — each is one `old` and one `new` — so simply asking about `new` first, which was this verifier's first draft of the correction, would have corrupted the substring case by splicing `old` into text that already contained it. What separates them is POSITION: mask every occurrence of `old` out of the source, and count the occurrences of `new` that remain. Exactly one is the site; none is "already"; anything else refuses. The body carries both directions, and the three answers the lane's own body pins are all preserved. RED 25/1, GREEN 26, restore proved by sha256.
+
+```mutant
+correction: a correction is applied wherever its NEW text names a site OUTSIDE its OLD text
+file: tools/e2e/scripts/merge.mjs
+spec: tools/e2e/tests/merge.spec.ts
+body: a correction is applied whenever the tree carries its NEW text once, even where the OLD text also occurs elsewhere
+message: the site is there, so the correction is applied
+--- old
+  const hasOld = occurrences(source, block.old);
+  const hasNew = occurrences(source, block.new);
+  // EVERY OCCURRENCE OF `new` THAT IS NOT PART OF ONE OF `old`. The two
+  // counts alone cannot tell "already corrected, and this block's `new`
+  // text is a substring of its own `old`" from "the correction is owed
+  // HERE, and its `old` text also occurs elsewhere in the file" — both
+  // read as one of each, and answering them alike leaves the defect in
+  // the merged tree under the word "already".
+  const MASK = "\u0000";
+  const masked = source.split(block.old).join(MASK);
+  if (occurrences(masked, block.new) === 1) {
+    return { text: masked.replace(block.new, () => block.old).split(MASK).join(block.old) };
+  }
+  if (hasOld > 0) {
+    return {
+      already:
+        `${block.correction}: ${block.file} already carries the block's \`old\` text, so this ` +
+        "correction is in the merged tree and nothing was written. The re-drill below is what " +
+        "says whether the body still pins it",
+    };
+  }
+  return {
+    problem:
+      `${block.correction}: ${block.file} carries the block's \`old\` text 0 time(s) and its ` +
+      `\`new\` text ${String(hasNew)} time(s), so this merge cannot tell whether the correction ` +
+      "is owed or already made. An anchor that names no site, or names several, is not a " +
+      "correction — the merge stops here rather than guessing",
+  };
+--- new
+  const hasOld = occurrences(source, block.old);
+  if (hasOld > 0) {
+    return {
+      already:
+        `${block.correction}: ${block.file} already carries the block's \`old\` text, so this ` +
+        "correction is in the merged tree and nothing was written. The re-drill below is what " +
+        "says whether the body still pins it",
+    };
+  }
+  const hasNew = occurrences(source, block.new);
+  if (hasNew !== 1) {
+    return {
+      problem:
+        `${block.correction}: ${block.file} carries the block's \`old\` text 0 time(s) and its ` +
+        `\`new\` text ${String(hasNew)} time(s), so this merge cannot tell whether the correction ` +
+        "is owed or already made. An anchor that names no site, or names several, is not a " +
+        "correction — the merge stops here rather than guessing",
+    };
+  }
+  return { text: source.replace(block.new, () => block.old) };
+```
+
+#### CORRECTION 3 — the address a refusal found is not republished by the refusal
+
+The forbidden-spelling keeper exists because "an address in a tracked file is an address published", and its own refusal prints the address verbatim into the seat's return — which is what a checkpoint record quotes. The credential class already names the class and redacts the value; this asks the address class to do the same. The file and the class are what a seat needs to find the line, and the value is what it must not carry. RED 25/1, GREEN 26, restore proved by sha256.
+
+```mutant
+correction: the address a refusal found is not republished by the refusal
+file: tools/e2e/scripts/merge.mjs
+spec: tools/e2e/tests/merge.spec.ts
+body: a forbidden-spelling refusal names the file and the class and REDACTS the value, on every class it carries
+message: but the address is NOT published by the refusal
+--- old
+        `${rel}: this merge ADDS a line carrying an email address. An address in a tracked ` +
+          "file is an address published, and this refusal does not repeat the one it found",
+--- new
+        `${rel}: this merge ADDS a line carrying an email address — ` +
+          `${JSON.stringify(EMAIL_SHAPE.exec(line)?.[0] ?? "")}. An address in a tracked file is ` +
+          "an address published",
+```
+
+#### CORRECTION 4 — the account name a refusal found is not republished by the refusal
+
+The same fault, the same function, the other half: the derived personal name is echoed verbatim while the home path beside it is named by class alone. The name is derived from the machine precisely so that no list of names lives in the repository, and the refusal then writes one into the record. RED 25/1, GREEN 26, restore proved by sha256.
+
+```mutant
+correction: the account name a refusal found is not republished by the refusal
+file: tools/e2e/scripts/merge.mjs
+spec: tools/e2e/tests/merge.spec.ts
+body: a forbidden-spelling refusal names the file and the class and REDACTS the value, on every class it carries
+message: and neither is the name
+--- old
+          `${rel}: this merge ADDS a line carrying the seat's own account or git name. A ` +
+            "personal name reaches a tracked file by accident far more often than on purpose, " +
+            "and this refusal does not repeat the one it found",
+--- new
+          `${rel}: this merge ADDS a line carrying the seat's own account or git name ` +
+            `(${JSON.stringify(name)}). A personal name reaches a tracked file by accident far ` +
+            "more often than on purpose",
+```
+
+#### CORRECTION 5 — a merge is what an APPROVED verdict authorises
+
+Criterion 1 opens "on a card with an approved verdict" and nothing reads that condition. A card whose NEWEST verdict is REJECTED plans `drill:none` — "assigns no correction, so nothing is re-drilled", exit 0 — and the run walks on to write a message whose own subject begins `Merge T-900 (REJECTED at ...)`. The newest-verdict selection itself is correct and was attacked: an APPROVED entry older than a REJECTED one does not win. What is missing is only which answers authorise a merge, and the state is already computed for that subject line, so the check costs a comparison. RED 25/1, GREEN 26, restore proved by sha256.
+
+```mutant
+correction: a merge is what an APPROVED verdict authorises
+file: tools/e2e/scripts/merge.mjs
+spec: tools/e2e/tests/merge.spec.ts
+body: a merge is what an APPROVED verdict authorises, so a REJECTED newest verdict refuses the drill
+message: a REJECTED verdict is a refusal, not a clean drill
+--- old
+  if ("problem" in verdict) return refuse(verdict.problem);
+  const state = verdictState(verdict.heading);
+  if (!/^(?:APPROVED|ACCEPTED)/i.test(state)) {
+    return refuse(
+      `the newest verdict (${verdict.heading}) reads ${state}, which is not an approval. A merge ` +
+        "is what an APPROVED verdict authorises, and the newest verdict is the one that counts",
+    );
+  }
+  const read = readMutantBlocks(verdict.text);
+--- new
+  if ("problem" in verdict) return refuse(verdict.problem);
+  const read = readMutantBlocks(verdict.text);
+```
+
+---
+
+**Improvement ideas that are not failures** are filed as T-295-s4, T-295-s5 and T-295-s6, not folded into this verdict.
+
+## Meters
+
+- wall clock, by phase: sealed inputs and the standing read 8 min; the diff, the fence and the static attacks 11 min; the shared-clone fixtures and the four runtime reproductions 14 min; the four bodies, five corrections and the RED-ALONE drill 22 min; the suites 34 min wall, overlapped with the reading; the verdict and the cards 12 min. About 1 h 40 m end to end.
+- context consumed: roughly 270k tokens of a 1M window.
+- model: claude-opus-5@subagent, effort set at session start and never switched.
+- suites run: the RANGE FORM through `gate-run.mjs` at 46c33c07..9331fbc8 (parser 389 / app 1171 / rust 655 / e2e 890, every leg exit 0 and GREEN, gate exit 0); `merge.spec.ts`, `cli.spec.ts` and `brief-flush.spec.ts` each alone by name; `tools/method-evals/run.mjs` (10 model-free evals, exit 0); and `merge.spec.ts` a further eleven times across the RED, GREEN and five RED-ALONE drill runs.
+- bodies graded: 22 of the lane's own in `merge.spec.ts`, 48 in `cli.spec.ts`, 6 in `brief-flush.spec.ts`, plus the 4 this bench committed.
+- mutants drilled: 5, each RED ALONE at 25 passed / 1 failed, each restore proved by sha256 `3e55542baef6b144`.
+- fixtures: one `git clone --shared` under the scratch directory, its `main` its own; four end-to-end runs of the verb on it (the ritual, the widening control, the sibling-card conflict, and the card's own merge). The verb was never run against the host repository, the integration checkout, the lane or this bench.
