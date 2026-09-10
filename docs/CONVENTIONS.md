@@ -1952,6 +1952,46 @@ and T-236 (2026-09-02, whose pre-compaction text is
   **AND NOTHING MAY SCAN THE RECORDS FOR ANY OF THIS** (ADR-019's Records
   clause): the marker reaches the command hand-carried into `--readings`
   at the checkpoint that wrote it, never as a walk of docs/checkpoints/.
+  **AND SINCE T-297 THE LOOP ITSELF IS TWO OF THE BANDS** (ADR-024
+  decision 1, whose budgets they hold: 20 min/80K bounded, 75 min/310K
+  standard, 100 min/450K guarded). `loop/cycle-budget-used` prices every
+  card merged in this checkpoint's window from its own `T-NNN: dispatch
+  stamp` commit to the merge that appended its reading;
+  `loop/token-budget-used` sums the seats' own token figures out of
+  their `## Meters` blocks. Both report the WORST card in the window as
+  a SHARE of that card's own tier budget — one line has to hold three
+  tiers whose budgets differ five-fold — and both go UNREAD rather than
+  green when a card in the window cannot be priced whole: an unknown
+  tier, a missing dispatch stamp, or a seat that stated no tokens, which
+  is not a smaller number but a lower bound wearing a measurement's
+  clothes. The cycle reading is a FLOOR and its derivation says so on
+  every line it prints: the tree ends at the merge and CI green is
+  minutes later in an API. The third reading is ADR-024's own —
+  `loop/soft-verifier` flags a tier whose rejections fell to zero while
+  its CI reds ROSE, on the conjunction only, and is wired, driven by the
+  suite on a planted history, and UNREAD until a capture stamps a
+  verdict outcome and a CI-red count on a reading.
+  **A BREACH ON EITHER BAND IS A FINDING ABOUT THE PROCESS AND NEVER A
+  GATE ON A LANE** — the disposition every tier of this reporter already
+  has, restated because these two read a LANE'S OWN numbers and are the
+  first ones anybody would try to enforce. The lane that overran is
+  evidence, not the defect; the remedy is a card, and a tier repriced
+  by triage rather than by the session it caught.
+  **THE READINGS FILE IS THE ONE FILE UNDER docs/checkpoints/ THAT A
+  PROGRAM READS, AND THE SENTENCE ABOVE IS NOT AMENDED** (ADR-024
+  decision 3, captured by T-295): `docs/checkpoints/meters.jsonl` is
+  written by the MERGE VERB, one JSON line per seat per merge, and never
+  by a hand — while ADR-019's Records clause binds a suite, a gate or a
+  generator, and the sentence above binds the hand-written MARKER LINES
+  in a record, which still reach the command through `--readings` and
+  are still walked by nothing. This reporter is none of those three and
+  the loop bands parse no record's prose. The addendum that would say
+  this inside ADR-019 is the owner's to write and is filed as a
+  suggestion.
+  WHAT THE CHECKPOINT OWES FOR THESE TWO: both readings QUOTED with the
+  command that derived them — `npm run health`, from tools/e2e/ — in
+  docs/checkpoints/TEMPLATE.md's Metrics section, which carries the two
+  lines and the reason they are quotes rather than markers.
   THE CI DISPOSITION (`T-156-s1`): **LOCAL ONLY**, the disposition
   `index --watch`, `arch` and `npm run boot:orphan-drill` already have —
   it exits 3 at every ref while any band is unkept, so a step would red

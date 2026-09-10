@@ -181,6 +181,42 @@ suite and graph readings already take. A later card that gives these
 bands an `authority` reads that as its constraint: `kind: "readings"`
 with the marker named in words, never a walk of this directory.
 
+**AND SINCE T-297 A BAND READS A FILE IN THIS DIRECTORY, WHICH IS NOT
+THAT CLAUSE BENDING** (ADR-024 decisions 1 and 3).
+`docs/checkpoints/meters.jsonl` is written by the MERGE VERB — one JSON
+line per seat per merge, the seat's own `## Meters` block carried whole
+— and read by `loop/cycle-budget-used` and `loop/token-budget-used`.
+Nothing in it is a record's prose, no session composes it, and a
+session that writes its own record differently changes nothing a band
+reads; the hazard ADR-019's clause exists against is a program that
+reds when a human writes a paragraph another way, and no human writes
+that file. The paragraph above still holds for the three marker lines
+it is about. ADR-019's Records clause is NOT amended here — only the
+owner amends an ADR, and the addendum that would say this in its own
+document is filed as a suggestion rather than written by a lane.
+
+**QUOTE BOTH LOOP BANDS, WITH THE COMMAND THAT DERIVED THEM.** Two
+lines, owed at every checkpoint, and they do NOT join the five above:
+those five FEED a band and these two REPORT one, which is why they are
+quotes and not markers.
+
+- `Cycle band:` — the `loop/cycle-budget-used` line `npm run health`
+  printed, with its derivation, or `unread` plus the reason the command
+  itself gave. The derive command is written beside the reading every
+  time: `npm run health`, from tools/e2e/.
+- `Token band:` — the same for `loop/token-budget-used`, whose reading
+  is the worst card in this window summed over its seats.
+
+**A BREACH ON EITHER IS A FINDING ABOUT THE PROCESS AND NEVER A GATE ON
+A LANE.** The card that overran is evidence, not a defendant: the tier
+was mispriced for that kind of work, or the ceremony outweighed the
+card, or the seat was under-powered — and each of those is a card on
+the board, which is where a breach goes. Writing the reading is the
+whole obligation here; no lane is held back and no merge is blocked.
+A record that softened a reading to keep a lane looking clean is the
+one failure this pair cannot survive, because these two bands are the
+only numbers in the project that measure the project.
+
 ## Dispositions
 
 Cards stamped, suggestions filed, rules applied by name.

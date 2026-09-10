@@ -55,7 +55,7 @@
  * the reason those files give.
  */
 import { execFileSync } from "node:child_process";
-import { statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { DOC_BUDGETS, frontmatterBlock, liveTaskCards, repoRoot } from "./docs-scan.mjs";
 import { allBands } from "./health-bands.config.mjs";
@@ -348,6 +348,484 @@ export function suggestionFlow(sinceHash, root = repoRoot) {
   return { arrivals: [...new Set(names("A"))], dispositions: [...new Set(names("D"))] };
 }
 
+// ── THE LOOP'S OWN COST, PARSED OUT OF THE MERGES' READINGS (T-297) ──
+
+/**
+ * ADR-024 decision 1's budgets, per tier, in as many words: "Budgets:
+ * 20 min/80K, 75 min/310K, 100 min/450K", against the three tiers it
+ * names in the sentence before them.
+ *
+ * WHY THIS TABLE IS HERE AND NOT IN health-bands.config.mjs, which is
+ * where every other limit in this reporter lives: that file's second
+ * rule is that TRIAGE tunes it and the session that trips a band never
+ * does. These three pairs are not a band's limits — they are a ratified
+ * decision the owner made in docs/rooms/loop-cost-and-speed.md, and a
+ * ratified number sitting in the file this project invites triage to
+ * edit is a number that will one day be edited by triage. What the
+ * config owns is the two bands' drift and breach lines, which are
+ * stated as a SHARE of whichever budget the card's own tier names — so
+ * the tunable part is tunable and the ruled part is quoted.
+ *
+ * A tier this table does not name has no budget, and a reading against
+ * a budget that does not exist is not a reading: `cardMeters` leaves
+ * the share null and says which tier it could not price.
+ */
+export const TIER_BUDGETS = Object.freeze({
+  bounded: Object.freeze({ minutes: 20, tokens: 80000 }),
+  standard: Object.freeze({ minutes: 75, tokens: 310000 }),
+  guarded: Object.freeze({ minutes: 100, tokens: 450000 }),
+});
+
+/**
+ * The readings the merge verb appends, one JSON object per seat per
+ * merge (`readingsLines` in merge.mjs owns the write and carries the
+ * shape). It lives under docs/checkpoints/ because it IS a record —
+ * appended, never rewritten — and it is the ONE file in that directory
+ * a program reads: ADR-019's Records clause forbids a suite, a gate or
+ * a generator to depend on the directory's contents, and this reporter
+ * is none of the three. docs/CONVENTIONS.md's HEALTH BANDS bullet
+ * carries that reading in full, beside the sentence it is an exception
+ * to.
+ */
+export const METERS_PATH = "docs/checkpoints/meters.jsonl";
+
+/**
+ * @typedef {object} MeterRecord
+ * @property {string} at    ISO-8601, the moment the merge ran.
+ * @property {number} atSec
+ * @property {string} card
+ * @property {string} size
+ * @property {string} tier
+ * @property {string} seat
+ * @property {string} meters  The seat's own `## Meters` block, whole.
+ * @property {string} [verdict]  The card's verdict outcome, when a capture states it.
+ * @property {number} [ciReds]   CI reds attributed to this card, when a capture counts them.
+ */
+
+/**
+ * THE READINGS FILE, PARSED, AND A BAD LINE IS NEVER A QUIET ONE.
+ *
+ * JSON Lines is chosen for the write because an append cannot corrupt
+ * what is already there; the matching discipline on the read is that a
+ * line this cannot understand becomes a PROBLEM rather than a skip. A
+ * reader that silently drops the lines it does not like reports a
+ * healthy loop out of the subset that happened to parse — which is the
+ * same failure as a band reported as holding that was never read, one
+ * layer down.
+ *
+ * @param {string} text
+ * @returns {{ records: MeterRecord[], problems: string[] }}
+ */
+export function parseMeterRecords(text) {
+  /** @type {MeterRecord[]} */
+  const records = [];
+  /** @type {string[]} */
+  const problems = [];
+  const lines = text.split("\n");
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = (lines[i] ?? "").trim();
+    if (line === "") continue;
+    /** @type {unknown} */
+    let parsed;
+    try {
+      parsed = JSON.parse(line);
+    } catch {
+      problems.push(`${METERS_PATH} line ${i + 1} is not JSON`);
+      continue;
+    }
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      problems.push(`${METERS_PATH} line ${i + 1} is not an object`);
+      continue;
+    }
+    const o = /** @type {Record<string, unknown>} */ (parsed);
+    const missing = ["at", "card", "size", "tier", "seat", "meters"].filter(
+      (k) => typeof o[k] !== "string" || /** @type {string} */ (o[k]).trim() === "",
+    );
+    if (missing.length > 0) {
+      problems.push(`${METERS_PATH} line ${i + 1} has no ${missing.join(", ")}`);
+      continue;
+    }
+    const atSec = Date.parse(/** @type {string} */ (o["at"])) / 1000;
+    if (!Number.isFinite(atSec)) {
+      problems.push(`${METERS_PATH} line ${i + 1} has an unreadable at: ${String(o["at"])}`);
+      continue;
+    }
+    /** @type {MeterRecord} */
+    const rec = {
+      at: /** @type {string} */ (o["at"]),
+      atSec,
+      card: /** @type {string} */ (o["card"]),
+      size: /** @type {string} */ (o["size"]),
+      tier: /** @type {string} */ (o["tier"]),
+      seat: /** @type {string} */ (o["seat"]),
+      meters: /** @type {string} */ (o["meters"]),
+    };
+    if (typeof o["verdict"] === "string") rec.verdict = o["verdict"];
+    if (typeof o["ciReds"] === "number" && Number.isFinite(o["ciReds"])) rec.ciReds = o["ciReds"];
+    records.push(rec);
+  }
+  return { records, problems };
+}
+
+/**
+ * ONE SEAT'S TOKEN FIGURE, READ OFF ITS OWN PROSE, AND THE QUOTE COMES
+ * WITH IT.
+ *
+ * A meters block is a seat's sentences, not a schema — merge.mjs says
+ * so where it refuses to normalise them at write time — so this parse
+ * is a reading of English and has to be auditable as one. The rule is
+ * the narrowest that works: THE FIRST NUMBER THE WORD `tokens` IS
+ * ATTACHED TO. That is what distinguishes the reading from the budget
+ * it is stated against, which is the trap every one of the four blocks
+ * on record lays: "about 319,000 tokens of the 15,000,000 budget",
+ * "about 430K tokens (budget 15,000,000 at dispatch)", "about 320K
+ * tokens of a 1M window" — in all three the larger number is the
+ * window and only the smaller one is a reading. `K` and `M` are read
+ * because two of the three blocks use them.
+ *
+ * The QUOTE is returned beside the value so the derivation can show the
+ * words it read. A parse of prose that reports only its answer is one
+ * nobody can check.
+ *
+ * @param {string} metersText
+ * @returns {{ value: number, quote: string } | null}
+ */
+export function parseSeatTokens(metersText) {
+  const m = /(\d[\d,]*(?:\.\d+)?)\s*([KM])?\s*tokens\b/i.exec(metersText);
+  if (m === null) return null;
+  const n = Number(/** @type {string} */ (m[1]).replace(/,/g, ""));
+  if (!Number.isFinite(n)) return null;
+  const suffix = (m[2] ?? "").toUpperCase();
+  const value = suffix === "K" ? n * 1000 : suffix === "M" ? n * 1000000 : n;
+  return { value, quote: /** @type {string} */ (m[0]).trim() };
+}
+
+/**
+ * @typedef {object} CardMeter
+ * @property {string} card
+ * @property {string} size
+ * @property {string} tier
+ * @property {number} mergedSec
+ * @property {number | null} minutes  dispatch stamp to the merge that appended the reading.
+ * @property {number | null} tokens   summed over the card's seats.
+ * @property {number | null} cycleShare  `minutes` as a % of the tier's budget.
+ * @property {number | null} tokenShare  `tokens` as a % of the tier's budget.
+ * @property {string[]} unreadable  why a share is null, one line each.
+ * @property {string} quote  the seats' own token phrases, in seat order.
+ */
+
+/**
+ * ONE ROW PER CARD, ASSEMBLED FROM ITS SEATS' LINES.
+ *
+ * ── WHY THE CYCLE COMES FROM THE TREE AND THE TOKENS FROM THE PROSE ──
+ * They are different kinds of fact and the file already draws the line:
+ * a token count belongs to a session and a quota and is stamped, never
+ * re-derived; a commit time is a function of the tree and re-derives
+ * exactly. So the cycle is measured between two commits — the card's
+ * own `T-NNN: dispatch stamp` and the merge that appended the reading —
+ * and the seats' wall-clock sentences are deliberately NOT summed into
+ * it: an executor's hours and a verifier's minutes overlap their spawns
+ * and their detached suites, and a sum of them is a number with no
+ * referent. The tokens are summed because they genuinely add: two seats
+ * spend two budgets against one card.
+ *
+ * ── AND WHERE CI GREEN WENT ──────────────────────────────────────────
+ * The card asks for dispatch to CI GREEN and the tree ends at the
+ * merge. The gap is the runner's own wall clock, which lives in an API
+ * and not in a checkout, so this reading is a FLOOR and every
+ * derivation it produces says the word. Closing it is a capture change
+ * — a `ciGreenAt` on the reading — and it is filed rather than faked,
+ * because a cycle that quietly stopped at the merge and called itself
+ * dispatch-to-green would be a band reporting a number it never took.
+ *
+ * ── A SEAT THAT STATED NO TOKENS TAKES THE WHOLE CARD DARK ───────────
+ * The sum of the seats that DID state one is a lower bound, and a lower
+ * bound rendered as a share of a budget reads as a measurement while
+ * being able to sit on either side of the line. So the card's token
+ * share is null and the seat is named. That is the pressure that makes
+ * the meter get written, and it fires today: T-296's executor block
+ * states no token figure at all.
+ *
+ * @param {{ records: readonly MeterRecord[], dispatchedSec: (card: string) => number | null, budgets?: typeof TIER_BUDGETS }} opts
+ * @returns {CardMeter[]} newest merge first
+ */
+export function cardMeters({ records, dispatchedSec, budgets = TIER_BUDGETS }) {
+  /** @type {Map<string, MeterRecord[]>} */
+  const byCard = new Map();
+  for (const r of records) {
+    const seats = byCard.get(r.card);
+    if (seats === undefined) byCard.set(r.card, [r]);
+    else seats.push(r);
+  }
+
+  /** @type {CardMeter[]} */
+  const out = [];
+  for (const [card, seats] of byCard) {
+    const first = /** @type {MeterRecord} */ (seats[0]);
+    const mergedSec = Math.max(...seats.map((s) => s.atSec));
+    /** @type {string[]} */
+    const unreadable = [];
+    const budget = /** @type {{ minutes: number, tokens: number } | undefined} */ (
+      /** @type {Record<string, unknown>} */ (budgets)[first.tier]
+    );
+    if (budget === undefined) {
+      unreadable.push(`${card} is tier "${first.tier}", which ADR-024 decision 1 sets no budget for`);
+    }
+
+    const dispatched = dispatchedSec(card);
+    if (dispatched === null) {
+      unreadable.push(`${card} has no \`${card}: dispatch stamp\` commit reachable from HEAD`);
+    }
+    const minutes = dispatched === null ? null : (mergedSec - dispatched) / 60;
+
+    /** @type {number | null} */
+    let tokens = 0;
+    /** @type {string[]} */
+    const quotes = [];
+    for (const s of seats) {
+      const seen = parseSeatTokens(s.meters);
+      if (seen === null) {
+        unreadable.push(`${card}'s ${s.seat} block states no token figure`);
+        tokens = null;
+        continue;
+      }
+      quotes.push(`${s.seat} "${seen.quote}"`);
+      if (tokens !== null) tokens += seen.value;
+    }
+
+    out.push({
+      card,
+      size: first.size,
+      tier: first.tier,
+      mergedSec,
+      minutes,
+      tokens,
+      cycleShare: minutes === null || budget === undefined ? null : (minutes * 100) / budget.minutes,
+      tokenShare: tokens === null || budget === undefined ? null : (tokens * 100) / budget.tokens,
+      unreadable,
+      quote: quotes.join(", "),
+    });
+  }
+  return out.sort((a, b) => b.mergedSec - a.mergedSec);
+}
+
+/**
+ * @typedef {object} TierWindow
+ * @property {string} tier
+ * @property {number} rejections  cards REJECTED in this window at this tier.
+ * @property {number} ciReds      CI reds attributed to this window's cards at this tier.
+ */
+
+/**
+ * THE SOFT-VERIFIER READING (acceptance criterion 3, ADR-024's own
+ * Consequences: "a tier whose rejection rate falls to zero while CI
+ * reds rise is read as a soft verifier").
+ *
+ * A verifier that stops rejecting is indistinguishable from a lane that
+ * stopped needing rejection — from the inside, and on every number this
+ * project keeps. The one thing that tells them apart is what CI does
+ * afterwards: rejections going to zero WHILE reds rise is the shape of
+ * a rubber stamp, and rejections going to zero while reds fall is the
+ * shape of the loop working. So the flag is a two-point comparison per
+ * tier across two windows, and it fires on the CONJUNCTION only —
+ * either half alone is good news half the time.
+ *
+ * PURE, AND THAT IS THE POINT: the history it reads is planted by the
+ * suite, because the shape this exists to catch has not happened yet
+ * and a keeper nobody can drive is a keeper nobody has.
+ *
+ * @param {readonly TierWindow[]} earlier
+ * @param {readonly TierWindow[]} later
+ * @returns {{ tier: string, why: string }[]}
+ */
+export function softVerifierFlags(earlier, later) {
+  /** @type {{ tier: string, why: string }[]} */
+  const flags = [];
+  for (const now of later) {
+    const before = earlier.find((w) => w.tier === now.tier);
+    if (before === undefined) continue;
+    if (before.rejections > 0 && now.rejections === 0 && now.ciReds > before.ciReds) {
+      flags.push({
+        tier: now.tier,
+        why:
+          `${now.tier}: rejections ${before.rejections} -> 0 while CI reds ` +
+          `${before.ciReds} -> ${now.ciReds}`,
+      });
+    }
+  }
+  return flags.sort((a, b) => a.tier.localeCompare(b.tier));
+}
+
+/**
+ * A window's rejections and CI reds per tier, over the cards whose
+ * readings state BOTH. A card stating one and not the other is not half
+ * a data point — it is a card this comparison cannot use, and it is
+ * named rather than dropped.
+ *
+ * The outcome vocabulary is the one the merge subjects already write:
+ * APPROVED, APPROVED WITH ASSIGNED CORRECTIONS, REJECTED. It is read
+ * here and RATIFIED nowhere — `north-star/rejection-rate-by-size` is
+ * declared unkept for exactly that reason and routes the ratification
+ * as T-156-s2 — so a value this does not recognise makes the card
+ * unusable rather than quietly not-a-rejection.
+ *
+ * @param {readonly MeterRecord[]} records
+ * @returns {{ windows: TierWindow[], unusable: string[] }}
+ */
+export function tierWindows(records) {
+  /** @type {Map<string, { tier: string, verdict: string, ciReds: number }>} */
+  const cards = new Map();
+  /** @type {string[]} */
+  const unusable = [];
+  for (const r of records) {
+    if (cards.has(r.card)) continue;
+    if (r.verdict === undefined || r.ciReds === undefined) {
+      unusable.push(`${r.card} states no ${r.verdict === undefined ? "verdict" : "ciReds"}`);
+      continue;
+    }
+    const outcome = r.verdict.trim().toUpperCase();
+    if (!outcome.startsWith("APPROVED") && outcome !== "REJECTED") {
+      unusable.push(`${r.card}'s verdict "${r.verdict}" is not an outcome this reads`);
+      continue;
+    }
+    cards.set(r.card, { tier: r.tier, verdict: outcome, ciReds: r.ciReds });
+  }
+  /** @type {Map<string, TierWindow>} */
+  const byTier = new Map();
+  for (const c of cards.values()) {
+    const w = byTier.get(c.tier) ?? { tier: c.tier, rejections: 0, ciReds: 0 };
+    if (c.verdict === "REJECTED") w.rejections += 1;
+    w.ciReds += c.ciReds;
+    byTier.set(c.tier, w);
+  }
+  return { windows: [...byTier.values()].sort((a, b) => a.tier.localeCompare(b.tier)), unusable };
+}
+
+/**
+ * The three loop readings, keyed by band id. ABSENT is the answer
+ * whenever the window cannot be priced whole — the band then reads
+ * UNREAD, which costs the run exit 3, which is the house meaning of
+ * "this run is not a claim about the tree".
+ *
+ * THE WINDOW IS THE CHECKPOINT'S, the same one
+ * `triage/net-arrivals-per-window` uses, because a checkpoint is when
+ * the loop is actually looked at and because an append-only file would
+ * otherwise hold its worst card forever: a lane that overran once in
+ * August would keep the band breached in December, and a band that can
+ * never recover is a band that gets filtered. An EMPTY window has no
+ * worst card, so it reads UNREAD rather than 0 — the difference from
+ * `triage/oldest-suggestion-days`, whose empty set has a defined
+ * maximum age of zero and says so.
+ *
+ * @param {{ cards: readonly CardMeter[], sinceSec: number | null, earlier?: readonly MeterRecord[] | undefined, later?: readonly MeterRecord[] | undefined, since?: string | undefined }} opts
+ * @returns {Map<string, Reading>}
+ */
+export function loopReadings({ cards, sinceSec, earlier, later, since = "the newest Checkpoint: commit" }) {
+  /** @type {Map<string, Reading>} */
+  const out = new Map();
+  const window = sinceSec === null ? [...cards] : cards.filter((c) => c.mergedSec >= sinceSec);
+
+  /** @param {"cycle" | "token"} which @returns {Reading | null} */
+  const budgetReading = (which) => {
+    if (window.length === 0) return null;
+    const shares = window.map((c) => (which === "cycle" ? c.cycleShare : c.tokenShare));
+    if (shares.some((s) => s === null)) return null;
+    const worst = window.reduce((acc, c) =>
+      /** @type {number} */ (which === "cycle" ? c.cycleShare : c.tokenShare) >
+      /** @type {number} */ (which === "cycle" ? acc.cycleShare : acc.tokenShare)
+        ? c
+        : acc,
+    );
+    const share = /** @type {number} */ (which === "cycle" ? worst.cycleShare : worst.tokenShare);
+    const each = window
+      .map((c) =>
+        which === "cycle"
+          ? `${c.card} (size ${c.size}, ${c.tier}) ${fmt(/** @type {number} */ (c.minutes))} min = ${fmt(/** @type {number} */ (c.cycleShare))}%`
+          : `${c.card} (size ${c.size}, ${c.tier}) ${fmt(/** @type {number} */ (c.tokens))} tokens = ${fmt(/** @type {number} */ (c.tokenShare))}%`,
+      )
+      .join("; ");
+    return {
+      value: share,
+      derivation:
+        `${METERS_PATH}, ${window.length} card(s) merged since ${since} — ${each}. ` +
+        `The worst is ${worst.card} at ${fmt(share)}% of the ${worst.tier} tier's budget ` +
+        (which === "cycle"
+          ? "(ADR-024 decision 1). The cycle is its `dispatch stamp` commit to the merge that " +
+            "appended the reading, and it is a FLOOR: CI green is not in the tree"
+          : `(ADR-024 decision 1), summed over its seats: ${worst.quote}`),
+    };
+  };
+
+  const cycle = budgetReading("cycle");
+  if (cycle !== null) out.set("loop/cycle-budget-used", cycle);
+  const token = budgetReading("token");
+  if (token !== null) out.set("loop/token-budget-used", token);
+
+  if (earlier !== undefined && later !== undefined) {
+    const before = tierWindows(earlier);
+    const now = tierWindows(later);
+    if (before.windows.length > 0 && now.windows.length > 0) {
+      const flags = softVerifierFlags(before.windows, now.windows);
+      out.set("loop/soft-verifier", {
+        value: flags.length,
+        derivation:
+          flags.length === 0
+            ? `${METERS_PATH}: no tier's rejections fell to zero while its CI reds rose, over ` +
+              `${before.windows.length} tier(s) in the earlier window and ${now.windows.length} in this one`
+            : flags.map((f) => f.why).join("; "),
+      });
+    }
+  }
+
+  return out;
+}
+
+/**
+ * The newest `Checkpoint:` commits reachable from HEAD, newest first.
+ *
+ * @param {number} count
+ * @param {string} [root]
+ * @returns {{ hash: string, sec: number }[]}
+ */
+export function recentCheckpoints(count, root = repoRoot) {
+  const raw = git(["log", `-${count}`, "--grep=^Checkpoint:", "--format=%H%x00%ct", "HEAD"], root).trim();
+  if (raw === "") return [];
+  return raw
+    .split("\n")
+    .map((line) => line.split("\0"))
+    .filter((parts) => parts.length === 2)
+    .map(([hash, sec]) => ({ hash: /** @type {string} */ (hash), sec: Number(sec) }));
+}
+
+/**
+ * The card's own dispatch-stamp commit time, or null. The NEWEST such
+ * commit is taken: a card re-stamped seconds later (T-294 carries two)
+ * was corrected rather than re-dispatched, and the correction is the
+ * stamp the lane actually started from.
+ *
+ * @param {string} card
+ * @param {string} [root]
+ * @returns {number | null}
+ */
+export function dispatchStampSec(card, root = repoRoot) {
+  const raw = git(["log", "-1", "--format=%ct", `--grep=^${card}: dispatch stamp`, "HEAD"], root).trim();
+  return raw === "" ? null : Number(raw);
+}
+
+/**
+ * The readings file at this ref, or nothing. An absent file is not an
+ * error: a project adopting this method has no merges yet, and the
+ * bands read UNREAD until it does.
+ *
+ * @param {string} [root]
+ * @returns {{ records: MeterRecord[], problems: string[] }}
+ */
+export function metersFromTree(root = repoRoot) {
+  const abs = path.join(root, METERS_PATH);
+  if (!existsSync(abs)) return { records: [], problems: [] };
+  return parseMeterRecords(readFileSync(abs, "utf8"));
+}
+
 /**
  * Every tree-authority band's reading, keyed by band id.
  *
@@ -406,6 +884,30 @@ export function readingsFromTree({ root = repoRoot, parseYaml, now = Date.now(),
         `since the newest Checkpoint: commit ${cp.hash.slice(0, 7)} — ` +
         `${flow.arrivals.length} suggestion card(s) added, ${flow.dispositions.length} dispositioned, net ${net}`,
     });
+  }
+
+  // THE LOOP'S OWN BANDS (T-297). The readings are cut to the two
+  // newest checkpoint windows BEFORE the cards are assembled, because
+  // assembling one costs a `git log` per card and the readings file is
+  // append-only: pricing every merge this project has ever made, at
+  // every run, to report on the two windows that are compared would be
+  // a reporter whose cost grows with the record it reads.
+  const { records } = metersFromTree(root);
+  const checkpoints = recentCheckpoints(2, root);
+  const current = checkpoints[0] ?? null;
+  const previous = checkpoints[1] ?? null;
+  /** @param {number | null} from @param {number | null} to */
+  const between = (from, to) =>
+    records.filter((r) => (from === null || r.atSec >= from) && (to === null || r.atSec < to));
+  const considered = previous === null ? records : between(previous.sec, null);
+  for (const [id, reading] of loopReadings({
+    cards: cardMeters({ records: considered, dispatchedSec: (card) => dispatchStampSec(card, root) }),
+    sinceSec: current === null ? null : current.sec,
+    earlier: previous === null || current === null ? undefined : between(previous.sec, current.sec),
+    later: current === null ? undefined : between(current.sec, null),
+    since: current === null ? "the first reading on record" : `Checkpoint: ${current.hash.slice(0, 7)}`,
+  })) {
+    out.set(id, reading);
   }
 
   return out;
