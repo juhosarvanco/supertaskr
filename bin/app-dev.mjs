@@ -76,9 +76,9 @@ const EXIT = Object.freeze({ OK: 0, FAILED: 1, USAGE: 2, REFUSED: 3 });
  * variable, one stated default — no second source, no config file, no
  * argument, so there is never a question of which of two answers won.
  */
-const ENV_VAR = "NPUTER_APP_WORKTREE";
-const DEFAULT_TARGET = path.join(homedir(), "Projects", "nputer-app");
-const DEFAULT_TARGET_SPELLING = "~/Projects/nputer-app";
+const ENV_VAR = "SUPERTASKR_APP_WORKTREE";
+const DEFAULT_TARGET = path.join(homedir(), "Projects", "supertaskr-app");
+const DEFAULT_TARGET_SPELLING = "~/Projects/supertaskr-app";
 
 const USAGE = `usage: bin/app-dev.mjs [--dry-run]
 
@@ -317,7 +317,7 @@ function derive() {
     if (!existsSync(path.join(dir, "package.json"))) {
       return {
         refusal: refuse(
-          "the target does not look like an nputer worktree",
+          "the target does not look like a supertaskr worktree",
           target,
           `${label}/package.json is missing`,
           null,
