@@ -42,6 +42,7 @@ import {
   correctionSteps,
   dedentBlock,
   drillScope,
+  drillSteps,
   forbiddenSpellingFindings,
   gradeCounts,
   keeperSteps,
@@ -61,6 +62,7 @@ import {
   tailPlan,
   verdictOpener,
   verdictSpecs,
+  verdictState,
   widenTouches,
   xsBoundFinding,
   main as mergeMain,
@@ -985,4 +987,176 @@ test("the verb never pushes, and the keeper steps it plans are the four the card
     "keeper:preflight",
   ]);
   for (const k of keepers) expect(k.kind, `${k.id} is a gate with an exit`).toBe("gate");
+});
+
+// ── the verifier's assigned corrections (T-295 bench, phase 2) ────────
+
+test("the card arm takes ITS OWN card and no other, so a SUGGESTED card of the same lane is a fence finding", () => {
+  // MEASURED ON THIS BENCH. `classifyConflict` anchors the card arm on
+  // `^docs/tasks/<id>(?:-|\.)`, and every suggested card this lane files
+  // is spelled `<id>-s<n>-...`, so its path matches that anchor too. A
+  // conflict in T-950-s1 was resolved to the LANE's copy on a scratch
+  // clone, main's copy discarded without a word, under a sentence
+  // reading "is T-950's OWN card" — which it is not.
+  //
+  // The criterion's word is ITS, and criterion 6 says everything else
+  // STOPS as a fence finding. A suggested card is a different card with
+  // a different id, and two sides writing it is the same fence failure
+  // any other shared file would be.
+  // BOTH SIDES REWROTE A LINE THAT WAS ALREADY THERE — the shape two
+  // sides editing one card actually make, and the shape the card arm
+  // is the ONLY thing standing in front of.
+  const conflicted = [
+    "<<<<<<< HEAD",
+    "MAIN wrote this sentence.",
+    "||||||| merged common ancestors",
+    "the sentence both sides rewrote",
+    "=======",
+    "THE LANE wrote a different sentence.",
+    ">>>>>>> task/T-900-x",
+    "",
+  ].join("\n");
+  const own = classifyConflict({ path: "docs/tasks/T-900-a-card.md", id: "T-900", text: conflicted });
+  expect(own.kind, "the control: the lane's OWN card is still taken from the lane").toBe("card");
+  const sibling = classifyConflict({ path: "docs/tasks/T-900-s1-a-suggestion.md", id: "T-900", text: conflicted });
+  expect(sibling.kind, "a SUGGESTED card of the same lane is NOT this card").toBe("fence");
+  expect(sibling.why, "and it is named as a fence finding").toContain("fences were not disjoint");
+  const deeper = classifyConflict({ path: "docs/tasks/T-900-s12-another.md", id: "T-900", text: conflicted });
+  expect(deeper.kind, "and neither is a two-digit one").toBe("fence");
+  // AND THE OTHER DIRECTION STILL HOLDS: a different card's file was
+  // never in this arm, and a longer NUMBER is not this card either.
+  expect(classifyConflict({ path: "docs/tasks/T-901-other.md", id: "T-900", text: conflicted }).kind).toBe("fence");
+  expect(classifyConflict({ path: "docs/tasks/T-9001-other.md", id: "T-900", text: conflicted }).kind).toBe("fence");
+});
+
+test("a correction is applied whenever the tree carries its NEW text once, even where the OLD text also occurs elsewhere", () => {
+  // MEASURED ON THIS BENCH. `correctionFor` asks whether the `old` text
+  // occurs AT ALL before it asks where the `new` text is, so a block
+  // whose `old` text also appears somewhere else in the same file is
+  // answered "already carries the block's `old` text" — and the defect
+  // the verdict assigned a correction for is left in the merged tree,
+  // reported as a correction already made.
+  //
+  // The site is named by the `new` text, which is the text the tree
+  // carries and the one the block requires to occur exactly once. That
+  // question is the one that decides, and "already" is the answer only
+  // when the site is NOT there.
+  const b = {
+    correction: "C1",
+    file: "src/a.ts",
+    spec: "s",
+    body: "b",
+    message: "m",
+    old: "return n > 0;",
+    new: "return n >= 0;",
+  };
+  const both = correctionFor({
+    source: ["export function other() {", "  return n > 0;", "}", "export function guard(n) {", "  return n >= 0;", "}", ""].join("\n"),
+    block: b,
+  });
+  expect("text" in both, "the site is there, so the correction is applied").toBe(true);
+  if (!("text" in both)) return;
+  expect(both.text, "the defect is gone from the site").not.toContain("return n >= 0;");
+  expect(
+    both.text.split("return n > 0;").length - 1,
+    "and the untouched occurrence elsewhere is still there beside the corrected one",
+  ).toBe(2);
+  // THE CONTROLS, each differing from the case above only in the arming.
+  expect("already" in correctionFor({ source: "  return n > 0;\n", block: b }), "no site: already").toBe(true);
+  expect("text" in correctionFor({ source: "  return n >= 0;\n", block: b }), "a bare site: applied").toBe(true);
+  expect("problem" in correctionFor({ source: "  return 1;\n", block: b }), "neither: a refusal").toBe(true);
+  // AND THE CONTROL THAT KEEPS THE EXISTING ORDER'S REASON, which the
+  // lane's notes state and which a naive "ask about `new` first" would
+  // destroy: where the block's `new` text is a SUBSTRING of its own
+  // `old`, a tree carrying `old` carries `new` inside it, and the
+  // answer is still ALREADY. Counting alone cannot tell that from the
+  // case above — only asking which occurrences of `new` lie OUTSIDE an
+  // occurrence of `old` can.
+  const nested = {
+    ...b,
+    old: "  return n > 0 && n < 10;",
+    new: "  return n > 0",
+  };
+  const corrected = correctionFor({ source: "x\n  return n > 0 && n < 10;\ny\n", block: nested });
+  expect("already" in corrected, "a nested `new` inside a present `old` is already corrected").toBe(true);
+  const owed = correctionFor({ source: "x\n  return n > 0;\ny\n", block: nested });
+  expect("text" in owed, "and the same block still corrects a tree that carries only the site").toBe(true);
+  if (!("text" in owed)) return;
+  expect(owed.text, "restoring the whole `old` text").toContain("  return n > 0 && n < 10;");
+});
+
+test("a forbidden-spelling refusal names the file and the class and REDACTS the value, on every class it carries", () => {
+  // MEASURED ON THIS BENCH. Two of this keeper's four classes print the
+  // very string they exist to keep out of a tracked file: the address
+  // and the derived personal name are echoed verbatim into the refusal,
+  // while the credential and the home path are named by class alone.
+  // The refusal is the seat's return and it is what a checkpoint record
+  // quotes, so the keeper publishes what it refused — which is the
+  // fault it exists to prevent, performed by the keeper.
+  //
+  // The file and the class are what a seat needs to find the line; the
+  // value is what it must not carry. The credential class already draws
+  // it that way and this asks the other three to.
+  const address = "areal.person@example.org";
+  const account = "arealaccount";
+  const found = forbiddenSpellingFindings({
+    added: [
+      { path: "docs/X.md", line: `write to ${address} about it` },
+      { path: "docs/Y.md", line: `signed off by ${account}, who ran it` },
+    ],
+    names: [account],
+  });
+  expect(found.length, "both classes still refuse — the control on the refusal itself").toBe(2);
+  const said = found.join("\n");
+  expect(said, "the file is named").toContain("docs/X.md");
+  expect(said, "and so is the class").toContain("email address");
+  expect(said, "and the account's class too").toContain("account or git name");
+  expect(said, "but the address is NOT published by the refusal").not.toContain(address);
+  expect(said, "and neither is the name").not.toContain(account);
+});
+
+test("a merge is what an APPROVED verdict authorises, so a REJECTED newest verdict refuses the drill", () => {
+  // MEASURED ON THIS BENCH. Criterion 1 opens "on a card with an
+  // approved verdict" and nothing reads that condition: a card whose
+  // NEWEST verdict is REJECTED plans `drill:none` — "assigns no
+  // correction, so nothing is re-drilled", exit 0 — and the run walks
+  // on to write a message whose own subject line begins
+  // "Merge T-900 (REJECTED at ...)".
+  //
+  // The state is already computed for that subject, so the check costs
+  // a comparison. The newest verdict is the one that counts, which the
+  // reader beneath this already settles; this is only the question of
+  // WHICH answers authorise a merge.
+  const card = (heading: string, body: string): string =>
+    ["---", "id: T-900", "---", "", "## Verdicts", "", heading, "", body, ""].join("\n");
+  const rejected = drillSteps({
+    cardText: card("### VERDICT 2026-09-10 — REJECTED — a verifier", "The guard is wrong."),
+    projectRoot: repoRoot,
+    id: "T-900",
+  });
+  expect(rejected.map((s) => s.id), "a REJECTED verdict is a refusal, not a clean drill").toEqual([
+    "drill:refused",
+  ]);
+  expect(rejected[0]?.problem, "and the refusal names the state it read").toContain("REJECTED");
+  // THE CONTROLS: both approving states still plan, and neither is a
+  // refusal — the arming is the STATE and nothing else about the card.
+  const approved = drillSteps({
+    cardText: card("### VERDICT 2026-09-10 — APPROVED — a verifier", "Everything held."),
+    projectRoot: repoRoot,
+    id: "T-900",
+  });
+  expect(approved.map((s) => s.id), "APPROVED still plans").toEqual(["drill:none"]);
+  expect(approved[0]?.problem, "and it is not a refusal").toBeUndefined();
+  const assigned = drillSteps({
+    cardText: card(
+      "### VERDICT 2026-09-10 — APPROVED WITH ASSIGNED CORRECTIONS — a verifier",
+      block({}),
+    ),
+    projectRoot: repoRoot,
+    id: "T-900",
+  });
+  expect(assigned.map((s) => s.id), "and so does an approval that assigns one").toEqual(["drill:1"]);
+  // AND THE STATE READER IS THE ONE THE MESSAGE ALREADY USES, so the
+  // two cannot drift apart into two answers about one heading.
+  expect(verdictState("### VERDICT 2026-09-10 — REJECTED — a verifier")).toBe("REJECTED");
 });
