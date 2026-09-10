@@ -48,8 +48,13 @@ files, and none of them can be reached from T-293's fence.
 an adapter from spelling a governing document's PATH, in the derivation
 and in the raw text both. Nothing forbids the prose form: a sentence
 saying *"also skim the roadmap before starting"* in any seat-facing file
-passes every body on the tree. Measured at this ref: the path form reds,
-the prose form does not.
+passes every body on the tree. Measured at this ref by feeding both
+spellings to the reader the bodies use:
+
+    node -e 'import("./tools/e2e/scripts/docs-scan.mjs").then(m => console.log(m.adapterNamedDocs("also skim docs/ROADMAP.md"), m.adapterNamedDocs("also skim the roadmap")))'
+
+The path spelling comes back naming the document and reds the body; the
+prose spelling comes back empty and reds nothing.
 
 ## Acceptance criteria
 

@@ -49,11 +49,17 @@ in four large documents that are edited often.
 T-293's tip, `the hand-run gate's exit codes hold, and an EMPTY path list
 is 2 and not 0` failed once, on exactly the assertion this coupling
 controls — a code-only path list answered 1 where the body expects 0. It
-did not reproduce: the spec alone is 60 of 60 green, a second whole-leg
-run is 852 of 852 green, and a sampler running that exact invocation
-against the live tree continuously through the second run never once saw a
-non-zero exit. No spec in the corpus writes into the live `docs/` tree or
-checks out the live worktree, so the trigger is UNATTRIBUTED. It is
+did not reproduce: the spec alone is 60 of 60 green, a repeat whole-leg
+run is 852 of 852 green, and a sampler ran that exact invocation against
+the live tree in a loop beside that repeat leg for its whole duration,
+appending to a log on any exit but 0 — the log it wrote is empty. The
+corpus was then swept for a writer into the live tree, which is derivable
+rather than remembered:
+
+    grep -rn 'writeFileSync\|cpSync\|rmSync' tools/e2e/tests/*.spec.ts | grep repoRoot
+
+Every hit READS from the repository root and WRITES into a scratch root,
+so the trigger is UNATTRIBUTED. It is
 recorded here so the next seat attributes it instead of rediscovering it.
 
 ## Acceptance criteria

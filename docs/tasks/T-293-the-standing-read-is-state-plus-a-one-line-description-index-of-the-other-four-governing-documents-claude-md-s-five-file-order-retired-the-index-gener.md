@@ -402,8 +402,8 @@ than a failure of this criterion, whose subject is these four files —
 
 **C-2 — one command, and a gate that reds on a planted stale line. MET,
 AND LITERALLY.** Run in a clone at this tip, the census command wrote BOTH
-generated documents in one invocation, the census first so the index
-derives from a fresh one, and the index came back a ZERO-BYTE diff. The
+generated documents in one invocation, and it writes the census ahead of
+the index so the index derives from a fresh one, and the index came back a ZERO-BYTE diff. The
 census is stale by 623 bytes — exactly the seven new body names, 845 to
 852 — and that regeneration is the integrator's.
 
@@ -475,8 +475,8 @@ the result to a seat, so a path in that file is that document back in the
 standing read whatever the sentence says. The fix pass moves no production
 line — every changed line in the rust file is inside its test module.
 Each repaired control is decided by an arrangement its own body does not
-also control: the live adapter for one, body-supplied adapter text for the
-second, and a derived non-empty set naming no document for the third, with
+also control: the live adapter for one, body-supplied adapter text for another,
+and a derived non-empty set naming no document for the last, with
 the round trip (the document leaves the applied set and comes back when
 the clause goes) carrying the not-vacuous half.
 
@@ -485,16 +485,16 @@ the clause goes) carrying the not-vacuous half.
     parser  exit 0    389 bodies  GREEN
     app     exit 0   1171 bodies  GREEN
     rust    exit 0    655 bodies  GREEN
-    e2e     exit 1    852 bodies  RED, 1 failed / 851 passed   (first run)
-    e2e     exit 0    852 bodies  GREEN                        (second run)
+    e2e     exit 1    852 bodies  RED, 1 failed / 851 passed   (leg A)
+    e2e     exit 0    852 bodies  GREEN                        (leg B)
 
 **THE ONE RED, ATTRIBUTED AS FAR AS THE EVIDENCE GOES.** The body was
 `the hand-run gate's exit codes hold, and an EMPTY path list is 2 and not
 0`, failing where it expects a code-only path list to answer 0 and got 1.
-Following STATE's own rule: the spec alone is 60 of 60 green, a second
-whole leg is 852 green, and a sampler running that exact invocation
-against this tree continuously through the second leg never once saw a
-non-zero exit. No spec in the corpus writes into the live docs tree or
+Following STATE's own rule: the spec alone is 60 of 60 green, a repeat
+whole leg is 852 green, and a sampler ran that exact invocation against
+this tree in a loop beside that repeat leg for its whole duration,
+appending to a log on any exit but 0; the log it wrote is empty. No spec in the corpus writes into the live docs tree or
 checks out the live worktree. So it is UNATTRIBUTED and I do not charge
 it to this diff. What I did find is the mechanism that could reach it:
 inverting the new comparison reds SIX bodies, five of them pre-existing
