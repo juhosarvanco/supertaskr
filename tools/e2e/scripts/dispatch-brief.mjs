@@ -5499,7 +5499,7 @@ export function benchRecs(ctx, plan, result) {
   const machine = liveProv(ctx.at, ctx.host, "the scratch directory this bench was given");
   const moving = liveProv(ctx.at, ctx.host, "git rev-parse in the bench worktree, and git merge-base against this checkout");
   return [
-    note("THE BENCH — phase 2's inputs, sealed, and the one line the seat pastes"),
+    note("THE BENCH — the sealed inputs the verifier judges on, and the line the seat pastes"),
     value(`task: ${plan.taskId}`, treeProv(ctx.ref, "the card named by this bench, and nothing else")),
     value(`tier: ${plan.tier}`, treeProv(ctx.ref, `${plan.taskId} frontmatter field tier, written by the arm at dispatch`)),
     value(`bench worktree: ${plan.bench}`, liveProv(ctx.at, ctx.host, "docs/CONVENTIONS.md's bench spelling, resolved against the repository's main worktree")),

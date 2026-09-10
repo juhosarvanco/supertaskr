@@ -976,7 +976,11 @@ async function main(argv) {
       });
       const result = runBench(plan, defaultDispatchIo());
       say(render(benchRecs(ctx, plan, result)));
-      for (const n of result.notes) say(render([note(n)]));
+      // A NOTE MAY CARRY NO DIGIT (this module's own provenance floor),
+      // and every one of these carries a path — so they go out as
+      // STAMPED values, which is what that floor is asking for.
+      const said = liveProv(ctx.at, ctx.host, "the bench ritual's own steps, in the order runBench performs them");
+      for (const n of result.notes) say(render([value(n, said)]));
       for (const f of result.findings) benchFindings.push(f);
       if (result.code === EXIT.CANNOT_RUN) {
         console.error("brief: COULD NOT RUN");
