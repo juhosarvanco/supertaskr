@@ -174,4 +174,14 @@ arm a size guard RUNS, which is `--dispatch-lane`'s own argument at the
 closing end of the loop, and `merge.spec.ts` drives it end to end
 instead.
 
+**THE CLOSING BATTERY, RE-RUN AT `938b31df` AFTER THE FLUSH-GUARD FIX**
+— the range's own owed set, `46c33c07..HEAD` through `gate-run.mjs`, one
+run, on `SUPERTASKR_E2E_PORT=15295`: parser 389 bodies exit 0 GREEN, app
+1171 bodies exit 0 GREEN, rust 655 bodies exit 0 GREEN, e2e 890 bodies
+exit 0 GREEN, range exit 0. Every figure is read at that ref. The one
+red of the previous reading — `brief-flush.spec.ts`'s arm-list coverage
+body, at `:753` then and at `:773` now, over the five flags this card
+adds — is the body the same commit turned green, and no other body in
+that file moved: the file's six bodies pass alone as well.
+
 ## Verdicts
