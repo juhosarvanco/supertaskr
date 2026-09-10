@@ -407,7 +407,7 @@ export function caseFindings(text) {
   }
   for (const m of text.matchAll(new RegExp(PROSE_NAME, "g"))) {
     const at = /** @type {number} */ (m.index);
-    const before = at > 0 ? text[at - 1] : "";
+    const before = at > 0 ? (text[at - 1] ?? "") : "";
     const rest = text.slice(at + PROSE_NAME.length);
     const glued =
       /[A-Za-z0-9_@/.]/.test(before) ||
