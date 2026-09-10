@@ -317,7 +317,7 @@ async function main(argv) {
           "[--scratch <dir>] [--dry-run]] " +
           "[--merge <T-NNN> [--bump <old>..<new>] [--meters <path>] [--tier <tier>] " +
           "[--blocks-absent <sha>] [--dry-run]] [--bench <T-NNN> [--scratch <dir>]] " +
-          "[--await <marker> | --await-pid <pid>] --ceiling <seconds>] " +
+          "[[--await <marker> | --await-pid <pid>] --ceiling <seconds>] " +
           "[--full] [--root <path>]",
       );
       return EXIT.CLEAN;

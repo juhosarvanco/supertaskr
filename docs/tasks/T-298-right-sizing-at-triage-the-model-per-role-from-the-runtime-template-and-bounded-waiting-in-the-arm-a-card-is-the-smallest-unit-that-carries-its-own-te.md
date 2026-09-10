@@ -142,4 +142,45 @@ drive.
 - **T-298-s2** — the arm's own subprocess waits carry no ceiling at all,
   and the keeper leg at the base is the one that pays for it.
 
+### The method stamp, and the bump the merge performs
+
+Two method files moved in this lane — `method/roles/orchestrator.md` and
+`method/runtime/supertaskr.yaml` — so the METHOD EVAL GATE fires at this
+merge and the method version moves with it. The version at the base is
+`v0.1.21`, read out of the conventions' own stamp line rather than
+remembered, and the verb performs the bump:
+
+    node tools/e2e/scripts/brief.mjs --merge T-298 --bump 0.1.21..0.1.22
+
+The three stamp files are the merge runner's own set and are not re-listed
+here. The gate was run in this lane and answered exit 0 over 11 model-free
+evals at the lane's tip; the merge's own run is the one that grades the
+merged tree, and the block above is what tells it which version to move
+to.
+
+### The working run that found a defect, said out loud
+
+The battery was run once before the tip below, on a tree whose only
+difference was one word in one frontmatter field, and three of its four
+legs came back RED for that one word: a suggested card filed from this
+lane declared `size: XS`, because that is the size the method's own tier
+table names for the bounded tier, and the parser's legal set is S, M and
+L. Parser 388 of 389, app 1170 of 1171, the end-to-end lane four bodies
+down where the frame counts the parse-error list, 60 expected against 61
+received. The card's size is now S and the disagreement between the two
+documents is filed as T-298-s3, which is the more interesting half: the
+cheapest tier this project has is selectable only by a card the tree
+refuses to hold.
+
+That run is a WORKING run and it is not the lane's graded reading. The
+graded run is the one at the tip that carries this paragraph.
+
+### Suggested cards filed, complete list
+
+- **T-298-s1** — the conventions bullet and the standing-state line the
+  method text now points at.
+- **T-298-s2** — the arm's own subprocess waits carry no ceiling at all.
+- **T-298-s3** — the bounded tier is unreachable, because the classifier
+  selects it on a size the parser refuses. Measured by a card that tried.
+
 ## Verdicts

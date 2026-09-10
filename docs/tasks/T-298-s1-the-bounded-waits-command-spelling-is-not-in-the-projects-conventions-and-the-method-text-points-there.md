@@ -3,7 +3,7 @@ id: T-298-s1
 title: "The bounded wait's command SPELLING is not in this project's conventions, and the method text now points there — the rule landed without the pointer's target, so a seat reading orchestrator 5f is sent to a bullet that does not exist"
 feature: F-04
 milestone: 4
-size: XS
+size: S
 priority: 3
 status: suggested
 suggested_by: "executor claude-opus-5@subagent @T-298, measured at d8e4a9dd07a1f9b8beaad0e808a0e6742f5a0177 and at this lane's tip, 2026-09-10"
