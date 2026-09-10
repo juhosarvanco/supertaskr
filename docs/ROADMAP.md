@@ -15,7 +15,7 @@ opens with the card id that still holds its story.
 
 ## Backbone (revised per ADR-021 — the skill in the agent app is the front door, the app is the mirror)
 
-- F-01: Method — the convention itself (method/), usable by hand.
+- F-01: Method — the convention itself (method/), usable by hand. **v1 is called only after the loop lands a card in a project that is not supertaskr (ADR-024, T-304).**
   Runs this project daily: lanes, fences, verdicts, checkpoints, and
   since ADR-019 (2026-08-27) the three-tier governing-docs contract
   this file itself is under. The behaviour census is GENERATED rather

@@ -1,11 +1,19 @@
 ---
 type: debate
-status: open
+status: resolved
 opened: 2026-09-10
 question: The loop costs about 2.5 hours and half a million subagent tokens per size-S card regardless of size; what does an elite team's proportionate process look like here, and which of our fixed costs go
 ---
 
 # The loop's cost and speed — a fixed floor that does not scale down
+
+
+## Resolution
+
+- **Question** — the loop costs about 2.5 hours and half a million subagent tokens per size-S card regardless of size; what does a proportionate, elite-grade process look like here, and which fixed costs go?
+- **Decision** — @human, 2026-09-10: *"Rule the loop room, A to I as amended: yes"*; *"Universality as a v1 acceptance criterion: yes"*; the public repository: *"later"*. The consolidated seven-part decision above is the ruled form: the three tiers with their budgets, the eight stages, the standing read cut to STATE and an index, the seat's rights, what stays by name, the settings in the runtime template, universality proven on a second project, the order of landing.
+- **Why** — measured: two size-S cycles of 2.5 h and 3.5 h with the build a fifth to a third of them; ~520K subagent tokens per small card; a 61K-token standing read; and the superpowers reading (docs/research/superpowers-loop-b36e082.md): no fixed floor, 1.4K standing, files not pastes, one reviewer with two verdicts — and zero enforcement, which is where this method keeps its keepers.
+- **Changed** — docs/decisions/024-the-proportionate-loop.md (new); cards T-293 (the standing read), T-294 (CI to ten minutes), T-295 (the merge verb and the cheap keepers), T-296 (the tiers in the method), T-297 (the bands), T-298 (right-sizing, the model per role, bounded waiting), T-299–T-302 (the settings: schema and arm, CLI, app, skill), T-303 (the universality audit), T-304 (the second project), T-305 (the over-run notice); the v1 criterion appended to docs/rooms/version-planning.md's function list and to ROADMAP's method entry. The public repository's room opens when @human says so.
 
 ## The question
 

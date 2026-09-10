@@ -279,3 +279,8 @@ next reader does not re-derive it:
 ## Sitting of 2026-09-09 — the cockpit
 
 @human, on the README's v2 list: *"Lets not mention this. We decided the native apps are the cockpit for now. This should also be true in the northstar and other documents."* Ruled: the in-app orchestrator conversation (F-05's cockpit) leaves v2 for the parked list and is scheduled in no version; NORTH_STAR's non-goals carry the sentence, ROADMAP's F-05 entry and both versions pages follow; docs/rooms/cockpit-or-mirror.md records the same word.
+
+
+## Appended 2026-09-10 — universality is a v1 acceptance criterion (@human: "Universality as a v1 acceptance criterion: yes"; ADR-024)
+
+v1 is not called until a project that is not supertaskr, in another language, has been created by the genesis and taken through one whole card by the loop (T-304), with every mechanism reading its configuration from the runtime template (T-303). Section fences were declined on 2026-09-09 (ADR-023 decision 4); the file stays the unit of ownership.
