@@ -5,7 +5,7 @@ feature: F-01
 milestone: 4
 size: S
 priority: 1
-status: building
+status: verifying
 suggested_by: "@human (2026-09-10): \"Rule the loop room, A to I as amended: yes\" — docs/rooms/loop-cost-and-speed.md, ADR-024"
 blocked_by: []
 touches: [CLAUDE.md, AGENTS.md, method/adapters/, docs/INDEX.md, docs/STATE.md, docs/STATE-template.md, method/docs-templates/STATE.md, tools/e2e/scripts/docs-scan.mjs, tools/e2e/scripts/capabilities.mjs, tools/e2e/scripts/docs-gate.mjs, tools/e2e/tests/docs-input-gate.spec.ts]
@@ -141,6 +141,42 @@ T-293-s3, and its repair is ten lines in each file.
 the index, and its trigger cannot see a governing document's opener),
 T-293-s2 (the kit promises a generated index and the genesis has no step
 that generates one), T-293-s3 (the three positive controls above).
+
+**THE SUITES, RUN ONCE AT fcd5c706 THROUGH THE BLESSED RUNNER.**
+`node tools/e2e/scripts/gate-run.mjs --range cbdafa4e..HEAD` derived the
+set — 16 paths moved, owing app, e2e, parser and rust, the end-to-end leg
+whole — and graded it, exit 1 overall:
+
+    parser  exit 0   389 bodies  GREEN  ref fcd5c706
+    app     exit 0  1171 bodies  GREEN  ref fcd5c706
+    rust    exit 101 655 bodies  RED    ref fcd5c706  1 body
+    e2e     exit 1   852 bodies  RED    ref fcd5c706  2 bodies, 850 passed
+
+The three red bodies are the three named above and NOTHING else:
+`row_three_applies_the_role_files_reading_step_rather_than_printing_it_beside_the_list`
+(277 passed, 1 failed in the lib target, panicking on its own message
+"the positive control: the adapter really does name ROADMAP"), and
+brief.spec.ts's `ROW 3 APPLIES the role file's reading step, and still
+shows what the adapter itself named` and `the subtraction and the
+addition FOLLOW the role file — no clause leaves the adapter's list
+unchanged`. T-293-s3 is the card; the repair is outside this fence.
+
+**GATES, DERIVED FROM THIS DIFF.** DOCS GATE FIRES — six paths under
+docs/ are code inputs, owing the app, e2e and parser suites, all run
+here; its injection scan found 0 hits in 6 paths against 7 patterns.
+METHOD EVAL GATE FIRES — run and selftest both exit 0. GRAPH REGEN fires
+by trigger and is a NO-OP, asked rather than predicted: `index --check`
+exit 0, graph CURRENT at 201 files, 2561 symbols, 2453 edges. BOOT GATE
+IS NOT OWED — nothing under app/src/, app/src-tauri/ or either manifest.
+
+**OWED AT THE MERGE, AND NOT DONE HERE**: `npm run capabilities` from
+tools/e2e/. Seven spec names were added, so the census is stale by 623
+bytes (`capabilities:check` exit 1, committed 74,663, fresh 75,286), and
+docs/CAPABILITIES.md is outside this fence. Modelled the regeneration
+against the index at this tree: the index is UNCHANGED by it, because
+each line reads its document's first heading, first prose paragraph and
+section headings, and new sentences under an existing topic move none of
+the three. `npm run lint:docs` is exit 0 at this tip.
 
 **ONE MEASURED QUIRK, DISCLOSED**: the read-first derivation treats a dot
 as part of a path, so a document written at the END of a sentence reads
