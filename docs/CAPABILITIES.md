@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **912 behaviours** — 910 extracted sentences + 2 named-not-extracted (listed at the end) — across 40 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **924 behaviours** — 922 extracted sentences + 2 named-not-extracted (listed at the end) — across 40 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -565,6 +565,18 @@ Census: **912 behaviours** — 910 extracted sentences + 2 named-not-extracted (
 - the command refuses what it cannot answer rather than answering it
 - every band this project watches is present, and each names an authority
 - the tree-authority bands are read at the running ref, not remembered
+- a seat's token figure is the number the word `tokens` is attached to, never the budget beside it
+- a reading line this cannot understand is a PROBLEM, never a quietly skipped line
+- a card's cycle is measured between two commits and its tokens are summed over its seats
+- A SEAT THAT STATED NO TOKENS TAKES THE WHOLE CARD DARK — a lower bound is not a share of a budget
+- a tier ADR-024 sets no budget for is not priced, and the band goes dark rather than inventing one
+- the window is the checkpoint's, and an EMPTY window is UNREAD rather than a green zero
+- THE SOFT-VERIFIER READING fires on the CONJUNCTION only — seen on a planted history
+- TIER_BUDGETS TRANSCRIBES ADR-024 DECISION 1 — pinned to the ruling that produced it
+- the loop bands reach the command's own band set, and each of the three tiers renders
+- A CYCLE THAT ENDED BEFORE IT BEGAN IS NOT A MEASUREMENT — a re-dispatched card takes the band dark
+- A LINE THE READER COULD NOT UNDERSTAND TAKES THE LOOP BANDS DARK — the problems reach the reading
+- THE CHECKPOINT TEMPLATE QUOTES BOTH LOOP BANDS BY ID, WITH THE COMMAND THAT DERIVES THEM
 
 ## identifier-rename
 

@@ -38,6 +38,19 @@
  * to a session and a quota, not to a tree — so it is stamped in
  * checkpoint records and never derived from a ref. The card defers them
  * to telemetry export at org scale, and this file honours that.
+ *
+ * ── AND WHAT ARRIVED ANYWAY, BY THE ONE ROUTE THAT PARAGRAPH LEAVES
+ *    OPEN (T-297) ────────────────────────────────────────────────────
+ * The sentence above stands and is not amended: a token reading is a
+ * live-environment fact and is still never DERIVED from a ref. What
+ * changed is where it is STAMPED. ADR-024 decision 3 has the merge
+ * append each seat's own `## Meters` block to
+ * docs/checkpoints/meters.jsonl, so `loop/token-budget-used` READS a
+ * recorded reading instead of recomputing one — the same relationship
+ * `graph/budget-headroom-bytes` has to `index --check`'s own output,
+ * and the reason both bands quote the words they read. The telemetry
+ * export at org scale that T-156's card deferred is still deferred and
+ * is still not this.
  */
 
 /**
@@ -299,6 +312,113 @@ export const STANDING_BANDS = [
         "breach line still reading 40 would name a ceiling this config no longer holds. The " +
         "drift line is NOT re-derived here — it belongs to the arrival measurement above and " +
         "T-282 measured the clearing side.",
+    },
+  },
+  {
+    id: "loop/cycle-budget-used",
+    metric: "the worst card's cycle in this checkpoint's window, as a share of its tier's budget",
+    unit: "% of the tier's budget",
+    healthy: "below",
+    drift: 100,
+    breach: 200,
+    authority: {
+      kind: "tree",
+      name:
+        "docs/checkpoints/meters.jsonl priced against each card's own dispatch-stamp commit, " +
+        "over the merges since the newest Checkpoint: commit",
+    },
+    measured: {
+      at: "c745a6af, over the four readings docs/checkpoints/meters.jsonl carried at that ref",
+      reason:
+        "THE DRIFT LINE IS THE BUDGET ITSELF AND IS NOT THIS FILE'S TO MOVE. ADR-024 decision 1 " +
+        "(docs/decisions/024-the-proportionate-loop.md) rules 20 minutes for bounded, 75 for " +
+        "standard and 100 for guarded, so a card that has spent 100 percent of its tier's budget " +
+        "has spent all of it, and crossing that is DRIFTING by arithmetic rather than by a " +
+        "judgment made here — which is why the band is a SHARE and not a duration: one line has " +
+        "to hold three tiers whose budgets differ by 5x. THE BREACH LINE IS THE STATE THE ROOM " +
+        "MEASURED AND REFUSED. That ADR's own Context paragraph reads a size-S card at 2.5 to " +
+        "3.5 hours from dispatch to CI green, and 2.5 hours against the standard tier's 75 " +
+        "minutes is exactly 200 percent — the MILDEST of the readings ADR-024 was written to " +
+        "end, so the line calls every one of them and calls nothing the ruling accepted. " +
+        "RE-DERIVED AT c745a6af against the merges T-295 and T-296 appended: T-295 was stamped " +
+        "at 46c33c07 and merged 156.3 minutes later, 208.4 percent of the standard 75; T-296 " +
+        "was stamped at 9dc05597 and merged 160.3 minutes later, 160.3 percent of the guarded " +
+        "100. Both lines therefore sit between readings this project has actually taken and the " +
+        "budget it has actually ruled. THE FIRST READING IS DRIFTING, NOT A BREACH, and the " +
+        "difference is this band's own WINDOW: T-295's reading was appended before the newest " +
+        "`Checkpoint:` commit and is outside it, so the run at c745a6af prices T-296 alone and " +
+        "reports 160.27 percent — drifting. The 208.4 percent above is a re-derivation over both " +
+        "merges, which is how the breach line was placed, and is not what the command prints. " +
+        "Either way it is a finding about the process and never a gate on a lane " +
+        "(docs/CONVENTIONS.md, HEALTH " +
+        "BANDS AT THE CHECKPOINT). THE READING IS A FLOOR: the tree ends at the merge and CI " +
+        "green is minutes later in an API, so this band under-reports by the runner's own wall " +
+        "clock and its derivation says so on every line it prints.",
+    },
+  },
+  {
+    id: "loop/token-budget-used",
+    metric: "the worst card's subagent tokens in this checkpoint's window, as a share of its tier's budget",
+    unit: "% of the tier's budget",
+    healthy: "below",
+    drift: 100,
+    breach: 168,
+    authority: {
+      kind: "tree",
+      name:
+        "a token figure in EVERY seat's `## Meters` block in docs/checkpoints/meters.jsonl, " +
+        "summed per card, over the merges since the newest Checkpoint: commit",
+    },
+    measured: {
+      at: "c745a6af, over the four readings docs/checkpoints/meters.jsonl carried at that ref",
+      reason:
+        "THE DRIFT LINE IS THE BUDGET, for the reason the cycle band above gives at length: " +
+        "ADR-024 decision 1 rules 80K for bounded, 310K for standard and 450K for guarded, and " +
+        "100 percent of a budget is the budget. THE BREACH LINE IS THE ONE READING ADR-024 " +
+        "TOOK: its Context paragraph measured a size-S card at about 520K subagent tokens, and " +
+        "520,000 against the standard tier's 310,000 is 167.7 percent, which rounds to 168 — " +
+        "the reading the room saw and refused, transcribed rather than chosen. The cycle band's " +
+        "breach is 200 and this one's is not, deliberately: the two halves of the same measured " +
+        "state are 2.0x on the clock and 1.68x on the tokens, and rounding them to one number " +
+        "would make one of the two lines a guess wearing a derivation. RE-DERIVED AT c745a6af: " +
+        "T-295's two seats state 319,000 and 430,000 tokens, 749,000 against the standard " +
+        "310,000, 241.6 percent. T-296 HAS NO READING AT ALL and that is the second thing this " +
+        "band keeps — its verifier states 320K and its executor states none, so the card's total " +
+        "is a lower bound, a lower bound rendered as a share of a budget reads as a measurement " +
+        "while being able to sit on either side of the line, and the band goes UNREAD naming the " +
+        "seat rather than reporting the sum it could see.",
+    },
+  },
+  {
+    id: "loop/soft-verifier",
+    metric: "tiers whose rejections fell to zero in this window while their CI reds rose",
+    unit: "tiers",
+    healthy: "below",
+    drift: 0,
+    breach: 1,
+    authority: {
+      kind: "tree",
+      name:
+        "a `verdict` outcome and a `ciReds` count on the cards' readings in " +
+        "docs/checkpoints/meters.jsonl, over the two newest checkpoint windows",
+    },
+    measured: {
+      at: "c745a6af, by the shape ADR-024 named rather than by a reading — no window on record has two",
+      reason:
+        "ADR-024's Consequences: 'a tier whose rejection rate falls to zero while CI reds rise " +
+        "is read as a soft verifier'. THE LINES ARE THE ARITHMETIC OF THE THING COUNTED, not a " +
+        "tuning: the reading is a count of tiers and there are three, so 0 flagged tiers is the " +
+        "only healthy reading and the drift line is 0 — one tier reading as a soft verifier is " +
+        "DRIFTING and prints itself with its derivation, and 2 of the 3 is BREACHED and files, " +
+        "which puts the breach line at 1. A band whose drift and breach could differ by more " +
+        "than that would need a fourth tier to exist. THIS BAND IS WIRED AND NOT YET FED, and " +
+        "the distinction from the four bands declared with no keeper at all is exactly that: " +
+        "the comparison exists, is driven by health-bands.spec.ts on a planted history, and " +
+        "reads UNREAD only because no capture yet stamps a verdict outcome or a CI-red count on " +
+        "a reading. The vocabulary it reads is the merge subjects' own — APPROVED, APPROVED " +
+        "WITH ASSIGNED CORRECTIONS, REJECTED — and its ratification is the same debt " +
+        "north-star/rejection-rate-by-size routes as T-156-s2, which is why a value this does " +
+        "not recognise makes a card unusable rather than quietly not-a-rejection.",
     },
   },
   {

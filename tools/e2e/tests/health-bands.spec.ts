@@ -9,16 +9,23 @@ import { DOC_BUDGETS, taskStatuses } from "../scripts/docs-scan.mjs";
 import { STANDING_BANDS, allBands, docHeadroomBands } from "../scripts/health-bands.config.mjs";
 import {
   EXIT,
+  TIER_BUDGETS,
+  cardMeters,
   evaluate,
   evaluateBand,
   findingCard,
+  loopReadings,
   nextSuggestionId,
   parseE2eSeconds,
   parseGraphHeadroom,
   parseLibSuiteSeconds,
+  parseMeterRecords,
+  parseSeatTokens,
   readingsFromOutput,
   readingsFromTree,
   renderReport,
+  softVerifierFlags,
+  tierWindows,
   validateBands,
 } from "../scripts/health-bands.mjs";
 
@@ -583,11 +590,13 @@ test("every band this project watches is present, and each names an authority", 
   }
   // The card's own set, by family — the four doc budgets, the graph, the
   // two suites, the three triage metrics, the machinery, the three
-  // constitution indicators.
+  // constitution indicators, and (T-297) the loop's own two budget bands
+  // beside the soft-verifier reading ADR-024's Consequences names.
   const families = new Set(bands.map((b) => b.id.split("/")[0]));
   expect([...families].sort()).toEqual([
     "docs-headroom",
     "graph",
+    "loop",
     "machinery",
     "north-star",
     "suite",
@@ -603,4 +612,400 @@ test("the tree-authority bands are read at the running ref, not remembered", () 
   expect(out).toContain("health-bands:");
   const evaluated = evaluate({ readings: new Map() });
   expect(evaluated.every((r) => r.state === "unread" || r.state === "unkept")).toBe(true);
+});
+
+// ── §THE LOOP (T-297) ────────────────────────────────────────────────
+//
+// The two bands ADR-024 decision 1 sets budgets for, and the
+// soft-verifier reading its Consequences name. The failure mode here is
+// the file's first one arriving through a new door: these readings are
+// parsed out of a seat's ENGLISH, so a parse that guesses reports a
+// confident number nobody took. Every body below is written against a
+// wrong number rather than against an exception.
+
+/** Readings in the shape `readingsLines` in merge.mjs appends, as JSON Lines. */
+function plantReadings(rows: Record<string, unknown>[]): string {
+  return `${rows.map((r) => JSON.stringify(r)).join("\n")}\n`;
+}
+
+/** One reading row, defaulted to a real one and overridden per body. */
+function row(over: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    at: "2026-09-10T20:04:16.172Z",
+    card: "T-296",
+    size: "M",
+    tier: "guarded",
+    seat: "executor",
+    source: "report-T-296.md",
+    merge: "d740c1650130d24db33d9fcd1081bdad31e35614",
+    meters: "- context consumed — about 100K tokens of a 1M window.",
+    ...over,
+  };
+}
+
+/** The records a planted file yields, refusing to hide a parse problem. */
+function planted(rows: Record<string, unknown>[]) {
+  const { records, problems } = parseMeterRecords(plantReadings(rows));
+  expect(problems, "a planted fixture that does not parse tests nothing").toEqual([]);
+  return records;
+}
+
+test("a seat's token figure is the number the word `tokens` is attached to, never the budget beside it", () => {
+  // MEASURED, on all four blocks docs/checkpoints/meters.jsonl carried
+  // at c745a6af: every one of them states its reading AND the window it
+  // was taken against in the same sentence, and the window is always the
+  // larger number. A parse that took the largest, or the last, or simply
+  // the first number on the line would read 15,000,000 for two of them
+  // and report a seat forty-seven times over its budget — a breach the
+  // board would have chased for an afternoon.
+  expect(
+    parseSeatTokens("- context consumed: about 319,000 tokens of the 15,000,000 budget at dispatch."),
+  ).toEqual({ value: 319000, quote: "319,000 tokens" });
+  expect(parseSeatTokens("context consumed about 430K tokens (budget 15,000,000 at dispatch)")).toEqual({
+    value: 430000,
+    quote: "430K tokens",
+  });
+  expect(parseSeatTokens("- context consumed — about 320K tokens of a 1M window.")).toEqual({
+    value: 320000,
+    quote: "320K tokens",
+  });
+  expect(parseSeatTokens("1.5M tokens")?.value).toBe(1500000);
+  // AND THE ABSENT CASE IS NULL, NEVER ZERO. T-296's executor block is
+  // on record at this ref and states no token figure at all; a zero
+  // there is a card that cost nothing, which is a lie the band would
+  // have printed as good news.
+  expect(parseSeatTokens("- **model:** claude-opus-5@subagent, set at session start.")).toBeNull();
+});
+
+test("a reading line this cannot understand is a PROBLEM, never a quietly skipped line", () => {
+  // JSON Lines is chosen for the WRITE because an append cannot corrupt
+  // what is already there. The matching discipline on the READ is this
+  // one: a reader that drops the lines it does not like reports a
+  // healthy loop out of the subset that happened to parse.
+  const { records, problems } = parseMeterRecords(
+    [
+      "{not json}",
+      JSON.stringify({ at: "2026-09-10T20:04:16.172Z", card: "T-1" }),
+      "[1,2]",
+      "",
+      JSON.stringify(row()),
+    ].join("\n"),
+  );
+  expect(records.map((r) => r.card)).toEqual(["T-296"]);
+  expect(problems.length).toBe(3);
+  expect(problems.join("\n")).toContain("is not JSON");
+  expect(problems.join("\n")).toContain("has no size, tier, seat, meters");
+  expect(problems.join("\n")).toContain("is not an object");
+  // A BLANK LINE IS NOT A PROBLEM: an append-only file ends in one, and
+  // a reporter that complained about its own record's last byte would be
+  // noise on every run.
+  expect(parseMeterRecords("\n\n").problems).toEqual([]);
+  // An unreadable timestamp is a problem too — it is the one field the
+  // window is cut on, so a NaN there would silently land the card in
+  // every window and in none.
+  expect(parseMeterRecords(JSON.stringify(row({ at: "yesterday" }))).problems.join("")).toContain(
+    "unreadable at: yesterday",
+  );
+});
+
+test("a card's cycle is measured between two commits and its tokens are summed over its seats", () => {
+  const records = planted([
+    row({ card: "T-900", size: "S", tier: "standard", seat: "executor", meters: "about 200,000 tokens" }),
+    row({ card: "T-900", size: "S", tier: "standard", seat: "verifier", meters: "about 100K tokens" }),
+  ]);
+  const dispatched = Date.parse("2026-09-10T18:34:16.172Z") / 1000;
+  const cards = cardMeters({ records, dispatchedSec: () => dispatched });
+  expect(cards.length).toBe(1);
+  const card = cards[0]!;
+  // THE CYCLE IS NOT THE SUM OF THE SEATS' WALL CLOCKS, deliberately:
+  // an executor's hours and a verifier's minutes overlap their spawns
+  // and their detached suites, so a sum of them is a number with no
+  // referent. The TOKENS are summed, because two seats do spend two
+  // budgets against one card.
+  expect(card.minutes).toBeCloseTo(90, 5);
+  expect(card.tokens).toBe(300000);
+  // THE SHARE IS AGAINST THE CARD'S OWN TIER, which is the whole reason
+  // this band is a percentage: 90 minutes is inside the guarded budget
+  // and 120% of the standard one, and one band has to hold both.
+  expect(card.cycleShare).toBeCloseTo(120, 5);
+  expect(card.tokenShare).toBeCloseTo((300000 * 100) / 310000, 5);
+  // The seats' own words travel beside the number, so a parse of prose
+  // can be checked by a reader who did not write the parser.
+  expect(card.quote).toBe('executor "200,000 tokens", verifier "100K tokens"');
+});
+
+test("A SEAT THAT STATED NO TOKENS TAKES THE WHOLE CARD DARK — a lower bound is not a share of a budget", () => {
+  // The shape on record at this ref: T-296's verifier states 320K and
+  // its executor states none. The sum of the seats that DID answer is a
+  // lower bound, and a lower bound rendered as a share of a budget reads
+  // exactly like a measurement while being able to sit on either side of
+  // the line.
+  const records = planted([
+    row({ card: "T-901", tier: "standard", seat: "verifier", meters: "about 320K tokens" }),
+    row({ card: "T-901", tier: "standard", seat: "executor", meters: "- **model:** claude-opus-5, never switched." }),
+  ]);
+  const cards = cardMeters({ records, dispatchedSec: () => Date.parse("2026-09-10T19:34:16.172Z") / 1000 });
+  const card = cards[0]!;
+  expect(card.tokens).toBeNull();
+  expect(card.tokenShare).toBeNull();
+  expect(card.unreadable.join("\n")).toContain("T-901's executor block states no token figure");
+  // ONE MISSING METER DARKENS ONE BAND. The cycle is a function of two
+  // commits and is untouched by a seat's prose.
+  expect(card.cycleShare).toBeCloseTo(40, 5);
+
+  const readings = loopReadings({ cards, sinceSec: null });
+  expect(readings.has("loop/cycle-budget-used")).toBe(true);
+  expect(readings.has("loop/token-budget-used")).toBe(false);
+  // AND UNREAD IS WHAT THE REPORT CALLS IT — never inside, which is the
+  // single worst outcome available to this command because it is
+  // indistinguishable from good news.
+  const band = STANDING_BANDS.find((b) => b.id === "loop/token-budget-used")!;
+  expect(evaluateBand(band, readings.get("loop/token-budget-used")).state).toBe("unread");
+});
+
+test("a tier ADR-024 sets no budget for is not priced, and the band goes dark rather than inventing one", () => {
+  const cards = cardMeters({
+    records: planted([row({ card: "T-902", tier: "heroic", meters: "about 10K tokens" })]),
+    dispatchedSec: () => Date.parse("2026-09-10T20:00:16.172Z") / 1000,
+  });
+  expect(cards[0]!.cycleShare).toBeNull();
+  expect(cards[0]!.tokenShare).toBeNull();
+  expect(cards[0]!.unreadable.join("\n")).toContain(
+    'T-902 is tier "heroic", which ADR-024 decision 1 sets no budget for',
+  );
+  // THE POSITIVE CONTROL, because a pricer that refuses everything and a
+  // pricer that refuses the unpriceable look identical on one fixture:
+  // the same row at a tier the ruling DOES name is priced, off that
+  // tier's own budget and no other.
+  const priced = cardMeters({
+    records: planted([row({ card: "T-902", tier: "bounded", meters: "about 10K tokens" })]),
+    dispatchedSec: () => Date.parse("2026-09-10T20:00:16.172Z") / 1000,
+  });
+  expect(priced[0]!.tokenShare).toBeCloseTo(12.5, 5);
+});
+
+test("the window is the checkpoint's, and an EMPTY window is UNREAD rather than a green zero", () => {
+  // The window matters because the readings file is APPEND-ONLY: a lane
+  // that overran once in August would hold the band breached in
+  // December, and a band that can never recover is a band that gets
+  // filtered within two checkpoints.
+  const records = planted([
+    row({ card: "T-903", tier: "standard", at: "2026-09-01T00:00:00.000Z", meters: "about 10K tokens" }),
+    row({ card: "T-904", tier: "standard", at: "2026-09-09T00:00:00.000Z", meters: "about 620K tokens" }),
+  ]);
+  const cards = cardMeters({
+    records,
+    dispatchedSec: (card) =>
+      Date.parse(card === "T-904" ? "2026-09-08T23:00:00.000Z" : "2026-08-31T23:00:00.000Z") / 1000,
+  });
+  const inWindow = loopReadings({ cards, sinceSec: Date.parse("2026-09-05T00:00:00.000Z") / 1000 });
+  expect(inWindow.get("loop/token-budget-used")?.value).toBeCloseTo(200, 5);
+  expect(inWindow.get("loop/token-budget-used")?.derivation).toContain("T-904");
+  expect(inWindow.get("loop/token-budget-used")?.derivation).not.toContain("T-903");
+  // AN EMPTY WINDOW HAS NO WORST CARD, so it reads UNREAD rather than 0
+  // — the difference from triage/oldest-suggestion-days, whose empty set
+  // has a defined maximum age of zero and says so in its own derivation.
+  expect(loopReadings({ cards, sinceSec: Date.parse("2026-09-10T00:00:00.000Z") / 1000 }).size).toBe(0);
+});
+
+test("THE SOFT-VERIFIER READING fires on the CONJUNCTION only — seen on a planted history", () => {
+  // ADR-024's Consequences: "a tier whose rejection rate falls to zero
+  // while CI reds rise is read as a soft verifier". A verifier that has
+  // stopped rejecting and a lane that has stopped needing rejection are
+  // indistinguishable on every number this project keeps; what tells
+  // them apart is what CI does afterwards. The history is PLANTED
+  // because the shape has not happened here yet, and a keeper nobody can
+  // drive is a keeper nobody has.
+  const earlier = [
+    { tier: "standard", rejections: 3, ciReds: 1 },
+    { tier: "guarded", rejections: 2, ciReds: 0 },
+  ];
+  expect(
+    softVerifierFlags(earlier, [
+      { tier: "standard", rejections: 0, ciReds: 4 },
+      { tier: "guarded", rejections: 0, ciReds: 0 },
+    ]).map((f) => f.tier),
+  ).toEqual(["standard"]);
+  // BOTH HALVES, EACH ALONE, ARE GOOD NEWS HALF THE TIME — so neither
+  // alone flags. Rejections to zero with CI flat is the loop working;
+  // CI reds rising while the verifier still rejects is a lane problem.
+  expect(softVerifierFlags(earlier, [{ tier: "standard", rejections: 0, ciReds: 1 }])).toEqual([]);
+  expect(softVerifierFlags(earlier, [{ tier: "standard", rejections: 2, ciReds: 9 }])).toEqual([]);
+  // A tier with no earlier window has not FALLEN to zero; it has only
+  // ever been there.
+  expect(softVerifierFlags([], [{ tier: "standard", rejections: 0, ciReds: 9 }])).toEqual([]);
+
+  // AND THE READING, over two windows of the readings' own fields.
+  const before = planted([
+    row({ card: "T-905", tier: "standard", verdict: "REJECTED", ciReds: 1, meters: "about 10K tokens" }),
+  ]);
+  const now = planted([
+    row({
+      card: "T-906",
+      tier: "standard",
+      verdict: "APPROVED WITH ASSIGNED CORRECTIONS",
+      ciReds: 4,
+      meters: "about 10K tokens",
+    }),
+  ]);
+  const flagged = loopReadings({ cards: [], sinceSec: null, earlier: before, later: now });
+  expect(flagged.get("loop/soft-verifier")?.value).toBe(1);
+  expect(flagged.get("loop/soft-verifier")?.derivation).toContain("rejections 1 -> 0 while CI reds 1 -> 4");
+  const band = STANDING_BANDS.find((b) => b.id === "loop/soft-verifier")!;
+  expect(evaluateBand(band, flagged.get("loop/soft-verifier")).state).toBe("drifting");
+
+  // A CARD STATING ONE FIELD AND NOT THE OTHER IS NOT HALF A DATA POINT,
+  // and a verdict word this does not recognise is not quietly
+  // not-a-rejection: both make the card unusable, by name.
+  const halved = planted([row({ card: "T-907", tier: "standard", verdict: "APPROVED", meters: "about 10K tokens" })]);
+  expect(tierWindows(halved).windows).toEqual([]);
+  expect(tierWindows(halved).unusable.join("")).toContain("T-907 states no ciReds");
+  const odd = planted([
+    row({ card: "T-908", tier: "standard", verdict: "looked fine", ciReds: 0, meters: "about 10K tokens" }),
+  ]);
+  expect(tierWindows(odd).unusable.join("")).toContain('verdict "looked fine" is not an outcome this reads');
+  // AND WITH NOTHING FEEDING IT THE READING IS ABSENT — which is where
+  // this band sits at this ref: UNREAD, never inside.
+  expect(loopReadings({ cards: [], sinceSec: null, earlier: halved, later: halved }).has("loop/soft-verifier")).toBe(
+    false,
+  );
+});
+
+test("TIER_BUDGETS TRANSCRIBES ADR-024 DECISION 1 — pinned to the ruling that produced it", () => {
+  // The §AUTHORITIES discipline pointed at a RULING instead of a tool.
+  // These six numbers are the owner's, and the failure they are pinned
+  // against is the quiet one: a budget edited beside the parse while the
+  // decision record still reads the old pair, after which every band
+  // reports against a limit nobody ruled.
+  const adr = readFileSync(path.join(repoRoot, "docs/decisions/024-the-proportionate-loop.md"), "utf8");
+  expect(adr).toContain("Budgets: 20 min/80K, 75 min/310K, 100 min/450K");
+  expect(TIER_BUDGETS).toEqual({
+    bounded: { minutes: 20, tokens: 80000 },
+    standard: { minutes: 75, tokens: 310000 },
+    guarded: { minutes: 100, tokens: 450000 },
+  });
+  // The order is the ADR's own tier sentence, bounded then standard then
+  // guarded, and the table keeps it so the two can be read side by side.
+  expect(Object.keys(TIER_BUDGETS)).toEqual(["bounded", "standard", "guarded"]);
+});
+
+test("the loop bands reach the command's own band set, and each of the three tiers renders", () => {
+  // Criterion 1's second half. A band reaches `npm run health` only
+  // through allBands(); a reading computed and never registered is a
+  // measurement nobody sees.
+  const ids = allBands(DOC_BUDGETS).map((b) => b.id);
+  expect(ids).toContain("loop/cycle-budget-used");
+  expect(ids).toContain("loop/token-budget-used");
+  expect(ids).toContain("loop/soft-verifier");
+  const cycle = STANDING_BANDS.find((b) => b.id === "loop/cycle-budget-used")!;
+  expect([
+    evaluateBand(cycle, { value: 80, derivation: "planted inside" }).state,
+    evaluateBand(cycle, { value: 150, derivation: "planted drifting" }).state,
+    evaluateBand(cycle, { value: 260, derivation: "planted breach" }).state,
+    evaluateBand(cycle, undefined).state,
+  ]).toEqual(["inside", "drifting", "breached", "unread"]);
+  // AND THE COMMAND LOADS THEM: the config gate refuses a band with no
+  // measured reason before the tree is read at all, so a new entry that
+  // reaches --list has already passed it.
+  expect(runHealth(["--list"]).out).toContain("loop/cycle-budget-used");
+});
+
+// ── §THE LOOP, THE VERIFIER'S CORRECTIONS (T-297 verdict) ────────────
+//
+// Three properties the lane's own prose already committed to and the
+// wiring did not carry. Each is written against a WRONG NUMBER or a
+// LOST SENTENCE rather than against an exception, because every one of
+// them fails today by reporting something plausible.
+
+test("A CYCLE THAT ENDED BEFORE IT BEGAN IS NOT A MEASUREMENT — a re-dispatched card takes the band dark", () => {
+  // `dispatchStampSec` takes the NEWEST `T-NNN: dispatch stamp`, and
+  // this project re-dispatches cards it rejected. The reading appended
+  // by the FIRST merge stays in an append-only file forever, so the
+  // subtraction goes negative — and a negative share is below every
+  // drift line there is. MEASURED at 3294c349 before this correction, on
+  // a planted tree whose readings file carried a re-dispatched T-999:
+  // `npm run health` printed "T-999 (size S, bounded) -49.23 min =
+  // -246.17%" inside a live derivation and read the band DRIFTING off
+  // another card. Alone in the window that same card reads INSIDE at
+  // -80%. The card that cannot be priced is the card the band can never
+  // report, which is a budget escape that is silent and permanent.
+  const merged = Date.parse("2026-09-10T20:04:16.172Z") / 1000;
+  const records = planted([row({ card: "T-920", tier: "bounded", meters: "about 10K tokens" })]);
+  const restamped = cardMeters({ records, dispatchedSec: () => merged + 3600 })[0]!;
+  expect(restamped.minutes).toBeNull();
+  expect(restamped.cycleShare).toBeNull();
+  expect(restamped.unreadable.join("\n")).toContain("60 min AFTER the merge that appended this reading");
+  // AND THE BAND GOES UNREAD RATHER THAN INSIDE, which is the whole
+  // point: unread costs the run exit 3 and says the reading was not
+  // taken; inside is a claim that it was, and that it was fine.
+  const dark = loopReadings({ cards: [restamped], sinceSec: null });
+  expect(dark.has("loop/cycle-budget-used")).toBe(false);
+  const cycle = STANDING_BANDS.find((b) => b.id === "loop/cycle-budget-used")!;
+  expect(evaluateBand(cycle, dark.get("loop/cycle-budget-used")).state).toBe("unread");
+  // THE POSITIVE CONTROL, because a pricer that refuses every card and
+  // one that refuses only the impossible look identical on one fixture:
+  // the same card stamped BEFORE its merge is priced, and normally.
+  const ordinary = cardMeters({ records, dispatchedSec: () => merged - 600 })[0]!;
+  expect(ordinary.minutes).toBeCloseTo(10, 5);
+  expect(ordinary.cycleShare).toBeCloseTo(50, 5);
+  expect(ordinary.unreadable).toEqual([]);
+});
+
+test("A LINE THE READER COULD NOT UNDERSTAND TAKES THE LOOP BANDS DARK — the problems reach the reading", () => {
+  // `parseMeterRecords` is careful to make a bad line a PROBLEM rather
+  // than a skip, and its own comment says why: "a reader that silently
+  // drops the lines it does not like reports a healthy loop out of the
+  // subset that happened to parse". MEASURED at 3294c349: the caller
+  // destructured `records` and left `problems` on the floor, so the
+  // discipline existed and reached nothing. The failure it lets through
+  // is the worst-shaped one available here — the expensive card is the
+  // corrupt line, and the band reports the cheap survivor as the worst
+  // in the window and calls that INSIDE.
+  const good = row({ card: "T-921", tier: "standard", meters: "about 10K tokens" });
+  const { records, problems } = parseMeterRecords(`${JSON.stringify(good)}\n{"card":"T-922",\n`);
+  expect(records.map((r) => r.card)).toEqual(["T-921"]);
+  expect(problems.length).toBe(1);
+  const cards = cardMeters({ records, dispatchedSec: () => Date.parse("2026-09-10T20:00:16.172Z") / 1000 });
+  // WITHOUT the problems the survivor prices, and prices INSIDE — this
+  // is the reading the operator would have been given.
+  expect(loopReadings({ cards, sinceSec: null }).get("loop/token-budget-used")!.value).toBeCloseTo(
+    (10000 * 100) / 310000,
+    5,
+  );
+  // WITH them, no loop reading is emitted at all and every loop band
+  // reads UNREAD, which is the answer an unknown tier and a silent seat
+  // already get: a window that cannot be priced WHOLE is not priced.
+  const dark = loopReadings({ cards, sinceSec: null, problems });
+  expect(dark.size).toBe(0);
+  for (const id of ["loop/cycle-budget-used", "loop/token-budget-used"]) {
+    expect(evaluateBand(STANDING_BANDS.find((b) => b.id === id)!, dark.get(id)).state).toBe("unread");
+  }
+  // AND A CLEAN FILE IS STILL READ: the guard is about problems, not
+  // about refusing whenever it is passed a list.
+  expect(loopReadings({ cards, sinceSec: null, problems: [] }).size).toBe(2);
+});
+
+test("THE CHECKPOINT TEMPLATE QUOTES BOTH LOOP BANDS BY ID, WITH THE COMMAND THAT DERIVES THEM", () => {
+  // Criterion 2's first half lives entirely in DATA — two lines of prose
+  // in docs/checkpoints/TEMPLATE.md — and at 3294c349 nothing in the
+  // tree kept it: `Cycle band:` and `Token band:` appeared in exactly
+  // one file each, the template itself, and no body, gate or generator
+  // read them. A criterion whose whole delivery is an unkept paragraph
+  // is satisfied by good intentions until somebody edits the paragraph.
+  // This is the project's own standing hazard — a second copy of a list
+  // drifting from the first — so the pin is on the BAND IDS, which is
+  // what actually drifts when a band is renamed.
+  const template = readFileSync(path.join(repoRoot, "docs/checkpoints/TEMPLATE.md"), "utf8");
+  expect(template).toContain("`Cycle band:`");
+  expect(template).toContain("`Token band:`");
+  for (const id of ["loop/cycle-budget-used", "loop/token-budget-used"]) {
+    expect(template, `the checkpoint template must name ${id}`).toContain(id);
+    expect(allBands(DOC_BUDGETS).map((b) => b.id)).toContain(id);
+  }
+  // THE DERIVE COMMAND IS QUOTED, and it is the one that actually
+  // prints these bands. RUN VERBATIM at 3294c349 from tools/e2e/, it
+  // emitted `loop/cycle-budget-used: 160.27 % of the tier's budget` with
+  // its derivation — a figure a checkpoint can paste.
+  expect(template).toContain("npm run health");
+  expect(runHealth(["--list"]).out).toContain("loop/token-budget-used");
 });
