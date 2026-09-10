@@ -19,7 +19,7 @@ project directory.
    from adapters/ to the project root. Ensure .gitignore exists and
    carries a `.supertaskr/` line (append if missing). `git init` if the
    project directory is not a repo. You MAY seed .supertaskr/supertaskr.yaml
-   from runtime/nputer.yaml (runtime defaults, losable, gitignored).
+   from runtime/supertaskr.yaml (runtime defaults, losable, gitignored).
    Stamp docs/STATE.md: Updated line filled in, In progress =
    "genesis interview running — next stage: 1 (Q1)".
    **TWO SPELLINGS, BOTH ABOUT HOW YOU TOUCH THE DISK, NEITHER A NEW

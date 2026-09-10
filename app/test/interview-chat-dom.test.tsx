@@ -770,7 +770,7 @@ const REFUSED_COMPOUND = {
   toolName: "Bash",
   toolUseId: "toolu_01FAHQKCKFrBLrmVtRiuLT9L",
   message:
-    "This Bash command contains multiple operations. The following part requires approval: KIT=.supertaskr/genesis/kit && mkdir -p docs/decisions docs/tasks docs/rooms && cp \"$KIT\"/docs-templates/*.md docs/ && cp \"$KIT\"/adapters/CLAUDE.md \"$KIT\"/adapters/AGENTS.md . && cp \"$KIT\"/runtime/nputer.yaml .supertaskr/supertaskr.yaml && printf '.supertaskr/\\n' && git init -q 2>&1; git status --short; find . -path ./.git -prune -o -type f -print",
+    "This Bash command contains multiple operations. The following part requires approval: KIT=.supertaskr/genesis/kit && mkdir -p docs/decisions docs/tasks docs/rooms && cp \"$KIT\"/docs-templates/*.md docs/ && cp \"$KIT\"/adapters/CLAUDE.md \"$KIT\"/adapters/AGENTS.md . && cp \"$KIT\"/runtime/supertaskr.yaml .supertaskr/supertaskr.yaml && printf '.supertaskr/\\n' && git init -q 2>&1; git status --short; find . -path ./.git -prune -o -type f -print",
 } as const;
 
 const REFUSED_GLOB = {
