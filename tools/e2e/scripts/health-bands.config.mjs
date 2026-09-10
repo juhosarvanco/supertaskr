@@ -344,8 +344,13 @@ export const STANDING_BANDS = [
         "at 46c33c07 and merged 156.3 minutes later, 208.4 percent of the standard 75; T-296 " +
         "was stamped at 9dc05597 and merged 160.3 minutes later, 160.3 percent of the guarded " +
         "100. Both lines therefore sit between readings this project has actually taken and the " +
-        "budget it has actually ruled, and the first reading of this band is a breach — which " +
-        "is a finding about the process and never a gate on a lane (docs/CONVENTIONS.md, HEALTH " +
+        "budget it has actually ruled. THE FIRST READING IS DRIFTING, NOT A BREACH, and the " +
+        "difference is this band's own WINDOW: T-295's reading was appended before the newest " +
+        "`Checkpoint:` commit and is outside it, so the run at c745a6af prices T-296 alone and " +
+        "reports 160.27 percent — drifting. The 208.4 percent above is a re-derivation over both " +
+        "merges, which is how the breach line was placed, and is not what the command prints. " +
+        "Either way it is a finding about the process and never a gate on a lane " +
+        "(docs/CONVENTIONS.md, HEALTH " +
         "BANDS AT THE CHECKPOINT). THE READING IS A FLOOR: the tree ends at the merge and CI " +
         "green is minutes later in an API, so this band under-reports by the runner's own wall " +
         "clock and its derivation says so on every line it prints.",

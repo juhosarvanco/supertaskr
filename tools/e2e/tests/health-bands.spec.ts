@@ -909,3 +909,103 @@ test("the loop bands reach the command's own band set, and each of the three tie
   // reaches --list has already passed it.
   expect(runHealth(["--list"]).out).toContain("loop/cycle-budget-used");
 });
+
+// ── §THE LOOP, THE VERIFIER'S CORRECTIONS (T-297 verdict) ────────────
+//
+// Three properties the lane's own prose already committed to and the
+// wiring did not carry. Each is written against a WRONG NUMBER or a
+// LOST SENTENCE rather than against an exception, because every one of
+// them fails today by reporting something plausible.
+
+test("A CYCLE THAT ENDED BEFORE IT BEGAN IS NOT A MEASUREMENT — a re-dispatched card takes the band dark", () => {
+  // `dispatchStampSec` takes the NEWEST `T-NNN: dispatch stamp`, and
+  // this project re-dispatches cards it rejected. The reading appended
+  // by the FIRST merge stays in an append-only file forever, so the
+  // subtraction goes negative — and a negative share is below every
+  // drift line there is. MEASURED at 3294c349 before this correction, on
+  // a planted tree whose readings file carried a re-dispatched T-999:
+  // `npm run health` printed "T-999 (size S, bounded) -49.23 min =
+  // -246.17%" inside a live derivation and read the band DRIFTING off
+  // another card. Alone in the window that same card reads INSIDE at
+  // -80%. The card that cannot be priced is the card the band can never
+  // report, which is a budget escape that is silent and permanent.
+  const merged = Date.parse("2026-09-10T20:04:16.172Z") / 1000;
+  const records = planted([row({ card: "T-920", tier: "bounded", meters: "about 10K tokens" })]);
+  const restamped = cardMeters({ records, dispatchedSec: () => merged + 3600 })[0]!;
+  expect(restamped.minutes).toBeNull();
+  expect(restamped.cycleShare).toBeNull();
+  expect(restamped.unreadable.join("\n")).toContain("60 min AFTER the merge that appended this reading");
+  // AND THE BAND GOES UNREAD RATHER THAN INSIDE, which is the whole
+  // point: unread costs the run exit 3 and says the reading was not
+  // taken; inside is a claim that it was, and that it was fine.
+  const dark = loopReadings({ cards: [restamped], sinceSec: null });
+  expect(dark.has("loop/cycle-budget-used")).toBe(false);
+  const cycle = STANDING_BANDS.find((b) => b.id === "loop/cycle-budget-used")!;
+  expect(evaluateBand(cycle, dark.get("loop/cycle-budget-used")).state).toBe("unread");
+  // THE POSITIVE CONTROL, because a pricer that refuses every card and
+  // one that refuses only the impossible look identical on one fixture:
+  // the same card stamped BEFORE its merge is priced, and normally.
+  const ordinary = cardMeters({ records, dispatchedSec: () => merged - 600 })[0]!;
+  expect(ordinary.minutes).toBeCloseTo(10, 5);
+  expect(ordinary.cycleShare).toBeCloseTo(50, 5);
+  expect(ordinary.unreadable).toEqual([]);
+});
+
+test("A LINE THE READER COULD NOT UNDERSTAND TAKES THE LOOP BANDS DARK — the problems reach the reading", () => {
+  // `parseMeterRecords` is careful to make a bad line a PROBLEM rather
+  // than a skip, and its own comment says why: "a reader that silently
+  // drops the lines it does not like reports a healthy loop out of the
+  // subset that happened to parse". MEASURED at 3294c349: the caller
+  // destructured `records` and left `problems` on the floor, so the
+  // discipline existed and reached nothing. The failure it lets through
+  // is the worst-shaped one available here — the expensive card is the
+  // corrupt line, and the band reports the cheap survivor as the worst
+  // in the window and calls that INSIDE.
+  const good = row({ card: "T-921", tier: "standard", meters: "about 10K tokens" });
+  const { records, problems } = parseMeterRecords(`${JSON.stringify(good)}\n{"card":"T-922",\n`);
+  expect(records.map((r) => r.card)).toEqual(["T-921"]);
+  expect(problems.length).toBe(1);
+  const cards = cardMeters({ records, dispatchedSec: () => Date.parse("2026-09-10T20:00:16.172Z") / 1000 });
+  // WITHOUT the problems the survivor prices, and prices INSIDE — this
+  // is the reading the operator would have been given.
+  expect(loopReadings({ cards, sinceSec: null }).get("loop/token-budget-used")!.value).toBeCloseTo(
+    (10000 * 100) / 310000,
+    5,
+  );
+  // WITH them, no loop reading is emitted at all and every loop band
+  // reads UNREAD, which is the answer an unknown tier and a silent seat
+  // already get: a window that cannot be priced WHOLE is not priced.
+  const dark = loopReadings({ cards, sinceSec: null, problems });
+  expect(dark.size).toBe(0);
+  for (const id of ["loop/cycle-budget-used", "loop/token-budget-used"]) {
+    expect(evaluateBand(STANDING_BANDS.find((b) => b.id === id)!, dark.get(id)).state).toBe("unread");
+  }
+  // AND A CLEAN FILE IS STILL READ: the guard is about problems, not
+  // about refusing whenever it is passed a list.
+  expect(loopReadings({ cards, sinceSec: null, problems: [] }).size).toBe(2);
+});
+
+test("THE CHECKPOINT TEMPLATE QUOTES BOTH LOOP BANDS BY ID, WITH THE COMMAND THAT DERIVES THEM", () => {
+  // Criterion 2's first half lives entirely in DATA — two lines of prose
+  // in docs/checkpoints/TEMPLATE.md — and at 3294c349 nothing in the
+  // tree kept it: `Cycle band:` and `Token band:` appeared in exactly
+  // one file each, the template itself, and no body, gate or generator
+  // read them. A criterion whose whole delivery is an unkept paragraph
+  // is satisfied by good intentions until somebody edits the paragraph.
+  // This is the project's own standing hazard — a second copy of a list
+  // drifting from the first — so the pin is on the BAND IDS, which is
+  // what actually drifts when a band is renamed.
+  const template = readFileSync(path.join(repoRoot, "docs/checkpoints/TEMPLATE.md"), "utf8");
+  expect(template).toContain("`Cycle band:`");
+  expect(template).toContain("`Token band:`");
+  for (const id of ["loop/cycle-budget-used", "loop/token-budget-used"]) {
+    expect(template, `the checkpoint template must name ${id}`).toContain(id);
+    expect(allBands(DOC_BUDGETS).map((b) => b.id)).toContain(id);
+  }
+  // THE DERIVE COMMAND IS QUOTED, and it is the one that actually
+  // prints these bands. RUN VERBATIM at 3294c349 from tools/e2e/, it
+  // emitted `loop/cycle-budget-used: 160.27 % of the tier's budget` with
+  // its derivation — a figure a checkpoint can paste.
+  expect(template).toContain("npm run health");
+  expect(runHealth(["--list"]).out).toContain("loop/token-budget-used");
+});

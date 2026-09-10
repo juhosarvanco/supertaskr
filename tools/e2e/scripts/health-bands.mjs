@@ -576,7 +576,26 @@ export function cardMeters({ records, dispatchedSec, budgets = TIER_BUDGETS }) {
     if (dispatched === null) {
       unreadable.push(`${card} has no \`${card}: dispatch stamp\` commit reachable from HEAD`);
     }
-    const minutes = dispatched === null ? null : (mergedSec - dispatched) / 60;
+    let minutes = dispatched === null ? null : (mergedSec - dispatched) / 60;
+    // A CYCLE THAT ENDED BEFORE IT BEGAN IS NOT A SHORT CYCLE (the
+    // verifier's correction). `dispatchStampSec` takes the NEWEST
+    // dispatch stamp, and a card that was REJECTED and re-dispatched
+    // carries one that is newer than the merge which appended its
+    // earlier reading — an append-only file keeps that reading forever.
+    // The subtraction then yields a NEGATIVE share, and a negative
+    // share sits below every drift line there is: the card reads INSIDE
+    // when it is alone in the window, and loses the maximum to any card
+    // at all when it is not. So the one card whose cycle nobody can
+    // price is the one card the band can never report — a silent budget
+    // escape, and permanent for that card. It is un-priceable, which is
+    // a state this file already has a name and a discipline for.
+    if (minutes !== null && minutes < 0) {
+      unreadable.push(
+        `${card}'s newest dispatch stamp is ${fmt(-minutes)} min AFTER the merge that appended ` +
+          `this reading — a re-dispatched card, not a cycle`,
+      );
+      minutes = null;
+    }
 
     /** @type {number | null} */
     let tokens = 0;
@@ -717,12 +736,31 @@ export function tierWindows(records) {
  * `triage/oldest-suggestion-days`, whose empty set has a defined
  * maximum age of zero and says so.
  *
- * @param {{ cards: readonly CardMeter[], sinceSec: number | null, earlier?: readonly MeterRecord[] | undefined, later?: readonly MeterRecord[] | undefined, since?: string | undefined }} opts
+ * AND A LINE THE READER COULD NOT UNDERSTAND TAKES EVERY LOOP BAND DARK
+ * (the verifier's correction). `parseMeterRecords` is careful to make a
+ * bad line a PROBLEM rather than a skip, and says in its own comment why:
+ * "a reader that silently drops the lines it does not like reports a
+ * healthy loop out of the subset that happened to parse". That is
+ * exactly what happened to the problems it returned — the caller took
+ * `records` and left them on the floor — so the discipline existed and
+ * reached nothing. A truncated input cannot price a window WHOLE, which
+ * is the same condition an unknown tier and a silent seat already meet,
+ * and it gets the same answer: no reading, the band UNREAD, exit 3.
+ *
+ * @param {{ cards: readonly CardMeter[], sinceSec: number | null, earlier?: readonly MeterRecord[] | undefined, later?: readonly MeterRecord[] | undefined, since?: string | undefined, problems?: readonly string[] }} opts
  * @returns {Map<string, Reading>}
  */
-export function loopReadings({ cards, sinceSec, earlier, later, since = "the newest Checkpoint: commit" }) {
+export function loopReadings({
+  cards,
+  sinceSec,
+  earlier,
+  later,
+  since = "the newest Checkpoint: commit",
+  problems = [],
+}) {
   /** @type {Map<string, Reading>} */
   const out = new Map();
+  if (problems.length > 0) return out;
   const window = sinceSec === null ? [...cards] : cards.filter((c) => c.mergedSec >= sinceSec);
 
   /** @param {"cycle" | "token"} which @returns {Reading | null} */
@@ -892,7 +930,7 @@ export function readingsFromTree({ root = repoRoot, parseYaml, now = Date.now(),
   // append-only: pricing every merge this project has ever made, at
   // every run, to report on the two windows that are compared would be
   // a reporter whose cost grows with the record it reads.
-  const { records } = metersFromTree(root);
+  const { records, problems } = metersFromTree(root);
   const checkpoints = recentCheckpoints(2, root);
   const current = checkpoints[0] ?? null;
   const previous = checkpoints[1] ?? null;
@@ -906,6 +944,7 @@ export function readingsFromTree({ root = repoRoot, parseYaml, now = Date.now(),
     earlier: previous === null || current === null ? undefined : between(previous.sec, current.sec),
     later: current === null ? undefined : between(current.sec, null),
     since: current === null ? "the first reading on record" : `Checkpoint: ${current.hash.slice(0, 7)}`,
+    problems,
   })) {
     out.set(id, reading);
   }
