@@ -5,12 +5,12 @@ feature: F-01
 milestone: 4
 size: M
 priority: 1
-status: planned
+status: building
 suggested_by: "@human (2026-09-10): \"Rule the loop room, A to I as amended: yes\" — docs/rooms/loop-cost-and-speed.md, ADR-024"
 blocked_by: [T-295]
 touches: [method/tasks/TASK-FORMAT.md, method/roles/verifier.md, method/roles/executor.md, method/roles/orchestrator.md, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/scripts/card-preflight.mjs, tools/e2e/scripts/merge.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/card-preflight.spec.ts, tools/e2e/tests/merge.spec.ts, docs/CONVENTIONS.md]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
