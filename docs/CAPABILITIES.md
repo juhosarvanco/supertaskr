@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **868 behaviours** — 866 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **870 behaviours** — 868 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -134,6 +134,8 @@ Census: **868 behaviours** — 866 extracted sentences + 2 named-not-extracted (
 - THE WAKE VIEW IS A READ — it derives the live board and writes nothing into it
 - THE WOKEN SECTION REACHES THE RENDERED ANSWER — `--dispatch` carries the counted line and `--full` the page
 - THE PROSE TEST SEES THE BOARD'S OWN `UN-PARK WHEN:` SPELLING — nine live parked cards write the condition that way and the flag calls them conditionless
+- T-307 C1 — MF-11 refuses a quotation attributed to the owner HOWEVER LONG it is
+- T-307 C2 — MF-11 refuses an entry that attributes a ruling to the owner by HANDLE
 
 ## card-figures
 

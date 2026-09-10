@@ -469,6 +469,20 @@ and T-236 (2026-09-02, whose pre-compaction text is
   (rule 4). Do it by hand at the merge — the landing card as the
   argument, `--scratch` on the dispatching session's scratchpad, exit
   read unpiped — until `T-205-s6` gives sealed sets a home in the tree.
+- **THE SEAT PROPOSES BEFORE IT RECORDS, AND THIS BULLET IS THE
+  POINTER, NEVER THE RULE** (T-307, 2026-09-10). An entry for a room or a
+  decision record is shown to the owner in the conversation, verbatim as
+  it will be written, and appended only on the owner's yes; the entry
+  paraphrases the ruling and dates it, never the owner's words, and the
+  owner appears as the owner. The rule is stated once, in
+  `method/roles/orchestrator.md` 8b and `method/rooms/ROOM-FORMAT.md`
+  (the decision template carries it because it rides the genesis kit and
+  the room format does not); MF-11
+  (`tools/method-evals/evals/mf-11-room-entries-paraphrase.mjs`) holds it
+  over entries dated on or after 2026-09-11 — the day after the rule
+  landed, because the sitting that asked for it wrote six entries that
+  day and records are never restyled. Cards, checkpoints, STATE and the
+  seat's ledger are the seat's own records: written, and nobody asked.
 - PORT RULE: 1420 belongs to the human's live `tauri dev`. The lane
   runs its own vite on `SUPERTASKR_E2E_PORT` (default 14520),
   `reuseExistingServer: false`; setting it to 1420 THROWS at config
@@ -627,11 +641,13 @@ and T-236 (2026-09-02, whose pre-compaction text is
 ## Gotchas
 - method/ is the generic, product-agnostic convention — nothing
   supertaskr-specific goes in it; product docs live in docs/. Changes to
-  method/ formats are version-bumped (currently v0.1.18) and noted here.
+  method/ formats are version-bumped (currently v0.1.19) and noted here.
   **A VERSION'S NOTE HERE IS ITS DATE, ITS CARD AND ITS THEME; WHAT
   MOVED IS THE RELEASE'S OWN RECORD** (ADR-019's law applied to this
   changelog at T-162): the per-clause itemisation is RECORD-shaped, and
   the AUTHORITY for what a version says is `method/` itself at that tag.
+  v0.1.19 (T-307, 2026-09-10) — the PROPOSE-BEFORE-RECORDING release: a room or decision
+  entry is shown to the owner verbatim and appended on a yes; entries paraphrase and never quote; an eval holds it.
   v0.1.18 (T-293, 2026-09-10) — the STANDING READ release: a seat reads STATE and a
   generated one-line index of the other four governing documents, nothing else standing (ADR-024).
   v0.1.17 (T-264-s3, 2026-09-10) — the RENAME release: the runtime template is
