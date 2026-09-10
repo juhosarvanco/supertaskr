@@ -304,6 +304,18 @@ test("ROW 3 APPLIES the role file's reading step, and still shows what the adapt
   ).toBe(1);
   const applied = readFirstList(appliedLines[0] ?? "", APPLIED);
 
+  // THE CONTROL THAT SURVIVES THIS PROJECT'S OWN STANDING READ, DERIVED
+  // RATHER THAN NAMED. At least one document the adapter lists is one this
+  // role file leaves alone, so every presence asserted below is decided by
+  // what the adapter named and not by an empty set.
+  const untouched = adapterLines
+    .flatMap((l) => readFirstList(l, " names: "))
+    .filter((d) => !subtracted.includes(d));
+  expect(
+    untouched,
+    "the adapter names nothing this role file leaves alone, so every presence below proves nothing",
+  ).not.toEqual([]);
+
   // THE CARD'S SECOND CRITERION: the adapter's own list survives on the
   // report, unchanged and attributed to the adapter, so a reader can see
   // WHICH document was removed and which was added.
@@ -316,11 +328,16 @@ test("ROW 3 APPLIES the role file's reading step, and still shows what the adapt
         "the role file did to it, never the second in place of the first",
     ).toEqual(docsNamed(readDoc(rel)));
   }
+  // THE SUBTRACTION HALF, AND WHERE ITS CONTROL NOW LIVES. This role file
+  // subtracts documents no adapter names any more — T-293 retired the
+  // five-file order — so an assertion that some adapter still names them
+  // would be a red about THIS PROJECT'S standing read rather than about
+  // row 3, and the absence below would be true for free. What the live
+  // tree can still decide is that the row SAYS what it removed and removes
+  // what it says; the not-vacuous half is the sibling body's, which
+  // rewrites the role file to subtract a document the adapter DOES name
+  // and watches it leave the applied set and come back.
   for (const gone of subtracted) {
-    expect(
-      adapterLines.some((l) => l.includes(gone)),
-      `no adapter names ${gone}, so its absence from the applied set proves nothing`,
-    ).toBe(true);
     expect(
       rendered.some((l) => l.includes(`the role file SUBTRACTS: ${gone}`)),
       `row 3 removed ${gone} without saying so — the difference has to be visible, not silent`,
@@ -395,7 +412,6 @@ test("the subtraction and the addition FOLLOW the role file — no clause leaves
         "difference this row applies is a constant in the tool rather than a reading of the role file",
     ).toEqual(list);
   }
-  expect(appliedPlain, "the subtracted document did not come back").toContain(subtracted[0]);
   expect(appliedPlain, "the addition survived a role file that no longer asks for it").not.toContain(
     added[0],
   );
@@ -405,15 +421,20 @@ test("the subtraction and the addition FOLLOW the role file — no clause leaves
       "silently failed to read the role file",
   ).toBe(true);
 
-  // THE OTHER HALF OF "NOT A CONSTANT": a role file subtracting a DIFFERENT
-  // document strikes THAT one instead. The replacement is DERIVED — the last
-  // document the adapter names that is not already subtracted — so this body
-  // holds no document name of its own either.
+  // THE OTHER HALF OF "NOT A CONSTANT", AND SINCE T-293 THE WHOLE OF THIS
+  // BODY'S SUBJECT: a role file subtracting a DIFFERENT document strikes
+  // THAT one instead. It has to be this way round now — the documents this
+  // role file really subtracts are ones no adapter names since the standing
+  // read became STATE plus the generated index, so striking one out of the
+  // role file moves nothing and proves nothing. The replacement is DERIVED
+  // — the last document the adapter names that is not already subtracted —
+  // so this body holds no document name of its own either.
   const adapterFirst = adapterPlain[0] ?? [];
   const other = [...adapterFirst].reverse().find((d) => !subtracted.includes(d)) ?? "";
-  expect(other, "the adapter names only the subtracted document, so nothing can be swapped").not.toBe(
-    "",
-  );
+  expect(
+    other,
+    "the adapter names only the subtracted documents, so nothing can be swapped",
+  ).not.toBe("");
   const moved = md.split(subtracted[0] ?? "").join(other);
   expect(moved).not.toBe(md);
   // THE ROLE FILE MAY SUBTRACT MORE THAN ONE DOCUMENT (T-254: the pack's
@@ -426,11 +447,28 @@ test("the subtraction and the addition FOLLOW the role file — no clause leaves
     appliedMoved,
     `the role file now subtracts ${other} and the applied set still carries it`,
   ).not.toContain(other);
+
+  // AND IT COMES BACK WHEN THE CLAUSE GOES. The same rewritten role file,
+  // its subtraction and addition sentences struck out the same way the
+  // plain arm struck this file's own, hands back the adapter's list whole —
+  // so what removed the document above was the CLAUSE, and not a document
+  // this module remembers rather than reads.
+  const movedPlain = moved
+    .split("\n")
+    .filter((l) => !l.includes("do NOT read ") && !l.includes("ADDITION TO THAT SET IS "))
+    .join("\n");
+  expect(readSubtractions(movedPlain)).toEqual([]);
+  expect(readAdditions(movedPlain)).toEqual([]);
+  const renderedBack = render(assembleBrief({ ...ctx, roleMd: movedPlain, findings: [] }).recs).split(
+    "\n",
+  );
+  const appliedBack = readFirstList(renderedBack.find((l) => l.includes(APPLIED)) ?? "", APPLIED);
+  expect(appliedBack, "the subtracted document did not come back").toContain(other);
   expect(
-    appliedMoved,
-    `the role file no longer subtracts ${subtracted[0]} and the applied set still drops it — that ` +
-      "is a document this module remembers rather than reads",
-  ).toContain(subtracted[0]);
+    appliedBack,
+    `the role file no longer subtracts ${other} and the applied set is still not the adapter's own ` +
+      "list — the difference row 3 applies is a constant in the tool rather than a reading",
+  ).toEqual(adapterFirst);
 });
 
 test("a `do NOT read` sentence that names no document subtracts nothing", () => {

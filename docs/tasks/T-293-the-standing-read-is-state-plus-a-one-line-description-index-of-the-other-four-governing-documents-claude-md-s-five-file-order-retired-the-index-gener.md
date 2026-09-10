@@ -8,7 +8,7 @@ priority: 1
 status: verifying
 suggested_by: "@human (2026-09-10): \"Rule the loop room, A to I as amended: yes\" — docs/rooms/loop-cost-and-speed.md, ADR-024"
 blocked_by: []
-touches: [CLAUDE.md, AGENTS.md, method/adapters/, docs/INDEX.md, docs/STATE.md, docs/STATE-template.md, method/docs-templates/STATE.md, tools/e2e/scripts/docs-scan.mjs, tools/e2e/scripts/capabilities.mjs, tools/e2e/scripts/docs-gate.mjs, tools/e2e/tests/docs-input-gate.spec.ts]
+touches: [CLAUDE.md, AGENTS.md, method/adapters/, docs/INDEX.md, docs/STATE.md, docs/STATE-template.md, method/docs-templates/STATE.md, tools/e2e/scripts/docs-scan.mjs, tools/e2e/scripts/capabilities.mjs, tools/e2e/scripts/docs-gate.mjs, tools/e2e/tests/docs-input-gate.spec.ts, tools/e2e/tests/brief.spec.ts, app/src-tauri/src/dispatch/brief.rs]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by:
@@ -185,5 +185,99 @@ kept. The JS mirror inherits it deliberately — a mirror that disagrees
 with the list a seat is handed is worthless — and the adapter keeper
 closes the gap by asking the RAW text as well. Found by a mutant that
 survived; the mutant was re-cut and both spellings now red.
+
+### FIX PASS — the three positive controls, repaired in TEST CODE ONLY
+
+**THE SECOND ASK WAS GRANTED AFTER THE STAMP, OPTION 1** (the seat,
+2026-09-10T11:43:05Z; the seat records the miss as its own watcher's,
+now fixed). The fence gained `tools/e2e/tests/brief.spec.ts` and
+`app/src-tauri/src/dispatch/brief.rs`; this card's `touches:` line
+carries both — the seat wrote it, and this lane commits it unedited —
+and the manifest in this lane re-expands to the same set. The three
+bodies the lane landed RED are repaired here.
+
+**NO PRODUCTION CODE MOVED.** Every line this pass touches is inside
+`#[cfg(test)]` or inside a spec file. `row_read_first` in the rust
+module and `deriveReadFirst` in the JS mirror are byte for byte what
+they were at 17fec1c5, and the diff of this pass names two files plus
+this card and T-293-s3.
+
+**WHAT THE REPAIR IS.** Each of the three asserted, as its positive
+control, that the LIVE root adapter really does name the document the
+acting role file subtracts. This card is what takes that document out
+of the adapter, so the control loses its subject correctly and the
+assertion turns into a red about this project's standing read rather
+than about row 3. Each control now has a subject that survives, and the
+half the live tree can no longer decide is decided against text the
+body itself supplies.
+
+- `row_three_applies_the_role_files_reading_step_rather_than_printing_it_beside_the_list`
+  in `app/src-tauri/src/dispatch/brief.rs`. ARM ONE reads the LIVE
+  adapter and asserts it names `docs/INDEX.md`, that the applied set
+  carries the index, `docs/STATE.md` and the role file's own addition,
+  and that NONE of the four documents the index stands in for is back in
+  the applied set — this card's own property, stated where the old
+  control stood. ARM TWO supplies the adapter through the module's
+  existing `OverlayFiles` source: a list naming `docs/ROADMAP.md`, the
+  LIVE role file's subtraction sentence applied to it, and the document
+  gone from the applied set. What the body supplies is the LIST; the
+  sentence that strikes a document out of it is still read off the role
+  file, so the rule under test is nobody's constant.
+- `ROW 3 APPLIES the role file's reading step, and still shows what the
+  adapter itself named` in `tools/e2e/tests/brief.spec.ts`. The control
+  is now DERIVED and holds no document name of its own: at least one
+  document the adapter names is one this role file leaves alone, so
+  every presence the body asserts afterwards is decided by the adapter
+  rather than by an empty set. The subtraction half keeps both live
+  assertions — the row SAYS what it removed, and removes what it says —
+  and the not-vacuous half moves to the sibling body, which is where the
+  swap already lived.
+- `the subtraction and the addition FOLLOW the role file — no clause
+  leaves the adapter's list unchanged` in the same file. The swap arm
+  becomes the whole of the subject: the role file is rewritten in memory
+  to subtract the last document the adapter names that it does not
+  already subtract, that document leaves the applied set, and then the
+  same rewritten role file with its subtraction and addition sentences
+  struck out hands the adapter's list back WHOLE. That is the property
+  the old arm stated, measured on a document the adapter really names.
+
+No body was deleted and no test name moved: both e2e names are pinned
+verbatim in `docs/CAPABILITIES.md`, which is outside this fence, and the
+rust name is cited by this card and by T-293-s3.
+
+**THE FIX-PASS DRILL — one mutant per repaired arm, one side only, each
+restored and the restore proved by sha256.**
+
+| # | mutant | owning body | exit | restored |
+|---|---|---|---|---|
+| 1 | `row_read_first` drops the subtraction filter | rust row 3 | 101 | yes, `523b8c31` |
+| 2 | the adapter names `docs/ROADMAP.md` again, mid-sentence | rust row 3 | 0 — SURVIVED | yes, `313fa36c` |
+| 2b | the adapter names `docs/ARCHITECTURE.md` again, mid-sentence | rust row 3 | 101 | yes, `313fa36c` |
+| 3 | both root adapters name ONLY documents this role file subtracts | the two e2e bodies | 1 | yes, `313fa36c` |
+
+Mutant 1 reds arm two on its own message, *"the role file's subtraction
+was not applied"*, over the overlaid list. **MUTANT 2 SURVIVED AND WAS
+RE-CUT, and the survival is worth the sentence**: the executor role file
+subtracts the roadmap whatever the adapter says, so putting that path
+back cannot reach the applied set and the retired-four loop stays green.
+The two documents that loop really guards are the two no role file
+subtracts, which is what mutant 2b cuts — and it reds, naming the
+document that came back. Mutant 3 is the vacuity itself, made on
+purpose: with every document the adapters name also subtracted, both
+repaired e2e bodies red on their NEW controls and on nothing else —
+*"the adapter names nothing this role file leaves alone, so every
+presence below proves nothing"* and *"the adapter names only the
+subtracted documents, so nothing can be swapped"*. That is the
+demonstration that the repaired controls are live rather than decided by
+the same arrangement as their subject.
+
+**GATES, RE-DERIVED FOR THIS PASS, AND ONE OF THEM FLIPS.** BOOT GATE
+NOW FIRES and the derivation recorded above is corrected: this pass
+moves `app/src-tauri/src/dispatch/brief.rs`, which is under
+`app/src-tauri/`, so the gate's trigger is met for the first time in
+this lane. GRAPH REGEN still fires by trigger. DOCS GATE and METHOD EVAL
+GATE are unchanged — this pass moves no path under `method/` and no path
+under `docs/` but two cards. The results are recorded with the fix
+pass's battery below.
 
 ## Verdicts

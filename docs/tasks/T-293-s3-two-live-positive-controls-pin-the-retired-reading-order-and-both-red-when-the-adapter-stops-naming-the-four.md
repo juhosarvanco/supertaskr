@@ -71,4 +71,44 @@ removes it, with the adapter text supplied by the body.
 ## Implementation notes
 <!-- executor appends before finishing -->
 
+**DISCHARGED IN T-293'S OWN LANE, AFTER THE STAMP AND BY A GRANTED
+WIDENING.** This card was filed because both files were outside T-293's
+fence. The seat then granted the second ask, option 1 — the fence gained
+`app/src-tauri/src/dispatch/brief.rs` and `tools/e2e/tests/brief.spec.ts`
+— and the lane performed the repair on branch
+`task/T-293-the-standing-read`. **THE STATUS STAYS `suggested`**:
+`method/tasks/TASK-FORMAT.md` rules that a discharged finding keeps it
+and records the discharge in its own body, naming the commit that did
+it, and that disposing of the card is triage's move and not a lane's.
+This section is that record; the commit is named in the line below,
+which the same lane's stamp commit appends.
+
+Against the three acceptance criteria above:
+
+- **A control the retiring card cannot make vacuous again — MET.** The
+  rust body's arm one now reads the live adapter for `docs/INDEX.md`,
+  which is what the standing read IS after this card, and asserts the
+  four retired documents are absent from the APPLIED set — the card's
+  own property rather than a fact about a document it removed. The e2e
+  control is DERIVED and names no document: it asks that the adapter
+  name at least one document this role file leaves alone.
+- **The applied set still shown to change against adapter text the body
+  controls — MET.** The rust arm two overlays the adapter through the
+  module's own `OverlayFiles` source. The e2e pair cannot overlay an
+  adapter — the JS deriver reads the root adapters off the checkout and
+  takes no injection point, and that file is outside the widened fence —
+  so the same property is measured from the other side: the ROLE FILE is
+  rewritten in memory to subtract a document the adapter really names,
+  the document leaves the applied set, and it comes back when the clause
+  goes.
+- **Neither suite loses a body — MET.** Three bodies re-pointed, none
+  deleted, no test name moved; both e2e names are pinned verbatim in
+  `docs/CAPABILITIES.md` and stand unchanged.
+
+**WHAT IS LEFT FOR TRIAGE.** Only the disposition. One thing worth
+carrying into it: the JS mirror has no seam for adapter text, so its two
+bodies prove the subtraction from the role-file side only. Giving
+`deriveReadFirst` the injection point its rust twin already has is a
+separate card in a separate fence, and nothing in this one needs it.
+
 ## Verdicts
