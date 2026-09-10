@@ -1,8 +1,8 @@
-# Handoff: nputer architecture map
+# Handoff: Supertaskr architecture map
 
 ## Overview
 
-The **architecture map** is nputer's second hero surface after the story-map board. The board shows *what is being built*; the map shows *what the system is, how far along each part is, and where the code has drifted from the plan*.
+The **architecture map** is Supertaskr's second hero surface after the story-map board. The board shows *what is being built*; the map shows *what the system is, how far along each part is, and where the code has drifted from the plan*.
 
 Two layers are drawn together on one canvas:
 
@@ -20,9 +20,9 @@ This handoff covers T0 (component tier), T1 (one component expanded), the detail
 
 ## About the design files
 
-The files in this bundle are **design references authored in HTML** — prototypes showing intended look and behaviour, not production code to copy. The task is to **recreate these designs in nputer's real environment** (Tauri + web front end, per the component inventory) using its established patterns, its token file, and its existing card/board components. Where the map reuses a board or card element, reuse the real component rather than porting markup from these prototypes.
+The files in this bundle are **design references authored in HTML** — prototypes showing intended look and behaviour, not production code to copy. The task is to **recreate these designs in Supertaskr's real environment** (Tauri + web front end, per the component inventory) using its established patterns, its token file, and its existing card/board components. Where the map reuses a board or card element, reuse the real component rather than porting markup from these prototypes.
 
-`nputer app.dc.html` opens directly in a browser (it needs `support.js` beside it) and renders every screen; the tab bar across the top switches screens.
+`supertaskr app.dc.html` opens directly in a browser (it needs `support.js` beside it) and renders every screen; the tab bar across the top switches screens.
 
 ## Fidelity
 
@@ -32,7 +32,7 @@ Two things are deliberately *not* specified and are the implementer's call: the 
 
 ## Screens / views
 
-Open `nputer app.dc.html` and use the tab bar. Tabs: `board` · `board · dark` · `map` · `map · dark` · `map spec` · `map behavior` · `map · tasks` · `card detail` · `card states` · `interview` · `rooms` · `sessions` · `open a folder`.
+Open `supertaskr app.dc.html` and use the tab bar. Tabs: `board` · `board · dark` · `map` · `map · dark` · `map spec` · `map behavior` · `map · tasks` · `card detail` · `card states` · `interview` · `rooms` · `sessions` · `open a folder`.
 
 ---
 
@@ -186,7 +186,7 @@ The same pane, dependency-of-tasks instead of architecture: 18 board tasks in de
 | `Re-index` | recompute reality; columns may change, and only then do nodes move |
 | scroll / pinch | pan and scale the canvas — scale only, never re-layout |
 
-**Motion budget.** The existing card pulse (verifying, merging) is the only ambient motion: `nputerPulse 2.4s ease-in-out infinite`, opacity 1 → 0.45 → 1, on a 5px dot. Expand/collapse may use one short transition (≤160ms) or none. One delight moment, and only one: **the turn to teal** — when a component completes, its fill wipes in from the left edge over 400ms, once, on the transition only. `prefers-reduced-motion` kills the pulse and the wipe and swaps colours directly.
+**Motion budget.** The existing card pulse (verifying, merging) is the only ambient motion: `supertaskrPulse 2.4s ease-in-out infinite`, opacity 1 → 0.45 → 1, on a 5px dot. Expand/collapse may use one short transition (≤160ms) or none. One delight moment, and only one: **the turn to teal** — when a component completes, its fill wipes in from the left edge over 400ms, once, on the transition only. `prefers-reduced-motion` kills the pulse and the wipe and swaps colours directly.
 
 **States to build.** Loading (index running): existing parse-error-style chip in the header, map stays interactive on last valid data. Error (parse failure): board's `2 parse errors · last valid state` chip; the map ages rather than blanking. Empty: the three degraded states in `map spec`.
 
@@ -208,7 +208,7 @@ Data the pane reads: declared components (parsed markdown), the observed graph (
 
 ## Design tokens
 
-Full paste-ready values, light and dark, are in **section 06 of `nputer tokens.dc.html`**. New in this pass:
+Full paste-ready values, light and dark, are in **section 06 of `supertaskr tokens.dc.html`**. New in this pass:
 
 ```css
 :root {
@@ -282,14 +282,14 @@ None. No images, no icon font, no external SVG. Every glyph in the map is a CSS 
 
 | file | what it is |
 |---|---|
-| `nputer app.dc.html` | All screens. Tabs: `map`, `map · dark`, `map spec`, `map behavior`, `map · tasks`, plus the existing board/card/interview/rooms/sessions screens for context. Open in a browser with `support.js` beside it. |
-| `nputer tokens.dc.html` | The token sheet. Section 06 is the map; sections 01–05 are the existing language it builds on. |
+| `supertaskr app.dc.html` | All screens. Tabs: `map`, `map · dark`, `map spec`, `map behavior`, `map · tasks`, plus the existing board/card/interview/rooms/sessions screens for context. Open in a browser with `support.js` beside it. |
+| `supertaskr tokens.dc.html` | The token sheet. Section 06 is the map; sections 01–05 are the existing language it builds on. |
 | `support.js` | Runtime the two HTML files need in order to open. Not part of the design. |
 | `map-design-handoff.md` | The original written brief this design answers, including the acceptance criteria in §9. |
 
 ## Acceptance criteria (from the brief)
 
-- Rendering nputer's own repo is screenshot-ready in light and dark using only tokens.
+- Rendering Supertaskr's own repo is screenshot-ready in light and dark using only tokens.
 - Building/verifying amber and drift/warning amber are distinguishable at a glance in both schemes, including on the same node.
 - The three provenance marks stay distinct at map-node scale.
 - Every component and edge state has a designed treatment.

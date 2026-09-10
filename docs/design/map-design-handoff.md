@@ -1,4 +1,4 @@
-# nputer — architecture map: design handoff (input for Claude Design)
+# Supertaskr — architecture map: design handoff (input for Claude Design)
 
 Prepared 2026-08-15. Companion to the T-006 design handoff; everything there
 (§2 non-negotiables, §5 token schema, house voice) still applies. This
@@ -7,11 +7,11 @@ values + component specs + mocks; the coding session applies them.
 
 ## 1. What you are designing
 
-The **architecture map** is nputer's second hero surface after the board.
+The **architecture map** is Supertaskr's second hero surface after the board.
 The board shows *what is being built*; the map shows *what the system is,
 how far along each part is, and where the code has quietly drifted from the
 plan*. Think "Google Maps of the codebase" — a stable map you zoom into, with
-layers you toggle — but rendered in nputer's language: restraint, density,
+layers you toggle — but rendered in Supertaskr's language: restraint, density,
 calm.
 
 Two layers, drawn together, are the entire idea:
@@ -30,7 +30,7 @@ fills in teal as the board completes. Each component also carries the
 self-verified tasks must never look as trustworthy as one checked by
 independent eyes.
 
-**The screenshot that matters:** nputer's own repo at the component tier —
+**The screenshot that matters:** Supertaskr's own repo at the component tier —
 eight-ish nodes, a few teal, one amber pulsing, most gray, one drift edge
 dashed amber, the panel open on one component. It should read as *a blueprint
 coming to life*, and a mostly-gray map on day one should feel like promise,
@@ -190,7 +190,7 @@ New — name · purpose:
 ## 7. What to deliver back
 
 1. **Token values** for §6, light + dark, paste-ready CSS custom properties.
-2. **The hero mock** — T0 map of nputer's own repo (≈8 components: board
+2. **The hero mock** — T0 map of Supertaskr's own repo (≈8 components: board
    renderer, model/parser, file watcher, tauri shell, tokens/theme, detail
    panel, indexer, CLI — names indicative), 3 done (teal, one with an
    independent mark, one self-verified), 1 verifying (pulse), 1 building with
@@ -223,7 +223,7 @@ New — name · purpose:
 
 ## 9. Acceptance criteria this design feeds (draft, EARS)
 
-- WHEN the map renders nputer's own repo THE result SHALL be screenshot-ready
+- WHEN the map renders Supertaskr's own repo THE result SHALL be screenshot-ready
   in light and dark using only tokens.
 - THE building/verifying amber and the drift/warning amber SHALL be
   distinguishable at a glance in both schemes, including on the same node.

@@ -70,7 +70,7 @@ of the feature. **Recommend A**, and it is cheapest right now while
 **D3 — May the app write into `docs/`?** Thirteen commands, zero bytes
 ever written under `docs/`. ARCHITECTURE permits "single-field
 frontmatter edits or thread appends, nothing else"; ADR-017 confines app
-writes to `.nputer/`. Arm A (never) keeps the pure-lens rule intact and
+writes to `.supertaskr/`. Arm A (never) keeps the pure-lens rule intact and
 makes model/session selection non-durable across restart. Arm B (exactly
 `builder:` and `verifier:`) buys durability and costs an atomic-write
 path, a staleness rule, and a new failure class: writing a card an agent
@@ -184,7 +184,7 @@ detail invented by whoever builds first if left open.
   amber and "must be visually distinct from building/verifying amber".
   F-04 introduces the first live building/verifying states this app has
   ever rendered.
-- **`method/runtime/nputer.yaml` is packaged, reachable and consulted by
+- **`method/runtime/supertaskr.yaml` is packaged, reachable and consulted by
   nobody**, and names a `janitor` role that has no role file.
 - **`method/README.md` promises four CLI verbs this slice does not
   build** — `init`, `next`, `verify`, `merge`. Deferred on ADR-008
@@ -240,13 +240,13 @@ for the life of the feature.
 edits, written atomically, refused if the file changed since it was
 read, unknown keys preserved byte-for-byte. The deciding argument was
 cross-harness: the two models talk only through the repo, and
-`.nputer/` is gitignored so a selection stored there cannot reach an
+`.supertaskr/` is gitignored so a selection stored there cannot reach an
 agent on another machine. The card is the only channel that reaches
 both. **What this ruling does NOT extend to is `status:`** — D4's
 measurement stands.
 
 **D5 is deliberately held** pending a north-star-level question the
-human raised in the same session: whether nputer is the app you run
+human raised in the same session: whether Supertaskr is the app you run
 the process FROM (set builder/verifier there, talk to the orchestrator
 there) or a mirror that follows work you run from the agents' own
 apps. See the room when it opens; D5's answer falls out of that one.
@@ -285,7 +285,7 @@ plan assumed:
    the unstated assumption it is today.
 
 **D5 (`model@session`) gains an asymmetry it did not have.** Codex's
-`exec` accepts `--model`; nputer deliberately never passes one to
+`exec` accepts `--model`; Supertaskr deliberately never passes one to
 Claude, on stated ADR-003 grounds. So the rule cannot stay global: it
 becomes per-adapter, or ADR-003's reasoning is revisited. Rule it before
 T-086, not inside it.

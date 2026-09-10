@@ -1,4 +1,4 @@
-# nputer — design handoff (input for T-006, design language pass)
+# Supertaskr — design handoff (input for T-006, design language pass)
 
 Prepared 2026-08-14 by the architect session for an external design pass
 (Claude Design). Everything the UI needs is inventoried here; the design
@@ -6,13 +6,13 @@ comes back as **token values + component specs**, and T-006 applies it.
 
 ## 1. What you are designing
 
-nputer is a local-first desktop app (Tauri 2: real window, macOS/Linux/
+Supertaskr is a local-first desktop app (Tauri 2: real window, macOS/Linux/
 Windows) for running software projects built by AI agents. It renders a
 project's plain-markdown files as a living **story map board**: feature
 columns, task cards that change color as agent sessions build, verify,
 and merge them, and — later — the planning interview, debate rooms, and
 session registry. The product's identity: **beautiful app, boring
-files**. The app is a pure lens over markdown in a git repo; if nputer
+files**. The app is a pure lens over markdown in a git repo; if Supertaskr
 vanishes, the project lives on.
 
 Audience: technical builders who live in terminals and have an AI
@@ -22,12 +22,12 @@ data-dense but calm, credible to someone who judges tools by their
 sharpness. House voice: lowercase wordmark "nputer" (computer minus
 "co"; sibling of "Omputer"), dry wit welcome, never cute.
 
-**The one screenshot that matters:** the board rendering nputer's own
+**The one screenshot that matters:** the board rendering Supertaskr's own
 repo — feature columns F-01…F-05, seven task cards, teal filling in
 top-down. That image is the launch post (T-006 acceptance criterion:
 "screenshot-ready"). Design for that moment first.
 
-### 1.1 How nputer works — the 60-second domain primer
+### 1.1 How Supertaskr works — the 60-second domain primer
 
 Everything the app shows is a plain markdown file in the project's
 repo; the app is a read-mostly lens (it may later write one field or
@@ -90,7 +90,7 @@ append one turn, never more). The vocabulary used throughout:
 
 ### 3.1 Built today (design these fully)
 
-**App shell** — Tauri window titled `nputer` (800×600 default,
+**App shell** — Tauri window titled `supertaskr` (800×600 default,
 resizable; macOS traffic lights). Header bar: project folder path,
 counts line ("16 tasks · 5 features"), theme toggle button, and a
 **parse-error chip** ("N parse errors" + tooltip + "(showing last
@@ -351,7 +351,7 @@ treatment, ghost-card border style): name + purpose + both schemes.
 2. **Type decision** — families + weights + bundling/license note.
 3. **Status palette** — the six, diverged, with one line of intent per
    color.
-4. **Board mock** — the launch screenshot composition: nputer's own
+4. **Board mock** — the launch screenshot composition: Supertaskr's own
    repo (F-01…F-05 columns; F-02 holding T-001…T-007 with T-001–003
    teal/done, T-004 amber, rest gray; ghosts + parked present).
 5. **Card + badge spec** — card anatomy at rest/hover/focus; the
@@ -378,11 +378,11 @@ treatment, ghost-card border style): name + purpose + both schemes.
 
 ## 8. Acceptance criteria this design feeds (T-006, verbatim)
 
-- THE app SHALL apply a coherent nputer visual identity — typography
+- THE app SHALL apply a coherent Supertaskr visual identity — typography
   scale, color system (incl. the five status colors as a deliberate
   palette), spacing, dark/light — defined once in the design tokens
   file and used exclusively (no ad-hoc styles).
-- WHEN the board renders the nputer repo itself THE result SHALL be
+- WHEN the board renders the Supertaskr repo itself THE result SHALL be
   screenshot-ready: the launch-post image is this screen.
 - IF a shadcn default remains visibly unstyled THEN the pass is not
   done (acceptance is a deliberate look, not a component kit's look).

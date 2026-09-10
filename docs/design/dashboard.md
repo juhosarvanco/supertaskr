@@ -63,7 +63,7 @@ keeps beauty from becoming a second source of truth.
   doubles as a browsable decision log.
 
 ### 4. Sessions
-- Renders .nputer/sessions.json: live + past sessions, model, tasks
+- Renders .supertaskr/sessions.json: live + past sessions, model, tasks
   built, turn count, sediment warnings, kill switch.
 - Killing a session is safe by construction — the project resumes
   from docs/.

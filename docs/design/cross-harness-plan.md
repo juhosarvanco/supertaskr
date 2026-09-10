@@ -202,13 +202,13 @@ server, registered with `codex mcp add <NAME> (--url <URL> | --
 `mcpServers` field or a companion `.mcp.json`; Codex can also *be* an
 MCP server (`codex mcp-server`, stdio). **But a project-local
 `.mcp.json` is NOT read** (measured), so an MCP surface onto
-`npx nputer` is a user-level install step while a skill is a directory
+`npx supertaskr` is a user-level install step while a skill is a directory
 a clone already carries.
 
 **The card's fallback branch does not fire.** T-246 asked what to do
 "IF no reusable-prompt mechanism exists on this machine's Codex
 version". One exists, it is first-class, and it is shaped like
-Claude's — so nputer does not fall back to a pasted brief on the Codex
+Claude's — so Supertaskr does not fall back to a pasted brief on the Codex
 side, and D-X1's hand-driven path stays a *choice* rather than a
 necessity.
 
@@ -269,7 +269,7 @@ login), T-078's rejection, and T-073's verifier finding two passing
 reverts of the guard its own card had just built. All three came from
 attacking criteria, not from reading notes.
 
-## 7. Where nputer's design holds, and where it breaks
+## 7. Where Supertaskr's design holds, and where it breaks
 
 **Holds better than expected.** `AgentAdapter` is fully declarative —
 `key`, `binary`, `min_major`, `spawn_args`, `resume_args`, `parse` — and
@@ -349,7 +349,7 @@ In order, each costing approximately nothing:
 - **D-X2 — `--model`: SHAPED by the cockpit-or-mirror ruling
   (rooms/cockpit-or-mirror.md, 2026-08-20).** `model@session` is intent
   on the card (D3: the app writes `builder:`/`verifier:`), enforced
-  per-adapter where nputer spawns (Claude stays unpassed per ADR-003;
+  per-adapter where Supertaskr spawns (Claude stays unpassed per ADR-003;
   Codex `exec` accepts `-m`, measured), honoured by the human where
   they paste. No global rule; the adapter entry carries it.
 - **D-X3 — one sandbox policy per ROLE or per ADAPTER?** §5 says the
