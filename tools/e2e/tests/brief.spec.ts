@@ -5537,3 +5537,100 @@ test("THE PROSE TEST SEES THE BOARD'S OWN `UN-PARK WHEN:` SPELLING — nine live
     "the hyphenated spelling is stated where the card author reads it",
   ).toMatch(/un-park/i);
 });
+
+/**
+ * T-307's VERDICT CORRECTIONS (verifier, phase 2, bench worktree
+ * supertaskr-V-T-307).
+ *
+ * MF-11 holds the propose-before-record rule's WORDING half by reading
+ * `docs/rooms/**.md`. Both corrections below are ESCAPES of it, and
+ * neither is visible to the eval's own positive control, because that
+ * control plants the one shape the check already sees. Each body runs
+ * MF-11's OWN exported audit — the same function `check()` calls — over
+ * one synthetic entry dated at the eval's own floor, so what is pinned
+ * is the audit's answer and never a spelling. The identity list is
+ * passed in rather than derived, so no body here handles a real name and
+ * no body here needs a git history to run.
+ */
+const MF11_PROBE = [
+  'import { auditWithCoverage, FLOOR } from',
+  '  "./tools/method-evals/evals/mf-11-room-entries-paraphrase.mjs";',
+  'const entry = String(process.env.MF11_ENTRY).split("<FLOOR>").join(FLOOR);',
+  'const ids = JSON.parse(String(process.env.MF11_IDS));',
+  'const rel = "docs/rooms/the-verifier-probe.md";',
+  'const found = auditWithCoverage(new Map([[rel, entry]]), ids).findings;',
+  "process.stdout.write(JSON.stringify(found));",
+].join("\n");
+
+/** MF-11's findings for one synthetic room entry. `<FLOOR>` becomes its floor. */
+function mf11Findings(entry: string, identities: string[]): string[] {
+  const out = execFileSync("node", ["--input-type=module", "-e", MF11_PROBE], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    env: { ...process.env, MF11_ENTRY: entry, MF11_IDS: JSON.stringify(identities) },
+  });
+  return JSON.parse(out) as string[];
+}
+
+/** A token no method file uses and no person answers to. */
+const PROBE_IDENTITY = "zzowner";
+
+test("T-307 C1 — MF-11 refuses a quotation attributed to the owner HOWEVER LONG it is", () => {
+  // KILLED BY: a length ceiling on the quoted run. The rule's subject is
+  // a pasted chat message; a pasted chat message is the LONG shape, so a
+  // ceiling exempts the entry the rule exists for while catching the
+  // short quotations nobody was worried about. Measured on this
+  // repository's own corpus at b78f9f50: of 44 quotations of the refused
+  // shape across the live rooms and decision records, one already runs to
+  // 614 characters.
+  const message = `${"just build the second one, the first is a waste of a whole sitting and I do not want to spend another day on it. ".repeat(7).trim()}`;
+  expect(message.length, "the probe message is longer than any ceiling a matcher might carry").toBeGreaterThan(600);
+  const long = mf11Findings(`## The ruling (<FLOOR>)\n\n@human (<FLOOR>): "${message}"\n`, [PROBE_IDENTITY]);
+  expect(
+    long.filter((f) => f.includes("QUOTES")).length,
+    "a long quoted run walks past MF-11 — the pasted message the rule exists to refuse is the long one",
+  ).toBe(1);
+  // THE BOUNDARY, so a green here is not a probe that flags everything:
+  // the short quotation is caught too, and the paraphrase is clean.
+  const short = mf11Findings(`## The ruling (<FLOOR>)\n\n@human (<FLOOR>): "just build the second one instead".\n`, [
+    PROBE_IDENTITY,
+  ]);
+  expect(short.filter((f) => f.includes("QUOTES")).length, "and the short one is still caught").toBe(1);
+  expect(
+    mf11Findings(`## The ruling (<FLOOR>)\n\nThe owner ruled on <FLOOR> that the second option is built.\n`, [
+      PROBE_IDENTITY,
+    ]),
+    "and the paraphrased twin is still clean, so this probe is not flagging everything",
+  ).toEqual([]);
+});
+
+test("T-307 C2 — MF-11 refuses an entry that attributes a ruling to the owner by HANDLE", () => {
+  // KILLED BY: skipping a whitespace token because it carries an at-sign.
+  // That skip is for machine facts, and a bare handle is not one — it is
+  // the name. It takes an entry past BOTH halves at once: the name half
+  // skips the token, and the quote half never fires because the
+  // attribution set holds roles and never a name. One character in the
+  // attribution greens the whole eval.
+  const handled = mf11Findings(
+    `## The ruling (<FLOOR>)\n\n@${PROBE_IDENTITY} (<FLOOR>): "just build the second one, the first is a waste of a sitting".\n`,
+    [PROBE_IDENTITY],
+  );
+  expect(
+    handled.filter((f) => f.includes("NAMES")).length,
+    "an at-sign in front of the name takes the entry past BOTH halves of MF-11",
+  ).toBe(1);
+  // ARMING ABSENT, twice over: the same name with no at-sign was always
+  // caught, and an address that really is a machine fact is still skipped.
+  expect(
+    mf11Findings(`## The ruling (<FLOOR>)\n\nRecorded on <FLOOR> by ${PROBE_IDENTITY} after the call.\n`, [
+      PROBE_IDENTITY,
+    ]).filter((f) => f.includes("NAMES")).length,
+    "the bare name was never the escape",
+  ).toBe(1);
+  expect(
+    mf11Findings(`## The ruling (<FLOOR>)\n\nThe owner ruled on <FLOOR>; the run is logged at ${PROBE_IDENTITY}@example.com.\n`, [
+      PROBE_IDENTITY,
+    ]),
+    "and an address is still a machine fact rather than an attribution",
+  ).toEqual([]);
+});

@@ -119,7 +119,12 @@ const GLUE_MAX = 60;
 
 const ISO_DATE = /\b20\d{2}-\d{2}-\d{2}\b/g;
 const ATTRIBUTION = /@human|the owner|the human/gi;
-const QUOTED = /"([^"]{1,600})"|“([^”]{1,600})”/g;
+/**
+ * A quoted run, OF ANY LENGTH. The shape this rule refuses is a pasted
+ * message, and a pasted message is the long one rather than the short
+ * one: a ceiling here exempts exactly the entry the rule exists for.
+ */
+const QUOTED = /"([^"]+)"|“([^”]+)”/g;
 const SAYING =
   /\b(said|says|saying|ask|asks|asked|wrote|writes|ruled|ruling|rules|message|messages|word|words|question|questions|proposal|proposed|reply|replied|answer|answered|told|verbatim|put it|call|called|quote|quoted)\b/i;
 
@@ -228,12 +233,17 @@ function auditEntry(entry, identities) {
   /** @type {Set<string>} */
   const seen = new Set();
   for (const raw of prose.split(/\s+/)) {
-    if (raw.includes("/") || raw.includes("@") || raw.includes(".")) continue;
+    // A LEADING AT-SIGN IS AN ATTRIBUTION, NOT AN ADDRESS. The skip below
+    // is for machine facts — a path, an address, a hostname — and a bare
+    // handle is none of them: it is the name, spelled the way a chat
+    // spells it, and it walked past BOTH halves of this audit at once.
+    const token = raw.startsWith("@") ? raw.slice(1) : raw;
+    if (token.includes("/") || token.includes("@") || token.includes(".")) continue;
     for (const id of identities) {
-      if (seen.has(id) || !new RegExp(`\\b${id}\\b`, "i").test(raw)) continue;
+      if (seen.has(id) || !new RegExp(`\\b${id}\\b`, "i").test(token)) continue;
       seen.add(id);
       findings.push(
-        `${where} NAMES a person (${raw}) — in a room the owner appears as the owner.`,
+        `${where} NAMES a person (${token}) — in a room the owner appears as the owner.`,
       );
     }
   }
