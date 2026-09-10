@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **924 behaviours** — 922 extracted sentences + 2 named-not-extracted (listed at the end) — across 40 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **936 behaviours** — 934 extracted sentences + 2 named-not-extracted (listed at the end) — across 40 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -150,6 +150,18 @@ Census: **924 behaviours** — 922 extracted sentences + 2 named-not-extracted (
 - the tier line is CREATED where a card has none, and no other field may be created by a stamp
 - THE BENCH ARM TAKES THE GROUND, SEALS THREE INPUTS AND RENDERS PHASE 2, against a real dispatch
 - the arm renders phase 1 from the card AS THE COMMIT CARRIES IT, never off the working tree
+- THE SHIPPED TEMPLATE NAMES A MODEL FOR EVERY ROLE, and every one of them is Opus 5
+- THE BRIEF PRINTS THE MODEL IN ROW 1, read from the runtime template and named as such
+- A ROLE THE TEMPLATE NAMES NO MODEL FOR REFUSES THE DISPATCH, before a card is stamped or a worktree is cut
+- THE DISPATCH STAMPS AND PRINTS THE MODEL PER SEAT, and a dial that overrides one says so
+- A WAIT WITH NO CEILING IS REFUSED, and so is a wait on nothing, on two facts, or on a broadcast pid
+- THE CEILING IS REPORTED RATHER THAN HUNG ON, and the report names the wait, the elapsed and the asks
+- THE WAIT ENDS ON THE FACT, and it asks BEFORE it sleeps so a fact already true costs no interval
+- THE TRIAGE STEP STATES THE RIGHT-SIZING RULE, and it is stated THERE and nowhere else in the role file
+- THE DISPATCH STEP STATES WHERE THE MODEL COMES FROM, and the waiting step states its ceiling
+- EVERY ROLE THIS METHOD SHIPS RESOLVES A MODEL, and the checklist is the TREE'S rather than the arm's own map
+- THE TRIAGE RULE CARRIES BOTH ITS HALVES — the test cycle AND the fresh reviewer's gate, and the split is an instruction
+- A TEMPLATE VALUE THAT IS ONLY A COMMENT IS AN ABSENT DEFAULT, and so is an empty quoted one
 
 ## card-figures
 

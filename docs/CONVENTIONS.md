@@ -641,11 +641,13 @@ and T-236 (2026-09-02, whose pre-compaction text is
 ## Gotchas
 - method/ is the generic, product-agnostic convention — nothing
   supertaskr-specific goes in it; product docs live in docs/. Changes to
-  method/ formats are version-bumped (currently v0.1.21) and noted here.
+  method/ formats are version-bumped (currently v0.1.22) and noted here.
   **A VERSION'S NOTE HERE IS ITS DATE, ITS CARD AND ITS THEME; WHAT
   MOVED IS THE RELEASE'S OWN RECORD** (ADR-019's law applied to this
   changelog at T-162): the per-clause itemisation is RECORD-shaped, and
   the AUTHORITY for what a version says is `method/` itself at that tag.
+  v0.1.22 (T-298, 2026-09-11) — the RIGHT-SIZING release: the triage rule stated once (orchestrator 2), the model per
+  role read from the runtime template and printed in the brief (5b), every wait bounded and performed by the arm (5f).
   v0.1.21 (T-296, 2026-09-10) — the THREE TIERS release: bounded, standard and guarded chosen by the arm from
   the card against the guard-class list; phase 1 and phase 2 rendered by the arm; the standard verifier's mode stated once.
   v0.1.20 (T-295, 2026-09-10) — the ARM MERGES release: `brief.mjs --merge <id>` performs the
@@ -811,6 +813,21 @@ and T-236 (2026-09-02, whose pre-compaction text is
   would stop a finished lane at its last step over a fact for the NEXT
   triage. The other three still refuse, and a card of any other size is
   still not this keeper's to judge.
+- BOUNDED WAITS, IN THIS PROJECT'S OWN SPELLING (T-298, ADR-024's room
+  decision G): `method/roles/orchestrator.md` 5f states the rule — every
+  wait is on a FACT with a CEILING and a hand-typed sleep is not a wait —
+  and this bullet carries the command. From the repository root:
+
+      node tools/e2e/scripts/brief.mjs --await <marker path> --ceiling <seconds>
+      node tools/e2e/scripts/brief.mjs --await-pid <pid> --ceiling <seconds>
+
+  Exits, read unpiped in the T-298 lane: 0 when the fact happened; 1 when
+  the ceiling was reached and REPORTED (what it waited for, how long, how
+  many asks, and that nothing was signalled or taken away); 2 for every
+  usage refusal — no ceiling, no fact, two facts, a ceiling of zero or one
+  that is not a number, the process group or the broadcast pid, and any
+  attempt to share the invocation with another arm. The arm's own child
+  processes carry no ceiling yet (T-298-s2).
 - GUARD-CLASS PATHS, IN THIS PROJECT'S OWN SPELLING (T-296, ADR-024
   decision 1): `method/tasks/TASK-FORMAT.md` names the guard-class
   CLASSES and is product-agnostic, so the mapping onto this repository

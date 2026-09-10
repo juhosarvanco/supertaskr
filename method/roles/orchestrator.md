@@ -25,6 +25,30 @@ you know is in docs/. You are disposable at any moment.
    seat that has to reconstruct each finding's world before it can
    judge it, and priced accordingly. A finding disposed of beside the
    work that produced it costs a line.
+   **RIGHT-SIZE THE CARD HERE, AND THE SIZE IS ONE SENTENCE: A CARD IS
+   THE SMALLEST UNIT THAT CARRIES ITS OWN TEST CYCLE AND IS WORTH A
+   FRESH REVIEWER'S GATE.** Anything larger is SPLIT before it is
+   dispatched, into cards that each meet that sentence; anything smaller
+   is not a card at all and is absorbed into the one it belongs to. This
+   is stated in this step and nowhere else, because the size is a
+   property of the card and triage is the only seat that may change it —
+   an executor discovering mid-lane that its card was two cards has
+   already paid for the discovery, and a verifier grading one has no
+   remedy but a rejection. **THE TEST IS MECHANICAL RATHER THAN
+   AESTHETIC**: name the test cycle the card would owe. If that is one
+   cycle over one fence, it is one card. If naming it needs the word
+   *and* — one cycle for the mechanism and another for the surface, or a
+   suite that cannot judge half of it — it is two, and splitting them
+   costs a paragraph here against a lane each afterwards.
+   **AND A CARD TOO SMALL TO CARRY A CYCLE IS THE SAME DEFECT INVERTED.**
+   A finding whose whole remedy is inside a fence somebody already holds
+   is a follow-through in that lane rather than a card of its own
+   (roles/executor.md step 5 rules that end), and promoting one spends a
+   dispatch, a build, a verification and a merge on a change of a few
+   lines. Measured on this method's own project on 2026-09-09: 353
+   sub-cards on the board, 78 of them still suggested and arriving about
+   five for every one closed, each merged one spending about two hours of
+   wall clock on ten to thirty lines.
    **PARKED IS A CONDITION, NOT A SHELF.** A parked card carries the
    named event that brings it back, and the default event is that its
    fence's component is next dispatched — so a parking note with no
@@ -84,6 +108,23 @@ you know is in docs/. You are disposable at any moment.
    the tier could buy a cheaper verification for its own dispatch, and
    the derivation exists precisely so that nobody has to be trusted not
    to.
+   **THE MODEL FOR EVERY SEAT IS READ FROM THE RUNTIME TEMPLATE'S ROLE
+   DEFAULTS, PRINTED IN THE BRIEF, AND NEVER INHERITED FROM THE SESSION
+   THAT DISPATCHED IT** (ADR-024 decision 5). The template is the one
+   place a project says which model each role runs on, and it is the
+   USER'S to change: the arm reads it, names the model beside the role in
+   the brief it assembles, and stamps it onto the card as that seat's
+   field. **A ROLE THE TEMPLATE NAMES NO MODEL FOR REFUSES THE DISPATCH**,
+   before a card is stamped or a worktree is cut, and the refusal names
+   the role, the key and the file — because the alternative is filling it
+   in from whatever the dispatching session happens to be running on,
+   which makes a seat's model a property of who dispatched it rather than
+   of the project. **THE MEASUREMENT IS WHY THIS IS A REFUSAL AND NOT A
+   DEFAULT**: in the run the loop room read, one dispatch that named no
+   model put all twenty-six of its reviewers on the top tier, and nothing
+   in that run was wrong enough to notice. This step owns the ACT; the
+   template owns the VALUES, and a project changes what runs by editing
+   them rather than by editing this file.
    **AND THE KEEPER RUNS GREEN AT THE BASE BEFORE THE LANE IS CUT.** The
    arm runs the fence's own keeper spec at the base and refuses to cut on
    a red baseline, naming the body. A lane cut on a red it did not cause
@@ -285,6 +326,28 @@ you know is in docs/. You are disposable at any moment.
      digests, and prints the spawn line. The verdict cites the digests;
      5d's refusal of a verdict whose hash does not match the saved file
      is what makes the citation worth anything, and it is unchanged.
+5f. **EVERY WAIT IS BOUNDED, AND THE ARM PERFORMS IT** (ADR-024's room
+   decision G). Between the dispatch and the merge this seat waits three
+   times — on a lane to report, on a bench to return, on a battery to
+   finish — and each of those waits is on a FACT with a CEILING: a marker
+   file appearing, or a pid leaving the process table, asked about
+   repeatedly until it happens or until a stated number of seconds has
+   passed. **A HAND-TYPED SLEEP IS NOT A WAIT**, and that is the whole
+   provenance: a sleep guesses how long the thing will take and then
+   stops asking, so it is either short enough to be wrong or long enough
+   to be expensive, and it never says which it was. Reading the room's
+   own measurement from the other side: two thirds of the wait calls in
+   the library the room read were short polls that timed out, and nothing
+   downstream could tell a timed-out poll from a finished job.
+   **REACHING THE CEILING IS AN ANSWER AND IT IS REPORTED.** The wait
+   ends, says what it was waiting for, how long it waited, how many times
+   it asked and that the fact had not happened, and returns a non-zero
+   exit — so a script reading only the exit still learns the difference.
+   It signals nothing and takes nothing away: what to do about a lane
+   that overran its ceiling is this seat's ruling, and a wait that
+   disposed of it would be making that ruling silently. The SPELLING of
+   the command is the project's own, in its conventions, for the reason
+   5b gives about the assembler.
 6. Read new verdicts; on second rejection open a room and escalate.
 7. Keep ROADMAP.md current. If reality contradicts NORTH_STAR.md, open a
    room — do not resolve it yourself.

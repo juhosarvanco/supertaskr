@@ -1,12 +1,20 @@
 # .supertaskr/supertaskr.yaml — role defaults and thresholds
 # Task-file fields override these per task.
 
+# THE MODEL PER ROLE IS READ FROM HERE, AND FROM NOWHERE ELSE (ADR-024
+# decision 5). The arm resolves each dispatched seat's model out of this
+# block, prints it in the brief and REFUSES the dispatch when a role it
+# is filling has no default — it never falls back to whatever model the
+# dispatching session happens to be running on, because a dispatch with
+# no named model put all twenty-six reviewers of one measured run on the
+# top tier. Opus 5 is the default for every role and these values are the
+# user's to change: change them here and every dispatch after it changes.
 roles:
-  planner: claude
-  builder: codex
-  verifier: claude          # resolver default: independent of builder
-  integrator: claude
-  janitor: ollama:qwen3-coder   # doc upkeep, commit messages
+  planner: claude-opus-5@subagent
+  builder: claude-opus-5@subagent
+  verifier: claude-opus-5@subagent   # resolver default: independent of builder — a fresh SESSION, never a cheaper model
+  integrator: claude-opus-5@subagent
+  janitor: claude-opus-5@subagent    # doc upkeep, commit messages
 
 session_policy:
   default: fresh            # fresh unless a task names model@Sx
