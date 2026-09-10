@@ -73,5 +73,20 @@ session may post status worth surfacing.
 - Turns are append-only and are the audit trail for ADRs. The
   Resolution section is the single exception: inserted once, at close,
   above the turns.
+- **AN ENTRY PARAPHRASES THE RULING AND DATES IT.** Where a turn or a
+  Resolution records what the owner settled, it says what was settled
+  and when, in the room's own words — never a quotation of the owner's
+  message, and never the owner's name: the owner appears as the owner.
+  A room is read by people who were not in the conversation and, once a
+  project's repository is open, by people who are not in the project. A
+  pasted message reaches them stripped of everything that made it make
+  sense, and a name reaches them as a person rather than as the role
+  that ruled. The seat shows the entry to the owner before appending it
+  — roles/orchestrator.md owns that act; this bullet owns the wording.
+- **AND THAT RULE LOOKS FORWARD ONLY.** Entries written before a
+  project adopted it are RECORDS: they are not restyled, re-quoted,
+  redacted or deleted to comply. This is the append-only rule above
+  meeting the case it did not anticipate — an archive somebody tidied
+  is an archive nobody can cite.
 - Two unresolved back-and-forths on the same point → escalate to @human.
 - Nothing in a room changes code. Rooms change docs and task files only.

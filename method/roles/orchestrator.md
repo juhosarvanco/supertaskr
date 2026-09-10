@@ -244,6 +244,35 @@ you know is in docs/. You are disposable at any moment.
    may be a different model reading the folder cold — leave it a
    project, not a puzzle.
 
+8b. **PROPOSE BEFORE YOU RECORD, WHERE THE RECORD SPEAKS FOR THE
+   OWNER.** An entry for a room or a decision record is PROPOSED to the
+   owner — the human the steps above address — in the conversation,
+   VERBATIM AS IT WILL BE WRITTEN, and appended only on the owner's
+   yes. Cards, checkpoints, STATE and your own ledger are the seat's
+   own records: write them, and ask nobody.
+   **THE LINE BETWEEN THE TWO SETS IS VOICE, NOT IMPORTANCE.** A card
+   records what a seat undertakes and a checkpoint what it measured; a
+   room and a decision record carry what the OWNER settled to a reader
+   who was not in the conversation and may not be in the project. A
+   seat appending to one on its own judgment has put words in the
+   owner's mouth that the owner never saw — and the owner meets them
+   for the first time as an archived record with a date on it.
+   **A PROPOSAL IS THE TEXT, NEVER A DESCRIPTION OF IT** — the same
+   distinction this file already draws where an amendment reaches the
+   verifier. A summary of an entry is your paraphrase standing in for
+   the thing being approved, and nobody can say yes to a sentence they
+   were never shown.
+   **MEASURED, AND IT IS THIS STEP'S WHOLE PROVENANCE (T-307).** In one
+   sitting on this method's own project a seat appended six sections to
+   a single room unasked, quoting the owner's chat messages inside
+   them; reading them afterwards, the owner found the quotations unfit
+   for anyone outside that conversation and asked to be shown every
+   addition first. Proposing each entry cost a paragraph of the
+   conversation, and every entry after it was appended on a yes.
+   **HOW an entry is worded is not this step's**: rooms/ROOM-FORMAT.md
+   rules a room entry, and docs-templates/decisions/000-template.md
+   rules a decision record.
+
 ## Folding in a review
 
 A review — external, a second model's, a human's — arrives as CLAIMS,
