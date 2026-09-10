@@ -932,6 +932,42 @@ test("a same-file end-of-file append is resolved by keeping both sides, and any 
   }
 });
 
+test("the bound, the floor and the readings path this file computes are the ones docs/CONVENTIONS.md publishes", () => {
+  // T-057's discipline, applied to the three figures T-295 INVENTED: a
+  // rule with two statements is two chances to disagree, and every one
+  // of these is stated twice by construction — once as a constant a
+  // program enforces and once as a sentence a seat reads. The XS bound
+  // is a number the tier work (T-296) will read out of the document, the
+  // readings path is what T-297's bands will open, and the
+  // pinned-sentence floor is what a seat has to know to predict a
+  // refusal. This body is the only thing that compares them.
+  //
+  // IT IS ALSO WHAT MAKES THIS FILE A DERIVED READER OF docs/ TO THE
+  // DOCS GATE, which is not a side effect but the point: a spec that
+  // asserts a document's sentence is a spec the docs gate must run when
+  // that document moves.
+  const conventions = readFileSync(path.join(repoRoot, "docs", "CONVENTIONS.md"), "utf8");
+  expect(conventions, "the verb is spelled in the document").toContain(
+    "node tools/e2e/scripts/brief.mjs --merge <T-NNN>",
+  );
+  expect(conventions, "the XS bound is STATED, in words, as this file computes it").toContain(
+    "exceeds FORTY changed lines",
+  );
+  expect(XS_CHANGED_LINE_BOUND, "and forty is what the program enforces").toBe(40);
+  expect(conventions, "the readings file is named where T-297 will look for it").toContain(
+    READINGS_PATH,
+  );
+  expect(conventions, "and the pinned-sentence floor is stated too").toContain(
+    "thirty\n  characters is the floor",
+  );
+  expect(PINNED_SENTENCE_FLOOR, "as the program spells it").toBe(30);
+  // AND THE INTEGRATOR'S ROLE FILE STATES THE WIDENING AS A STEP OF THE
+  // MERGE, beside the re-drill (T-281-s10's third criterion).
+  const integrator = readFileSync(path.join(repoRoot, "method", "roles", "integrator.md"), "utf8");
+  expect(integrator).toContain("THE WIDENING IS A STEP OF THIS MERGE, BESIDE THE DRILL");
+  expect(integrator, "and it says WHY it comes before the merge").toContain("FIRST PARENT");
+});
+
 test("the verb never pushes, and the keeper steps it plans are the four the card names", () => {
   // A NEGATIVE ASSERTION WITH ITS POSITIVE CONTROL (docs/CONVENTIONS.md):
   // the same read that finds no push finds the merge and the branch move,
