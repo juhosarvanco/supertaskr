@@ -5963,6 +5963,85 @@ test("THE KEEPER RUN IS READ OFF ITS OUTPUT, so a derivation that graded nothing
   expect(green.graded && green.green, "and a graded zero is the baseline holding").toBe(true);
 });
 
+test("A FENCE NAMING A DIRECTORY NAMES THE GUARDS INSIDE IT, and a leading ./ is not a different path", () => {
+  // KILLED BY: a containment that only asks whether the MAP's token covers
+  // the fenced path and never whether the fenced path CONTAINS the token.
+  // `tools/e2e/scripts/` is a tracked directory holding the gate runners
+  // and `lib/` holds the parser, so a card fencing either is a card
+  // editing them — and asking one direction answered `standard` for a
+  // fence over the guards themselves, which is the cheap bench bought on
+  // the one class of file this tier exists for.
+  const map = guardClassMap(conventionsText(repoRoot), guardClassIds(readDoc("method/tasks/TASK-FORMAT.md")));
+  const keeper = { pinned: true, answered: true, why: "graded and green" };
+  const tierOf = (fencePaths: string[]): string =>
+    classifyTier({ size: "M", fencePaths, unresolved: [], untracked: [], guardMap: map, keeper }).tier;
+
+  // THE ANCESTOR DIRECTION, over directories this tree really carries and
+  // the mapped tokens really inside them — DERIVED from the map, never
+  // typed here, so a map that moves moves this body with it.
+  const mapped = [...map.values()].flat();
+  for (const dir of ["tools/e2e/scripts/", "lib/"]) {
+    const inside = mapped.filter((t) => t.startsWith(dir));
+    expect(inside.length, `${dir} holds no mapped guard, so this arm would prove nothing`).toBeGreaterThan(0);
+    expect(tierOf([dir]), `${dir} holds ${inside.join(", ")}`).toBe("guarded");
+  }
+
+  // THE SAME FILE, SPELLED THE WAY A RELATIVE PATH IS USUALLY SPELLED.
+  expect(tierOf(["./method/roles/verifier.md"]), "a leading ./ is not a different file").toBe("guarded");
+
+  // THE CONTROLS, WHERE THE ARMING IS ABSENT: a directory holding no
+  // mapped guard stays standard, and a name that merely EXTENDS a class's
+  // characters is still not inside it. Without these, a containment that
+  // fired on everything would pass every arm above.
+  expect(mapped.some((t) => t.startsWith("docs/")), "docs/ must hold no mapped token for this control").toBe(false);
+  expect(tierOf(["docs/"]), "a directory with no guard under it").toBe("standard");
+  expect(guardTokenCovers("method/", "methodical/x.md"), "a prefix without a separator boundary is not a hit").toBe(false);
+  expect(
+    guardTokenCovers("tools/e2e/scripts/gate-*", "tools/e2e/scripts/lane-lock.mjs"),
+    "and the prefix form keeps its own boundary",
+  ).toBe(false);
+});
+
+test("A KEEPER RUN THAT PUBLISHED `verdict=REFUSED` GRADED NOTHING, and a dispatch does not call that a red baseline", () => {
+  // KILLED BY: deciding green from the process exit alone after grepping
+  // for the very line that carries the verdict word. `gate-run.mjs`
+  // publishes GREEN, RED and REFUSED on that line and its own header says
+  // REFUSED is never a green run and never a red one — a scoped run that
+  // collected zero bodies exits non-zero and says REFUSED, and reading
+  // that as RED refuses a dispatch whose baseline nobody ever measured.
+  // That is the mirror of the over-refusal this function's own comment
+  // says it exists to prevent.
+  const token = blessedRunner(conventionsText(repoRoot)).verdictToken;
+  const refused = keeperVerdict({
+    status: 1,
+    stdout: `${token} suite=e2e exit=1 bodies=0 targets=1 verdict=REFUSED scope=tools/e2e/tests/x.spec.ts reason=zero-bodies`,
+    stderr: "",
+    token,
+  });
+  expect(refused.graded, "the runner REFUSED to grade, so nothing was graded").toBe(false);
+  expect(refused.green, "and a refusal is not a pass either").toBe(false);
+  expect(refused.detail, "and the detail carries what the runner actually said").toContain("REFUSED");
+
+  // THE TWO CONTROLS, WHERE THE ARMING IS ABSENT: the same reader over a
+  // line the runner DID grade still answers graded, in both directions.
+  // Without them an implementation answering `graded: false` for
+  // everything would pass the arm above.
+  const red = keeperVerdict({
+    status: 1,
+    stdout: `${token} suite=e2e exit=1 bodies=41 targets=1 verdict=RED reason=ok`,
+    stderr: "",
+    token,
+  });
+  expect(red.graded && !red.green, "a GRADED non-zero is still a red baseline").toBe(true);
+  const green = keeperVerdict({
+    status: 0,
+    stdout: `${token} suite=e2e exit=0 bodies=41 targets=1 verdict=GREEN reason=ok`,
+    stderr: "",
+    token,
+  });
+  expect(green.graded && green.green, "and a GRADED zero is still the baseline holding").toBe(true);
+});
+
 test("THE PHASE 1 BRIEF IS RENDERED FROM THE CARD AT THE BASE AND CARRIES NOTHING FROM THE LANE", () => {
   // KILLED BY: a renderer handed the tip's card, the notes, the diff or
   // any figure measured after the cut. The guarantee is the PARAMETER

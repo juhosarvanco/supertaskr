@@ -4644,6 +4644,20 @@ export function keeperVerdict(r) {
         `graded here${said === "" ? "" : ` — it said: ${said}`}`,
     };
   }
+  // THE VERDICT WORD IS ON THE LINE THIS READER WENT LOOKING FOR, and a
+  // reader that greps for that line and then decides from the process
+  // exit has not read it. `gate-run.mjs`'s own header says REFUSED "is
+  // never a green run and never a red one" — it means nothing was graded,
+  // which is the third answer this function exists to keep apart from the
+  // second, and reading it as red refuses a dispatch over a baseline
+  // nobody measured.
+  if (lines.some((l) => /\bverdict=REFUSED\b/.test(l))) {
+    return {
+      graded: false,
+      green: false,
+      detail: `exit ${String(r.status)} — ${lines.join(" / ")}`,
+    };
+  }
   return {
     graded: true,
     green: r.status === 0,
@@ -4772,13 +4786,23 @@ export function guardClassMap(conventionsMd, ids) {
  * @returns {boolean}
  */
 export function guardTokenCovers(token, rel) {
+  // BOTH DIRECTIONS, BECAUSE A FENCE NAMES A REGION AND SO DOES A CLASS.
+  // A fenced path may sit UNDER the class's token, and it may equally
+  // CONTAIN it: `tools/e2e/scripts/` is a tracked directory holding the
+  // gate runners and `lib/` holds the parser, so a card fencing either is
+  // a card editing them. Asking only the first question answered
+  // `standard` for a fence over five mapped guards. A leading `./` is the
+  // same path written the way a relative path usually is written, and is
+  // stripped before either question is asked.
+  const r = rel.replace(/^\.\//, "").replace(/\/+$/, "");
+  if (r === "") return false;
   if (token.endsWith("*")) {
     const prefix = token.slice(0, -1);
-    return prefix !== "" && rel.startsWith(prefix);
+    return prefix !== "" && (r.startsWith(prefix) || prefix.startsWith(`${r}/`));
   }
   const t = token.replace(/\/+$/, "");
   if (t === "") return false;
-  return rel === t || rel.startsWith(`${t}/`);
+  return r === t || r.startsWith(`${t}/`) || t.startsWith(`${r}/`);
 }
 
 /**
