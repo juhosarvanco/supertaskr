@@ -28,6 +28,8 @@ Three things, in the order they earn each other:
    runs the gates, stages the merge and re-drills the verdict, and undoes
    a landing safely. Every verb fronts a script this repo already runs
    on itself, spawns nothing, and can never make a red gate look green.
+   Today the name is reserved on npm (0.0.1) and not yet the CLI; T-244
+   makes it one.
    The thinking — the interview, the building, the doubting — happens in
    your own agent app, with Supertaskr as a skill inside it.
 3. **An app.** A local desktop mirror of the folder: the story map, the

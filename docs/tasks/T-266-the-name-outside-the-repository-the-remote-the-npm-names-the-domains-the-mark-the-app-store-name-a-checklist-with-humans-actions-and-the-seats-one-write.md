@@ -37,3 +37,9 @@ the repository rename: the remote URL in CI, CONVENTIONS and the README.
   a conflict THEN the room reopens before any public launch, not
   before the rename.
 - Nothing under app/, lib/, tools/ or method/ moves in this card.
+
+## Done, appended as it happens
+
+- 2026-09-10 — the repository renamed to juhosarvanco/supertaskr and the directories moved (@human); the seat re-pointed the remote and the old spelling's living occurrences landed with T-264-s3 (criterion 1 met there; the push guard's CI read answers for the renamed repository, measured by that lane's verifier).
+- 2026-09-10 — the npm placeholder `supertaskr@0.0.1` published by @human ("it is out"); `npm view supertaskr` answers with the reserved description; the README's CLI paragraph says the name is reserved and not yet the CLI (criterion 2 met).
+- Open: the domains, the mark search. The App Store name: the seat recommends striking it until a store release is a decision — a Tauri app ships as a notarised download from GitHub Releases, which needs no store name.
