@@ -555,3 +555,26 @@ integrator.
 
 Owed at the merge and named on the card: the census regeneration and the
 graph regeneration. Both are the integrator's.
+
+#### Step 7 — the gates my own commits could move, at the tip I made
+
+Appending a verdict and filing cards is a write, and prose is a code
+input here. At `66a03aeb54438666da7b6a2e3a2b9d6e2a591eb9`:
+
+    parser      exit 0   389 bodies  GREEN
+    app         exit 0  1171 bodies  GREEN
+    docs gate   over the five paths I wrote: 0 frontmatter issue(s),
+                budgets hold (4 gated), injection scan 0 hits in 5 paths
+    lint:docs   exit 0
+    docs-input-gate.spec.ts, carrying the correction body: 61 passed, exit 0
+
+**AND IT CAUGHT ME.** The card preflight refused a sentence in the
+verdict above on the first run: a bare ordinal reads as a claim about
+this repository's whole history with no stamp behind it. Three sentences
+were rewritten to name the measurement instead, and the refusal is gone.
+The one finding left is the bench's own `[guard-surface-behind]` — a
+detached verification checkout sitting at the lane's tip is behind main
+on the hooks directory by construction, and syncing it would destroy the
+tree every figure above was measured at. The four suggested cards refuse
+at exit 3 for the reason every suggested card does — the board's schedule
+draws no dispatch candidate for them — which the lane's own three do too.
