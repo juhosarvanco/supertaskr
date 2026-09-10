@@ -761,7 +761,7 @@ export const GH_BIN = "gh";
  * the bound below is a NUMBER WITH AN ARGUMENT rather than a number.
  *
  * MEASURED 2026-09-02 ON Mac.lan, `gh` 2.89.0, from this repository's own
- * checkout against its own remote (`github.com/juhosarvanco/nputer`),
+ * checkout against its own remote (`github.com/juhosarvanco/supertaskr`),
  * seven consecutive samples each, wall time of the whole process:
  *
  *   `gh run list --branch main --limit 10 --json …`  1026–1256 ms, median 1085
