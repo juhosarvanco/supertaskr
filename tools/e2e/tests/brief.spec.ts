@@ -3671,6 +3671,8 @@ interface RitualStub {
   calls: StubCall[];
   reads: string[];
   writes: string[];
+  /** What was written, by file — the phase 1 brief's own text lives here. */
+  written: Map<string, string>;
 }
 
 /**
@@ -3684,6 +3686,7 @@ function ritualStub(plan: ReturnType<typeof dispatchLanePlan>, failing: string):
   const calls: StubCall[] = [];
   const reads: string[] = [];
   const writes: string[] = [];
+  const written = new Map<string, string>();
   // THE KEEPER THIS STUB REPORTS IS GREEN AND GRADED, so the tier step
   // has a real answer to classify with — which is also what makes the
   // expected tier below computable on this side without re-running the
@@ -3771,14 +3774,15 @@ function ritualStub(plan: ReturnType<typeof dispatchLanePlan>, failing: string):
       if (file === plan.keeperArgv[1]) return "// the runner";
       throw new Error(`the stub was asked for ${file}, which no step of this ritual reads`);
     },
-    write: (file: string, _text: string) => {
+    write: (file: string, text: string) => {
       writes.push(file);
+      written.set(file, text);
       if (failing === "phase1" && file === plan.phase1File) {
         throw new Error(`EACCES: permission denied, open '${file}'`);
       }
     },
   };
-  return { io, calls, reads, writes };
+  return { io, calls, reads, writes, written };
 }
 
 /** Was this step ATTEMPTED at all? Derived from the plan, never typed. */
@@ -6175,4 +6179,29 @@ test("THE BENCH ARM TAKES THE GROUND, SEALS THREE INPUTS AND RENDERS PHASE 2, ag
   } finally {
     removeGitFixture(fx.dir, "ritualFixture(bench)");
   }
+});
+
+test("the arm renders phase 1 from the card AS THE COMMIT CARRIES IT, never off the working tree", () => {
+  // THE CALLER'S HALF OF THE BLINDNESS, and it needs its own body: the
+  // renderer is blind because of WHAT IT IS PASSED, so a caller that
+  // passed the working tree's copy would spend the guarantee while every
+  // pure-function body above stayed green. The stub answers `git show`
+  // with the STAMPED card and `read` with the unstamped one, so the two
+  // sources are distinguishable by one line — which is exactly the
+  // discrimination this body needs and the arm's own two reads make.
+  //
+  // KILLED BY: `cardAtBase = io.read(plan.cardFile)` in the phase 1 step,
+  // and by any read of the card taken after the lane branch exists.
+  const plan = stubPlan();
+  const stub = ritualStub(plan, "none");
+  const result = runDispatchLane(plan, stub.io);
+  expect(result.stopped, "the ritual stopped, so there is no phase 1 to read").toBeUndefined();
+  const phase1 = stub.written.get(plan.phase1File) ?? "";
+  expect(phase1.length, "no phase 1 brief was written at all").toBeGreaterThan(0);
+  expect(phase1, "the card it carries is the one the STAMP COMMIT holds").toContain("status: building");
+  // THE CONTROL: the working-tree copy the stub hands `read` does NOT
+  // carry that line, so the assertion above discriminates between the two
+  // sources rather than being true of both.
+  expect(FIXTURE_CARD, "the control: the working-tree card is unstamped").not.toContain("status: building");
+  expect(phase1, "and it names the base it was read at").toContain(STUB_BASE);
 });

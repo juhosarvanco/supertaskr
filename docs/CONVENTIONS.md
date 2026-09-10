@@ -800,50 +800,43 @@ and T-236 (2026-09-02, whose pre-compaction text is
   exceeds FORTY changed lines (the bound is stated here so the tier work
   has something to read, and it is a number to be moved by measurement);
   and the card's own `--preflight`.
-  **AND SINCE T-296 THE XS-BOUND KEEPER BUMPS RATHER THAN REFUSES.** It
-  is the one keeper of the four whose subject is a MIS-SIZING and not a
-  defect: the card was classified `bounded` before the work existed, the
-  work turned out bigger, and nothing about the merged tree is wrong. So
-  the step passes, the printed line says the card is bumped to
-  `standard`, and the reading appended to the bands carries `standard`
-  as its tier rather than the tier the dispatch stamped — a merge that
-  refused here would stop a finished lane at its last step to report a
-  fact for the NEXT triage. The other three keepers still refuse, and a
-  card of any other size is still not this keeper's to judge.
+  **AND SINCE T-296 THE XS-BOUND KEEPER BUMPS RATHER THAN REFUSES.** Its
+  subject is a MIS-SIZING and not a defect — the card was classified
+  `bounded` before the work existed and the work turned out bigger, and
+  nothing about the merged tree is wrong — so the step passes, says the
+  card is bumped, and the reading appended to the bands carries
+  `standard` rather than the tier the dispatch stamped. Refusing here
+  would stop a finished lane at its last step over a fact for the NEXT
+  triage. The other three still refuse, and a card of any other size is
+  still not this keeper's to judge.
 - GUARD-CLASS PATHS, IN THIS PROJECT'S OWN SPELLING (T-296, ADR-024
   decision 1): `method/tasks/TASK-FORMAT.md` names the guard-class
-  CLASSES and cannot name paths — it is product-agnostic — so the
-  mapping onto this repository lives here, beside the slug map, and the
-  arm reads BOTH and refuses when they disagree: a class the method
-  declares and this bullet does not map, or a name mapped here that the
-  method never declared, is a hard failure rather than a default. A
-  fenced path under any of these makes a card `guarded` whatever its
-  size, because the builder of a cage is not its inspector and a
-  one-line change to a guard can retire the guard in silence. **THE
-  CLASSES OVERLAP AND THAT IS NOT A DEFECT** — a class says what a file
-  DOES, and one file can do two of these things; the arm reports every
-  class a path hits and the answer is guarded either way. **THE MAP:**
+  CLASSES and is product-agnostic, so the mapping onto this repository
+  lives here, beside the slug map. The arm reads BOTH and refuses when
+  they disagree, either way round: a declared class this bullet does not
+  map, or a name mapped here the method never declared. A fenced path
+  under any of these makes a card `guarded` whatever its size — the
+  builder of a cage is not its inspector, and a one-line change to a
+  guard can retire the guard in silence. Classes OVERLAP by design (a
+  class says what a file DOES, and `.claude/` holds several kinds); the
+  arm reports every class a path hits. **THE MAP:**
   `agent-hooks`: `.claude/`;
   `gate-runners`: `tools/e2e/scripts/gate-run.mjs`,
   `tools/e2e/scripts/docs-gate.mjs`, `tools/e2e/scripts/push-checks.mjs`;
   `fences-and-locks`: `tools/e2e/scripts/lane-fence.mjs`,
-  `tools/e2e/scripts/lane-lock.mjs`, `.claude/hooks/lane-fence.mjs`,
-  `.claude/hooks/lane-fence-hook.mjs`, `.claude/hooks/expand-fence.mjs`;
+  `tools/e2e/scripts/lane-lock.mjs`;
   `landing-and-push-guards`: `.claude/hooks/landing-gate.mjs`,
-  `.claude/hooks/push-guard.mjs`, `.claude/hooks/push-guard-hook.mjs`,
-  `.claude/hooks/gate-token.mjs`, `tools/e2e/scripts/merge.mjs`;
+  `.claude/hooks/push-guard.mjs`, `tools/e2e/scripts/merge.mjs`;
   `parser`: `lib/parser/`;
   `method-text`: `method/`;
   `ci-workflow`: `.github/workflows/`.
-  **THE LIST IS KEPT BY A BODY AND NOT BY A MEMORY**: the e2e suite
-  derives this repository's guard-class CANDIDATES from the tree by a
-  rule that never reads this map — every tracked file under `.claude/`,
+  **KEPT BY A BODY, NOT BY A MEMORY**: the e2e suite derives this
+  repository's guard-class CANDIDATES from the tree by a rule that never
+  reads this map — every tracked file under `.claude/`,
   `.github/workflows/`, `method/` or `lib/parser/src/`, plus every
   tracked script under `tools/e2e/scripts/` whose own name carries
   `gate`, `guard`, `fence`, `lock`, `push` or `landing` — and reds
-  naming any candidate no class above covers. Two independent readings
-  of one question, which is the only arrangement in which their
-  agreement is evidence.
+  naming any candidate no class covers.
 - A CITATION NAMES A SYMBOL, NOT A LINE (fourth triage, 2026-08-19):
   line numbers drift downward under later merges while the finding's
   substance reproduces, so a stale line reads as "this was fixed". Cite

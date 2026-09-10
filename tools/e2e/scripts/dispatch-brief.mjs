@@ -79,6 +79,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  INDEXED_DOCS,
   conventionsText,
   frontmatterBlock,
   liveTaskCards,
@@ -5351,15 +5352,19 @@ export function runBench(plan, io) {
   // ── THE GROUND ────────────────────────────────────────────────────
   /** @type {GroundFile[]} */
   const files = [];
-  /** @type {string} */
-  let capabilities = "";
-  try {
-    capabilities = io.read(path.join(plan.root, "docs", "CAPABILITIES.md"));
-  } catch {
+  // THE CENSUS IS READ AT THE BASE AND THROUGH GIT, not off the working
+  // tree — every other figure in this file is at the base, and a census
+  // read from the tree would be the one line of the ground measured
+  // somewhere else. Its NAME comes from `INDEXED_DOCS`, which is the one
+  // place this project enumerates the documents its index carries.
+  const censusRel = INDEXED_DOCS.find((d) => d.toUpperCase().includes("CAPABILITIES")) ?? "";
+  const censusRun = censusRel === "" ? undefined : run(["git", "-C", plan.root, "show", `${base}:${censusRel}`]);
+  const capabilities = censusRun !== undefined && censusRun.ok ? censusRun.out : "";
+  if (capabilities === "") {
     notes.push(
-      "this checkout publishes no behaviour census, so the ground carries no census section for " +
-        "any fenced spec. Said rather than left blank: a missing census and a spec the census " +
-        "does not name look the same in a file that omits both.",
+      "this checkout publishes no behaviour census at the base, so the ground carries no census " +
+        "section for any fenced spec. Said rather than left blank: a missing census and a spec " +
+        "the census does not name look the same in a file that omits both.",
     );
   }
   for (const rel of plan.fencePaths) {
