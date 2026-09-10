@@ -703,6 +703,18 @@ const NOT_AN_ARM: ReadonlyArray<{ flag: string; why: string }> = [
     why: "THE THIRD WRITER (T-296). It takes the verifier's ground by a script, seals the three inputs by sha256 and writes the ground, the stamps and the phase 2 brief into the lane's scratch directory — so a guard that measured its size would perform the bench ritual every time this suite ran, which is `--dispatch-lane`'s argument at the verification end of the loop. `brief.spec.ts` drives it end to end against scratch repositories instead.",
   },
   {
+    flag: "--await",
+    why: "a WAITER, and the one arm a size guard must never drive: it blocks until a marker file appears or its ceiling is reached, so an entry in the arm list above would make this suite wait on a file nobody is going to write. `brief.spec.ts` drives it against markers it plants itself, where the subject — that the ceiling is REPORTED rather than hung on — can actually be asserted.",
+  },
+  {
+    flag: "--await-pid",
+    why: "the second half of the same WAITER: it blocks until a process exits. Same argument as --await above, one degree worse, since the process it would wait on in this suite is nobody's.",
+  },
+  {
+    flag: "--ceiling",
+    why: "a MODIFIER of --await / --await-pid: how many seconds the wait may take before it reports the ceiling instead of hanging. It is required beside either of them and alone it is a usage error, so there is no invocation of it for this file to size.",
+  },
+  {
     flag: "--bump",
     why: "a MODIFIER of --merge: which method version the three stamp files move to. It is meaningless without --merge and this command refuses it alone.",
   },

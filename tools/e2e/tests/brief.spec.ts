@@ -22,8 +22,10 @@ import {
   BASE_TOKEN,
   DERIVERS,
   DISPATCH_STEPS,
+  AwaitFinding,
   DispatchLaneFinding,
   EXIT,
+  ModelFinding,
   GATE_SOURCE_DIRS,
   GROUND_ADDENDUM_HEADING,
   NO_GROUND,
@@ -32,12 +34,15 @@ import {
   PARKED_STATUS,
   PIPE_BUFFER_BYTES,
   PROSE_WAKE_PATTERN,
+  ROLE_TEMPLATE_KEYS,
+  RUNTIME_TEMPLATE,
   SPAWNSYNC_DEFAULT_MAXBUFFER,
   TRIAGE_STATUSES,
   WAKE_FENCE,
   WOKEN_BY_STATUS,
   architectureText,
   assembleBrief,
+  awaitPlan,
   boardCensus,
   byCardId,
   ceremonyRows,
@@ -51,6 +56,7 @@ import {
   conventionHeadings,
   createLaneArgv,
   dispatchLanePlan,
+  dispatchLaneRecs,
   dispatchSpellings,
   docsNamed,
   fenceLedger,
@@ -84,6 +90,7 @@ import {
   methodNamed,
   namedDisciplines,
   note,
+  numberedStep,
   packRecs,
   packageCommands,
   parkedBoard,
@@ -97,8 +104,12 @@ import {
   render,
   resolveIntegrationRef,
   roleText,
+  roleModel,
+  roleModels,
   ruleWake,
+  runAwait,
   runDispatchLane,
+  runtimeTemplateText,
   sealDocument,
   sha256,
   sharedGround,
@@ -3412,11 +3423,25 @@ test("THE ARM LEAVES EXACTLY WHAT THE HAND STEPS LEAVE, file for file, plus the 
     // 1 — stamp on the integration branch, commit, and read it back. The
     //     tier is typed HERE, from this side's own reading of the card:
     //     size S, a fence of README.md, nothing guard-class in it.
+    //     THE MODELS ARE READ THE WAY A HAND DISPATCHER READS THEM
+    //     (T-298): open the runtime template, find the role's line, copy
+    //     the value. It is a plain regex rather than the production
+    //     parser on purpose — a hand side that called the arm's own
+    //     reader would be comparing that reader with itself.
+    const handTemplate = readFileSync(path.join(hand.root, RUNTIME_TEMPLATE), "utf8");
+    const handModel = (key: string) => {
+      const m = new RegExp(`^\\s+${key}:\\s*(.*)$`, "m").exec(handTemplate);
+      const raw = (m?.[1] ?? "").split(" #")[0] ?? "";
+      expect(raw.trim(), `the fixture's template names no model for ${key}`).not.toBe("");
+      return raw.trim();
+    };
     writeFileSync(
       cardPath,
       readFileSync(cardPath, "utf8")
         .replace("status: planned", "status: building")
-        .replace("size: S", "size: S\ntier: standard"),
+        .replace("size: S", "size: S\ntier: standard")
+        .replace(/^builder:.*$/m, `builder: ${handModel("builder")}`)
+        .replace(/^verifier:.*$/m, `verifier: ${handModel("verifier")}`),
     );
     fixtureGit(hand.root, ["commit", "--quiet", "-m", "hand-run dispatch stamp", "--", FIXTURE_CARD_FILE]);
     const base = fixtureGit(hand.root, ["rev-parse", "HEAD"]).trim();
@@ -6314,4 +6339,324 @@ test("the arm renders phase 1 from the card AS THE COMMIT CARRIES IT, never off 
   // sources rather than being true of both.
   expect(FIXTURE_CARD, "the control: the working-tree card is unstamped").not.toContain("status: building");
   expect(phase1, "and it names the base it was read at").toContain(STUB_BASE);
+});
+
+/* ────────────────────────────────────────────────────────────────────
+ * T-298 — THE MODEL PER ROLE, READ FROM THE RUNTIME TEMPLATE, and THE
+ * BOUNDED WAIT.
+ *
+ * Two mechanisms, one card, and the thing they have in common is that
+ * both replace a value a SESSION used to supply: the model a dispatch
+ * ran on, and the duration a seat guessed at. A value supplied by
+ * whoever happened to be sitting there is a value nobody can re-derive
+ * afterwards, which is why each of the bodies below asks the tree rather
+ * than the run.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/**
+ * THE MODEL ADR-024 decision 5 FIXES, TYPED HERE RATHER THAN IMPORTED.
+ *
+ * A constant read out of the same module the template feeds would make
+ * the body below vacuous in the one direction it exists to guard: the
+ * decision names a model, and this is where a reader checks the shipped
+ * file against the decision rather than against itself.
+ */
+const OPUS_5_SEAT = "claude-opus-5@subagent";
+
+test("THE SHIPPED TEMPLATE NAMES A MODEL FOR EVERY ROLE, and every one of them is Opus 5", () => {
+  // KILLED BY: a role default emptied, a role dropped from the block, and
+  // a value that is not the model ADR-024 decision 5 fixes. It reads the
+  // COMMITTED template rather than a fixture on purpose — the criterion
+  // is about what this project ships, and a fixture would pass while the
+  // shipped file said something else.
+  const models = roleModels(runtimeTemplateText(repoRoot));
+  expect(models.size, "the roles block parsed to nothing at all").toBeGreaterThan(0);
+  for (const [key, model] of models) {
+    expect(model, `roles.${key} names no model`).not.toBe("");
+    expect(model, `roles.${key} is not Opus 5 (ADR-024 decision 5)`).toBe(OPUS_5_SEAT);
+  }
+  // AND EVERY ROLE THE ARM DISPATCHES RESOLVES, which is the half a
+  // count of the block cannot see: a template with five roles none of
+  // which the arm looks up would satisfy the loop above.
+  for (const role of Object.keys(ROLE_TEMPLATE_KEYS)) {
+    expect(roleModel(models, role).model, `the ${role} seat resolves no model`).toBe(OPUS_5_SEAT);
+  }
+});
+
+test("THE BRIEF PRINTS THE MODEL IN ROW 1, read from the runtime template and named as such", () => {
+  // KILLED BY: a row 1 that stops naming the model, one that names it
+  // without saying where it was read, and a model taken from anywhere but
+  // the template — which the fixture discriminates by putting a value in
+  // that file that exists nowhere else in the tree.
+  const fx = ritualFixture("row1");
+  try {
+    const template = path.join(fx.root, RUNTIME_TEMPLATE);
+    writeFileSync(
+      template,
+      readFileSync(template, "utf8").replace(/^(\s+)builder:.*$/m, "$1builder: fixture-model@probe"),
+    );
+    const { recs } = assembleBrief(context({ root: fx.root, taskId: FIXTURE_CARD_ID }));
+    const printed = render(recs);
+    expect(printed, "row 1 does not print the model at all").toContain("model: fixture-model@probe");
+    expect(printed, "and it does not say which file it was read from").toContain(
+      `read from ${RUNTIME_TEMPLATE} as roles.builder`,
+    );
+    // THE CONTROL: the value is the fixture's own and appears nowhere
+    // else in this tree, so the assertion above cannot be satisfied by a
+    // model remembered from the session or copied off the card.
+    expect(
+      readFileSync(path.join(fx.root, FIXTURE_CARD_FILE), "utf8"),
+      "the control: the card names no such model, so row 1 read the template",
+    ).not.toContain("fixture-model@probe");
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(row1)");
+  }
+});
+
+test("A ROLE THE TEMPLATE NAMES NO MODEL FOR REFUSES THE DISPATCH, before a card is stamped or a worktree is cut", () => {
+  // KILLED BY: a resolution that falls back to the session's model, one
+  // that falls back to any other role's, and one that refuses only AFTER
+  // the ritual has begun — which the fixture measures by comparing the
+  // tree either side of the refusal.
+  const fx = ritualFixture("nomodel");
+  try {
+    const template = path.join(fx.root, RUNTIME_TEMPLATE);
+    writeFileSync(template, readFileSync(template, "utf8").replace(/^(\s+)builder:.*$/m, ""));
+    const before = inventory(fx.root);
+    let refused: unknown;
+    try {
+      dispatchLanePlan(context({ root: fx.root }), {
+        taskId: FIXTURE_CARD_ID,
+        slug: FIXTURE_SLUG,
+        scratch: fx.scratch,
+      });
+    } catch (err) {
+      refused = err;
+    }
+    expect(refused, "a template with no builder default planned a dispatch anyway").toBeInstanceOf(
+      ModelFinding,
+    );
+    const why = (refused as Error).message;
+    expect(why, "the refusal does not name the key that is missing").toContain("builder");
+    expect(why, "nor the file the repair belongs in").toContain(RUNTIME_TEMPLATE);
+    expect(why, "nor why it is a refusal rather than an inheritance").toContain(
+      "the dispatching session's own model",
+    );
+    // AND NOTHING WAS WRITTEN. The plan is pure, so the refusal lands
+    // before the stamp commit and before either worktree — which is the
+    // half that makes it cheap rather than merely correct.
+    expect(inventory(fx.root), "the refused dispatch left something behind").toEqual(before);
+    // THE POSITIVE CONTROL: the same fixture with the default restored
+    // plans without complaint, so the refusal above is about the missing
+    // model and not about the fixture.
+    writeFileSync(template, readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8"));
+    const plan = dispatchLanePlan(context({ root: fx.root }), {
+      taskId: FIXTURE_CARD_ID,
+      slug: FIXTURE_SLUG,
+      scratch: fx.scratch,
+    });
+    expect(plan.stamp["builder"], "the control: with the default restored the seat is stamped").toBe(
+      OPUS_5_SEAT,
+    );
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(nomodel)");
+  }
+});
+
+test("THE DISPATCH STAMPS AND PRINTS THE MODEL PER SEAT, and a dial that overrides one says so", () => {
+  // KILLED BY: a stamp that leaves the seat fields empty when no dial was
+  // passed, a dial that is ignored, and an override that is printed as
+  // though it were the project's own default.
+  const fx = ritualFixture("seats");
+  try {
+    // THE FIXTURE'S OWN TEMPLATE IS PLANTED, with two values that exist
+    // nowhere else in this tree and differ from each other: a stamp that
+    // read the wrong role's default, or remembered a model from anywhere
+    // but this file, cannot produce them.
+    const template = path.join(fx.root, RUNTIME_TEMPLATE);
+    writeFileSync(
+      template,
+      readFileSync(template, "utf8")
+        .replace(/^(\s+)builder:.*$/m, "$1builder: planted-builder@probe")
+        .replace(/^(\s+)verifier:.*$/m, "$1verifier: planted-verifier@probe"),
+    );
+    const ctx = context({ root: fx.root });
+    const plain = dispatchLanePlan(ctx, {
+      taskId: FIXTURE_CARD_ID,
+      slug: FIXTURE_SLUG,
+      scratch: fx.scratch,
+    });
+    expect(plain.stamp["builder"], "the builder field is not stamped from the template").toBe(
+      "planted-builder@probe",
+    );
+    expect(plain.stamp["verifier"], "the verifier field is not stamped from the template").toBe(
+      "planted-verifier@probe",
+    );
+    const plainOut = render(dispatchLaneRecs(ctx, plain, undefined));
+    expect(plainOut, "the lane facts do not print the builder's model").toContain(
+      `model (builder): planted-builder@probe — read from ${RUNTIME_TEMPLATE} as roles.builder`,
+    );
+    expect(plainOut, "nor the verifier's").toContain("model (verifier): planted-verifier@probe");
+
+    const dialled = dispatchLanePlan(ctx, {
+      taskId: FIXTURE_CARD_ID,
+      slug: FIXTURE_SLUG,
+      scratch: fx.scratch,
+      executor: "dialled-model@probe",
+    });
+    expect(dialled.stamp["builder"], "the dial did not reach the stamp").toBe("dialled-model@probe");
+    const dialledOut = render(dispatchLaneRecs(ctx, dialled, undefined));
+    expect(dialledOut, "an override is not announced as one").toContain("THIS DISPATCH NAMED IT");
+    expect(dialledOut, "and the default it departed from is not reported beside it").toContain(
+      "the template's default for roles.builder is planted-builder@probe",
+    );
+    // THE CONTROL: the un-dialled plan says neither of those things, so
+    // the two assertions above discriminate rather than being true of
+    // every dispatch.
+    expect(plainOut, "the control: an un-dialled dispatch announces no override").not.toContain(
+      "THIS DISPATCH NAMED IT",
+    );
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(seats)");
+  }
+});
+
+test("A WAIT WITH NO CEILING IS REFUSED, and so is a wait on nothing, on two facts, or on a broadcast pid", () => {
+  // KILLED BY: a default ceiling, a wait that accepts neither target or
+  // both, and a pid arm that accepts 0 or -1 — the two numbers
+  // checkout-currency.mjs measured as answering ALIVE for ever.
+  const refusals: Array<[string, Parameters<typeof awaitPlan>[0]]> = [
+    ["no ceiling", { marker: "/tmp/t298-probe" }],
+    ["no fact", { ceiling: "5" }],
+    ["two facts", { marker: "/tmp/t298-probe", pid: "12", ceiling: "5" }],
+    ["a ceiling of zero", { marker: "/tmp/t298-probe", ceiling: "0" }],
+    ["a ceiling that is not a number", { marker: "/tmp/t298-probe", ceiling: "soon" }],
+    ["the process group", { pid: "0", ceiling: "5" }],
+    ["the broadcast pid", { pid: "-1", ceiling: "5" }],
+  ];
+  for (const [what, opts] of refusals) {
+    let refused: unknown;
+    try {
+      awaitPlan(opts);
+    } catch (err) {
+      refused = err;
+    }
+    expect(refused, `${what} was planned as a wait instead of refused`).toBeInstanceOf(AwaitFinding);
+  }
+  // THE POSITIVE CONTROL: a wait naming ONE fact and a ceiling plans, so
+  // the refusals above are about what was missing rather than about this
+  // function refusing everything.
+  const plan = awaitPlan({ marker: "/tmp/t298-probe", ceiling: "2.5" });
+  expect(plan.kind, "the control: a marker wait plans").toBe("marker");
+  expect(plan.ceilingMs, "the ceiling is carried in milliseconds").toBe(2500);
+  expect(awaitPlan({ pid: "4242", ceiling: "1" }).pid, "the control: a pid wait plans").toBe(4242);
+});
+
+test("THE CEILING IS REPORTED RATHER THAN HUNG ON, and the report names the wait, the elapsed and the asks", async () => {
+  // KILLED BY: a loop with no ceiling, one that returns satisfied when it
+  // ran out of time, one that reports no elapsed or no poll count, and
+  // one that sleeps past its own ceiling. THE CLOCK IS INJECTED so this
+  // body cannot itself hang: a real-time wait would either take its own
+  // ceiling to red or assert nothing.
+  const clock = { t: 0 };
+  const asked: number[] = [];
+  const io = {
+    now: () => clock.t,
+    sleep: async (ms: number) => {
+      asked.push(ms);
+      clock.t += ms;
+    },
+    happened: () => false,
+  };
+  const plan = awaitPlan({ marker: "/tmp/t298-never", ceiling: "1" });
+  const result = await runAwait(plan, io);
+  expect(result.ceiling, "the wait did not report reaching its ceiling").toBe(true);
+  expect(result.satisfied, "a wait that ran out of time reported success").toBe(false);
+  expect(result.waitedMs, "it stopped before its ceiling").toBe(plan.ceilingMs);
+  expect(result.polls, "it reported asking nothing").toBeGreaterThan(1);
+  expect(result.why, "the report does not say the ceiling was reached").toContain("THE CEILING WAS REACHED");
+  expect(result.why, "nor name what was waited for").toContain(plan.target);
+  expect(result.why, "nor say that nothing was signalled or taken away").toContain("Nothing was signalled");
+  // AND IT NEVER SLEPT PAST THE CEILING: the last interval is trimmed, so
+  // the report lands AT the ceiling rather than up to one interval after
+  // it — which is what makes a stated ceiling a stated ceiling.
+  expect(
+    asked.reduce((a, b) => a + b, 0),
+    "the wait slept past the ceiling it stated",
+  ).toBe(plan.ceilingMs);
+  for (const ms of asked) expect(ms, "an interval was longer than the wait's own").toBeLessThanOrEqual(plan.intervalMs);
+});
+
+test("THE WAIT ENDS ON THE FACT, and it asks BEFORE it sleeps so a fact already true costs no interval", async () => {
+  // KILLED BY: a loop that sleeps first, one that keeps waiting after the
+  // fact happened, and one that reports the ceiling when it did not reach
+  // it.
+  const clock = { t: 0 };
+  const io = (happensAtPoll: number) => {
+    let polls = 0;
+    return {
+      now: () => clock.t,
+      sleep: async (ms: number) => {
+        clock.t += ms;
+      },
+      happened: () => {
+        polls += 1;
+        return polls >= happensAtPoll;
+      },
+    };
+  };
+  const plan = awaitPlan({ marker: "/tmp/t298-soon", ceiling: "10" });
+  clock.t = 0;
+  const already = await runAwait(plan, io(1));
+  expect(already.satisfied, "a fact already true was not seen").toBe(true);
+  expect(already.polls, "it asked more than once about a fact already true").toBe(1);
+  expect(already.waitedMs, "it slept before asking").toBe(0);
+  expect(already.ceiling, "a satisfied wait reported its ceiling").toBe(false);
+
+  clock.t = 0;
+  const later = await runAwait(plan, io(3));
+  expect(later.satisfied, "a fact that became true was not seen").toBe(true);
+  expect(later.polls, "it did not ask until the fact happened").toBe(3);
+  expect(later.waitedMs, "it did not wait at all for a fact that took two intervals").toBe(
+    2 * plan.intervalMs,
+  );
+  expect(later.why, "the report of a satisfied wait does not say what happened").toContain("it happened");
+});
+
+test("THE TRIAGE STEP STATES THE RIGHT-SIZING RULE, and it is stated THERE and nowhere else in the role file", () => {
+  // KILLED BY: the rule dropped from the triage step, the rule moved to a
+  // step that is not triage, and a SECOND copy of it elsewhere in the
+  // file — which is the failure T-057 names and the reason this body
+  // counts rather than merely searches.
+  const md = roleText("orchestrator", repoRoot);
+  const needle = "THE SMALLEST UNIT THAT CARRIES ITS OWN TEST CYCLE";
+  const hits = md.split(needle).length - 1;
+  expect(hits, "the right-sizing rule is stated a number of times other than once").toBe(1);
+  const triage = numberedStep(md, 2);
+  expect(triage, "the rule is not in the triage step").toContain(needle);
+  expect(triage, "the rule does not say what happens to a card larger than that").toContain("SPLIT");
+  // THE CONTROL: the step this rule is NOT in still exists and does not
+  // carry it, so the assertion above places the rule rather than merely
+  // finding it somewhere in a long document.
+  expect(numberedStep(md, 4), "the control: the dispatch-order step carries no sizing rule").not.toContain(
+    needle,
+  );
+});
+
+test("THE DISPATCH STEP STATES WHERE THE MODEL COMES FROM, and the waiting step states its ceiling", () => {
+  // KILLED BY: either rule dropped, either rule stated without its
+  // refusal, and a method file that describes the mechanism without
+  // naming the file a project edits to change it.
+  const md = roleText("orchestrator", repoRoot);
+  const dispatch = numberedStep(md, "5b");
+  expect(dispatch, "the dispatch step does not name the runtime template").toContain("RUNTIME TEMPLATE");
+  expect(dispatch, "nor say the model is never inherited from the dispatching session").toContain(
+    "NEVER INHERITED FROM THE SESSION",
+  );
+  expect(dispatch, "nor say an absent default refuses").toContain("REFUSES THE DISPATCH");
+  const waiting = numberedStep(md, "5f");
+  expect(waiting, "the waiting step does not say every wait is bounded").toContain("EVERY WAIT IS BOUNDED");
+  expect(waiting, "nor name the two facts a wait may wait on").toContain("marker file");
+  expect(waiting, "nor say that reaching the ceiling is reported").toContain("REACHING THE CEILING IS AN ANSWER");
+  expect(waiting, "nor refuse the hand-typed sleep it replaces").toContain("A HAND-TYPED SLEEP IS NOT A WAIT");
 });

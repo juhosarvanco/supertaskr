@@ -150,11 +150,15 @@ import {
 } from "./card-figures.mjs";
 import { preflight } from "./card-preflight.mjs";
 import {
+  AwaitFinding,
   DispatchLaneFinding,
   EXIT,
   assembleBrief,
+  awaitPlan,
+  awaitRecs,
   blank,
   context,
+  defaultAwaitIo,
   defaultDispatchIo,
   benchPlan,
   benchRecs,
@@ -166,6 +170,7 @@ import {
   mainWorktree,
   note,
   render,
+  runAwait,
   runBench,
   runDispatchLane,
   stateReport,
@@ -208,6 +213,9 @@ const FLAGS = Object.freeze([
   "--dispatch-lane",
   "--merge",
   "--bench",
+  "--await",
+  "--await-pid",
+  "--ceiling",
   "--bump",
   "--meters",
   "--tier",
@@ -309,6 +317,7 @@ async function main(argv) {
           "[--scratch <dir>] [--dry-run]] " +
           "[--merge <T-NNN> [--bump <old>..<new>] [--meters <path>] [--tier <tier>] " +
           "[--blocks-absent <sha>] [--dry-run]] [--bench <T-NNN> [--scratch <dir>]] " +
+          "[--await <marker> | --await-pid <pid>] --ceiling <seconds>] " +
           "[--full] [--root <path>]",
       );
       return EXIT.CLEAN;
@@ -359,6 +368,21 @@ async function main(argv) {
   const wantsMerge = mergeId !== "";
   const benchId = opts["bench"] ?? "";
   const wantsBench = benchId !== "";
+  /**
+   * ARM TWELVE'S DIALS (T-298). The wait is the ONE arm that BLOCKS, so
+   * it is held apart from every other arm here rather than merely from
+   * the writers: an invocation that both waited and derived would hold a
+   * derived answer behind a fact that may never happen, and the ceiling
+   * would then bound the wait while the answer bounded nothing.
+   */
+  const wantsAwait = opts["await"] !== undefined || opts["await-pid"] !== undefined;
+  if (!wantsAwait && opts["ceiling"] !== undefined) {
+    console.error(
+      "brief: --ceiling only means something beside --await <marker> or --await-pid <pid> — it is " +
+        "the bound on a wait, and there is no wait here for it to bound.",
+    );
+    return EXIT.USAGE;
+  }
   /**
    * THE RITUAL'S OWN DIALS, AND EVERY ONE OF THEM IS MEANINGLESS ALONE.
    * A `--slug` with no `--dispatch-lane` is a lane name for a lane nobody
@@ -413,6 +437,55 @@ async function main(argv) {
         "something it did not.",
     );
     return EXIT.USAGE;
+  }
+  if (wantsAwait) {
+    const others = [
+      ...(taskId === "" ? [] : ["--task"]),
+      ...(wantsState ? ["--state"] : []),
+      ...(wantsDispatch ? ["--dispatch"] : []),
+      ...(cardId === "" ? [] : ["--card"]),
+      ...(auditPath === "" ? [] : ["--audit"]),
+      ...(wantsPreflight ? ["--preflight"] : []),
+      ...(fenceWorktree === "" ? [] : ["--write-fence"]),
+      ...(wantsTakeSeat ? ["--take-seat"] : []),
+      ...(wantsReleaseSeat ? ["--release-seat"] : []),
+      ...(wantsDispatchLane ? ["--dispatch-lane"] : []),
+      ...(wantsMerge ? ["--merge"] : []),
+      ...(wantsBench ? ["--bench"] : []),
+    ];
+    if (others.length > 0) {
+      console.error(
+        `brief: the wait cannot share an invocation with ${others.join(", ")}. It is the one arm ` +
+          "that BLOCKS, and an answer derived beside it would sit behind a fact that may never " +
+          "happen — the ceiling would bound the wait and nothing would bound the answer. Wait, " +
+          "then derive.",
+      );
+      return EXIT.USAGE;
+    }
+    /** @type {import("./dispatch-brief.mjs").AwaitPlan} */
+    let plan;
+    try {
+      plan = awaitPlan({
+        ...(opts["await"] === undefined ? {} : { marker: opts["await"] }),
+        ...(opts["await-pid"] === undefined ? {} : { pid: opts["await-pid"] }),
+        ...(opts["ceiling"] === undefined ? {} : { ceiling: opts["ceiling"] }),
+      });
+    } catch (err) {
+      if (err instanceof AwaitFinding) {
+        console.error(`brief: ${err.message}`);
+        return EXIT.USAGE;
+      }
+      throw err;
+    }
+    const ctx = context({ ...(opts["root"] === undefined ? {} : { root: opts["root"] }) });
+    const result = await runAwait(plan, defaultAwaitIo());
+    say(render(awaitRecs(ctx, plan, result)));
+    flush();
+    // THE CEILING IS AN ANSWER AND IT CARRIES AN EXIT (T-298). A caller
+    // that read only the exit still learns the wait ended without the
+    // fact, which is the whole difference between a bounded wait and a
+    // sleep that a script cannot tell from a success.
+    return result.satisfied ? EXIT.CLEAN : EXIT.FOUND;
   }
   if (wantsDispatchLane && (opts["slug"] ?? "") === "") {
     console.error(

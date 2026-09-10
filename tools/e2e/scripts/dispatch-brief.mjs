@@ -74,7 +74,7 @@
 
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { closeSync, mkdirSync, openSync, readFileSync, writeFileSync } from "node:fs";
+import { closeSync, existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -86,6 +86,7 @@ import {
   repoRoot,
   trackedFiles,
 } from "./docs-scan.mjs";
+import { isRecordablePid, processRow } from "./checkout-currency.mjs";
 import { rawBullet } from "./range-rule.mjs";
 
 export const EXIT = Object.freeze({ CLEAN: 0, FOUND: 1, USAGE: 2, CANNOT_RUN: 3 });
@@ -398,14 +399,14 @@ export function contractRows(md) {
  * transcription that silently becomes empty is a paraphrase.
  *
  * @param {string} md
- * @param {number} n
+ * @param {number | string} n the step's own label — `1`, or a lettered one like `5b`
  * @returns {string}
  */
 export function numberedStep(md, n) {
   const lines = md.split(/\r?\n/);
   const start = lines.findIndex((l) => l.startsWith(`${n}. `));
   if (start < 0) {
-    throw new Error(`dispatch-brief: this role file has no step ${n}`);
+    throw new Error(`dispatch-brief: this role file has no step ${String(n)}`);
   }
   /** @type {string[]} */
   const held = [/** @type {string} */ (lines[start])];
@@ -1716,7 +1717,41 @@ function deriveRole(ctx) {
     value(`role file: ${file}`, tree(ctx, file)),
     value(`heading: ${heading}`, tree(ctx, `${file} first heading`)),
     value(`one line: ${opening}`, tree(ctx, `${file} opening line`)),
+    // THE MODEL THIS SEAT RUNS ON, AND IT IS ROW ONE'S BUSINESS (T-298).
+    // Row one names WHICH ROLE this session takes; which model takes it is
+    // the same row's question, and putting it here rather than in a row of
+    // its own is what keeps the contract table at thirteen rows — a
+    // fourteenth would be a method version bump and this is not one.
+    ...roleModelRecs(ctx),
   ];
+}
+
+/**
+ * The model row 1 prints, read from the runtime template, and the
+ * ABSENCE printed just as plainly.
+ *
+ * A READ ARM NEVER THROWS OVER THIS, and that is the difference between
+ * this and the dispatch. `--task` answers questions about a card in
+ * whatever checkout it is pointed at, and a checkout with no template —
+ * a scratch fixture, a project mid-genesis — still has thirteen rows
+ * worth answering. So the absence becomes a printed line AND a finding,
+ * which is how every other unanswerable row in this file behaves; the
+ * REFUSAL belongs to `dispatchLanePlan`, where a seat is about to be
+ * paid for.
+ *
+ * @param {Ctx} ctx
+ * @returns {Rec[]}
+ */
+function roleModelRecs(ctx) {
+  const via = `${RUNTIME_TEMPLATE}, its roles block (ADR-024 decision 5)`;
+  try {
+    const { model, key } = roleModel(roleModels(runtimeTemplateText(ctx.root)), ctx.role);
+    return [value(`model: ${model} — read from ${RUNTIME_TEMPLATE} as roles.${key}`, tree(ctx, via))];
+  } catch (err) {
+    const why = err instanceof Error ? err.message : String(err);
+    ctx.findings.push(why);
+    return [value(`model: NOT READ — ${why}`, tree(ctx, via))];
+  }
 }
 
 /** @param {Ctx} ctx @returns {Rec[]} */
@@ -5569,6 +5604,181 @@ export function benchRecs(ctx, plan, result) {
  */
 export class DispatchLaneFinding extends Error {}
 
+/* ────────────────────────────────────────────────────────────────────
+ * THE MODEL PER ROLE, READ FROM THE RUNTIME TEMPLATE (T-298, ADR-024
+ * decision 5).
+ *
+ * A dispatch that names no model is the failure this block exists
+ * against: the measured run the loop room read put all twenty-six of its
+ * reviewers on the top tier because one dispatch left the model
+ * unnamed, and the dispatching session's own model is the worst possible
+ * fallback — it is a property of who happened to be sitting there.
+ *
+ * So the model is a function of ONE file, the runtime template, and of
+ * the role being filled. An absent default is a REFUSAL rather than an
+ * inheritance, and the refusal names the role, the key and the file, so
+ * the repair is one line in a document the user owns.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/**
+ * THE FINDING CLASS, and it is a `DispatchLaneFinding` on purpose: the
+ * dispatch arm already catches that class and reports it as a refusal, so
+ * a missing model refuses a dispatch by exactly the path a missing slug
+ * or an unreadable card already does.
+ */
+export class ModelFinding extends DispatchLaneFinding {}
+
+/** The one file the model per role is read from, repository-relative. */
+export const RUNTIME_TEMPLATE = "method/runtime/supertaskr.yaml";
+
+/**
+ * THE ROLE FILE'S NAME AGAINST THE TEMPLATE'S OWN KEY, and the two differ
+ * for one role, which is why this map is written down instead of assumed.
+ *
+ * `method/roles/executor.md` is the seat that BUILDS, and both the card
+ * field and the template call that role `builder:` — the arm has stamped
+ * `builder:` from the executor dial since T-239 and this map is that same
+ * correspondence, said once and in one place. Every other role file's
+ * name IS its template key.
+ *
+ * The orchestrator is deliberately absent: it is the standing seat that
+ * dispatches, never a seat that is dispatched, so there is no role
+ * default to read for it and a lookup says so rather than refusing.
+ */
+export const ROLE_TEMPLATE_KEYS = Object.freeze({
+  executor: "builder",
+  verifier: "verifier",
+  integrator: "integrator",
+  planner: "planner",
+});
+
+/**
+ * Read the runtime template, or refuse naming the path.
+ *
+ * @param {string} [root]
+ * @returns {string}
+ */
+export function runtimeTemplateText(root = repoRoot) {
+  const file = path.join(root, RUNTIME_TEMPLATE);
+  try {
+    return readFileSync(file, "utf8");
+  } catch {
+    throw new ModelFinding(
+      `dispatch-brief: this checkout carries no runtime template at ${RUNTIME_TEMPLATE}, and that ` +
+        "file is where the model for every dispatched role is read from (ADR-024 decision 5). " +
+        "Without it there is no default to name, and the dispatching session's own model is " +
+        "never the fallback.",
+    );
+  }
+}
+
+/**
+ * THE `roles:` BLOCK, PARSED — and parsed rather than imported because
+ * this repository ships no YAML dependency and the block is two levels
+ * deep. A line is a role default when it sits indented under `roles:`,
+ * carries a colon and a non-empty value; a comment after the value is cut
+ * at the ` #`, which is the only comment shape the template uses.
+ *
+ * A template with no `roles:` block at all is a REFUSAL rather than an
+ * empty map: an empty map would make every lookup below report an absent
+ * default for its own role, and the reader would repair one line in a
+ * file whose whole section is missing.
+ *
+ * @param {string} templateYaml
+ * @returns {Map<string, string>}
+ */
+export function roleModels(templateYaml) {
+  const lines = templateYaml.split(/\r?\n/);
+  const at = lines.findIndex((l) => /^roles:\s*(#.*)?$/.test(l));
+  if (at === -1) {
+    throw new ModelFinding(
+      `dispatch-brief: ${RUNTIME_TEMPLATE} carries no \`roles:\` block, and that block is the ` +
+        "one source for which model each dispatched seat runs on (ADR-024 decision 5).",
+    );
+  }
+  /** @type {Map<string, string>} */
+  const models = new Map();
+  for (const line of lines.slice(at + 1)) {
+    if (line.trim() === "" || line.trimStart().startsWith("#")) continue;
+    // A line that is not indented has left the block, and the block ends
+    // there — the next top-level key is not a role however it is spelled.
+    if (!/^\s/.test(line)) break;
+    const m = /^\s+([A-Za-z0-9_-]+):\s*(.*)$/.exec(line);
+    if (m === null) continue;
+    const key = /** @type {string} */ (m[1]);
+    const raw = /** @type {string} */ (m[2]);
+    const value = raw.split(" #")[0]?.trim() ?? "";
+    if (value === "") continue;
+    models.set(key, value);
+  }
+  return models;
+}
+
+/**
+ * @typedef {object} ModelChoice
+ * @property {string} role     the method role file's name, e.g. `executor`
+ * @property {string} field    the card frontmatter field this seat is stamped under
+ * @property {string} key      the runtime template's own key for that role
+ * @property {string} model    what this seat is dispatched on
+ * @property {string} fromTemplate the template's default, always read and always reported
+ * @property {boolean} overridden whether this dispatch named a model of its own
+ */
+
+/**
+ * ONE SEAT'S CHOICE, WITH THE DEFAULT KEPT BESIDE IT.
+ *
+ * A dial may name a model for one dispatch, and the template's default is
+ * reported anyway rather than replaced in the record: a reader who is
+ * shown only the value that won cannot tell a dispatch that took the
+ * project's default from one that departed from it, and the departure is
+ * the interesting half.
+ *
+ * @param {string} role
+ * @param {string} field
+ * @param {{ model: string, key: string }} fallback the template's answer for that role
+ * @param {string | undefined} dial
+ * @returns {ModelChoice}
+ */
+export function modelChoice(role, field, fallback, dial) {
+  const named = dial !== undefined && dial.trim() !== "";
+  return {
+    role,
+    field,
+    key: fallback.key,
+    model: named ? /** @type {string} */ (dial).trim() : fallback.model,
+    fromTemplate: fallback.model,
+    overridden: named,
+  };
+}
+
+/**
+ * The model one role is dispatched on, or the refusal.
+ *
+ * @param {Map<string, string>} models the parsed `roles:` block
+ * @param {string} role the METHOD role file's name, e.g. `executor`
+ * @returns {{ model: string, key: string }}
+ */
+export function roleModel(models, role) {
+  const key = /** @type {Record<string, string>} */ (ROLE_TEMPLATE_KEYS)[role];
+  if (key === undefined) {
+    throw new ModelFinding(
+      `dispatch-brief: ${role} is not a role this arm dispatches, so ${RUNTIME_TEMPLATE} holds no ` +
+        `model default for it. The roles it dispatches are ${Object.keys(ROLE_TEMPLATE_KEYS).join(", ")}.`,
+    );
+  }
+  const model = models.get(key);
+  if (model === undefined || model === "") {
+    throw new ModelFinding(
+      `dispatch-brief: ${RUNTIME_TEMPLATE} names no model for \`${key}:\`, the key the ${role} ` +
+        "seat is dispatched under, so this dispatch is REFUSED. It is refused rather than filled " +
+        "in from the dispatching session's own model, because a seat's model would then be a " +
+        "property of who happened to dispatch it (ADR-024 decision 5). Name a model on that key " +
+        `in ${RUNTIME_TEMPLATE} and dispatch again.`,
+    );
+  }
+  return { model, key };
+}
+
 /**
  * Rewrite frontmatter fields on a card, IN PLACE and by whole line.
  *
@@ -5795,6 +6005,226 @@ export const DISPATCH_STEPS = Object.freeze([
   }),
 ]);
 
+/* ────────────────────────────────────────────────────────────────────
+ * ARM TWELVE — THE BOUNDED WAIT (T-298, ADR-024's room decision G).
+ *
+ * **A WAIT WITH NO CEILING IS A HANG, AND A HANG IS THE ONE FAILURE A
+ * PIPELINE CANNOT REPORT.** The measured run the loop room read spent
+ * two thirds of its wait calls on short polls that timed out; ours were
+ * hand-typed sleeps, which is the same defect from the other side — a
+ * sleep guesses the answer and then stops asking, so it is either too
+ * short to be true or too long to be cheap, and it never says which.
+ *
+ * So every wait this arm performs has exactly three properties:
+ *
+ *   1. IT WAITS ON A FACT, not on a duration — a MARKER FILE appearing,
+ *      or a PID leaving the process table. Both are things that either
+ *      happened or did not, so the wait ends the moment the answer
+ *      changes rather than when a guessed interval elapses.
+ *   2. IT CARRIES A CEILING AND THE CEILING IS STATED. A wait with no
+ *      ceiling is refused at USAGE, because a default nobody typed is a
+ *      hang nobody chose.
+ *   3. IT REPORTS THE CEILING RATHER THAN HANGING ON IT. Reaching the
+ *      ceiling is an ANSWER — "not yet, after this long, having asked
+ *      this many times" — printed with its own exit, and never silence.
+ *
+ * THE LIVENESS PROBE IS `ps`, AND THAT IS RULED RATHER THAN CHOSEN:
+ * `checkout-currency.mjs` measured the obvious spelling wrong in three
+ * separate ways on this machine, so this arm reuses that file's own
+ * `processRow` instead of keeping a second answer to one question.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/** How often the wait asks, in milliseconds. */
+export const AWAIT_INTERVAL_MS = 250;
+
+/** The finding class: a wait this arm was asked for and cannot perform. */
+export class AwaitFinding extends Error {}
+
+/**
+ * @typedef {object} AwaitOptions
+ * @property {string} [marker]  a path whose APPEARANCE ends the wait
+ * @property {string} [pid]     a process whose EXIT ends the wait
+ * @property {string} [ceiling] seconds, as the seat typed them
+ */
+
+/**
+ * @typedef {object} AwaitPlan
+ * @property {"marker" | "pid"} kind
+ * @property {string} target     the marker path, or the pid as it will be printed
+ * @property {number} [pid]      the parsed pid, on the pid arm only
+ * @property {number} ceilingMs
+ * @property {number} intervalMs
+ * @property {string} what       one line naming the fact this wait is waiting on
+ */
+
+/**
+ * @typedef {object} AwaitResult
+ * @property {boolean} satisfied  the fact happened
+ * @property {boolean} ceiling    the ceiling was reached and is being REPORTED
+ * @property {number} waitedMs
+ * @property {number} polls       how many times the fact was asked about
+ * @property {string} why         one line a reader can act on
+ */
+
+/**
+ * Validate a wait, or refuse it. Reads nothing and waits for nothing.
+ *
+ * @param {AwaitOptions} opts
+ * @returns {AwaitPlan}
+ */
+export function awaitPlan(opts) {
+  const marker = (opts.marker ?? "").trim();
+  const pidRaw = (opts.pid ?? "").trim();
+  if (marker !== "" && pidRaw !== "") {
+    throw new AwaitFinding(
+      "dispatch-brief: a wait names ONE fact — a marker file or a pid — and this invocation named " +
+        "both. Two facts are two waits, and which one ended it would then depend on which was " +
+        "asked about first.",
+    );
+  }
+  if (marker === "" && pidRaw === "") {
+    throw new AwaitFinding(
+      "dispatch-brief: a wait needs the fact it is waiting on: a marker path, or a pid. A wait on " +
+        "nothing is a sleep, which is the hand-typed thing this arm exists to replace.",
+    );
+  }
+  const ceilingRaw = (opts.ceiling ?? "").trim();
+  if (ceilingRaw === "") {
+    throw new AwaitFinding(
+      "dispatch-brief: a wait needs a CEILING in seconds and this arm will not default one. A " +
+        "ceiling nobody typed is a hang nobody chose, and the whole property this arm buys is " +
+        "that the wait ends whatever happens.",
+    );
+  }
+  const seconds = Number(ceilingRaw);
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    throw new AwaitFinding(
+      `dispatch-brief: ${JSON.stringify(ceilingRaw)} is not a ceiling — it must be a positive ` +
+        "number of seconds. A ceiling of zero or less is a wait that has already expired, which " +
+        "reports rather than waits and is never what a caller meant.",
+    );
+  }
+  const ceilingMs = Math.round(seconds * 1000);
+  if (marker !== "") {
+    return {
+      kind: "marker",
+      target: marker,
+      ceilingMs,
+      intervalMs: AWAIT_INTERVAL_MS,
+      what: `the marker file ${marker} to appear`,
+    };
+  }
+  const pid = Number(pidRaw);
+  if (!isRecordablePid(pid)) {
+    throw new AwaitFinding(
+      `dispatch-brief: ${JSON.stringify(pidRaw)} is not a pid this arm will wait on. It must be a ` +
+        "whole number of at least 1: 0 is the process GROUP and -1 is every process, and both " +
+        "answer ALIVE for ever to a liveness probe (checkout-currency.mjs carries that " +
+        "measurement).",
+    );
+  }
+  return {
+    kind: "pid",
+    target: String(pid),
+    pid,
+    ceilingMs,
+    intervalMs: AWAIT_INTERVAL_MS,
+    what: `process ${String(pid)} to leave the process table`,
+  };
+}
+
+/**
+ * THE SEAM, AND IT IS WHY THIS ARM IS TESTABLE AT ALL.
+ *
+ * A body that waited on real time would either take its own ceiling to
+ * red or assert nothing, so the clock, the sleep and the question are all
+ * injected: a body drives a synthetic clock and gets the ceiling arm in
+ * microseconds. This is `checkout-currency.spec.ts`'s own rule about the
+ * liveness derivation, applied to the wait around it — no body may arm
+ * this through the machine it happens to run on.
+ *
+ * @returns {{ now: () => number, sleep: (ms: number) => Promise<void>, happened: (plan: AwaitPlan) => boolean }}
+ */
+export function defaultAwaitIo() {
+  return {
+    now: () => Date.now(),
+    sleep: (ms) =>
+      new Promise((resolve) => {
+        setTimeout(resolve, ms);
+      }),
+    happened: (plan) =>
+      plan.kind === "marker"
+        ? existsSync(plan.target)
+        : processRow(/** @type {number} */ (plan.pid)) === undefined,
+  };
+}
+
+/**
+ * Wait for the fact, or reach the ceiling and SAY SO.
+ *
+ * THE FACT IS ASKED ABOUT BEFORE THE FIRST SLEEP, deliberately: a marker
+ * already on disk when the wait began, or a process that has already
+ * exited, is a wait that is already over — and a poll loop that sleeps
+ * first spends one interval learning that.
+ *
+ * @param {AwaitPlan} plan
+ * @param {ReturnType<typeof defaultAwaitIo>} io
+ * @returns {Promise<AwaitResult>}
+ */
+export async function runAwait(plan, io) {
+  const started = io.now();
+  let polls = 0;
+  for (;;) {
+    polls += 1;
+    if (io.happened(plan)) {
+      const waitedMs = io.now() - started;
+      return {
+        satisfied: true,
+        ceiling: false,
+        waitedMs,
+        polls,
+        why:
+          `it happened: ${plan.what}, after ${String(waitedMs)} ms and ${String(polls)} ask(s), ` +
+          `inside the ${String(plan.ceilingMs)} ms ceiling`,
+      };
+    }
+    const waitedMs = io.now() - started;
+    if (waitedMs >= plan.ceilingMs) {
+      return {
+        satisfied: false,
+        ceiling: true,
+        waitedMs,
+        polls,
+        why:
+          `THE CEILING WAS REACHED AND THIS IS THE REPORT, not a hang: waited for ${plan.what} ` +
+          `for ${String(waitedMs)} ms against a ceiling of ${String(plan.ceilingMs)} ms, asking ` +
+          `${String(polls)} time(s), and it had not happened. Nothing was signalled and nothing ` +
+          "was taken away — the wait ended, the thing it waited on did not.",
+      };
+    }
+    // NEVER SLEEP PAST THE CEILING: the last interval is trimmed to what
+    // is left, so the report lands at the ceiling rather than up to one
+    // interval after it.
+    await io.sleep(Math.min(plan.intervalMs, plan.ceilingMs - waitedMs));
+  }
+}
+
+/**
+ * @param {Ctx} ctx
+ * @param {AwaitPlan} plan
+ * @param {AwaitResult} result
+ * @returns {Rec[]}
+ */
+export function awaitRecs(ctx, plan, result) {
+  const p = liveProv(ctx.at, ctx.host, "this wait's own clock, and the fact it asked about");
+  return [
+    note("THE BOUNDED WAIT — on a fact, with a ceiling, and the ceiling is an ANSWER"),
+    value(`waiting on: ${plan.what}`, p),
+    value(`ceiling: ${String(plan.ceilingMs)} ms, asked every ${String(plan.intervalMs)} ms`, p),
+    value(result.ceiling ? `CEILING REACHED — ${result.why}` : `satisfied — ${result.why}`, p),
+  ];
+}
+
 /**
  * @typedef {object} DispatchLaneOptions
  * @property {string} taskId
@@ -5826,6 +6256,7 @@ export const DISPATCH_STEPS = Object.freeze([
  * @property {string[]} keeperArgv  the fence's keeper run, at the base
  * @property {string} keeperVerdictToken the token a graded reading prints
  * @property {Record<string, string>} stamp
+ * @property {ModelChoice[]} models  one per dispatched seat, read from the runtime template
  * @property {string[]} createArgv  the published create command, substituted
  * @property {readonly DispatchStep[]} steps
  */
@@ -5880,10 +6311,24 @@ export function dispatchLanePlan(ctx, opts) {
         "copy of every file to everything that walks the tree.",
     );
   }
+  // ── THE MODEL PER SEAT, READ FROM THE RUNTIME TEMPLATE (T-298) ─────
+  // It is resolved HERE, in the pure plan, so an absent default refuses
+  // BEFORE the ritual stamps a card or cuts a worktree: a dispatch that
+  // has to be unwound is more expensive than one that never began. And
+  // it is resolved whether or not a dial was passed, because "an absent
+  // default refuses" is a statement about the TEMPLATE and a dial cannot
+  // make a missing default present.
+  const templateModels = roleModels(runtimeTemplateText(ctx.root));
+  const builderDefault = roleModel(templateModels, "executor");
+  const verifierDefault = roleModel(templateModels, "verifier");
+  /** @type {ModelChoice[]} */
+  const models = [
+    modelChoice("executor", "builder", builderDefault, opts.executor),
+    modelChoice("verifier", "verifier", verifierDefault, opts.verifier),
+  ];
   /** @type {Record<string, string>} */
   const stamp = { status: "building" };
-  if (opts.executor !== undefined && opts.executor !== "") stamp["builder"] = opts.executor;
-  if (opts.verifier !== undefined && opts.verifier !== "") stamp["verifier"] = opts.verifier;
+  for (const m of models) stamp[m.field] = m.model;
   const scratch = opts.scratch === undefined || opts.scratch === "" ? os.tmpdir() : opts.scratch;
 
   // ── THE TIER'S TREE-SIDE INPUTS (T-296) ────────────────────────────
@@ -5951,6 +6396,7 @@ export function dispatchLanePlan(ctx, opts) {
     ],
     keeperVerdictToken: runner.verdictToken,
     stamp,
+    models,
     createArgv: createLaneArgv(ctx, { branchName, worktree }),
     steps: DISPATCH_STEPS,
   };
@@ -6628,6 +7074,18 @@ export function dispatchLaneRecs(ctx, plan, result) {
       treeProv(
         ctx.ref,
         "the card's size and fence against method/tasks/TASK-FORMAT.md's guard-class list, mapped by docs/CONVENTIONS.md",
+      ),
+    ),
+    // THE MODEL PER SEAT (T-298), beside the lane facts rather than inside
+    // the ledger: it is a property of the DISPATCH and it is true on a dry
+    // run, where no step has been performed and there is no ledger yet.
+    ...plan.models.map((m) =>
+      value(
+        `model (${m.field}): ${m.model}` +
+          (m.overridden
+            ? ` — THIS DISPATCH NAMED IT; the template's default for roles.${m.key} is ${m.fromTemplate}`
+            : ` — read from ${RUNTIME_TEMPLATE} as roles.${m.key}`),
+        treeProv(ctx.ref, `${RUNTIME_TEMPLATE}, its roles block (ADR-024 decision 5)`),
       ),
     ),
     value(
