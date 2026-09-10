@@ -3,7 +3,7 @@ id: T-297-s3
 title: "ADR-019's Records clause owes an addendum, because a machine-written readings file now lives in that directory and a band reads it — the owner's sentence, not a lane's"
 feature: F-01
 milestone: 4
-size: XS
+size: S
 priority: 2
 status: suggested
 suggested_by: "executor claude-opus-5@subagent @T-297, 2026-09-10"
