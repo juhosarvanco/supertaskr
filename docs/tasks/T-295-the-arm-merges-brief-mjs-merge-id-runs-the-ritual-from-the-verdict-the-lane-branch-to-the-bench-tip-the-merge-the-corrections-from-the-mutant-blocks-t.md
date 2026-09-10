@@ -153,4 +153,25 @@ to satisfy. The landing gate now labels each out-of-fence path as a
 VERDICT-NAMED spec or a LANE write, since the two have different
 remedies.
 
+**THE SEAT RULED ASK 1 AT 2026-09-10T14:36:42Z: THE BRIEF'S HALF STANDS
+AND NOTHING BUILT ABOVE INVERTS.** A block's `old` text is the
+correction and is applied when the merged tree carries `new` exactly
+once, nothing is written when the tree already carries `old` and the
+step says so, and anything else refuses naming the block — so
+criterion 2's letter ("apply each correction's `new` text") is read as
+so amended, the card standing as the record it is, and the drill goes
+on planting `new` over `old`.
+
+**ASK 2 WAS GRANTED AT 2026-09-10T15:44:53Z BY THE FAST PATH, AND THE
+FIVE FLAGS ARE ARGUED IN THIS COMMIT.** Main commit `9e34aaec` widened
+this card's `touches:` by `tools/e2e/tests/brief-flush.spec.ts` and the
+lane's fence manifest carries it, so the five flags this card adds to
+`brief.mjs` — `--merge` and its four modifiers `--bump`, `--meters`,
+`--tier` and `--blocks-absent` — now sit in that file's `NOT_AN_ARM`
+beside `--dispatch-lane`, each with the reason that guard requires: a
+verb that stages a merge, widens a fence and stamps a card cannot be an
+arm a size guard RUNS, which is `--dispatch-lane`'s own argument at the
+closing end of the loop, and `merge.spec.ts` drives it end to end
+instead.
+
 ## Verdicts

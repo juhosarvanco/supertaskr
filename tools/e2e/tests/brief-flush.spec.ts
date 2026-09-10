@@ -695,6 +695,26 @@ const NOT_AN_ARM: ReadonlyArray<{ flag: string; why: string }> = [
     why: "THE WRITER THAT COMMITS (T-239). It stamps a card on the integration branch and commits that, cuts two worktrees and writes a brief — so a guard that measured its size would perform a dispatch every time this suite ran, which is the same argument the three writers above already make and one degree worse. `brief.spec.ts` drives it end to end against scratch repositories instead.",
   },
   {
+    flag: "--merge",
+    why: "THE OTHER WRITER THAT COMMITS (T-295). It widens a card's fence on the integration branch as its own commit, stages a merge, stamps a card and appends to the bands' readings — so a guard that measured its size would perform a merge every time this suite ran, which is `--dispatch-lane`'s argument at the closing end of the loop. `merge.spec.ts` drives it end to end against scratch repositories instead.",
+  },
+  {
+    flag: "--bump",
+    why: "a MODIFIER of --merge: which method version the three stamp files move to. It is meaningless without --merge and this command refuses it alone.",
+  },
+  {
+    flag: "--meters",
+    why: "a MODIFIER of --merge taking a PATH, so its size is a function of the report it is handed and not of this repository — the same argument `--audit` above already makes.",
+  },
+  {
+    flag: "--tier",
+    why: "a MODIFIER of --merge: which tier the readings are stamped with. One word into one JSON line, and meaningless without --merge.",
+  },
+  {
+    flag: "--blocks-absent",
+    why: "a MODIFIER of --merge: the acknowledgement that names a pre-T-281 verdict carrying no mutant block. It is a sha the seat has read and typed, and it is meaningless without --merge.",
+  },
+  {
     flag: "--slug",
     why: "a MODIFIER of --dispatch-lane, and the one input in that whole ritual the documents leave to a person: the branch name a reader of `git branch` sees for the life of the repository. It changes no size this file measures, and alone it is a usage error.",
   },
