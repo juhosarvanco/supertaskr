@@ -38,7 +38,7 @@ never deleted to fit.** The commit subject opens with `Checkpoint:`.
 - **THE BENCH IS TWO SPAWNS** (5d): phase 1 pasted the card at base +
   the condensed role, its return saved as `attack-set-<id>.md` and
   hashed with ground truths taken AT THE BASE; phase 2 a FRESH spawn on
-  `../nputer-V-<id>`, `git checkout --quiet --detach <tip>`. Phase 1
+  `../supertaskr-V-<id>`, `git checkout --quiet --detach <tip>`. Phase 1
   keeps blindness by instruction and every verdict says so (T-261).
   **PASS `model` ON EVERY SPAWN and stamp what ran.** **A BENCH STANDS UNTIL THE VERIFIER'S NOTIFICATION, never its
   verdict file.** **A CORRECTION IS A BODY THE VERIFIER COMMITS PLUS A
@@ -54,7 +54,7 @@ never deleted to fit.** The commit subject opens with `Checkpoint:`.
   typed** (T-282's ask went unseen). **THE READ GUARD SCREENS READS IN EVERY CHECKOUT**
   (T-249); Bash reads bypass it, disclosed.
 - THE HUMAN'S APP holds **1420** (the boot gate ABORTS while it does);
-  `../nputer-app` is detached ON PURPOSE: not a lane.
+  `../supertaskr-app` is detached ON PURPOSE: not a lane.
 - BOARD CENSUS: `brief.mjs --state`; the parser's field is `blockedBy`.
 - **E2E PORT AND SCRATCH FILENAMES ARE CONVENTIONS' RULES** (T-217):
   lane 15<card>, bench 25<card>, `<purpose>-<card>.<ext>`.

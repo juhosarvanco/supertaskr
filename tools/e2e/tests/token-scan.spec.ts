@@ -125,7 +125,7 @@ function gateFixture(targets: readonly string[]): { root: string; wrapper: strin
   // directory is shared between concurrent sessions, and
   // docs/CONVENTIONS.md's POISON DRILL bullet measured four of them
   // picking one literal path and losing each other's files.
-  const root = mkdtempSync(path.join(os.tmpdir(), "nputer-T-216-s4-token-scan-"));
+  const root = mkdtempSync(path.join(os.tmpdir(), "supertaskr-T-216-s4-token-scan-"));
   SCRATCH.push(root);
   for (const dir of TOKEN_ROOT_DIRS) mkdirSync(path.join(root, dir), { recursive: true });
   for (const relative of [...GATE_IMPLEMENTATION, ...targets]) {
@@ -672,6 +672,61 @@ test("CONTROL covers every tracked suffix class it does not declare uncoverable"
     expect(row, `${cls} is tracked`).toBeDefined();
     expect(row!.covered, `every tracked ${cls} file is CONTROL-covered`).toBe(row!.tracked);
   }
+});
+
+/**
+ * T-269's last criterion names ONE walk-policy check as the guard for the
+ * runtime template's new name. That check is a ROW in a list inside
+ * `token-scan.mjs` which is both the expectation and its own source, so a
+ * row deleted from it deletes its own assertion and the gate stays clean
+ * — measured: removing the row leaves `npm run lint:tokens` at exit 0 and
+ * this file at 10 passed. It is the same tautology `rename-scan.mjs`'s
+ * own header names for the class table, and the same one
+ * `the corpus reaches every tree the criteria name` was re-cut for in
+ * this lane; this body closes it one module over, by deriving the path
+ * the check must name from `kit.rs`'s compile-time embed instead of from
+ * the list being judged.
+ */
+test("the CONTROL corpus check for the kit's runtime template is named from the tree, not from the list that checks it", () => {
+  const kitSource = readFileSync(
+    path.join(repoRoot, "app", "src-tauri", "src", "agent", "kit.rs"),
+    "utf8",
+  );
+  const embedded = [
+    ...kitSource.matchAll(/include_str!\("[^"]*?(method\/runtime\/[^"/]+\.yaml)"\)/g),
+  ].map((m) => m[1] as string);
+  // POSITIVE CONTROL FIRST: the needle found something. An empty list
+  // satisfies every check below for the wrong reason.
+  expect(embedded, "kit.rs embeds no runtime template, so this body pins nothing").toHaveLength(1);
+  const rel = embedded[0] as string;
+  expect(
+    execFileSync("git", ["ls-files", "--error-unmatch", rel], {
+      cwd: repoRoot,
+      encoding: "utf8",
+    }).trim(),
+    "the runtime template the kit embeds is not a tracked file",
+  ).toBe(rel);
+  expect(
+    corpus(CORPORA.CONTROL),
+    `the runtime template ${rel} is outside the CONTROL corpus the gate walks`,
+  ).toContain(rel);
+
+  // THE CHECK ITSELF, read out of the scanner's source. The list is
+  // DATA, so a data mutant is what grades this (verifier.md 2b), and the
+  // list's shape is asserted before its content so that an absence below
+  // means the row is gone rather than that the needle was never right.
+  const scanner = readFileSync(
+    path.join(repoRoot, "tools", "e2e", "scripts", "token-scan.mjs"),
+    "utf8",
+  );
+  expect(
+    scanner.includes(`"docs/ROADMAP.md",`),
+    "the tracked-text-format list has changed shape, so the absence below proves nothing",
+  ).toBe(true);
+  expect(
+    scanner.includes(`"${rel}",`),
+    `the tracked-text-format list names no CONTROL check for the runtime template ${rel} the kit embeds`,
+  ).toBe(true);
 });
 
 /**

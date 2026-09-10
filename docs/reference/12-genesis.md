@@ -22,7 +22,7 @@ method/
   docs-templates/        STATE, ROADMAP, ARCHITECTURE, CONVENTIONS, NORTH_STAR
   adapters/              CLAUDE.md and AGENTS.md templates
   rooms/                 the room format
-  runtime/nputer.yaml    role → model defaults, thresholds (gitignored copy)
+  runtime/supertaskr.yaml    role → model defaults, thresholds (gitignored copy)
 ```
 
 All kit paths are relative to the kit root; the kickoff names the kit

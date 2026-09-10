@@ -28,7 +28,7 @@
  *   node tools/e2e/scripts/brief.mjs --task T-133 --state --full
  *   node tools/e2e/scripts/brief.mjs --card T-150
  *   node tools/e2e/scripts/brief.mjs --task T-160 --preflight
- *   node tools/e2e/scripts/brief.mjs --task T-154 --write-fence ../nputer-T-154
+ *   node tools/e2e/scripts/brief.mjs --task T-154 --write-fence ../supertaskr-T-154
  *   node tools/e2e/scripts/brief.mjs --take-seat
  *   node tools/e2e/scripts/brief.mjs --release-seat
  *   node tools/e2e/scripts/brief.mjs --dispatch-lane T-239 --slug one-arm
@@ -1012,7 +1012,7 @@ async function main(argv) {
     // This resolved a relative `--write-fence` argument against `ctx.root`
     // — the checkout the command ran in — which is the same base row 4 was
     // fixed for and the same wrong answer from a nested worktree: the
-    // dispatcher who pastes CONVENTIONS' published `../nputer-T-NNN` gets a
+    // dispatcher who pastes CONVENTIONS' published `../supertaskr-T-NNN` gets a
     // manifest aimed one directory inside `.claude/worktrees/`. It is
     // WORSE than the row, because the row is read and this one acts. One
     // base, derived once, spent by both. An ABSOLUTE argument is untouched

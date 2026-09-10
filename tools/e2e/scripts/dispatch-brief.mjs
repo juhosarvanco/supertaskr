@@ -637,7 +637,7 @@ export function parseWorktreePorcelain(porcelain) {
  * command happens to have run in (T-179).
  *
  * ── THE DEFECT THIS EXISTS TO REMOVE ─────────────────────────────────
- * `docs/CONVENTIONS.md` publishes the lane worktree as `../nputer-T-NNN`,
+ * `docs/CONVENTIONS.md` publishes the lane worktree as `../supertaskr-T-NNN`,
  * a RELATIVE path. Row 4 resolved it against `ctx.root` — the checkout the
  * command ran in — and printed the answer under the heading "absolute, per
  * lane-protocol rule three". From the integration checkout that lands on
@@ -653,7 +653,7 @@ export function parseWorktreePorcelain(porcelain) {
  * ── WHY THE PORCELAIN'S FIRST ENTRY AND NOT `--git-common-dir` ────────
  * Both were measured on this repository from all three checkout shapes
  * (integration, nested worktree, lane) and both answered
- * `/Users/ujju/Projects/nputer`. The porcelain wins on three counts.
+ * `/Users/ujju/Projects/supertaskr`. The porcelain wins on three counts.
  * It is GIT'S OWN ANSWER rather than a derivation from one — git-worktree(1)
  * lists the main working tree first, by contract, while the parent of
  * `--git-common-dir` is a guess that holds only where `.git` is a
@@ -1994,7 +1994,7 @@ function deriveLane(ctx) {
     : [
         // A LIVE FACT, AND IT ALWAYS WAS. Where the repository sits on a
         // disk is not determined by the commit this checkout holds — the
-        // same tree answers `/Users/ujju/Projects/nputer` here and
+        // same tree answers `/Users/ujju/Projects/supertaskr` here and
         // something else on a runner — so stamping it `@ <ref>` was the
         // module's own contract rule 3 broken in the row that cites rule
         // three. The SPELLING is the tree's; the resolved path is the

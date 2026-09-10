@@ -1,7 +1,7 @@
 //! T-110: enumerate the lanes git has already written down.
 //!
 //! ```text
-//! <repo>/.git/worktrees/<name>/gitdir -> /Users/…/nputer-T-110/.git
+//! <repo>/.git/worktrees/<name>/gitdir -> /Users/…/supertaskr-T-110/.git
 //! <repo>/.git/worktrees/<name>/HEAD   -> ref: refs/heads/task/T-110-lane-reader
 //! ```
 //!
@@ -619,7 +619,7 @@ mod tests {
         let root = repo("live");
         let worktree = register(
             &root,
-            "nputer-T-110",
+            "supertaskr-T-110",
             &branch_head("task/T-110-lane-reader"),
             true,
         );
@@ -628,7 +628,7 @@ mod tests {
         assert_eq!(
             entries(&scan),
             [WorktreeEntry::Lane {
-                name: "nputer-T-110".to_string(),
+                name: "supertaskr-T-110".to_string(),
                 task_id: "T-110".to_string(),
                 branch: "task/T-110-lane-reader".to_string(),
                 worktree_path: worktree.to_string_lossy().to_string(),
@@ -643,7 +643,7 @@ mod tests {
         let root = repo("stale");
         let worktree = register(
             &root,
-            "nputer-T-042",
+            "supertaskr-T-042",
             &branch_head("task/T-042-genesis-switch"),
             false,
         );
@@ -657,7 +657,7 @@ mod tests {
         assert_eq!(
             entry,
             &WorktreeEntry::Lane {
-                name: "nputer-T-042".to_string(),
+                name: "supertaskr-T-042".to_string(),
                 task_id: "T-042".to_string(),
                 branch: "task/T-042-genesis-switch".to_string(),
                 worktree_path: worktree.to_string_lossy().to_string(),
@@ -754,7 +754,7 @@ mod tests {
         let root = scratch("gitfile");
         fs::write(
             root.join(".git"),
-            "gitdir: /Users/somebody/Projects/nputer/.git/worktrees/nputer-T-110\n",
+            "gitdir: /Users/somebody/Projects/supertaskr/.git/worktrees/supertaskr-T-110\n",
         )
         .expect(".git file");
         assert_eq!(read_lanes(&root), LaneScan::GitIsAFile);
@@ -1066,11 +1066,11 @@ mod tests {
         // part of THIS, so "refused" can never mean "the target was
         // rubbish".
         let real = repo("symlinkstructure-real");
-        let worktree = register(&real, "nputer-T-110", &branch_head("task/T-110-x"), true);
+        let worktree = register(&real, "supertaskr-T-110", &branch_head("task/T-110-x"), true);
         assert_eq!(
             entries(&read_lanes(&real)),
             [WorktreeEntry::Lane {
-                name: "nputer-T-110".to_string(),
+                name: "supertaskr-T-110".to_string(),
                 task_id: "T-110".to_string(),
                 branch: "task/T-110-x".to_string(),
                 worktree_path: worktree.to_string_lossy().to_string(),
@@ -1109,7 +1109,7 @@ mod tests {
         let arm3 = repo("symlinkentry");
         let real_entry = register(&arm3, "acontrol", &branch_head("task/T-110-x"), true);
         symlink(
-            real.join(".git").join("worktrees").join("nputer-T-110"),
+            real.join(".git").join("worktrees").join("supertaskr-T-110"),
             arm3.join(".git").join("worktrees").join("bleak"),
         )
         .expect("symlink entry");
@@ -1142,7 +1142,7 @@ mod tests {
     #[test]
     fn entries_come_back_sorted_by_name_whatever_the_filesystem_says() {
         let root = repo("order");
-        for name in ["nputer-T-123", "nputer-T-010", "nputer-T-110"] {
+        for name in ["supertaskr-T-123", "supertaskr-T-010", "supertaskr-T-110"] {
             register(&root, name, &branch_head("task/T-1-x"), true);
         }
         let scan = read_lanes(&root);
@@ -1153,7 +1153,7 @@ mod tests {
                 other => panic!("expected lanes, got {other:?}"),
             })
             .collect();
-        assert_eq!(names, ["nputer-T-010", "nputer-T-110", "nputer-T-123"]);
+        assert_eq!(names, ["supertaskr-T-010", "supertaskr-T-110", "supertaskr-T-123"]);
     }
 
     // ---- the positive shape, from both sides ---------------------------
@@ -1361,8 +1361,8 @@ mod tests {
     #[test]
     fn the_reader_writes_nothing() {
         let root = repo("writeset");
-        register(&root, "nputer-T-110", &branch_head("task/T-110-lane-reader"), true);
-        register(&root, "nputer-T-042", &branch_head("task/T-042-x"), false);
+        register(&root, "supertaskr-T-110", &branch_head("task/T-110-lane-reader"), true);
+        register(&root, "supertaskr-T-042", &branch_head("task/T-042-x"), false);
         register(&root, "hotfix", &branch_head("hotfix/please"), true);
         register(&root, "drill", "d46f71f7e036d87629f46efdb65f4b070b89cb36", true);
 

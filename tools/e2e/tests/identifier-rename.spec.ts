@@ -5,13 +5,21 @@ import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { repoRoot } from "../preflight";
 import {
+  CURRENT_NAME,
   KEPT_CLASSES,
   KEPT_CLASS_IDS,
   LEGACY_NAME,
+  PROSE_NAME,
   SCAN_EXCLUDED_FILES,
+  SCAN_ROOTS,
+  caseFindings,
   carriesLegacy,
   classifyLegacy,
+  foldHomoglyphs,
+  homoglyphFindings,
+  scanCase,
   scanCorpus,
+  scanHomoglyphs,
   scanLegacy,
 } from "../scripts/rename-scan.mjs";
 import {
@@ -32,6 +40,12 @@ import { readToken } from "../../../.claude/hooks/gate-token.mjs";
  * make a record a record of what happened rather than a document that
  * gets maintained. A rename that satisfies one and not the other is the
  * failure this file exists to catch, in either direction.
+ *
+ * AND SINCE T-265-s3 THE SAME CORPUS IS READ TWICE MORE, because the old
+ * spelling being gone is not the same claim as the new one being right:
+ * the CASE reading holds ADR-022 decision 1's identifier half, and the
+ * HOMOGLYPH reading holds the token that looks like the name to a reader
+ * and is not the name to any search — including the two above it.
  *
  * THE RECORD DIRECTORIES ARE FLOORS, NOT EQUALITIES, and the asymmetry
  * is the point: records are append-only, so a count here can only rise.
@@ -76,7 +90,7 @@ function filesCarrying(dir: string, needle: string): string[] {
   return out.split("\n").filter(Boolean).filter((f) => !NOT_A_RECORD.has(f));
 }
 
-test("only the four enumerated classes of the pre-rename identifier survive in the code tree", () => {
+test("only the enumerated classes of the pre-rename identifier survive in the corpus", () => {
   const corpus = scanCorpus(repoRoot);
   // Shape TEN: a comparison whose expected side was never shown to be
   // non-empty reports agreement when the producer failed.
@@ -126,6 +140,132 @@ test("every enumerated survivor class is occupied — a class nobody hits has st
     expect(scanCorpus(repoRoot)).not.toContain(excluded);
   }
   expect(KEPT_CLASSES.every((c) => c.files === null || c.files.length > 0)).toBe(true);
+});
+
+test("the corpus reaches every tree the criteria name — a root that drops takes three readings with it", () => {
+  const corpus = scanCorpus(repoRoot);
+  // POSITIVE CONTROL FIRST: the walk answered at all. Every absence
+  // below is satisfied by an empty list, and only one of those is the
+  // property.
+  expect(corpus.length, "the walk found nothing, so every root below is trivially unreached").toBeGreaterThan(
+    100,
+  );
+
+  // THE ROOTS ARE LISTED HERE, NOT READ OFF `SCAN_ROOTS`, and the first
+  // cut of this body did read them — which made it a tautology: a root
+  // deleted from the module deleted its own assertion, and a drill that
+  // dropped `method/` passed nine of nine. This is the same failure
+  // `rename-scan.mjs`'s own header names for the class table, and the
+  // same answer: an expectation learned from the thing it judges agrees
+  // with it by construction.
+  const REQUIRED_ROOTS = [
+    // T-264's first acceptance criterion
+    "app/",
+    "lib/",
+    "tools/",
+    ".claude/",
+    ".github/",
+    // T-264-s2's launcher, the one a human runs by hand
+    "bin/",
+    // T-265-s3's own criterion
+    "method/",
+    // the prose trees T-265's `touches:` line names
+    "docs/architecture/",
+    "docs/business/",
+    "docs/design/",
+    "docs/guide/",
+    "docs/reference/",
+  ];
+  for (const root of REQUIRED_ROOTS) {
+    expect(
+      SCAN_ROOTS,
+      `the criteria name the root \`${root}\` and the module's own list has dropped it`,
+    ).toContain(root);
+    expect(
+      corpus.some((f) => f.startsWith(root)),
+      `the corpus names the root \`${root}\` and walks no tracked file under it`,
+    ).toBe(true);
+  }
+  // And the governing documents, which are a tree nowhere: `docs/` is
+  // mostly records, so they are named one by one and are checked one by
+  // one.
+  for (const doc of ["docs/CONVENTIONS.md", "docs/NORTH_STAR.md", "docs/STATE.md", "docs/future.md"]) {
+    expect(corpus, `the governing document ${doc} is outside the corpus`).toContain(doc);
+  }
+  // THE RECORD TREES ARE OUT, and that is a property rather than an
+  // omission: ADR-022 decision 3 keeps the old spelling there, so a
+  // corpus that walked them would report the project's own history as an
+  // unfinished rename.
+  for (const record of ["docs/checkpoints/", "docs/rooms/", "docs/tasks/", "docs/decisions/", "docs/research/"]) {
+    expect(
+      corpus.filter((f) => f.startsWith(record)),
+      `the corpus walks the record tree ${record}, whose old spelling ADR-022 decision 3 keeps`,
+    ).toEqual([]);
+  }
+});
+
+test("the new name is not spelled with a capital S inside a code span or an identifier", () => {
+  // THE DETECTOR IS SHOWN TO FIRE FIRST. A tree-wide `toEqual([])` is
+  // satisfied by a reading that never finds anything, which is exactly
+  // what a broken regex looks like from here.
+  expect(
+    caseFindings(`the token \`${PROSE_NAME}\` is wrong here`),
+    "a prose-cased name inside a code span is not detected, so the empty tree below proves nothing",
+  ).toHaveLength(1);
+  expect(
+    caseFindings(`dev.${PROSE_NAME}.app and @${PROSE_NAME}/parser`),
+    "a prose-cased name glued into an identifier is not detected",
+  ).toHaveLength(2);
+  // AND IT IS SHOWN NOT TO FIRE ON PROSE, because a reading that says
+  // yes to everything passes the arm above just as well: an English
+  // hyphenation, a possessive, a full stop and decision 2's all-caps
+  // environment prefix are all correct spellings.
+  expect(
+    caseFindings(
+      `${PROSE_NAME}-scale repos are ${PROSE_NAME}'s own. ${PROSE_NAME}. SUPERTASKR_APP_WORKTREE`,
+    ),
+    "correct prose is reported as a case defect",
+  ).toEqual([]);
+  expect(PROSE_NAME.toLowerCase(), "the two spellings ADR-022 decision 1 gives are the same string").toBe(
+    CURRENT_NAME,
+  );
+
+  expect(
+    scanCase(repoRoot).map((h) => `${h.file}:${h.line}: ${h.cls}`),
+    "the prose spelling of the name is used where ADR-022 decision 1 gives the identifier spelling",
+  ).toEqual([]);
+});
+
+test("a name-shaped token carrying a non-ASCII homoglyph reds rather than passing as an unrecognised word", () => {
+  // The planted token: `supertaskr` with a CYRILLIC small a. `git grep`,
+  // `carriesLegacy` and `caseFindings` all answer no on it, which is the
+  // whole reason this reading exists.
+  const cyrillic = `supert${String.fromCodePoint(0x430)}skr`;
+  expect(cyrillic, "the plant is ASCII, so it is not the case this body covers").not.toBe(CURRENT_NAME);
+  expect(carriesLegacy(cyrillic), "the byte reading already sees the plant").toBe(false);
+  expect(foldHomoglyphs(cyrillic), "the fold does not recover the name").toBe(CURRENT_NAME);
+  expect(
+    homoglyphFindings(`the wordmark is ${cyrillic} here`),
+    "a homoglyph in a name-shaped token is not detected, so the empty tree below proves nothing",
+  ).toHaveLength(1);
+  // The pre-rename name folds too: a lookalike of the OLD spelling is
+  // just as invisible to the survivor scan as one of the new.
+  expect(
+    homoglyphFindings(`nput${String.fromCodePoint(0x435)}r`),
+    "a homoglyph of the pre-rename name is not detected",
+  ).toHaveLength(1);
+  // NEGATIVE CONTROL: non-ASCII text that is not name-shaped is not a
+  // finding. Without this the arm above is satisfied by a reading that
+  // reds on every accented word in the tree.
+  expect(
+    homoglyphFindings("Ströme, naïve, 你好, and a plain supertaskr"),
+    "ordinary non-ASCII text is reported as a homoglyph attack",
+  ).toEqual([]);
+
+  expect(
+    scanHomoglyphs(repoRoot).map((h) => `${h.file}:${h.line}: ${h.cls}`),
+    "a name-shaped token in the corpus carries a non-ASCII homoglyph",
+  ).toEqual([]);
 });
 
 test("the records were not rewritten — every record tree still carries the old name", () => {

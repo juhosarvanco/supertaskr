@@ -1232,7 +1232,7 @@ function walkPolicyChecks() {
       "app/src-tauri/tauri.conf.json",
       "docs/ROADMAP.md",
       "lib/parser/tsconfig.json",
-      "method/runtime/nputer.yaml",
+      "method/runtime/supertaskr.yaml",
     ].map((rel) => [`CONTROL includes tracked text format ${rel}`, controlFiles.includes(rel)]),
     [
       "CONTROL excludes binary assets",

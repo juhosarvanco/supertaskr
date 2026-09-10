@@ -853,7 +853,7 @@ function liveTouchTokens(model: ProjectParseResult): Map<string, string[]> {
 const lane = (taskId: string, branch: string, touches: string[] = []): InFlightLane => ({
   taskId,
   branch,
-  worktreePath: "/Users/x/Projects/nputer-" + taskId,
+  worktreePath: "/Users/x/Projects/supertaskr-" + taskId,
   touches,
   disagrees: false,
   fenceKnown: true,
@@ -862,7 +862,7 @@ const lane = (taskId: string, branch: string, touches: string[] = []): InFlightL
 const laneHold = (taskId: string, branch: string, existsOnDisk = true): LaneHold => ({
   taskId,
   branch,
-  worktreePath: "/Users/x/Projects/nputer-" + taskId,
+  worktreePath: "/Users/x/Projects/supertaskr-" + taskId,
   existsOnDisk,
 });
 
@@ -1430,7 +1430,7 @@ describe("the two facts the board's own type used to drop (T-185)", () => {
       oneCard(),
       floorReading(
         [
-          { kind: "detached", name: "nputer-app" },
+          { kind: "detached", name: "supertaskr-app" },
           { kind: "notALane", name: "arch-verify" },
         ],
         false,
@@ -1442,13 +1442,13 @@ describe("the two facts the board's own type used to drop (T-185)", () => {
     // a count would satisfy a length assertion and lose the only thing
     // that makes the entries actionable.
     expect(d.notLanes).toEqual([
-      { kind: "detached", name: "nputer-app" },
+      { kind: "detached", name: "supertaskr-app" },
       { kind: "notALane", name: "arch-verify" },
     ]);
     // And the board SAYS it, naming each — the producer's "reported,
     // never dropped" is a claim about a reader, not about a field.
     expect(d.headline).toContain("worktrees that are not lanes");
-    expect(d.headline).toContain("nputer-app · detached");
+    expect(d.headline).toContain("supertaskr-app · detached");
     expect(d.headline).toContain("arch-verify · notALane");
   });
 

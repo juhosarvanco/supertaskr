@@ -544,7 +544,7 @@ export const GIT_REPOINTING_ENV_RE =
  * What makes a token's VALUE unknowable without running the shell.
  *
  * THIS IS THE LINE BETWEEN READING AND GUESSING, and it is drawn wide on
- * purpose. `cd /Users/ujju/Projects/nputer-T-216` is not a parse: it is
+ * purpose. `cd /Users/ujju/Projects/supertaskr-T-216` is not a parse: it is
  * one literal word whose value is itself. `cd "$LANE"`, `cd ~/x`,
  * `cd $(pwd)` and `cd lane-*` are values only a shell knows, and
  * `T-025-s4` ruled that a `PreToolUse` hook cannot be the shell. A token
@@ -761,7 +761,7 @@ export const GH_BIN = "gh";
  * the bound below is a NUMBER WITH AN ARGUMENT rather than a number.
  *
  * MEASURED 2026-09-02 ON Mac.lan, `gh` 2.89.0, from this repository's own
- * checkout against its own remote (`github.com/juhosarvanco/nputer`),
+ * checkout against its own remote (`github.com/juhosarvanco/supertaskr`),
  * seven consecutive samples each, wall time of the whole process:
  *
  *   `gh run list --branch main --limit 10 --json …`  1026–1256 ms, median 1085

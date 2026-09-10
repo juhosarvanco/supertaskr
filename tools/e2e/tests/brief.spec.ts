@@ -141,7 +141,7 @@ const CLI = path.join(repoRoot, "tools", "e2e", "scripts", "brief.mjs");
  * created on disk. THE POINT OF THE FIXTURE IS THE SECOND AND THIRD
  * ENTRIES: a DETACHED worktree at a lane-shaped path, and a detached one
  * named after a card. Both existed on this repository while this card was
- * being built — `nputer-T-132-verify` at dispatch and `nputer-T-127-verify`
+ * being built — `supertaskr-T-132-verify` at dispatch and `supertaskr-T-127-verify`
  * an hour later — and a path filter counts both as lanes holding fences
  * that nobody holds.
  */
@@ -150,19 +150,19 @@ const PORCELAIN_FIXTURE = [
   "HEAD 1111111111111111111111111111111111111111",
   "branch refs/heads/main",
   "",
-  "worktree /Users/x/nputer-T-901",
+  "worktree /Users/x/supertaskr-T-901",
   "HEAD 2222222222222222222222222222222222222222",
   "branch refs/heads/task/T-901-a-real-lane",
   "",
-  "worktree /Users/x/nputer-T-902",
+  "worktree /Users/x/supertaskr-T-902",
   "HEAD 3333333333333333333333333333333333333333",
   "detached",
   "",
-  "worktree /Users/x/nputer-T-901-verify",
+  "worktree /Users/x/supertaskr-T-901-verify",
   "HEAD 2222222222222222222222222222222222222222",
   "detached",
   "",
-  "worktree /Users/x/nputer-T-903",
+  "worktree /Users/x/supertaskr-T-903",
   "HEAD 4444444444444444444444444444444444444444",
   "branch refs/heads/not-a-task-branch",
   "",
@@ -481,7 +481,7 @@ test("THE LANE LIST FILTERS ON THE BRANCH, NEVER THE PATH", () => {
       "was being built",
   ).not.toContain("T-902");
   // A detached checkout NAMED after a card is the same error wearing a
-  // better disguise: under a path filter `nputer-T-901-verify` becomes a
+  // better disguise: under a path filter `supertaskr-T-901-verify` becomes a
   // SECOND T-901 lane holding the same fence twice.
   expect(
     lanes.filter((l) => l.taskId === "T-901").length,
@@ -2525,12 +2525,12 @@ const BLIND_PORCELAIN = (ids: string[], real: string): string =>
     "branch refs/heads/main",
     "",
     ...ids.flatMap((id, i) => [
-      `worktree /Users/x/nputer-${id}`,
+      `worktree /Users/x/supertaskr-${id}`,
       `HEAD ${String(i + 2).repeat(40)}`,
       `branch refs/heads/task/${id}-a-card-this-checkout-cannot-read`,
       "",
     ]),
-    `worktree /Users/x/nputer-${real}`,
+    `worktree /Users/x/supertaskr-${real}`,
     "HEAD 9999999999999999999999999999999999999999",
     `branch refs/heads/task/${real}-a-real-lane`,
     "",
@@ -2719,7 +2719,7 @@ test("A SUFFIXED LANE BRANCH JOINS TO ITS OWN CARD IN THE `--state` LANE LIST, N
     "HEAD 1111111111111111111111111111111111111111",
     "branch refs/heads/main",
     "",
-    "worktree /Users/x/nputer-T-153-s2",
+    "worktree /Users/x/supertaskr-T-153-s2",
     "HEAD 2222222222222222222222222222222222222222",
     "branch refs/heads/task/T-153-s2-clock-restore-guard",
     "",
@@ -2764,7 +2764,7 @@ test("A SUFFIXED LANE BRANCH JOINS TO ITS OWN CARD IN THE `--state` LANE LIST, N
  * T-179 — A LANE IS A SIBLING OF THE REPOSITORY, NOT OF WHOEVER
  * DISPATCHED IT.
  *
- * `docs/CONVENTIONS.md` publishes the lane worktree as `../nputer-T-NNN`.
+ * `docs/CONVENTIONS.md` publishes the lane worktree as `../supertaskr-T-NNN`.
  * Row 4 resolved that RELATIVE spelling against `ctx.root` — the checkout
  * the command ran in — and printed the answer under the heading
  * "absolute, per lane-protocol rule three". From a NESTED worktree it
@@ -2856,7 +2856,7 @@ test("THE REPOSITORY'S ROOT IS DERIVED FROM GIT, and a repository with no workin
   // five and not the only path there was to hand back.
   const entries = parseWorktreePorcelain(PORCELAIN_FIXTURE);
   expect(entries.length).toBeGreaterThan(1);
-  expect(entries.map((e) => e.path)).toContain("/Users/x/nputer-T-901");
+  expect(entries.map((e) => e.path)).toContain("/Users/x/supertaskr-T-901");
   expect(entries.every((e) => e.bare)).toBe(false);
 
   // THE REFUSALS — the tool's own established idiom, and better than a
@@ -2880,9 +2880,9 @@ test("THE REPOSITORY'S ROOT IS DERIVED FROM GIT, and a repository with no workin
   // THE CONTAINMENT TEST RULE THREE IS ABOUT, both directions. The sibling
   // is OUT; the nested path the brief used to print is IN; and the root
   // itself is IN, because the repository is not a sibling of itself.
-  expect(insideRepository("/Users/x/supertaskr", "/Users/x/nputer-T-179")).toBe(false);
+  expect(insideRepository("/Users/x/supertaskr", "/Users/x/supertaskr-T-179")).toBe(false);
   expect(
-    insideRepository("/Users/x/supertaskr", "/Users/x/supertaskr/.claude/worktrees/nputer-T-179"),
+    insideRepository("/Users/x/supertaskr", "/Users/x/supertaskr/.claude/worktrees/supertaskr-T-179"),
     "this is the exact path the brief printed under the heading citing rule three",
   ).toBe(true);
   expect(insideRepository("/Users/x/supertaskr", "/Users/x/supertaskr")).toBe(true);
@@ -2894,7 +2894,7 @@ test("THE SWEEP: no derived row moves when only the dispatching checkout moves, 
   // WAS WRITTEN DOWN: the fixture's own tar is a checkout of the pre-fix
   // tree, and running ITS `brief.mjs` over the same two roots produced a
   // third moved line, `worktree (absolute, per lane-protocol rule three)`,
-  // naming `<main>/.claude/worktrees/nputer-T-133`.
+  // naming `<main>/.claude/worktrees/supertaskr-T-133`.
   //
   // THE SWEEP IS THE DELIVERABLE, NOT THE ROW. Row 4's worktree was one
   // member of a class — "a path this command derives by resolving a
@@ -3005,7 +3005,7 @@ test("THE SWEEP: no derived row moves when only the dispatching checkout moves, 
 
     // ── AND THE VALUE ITSELF, because the sweep alone cannot see a row
     //    that is equally wrong from both checkouts — which the `create:`
-    //    line WAS: it carried the bare relative `../nputer-T-133`, and a
+    //    line WAS: it carried the bare relative `../supertaskr-T-133`, and a
     //    pasted relative path lands wherever the pasting shell happens to
     //    sit. Two sides sharing no constant: the producer derives the base
     //    from git, this body derives it from the fixture's own layout.
@@ -3339,7 +3339,7 @@ test("THE ARM LEAVES EXACTLY WHAT THE EIGHT HAND STEPS LEAVE, file for file", ()
     const s = laneSpellings(conventions());
     const home = path.dirname(hand.root);
     const laneWt = path.join(home, s.worktreePattern.replace("T-NNN", FIXTURE_CARD_ID).replace("../", ""));
-    const benchWt = path.join(home, `nputer-V-${FIXTURE_CARD_ID}`);
+    const benchWt = path.join(home, `supertaskr-V-${FIXTURE_CARD_ID}`);
     const branch = s.branchPattern.replace("T-NNN", FIXTURE_CARD_ID).replace("<slug>", FIXTURE_SLUG);
     const cardPath = path.join(hand.root, FIXTURE_CARD_FILE);
 
@@ -3387,8 +3387,8 @@ test("THE ARM LEAVES EXACTLY WHAT THE EIGHT HAND STEPS LEAVE, file for file", ()
 
     // ── THE COMPARISON, FILE FOR FILE ──────────────────────────────────
     const armHome = path.dirname(arm.root);
-    const armLane = path.join(armHome, `nputer-${FIXTURE_CARD_ID}`);
-    const armBench = path.join(armHome, `nputer-V-${FIXTURE_CARD_ID}`);
+    const armLane = path.join(armHome, `supertaskr-${FIXTURE_CARD_ID}`);
+    const armBench = path.join(armHome, `supertaskr-V-${FIXTURE_CARD_ID}`);
 
     // The worktree administration first: same entries, same branches, same
     // detached-ness. A bench cut on a branch would be a second lane.
@@ -3823,7 +3823,7 @@ test("THE MANIFEST IS READ BACK, and a manifest for another lane is not this lan
   const want = {
     taskId: "T-133",
     branch: "refs/heads/task/T-133-a-lane",
-    worktree: "/Users/x/nputer-T-133",
+    worktree: "/Users/x/supertaskr-T-133",
     card: "docs/tasks/T-133-a-card.md",
   };
   const good = { version: 1, ...want, paths: ["tools/e2e/scripts/brief.mjs"] };
@@ -3884,7 +3884,7 @@ test("THE CREATE COMMAND IS THE ONE CONVENTIONS PUBLISHES, SUBSTITUTED — never
   // KILLED BY: a `git worktree add` assembled in the module. The document
   // moves on one side only, and the argv has to move with it.
   const ctx = context({});
-  const lane = { branchName: "task/T-901-a-lane", worktree: "/Users/x/nputer-T-901" };
+  const lane = { branchName: "task/T-901-a-lane", worktree: "/Users/x/supertaskr-T-901" };
   const argv = createLaneArgv(ctx, lane);
   expect(argv.slice(0, 3)).toEqual(["git", "-C", ctx.root]);
   expect(argv).toContain(lane.worktree);
@@ -4879,7 +4879,7 @@ test("THE TRIAGE CLUSTERS REACH THE RENDERED ANSWER — `--dispatch --full` carr
 });
 
 /**
- * T-283's VERDICT CORRECTIONS (verifier, phase 2, bench /Users/ujju/Projects/nputer-V-T-283).
+ * T-283's VERDICT CORRECTIONS (verifier, phase 2, bench /Users/ujju/Projects/supertaskr-V-T-283).
  *
  * The in-fence follow-through rule lands wholly in method PROSE, and the
  * method eval gate is blind to its substance — nine one-side data mutants

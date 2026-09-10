@@ -1,4 +1,4 @@
-# .nputer/nputer.yaml — role defaults and thresholds
+# .supertaskr/supertaskr.yaml — role defaults and thresholds
 # Task-file fields override these per task.
 
 roles:

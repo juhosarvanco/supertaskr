@@ -65,7 +65,7 @@ own rules — must carry a mechanism for discovering it is wrong.
 - **Seeds** — a finished project's transferable residue (ablation-
   surviving conventions, ADR patterns, generalizing interview answers,
   task templates with real size/cost data) extracted into a starting
-  seed for the next nputer init. Shareable → community seed library →
+  seed for the next supertaskr init. Shareable → community seed library →
   domain compliance seeds (expert knowledge as interview questions +
   verifier checklists + doc requirements).
 - **Explainer** — every verdict, resolution, and ADR carries an

@@ -1,16 +1,16 @@
-# nputer — architecture map: technical plan
+# Supertaskr — architecture map: technical plan
 
 Handoff for the coding session (Claude Code). Prepared 2026-08-15 with Juho.
 Scope: **only the architecture map** ("Google Maps of the codebase") inside
-nputer. Everything else in the app is out of scope for this document.
+Supertaskr. Everything else in the app is out of scope for this document.
 
 Decisions already made (do not reopen):
 
 - **v1 ships intent + reality overlaid.** Declared components (architect-
   authored) AND a code-derived graph (indexer) from day one; drift is a v1
   feature, not a follow-up.
-- **Indexer languages v1: TypeScript (incl. TSX/JS) and Rust** — nputer's own
-  stack, so the map dogfoods on nputer's repo immediately.
+- **Indexer languages v1: TypeScript (incl. TSX/JS) and Rust** — Supertaskr's own
+  stack, so the map dogfoods on Supertaskr's repo immediately.
 - **Graph data lives as plain files in the repo** (`docs/architecture/…`),
   regenerated deterministically, diffable, readable by agents. The app is a
   lens over those files, same as the board is a lens over task files.
@@ -28,8 +28,8 @@ list, this list wins:
    derived model on the Rust side; that contradicts the built pattern
    (T-003: Rust is a contained file shipper, parsing lives where TS
    runs) and would fork the convention's one hardened frontmatter
-   parser (@nputer/parser, ADR-009). The indexer stays Rust and emits
-   `graph.json` ONLY; component files are parsed by @nputer/parser
+   parser (@supertaskr/parser, ADR-009). The indexer stays Rust and emits
+   `graph.json` ONLY; component files are parsed by @supertaskr/parser
    (new ComponentRecord module, T-008); the intent⨝reality⨝tasks
    join is pure TS in the app (T-011). §5.5 is revised accordingly.
 2. **Delivery rides the existing docs pipeline.** Component files
@@ -40,7 +40,7 @@ list, this list wins:
    sized so `graph.json` stays under the cap; exceeding it is a
    defined degraded state, never a silent drop.
 3. **Repo paths corrected to the real layout** (ADR-011): the crate
-   is `app/src-tauri/crates/nputer-index` (a Cargo workspace is
+   is `app/src-tauri/crates/supertaskr-index` (a Cargo workspace is
    introduced inside app/src-tauri — the Rust sibling of ADR-011's
    decision, recorded there); frontend map code is `app/src/…`;
    there is no `src/routes/**`. The pane switcher the map needs in
@@ -91,7 +91,7 @@ touch it, so the architecture fills in teal top-down as the board completes.
 Review provenance rolls up too: a component built entirely under self-verified
 tasks must never look as trustworthy as one checked by independent eyes.
 
-Design principles inherited from nputer that constrain everything below:
+Design principles inherited from Supertaskr that constrain everything below:
 
 1. **Boring files.** Every input and every persisted output is a plain file in
    the repo. Nothing the map knows lives only inside the app.
@@ -115,7 +115,7 @@ Design principles inherited from nputer that constrain everything below:
 | layer | source | who writes it | file |
 |---|---|---|---|
 | **Intent** | component files (one markdown file per component, frontmatter + prose) | architect/planner session | `docs/architecture/components/C-xx-<slug>.md` |
-| **Reality** | parsed code: files, symbols, dependency edges | indexer (`nputer-index` crate; runs in-app and via CLI) | `docs/architecture/graph.json` |
+| **Reality** | parsed code: files, symbols, dependency edges | indexer (`supertaskr-index` crate; runs in-app and via CLI) | `docs/architecture/graph.json` |
 | **Derived** | intent ⨝ reality ⨝ tasks: component rollups, status, provenance, drift, unmapped | app, at load, in memory (never persisted) | — |
 
 Plus one optional persisted file: `docs/architecture/layout.json` — pinned
@@ -247,7 +247,7 @@ indexed commit go in the CLI report / in-app note only.
 
 ### 3.2 Size discipline
 
-nputer-scale repos produce a few hundred KB. For large repos (>5k files) the
+Supertaskr-scale repos produce a few hundred KB. For large repos (>5k files) the
 indexer emits `symbols: []` for files beyond a configurable budget and sets
 `stats.truncated_symbols: true`; the map degrades to file-level detail with a
 visible note. Never silently drop files or edges.
@@ -331,19 +331,19 @@ overlay is disabled, not broken.
 
 ---
 
-## 5. Indexer: `nputer-index` (Rust)
+## 5. Indexer: `supertaskr-index` (Rust)
 
-Location: `app/src-tauri/crates/nputer-index` (workspace member; the
+Location: `app/src-tauri/crates/supertaskr-index` (workspace member; the
 workspace is introduced inside app/src-tauri at T-009 — the Rust
 sibling of ADR-011). No tauri dependency in the crate (ADR-015). Used
 by (a) a thin Tauri command in the app, (b) its own small binary
-(`nputer-index`), which the future Node CLI (C-02, ADR-007) shells
-out to per ADR-003 — `nputer index` is Node wrapping this binary,
+(`supertaskr-index`), which the future Node CLI (C-02, ADR-007) shells
+out to per ADR-003 — `supertaskr index` is Node wrapping this binary,
 not a Rust CLI.
 
 ### 5.1 Pipeline
 
-1. **Walk** — `ignore` crate (respects `.gitignore`, `.nputerignore` optional
+1. **Walk** — `ignore` crate (respects `.gitignore`, `.supertaskrignore` optional
    extra excludes); collect `.ts .tsx .js .jsx .mts .cts .rs`.
 2. **Hash** — blake3 per file; consult cache (`<app-data>/index-cache/<repo-hash>/`)
    keyed by path+hash → skip parse if unchanged. (Cache is app-side and
@@ -375,24 +375,24 @@ not a Rust CLI.
 
 Reuse the app's existing markdown file watcher; add code paths. Debounce
 300 ms; on change, re-index changed files only, re-emit, and the frontend
-store reloads (existing live-update path). `nputer index --watch` does the
+store reloads (existing live-update path). `supertaskr index --watch` does the
 same headless (for users whose agents run in a terminal while the app is
 closed).
 
 ### 5.3 Check mode (CI/agents)
 
-`nputer index --check` exits non-zero if the committed `graph.json` differs
-from a fresh index (like `cargo fmt --check`), and `nputer arch --check` (see
+`supertaskr index --check` exits non-zero if the committed `graph.json` differs
+from a fresh index (like `cargo fmt --check`), and `supertaskr arch --check` (see
 CLI below) exits non-zero on drift findings above a configurable severity.
 This is how the map's honesty becomes enforceable later; v1 only needs the
 exit codes and a plain-text report.
 
 ### 5.4 Determinism & perf budgets
 
-- Golden tests: fixture repos under `crates/nputer-index/tests/fixtures/`
+- Golden tests: fixture repos under `crates/supertaskr-index/tests/fixtures/`
   (`ts-basic`, `ts-paths-alias`, `rust-workspace`, `mixed`) with committed
   expected `graph.json`. Property test: index twice → identical bytes.
-- Budget: nputer's own repo < 500 ms cold, < 50 ms incremental single-file;
+- Budget: Supertaskr's own repo < 500 ms cold, < 50 ms incremental single-file;
   10k-file repo < 10 s cold on a laptop. Parse in parallel (`rayon`).
 
 ### 5.5 Public API (Rust)
@@ -494,12 +494,12 @@ an error (T-005 rule).
 
 ## 7. CLI surface (power path; the app calls the same code)
 
-- `nputer index [--watch] [--check] [--root .]` — write/verify `graph.json`.
-- `nputer arch` — print components with status, provenance, drift summary
+- `supertaskr index [--watch] [--check] [--root .]` — write/verify `graph.json`.
+- `supertaskr arch` — print components with status, provenance, drift summary
   (plain text; agents will read this).
-- `nputer arch deps <C-xx|path>` — who depends on it / what it depends on
+- `supertaskr arch deps <C-xx|path>` — who depends on it / what it depends on
   (declared vs observed).
-- `nputer arch drift [--fail-on undeclared|unmapped|any]` — findings list +
+- `supertaskr arch drift [--fail-on undeclared|unmapped|any]` — findings list +
   exit code.
 
 Keep output plain and stable; sessions will grep it.
@@ -508,7 +508,7 @@ Keep output plain and stable; sessions will grep it.
 
 ## 8. Task decomposition — SUPERSEDED at promotion by docs/tasks/T-008…T-015 (F-06); kept as drafting record
 
-Format follows nputer's task convention: frontmatter (id, feature, priority,
+Format follows Supertaskr's task convention: frontmatter (id, feature, priority,
 size, status, builds/verifies) + EARS acceptance criteria + `touches`. Feature:
 **F-0x Architecture map**. Priorities are the intended build order.
 
@@ -520,18 +520,18 @@ size, status, builds/verifies) + EARS acceptance criteria + `touches`. Feature:
   and the last valid model SHALL remain.
 - WHEN two components' `paths` match the same file THEN the model SHALL keep
   first-by-id and record an `ambiguous_mapping` warning.
-- THE nputer repo SHALL ship with its own component files (dogfood; ≥5).
+- THE Supertaskr repo SHALL ship with its own component files (dogfood; ≥5).
 
-**T-M02 · Indexer crate: TypeScript** (L) — touches: `src-tauri/crates/nputer-index/**`
+**T-M02 · Indexer crate: TypeScript** (L) — touches: `src-tauri/crates/supertaskr-index/**`
 - WHEN run on a TS/JS repo THE indexer SHALL emit `graph.json` per §3 with
   files, symbols, resolved import edges, packages, and unresolved specifiers.
 - THE output SHALL be byte-identical across two consecutive runs on an
   unchanged tree (golden + property tests).
 - WHEN a `tsconfig.json` declares `paths` THEN aliased imports SHALL resolve.
 - WHEN one file changes THEN incremental re-index SHALL re-parse only that
-  file (< 50 ms on the nputer repo).
+  file (< 50 ms on the Supertaskr repo).
 
-**T-M03 · Indexer crate: Rust** (M) — touches: `src-tauri/crates/nputer-index/src/lang/rust/**`
+**T-M03 · Indexer crate: Rust** (M) — touches: `src-tauri/crates/supertaskr-index/src/lang/rust/**`
 - WHEN run on a Cargo workspace THE indexer SHALL resolve `mod`/`use` paths
   across files and crates and emit symbols (fn/struct/enum/trait/impl/mod).
 - External crates SHALL appear as `cargo` package nodes.
@@ -547,7 +547,7 @@ size, status, builds/verifies) + EARS acceptance criteria + `touches`. Feature:
 - Unit tests SHALL cover every rollup rule and every drift rule.
 
 **T-M05 · Map view T0 + panel** (L) — touches: `src/architecture/**`, `src/routes/**`, `tokens.css`
-- WHEN the map pane opens on the nputer repo THE app SHALL render every
+- WHEN the map pane opens on the Supertaskr repo THE app SHALL render every
   component as a node with status fill and provenance mark, and edges styled
   by relation, laid out deterministically (ELK), with legend and search.
 - WHEN a node is clicked or activated by keyboard THEN the panel SHALL show
@@ -566,9 +566,9 @@ size, status, builds/verifies) + EARS acceptance criteria + `touches`. Feature:
 - Overlays status/provenance/drift/churn SHALL be toggleable; the legend SHALL
   follow the active overlay.
 
-**T-M07 · CLI + watch + check** (S) — touches: `src-tauri/src/bin/**`, `src-tauri/crates/nputer-index/**`
-- `nputer index --check` SHALL exit non-zero when the committed graph is
-  stale; `nputer arch drift --fail-on any` SHALL exit non-zero on findings.
+**T-M07 · CLI + watch + check** (S) — touches: `src-tauri/src/bin/**`, `src-tauri/crates/supertaskr-index/**`
+- `supertaskr index --check` SHALL exit non-zero when the committed graph is
+  stale; `supertaskr arch drift --fail-on any` SHALL exit non-zero on findings.
 - `--watch` SHALL keep `graph.json` current with the app closed.
 
 **T-M08 · Layout pins** (S, optional for v1) — touches: `src/architecture/layout.ts`, `docs/architecture/layout.json`
@@ -576,7 +576,7 @@ size, status, builds/verifies) + EARS acceptance criteria + `touches`. Feature:
   survive re-index and app restart; unpinned nodes SHALL lay out around pins.
 
 Suggested milestone: M01 → M02 → M04 → M05 form the vertical slice that
-produces the "blueprint coming to life" screenshot on nputer's own repo; M03,
+produces the "blueprint coming to life" screenshot on Supertaskr's own repo; M03,
 M06, M07, M08 follow.
 
 ---
@@ -613,9 +613,9 @@ New (values come back from the design handoff):
   (index files, extension-less imports, `paths` aliases, `pub use` chains,
   `#[path]`, bin+lib crates).
 - Derivation: table-driven tests for every rollup/drift rule; a fixture where
-  nputer's own repo is the input and expected findings are asserted (this is
+  Supertaskr's own repo is the input and expected findings are asserted (this is
   also the dogfood check — the repo should reach zero drift before launch).
-- UI: Playwright screenshot of the T0 map on nputer's repo, light and dark,
+- UI: Playwright screenshot of the T0 map on Supertaskr's repo, light and dark,
   reduced-motion on/off; keyboard traversal test; panel empty-state test.
 - Perf: budget assertions from §5.4 in CI (with generous CI multipliers).
 
@@ -636,7 +636,7 @@ New (values come back from the design handoff):
 - **Big repos.** Symbol budget + T0-only rendering keep the pane usable;
   WebGL is a known escape hatch, not a v1 requirement.
 - **`graph.json` merge conflicts.** Documented rule: never hand-edit; on
-  conflict take either side and re-run `nputer index`.
+  conflict take either side and re-run `supertaskr index`.
 
 ---
 
@@ -646,7 +646,7 @@ New (values come back from the design handoff):
   already; `diff()` exists; the scrubber replays them.
 - **Runtime layer:** OpenTelemetry spans mapped onto symbol ids → observed
   call edges with counts/latency (an `observed_runtime` relation).
-- **Agents as consumers:** `nputer arch` output today; an MCP/JSON query
+- **Agents as consumers:** `supertaskr arch` output today; an MCP/JSON query
   surface later so executors can ask "who depends on this" before editing.
 - **Cross-repo edges:** package nodes are the seam (`p:*` ids).
 - **Layer rules:** `layers.md` ordering → D6 violations → CI gate.

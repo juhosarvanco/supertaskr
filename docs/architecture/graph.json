@@ -4950,7 +4950,7 @@
       "id": "f:app/src-tauri/src/agent/kit.rs",
       "path": "app/src-tauri/src/agent/kit.rs",
       "lang": "rust",
-      "hash": "blake3:1b99c34d6f4d94c16bd5a25091f0e545b5ac1d8c07db76d695e032959e5956f2",
+      "hash": "blake3:43ef60402223c202afc7c2fa7d45bcbd7a22d7ed66a96186fd488f313d87ef2b",
       "loc": 1175,
       "symbols": [
         {
@@ -7482,7 +7482,7 @@
       "id": "f:app/src-tauri/src/dispatch/brief.rs",
       "path": "app/src-tauri/src/dispatch/brief.rs",
       "lang": "rust",
-      "hash": "blake3:9632d692410df79b853cbd4c956b6479ee2d8026861fff03b0c25ef73a743155",
+      "hash": "blake3:2eac5307c057588f5d0bc01b61f9ed4fcd72834f089dd4505b7c1722bbe52ce8",
       "loc": 3572,
       "symbols": [
         {
@@ -8410,7 +8410,7 @@
       "id": "f:app/src-tauri/src/dispatch/join.rs",
       "path": "app/src-tauri/src/dispatch/join.rs",
       "lang": "rust",
-      "hash": "blake3:7c6e87bb5e062b98ddab0252eb140213621dcb3a12f04a652570bda23fda8958",
+      "hash": "blake3:0b5f7e7de2b21c564c47516e4b71713a7ddfa10b61ccc9f1856122c24fa9a545",
       "loc": 997,
       "symbols": [
         {
@@ -8589,7 +8589,7 @@
       "id": "f:app/src-tauri/src/dispatch/lanes.rs",
       "path": "app/src-tauri/src/dispatch/lanes.rs",
       "lang": "rust",
-      "hash": "blake3:37c9abb1121a3161e6a82e2342ed477d1e81d1152c57e9d0b1216bedef2c53f9",
+      "hash": "blake3:b43d8561e4dfaedbfd822aab575ad06ae4e41fda0f083f0ad439979f3c67939b",
       "loc": 1435,
       "symbols": [
         {
@@ -9435,7 +9435,7 @@
       "id": "f:app/src-tauri/src/lib.rs",
       "path": "app/src-tauri/src/lib.rs",
       "lang": "rust",
-      "hash": "blake3:7fd8fb6e795b2ac06b513ba91b87ae73fb10547305ddf5ade7f260704e929ce5",
+      "hash": "blake3:6ff795821a5038c072175cdaf0ae9d8b21032253790f9bc9b1b61ba8e1cdb95b",
       "loc": 1375,
       "symbols": [
         {
@@ -20982,7 +20982,7 @@
       "id": "f:app/test/detail-assignment.test.tsx",
       "path": "app/test/detail-assignment.test.tsx",
       "lang": "ts",
-      "hash": "blake3:2e1321391903063bf230b9c66de5ba3cc84e5712c20ef82d71ffefd294ae4e9b",
+      "hash": "blake3:cb3dfd1a0e13132b813dc5c804c45e3248ca90d9b9b096665487d1a9225d16af",
       "loc": 552,
       "symbols": [
         {
@@ -21199,7 +21199,7 @@
       "id": "f:app/test/dispatch-store.test.ts",
       "path": "app/test/dispatch-store.test.ts",
       "lang": "ts",
-      "hash": "blake3:dce36d2af1078ad5e2c32d679dab5283b5b00456152eacf4ed3f229011cdd9d9",
+      "hash": "blake3:d672434f305a9f3b3f1e172005423bcfcc5eb34bca25352e173640ed75223ee2",
       "loc": 602,
       "symbols": [
         {
@@ -22211,7 +22211,7 @@
       "id": "f:app/test/interview-chat-dom.test.tsx",
       "path": "app/test/interview-chat-dom.test.tsx",
       "lang": "ts",
-      "hash": "blake3:f57f0db15a038e92cc6f2d3b44ae50a906a8c0c70ceae1545317cae571987c7d",
+      "hash": "blake3:abdeecc94459b5f278e119658c4303f6ef91953979c3a1cae37d5f04cbf8c939",
       "loc": 1748,
       "symbols": [
         {
@@ -23907,7 +23907,7 @@
       "id": "f:app/test/select-board.test.ts",
       "path": "app/test/select-board.test.ts",
       "lang": "ts",
-      "hash": "blake3:3ee793301c243559aaec77c70bc956a9c75a7aee34aeddeb0250d164a4df428f",
+      "hash": "blake3:4aba7d25f438f352395df2be4f04d5f0d6daa1ae02e22771b33964026b855321",
       "loc": 2430,
       "symbols": [
         {
@@ -24146,7 +24146,7 @@
       "id": "f:app/test/select-task-detail.test.ts",
       "path": "app/test/select-task-detail.test.ts",
       "lang": "ts",
-      "hash": "blake3:9bf10fbbae7610df912737a87800f2ab4f3923bf13ac12ff948b0570ef934f4c",
+      "hash": "blake3:31e802f3dc30a5937ba293e3b56c4878537afc12dba21f5de0b8164a7729ed35",
       "loc": 887,
       "symbols": [
         {
@@ -26864,7 +26864,7 @@
       "id": "f:lib/parser/test/fence.test.ts",
       "path": "lib/parser/test/fence.test.ts",
       "lang": "ts",
-      "hash": "blake3:704cae64d38dde8721aac0191dfec2da7fc2d4c241483c5736b0e7518a475348",
+      "hash": "blake3:4da2341b357184335ce3704f7981ae45ba4a4a499460da985edabb995c8fa692",
       "loc": 1372,
       "symbols": [
         {

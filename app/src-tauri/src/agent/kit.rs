@@ -34,7 +34,7 @@ use super::skills;
 /// the live stamps in `method/interview/plan-interview.md` and
 /// `docs/CONVENTIONS.md` by [`tests::snapshot_version_matches_the_live_method_stamps`],
 /// so a method bump that forgets this const is red.
-pub const METHOD_SNAPSHOT_VERSION: &str = "0.1.16";
+pub const METHOD_SNAPSHOT_VERSION: &str = "0.1.17";
 
 /// Where the kit is written inside a project (relative, POSIX).
 pub const KIT_REL_DIR: &str = ".supertaskr/genesis/kit";
@@ -55,7 +55,7 @@ pub struct KitFile {
 /// enumerates ("this role file + interview/plan-interview.md +
 /// interview/decomposition.md + docs-templates/** + adapters/* +
 /// tasks/TASK-FORMAT.md + tasks/T-000-template.md"), plus
-/// `runtime/nputer.yaml` because planner.md step 1's MAY-seed reads it,
+/// `runtime/supertaskr.yaml` because planner.md step 1's MAY-seed reads it,
 /// plus `skills/**` — T-241's seat skill, which is not the planner's
 /// input at all but the ARCHITECT's, and rides for ADR-021's reason: what
 /// this product ships for that chair is the seat's hand work as a skill,
@@ -119,8 +119,8 @@ pub const KIT_FILES: &[KitFile] = &[
         content: include_str!("../../../../method/tasks/T-000-template.md"),
     },
     KitFile {
-        rel: "runtime/nputer.yaml",
-        content: include_str!("../../../../method/runtime/nputer.yaml"),
+        rel: "runtime/supertaskr.yaml",
+        content: include_str!("../../../../method/runtime/supertaskr.yaml"),
     },
     // T-241: THE SEAT SKILL, carried whole. The pack is five files and
     // each rides as its own entry, because the kit materializes FILES and
@@ -575,7 +575,7 @@ mod tests {
             "roles/planner.md",
             "interview/plan-interview.md",
             "interview/decomposition.md",
-            "runtime/nputer.yaml",
+            "runtime/supertaskr.yaml",
         ] {
             assert!(table.contains(rel), "{rel} must ride the kit");
         }

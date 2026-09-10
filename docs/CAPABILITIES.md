@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **841 behaviours** — 839 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **845 behaviours** — 843 extracted sentences + 2 named-not-extracted (listed at the end) — across 39 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -535,8 +535,11 @@ Census: **841 behaviours** — 839 extracted sentences + 2 named-not-extracted (
 
 ## identifier-rename
 
-- only the four enumerated classes of the pre-rename identifier survive in the code tree
+- only the enumerated classes of the pre-rename identifier survive in the corpus
 - every enumerated survivor class is occupied — a class nobody hits has stopped meaning anything
+- the corpus reaches every tree the criteria name — a root that drops takes three readings with it
+- the new name is not spelled with a capital S inside a code span or an identifier
+- a name-shaped token carrying a non-ASCII homoglyph reds rather than passing as an unrecognised word
 - the records were not rewritten — every record tree still carries the old name
 - a pre-rename runtime directory refuses the fence manifest read, and names the rename
 - a pre-rename runtime directory refuses the verdict token read, and names the rename
@@ -913,6 +916,7 @@ Census: **841 behaviours** — 839 extracted sentences + 2 named-not-extracted (
 - P6 reds a planted bare motion utility and leaves its motion-safe twin alone
 - every animation utility this tree declares is matched by P6 or argued out
 - CONTROL covers every tracked suffix class it does not declare uncoverable
+- the CONTROL corpus check for the kit's runtime template is named from the tree, not from the list that checks it
 - the gate distinguishes clean, found-something and could-not-run
 
 ## trusted-canary

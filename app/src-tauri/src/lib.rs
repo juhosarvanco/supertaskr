@@ -1140,7 +1140,7 @@ mod tests {
         let root = dispatch::fixtures::repo_with_worktrees_dir("t126-seam");
         dispatch::fixtures::register(
             &root,
-            "nputer-T-126",
+            "supertaskr-T-126",
             &dispatch::fixtures::branch_head("task/T-126-lane-reader-compiled"),
             true,
         );

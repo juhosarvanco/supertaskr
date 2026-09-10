@@ -464,7 +464,7 @@ describe("selectBriefPanel — the copyable block is gated on T-111's dispositio
             {
               taskId,
               branch: `task/${taskId}-x`,
-              worktreePath: `/tmp/nputer-${taskId}`,
+              worktreePath: `/tmp/supertaskr-${taskId}`,
               existsOnDisk: true,
             },
           ],

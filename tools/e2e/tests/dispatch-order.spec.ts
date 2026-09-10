@@ -52,15 +52,15 @@ const PORCELAIN_FIXTURE = [
   "HEAD 1111111111111111111111111111111111111111",
   "branch refs/heads/main",
   "",
-  "worktree /Users/x/nputer-T-901",
+  "worktree /Users/x/supertaskr-T-901",
   "HEAD 2222222222222222222222222222222222222222",
   "branch refs/heads/task/T-901-a-real-lane",
   "",
-  "worktree /Users/x/nputer-T-902",
+  "worktree /Users/x/supertaskr-T-902",
   "HEAD 3333333333333333333333333333333333333333",
   "detached",
   "",
-  "worktree /Users/x/nputer-T-901-verify",
+  "worktree /Users/x/supertaskr-T-901-verify",
   "HEAD 2222222222222222222222222222222222222222",
   "detached",
   "",
@@ -75,7 +75,7 @@ test("the lane list is filtered on the BRANCH, never the path", () => {
   const lanes = lanesFrom(PORCELAIN_FIXTURE, conventionsText());
   expect(lanes.map((l) => l.taskId)).toEqual(["T-901"]);
   expect(lanes[0]?.branch).toBe("refs/heads/task/T-901-a-real-lane");
-  expect(lanes[0]?.worktree).toBe("/Users/x/nputer-T-901");
+  expect(lanes[0]?.worktree).toBe("/Users/x/supertaskr-T-901");
 });
 
 test("and the live repository AGREES with git worktree list, entry for entry", () => {
@@ -516,7 +516,7 @@ const ONE_LANE = [
   "HEAD 1111111111111111111111111111111111111111",
   "branch refs/heads/main",
   "",
-  "worktree /Users/x/nputer-T-901",
+  "worktree /Users/x/supertaskr-T-901",
   "HEAD 2222222222222222222222222222222222222222",
   "branch refs/heads/task/T-901-a-real-lane",
   "",
@@ -742,7 +742,7 @@ test("A LANE'S ADDRESS IS SPELLED ONCE, and the ruling still NAMES the lane and 
   expect(full.order.fenced.map((r: { id: string }) => r.id)).toEqual(["T-950", "T-951"]);
 
   // THE ADDRESS IS IN THE ANSWER, ONCE, ON THE LANE'S OWN ROW.
-  const laneRow = "T-901 branch refs/heads/task/T-901-a-real-lane worktree /Users/x/nputer-T-901";
+  const laneRow = "T-901 branch refs/heads/task/T-901-a-real-lane worktree /Users/x/supertaskr-T-901";
   expect(rendered).toContain(laneRow);
   expect(
     linesWith(rendered, "refs/heads/task/T-901-a-real-lane"),
@@ -750,7 +750,7 @@ test("A LANE'S ADDRESS IS SPELLED ONCE, and the ruling still NAMES the lane and 
       "means the answer no longer carries the address a reader comes here for",
   ).toBe(1);
   expect(
-    linesWith(rendered, "/Users/x/nputer-T-901"),
+    linesWith(rendered, "/Users/x/supertaskr-T-901"),
     "T-901's worktree path is not on exactly one row — more means a ruling still re-spells it, " +
       "zero means the answer no longer carries it at all",
   ).toBe(1);
@@ -758,7 +758,7 @@ test("A LANE'S ADDRESS IS SPELLED ONCE, and the ruling still NAMES the lane and 
   // AND NO RULING CARRIES IT — which is the byte this card is about.
   for (const row of rulingRows(rendered)) {
     expect(row, "a ruling re-spells a lane's branch").not.toContain("refs/heads/");
-    expect(row, "a ruling re-spells a lane's worktree path").not.toContain("/Users/x/nputer-T-901");
+    expect(row, "a ruling re-spells a lane's worktree path").not.toContain("/Users/x/supertaskr-T-901");
   }
 
   // WHILE THE TWO THINGS A TRIAGE READER ACTS ON ARE UNTOUCHED: which
@@ -779,7 +779,7 @@ test("A LANE'S ADDRESS IS SPELLED ONCE, and the ruling still NAMES the lane and 
     (full.order.fenced as { id: string; reason: string }[]).find((r) => r.id === "T-950")?.reason,
   );
   expect(raw, "the parser's own reason no longer carries a lane address").toContain(
-    "T-901 (refs/heads/task/T-901-a-real-lane at /Users/x/nputer-T-901)",
+    "T-901 (refs/heads/task/T-901-a-real-lane at /Users/x/supertaskr-T-901)",
   );
   expect(laneAddressOnce(raw, [...full.order.lanes])).not.toContain("refs/heads/");
   expect(
