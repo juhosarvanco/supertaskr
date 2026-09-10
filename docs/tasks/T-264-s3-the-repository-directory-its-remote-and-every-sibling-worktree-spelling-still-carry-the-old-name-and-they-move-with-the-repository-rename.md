@@ -404,3 +404,376 @@ basename, and every other mention in the tree is a record.
 
 ## Verdicts
 <!-- verifier appends: date, model@session, APPROVED / REJECTED + failures -->
+
+### 2026-09-10 — claude-opus-5@subagent (verifier, phase 2) — APPROVED WITH ASSIGNED CORRECTIONS
+
+Tip judged `56f422e2f6dc8b62d4d479f41732e3aee0c3398a`; base
+`130f4c4c661b214ee1ece920643c90e18a886bfc`. Bench: a detached sibling
+worktree at the tip, its own dependencies installed with `npm ci` and its
+own port 25264.
+
+attack set: sha256:e2e683390584d614c7eeaa05fdb519dfa79222bb12252170bfafacdf7d9130dc (attack-set-T-264-s3.md)
+ground truths: sha256:47e8c9d495e85e5abf91eb585f80ecee50ce216195e70315ab3e510ff28d9ef6 (ground-T-264-s3.md)
+ground addendum: sha256:b582b26acfb59d735b661f7d7c84374ead7c9abadb531de9ac1aaa2a0dff446e (ground-T-264-s3-addendum.md)
+
+**THE FRAME I ACTUALLY HAD, said plainly.** Phase 1 was a separate
+tool-less spawn at the base; its set and both ground files are hashed
+above and I re-verified all three before opening anything. Four
+departures to disclose. First, **this brief carries no context pack** —
+`method/roles/verifier.md` step 0 calls that a dispatch fault; I read
+`docs/CONVENTIONS.md` at the base and at the tip by the bullets I needed
+(the lane bullet, the DOCS GATE, the boot and eval gates, the stamp
+gotcha) rather than end to end. Second, **the brief's duties paragraph
+names the executor's report inline** — its census figures, its survivor
+counts, its class names, its suite counts, its mutant tally and the two
+cards it filed — so I held those claims before my findings were written;
+every one below is re-measured by me and I say where my number differs.
+Third, **I leaked commit SUBJECTS to myself** by taking the per-commit
+walk with `--format='%H %s'` instead of `%H`, before opening the notes;
+the subjects named the commits' contents. Fourth, phase 1's own note
+that 97, 108 and 318 do not reconcile is right, and my figures are below.
+
+## The fence, checked before anything was read for correctness
+
+`git diff --stat` over the range is 53 paths. Every one is inside the
+fence as the card's `touches:` line stands at the tip, including the two
+`docs/architecture/components/C-07-*` names the fast-path-A widening
+added during the lane. The four record trees are **byte-identical**:
+
+    docs/checkpoints  f15e5bb85a05b8888c2e47af46f79941a594286a  IDENTICAL
+    docs/rooms        b65861fb98c8e1e9bb23f7d1e1613cd386f8eb89  IDENTICAL
+    docs/decisions    6ce15d7e8da698916260032d9b228797dcb14fa1  IDENTICAL
+    docs/research     b5b20fd6bbde7097e6cbeb5cf7e02f39ab1448a8  IDENTICAL
+
+`docs/tasks` carries exactly three entries: `M` this card, `A` T-264-s8,
+`A` T-264-s9. No other card's bytes moved. The old spelling is still
+carried by the record trees in five files' worth of remote spellings and
+by six record FILENAMES, all untouched. No binary in the diff
+(`--numstat` names none), no lockfile, no mode-bit change
+(`bin/app-dev.mjs` is still 100755, every hook still 100644), no
+dependency added. Nothing spelled `/Users` was introduced: the count of
+lines carrying a home path is 13 at the base and 13 at the tip, and a
+per-file diff shows the only movement is one file's own rename.
+
+## The census, with the seat's own pathspec, measured at both ends
+
+`git grep -io nputer` with the five record trees excluded:
+
+| | occurrences | lines | files |
+|---|---|---|---|
+| base `130f4c4c` | **318** | 283 | 55 |
+| tip `56f422e2` | **46** | 30 | 10 |
+
+**THE THREE NUMBERS, RECONCILED WITH MY OWN FIGURES.** 318 is every
+occurrence over the record-excluded living tree at the base, and it is
+what I measure. The card's title says 97 and its finding says 108; those
+are the `repository-directory` class alone at earlier refs, and at THIS
+base that class is **126 occurrences on 113 lines** inside the base
+scan's own (narrower) corpus, which is neither. The title's figure is
+stale rather than wrong-in-kind, and it is frontmatter the card carried
+in at dispatch — recorded, not charged to the lane.
+
+**THE SURVIVORS, EVERY ONE, ATTRIBUTED.** 30 lines in 10 files. Sixteen
+of them are inside the scan's corpus and each is classified; the other
+fourteen are the scan's own two implementation files, excluded BY NAME.
+I ran the classifier myself rather than reading the table:
+
+    migration-refusal      3  .claude/hooks/lane-fence.mjs 323, 344, 358
+    capture-transcription  3  app/src-tauri/src/bin/fake_agent.rs 1385, 1414, 1422
+    verbatim-quotation     5  docs/NORTH_STAR.md 84, 85; docs/business/marketing.md 57, 138;
+                              docs/business/strategy-room.md 40
+    naming-history         3  docs/design/design-handoff.md 22, 369; method/README.md 6
+    record-title           2  docs/reference/09-records.md 92, 93
+    (self-excluded)       14  tools/e2e/scripts/rename-scan.mjs 12; identifier-rename.spec.ts 2
+
+Unclassified: **zero**. Every class occupied: **yes**, all five. I read
+each of the five ruled sites in its own file: the bar in NORTH_STAR is
+marked "Quoted verbatim" and dated; the M3 lines are @human's quoted
+ruling of 2026-08-30; 09-records says in as many words that records keep
+the pre-rename name; method/README's sentence is the etymology. Each
+ruling is real and each reaches its site.
+
+**THE SUBSTRING TRAP: NO SPILL.** Base against tip over the same
+pathspec — `computer` 2/2, `input` 874/874, `output` 382/382,
+`reputation` 0/0, all IDENTICAL. Over the whole tree including records,
+`input` and `output` move by 2 and 1, and a per-file diff localises every
+one of them to this card and to T-264-s8 — prose the lane wrote, not a
+regex spill.
+
+**HOMOGLYPHS: ZERO, measured independently of the lane's own reading.** I
+folded every name-shaped token in all 1440 tracked text files of the tip
+— records included, the scan's own two files included — and nothing folds
+to either spelling. The lane's corpus reading agrees at 0.
+
+**CASE: ZERO findings** over the corpus. `SuperTaskr` exists at the tip in
+exactly one place, T-265's own card, quoting the mutant that produced it;
+that is a record and outside every corpus by ruling.
+
+**FILENAMES (C1's answer).** At the base seven tracked names carried the
+old spelling; at the tip six do, and all six are records. The four living
+ones all moved as RENAMES, not add-plus-delete: `C-07-supertaskr-index.md`
+R100, `supertaskr app.dc.html` R099, `supertaskr tokens.dc.html` R098,
+`method/runtime/supertaskr.yaml` R090. `git log --follow` on the template
+reaches `18846899` and `1e757b6c`, both older than this lane, so history
+followed the move. **The SPACE in the two prototype basenames was NOT
+removed, which is correct — that is a different rename — and the lane
+filed it.** I reproduced its cost myself: the docs gate invoked exactly as
+`docs/CONVENTIONS.md` spells it, over this lane's own changed paths,
+printed `INJECTION SCAN COULD NOT RUN` twice for a path truncated at the
+space. T-264-s8 is a real card.
+
+## The per-commit build, walked in a shared clone under scratch
+
+T-269's criterion is `cargo build` green at EVERY commit, so I walked all
+nine in a `git clone --shared`, never in a worktree of the host:
+
+    ad141755  cargo build  exit 0
+    f720ae2c  cargo build  exit 0
+    142e32d3  cargo build  exit 0
+    dee715c4  cargo build  exit 0
+    e772ce87  cargo build  exit 0
+    e432b793  cargo build  exit 0
+    98121a65  cargo build  exit 0
+    ece2ca61  cargo build  exit 0
+    56f422e2  cargo build  exit 0
+
+Nine for nine. I also walked the KEEPER at every commit with the module
+rather than the suite, because the notes disclose a red window and a
+disclosure is a claim: `every enumerated survivor class is occupied` is
+RED from `ad141755` through `e772ce87` (`method-source` empties at the
+first commit, `repository-directory` at the third) and GREEN from
+`e432b793` on. The disclosure is accurate and the window is exactly as
+stated. **And the OTHER keeper never reds: unclassified survivors are
+zero at every one of the nine commits and at the base.**
+
+## The suites, run whole at my own bench at the tip judged
+
+    parser  exit 0  bodies 389   GREEN  ref 56f422e2
+    app     exit 0  bodies 1171  GREEN  ref 56f422e2
+    rust    exit 0  bodies 655   GREEN  ref 56f422e2  targets 18
+    e2e     exit 0  bodies 844   GREEN  ref 56f422e2  (the FULL leg)
+
+`identifier-rename.spec.ts` alone: **9 passed**, exit 0. All six base body
+names survive at the tip; one was RENAMED (`only the four enumerated
+classes … in the code tree` became `only the enumerated classes … in the
+corpus`) and three were added. Nothing in the living tree pins the old
+body name; `docs/CAPABILITIES.md` still carries it and is the
+integrator's regen.
+
+Gates, each run by me at the tip: **docs gate census exit 0**, 0 findings;
+**lint:tokens exit 0**, clean over 1440 CONTROL files; **method eval gate
+exit 0** over 10 model-free evals; **boot gate exit 0** on scratch port
+25265, both `[supertaskr]` lines observed. The two STALE readings are the
+integrator's and are expected: `capabilities:check` exit 1 (74270
+committed against 74548 fresh) and `index --check` exit 1 naming eleven
+indexed files, every one of them a file this lane re-spelled.
+
+## The criteria, one at a time
+
+**T-264-s3 criterion 1 — MET, and the derivation is a PARSE rather than a
+restatement.** `dispatch-brief.mjs` reads the lane bullet by LABEL
+(`backticked("worktree")` for the lane, `BENCH_LABEL` for the bench) and
+THROWS when the label is missing; `brief.rs` reads the same document by
+`l.label == "worktree"`. Run for a synthetic card the arm emits
+`supertaskr-T-777` and `supertaskr-V-T-777`, both derived. I proved the
+parse with a data mutant rather than by reading: spelling the bullet
+`supertaskr2` makes the JS derivation FOLLOW it, and reds the Rust body
+`row_fours_worktree_spelling_is_read_by_its_label_and_a_planted_sibling_path_does_not_move_it`
+with `left: "supertaskr2-T-900"` against `right: "supertaskr-T-900"`.
+Reverting the bullet to the pre-rename spelling reds **14 bodies** across
+`brief.spec.ts` and the keeper — two independent guards, not one.
+
+**Criterion 2 — MET, and the removal is not decorative.** Re-adding
+`repository-directory` to the table reds `every enumerated survivor class
+is occupied` by name — the message it prints names the class
+`repository-directory` and says it is named by the table and hit by
+nothing. The negative arming holds too: with the class
+re-added AND one matching occurrence planted, the body goes GREEN again —
+so it reads the table rather than a hardcoded list.
+
+**Criterion 3 — the field and the criterion disagree, and the executor
+says so first.** Frontmatter is `blocked_by: []`; the criterion says
+`blocked_by: [T-266]` is the whole of its ordering. The precondition is
+met either way and nothing was mis-ordered. Recorded, not charged.
+
+**T-264-s2 — MET, and the conditional's premise is false, honestly.**
+`git grep -h -o -E 'NPUTER_[A-Z0-9_]+'` outside `docs/` returns nothing at
+the tip; the launcher reads `process.env[ENV_VAR]` exactly once, so there
+is no dual read. The held-back default moved to the app checkout as it now
+exists, which is the correct reading of a conditional whose premise
+stopped being true on 2026-09-10, and it is named in the notes. The one
+thing nobody guards is a shell that still exports the pre-rename name: it
+is answered by the default, silently. Filed as **T-264-s10**, not charged.
+
+**T-265-s1 — MET, and the markers were REMOVED rather than rewritten.**
+The paragraph in `docs/reference/05-dispatch.md` naming ADR-022 decision 4
+and this card is gone; the parenthetical in `07-verification.md` is gone.
+Read at one ref, the three strings agree: CONVENTIONS publishes
+`supertaskr-T-NNN`, `supertaskr-V-T-NNN` and the app checkout;
+05-dispatch spells the first two; 07-verification spells the bench.
+
+**T-265-s3 — MET, and widened whole rather than partially.** The roots
+went from five to twelve — `bin/`, `method/` and all five prose trees —
+and the governing documents were added one by one because `docs/` is
+mostly records. My own mutants: a survivor planted in `method/` reds
+`only the enumerated classes …` naming **file and line**
+(`method/roles/planner.md:130: <the line>`), which is what the criterion
+asks for and not merely a count; a Cyrillic-a token reds the homoglyph
+body naming `docs/future.md:83`; a capital-S name in a code span reds the
+case body naming `docs/reference/12-genesis.md:164`. The three NEW classes
+each name a ruling in the table itself. **The corpus reads PATHS as well
+as lines**, which phase 1 predicted would survive: renaming a prototype
+back reds the keeper on the path alone. I re-drilled the lane's own
+disclosed fix and it holds — dropping `method/` from the roots reds by
+name, and so does dropping `docs/design/`, one body each.
+
+**T-269 — MET, with the `rel:` string guarded by a body and not only by
+the compiler.** The template moved by `git mv` with history; kit.rs's
+`include_str!`, its `rel:` string and the KIT_FILES expectation all name
+the new path; token-scan's control entry and the interview approval string
+moved; planner.md and 12-genesis.md say the new name. Phase 1's sharpest
+worry here was the `rel:` string, which compiles clean when wrong: I
+reverted it alone and **two** bodies red —
+`every_compiled_entry_matches_its_method_file_byte_for_byte` ("unreadable:
+No such file or directory") and
+`the_snapshot_carries_the_driver_contracts_kickoff_set` ("runtime/
+supertaskr.yaml must ride the kit"). And I did not take the genesis on
+trust: I materialized the kit for real out of the built library into a
+scratch directory. It produced `.supertaskr/genesis/kit/runtime/
+supertaskr.yaml`, the template's own header reads `.supertaskr/
+supertaskr.yaml`, the manifest stamps method version 0.1.16, and the
+produced tree carries **zero** occurrences of the old spelling in any byte
+or any filename.
+
+## Security sweep
+
+No record rewritten; no history dropped by a move; no hash, URL or base64
+run rewritten (the only URL-shaped change is the remote spelling, and the
+lane's judgement to move it inside a dated CI-latency comment is sound —
+I MEASURED the behaviour underneath it: `gh run list --branch main` from
+this bench answers for the renamed repository at exit 0 with five
+completed successful runs, and the guard's argv passes no explicit
+repository, so it follows the remote rather than a literal). No fixture's
+expectation moved without its producer: the interview approval string and
+the fake agent's transcription already disagreed at the base, the
+transcription is untouched and still matches its capture, and nothing
+compares the two. No binary, no mode bit, no credential, no new home path,
+no dependency. The two-argument split on the space-bearing paths is real,
+is pre-existing, and is filed rather than hidden.
+
+## The mutants and controls, every one run by me
+
+    M1  survivor planted in method/            RED   1 failed / 8 passed, names file and line
+    M2  Cyrillic-a homoglyph in a prose tree   RED   1 failed / 8 passed, names file and line
+    M3  capital-S name in a code span          RED   1 failed / 8 passed, names file and line
+    M4  lowercase name opening a sentence      SURVIVED — expected; the prose half is T-265-s2's
+    M5  repository-directory re-added          RED   1 failed / 8 passed, names the class
+    M6  the runtime template's CONTROL row     SURVIVED — CORRECTION 1 below
+    M7  kit.rs `rel:` reverted alone           RED   2 bodies, both naming the path
+    M8  lane bullet back to the old spelling   RED   14 bodies across two independent guards
+    M10 a prototype renamed back               RED   1 failed / 8 passed, on the PATH
+    re-drill: method/ dropped from the roots   RED   1 failed / 8 passed, names the root
+    re-drill: docs/design/ dropped             RED   1 failed / 8 passed, names the root
+
+    C-alpha the new spelling planted in a record   nothing red — the record trees are outside
+                                                   every corpus by construction, arming absent
+    C-beta  the lane's and bench's own directory   no such string anywhere in the tree
+    C-gamma the old spelling in a lockfile         CLASSIFIED and red; the scan does not crash
+            the old spelling appended to a .png    excluded by extension; the scan does not crash
+    C-delta class re-added PLUS one occurrence     GREEN again — the body reads the table
+
+Every landing above was read from `git diff`, never from the mutator's
+own report, and the tree was proved clean after each.
+
+## The corrections
+
+**CORRECTION 1 — the CONTROL check T-269's own criterion names can delete
+itself, and does.** The criterion says the lint:tokens control corpus
+SHALL still include the file under its new name, naming the `CONTROL
+includes tracked text format` body as the guard. That body is a ROW in a
+literal list inside `tools/e2e/scripts/token-scan.mjs`, and the row is
+both the expectation and the only record that the expectation was wanted.
+Measured: with the row removed, `npm run lint:tokens` prints
+`lint-tokens: clean` at **exit 0** over the same 1440 files and
+`token-scan.spec.ts` is **10 passed**. Nothing notices. This is the same
+tautology `rename-scan.mjs`'s own header argues against for the class
+table, and the same one this lane re-cut `the corpus reaches every tree
+the criteria name` for at `98121a65` — reproduced one module over, in the
+guard the absorbed card leans on. The body I commit derives the path the
+check must name from kit.rs's compile-time embed instead of from the list
+being judged. Its general form is out of this fence and is filed as
+**T-264-s12**.
+
+```mutant
+correction: the CONTROL check for the kit's runtime template is derived from the tree, not restated by the list that checks it
+file: tools/e2e/scripts/token-scan.mjs
+spec: tools/e2e/tests/token-scan.spec.ts
+body: the CONTROL corpus check for the kit's runtime template is named from the tree, not from the list that checks it
+message: the tracked-text-format list names no CONTROL check for the runtime template
+--- old
+      "method/runtime/supertaskr.yaml",
+--- new
+      "method/README.md",
+```
+
+Both readings taken by my own hand on this bench, at the tip judged.
+**GREEN** against the implementation carrying the property: 11 passed,
+exit 0, the new body among them. **RED** against the implementation
+lacking it: 1 failed / 10 passed, exit 1, and the failing body is the new
+one alone, printing `the tracked-text-format list names no CONTROL check
+for the runtime template method/runtime/supertaskr.yaml the kit embeds`.
+One body in the kill set, landing at the site the property lives. The
+anchor matches its file exactly once and the replacement text appears
+nowhere in it.
+
+**CORRECTION 2 — a section that calls itself VERBATIM stopped being
+verbatim, and this is a WORDING correction that owes no mutant block.**
+`docs/design/design-handoff.md` heading 8 reads "Acceptance criteria this
+design feeds (T-006, verbatim)", and its three bullets are a byte-for-byte
+transcription of `docs/tasks/T-006-design-language.md`'s three acceptance
+criteria. The lane re-spelled two of them. T-006 is a record and keeps the
+pre-rename name by ADR-022 decision 3, so at the tip the document asserts
+a verbatim quotation that its own named source does not contain — the
+exact failure this lane created the `verbatim-quotation` class for, one
+document over and applied to a card's words instead of a person's. The
+remedy is two words either way and the choice is the integrator's: restore
+the two quoted lines to the spelling T-006 carries, or drop "verbatim"
+from the heading and say what the section is instead. I state in as many
+words, per step 5b, that this correction pins no property and therefore
+carries no block: the property is a prose quotation's fidelity to a
+record, nothing in this repository reads that section, and a body written
+for it would be RED at the tip rather than green with a mutant to drill —
+which is not the shape the merge reads.
+
+**Not a correction, recorded.** `naming-history` holds
+`docs/design/design-handoff.md` line 369, which carries the quoted name
+with no etymology beside it, unlike line 22 and unlike method/README's
+sentence; the notes declare it as a restatement of the wordmark note, and
+that reading is defensible, so it stands. `docs/reference/12-genesis.md`
+line 25 lost its column alignment inside a code fence when the name grew;
+cosmetic. The card's title still says 97.
+
+## Verdict
+
+**APPROVED WITH ASSIGNED CORRECTIONS.** Two corrections, one block — the
+shortfall is Correction 2 and it is explained above rather than left to be
+inferred. The fence held and the record trees are byte-identical; the
+census fell from 318 occurrences in 55 files to 46 in 10, every one of the
+sixteen corpus survivors attributed to a class whose ruling I read at its
+own site and none unclassified; `cargo build` is green at all nine
+commits; all four suites are green at the tip judged; nine of my ten
+mutants landed as predicted or better, with the two survivors being the
+one the card itself routes to another card and the one this verdict
+corrects; and the four controls each behaved where the arming was absent.
+The three claims this lane hands the integrator — the capabilities regen,
+the graph regen and the method bump — I re-measured and they are all three
+still the integrator's, with the stamp unmoved at 0.1.16 in all three
+places.
+
+Findings that are not failures are filed as **T-264-s10** (the launcher's
+silent fallback for a shell still exporting the pre-rename variable),
+**T-264-s11** (the occupancy body grades class ids while the table is
+rows — measured: two rows of `method-source` matched nothing at the base
+while the id read occupied) and **T-264-s12** (the general form of
+Correction 1). None of them blocks this card.
+
