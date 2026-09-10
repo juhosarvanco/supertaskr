@@ -40,3 +40,11 @@ The repository is private today. The exposure is history, not files: the older p
 **Contributions and issues** arrive on the public repository: an issue becomes a card here, filed with the issue's number and a paraphrase; a pull request is read as a diff, given a card and a fence, re-applied through the bench, and lands at the next tag with credit in the changelog.
 
 **The cards this revision needs:** the exclusion manifest and the cut script (M, guard-class); the front-stage pass and its keeper (S, guard-class); the release checklist as a checkpoint template (S); the public README and contribution note (S); the backstage folder and the move of the business and design material (S, the owner's act with the seat's list). All after the second project passes, when the first cut is due.
+
+## Rulings of 2026-09-10 (the owner, asked with options; appended on the owner's yes)
+
+- **B, the license:** decided at the first cut; the published placeholder stays MIT until then.
+- **C, the cadence:** tags the owner chooses until v1, the seat cutting and tagging when the release gate passes, a changelog generated per tag.
+- **D, the record conventions and the front-stage pass:** open, pending more planning; the boundary is fixed — they apply only to what crosses to the public repository, and the private development repository keeps its working voice as it is.
+- **E, the timing:** the first cut only at the v1 tag itself.
+- **F, the release gate:** the owner's checklist recorded as a checkpoint, and every stable tag preceded by a pre-release tag for outside testers with at least one testing cycle between them; the automated gates run first and are recorded in the same checkpoint.
