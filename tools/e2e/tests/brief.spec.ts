@@ -7424,6 +7424,77 @@ test("THE READ SITES ARE DERIVED FROM THE ARM'S OWN SOURCE, never from a table b
   }
 });
 
+/* ── THE VERIFIER'S ASSIGNED CORRECTIONS (T-299, phase 2) ──────────── */
+
+test("THE ARM'S PHASE-1 STEP READS `verify.phase1` — the brief is written or it is not, and the skip names the switch", () => {
+  // CORRECTION 1. `phase1Owed` was proved both ways and the RITUAL STEP
+  // that consumes it was observed by nothing, so the arm could branch on
+  // the tier alone — exactly what it did before this card — with the
+  // whole suite green. The observable here is the arm's ACT: a phase 1
+  // brief written to disk, or not written. Never the resolver's return.
+  const plan = stubPlan();
+  const seat = { ...plan, tierInput: { ...plan.tierInput, process: atProfile("guarded-everything") } };
+  const skipped = ritualStub(seat, "nothing-fails");
+  const run = runDispatchLane(seat, skipped.io);
+  expect(
+    skipped.writes,
+    "the arm wrote a phase 1 brief while `verify.phase1` is by-the-seat",
+  ).not.toContain(plan.phase1File);
+  const step = run.done.find((d) => d.id === "phase1");
+  expect(step, "the ritual carried no phase 1 step at all, so nothing here was measured").toBeDefined();
+  expect(
+    (step as NonNullable<typeof step>).detail,
+    "the skip does not name the switch that decided it",
+  ).toContain("verify.phase1");
+  // THE POSITIVE CONTROL, and it is what makes the assertion above mean
+  // anything: the SAME plan under the profile this project runs DOES
+  // write the brief, so a stub that never writes cannot pass this body.
+  const arm = { ...plan, tierInput: { ...plan.tierInput, process: atProfile("standard") } };
+  const written = ritualStub(arm, "nothing-fails");
+  runDispatchLane(arm, written.io);
+  expect(
+    written.writes,
+    "the control: by-the-arm wrote no phase 1 brief either, so this body cannot tell the two apart",
+  ).toContain(plan.phase1File);
+});
+
+test("THE SCHEMA'S TWO COLUMNS MOVE EXACTLY WHERE THE ROOM'S OLD AND RULED COLUMNS MOVE", () => {
+  // CORRECTION 2. The room's rows were compared to the schema's by ID in
+  // both directions and their VALUES by nothing — and this project RUNS
+  // the standard column, so a row transcribed into the wrong column is
+  // this project's loop quietly differing from what the decision ruled,
+  // with every other body green.
+  //
+  // NEITHER SIDE IS TYPED HERE, and no mapping between the room's prose
+  // values and the schema's enum values is needed: the room's own table
+  // says whether a row MOVED between its two columns, the schema's own
+  // table says the same thing, and the two answers are compared as sets.
+  const room = readFileSync(path.join(repoRoot, "docs", "rooms", "loop-cost-and-speed.md"), "utf8");
+  const table = room.slice(room.indexOf("## The switch inventory"));
+  const rows = [...table.matchAll(/^\|\s*([a-z0-9_]+\.[a-z0-9_]+)\s*\|([^|]*)\|([^|]*)\|([^|]*)\|/gm)].map(
+    (m) => ({ id: m[1] as string, old: (m[3] as string).trim(), ruled: (m[4] as string).trim() }),
+  );
+  expect(rows.length, "the room's table parsed to too few rows to be the inventory").toBeGreaterThan(30);
+  const schema = shippedSchema();
+  const roomMoved: string[] = [];
+  const schemaMoved: string[] = [];
+  for (const row of rows) {
+    const sw = schema.switches.get(row.id);
+    if (sw === undefined) continue;
+    if (row.old !== row.ruled) roomMoved.push(row.id);
+    if (sw.profiles.get("guarded-everything") !== sw.profiles.get("standard")) schemaMoved.push(row.id);
+  }
+  expect(roomMoved.length, "no row of the room moved at all, so this body compares nothing").toBeGreaterThan(0);
+  expect(
+    roomMoved.filter((id) => !schemaMoved.includes(id)),
+    "the room ruled these switch(es) changed and the schema gives them one value in both columns",
+  ).toEqual([]);
+  expect(
+    schemaMoved.filter((id) => !roomMoved.includes(id)),
+    "the schema moves these switch(es) between its two columns and the room ruled no such change",
+  ).toEqual([]);
+});
+
 /*
  * ONE BODY PER SWITCH, AND ITS MUTANT IS EXECUTED RATHER THAN DESCRIBED.
  *
