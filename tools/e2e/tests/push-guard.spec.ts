@@ -4558,3 +4558,86 @@ test("a leg this table cannot price is disclosed as a FLOOR, never counted as no
     String(many[many.length - 1]),
   );
 });
+
+/* ── T-305, THE BENCH'S TWO ASSIGNED CORRECTIONS ──────────────────────
+ *
+ * Both are MINUTES, and minutes are this criterion's second half. The
+ * bodies above pin the figure on ONE of the notice's three shapes — the
+ * suite axis, where whole legs the range does not owe are named — and
+ * the arm carries two more arithmetics that nothing reads back: the
+ * WHOLE browser leg run where the range owed a subset, and a leg beyond
+ * the set that ran NARROWED. Each is argued in the arm's own prose, each
+ * moves the printed number by an order of magnitude when it is wrong,
+ * and each survived every body on this bench.
+ */
+
+test("the whole browser leg's over-run minutes are the leg LESS the subset the range owed, and the owed figure is that subset's own", () => {
+  // THE SHAPE THE CARD WAS MEASURED ON: a range that owes spec files
+  // rather than legs, and a battery that ran the leg whole anyway.
+  const fx = fixture("over-run-whole-minutes", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    token: "missing",
+    seed: {
+      "tools/e2e/tests/other.spec.ts": 'import { helper } from "./helpers";\n',
+      "tools/e2e/tests/helpers.ts": "export const helper = 1;\n",
+    },
+    change: "tools/e2e/tests/helpers.ts",
+  });
+  armUpstream(fx, fx.base);
+  const range = pushRange(fx.root);
+  const owed = "range" in range ? runOwedSet(fx.root, range.range) : { problem: "no range" };
+  expect("owed" in owed ? owed.owed.e2e.specs.length : 0, "the range owes ONE spec file").toBe(1);
+  expect("owed" in owed ? owed.owed.e2e.whole : true, "and owes the leg in PART").toBe(false);
+
+  plantSuites(fx.root, ["e2e"]);
+  const notice = String(overRunLine(decideFor(fx)));
+
+  // BOTH FIGURES ARE TYPED HERE AND NEITHER IS COMPUTED BY THE ARM.
+  // One spec file at the table's per-spec figure is fifteen seconds, a
+  // quarter of a minute; the whole leg is ten minutes; what the over-run
+  // cost is the difference, 585 seconds. The three candidate answers a
+  // wrong arithmetic would print — the whole leg at 10.0, the subset at
+  // 0.3, nothing at 0.0 — are all distinct from 9.8 and from each other,
+  // which is what makes this an assertion rather than a coincidence.
+  expect(notice, "the minutes the owed set would have taken").toContain(
+    "THIS RANGE OWES e2e over 1 spec file(s), about 0.3 minute(s)",
+  );
+  expect(notice, "the whole leg LESS the subset this range owed").toContain(
+    "Those legs are about 9.8 minute(s)",
+  );
+  expect(notice, "and never the whole leg charged entire").not.toContain(
+    "Those legs are about 10.0 minute(s)",
+  );
+});
+
+test("a leg beyond the owed set that ran NARROWED is priced by the scope it records, never by the leg it did not run", () => {
+  const fx = fixture("over-run-scoped-price", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    token: "missing",
+    change: "lib/parser/src/x.ts",
+  });
+  armUpstream(fx, fx.base);
+  const range = pushRange(fx.root);
+  const owed = "range" in range ? runOwedSet(fx.root, range.range) : { problem: "no range" };
+  expect("owed" in owed ? owed.owed.suites : []).toEqual(["parser"]);
+
+  // THE CONTROL, AND IT IS THE SAME LEG BEYOND THE SAME SET: run WHOLE,
+  // it costs the whole leg. Without this line the assertion below is
+  // satisfied by an arm that had stopped pricing legs at all.
+  plantSuites(fx.root, ["parser", "e2e"]);
+  const whole = String(overRunLine(decideFor(fx)));
+  expect(whole, "a WHOLE browser leg beyond the set costs the leg").toContain(
+    "Those legs are about 10.0 minute(s)",
+  );
+
+  // AND NARROWED: the same leg, the same range, a scope naming two spec
+  // files. Two at the table's per-spec figure is thirty seconds, half a
+  // minute — and charging the leg would tell a seat it spent twenty
+  // times what it spent, on the one line the seat is meant to act on.
+  plantSuites(fx.root, ["parser", "e2e"], "tools/e2e/tests/a.spec.ts,tools/e2e/tests/b.spec.ts");
+  const scoped = String(overRunLine(decideFor(fx)));
+  expect(scoped, "priced by the scope the entry records").toContain(
+    "Those legs are about 0.5 minute(s)",
+  );
+  expect(scoped, "and never by the leg it did not run").not.toContain(
+    "Those legs are about 10.0 minute(s)",
+  );
+});
