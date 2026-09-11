@@ -6,13 +6,13 @@ milestone: 4
 size: M
 tier: guarded
 priority: 2
-status: building
+status: verifying
 suggested_by: "@human (2026-09-10): \"Rule the loop room, A to I as amended: yes\" — docs/rooms/loop-cost-and-speed.md, ADR-024"
 blocked_by: [T-296]
 touches: [method/runtime/supertaskr.yaml, method/runtime/process-schema.yaml, tools/e2e/scripts/brief.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/merge.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
-built_by:
+built_by: claude-opus-5@subagent
 verified_by:
 review: independent
 ---
