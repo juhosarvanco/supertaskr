@@ -5,6 +5,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   realpathSync,
   rmSync,
   symlinkSync,
@@ -17,12 +18,15 @@ import {
   ACTIVE_RUN_STATUSES,
   ANNOUNCED_ALLOW_CODES,
   ANNOUNCED_RED_CONCLUSIONS,
+  BATTERY_SECONDS,
   CHEAP_CHECKS_EXIT,
   CHECK_ARGV,
   CHECK_DIR_REL_PATH,
   CHECK_EXIT,
   CI_WORKFLOW_REL_PATH,
   COMPLETED_RUN_STATUS,
+  E2E_SPECS_AT_MEASURE,
+  E2E_SPEC_SECONDS,
   FAILED_CONCLUSION,
   GH_BIN,
   GH_EXIT,
@@ -32,8 +36,10 @@ import {
   GRAPH_REL_PATH,
   HEAD_REFSPEC_WORDS,
   INDEX_CRATE_MANIFEST_REL_PATH,
+  LEG_SECONDS,
   NON_PUSHING_FLAGS,
   NON_VERDICT_CONCLUSIONS,
+  OVER_RUN_NAME_LIMIT,
   PUSH_ALL_BRANCHES_FLAGS,
   PUSH_OPTS_WITH_VALUE,
   PUSH_REPOSITORY_OPT,
@@ -41,6 +47,7 @@ import {
   RUN_LIST_JSON_FIELDS,
   RUN_LIST_REQUIRED_FIELDS,
   RUN_VIEW_JSON_FIELDS,
+  UNGRADED_VERDICT,
   UNRESOLVABLE_TOKEN_RE,
   classifyGhFailure,
   commandOf,
@@ -50,9 +57,13 @@ import {
   ghRunListArgv,
   ghRunViewArgv,
   gitInvocations,
+  gradedSpecs,
   isPush,
   laneCanRegenerate,
   newestVerdictRun,
+  overRun,
+  overRunNotice,
+  owedCost,
   parseRunJobs,
   parseRunList,
   pathsSince,
@@ -83,6 +94,13 @@ import { holderVerdict, processRow, writeHolder } from "../scripts/checkout-curr
 import { repoRoot } from "../preflight";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import { conventionsBullet, conventionsText } from "../scripts/docs-scan.mjs";
+// T-305 — THE VERDICT WORD IS ASKED OF THE PROGRAM THAT WRITES IT. This
+// spec holds `UNGRADED_VERDICT`'s pin, and a pin against a literal in
+// this file would be a pin against itself; `judge` is the function the
+// runner reaches that word through. The import edge is real and is
+// declared: a change to the runner now owes this spec too, which is the
+// honest reading of a body that asserts against the runner's behaviour.
+import { judge } from "../scripts/gate-run.mjs";
 
 /**
  * THE PUSH ASKS THE GRAPH MECHANICALLY (T-167-s8) — no browser.
@@ -462,6 +480,16 @@ function fixture(
     ghAbsent?: boolean;
     /** T-237: the path the SECOND commit changes — what the push carries. */
     change?: string;
+    /**
+     * T-305: files written into the FIRST commit, path -> content.
+     *
+     * The owed set is derived from the tree the push carries, so a body
+     * that needs the end-to-end leg NARROWED rather than whole needs a
+     * spec file in this fixture for the change to be owned BY — the
+     * import graph is read off the tree, and a tree with no specs in it
+     * can only answer *the whole battery* or *not this suite at all*.
+     */
+    seed?: Record<string, string>;
   } = {},
 ): Fixture {
   const root = mkdtempSync(path.join(os.tmpdir(), `T-167-s8-${name}-`));
@@ -505,6 +533,10 @@ function fixture(
     path.join(root, ".gitignore"),
     "bin/\ncargo-was-run.txt\ngh-was-run.txt\ngitonly/\n.supertaskr/\nremote.git/\n",
   );
+  for (const [rel, content] of Object.entries(opts.seed ?? {})) {
+    mkdirSync(path.join(root, path.dirname(rel)), { recursive: true });
+    writeFileSync(path.join(root, rel), content);
+  }
   git("add", "-A");
   git("commit", "-qm", "fixture");
   const base = execFileSync("git", ["-C", root, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
@@ -4177,4 +4209,435 @@ test("a token whose end-to-end entry graded PART of the leg is refused even when
   expect(decision.verdict, "a leg graded in part is not the battery").toBe("block");
   expect(decision.code).toBe("token-partial");
   expect(decision.reason, "and the refusal says which leg was short").toContain("e2e");
+});
+
+/* ═════════════ T-305 — THE OVER-RUN, SAID OUT LOUD ══════════════════
+ *
+ * The other direction from T-280. That arm refuses a token that graded
+ * LESS than the pushed range owed; a token that graded MORE was silent,
+ * and silence is what let four whole batteries run for ranges that owed
+ * two spec files in one evening. Every body below plants a token and
+ * reads what `decide` said about it — the card's own "seen on a planted
+ * token" — and each one carries the control that would catch a guard
+ * which had simply started talking on every push.
+ */
+
+/** The opener the arm's notice is identified by, in one place. */
+const OVER_RUN_OPENER = "THIS PUSH GRADED MORE THAN ITS RANGE OWED";
+
+/** The over-run notice out of a decision, or undefined for silence. */
+function overRunLine(d: { notices?: string[] }): string | undefined {
+  return (d.notices ?? []).find((n) => n.startsWith(OVER_RUN_OPENER));
+}
+
+/**
+ * One suite entry in the shape `writeToken` leaves on disk, for the
+ * bodies that drive the arm DIRECTLY rather than through a fixture.
+ *
+ * Written out rather than hand-built at each site because the fields
+ * this arm reads — `tree`, `verdict`, `scope` — are three of eleven, and
+ * a literal missing one of the other eight is a body that fails to
+ * compile for a reason that has nothing to do with what it is asking.
+ */
+function tokenEntry(
+  suite: string,
+  tree: string,
+  opts: { verdict?: string; scope?: string } = {},
+) {
+  return {
+    ...suiteVerdict(suite, opts.verdict ?? GREEN, "ref"),
+    tree,
+    treeAtWrite: tree,
+    dirty: false,
+    at: "2026-09-10T00:00:00.000Z",
+    ...(opts.scope === undefined ? {} : { scope: opts.scope }),
+  };
+}
+
+test("a whole battery for a range that owes ONE suite is allowed, and every leg beyond the set is named with the minutes the owed set would have taken", () => {
+  const fx = fixture("over-run-suites", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    token: "missing",
+    change: "lib/parser/src/x.ts",
+  });
+  armUpstream(fx, fx.base);
+
+  // THE DERIVATION THIS BODY RELIES ON, ASKED HERE TOO — the T-280
+  // bodies' habit: say what the range owes rather than only what the
+  // notice concluded about it.
+  const range = pushRange(fx.root);
+  const owed = "range" in range ? runOwedSet(fx.root, range.range) : { problem: "no range" };
+  expect("owed" in owed ? owed.owed.suites : []).toEqual(["parser"]);
+
+  // THE CONTROL FIRST, because the assertion below is about a SENTENCE
+  // and a guard that printed it on every push would satisfy the
+  // assertion and fail the card. A token covering exactly the owed set
+  // is allowed and says nothing.
+  plantSuites(fx.root, ["parser"]);
+  const inside = decideFor(fx);
+  expect(inside.verdict, "the owed set exactly: allowed").toBe("allow");
+  expect(overRunLine(inside), "a run that stayed inside the set is SILENT").toBeUndefined();
+
+  // AND NOW THE HABIT THE CARD IS ABOUT: the same tree, the same range,
+  // four whole legs.
+  plantSuites(fx.root, [...REQUIRED_SUITES]);
+  const over = decideFor(fx);
+  expect(over.verdict, "an over-run is never a refusal").toBe("allow");
+  const notice = String(overRunLine(over));
+  expect(notice, "the notice must reach the seat at all").toContain(OVER_RUN_OPENER);
+  for (const leg of ["app", "e2e", "rust"]) {
+    expect(notice, `${leg} ran and this range does not owe it`).toContain(leg);
+  }
+  expect(notice, "the leg the range DOES owe is not an over-run").toMatch(
+    /whole leg\(s\) this range does not owe: app, e2e, rust/,
+  );
+  // THE MINUTES THE OWED SET WOULD HAVE TAKEN — the criterion's own
+  // clause. The parser leg alone is 20 seconds by the table, which is
+  // 0.3 of a minute; the four legs beyond it are 640, which is 10.7.
+  expect(notice).toContain("THIS RANGE OWES parser, about 0.3 minute(s)");
+  expect(notice).toContain("about 10.7 minute(s)");
+  expect(notice, "and the command that would have run the narrow set").toContain(
+    `gate-run.mjs --range ${"range" in range ? range.range : ""}`,
+  );
+
+  // AND IT REACHES THE SEAT THROUGH THE REAL RUNNER, at exit 0. This
+  // file's own ANNOUNCED_ALLOW_CODES header records that a passing
+  // hook's stdout is not shown; notices go to STDERR and are written
+  // before the verdict, so this is the half that decides whether the
+  // sentence is read by anybody.
+  const wired = runHook(fx, "git push origin HEAD:refs/heads/main");
+  expect(wired.status, "an over-run is allowed by the real runner too").toBe(0);
+  expect(wired.stderr, "and the notice is on stderr, where a seat sees it").toContain(
+    OVER_RUN_OPENER,
+  );
+  disclose("over-run-notice", notice.split("\n")[0] ?? "");
+});
+
+test("the SPEC axis: a whole browser leg where the range owed spec files is named as the whole leg, and a scope carrying specs the range does not owe names those", () => {
+  // A FIXTURE WITH A SPEC IN IT, so the owed set can be NARROWED rather
+  // than whole — the shape every push this card was written about had.
+  const fx = fixture("over-run-specs", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    token: "missing",
+    seed: {
+      "tools/e2e/tests/other.spec.ts": 'import { helper } from "./helpers";\n',
+      "tools/e2e/tests/helpers.ts": "export const helper = 1;\n",
+    },
+    change: "tools/e2e/tests/helpers.ts",
+  });
+  armUpstream(fx, fx.base);
+  const range = pushRange(fx.root);
+  const owed = "range" in range ? runOwedSet(fx.root, range.range) : { problem: "no range" };
+  expect("owed" in owed ? owed.owed.suites : []).toEqual(["e2e"]);
+  expect("owed" in owed ? owed.owed.e2e.specs : []).toEqual(["tools/e2e/tests/other.spec.ts"]);
+  expect("owed" in owed ? owed.owed.e2e.whole : true, "the leg is owed in PART here").toBe(false);
+
+  // THE CONTROL: the leg graded over exactly the spec files the range
+  // owes. Nothing exceeded, nothing said.
+  plantSuites(fx.root, ["e2e"], "tools/e2e/tests/other.spec.ts");
+  const exact = decideFor(fx);
+  expect(exact.verdict).toBe("allow");
+  expect(overRunLine(exact), "the owed specs exactly: SILENT").toBeUndefined();
+
+  // AXIS ONE: the leg ran WHOLE. An entry with no `scope` graded the
+  // whole leg — that is the field's meaning in gate-token.mjs — so the
+  // notice names the WHOLE LEG rather than pretending to know which
+  // files it ran.
+  plantSuites(fx.root, ["e2e"]);
+  const whole = decideFor(fx);
+  expect(whole.verdict, "still allowed").toBe("allow");
+  expect(String(overRunLine(whole))).toContain("e2e ran WHOLE where this range owes 1 spec file(s)");
+
+  // AXIS TWO: a narrowed run that still carried a file the range does
+  // not owe. The owed file is covered — so T-280's arm is satisfied and
+  // the push passes — and the extra one is named.
+  plantSuites(
+    fx.root,
+    ["e2e"],
+    "tools/e2e/tests/other.spec.ts,tools/e2e/tests/unrelated.spec.ts",
+  );
+  const extra = decideFor(fx);
+  expect(extra.verdict, "covering the owed set and more is not a refusal").toBe("allow");
+  const notice = String(overRunLine(extra));
+  expect(notice).toContain("e2e graded 1 spec file(s) this range does not owe");
+  expect(notice).toContain("tools/e2e/tests/unrelated.spec.ts");
+  expect(notice, "the spec the range DOES owe is not named as an over-run").not.toContain(
+    "does not owe: tools/e2e/tests/other.spec.ts",
+  );
+});
+
+test("what an over-run is NOT: a leg graded against an EARLIER tree, and a leg the runner DECLINED to grade", () => {
+  const fx = fixture("over-run-not", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    token: "missing",
+    change: "lib/parser/src/x.ts",
+  });
+  armUpstream(fx, fx.base);
+  const ref = execFileSync("git", ["-C", fx.root, "rev-parse", "HEAD"], {
+    encoding: "utf8",
+  }).trim();
+  const tree = String(headTree(fx.root));
+
+  // THE POSITIVE CONTROL FOR BOTH: the same two legs, graded at THIS
+  // tree with a verdict the runner stands behind, ARE an over-run. Both
+  // negatives below are about a filter, and a filter that had stopped
+  // matching would pass them silently without this line.
+  writeToken(fx.root, [suiteVerdict("parser", GREEN, ref), suiteVerdict("rust", GREEN, ref)]);
+  expect(String(overRunLine(decideFor(fx))), "the control: rust really is an over-run").toContain(
+    "rust",
+  );
+
+  // NOT AN OVER-RUN, ONE: an entry keyed to a tree that is not HEAD's.
+  // `writeToken` MERGES entries across runs, so a leg graded before the
+  // last commit is still in the token — and minutes paid for a tree this
+  // push does not carry were not paid for this push. `judgeToken` never
+  // looks: it reads staleness only over the suites it REQUIRES, and this
+  // one is not one of them.
+  writeToken(fx.root, [
+    suiteVerdict("parser", GREEN, ref),
+    { ...suiteVerdict("rust", GREEN, ref), tree: FOREIGN_TREE },
+  ]);
+  const earlier = decideFor(fx);
+  expect(earlier.verdict, "and it is still an ordinary allow").toBe("allow");
+  expect(overRunLine(earlier), "a leg graded at another tree is another push's minute").toBeUndefined();
+
+  // NOT AN OVER-RUN, TWO: a leg the runner DECLINED to grade. REFUSED
+  // means no toolchain, zero bodies, a count that would not sum — a leg
+  // that did not run cost nobody a minute, and naming it would tell a
+  // seat it paid for something it never got.
+  writeToken(fx.root, [
+    suiteVerdict("parser", GREEN, ref),
+    {
+      suite: "rust",
+      exit: -1,
+      bodies: 0,
+      targets: 0,
+      verdict: UNGRADED_VERDICT,
+      reason: "could-not-run: spawnSync cargo ENOENT",
+      ref,
+      tree,
+    },
+  ]);
+  const declined = decideFor(fx);
+  expect(declined.verdict, "an ungraded leg the range does not owe is not a refusal either").toBe(
+    "allow",
+  );
+  expect(overRunLine(declined), "a leg that never ran is not an over-run").toBeUndefined();
+
+  // AND THE WORD IS THE RUNNER'S, ASKED OF THE RUNNER. `judge` is the
+  // function that writes it; a rename there reds this line rather than
+  // turning the filter above into one that matches nothing.
+  expect(
+    judge({
+      status: 0,
+      count: { bodies: 0, targets: 1, baseline: 0, sums: true, how: "this body's own count" },
+      ref,
+      suite: "rust",
+    }).verdict,
+  ).toBe(UNGRADED_VERDICT);
+});
+
+test("the cost table is docs/CONVENTIONS.md's own two figures, and the notice's minutes are its arithmetic", () => {
+  // THE AUTHORITY IS THE DOCUMENT, not this file — the treatment
+  // CHECK_ARGV gets against the Rust bullet. Both figures live in one
+  // bullet, so one read answers both.
+  const bullet = String(conventionsBullet(conventionsText(), "THE BLESSED GATE-RUNNER (T-202):"));
+  expect(bullet, "the browser leg's own published figure").toContain(
+    "ten of the battery's eleven minutes",
+  );
+  expect(bullet, "and what the document says the other three cost").toContain(
+    "other three legs are seconds each",
+  );
+
+  // The arithmetic this table IS: ten minutes of the eleven for the
+  // browser leg, the residual sixty seconds split three ways.
+  expect(BATTERY_SECONDS).toBe(11 * 60);
+  expect(LEG_SECONDS.e2e).toBe(10 * 60);
+  expect(Object.values(LEG_SECONDS).reduce((a, b) => a + b, 0)).toBe(BATTERY_SECONDS);
+  const others = Object.entries(LEG_SECONDS).filter(([id]) => id !== "e2e");
+  expect(others.length, "the residual is split over the other three").toBe(3);
+  for (const [id, seconds] of others) {
+    expect(seconds, `${id} is priced in seconds, as the document says`).toBe(
+      (BATTERY_SECONDS - LEG_SECONDS.e2e) / 3,
+    );
+  }
+  // Every graded suite the runner has is priced, or the notice's figure
+  // silently under-reports the habit it is about.
+  for (const suite of REQUIRED_SUITES) {
+    expect(Object.keys(LEG_SECONDS), `${suite} has no figure in the cost table`).toContain(suite);
+  }
+  // The per-spec figure is the whole leg divided by the stamped count,
+  // and the divisor is here to be re-divided rather than guessed at.
+  expect(E2E_SPEC_SECONDS).toBe(LEG_SECONDS.e2e / E2E_SPECS_AT_MEASURE);
+  disclose(
+    "cost-table",
+    `battery ${BATTERY_SECONDS}s, browser leg ${LEG_SECONDS.e2e}s over ` +
+      `${E2E_SPECS_AT_MEASURE} spec files at the stamp = ${E2E_SPEC_SECONDS}s each; this tree ` +
+      `carries ${readdirSync(path.join(repoRoot, "tools", "e2e", "tests")).filter((f) => f.endsWith(".spec.ts")).length} spec files`,
+  );
+
+  // A NARROWED LEG IS PRICED BY ITS SCOPE AND NEVER ABOVE THE WHOLE ONE
+  // — no subset of a leg costs more than the leg, however many files a
+  // scope names.
+  const owed = {
+    range: "a..b",
+    suites: ["e2e"],
+    e2e: { whole: false, specs: ["one.spec.ts", "two.spec.ts"] },
+  };
+  expect(owedCost(owed).seconds).toBe(2 * E2E_SPEC_SECONDS);
+  expect(
+    owedCost({ ...owed, e2e: { whole: false, specs: Array.from({ length: 500 }, (_, i) => `s${i}`) } })
+      .seconds,
+    "a scope wider than the leg is still the leg",
+  ).toBe(LEG_SECONDS.e2e);
+  expect(owedCost({ ...owed, e2e: { whole: true, specs: [] } }).seconds).toBe(LEG_SECONDS.e2e);
+  // And an entry with no scope graded the whole leg — the reader that
+  // decides which of those two prices applies.
+  expect(gradedSpecs(tokenEntry("e2e", "t"))).toBeUndefined();
+  expect(gradedSpecs(tokenEntry("e2e", "t", { scope: "" }))).toBeUndefined();
+  expect(gradedSpecs(tokenEntry("e2e", "t", { scope: "a.ts, b.ts" }))).toEqual(["a.ts", "b.ts"]);
+});
+
+test("a leg this table cannot price is disclosed as a FLOOR, never counted as nothing", () => {
+  // THE GRADED REGISTRY CAN GROW A SUITE, and a table that priced a new
+  // one at zero would make every sentence this arm prints quietly too
+  // small — in the one direction that flatters the habit the arm exists
+  // to name. So it is carried out as a list and said.
+  const owed = {
+    range: "a..b",
+    suites: ["parser", "wasm"],
+    e2e: { whole: false, specs: [] },
+  };
+  const cost = owedCost(owed);
+  expect(cost.seconds, "the legs it CAN price are still priced").toBe(LEG_SECONDS.parser);
+  expect(cost.unpriced).toEqual(["wasm"]);
+
+  const tree = "t".repeat(40);
+  const token = {
+    version: 1,
+    writtenAt: "2026-09-10T00:00:00.000Z",
+    writtenFrom: "the directory this body never writes in",
+    suites: { parser: tokenEntry("parser", tree), wasm: tokenEntry("wasm", tree) },
+  };
+  const over = overRun(token, owed, tree);
+  expect(over, "the control: `parser` is owed, so only `wasm` could be over-run").toBeUndefined();
+
+  // And with `wasm` off the owed set it IS an over-run — priced at
+  // nothing, and the notice says the figure is a floor rather than
+  // reporting zero minutes as though it were a measurement.
+  const narrow = { ...owed, suites: ["parser"] };
+  const notice = String(overRunNotice(token, narrow, tree));
+  expect(notice).toContain("wasm");
+  expect(notice, "the over-run's own figure is disclosed as a floor").toContain("FLOOR");
+  expect(overRun(token, narrow, tree)?.unpriced).toEqual(["wasm"]);
+  expect(overRun(token, narrow, tree)?.seconds, "an unpriced leg adds nothing to it").toBe(0);
+
+  // A range that owes NOTHING AT ALL is the other end of the same
+  // sentence, and it is the shape half the batteries this card was
+  // written about had: a records-only push, four legs, nothing owed.
+  const nothing = { range: "a..b", suites: [], e2e: { whole: false, specs: [] } };
+  expect(owedCost(nothing).seconds).toBe(0);
+  expect(String(overRunNotice(token, nothing, tree))).toContain(
+    "THIS RANGE OWED NO GRADED SUITE AT ALL",
+  );
+
+  // AND A LONG LIST IS COUNTED BEFORE IT IS SAMPLED. The count is the
+  // truth and the names are the sample, in that order in the sentence,
+  // so a truncated list can never be read as the whole one.
+  const many = Array.from({ length: OVER_RUN_NAME_LIMIT + 3 }, (_, i) => `extra${i}.spec.ts`);
+  const wide = {
+    ...token,
+    suites: { e2e: tokenEntry("e2e", tree, { scope: ["owed.spec.ts", ...many].join(",") }) },
+  };
+  const owedOne = {
+    range: "a..b",
+    suites: ["e2e"],
+    e2e: { whole: false, specs: ["owed.spec.ts"] },
+  };
+  const sampled = String(overRunNotice(wide, owedOne, tree));
+  expect(sampled).toContain(`e2e graded ${many.length} spec file(s) this range does not owe`);
+  expect(sampled, "the ones it did not spell are counted").toContain("and 3 more");
+  expect(sampled, "and the sample really does stop at the limit").not.toContain(
+    String(many[many.length - 1]),
+  );
+});
+
+/* ── T-305, THE BENCH'S TWO ASSIGNED CORRECTIONS ──────────────────────
+ *
+ * Both are MINUTES, and minutes are this criterion's second half. The
+ * bodies above pin the figure on ONE of the notice's three shapes — the
+ * suite axis, where whole legs the range does not owe are named — and
+ * the arm carries two more arithmetics that nothing reads back: the
+ * WHOLE browser leg run where the range owed a subset, and a leg beyond
+ * the set that ran NARROWED. Each is argued in the arm's own prose, each
+ * moves the printed number by an order of magnitude when it is wrong,
+ * and each survived every body on this bench.
+ */
+
+test("the whole browser leg's over-run minutes are the leg LESS the subset the range owed, and the owed figure is that subset's own", () => {
+  // THE SHAPE THE CARD WAS MEASURED ON: a range that owes spec files
+  // rather than legs, and a battery that ran the leg whole anyway.
+  const fx = fixture("over-run-whole-minutes", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    token: "missing",
+    seed: {
+      "tools/e2e/tests/other.spec.ts": 'import { helper } from "./helpers";\n',
+      "tools/e2e/tests/helpers.ts": "export const helper = 1;\n",
+    },
+    change: "tools/e2e/tests/helpers.ts",
+  });
+  armUpstream(fx, fx.base);
+  const range = pushRange(fx.root);
+  const owed = "range" in range ? runOwedSet(fx.root, range.range) : { problem: "no range" };
+  expect("owed" in owed ? owed.owed.e2e.specs.length : 0, "the range owes ONE spec file").toBe(1);
+  expect("owed" in owed ? owed.owed.e2e.whole : true, "and owes the leg in PART").toBe(false);
+
+  plantSuites(fx.root, ["e2e"]);
+  const notice = String(overRunLine(decideFor(fx)));
+
+  // BOTH FIGURES ARE TYPED HERE AND NEITHER IS COMPUTED BY THE ARM.
+  // One spec file at the table's per-spec figure is fifteen seconds, a
+  // quarter of a minute; the whole leg is ten minutes; what the over-run
+  // cost is the difference, 585 seconds. The three candidate answers a
+  // wrong arithmetic would print — the whole leg at 10.0, the subset at
+  // 0.3, nothing at 0.0 — are all distinct from 9.8 and from each other,
+  // which is what makes this an assertion rather than a coincidence.
+  expect(notice, "the minutes the owed set would have taken").toContain(
+    "THIS RANGE OWES e2e over 1 spec file(s), about 0.3 minute(s)",
+  );
+  expect(notice, "the whole leg LESS the subset this range owed").toContain(
+    "Those legs are about 9.8 minute(s)",
+  );
+  expect(notice, "and never the whole leg charged entire").not.toContain(
+    "Those legs are about 10.0 minute(s)",
+  );
+});
+
+test("a leg beyond the owed set that ran NARROWED is priced by the scope it records, never by the leg it did not run", () => {
+  const fx = fixture("over-run-scoped-price", CHECK_EXIT.CURRENT, CURRENT_REPORT, {
+    token: "missing",
+    change: "lib/parser/src/x.ts",
+  });
+  armUpstream(fx, fx.base);
+  const range = pushRange(fx.root);
+  const owed = "range" in range ? runOwedSet(fx.root, range.range) : { problem: "no range" };
+  expect("owed" in owed ? owed.owed.suites : []).toEqual(["parser"]);
+
+  // THE CONTROL, AND IT IS THE SAME LEG BEYOND THE SAME SET: run WHOLE,
+  // it costs the whole leg. Without this line the assertion below is
+  // satisfied by an arm that had stopped pricing legs at all.
+  plantSuites(fx.root, ["parser", "e2e"]);
+  const whole = String(overRunLine(decideFor(fx)));
+  expect(whole, "a WHOLE browser leg beyond the set costs the leg").toContain(
+    "Those legs are about 10.0 minute(s)",
+  );
+
+  // AND NARROWED: the same leg, the same range, a scope naming two spec
+  // files. Two at the table's per-spec figure is thirty seconds, half a
+  // minute — and charging the leg would tell a seat it spent twenty
+  // times what it spent, on the one line the seat is meant to act on.
+  plantSuites(fx.root, ["parser", "e2e"], "tools/e2e/tests/a.spec.ts,tools/e2e/tests/b.spec.ts");
+  const scoped = String(overRunLine(decideFor(fx)));
+  expect(scoped, "priced by the scope the entry records").toContain(
+    "Those legs are about 0.5 minute(s)",
+  );
+  expect(scoped, "and never by the leg it did not run").not.toContain(
+    "Those legs are about 10.0 minute(s)",
+  );
 });

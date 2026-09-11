@@ -394,6 +394,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { LANE_BRANCH_RE, findCheckoutRoot, readHeadRef, readManifest, within } from "./lane-fence.mjs";
 import {
+  SCOPABLE_SUITE,
   TOKEN_REL_PATH,
   headTree,
   judgeToken,
@@ -2219,6 +2220,362 @@ export function owedSetForPush(root) {
   return runOwedSet(root, range.range);
 }
 
+/* ═════════════ T-305 — THE OVER-RUN, SAID OUT LOUD ══════════════════
+ *
+ * T-280 gave this file one direction to be strict in: a token that
+ * graded LESS than the pushed range owed is refused as `token-partial`,
+ * naming the missing suites and the missing spec files. THE OTHER
+ * DIRECTION WAS SILENT. A token that graded MORE — four whole legs for
+ * a range that owed two spec files — is safe, so it passed, and passing
+ * was all it did. Measured on 2026-09-10: four whole batteries for
+ * ranges that owed two specs, in one evening, weeks after the arm that
+ * made the narrow run possible had landed. The rule was known and the
+ * habit was older than the rule, which is the shape every guard in this
+ * file exists for.
+ *
+ * ── IT IS A NOTICE AND IT IS NEVER A REFUSAL ────────────────────────
+ * Over-measuring is the direction the owed-set derivation is ITSELF
+ * allowed to be wrong in — *"this form can only ever be wrong by running
+ * too MUCH"* — so a refusal here would refuse the safe direction and
+ * teach a seat to distrust the narrow one. It rides in `notices`, which
+ * the runner prints whatever the verdict is, so an over-run is still
+ * heard on a push the graph then refuses; and it says nothing at all
+ * when there is nothing to say, which is this file's standing rule about
+ * a line that appears on every push.
+ *
+ * ── WHAT COUNTS AS AN OVER-RUN, AND THE THREE THINGS THAT DO NOT ────
+ *   A SUITE the token records as graded AT THIS TREE which the range
+ *     does not owe. *At this tree* is the load-bearing half and it is
+ *     not decoration: `writeToken` MERGES entries across runs, so a leg
+ *     graded before the last commit is still in the token, and minutes
+ *     spent on a tree that is no longer HEAD's were not spent on this
+ *     push. `judgeToken` cannot see that entry either way — it reads
+ *     staleness only over the suites it REQUIRES — so this arm asks for
+ *     itself rather than inheriting an answer about a different set.
+ *   THE SPEC AXIS, where the one scopable leg ran WHOLE for a range that
+ *     owes part of it, or ran a scope carrying spec files the range does
+ *     not owe. AN ENTRY WITH NO `scope` GRADED THE WHOLE LEG — that is
+ *     the field's own meaning one file over — so the whole-leg case is
+ *     an ABSENT field rather than a long list, and it is named as the
+ *     whole leg rather than as spec files this file cannot enumerate.
+ *   A `REFUSED` ENTRY IS NOT AN OVER-RUN. The runner writes that word
+ *     when it DECLINED to grade — no toolchain, zero bodies, parts that
+ *     do not sum — and a leg that did not run cost nobody a minute.
+ *     Naming it would be this file telling a seat it paid for something
+ *     it never got, which is the mirror of the sentence `token-red` and
+ *     `token-unmeasured` were split apart to avoid.
+ *
+ * ── AND THE THREE THINGS IT DOES NOT DO ─────────────────────────────
+ * It re-runs nothing, it re-derives no owed set of its own — the one
+ * `decideWith` already asked the runner for is the one it reads — and it
+ * never touches the verdict. A notice that could move a verdict would be
+ * a second refusal wearing a friendly word.
+ */
+
+/**
+ * WHAT A LEG COSTS, IN THE TWO FIGURES docs/CONVENTIONS.md PUBLISHES.
+ *
+ * NOTHING HERE IS THIS CARD'S OWN MEASUREMENT. The BLESSED GATE-RUNNER
+ * bullet carries both numbers and their provenance — *"the browser leg
+ * is ten of the battery's eleven minutes, measured on T-224's fix
+ * passes"* and *"The other three legs are seconds each"* — so the
+ * browser leg is 600 seconds, the whole battery is 660, and the residual
+ * 60 is split three ways. `push-guard.spec.ts` reads BOTH sentences out
+ * of the document and checks this table against them, which is the
+ * treatment `CHECK_EXIT` already gets against the Rust bullet: a
+ * re-measurement that lands in the document reds a body here by name
+ * instead of leaving this arm quietly wrong.
+ *
+ * A FIGURE THIS COARSE IS THE RIGHT INSTRUMENT, AND THE NOTICE SAYS SO.
+ * The question a seat is being asked is *was that eleven minutes or
+ * one*, and no arithmetic here can answer it more precisely than the
+ * table it came from: THE TOKEN CARRIES NO DURATION AT ALL — a
+ * `SuiteEntry` records the moment it was written and never how long its
+ * suite took — so there is no measurement of the run that happened for
+ * this file to prefer. Every sentence this arm prints therefore says
+ * ABOUT, and none of them is presented as a reading of that run.
+ */
+export const LEG_SECONDS = Object.freeze({ app: 20, e2e: 600, parser: 20, rust: 20 });
+
+/** The whole battery's own figure, which the table above must sum to.
+ *  @see LEG_SECONDS */
+export const BATTERY_SECONDS = 660;
+
+/**
+ * WHAT ONE SPEC FILE COSTS IN A NARROWED BROWSER LEG.
+ *
+ * The whole leg divided by the spec files there were when this was
+ * written: 600 seconds over 40 files, which is 15 seconds each. The lane
+ * runs `workers: 1, retries: 0` by design, so its wall time is close to
+ * linear in spec count — that argument is `health-bands.config.mjs`'s
+ * own, made for the `suite/e2e-seconds` band, and it is borrowed here
+ * rather than invented.
+ *
+ * IT IS A DIVIDED FIGURE AND THE DIVISOR IS STAMPED BESIDE IT, so a
+ * reader can re-divide rather than guess: the suite grows, and the day
+ * it doubles this number halves. A body asserts the ARITHMETIC between
+ * these three constants and never the suite's live size — a stamped
+ * reading that reds every time the world moves is a reading nobody
+ * re-stamps, they delete the body.
+ */
+export const E2E_SPECS_AT_MEASURE = 40;
+
+/** @see E2E_SPECS_AT_MEASURE */
+export const E2E_SPEC_SECONDS = 15;
+
+/**
+ * The verdict word that means the runner DECLINED to grade.
+ *
+ * Held here and pinned rather than trusted: `gate-run.spec.ts` owns the
+ * runner, and `push-guard.spec.ts` drives the runner's own `judge` at a
+ * zero-body count and asserts the word it writes is this one. A rename
+ * there reds a body here by name instead of turning this filter into a
+ * filter that matches nothing.
+ */
+export const UNGRADED_VERDICT = "REFUSED";
+
+/**
+ * How many names a notice spells before it counts the rest.
+ *
+ * THE COUNT IS THE TRUTH AND THE NAMES ARE THE SAMPLE, in that order in
+ * the sentence, so a truncated list can never read as the whole one —
+ * the failure this file records one section up, where a reader followed
+ * a pointer to a list shorter than the limit that had fired.
+ */
+export const OVER_RUN_NAME_LIMIT = 6;
+
+/**
+ * @typedef {object} OverRun
+ * @property {string[]} suites    legs graded at this tree that the range does not owe
+ * @property {string[]} specs     spec files the scopable leg graded beyond the owed set
+ * @property {boolean} wholeLeg   the scopable leg ran WHOLE where the range owed part of it
+ * @property {number} seconds     what those legs are priced at by `LEG_SECONDS`
+ * @property {string[]} unpriced  legs run beyond the set that this table carries no figure for
+ */
+
+/**
+ * The spec files an entry records itself as having graded, or `undefined`
+ * for a whole leg.
+ *
+ * ONE READER FOR ONE FIELD. `judgeToken` splits `scope` the same way one
+ * file over, and this is the second reader rather than a second RULE:
+ * absent and empty both mean the whole leg, which is what makes a token
+ * minted before the field existed cover any subset instead of reading as
+ * a leg that graded nothing.
+ *
+ * @param {import("./gate-token.mjs").SuiteEntry | undefined} entry
+ * @returns {string[] | undefined}
+ */
+export function gradedSpecs(entry) {
+  if (entry === undefined || entry === null || typeof entry !== "object") return undefined;
+  const scope = entry.scope;
+  if (typeof scope !== "string" || scope === "") return undefined;
+  const specs = scope
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s !== "");
+  return specs.length === 0 ? undefined : specs;
+}
+
+/**
+ * What one leg of a run is priced at, narrowed where the entry says it
+ * ran narrowed.
+ *
+ * A SCOPED ENTRY IS PRICED BY ITS SCOPE, never by the whole leg. T-271's
+ * `--owning` form writes a scope under the leg's own key with a
+ * `SCOPED-` verdict, and pricing that at ten minutes would tell a seat
+ * it spent time it did not spend. Capped at the whole leg, because no
+ * subset of a leg costs more than the leg.
+ *
+ * @param {string} suite
+ * @param {string[] | undefined} specs  the spec files that leg graded, or undefined for all of them
+ * @returns {{ seconds: number } | { unpriced: string }}
+ */
+export function legSeconds(suite, specs) {
+  const whole = /** @type {Readonly<Record<string, number>>} */ (LEG_SECONDS)[suite];
+  if (whole === undefined) return { unpriced: suite };
+  if (suite !== SCOPABLE_SUITE || specs === undefined) return { seconds: whole };
+  return { seconds: Math.min(whole, specs.length * E2E_SPEC_SECONDS) };
+}
+
+/**
+ * What the owed set would have taken, and every leg this table cannot
+ * price.
+ *
+ * AN UNPRICED LEG IS RETURNED RATHER THAN COUNTED AS ZERO, and the
+ * notice says so. The graded registry can grow a suite tomorrow; a table
+ * that silently priced the new one at nothing would make the arm's whole
+ * sentence quietly too small, in the one direction that flatters the
+ * habit this card is about.
+ *
+ * @param {OwedSet} owed
+ * @returns {{ seconds: number, unpriced: string[] }}
+ */
+export function owedCost(owed) {
+  let seconds = 0;
+  /** @type {string[]} */
+  const unpriced = [];
+  for (const suite of owed.suites) {
+    const priced = legSeconds(
+      suite,
+      suite === SCOPABLE_SUITE && !owed.e2e.whole ? owed.e2e.specs : undefined,
+    );
+    if ("unpriced" in priced) unpriced.push(priced.unpriced);
+    else seconds += priced.seconds;
+  }
+  return { seconds, unpriced };
+}
+
+/**
+ * What this token graded beyond what the range owed, or `undefined` for
+ * a run that stayed inside the set.
+ *
+ * @param {import("./gate-token.mjs").Token} token
+ * @param {OwedSet} owed
+ * @param {string} tree  HEAD's tree — the key an entry must carry to be about THIS push
+ * @returns {OverRun | undefined}
+ */
+export function overRun(token, owed, tree) {
+  const suites = token.suites;
+  if (suites === undefined || suites === null || typeof suites !== "object") return undefined;
+  const owedSuites = new Set(owed.suites);
+  /** @type {string[]} */
+  const beyond = [];
+  /** @type {string[]} */
+  const unpriced = [];
+  let seconds = 0;
+  for (const id of Object.keys(suites).sort()) {
+    const entry = suites[id];
+    if (entry === undefined || entry === null || typeof entry !== "object") continue;
+    // GRADED AT THIS TREE, GRADED AT ALL, AND NOT OWED — in that order,
+    // because the first two are about whether a leg ran for this push
+    // and only the third is about the set.
+    if (entry.tree !== tree) continue;
+    if (entry.verdict === UNGRADED_VERDICT) continue;
+    if (owedSuites.has(id)) continue;
+    beyond.push(id);
+    const priced = legSeconds(id, gradedSpecs(entry));
+    if ("unpriced" in priced) unpriced.push(priced.unpriced);
+    else seconds += priced.seconds;
+  }
+  // ── THE SPEC AXIS, ASKED ONLY OF A LEG THE RANGE ACTUALLY OWES ─────
+  // A scopable leg the range does not owe AT ALL is already named above
+  // as a whole leg beyond the set, and naming it twice would say two
+  // things about one run.
+  const scopable = suites[SCOPABLE_SUITE];
+  let wholeLeg = false;
+  /** @type {string[]} */
+  let specs = [];
+  if (
+    owedSuites.has(SCOPABLE_SUITE) &&
+    !owed.e2e.whole &&
+    scopable !== undefined &&
+    scopable !== null &&
+    typeof scopable === "object" &&
+    scopable.tree === tree &&
+    scopable.verdict !== UNGRADED_VERDICT
+  ) {
+    const graded = gradedSpecs(scopable);
+    if (graded === undefined) {
+      wholeLeg = true;
+      const whole = legSeconds(SCOPABLE_SUITE, undefined);
+      const wasOwed = legSeconds(SCOPABLE_SUITE, owed.e2e.specs);
+      if ("seconds" in whole && "seconds" in wasOwed) seconds += whole.seconds - wasOwed.seconds;
+    } else {
+      specs = graded.filter((s) => !owed.e2e.specs.includes(s)).sort();
+      const priced = legSeconds(SCOPABLE_SUITE, specs);
+      if ("seconds" in priced) seconds += priced.seconds;
+    }
+  }
+  if (beyond.length === 0 && !wholeLeg && specs.length === 0) return undefined;
+  return { suites: beyond, specs, wholeLeg, seconds, unpriced };
+}
+
+/**
+ * `count` things, naming the first few of them.
+ *
+ * @param {string[]} names
+ * @returns {string}
+ */
+function sample(names) {
+  if (names.length <= OVER_RUN_NAME_LIMIT) return names.join(", ");
+  return `${names.slice(0, OVER_RUN_NAME_LIMIT).join(", ")} and ${
+    names.length - OVER_RUN_NAME_LIMIT
+  } more`;
+}
+
+/** @param {number} seconds @returns {string} */
+function aboutMinutes(seconds) {
+  return `about ${(seconds / 60).toFixed(1)} minute(s)`;
+}
+
+/**
+ * The sentence a seat reads when its run went wider than its range, or
+ * `undefined` when it did not.
+ *
+ * @param {import("./gate-token.mjs").Token} token
+ * @param {OwedSet} owed
+ * @param {string} tree
+ * @returns {string | undefined}
+ */
+export function overRunNotice(token, owed, tree) {
+  const over = overRun(token, owed, tree);
+  if (over === undefined) return undefined;
+  /** @type {string[]} */
+  const clauses = [];
+  if (over.suites.length > 0) {
+    clauses.push(
+      `${over.suites.length} whole leg(s) this range does not owe: ${sample(over.suites)}`,
+    );
+  }
+  if (over.wholeLeg) {
+    clauses.push(
+      `${SCOPABLE_SUITE} ran WHOLE where this range owes ${owed.e2e.specs.length} spec file(s)`,
+    );
+  }
+  if (over.specs.length > 0) {
+    clauses.push(
+      `${SCOPABLE_SUITE} graded ${over.specs.length} spec file(s) this range does not owe: ` +
+        `${sample(over.specs)}`,
+    );
+  }
+  const cost = owedCost(owed);
+  const owedLine =
+    owed.suites.length === 0
+      ? "  THIS RANGE OWED NO GRADED SUITE AT ALL — nothing it changes is under a package root, " +
+        "reached by a spec, or read by a document a suite reads."
+      : `  THIS RANGE OWES ${owed.suites
+          .map((suite) =>
+            suite === SCOPABLE_SUITE && !owed.e2e.whole && owed.e2e.specs.length > 0
+              ? `${suite} over ${owed.e2e.specs.length} spec file(s)`
+              : suite,
+          )
+          .join(", ")}, ${aboutMinutes(cost.seconds)}.` +
+        (cost.unpriced.length === 0
+          ? ""
+          : ` That figure is a FLOOR: ${cost.unpriced.join(", ")} is not in this guard's cost ` +
+            "table, so it is priced at nothing.");
+  return (
+    "THIS PUSH GRADED MORE THAN ITS RANGE OWED. The push is ALLOWED and this is a NOTICE: " +
+    "over-measuring is the safe direction, and the owed-set derivation is allowed to be wrong " +
+    "in it too. It is said because nothing else says it, and the habit outlives the rule.\n" +
+    `  BEYOND THE OWED SET, all of it graded against the tree this push carries — ${clauses.join(
+      "; ",
+    )}.\n` +
+    owedLine +
+    "\n" +
+    `  Those legs are ${aboutMinutes(over.seconds)} by this guard's own table` +
+    (over.unpriced.length === 0
+      ? ""
+      : `, and ${over.unpriced.join(", ")} is priced at nothing there, so the figure is a FLOOR`) +
+    ". THE FIGURES ARE A TABLE AND NOT A STOPWATCH — docs/CONVENTIONS.md's own two, the browser " +
+    "leg at ten of the battery's eleven minutes; the token records no duration, so nothing here " +
+    "is a reading of the run that actually happened.\n" +
+    `  The narrow run, next time, is the one the runner derives for itself:\n` +
+    `    node tools/e2e/scripts/gate-run.mjs ${OWED_SET_FLAGS.range} ${owed.range}\n`
+  );
+}
+
 /* ═════════════ T-237 — THE RUN THAT IS ALREADY RUNNING ══════════════ */
 
 /**
@@ -3545,10 +3902,20 @@ function decideWith(request, check, cheap, gh, holder, notices) {
           "and this card was told to follow that unless a measured reason appeared. None did.",
       );
     }
-    // A FRESH TOKEN IS SILENT. This file's own rule: an ORDINARY allow
-    // says nothing, and only an allow that left something UNVERIFIED
-    // announces itself. A line on every good push is a line nobody reads
-    // by the third one.
+    // A FRESH TOKEN IS SILENT, AND SINCE T-305 THERE IS ONE THING IT
+    // SAYS. This file's own rule stands: an ORDINARY allow says nothing,
+    // and only an allow that left something UNVERIFIED announces itself
+    // — a line on every good push is a line nobody reads by the third
+    // one. AN OVER-RUN IS NOT AN ORDINARY ALLOW. Nothing is unverified
+    // there; what went unsaid is that the seat paid for legs its own
+    // range did not owe, which no other arm in this file can see and
+    // which the guard is the only reader positioned to notice: it is the
+    // one place where what WAS measured and what was OWED are both in
+    // hand. It stays silent for a run that stayed inside the set.
+    if ("token" in read && "owed" in owedRead) {
+      const over = overRunNotice(read.token, owedRead.owed, tree);
+      if (over !== undefined) notices.push(over);
+    }
   }
 
   // ── THE RUN THAT IS ALREADY RUNNING (T-237) ────────────────────────

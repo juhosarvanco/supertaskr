@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **936 behaviours** — 934 extracted sentences + 2 named-not-extracted (listed at the end) — across 40 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **943 behaviours** — 941 extracted sentences + 2 named-not-extracted (listed at the end) — across 40 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -926,6 +926,13 @@ Census: **936 behaviours** — 934 extracted sentences + 2 named-not-extracted (
 - the five token reasons that existed before this arm are all still reachable, none renamed
 - every way the owed set cannot be derived lands on the WHOLE battery, and none of them narrows a push
 - a token whose end-to-end entry graded PART of the leg is refused even when no owed set could be derived, because a scoped GREEN is not a whole leg
+- a whole battery for a range that owes ONE suite is allowed, and every leg beyond the set is named with the minutes the owed set would have taken
+- the SPEC axis: a whole browser leg where the range owed spec files is named as the whole leg, and a scope carrying specs the range does not owe names those
+- what an over-run is NOT: a leg graded against an EARLIER tree, and a leg the runner DECLINED to grade
+- the cost table is docs/CONVENTIONS.md's own two figures, and the notice's minutes are its arithmetic
+- a leg this table cannot price is disclosed as a FLOOR, never counted as nothing
+- the whole browser leg's over-run minutes are the leg LESS the subset the range owed, and the owed figure is that subset's own
+- a leg beyond the owed set that ran NARROWED is priced by the scope it records, never by the leg it did not run
 
 ## range-rule
 
