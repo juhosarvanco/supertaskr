@@ -30,4 +30,26 @@ The schema (T-299) is the source; the terminal is the first renderer because eve
 ## Implementation notes
 <!-- executor appends before finishing -->
 
+### The criteria echo, written before the code (executor, at the base c41a3c0a)
+
+Restated in my own words, one line per criterion, as a checklist:
+
+1. `npx supertaskr settings` with no argument prints the profile this
+   project runs and then EVERY switch the schema declares, in the
+   schema's own order, each with the value it resolves to, its one-line
+   `what`, and one measured column beside it: the project's own band
+   reading where the tree carries one, and the schema's `cost` labelled
+   as the seat's estimate where it does not.
+2. `settings set <switch> <value>` writes the departure into the runtime
+   template's `process:` section and ONLY where the schema allows it —
+   an id the schema does not declare, a value outside that switch's own
+   set, a FLOOR switch, and a combination the constraints forbid are
+   four different refusals, each naming what it refused and writing
+   nothing; two bodies show the allowed edit and the forbidden one.
+3. The reference page that documents the command is GENERATED from the
+   schema by this same command, never typed, and a body compares the
+   committed page against a fresh generation so a schema change that
+   was not regenerated reds.
+
+
 ## Verdicts
