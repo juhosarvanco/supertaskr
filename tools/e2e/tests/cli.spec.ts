@@ -6,11 +6,13 @@ import {
   mkdtempSync,
   readFileSync,
   readdirSync,
+  rmSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
+import { parse as parseYaml } from "yaml";
 import { repoRoot } from "../preflight";
 import {
   ARCHITECTURE_VERBS,
@@ -58,6 +60,24 @@ import {
   mentionsCard,
   touchesTokens,
 } from "../scripts/undo.mjs";
+import {
+  PROCESS_SCHEMA,
+  RUNTIME_TEMPLATE,
+  loadProcess,
+  parseProcessSchema,
+  processSection,
+  resolveProcess,
+} from "../scripts/dispatch-brief.mjs";
+import {
+  REFERENCE_DOC,
+  editTemplate,
+  main as settingsMain,
+  measuredFor,
+  renderReference,
+  setPlan,
+  settingsRows,
+  yamlScalar,
+} from "../scripts/settings.mjs";
 import { docsReaders } from "../scripts/docs-scan.mjs";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 
@@ -2019,4 +2039,281 @@ test("the integrator's never-rewrite rule carries NO hedge — the one clause th
   // that passed because it was reading an empty string would be caught.
   expect(row, "the prohibition itself").toContain("rewriting the body");
   expect(row, "and the corner it governs").toContain("the committed body is what proves it");
+});
+
+
+// ── `npx supertaskr settings` (T-300, ADR-024 decision 6) ─────────────
+//
+// The process is SETTINGS and every switch is declared ONCE, in
+// method/runtime/process-schema.yaml. This verb is the terminal surface
+// of that file, and the six bodies below are written against the
+// RELATION between the surface and the schema rather than against the
+// text it happens to print today: every switch reaches the listing, the
+// measured column distinguishes a reading from an estimate, the edit
+// keeps the template readable by a REAL yaml parser and by the arm's own,
+// each refusal is itself, and the reference chapter is a generation
+// rather than a transcription.
+
+/** The schema and the template this repository actually runs, read at body time. */
+function process300() {
+  const loaded = loadProcess(repoRoot);
+  expect(loaded, `${repoRoot} carries ${PROCESS_SCHEMA} and a process: section`).not.toBeNull();
+  return loaded!;
+}
+
+/** A scratch project carrying THIS repository's schema and template, writable. */
+function settingsProject(): string {
+  const root = scratchProject();
+  mkdirSync(path.join(root, "method", "runtime"), { recursive: true });
+  mkdirSync(path.join(root, "docs", "reference"), { recursive: true });
+  for (const rel of [PROCESS_SCHEMA, RUNTIME_TEMPLATE]) {
+    // WRITTEN, NEVER COPIED: method/ is `chmod a-w` inside a lane
+    // worktree (the lane lock), and copyFileSync carries the mode across
+    // — so a fixture built by copying is a fixture nothing can edit, and
+    // every `set` body would measure the file mode instead of the edit.
+    writeFileSync(path.join(root, rel), readFileSync(path.join(repoRoot, rel), "utf8"));
+  }
+  return root;
+}
+
+test("the settings listing names the profile and EVERY switch the schema declares, in the schema's order", () => {
+  const loaded = process300();
+  const rows = settingsRows({ ...loaded, readings: new Map(), units: new Map() });
+  expect(
+    rows.map((r) => r.id),
+    "the rows ARE the schema's switches, in its order — a surface that renders one row fewer " +
+      "than the loop has is a settings screen nobody can trust",
+  ).toEqual([...loaded.schema.switches.keys()]);
+
+  const said: string[] = [];
+  const status = settingsMain(["--root", repoRoot], {
+    stdout: (s) => said.push(s),
+    stderr: (s) => said.push(s),
+    readings: new Map(),
+  });
+  expect(status).toBe(EXIT.CLEAN);
+  const out = said.join("\n");
+  expect(out, "the profile this project runs").toContain(`profile: ${loaded.settings.profile}`);
+  expect(out, "and the profiles it may run").toContain(loaded.settings.available.join(", "));
+  for (const [id, sw] of loaded.schema.switches) {
+    expect(out, `${id} is listed with the value it resolves to`).toContain(
+      `  ${id} = ${loaded.settings.values.get(id) ?? ""}`,
+    );
+    expect(out, `${id} carries its one-line explanation`).toContain(sw.what);
+    if (sw.floor) expect(out, `${id} says it is floor`).toContain(`${id} = ${loaded.settings.values.get(id) ?? ""}  [FLOOR`);
+  }
+  // NOT VACUOUS: the listing is a rendering of THIS schema, so a switch
+  // the schema does not declare is absent from it.
+  expect(out).not.toContain("definitely.not.a.switch");
+});
+
+test("a switch shows the project's own band reading where the tree has one, and the seat's ESTIMATE where it does not", () => {
+  const readings = new Map([["loop/cycle-budget-used", { value: 418.74, derivation: "the meters" }]]);
+  const units = new Map([["loop/cycle-budget-used", "% of the tier's budget"]]);
+
+  const read = measuredFor({ band: ["loop/cycle-budget-used"], cost: "1 to 3 min" }, readings, units);
+  expect(read.kind, "a band this tree has read is a READING").toBe("reading");
+  expect(read.text).toContain("loop/cycle-budget-used = 418.74 % of the tier's budget");
+  expect(read.text, "and a reading is not dressed as an estimate").not.toContain("estimate");
+
+  const unread = measuredFor({ band: ["loop/token-budget-used"], cost: "about 50K tokens per seat" }, readings, units);
+  expect(unread.kind, "a band nothing has read falls back to the schema's cost").toBe("estimate");
+  expect(unread.text, "LABELLED as the seat's estimate — a cost nobody measured rendered in a " +
+    "reading's voice is a settings screen inviting a decision on a number that came out of a room")
+    .toContain("the seat's estimate — about 50K tokens per seat");
+  expect(unread.text, "and it names the band it is waiting for").toContain("awaiting loop/token-budget-used");
+
+  const none = measuredFor({ band: [], cost: "seconds" }, readings, units);
+  expect(none.kind).toBe("estimate");
+  expect(none.text, "a switch no band measures says so").toContain("no band measures this yet");
+
+  // THE PARTIAL CASE, which is the one a single-band test cannot see: a
+  // switch measured by two bands of which ONE has been read is reported
+  // as read, and the unread one is NAMED beside it.
+  const partial = measuredFor(
+    { band: ["loop/cycle-budget-used", "loop/token-budget-used"], cost: "the tiers' own budgets" },
+    readings,
+    units,
+  );
+  expect(partial.kind).toBe("reading");
+  expect(partial.text).toContain("unread: loop/token-budget-used");
+});
+
+test("an allowed set writes ONE departure that a real yaml parser and the arm's own reader agree about", () => {
+  const loaded = process300();
+  const before = readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8");
+  const plan = setPlan({
+    schema: loaded.schema,
+    settings: loaded.settings,
+    id: "dispatch.keeper_at_base",
+    value: "off",
+  });
+  expect(plan.remove, "`off` is not the standard profile's own value, so it IS a departure").toBe(false);
+  const after = editTemplate(before, plan);
+
+  expect(
+    after.split("\n").length,
+    "ONE line was added — the section is method text a human wrote, and an editor that " +
+      "round-tripped it through a yaml emitter would hand back the same document with every " +
+      "comment gone",
+  ).toBe(before.split("\n").length + 1);
+  expect(after, "the profile line survives").toContain(`profile: ${loaded.settings.profile}`);
+  expect(after.endsWith("\n"), "and the file keeps its trailing newline").toBe(true);
+  for (const line of before.split("\n").filter((l) => l.trimStart().startsWith("#"))) {
+    expect(after, "every comment survives").toContain(line);
+  }
+
+  // BOTH READERS, AND THEY MUST AGREE. `off` is a BOOLEAN to a yaml
+  // parser, so a toggle written bare comes back as `false`, fails its own
+  // value set, and takes the tree to the refusal loadProcess keeps for a
+  // project that contradicts itself — written by the command whose job
+  // was to keep it consistent.
+  const real = parseYaml(after) as { process: { switches: Record<string, unknown> } };
+  expect(
+    real.process.switches["dispatch.keeper_at_base"],
+    "a real yaml parser reads back the STRING, not the boolean",
+  ).toBe("off");
+  const section = processSection(after);
+  expect(section, "the arm's own reader finds the section").not.toBeNull();
+  expect(section!.overrides.get("dispatch.keeper_at_base")).toBe("off");
+  expect(resolveProcess(loaded.schema, section!).values.get("dispatch.keeper_at_base")).toBe("off");
+
+  // And the quoting rule itself, both ways round.
+  expect(yamlScalar("off"), "a boolean-shaped value is quoted").toBe('"off"');
+  expect(yamlScalar("state-and-index"), "a plain one is not").toBe("state-and-index");
+});
+
+test("setting a switch to the profile's OWN value removes the departure rather than writing one", () => {
+  const loaded = process300();
+  const before = readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8");
+  const departed = editTemplate(
+    before,
+    setPlan({ schema: loaded.schema, settings: loaded.settings, id: "dispatch.keeper_at_base", value: "off" }),
+  );
+  expect(processSection(departed)!.overrides.get("dispatch.keeper_at_base")).toBe("off");
+
+  const back = setPlan({
+    schema: loaded.schema,
+    settings: resolveProcess(loaded.schema, processSection(departed)!),
+    id: "dispatch.keeper_at_base",
+    value: loaded.settings.values.get("dispatch.keeper_at_base") ?? "",
+  });
+  expect(back.remove, "a value that IS the profile's own is not a departure").toBe(true);
+  const restored = editTemplate(departed, back);
+  expect(
+    processSection(restored)!.overrides.has("dispatch.keeper_at_base"),
+    "the section names the profile and the DEPARTURES only, so a departure that departs from " +
+      "nothing is removed rather than left to read as a decision",
+  ).toBe(false);
+  expect(restored, "and removing it puts the file back exactly as it was").toBe(before);
+});
+
+test("each of the four refusals a set owes is ITSELF, and the template is not touched by any of them", () => {
+  const loaded = process300();
+  const s = loaded.schema;
+  const settings = loaded.settings;
+  expect(
+    () => setPlan({ schema: s, settings, id: "definitely.not.a.switch", value: "on" }),
+    "an id the schema does not declare",
+  ).toThrow(/is not a switch/);
+  expect(
+    () => setPlan({ schema: s, settings, id: "push.token", value: "off" }),
+    "a FLOOR switch",
+  ).toThrow(/is FLOOR/);
+  expect(
+    () => setPlan({ schema: s, settings, id: "read.standing", value: "banana" }),
+    "a value outside the switch's own set",
+  ).toThrow(/is not one of/);
+
+  // THE FOURTH IS THE CRITERION'S HEART, and it is not this command's
+  // judgement: it is the SCHEMA'S constraints, run over the settings the
+  // write WOULD produce, so the refusal names both switches and both
+  // values and a constraint added to the schema is enforced the day it
+  // lands.
+  let forbidden = "";
+  try {
+    setPlan({ schema: s, settings, id: "record.bands", value: "off" });
+  } catch (e) {
+    forbidden = e instanceof Error ? e.message : String(e);
+  }
+  expect(forbidden, "a combination the constraints forbid is refused").toContain("FORBIDDEN COMBINATION");
+  expect(forbidden, "naming the switch that needs it").toContain("merge.meters_to_bands");
+  expect(forbidden, "naming the switch asked for").toContain("record.bands");
+  expect(forbidden, "and both values").toContain("`off`");
+
+  // AND THROUGH THE REAL ENTRY POINT, over a project of its own, where
+  // "nothing was written" is a fact about a file rather than about a throw.
+  const root = settingsProject();
+  try {
+    const templateAt = path.join(root, RUNTIME_TEMPLATE);
+    const untouched = readFileSync(templateAt, "utf8");
+    for (const args of [
+      ["set", "definitely.not.a.switch", "on"],
+      ["set", "push.token", "off"],
+      ["set", "read.standing", "banana"],
+      ["set", "record.bands", "off"],
+      ["set", "read.standing"],
+    ]) {
+      const said: string[] = [];
+      const status = settingsMain(["--root", root, ...args], {
+        stdout: (s2) => said.push(s2),
+        stderr: (s2) => said.push(s2),
+        readings: new Map(),
+      });
+      expect(status, `${args.join(" ")} is CALLED WRONG, never a silent success`).toBe(EXIT.USAGE);
+      expect(said.join("\n"), `${args.join(" ")} says what it refused`).not.toBe("");
+      expect(readFileSync(templateAt, "utf8"), `${args.join(" ")} wrote nothing`).toBe(untouched);
+    }
+    // THE POSITIVE CONTROL: the same entry point, one legal value, DOES write.
+    const ok = settingsMain(["--root", root, "set", "dispatch.keeper_at_base", "off"], {
+      stdout: () => {},
+      stderr: () => {},
+      readings: new Map(),
+    });
+    expect(ok, "an allowed set is clean").toBe(EXIT.CLEAN);
+    expect(readFileSync(templateAt, "utf8"), "and it really moved the file").not.toBe(untouched);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("the committed settings chapter is a GENERATION of the schema, and a schema nobody regenerated for reds", () => {
+  const schema = parseProcessSchema(readFileSync(path.join(repoRoot, PROCESS_SCHEMA), "utf8"));
+  const committed = readFileSync(path.join(repoRoot, REFERENCE_DOC), "utf8");
+  expect(
+    committed,
+    `${REFERENCE_DOC} is stale against ${PROCESS_SCHEMA} — run \`node tools/e2e/scripts/` +
+      "settings.mjs reference --write\` and commit what it wrote; the chapter is GENERATED, " +
+      "never typed",
+  ).toBe(renderReference(schema));
+  expect(
+    readFileSync(path.join(repoRoot, "docs", "reference", "README.md"), "utf8"),
+    "and the chapter table names it, so the reference has no orphan page",
+  ).toContain("15-settings.md");
+
+  // NOT VACUOUS, AND THE PLANT IS A DATA MUTANT — the shape a stale
+  // commit really takes is a page that was true when it was written.
+  const first = [...schema.switches.values()][0];
+  expect(first, "the schema declares a switch to plant against").toBeDefined();
+  const moved = parseProcessSchema(
+    readFileSync(path.join(repoRoot, PROCESS_SCHEMA), "utf8").replace(
+      `what: "${first!.what}"`,
+      `what: "${first!.what}, and something nobody regenerated for"`,
+    ),
+  );
+  expect(renderReference(moved), "a schema that moved moves the page").not.toBe(committed);
+
+  // AND THE PAGE IS A FUNCTION OF THE SCHEMA ALONE: a project that sets a
+  // switch has not changed its documentation, and a chapter that moved
+  // when it did would red this body for something that is not a
+  // documentation change.
+  const loaded = process300();
+  const edited = editTemplate(
+    readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8"),
+    setPlan({ schema, settings: loaded.settings, id: "dispatch.keeper_at_base", value: "off" }),
+  );
+  expect(edited, "the template really moved").not.toBe(
+    readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8"),
+  );
+  expect(renderReference(schema), "and the chapter did not").toBe(committed);
 });
