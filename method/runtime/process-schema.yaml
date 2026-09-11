@@ -1,0 +1,689 @@
+# method/runtime/process-schema.yaml — THE PROCESS AS SETTINGS, DECLARED
+# ONCE (ADR-024 decision 6; the switch inventory in
+# docs/rooms/loop-cost-and-speed.md is this file's input).
+#
+# Every step of the ceremony is a SWITCH here, and every switch is
+# declared in exactly one place: this file. The runtime template beside
+# it (supertaskr.yaml) names which PROFILE a project runs and any switch
+# it departs from; it never repeats a switch's explanation, because a
+# second copy is a copy that goes stale. The arm reads this file at
+# dispatch and at merge, the CLI renders it, the app's settings screen
+# renders it and the skill's command renders it — one source, four
+# surfaces, and none of them is allowed to carry its own sentence about
+# what a switch means.
+#
+# THE FIELDS, and each is a question a reader of a settings screen asks:
+#   what     what the switch does, in one line
+#   effect   how it changes the loop — what actually happens differently
+#   reads    the arm symbol that consults it. A CITATION NAMES A SYMBOL,
+#            NOT A LINE (docs/CONVENTIONS.md), so this is a function name
+#            and never a line number. `processLedger` is the honest
+#            answer for a switch no other arm branches on yet: the arm
+#            still reads it, renders it and refuses when it goes missing.
+#   needs    the constraints, as `<this value> => <other id>=<value>`;
+#            `*` on the left means the need holds at every value, and a
+#            `|` separates alternatives on either side. An unsatisfied
+#            need is a FORBIDDEN COMBINATION and the arm refuses it
+#            naming both switches and both values.
+#   floor    whether it may be turned off. `true` is the room's floor:
+#            no profile turns it off, and an override that tries is
+#            refused. T-299 may refine the three profiles, never this.
+#   band     which band measures it, by the band's own id in
+#            tools/e2e/scripts/health-bands.config.mjs. An empty list is
+#            "no band measures this yet" and `cost` says so.
+#   cost     the project's own measured cost, from the room's table
+#   type     `toggle` or `choice`, with `values` its whole value set
+#   profiles the value under each of the three profiles
+#
+# A PROFILE IS A COLUMN OF THIS TABLE, not a fourth thing to maintain:
+# `guarded-everything` is the ceremony as it stood on 2026-09-09,
+# `standard` is what ADR-024 ruled, and `fast` is `standard` with the
+# whole-suite net nightly only and push batching on.
+
+version: 1
+
+profiles:
+  guarded-everything: "the full-scale ceremony as it stood on 2026-09-09 — every card verified on the blind two-phase bench, the whole four suites at every push, and every regeneration and keeper done by a seat's hand"
+  standard: "what ADR-024 ruled: three tiers chosen by the arm, one standing read, the arm merges, and the whole suite on a clock"
+  fast: "standard with the whole-suite net nightly only and push batching on — the profile for a project whose CI minutes are the scarce thing"
+
+switches:
+
+  # ── WHAT EVERY SEAT READS ──────────────────────────────────────────
+  read.standing:
+    type: choice
+    values: [five-documents-whole, state-and-index]
+    what: "what every seat reads before working"
+    effect: "at five-documents-whole every dispatched seat reads the five governing documents end to end before it can start; at state-and-index it reads STATE and the one-line index, and every other rule reaches it through its brief's context pack"
+    reads: processLedger
+    needs: []
+    floor: false
+    band: [loop/token-budget-used]
+    cost: "about 50K tokens per seat"
+    profiles:
+      guarded-everything: five-documents-whole
+      standard: state-and-index
+      fast: state-and-index
+
+  # ── DISPATCH ───────────────────────────────────────────────────────
+  dispatch.keeper_at_base:
+    type: toggle
+    values: [off, on]
+    what: "the fence's keeper spec run at the base before a lane is cut"
+    effect: "on, the dispatch grades the keeper that pins the fenced property at the base and reports graded-and-green, graded-and-red or nothing-was-graded before a worktree exists; off, a lane is cut over a baseline nobody measured"
+    reads: processLedger
+    needs: []
+    floor: false
+    band: [loop/cycle-budget-used]
+    cost: "1 to 3 min"
+    profiles:
+      guarded-everything: "off"
+      standard: "on"
+      fast: "on"
+
+  dispatch.model_per_role:
+    type: choice
+    values: [by-hand, from-the-template]
+    what: "the model of every dispatch read from the runtime template"
+    effect: "at from-the-template the arm resolves each seat's model out of the template's roles block, prints it in row 1 and REFUSES a dispatch whose role has no default; at by-hand the arm names no model and the dispatching session's own is what a seat inherits"
+    reads: roleModelRecs
+    needs: ["from-the-template => template.roles=on"]
+    floor: false
+    band: [loop/token-budget-used]
+    cost: "not measured — the model is the input the token band divides by, never a cost of its own"
+    profiles:
+      guarded-everything: by-hand
+      standard: from-the-template
+      fast: from-the-template
+
+  dispatch.ask_watcher:
+    type: toggle
+    values: [off, on]
+    what: "the derived watcher over the live lanes' ask and report files"
+    effect: "on, the seat's watcher is derived from the live lanes and fires on a NEW or a CHANGED ask file; off, a lane that parks a question waits for someone to remember it"
+    reads: processLedger
+    needs: []
+    floor: false
+    band: []
+    cost: "not measured"
+    profiles:
+      guarded-everything: "on"
+      standard: "on"
+      fast: "on"
+
+  dispatch.preflight:
+    type: toggle
+    values: [on]
+    what: "the card preflight at dispatch"
+    effect: "the card's own claims are re-derived against the tree before a lane is cut, so a brief is never assembled over a figure that has moved"
+    reads: processLedger
+    needs: []
+    floor: true
+    band: []
+    cost: "seconds"
+    profiles:
+      guarded-everything: "on"
+      standard: "on"
+      fast: "on"
+
+  template.roles:
+    type: toggle
+    values: [on]
+    what: "the runtime template's own roles block, which the model per role is read from"
+    effect: "the block exists and names a model for every role the arm dispatches; without it the arm has nothing to resolve and refuses rather than inheriting the dispatching session's model"
+    reads: processLedger
+    needs: []
+    floor: true
+    band: []
+    cost: "seconds"
+    profiles:
+      guarded-everything: "on"
+      standard: "on"
+      fast: "on"
+
+  # ── BUILD ──────────────────────────────────────────────────────────
+  build.suites:
+    type: choice
+    values: [fence-owes, owed-set]
+    what: "what the executor runs at its final commit"
+    effect: "at fence-owes the lane runs every suite its fence touches, once; at owed-set it runs the set its own range owes, which is the smaller reading and the one the push and CI also take"
+    reads: processLedger
+    needs: ["* => push.token=on"]
+    floor: false
+    band: [loop/cycle-budget-used]
+    cost: "5 to 15 min"
+    profiles:
+      guarded-everything: fence-owes
+      standard: owed-set
+      fast: owed-set
+
+  build.self_drill:
+    type: choice
+    values: [practised, required]
+    what: "one mutant per new body, red, restored and proved, in the report"
+    effect: "at required the executor's report carries a self-drill block and a report without one is incomplete; at practised the drill is a habit and a lane that skips it is discovered at the bench or not at all"
+    reads: processLedger
+    needs: []
+    floor: false
+    band: [loop/cycle-budget-used]
+    cost: "minutes in the lane"
+    profiles:
+      guarded-everything: practised
+      standard: required
+      fast: required
+
+  build.criteria_echo:
+    type: toggle
+    values: [off, on]
+    what: "the criteria restated as a checklist before coding"
+    effect: "on, the executor writes the acceptance criteria back as a checklist before it touches anything, so a criterion it misread is caught while the cost of the miss is one paragraph"
+    reads: processLedger
+    needs: []
+    floor: false
+    band: [loop/cycle-budget-used]
+    cost: "1 min"
+    profiles:
+      guarded-everything: "off"
+      standard: "on"
+      fast: "on"
+
+  build.preflight_before_stamp:
+    type: toggle
+    values: [off, on]
+    what: "the card preflight on the executor's own prose"
+    effect: "on, the lane's own implementation notes are re-derived before the verifying stamp, so prose that breaks the card's own claims is caught in the lane rather than at the merge"
+    reads: processLedger
+    needs: []
+    floor: false
+    band: [loop/cycle-budget-used]
+    cost: "seconds"
+    profiles:
+      guarded-everything: "off"
+      standard: "on"
+      fast: "on"
+
+  # ── VERIFY ─────────────────────────────────────────────────────────
+  verify.tier:
+    type: choice
+    values: [guarded-for-every-card, by-the-classifier]
+    what: "how a card is verified"
+    effect: "at by-the-classifier the arm derives bounded, standard or guarded from the card's size, its fence against the guard-class list and whether a keeper already pins it; at guarded-for-every-card every card takes the blind two-phase bench whatever its size, which is the ceremony the room measured at 2.5 to 3.5 hours a card"
+    reads: classifyTier
+    needs: ["by-the-classifier => fence.hook=on", "by-the-classifier => push.token=on"]
+    floor: false
+    band: [loop/cycle-budget-used, loop/token-budget-used, loop/soft-verifier]
+    cost: "the tiers' own budgets: 20 min and 80K bounded, 75 min and 310K standard, 100 min and 450K guarded"
+    profiles:
+      guarded-everything: guarded-for-every-card
+      standard: by-the-classifier
+      fast: by-the-classifier
+
+  verify.phase1:
+    type: choice
+    values: [by-the-seat, by-the-arm, "off"]
+    what: "the tool-less attack set written from the card before the diff"
+    effect: "at by-the-arm the arm renders phase 1 for the standard and guarded tiers and renders none for bounded; at by-the-seat the arm renders nothing and the seat writes the phase brief by hand; off, nothing is written before the diff exists and the verifier's blindness is spent"
+    reads: phase1Owed
+    needs: []
+    floor: false
+    band: [loop/token-budget-used]
+    cost: "about 60K tokens, 4 min beside the build"
+    profiles:
+      guarded-everything: by-the-seat
+      standard: by-the-arm
+      fast: by-the-arm
+
+  verify.ground:
+    type: choice
+    values: [by-hand, by-a-script]
+    what: "the ground truths at the base that phase 2 judges on"
+    effect: "at by-a-script the arm takes the grounds and seals them, and the seat's further asks are answered by hand only on the guarded tier; at by-hand every ground is the seat's own measurement and the bench waits on it"
+    reads: processLedger
+    needs: []
+    floor: false
+    band: [loop/cycle-budget-used]
+    cost: "10 to 15 min of the seat"
+    profiles:
+      guarded-everything: by-hand
+      standard: by-a-script
+      fast: by-a-script
+
+  verify.sealed_inputs:
+    type: choice
+    values: ["off", "on", standard-and-guarded]
+    what: "the attack set and the grounds hashed and cited"
+    effect: "sealed, the verdict cites a digest of what it judged on and a reader can re-derive it; unsealed, a verdict's inputs are whatever the session remembers"
+    reads: processLedger
+    needs: []
+    floor: false
+    band: [loop/soft-verifier]
+    cost: "seconds"
+    profiles:
+      guarded-everything: "on"
+      standard: standard-and-guarded
+      fast: standard-and-guarded
+
+  verify.separate_bench:
+    type: choice
+    values: ["off", "on", standard-and-guarded]
+    what: "phase 2 on a detached worktree at the tip"
+    effect: "on, the verifier measures on a checkout of its own and the lane's worktree is never the bench; off, the verifier measures where the executor built and a dirty lane is indistinguishable from a defect"
+    reads: processLedger
+    needs: []
+    floor: false
+    band: [loop/cycle-budget-used]
+    cost: "a worktree"
+    profiles:
+      guarded-everything: "on"
+      standard: standard-and-guarded
+      fast: standard-and-guarded
+
+  verify.suites:
+    type: choice
+    values: [whole, owed-set, owed-set-except-guarded]
+    what: "what the verifier runs at the tip"
+    effect: "at whole the verifier grades the four legs end to end; at owed-set-except-guarded it grades the set the range owes and the guarded tier still takes the whole four"
+    reads: processLedger
+    needs: ["owed-set|owed-set-except-guarded => record.whole_suite_net=checkpoint-and-nightly|nightly"]
+    floor: false
+    band: [loop/cycle-budget-used]
+    cost: "15 to 20 min, down to about 5"
+    profiles:
+      guarded-everything: whole
+      standard: owed-set-except-guarded
+      fast: owed-set-except-guarded
+
+  verify.mutants:
+    type: toggle
+    values: [off, on]
+    what: "data mutants where the property is data, code mutants for containment"
+    effect: "on, a keeper is proved by planting the defect it claims to catch — and where the property lives in data, the mutant is a DATA mutant; off, a vacuous keeper is green and nobody knows"
+    reads: processLedger
+    needs: []
+    floor: false
+    band: [loop/soft-verifier]
+    cost: "inside phase 2"
+    profiles:
+      guarded-everything: "on"
+      standard: "on"
+      fast: "on"
+
+  verify.corrections_as_bodies:
+    type: toggle
+    values: [off, on]
+    what: "a correction is a body the verifier commits plus a mutant block"
+    effect: "on, an assigned correction arrives as a committed body with the mutant that drills it, and the merge re-drills it RED ALONE; off, a correction is prose the integrator interprets"
+    reads: processLedger
+    needs: []
+    floor: false
+    band: [loop/soft-verifier]
+    cost: "not measured"
+    profiles:
+      guarded-everything: "on"
+      standard: "on"
+      fast: "on"
+
+  verify.reads_notes_last:
+    type: toggle
+    values: [on]
+    what: "the verifier reads the diff before the executor's notes"
+    effect: "the diff is judged on its own before the lane's account of it, so the verifier's reading is not the executor's reading repeated back"
+    reads: processLedger
+    needs: []
+    floor: true
+    band: [loop/soft-verifier]
+    cost: "not measured"
+    profiles:
+      guarded-everything: "on"
+      standard: "on"
+      fast: "on"
+
+  # ── MERGE ──────────────────────────────────────────────────────────
+  merge.by:
+    type: choice
+    values: [by-the-seat, by-the-arm]
+    what: "who runs the merge ritual"
+    effect: "at by-the-arm the merge verb performs the ritual step by step and STOPS with the merge staged, and the seat reads one line per step and rules; at by-the-seat every step is a command a session types and a step it forgets is a step nobody sees missing"
+    reads: processLedger
+    needs: []
+    floor: false
+    band: [loop/cycle-budget-used]
+    cost: "15 to 21 min, down to about 5"
+    profiles:
+      guarded-everything: by-the-seat
+      standard: by-the-arm
+      fast: by-the-arm
+
+  merge.redrill:
+    type: choice
+    values: [whole-spec, scoped]
+    what: "the re-drill of the verdict's correction blocks"
+    effect: "at scoped each mutant is re-drilled against the spec the fix diff touches; at whole-spec every block is re-drilled over the whole spec, which is the same answer for more minutes"
+    reads: processLedger
+    needs: []
+    floor: false
+    band: [loop/cycle-budget-used]
+    cost: "minutes"
+    profiles:
+      guarded-everything: whole-spec
+      standard: scoped
+      fast: scoped
+
+  merge.regen_graph:
+    type: choice
+    values: [by-the-seat, by-the-arm]
+    what: "the code graph regenerated when a source under the walk moved"
+    effect: "at by-the-arm the regeneration, the currency check and the staging are steps in the merge plan with their own exits, and the dogfood pins run before the commit; at by-the-seat the plan carries a STOP naming what the seat owes and the regeneration happens off the ledger"
+    reads: regenPlace
+    needs: []
+    floor: false
+    band: [loop/cycle-budget-used]
+    cost: "about 3 min when it fires"
+    profiles:
+      guarded-everything: by-the-seat
+      standard: by-the-arm
+      fast: by-the-arm
+
+  merge.regen_census:
+    type: choice
+    values: [by-the-seat, by-the-arm]
+    what: "the behaviour census regenerated when a spec name moved"
+    effect: "at by-the-arm the census regeneration and its staging are steps in the merge plan; at by-the-seat the plan carries a STOP naming what the seat owes"
+    reads: regenPlace
+    needs: []
+    floor: false
+    band: [loop/cycle-budget-used]
+    cost: "about 1 min when it fires"
+    profiles:
+      guarded-everything: by-the-seat
+      standard: by-the-arm
+      fast: by-the-arm
+
+  merge.keepers:
+    type: toggle
+    values: [off, on]
+    what: "the cheap keepers at the merge — the pinned-sentence, forbidden-content and diff-size checks"
+    effect: "on, each is a step with its own exit before the commit; off, the merge plan carries the floor preflight alone and a reworded pinned sentence or a forbidden spelling lands and is found afterwards"
+    reads: keeperSteps
+    needs: []
+    floor: false
+    band: [loop/cycle-budget-used]
+    cost: "seconds"
+    profiles:
+      guarded-everything: "off"
+      standard: "on"
+      fast: "on"
+
+  merge.meters_to_bands:
+    type: toggle
+    values: [off, on]
+    what: "the reports' meters appended to the bands at the merge"
+    effect: "on, the lane's and the verifier's meters blocks are appended to the readings the bands parse; off, every report on the board carries a meters block that nobody reads"
+    reads: processLedger
+    needs: ["on => record.bands=on"]
+    floor: false
+    band: []
+    cost: "seconds"
+    profiles:
+      guarded-everything: "off"
+      standard: "on"
+      fast: "on"
+
+  merge.message:
+    type: choice
+    values: [by-the-seat, from-the-verdict]
+    what: "the merge message"
+    effect: "at from-the-verdict every sentence comes out of the verdict or out of a figure the run measured; at by-the-seat the message is a summary of what the session remembers, and a count that has moved is remembered wrong"
+    reads: processLedger
+    needs: []
+    floor: false
+    band: []
+    cost: "not measured"
+    profiles:
+      guarded-everything: by-the-seat
+      standard: from-the-verdict
+      fast: from-the-verdict
+
+  # ── PUSH ───────────────────────────────────────────────────────────
+  push.owed:
+    type: choice
+    values: [whole, owed-set]
+    what: "what a push must have graded"
+    effect: "at owed-set the push grades the set its own range owes, last, and the token keys on it; at whole the four legs run at every push"
+    reads: processLedger
+    needs: ["* => push.token=on"]
+    floor: false
+    band: [loop/cycle-budget-used]
+    cost: "15 min, down to 1 to 5"
+    profiles:
+      guarded-everything: whole
+      standard: owed-set
+      fast: owed-set
+
+  push.batching:
+    type: toggle
+    values: [off, on]
+    what: "several merges per push"
+    effect: "on, merges accumulate and one push carries them, which is fewer runs for the same tree; off, every merge is its own push and its own run"
+    reads: processLedger
+    needs: ["on => ci.per_push_runs=one"]
+    floor: false
+    band: [loop/cycle-budget-used]
+    cost: "fewer CI runs"
+    profiles:
+      guarded-everything: "off"
+      standard: "on"
+      fast: "on"
+
+  push.wait_previous_run:
+    type: toggle
+    values: [off, on]
+    what: "the guard refuses a push while a run is in flight"
+    effect: "on, a push waits for the previous run to conclude; off, the guard ANNOUNCES the newest concluded verdict at every push and the reading stays the seat's"
+    reads: processLedger
+    needs: []
+    floor: false
+    band: [loop/cycle-budget-used]
+    cost: "up to 35 min"
+    profiles:
+      guarded-everything: "on"
+      standard: "off"
+      fast: "off"
+
+  push.token:
+    type: toggle
+    values: [on]
+    what: "the owed-set token and the push guard"
+    effect: "a push is refused unless the set its range owes has been graded and the token keys on that tree; a commit or a staged merge during the run unkeys it"
+    reads: processLedger
+    needs: []
+    floor: true
+    band: []
+    cost: "seconds"
+    profiles:
+      guarded-everything: "on"
+      standard: "on"
+      fast: "on"
+
+  # ── CI ─────────────────────────────────────────────────────────────
+  ci.owed:
+    type: choice
+    values: [everything, owed-set]
+    what: "what CI runs per push"
+    effect: "at owed-set the runner grades the set the pushed range owes; at everything it grades the four legs at every push"
+    reads: processLedger
+    needs: ["owed-set => record.whole_suite_net=checkpoint-and-nightly|nightly"]
+    floor: false
+    band: [loop/cycle-budget-used]
+    cost: "34 min, down to about 10"
+    profiles:
+      guarded-everything: everything
+      standard: owed-set
+      fast: owed-set
+
+  ci.sharding:
+    type: toggle
+    values: [off, on]
+    what: "the e2e lane split across runners by owning spec"
+    effect: "on, the longest leg is several jobs and the wall clock is the slowest shard; off, it is one job and the wall clock is the sum"
+    reads: processLedger
+    needs: []
+    floor: false
+    band: [loop/cycle-budget-used]
+    cost: "21 min, down to about 5"
+    profiles:
+      guarded-everything: "off"
+      standard: "on"
+      fast: "on"
+
+  ci.regen_check:
+    type: toggle
+    values: [off, on]
+    what: "graph and census currency checked on the runner"
+    effect: "on, a merge that forgot a regeneration reds on a machine that is not the seat's; off, a stale generated file travels until someone asks the gate by hand"
+    reads: processLedger
+    needs: []
+    floor: false
+    band: []
+    cost: "seconds"
+    profiles:
+      guarded-everything: "on"
+      standard: "on"
+      fast: "on"
+
+  ci.per_push_runs:
+    type: choice
+    values: [one, per-merge]
+    what: "how many runs a push starts"
+    effect: "at one, a push carrying several merges starts one run and that run is the reading for the whole batch; at per-merge each merge is separately visible and batching cannot be told from a lost run"
+    reads: processLedger
+    needs: []
+    floor: false
+    band: [loop/cycle-budget-used]
+    cost: "one run per push"
+    profiles:
+      guarded-everything: per-merge
+      standard: one
+      fast: one
+
+  # ── RECORD ─────────────────────────────────────────────────────────
+  record.whole_suite_net:
+    type: choice
+    values: [every-push, checkpoint-and-nightly, nightly]
+    what: "when the whole four suites run"
+    effect: "the net under every switch that grades less than everything: at checkpoint-and-nightly the four legs run at every checkpoint and nightly in CI, and a red there is filed against the merge that caused it; at every-push there is no net because nothing is ever skipped"
+    reads: wholeSuiteNet
+    needs: []
+    floor: false
+    band: [loop/cycle-budget-used]
+    cost: "15 min per run"
+    profiles:
+      guarded-everything: every-push
+      standard: checkpoint-and-nightly
+      fast: nightly
+
+  record.bands:
+    type: toggle
+    values: [off, on]
+    what: "cycle time and tokens per size and tier, with budgets"
+    effect: "on, every lane's readings land in the bands and a tier drifting past its budget is visible at the next checkpoint; off, the budgets are numbers in an ADR"
+    reads: processLedger
+    needs: []
+    floor: false
+    band: []
+    cost: "seconds"
+    profiles:
+      guarded-everything: "off"
+      standard: "on"
+      fast: "on"
+
+  record.checkpoint:
+    type: toggle
+    values: [on]
+    what: "the record and STATE regenerated at a sitting"
+    effect: "the sitting's record is written and STATE is replaced from its template in the same commit, so the handoff baton is never a commit behind the tree"
+    reads: processLedger
+    needs: []
+    floor: true
+    band: [loop/cycle-budget-used]
+    cost: "20 min per sitting"
+    profiles:
+      guarded-everything: "on"
+      standard: "on"
+      fast: "on"
+
+  # ── THE REST OF THE FLOOR ──────────────────────────────────────────
+  fence.hook:
+    type: toggle
+    values: [on]
+    what: "the lane fence and the write hook that keeps it"
+    effect: "a lane may write only what its card fenced, and the hook refuses the write rather than reporting it afterwards"
+    reads: processLedger
+    needs: []
+    floor: true
+    band: []
+    cost: "seconds"
+    profiles:
+      guarded-everything: "on"
+      standard: "on"
+      fast: "on"
+
+  landing.gate:
+    type: toggle
+    values: [on]
+    what: "the landing gate"
+    effect: "a merge onto the integration branch is judged before it lands, and a card is resolved by the branch at the merge's second parent"
+    reads: processLedger
+    needs: []
+    floor: true
+    band: []
+    cost: "seconds"
+    profiles:
+      guarded-everything: "on"
+      standard: "on"
+      fast: "on"
+
+  docs.gate:
+    type: toggle
+    values: [on]
+    what: "the docs gate"
+    effect: "a path under docs/ is a CODE INPUT, and the gate names which suites a change to it owes — the trigger no other gate can see"
+    reads: processLedger
+    needs: []
+    floor: true
+    band: []
+    cost: "seconds"
+    profiles:
+      guarded-everything: "on"
+      standard: "on"
+      fast: "on"
+
+  method.stamp:
+    type: toggle
+    values: [on]
+    what: "the method stamp and its eval gate when method text moves"
+    effect: "a merge that moves method text bumps the stamp in every file that carries it and runs the method evals; a half bump reds the pin"
+    reads: processLedger
+    needs: []
+    floor: true
+    band: []
+    cost: "seconds"
+    profiles:
+      guarded-everything: "on"
+      standard: "on"
+      fast: "on"
+
+  record.immutable:
+    type: toggle
+    values: [on]
+    what: "records never rewritten"
+    effect: "a checkpoint, a verdict and a room entry are appended to and never edited, so the record of what was believed at a moment survives the belief"
+    reads: processLedger
+    needs: []
+    floor: true
+    band: []
+    cost: "seconds"
+    profiles:
+      guarded-everything: "on"
+      standard: "on"
+      fast: "on"

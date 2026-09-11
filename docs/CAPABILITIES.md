@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **943 behaviours** — 941 extracted sentences + 2 named-not-extracted (listed at the end) — across 40 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1005 behaviours** — 1003 extracted sentences + 2 named-not-extracted (listed at the end) — across 40 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -162,6 +162,68 @@ Census: **943 behaviours** — 941 extracted sentences + 2 named-not-extracted (
 - EVERY ROLE THIS METHOD SHIPS RESOLVES A MODEL, and the checklist is the TREE'S rather than the arm's own map
 - THE TRIAGE RULE CARRIES BOTH ITS HALVES — the test cycle AND the fresh reviewer's gate, and the split is an instruction
 - A TEMPLATE VALUE THAT IS ONLY A COMMENT IS AN ABSENT DEFAULT, and so is an empty quoted one
+- THE TYPED SWITCH LIST AND THE SHIPPED SCHEMA AGREE EXACTLY, so a switch with no body of its own reds by name
+- THE SCHEMA CARRIES EVERY ROW OF THE ROOM'S SWITCH INVENTORY AND EVERY ID ITS FLOOR NAMES
+- THE ARM'S HAND PARSER AND A REAL YAML PARSER READ THE SAME SCHEMA, field for field
+- EVERY BAND A SWITCH NAMES IS A BAND THIS PROJECT ACTUALLY KEEPS
+- THE THREE PROFILES ALL RESOLVE AND ALL SATISFY THEIR OWN CONSTRAINTS
+- THE SHIPPED TEMPLATE NAMES A PROFILE THE SCHEMA DECLARES, offers all three, and departs only legally
+- THE BRIEF PRINTS THE PROCESS ROWS, read from the schema under the template's own profile
+- A FORBIDDEN COMBINATION IS REFUSED BY NAME — both switches, both values, and the repair
+- A FORBIDDEN COMBINATION REFUSES THE WHOLE ARM, before a row is assembled or a step is planned
+- AN OVERRIDE ON A FLOOR SWITCH IS REFUSED BY NAME, and the floor is the room's own set
+- THE TIER RULES ARE READ FROM THE SECTION — verify.tier switches the classifier off entirely
+- THE PHASE-1 SPAWN IS READ FROM THE SECTION — by-the-arm, by-the-seat and off are three different answers
+- THE WHOLE-SUITE NET IS READ FROM THE SECTION, and every-push is the profile with no net at all
+- THE REGENERATIONS' PLACE IS READ FROM THE SECTION — by-the-arm is a graded step, by-the-seat is a STOP
+- THE CHEAP KEEPERS ARE READ FROM THE SECTION, and the card's own preflight survives because it is FLOOR
+- THE MODEL PER ROLE IS READ FROM THE SECTION — by-hand names no model and says so
+- THE STANDARD PROFILE REPRODUCES THE MERGE PLAN THIS VERB BUILT BEFORE THE SWITCHES EXISTED
+- THE READ SITES ARE DERIVED FROM THE ARM'S OWN SOURCE, never from a table beside it
+- THE ARM'S PHASE-1 STEP READS `verify.phase1` — the brief is written or it is not, and the skip names the switch
+- THE SCHEMA'S TWO COLUMNS MOVE EXACTLY WHERE THE ROOM'S OLD AND RULED COLUMNS MOVE
+- the process switch read.standing is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch dispatch.keeper_at_base is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch dispatch.model_per_role is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch dispatch.ask_watcher is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch dispatch.preflight is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch template.roles is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch build.suites is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch build.self_drill is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch build.criteria_echo is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch build.preflight_before_stamp is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch verify.tier is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch verify.phase1 is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch verify.ground is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch verify.sealed_inputs is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch verify.separate_bench is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch verify.suites is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch verify.mutants is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch verify.corrections_as_bodies is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch verify.reads_notes_last is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch merge.by is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch merge.redrill is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch merge.regen_graph is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch merge.regen_census is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch merge.keepers is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch merge.meters_to_bands is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch merge.message is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch push.owed is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch push.batching is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch push.wait_previous_run is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch push.token is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch ci.owed is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch ci.sharding is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch ci.regen_check is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch ci.per_push_runs is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch record.whole_suite_net is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch record.bands is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch record.checkpoint is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch fence.hook is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch landing.gate is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch docs.gate is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch method.stamp is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- the process switch record.immutable is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
 
 ## card-figures
 

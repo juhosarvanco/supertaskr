@@ -28,3 +28,29 @@ ceremony:
   S: [executor]
   M: [executor, verifier, integrator]
   L: [plan, executor, verifier, integrator]
+
+# THE PROCESS IS SETTINGS (ADR-024 decision 6). Every step of the loop is
+# a SWITCH, and every switch is DECLARED ONCE — in the schema beside this
+# file, method/runtime/process-schema.yaml, with what it does, how it
+# changes the loop, what it needs on, whether it may be turned off, which
+# band measures it and what this project measured it to cost. This
+# section carries no explanation of its own on purpose: a second copy is
+# a copy that goes stale, and the schema is the ONE source the arm, the
+# CLI, the app's settings screen and the skill all render.
+#
+# `profile:` is the column of that schema this project runs. `available:`
+# is the whole set of columns, and the arm refuses when it and the schema
+# disagree either way round. `switches:` holds the DEPARTURES only — an
+# id the schema does not declare is refused, so is a value outside that
+# switch's own set, and so is any override of a FLOOR switch. To see the
+# switches this profile actually resolves to, with their costs and their
+# constraints, ask the arm: it prints them in the dispatch brief and
+# names the ones governing each step of a merge.
+process:
+  profile: standard
+  available: [guarded-everything, standard, fast]
+  switches:
+    # This project departs from `standard` at NO switch today. That is a
+    # fact about this project rather than a property of the schema, and
+    # it is written as an empty block rather than left out so that a
+    # reader can see the question was asked.

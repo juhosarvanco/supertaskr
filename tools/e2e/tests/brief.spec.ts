@@ -33,6 +33,11 @@ import {
   PHASE1_SPAWN_NOTE,
   PARKED_STATUS,
   PIPE_BUFFER_BYTES,
+  PROCESS_SCHEMA,
+  PROCESS_SECTION,
+  ProcessFinding,
+  SWITCH_FIELDS,
+  SWITCH_TYPES,
   PROSE_WAKE_PATTERN,
   ROLE_TEMPLATE_KEYS,
   RUNTIME_TEMPLATE,
@@ -94,7 +99,17 @@ import {
   packRecs,
   packageCommands,
   parkedBoard,
+  parseProcessSchema,
   parseWorktreePorcelain,
+  phase1Owed,
+  processLedger,
+  processSection,
+  constraintFindings,
+  loadProcess,
+  resolveProcess,
+  switchReadSites,
+  switchValue,
+  wholeSuiteNet,
   readAdditions,
   readDoc,
   readWake,
@@ -132,6 +147,15 @@ import {
   withMargin,
   worktreePorcelain,
 } from "../scripts/dispatch-brief.mjs";
+// T-299 — THE MERGE SIDE OF THE PROCESS SETTINGS. These three live in
+// `merge.mjs` because they are the merge's own behaviour, and the bodies
+// for them are HERE because this card's fence names this spec and not
+// `merge.spec.ts`. Said out loud rather than left to be discovered, and
+// filed as T-299-s1.
+import { keeperSteps, regenPlace, tailPlan } from "../scripts/merge.mjs";
+// The band ids a switch may name, read from the bands themselves so that
+// "which band measures it" cannot be a band that does not exist.
+import { STANDING_BANDS } from "../scripts/health-bands.config.mjs";
 
 /**
  * THE BRIEF COMMAND (T-133) — no browser.
@@ -6763,3 +6787,793 @@ test("A TEMPLATE VALUE THAT IS ONLY A COMMENT IS AN ABSENT DEFAULT, and so is an
     "the control: a value with a trailing comment is still a value",
   ).toBe("a-model@seat");
 });
+
+/* ────────────────────────────────────────────────────────────────────
+ * T-299 — THE PROCESS AS SETTINGS: the schema, the profiles and the arm.
+ *
+ * The loop's ceremony used to be lore. Which steps a card took was a
+ * property of who was sitting in the seat and what they remembered, and
+ * the room that measured it found a size-S card costing 2.5 to 3.5 hours
+ * and about 520K subagent tokens with every seat reading 242,673 bytes
+ * before it could start. ADR-024 decision 6 turned every step into a
+ * SWITCH with a measured cost and a constraint, declared ONCE in a
+ * schema that the arm, the CLI, the app's settings screen and the
+ * skill's command all render.
+ *
+ * ── WHAT THE BODIES BELOW ARE FOR, and it is three different jobs ──
+ *  1. THE SCHEMA AGAINST THE ROOM. The room's switch inventory is this
+ *     card's input, and a schema that quietly lost a row would satisfy
+ *     every other body here. So the room's own table is parsed and
+ *     compared, both ways round.
+ *  2. THE HAND PARSER AGAINST A REAL ONE. These scripts are what the CLI
+ *     packages and the genesis installs, so the arm parses the schema by
+ *     hand — a package's devDependencies are not there when it is
+ *     installed. This suite parses the SAME file with a real YAML
+ *     library and requires the two readings to agree, so the hand parser
+ *     is checked against a parser it shares no line with.
+ *  3. ONE BODY PER SWITCH, AND ITS MUTANT EXECUTED. The card's third
+ *     criterion is that a switch the arm ignores reds ITS OWN body. The
+ *     mutant is therefore not described: each body below builds the
+ *     resolution with its own switch DROPPED and requires the arm to
+ *     refuse naming it. A table of forty-two hand-planted mutants would
+ *     be forty-two chances to plant the wrong one.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/**
+ * THE SWITCH IDS, TYPED HERE AND NOT IMPORTED, for the reason T-298's
+ * first assigned correction gives: a list read out of the same module
+ * the schema feeds would be vacuous in the one direction it exists to
+ * guard. This is the hand-kept side, the schema is the tree side, and
+ * the body below requires them to agree exactly — so a switch added to
+ * the schema without a body of its own reds by name, and so does a body
+ * for a switch nobody declares.
+ *
+ * It is also what makes the census expand the family: the generated
+ * behaviour document reads a same-file const array, and a family it
+ * cannot resolve is listed as an omission rather than as behaviours.
+ */
+const PROCESS_SWITCH_IDS = [
+  "read.standing",
+  "dispatch.keeper_at_base",
+  "dispatch.model_per_role",
+  "dispatch.ask_watcher",
+  "dispatch.preflight",
+  "template.roles",
+  "build.suites",
+  "build.self_drill",
+  "build.criteria_echo",
+  "build.preflight_before_stamp",
+  "verify.tier",
+  "verify.phase1",
+  "verify.ground",
+  "verify.sealed_inputs",
+  "verify.separate_bench",
+  "verify.suites",
+  "verify.mutants",
+  "verify.corrections_as_bodies",
+  "verify.reads_notes_last",
+  "merge.by",
+  "merge.redrill",
+  "merge.regen_graph",
+  "merge.regen_census",
+  "merge.keepers",
+  "merge.meters_to_bands",
+  "merge.message",
+  "push.owed",
+  "push.batching",
+  "push.wait_previous_run",
+  "push.token",
+  "ci.owed",
+  "ci.sharding",
+  "ci.regen_check",
+  "ci.per_push_runs",
+  "record.whole_suite_net",
+  "record.bands",
+  "record.checkpoint",
+  "fence.hook",
+  "landing.gate",
+  "docs.gate",
+  "method.stamp",
+  "record.immutable",
+];
+
+/** The three profiles the decision fixes, typed for the same reason. */
+const PROFILE_IDS = ["guarded-everything", "standard", "fast"];
+
+/**
+ * The `reads:` value that means "no other arm branches on this switch —
+ * the ledger is where it is read". Not a fiction: `processLedger` goes
+ * through the accessor for every declared switch, so a switch the
+ * resolution lost throws there.
+ */
+const LEDGER_READER = "processLedger";
+
+/** The arm's own sources, which is where a read site can exist at all. */
+const ARM_SOURCES = [
+  "tools/e2e/scripts/dispatch-brief.mjs",
+  "tools/e2e/scripts/merge.mjs",
+  "tools/e2e/scripts/brief.mjs",
+];
+
+/** The shipped schema, parsed by the arm's own reader. */
+function shippedSchema() {
+  return parseProcessSchema(readFileSync(path.join(repoRoot, PROCESS_SCHEMA), "utf8"));
+}
+
+/** The shipped process, resolved. Non-null or the body says so. */
+function shippedProcess() {
+  const loaded = loadProcess(repoRoot);
+  expect(loaded, `${PROCESS_SCHEMA} or the process section did not load in this checkout`).not.toBeNull();
+  return loaded as NonNullable<ReturnType<typeof loadProcess>>;
+}
+
+/** One resolution of a named profile, with the overrides a body wants. */
+function atProfile(profile: string, overrides: [string, string][] = []) {
+  return resolveProcess(shippedSchema(), {
+    profile,
+    available: [],
+    overrides: new Map(overrides),
+  });
+}
+
+/** Where the arm reads each switch, derived from the arm's own source. */
+function armReadSites() {
+  return switchReadSites(
+    new Map(ARM_SOURCES.map((rel) => [rel, readFileSync(path.join(repoRoot, rel), "utf8")])),
+  );
+}
+
+test("THE TYPED SWITCH LIST AND THE SHIPPED SCHEMA AGREE EXACTLY, so a switch with no body of its own reds by name", () => {
+  // KILLED BY: a switch added to the schema and not to the list above, a
+  // switch dropped from the schema while the list still names it, and a
+  // reordering that loses one — the comparison is on sets AND on the
+  // count, so a duplicate cannot hide a loss.
+  const schema = shippedSchema();
+  const declared = [...schema.switches.keys()];
+  expect(new Set(PROCESS_SWITCH_IDS).size, "the typed list carries a duplicate").toBe(
+    PROCESS_SWITCH_IDS.length,
+  );
+  expect(
+    declared.filter((id) => !PROCESS_SWITCH_IDS.includes(id)),
+    "the schema declares switch(es) this suite has no body for",
+  ).toEqual([]);
+  expect(
+    PROCESS_SWITCH_IDS.filter((id) => !schema.switches.has(id)),
+    "this suite carries a body for switch(es) the schema does not declare",
+  ).toEqual([]);
+  expect(declared.length, "the counts disagree").toBe(PROCESS_SWITCH_IDS.length);
+});
+
+test("THE SCHEMA CARRIES EVERY ROW OF THE ROOM'S SWITCH INVENTORY AND EVERY ID ITS FLOOR NAMES", () => {
+  // KILLED BY: a row of the room's table the schema never declared, a
+  // floor id the schema declares as switchable, and a schema switch that
+  // is neither a row of that table, a floor entry, nor named by another
+  // switch's own constraint — which is the direction that catches a
+  // switch invented here rather than ruled there.
+  const room = readFileSync(path.join(repoRoot, "docs", "rooms", "loop-cost-and-speed.md"), "utf8");
+  const at = room.indexOf("## The switch inventory");
+  expect(at, "the room no longer carries a switch inventory heading").toBeGreaterThan(-1);
+  const body = room.slice(at);
+  const rowIds = [...body.matchAll(/^\|\s*([a-z0-9_]+\.[a-z0-9_]+)\s*\|/gm)].map((m) => m[1] as string);
+  expect(rowIds.length, "the room's table parsed to too few rows to be the inventory").toBeGreaterThan(30);
+  const schema = shippedSchema();
+  expect(
+    rowIds.filter((id) => !schema.switches.has(id)),
+    "the room ruled switch(es) the schema does not declare",
+  ).toEqual([]);
+  // THE FLOOR the room names in code spans, each declared and each floor.
+  const floorAt = body.indexOf("The floor (no profile turns these off)");
+  expect(floorAt, "the room no longer carries its floor sentence").toBeGreaterThan(-1);
+  const floorSentence = body.slice(floorAt, body.indexOf("\n\n", floorAt));
+  const floorIds = [...floorSentence.matchAll(/`([a-z0-9_]+\.[a-z0-9_]+)`/g)].map((m) => m[1] as string);
+  expect(floorIds.length, "the floor sentence names no id at all").toBeGreaterThan(0);
+  for (const id of floorIds) {
+    const sw = schema.switches.get(id);
+    expect(sw, `the floor names ${id} and the schema does not declare it`).toBeDefined();
+    expect((sw as { floor: boolean }).floor, `${id} is floor in the room and switchable in the schema`).toBe(true);
+  }
+  // AND NOTHING WAS INVENTED. Every switch that is not floor is either a
+  // row of that table or is named by another switch's constraint — the
+  // second case is real: a constraint may name a setting the table
+  // referred to without giving it a row of its own.
+  const constrained = new Set<string>();
+  for (const sw of schema.switches.values()) {
+    for (const need of sw.needs) {
+      const m = /=>\s*([a-z0-9_]+\.[a-z0-9_]+)\s*=/.exec(need);
+      if (m?.[1] !== undefined) constrained.add(m[1]);
+    }
+  }
+  expect(
+    [...schema.switches.values()]
+      .filter((sw) => !sw.floor && !rowIds.includes(sw.id) && !constrained.has(sw.id))
+      .map((sw) => sw.id),
+    "the schema declares switchable option(s) neither the room nor a constraint names",
+  ).toEqual([]);
+});
+
+test("THE ARM'S HAND PARSER AND A REAL YAML PARSER READ THE SAME SCHEMA, field for field", () => {
+  // KILLED BY: a hand parser that drops a field, one that keeps a value's
+  // quotes, one that loses a flow list's last item, and one that reads a
+  // switch's profile block off the wrong indent. The two readings share
+  // no line of code, which is the whole point: the arm parses by hand
+  // because a packaged script has no devDependencies, and this is where
+  // that shortcut is checked against a parser that has none.
+  const text = readFileSync(path.join(repoRoot, PROCESS_SCHEMA), "utf8");
+  const real = parseYaml(text) as {
+    version: number;
+    profiles: Record<string, string>;
+    switches: Record<string, Record<string, unknown>>;
+  };
+  const mine = parseProcessSchema(text);
+  expect(mine.version, "the version disagrees").toBe(real.version);
+  expect([...mine.profiles.keys()], "the profile ids disagree").toEqual(Object.keys(real.profiles));
+  expect([...mine.switches.keys()], "the switch ids or their order disagree").toEqual(
+    Object.keys(real.switches),
+  );
+  for (const [id, sw] of mine.switches) {
+    const them = real.switches[id] as Record<string, unknown>;
+    expect(sw.type, `${id}.type`).toBe(them["type"]);
+    expect(sw.values, `${id}.values`).toEqual(them["values"]);
+    expect(sw.what, `${id}.what`).toBe(them["what"]);
+    expect(sw.effect, `${id}.effect`).toBe(them["effect"]);
+    expect(sw.reads, `${id}.reads`).toBe(them["reads"]);
+    expect(sw.needs, `${id}.needs`).toEqual(them["needs"]);
+    expect(sw.floor, `${id}.floor`).toBe(them["floor"] === true);
+    expect(sw.band, `${id}.band`).toEqual(them["band"]);
+    expect(sw.cost, `${id}.cost`).toBe(them["cost"]);
+    expect(
+      Object.fromEntries(sw.profiles),
+      `${id}.profiles`,
+    ).toEqual(them["profiles"]);
+  }
+});
+
+test("EVERY BAND A SWITCH NAMES IS A BAND THIS PROJECT ACTUALLY KEEPS", () => {
+  // KILLED BY: a band id typed into the schema that the health bands do
+  // not carry — "which band measures it" is a criterion, and a band that
+  // exists only in the schema measures nothing. The control is that at
+  // least one switch names one, so an empty band column cannot pass.
+  const known = new Set(STANDING_BANDS.map((b: { id: string }) => b.id));
+  expect(known.size, "the standing bands parsed to nothing").toBeGreaterThan(0);
+  const schema = shippedSchema();
+  const named: string[] = [];
+  for (const sw of schema.switches.values()) {
+    for (const b of sw.band) {
+      named.push(b);
+      expect(known.has(b), `the switch ${sw.id} says it is measured by ${b}, which is not a band`).toBe(true);
+    }
+  }
+  expect(named.length, "no switch names a band at all, so the column is vacuous").toBeGreaterThan(0);
+});
+
+test("THE THREE PROFILES ALL RESOLVE AND ALL SATISFY THEIR OWN CONSTRAINTS", () => {
+  // KILLED BY: a profile column with a hole in it, a value outside a
+  // switch's own set, and a profile whose own column is a combination the
+  // constraints forbid — which is the one a hand-written settings file
+  // would produce and nobody would notice until an arm refused.
+  const schema = shippedSchema();
+  expect([...schema.profiles.keys()], "the schema's profiles are not the three the decision fixes").toEqual(
+    PROFILE_IDS,
+  );
+  for (const profile of PROFILE_IDS) {
+    const settings = resolveProcess(schema, { profile, available: [], overrides: new Map() });
+    expect(settings.values.size, `${profile} resolves fewer switches than the schema declares`).toBe(
+      schema.switches.size,
+    );
+    expect(constraintFindings(schema, settings), `${profile} is a combination its own schema forbids`).toEqual([]);
+  }
+});
+
+test("THE SHIPPED TEMPLATE NAMES A PROFILE THE SCHEMA DECLARES, offers all three, and departs only legally", () => {
+  // KILLED BY: a template naming a profile the schema does not carry, an
+  // `available:` list that has drifted from the schema, an override on a
+  // switch nobody declares, and an override on a FLOOR switch. The
+  // shipped file is read rather than a fixture, because the criterion is
+  // about what this project ships.
+  const section = processSection(readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8"));
+  expect(section, `${RUNTIME_TEMPLATE} carries no ${PROCESS_SECTION}: section`).not.toBeNull();
+  const it = section as NonNullable<typeof section>;
+  expect(PROFILE_IDS, "the template runs a profile the decision does not fix").toContain(it.profile);
+  expect(it.available, "the template does not offer all three profiles").toEqual(PROFILE_IDS);
+  const loaded = shippedProcess();
+  expect(loaded.settings.profile, "the resolution disagrees with the section").toBe(it.profile);
+  expect(processLedger(loaded.schema, loaded.settings).length, "the ledger is short").toBe(
+    loaded.schema.switches.size,
+  );
+});
+
+test("THE BRIEF PRINTS THE PROCESS ROWS, read from the schema under the template's own profile", () => {
+  // KILLED BY: a brief that stops printing the process at all, one that
+  // prints it without saying which file it came from, and one that reads
+  // the profile from anywhere but the template — which the fixture
+  // discriminates by planting a profile in that file and asserting the
+  // switch value that only THAT column produces.
+  const fx = ritualFixture("process");
+  try {
+    const template = path.join(fx.root, RUNTIME_TEMPLATE);
+    writeFileSync(
+      template,
+      readFileSync(template, "utf8").replace(/^(\s+)profile:.*$/m, "$1profile: guarded-everything"),
+    );
+    const { recs } = assembleBrief(context({ root: fx.root, taskId: FIXTURE_CARD_ID }));
+    const printed = render(recs);
+    expect(printed, "the brief does not print the profile").toContain("profile: guarded-everything");
+    expect(printed, "nor the file the switches were read from").toContain(PROCESS_SCHEMA);
+    // THE DISCRIMINATOR: this value exists only in that column, so a
+    // brief that read the standard column cannot produce it.
+    expect(printed, "the printed tier switch is not the planted profile's").toContain(
+      "verify.tier = guarded-for-every-card",
+    );
+    expect(printed, "nor its model-per-role value").toContain("dispatch.model_per_role = by-hand");
+    // THE CONTROL: this repository's own template says otherwise, so the
+    // assertions above are about the fixture and not about the tree.
+    expect(
+      readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8"),
+      "the control: the shipped template does not run that profile",
+    ).not.toContain("profile: guarded-everything");
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(process)");
+  }
+});
+
+test("A FORBIDDEN COMBINATION IS REFUSED BY NAME — both switches, both values, and the repair", () => {
+  // KILLED BY: a constraint checker that reports "invalid configuration"
+  // without naming which two switches disagree, one that checks a need
+  // whose trigger value is not the one set, and one that passes a need
+  // whose target switch the schema does not declare.
+  const schema = shippedSchema();
+  // The net switched off while two switches that NEED it are on.
+  const noNet = atProfile("standard", [["record.whole_suite_net", "every-push"]]);
+  const findings = constraintFindings(schema, noNet);
+  expect(findings.length, "the net switched off under standard was not refused").toBeGreaterThan(0);
+  const joined = findings.join(" | ");
+  expect(joined, "the refusal does not name the switch that is unsatisfied").toContain("verify.suites");
+  expect(joined, "nor the switch it needs").toContain("record.whole_suite_net");
+  expect(joined, "nor the value that is set").toContain("every-push");
+  expect(joined, "nor that it is a forbidden combination").toContain("FORBIDDEN COMBINATION");
+  // A SECOND, INDEPENDENT PAIR, so the body is not pinned to one rule.
+  const noBands = atProfile("standard", [["record.bands", "off"]]);
+  expect(constraintFindings(schema, noBands).join(" | "), "meters into bands with the bands off").toContain(
+    "merge.meters_to_bands",
+  );
+  const perMerge = atProfile("standard", [["ci.per_push_runs", "per-merge"]]);
+  expect(constraintFindings(schema, perMerge).join(" | "), "push batching against per-merge runs").toContain(
+    "push.batching",
+  );
+  // THE POSITIVE CONTROL: the same profile untouched is clean, so the
+  // three refusals above are about the combination and not about the
+  // checker refusing everything.
+  expect(constraintFindings(schema, atProfile("standard")), "the control: standard is clean").toEqual([]);
+});
+
+test("A FORBIDDEN COMBINATION REFUSES THE WHOLE ARM, before a row is assembled or a step is planned", () => {
+  // KILLED BY: an arm that reads the settings and carries on, one that
+  // refuses only at the step that reads the switch, and one that reports
+  // the refusal as a finding rather than stopping. The tree either side
+  // of the refusal is compared, because "refuses" and "refuses before it
+  // wrote anything" are different claims.
+  const fx = ritualFixture("forbidden");
+  try {
+    const template = path.join(fx.root, RUNTIME_TEMPLATE);
+    writeFileSync(
+      template,
+      readFileSync(template, "utf8").replace(
+        /^(\s+)switches:.*$/m,
+        "$1switches:\n    record.whole_suite_net: every-push",
+      ),
+    );
+    const before = inventory(fx.root);
+    let refused: unknown;
+    try {
+      context({ root: fx.root, taskId: FIXTURE_CARD_ID });
+    } catch (err) {
+      refused = err;
+    }
+    expect(refused, "a contradictory process section assembled a context anyway").toBeInstanceOf(
+      ProcessFinding,
+    );
+    const why = (refused as Error).message;
+    expect(why, "the refusal does not name the switch that is unsatisfied").toContain("verify.suites");
+    expect(why, "nor the one it needs").toContain("record.whole_suite_net");
+    expect(why, "nor where the repair belongs").toContain(RUNTIME_TEMPLATE);
+    expect(inventory(fx.root), "the refused run left something behind").toEqual(before);
+    // THE POSITIVE CONTROL: with the departure removed the same fixture
+    // assembles, so the refusal is about the combination.
+    writeFileSync(template, readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8"));
+    expect(
+      context({ root: fx.root, taskId: FIXTURE_CARD_ID }).process?.settings.profile,
+      "the control: the shipped section resolves",
+    ).toBe("standard");
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(forbidden)");
+  }
+});
+
+test("AN OVERRIDE ON A FLOOR SWITCH IS REFUSED BY NAME, and the floor is the room's own set", () => {
+  // KILLED BY: a resolver that applies a floor override, one that refuses
+  // it without naming the switch, and a schema whose floor set has been
+  // narrowed. The positive control is a NON-floor switch at the same
+  // value, which must resolve.
+  const schema = shippedSchema();
+  const floorIds = [...schema.switches.values()].filter((sw) => sw.floor).map((sw) => sw.id);
+  expect(floorIds.length, "the schema declares no floor at all").toBeGreaterThan(0);
+  for (const id of floorIds) {
+    let refused: unknown;
+    try {
+      resolveProcess(schema, { profile: "standard", available: [], overrides: new Map([[id, "off"]]) });
+    } catch (err) {
+      refused = err;
+    }
+    expect(refused, `the floor switch ${id} was overridden`).toBeInstanceOf(ProcessFinding);
+    expect((refused as Error).message, `the refusal for ${id} does not name it`).toContain(id);
+    expect((refused as Error).message, "nor say it is floor").toContain("FLOOR");
+  }
+  // THE POSITIVE CONTROL: a switchable one takes an override.
+  expect(
+    switchValue(atProfile("standard", [["push.wait_previous_run", "on"]]), "push.wait_previous_run"),
+    "the control: a non-floor switch is overridable",
+  ).toBe("on");
+});
+
+test("THE TIER RULES ARE READ FROM THE SECTION — verify.tier switches the classifier off entirely", () => {
+  // KILLED BY: a classifier that ignores the switch, one that reads it
+  // only for some sizes, and one that reads it AFTER the size ladder —
+  // which the XS case discriminates, because XS is the one size that can
+  // reach `bounded` and would still reach it under a late read.
+  const guardMap = new Map([["parser", ["lib/parser/"]]]);
+  const keeper = { pinned: true, answered: true, why: "a keeper pins it" };
+  const clean = { size: "XS", fencePaths: ["app/src/x.ts"], unresolved: [], untracked: [], guardMap, keeper };
+  // WITHOUT the setting: the derivation this arm ran before the switch.
+  expect(classifyTier(clean).tier, "the control: the classifier still derives when no settings are passed").toBe(
+    "bounded",
+  );
+  expect(classifyTier({ ...clean, process: atProfile("standard") }).tier, "standard derives as before").toBe(
+    "bounded",
+  );
+  const old = classifyTier({ ...clean, process: atProfile("guarded-everything") });
+  expect(old.tier, "guarded-everything did not force the guarded tier").toBe("guarded");
+  expect(old.reason, "and it does not say which switch decided").toContain("verify.tier");
+  // AND IT OUTRANKS EVERY SIZE, which is the property a late read loses.
+  for (const size of ["XS", "S", "M", "L"]) {
+    expect(
+      classifyTier({ ...clean, size, process: atProfile("guarded-everything") }).tier,
+      `size ${size} escaped the guarded-for-every-card setting`,
+    ).toBe("guarded");
+  }
+});
+
+test("THE PHASE-1 SPAWN IS READ FROM THE SECTION — by-the-arm, by-the-seat and off are three different answers", () => {
+  // KILLED BY: an arm that renders phase 1 whatever the switch says, one
+  // that folds `by-the-seat` into `off`, and one that renders it for the
+  // bounded tier — which is the tier that takes no verifier at all, so an
+  // attack set for it is tokens spent on nothing.
+  const std = atProfile("standard");
+  expect(phase1Owed(std, "guarded").render, "the guarded tier is owed an attack set").toBe(true);
+  expect(phase1Owed(std, "standard").render, "so is the standard tier").toBe(true);
+  expect(phase1Owed(std, "bounded").render, "the bounded tier is not").toBe(false);
+  expect(phase1Owed(std, "bounded").why, "and the reason does not name the tier").toContain("bounded");
+  const old = phase1Owed(atProfile("guarded-everything"), "guarded");
+  expect(old.render, "by-the-seat had the arm render it anyway").toBe(false);
+  expect(old.by, "and it does not say who writes it instead").toBe("the seat");
+  expect(old.why, "nor which switch decided").toContain("verify.phase1");
+  const off = phase1Owed(atProfile("standard", [["verify.phase1", "off"]]), "guarded");
+  expect(off.render, "off still rendered").toBe(false);
+  expect(off.by, "off and by-the-seat are the same answer, and they are not").toBe("nobody");
+});
+
+test("THE WHOLE-SUITE NET IS READ FROM THE SECTION, and every-push is the profile with no net at all", () => {
+  // KILLED BY: a reader that treats every setting as netted, one that
+  // treats every-push as netted (it is the profile where nothing is
+  // skipped, so there is nothing to net), and one that does not say
+  // which clock the four legs run on.
+  expect(wholeSuiteNet(atProfile("standard")).when, "standard's clock").toBe("checkpoint-and-nightly");
+  expect(wholeSuiteNet(atProfile("standard")).netted, "standard is netted").toBe(true);
+  expect(wholeSuiteNet(atProfile("fast")).when, "fast's clock").toBe("nightly");
+  expect(wholeSuiteNet(atProfile("fast")).netted, "fast is netted").toBe(true);
+  const old = wholeSuiteNet(atProfile("guarded-everything"));
+  expect(old.when, "the old profile's clock").toBe("every-push");
+  expect(old.netted, "every-push was reported as netted, and it is the profile with no net").toBe(false);
+  expect(old.why, "and it does not say why").toContain("nothing is ever skipped");
+});
+
+test("THE REGENERATIONS' PLACE IS READ FROM THE SECTION — by-the-arm is a graded step, by-the-seat is a STOP", () => {
+  // KILLED BY: a plan that regenerates whatever the switch says, one that
+  // drops the step silently when the switch is off (a plan that lost a
+  // step and a plan set to skip it look the same in a ledger), and one
+  // that leaves the dogfood pins running against a graph nobody rebuilt.
+  const moved = ["tools/e2e/tests/brief.spec.ts", "app/src/x.ts"];
+  const byArm = tailPlan({ paths: moved, projectRoot: repoRoot, id: "T-000", process: atProfile("standard") }).map(
+    (s) => s.id,
+  );
+  expect(byArm, "the census regeneration is not a step under standard").toContain("capabilities");
+  expect(byArm, "nor is the graph regeneration").toContain("graph:regen");
+  expect(byArm, "nor the dogfood pins that ride with it").toContain("dogfood");
+  const bySeat = tailPlan({
+    paths: moved,
+    projectRoot: repoRoot,
+    id: "T-000",
+    process: atProfile("guarded-everything"),
+  }).map((s) => s.id);
+  expect(bySeat, "by-the-seat still planned the census regeneration").not.toContain("capabilities");
+  expect(bySeat, "and it still planned the graph one").not.toContain("graph:regen");
+  expect(bySeat, "what is owed is not said out loud").toContain("capabilities:owed");
+  expect(bySeat, "nor for the graph").toContain("graph:owed");
+  // THE UNIT BENEATH IT, so a plan that changed for another reason cannot
+  // satisfy the assertions above.
+  expect(regenPlace(atProfile("standard"), "graph").byTheArm, "standard regenerates by the arm").toBe(true);
+  expect(regenPlace(atProfile("guarded-everything"), "census").byTheArm, "the old profile does not").toBe(false);
+  expect(regenPlace(atProfile("guarded-everything"), "census").why, "and does not name its switch").toContain(
+    "merge.regen_census",
+  );
+});
+
+test("THE CHEAP KEEPERS ARE READ FROM THE SECTION, and the card's own preflight survives because it is FLOOR", () => {
+  // KILLED BY: keepers that are planned whatever the switch says, a
+  // switch that also takes the FLOOR preflight away with them, and an
+  // off setting that plans three steps fewer without saying so.
+  const on = keeperSteps({ projectRoot: repoRoot, id: "T-000", card: "docs/tasks/T-000.md", process: atProfile("standard") });
+  expect(on.map((s) => s.id), "standard does not plan the cheap keepers").toEqual([
+    "keeper:pinned-sentence",
+    "keeper:forbidden-spelling",
+    "keeper:xs-bound",
+    "keeper:preflight",
+  ]);
+  const off = keeperSteps({
+    projectRoot: repoRoot,
+    id: "T-000",
+    card: "docs/tasks/T-000.md",
+    process: atProfile("guarded-everything"),
+  });
+  expect(off.map((s) => s.id), "the switch off did not change the plan, or took the floor with it").toEqual([
+    "keeper:off",
+    "keeper:preflight",
+  ]);
+  expect(off[0]?.title ?? "", "the skip is silent rather than announced").toContain("merge.keepers");
+  // THE CONTROL: a caller that passes no settings gets the plan this
+  // function built before the switch existed, byte for byte.
+  expect(
+    keeperSteps({ projectRoot: repoRoot, id: "T-000", card: "docs/tasks/T-000.md" }).map((s) => s.id),
+    "the control: no settings reproduces the pre-switch plan",
+  ).toEqual(on.map((s) => s.id));
+});
+
+test("THE MODEL PER ROLE IS READ FROM THE SECTION — by-hand names no model and says so", () => {
+  // KILLED BY: a row that reads the template whatever the switch says,
+  // and one that goes silent under `by-hand` rather than saying the seat
+  // names the model. The fixture plants a value in the template that
+  // exists nowhere else, so a row that read it anyway is caught by name.
+  const fx = ritualFixture("modelswitch");
+  try {
+    const template = path.join(fx.root, RUNTIME_TEMPLATE);
+    writeFileSync(
+      template,
+      readFileSync(template, "utf8")
+        .replace(/^(\s+)builder:.*$/m, "$1builder: planted-model@probe")
+        .replace(/^(\s+)profile:.*$/m, "$1profile: guarded-everything"),
+    );
+    const printed = render(assembleBrief(context({ root: fx.root, taskId: FIXTURE_CARD_ID })).recs);
+    expect(printed, "the row does not say the model is named by hand").toContain("NAMED BY HAND");
+    expect(printed, "nor which switch decided").toContain("dispatch.model_per_role");
+    expect(printed, "the template's value was read anyway").not.toContain("planted-model@probe");
+    // THE POSITIVE CONTROL: the same fixture at the standard profile
+    // reads the planted value, so the absence above is the switch.
+    writeFileSync(
+      template,
+      readFileSync(template, "utf8").replace(/^(\s+)profile:.*$/m, "$1profile: standard"),
+    );
+    expect(
+      render(assembleBrief(context({ root: fx.root, taskId: FIXTURE_CARD_ID })).recs),
+      "the control: from-the-template reads the template",
+    ).toContain("planted-model@probe");
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(modelswitch)");
+  }
+});
+
+test("THE STANDARD PROFILE REPRODUCES THE MERGE PLAN THIS VERB BUILT BEFORE THE SWITCHES EXISTED", () => {
+  // KILLED BY: any switch whose standard value quietly changes a step
+  // set. The settings are meant to make the loop configurable, not to
+  // change it — a card that landed a new default while claiming to land
+  // a mechanism would be the worst outcome here, and this is the body
+  // that refuses it.
+  for (const paths of [
+    ["tools/e2e/scripts/dispatch-brief.mjs", "docs/tasks/T-000-a.md"],
+    ["app/src/x.ts", "tools/e2e/tests/brief.spec.ts"],
+    ["method/roles/executor.md"],
+    ["docs/CONVENTIONS.md"],
+  ]) {
+    const before = tailPlan({ paths, projectRoot: repoRoot, id: "T-000", card: "docs/tasks/T-000-a.md" });
+    const after = tailPlan({
+      paths,
+      projectRoot: repoRoot,
+      id: "T-000",
+      card: "docs/tasks/T-000-a.md",
+      process: atProfile("standard"),
+    });
+    expect(after.map((s) => s.id), `the standard profile changed the plan for ${paths.join(", ")}`).toEqual(
+      before.map((s) => s.id),
+    );
+  }
+});
+
+test("THE READ SITES ARE DERIVED FROM THE ARM'S OWN SOURCE, never from a table beside it", () => {
+  // KILLED BY: a scanner that finds nothing (which would make every
+  // per-switch body below vacuous), one that attributes a call to the
+  // wrong function, and a schema `reads:` that names a symbol no arm
+  // carries. The positive control is that the six behaviours the card
+  // names are all found, each in the function the schema declares.
+  const sites = armReadSites();
+  expect(sites.size, "the scanner placed no read site at all, so every per-switch body is vacuous").toBeGreaterThan(0);
+  const schema = shippedSchema();
+  for (const sw of schema.switches.values()) {
+    if (sw.reads === LEDGER_READER) continue;
+    const found = (sites.get(sw.id) ?? []).map((s) => s.symbol);
+    expect(found, `${sw.id} declares it is read by ${sw.reads} and no such site exists`).toContain(sw.reads);
+  }
+  // AND THE SIX THE CARD NAMES ARE ALL THERE, by their own ids.
+  for (const id of [
+    "verify.tier",
+    "verify.phase1",
+    "record.whole_suite_net",
+    "merge.regen_graph",
+    "merge.regen_census",
+    "merge.keepers",
+    "dispatch.model_per_role",
+  ]) {
+    expect([...sites.keys()], `the arm reads no switch called ${id}`).toContain(id);
+  }
+});
+
+/* ── THE VERIFIER'S ASSIGNED CORRECTIONS (T-299, phase 2) ──────────── */
+
+test("THE ARM'S PHASE-1 STEP READS `verify.phase1` — the brief is written or it is not, and the skip names the switch", () => {
+  // CORRECTION 1. `phase1Owed` was proved both ways and the RITUAL STEP
+  // that consumes it was observed by nothing, so the arm could branch on
+  // the tier alone — exactly what it did before this card — with the
+  // whole suite green. The observable here is the arm's ACT: a phase 1
+  // brief written to disk, or not written. Never the resolver's return.
+  const plan = stubPlan();
+  const seat = { ...plan, tierInput: { ...plan.tierInput, process: atProfile("guarded-everything") } };
+  const skipped = ritualStub(seat, "nothing-fails");
+  const run = runDispatchLane(seat, skipped.io);
+  expect(
+    skipped.writes,
+    "the arm wrote a phase 1 brief while `verify.phase1` is by-the-seat",
+  ).not.toContain(plan.phase1File);
+  const step = run.done.find((d) => d.id === "phase1");
+  expect(step, "the ritual carried no phase 1 step at all, so nothing here was measured").toBeDefined();
+  expect(
+    (step as NonNullable<typeof step>).detail,
+    "the skip does not name the switch that decided it",
+  ).toContain("verify.phase1");
+  // THE POSITIVE CONTROL, and it is what makes the assertion above mean
+  // anything: the SAME plan under the profile this project runs DOES
+  // write the brief, so a stub that never writes cannot pass this body.
+  const arm = { ...plan, tierInput: { ...plan.tierInput, process: atProfile("standard") } };
+  const written = ritualStub(arm, "nothing-fails");
+  runDispatchLane(arm, written.io);
+  expect(
+    written.writes,
+    "the control: by-the-arm wrote no phase 1 brief either, so this body cannot tell the two apart",
+  ).toContain(plan.phase1File);
+});
+
+test("THE SCHEMA'S TWO COLUMNS MOVE EXACTLY WHERE THE ROOM'S OLD AND RULED COLUMNS MOVE", () => {
+  // CORRECTION 2. The room's rows were compared to the schema's by ID in
+  // both directions and their VALUES by nothing — and this project RUNS
+  // the standard column, so a row transcribed into the wrong column is
+  // this project's loop quietly differing from what the decision ruled,
+  // with every other body green.
+  //
+  // NEITHER SIDE IS TYPED HERE, and no mapping between the room's prose
+  // values and the schema's enum values is needed: the room's own table
+  // says whether a row MOVED between its two columns, the schema's own
+  // table says the same thing, and the two answers are compared as sets.
+  const room = readFileSync(path.join(repoRoot, "docs", "rooms", "loop-cost-and-speed.md"), "utf8");
+  const table = room.slice(room.indexOf("## The switch inventory"));
+  const rows = [...table.matchAll(/^\|\s*([a-z0-9_]+\.[a-z0-9_]+)\s*\|([^|]*)\|([^|]*)\|([^|]*)\|/gm)].map(
+    (m) => ({ id: m[1] as string, old: (m[3] as string).trim(), ruled: (m[4] as string).trim() }),
+  );
+  expect(rows.length, "the room's table parsed to too few rows to be the inventory").toBeGreaterThan(30);
+  const schema = shippedSchema();
+  const roomMoved: string[] = [];
+  const schemaMoved: string[] = [];
+  for (const row of rows) {
+    const sw = schema.switches.get(row.id);
+    if (sw === undefined) continue;
+    if (row.old !== row.ruled) roomMoved.push(row.id);
+    if (sw.profiles.get("guarded-everything") !== sw.profiles.get("standard")) schemaMoved.push(row.id);
+  }
+  expect(roomMoved.length, "no row of the room moved at all, so this body compares nothing").toBeGreaterThan(0);
+  expect(
+    roomMoved.filter((id) => !schemaMoved.includes(id)),
+    "the room ruled these switch(es) changed and the schema gives them one value in both columns",
+  ).toEqual([]);
+  expect(
+    schemaMoved.filter((id) => !roomMoved.includes(id)),
+    "the schema moves these switch(es) between its two columns and the room ruled no such change",
+  ).toEqual([]);
+});
+
+/*
+ * ONE BODY PER SWITCH, AND ITS MUTANT IS EXECUTED RATHER THAN DESCRIBED.
+ *
+ * The card's third criterion: when a switch is ignored by the arm, the
+ * body for THAT switch reds. The arm reads every switch through one
+ * accessor, so "ignored" has a single shape — the id missing from the
+ * resolution the arm reads — and each body below builds exactly that and
+ * requires the refusal to name its own switch. Nothing here is a
+ * hand-planted mutant, because forty-two hand-planted mutants are
+ * forty-two chances to plant the wrong one.
+ */
+for (const switchId of PROCESS_SWITCH_IDS) {
+  test(`the process switch ${switchId} is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name`, () => {
+    const schema = shippedSchema();
+    const sw = schema.switches.get(switchId);
+    expect(sw, `${switchId} is not declared in ${PROCESS_SCHEMA}`).toBeDefined();
+    const it = sw as NonNullable<typeof sw>;
+    // DECLARED WHOLE: every field a settings screen renders.
+    for (const field of SWITCH_FIELDS) {
+      expect(
+        (it as unknown as Record<string, unknown>)[field],
+        `${switchId} declares no ${field}`,
+      ).toBeDefined();
+    }
+    expect(SWITCH_TYPES, `${switchId} has a type this schema does not know`).toContain(it.type);
+    expect(it.values.length, `${switchId} declares an empty value set`).toBeGreaterThan(0);
+    expect(it.what.length, `${switchId} says nothing about what it does`).toBeGreaterThan(10);
+    expect(it.effect.length, `${switchId} says nothing about how it changes the loop`).toBeGreaterThan(10);
+    expect(it.cost.length, `${switchId} names no cost, measured or not`).toBeGreaterThan(0);
+    // RESOLVES UNDER ALL THREE, and inside its own value set.
+    for (const profile of PROFILE_IDS) {
+      const v = it.profiles.get(profile);
+      expect(v, `${switchId} has no value under ${profile}`).toBeDefined();
+      expect(it.values, `${switchId} takes ${String(v)} under ${profile}, outside its own set`).toContain(v);
+      expect(
+        switchValue(atProfile(profile), switchId),
+        `${switchId} resolves to something other than its ${profile} column`,
+      ).toBe(v);
+    }
+    // FLOOR MEANS ONE VALUE IN EVERY PROFILE, which is what "no profile
+    // turns it off" means when it is written as a table.
+    if (it.floor) {
+      expect(
+        new Set(PROFILE_IDS.map((p) => it.profiles.get(p))).size,
+        `${switchId} is floor and its profiles disagree`,
+      ).toBe(1);
+    }
+    // READ WHERE IT SAYS IT IS READ.
+    const sites = (armReadSites().get(switchId) ?? []).map((s) => s.symbol);
+    if (it.reads === LEDGER_READER) {
+      expect(sites, `${switchId} says the ledger reads it and an arm branches on it too`).toEqual([]);
+    } else {
+      expect(sites, `${switchId} says ${it.reads} reads it and no such site exists`).toContain(it.reads);
+    }
+    // AND THE ARM READS IT: the ledger is built through the accessor.
+    const loaded = shippedProcess();
+    const row = processLedger(loaded.schema, loaded.settings).find((r) => r.id === switchId);
+    expect(row, `the arm's ledger carries no row for ${switchId}`).toBeDefined();
+    expect((row as NonNullable<typeof row>).value, `the ledger's value for ${switchId} is not the resolved one`).toBe(
+      switchValue(loaded.settings, switchId),
+    );
+    // ── THE MUTANT, EXECUTED: the arm ignoring THIS switch ──────────
+    const ignored = {
+      ...loaded.settings,
+      values: new Map([...loaded.settings.values].filter(([k]) => k !== switchId)),
+    };
+    expect(
+      () => switchValue(ignored, switchId),
+      `the arm read ${switchId} out of a resolution that does not carry it`,
+    ).toThrow(ProcessFinding);
+    expect(() => switchValue(ignored, switchId), "and the refusal does not name the switch").toThrow(switchId);
+    expect(
+      () => processLedger(loaded.schema, ignored),
+      `the arm's ledger rendered without ${switchId} rather than refusing`,
+    ).toThrow(switchId);
+    // THE POSITIVE CONTROL: restored, the same reads answer.
+    expect(
+      processLedger(loaded.schema, loaded.settings).length,
+      "the control: with the switch restored the ledger is whole",
+    ).toBe(loaded.schema.switches.size);
+  });
+}

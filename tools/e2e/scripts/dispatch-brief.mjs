@@ -1691,6 +1691,9 @@ export function withMargin(body, opts) {
  * @property {string} roleMd
  * @property {string} archMd
  * @property {boolean} full
+ * @property {LoadedProcess | null} process  this project's resolved process
+ *   switches, or null where the tree carries no schema or no `process:`
+ *   section — a tree that predates the settings is not a misconfiguration
  * @property {string[]} findings
  */
 
@@ -1744,6 +1747,23 @@ function deriveRole(ctx) {
  */
 function roleModelRecs(ctx) {
   const via = `${RUNTIME_TEMPLATE}, its roles block (ADR-024 decision 5)`;
+  // WHERE THE MODEL COMES FROM IS ITSELF A SETTING (T-299, ADR-024
+  // decision 6). At `by-hand` this arm names no model at all and says
+  // so — which is the ceremony as it stood before T-298, and the row
+  // has to be able to render it rather than quietly reading the
+  // template anyway.
+  if (ctx.process !== null) {
+    const how = switchValue(ctx.process.settings, "dispatch.model_per_role");
+    if (how === "by-hand") {
+      return [
+        value(
+          "model: NAMED BY HAND — dispatch.model_per_role is by-hand, so this arm reads no " +
+            "default and the seat names the model for this dispatch",
+          tree(ctx, `${PROCESS_SCHEMA}, the switch dispatch.model_per_role`),
+        ),
+      ];
+    }
+  }
   try {
     const { model, key } = roleModel(roleModels(runtimeTemplateText(ctx.root)), ctx.role);
     return [value(`model: ${model} — read from ${RUNTIME_TEMPLATE} as roles.${key}`, tree(ctx, via))];
@@ -3144,6 +3164,12 @@ export function context(opts = {}) {
     roleMd: roleText(role, root),
     archMd: architectureText(root),
     full: opts.full ?? false,
+    // THE PROCESS, READ ONCE PER CONTEXT (T-299, ADR-024 decision 6).
+    // A forbidden combination throws HERE, before a row is assembled or
+    // a worktree is cut, which is the same place a missing role default
+    // refuses; an absent schema is `null` and the arms below run what
+    // they ran before the settings existed.
+    process: loadProcess(root),
     findings: [],
   };
 }
@@ -3203,6 +3229,11 @@ export function assembleBrief(ctx) {
   // is what the rows' own sources add up to for THIS card, so it sits
   // where the advisory line sits — below the contract, plainly labelled.
   for (const rec of packRecs(ctx)) recs.push(rec);
+  // THE PROCESS, AFTER THE PACK AND OUTSIDE THE ROWS, for the reason the
+  // pack sits there: the contract table is normative and a fourteenth
+  // row is a method version bump, while what the project's loop is SET
+  // to is a fact about the project rather than a row of the contract.
+  for (const rec of processRecs(ctx)) recs.push(rec);
   const labels = new Set(rows.map((r) => r.key));
   for (const key of DERIVERS.keys()) {
     if (labels.has(key)) continue;
@@ -4878,6 +4909,7 @@ export class TierFinding extends Error {}
  * @property {string[]} untracked     fenced paths this tree does not track
  * @property {Map<string, string[]>} guardMap
  * @property {{ pinned: boolean, answered: boolean, why: string }} keeper
+ * @property {ProcessSettings} [process] this project's resolved process switches
  */
 
 /**
@@ -4898,6 +4930,25 @@ export class TierFinding extends Error {}
  * @returns {TierVerdict}
  */
 export function classifyTier(input) {
+  // THE TIER IS A SETTING BEFORE IT IS A DERIVATION (T-299, ADR-024
+  // decision 6). `verify.tier` says whether this project sizes its
+  // verification at all: at `guarded-for-every-card` the whole ladder
+  // below is switched off and every card takes the blind two-phase
+  // bench, which is the ceremony the room measured at 2.5 to 3.5 hours a
+  // card. A project that has not settled its process yet passes no
+  // settings and gets the derivation, which is what this arm did before
+  // the switch existed.
+  if (input.process !== undefined) {
+    const how = switchValue(input.process, "verify.tier");
+    if (how === "guarded-for-every-card") {
+      return {
+        tier: "guarded",
+        reason:
+          "verify.tier is guarded-for-every-card, so the classifier is not consulted and every " +
+          "card takes the guarded tier whatever its size or its fence",
+      };
+    }
+  }
   const size = input.size.trim().toUpperCase();
   if (size === "") {
     throw new TierFinding(
@@ -5780,6 +5831,787 @@ export function roleModel(models, role) {
   return { model, key };
 }
 
+/* ────────────────────────────────────────────────────────────────────
+ * THE PROCESS AS SETTINGS — profiles and switches, declared ONCE in a
+ * schema and READ here (T-299, ADR-024 decision 6).
+ *
+ * The loop's ceremony used to be lore: which steps a card takes was a
+ * property of who was sitting in the seat and what they remembered. The
+ * room turned every step into a SWITCH with a measured cost and a
+ * constraint, and this section is the half of that ruling the arm owns —
+ * it reads the schema, resolves the project's profile, refuses a
+ * combination the constraints forbid BY NAME, and hands every other arm
+ * a value instead of a habit.
+ *
+ * WHY THE PARSER IS BY HAND. The scripts in this directory are what the
+ * CLI packages and the genesis installs (ADR-024 decision 7), and a
+ * package's `devDependencies` are not there when it is installed. The
+ * `roles:` block above is parsed the same way and for the same reason.
+ * The e2e suite parses the SAME file with a real YAML library and
+ * requires the two readings to agree, so the hand parser is checked
+ * against a parser it shares no line with.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/**
+ * A PROCESS SETTING THIS ARM CANNOT READ, or a combination it refuses.
+ *
+ * A `DispatchLaneFinding` for the reason `ModelFinding` is one: the
+ * dispatch arm already reports that class as a refusal, so a forbidden
+ * combination stops a dispatch by exactly the path a missing model does.
+ */
+export class ProcessFinding extends DispatchLaneFinding {}
+
+/** The one file every switch is declared in, repository-relative. */
+export const PROCESS_SCHEMA = "method/runtime/process-schema.yaml";
+
+/** The section of the runtime template that names the project's profile. */
+export const PROCESS_SECTION = "process";
+
+/**
+ * THE FIELDS EVERY SWITCH DECLARES, and the list is here rather than in
+ * the document because a schema row missing one of them is a settings
+ * screen with a blank in it. Each answers a question a reader asks:
+ * `what` it does, `effect` how the loop changes, `reads` which arm
+ * symbol consults it, `needs` what it needs on, `floor` whether it may
+ * be turned off, `band` which band measures it, `cost` what this project
+ * measured, `type`/`values` the value set, `profiles` the three columns.
+ */
+export const SWITCH_FIELDS = Object.freeze([
+  "type",
+  "values",
+  "what",
+  "effect",
+  "reads",
+  "needs",
+  "floor",
+  "band",
+  "cost",
+  "profiles",
+]);
+
+/** The two shapes a switch may take. */
+export const SWITCH_TYPES = Object.freeze(["toggle", "choice"]);
+
+/**
+ * Strip one layer of YAML quoting off a scalar. The schema quotes every
+ * free-text value, because an unquoted value carrying a colon is a
+ * different document to a real parser and the same one to a naive
+ * reader — which is the class of bug a hand parser exists to avoid, not
+ * to demonstrate.
+ *
+ * @param {string} raw
+ * @returns {string}
+ */
+function processScalar(raw) {
+  const t = raw.trim();
+  if (t.length >= 2 && ((t.startsWith('"') && t.endsWith('"')) || (t.startsWith("'") && t.endsWith("'")))) {
+    return t.slice(1, -1);
+  }
+  return t;
+}
+
+/**
+ * A YAML flow sequence — `[a, "b c", d]` — split on the commas that are
+ * not inside a quoted item.
+ *
+ * @param {string} raw
+ * @returns {string[]}
+ */
+function processFlowList(raw) {
+  const t = raw.trim();
+  if (!t.startsWith("[") || !t.endsWith("]")) return [];
+  const body = t.slice(1, -1);
+  /** @type {string[]} */
+  const items = [];
+  let cur = "";
+  /** @type {string | null} */
+  let quote = null;
+  for (const ch of body) {
+    if (quote !== null) {
+      if (ch === quote) quote = null;
+      cur += ch;
+      continue;
+    }
+    if (ch === '"' || ch === "'") {
+      quote = ch;
+      cur += ch;
+      continue;
+    }
+    if (ch === ",") {
+      items.push(cur);
+      cur = "";
+      continue;
+    }
+    cur += ch;
+  }
+  items.push(cur);
+  return items.map((s) => processScalar(s)).filter((s) => s !== "");
+}
+
+/** @param {string} line @returns {number} */
+function indentOf(line) {
+  return line.length - line.trimStart().length;
+}
+
+/**
+ * @typedef {object} ProcessSwitch
+ * @property {string} id
+ * @property {string} type
+ * @property {string[]} values
+ * @property {string} what
+ * @property {string} effect
+ * @property {string} reads
+ * @property {string[]} needs
+ * @property {boolean} floor
+ * @property {string[]} band
+ * @property {string} cost
+ * @property {Map<string, string>} profiles
+ */
+
+/**
+ * @typedef {object} ProcessSchema
+ * @property {number} version
+ * @property {Map<string, string>} profiles   profile id → what it is
+ * @property {Map<string, ProcessSwitch>} switches  in declaration order
+ */
+
+/**
+ * THE SCHEMA, PARSED — and parsed STRICTLY, because a hand parser that
+ * shrugs at a shape it does not know is a parser that silently loses a
+ * switch. Every line under `switches:` either matches the shape this
+ * function knows or REFUSES naming its own line number.
+ *
+ * @param {string} text
+ * @returns {ProcessSchema}
+ */
+export function parseProcessSchema(text) {
+  const lines = text.split(/\r?\n/);
+  let version = 0;
+  /** @type {Map<string, string>} */
+  const profiles = new Map();
+  /** @type {Map<string, ProcessSwitch>} */
+  const switches = new Map();
+  /** @type {"none" | "profiles" | "switches"} */
+  let block = "none";
+  /** @type {Record<string, unknown> | null} */
+  let cur = null;
+  let curId = "";
+  let inProfiles = false;
+
+  const close = () => {
+    if (cur === null) return;
+    const missing = SWITCH_FIELDS.filter((f) => cur !== null && cur[f] === undefined);
+    if (missing.length > 0) {
+      throw new ProcessFinding(
+        `${PROCESS_SCHEMA}: the switch \`${curId}\` declares no ${missing.join(", ")}. Every ` +
+          "switch answers all of " +
+          `${SWITCH_FIELDS.join(", ")} — a row missing one of them is a settings screen with a ` +
+          "blank in it, and a reader cannot tell an option that costs nothing from one nobody " +
+          "has measured.",
+      );
+    }
+    switches.set(curId, /** @type {ProcessSwitch} */ ({ id: curId, ...cur }));
+    cur = null;
+    curId = "";
+    inProfiles = false;
+  };
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = /** @type {string} */ (lines[i]);
+    const at = `${PROCESS_SCHEMA} line ${String(i + 1)}`;
+    if (line.trim() === "" || line.trimStart().startsWith("#")) continue;
+    const col = indentOf(line);
+    if (col === 0) {
+      close();
+      block = "none";
+      const m = /^([A-Za-z0-9_.-]+):\s*(.*)$/.exec(line);
+      if (m === null) {
+        throw new ProcessFinding(`${at}: a top-level line this parser cannot read: ${line.trim()}`);
+      }
+      const key = /** @type {string} */ (m[1]);
+      const rest = /** @type {string} */ (m[2]);
+      if (key === "version") version = Number.parseInt(processScalar(rest), 10);
+      else if (key === "profiles") block = "profiles";
+      else if (key === "switches") block = "switches";
+      else {
+        throw new ProcessFinding(
+          `${at}: \`${key}:\` is not a section this schema declares. The sections are version, ` +
+            "profiles and switches.",
+        );
+      }
+      continue;
+    }
+    const m = /^\s*([A-Za-z0-9_.-]+):\s*(.*)$/.exec(line);
+    if (m === null) {
+      throw new ProcessFinding(`${at}: a line this parser cannot read: ${line.trim()}`);
+    }
+    const key = /** @type {string} */ (m[1]);
+    const rest = /** @type {string} */ (m[2]);
+    if (block === "profiles") {
+      if (col !== 2) throw new ProcessFinding(`${at}: a profile is declared at two spaces, not ${String(col)}`);
+      profiles.set(key, processScalar(rest));
+      continue;
+    }
+    if (block !== "switches") {
+      throw new ProcessFinding(`${at}: an indented line outside every section: ${line.trim()}`);
+    }
+    if (col === 2) {
+      close();
+      curId = key;
+      cur = { needs: [], band: [], values: [], profiles: new Map() };
+      if (rest.trim() !== "") {
+        throw new ProcessFinding(`${at}: the switch \`${key}\` carries a value on its own line`);
+      }
+      continue;
+    }
+    if (cur === null) {
+      throw new ProcessFinding(`${at}: a switch field before any switch: ${line.trim()}`);
+    }
+    if (col === 4) {
+      inProfiles = false;
+      if (key === "profiles") {
+        inProfiles = true;
+        cur["profiles"] = new Map();
+        continue;
+      }
+      if (!SWITCH_FIELDS.includes(key)) {
+        throw new ProcessFinding(
+          `${at}: \`${key}:\` is not a field a switch declares. The fields are ` +
+            `${SWITCH_FIELDS.join(", ")}, and a field this parser silently ignored would be a ` +
+            "line the settings screens never render.",
+        );
+      }
+      if (key === "values" || key === "needs" || key === "band") cur[key] = processFlowList(rest);
+      else if (key === "floor") cur[key] = processScalar(rest) === "true";
+      else cur[key] = processScalar(rest);
+      continue;
+    }
+    if (col === 6 && inProfiles) {
+      /** @type {Map<string, string>} */ (cur["profiles"]).set(key, processScalar(rest));
+      continue;
+    }
+    throw new ProcessFinding(`${at}: an indent of ${String(col)} this parser does not know`);
+  }
+  close();
+  if (version === 0 || profiles.size === 0 || switches.size === 0) {
+    throw new ProcessFinding(
+      `${PROCESS_SCHEMA} parsed to ${String(switches.size)} switch(es) under ` +
+        `${String(profiles.size)} profile(s) at version ${String(version)}, which cannot be right. ` +
+        "The schema is the ONE source every renderer reads (ADR-024 decision 6), and an empty " +
+        "reading of it would leave the arm running on its own memory of the loop.",
+    );
+  }
+  return { version, profiles, switches };
+}
+
+/**
+ * @typedef {object} ProcessSection
+ * @property {string} profile
+ * @property {string[]} available
+ * @property {Map<string, string>} overrides
+ */
+
+/**
+ * THE `process:` SECTION OF THE RUNTIME TEMPLATE — which profile this
+ * project runs, which profiles it may run, and the switches it departs
+ * from. It carries no explanation of its own: that is the schema's, said
+ * once, and a second copy here is a copy that goes stale.
+ *
+ * @param {string} templateYaml
+ * @returns {ProcessSection | null} null when the template has no such section
+ */
+export function processSection(templateYaml) {
+  const lines = templateYaml.split(/\r?\n/);
+  const at = lines.findIndex((l) => new RegExp(`^${PROCESS_SECTION}:\\s*(#.*)?$`).test(l));
+  if (at === -1) return null;
+  let profile = "";
+  /** @type {string[]} */
+  let available = [];
+  /** @type {Map<string, string>} */
+  const overrides = new Map();
+  let inSwitches = false;
+  for (const line of lines.slice(at + 1)) {
+    if (line.trim() === "" || line.trimStart().startsWith("#")) continue;
+    if (!/^\s/.test(line)) break;
+    const m = /^\s*([A-Za-z0-9_.-]+):\s*(.*)$/.exec(line);
+    if (m === null) continue;
+    const key = /** @type {string} */ (m[1]);
+    const rest = /** @type {string} */ (m[2]);
+    const col = indentOf(line);
+    if (col === 2) {
+      inSwitches = false;
+      if (key === "profile") profile = processScalar(rest);
+      else if (key === "available") available = processFlowList(rest);
+      else if (key === "switches") inSwitches = rest.trim() === "" || rest.trim() === "{}";
+      continue;
+    }
+    if (col === 4 && inSwitches) overrides.set(key, processScalar(rest));
+  }
+  if (profile === "") {
+    throw new ProcessFinding(
+      `${RUNTIME_TEMPLATE}: the \`${PROCESS_SECTION}:\` section names no \`profile:\`, so this ` +
+        "project's loop has no column of the schema to resolve against. A profile guessed here " +
+        "would be the arm choosing the project's ceremony for it.",
+    );
+  }
+  return { profile, available, overrides };
+}
+
+/**
+ * @typedef {object} ProcessSettings
+ * @property {string} profile
+ * @property {string[]} available
+ * @property {Map<string, string>} values
+ * @property {Set<string>} overridden
+ */
+
+/**
+ * RESOLVE THE PROJECT'S SWITCHES: the profile's column of the schema,
+ * with the section's departures laid over it.
+ *
+ * Every refusal here names the repair. A profile the schema does not
+ * declare, an override on a switch the schema does not declare, a value
+ * outside a switch's own set, and an override on a FLOOR switch are four
+ * different mistakes and each is reported as itself.
+ *
+ * @param {ProcessSchema} schema
+ * @param {ProcessSection} section
+ * @returns {ProcessSettings}
+ */
+export function resolveProcess(schema, section) {
+  const known = [...schema.profiles.keys()];
+  if (!schema.profiles.has(section.profile)) {
+    throw new ProcessFinding(
+      `${RUNTIME_TEMPLATE} runs the profile \`${section.profile}\`, which ${PROCESS_SCHEMA} does ` +
+        `not declare. The profiles are ${known.join(", ")}.`,
+    );
+  }
+  if (section.available.length > 0) {
+    const strayed = section.available.filter((p) => !schema.profiles.has(p));
+    const missed = known.filter((p) => !section.available.includes(p));
+    if (strayed.length > 0 || missed.length > 0) {
+      throw new ProcessFinding(
+        `${RUNTIME_TEMPLATE}'s \`available:\` and ${PROCESS_SCHEMA}'s profiles disagree` +
+          (strayed.length > 0 ? ` — the template offers ${strayed.join(", ")}, which the schema does not declare` : "") +
+          (missed.length > 0 ? ` — the schema declares ${missed.join(", ")}, which the template does not offer` : "") +
+          ". A settings screen rendered from the template alone would hide a profile that exists.",
+      );
+    }
+  }
+  /** @type {Map<string, string>} */
+  const values = new Map();
+  for (const [id, sw] of schema.switches) {
+    const v = sw.profiles.get(section.profile);
+    if (v === undefined) {
+      throw new ProcessFinding(
+        `${PROCESS_SCHEMA}: the switch \`${id}\` names no value under the profile ` +
+          `\`${section.profile}\`, so this project's loop is undefined at that switch.`,
+      );
+    }
+    if (!sw.values.includes(v)) {
+      throw new ProcessFinding(
+        `${PROCESS_SCHEMA}: the switch \`${id}\` takes the value \`${v}\` under ` +
+          `\`${section.profile}\`, which is not in its own value set (${sw.values.join(", ")}).`,
+      );
+    }
+    values.set(id, v);
+  }
+  /** @type {Set<string>} */
+  const overridden = new Set();
+  for (const [id, v] of section.overrides) {
+    const sw = schema.switches.get(id);
+    if (sw === undefined) {
+      throw new ProcessFinding(
+        `${RUNTIME_TEMPLATE} sets the switch \`${id}\`, which ${PROCESS_SCHEMA} does not declare. ` +
+          "A switch set in the template and declared nowhere is a setting no surface can explain.",
+      );
+    }
+    if (sw.floor) {
+      throw new ProcessFinding(
+        `${RUNTIME_TEMPLATE} sets \`${id}\` to \`${v}\`, and \`${id}\` is FLOOR: no profile turns ` +
+          `it off (${sw.what}). The floor is the set the room ruled a project may not refine, so ` +
+          "this is refused rather than applied.",
+      );
+    }
+    if (!sw.values.includes(v)) {
+      throw new ProcessFinding(
+        `${RUNTIME_TEMPLATE} sets \`${id}\` to \`${v}\`, which is not one of its values ` +
+          `(${sw.values.join(", ")}).`,
+      );
+    }
+    values.set(id, v);
+    overridden.add(id);
+  }
+  return { profile: section.profile, available: known, values, overridden };
+}
+
+/**
+ * ONE SWITCH'S VALUE, AND THE ONLY WAY THE ARM READS ONE.
+ *
+ * Every read goes through here so that a switch the resolution has
+ * DROPPED is a refusal rather than an `undefined` that reads as false.
+ * That is also what makes criterion 3 measurable: the mutant for a
+ * switch is the arm ignoring it, and ignoring it lands exactly here.
+ *
+ * @param {ProcessSettings} settings
+ * @param {string} id
+ * @returns {string}
+ */
+export function switchValue(settings, id) {
+  const v = settings.values.get(id);
+  if (v === undefined) {
+    throw new ProcessFinding(
+      `the process switch \`${id}\` is not in this project's resolved settings, so the arm cannot ` +
+        `read it. Either ${PROCESS_SCHEMA} no longer declares it, or the resolution dropped it — ` +
+        "and an arm that carried on would be running that step on its own memory of the loop " +
+        "rather than on the project's setting.",
+    );
+  }
+  return v;
+}
+
+/**
+ * @typedef {object} LedgerRow
+ * @property {string} id
+ * @property {string} value
+ * @property {string} what
+ * @property {string} effect
+ * @property {string} reads
+ * @property {boolean} floor
+ * @property {string[]} band
+ * @property {string} cost
+ * @property {boolean} overridden
+ */
+
+/**
+ * THE ARM'S READ OF EVERY SWITCH, in the schema's own order.
+ *
+ * This is the row set the dispatch brief prints and the merge names its
+ * governing switches out of — and it is built by READING each switch
+ * through `switchValue`, never by walking the resolution's own map. The
+ * difference is the whole keeper: a switch the schema declares and the
+ * resolution lost is a THROW here, where a walk of the map would simply
+ * render one row fewer and nobody would see the loss.
+ *
+ * @param {ProcessSchema} schema
+ * @param {ProcessSettings} settings
+ * @returns {LedgerRow[]}
+ */
+export function processLedger(schema, settings) {
+  /** @type {LedgerRow[]} */
+  const rows = [];
+  for (const [id, sw] of schema.switches) {
+    rows.push({
+      id,
+      value: switchValue(settings, id),
+      what: sw.what,
+      effect: sw.effect,
+      reads: sw.reads,
+      floor: sw.floor,
+      band: sw.band,
+      cost: sw.cost,
+      overridden: settings.overridden.has(id),
+    });
+  }
+  return rows;
+}
+
+/**
+ * Does a value satisfy one side of a need? `*` is every value and a
+ * `|` separates alternatives.
+ *
+ * @param {string} spec
+ * @param {string} value
+ * @returns {boolean}
+ */
+function needMatches(spec, value) {
+  if (spec.trim() === "*") return true;
+  return spec
+    .split("|")
+    .map((s) => s.trim())
+    .includes(value);
+}
+
+/**
+ * THE FORBIDDEN COMBINATIONS, EACH NAMED.
+ *
+ * A constraint reads `<this value> => <other id>=<other value>`: while
+ * this switch holds one of the values on the left, the switch on the
+ * right must hold one of the values on the right. A finding names BOTH
+ * switches and BOTH values, because "invalid configuration" sends a
+ * reader to a settings screen with nothing to look at.
+ *
+ * @param {ProcessSchema} schema
+ * @param {ProcessSettings} settings
+ * @returns {string[]}
+ */
+export function constraintFindings(schema, settings) {
+  /** @type {string[]} */
+  const findings = [];
+  for (const [id, sw] of schema.switches) {
+    const mine = switchValue(settings, id);
+    for (const need of sw.needs) {
+      const m = /^\s*(.+?)\s*=>\s*([A-Za-z0-9_.-]+)\s*=\s*(.+?)\s*$/.exec(need);
+      if (m === null) {
+        findings.push(
+          `${PROCESS_SCHEMA}: the switch \`${id}\` declares the need ${JSON.stringify(need)}, ` +
+            "which is not of the form `<value> => <other id>=<value>`",
+        );
+        continue;
+      }
+      const when = /** @type {string} */ (m[1]);
+      const other = /** @type {string} */ (m[2]);
+      const wanted = /** @type {string} */ (m[3]);
+      if (!schema.switches.has(other)) {
+        findings.push(
+          `${PROCESS_SCHEMA}: the switch \`${id}\` needs \`${other}\`, which this schema does not ` +
+            "declare — a constraint on a switch nobody can set",
+        );
+        continue;
+      }
+      if (!needMatches(when, mine)) continue;
+      const has = switchValue(settings, other);
+      if (needMatches(wanted, has)) continue;
+      findings.push(
+        `FORBIDDEN COMBINATION: \`${id}\` is \`${mine}\` and that needs \`${other}\` to be ` +
+          `\`${wanted.split("|").map((s) => s.trim()).join("\` or \`")}\`, but \`${other}\` is ` +
+          `\`${has}\`. ${sw.what} — ${sw.effect}`,
+      );
+    }
+  }
+  return findings;
+}
+
+/**
+ * @typedef {object} LoadedProcess
+ * @property {ProcessSchema} schema
+ * @property {ProcessSection} section
+ * @property {ProcessSettings} settings
+ */
+
+/**
+ * THE ARM'S ONE ENTRY POINT, and the split in it is deliberate.
+ *
+ * A project whose tree carries no schema or no `process:` section gets
+ * `null` and the arms below run the behaviour they ran before this card
+ * — a tree that predates the settings is not a misconfiguration. A
+ * project that carries them and CONTRADICTS itself is a REFUSAL: a
+ * forbidden combination is exactly what the constraints exist to catch,
+ * and an arm that ran a combination the schema forbids would be spending
+ * the whole mechanism on nothing.
+ *
+ * @param {string} [root]
+ * @returns {LoadedProcess | null}
+ */
+export function loadProcess(root = repoRoot) {
+  let schemaText = "";
+  try {
+    schemaText = readFileSync(path.join(root, PROCESS_SCHEMA), "utf8");
+  } catch {
+    return null;
+  }
+  let templateText = "";
+  try {
+    templateText = readFileSync(path.join(root, RUNTIME_TEMPLATE), "utf8");
+  } catch {
+    return null;
+  }
+  const section = processSection(templateText);
+  if (section === null) return null;
+  const schema = parseProcessSchema(schemaText);
+  const settings = resolveProcess(schema, section);
+  const findings = constraintFindings(schema, settings);
+  if (findings.length > 0) {
+    throw new ProcessFinding(
+      `this project's process settings are a combination the schema forbids, so the arm REFUSES ` +
+        `rather than running it:\n  - ${findings.join("\n  - ")}\n` +
+        `Repair the \`${PROCESS_SECTION}:\` section in ${RUNTIME_TEMPLATE}, or the profile column ` +
+        `in ${PROCESS_SCHEMA} it resolved from.`,
+    );
+  }
+  return { schema, section, settings };
+}
+
+/**
+ * WHERE THE ARM READS EACH SWITCH, DERIVED FROM THE ARM'S OWN SOURCE.
+ *
+ * A table of "which function reads which switch" would be a third copy
+ * of the truth and would go stale the first time a read moved. This
+ * scans for the ONE accessor's literal call sites and attributes each to
+ * the function that encloses it, so an arm that stops reading a switch
+ * loses its site here and the switch's own body reds — which is the
+ * whole of criterion 3.
+ *
+ * @param {Map<string, string>} sources file label → source text
+ * @returns {Map<string, { file: string, symbol: string }[]>}
+ */
+export function switchReadSites(sources) {
+  /** @type {Map<string, { file: string, symbol: string }[]>} */
+  const sites = new Map();
+  for (const [file, text] of sources) {
+    const lines = text.split(/\r?\n/);
+    let symbol = "";
+    for (const line of lines) {
+      const fn = /^(?:export\s+)?(?:async\s+)?function\s+([A-Za-z0-9_$]+)\s*\(/.exec(line.trimStart());
+      if (fn !== null && indentOf(line) === 0) symbol = /** @type {string} */ (fn[1]);
+      for (const call of line.matchAll(/switchValue\(\s*[A-Za-z0-9_$.[\]]+\s*,\s*"([^"]+)"\s*\)/g)) {
+        const id = /** @type {string} */ (call[1]);
+        const list = sites.get(id) ?? [];
+        list.push({ file, symbol });
+        sites.set(id, list);
+      }
+    }
+  }
+  return sites;
+}
+
+/* ── THE SIX BEHAVIOURS THE CARD NAMES, each reading its own switch ── */
+
+/**
+ * THE PHASE-1 SPAWN, as a function of the setting and the tier.
+ *
+ * @param {ProcessSettings} settings
+ * @param {string} tier
+ * @returns {{ render: boolean, by: string, why: string }}
+ */
+export function phase1Owed(settings, tier) {
+  const how = switchValue(settings, "verify.phase1");
+  if (how === "off") {
+    return {
+      render: false,
+      by: "nobody",
+      why: "verify.phase1 is off: nothing is written before the diff exists, and the verifier's blindness is spent",
+    };
+  }
+  if (how === "by-the-seat") {
+    return {
+      render: false,
+      by: "the seat",
+      why: "verify.phase1 is by-the-seat: the arm renders nothing and the phase brief is hand-written",
+    };
+  }
+  if (tier === "bounded") {
+    return {
+      render: false,
+      by: "nobody",
+      why: "verify.phase1 is by-the-arm, and the bounded tier takes no bench and therefore no attack set",
+    };
+  }
+  return {
+    render: true,
+    by: "the arm",
+    why: `verify.phase1 is by-the-arm, and the ${tier} tier takes an attack set written before the diff exists`,
+  };
+}
+
+/**
+ * THE WHOLE-SUITE NET — when the four legs run end to end, which is what
+ * makes every switch that grades LESS than everything safe to hold.
+ *
+ * @param {ProcessSettings} settings
+ * @returns {{ when: string, netted: boolean, why: string }}
+ */
+export function wholeSuiteNet(settings) {
+  const when = switchValue(settings, "record.whole_suite_net");
+  if (when === "every-push") {
+    return {
+      when,
+      netted: false,
+      why: "record.whole_suite_net is every-push: there is no net because nothing is ever skipped",
+    };
+  }
+  return {
+    when,
+    netted: true,
+    why:
+      `record.whole_suite_net is ${when}: the four legs run on that clock, and a red there is ` +
+      "filed against the merge that caused it",
+  };
+}
+
+/**
+ * THE PROCESS ROWS OF THE BRIEF — what this project's loop is SET to,
+ * beside the contract rows that say what the seat owes.
+ *
+ * EVERY SWITCH IS READ AND FOUR ARE PRINTED, which is not a shortcut.
+ * The read is `processLedger`, and it goes through the accessor for
+ * every declared switch, so a switch the resolution lost throws here
+ * rather than rendering one row fewer. What the brief PRINTS is the
+ * profile, the floor count, the net and the switches a reader of a
+ * dispatch acts on; the rest is pointed at, because a brief carrying a
+ * second copy of the schema is the duplication this card exists to end
+ * and would cost about a third of a pipe buffer on every dispatch.
+ *
+ * @param {Ctx} ctx
+ * @returns {Rec[]}
+ */
+export function processRecs(ctx) {
+  const loaded = ctx.process;
+  if (loaded === null) {
+    return [
+      blank(),
+      note(
+        `THE PROCESS AS SETTINGS — this tree carries no ${PROCESS_SCHEMA} or no ` +
+          `\`${PROCESS_SECTION}:\` section in ${RUNTIME_TEMPLATE}, so every arm below runs the ` +
+          "behaviour it ran before the process became settings. A tree that predates the settings " +
+          "is not a misconfiguration, and this line is here so that the absence is read rather " +
+          "than assumed.",
+      ),
+    ];
+  }
+  const { schema, settings } = loaded;
+  const rows = processLedger(schema, settings);
+  const via = `${PROCESS_SCHEMA} under the profile ${RUNTIME_TEMPLATE} names`;
+  const floor = rows.filter((r) => r.floor);
+  const departures = rows.filter((r) => r.overridden);
+  const net = wholeSuiteNet(settings);
+  /** @type {Rec[]} */
+  const recs = [
+    blank(),
+    note(
+      "THE PROCESS AS SETTINGS — the loop's own switches, declared ONCE in the schema and READ " +
+        "here; a combination the constraints forbid refuses this command before a row is assembled",
+    ),
+    value(
+      `profile: ${settings.profile} of ${settings.available.join(", ")} — ${schema.profiles.get(settings.profile) ?? ""}`,
+      tree(ctx, `${RUNTIME_TEMPLATE}, its ${PROCESS_SECTION}: section`),
+    ),
+    value(
+      `${String(rows.length)} switch(es), ${String(floor.length)} of them FLOOR (no profile turns ` +
+        `them off), ${String(departures.length)} departure(s) from the profile`,
+      tree(ctx, via),
+    ),
+    value(`the whole-suite net: ${net.why}`, tree(ctx, `${PROCESS_SCHEMA}, the switch record.whole_suite_net`)),
+  ];
+  for (const id of ["verify.tier", "verify.phase1", "dispatch.model_per_role", "merge.keepers"]) {
+    const row = /** @type {LedgerRow} */ (rows.find((r) => r.id === id));
+    recs.push(value(`${id} = ${row.value} — ${row.what}`, tree(ctx, via)));
+  }
+  for (const row of departures) {
+    recs.push(
+      value(
+        `DEPARTURE: ${row.id} = ${row.value}, which is not what the ${settings.profile} profile sets`,
+        tree(ctx, `${RUNTIME_TEMPLATE}, its ${PROCESS_SECTION}: switches block`),
+      ),
+    );
+  }
+  // AND THE OTHER SWITCHES ARE POINTED AT, NEVER COPIED. Every row was
+  // READ a few lines above — `processLedger` reads each one through the
+  // accessor and throws on a switch the resolution lost — and printing
+  // all of them here would put a second copy of the schema inside every
+  // brief, which is the duplication the whole card is against. It would
+  // also cost this command about a third of a pipe buffer per dispatch.
+  recs.push(
+    value(
+      `the other ${String(rows.length - 5 - departures.length)} switch(es) were READ and are not ` +
+        `copied here — what each one does, what it needs on, which band measures it and what it ` +
+        `cost this project are in ${PROCESS_SCHEMA}, which is the ONE source every surface renders`,
+      tree(ctx, via),
+    ),
+  );
+  return recs;
+}
+
 /**
  * Rewrite frontmatter fields on a card, IN PLACE and by whole line.
  *
@@ -6387,6 +7219,10 @@ export function dispatchLanePlan(ctx, opts) {
       untracked: paths.filter((p) => !isTracked(p)),
       guardMap,
       keeper: { pinned: false, answered: false, why: "step one has not run yet" },
+      // THE PROJECT'S OWN SETTING RIDES WITH THE INPUT (T-299), so the
+      // classification the ritual performs is the classification any
+      // reader can reproduce from the plan alone.
+      ...(ctx.process === null ? {} : { process: ctx.process.settings }),
     },
     keeperArgv: [
       process.execPath,
@@ -6738,18 +7574,34 @@ export function runDispatchLane(plan, io) {
 
     if (step.id === "phase1") {
       const ran = `render ${plan.phase1File}`;
-      if (tier === "bounded") {
+      // WHO WRITES THE ATTACK SET IS A SETTING (T-299, ADR-024 decision
+      // 6). `verify.phase1` decides whether this arm renders it at all,
+      // and the tier decides which cards it is owed for — so the two are
+      // asked together and the answer is REPORTED either way. A phase
+      // this arm skipped on purpose and a phase it forgot look the same
+      // on disk, which is why the skip is a note and never a silence.
+      const owed =
+        plan.tierInput.process === undefined
+          ? {
+              render: tier !== "bounded",
+              by: "the arm",
+              why:
+                tier === "bounded"
+                  ? "the bounded tier takes no verifier at all (method/tasks/TASK-FORMAT.md, The tier)"
+                  : `the ${tier} tier takes an attack set written before the diff exists`,
+            }
+          : phase1Owed(plan.tierInput.process, tier);
+      if (!owed.render) {
         notes.push(
-          "the bounded tier takes no verifier at all (method/tasks/TASK-FORMAT.md, The tier), so " +
-            "no phase 1 was rendered and none is owed. Said out loud, because a phase this arm " +
-            "skipped on purpose and a phase it forgot look the same on disk.",
+          `no phase 1 was rendered and none is owed — ${owed.why}. Said out loud, because a phase ` +
+            "this arm skipped on purpose and a phase it forgot look the same on disk.",
         );
         done.push({
           n: step.n,
           id: step.id,
           ran,
           exit: EXIT.CLEAN,
-          detail: "not owed at the bounded tier",
+          detail: `not owed — ${owed.why}`,
         });
         continue;
       }
