@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1022 behaviours** — 1020 extracted sentences + 2 named-not-extracted (listed at the end) — across 40 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1040 behaviours** — 1038 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -224,6 +224,7 @@ Census: **1022 behaviours** — 1020 extracted sentences + 2 named-not-extracted
 - the process switch docs.gate is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
 - the process switch method.stamp is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
 - the process switch record.immutable is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
+- ARM THIRTEEN performs ONE run operation against the root it is handed, and refuses to share an invocation with another arm
 
 ## card-figures
 
@@ -1047,6 +1048,26 @@ Census: **1022 behaviours** — 1020 extracted sentences + 2 named-not-extracted
 - a refused turn subscription says so, in the half that is not receiving
 - a restart mid-interview rehydrates the conversation instead of showing an empty log
 - a resumable session offers both exits, and a fresh one is never a dead end
+
+## run-record
+
+- a WRITER takes the resource's reservation before its launch and a READ-ONLY participant takes none, so an executor and a tool-less phase one run for one card at once
+- the assignment is refused FIELD BY FIELD, and `none` has to be typed rather than defaulted
+- a BIND attaches the harness's task id before the record is started, and one harness id cannot serve two attempts
+- an INTERRUPT between the reservation and the bind starts no second writer and is RECONCILED rather than assumed stopped
+- an answer moves written, delivered, acknowledged with the evidence of each retained, and this arm never writes the acknowledgement itself
+- an interrupt after DELIVERED and before ACKNOWLEDGED re-delivers the answer on continue and never assumes it was read
+- a scope grant that lands after the stamp is refused for the resumed attempt and requires a fresh one
+- collect answers for finished, failed and stopped alike, and an `unknown` usage is collected rather than dropped
+- stop is written only after termination is established, and it can never reach the shared harness process
+- an uncertain attempt starts no replacement, and an established termination releases the resource for one
+- a PROCESS CHILD's question, exit, answer, same-session resume, acknowledgement, completion and release happen in that order
+- an authorized continuation after a release REACQUIRES the resource atomically, and is refused when another attempt took it first
+- the wait RE-OBSERVES and reports its ceiling, and a ceiling reached is never read as finished
+- the operations are the seven the card names plus the bind that closes a launch, and no adapter, daemon, heartbeat or scheduler is built here
+- the lane protocol names the run record as the contract every child runs under, and names no product's spelling for it
+- the record is one JSON document per attempt under the runs directory, and a continuation keeps the history it continues
+- the reservation is the EXCLUSIVE CREATE ITSELF, not an existence check in front of a write — the one place a check-then-write and an `O_EXCL` open answer differently
 
 ## session-economics
 

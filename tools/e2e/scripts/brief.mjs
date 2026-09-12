@@ -3,7 +3,7 @@
  * THE BRIEF COMMAND (T-133) — the runnable half of `dispatch-brief.mjs`.
  *
  * THE ONE SPELLING, run from the repo ROOT and by a dispatcher with no
- * lane. Every arm but FOUR is a read, and all four writers are NAMED
+ * lane. Every arm but FIVE is a read, and all five writers are NAMED
  * ARMS: `--write-fence` writes the lane's manifest SOMEWHERE ELSE, into
  * the lane worktree it is handed, and `--take-seat` (T-238) writes the
  * holder record into the checkout `--root` names — which is the point of
@@ -80,6 +80,17 @@
  * The identity, the measurement it rests on and every limit are
  * `checkout-currency.mjs`'s, next to the catcher that already answers
  * *which checkout is this session in*.
+ *
+ * **THE FIFTH WRITER IS `--run` (T-311) AND IT IS THE SMALLEST OF THEM.**
+ * It performs one operation on one child's RUN RECORD — start, bind,
+ * observe, send, wait, collect, continue, stop — and writes under
+ * `.supertaskr/runs/` in the checkout `--root` names, behind the same
+ * self-ignoring `.gitignore` as the manifest and the holder record, so it
+ * is never a commit either. It is a writer because a record is the point:
+ * until T-311 nothing on disk said WHO had been started FOR WHICH
+ * ATTEMPT, and a seat that lost its session had to reconstruct that from
+ * worktrees. The derivation, the states and every refusal are
+ * `run-record.mjs`'s; this wrapper parses the verb and renders the record.
  *
  * **THE FOURTH WRITER IS `--merge` (T-295) AND IT IS THE ARM AT THE
  * OTHER END OF THE LOOP.** Where `--dispatch-lane` performs the eight
@@ -194,6 +205,21 @@ import {
 } from "./checkout-currency.mjs";
 import { dispatchContext, dispatchReport, listedCards } from "./dispatch-order.mjs";
 import { LaneFenceFinding, buildLaneFence, writeLaneFence } from "./lane-fence.mjs";
+import {
+  RunRecordFinding,
+  bindRun,
+  collectRun,
+  continueRun,
+  observeRun,
+  readAssignment,
+  runPlan,
+  runRecs,
+  sendAnswer,
+  startRun,
+  stopRun,
+  waitRun,
+} from "./run-record.mjs";
+import { findCheckoutRoot } from "../../../.claude/hooks/lane-fence.mjs";
 import { main as mergeMain, mergeDials } from "./merge.mjs";
 import { LaneLockFinding, applyLaneLock } from "./lane-lock.mjs";
 import { seatRecs } from "./session-economics.mjs";
@@ -216,6 +242,18 @@ const FLAGS = Object.freeze([
   "--await",
   "--await-pid",
   "--ceiling",
+  "--run",
+  "--assignment",
+  "--attempt",
+  "--session",
+  "--pid",
+  "--question",
+  "--answer",
+  "--evidence",
+  "--usage",
+  "--ref",
+  "--report",
+  "--replace",
   "--bump",
   "--meters",
   "--tier",
@@ -293,6 +331,7 @@ async function main(argv) {
   let wantsTakeSeat = false;
   let wantsReleaseSeat = false;
   let dryRun = false;
+  let replace = false;
   let full = false;
   for (let i = 0; i < argv.length; i += 1) {
     const a = /** @type {string} */ (argv[i]);
@@ -318,6 +357,11 @@ async function main(argv) {
           "[--merge <T-NNN> [--bump <old>..<new>] [--meters <path>] [--tier <tier>] " +
           "[--blocks-absent <sha>] [--dry-run]] [--bench <T-NNN> [--scratch <dir>]] " +
           "[[--await <marker> | --await-pid <pid>] --ceiling <seconds>] " +
+          "[--run start --assignment <path>] " +
+          "[--run bind|observe|send|wait|collect|continue|stop --attempt <id> " +
+          "[--session <id>] [--pid <n>] [--question <id>] [--answer <text|@file>] " +
+          "[--evidence <text|@file>] [--ceiling <seconds>] [--usage <text>] [--ref <sha>] " +
+          "[--report <path>] [--replace]] " +
           "[--full] [--root <path>]",
       );
       return EXIT.CLEAN;
@@ -344,6 +388,10 @@ async function main(argv) {
     }
     if (a === "--dry-run") {
       dryRun = true;
+      continue;
+    }
+    if (a === "--replace") {
+      replace = true;
       continue;
     }
     if (a === "--full") {
@@ -376,10 +424,19 @@ async function main(argv) {
    * would then bound the wait while the answer bounded nothing.
    */
   const wantsAwait = opts["await"] !== undefined || opts["await-pid"] !== undefined;
-  if (!wantsAwait && opts["ceiling"] !== undefined) {
+  /**
+   * ARM THIRTEEN'S VERB (T-311). The run arm is held apart from every
+   * other arm for the reason the wait is: it WRITES a run record, and one
+   * of its verbs blocks. An invocation that both ran an operation and
+   * derived a brief would decide by argument order which act this seat
+   * was performing.
+   */
+  const runVerb = opts["run"] ?? "";
+  const wantsRun = runVerb !== "";
+  if (!wantsAwait && !wantsRun && opts["ceiling"] !== undefined) {
     console.error(
-      "brief: --ceiling only means something beside --await <marker> or --await-pid <pid> — it is " +
-        "the bound on a wait, and there is no wait here for it to bound.",
+      "brief: --ceiling only means something beside --await <marker>, --await-pid <pid> or " +
+        "--run wait — it is the bound on a wait, and there is no wait here for it to bound.",
     );
     return EXIT.USAGE;
   }
@@ -429,7 +486,7 @@ async function main(argv) {
     );
     return EXIT.USAGE;
   }
-  if (!wantsDispatchLane && !wantsMerge && (strayDials.length > 0 || dryRun)) {
+  if (!wantsDispatchLane && !wantsMerge && !wantsRun && (strayDials.length > 0 || dryRun)) {
     console.error(
       `brief: ${[...strayDials.map((d) => `--${d}`), ...(dryRun ? ["--dry-run"] : [])].join(", ")} ` +
         "only mean something to --dispatch-lane <T-NNN>, and nothing else on this command reads " +
@@ -437,6 +494,170 @@ async function main(argv) {
         "something it did not.",
     );
     return EXIT.USAGE;
+  }
+  if (wantsRun) {
+    const others = [
+      ...(taskId === "" ? [] : ["--task"]),
+      ...(wantsState ? ["--state"] : []),
+      ...(wantsDispatch ? ["--dispatch"] : []),
+      ...(cardId === "" ? [] : ["--card"]),
+      ...(auditPath === "" ? [] : ["--audit"]),
+      ...(wantsPreflight ? ["--preflight"] : []),
+      ...(fenceWorktree === "" ? [] : ["--write-fence"]),
+      ...(wantsTakeSeat ? ["--take-seat"] : []),
+      ...(wantsReleaseSeat ? ["--release-seat"] : []),
+      ...(wantsDispatchLane ? ["--dispatch-lane"] : []),
+      ...(wantsMerge ? ["--merge"] : []),
+      ...(wantsBench ? ["--bench"] : []),
+      ...(wantsAwait ? ["--await"] : []),
+    ];
+    if (others.length > 0) {
+      console.error(
+        `brief: --run cannot share an invocation with ${others.join(", ")}. It performs one ` +
+          "OPERATION on one child's run record — it writes, and one of its verbs blocks — so an " +
+          "invocation that also derived a brief would decide by argument order which act this " +
+          "seat was performing.",
+      );
+      return EXIT.USAGE;
+    }
+    /** @type {import("./run-record.mjs").RunPlan} */
+    let plan;
+    try {
+      plan = runPlan(opts, replace);
+    } catch (err) {
+      if (err instanceof RunRecordFinding) {
+        console.error(`brief: ${err.message}`);
+        return EXIT.USAGE;
+      }
+      throw err;
+    }
+    // THE RECORDS LIVE IN THE CHECKOUT THIS ARM RUNS IN, and that is the
+    // SEAT's checkout rather than the lane's: a reservation over a lane
+    // worktree cannot live inside the thing it reserves, or two seats
+    // would each hold their own copy of the lock.
+    const runRoot = opts["root"] ?? findCheckoutRoot(process.cwd()) ?? process.cwd();
+    const at = new Date().toISOString();
+    const host = os.hostname();
+    const rctx = { at, host, root: runRoot };
+    try {
+      /** @type {string[]} */
+      let extra = [];
+      /** @type {import("./run-record.mjs").RunRecord} */
+      let record;
+      let satisfied = true;
+      if (plan.verb === "start") {
+        const assignment = readAssignment(/** @type {string} */ (plan.assignment));
+        const started = startRun(runRoot, { assignment, at, host });
+        record = started.record;
+        extra = [
+          `written: ${started.file}`,
+          started.reservation === null
+            ? "reservation: none — a read-only participant runs beside the writer it serves"
+            : `reservation: ${started.reservation.resource} taken atomically at ${started.reservation.takenAt}`,
+          "next: spawn the child, then bind it with --run bind --attempt " +
+            `${started.record.attempt} --session <the harness's id>`,
+        ];
+      } else if (plan.verb === "bind") {
+        record = bindRun(runRoot, {
+          attempt: plan.attempt,
+          harnessId: /** @type {string} */ (plan.harnessId),
+          ...(plan.pid === undefined ? {} : { pid: plan.pid }),
+          at,
+        });
+      } else if (plan.verb === "observe") {
+        const seen = observeRun(runRoot, {
+          attempt: plan.attempt,
+          ...(plan.evidence === undefined ? {} : { evidence: plan.evidence }),
+          at,
+        });
+        record = seen.record;
+        extra = seen.signals.map((s) => `signal: ${s}`);
+      } else if (plan.verb === "send") {
+        const sent = sendAnswer(runRoot, {
+          attempt: plan.attempt,
+          question: /** @type {string} */ (plan.question),
+          ...(plan.answer === undefined ? {} : { answer: plan.answer }),
+          ...(plan.evidence === undefined ? {} : { delivered: plan.evidence }),
+          at,
+        });
+        record = sent.record;
+        extra = [
+          `written: ${String(sent.wrote)}`,
+          `delivered: ${String(sent.delivered)}`,
+          "acknowledged: never by this arm — it comes from the child's own file or the harness's own output",
+        ];
+      } else if (plan.verb === "wait") {
+        const waited = await waitRun(
+          runRoot,
+          {
+            attempt: plan.attempt,
+            ceilingMs: /** @type {number} */ (plan.ceilingMs),
+            ...(plan.evidence === undefined ? {} : { evidence: plan.evidence }),
+          },
+          {
+            now: () => Date.now(),
+            sleep: (ms) =>
+              new Promise((resolve) => {
+                setTimeout(resolve, ms);
+              }),
+          },
+        );
+        record = waited.record;
+        satisfied = waited.satisfied;
+        extra = [waited.ceiling ? `CEILING REACHED — ${waited.why}` : `satisfied — ${waited.why}`];
+      } else if (plan.verb === "collect") {
+        const got = collectRun(runRoot, {
+          attempt: plan.attempt,
+          ...(plan.usage === undefined ? {} : { usage: plan.usage }),
+          ...(plan.ref === undefined ? {} : { ref: plan.ref }),
+          ...(plan.report === undefined ? {} : { report: plan.report }),
+          at,
+        });
+        record = got.record;
+        extra = [
+          `collected state: ${got.collected.state}`,
+          `refs: ${got.collected.refs.join(", ") || "none"}`,
+          `report: ${got.collected.report}`,
+          `evidence entries retained: ${String(got.collected.evidence.length)}`,
+        ];
+      } else if (plan.verb === "continue") {
+        const carried = continueRun(runRoot, {
+          attempt: plan.attempt,
+          ...(plan.replace === true ? { replace: true } : {}),
+          ...(plan.evidence === undefined ? {} : { evidence: plan.evidence }),
+          at,
+          host,
+        });
+        record = carried.record;
+        extra = [
+          `reconciliation: ${carried.reconciliation.verdict} — ${carried.reconciliation.why}`,
+          ...carried.reconciliation.sources.map((s) => `source: ${s}`),
+          `re-delivered: ${carried.redelivered.join(", ") || "nothing was left unacknowledged"}`,
+          ...(carried.replaced === null ? [] : [`replaces: ${carried.replaced}`]),
+        ];
+      } else {
+        const stopped = stopRun(runRoot, {
+          attempt: plan.attempt,
+          ...(plan.evidence === undefined ? {} : { evidence: plan.evidence }),
+          at,
+        });
+        record = stopped.record;
+        extra = [
+          `reconciliation: ${stopped.reconciliation.verdict} — ${stopped.reconciliation.why}`,
+          ...stopped.reconciliation.sources.map((s) => `source: ${s}`),
+          "the shared harness process was never signalled, and this arm holds no code path that could",
+        ];
+      }
+      say(render(runRecs(rctx, plan.verb, record, extra)));
+      flush();
+      return satisfied ? EXIT.CLEAN : EXIT.FOUND;
+    } catch (err) {
+      if (err instanceof RunRecordFinding) {
+        console.error(`brief: [${err.code}] ${err.message}`);
+        return EXIT.FOUND;
+      }
+      throw err;
+    }
   }
   if (wantsAwait) {
     const others = [
@@ -452,6 +673,7 @@ async function main(argv) {
       ...(wantsDispatchLane ? ["--dispatch-lane"] : []),
       ...(wantsMerge ? ["--merge"] : []),
       ...(wantsBench ? ["--bench"] : []),
+      ...(wantsRun ? ["--run"] : []),
     ];
     if (others.length > 0) {
       console.error(
@@ -545,7 +767,8 @@ async function main(argv) {
     !wantsReleaseSeat &&
     !wantsDispatchLane &&
     !wantsMerge &&
-    !wantsBench
+    !wantsBench &&
+    !wantsRun
   ) {
     console.error(
       "brief: nothing asked for — give --task <T-NNN> for a dispatch brief, --state for the " +

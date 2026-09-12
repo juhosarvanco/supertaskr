@@ -6881,9 +6881,20 @@ export class AwaitFinding extends Error {}
  */
 
 /**
+ * THE THIRD KIND IS `run-record.mjs`'s AND IT IS NOT PLANNED HERE
+ * (T-311). `awaitPlan` below still produces exactly two kinds — a marker
+ * and a pid — because those are the two facts a caller can name on a
+ * command line. The RUN ARM waits on a third: an attempt reaching a
+ * state, which is DERIVED by re-observing rather than read off the
+ * filesystem. It reuses this arm's loop, its interval and its ceiling
+ * report rather than keeping a second one, and supplies its own
+ * `happened`; the kind is widened here so that reuse is typed rather
+ * than cast. `defaultAwaitIo` REFUSES it, because the whole point of a
+ * derived fact is that this file has no way to ask it.
+ *
  * @typedef {object} AwaitPlan
- * @property {"marker" | "pid"} kind
- * @property {string} target     the marker path, or the pid as it will be printed
+ * @property {"marker" | "pid" | "state"} kind
+ * @property {string} target     the marker path, the pid as it will be printed, or the attempt id
  * @property {number} [pid]      the parsed pid, on the pid arm only
  * @property {number} ceilingMs
  * @property {number} intervalMs
@@ -6985,10 +6996,18 @@ export function defaultAwaitIo() {
       new Promise((resolve) => {
         setTimeout(resolve, ms);
       }),
-    happened: (plan) =>
-      plan.kind === "marker"
-        ? existsSync(plan.target)
-        : processRow(/** @type {number} */ (plan.pid)) === undefined,
+    happened: (plan) => {
+      if (plan.kind === "marker") return existsSync(plan.target);
+      if (plan.kind === "pid") return processRow(/** @type {number} */ (plan.pid)) === undefined;
+      // A DERIVED FACT HAS NO PROBE HERE, and answering `false` would be
+      // this io waiting for ever on a question it never asked — the
+      // silent half of the hang this arm exists to remove.
+      throw new AwaitFinding(
+        `dispatch-brief: this wait's default io cannot ask about a ${plan.kind} fact — it reads ` +
+          "the filesystem and the process table, and nothing else. The arm that owns that kind of " +
+          "fact supplies its own probe.",
+      );
+    },
   };
 }
 

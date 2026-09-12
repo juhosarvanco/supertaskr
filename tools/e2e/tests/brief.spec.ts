@@ -7577,3 +7577,84 @@ for (const switchId of PROCESS_SWITCH_IDS) {
     ).toBe(loaded.schema.switches.size);
   });
 }
+
+/* ────────────────────────────────────────────────────────────────────
+ * ARM THIRTEEN — THE RUN OPERATION (T-311). The record, the states and
+ * every refusal are `run-record.spec.ts`'s; what is HERE is the WIRING,
+ * which is the half a module test cannot see: that the command parses a
+ * verb, performs it against the root it was handed, renders a stamped
+ * record and refuses to share an invocation with any other arm.
+ * ──────────────────────────────────────────────────────────────────── */
+
+test("ARM THIRTEEN performs ONE run operation against the root it is handed, and refuses to share an invocation with another arm", () => {
+  // KILLED BY: an arm that shares an invocation (argument order would
+  // then decide which act the seat was performing), a verb that writes
+  // into this checkout rather than into --root, a world refusal that
+  // answers USAGE, and an unstamped line in the rendered record.
+  const dir = mkdtempSync(path.join(os.tmpdir(), "t311-arm-"));
+  try {
+    const root = path.join(dir, "root");
+    const lane = path.join(dir, "lane");
+    const scratch = path.join(dir, "scratch");
+    for (const d of [root, lane, scratch]) mkdirSync(d, { recursive: true });
+    const brief = path.join(scratch, "brief-T-900.txt");
+    writeFileSync(brief, "the brief this child is answerable to\n");
+    const assignment = path.join(scratch, "assign-T-900.json");
+    writeFileSync(
+      assignment,
+      JSON.stringify({
+        kind: "card",
+        id: "T-900",
+        role: "executor",
+        resource: lane,
+        harness: "claude-code",
+        model: "a-model@a-kind",
+        effort: "high",
+        base: "0123456789abcdef0123456789abcdef01234567",
+        brief,
+        cwd: lane,
+        deadline: "none",
+        budget: "none",
+      }),
+    );
+    const run = (args: string[]) =>
+      spawnSync(process.execPath, [CLI, ...args], { cwd: repoRoot, encoding: "utf8" });
+
+    const started = run(["--run", "start", "--assignment", assignment, "--root", root]);
+    expect(started.status, `the start arm did not perform: ${started.stderr}`).toBe(EXIT.CLEAN);
+    expect(started.stdout, "the arm did not render the attempt it wrote").toContain("attempt: T-900-a1");
+    expect(
+      existsSync(path.join(root, ".supertaskr", "runs", "T-900", "T-900-a1.json")),
+      "the record was not written under the root the arm was handed",
+    ).toBe(true);
+    expect(
+      unstampedLines(started.stdout.split("\n").filter((l) => !l.startsWith("#")).join("\n")),
+      "a rendered record line carries no provenance stamp",
+    ).toEqual([]);
+
+    // A WORLD REFUSAL ANSWERS 1 AND NAMES ITS CODE; a usage refusal
+    // answers 2. Keeping those apart is the house exit contract.
+    const early = run(["--run", "collect", "--attempt", "T-900-a1", "--root", root]);
+    expect(early.status, "a collect before the state was terminal did not answer FOUND").toBe(EXIT.FOUND);
+    expect(early.stderr, "the refusal does not carry a greppable code").toContain("[COLLECT_NOT_TERMINAL]");
+
+    for (const [label, args] of [
+      ["another arm", ["--run", "observe", "--attempt", "T-900-a1", "--state"]],
+      ["a dial the verb does not read", ["--run", "observe", "--attempt", "T-900-a1", "--usage", "12k"]],
+      ["no attempt", ["--run", "observe"]],
+      ["a verb nobody has", ["--run", "resume", "--attempt", "T-900-a1"]],
+    ] as const) {
+      const refused = run([...args, "--root", root]);
+      expect(refused.status, `${label} was accepted instead of refused`).toBe(EXIT.USAGE);
+    }
+
+    // THE POSITIVE CONTROL: the same observe, alone, performs — so the
+    // refusals above are about what was beside it rather than about the
+    // verb being unreachable.
+    const alone = run(["--run", "observe", "--attempt", "T-900-a1", "--root", root]);
+    expect(alone.status, `the control observe did not perform: ${alone.stderr}`).toBe(EXIT.CLEAN);
+    expect(alone.stdout, "the control did not render a state").toContain("state: reserved");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
