@@ -426,5 +426,24 @@ owes none because it changes wording and pins nothing.
 #### The gates at the tip I created
 
 Re-run after this verdict and its corrections were committed, because
-prose is a code input here: the docs gate, the card preflight and the arm's
-brief spec. Their readings are in the commit that carries them.
+prose is a code input here and a figure measured at the commit I was sent
+is stale at the tip I created. The whole battery again, at **d2c3a44f** —
+the tip carrying the verdict, both committed corrections and the filed
+card:
+
+| suite | bodies | exit | verdict |
+|---|---|---|---|
+| parser | 412 | 0 | GREEN |
+| app | 1171 | 0 | GREEN |
+| rust | 655 | 0 | GREEN |
+| e2e | 1042 | 0 | GREEN |
+
+Correction 2 adds assertions and no test NAME, so the e2e count is the
+same 1042 at my tip as at the lane's, and the census figure quoted above
+is unmoved by my own writes: committed 95835 against a fresh 96059 at
+d2c3a44f, exactly as at f65f7e25. The docs gate answers 0 over 0 findings
+at my tip, and the card preflight answers 0 for T-317. The three cards
+filed as `suggested` answer 3 from the preflight — all three of the
+lane's do too, which is what that command answers about a card the
+board's schedule does not draw, and not a property of anything written
+here.
