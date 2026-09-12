@@ -7052,6 +7052,91 @@ test("THE ARM'S FIVE SYMBOLS ARE THE PARSER LIBRARY'S, and this file carries no 
     expect(librarySource, `the library no longer raises: ${sentence}`).toContain(sentence);
     expect(armSource, `the arm carries a second spelling of: ${sentence}`).not.toContain(sentence);
   }
+  // AND EACH SENTENCE IS DRIVEN, BECAUSE PRESENT IS NOT RAISED.
+  // A `toContain` over the source TEXT is satisfied by a doc comment: with
+  // the constraint refusal reworded to `FORBIDDEN COMBO` in the code, the
+  // heading `THE FORBIDDEN COMBINATIONS, EACH NAMED.` still carried the
+  // phrase, so the loop above passed while the refusal had moved — measured
+  // on this bench, where the same mutant redded the arm's own body and left
+  // this one green. So every sentence is now RAISED through the public
+  // entry and read off the message rather than off the file.
+  // KILLED BY: a refusal reworded, renumbered or dropped; a refusal that
+  // stops being reachable through the entry at all; and a library that
+  // answers a different message than the one it spells.
+  const DRILL = [
+    "version: 1",
+    "",
+    "profiles:",
+    '  only: "one"',
+    "",
+    "switches:",
+    "",
+    "  a.switch:",
+    "    type: toggle",
+    "    values: [on, off]",
+    '    what: "a"',
+    '    effect: "b"',
+    "    reads: c",
+    '    needs: ["on => b.switch=off"]',
+    "    floor: false",
+    "    band: []",
+    '    cost: "d"',
+    "    profiles:",
+    "      only: on",
+    "",
+    "  b.switch:",
+    "    type: toggle",
+    "    values: [on, off]",
+    '    what: "e"',
+    '    effect: "f"',
+    "    reads: g",
+    "    needs: []",
+    "    floor: false",
+    "    band: []",
+    '    cost: "h"',
+    "    profiles:",
+    "      only: on",
+    "",
+  ].join("\n");
+  const said = (run: () => unknown): string => {
+    try {
+      const answer = run();
+      return Array.isArray(answer) ? answer.join("\n") : "";
+    } catch (err) {
+      return err instanceof Error ? err.message : String(err);
+    }
+  };
+  const drilled = parserPure.parseProcessSchema(DRILL);
+  const noDepartures = { profile: "only", available: [], overrides: new Map<string, string>() };
+  const drilledSettings = parserPure.resolveProcess(drilled, noDepartures);
+  const driven: [string, () => unknown][] = [
+    ["a top-level line this parser cannot read", () => parserPure.parseProcessSchema("nonsense\n")],
+    [
+      "is not a field a switch declares",
+      () => parserPure.parseProcessSchema(DRILL.replace("    reads: c", "    readz: c")),
+    ],
+    [
+      "is not in its own value set",
+      () =>
+        parserPure.resolveProcess(
+          parserPure.parseProcessSchema(DRILL.replace("      only: on\n\n  b.switch", "      only: maybe\n\n  b.switch")),
+          noDepartures,
+        ),
+    ],
+    [
+      "is not one of its values",
+      () =>
+        parserPure.resolveProcess(drilled, {
+          profile: "only",
+          available: [],
+          overrides: new Map([["a.switch", "maybe"]]),
+        }),
+    ],
+    ["FORBIDDEN COMBINATION", () => parserPure.constraintFindings(drilled, drilledSettings)],
+  ];
+  for (const [sentence, run] of driven) {
+    expect(said(run), `the library no longer RAISES: ${sentence}`).toContain(sentence);
+  }
   expect(armSource, "the arm no longer imports the parser's built browser entry").toContain(
     "lib/parser/dist/pure.js",
   );
