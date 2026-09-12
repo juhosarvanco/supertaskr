@@ -830,6 +830,42 @@ and T-236 (2026-09-02, whose pre-compaction text is
   that is not a number, the process group or the broadcast pid, and any
   attempt to share the invocation with another arm. The arm's own child
   processes carry no ceiling yet (T-298-s2).
+- THE RUN RECORD, IN THIS PROJECT'S OWN SPELLING (T-311, ADR-025
+  decision 1): `method/lane-protocol.md` states the contract — every
+  child runs under one record, only a writer takes its resource's
+  exclusive reservation, and an uncertain record is reconciled before
+  anything replaces it — and this bullet carries the spellings that file
+  leaves to a project. Records live under `.supertaskr/runs/<work>/<attempt
+  id>.json` in the checkout the SEAT holds, and the writer reservations
+  under `.supertaskr/runs/reservations/`, one file per resource, behind the
+  same self-ignoring `.gitignore` as the fence manifest and the holder
+  record — so a record is never a commit. An attempt id is `<work>-a<n>`
+  and carries its own work, which is why the verbs need no second flag to
+  find a record. From the repository root:
+
+      node tools/e2e/scripts/brief.mjs --run start --assignment <path>
+      node tools/e2e/scripts/brief.mjs --run bind --attempt <id> --session <harness id> [--pid <n>]
+      node tools/e2e/scripts/brief.mjs --run observe|send|wait|collect|continue|stop --attempt <id>
+
+  **THE ASSIGNMENT IS A DOCUMENT AND EVERY FIELD IS REQUIRED**, with the
+  word `none` a legal value for the resource, the deadline and the budget
+  and a MISSING field a refusal that names it: the work and its kind, the
+  role, the resource, the harness, the model, the effort, the base ref,
+  the brief, the working directory, the deadline and the authorized
+  budget. The permission boundary and the ask file are DERIVED — from the
+  fence manifest in the working directory and from the brief's own
+  directory — because a boundary somebody typed is a claim about a
+  manifest the write hook will read anyway. Exits, read unpiped: 0 when
+  the operation was performed; 1 when it was REFUSED by the world (the
+  resource already reserved, a prior execution that might still be
+  running, a collect before the state is terminal, a wait that reached
+  its ceiling), each naming a greppable code; 2 for every usage refusal.
+  **THE GRAMMAR IS ONE GRAMMAR FOR BOTH KINDS OF CHILD**: `RUN-ASK <id>`,
+  `RUN-ACK <id>` and `RUN-DONE ok|failed|gone`, written by a process child
+  into its ask file and arriving for a native child in the harness's own
+  output, which the seat hands to `--run observe --evidence`. `gone` is
+  the honest third value — the execution is not there any more and what
+  the assignment did is `unknown`.
 - THE PROCESS IS SETTINGS, AND EVERY SWITCH IS DECLARED ONCE (T-299,
   ADR-024 decision 6): `method/runtime/process-schema.yaml` is the ONE
   source. It declares each step of the loop as a SWITCH with what it

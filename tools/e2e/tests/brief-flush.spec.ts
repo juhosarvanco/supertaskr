@@ -715,6 +715,54 @@ const NOT_AN_ARM: ReadonlyArray<{ flag: string; why: string }> = [
     why: "a MODIFIER of --await / --await-pid: how many seconds the wait may take before it reports the ceiling instead of hanging. It is required beside either of them and alone it is a usage error, so there is no invocation of it for this file to size.",
   },
   {
+    flag: "--run",
+    why: "THE FIFTH WRITER (T-311). It performs one operation on one child's RUN RECORD and writes it under the runtime directory of the checkout it is handed — and one of its verbs BLOCKS — so an entry in the arm list above would have this suite reserving resources, binding executions and waiting on children every time it ran. `run-record.spec.ts` drives every operation against scratch roots instead, where the refusals can actually be asserted.",
+  },
+  {
+    flag: "--assignment",
+    why: "a MODIFIER of --run start taking a PATH: the document the record is written from. Its size is a function of the assignment it is handed and not of this repository, which is the argument --audit and --meters above already make.",
+  },
+  {
+    flag: "--attempt",
+    why: "a MODIFIER of --run: which attempt's record the operation acts on. It is one id into one file name, it is meaningless without --run, and the record it names does not exist in this checkout at all.",
+  },
+  {
+    flag: "--session",
+    why: "a MODIFIER of --run bind: the harness's own task or session id, which is what the seat gets back from a spawn. It is meaningless without --run and it names an execution this suite never started.",
+  },
+  {
+    flag: "--pid",
+    why: "a MODIFIER of --run bind: a process child's process identity. Same shape as --session above, and the process it names would be nobody's — the argument --await-pid already makes one line up.",
+  },
+  {
+    flag: "--question",
+    why: "a MODIFIER of --run send: which question the answer answers. One id into one record, meaningless without --run, and it changes no size this file measures.",
+  },
+  {
+    flag: "--answer",
+    why: "a MODIFIER of --run send taking text or @<path>: what is written into the lane's ask file. It is a WRITE into somebody's channel rather than a derivation, and its size is the answer's rather than this command's.",
+  },
+  {
+    flag: "--evidence",
+    why: "a MODIFIER of --run observe, send, continue and stop taking text or @<path>: the harness's own output, the confirmation of a delivery, or the seat's own reading of its harness. Its size is the evidence's and not this repository's.",
+  },
+  {
+    flag: "--usage",
+    why: "a MODIFIER of --run collect: what the run cost, or nothing — in which case the record keeps `unknown`. One string into one JSON field, and meaningless without --run.",
+  },
+  {
+    flag: "--ref",
+    why: "a MODIFIER of --run collect: a partial ref a terminal run left behind. One sha into one array, and meaningless without --run.",
+  },
+  {
+    flag: "--report",
+    why: "a MODIFIER of --run collect taking a PATH: where the child's own report was written. The same argument --meters and --audit above make about a flag whose size is the file's.",
+  },
+  {
+    flag: "--replace",
+    why: "a MODIFIER of --run continue that turns a resumption into an explicit REPLACEMENT attempt — it takes the resource's reservation for a new attempt id. It is a writer's dial, it is meaningless without --run, and alone it is a usage error.",
+  },
+  {
     flag: "--bump",
     why: "a MODIFIER of --merge: which method version the three stamp files move to. It is meaningless without --merge and this command refuses it alone.",
   },

@@ -463,6 +463,69 @@ this file is a project's actual name.
    which is what makes the fence checkable by a session that was not
    present when the others were dispatched.
 
+## The run record — the contract every child runs under
+
+**EVERY CHILD A SEAT STARTS HAS ONE RECORD, AND THE RECORD IS A FILE.**
+The executor in a lane, the tool-less first phase beside it, a
+consultation participant, a foreign process driven through an adapter:
+one record per ATTEMPT, written before the child is launched and read by
+whoever has to recover the run. Without it a child's assignment lives in
+three places that never meet — the stamp on the card, the brief, and the
+dispatching session's own memory — and a seat that loses its session
+reconstructs what it started by reading worktrees. That reconstruction
+has been performed, and this section is what replaces it.
+
+**THE RECORD SEPARATES TWO THINGS THE LOOP KEPT CONFLATED.** The WORK
+SERVED — a card, a consultation — is not the RESOURCE A CHILD MAY WRITE
+— a lane worktree, a clone, a verifier's bench. Every child has a
+record; only a child granted write ownership of a resource takes that
+resource's EXCLUSIVE WRITER RESERVATION, and it is taken ATOMICALLY
+BEFORE THE LAUNCH rather than checked and then written. A read-only
+participant takes none, which is what lets a first-phase verifier run
+beside the executor of the same card, as the two-spawn bench already
+does.
+
+**THE OPERATIONS ARE THE SAME SEVEN FOR EVERY KIND OF CHILD** — start,
+observe, send, wait, collect, continue, stop — with a BIND closing the
+launch of a child a harness spawned, because the spawn happens between
+the reservation and the identity coming back. A project that adds a new
+kind of child adds an adapter, never an operation.
+
+**FOUR PROPERTIES ARE THE WHOLE OF IT, AND EACH ONE IS A FAILURE THIS
+PROTOCOL HAS ALREADY PAID FOR.**
+
+1. **Execution and assignment are separate facts.** A confirmed launch
+   is started; evidence that it is executing makes it running; PROCESS
+   EXIT ALONE IS NEVER FINISHED. A child that ends its turn with an
+   unanswered question leaves the ASSIGNMENT blocked and its EXECUTION
+   ended, which is a pair no single field can hold — and it is the
+   ordinary shape of an agent that asks and stops.
+2. **Never a heartbeat, and what cannot be established is unknown.**
+   Nothing polls a child for liveness and nothing infers it from time
+   passing. A state that cannot be derived is recorded as not derived.
+3. **An acknowledgement is persisted from evidence, never assumed.** An
+   answer moves through written, delivered and acknowledged with the
+   evidence of each retained; one delivered whose acknowledgement is
+   lost STAYS delivered and is re-delivered when the child is continued.
+4. **An uncertain record is RECONCILED before anything replaces it.** No
+   second writer while the first might exist, and resumption once
+   termination is established — both halves, because a reservation that
+   can never be released is the same defect from the other side. A
+   record left uncertain starts no replacement and says why.
+
+**AND NO SEAT SIGNALS THE SHARED HARNESS PROCESS.** A stop ends ONE
+child — the harness's own stop for that task, or the adapter's for that
+process — and confirms the jobs that child owned are gone before the
+record says stopped. The shared process every other child of that
+session is running under is never a target.
+
+**WHERE THE RECORDS LIVE, WHAT THE VERBS ARE CALLED AND WHAT AN
+ASSIGNMENT MUST CARRY ARE THE PROJECT'S**, spelled once in its own
+CONVENTIONS like every other name in this file. What is NOT the
+project's is the contract above: a project that keeps no record, or
+takes its reservation after the launch, or writes a terminal state it
+has not established, is not running this protocol.
+
 ## Why the branch carries the dispatch stamp and the lane does not
 
 `status: building` is written on the integration branch **before** the

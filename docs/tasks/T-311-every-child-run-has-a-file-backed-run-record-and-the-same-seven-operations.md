@@ -76,4 +76,140 @@ record says why. A scope grant after the stamp still requires a fresh executor a
 ## Implementation notes
 <!-- executor appends before finishing -->
 
+### The criteria echo, written before a line of the implementation
+
+One line per acceptance criterion, in my own words, read off the card
+and nothing else.
+
+1. `start` writes ONE record per attempt carrying every field the
+   criterion enumerates, a writer takes the resource's exclusive
+   reservation ATOMICALLY before it launches, a read-only participant
+   takes none, and a body runs an executor and a tool-less phase one
+   for one card at the same time under two records.
+2. `bind` attaches the harness's task or session id BEFORE the record
+   becomes `started`, and a body interrupts between the reservation and
+   the bind, shows no second writer for that resource can start, and
+   shows the attempt RECONCILED rather than assumed stopped.
+3. A question is recorded against the attempt with its own id; the
+   answer moves written, delivered, acknowledged with the evidence of
+   each retained; a tool-less phase one's acknowledgement comes from its
+   own output; a body interrupts after delivered and before
+   acknowledged and shows the answer re-delivered on continue; and a
+   scope grant arriving after the stamp is REFUSED for a resumed
+   attempt and requires a fresh one.
+4. `collect` gathers the output, the usage or `unknown`, the partial
+   refs and the report for finished, failed and stopped alike; `stop`
+   stops that task only, confirms the owned jobs are gone, and never
+   signals the shared harness process.
+5. An uncertain state is RECONCILED before any replacement, and one
+   body shows both halves: no second writer while the first might
+   exist, and resumption once termination is established. A reservation
+   that can never be released fails the second half.
+6. A process child that exits after asking stays `blocked`, keeps its
+   writer reservation, accepts an answer through `send`, and resumes
+   only after the prior execution and its owned jobs have ended — one
+   body covering question, exit, answer, same-session resume,
+   acknowledgement, completion and release IN THAT ORDER; and a second
+   body covering an authorized continuation after release, the atomic
+   reacquisition, and the refusal when another attempt got the resource
+   first.
+7. The lane protocol names the run record as the contract every child
+   runs under, the flush guard knows the new verbs, and the method
+   version bumps with its release note and evaluation block (the bump
+   is the merge's write, not the lane's). No adapter is built here, the
+   operations stay usable by the two adapter cards without change, and
+   there is no daemon, no heartbeat and no scheduler.
+
+
+### What was built, and where each half lives
+
+`tools/e2e/scripts/run-record.mjs` is the module: the record shape, the
+eight states, the reservation, the six probes and every refusal, each
+carrying a greppable CODE so a caller never has to match on a sentence.
+`brief.mjs` gains ONE arm, `--run <verb>`, which parses the verb, refuses
+a dial the verb does not read, calls the module and renders the record.
+The header's writer count moved with it: the file says an arm that starts
+writing has to move that count, and this is the fifth writer.
+
+`method/lane-protocol.md` gains the section the card asks for — the run
+record as the contract every child runs under, product-agnostic as that
+file's own opening requires — and `docs/CONVENTIONS.md` carries the half
+that file leaves to a project: where records live, what an assignment
+must carry, the verbs and the exit codes.
+
+### The decisions a reader would otherwise have to reconstruct
+
+**THE ASSIGNMENT IS A DOCUMENT, NOT ELEVEN FLAGS.** What was missing was
+a single recoverable state, so the eleven fields arrive as one JSON file
+whose every field is required and whose missing field is a refusal that
+names it. The word `none` is legal for the resource, the deadline and the
+budget and must be TYPED: a defaulted budget is an unauthorised budget.
+
+**THE RESERVATION IS AN EXCLUSIVE CREATE AND NOTHING ELSE.** One
+`openSync(file, "wx")`, held in its own named function so the line the
+whole atomicity rests on is greppable. A check-then-write would answer
+the race with a smaller window rather than with none.
+
+**THE ATTEMPT ID CARRIES ITS OWN WORK** — `<work>-a<n>` — so every verb
+but `start` needs one flag to find a record, and two flags can never
+disagree about which record is meant.
+
+**A TOKEN IS LINE-INITIAL, AND THAT RULE WAS BOUGHT BY A BODY.** The
+answer this arm writes into the ask file tells the child, in prose, which
+line to write back. Without the line-initial rule the arm read its OWN
+instruction back as the child's acknowledgement and marked an answer
+acknowledged that nobody had read — which is exactly the assumption the
+card forbids. The body that caught it is the one that asserts the
+acknowledgement came from the harness's output rather than the file.
+
+**THE THIRD COMPLETION VALUE IS `gone`.** `ok` and `failed` are the
+assignment's outcome; `gone` says only that the execution is not there
+any more, which is what a seat can honestly report when its harness lists
+no such task. Without it an unbound attempt is a deadlock: a replacement
+needs termination established, and a seat with no probe could never
+establish it.
+
+**AN UNBOUND ATTEMPT IS NOT `ended`.** The spawn happens BETWEEN the
+reservation and the bind, so a record reading `reserved` with no
+execution is the one moment a live child is invisible. Reading it as
+un-started would authorise a second writer exactly there. It reconciles
+as undetermined, and the way through is the seat's own reading of its
+harness, passed as evidence.
+
+**THIS ARM SIGNALS NOTHING.** A stop is the record of a termination that
+has been established; the harness's own stop for that task is the seat's
+act. A body asserts the module holds no path that could signal, and a
+second refuses a record naming this process or its parent by name.
+
+### For the verifier
+
+- The native path is driven by the verbs with an INVENTED task id, and
+  the process path by REAL child processes that end themselves. Each body
+  says which it drives; no body sends a signal to anything.
+- The stamp and the permission boundary are READ off the resource — the
+  card in it and the fence manifest in the working directory — never
+  typed into the assignment, so the grant-after-stamp refusal is derived.
+- The bodies are split on purpose: the record, the states and every
+  refusal are the module's spec, and the one body in the command's spec
+  is the WIRING — that the arm parses a verb, performs it against the
+  root it was handed, keeps a world refusal apart from a usage refusal,
+  and will not share an invocation with another arm.
+- The whole suite ran once at the tip of the code-and-notes commit. The
+  drill is one mutant per body added, each shown red with its kill set
+  and restored by hash; the report carries the block.
+
+### What was noticed and NOT done
+
+- The dispatch ritual does not yet OPEN a record and the merge does not
+  close one: a seat has to run `--run start` beside the dispatch by hand.
+  Filed as T-311-s1.
+- Nothing enumerates the live attempts. The records are the roster on
+  disk and `allRecords` reads them, but no verb prints it, so a seat that
+  lost its session still has to list a directory. Filed as T-311-s2.
+- `docs/CONVENTIONS.md` was already past its byte WARN line at this
+  lane's base and this card adds a bullet to it. Filed as T-311-s3.
+- The behaviour census and the generated index go stale the moment a new
+  spec file lands, and both documents are outside this fence: the
+  regeneration is the merge commit's step, as the state document says.
+
 ## Verdicts
