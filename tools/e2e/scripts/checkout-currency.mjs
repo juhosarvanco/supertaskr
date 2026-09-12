@@ -114,7 +114,7 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 // THE TWO FACTS THIS FILE REFUSES TO RE-SPELL (T-238). `.supertaskr/` and the
@@ -893,11 +893,18 @@ export function renderSweep(results) {
  * ── THE IDENTITY IS A FACT ABOUT ONE HARNESS, AND IT IS NAMED ────────
  * `sessionIdentity` is the ONE derivation, and this paragraph is the
  * whole of what another harness has to replace. **THE HARNESS IS CLAUDE
- * CODE**, running as the `claude` binary the Claude desktop app embeds
+ * CODE OR CODEX**, with Claude running as the `claude` binary the desktop app embeds
  * (`…/Claude/claude-code/<version>/claude.app/Contents/MacOS/claude`) or
  * as a `claude` on a PATH. Every tool shell is a DESCENDANT of that
  * process, so the harness's own pid plus its start time is an identity
- * that survives across calls and dies with the session.
+ * that survives across calls and dies with the session. Codex desktop
+ * tasks share one `codex` app-server process, so their identity also
+ * carries the validated UUID exposed as `CODEX_THREAD_ID`. The process
+ * incarnation proves liveness; the thread UUID distinguishes logical
+ * tasks sharing it. `CODEX_SESSION_ID` is parent-session context: a
+ * subagent inherits it while receiving its own thread id, so it is
+ * ignored and never used as a fallback. A missing or malformed thread id
+ * refuses identity rather than collapsing those tasks together.
  *
  * ── WHAT A TOOL CALL DOES CARRY, RE-MEASURED (T-238-s1) ──────────────
  * **THIS PARAGRAPH OPENED WITH "a Bash tool call carries no session id",
@@ -1016,9 +1023,10 @@ export function renderSweep(results) {
  * commits without pushing is seen only at its next push. A harness whose
  * process this derivation does not recognise yields NO identity, and the
  * arms then ANNOUNCE rather than refuse: three verdicts, never two, the
- * same rule the currency arms above keep. And `ps` is asked once per
- * ancestor rather than once for the whole table, because a `ps -A` parse
- * is a wider surface for one fewer process spawn.
+ * same rule the currency arms above keep. `ps` is asked narrowly per
+ * ancestor for the row and its executable-only `comm` value rather than
+ * once for the whole table, because a `ps -A` parse is a wider surface
+ * and would copy every process's argv into this guard.
  *
  * ── AND THE ONE MACHINE WHERE IT DERIVES NOTHING AT ALL: A CI RUNNER ──
  * (T-237-s8, whose whole subject is that this list did not name it.) The
@@ -1055,10 +1063,19 @@ export function renderSweep(results) {
 /**
  * THE HARNESS, AS A PATTERN OVER A PROCESS'S PROGRAM.
  *
- * Two arms, and the first is the precise one: the program's BASENAME is
- * exactly `claude` — the desktop app's embedded CLI and a PATH-installed
- * `claude` both. The second catches the form where the interpreter is
- * the program and the CLI is an argument (`node …/claude-code/…/cli.js`).
+ * Two arms, and the first is the precise one: the executable's BASENAME
+ * is exactly `claude` — the desktop app's embedded CLI and a PATH-installed
+ * `claude` both. The second requires the executable basename to be `node`
+ * before recognizing its first argument as the Claude CLI entrypoint
+ * (`node …/claude-code/…/cli.js`).
+ * An unrelated executable whose positional argument mentions that path
+ * matches neither arm. `ps` flattens argv and erases the boundary around
+ * a script path containing spaces, so that measured legacy form is
+ * corroborated by an existing file at the full entrypoint prefix. An
+ * earlier existing prefix makes the row ambiguous and therefore refused;
+ * a relative spaced prefix cannot be grounded from the observer's cwd
+ * and is refused too. Package matching requires the name to start at the
+ * path or after `/`; `/` or a version `@` may follow the exact name.
  *
  * IT IS CASE-SENSITIVE ON PURPOSE. `/Applications/Claude.app/Contents/
  * MacOS/Claude` — the shared application root, one per application
@@ -1069,7 +1086,16 @@ export function renderSweep(results) {
 export const HARNESS_PROGRAM_BASENAME = "claude";
 
 /** @see HARNESS_PROGRAM_BASENAME */
-export const HARNESS_PROGRAM_RE = /claude-code[/@]|@anthropic-ai\/claude-code/;
+export const HARNESS_PROGRAM_RE = /(?:^|\/)claude-code(?:[/@])/;
+
+/** Codex CLI and desktop app-server executable; logical identity is checked separately. */
+export const CODEX_HARNESS_PROGRAM_BASENAME = "codex";
+
+/** The canonical logical task source for this supported Codex host integration. */
+export const CODEX_THREAD_ID_ENV = "CODEX_THREAD_ID";
+
+/** Canonical UUID text, deliberately accepting future UUID versions. */
+export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * How much of a command line may be recorded as the holder's program.
@@ -1099,8 +1125,18 @@ export const ANCESTRY_LIMIT = 24;
  * both BSD and procps (`Wed Sep  2 06:38:41 2026`, the day space-padded),
  * which is why the split is a regex and not `split(" ")`.
  *
+ * `comm` is read in a SECOND `ps` call because it is the executable
+ * without argv, and no one column list can carry both unambiguously: a
+ * `comm` value on this platform is an absolute path that may itself hold
+ * spaces, so a row with `comm` before `command` has no parseable
+ * boundary. Holder records and diagnostics use the executable, so an
+ * argument cannot be copied into either surface; `command` remains for
+ * the legacy Node-launched Claude matcher alone. The second call is
+ * omitted rather than guessed when `ps` refuses it, and every arm that
+ * reads `program` then declines to match.
+ *
  * @param {number} pid
- * @returns {{ pid: number, ppid: number, startedAt: string, command: string } | undefined}
+ * @returns {{ pid: number, ppid: number, startedAt: string, command: string, program?: string } | undefined}
  */
 export function processRow(pid) {
   const r = spawnSync("ps", ["-o", "ppid=,lstart=,command=", "-p", String(pid)], {
@@ -1110,11 +1146,16 @@ export function processRow(pid) {
   const line = String(r.stdout ?? "").split("\n")[0] ?? "";
   const m = /^\s*(\d+)\s+(\S+\s+\S+\s+\S+\s+\S+\s+\S+)\s+(.*)$/.exec(line);
   if (m === null) return undefined;
+  const executable = spawnSync("ps", ["-o", "comm=", "-p", String(pid)], { encoding: "utf8" });
+  const program = executable.error === undefined && executable.status === 0
+    ? String(executable.stdout ?? "").trim()
+    : "";
   return {
     pid,
     ppid: Number(m[1]),
     startedAt: /** @type {string} */ (m[2]).replace(/\s+/g, " "),
     command: /** @type {string} */ (m[3]).trim(),
+    ...(program === "" ? {} : { program }),
   };
 }
 
@@ -1124,8 +1165,38 @@ export function processRow(pid) {
  * @property {string} startedAt  its start time, as this file read it
  * @property {string} program    the program, for a HUMAN reading the file;
  *                              never part of the comparison, which is the
- *                              pid and the start time and nothing else
+ *                              process incarnation and logical identity
+ * @property {"codex"} [provider] logical-identity provider; absent on legacy Claude records
+ * @property {string} [taskId]   validated Codex logical task UUID
  */
+
+/**
+ * Validate the Codex logical task source without ever copying its value into a diagnostic.
+ * @param {NodeJS.ProcessEnv | Record<string, string | undefined>} env
+ * @returns {{ ok: true, taskId: string } | { ok: false, why: string }}
+ */
+export function codexTaskIdentity(env = process.env) {
+  const thread = env[CODEX_THREAD_ID_ENV];
+  if (thread === undefined) {
+    return {
+      ok: false,
+      why:
+        `Codex shared-server identity is missing ${CODEX_THREAD_ID_ENV}. It must contain the ` +
+        "logical task UUID; CODEX_SESSION_ID is parent-session context and is never a fallback. " +
+        "No holder record was created or released.",
+    };
+  }
+  if (!UUID_RE.test(thread)) {
+    return {
+      ok: false,
+      why:
+        `Codex shared-server identity requires a UUID in ${CODEX_THREAD_ID_ENV}; it is malformed. ` +
+        "No value is echoed, CODEX_SESSION_ID is never a fallback, and no holder record was " +
+        "created or released.",
+    };
+  }
+  return { ok: true, taskId: thread.toLowerCase() };
+}
 
 /**
  * WHO IS THIS SESSION — the ONE derivation. See the section header for
@@ -1142,6 +1213,7 @@ export function processRow(pid) {
  * @param {object} [options]
  * @param {number} [options.pid]  where the walk starts; defaults to this process
  * @param {(pid: number) => ReturnType<typeof processRow>} [options.readProcess]
+ * @param {NodeJS.ProcessEnv | Record<string, string | undefined>} [options.env]
  * @returns {{ ok: true, identity: HolderIdentity, hops: number } | { ok: false, why: string }}
  */
 export function sessionIdentity(options = {}) {
@@ -1160,17 +1232,33 @@ export function sessionIdentity(options = {}) {
           "be found. This run has no session identity and nothing is claimed on its behalf.",
       };
     }
-    walked.push(`${String(row.pid)} ${path.basename(programOf(row.command))}`);
+    const executable = row.program ?? programOf(row.command);
+    walked.push(`${String(row.pid)} ${path.basename(executable)}`);
     // THE WALK INCLUDES THIS PROCESS, and that is not an accident of the
     // loop bound. In production the caller is always a subprocess — the
     // CLI or the hook — so hop zero never matches; making self ineligible
     // anyway would mean the answer depended on how many levels down the
     // caller happened to sit, which is the one thing this derivation is
     // built not to depend on.
-    if (isHarnessProcess(row.command)) {
+    if (isHarnessProcess(row.command, row.program)) {
       return {
         ok: true,
-        identity: { pid: row.pid, startedAt: row.startedAt, program: programOf(row.command) },
+        identity: { pid: row.pid, startedAt: row.startedAt, program: executable },
+        hops: hop,
+      };
+    }
+    if (isCodexHarnessProcess(row.command, row.program)) {
+      const logical = codexTaskIdentity(options.env ?? process.env);
+      if (!logical.ok) return logical;
+      return {
+        ok: true,
+        identity: {
+          pid: row.pid,
+          startedAt: row.startedAt,
+          program: executable,
+          provider: "codex",
+          taskId: logical.taskId,
+        },
         hops: hop,
       };
     }
@@ -1182,8 +1270,8 @@ export function sessionIdentity(options = {}) {
     why:
       `no ancestor of pid ${String(options.pid ?? process.pid)} names this harness ` +
       `(${walked.join(" <- ")}). The identity derivation is a fact about ONE harness, stated in ` +
-      "this file's holder section above `sessionIdentity` and matched by HARNESS_PROGRAM_BASENAME " +
-      "and HARNESS_PROGRAM_RE; it answers NOTHING rather than guessing, which the arms report as " +
+      "this file's holder section above `sessionIdentity` and matched by HARNESS_PROGRAM_BASENAME, " +
+      "HARNESS_PROGRAM_RE, and CODEX_HARNESS_PROGRAM_BASENAME; it answers NOTHING rather than guessing, which the arms report as " +
       "an unanswered question and never as a verdict. A CI RUNNER IS WHERE THIS IS THE ORDINARY " +
       "ANSWER: its chain is `node <- bash <- Runner` and carries no harness at all.",
   };
@@ -1218,19 +1306,85 @@ export function programOf(command) {
  * Does this command line belong to the harness?
  * @see HARNESS_PROGRAM_BASENAME
  *
- * Both arms read the PROGRAM and neither reads the argument list, so the
- * per-session launcher that sits one hop above the harness — and whose
- * arguments name the very same directory — matches NEITHER. The walk's
- * nearest-first order would have saved it anyway; this makes the answer
- * independent of the order, which is worth more than the line it costs.
+ * The native arm reads only the executable. The legacy interpreter arm
+ * reads arguments only after the executable basename is exactly `node`,
+ * and recognizes the command prefix through the known `cli.js` entrypoint.
+ * A no-space prefix retains the direct helper's legacy behavior. A spaced
+ * prefix must be absolute, name an existing file, and have no earlier
+ * existing boundary; this is the available evidence after `ps` has
+ * flattened argv. Ambiguity fails closed instead of reopening arbitrary
+ * later-argument matching. When `comm` is only the Linux basename `node`,
+ * a full command executable prefix is accepted only when its basename
+ * independently corroborates `node`.
  *
  * @param {string} command
+ * @param {string} [executable] executable-only `comm` value when read from a real process
  * @returns {boolean}
  */
-export function isHarnessProcess(command) {
-  const program = programOf(command);
+export function isHarnessProcess(command, executable) {
+  const program = executable ?? programOf(command);
   if (path.basename(program) === HARNESS_PROGRAM_BASENAME) return true;
-  return HARNESS_PROGRAM_RE.test(program);
+  const trimmed = command.trim();
+  const firstSpace = trimmed.search(/\s/);
+  const commandProgram = firstSpace === -1 ? trimmed : trimmed.slice(0, firstSpace);
+  const nodeProgram = executable ?? commandProgram;
+  if (path.basename(nodeProgram) !== "node") return false;
+  const launchers = [
+    nodeProgram,
+    path.basename(nodeProgram),
+    ...(path.basename(commandProgram) === "node" ? [commandProgram] : []),
+  ];
+  for (const launcher of launchers) {
+    if (!trimmed.startsWith(`${launcher} `)) continue;
+    const flattenedArgs = trimmed.slice(launcher.length).trimStart();
+    // The legacy contract names the executed script, never a preload or
+    // another Node option whose value happens to name the Claude package.
+    // Baseline behavior refused option-leading forms; keep that fail-closed
+    // boundary instead of trying to reconstruct Node's option arity from a
+    // `ps` string whose argv boundaries are already gone.
+    if (flattenedArgs.startsWith("-")) return false;
+    const marker = HARNESS_PROGRAM_RE.exec(flattenedArgs);
+    if (marker === null) return false;
+    const cli = flattenedArgs.indexOf("/cli.js", marker.index);
+    if (cli === -1 || !/^(?:\s|$)/.test(flattenedArgs.slice(cli + "/cli.js".length))) return false;
+    const entrypoint = flattenedArgs.slice(0, cli + "/cli.js".length);
+    if (!/\s/.test(entrypoint)) return true;
+
+    // `ps` flattens argv, so a space may belong to the script path or
+    // separate a prior argument from a later Claude-looking one. A real
+    // spaced entrypoint is corroborated by the filesystem. If any earlier
+    // whitespace prefix also exists, the boundary is ambiguous and fails
+    // closed rather than guessing that the longer path was argv[1].
+    if (!path.isAbsolute(entrypoint)) return false;
+    try {
+      if (!statSync(entrypoint).isFile()) return false;
+    } catch {
+      return false;
+    }
+    for (const boundary of entrypoint.matchAll(/\s+/g)) {
+      if (existsSync(entrypoint.slice(0, boundary.index))) return false;
+    }
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Codex is matched by the executable only; arguments mentioning it never identify a task.
+ *
+ * The command line is ACCEPTED AND NEVER READ, and the parameter stays
+ * so this predicate takes the same pair as `isHarnessProcess` and a
+ * caller cannot pass them in the wrong order. There is no second arm to
+ * add: the whole point is that one shared app-server's argv says nothing
+ * about which logical task is asking, so a row with no executable value
+ * declines rather than falling back to the command.
+ *
+ * @param {string} command  accepted for the shared signature; deliberately unread
+ * @param {string} [executable] executable-only `comm` value when read from a real process
+ * @returns {boolean}
+ */
+export function isCodexHarnessProcess(command, executable) {
+  return executable !== undefined && path.basename(executable) === CODEX_HARNESS_PROGRAM_BASENAME;
 }
 
 /**
@@ -1276,7 +1430,12 @@ export function identityAlive(identity, options = {}) {
  * @returns {boolean}
  */
 export function sameIdentity(a, b) {
-  return a.pid === b.pid && a.startedAt === b.startedAt;
+  return (
+    a.pid === b.pid &&
+    a.startedAt === b.startedAt &&
+    a.provider === b.provider &&
+    a.taskId === b.taskId
+  );
 }
 
 /** The holder record, relative to the checkout root. */
@@ -1362,6 +1521,17 @@ export function readHolder(root) {
         "carrying either would read as a live holder for ever",
     };
   }
+  const provider = i["provider"];
+  const taskId = i["taskId"];
+  if (provider !== undefined || taskId !== undefined) {
+    if (provider !== "codex" || typeof taskId !== "string" || !UUID_RE.test(taskId)) {
+      return {
+        problem:
+          `${HOLDER_REL_PATH}'s logical identity is invalid: provider must be \"codex\" and ` +
+          "taskId must be a UUID. The record is refused rather than treated as a legacy holder",
+      };
+    }
+  }
   return {
     holder: {
       version: HOLDER_VERSION,
@@ -1369,6 +1539,7 @@ export function readHolder(root) {
         pid: i["pid"],
         startedAt: i["startedAt"],
         program: typeof i["program"] === "string" ? i["program"] : "",
+        ...(provider === "codex" ? { provider, taskId: /** @type {string} */ (taskId).toLowerCase() } : {}),
       },
       checkout: typeof rec["checkout"] === "string" ? rec["checkout"] : "",
       takenAt: typeof rec["takenAt"] === "string" ? rec["takenAt"] : "",
@@ -1405,11 +1576,23 @@ export function writeHolder(root, identity, meta = {}) {
         "0 and -1 name a process group and the broadcast set, not a process.",
     );
   }
+  if (
+    (identity.provider !== undefined || identity.taskId !== undefined) &&
+    (identity.provider !== "codex" || typeof identity.taskId !== "string" || !UUID_RE.test(identity.taskId))
+  ) {
+    throw new Error(
+      "checkout-currency: refusing to record an invalid logical identity — provider must be " +
+        "\"codex\" and taskId must be a UUID.",
+    );
+  }
   const ignoreFile = armRuntimeDir(root);
   /** @type {HolderRecord} */
   const record = {
     version: HOLDER_VERSION,
-    identity,
+    identity:
+      identity.provider === "codex"
+        ? { ...identity, taskId: /** @type {string} */ (identity.taskId).toLowerCase() }
+        : identity,
     checkout: path.resolve(root),
     takenAt: meta.at ?? new Date().toISOString(),
     host: meta.host ?? "",
@@ -1622,7 +1805,8 @@ export function holderVerdict(options) {
       code: HOLDER_CODES.UNREADABLE,
       detail:
         `${read.problem}. Nothing about who holds ${root} was judged — that is an inability and ` +
-        "never a pass. Delete the file or re-take the seat.",
+        "never a pass. Inspect the record, then repair or delete it only after establishing that " +
+        "its claim is retired.",
       figures,
     };
   }

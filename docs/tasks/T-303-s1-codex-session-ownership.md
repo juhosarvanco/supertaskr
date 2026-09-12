@@ -43,4 +43,164 @@ Under the owner's ruling of 2026-09-12 no Codex session writes to this repositor
 ## Implementation notes
 <!-- executor appends before finishing -->
 
+### The criteria echo, written before the code was read
+
+Restated in my own words, one line each, from the card alone and before
+the recovery patch was applied to this lane:
+
+1. A Codex task's identity carries a LOGICAL id as well as the live pid
+   and start time, so two tasks hanging off one shared app-server
+   process never compare equal.
+2. A missing or malformed thread id refuses the Codex identity with a
+   diagnostic a reader can act on, writes and removes no holder record,
+   and never falls back to the session id; two subagent threads under
+   one session id stay distinguishable.
+3. A Claude session's identity and every holder record it already wrote
+   keep working unchanged, and a program that merely mentions a harness
+   in its arguments identifies no session.
+4. The logical id survives write then read of a holder record, a record
+   of the wrong shape fails closed rather than reading as vacant or as
+   a live holder, a different task cannot release a live holder, and
+   bodies prove the yes and the no of each.
+
+### How the patch entered, and what it is evidence of
+
+The recovery patch was verified by its sha256 before anything else,
+applied with `git apply` on the dispatch stamp, and then read as a diff
+rather than as a result. The recovery clone's own battery and its own
+verdict are named in the card and are not cited here: what follows is
+this lane's re-derivation against this tree, and the corrections below
+are the places where that re-derivation disagreed with what arrived.
+
+### What the re-derivation changed
+
+- **A sentence the patch broke in half.** The unreadable-record refusal
+  in the seat arm prints three note lines. The middle line was reworded
+  from "removing it would" to "replacing or removing it would" and the
+  words "retire an" were lost with the old wording, leaving the arm
+  printing "replacing or removing it would / unread claim and destroy
+  the only evidence of whose it was." No body asserts that line, so
+  nothing was red; the words are restored.
+- **A branch no body can reach any more, said out loud.** The arm now
+  derives the acting identity BEFORE it branches, and refuses with
+  CANNOT_RUN when that derivation failed. That precondition is the only
+  way the holder verdict ever returned its underivable code, so the
+  later live-record branch is now unreachable. It is kept as the catch
+  if the precondition is ever relaxed, and it now carries a comment
+  saying no body reaches it, because a branch that reads as live
+  coverage and is not is worse than no branch.
+- **A missing body for the card's own opening sentence.** Every arriving
+  body that proves two tasks sharing an app-server are told apart proves
+  it at the comparison function or at the verdict. None proved it at the
+  ownership commands, which is where the sentence is spent. A new body
+  drives both commands through a process table where every invocation
+  lands on ONE invented ancestor with ONE start time, so the process
+  incarnation is identical by construction and the logical task is the
+  only thing left that can separate them: one task takes the seat, the
+  other is refused BOTH the takeover and the release with the record
+  preserved byte for byte, and the task that took it releases it as the
+  positive control.
+- **Two header repairs.** The process-row reader had prose wedged
+  between its parameter and return tags; it moves above them and now
+  says WHY the executable is a second read rather than a wider column
+  list — an executable value on this platform can itself hold spaces, so
+  a single row carrying both has no parseable boundary. The Codex
+  predicate's command argument is accepted and never read, which now
+  says so in its header rather than reading as an oversight.
+
+### The criteria, with what answers each
+
+1. **Logical task as well as process incarnation.** The identity walk
+   returns the nearest ancestor whose EXECUTABLE basename is the Codex
+   one, and attaches the validated thread UUID to the pid and start time
+   it already carried. The comparison is all four fields, so two tasks
+   on one app-server row differ. Proved at the comparison, at the
+   verdict, and now at the commands themselves.
+2. **A missing or malformed thread refuses, touches no record, and the
+   parent session id never substitutes.** The thread source is read
+   once, checked against a canonical UUID shape, and refused otherwise;
+   the refusal names the variable and never its value. The commands
+   derive the identity before any branch that writes or removes, so a
+   refusal returns CANNOT_RUN with nothing created and nothing removed,
+   measured against a vacant seat, a dead record, a live record and an
+   unreadable one. A subagent with its own valid thread is accepted
+   whatever the inherited session context says, including a malformed
+   one and an absent one.
+3. **Claude sessions and their records stay compatible.** The native arm
+   is unchanged in effect: the executable basename is the harness name.
+   The interpreter arm now requires the executable itself to be the
+   interpreter before it will read an argument at all, so a program that
+   merely mentions the package in a positional argument, and every
+   option-leading form, identifies nothing. Records with no logical
+   identity read and write exactly as before, and every neighbouring
+   suite that drives the seat arm under a fake harness stays green.
+4. **The round trip, the closed failures and the refused release.** The
+   logical identity is canonicalised at the write and at the read, so it
+   survives; a record carrying half of it, or a provider this reader
+   does not know, or a task id that is not a UUID, is refused rather
+   than read as a legacy record; and the release refusal is proved end
+   to end against a live holder belonging to another task on the same
+   process. Every one of those has its positive control in the same
+   fixture.
+
+### What the record this changes, which this lane did not edit
+
+`--take-seat` used to write over a record whose shape it could not read.
+It now refuses, and that retires the remedy T-238-s1 recorded for that
+state. Two places rest on the old one and both are the seat's to amend
+at integration through the records process, not this lane's to touch:
+
+- T-238-s1's item about the sibling arm states that the documented
+  remedy is unchanged because re-taking the seat still does exactly
+  what the verdict's sentence says. That sentence is now false.
+- T-238-s4 is a live suggested card whose whole subject is that
+  `--take-seat` replaces an unreadable record without announcing it, and
+  whose premise is that re-taking is the right remedy. The replacement
+  is gone, so the card is moot; its fence is a subset of this one.
+
+The verdict's own sentence for the unreadable state was changed with the
+behaviour it described, and the arm's finding now says the same thing:
+inspect the record, then repair or delete it only once its claim is
+established as retired.
+
+### In-fence follow-through
+
+- The broken refusal sentence, one line moved, restoring the property
+  that the arm's own explanation of what it refused is a sentence.
+- The unreachable-branch comment, eight lines added, restoring the
+  property that a reader can tell live coverage from a kept fallback.
+
+### Measured here, at this lane's own tip
+
+- The executable is a SECOND process read per ancestor rather than a
+  wider column list. Cost at the walk's own bound of twenty-four hops,
+  measured on this host: thirty-three milliseconds for one read per hop
+  against fifty-six for two. The walk is bounded and the verdict reaches
+  it only when a record is present and parsed, so this is disclosed
+  rather than optimised.
+- The behaviour census goes stale on this diff: test titles changed and
+  two were renamed, and the generated capability list carries them. That
+  regeneration belongs to the merge commit by this project's own
+  standing rule, and the generated documents are outside this fence, so
+  nothing here regenerates them. The integrator owes
+  `npm run capabilities` in the merge commit, which also refreshes the
+  generated index.
+- No ask file was written. Everything the re-derivation wanted to change
+  was inside the armed fence, and the two things outside it are the
+  merge's regeneration and the seat's records act, both already assigned
+  elsewhere.
+
+### For the verifier
+
+- The interpreter arm reaches the FILESYSTEM to disambiguate a flattened
+  spaced entrypoint. That is a new surface inside a predicate a guard
+  calls, it is reached only after every cheaper refusal, and it is the
+  subject of a suggested card that proposes reading the true argument
+  vector instead.
+- The refusal exit for a session that cannot name itself moved for one
+  case: a release asked of a VACANT integration checkout used to be a
+  clean nothing and is now an inability. That is the price of deriving
+  the identity before the branch, it is the fail-closed direction, and
+  it is the subject of the other suggested card.
+
 ## Verdicts

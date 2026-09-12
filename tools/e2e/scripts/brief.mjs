@@ -741,8 +741,15 @@ async function main(argv) {
    * @type {string[]}
    */
   const holderFindings = [];
+  const ownershipIdentity =
+    wantsTakeSeat || wantsReleaseSeat ? sessionIdentity() : undefined;
   const holder =
-    arming || wantsTakeSeat || wantsReleaseSeat ? holderVerdict({ root: ctx.root }) : undefined;
+    arming || wantsTakeSeat || wantsReleaseSeat
+      ? holderVerdict({
+          root: ctx.root,
+          ...(ownershipIdentity === undefined ? {} : { identity: ownershipIdentity }),
+        })
+      : undefined;
   if (holder !== undefined && holder.state !== "mine") {
     say(
       render([
@@ -769,31 +776,40 @@ async function main(argv) {
    * needs, because rule 4's holder is DECLARED and a declaration nobody
    * performs is the state this card found.
    *
-   * `--take-seat` refuses a checkout somebody else is live in, takes over
-   * a DEAD holder's record while ANNOUNCING whose it was, and writes
-   * otherwise. `--release-seat` gives it up, and refuses to remove a
-   * record it cannot show belongs to this session — removing another
-   * seat's declaration is the one harm this arm could do.
+   * Both commands first derive the acting session. `--take-seat` then
+   * refuses a checkout somebody else is live in, takes over a DEAD
+   * holder's record while ANNOUNCING whose it was, and writes otherwise.
+   * `--release-seat` gives it up only after the same identity precondition,
+   * and refuses to remove a live record it cannot show belongs to this
+   * session — removing another seat's declaration is the one harm this
+   * arm could do.
    *
    * **AND IT REFUSES AN UNREADABLE RECORD TOO** (T-238-s1). That is the
    * same harm reached by a different route: a record whose SHAPE this
    * reader cannot parse says nothing about whose it is, so removing it
    * retires an unread claim — and the arm used to do exactly that and
-   * print RELEASED. `--take-seat` remains the way past it, because an
-   * explicit claim is a different act from a release stepping over
-   * evidence it never read.
+   * print RELEASED. Both commands now preserve it for inspection.
    *
    * THE ONE EARLY RETURN IS AN INABILITY. A session whose own identity
-   * cannot be derived cannot record anything on its own behalf, and that
-   * is `COULD NOT RUN` rather than a finding about the checkout: the
-   * house contract keeps "I derived it and found something" apart from
-   * "I could not tell you", and this is squarely the second.
+   * cannot be derived cannot create OR retire a claim on its own behalf,
+   * and that is `COULD NOT RUN` rather than a finding about the checkout:
+   * the house contract keeps "I derived it and found something" apart
+   * from "I could not tell you", and this is squarely the second.
    */
   if (wantsTakeSeat || wantsReleaseSeat) {
     const h = /** @type {NonNullable<typeof holder>} */ (holder);
     const asked = wantsTakeSeat ? "--take-seat" : "--release-seat";
     say("");
-    if (h.state === "not-integration") {
+    if (h.state !== "not-integration" && ownershipIdentity !== undefined && !ownershipIdentity.ok) {
+      console.error("brief: COULD NOT RUN");
+      console.error(`  ${ownershipIdentity.why}`);
+      console.error(
+        "  Nothing was changed. A session that cannot name itself cannot create or retire a " +
+          "claim on its own behalf.",
+      );
+      flush();
+      return EXIT.CANNOT_RUN;
+    } else if (h.state === "not-integration") {
       say(
         render([
           note("THE SEAT — nothing was taken and nothing was released"),
@@ -819,18 +835,10 @@ async function main(argv) {
           ),
         ]),
       );
-    } else if (wantsTakeSeat) {
-      const mine = sessionIdentity();
-      if (!mine.ok) {
-        console.error("brief: COULD NOT RUN");
-        console.error(`  ${mine.why}`);
-        console.error(
-          "  Nothing was written. A session that cannot name itself cannot record a claim on " +
-            "its own behalf, and a record naming nobody would refuse every other session for ever.",
-        );
-        flush();
-        return EXIT.CANNOT_RUN;
-      }
+    } else if (wantsTakeSeat && h.code !== HOLDER_CODES.UNREADABLE) {
+      const mine = /** @type {Extract<ReturnType<typeof sessionIdentity>, {ok: true}>} */ (
+        ownershipIdentity
+      );
       const written = writeHolder(ctx.root, mine.identity, { at: ctx.at, host: ctx.host });
       say(
         render([
@@ -877,16 +885,14 @@ async function main(argv) {
       // established the seat was free, and the one piece of evidence
       // about who held it was what got deleted.
       //
-      // AND THE REMEDY IS NOT LOST, it moves to the arm that owns it:
-      // `holderVerdict`'s own sentence for this state is *delete the
-      // file or re-take the seat*, and `--take-seat` still does exactly
-      // that — an explicit claim, which is a different act from a
-      // release stepping over a record it never read.
+      // T-303-s1 closes the acquisition half too: `wantsTakeSeat`
+      // excludes this code above, so both ownership commands reach this
+      // refusal and preserve the unread claim for inspection.
       say(
         render([
-          note("THE SEAT — NOT RELEASED. The record on disk is a SHAPE this reader cannot read,"),
-          note("so who holds this checkout was never established; removing it would retire an"),
-          note("unread claim and destroy the only evidence of whose it was."),
+          note("THE SEAT — NOT CHANGED. The record on disk is a SHAPE this reader cannot read,"),
+          note("so who holds this checkout was never established; replacing or removing it would"),
+          note("retire an unread claim and destroy the only evidence of whose it was."),
           value(
             `${asked} refused: ${h.detail}`,
             liveProv(ctx.at, ctx.host, `${HOLDER_REL_PATH}, as it is on disk`),
@@ -894,11 +900,19 @@ async function main(argv) {
         ]),
       );
       holderFindings.push(
-        `--release-seat refused an unreadable ${HOLDER_REL_PATH} rather than removing it — ` +
-          `${h.detail} Take the seat explicitly (--take-seat) if it is yours, or delete the file ` +
-          "by hand once you have read it.",
+        `${asked} refused an unreadable ${HOLDER_REL_PATH} without replacing or removing it — ` +
+          `${h.detail} Inspect the record, then repair or delete it only after establishing that ` +
+          "its claim is retired.",
       );
     } else if (h.state === "unknown" && h.figures["holderAlive"] === true) {
+      // UNREACHABLE TODAY, AND KEPT ON PURPOSE. This state is
+      // `HOLDER_CODES.UNDERIVABLE`, which `holderVerdict` returns only
+      // when the identity it was handed is not ok — and the precondition
+      // at the top of this block has already returned CANNOT_RUN for
+      // exactly that. It stays because it is the branch that catches a
+      // live record if that precondition is ever relaxed, and a reader
+      // who meets it should know no body reaches it rather than assume
+      // one does.
       say(
         render([
           note("THE SEAT — NOT RELEASED. A live record this session cannot show is its own is"),

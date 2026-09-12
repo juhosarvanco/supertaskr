@@ -1,4 +1,4 @@
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -18,6 +18,7 @@ import {
   REPOSITORY_PROBE_REL_PATH,
   SETTINGS_REL_PATH,
   STALE_CLONE_LIMIT,
+  codexTaskIdentity,
   defaultVantage,
   exitFor,
   holderVerdict,
@@ -25,16 +26,19 @@ import {
   hooksFor,
   identityAlive,
   isHarnessProcess,
+  isCodexHarnessProcess,
   isRecordablePid,
   judge,
   matcherSelects,
   processRow,
   programOf,
+  readHolder,
   registrationOf,
   removeHolder,
   render,
   sessionCheckout,
   sessionIdentity,
+  sameIdentity,
   sweep,
   worktreesOf,
   writeHolder,
@@ -1230,6 +1234,7 @@ interface PsRow {
   ppid: number;
   startedAt: string;
   command: string;
+  program?: string;
 }
 
 /** A process table this body wrote, read the way `processRow` reads one. */
@@ -1251,6 +1256,12 @@ const LAUNCHER_CMD =
 
 /** The application root: ONE per application instance, shared by every session in it. */
 const APP_ROOT_CMD = "/Applications/Claude.app/Contents/MacOS/Claude";
+
+/** The shared Codex desktop server process; its arguments are never identity inputs. */
+const CODEX_SERVER_CMD = "/Applications/ChatGPT.app/Contents/Resources/codex --app-server";
+const CODEX_TASK_A = "0198d7cf-5527-7f20-9af1-b20fa3437a10";
+const CODEX_TASK_B = "0198d7cf-5527-7f20-9af1-b20fa3437a11";
+const CODEX_PARENT_SESSION = "01a08f93-54f7-7512-a188-b45acae5c67a";
 
 /**
  * The measured ancestry of 2026-09-02, as a table: a tool shell under a
@@ -1300,6 +1311,159 @@ function injected(pid: number, startedAt: string) {
   return { ok: true as const, identity: { pid, startedAt, program: "/x/claude" } };
 }
 
+test("Codex tasks sharing one app-server compare by thread UUID as well as process incarnation", () => {
+  // KILLED BY: omitting `taskId` from `sameIdentity`, or accepting the
+  // shared `codex` pid/start pair as the whole identity. The positive
+  // control is task A compared with itself through a separately derived
+  // object; the negative is task B on the exact same process row.
+  const rows = chain([
+    {
+      pid: 10361,
+      ppid: 1,
+      startedAt: "Fri Sep 11 10:51:00 2026",
+      command: CODEX_SERVER_CMD,
+      program: "/Applications/ChatGPT.app/Contents/Resources/codex",
+    },
+    { pid: 10362, ppid: 10361, startedAt: "Fri Sep 11 12:00:00 2026", command: "node /x/brief.mjs" },
+  ]);
+  const derive = (taskId: string) =>
+    sessionIdentity({
+      pid: 10362,
+      readProcess: rows,
+      env: { CODEX_THREAD_ID: taskId, CODEX_SESSION_ID: CODEX_PARENT_SESSION },
+    });
+  const a = derive(CODEX_TASK_A);
+  const aAgain = derive(CODEX_TASK_A.toUpperCase());
+  const b = derive(CODEX_TASK_B);
+  expect(a.ok && aAgain.ok && b.ok, "all three supported Codex tasks derive").toBe(true);
+  if (!a.ok || !aAgain.ok || !b.ok) return;
+  expect(a.identity.provider).toBe("codex");
+  expect(a.identity.pid, "the live process incarnation is retained").toBe(10361);
+  expect(sameIdentity(a.identity, aAgain.identity), "the same logical task matches").toBe(true);
+  expect(sameIdentity(a.identity, b.identity), "another task on the same server does not").toBe(
+    false,
+  );
+  expect(
+    isCodexHarnessProcess("node /tmp/codex", "/usr/bin/node"),
+    "an argument naming codex does not turn an unrelated executable into the harness",
+  ).toBe(false);
+  expect(
+    isCodexHarnessProcess(CODEX_SERVER_CMD, "/Applications/ChatGPT.app/Contents/Resources/codex"),
+    "the executable-only process value identifies the supported server",
+  ).toBe(true);
+});
+
+test("a valid Codex subagent thread is accepted independently of inherited session context", () => {
+  // KILLED BY: requiring THREAD_ID and SESSION_ID to agree, or falling
+  // back to SESSION_ID. A real subagent measurement has this shape: its
+  // own valid thread id and the root session's distinct inherited id.
+  for (const session of [CODEX_PARENT_SESSION, "malformed", undefined]) {
+    const env = {
+      CODEX_THREAD_ID: CODEX_TASK_A,
+      ...(session === undefined ? {} : { CODEX_SESSION_ID: session }),
+    };
+    expect(codexTaskIdentity(env), `session context ${String(session)} is ignored`).toEqual({
+      ok: true,
+      taskId: CODEX_TASK_A,
+    });
+  }
+  expect(
+    codexTaskIdentity({ CODEX_SESSION_ID: CODEX_PARENT_SESSION }),
+    "parent session context alone never substitutes for the task",
+  ).toMatchObject({ ok: false });
+});
+
+test("missing or malformed Codex thread identity fails closed without echoing its value", () => {
+  // KILLED BY: accepting an absent thread, accepting arbitrary text, or
+  // copying the untrusted value into the actionable diagnostic.
+  const malformed = "not-a-uuid-sensitive-value";
+  const absent = codexTaskIdentity({ CODEX_SESSION_ID: CODEX_PARENT_SESSION });
+  const bad = codexTaskIdentity({ CODEX_THREAD_ID: malformed, CODEX_SESSION_ID: malformed });
+  for (const result of [absent, bad]) {
+    expect(result.ok).toBe(false);
+    if (result.ok) continue;
+    expect(result.why).toContain("CODEX_THREAD_ID");
+    expect(result.why.toLowerCase()).toContain("no holder record was created or released");
+    expect(result.why).not.toContain(malformed);
+  }
+
+  const repo = seatFixture("codex-underivable");
+  const holder = { pid: 10361, startedAt: "Fri Sep 11 10:51:00 2026", program: "/x/codex" };
+  writeHolder(repo, holder);
+  if (absent.ok) throw new Error("the absent-thread control unexpectedly derived");
+  const d = holderVerdict({ root: repo, identity: absent, readProcess: chain([
+    { ...holder, ppid: 1, command: CODEX_SERVER_CMD },
+  ]) });
+  expect(d.state, "a live holder remains unknown rather than mine or vacant").toBe("unknown");
+  expect(existsSync(path.join(repo, HOLDER_REL_PATH)), "and its record remains in place").toBe(true);
+});
+
+test("Codex logical identity survives the holder round trip and another task cannot release it", () => {
+  // KILLED BY: dropping provider/taskId at write or read, or comparing
+  // only pid/start after the round trip. Both tasks use one live row.
+  const repo = seatFixture("codex-roundtrip");
+  const processIdentity = {
+    pid: 10361,
+    startedAt: "Fri Sep 11 10:51:00 2026",
+    program: "/Applications/ChatGPT.app/Contents/Resources/codex",
+  };
+  const mine = { ...processIdentity, provider: "codex" as const, taskId: CODEX_TASK_A };
+  const other = { ...processIdentity, provider: "codex" as const, taskId: CODEX_TASK_B };
+  writeHolder(repo, mine, { at: "2026-09-11T10:00:00Z" });
+  const read = readHolder(repo);
+  expect("holder" in read, "the record parses").toBe(true);
+  if (!("holder" in read)) return;
+  expect(read.holder.identity, "provider and canonical task id survive").toEqual(mine);
+  const table = chain([{ ...processIdentity, ppid: 1, command: CODEX_SERVER_CMD }]);
+  expect(holderVerdict({ root: repo, identity: { ok: true, identity: mine }, readProcess: table }).state).toBe(
+    "mine",
+  );
+  const refused = holderVerdict({
+    root: repo,
+    identity: { ok: true, identity: other },
+    readProcess: table,
+  });
+  expect(refused.state, "the other logical task is refused despite sharing the process").toBe("held");
+  expect(existsSync(path.join(repo, HOLDER_REL_PATH)), "the release precondition leaves the holder intact").toBe(
+    true,
+  );
+});
+
+test("invalid logical holder records fail closed while legacy Claude records remain compatible", () => {
+  // KILLED BY: treating a partial/unknown logical identity as legacy,
+  // or requiring new fields on version-1 Claude records.
+  const repo = seatFixture("logical-record-shape");
+  const legacy = { pid: 500, startedAt: "Tue Sep 1 23:52:34 2026", program: "/x/claude" };
+  writeHolder(repo, legacy);
+  const old = readHolder(repo);
+  expect("holder" in old, "the existing Claude record still parses").toBe(true);
+  if ("holder" in old) expect(old.holder.identity).toEqual(legacy);
+
+  expect(() => writeHolder(repo, { ...legacy, provider: "codex" })).toThrow(/logical identity/);
+  const file = path.join(repo, HOLDER_REL_PATH);
+  for (const identity of [
+    { ...legacy, provider: "codex" },
+    { ...legacy, taskId: CODEX_TASK_A },
+    { ...legacy, provider: "other", taskId: CODEX_TASK_A },
+    { ...legacy, provider: "codex", taskId: "bad" },
+  ]) {
+    writeFileSync(
+      file,
+      `${JSON.stringify({ version: 1, identity, checkout: repo, takenAt: "", host: "" })}\n`,
+    );
+    const read = readHolder(repo);
+    expect("problem" in read, `invalid shape ${JSON.stringify(identity)} is unreadable`).toBe(true);
+    expect(holderVerdict({ root: repo, identity: injected(500, legacy.startedAt) }).state).toBe(
+      "unknown",
+    );
+  }
+
+  writeHolder(repo, legacy);
+  expect(readHolder(repo), "the legacy positive control remains accepted after refusals").toHaveProperty(
+    "holder",
+  );
+});
+
 test("the session identity is the NEAREST harness ancestor, at whatever depth the caller sits", () => {
   // KILLED BY: a fixed hop count, and by a walk that keeps climbing past
   // the first match. THE DEPTH IS NOT A CONSTANT AT THE TWO CALL SITES:
@@ -1319,7 +1483,7 @@ test("the session identity is the NEAREST harness ancestor, at whatever depth th
   }
 });
 
-test("the shared application root is never the identity, and neither is the launcher that names the harness in its own arguments", () => {
+test("Claude identity accepts its native and Node forms but never unrelated executable arguments", async () => {
   // KILLED BY: matching case-insensitively (the application root differs
   // from the harness binary only in case), and by testing the WHOLE
   // command line instead of the program (the launcher's arguments name
@@ -1343,6 +1507,225 @@ test("the shared application root is never the identity, and neither is the laun
   expect(path.basename(programOf(APP_ROOT_CMD)).toLowerCase()).toBe(
     path.basename(programOf(HARNESS_CMD)),
   );
+
+  const derive = (program: string, command: string) =>
+    sessionIdentity({
+      pid: 700,
+      env: {},
+      readProcess: chain([
+        { pid: 700, ppid: 1, startedAt: "Fri Sep 11 10:51:00 2026", program, command },
+      ]),
+    });
+  expect(derive("/x/claude", "/x/claude --model x").ok, "native Claude remains supported").toBe(
+    true,
+  );
+  expect(
+    derive(
+      "/usr/bin/node",
+      "node /x/node_modules/@anthropic-ai/claude-code/cli.js --model x",
+    ).ok,
+    "legacy Node-launched Claude remains supported",
+  ).toBe(true);
+  expect(
+    isHarnessProcess("node /x/node_modules/@anthropic-ai/claude-code/cli.js --model x"),
+    "the exported one-argument matcher retains its legacy Node form",
+  ).toBe(true);
+  expect(
+    derive("/usr/bin/node", "node /x/claude-code@1.2.3/cli.js").ok,
+    "a version suffix after the exact package name remains supported",
+  ).toBe(true);
+  expect(
+    derive("node", "/usr/bin/node /x/@anthropic-ai/claude-code/cli.js").ok,
+    "a basename-only Linux comm corroborates the absolute Node command prefix",
+  ).toBe(true);
+  const unrelated: Array<[string, string]> = [
+    [
+      "/usr/bin/node",
+      "node --require=/tmp/@anthropic-ai/claude-code/cli.js /x/unrelated.js",
+    ],
+    [
+      "/usr/bin/node",
+      "node --import=/tmp/@anthropic-ai/claude-code/cli.js /x/unrelated.js",
+    ],
+    [
+      "/usr/bin/node",
+      "node --eval=/tmp/@anthropic-ai/claude-code/cli.js /x/unrelated.js",
+    ],
+    [
+      "/usr/bin/node",
+      "node --check=/tmp/@anthropic-ai/claude-code/cli.js /x/unrelated.js",
+    ],
+    [
+      "/usr/bin/node",
+      "node --loader=/tmp/@anthropic-ai/claude-code/cli.js /x/unrelated.js",
+    ],
+    [
+      "/usr/bin/node",
+      "node --require /tmp/@anthropic-ai/claude-code/cli.js /x/unrelated.js",
+    ],
+    ["/usr/bin/node", "node -r=/tmp/claude-code/cli.js /x/unrelated.js"],
+    ["/usr/bin/node", "node -r/tmp/claude-code/cli.js /x/unrelated.js"],
+    ["/usr/bin/node", "node -r /tmp/claude-code/cli.js /x/unrelated.js"],
+    ["/usr/bin/node", "node -e require('/tmp/claude-code/cli.js')"],
+    ["/usr/bin/node", "node /x/unrelated.js /tmp/claude-code/inert.txt"],
+    ["/usr/bin/node", "node /x/not-claude-code/cli.js"],
+    ["/usr/bin/node", "node /x/not@claude-code/cli.js"],
+    ["/usr/bin/node", "node /x/@claude-code/cli.js"],
+    ["/usr/bin/node", "node /x/@anthropic-ai/claude-code/cli.js.other"],
+    ["/x/claude-helper", "/x/claude-helper"],
+    ["/usr/bin/printf", "printf /tmp/claude-code/inert.txt"],
+    ["/bin/cat", "cat /tmp/@anthropic-ai/claude-code/inert.txt"],
+    ["/bin/echo", "echo /x/claude-code/inert.txt --flag"],
+  ];
+  for (const [program, command] of unrelated) {
+    expect(
+      derive(program, command).ok,
+      `${path.basename(program)} positional arguments do not identify Claude`,
+    ).toBe(false);
+  }
+
+  const runtimeRoot = realpathSync(mkdtempSync(path.join(os.tmpdir(), "T-303-s1-node-entry-")));
+  SCRATCH.push(runtimeRoot);
+  const missingSpaced = path.join(
+    runtimeRoot,
+    "missing path",
+    "node_modules",
+    "@anthropic-ai",
+    "claude-code",
+    "cli.js",
+  );
+  expect(
+    derive("/usr/bin/node", `node ${missingSpaced}`).ok,
+    "a spaced prefix with no corroborating file fails closed",
+  ).toBe(false);
+  const earlier = path.join(runtimeRoot, "unrelated.js");
+  const later = path.join(
+    runtimeRoot,
+    "later",
+    "node_modules",
+    "@anthropic-ai",
+    "claude-code",
+    "cli.js",
+  );
+  writeFileSync(earlier, "setInterval(() => {}, 1000);\n");
+  mkdirSync(path.dirname(later), { recursive: true });
+  writeFileSync(later, "// later inert argument\n");
+  const combined = `${earlier} ${later}`;
+  mkdirSync(path.dirname(combined), { recursive: true });
+  writeFileSync(combined, "// deliberately ambiguous combined path\n");
+  expect(
+    derive("/usr/bin/node", `node ${earlier} ${later}`).ok,
+    "an existing earlier entrypoint makes a flattened combined path ambiguous",
+  ).toBe(false);
+
+  for (const folder of ["plain", "with spaces"]) {
+    const entrypoint = path.join(
+      runtimeRoot,
+      folder,
+      "node_modules",
+      "@anthropic-ai",
+      "claude-code",
+      "cli.js",
+    );
+    mkdirSync(path.dirname(entrypoint), { recursive: true });
+    writeFileSync(entrypoint, "setInterval(() => {}, 1000);\n");
+    const child = spawn(process.execPath, [entrypoint], { stdio: "ignore" });
+    await new Promise<void>((resolve, reject) => {
+      child.once("spawn", resolve);
+      child.once("error", reject);
+    });
+    try {
+      if (child.pid === undefined) throw new Error("Node child did not receive a pid");
+      const row = processRow(child.pid);
+      expect(row, `${folder} child has a readable real process row`).toBeDefined();
+      if (row === undefined) continue;
+      expect(
+        sessionIdentity({ pid: child.pid, env: {}, readProcess: chain([row]) }).ok,
+        `${folder} real Node entrypoint identifies legacy Claude`,
+      ).toBe(true);
+    } finally {
+      const closed = new Promise<void>((resolve) => child.once("close", () => resolve()));
+      child.kill("SIGTERM");
+      await closed;
+    }
+  }
+
+  const preloadChild = spawn(process.execPath, [`--require=${later}`, earlier], { stdio: "ignore" });
+  await new Promise<void>((resolve, reject) => {
+    preloadChild.once("spawn", resolve);
+    preloadChild.once("error", reject);
+  });
+  try {
+    if (preloadChild.pid === undefined) throw new Error("preload child did not receive a pid");
+    const row = processRow(preloadChild.pid);
+    expect(row, "preload child has a readable real process row").toBeDefined();
+    if (row !== undefined) {
+      expect(
+        sessionIdentity({ pid: preloadChild.pid, env: {}, readProcess: chain([row]) }).ok,
+        "a Claude-looking preload option does not become the executed script",
+      ).toBe(false);
+    }
+  } finally {
+    const closed = new Promise<void>((resolve) => preloadChild.once("close", () => resolve()));
+    preloadChild.kill("SIGTERM");
+    await closed;
+  }
+
+  const actualDir = path.join(runtimeRoot, "actual-cwd");
+  const observerDir = path.join(runtimeRoot, "observer-cwd");
+  const relativeEntry = path.join(actualDir, "earlier.js");
+  const relativeLater = path.join(
+    actualDir,
+    "later",
+    "node_modules",
+    "@anthropic-ai",
+    "claude-code",
+    "cli.js",
+  );
+  mkdirSync(path.dirname(relativeLater), { recursive: true });
+  mkdirSync(observerDir);
+  writeFileSync(relativeEntry, "setInterval(() => {}, 1000);\n");
+  writeFileSync(relativeLater, "// unrelated later argument\n");
+  const observerCombined = path.join(
+    observerDir,
+    "earlier.js later",
+    "node_modules",
+    "@anthropic-ai",
+    "claude-code",
+    "cli.js",
+  );
+  mkdirSync(path.dirname(observerCombined), { recursive: true });
+  writeFileSync(observerCombined, "// misleading observer-relative combined path\n");
+  const relativeChild = spawn(
+    process.execPath,
+    ["earlier.js", "later/node_modules/@anthropic-ai/claude-code/cli.js"],
+    { cwd: actualDir, stdio: "ignore" },
+  );
+  await new Promise<void>((resolve, reject) => {
+    relativeChild.once("spawn", resolve);
+    relativeChild.once("error", reject);
+  });
+  try {
+    if (relativeChild.pid === undefined) throw new Error("relative child did not receive a pid");
+    const row = processRow(relativeChild.pid);
+    expect(row, "relative child has a readable real process row").toBeDefined();
+    if (row !== undefined) {
+      const previousCwd = process.cwd();
+      process.chdir(observerDir);
+      try {
+        expect(
+          sessionIdentity({ pid: relativeChild.pid, env: {}, readProcess: chain([row]) }).ok,
+          "a relative spaced command cannot be grounded from the observer cwd",
+        ).toBe(false);
+      } finally {
+        process.chdir(previousCwd);
+      }
+    }
+  } finally {
+    const closed = new Promise<void>((resolve) => relativeChild.once("close", () => resolve()));
+    relativeChild.kill("SIGTERM");
+    await closed;
+  }
 });
 
 test("a chain with no harness in it answers NOTHING, naming what it walked, and never guesses a seat", () => {
@@ -1761,7 +2144,7 @@ function briefSeatFixture(name: string): string {
   return repo;
 }
 
-test("`--release-seat` REFUSES a record it could not read, and removes nothing", () => {
+test("`--take-seat` and `--release-seat` REFUSE unreadable records and change nothing", () => {
   // T-238-s1, ITEM 2. The arm removed the file and printed *"THE SEAT —
   // RELEASED. The next session to arm this checkout takes it unopposed"*.
   // Neither half was true: nothing had established the seat was free, and
@@ -1776,11 +2159,60 @@ test("`--release-seat` REFUSES a record it could not read, and removes nothing",
   const repo = briefSeatFixture("release-unreadable");
   const file = path.join(repo, HOLDER_REL_PATH);
   mkdirSync(path.dirname(file), { recursive: true });
+  const supportedBin = path.join(repo, "supported-process-bin");
+  mkdirSync(supportedBin);
+  const supportedPs = path.join(supportedBin, "ps");
+  writeFileSync(
+    supportedPs,
+    "#!/bin/sh\nif [ \"$2\" = \"comm=\" ]; then\n  printf '/fixture/codex\\n'\nelse\n  printf '1 Fri Sep 11 10:51:00 2026 /fixture/codex\\n'\nfi\n",
+  );
+  chmodSync(supportedPs, 0o755);
+  const invoke = (
+    verb: "--take-seat" | "--release-seat",
+    target: string = repo,
+    bin: string = supportedBin,
+  ) => {
+    const env: NodeJS.ProcessEnv = {
+      ...process.env,
+      PATH: `${bin}${path.delimiter}${process.env["PATH"] ?? ""}`,
+      CODEX_THREAD_ID: CODEX_TASK_A,
+      CODEX_SESSION_ID: CODEX_PARENT_SESSION,
+    };
+    delete env["CLAUDE_PROJECT_DIR"];
+    const run = spawnSync(process.execPath, [BRIEF, verb, "--root", target], {
+      cwd: target,
+      env,
+      encoding: "utf8",
+    });
+    return { status: run.status, out: run.stdout ?? "", err: run.stderr ?? "" };
+  };
+  const invalidLogical = `${JSON.stringify({
+    version: 1,
+    identity: {
+      pid: 10361,
+      startedAt: "Fri Sep 11 10:51:00 2026",
+      program: "/x/codex",
+      provider: "codex",
+    },
+    checkout: repo,
+    takenAt: "2026-09-11T10:00:00Z",
+    host: "fixture",
+  })}\n`;
+  writeFileSync(file, invalidLogical);
+
+  const take = invoke("--take-seat");
+  expect(take.status, "an invalid logical record refuses acquisition").toBe(EXIT.FOUND);
+  expect(take.out, "and says no claim changed").toContain("THE SEAT — NOT CHANGED");
+  expect(take.err, "the refusal reaches the summary").toContain("refused an unreadable");
+  expect(readFileSync(file, "utf8"), "the existing claim is byte-for-byte untouched").toBe(
+    invalidLogical,
+  );
+
   writeFileSync(file, "{ not json");
 
-  const run = runBrief(["--release-seat", "--root", repo], undefined, repo);
+  const run = invoke("--release-seat");
   expect(run.status, "a finding, not a clean release").toBe(EXIT.FOUND);
-  expect(run.out, "and it says the seat was NOT released").toContain("THE SEAT — NOT RELEASED");
+  expect(run.out, "and it says the seat was not changed").toContain("THE SEAT — NOT CHANGED");
   expect(run.out, "never the sentence it used to print").not.toContain("THE SEAT — RELEASED");
   expect(run.err, "the refusal reaches the summary a seat reads").toContain(
     "refused an unreadable",
@@ -1806,10 +2238,182 @@ test("`--release-seat` REFUSES a record it could not read, and removes nothing",
       2,
     )}\n`,
   );
-  const released = runBrief(["--release-seat", "--root", repo], undefined, repo);
+  const released = invoke("--release-seat");
   expect(released.status, "a readable record releases cleanly").toBe(EXIT.CLEAN);
   expect(released.out).toContain("THE SEAT — RELEASED");
   expect(existsSync(file), "and that one is gone").toBe(false);
+
+  const noHarnessRepo = briefSeatFixture("unreadable-no-harness");
+  const noHarnessFile = path.join(noHarnessRepo, HOLDER_REL_PATH);
+  mkdirSync(path.dirname(noHarnessFile), { recursive: true });
+  const noHarnessBin = path.join(noHarnessRepo, "no-harness-process-bin");
+  mkdirSync(noHarnessBin);
+  const noHarnessPs = path.join(noHarnessBin, "ps");
+  writeFileSync(
+    noHarnessPs,
+    "#!/bin/sh\nif [ \"$2\" = \"comm=\" ]; then\n  printf '/usr/bin/node\\n'\nelse\n  printf '1 Fri Sep 11 10:51:00 2026 /usr/bin/node /x/brief.mjs\\n'\nfi\n",
+  );
+  chmodSync(noHarnessPs, 0o755);
+  const unreadable = "{ still not json";
+  writeFileSync(noHarnessFile, unreadable);
+  for (const verb of ["--take-seat", "--release-seat"] as const) {
+    const underivable = invoke(verb, noHarnessRepo, noHarnessBin);
+    expect(underivable.status, `${verb} is an inability without a harness`).toBe(EXIT.CANNOT_RUN);
+    expect(underivable.err).toContain("no ancestor");
+    expect(readFileSync(noHarnessFile, "utf8"), `${verb} preserves unreadable bytes`).toBe(
+      unreadable,
+    );
+  }
+});
+
+test("Codex ownership commands derive a valid thread before changing any integration-seat state", () => {
+  // KILLED BY: deriving identity only in the acquisition branch. That
+  // shape releases a dead holder before it ever asks which logical task
+  // is acting. The fake process table makes the command a supported
+  // Codex process in every environment and never names or signals a real
+  // host process.
+  const repo = briefSeatFixture("codex-operation-identity");
+  const bin = path.join(repo, "fake-process-bin");
+  mkdirSync(bin);
+  const ps = path.join(bin, "ps");
+  writeFileSync(
+    ps,
+    "#!/bin/sh\nif [ \"$2\" = \"comm=\" ]; then\n  printf '/fixture/codex\\n'\nelse\n  printf '1 Fri Sep 11 10:51:00 2026 /fixture/codex\\n'\nfi\n",
+  );
+  chmodSync(ps, 0o755);
+  const file = path.join(repo, HOLDER_REL_PATH);
+  const invoke = (verb: "--take-seat" | "--release-seat", thread: string | undefined) => {
+    const env: NodeJS.ProcessEnv = {
+      ...process.env,
+      PATH: `${bin}${path.delimiter}${process.env["PATH"] ?? ""}`,
+      CODEX_SESSION_ID: CODEX_PARENT_SESSION,
+    };
+    delete env["CLAUDE_PROJECT_DIR"];
+    if (thread === undefined) delete env["CODEX_THREAD_ID"];
+    else env["CODEX_THREAD_ID"] = thread;
+    return spawnSync(process.execPath, [BRIEF, verb, "--root", repo], {
+      cwd: repo,
+      env,
+      encoding: "utf8",
+    });
+  };
+  const plant = (state: "dead" | "live" | "unreadable") => {
+    if (state === "unreadable") writeFileSync(file, "{ not json");
+    else {
+      writeHolder(repo, {
+        pid: 700,
+        startedAt:
+          state === "live" ? "Fri Sep 11 10:51:00 2026" : "Fri Sep 11 00:00:00 2026",
+        program: "/fixture/codex",
+        provider: "codex",
+        taskId: CODEX_TASK_A,
+      });
+    }
+  };
+
+  const validTake = invoke("--take-seat", CODEX_TASK_A);
+  expect(validTake.status, "a valid task acquires the vacant seat").toBe(EXIT.CLEAN);
+  expect(readHolder(repo)).toHaveProperty("holder.identity.taskId", CODEX_TASK_A);
+  removeHolder(repo);
+
+  plant("dead");
+  const validRelease = invoke("--release-seat", CODEX_TASK_A);
+  expect(validRelease.status, "a valid task still retires a dead record").toBe(EXIT.CLEAN);
+  expect(existsSync(file)).toBe(false);
+
+  for (const thread of [undefined, "", "not-a-uuid"]) {
+    const take = invoke("--take-seat", thread);
+    expect(take.status, "invalid-thread acquisition is an inability").toBe(EXIT.CANNOT_RUN);
+    expect(take.stderr).toContain("CODEX_THREAD_ID");
+    expect(existsSync(file), "vacant acquisition writes nothing").toBe(false);
+
+    for (const state of ["dead", "live", "unreadable"] as const) {
+      plant(state);
+      const before = readFileSync(file, "utf8");
+      const release = invoke("--release-seat", thread);
+      expect(release.status, `${state} release is an inability`).toBe(EXIT.CANNOT_RUN);
+      expect(release.stderr).toContain("CODEX_THREAD_ID");
+      expect(readFileSync(file, "utf8"), `${state} claim is preserved byte-for-byte`).toBe(before);
+      removeHolder(repo);
+    }
+  }
+});
+
+test("two Codex tasks on ONE app-server incarnation are told apart by the ownership commands themselves", () => {
+  // THE FIRST CRITERION'S OWN SENTENCE, MEASURED AT THE ARM RATHER THAN
+  // AT `sameIdentity`: two tasks sharing an app-server never compare as
+  // the same owner. KILLED BY: comparing only the pid and the start time
+  // anywhere on the acquisition or the release path. Both invocations
+  // derive the SAME process incarnation BY CONSTRUCTION — one fixed
+  // ancestor row, one start time — so the only thing left that can
+  // separate them is the logical task, and the positive control is the
+  // same seat released by the task that took it.
+  const repo = briefSeatFixture("codex-shared-server");
+  const bin = path.join(repo, "shared-server-bin");
+  mkdirSync(bin);
+  const ps = path.join(bin, "ps");
+  // One invented ancestor answers as the shared Codex app-server for
+  // every caller, so each invocation walks one hop and lands on the same
+  // pid and the same start time. Nothing here reads, names or signals a
+  // real host process.
+  writeFileSync(
+    ps,
+    [
+      "#!/bin/sh",
+      'if [ "$4" = "4242" ]; then',
+      '  if [ "$2" = "comm=" ]; then printf \'/fixture/codex\\n\'',
+      "  else printf '1 Fri Sep 11 10:51:00 2026 /fixture/codex\\n'",
+      "  fi",
+      "else",
+      '  if [ "$2" = "comm=" ]; then printf \'/usr/bin/node\\n\'',
+      "  else printf '4242 Fri Sep 11 12:00:00 2026 /usr/bin/node /x/brief.mjs\\n'",
+      "  fi",
+      "fi",
+      "",
+    ].join("\n"),
+  );
+  chmodSync(ps, 0o755);
+  const file = path.join(repo, HOLDER_REL_PATH);
+  const invoke = (verb: "--take-seat" | "--release-seat", thread: string) => {
+    const env: NodeJS.ProcessEnv = {
+      ...process.env,
+      PATH: `${bin}${path.delimiter}${process.env["PATH"] ?? ""}`,
+      CODEX_THREAD_ID: thread,
+      CODEX_SESSION_ID: CODEX_PARENT_SESSION,
+    };
+    delete env["CLAUDE_PROJECT_DIR"];
+    return spawnSync(process.execPath, [BRIEF, verb, "--root", repo], {
+      cwd: repo,
+      env,
+      encoding: "utf8",
+    });
+  };
+
+  const taken = invoke("--take-seat", CODEX_TASK_A);
+  expect(taken.status, `${taken.stdout}\n${taken.stderr}`).toBe(EXIT.CLEAN);
+  const recorded = readHolder(repo);
+  expect("holder" in recorded, "the first task's record parses").toBe(true);
+  if (!("holder" in recorded)) return;
+  expect(recorded.holder.identity.taskId, "carrying its logical task").toBe(CODEX_TASK_A);
+  expect(recorded.holder.identity.pid, "on the shared app-server incarnation").toBe(4242);
+  const bytes = readFileSync(file, "utf8");
+
+  const seized = invoke("--take-seat", CODEX_TASK_B);
+  expect(seized.status, "the other task on that same process cannot take the seat").toBe(EXIT.FOUND);
+  expect(seized.stderr, "and is told a live session holds it").toContain(
+    "HELD BY ANOTHER LIVE SESSION",
+  );
+
+  const refused = invoke("--release-seat", CODEX_TASK_B);
+  expect(refused.status, "nor release it").toBe(EXIT.FOUND);
+  expect(readFileSync(file, "utf8"), "and the first task's claim survives both").toBe(bytes);
+
+  const released = invoke("--release-seat", CODEX_TASK_A);
+  expect(released.status, "THE POSITIVE CONTROL: the task that took it releases it").toBe(
+    EXIT.CLEAN,
+  );
+  expect(released.stdout).toContain("THE SEAT — RELEASED");
+  expect(existsSync(file), "and the record is gone").toBe(false);
 });
 
 test("the identity derivation is named in the artifact's own header, with the harness it is a fact about", () => {
