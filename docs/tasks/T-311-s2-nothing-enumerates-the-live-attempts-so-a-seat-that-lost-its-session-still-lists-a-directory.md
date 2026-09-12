@@ -44,3 +44,8 @@ record has been in that state — sorted so a stale attempt sorts to where
 a reader looks. It reserves nothing and writes nothing, so it belongs
 with the read arms rather than with the writers. A body that plants three
 records in three states and reads the roster back is what keeps it.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

@@ -61,3 +61,8 @@ attempt to release it — a data mutant, because the property lives in the
 file rather than in the code — and a second body keeps the ordinary
 release working so the refusal is about the damage and not about every
 release.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

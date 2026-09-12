@@ -49,3 +49,8 @@ A re-landing that moves the line to wherever the document happens to be
 today, with no content moved and no argument, would retire the tripwire
 while leaving the growth. The budget is a tripwire against relapse, and a
 line raised to match the relapse measures nothing.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

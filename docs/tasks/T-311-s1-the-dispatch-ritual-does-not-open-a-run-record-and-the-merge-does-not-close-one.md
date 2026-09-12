@@ -54,3 +54,8 @@ bind is the step that follows the seat's own spawn. At the other end, the
 merge collects the attempt it is merging and says so in its output. A
 body that dispatches into a scratch repository and finds the record, and
 one that merges and finds the attempt collected, are what make it real.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts
