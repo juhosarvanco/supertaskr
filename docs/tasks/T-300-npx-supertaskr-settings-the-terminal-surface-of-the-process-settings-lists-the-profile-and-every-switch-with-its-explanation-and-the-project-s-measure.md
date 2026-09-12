@@ -172,4 +172,69 @@ about departing at no switch, which the edit leaves standing because it
 is a human's prose and this command is a settings editor rather than a
 formatter.
 
+### The follow-up the docs gate owed, and each half hides the other
+
+The build was interrupted by the weekly budget with two spellings
+uncommitted. Both were re-derived at the resumed tip by running the
+docs scanner's own functions over this tree with one half reverted at a
+time, and both are load-bearing:
+
+- `REFERENCE_DOC` is a plain repository-relative STRING joined to the
+  root at the call site, which is this package's own idiom for a path
+  under docs/. Spelled as a segmented join whose first segment is
+  `docs`, it is a docs-first site with no base, and the scanner resolves
+  such a site against the PACKAGE directory rather than the repository
+  root. Measured with only this half reverted: `unlinkedFiles()` reports
+  `tools/e2e/scripts/settings.mjs`, and the body in
+  `tools/e2e/tests/docs-input-gate.spec.ts` that requires that list
+  empty goes RED. The tripwire is right to fire. A generator whose
+  output path the gate cannot place is a page the gate can never tell
+  anyone to regenerate.
+- the reference-currency body reads the chapter by its literal path and
+  then asserts that IS the page the command writes, so the scanner sees
+  the spec as a READER of the chapter. Measured with only this half
+  reverted: the spec's derived prefixes lose the chapter while the
+  script stays linked, because importing the constant is not a site the
+  derivation can follow. The gate would then stop naming the one body
+  that checks the page's currency, and a diff that moved the page would
+  point at no suite at all.
+
+Neither spelling changes what the command does. The listing, the four
+refusals and the generated page are byte for byte what the build
+produced.
+
+### Re-derived criterion by criterion at the resumed tip
+
+Nothing was found short, and the figures below were measured in this
+lane rather than carried over.
+
+1. The listing renders 42 rows against the schema's 42 switches, in an
+   order that diffs identically to the schema's own declaration order,
+   with 10 FLOOR marks against the schema's 10 floor rows, and one
+   measured column on every row. Both halves of that column are live in
+   this tree: `loop/cycle-budget-used` renders a reading and
+   `loop/token-budget-used` renders the seat's estimate, labelled, and
+   naming the band it is waiting for.
+2. Every switch was driven through every value it declares, against
+   throwaway copies of the template. 34 writes, 32 already-at-that-value,
+   10 FLOOR refusals and 3 forbidden-combination refusals, and NOT ONE
+   refusal moved a byte of the file. The two refusals that sweep cannot
+   reach were driven by hand: an id the schema does not declare, and a
+   value outside a switch's own set. All four refusals exit 2, which is
+   called wrong, and the tree is fine. The write keeps the shape: the
+   line count moves by exactly one, all 31 comment lines survive, the
+   profile line survives, the trailing newline survives, and setting the
+   switch back to the profile's own value restores the file byte for
+   byte.
+3. The committed chapter is byte-identical to what the write path
+   generates. Editing the template leaves it unmoved, which is the
+   point of generating from the schema alone; planting one edit in a
+   schema field makes the currency check exit 1 and name the byte
+   difference. The command's usage block appears in the page verbatim
+   from the script's own constant, so even that is not typed twice.
+
+The verb was exercised through the shipped entry point rather than the
+library module it fronts, which is what the criterion means by the
+command's name.
+
 ## Verdicts
