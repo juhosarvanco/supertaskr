@@ -2279,7 +2279,12 @@ test("each of the four refusals a set owes is ITSELF, and the template is not to
 
 test("the committed settings chapter is a GENERATION of the schema, and a schema nobody regenerated for reds", () => {
   const schema = parseProcessSchema(readFileSync(path.join(repoRoot, PROCESS_SCHEMA), "utf8"));
-  const committed = readFileSync(path.join(repoRoot, REFERENCE_DOC), "utf8");
+  // READ BY ITS LITERAL PATH, so the docs gate's own derivation SEES
+  // this spec as a reader of the page — a currency body the gate cannot
+  // link is a body nobody is told to run when the page moves.
+  const chapter = path.join(repoRoot, "docs", "reference", "15-settings.md");
+  expect(path.join(repoRoot, REFERENCE_DOC), "and that IS the page the command writes").toBe(chapter);
+  const committed = readFileSync(chapter, "utf8");
   expect(
     committed,
     `${REFERENCE_DOC} is stale against ${PROCESS_SCHEMA} — run \`node tools/e2e/scripts/` +

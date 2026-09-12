@@ -84,8 +84,18 @@ import {
 /** A refusal this command owns: the caller asked for something the schema does not allow. */
 export class SettingsFinding extends Error {}
 
-/** The chapter this command generates, repository-relative. */
-export const REFERENCE_DOC = path.join("docs", "reference", "15-settings.md");
+/**
+ * The chapter this command generates, repository-relative.
+ *
+ * A PLAIN STRING JOINED TO THE ROOT AT THE CALL SITE, which is this
+ * package's own idiom for a path under docs/ (`METERS_PATH` in
+ * health-bands.mjs is the same shape). Spelled as a segmented
+ * `path.join("docs", …)` it would be a docs-first site with no base,
+ * which resolves against the PACKAGE directory rather than the
+ * repository root — so the docs gate's silent-miss tripwire would report
+ * this file as one it could not link, and be right to.
+ */
+export const REFERENCE_DOC = "docs/reference/15-settings.md";
 
 /** The command's own usage, rendered into the reference so it is never typed twice. */
 export const USAGE = [
