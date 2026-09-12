@@ -89,6 +89,38 @@ import {
 import { isRecordablePid, processRow } from "./checkout-currency.mjs";
 import { rawBullet } from "./range-rule.mjs";
 
+/* ────────────────────────────────────────────────────────────────────
+ * THE PROCESS SETTINGS READER, IMPORTED FROM THE PARSER LIBRARY (T-317).
+ *
+ * WHY THE BUILT ENTRY, AND WHY BY PATH. `tools/e2e` is the repository's
+ * THIRD npm package and declares no dependency on the parser (ADR-011
+ * family; its own manifest says it "imports neither app nor parser"), so
+ * the parser's BUILT browser-safe entry is loaded by relative path —
+ * the same spelling `dispatch-order.mjs` uses for `dist/index.js`, and
+ * the same artefact `preflight.ts` already asserts into existence for
+ * this package. A missing build is a LOUD REFUSAL NAMING THE ORDER,
+ * never a silent half-answer, and it fires at load because every arm in
+ * this file reads the settings.
+ * ──────────────────────────────────────────────────────────────────── */
+
+const processPure = await import("../../../lib/parser/dist/pure.js").catch((err) => {
+  throw new Error(
+    "dispatch-brief: cannot load the process settings reader from lib/parser/dist/pure.js — " +
+      "ADR-011 build order: lib/parser FIRST (`npm ci` + `npm run build` from lib/parser/), then " +
+      "app/. The schema parser, the section reader, the resolver, the ledger and the constraint " +
+      "findings are that library's since T-317 and this arm re-exports them rather than keeping a " +
+      `second spelling of them. (${err instanceof Error ? err.message : String(err)})`,
+  );
+});
+
+const { PROCESS_SCHEMA, PROCESS_SECTION, RUNTIME_TEMPLATE, SWITCH_FIELDS, SWITCH_TYPES } = processPure;
+
+/** @typedef {import("../../../lib/parser/dist/pure.js").ProcessSchema} ProcessSchema */
+/** @typedef {import("../../../lib/parser/dist/pure.js").ProcessSwitch} ProcessSwitch */
+/** @typedef {import("../../../lib/parser/dist/pure.js").ProcessSection} ProcessSection */
+/** @typedef {import("../../../lib/parser/dist/pure.js").ProcessSettings} ProcessSettings */
+/** @typedef {import("../../../lib/parser/dist/pure.js").LedgerRow} LedgerRow */
+
 export const EXIT = Object.freeze({ CLEAN: 0, FOUND: 1, USAGE: 2, CANNOT_RUN: 3 });
 
 /** The role whose brief this assembles when none is named. */
@@ -5679,8 +5711,12 @@ export class DispatchLaneFinding extends Error {}
  */
 export class ModelFinding extends DispatchLaneFinding {}
 
-/** The one file the model per role is read from, repository-relative. */
-export const RUNTIME_TEMPLATE = "method/runtime/supertaskr.yaml";
+/**
+ * The one file the model per role is read from, repository-relative — and
+ * the same file the process section is read out of, so the constant is the
+ * parser library's one declaration of it rather than a second literal here.
+ */
+export { RUNTIME_TEMPLATE };
 
 /**
  * THE ROLE FILE'S NAME AGAINST THE TEMPLATE'S OWN KEY, and the two differ
@@ -5843,13 +5879,18 @@ export function roleModel(models, role) {
  * combination the constraints forbid BY NAME, and hands every other arm
  * a value instead of a habit.
  *
- * WHY THE PARSER IS BY HAND. The scripts in this directory are what the
- * CLI packages and the genesis installs (ADR-024 decision 7), and a
- * package's `devDependencies` are not there when it is installed. The
- * `roles:` block above is parsed the same way and for the same reason.
- * The e2e suite parses the SAME file with a real YAML library and
- * requires the two readings to agree, so the hand parser is checked
- * against a parser it shares no line with.
+ * WHY THE PARSER IS BY HAND, AND WHERE IT LIVES NOW. The scripts in this
+ * directory are what the CLI packages and the genesis installs (ADR-024
+ * decision 7), and a package's `devDependencies` are not there when it is
+ * installed, so the schema is read by a hand parser rather than by a YAML
+ * library. The `roles:` block above is parsed the same way and for the
+ * same reason. SINCE T-317 THAT READER IS THE PARSER LIBRARY'S — the
+ * module named at the top of this file, imported through its browser-safe
+ * entry and re-exported below unchanged, so the terminal, the app's
+ * settings screen and the skill read ONE implementation instead of a
+ * spelling each. The e2e suite parses the SAME file with a real YAML
+ * library and requires the two readings to agree, so the hand parser is
+ * checked against a parser it shares no line with.
  * ──────────────────────────────────────────────────────────────────── */
 
 /**
@@ -5858,528 +5899,51 @@ export function roleModel(models, role) {
  * A `DispatchLaneFinding` for the reason `ModelFinding` is one: the
  * dispatch arm already reports that class as a refusal, so a forbidden
  * combination stops a dispatch by exactly the path a missing model does.
+ *
+ * AND IT IS WHY THE READER IS BOUND RATHER THAN TAKEN WHOLE. A class
+ * declared in the parser package cannot extend one declared here, so the
+ * class travels the other way: the reader is built with this one, and
+ * every refusal the library raises for this arm is a `ProcessFinding`
+ * exactly as it was before the move.
  */
 export class ProcessFinding extends DispatchLaneFinding {}
 
-/** The one file every switch is declared in, repository-relative. */
-export const PROCESS_SCHEMA = "method/runtime/process-schema.yaml";
-
-/** The section of the runtime template that names the project's profile. */
-export const PROCESS_SECTION = "process";
-
 /**
- * THE FIELDS EVERY SWITCH DECLARES, and the list is here rather than in
- * the document because a schema row missing one of them is a settings
- * screen with a blank in it. Each answers a question a reader asks:
- * `what` it does, `effect` how the loop changes, `reads` which arm
- * symbol consults it, `needs` what it needs on, `floor` whether it may
- * be turned off, `band` which band measures it, `cost` what this project
- * measured, `type`/`values` the value set, `profiles` the three columns.
- */
-export const SWITCH_FIELDS = Object.freeze([
-  "type",
-  "values",
-  "what",
-  "effect",
-  "reads",
-  "needs",
-  "floor",
-  "band",
-  "cost",
-  "profiles",
-]);
-
-/** The two shapes a switch may take. */
-export const SWITCH_TYPES = Object.freeze(["toggle", "choice"]);
-
-/**
- * Strip one layer of YAML quoting off a scalar. The schema quotes every
- * free-text value, because an unquoted value carrying a colon is a
- * different document to a real parser and the same one to a naive
- * reader — which is the class of bug a hand parser exists to avoid, not
- * to demonstrate.
+ * THE SIX SYMBOLS, BOUND TO THIS ARM'S FINDING CLASS AND RE-EXPORTED
+ * UNDER THE NAMES THEY HAVE ALWAYS CARRIED.
  *
- * @param {string} raw
- * @returns {string}
+ * What each one does, and why it refuses what it refuses, is documented
+ * where it now lives (`lib/parser/src/process-settings.ts`): a second
+ * copy of that prose here is the duplication this move exists to end.
+ * The hand parser is still a hand parser and the e2e suite still checks
+ * it against a real YAML library — the reading moved, the argument did
+ * not.
  */
-function processScalar(raw) {
-  const t = raw.trim();
-  if (t.length >= 2 && ((t.startsWith('"') && t.endsWith('"')) || (t.startsWith("'") && t.endsWith("'")))) {
-    return t.slice(1, -1);
-  }
-  return t;
-}
+export const {
+  parseProcessSchema,
+  processSection,
+  resolveProcess,
+  switchValue,
+  processLedger,
+  constraintFindings,
+} = processPure.processSettingsReader({ Finding: ProcessFinding });
 
 /**
- * A YAML flow sequence — `[a, "b c", d]` — split on the commas that are
- * not inside a quoted item.
- *
- * @param {string} raw
- * @returns {string[]}
+ * The schema's own vocabulary, re-exported from the one file that
+ * declares it: where the switches live, which section of the template
+ * names the profile, the fields every switch answers and the two shapes
+ * a switch may take.
  */
-function processFlowList(raw) {
-  const t = raw.trim();
-  if (!t.startsWith("[") || !t.endsWith("]")) return [];
-  const body = t.slice(1, -1);
-  /** @type {string[]} */
-  const items = [];
-  let cur = "";
-  /** @type {string | null} */
-  let quote = null;
-  for (const ch of body) {
-    if (quote !== null) {
-      if (ch === quote) quote = null;
-      cur += ch;
-      continue;
-    }
-    if (ch === '"' || ch === "'") {
-      quote = ch;
-      cur += ch;
-      continue;
-    }
-    if (ch === ",") {
-      items.push(cur);
-      cur = "";
-      continue;
-    }
-    cur += ch;
-  }
-  items.push(cur);
-  return items.map((s) => processScalar(s)).filter((s) => s !== "");
-}
+export { PROCESS_SCHEMA, PROCESS_SECTION, SWITCH_FIELDS, SWITCH_TYPES };
 
-/** @param {string} line @returns {number} */
+/**
+ * The indent of a line. Its one remaining reader is `switchReadSites`
+ * below; the schema parser took its own copy to the library with it.
+ *
+ * @param {string} line @returns {number}
+ */
 function indentOf(line) {
   return line.length - line.trimStart().length;
-}
-
-/**
- * @typedef {object} ProcessSwitch
- * @property {string} id
- * @property {string} type
- * @property {string[]} values
- * @property {string} what
- * @property {string} effect
- * @property {string} reads
- * @property {string[]} needs
- * @property {boolean} floor
- * @property {string[]} band
- * @property {string} cost
- * @property {Map<string, string>} profiles
- */
-
-/**
- * @typedef {object} ProcessSchema
- * @property {number} version
- * @property {Map<string, string>} profiles   profile id → what it is
- * @property {Map<string, ProcessSwitch>} switches  in declaration order
- */
-
-/**
- * THE SCHEMA, PARSED — and parsed STRICTLY, because a hand parser that
- * shrugs at a shape it does not know is a parser that silently loses a
- * switch. Every line under `switches:` either matches the shape this
- * function knows or REFUSES naming its own line number.
- *
- * @param {string} text
- * @returns {ProcessSchema}
- */
-export function parseProcessSchema(text) {
-  const lines = text.split(/\r?\n/);
-  let version = 0;
-  /** @type {Map<string, string>} */
-  const profiles = new Map();
-  /** @type {Map<string, ProcessSwitch>} */
-  const switches = new Map();
-  /** @type {"none" | "profiles" | "switches"} */
-  let block = "none";
-  /** @type {Record<string, unknown> | null} */
-  let cur = null;
-  let curId = "";
-  let inProfiles = false;
-
-  const close = () => {
-    if (cur === null) return;
-    const missing = SWITCH_FIELDS.filter((f) => cur !== null && cur[f] === undefined);
-    if (missing.length > 0) {
-      throw new ProcessFinding(
-        `${PROCESS_SCHEMA}: the switch \`${curId}\` declares no ${missing.join(", ")}. Every ` +
-          "switch answers all of " +
-          `${SWITCH_FIELDS.join(", ")} — a row missing one of them is a settings screen with a ` +
-          "blank in it, and a reader cannot tell an option that costs nothing from one nobody " +
-          "has measured.",
-      );
-    }
-    switches.set(curId, /** @type {ProcessSwitch} */ ({ id: curId, ...cur }));
-    cur = null;
-    curId = "";
-    inProfiles = false;
-  };
-
-  for (let i = 0; i < lines.length; i += 1) {
-    const line = /** @type {string} */ (lines[i]);
-    const at = `${PROCESS_SCHEMA} line ${String(i + 1)}`;
-    if (line.trim() === "" || line.trimStart().startsWith("#")) continue;
-    const col = indentOf(line);
-    if (col === 0) {
-      close();
-      block = "none";
-      const m = /^([A-Za-z0-9_.-]+):\s*(.*)$/.exec(line);
-      if (m === null) {
-        throw new ProcessFinding(`${at}: a top-level line this parser cannot read: ${line.trim()}`);
-      }
-      const key = /** @type {string} */ (m[1]);
-      const rest = /** @type {string} */ (m[2]);
-      if (key === "version") version = Number.parseInt(processScalar(rest), 10);
-      else if (key === "profiles") block = "profiles";
-      else if (key === "switches") block = "switches";
-      else {
-        throw new ProcessFinding(
-          `${at}: \`${key}:\` is not a section this schema declares. The sections are version, ` +
-            "profiles and switches.",
-        );
-      }
-      continue;
-    }
-    const m = /^\s*([A-Za-z0-9_.-]+):\s*(.*)$/.exec(line);
-    if (m === null) {
-      throw new ProcessFinding(`${at}: a line this parser cannot read: ${line.trim()}`);
-    }
-    const key = /** @type {string} */ (m[1]);
-    const rest = /** @type {string} */ (m[2]);
-    if (block === "profiles") {
-      if (col !== 2) throw new ProcessFinding(`${at}: a profile is declared at two spaces, not ${String(col)}`);
-      profiles.set(key, processScalar(rest));
-      continue;
-    }
-    if (block !== "switches") {
-      throw new ProcessFinding(`${at}: an indented line outside every section: ${line.trim()}`);
-    }
-    if (col === 2) {
-      close();
-      curId = key;
-      cur = { needs: [], band: [], values: [], profiles: new Map() };
-      if (rest.trim() !== "") {
-        throw new ProcessFinding(`${at}: the switch \`${key}\` carries a value on its own line`);
-      }
-      continue;
-    }
-    if (cur === null) {
-      throw new ProcessFinding(`${at}: a switch field before any switch: ${line.trim()}`);
-    }
-    if (col === 4) {
-      inProfiles = false;
-      if (key === "profiles") {
-        inProfiles = true;
-        cur["profiles"] = new Map();
-        continue;
-      }
-      if (!SWITCH_FIELDS.includes(key)) {
-        throw new ProcessFinding(
-          `${at}: \`${key}:\` is not a field a switch declares. The fields are ` +
-            `${SWITCH_FIELDS.join(", ")}, and a field this parser silently ignored would be a ` +
-            "line the settings screens never render.",
-        );
-      }
-      if (key === "values" || key === "needs" || key === "band") cur[key] = processFlowList(rest);
-      else if (key === "floor") cur[key] = processScalar(rest) === "true";
-      else cur[key] = processScalar(rest);
-      continue;
-    }
-    if (col === 6 && inProfiles) {
-      /** @type {Map<string, string>} */ (cur["profiles"]).set(key, processScalar(rest));
-      continue;
-    }
-    throw new ProcessFinding(`${at}: an indent of ${String(col)} this parser does not know`);
-  }
-  close();
-  if (version === 0 || profiles.size === 0 || switches.size === 0) {
-    throw new ProcessFinding(
-      `${PROCESS_SCHEMA} parsed to ${String(switches.size)} switch(es) under ` +
-        `${String(profiles.size)} profile(s) at version ${String(version)}, which cannot be right. ` +
-        "The schema is the ONE source every renderer reads (ADR-024 decision 6), and an empty " +
-        "reading of it would leave the arm running on its own memory of the loop.",
-    );
-  }
-  return { version, profiles, switches };
-}
-
-/**
- * @typedef {object} ProcessSection
- * @property {string} profile
- * @property {string[]} available
- * @property {Map<string, string>} overrides
- */
-
-/**
- * THE `process:` SECTION OF THE RUNTIME TEMPLATE — which profile this
- * project runs, which profiles it may run, and the switches it departs
- * from. It carries no explanation of its own: that is the schema's, said
- * once, and a second copy here is a copy that goes stale.
- *
- * @param {string} templateYaml
- * @returns {ProcessSection | null} null when the template has no such section
- */
-export function processSection(templateYaml) {
-  const lines = templateYaml.split(/\r?\n/);
-  const at = lines.findIndex((l) => new RegExp(`^${PROCESS_SECTION}:\\s*(#.*)?$`).test(l));
-  if (at === -1) return null;
-  let profile = "";
-  /** @type {string[]} */
-  let available = [];
-  /** @type {Map<string, string>} */
-  const overrides = new Map();
-  let inSwitches = false;
-  for (const line of lines.slice(at + 1)) {
-    if (line.trim() === "" || line.trimStart().startsWith("#")) continue;
-    if (!/^\s/.test(line)) break;
-    const m = /^\s*([A-Za-z0-9_.-]+):\s*(.*)$/.exec(line);
-    if (m === null) continue;
-    const key = /** @type {string} */ (m[1]);
-    const rest = /** @type {string} */ (m[2]);
-    const col = indentOf(line);
-    if (col === 2) {
-      inSwitches = false;
-      if (key === "profile") profile = processScalar(rest);
-      else if (key === "available") available = processFlowList(rest);
-      else if (key === "switches") inSwitches = rest.trim() === "" || rest.trim() === "{}";
-      continue;
-    }
-    if (col === 4 && inSwitches) overrides.set(key, processScalar(rest));
-  }
-  if (profile === "") {
-    throw new ProcessFinding(
-      `${RUNTIME_TEMPLATE}: the \`${PROCESS_SECTION}:\` section names no \`profile:\`, so this ` +
-        "project's loop has no column of the schema to resolve against. A profile guessed here " +
-        "would be the arm choosing the project's ceremony for it.",
-    );
-  }
-  return { profile, available, overrides };
-}
-
-/**
- * @typedef {object} ProcessSettings
- * @property {string} profile
- * @property {string[]} available
- * @property {Map<string, string>} values
- * @property {Set<string>} overridden
- */
-
-/**
- * RESOLVE THE PROJECT'S SWITCHES: the profile's column of the schema,
- * with the section's departures laid over it.
- *
- * Every refusal here names the repair. A profile the schema does not
- * declare, an override on a switch the schema does not declare, a value
- * outside a switch's own set, and an override on a FLOOR switch are four
- * different mistakes and each is reported as itself.
- *
- * @param {ProcessSchema} schema
- * @param {ProcessSection} section
- * @returns {ProcessSettings}
- */
-export function resolveProcess(schema, section) {
-  const known = [...schema.profiles.keys()];
-  if (!schema.profiles.has(section.profile)) {
-    throw new ProcessFinding(
-      `${RUNTIME_TEMPLATE} runs the profile \`${section.profile}\`, which ${PROCESS_SCHEMA} does ` +
-        `not declare. The profiles are ${known.join(", ")}.`,
-    );
-  }
-  if (section.available.length > 0) {
-    const strayed = section.available.filter((p) => !schema.profiles.has(p));
-    const missed = known.filter((p) => !section.available.includes(p));
-    if (strayed.length > 0 || missed.length > 0) {
-      throw new ProcessFinding(
-        `${RUNTIME_TEMPLATE}'s \`available:\` and ${PROCESS_SCHEMA}'s profiles disagree` +
-          (strayed.length > 0 ? ` — the template offers ${strayed.join(", ")}, which the schema does not declare` : "") +
-          (missed.length > 0 ? ` — the schema declares ${missed.join(", ")}, which the template does not offer` : "") +
-          ". A settings screen rendered from the template alone would hide a profile that exists.",
-      );
-    }
-  }
-  /** @type {Map<string, string>} */
-  const values = new Map();
-  for (const [id, sw] of schema.switches) {
-    const v = sw.profiles.get(section.profile);
-    if (v === undefined) {
-      throw new ProcessFinding(
-        `${PROCESS_SCHEMA}: the switch \`${id}\` names no value under the profile ` +
-          `\`${section.profile}\`, so this project's loop is undefined at that switch.`,
-      );
-    }
-    if (!sw.values.includes(v)) {
-      throw new ProcessFinding(
-        `${PROCESS_SCHEMA}: the switch \`${id}\` takes the value \`${v}\` under ` +
-          `\`${section.profile}\`, which is not in its own value set (${sw.values.join(", ")}).`,
-      );
-    }
-    values.set(id, v);
-  }
-  /** @type {Set<string>} */
-  const overridden = new Set();
-  for (const [id, v] of section.overrides) {
-    const sw = schema.switches.get(id);
-    if (sw === undefined) {
-      throw new ProcessFinding(
-        `${RUNTIME_TEMPLATE} sets the switch \`${id}\`, which ${PROCESS_SCHEMA} does not declare. ` +
-          "A switch set in the template and declared nowhere is a setting no surface can explain.",
-      );
-    }
-    if (sw.floor) {
-      throw new ProcessFinding(
-        `${RUNTIME_TEMPLATE} sets \`${id}\` to \`${v}\`, and \`${id}\` is FLOOR: no profile turns ` +
-          `it off (${sw.what}). The floor is the set the room ruled a project may not refine, so ` +
-          "this is refused rather than applied.",
-      );
-    }
-    if (!sw.values.includes(v)) {
-      throw new ProcessFinding(
-        `${RUNTIME_TEMPLATE} sets \`${id}\` to \`${v}\`, which is not one of its values ` +
-          `(${sw.values.join(", ")}).`,
-      );
-    }
-    values.set(id, v);
-    overridden.add(id);
-  }
-  return { profile: section.profile, available: known, values, overridden };
-}
-
-/**
- * ONE SWITCH'S VALUE, AND THE ONLY WAY THE ARM READS ONE.
- *
- * Every read goes through here so that a switch the resolution has
- * DROPPED is a refusal rather than an `undefined` that reads as false.
- * That is also what makes criterion 3 measurable: the mutant for a
- * switch is the arm ignoring it, and ignoring it lands exactly here.
- *
- * @param {ProcessSettings} settings
- * @param {string} id
- * @returns {string}
- */
-export function switchValue(settings, id) {
-  const v = settings.values.get(id);
-  if (v === undefined) {
-    throw new ProcessFinding(
-      `the process switch \`${id}\` is not in this project's resolved settings, so the arm cannot ` +
-        `read it. Either ${PROCESS_SCHEMA} no longer declares it, or the resolution dropped it — ` +
-        "and an arm that carried on would be running that step on its own memory of the loop " +
-        "rather than on the project's setting.",
-    );
-  }
-  return v;
-}
-
-/**
- * @typedef {object} LedgerRow
- * @property {string} id
- * @property {string} value
- * @property {string} what
- * @property {string} effect
- * @property {string} reads
- * @property {boolean} floor
- * @property {string[]} band
- * @property {string} cost
- * @property {boolean} overridden
- */
-
-/**
- * THE ARM'S READ OF EVERY SWITCH, in the schema's own order.
- *
- * This is the row set the dispatch brief prints and the merge names its
- * governing switches out of — and it is built by READING each switch
- * through `switchValue`, never by walking the resolution's own map. The
- * difference is the whole keeper: a switch the schema declares and the
- * resolution lost is a THROW here, where a walk of the map would simply
- * render one row fewer and nobody would see the loss.
- *
- * @param {ProcessSchema} schema
- * @param {ProcessSettings} settings
- * @returns {LedgerRow[]}
- */
-export function processLedger(schema, settings) {
-  /** @type {LedgerRow[]} */
-  const rows = [];
-  for (const [id, sw] of schema.switches) {
-    rows.push({
-      id,
-      value: switchValue(settings, id),
-      what: sw.what,
-      effect: sw.effect,
-      reads: sw.reads,
-      floor: sw.floor,
-      band: sw.band,
-      cost: sw.cost,
-      overridden: settings.overridden.has(id),
-    });
-  }
-  return rows;
-}
-
-/**
- * Does a value satisfy one side of a need? `*` is every value and a
- * `|` separates alternatives.
- *
- * @param {string} spec
- * @param {string} value
- * @returns {boolean}
- */
-function needMatches(spec, value) {
-  if (spec.trim() === "*") return true;
-  return spec
-    .split("|")
-    .map((s) => s.trim())
-    .includes(value);
-}
-
-/**
- * THE FORBIDDEN COMBINATIONS, EACH NAMED.
- *
- * A constraint reads `<this value> => <other id>=<other value>`: while
- * this switch holds one of the values on the left, the switch on the
- * right must hold one of the values on the right. A finding names BOTH
- * switches and BOTH values, because "invalid configuration" sends a
- * reader to a settings screen with nothing to look at.
- *
- * @param {ProcessSchema} schema
- * @param {ProcessSettings} settings
- * @returns {string[]}
- */
-export function constraintFindings(schema, settings) {
-  /** @type {string[]} */
-  const findings = [];
-  for (const [id, sw] of schema.switches) {
-    const mine = switchValue(settings, id);
-    for (const need of sw.needs) {
-      const m = /^\s*(.+?)\s*=>\s*([A-Za-z0-9_.-]+)\s*=\s*(.+?)\s*$/.exec(need);
-      if (m === null) {
-        findings.push(
-          `${PROCESS_SCHEMA}: the switch \`${id}\` declares the need ${JSON.stringify(need)}, ` +
-            "which is not of the form `<value> => <other id>=<value>`",
-        );
-        continue;
-      }
-      const when = /** @type {string} */ (m[1]);
-      const other = /** @type {string} */ (m[2]);
-      const wanted = /** @type {string} */ (m[3]);
-      if (!schema.switches.has(other)) {
-        findings.push(
-          `${PROCESS_SCHEMA}: the switch \`${id}\` needs \`${other}\`, which this schema does not ` +
-            "declare — a constraint on a switch nobody can set",
-        );
-        continue;
-      }
-      if (!needMatches(when, mine)) continue;
-      const has = switchValue(settings, other);
-      if (needMatches(wanted, has)) continue;
-      findings.push(
-        `FORBIDDEN COMBINATION: \`${id}\` is \`${mine}\` and that needs \`${other}\` to be ` +
-          `\`${wanted.split("|").map((s) => s.trim()).join("\` or \`")}\`, but \`${other}\` is ` +
-          `\`${has}\`. ${sw.what} — ${sw.effect}`,
-      );
-    }
-  }
-  return findings;
 }
 
 /**

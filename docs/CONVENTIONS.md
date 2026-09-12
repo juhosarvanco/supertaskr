@@ -16,6 +16,11 @@ and T-236 (2026-09-02, whose pre-compaction text is
   needs the parser's dist/ (fails with a clear TS2307 if missing),
   and the symlink resolves the parser's deps via the parser's own
   node_modules, so its `npm ci` must have run.
+  **AND SINCE T-317 tools/e2e NEEDS THAT BUILD BEFORE ITS SCRIPTS, not
+  only before its suite**: `dispatch-brief.mjs` imports the process
+  settings reader from the parser's built browser entry by path (the
+  package still declares no dependency on the parser), so a tree with no
+  `lib/parser/dist` refuses at load naming this order.
 - lib/parser (C-06), run from lib/parser/: `npm ci` ·
   `npx vitest run` (suite) · `npx tsc --noEmit` (types) ·
   `npm run build` (emits dist/, gitignored). The suite's smoke test
@@ -893,7 +898,13 @@ and T-236 (2026-09-02, whose pre-compaction text is
   parses the schema with a real YAML library and requires that reading to
   agree with the arm's hand parser, derives each switch's read site from
   the arm's own source rather than from a table, and reds per switch when
-  the arm stops reading it. The switch inventory the schema was built
+  the arm stops reading it. **AND SINCE T-317 THE READER ITSELF IS THE
+  PARSER LIBRARY'S** — `lib/parser/src/process-settings.ts`, exported
+  through the browser-safe entry `@supertaskr/parser/pure`, with the arm
+  importing it and re-exporting every symbol unchanged — so the terminal
+  command, the app's settings screen and the skill render ONE
+  implementation rather than a spelling each, and the app can render it
+  at all. The switch inventory the schema was built
   from — every row with its old and ruled value, its measured cost and
   its constraint — is in `docs/rooms/loop-cost-and-speed.md`.
 - GUARD-CLASS PATHS, IN THIS PROJECT'S OWN SPELLING (T-296, ADR-024
