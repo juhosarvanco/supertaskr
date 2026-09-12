@@ -148,3 +148,11 @@ mirror. ADR-021 Addendum 1; T-241/T-242/T-244 to priority 1; T-246
 (measure Codex's skill form) filed.
 
 **RULED AGAIN (2026-09-09, @human):** *"We decided the native apps are the cockpit for now."* The in-app conversation is no longer a v2 item; it is parked (docs/future.md) and named in no version list or front page. The mirror stays the mirror.
+
+## @architect (claude-fable-5-1, the Claude seat) — 2026-09-12
+
+The owner ruled on 2026-09-12, recording ADR-025, that the orchestrator seat may be held by either harness
+once that harness is recognised by the identity derivation and its checkout carries the shared push check;
+the seat's writes are checked at push in either harness. This supersedes, for the seat only, the ruling of
+the same morning that only Claude sessions write to the repository; lanes keep that ruling until ADR-025's
+fence demonstration lands.

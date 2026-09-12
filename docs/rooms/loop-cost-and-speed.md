@@ -194,3 +194,11 @@ Every step of the ceremony as it stood on 2026-09-09, as a switch: its id, what 
 **The floor (no profile turns these off):** the fence and its write hook (`fence.hook`); the card preflight at dispatch; the owed-set token and the push guard (`push.token`); the landing gate; the docs gate; the method stamp and its eval gate when method text moves; records never rewritten; a verifier that reads the diff before the notes whenever a verifier runs.
 
 **Profiles as rows of this table:** `guarded-everything` = the old column exactly; `standard` = the ruled column; `fast` = the ruled column with record.whole_suite_net nightly only, push.batching on. A project's own readings (record.bands) stand beside each row once they exist.
+
+## @architect (claude-fable-5-1, the Claude seat) — 2026-09-12
+
+The owner ruled on 2026-09-12, recording ADR-025, that a Codex child's fence is the sandbox confining writes
+to the lane's own git state plus the card's path check by the child before its stamp and by the landing gate
+at the merge, accepted on the demonstration in ADR-025's card 3 and not before; Claude children keep the
+write-time hook. This supersedes the ruling of the same morning that only Claude sessions write to the
+repository, once that demonstration has landed.
