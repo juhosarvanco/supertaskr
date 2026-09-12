@@ -70,14 +70,17 @@ import {
 } from "../scripts/dispatch-brief.mjs";
 import {
   REFERENCE_DOC,
+  bandUnits,
   editTemplate,
   main as settingsMain,
   measuredFor,
   renderReference,
   setPlan,
   settingsRows,
+  treeReadings,
   yamlScalar,
 } from "../scripts/settings.mjs";
+import { fmt } from "../scripts/health-bands.mjs";
 import { docsReaders } from "../scripts/docs-scan.mjs";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 
@@ -2321,4 +2324,146 @@ test("the committed settings chapter is a GENERATION of the schema, and a schema
     readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8"),
   );
   expect(renderReference(schema), "and the chapter did not").toBe(committed);
+});
+
+// ── T-300 verdict, assigned corrections (verifier, phase 2) ───────────
+//
+// Two halves of AC1 that this implementation already keeps and that no
+// body could see, because the one tree every body renders over decides
+// neither: this repository departs from its profile at NO switch, so a
+// listing that printed the PROFILE's value instead of the project's is
+// indistinguishable here; and every body injects its own `readings`, so
+// a command that never went to the tree for them is indistinguishable
+// too. "Its state" and "the project's own band reading" are the two
+// things AC1 asks the listing for, and each needed an arrangement the
+// six bodies do not build.
+
+test("the listing goes to the PROJECT'S OWN tree for its readings — the measured column is not a rendering of numbers somebody handed in", () => {
+  // The readings this checkout really prices, by the same functions
+  // `npm run health` uses, so this command cannot report a different
+  // number than the band report does.
+  const readings = treeReadings(repoRoot);
+  expect(
+    readings.size,
+    `${repoRoot} has recorded meters, so at least one loop band prices here — the arrangement ` +
+      "this body needs is present",
+  ).toBeGreaterThan(0);
+  const units = bandUnits();
+
+  const said: string[] = [];
+  // NO `readings` INJECTED. This is the one body that asks the command
+  // to go and FIND them, which is what "the project's own band reading"
+  // means and what a hand-built map can never decide.
+  const status = settingsMain(["--root", repoRoot], {
+    stdout: (s) => said.push(s),
+    stderr: (s) => said.push(s),
+  });
+  expect(status).toBe(EXIT.CLEAN);
+  const out = said.join("\n");
+
+  const loaded = process300();
+  const priced = [...loaded.schema.switches.values()].filter((sw) =>
+    sw.band.some((b) => readings.has(b)),
+  );
+  expect(priced.length, "at least one switch names a band this tree has read").toBeGreaterThan(0);
+  for (const sw of priced) {
+    const band = sw.band.find((b) => readings.has(b)) as string;
+    const reading = readings.get(band);
+    const unit = units.get(band);
+    expect(unit, `${band} carries its own unit, read off the band config`).toBeTruthy();
+    expect(
+      out,
+      `${sw.id} shows this tree's reading for ${band}, in that band's own unit`,
+    ).toContain(`measured: ${band} = ${fmt(reading!.value)} ${unit ?? ""}`);
+    expect(out, `and ${sw.id} is not dressed as an estimate instead`).not.toContain(
+      `measured: the seat's estimate — ${sw.cost} (awaiting ${sw.band.join(", ")})`,
+    );
+  }
+
+  // THE CONTROL, EVALUATED WHERE THE ARRANGEMENT THAT DECIDES THE
+  // SUBJECT IS ABSENT: the same schema, the same template, no meters.
+  // Nothing prices, every switch falls back to the seat's estimate, and
+  // the listing — the one verb that has to work everywhere — still runs.
+  const bare = settingsProject();
+  try {
+    expect(treeReadings(bare).size, "a tree with no recorded meter prices no band").toBe(0);
+    const alone: string[] = [];
+    expect(
+      settingsMain(["--root", bare], {
+        stdout: (s) => alone.push(s),
+        stderr: (s) => alone.push(s),
+      }),
+    ).toBe(EXIT.CLEAN);
+    expect(
+      alone.join("\n"),
+      "and a project with no readings shows none, rather than borrowing this one's",
+    ).not.toContain("measured: loop/");
+  } finally {
+    rmSync(bare, { recursive: true, force: true });
+  }
+});
+
+test("a DEPARTURE is listed at the value the PROJECT resolves to, marked against the profile's own", () => {
+  const root = settingsProject();
+  try {
+    const base = loadProcess(root);
+    expect(base, "the fixture carries this repository's schema and template").not.toBeNull();
+    const id = "dispatch.keeper_at_base";
+    const sw = base!.schema.switches.get(id);
+    expect(sw, `${id} is a switch the schema declares`).toBeDefined();
+    const profileValue = base!.settings.values.get(id) as string;
+    const departed = sw!.values.find((v) => v !== profileValue) as string;
+
+    // THE ARRANGEMENT ABSENT: before the departure, the state column and
+    // the profile's own value are the same string, which is why the
+    // fixture every other body renders over cannot decide this.
+    const undeparted: string[] = [];
+    expect(
+      settingsMain(["--root", root], {
+        stdout: (s) => undeparted.push(s),
+        stderr: (s) => undeparted.push(s),
+        readings: new Map(),
+      }),
+    ).toBe(EXIT.CLEAN);
+    expect(undeparted.join("\n"), "no departure, and the header says so").toContain(
+      "0 departure(s) from the profile",
+    );
+    expect(undeparted.join("\n"), "and no row is marked one").not.toContain("DEPARTURE —");
+
+    // THE ARRANGEMENT PRESENT.
+    const templateAt = path.join(root, RUNTIME_TEMPLATE);
+    writeFileSync(
+      templateAt,
+      editTemplate(
+        readFileSync(templateAt, "utf8"),
+        setPlan({ schema: base!.schema, settings: base!.settings, id, value: departed }),
+      ),
+    );
+    const loaded = loadProcess(root);
+    expect(loaded, "the departed template still loads").not.toBeNull();
+    const said: string[] = [];
+    expect(
+      settingsMain(["--root", root], {
+        stdout: (s) => said.push(s),
+        stderr: (s) => said.push(s),
+        readings: new Map(),
+      }),
+    ).toBe(EXIT.CLEAN);
+    const out = said.join("\n");
+    expect(
+      out,
+      "the state column carries the value THIS PROJECT resolves to, never the profile's — a " +
+        "settings screen showing the column the project departed from is showing somebody " +
+        "else's loop",
+    ).toContain(`  ${id} = ${departed}  [DEPARTURE — ${loaded!.settings.profile} is ${profileValue}]`);
+    expect(out, "and the header counts the departure").toContain(
+      "1 departure(s) from the profile",
+    );
+    expect(
+      out,
+      "and the profile's own value is not what the row reads as its state",
+    ).not.toContain(`  ${id} = ${profileValue}`);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
