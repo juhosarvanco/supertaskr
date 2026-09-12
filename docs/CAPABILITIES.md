@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1040 behaviours** — 1038 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1041 behaviours** — 1039 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -1068,6 +1068,7 @@ Census: **1040 behaviours** — 1038 extracted sentences + 2 named-not-extracted
 - the lane protocol names the run record as the contract every child runs under, and names no product's spelling for it
 - the record is one JSON document per attempt under the runs directory, and a continuation keeps the history it continues
 - the reservation is the EXCLUSIVE CREATE ITSELF, not an existence check in front of a write — the one place a check-then-write and an `O_EXCL` open answer differently
+- an attempt id and a work id are a CHARSET, never a path fragment — an id that would leave the runs directory is REFUSED
 
 ## session-economics
 
