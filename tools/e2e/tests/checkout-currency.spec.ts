@@ -1353,6 +1353,60 @@ test("Codex tasks sharing one app-server compare by thread UUID as well as proce
   ).toBe(true);
 });
 
+test("the Codex harness is its EXACT executable name, so a neighbour binary is never a session", () => {
+  // THE NEGATIVE HALF OF THE THIRD CRITERION, ON THE CODEX SIDE. The
+  // Claude matcher is drilled across nineteen unrelated shapes. The Codex
+  // matcher had ONE — an executable named `node` whose ARGUMENT mentions
+  // codex — so nothing separated the exact name from a prefix of it, or
+  // from a differently-cased one. Both shapes are live on the machine
+  // this was measured on: a `codex-code-mode-host` process, and the
+  // desktop application's capitalised helpers.
+  //
+  // KILLED BY: `startsWith` or `includes` in place of the equality, and
+  // by folding the case the Claude arm one function above is forbidden to
+  // fold.
+  const SERVER = "/Applications/ChatGPT.app/Contents/Resources/codex";
+  expect(isCodexHarnessProcess(CODEX_SERVER_CMD, SERVER), "THE POSITIVE CONTROL").toBe(true);
+  for (const neighbour of [
+    "/Applications/ChatGPT.app/Contents/Resources/codex-code-mode-host",
+    "/usr/local/bin/codex-helper",
+    "/usr/local/bin/codexx",
+    "/usr/local/bin/mycodex",
+    "/usr/local/bin/not-codex",
+    "/Applications/ChatGPT.app/Contents/Frameworks/Codex.framework/Helpers/Codex",
+    "/Applications/ChatGPT.app/Contents/Frameworks/Codex.framework/Helpers/Codex Helper",
+    "/usr/local/bin/CODEX",
+  ]) {
+    expect(
+      isCodexHarnessProcess(CODEX_SERVER_CMD, neighbour),
+      `${neighbour} is a neighbour and not the harness`,
+    ).toBe(false);
+  }
+
+  // AND THE DERIVATION SAYS IT WITH A PERFECTLY VALID THREAD ID IN THE
+  // ENVIRONMENT, which is where a loosened match would do its harm: it
+  // would hand one program's seat to another program's process.
+  const derive = (program: string) =>
+    sessionIdentity({
+      pid: 10361,
+      env: { CODEX_THREAD_ID: CODEX_TASK_A, CODEX_SESSION_ID: CODEX_PARENT_SESSION },
+      readProcess: chain([
+        {
+          pid: 10361,
+          ppid: 1,
+          startedAt: "Fri Sep 11 10:51:00 2026",
+          command: CODEX_SERVER_CMD,
+          program,
+        },
+      ]),
+    });
+  expect(derive(SERVER).ok, "the supported server still derives").toBe(true);
+  expect(
+    derive("/Applications/ChatGPT.app/Contents/Resources/codex-code-mode-host").ok,
+    "a neighbour executable derives nothing even with a valid thread id",
+  ).toBe(false);
+});
+
 test("a valid Codex subagent thread is accepted independently of inherited session context", () => {
   // KILLED BY: requiring THREAD_ID and SESSION_ID to agree, or falling
   // back to SESSION_ID. A real subagent measurement has this shape: its
@@ -2414,6 +2468,68 @@ test("two Codex tasks on ONE app-server incarnation are told apart by the owners
   );
   expect(released.stdout).toContain("THE SEAT — RELEASED");
   expect(existsSync(file), "and the record is gone").toBe(false);
+});
+
+test("the logical task id reaches the identity block and no other surface", () => {
+  // THE IMPLEMENTATION CONTRACT'S OWN CLAUSE: the value is never echoed
+  // into a diagnostic, and appears in a holder record only inside its
+  // identity block. Only the REFUSAL half was pinned — a malformed value
+  // is kept out of its own error — and the SUCCESS half, which is the one
+  // where a real id exists to leak, had no body at all.
+  //
+  // THE ENVIRONMENT CARRIES THE UPPERCASE FORM AND THE RECORD THE
+  // CANONICAL ONE, so a leak of either is caught and a redaction written
+  // as a strip of the exact input does not pass.
+  //
+  // KILLED BY: interpolating the id into any line either arm prints, and
+  // by copying it to a second field or a derived name in the record.
+  const repo = briefSeatFixture("codex-containment");
+  const bin = path.join(repo, "containment-bin");
+  mkdirSync(bin);
+  const ps = path.join(bin, "ps");
+  writeFileSync(
+    ps,
+    "#!/bin/sh\nif [ \"$2\" = \"comm=\" ]; then\n  printf '/fixture/codex\\n'\nelse\n  printf '1 Fri Sep 11 10:51:00 2026 /fixture/codex\\n'\nfi\n",
+  );
+  chmodSync(ps, 0o755);
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    PATH: `${bin}${path.delimiter}${process.env["PATH"] ?? ""}`,
+    CODEX_THREAD_ID: CODEX_TASK_A.toUpperCase(),
+    CODEX_SESSION_ID: CODEX_PARENT_SESSION,
+  };
+  delete env["CLAUDE_PROJECT_DIR"];
+  const run = spawnSync(process.execPath, [BRIEF, "--take-seat", "--root", repo], {
+    cwd: repo,
+    env,
+    encoding: "utf8",
+  });
+  expect(run.status, `${run.stdout ?? ""}\n${run.stderr ?? ""}`).toBe(EXIT.CLEAN);
+  const said = `${run.stdout ?? ""}\n${run.stderr ?? ""}`;
+  expect(said, "the canonical form reaches no diagnostic").not.toContain(CODEX_TASK_A);
+  expect(said, "and neither does the form the environment carried").not.toContain(
+    CODEX_TASK_A.toUpperCase(),
+  );
+
+  const bytes = readFileSync(path.join(repo, HOLDER_REL_PATH), "utf8");
+  expect(bytes.split(CODEX_TASK_A).length - 1, "the record names it EXACTLY ONCE").toBe(1);
+  const record = JSON.parse(bytes) as { identity: Record<string, unknown> };
+  expect(record.identity["taskId"], "and that one place is the identity block").toBe(CODEX_TASK_A);
+  delete record.identity["taskId"];
+  expect(JSON.stringify(record), "nothing else in the record carries it").not.toContain(
+    CODEX_TASK_A,
+  );
+
+  // THE REFUSAL HALF, WITH A PADDED MIXED-CASE MARKER: a redaction done
+  // as a strip of the exact input is defeated by printing a trimmed or
+  // lowercased form, so all three are asserted absent.
+  const marker = "  NoT-A-Uuid-MARKER  ";
+  const refused = codexTaskIdentity({ CODEX_THREAD_ID: marker });
+  expect(refused.ok, "the marker is refused").toBe(false);
+  if (refused.ok) return;
+  expect(refused.why).not.toContain(marker);
+  expect(refused.why).not.toContain(marker.trim());
+  expect(refused.why.toLowerCase()).not.toContain(marker.trim().toLowerCase());
 });
 
 test("the identity derivation is named in the artifact's own header, with the harness it is a fact about", () => {
