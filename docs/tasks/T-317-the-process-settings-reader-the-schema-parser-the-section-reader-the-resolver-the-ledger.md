@@ -26,3 +26,8 @@ The schema parser, the template section reader, the resolver, the ledger and the
 - WHEN the library's tests run THE parser and the resolver SHALL be pinned by the same cases the arm's spec pins today, moved or shared, and the brief spec bodies that compare the hand parser to a real YAML parser SHALL stay green.
 - WHEN the terminal command's reference is regenerated after the move THE page SHALL be byte-identical; any behaviour change is a separate decision and not this card's.
 - WHEN the graph is regenerated THE app-to-parser edge SHALL be the only edge the app gains and the parser component's record SHALL name the module.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

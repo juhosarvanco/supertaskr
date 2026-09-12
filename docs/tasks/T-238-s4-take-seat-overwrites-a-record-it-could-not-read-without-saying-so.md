@@ -48,3 +48,7 @@ on evidence it did not read.
 ## Note at the merge (the architect seat, 2026-09-09, from the T-238-s1 executor after its verdict)
 
 The mechanism sentence overstates: `--take-seat` DOES print `holder: unknown [holder-unreadable]`; what is missing is the TAKEOVER sentence the DEAD branch renders. The remedy is the sentence, not the announcement.
+
+### Note of 2026-09-12 — premise retired by T-303-s1
+
+The T-303-s1 verifier observed on 2026-09-12 that this card's premise, that re-taking the seat is the right remedy for an unreadable holder record, no longer holds: both ownership commands now refuse such a record and preserve it for inspection. This note records the observation; whether the card is closed is the pruning sitting's decision, not this note's.

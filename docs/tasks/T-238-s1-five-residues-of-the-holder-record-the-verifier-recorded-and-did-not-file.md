@@ -856,3 +856,7 @@ The card asks for a fixture that is "a clone or a worktree of a SCRATCH reposito
 ## T-238-s5 withdrawn at the merge (the architect seat, 2026-09-09, T-238-s1's verdict, correction 2)
 
 T-238-s5 ("the documented app setup command cannot be run inside a lane") was the THIRD filing of one defect: T-216-s6 (planned) carries it with its criteria, and T-256 — a live lane at this merge — is building the remedy (`npm ci` for app/, the parity mapping retired). Its `touches:` also omitted the parity spec its own second criterion named. The file is removed in this merge; this paragraph is the surviving record. T-216-s6 is absorbed at T-256's merge.
+
+### Amendment of 2026-09-12 — the unreadable-record remedy after T-303-s1
+
+T-303-s1 merged on 2026-09-12 changes the remedy this card recorded for an unreadable holder record. Item 2 above said a session takes the seat explicitly with `--take-seat` to step past a record the reader cannot parse. Since T-303-s1 both ownership commands refuse an unreadable record without replacing or removing it, and the remedy is to inspect the record, then repair or delete it only after establishing that its claim is retired. The original text above stays as history; this section supersedes item 2's remedy only.

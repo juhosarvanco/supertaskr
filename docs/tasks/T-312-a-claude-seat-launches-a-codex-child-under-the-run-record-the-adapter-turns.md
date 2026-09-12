@@ -28,3 +28,8 @@ The Codex CLI on this host (`codex exec`, version 0.153.4) takes a working direc
 - WHEN the seat sends, continues or stops a Codex child THE operations of T-311 SHALL work through the adapter: `send` records the answer for a running or blocked attempt, delivery uses the child's evidenced ask-file read or the resumed session's prompt, `continue` uses `codex exec resume` only after the prior execution and owned jobs have ended and the writer reservation is retained or atomically reacquired, and `stop` confirms the process and its owned jobs are gone. A process ending with a question SHALL leave the assignment blocked, not finished; the adapter's body SHALL exercise T-311's question-to-resume sequence and retain delivery and acknowledgement evidence.
 - WHEN a role names a Codex model THE template's roles block SHALL carry effort as its own field beside the model string, the `@` suffix keeping its session meaning; the parser SHALL refuse a session suffix that spells an effort level, pinned by a body; the arm SHALL print harness, model and effort in the model row and record them as separate fields; the card's builder and verifier strings remain provenance.
 - WHEN this card lands THE fence rule for Codex children SHALL read: the demonstrated sandbox configuration plus the card's path check by the child before its stamp and by the landing gate at the merge; the method version SHALL bump with its release note and evaluation block. Landing this card authorizes no Codex lane; that is the owner's acceptance of the demonstration.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

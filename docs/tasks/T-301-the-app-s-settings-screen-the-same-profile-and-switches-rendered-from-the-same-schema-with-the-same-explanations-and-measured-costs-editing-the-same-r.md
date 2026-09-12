@@ -49,6 +49,14 @@ criteria above stay as history.
 - Size and tier are re-derived by the arm at resumption; the fence stays the app's three
   directories.
 
+## Amendment of 2026-09-12, second — the labels and the third prerequisite
+
+The nine cards filed on 2026-09-12 sequence the settings track as T-317, then T-300-s6, then T-299-s6, and T-299-s6 names this card and T-302 as the remaining consumers of the switch labels. This section supersedes the first amendment's resume condition only, and adds one rendering obligation; everything else above stands.
+
+- This card resumes only when T-317, T-300-s6 and T-299-s6 are merged on its resumption base, not merely verdicted.
+- The screen SHALL show, beside each switch's value, its label (operational, manual or declarative) and, for a manual switch, its action, read through the parser library's browser entry; a declarative switch SHALL be shown as read-only in the screen's own terms. Editing stays with the follow-up card that runs the terminal command.
+- The executor's brief SHALL be rendered only after this section is on the card, so the requirement is in the sealed contract and never added to a live lane.
+
 ## Implementation notes
 <!-- executor appends before finishing -->
 

@@ -71,3 +71,8 @@ record says why. A scope grant after the stamp still requires a fresh executor a
 - WHEN an attempt's state is uncertain THE arm SHALL reconcile before any replacement, a body SHALL show both properties: no second writer while the first might exist, and resumption once termination is established; a reservation that can never be released fails the second.
 - WHEN a process child exits after asking a question THE assignment SHALL remain `blocked`, retain its writer reservation if any, accept an answer through `send`, and resume that session only after the previous execution and its owned jobs have ended; a body SHALL cover question, process exit, answer, same-session resume, acknowledgement, assignment completion and reservation release in that order. A second body SHALL cover an authorized continuation after release, successful atomic reacquisition, and refusal if another attempt acquired the resource first.
 - WHEN this card lands THE lane protocol SHALL name the run record as the contract every child runs under, the flush guard SHALL know the new verbs, and the method version SHALL bump with its release note and evaluation block. No adapter is built here; the operations must be usable by T-312 and T-316 without change. No daemon, no heartbeat, no scheduler.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

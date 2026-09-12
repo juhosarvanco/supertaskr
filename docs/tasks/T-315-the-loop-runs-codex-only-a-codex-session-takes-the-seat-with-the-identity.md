@@ -27,3 +27,8 @@ The arm is Node scripts and runs under any shell; the seat verbs recognise a Cod
 - WHEN the acceptance sitting runs THE card it lands SHALL be chosen by the owner and named in this card's notes before dispatch, with its own authorization, and the sitting SHALL exercise every instrument that card owes (its owed suites, its regenerations, a method bump if it touches method text); a card whose instruments do not cover a method change SHALL not be taken as proof for method changes.
 - WHEN the sitting ends THE seat SHALL release the seat with the verb and leave a handoff in the packet form, no Claude session SHALL have written to the repository during the sitting, and the records SHALL name the models and usage actually reported.
 - WHEN this card lands THE adapters' AGENTS.md and the seat skill SHALL say how a Codex session holds the seat, and the method version SHALL bump with its release note and evaluation block.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

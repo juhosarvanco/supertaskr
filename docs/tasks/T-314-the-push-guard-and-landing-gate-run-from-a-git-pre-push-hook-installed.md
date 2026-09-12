@@ -27,3 +27,8 @@ The push guard and landing gate are registered only as a Claude PreToolUse hook 
 - WHEN the seat takes a checkout with `--take-seat` THE arm SHALL install the hook, the file `pre-push` in the tracked hooks directory the fence names, by setting `core.hooksPath` to that directory only when it is unset or already ours, SHALL refuse by name and change nothing when a different hooks path is configured, SHALL change no configuration when the seat acquisition fails, and SHALL announce the result; the seat verbs SHALL report a checkout without the hook as unguarded.
 - WHEN the Claude PreToolUse guard runs THE existing behaviour SHALL be unchanged, as a second net.
 - WHEN this card lands THE conventions SHALL record, at the push bullet, that a deliberate bypass (`--no-verify`, a push from a checkout without the hook) is closed by procedure in v1 as the owner accepted on 2026-09-12, that the runner's owed set on the pushed range remains the public check, and that a protected receiving gate and credential isolation are separate proposals (T-310).
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

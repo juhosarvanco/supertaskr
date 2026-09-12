@@ -27,3 +27,8 @@ The Claude CLI on this host runs headless with `-p`, `--output-format stream-jso
 - WHEN the seat sends, continues or stops a Claude child THE operations SHALL follow T-311's process-child transitions: `send` records the answer for a running or blocked attempt and delivery is evidenced by the child's ask-file read or by an answer passed to `--resume`; `continue` resumes the named session only after the prior execution and owned jobs have ended and the writer reservation is retained or atomically reacquired; `stop` confirms the process and its owned jobs are gone. Bodies SHALL cover interruption after delivered and before acknowledged with redelivery under the same question id, and a child process ending with a question while its assignment remains blocked, followed by answer, same-session resume, completion and reservation release.
 - WHEN one card is dispatched by a Codex seat, built by a Claude child, verified by a Claude phase two and merged by the Codex seat THE closing check and push SHALL pass, and the records SHALL name the harness, model, effort and usage of each child.
 - WHEN the sitting ends THE Codex seat SHALL hand the seat back with work parked, in the packet form, and the receiving seat SHALL take it with the verb and recheck the live state before writing; the method version SHALL bump with its release note and evaluation block.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

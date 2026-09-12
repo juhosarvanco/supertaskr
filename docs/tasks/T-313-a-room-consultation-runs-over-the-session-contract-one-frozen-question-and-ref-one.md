@@ -27,3 +27,8 @@ The room format's first rule is that positions are written before either side se
 - WHEN a participant's liveness is uncertain at the reveal THE barrier SHALL hold until the attempt is reconciled under T-311; WHEN a participant fails THE others' positions SHALL be published as collected, and the failed one SHALL be re-run as a fresh session with the original frozen packet only, no published position included, or recorded absent; a body SHALL show one interruption recovered with no position lost or exposed early.
 - WHEN a test participant is instructed to find another's position THE demonstration SHALL record its search and its outcome as evidence, labelled evidence, never as proof of non-access.
 - WHEN the consultation is recorded THE room SHALL carry each position under its participant's id, model, harness and effort, the packet's digest, the mode and the guarantee each participant actually had, and the owner's ruling paraphrased when it comes; the method version SHALL bump with its release note and evaluation block.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

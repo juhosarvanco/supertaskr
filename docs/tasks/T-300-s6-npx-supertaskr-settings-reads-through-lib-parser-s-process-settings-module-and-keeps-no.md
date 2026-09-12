@@ -23,3 +23,8 @@ T-300 landed on 2026-09-12 importing the resolver from the arm and planning its 
 ### Acceptance criteria
 
 - WHEN the command lists, edits or renders THE rows, the resolved values and the constraint refusals SHALL come from the parser library's module through its browser entry, and the command SHALL keep no parser, resolver or constraint engine of its own; its edit planning SHALL stay the command's, named as such in the notes; its `main(argv, io)` seam, its command forms, its exit vocabulary and the generated reference SHALL be unchanged and byte-identical, pinned by the existing bodies.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts
