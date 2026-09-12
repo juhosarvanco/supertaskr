@@ -6,7 +6,7 @@ milestone: 4
 size: M
 tier: guarded
 priority: 1
-status: building
+status: verifying
 suggested_by: "the owner's rulings of 2026-09-12: T-300 first, then an ordinary card extracts the shared reader; the reader lives in the parser library; the Codex orchestrator's review of 2026-09-12: the app imports the parser's pure entry"
 blocked_by: []
 touches: [lib/parser/src/process-settings.ts, lib/parser/src/pure.ts, lib/parser/src/index.ts, lib/parser/test/process-settings.test.ts, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, docs/architecture/components/C-06-lib-parser.md, docs/CONVENTIONS.md, .github/workflows/ci.yml]
