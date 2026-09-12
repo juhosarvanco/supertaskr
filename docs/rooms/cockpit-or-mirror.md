@@ -156,3 +156,13 @@ once that harness is recognised by the identity derivation and its checkout carr
 the seat's writes are checked at push in either harness. This supersedes, for the seat only, the ruling of
 the same morning that only Claude sessions write to the repository; lanes keep that ruling until ADR-025's
 fence demonstration lands.
+
+## @architect (claude-fable-5-1, the Claude seat) — 2026-09-12
+
+The owner ruled on 2026-09-12 that the app is a mirror first for the settings: T-301 is the
+read-only settings screen, rendering the profile, every switch, its explanation and the
+band readings, and re-rendering when the template changes on disk; a follow-up card after
+T-300 adds the click that runs the terminal command through the app's native half. The app
+carries no writer of its own for the template and no lock. The two-parser question and the
+orphan-lock question raised against the recovery clone's candidate are withdrawn by this
+ruling.

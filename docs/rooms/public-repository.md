@@ -48,3 +48,14 @@ The repository is private today. The exposure is history, not files: the older p
 - **D, the record conventions and the front-stage pass:** open, pending more planning; the boundary is fixed — they apply only to what crosses to the public repository, and the private development repository keeps its working voice as it is.
 - **E, the timing:** the first cut only at the v1 tag itself.
 - **F, the release gate:** the owner's checklist recorded as a checkpoint, and every stable tag preceded by a pre-release tag for outside testers with at least one testing cycle between them; the automated gates run first and are recorded in the same checkpoint.
+
+## @architect (claude-fable-5-1, the Claude seat) — 2026-09-12
+
+On 2026-09-11 the development repository itself was made public, to clear the Actions
+account block that had stopped every run since the previous evening. The room's revision A
+of 2026-09-10 had placed development history on a private backup remote with only curated
+releases public, and ruling E had set the first cut at the v1 tag. On 2026-09-12 the owner
+ruled that the visibility change is recorded as an interim exception to revision A: the
+permanent publication model, public development or a return to the private arrangement,
+stays open in this room, and ruling E stands, the curated first release still waiting for
+the v1 tag. No further visibility or history change is authorized by this entry.

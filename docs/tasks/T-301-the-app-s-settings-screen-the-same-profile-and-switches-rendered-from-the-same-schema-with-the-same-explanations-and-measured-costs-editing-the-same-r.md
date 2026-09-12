@@ -26,6 +26,29 @@ The mirror app renders the board off files; the settings are a file too. One sch
 - WHEN the settings screen opens THE profile and the switches SHALL render from the schema with their explanations and the project's band readings, and a change SHALL write the runtime template through the app's existing file writer with the constraints enforced.
 - WHEN the template changes on disk THE screen SHALL re-render from the file (the board's own arrival mechanism), and a body SHALL show a forbidden combination refused in the screen with the constraint's text.
 
+## Amendment of 2026-09-12 — the mirror first
+
+The owner ruled on 2026-09-12 that the app is a mirror first. This section supersedes the
+first criterion's write clause and narrows the second criterion's refusal; the original
+criteria above stay as history.
+
+- The first criterion's rendering clause stands: the profile and the switches render from
+  the schema with their explanations and the project's band readings. Its write clause,
+  that a change writes the runtime template through the app's file writer, is superseded:
+  this card writes nothing. The edit is a follow-up card after T-300 lands, in which a click
+  runs the terminal command through the native half and the screen re-renders from disk.
+- The second criterion's re-render clause stands. Its refusal clause is narrowed: a
+  forbidden combination present in the template on disk is shown on the screen as a
+  diagnostic naming the constraint; refusing an edit belongs to the follow-up card.
+- The shared reader is read from lib/parser once it lands there; until then this lane is
+  not resumed. This card resumes only when both the reader in lib/parser and T-300's
+  adoption follow-up are merged on its dispatch base.
+- The recovery clone's app-side candidate (its settings screen, data source and tests at
+  its commit e1e1b14b) is input material for the executor, read as reference; its expanded
+  contract of twenty-three paths is not adopted, and its native writer is not used.
+- Size and tier are re-derived by the arm at resumption; the fence stays the app's three
+  directories.
+
 ## Implementation notes
 <!-- executor appends before finishing -->
 

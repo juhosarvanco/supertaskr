@@ -202,3 +202,40 @@ to the lane's own git state plus the card's path check by the child before its s
 at the merge, accepted on the demonstration in ADR-025's card 3 and not before; Claude children keep the
 write-time hook. This supersedes the ruling of the same morning that only Claude sessions write to the
 repository, once that demonstration has landed.
+
+## @architect (claude-fable-5-1, the Claude seat) — 2026-09-12
+
+The owner ruled on 2026-09-12 on the order of the settings doors: T-300, the terminal,
+lands first as dispatched, with its own small planner; the shared settings reader is then
+extracted by an ordinary card; T-300 adopts it in a follow-up; T-301 is built on it. The
+expanded contract drafted in the recovery clone, which made T-301 the owner of a shared
+interpreter with T-300 waiting behind it, is not adopted. The owner also ruled that the
+shared reader lives in lib/parser, the pure browser-safe library the app and the tooling
+already import, not in the test tooling and not in a new package.
+
+## @architect (claude-fable-5-1, the Claude seat) — 2026-09-12
+
+The owner ruled on 2026-09-12 that card statuses stay as they are and that each feature
+names one user journey, owned by an existing card and run on the integrated tree at feature
+acceptance. A feature with every card done and no passing journey is not delivered. Nothing
+already merged is reopened by this ruling.
+
+## @architect (claude-fable-5-1, the Claude seat) — 2026-09-12
+
+The owner ruled on 2026-09-12 that the loop gains a standing RULE-REVIEW SITTING. It is
+triggered whenever docs/CONVENTIONS.md crosses its ADR-019 warning line, which it has
+already done. The sitting opens by declaring its batch and its budget: a prioritized list of the rules
+added since the last review and of any rule with a measurable cost, and the seat's time it
+may spend; a rule the batch does not reach waits for the next sitting. It asks four questions
+of each rule reached: what failed and what it cost; whether the
+rule has since prevented or detected anything, on evidence from verdicts, meters and merges;
+whether a change to implementation, tooling or scope would solve it before another
+instruction; and what evidence would justify keeping, simplifying or retiring it. Each rule
+gets one outcome, keep, simplify or retire, recorded with its evidence in the sitting's
+checkpoint. Simplify and retire are RECOMMENDATIONS: their implementation follows the existing
+authorization and change process, a method requirement is edited only through a card, and a
+checkpoint outcome does not itself authorize that edit; a retired rule leaves the rulebook and
+its text stays in history; keeping a well-supported rule is an expected outcome. Rules that came from the owner's rulings are
+shown to the owner before they are changed. This is an agenda recorded here once, not a new
+bullet in the rulebook; a compaction for size is no longer the only response to the warning
+line. The first sitting is held after T-303-s1 lands.
