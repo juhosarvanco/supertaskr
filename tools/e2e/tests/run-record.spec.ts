@@ -1,5 +1,5 @@
 import { spawnSync, spawn } from "node:child_process";
-import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
@@ -1017,6 +1017,154 @@ test("the record is one JSON document per attempt under the runs directory, and 
       "the replacement did not get its own document",
     ).toBe(2);
     expect(existsSync(file), "the replacement overwrote the record it replaced").toBe(true);
+  } finally {
+    b.cleanup();
+  }
+});
+
+/* ════════════════════════════════════════════════════════════════════
+ * THE VERIFIER'S ASSIGNED CORRECTION (T-311, phase 2).
+ * ════════════════════════════════════════════════════════════════════ */
+
+/**
+ * The racer the body below spawns. It is written into the bench's own
+ * scratch directory rather than kept as a file of its own: a second file
+ * under `tests/` is a fence question, and this is one body's helper.
+ */
+const RACER = `
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
+
+const [modulePath, root, resource, barrier, winners, label] = process.argv.slice(2);
+const { takeReservation } = await import(pathToFileURL(modulePath).href);
+
+// PRE-WARM on a resource nobody contends, so the runtime directory, the
+// reservations directory and this code path are already there when the
+// barrier opens. Without it each racer does a different amount of
+// first-time work AFTER the barrier and the twelve spread themselves
+// out over milliseconds — which measures the warm-up rather than the
+// reservation.
+takeReservation(root, {
+  resource: resource + "-warm-" + label,
+  attempt: label + "warm-a1",
+  role: "warm",
+  at: "2026-09-12T00:00:00.000Z",
+});
+
+const nap = new Int32Array(new SharedArrayBuffer(4));
+while (!existsSync(barrier)) Atomics.wait(nap, 0, 0, 1);
+
+try {
+  takeReservation(root, {
+    resource,
+    attempt: label + "-a1",
+    role: "a racer",
+    at: "2026-09-12T00:00:00.000Z",
+  });
+  mkdirSync(winners, { recursive: true });
+  writeFileSync(winners + "/" + label, "won", "utf8");
+} catch (err) {
+  if (err && err.code === "RESOURCE_RESERVED") process.exit(0);
+  console.error(String(err));
+  process.exit(3);
+}
+`;
+
+test("the reservation is the EXCLUSIVE CREATE ITSELF, not an existence check in front of a write — the one place a check-then-write and an `O_EXCL` open answer differently", async () => {
+  // ASSIGNED BY THE VERIFIER AT PHASE 2. Every other body in this file
+  // takes its reservations ONE AFTER ANOTHER, and a check-then-write
+  // refuses a second caller exactly as an exclusive create does when
+  // nothing is concurrent — so none of them can tell the two apart, and
+  // `atomically`, which is the word the criterion uses and the whole
+  // answer to the T-247 race, was pinned by nothing. Measured: with
+  // `openSyncExclusive` reduced to `existsSync` then `openSync(file,
+  // "w")`, all sixteen bodies stayed green.
+  //
+  // KILLED BY: any existence check standing in for the exclusive create.
+  //
+  // THE DETERMINISTIC HALF IS A DANGLING SYMLINK, and it is deterministic
+  // because the two primitives disagree about one on this platform —
+  // measured here before the body was written: `existsSync` FOLLOWS the
+  // link and answers false, while `open(O_CREAT|O_EXCL)` refuses to
+  // follow one at all and throws EEXIST. So an exclusive create REFUSES
+  // the reservation and a check-then-write sails through it and writes
+  // the reservation somewhere else entirely — which is also why this is
+  // the right shape for the property rather than a grep for a flag.
+  //
+  // THE SECOND HALF IS A REAL RACE, because the property is about
+  // concurrency and a body that never runs two writers at once has
+  // measured a syscall rather than the race. It CANNOT FAIL RED under
+  // an exclusive create — the filesystem admits exactly one — so it adds
+  // kill power without adding a flake.
+  const b = bench("exclusive-create");
+  try {
+    const file = reservationPath(b.root, b.lane);
+    mkdirSync(path.dirname(file), { recursive: true });
+    const elsewhere = path.join(b.scratch, "not-the-reservations-directory.json");
+    symlinkSync(elsewhere, file);
+    expect(existsSync(file), "the planted link is not dangling, so it decides nothing").toBe(false);
+
+    let refused: unknown;
+    try {
+      startRun(b.root, { assignment: assignment(b), at: "2026-09-12T00:00:00.000Z", io: io() });
+    } catch (err) {
+      refused = err;
+    }
+    expect(
+      refused,
+      "the reservation is an existence check in front of a write: it followed a link `existsSync` " +
+        "could not see and wrote the reservation outside the reservations directory",
+    ).toBeInstanceOf(RunRecordFinding);
+    expect((refused as RunRecordFinding).code).toBe("RESOURCE_RESERVED");
+    expect(existsSync(elsewhere), "the reservation was written through the planted link").toBe(false);
+
+    // THE POSITIVE CONTROL: with the link gone the same start takes the
+    // same resource, so the refusal above is about the exclusive create
+    // meeting something already at that path rather than about this
+    // bench refusing every start.
+    rmSync(file, { force: true });
+    const ok = startRun(b.root, { assignment: assignment(b), at: "2026-09-12T00:00:01.000Z", io: io() });
+    expect(ok.record.state, "the control start was refused too").toBe("reserved");
+    rmSync(file, { force: true });
+    rmSync(path.join(b.root, ".supertaskr", "runs", WORK), { recursive: true, force: true });
+
+    // AND THE RACE: twelve processes reach for one resource at one
+    // instant and exactly one may hold it.
+    const racer = path.join(b.scratch, "racer.mjs");
+    writeFileSync(racer, RACER, "utf8");
+    const modulePath = path.join(repoRoot, "tools/e2e/scripts/run-record.mjs");
+    const barrier = path.join(b.scratch, "go");
+    const winners = path.join(b.scratch, "winners");
+    const kids: Promise<number>[] = [];
+    for (let i = 0; i < 12; i += 1) {
+      kids.push(
+        new Promise<number>((resolve) => {
+          const child = spawn(
+            process.execPath,
+            [racer, modulePath, b.root, b.lane, barrier, winners, `w${String(i)}`],
+            { stdio: ["ignore", "ignore", "inherit"] },
+          );
+          child.on("exit", (code) => resolve(code ?? 0));
+        }),
+      );
+    }
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 900);
+    });
+    writeFileSync(barrier, "go", "utf8");
+    const codes = await Promise.all(kids);
+    expect(
+      codes.filter((c) => c !== 0),
+      "a racer failed for a reason that is not the refusal under test",
+    ).toEqual([]);
+    const held = existsSync(winners) ? readdirSync(winners) : [];
+    expect(
+      held.length,
+      `${String(held.length)} of twelve racers took one resource at once: the reservation is not exclusive`,
+    ).toBe(1);
+    expect(readReservation(b.root, b.lane)?.attempt, "the reservation names no racer").toBe(
+      `${String(held[0])}-a1`,
+    );
   } finally {
     b.cleanup();
   }
