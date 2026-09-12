@@ -215,6 +215,15 @@ jobs:
       - name: Token lint
         working-directory: tools/e2e
         run: npm run lint:tokens
+      - name: parser install
+        working-directory: lib/parser
+        run: npm ci
+      - name: disk after the parser install
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+      - name: parser build
+        working-directory: lib/parser
+        run: npm run build
       - name: e2e install
         working-directory: tools/e2e
         run: npm ci

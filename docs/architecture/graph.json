@@ -19962,8 +19962,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:e25cda6ce4bcf6198961fb4751491b531cf9d1f97bf7e65e0540d7bb1d8555e2",
-      "loc": 2679,
+      "hash": "blake3:badb37c14f21c716c5c5121370a1d783a43f38e42c8e5ab415f3b9fee4f7787d",
+      "loc": 2688,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -22965,8 +22965,8 @@
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:591300b60b72b83524ddf6100b0c96d141c4db5bb6092ebc954d321180ec4fcb",
-      "loc": 811,
+      "hash": "blake3:9b2244f527a7259f3aaab017a0f6d84e999a49b822d28666b418874ee438c2b9",
+      "loc": 813,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -25629,8 +25629,8 @@
       "id": "f:lib/parser/src/index.ts",
       "path": "lib/parser/src/index.ts",
       "lang": "ts",
-      "hash": "blake3:684d35d16db360cb0005c47ef9007fdc778c50abfffd849cf3761f88462961e3",
-      "loc": 118,
+      "hash": "blake3:ea43b4cc551ee04d546bcb7cb5ed327c02ebcc1c1bf70c1c4fd17996e8d7bd23",
+      "loc": 141,
       "symbols": []
     },
     {
@@ -26011,6 +26011,275 @@
       ]
     },
     {
+      "id": "f:lib/parser/src/process-settings.ts",
+      "path": "lib/parser/src/process-settings.ts",
+      "lang": "ts",
+      "hash": "blake3:0bfb3347fd8f505eed97af7cd5b016ff35d78391a7f498e315ee66a34e3e467d",
+      "loc": 592,
+      "symbols": [
+        {
+          "id": "s:lib/parser/src/process-settings.ts#FindingConstructor",
+          "name": "FindingConstructor",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            136,
+            136
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#LedgerRow",
+          "name": "LedgerRow",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            123,
+            133
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#PROCESS_SCHEMA",
+          "name": "PROCESS_SCHEMA",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            46,
+            46
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#PROCESS_SECTION",
+          "name": "PROCESS_SECTION",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            49,
+            49
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#ProcessFinding",
+          "name": "ProcessFinding",
+          "kind": "class",
+          "exported": true,
+          "range": [
+            43,
+            43
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#ProcessReaderOptions",
+          "name": "ProcessReaderOptions",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            139,
+            146
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#ProcessSchema",
+          "name": "ProcessSchema",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            96,
+            102
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#ProcessSection",
+          "name": "ProcessSection",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            105,
+            110
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#ProcessSettings",
+          "name": "ProcessSettings",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            113,
+            120
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#ProcessSettingsReader",
+          "name": "ProcessSettingsReader",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            149,
+            156
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#ProcessSwitch",
+          "name": "ProcessSwitch",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            80,
+            93
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#RUNTIME_TEMPLATE",
+          "name": "RUNTIME_TEMPLATE",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            52,
+            52
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#SWITCH_FIELDS",
+          "name": "SWITCH_FIELDS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            63,
+            74
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#SWITCH_TYPES",
+          "name": "SWITCH_TYPES",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            77,
+            77
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#bound",
+          "name": "bound",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            585,
+            585
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#constraintFindings",
+          "name": "constraintFindings",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            592,
+            592
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#indentOf",
+          "name": "indentOf",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            206,
+            208
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#needMatches",
+          "name": "needMatches",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            211,
+            217
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#parseProcessSchema",
+          "name": "parseProcessSchema",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            587,
+            587
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#processFlowList",
+          "name": "processFlowList",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            177,
+            204
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#processLedger",
+          "name": "processLedger",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            591,
+            591
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#processScalar",
+          "name": "processScalar",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            165,
+            171
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#processSection",
+          "name": "processSection",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            588,
+            588
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#processSettingsReader",
+          "name": "processSettingsReader",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            224,
+            577
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#resolveProcess",
+          "name": "resolveProcess",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            589,
+            589
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#switchValue",
+          "name": "switchValue",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            590,
+            590
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:lib/parser/src/project.ts",
       "path": "lib/parser/src/project.ts",
       "lang": "ts",
@@ -26083,8 +26352,8 @@
       "id": "f:lib/parser/src/pure.ts",
       "path": "lib/parser/src/pure.ts",
       "lang": "ts",
-      "hash": "blake3:2fe97533cd3feb9951c80fe155569d7cd5364f4e4bf4f1961e08b41a7ce567b7",
-      "loc": 111,
+      "hash": "blake3:ffa11fa9f5a53879df54df2db78aef6148c82d9329cabceefdfb9dd12fe17a40",
+      "loc": 134,
       "symbols": []
     },
     {
@@ -27111,6 +27380,55 @@
       "hash": "blake3:912ae7fe39812a27aa683bc6c150779f6d100569b83c4830b6b814a466e314aa",
       "loc": 172,
       "symbols": []
+    },
+    {
+      "id": "f:lib/parser/test/process-settings.test.ts",
+      "path": "lib/parser/test/process-settings.test.ts",
+      "lang": "ts",
+      "hash": "blake3:2e16ec1a5fb7b0da7d09e02ed406d41a47d72348b8450a0a3149291641d49f8a",
+      "loc": 516,
+      "symbols": [
+        {
+          "id": "s:lib/parser/test/process-settings.test.ts#FIXTURE",
+          "name": "FIXTURE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            39,
+            88
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/process-settings.test.ts#SECTION",
+          "name": "SECTION",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            91,
+            98
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/process-settings.test.ts#fixture",
+          "name": "fixture",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            100,
+            100
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/process-settings.test.ts#refusal",
+          "name": "refusal",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            103,
+            110
+          ]
+        }
+      ]
     },
     {
       "id": "f:lib/parser/test/project.test.ts",
@@ -34276,6 +34594,35 @@
     },
     {
       "from": "f:lib/parser/src/index.ts",
+      "to": "f:lib/parser/src/process-settings.ts",
+      "kind": "import",
+      "symbols": [
+        "FindingConstructor",
+        "LedgerRow",
+        "PROCESS_SCHEMA",
+        "PROCESS_SECTION",
+        "ProcessFinding",
+        "ProcessReaderOptions",
+        "ProcessSchema",
+        "ProcessSection",
+        "ProcessSettings",
+        "ProcessSettingsReader",
+        "ProcessSwitch",
+        "RUNTIME_TEMPLATE",
+        "SWITCH_FIELDS",
+        "SWITCH_TYPES",
+        "constraintFindings",
+        "parseProcessSchema",
+        "processLedger",
+        "processSection",
+        "processSettingsReader",
+        "resolveProcess",
+        "switchValue"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:lib/parser/src/index.ts",
       "to": "f:lib/parser/src/project.ts",
       "kind": "import",
       "symbols": [
@@ -34578,6 +34925,35 @@
       "kind": "import",
       "symbols": [
         "parseModelSession"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:lib/parser/src/pure.ts",
+      "to": "f:lib/parser/src/process-settings.ts",
+      "kind": "import",
+      "symbols": [
+        "FindingConstructor",
+        "LedgerRow",
+        "PROCESS_SCHEMA",
+        "PROCESS_SECTION",
+        "ProcessFinding",
+        "ProcessReaderOptions",
+        "ProcessSchema",
+        "ProcessSection",
+        "ProcessSettings",
+        "ProcessSettingsReader",
+        "ProcessSwitch",
+        "RUNTIME_TEMPLATE",
+        "SWITCH_FIELDS",
+        "SWITCH_TYPES",
+        "constraintFindings",
+        "parseProcessSchema",
+        "processLedger",
+        "processSection",
+        "processSettingsReader",
+        "resolveProcess",
+        "switchValue"
       ],
       "reexport": true
     },
@@ -35088,6 +35464,59 @@
         "describe",
         "expect",
         "it"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/process-settings.test.ts",
+      "to": "f:lib/parser/src/pure.ts",
+      "kind": "import",
+      "symbols": [
+        "PROCESS_SCHEMA",
+        "ProcessFinding",
+        "RUNTIME_TEMPLATE",
+        "SWITCH_FIELDS",
+        "SWITCH_TYPES",
+        "constraintFindings",
+        "parseProcessSchema",
+        "processLedger",
+        "processSection",
+        "processSettingsReader",
+        "resolveProcess",
+        "switchValue"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/process-settings.test.ts",
+      "to": "p:node:fs",
+      "kind": "import",
+      "symbols": [
+        "readFileSync"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/process-settings.test.ts",
+      "to": "p:node:url",
+      "kind": "import",
+      "symbols": [
+        "fileURLToPath"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/process-settings.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/process-settings.test.ts",
+      "to": "p:yaml",
+      "kind": "import",
+      "symbols": [
+        "parse"
       ]
     },
     {
@@ -44422,6 +44851,174 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:lib/parser/src/process-settings.ts#ProcessReaderOptions",
+      "to": "s:lib/parser/src/process-settings.ts#FindingConstructor",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#ProcessSchema",
+      "to": "s:lib/parser/src/process-settings.ts#ProcessSwitch",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#ProcessSettingsReader",
+      "to": "s:lib/parser/src/process-settings.ts#LedgerRow",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#ProcessSettingsReader",
+      "to": "s:lib/parser/src/process-settings.ts#ProcessSchema",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#ProcessSettingsReader",
+      "to": "s:lib/parser/src/process-settings.ts#ProcessSection",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#ProcessSettingsReader",
+      "to": "s:lib/parser/src/process-settings.ts#ProcessSettings",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#bound",
+      "to": "s:lib/parser/src/process-settings.ts#ProcessSettingsReader",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#bound",
+      "to": "s:lib/parser/src/process-settings.ts#processSettingsReader",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#constraintFindings",
+      "to": "s:lib/parser/src/process-settings.ts#ProcessSettingsReader",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#parseProcessSchema",
+      "to": "s:lib/parser/src/process-settings.ts#ProcessSettingsReader",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#processFlowList",
+      "to": "s:lib/parser/src/process-settings.ts#processScalar",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#processLedger",
+      "to": "s:lib/parser/src/process-settings.ts#ProcessSettingsReader",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#processSection",
+      "to": "s:lib/parser/src/process-settings.ts#ProcessSettingsReader",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#processSettingsReader",
+      "to": "s:lib/parser/src/process-settings.ts#FindingConstructor",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#processSettingsReader",
+      "to": "s:lib/parser/src/process-settings.ts#LedgerRow",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#processSettingsReader",
+      "to": "s:lib/parser/src/process-settings.ts#ProcessReaderOptions",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#processSettingsReader",
+      "to": "s:lib/parser/src/process-settings.ts#ProcessSchema",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#processSettingsReader",
+      "to": "s:lib/parser/src/process-settings.ts#ProcessSection",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#processSettingsReader",
+      "to": "s:lib/parser/src/process-settings.ts#ProcessSettings",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#processSettingsReader",
+      "to": "s:lib/parser/src/process-settings.ts#ProcessSettingsReader",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#processSettingsReader",
+      "to": "s:lib/parser/src/process-settings.ts#ProcessSwitch",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#processSettingsReader",
+      "to": "s:lib/parser/src/process-settings.ts#indentOf",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#processSettingsReader",
+      "to": "s:lib/parser/src/process-settings.ts#needMatches",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#processSettingsReader",
+      "to": "s:lib/parser/src/process-settings.ts#processFlowList",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#processSettingsReader",
+      "to": "s:lib/parser/src/process-settings.ts#processScalar",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#processSettingsReader",
+      "to": "s:lib/parser/src/process-settings.ts#switchValue",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#resolveProcess",
+      "to": "s:lib/parser/src/process-settings.ts#ProcessSettingsReader",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#switchValue",
+      "to": "s:lib/parser/src/process-settings.ts#ProcessSettingsReader",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:lib/parser/src/project.ts#TaskDirectoryResult",
       "to": "s:lib/parser/src/types.ts#ParseIssue",
       "kind": "type_ref",
@@ -45318,8 +45915,8 @@
     }
   ],
   "stats": {
-    "files": 201,
-    "symbols": 2561,
-    "edges": 2453
+    "files": 203,
+    "symbols": 2591,
+    "edges": 2488
   }
 }

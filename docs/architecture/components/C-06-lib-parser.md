@@ -13,4 +13,8 @@ The one hardened frontmatter parser (@supertaskr/parser): docs/tasks/ +
 ROADMAP backbone + architecture component files into a typed model,
 collect-don't-throw. Pure library with a node entry and a browser-safe
 pure entry; every other component consumes files through it so the
-format never forks.
+format never forks. It also holds the PROCESS SETTINGS READER
+(`src/process-settings.ts`, T-317): the schema parser, the section
+reader, the resolver, the accessor, the ledger and the constraint
+findings, text in and values out, so the terminal, the app's settings
+screen and the skill read one implementation.

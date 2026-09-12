@@ -805,7 +805,9 @@ describe("the supertaskr repo on its own map", () => {
       // Derived from arch after the regen, not from the failure output.
       // 200 -> 201 at the T-112-s6 merge regen (2026-09-02, 531e04f) -
       // board-root.test.tsx under C-18, mapped, findings unmoved.
-      "committed graph · 201 files",
+      // 201 -> 203 at the T-317 merge regen (2026-09-13) - the process
+      // settings reader and its test under C-06, mapped, findings unmoved.
+      "committed graph · 203 files",
     );
   });
 });

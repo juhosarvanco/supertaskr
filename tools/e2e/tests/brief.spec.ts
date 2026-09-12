@@ -18,6 +18,10 @@ import { parse as parseYaml } from "yaml";
 import { repoRoot } from "../preflight";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import { conventionsText, liveTaskCards, taskStatuses, trackedFiles } from "../scripts/docs-scan.mjs";
+// THE PARSER LIBRARY'S BUILT BROWSER ENTRY — the one `dispatch-brief.mjs`
+// imports since T-317, read here so a body can compare the arm's reading
+// of the settings with the library's rather than take the move on trust.
+import * as parserPure from "../../../lib/parser/dist/pure.js";
 import {
   BASE_TOKEN,
   DERIVERS,
@@ -7026,6 +7030,162 @@ test("THE ARM'S HAND PARSER AND A REAL YAML PARSER READ THE SAME SCHEMA, field f
       `${id}.profiles`,
     ).toEqual(them["profiles"]);
   }
+});
+
+test("THE ARM'S FIVE SYMBOLS ARE THE PARSER LIBRARY'S, and this file carries no second spelling of them", () => {
+  // KILLED BY: an arm that keeps its own copy of the reader beside the
+  // import, a re-export bound to some other class than `ProcessFinding`,
+  // and a library whose reading of the shipped schema has drifted from
+  // the arm's. The refusal STRINGS are the discriminator a name cannot
+  // give: two implementations can export the same names, and only one
+  // file can carry the sentence a refusal is written in.
+  const armSource = readFileSync(path.join(repoRoot, "tools/e2e/scripts/dispatch-brief.mjs"), "utf8");
+  const librarySource = readFileSync(path.join(repoRoot, "lib/parser/src/process-settings.ts"), "utf8");
+  const refusals = [
+    "a top-level line this parser cannot read",
+    "is not a field a switch declares",
+    "is not in its own value set",
+    "is not one of its values",
+    "FORBIDDEN COMBINATION",
+  ];
+  for (const sentence of refusals) {
+    expect(librarySource, `the library no longer raises: ${sentence}`).toContain(sentence);
+    expect(armSource, `the arm carries a second spelling of: ${sentence}`).not.toContain(sentence);
+  }
+  // AND EACH SENTENCE IS DRIVEN, BECAUSE PRESENT IS NOT RAISED.
+  // A `toContain` over the source TEXT is satisfied by a doc comment: with
+  // the constraint refusal reworded to `FORBIDDEN COMBO` in the code, the
+  // heading `THE FORBIDDEN COMBINATIONS, EACH NAMED.` still carried the
+  // phrase, so the loop above passed while the refusal had moved — measured
+  // on this bench, where the same mutant redded the arm's own body and left
+  // this one green. So every sentence is now RAISED through the public
+  // entry and read off the message rather than off the file.
+  // KILLED BY: a refusal reworded, renumbered or dropped; a refusal that
+  // stops being reachable through the entry at all; and a library that
+  // answers a different message than the one it spells.
+  const DRILL = [
+    "version: 1",
+    "",
+    "profiles:",
+    '  only: "one"',
+    "",
+    "switches:",
+    "",
+    "  a.switch:",
+    "    type: toggle",
+    "    values: [on, off]",
+    '    what: "a"',
+    '    effect: "b"',
+    "    reads: c",
+    '    needs: ["on => b.switch=off"]',
+    "    floor: false",
+    "    band: []",
+    '    cost: "d"',
+    "    profiles:",
+    "      only: on",
+    "",
+    "  b.switch:",
+    "    type: toggle",
+    "    values: [on, off]",
+    '    what: "e"',
+    '    effect: "f"',
+    "    reads: g",
+    "    needs: []",
+    "    floor: false",
+    "    band: []",
+    '    cost: "h"',
+    "    profiles:",
+    "      only: on",
+    "",
+  ].join("\n");
+  const said = (run: () => unknown): string => {
+    try {
+      const answer = run();
+      return Array.isArray(answer) ? answer.join("\n") : "";
+    } catch (err) {
+      return err instanceof Error ? err.message : String(err);
+    }
+  };
+  const drilled = parserPure.parseProcessSchema(DRILL);
+  const noDepartures = { profile: "only", available: [], overrides: new Map<string, string>() };
+  const drilledSettings = parserPure.resolveProcess(drilled, noDepartures);
+  const driven: [string, () => unknown][] = [
+    ["a top-level line this parser cannot read", () => parserPure.parseProcessSchema("nonsense\n")],
+    [
+      "is not a field a switch declares",
+      () => parserPure.parseProcessSchema(DRILL.replace("    reads: c", "    readz: c")),
+    ],
+    [
+      "is not in its own value set",
+      () =>
+        parserPure.resolveProcess(
+          parserPure.parseProcessSchema(DRILL.replace("      only: on\n\n  b.switch", "      only: maybe\n\n  b.switch")),
+          noDepartures,
+        ),
+    ],
+    [
+      "is not one of its values",
+      () =>
+        parserPure.resolveProcess(drilled, {
+          profile: "only",
+          available: [],
+          overrides: new Map([["a.switch", "maybe"]]),
+        }),
+    ],
+    ["FORBIDDEN COMBINATION", () => parserPure.constraintFindings(drilled, drilledSettings)],
+  ];
+  for (const [sentence, run] of driven) {
+    expect(said(run), `the library no longer RAISES: ${sentence}`).toContain(sentence);
+  }
+  expect(armSource, "the arm no longer imports the parser's built browser entry").toContain(
+    "lib/parser/dist/pure.js",
+  );
+  // THE SAME READING, FIELD FOR FIELD. The arm's symbols are the
+  // library's bound to the arm's finding class, so the readings must be
+  // indistinguishable — and this is the comparison that would catch a
+  // drift a name check never sees.
+  const text = readFileSync(path.join(repoRoot, PROCESS_SCHEMA), "utf8");
+  const mine = parseProcessSchema(text);
+  const theirs = parserPure.parseProcessSchema(text);
+  expect([...mine.switches.keys()], "the two readings disagree about the switch set").toEqual([
+    ...theirs.switches.keys(),
+  ]);
+  for (const [id, sw] of mine.switches) {
+    const other = theirs.switches.get(id);
+    expect(other, `${id} is missing from the library's own reading`).toBeDefined();
+    const flat = (s: NonNullable<typeof other>) => ({ ...s, profiles: Object.fromEntries(s.profiles) });
+    expect(flat(sw), `${id} reads differently`).toEqual(flat(other as NonNullable<typeof other>));
+  }
+  const section = { profile: "standard", available: [], overrides: new Map<string, string>() };
+  expect(
+    processLedger(mine, resolveProcess(mine, section)),
+    "the arm's ledger and the library's differ under the same profile",
+  ).toEqual(parserPure.processLedger(theirs, parserPure.resolveProcess(theirs, section)));
+  // AND THE BINDING IS WHAT KEEPS THE ARM'S REFUSAL CATCHABLE. The
+  // library's own default class cannot be a `DispatchLaneFinding`, so
+  // the arm passes its own class in; that is the half a re-export alone
+  // would lose, and the control below is the library's default failing
+  // exactly that test.
+  let armRefusal: unknown;
+  try {
+    resolveProcess(mine, { profile: "no-such-profile", available: [], overrides: new Map() });
+  } catch (err) {
+    armRefusal = err;
+  }
+  expect(armRefusal, "the arm's re-export refused with some other class").toBeInstanceOf(ProcessFinding);
+  expect(armRefusal, "a process refusal stopped being a dispatch-lane finding").toBeInstanceOf(
+    DispatchLaneFinding,
+  );
+  let pureRefusal: unknown;
+  try {
+    parserPure.resolveProcess(theirs, { profile: "no-such-profile", available: [], overrides: new Map() });
+  } catch (err) {
+    pureRefusal = err;
+  }
+  expect(pureRefusal, "the control: the library refused nothing at all").toBeInstanceOf(Error);
+  expect(pureRefusal, "the control: the library's default is already a dispatch-lane finding").not.toBeInstanceOf(
+    DispatchLaneFinding,
+  );
 });
 
 test("EVERY BAND A SWITCH NAMES IS A BAND THIS PROJECT ACTUALLY KEEPS", () => {

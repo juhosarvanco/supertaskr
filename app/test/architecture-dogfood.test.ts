@@ -1419,7 +1419,12 @@ describe("dogfood: the supertaskr repo through its own derivation engine", () =>
     // same lane, mapped, the bucket still empty. The lane could not see
     // this pin move: arch reads the COMMITTED graph and the regeneration
     // is the integrator's, so the app suite is owed at the merge.
-    expect(derived.fileComponent.size).toBe(201);
+    // 201 -> 203 at the T-317 merge regen (2026-09-13) — lib/parser/src/
+    // process-settings.ts and lib/parser/test/process-settings.test.ts,
+    // the process settings reader moved into the library, mapped under
+    // C-06, the bucket still empty. Re-derived from the fresh index
+    // (203 files, 2591 symbols, 2488 edges), not from the failure output.
+    expect(derived.fileComponent.size).toBe(203);
     // AND THE BUCKET IS EMPTY AGAIN, ONE MERGE AFTER IT RE-OPENED.
     // T-033's settlement kept `tests/dispatch_lanes.rs` out of it by
     // CLAIMING it and T-126 kept it out by DELETING it; T-139 put a file IN
@@ -1613,7 +1618,11 @@ describe("dogfood: the supertaskr repo through its own derivation engine", () =>
       // revisions, not from the failure output.
       // 31 -> 33 at the T-169 merge regen: assignment.ts and its test
       // join the parser component.
-      ["C-06", 33],
+      // 33 -> 35 at the T-317 merge regen (2026-09-13): process-settings.ts
+      // and its test join the parser component — the process settings
+      // reader moved out of the dispatch arm; a rise anywhere but C-06
+      // would mean the move had not landed where the card claimed.
+      ["C-06", 35],
       // C-07 JOINS THE MAPPING AT THE T-010 MERGE REGEN WITH THIRTY-TWO
       // FILES AND NO NEW FILE ON DISK — the row this whole card exists to
       // create, and the inverse of every C-05 entry above. Its D3 clears

@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1041 behaviours** — 1039 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1042 behaviours** — 1040 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -165,6 +165,7 @@ Census: **1041 behaviours** — 1039 extracted sentences + 2 named-not-extracted
 - THE TYPED SWITCH LIST AND THE SHIPPED SCHEMA AGREE EXACTLY, so a switch with no body of its own reds by name
 - THE SCHEMA CARRIES EVERY ROW OF THE ROOM'S SWITCH INVENTORY AND EVERY ID ITS FLOOR NAMES
 - THE ARM'S HAND PARSER AND A REAL YAML PARSER READ THE SAME SCHEMA, field for field
+- THE ARM'S FIVE SYMBOLS ARE THE PARSER LIBRARY'S, and this file carries no second spelling of them
 - EVERY BAND A SWITCH NAMES IS A BAND THIS PROJECT ACTUALLY KEEPS
 - THE THREE PROFILES ALL RESOLVE AND ALL SATISFY THEIR OWN CONSTRAINTS
 - THE SHIPPED TEMPLATE NAMES A PROFILE THE SCHEMA DECLARES, offers all three, and departs only legally
