@@ -6,7 +6,7 @@ milestone: 4
 size: M
 tier: standard
 priority: 1
-status: building
+status: verifying
 suggested_by: "the Codex orchestrator's recovery sitting (2026-09-11): the seat-taking arm refused a real Codex ancestry because sessionIdentity recognised Claude only, and a Codex desktop task's nearest harness ancestor is one app-server process shared by every task on the machine; built and approved in the recovery clone at its commit 2ab710fa and reused here as a patch (sha256 51dffca9fbbd7e6e7c3235e9ebfa87fb36e8d0bfc78c4f7ab499f465e89c9a92), to be judged on this bench"
 blocked_by: []
 touches: [tools/e2e/scripts/checkout-currency.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/tests/checkout-currency.spec.ts]
