@@ -204,3 +204,210 @@ established as retired.
   it is the subject of the other suggested card.
 
 ## Verdicts
+
+### 2026-09-12 — claude-opus-5@subagent (verifier, phase 2) — APPROVED WITH ASSIGNED CORRECTIONS
+
+Tier standard, one pass at the tip 4c1fb0bc919283a681dc392ec64ffaa35ed6d6d0, base
+3c6a7895dc22b1c6ed59c49d345b1e8ca85a6ec7, bench detached at that tip.
+
+**The sealed inputs, cited.** The first was written in phase 1 from the card at the base and
+hashed before any diff existed. The second was taken at the base by the arm, and carries the
+seat's twelve further measurements appended under its own heading and sealed inside the same
+digest — two of the twelve report themselves as NOT TAKEN, with the claim they would have
+settled labelled as an attributed report.
+
+attack set: sha256:e766374ffd719ac068d8b3ba1fdce9122699e09e1fa094fa471efed529166fd5 (attack-set-T-303-s1.md)
+ground truths: sha256:66617324018b6d86dfb6332d6efc32859bc1b6bb3c2f62480dd88b40dddbfa02 (ground-T-303-s1.md)
+card at the base: sha256:72011e1752ea3a344de7feac03352f34e5ce86e8aaa02cc326c51234aad22320 (docs/tasks/T-303-s1-codex-session-ownership.md at 3c6a7895)
+
+All three recomputed on this bench and matched before anything else was opened; the bench's
+working tree was empty at the tip named above.
+
+**The frame I actually had.** Two spawns, guaranteed by the spawn and not by a discipline I
+kept: phase 1 held no tools and no diff, and I am a fresh phase-2 spawn that cannot reach its
+frame. The brief's duties section named no executor-derived specific — no mutant number, no
+path count, no suite figure — so phase 1 was not broken above the line. I read the diff, the
+tree at the tip, and my own measurements before the executor's notes, the report or the
+lane's commit messages, and those three were opened only at step 5. I did not open the
+recovery clone or the recovery verdict 330f43c7, and neither the diff, the notes nor the
+report quotes either to me.
+
+**A PACK GAP, and what it is and is not.** The brief carried a postscript of ground rules and
+paths and NO context pack at all, so no rule this fence implicates was handed to me. This
+project's own STATE already says the arm renders no verifier brief yet and that phase briefs
+are hand-written until the card building one lands, so this is a known shortfall rather than a
+dispatcher's slip — but the shortfall is real, and my role file's answer to it is to read the
+conventions whole and say in the verdict that I did: 153943 bytes at the base, read end to end
+through a helper briefed with the fence and the subject alone and never with the executor's
+report, returning the bullets this surface implicates. Nothing it returned contradicts the
+diff or this verdict, and the informative part of its answer is that the document names NONE
+of this fence's own subject — no holder record, no seat arm, no session identity — so what a
+pack for this fence could have carried is the adjacent process-reading, host-independence,
+scratch, port, positive-control and poison-drill rules, all of which this pass kept. The two documents the standing read names were read at the base
+directly. The card preflight this bench runs DOES render a pack, which is where a missing one
+could come from at little cost.
+
+**The suites the range owes.** Derived on this bench rather than taken from the brief, which
+named only the end-to-end leg:
+`gate-run.mjs --owed-set --range 3c6a7895..4c1fb0bc` answers app, e2e and parser, with the
+end-to-end leg WHOLE. Graded through the blessed runner on the same range at the tip:
+
+| leg | ref | count | exit | verdict |
+|---|---|---|---|---|
+| parser | 4c1fb0bc | 389 bodies | 0 | GREEN |
+| app | 4c1fb0bc | 1171 bodies | 0 | GREEN |
+| e2e | 4c1fb0bc | 1020 bodies | 0 | GREEN |
+
+Each count is non-zero, so no leg is an exit over nothing. The owning spec of every property
+drilled below ran alone as well: 53 bodies at the tip, 55 after the two bodies this verdict
+commits.
+
+## A row per acceptance criterion
+
+| # | criterion | what decided it | verdict |
+|---|---|---|---|
+| 1 | a supported Codex task's identity distinguishes the logical task as well as the live incarnation; two tasks sharing an app-server never compare as one owner | `sameIdentity` compares provider and task id as well as pid and start time. Three bodies carry it — at the comparison, at the holder verdict, and at BOTH ownership commands against one invented ancestor row, so the incarnation is identical by construction. Mutant: drop the task-id term; three bodies red, at the site. My own probe: a Claude identity and a Codex identity on the same pid and start time do not compare equal, so the discriminator is part of the comparison | MET |
+| 1b | the same criterion's "CLI or desktop" half | NOT MEASURABLE HERE and said so rather than assumed: the ground records that no Codex CLI or desktop task was running at the base, and none was running during this pass either. Both forms rest on ONE rule — the ancestor's executable basename — and I judged that rule's text and its behaviour against constructed rows and against the real neighbour executables running on this host. The claim that a desktop task's nearest harness ancestor carries that basename is an ATTRIBUTED report in the ground, not a measurement of mine | MET ON THE RULE, ONE HALF UNMEASURED |
+| 2 | absent or malformed thread id refused with an actionable diagnostic, no record created or released; the parent session id never substitutes; a valid distinct subagent thread stays identifiable | Twenty-five boundary values driven through the Codex identity check on this bench: only a full-match UUID in either case is accepted; no trim, no case fold and no normalisation happens BEFORE validation, so padded, prefixed, suffixed, two-line, wrong-length, non-hex, braced, URN, zero-width and non-ASCII-digit values all refuse. The refusal names the variable and carries no value. Mutant: make the session id a fallback; three bodies red. At the commands: a refusal is an inability against a vacant seat, a dead record, a live record and an unreadable one, with the bytes preserved each time. The subagent clause is pinned in both directions rather than being true by construction | MET |
+| 3 | an existing Claude session's identity and holder records remain compatible; unrelated executables or arguments mentioning a harness do not identify a session | The compatibility half is discharged against a BASE-CAPTURED fixture and not one the new writer made: the ground's own record, verbatim, parses identically under the base reader and the tip reader, still compares as the same owner, and its bytes are untouched. The tip's writer, handed a legacy identity, emits the base shape exactly. Unknown identity and top-level keys still parse, so the reader did not tighten forwards. On this host the live harness's executable basename still matches, and a symlink named for the harness keeps its name in the process table, which is the shape the neighbouring suite's stand-in rests on. The Claude negative half is drilled across nineteen constructed shapes and four real spawned processes. The CODEX negative half rests on ONE shape — CORRECTION 1 | MET, WITH CORRECTION 1 |
+| 4 | the logical identity survives the round trip, invalid records fail closed, a different task cannot release a live holder, and focused bodies prove acceptance and refusal | The round trip runs through the real acquisition command and the real file, not through a serialise-parse pair. Four invalid logical shapes are refused rather than read as legacy, each with its legacy positive control in the same fixture. The foreign release is proved in the CODEX shape specifically — same process row, same start time, different task — and refused at both the takeover and the release with the record byte-identical, the task that took it releasing it as the control. Mutants at the two arm sites red one and two bodies respectively, at the site. The containment clause the implementation contract states is pinned only on the refusal path — CORRECTION 2 | MET, WITH CORRECTION 2 |
+
+## The security sweep
+
+Mandatory in this tier and run in full. The new input is an environment variable, and it is
+validated against an anchored full-match UUID before it is used for anything; the value never
+reaches a path, a filename, a lock name, a comparison key or a shell. The record is built by
+serialisation and never by templating. The process table is read through an argument vector
+with a numerically coerced pid and no shell. No dependency was added and no lockfile moved.
+The refusal path leaks nothing, and I measured the SUCCESS path too: on a scratch fixture the
+value appears exactly once in the whole checkout, inside the identity block, and in neither
+stream of a successful acquisition, nor in the currency command's structured output, nor in
+the board census arm. The derivation seam is in-process only — there is no environment
+variable and no flag that mints an identity — and an environment carrying a well-formed thread
+id with no supported ancestor derives nothing.
+
+ONE NEW SURFACE, DISCLOSED RATHER THAN FAILED: the interpreter arm now reaches the filesystem
+to disambiguate a spaced entrypoint that the process table has already flattened. It is
+reached only after every cheaper refusal, its failure direction is closed rather than open,
+and the lane's own T-303-s3 proposes removing the ambiguity class instead of guessing at it.
+
+## Findings that are not failures
+
+- **A second record the change makes stale.** The card's contract assigns the integration seat
+  one amendment. There are two documents resting on the retired remedy, not one: T-238-s4 is a
+  live suggested card whose whole premise is that re-taking the seat is the documented way past
+  an unreadable record, and the acquisition arm no longer replaces one, so its criterion is
+  unreachable. Its fence is a subset of this one. The seat's records act should reach it in the
+  same sitting.
+- **The nil UUID is accepted**, because it is well formed. The criterion says malformed, so
+  this is inside the rule as written; naming it here so a later reader does not discover it.
+- **One clause in the process reader's header** says the second read is omitted rather than
+  guessed when the process table refuses it, "and every arm that reads `program` then declines
+  to match". That is exactly true of the Codex predicate, which declines. The Claude arm falls
+  back to the command form instead — which is the base behaviour, so nothing was loosened — and
+  a reader can take the sentence to promise more than it delivers.
+- **The fixture task ids.** Two of the three differ in their last character and are plainly
+  invented. The third shares its version and variant shape with a value the ground reports as
+  real, and a shape is not a value; I could not check further without opening the recovery
+  clone, which this brief forbids. Named so the integration seat, which may open it, can.
+
+## Assigned corrections
+
+Two, each a body committed on this bench AFTER this verdict, in the spec the property lives in,
+each run RED against an implementation lacking the property and GREEN against the one carrying
+it. Two corrections and two mutant blocks, so there is no shortfall to explain.
+
+**CORRECTION 1 — the Codex executable match is EXACT and CASE-SENSITIVE, and nothing proved it.**
+The Claude matcher's negative half is drilled across nineteen unrelated shapes. The Codex
+matcher's negative half had one: an executable named for the interpreter whose ARGUMENT mentions
+codex. Nothing separated the exact name from a prefix of it or from a differently-cased one, and
+both shapes are live on the machine this was measured on — a `codex-code-mode-host` process and
+the desktop application's capitalised helpers, four of them, read from the process table during
+this pass. RED reading: with the equality widened to a prefix test, the whole owning spec at the
+tip stays GREEN over 53 bodies, which is the gap; with the new body present it reds alone,
+naming the neighbour. GREEN reading: 55 bodies pass with the implementation unchanged. A second
+mutant that folds the case reds the same body and nothing else.
+
+```mutant
+correction: the Codex executable match is exact and case-sensitive
+file: tools/e2e/scripts/checkout-currency.mjs
+spec: tools/e2e/tests/checkout-currency.spec.ts
+body: the Codex harness is its EXACT executable name, so a neighbour binary is never a session
+message: is a neighbour and not the harness
+--- old
+  return executable !== undefined && path.basename(executable) === CODEX_HARNESS_PROGRAM_BASENAME;
+--- new
+  return executable !== undefined && path.basename(executable).startsWith(CODEX_HARNESS_PROGRAM_BASENAME);
+```
+
+**CORRECTION 2 — the task id reaches the identity block and no other surface, and only the
+refusal half was pinned.** The implementation contract says the value is never echoed into a
+diagnostic and appears in a holder record only inside its identity block. A body asserts the
+first clause for a MALFORMED value, which is the case where no real id exists to leak. The
+success path — the one that has a real id in hand, writes it and prints three lines about what
+it wrote — had no body at all. The implementation already carries the property; nothing held it
+there. The new body drives the real acquisition command, hands it the UPPERCASE form so a leak
+of either the given or the canonical form is caught, requires the record to name the value
+exactly once and at the identity path, and keeps the padded mixed-case marker out of the
+refusal so a redaction written as a strip of the exact input cannot pass. RED reading: with the
+task id interpolated into the line the arm already prints, the whole owning spec at the tip
+stays GREEN over 53 bodies; with the new body present it reds alone. GREEN reading: 55 bodies
+pass with the implementation unchanged. Neither correction's kill set contains the other's.
+
+```mutant
+correction: the task id never reaches a diagnostic on the success path
+file: tools/e2e/scripts/brief.mjs
+spec: tools/e2e/tests/checkout-currency.spec.ts
+body: the logical task id reaches the identity block and no other surface
+message: the canonical form reaches no diagnostic
+--- old
+            `holder: pid ${String(mine.identity.pid)} started ${mine.identity.startedAt}`,
+--- new
+            `holder: pid ${String(mine.identity.pid)} started ${mine.identity.startedAt} ${String(mine.identity.taskId ?? "")}`,
+```
+
+## The pre-commitments phase 1 made, discharged
+
+1. **AC3's compatibility half was pre-committed to be the degenerate one** unless a
+   base-captured record was exercised. It was exercised, and it is NOT degenerate: the ground's
+   own record from the base parses identically under both readers, compares as the same owner,
+   and is left byte-identical. PROVEN rather than assumed.
+2. **AC2's subagent clause was pre-committed to be probably true by construction.** It is pinned
+   in both directions instead — one task under three different session contexts, and two tasks
+   under one — so it is a live regression pin and not a vacuous pass.
+3. **AC1's "CLI or desktop" was pre-committed to be unprovable on a host missing one form.**
+   Neither form was running, at the base or now. Said in the row above rather than waved through.
+4. **AC4 was pre-committed to be judged by mutation only.** Five mutants were planted and read
+   from the diff rather than from a mutator's report; each landed at the site its property lives
+   and killed one to three bodies, never the whole file.
+5. Non-atomic acquisition is pre-existing and the diff does not widen the window; reported as an
+   observation only, as promised.
+6. In-fence, out-of-purpose edits: none. Every change to the acquisition arm serves the
+   unreadable-record path the fence was granted for.
+7. Automatic breaches checked and none found: no dependency added, no file outside the three
+   named plus this card and two filings, T-238-s1 untouched, and no task id reachable in any
+   diagnostic or anywhere in a record outside its identity block.
+8. The recovery verdict was not read, and nothing quoted it to me.
+9. The unruled tensions were checked: the restarted-task release case is decided by the
+   incarnation half of the comparison and is inherited from the base rather than introduced
+   here; the Claude-plus-Codex precedence case is ruled by nearest-ancestor order and a stale
+   thread id in a Claude session's environment is never read; the unknown-field boundary is
+   ruled and measured on both sides.
+
+## The declared follow-through, graded
+
+Two entries, both inside the manifest, neither adding a criterion, both small. The restored
+refusal sentence is a property a reader meets and no body asserts, and it reads as a sentence at
+the tip. The unreachable-branch comment is true: that branch's code is returned only when the
+handed identity is not ok, and the precondition above it has already answered for exactly that —
+confirmed by the mutant that removes the precondition, which makes the branch reachable again and
+reds two bodies. Nothing else in the diff is undeclared surface.
+
+## The claims I re-derived at step 5
+
+The notes' figures were re-measured rather than taken: the process-read cost at the walk's bound
+measures 30 ms against 56 ms here where the notes say 33 against 56; the census is stale at the
+tip and the regeneration belongs to the merge by this project's own standing rule; no ask file
+for this card exists; T-238-s4's fence is a subset of this one. The notes surface the filesystem
+surface and the moved refusal exit themselves, and both are filed. They do not name the two gaps
+this verdict corrects.
