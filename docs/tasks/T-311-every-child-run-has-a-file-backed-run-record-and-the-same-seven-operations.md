@@ -4,13 +4,14 @@ title: "Every child run has a file-backed run record and the same seven operatio
 feature: F-04
 milestone: 4
 size: L
+tier: guarded
 priority: 1
-status: planned
+status: building
 suggested_by: "ADR-025 decision 1, approved by the owner on 2026-09-12; card 2 of its plan; the recovery day of 2026-09-11, when two executors stopped at a quota and their state had to be reconstructed from their worktrees; the Codex orchestrator's review of 2026-09-12, which found the first draft would have refused the loop's own two-spawn bench"
 blocked_by: []
 touches: [tools/e2e/scripts/run-record.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/run-record.spec.ts, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/brief-flush.spec.ts, method/lane-protocol.md, docs/CONVENTIONS.md]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
