@@ -172,6 +172,19 @@ about departing at no switch, which the edit leaves standing because it
 is a human's prose and this command is a settings editor rather than a
 formatter.
 
+T-300-s4 was filed by the resumed session and is a finding about the
+OWED SET rather than about this command. Drilled here, with the
+docs-gate follow-up reverted: the set this range owes — 11 spec files,
+592 bodies — passed whole, while
+`tools/e2e/tests/docs-input-gate.spec.ts`, which owns the property the
+defect breaks, went RED. That body WALKS the tracked corpus and imports
+nothing from what it judges, so the ownership rule the derivation uses
+cannot see it, and the class is every body whose subject is a property
+of the tree rather than of an imported symbol. The whole-suite net
+catches it at the next checkpoint, which is the point being made rather
+than the answer: the cheap half is the announcement at build time, and
+that is what is missing.
+
 ### The follow-up the docs gate owed, and each half hides the other
 
 The build was interrupted by the weekly budget with two spellings
@@ -236,5 +249,18 @@ lane rather than carried over.
 The verb was exercised through the shipped entry point rather than the
 library module it fronts, which is what the criterion means by the
 command's name.
+
+### Where the brief was wrong, and one fact that moved under it
+
+The brief is sound on every row this lane used. Two facts moved after it
+was written and are recorded rather than acted on:
+
+- it names T-301 as live beside this lane. That lane stands still; its
+  executor was ended the same way this one was, and its fence stays
+  disjoint from this one either way.
+- its integration tip and this card's base are the same commit. The
+  integration branch has moved since, and this lane was neither rebased
+  nor merged: what this session measured, it measured at this lane's own
+  tip on this lane's own base.
 
 ## Verdicts
