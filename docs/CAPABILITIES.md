@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1005 behaviours** — 1003 extracted sentences + 2 named-not-extracted (listed at the end) — across 40 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1013 behaviours** — 1011 extracted sentences + 2 named-not-extracted (listed at the end) — across 40 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -416,6 +416,14 @@ Census: **1005 behaviours** — 1003 extracted sentences + 2 named-not-extracted
 - an ABORTING drill still restores the site — the merged tree is never left mutated
 - a mutant block's file and spec are CONFINED to the project root — no traversal, no absolute path
 - the integrator's never-rewrite rule carries NO hedge — the one clause that would refund this card
+- the settings listing names the profile and EVERY switch the schema declares, in the schema's order
+- a switch shows the project's own band reading where the tree has one, and the seat's ESTIMATE where it does not
+- an allowed set writes ONE departure that a real yaml parser and the arm's own reader agree about
+- setting a switch to the profile's OWN value removes the departure rather than writing one
+- each of the four refusals a set owes is ITSELF, and the template is not touched by any of them
+- the committed settings chapter is a GENERATION of the schema, and a schema nobody regenerated for reds
+- the listing goes to the PROJECT'S OWN tree for its readings — the measured column is not a rendering of numbers somebody handed in
+- a DEPARTURE is listed at the value the PROJECT resolves to, marked against the profile's own
 
 ## crescendo
 

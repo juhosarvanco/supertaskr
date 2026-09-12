@@ -626,6 +626,17 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
     source: "docs/CONVENTIONS.md tools/e2e bullet: `npm run capabilities` / `capabilities:check`",
   }),
   Object.freeze({
+    verb: "settings",
+    summary: "the process as settings — the profile, every switch with its cost, and the template edit",
+    target: { kind: "script", file: "settings.mjs", args: [] },
+    rootFlag: true,
+    usage:
+      "supertaskr settings [set <switch> <value> | reference [--write | --check]]",
+    source:
+      "docs/CONVENTIONS.md THE PROCESS IS SETTINGS, AND EVERY SWITCH IS DECLARED ONCE: " +
+      "`method/runtime/process-schema.yaml` is the ONE source (ADR-024 decision 6)",
+  }),
+  Object.freeze({
     verb: "health",
     summary: "the method's own health bands, compared rather than eyeballed",
     target: { kind: "script", file: "health-bands-run.mjs", args: [] },

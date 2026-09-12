@@ -44,6 +44,7 @@ what ships when is docs/VERSIONS.md.
 | 12 | [Genesis](12-genesis.md) | the interview, incremental banking, decomposition, the kit, the cold-start test, skill packs |
 | 13 | [Surfaces](13-surfaces.md) | the mirror app, the CLI, the seat skill and the interview skill, the two agent apps |
 | 14 | [Versions](14-versions.md) | every ruled feature by version, in depth, with the card that carries it |
+| 15 | [Settings](15-settings.md) | the loop's own switches: every one with what it does, what it needs on, whether it may be turned off and what it cost — GENERATED from the schema |
 
 ## The vocabulary in one screen
 
