@@ -4,13 +4,14 @@ title: "A Claude seat launches a Codex child under the run record — the adapte
 feature: F-04
 milestone: 4
 size: L
+tier: guarded
 priority: 1
-status: planned
+status: building
 suggested_by: "ADR-025 decisions 2 and 5, approved by the owner on 2026-09-12; card 3 of its plan; the owner's ruling of 2026-09-12 that a Codex child's fence is the sandbox plus the path checks, accepted on this demonstration and not before"
 blocked_by: [T-311]
 touches: [tools/e2e/scripts/adapter-codex.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/scripts/run-record.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/merge.mjs, tools/e2e/tests/adapter-codex.spec.ts, tools/e2e/tests/merge.spec.ts, tools/e2e/tests/brief-flush.spec.ts, lib/parser/src/model-session.ts, lib/parser/test/model-session.test.ts, method/runtime/supertaskr.yaml, docs/CONVENTIONS.md]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
