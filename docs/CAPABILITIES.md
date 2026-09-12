@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1013 behaviours** — 1011 extracted sentences + 2 named-not-extracted (listed at the end) — across 40 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1022 behaviours** — 1020 extracted sentences + 2 named-not-extracted (listed at the end) — across 40 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -351,8 +351,14 @@ Census: **1013 behaviours** — 1011 extracted sentences + 2 named-not-extracted
 - sessionCheckout derives the WORKTREE ROOT, never the raw working directory, and never outside this repository
 - the arm is scoped to the steps that CUT a session: a brief that arms nothing does not run it
 - the exported EXIT object is the single authority — the npm script re-types no number
+- Codex tasks sharing one app-server compare by thread UUID as well as process incarnation
+- the Codex harness is its EXACT executable name, so a neighbour binary is never a session
+- a valid Codex subagent thread is accepted independently of inherited session context
+- missing or malformed Codex thread identity fails closed without echoing its value
+- Codex logical identity survives the holder round trip and another task cannot release it
+- invalid logical holder records fail closed while legacy Claude records remain compatible
 - the session identity is the NEAREST harness ancestor, at whatever depth the caller sits
-- the shared application root is never the identity, and neither is the launcher that names the harness in its own arguments
+- Claude identity accepts its native and Node forms but never unrelated executable arguments
 - a chain with no harness in it answers NOTHING, naming what it walked, and never guesses a seat
 - the identity's refusal cites only names this module really exports, so a citation cannot dangle
 - liveness is the pid AND its start time, so a recycled pid is a dead holder
@@ -362,7 +368,10 @@ Census: **1013 behaviours** — 1011 extracted sentences + 2 named-not-extracted
 - a DETACHED checkout holds no seat, and it is its own answer rather than the lane's silence
 - the record's own probe tells ENOENT from every other errno, so a file that IS there is never read as a vacant seat
 - the DEAD holder is proved with a pid that genuinely does not exist, and the live one with a pid that does
-- `--release-seat` REFUSES a record it could not read, and removes nothing
+- `--take-seat` and `--release-seat` REFUSE unreadable records and change nothing
+- Codex ownership commands derive a valid thread before changing any integration-seat state
+- two Codex tasks on ONE app-server incarnation are told apart by the ownership commands themselves
+- the logical task id reaches the identity block and no other surface
 - the identity derivation is named in the artifact's own header, with the harness it is a fact about
 - the vantage fixture DECLARES what it borrows from the host, because a clone that borrows is not a scratch repository
 
