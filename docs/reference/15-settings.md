@@ -11,6 +11,8 @@
 
 The loop's own switches, at schema version 1: 42 of them under 3 profiles, 10 of which are FLOOR — no profile turns them off.
 
+Each row says what makes it true: 6 are OPERATIONAL — the arm reads them and changing the value changes what it does — 24 are MANUAL, where a person or a seat performs what the row names and the row carries that instruction, and 12 are DECLARATIVE: a record rather than a control, read by nothing and addressed to nobody, so editing one alone changes nothing. A declarative row is not an absent behaviour — what it describes lives in code or in CI configuration that never consults this schema.
+
 ## The command
 
 ```
@@ -23,7 +25,9 @@ usage: supertaskr settings                      list the profile and every switc
   --root <path>  the project to read; defaults to the checkout this script sits in
 
   Every switch is declared ONCE, in method/runtime/process-schema.yaml, and this
-  command renders that file rather than restating it. exit codes: 0 clean · 1 found ·
+  command renders that file rather than restating it. Every row carries its LABEL —
+  operational, manual or declarative — and a declarative row is a RECORD rather than
+  a control, so `set` refuses one. exit codes: 0 clean · 1 found ·
   2 called wrong · 3 could not run.
 ```
 
@@ -46,6 +50,8 @@ what every seat reads before working
 - **reads** — `processLedger`
 - **band** — `loop/token-budget-used`
 - **cost** — about 50K tokens per seat
+- **implementation** — manual
+- **manual action** — every seat reads the standing set before it works: the root adapter names that set and each role file applies its own subtractions to it, so changing this value means editing the adapter and those role files
 - **profiles** — `guarded-everything`: `five-documents-whole` · `standard`: `state-and-index` · `fast`: `state-and-index`
 
 ### `dispatch.keeper_at_base`
@@ -59,6 +65,7 @@ the fence's keeper spec run at the base before a lane is cut
 - **reads** — `processLedger`
 - **band** — `loop/cycle-budget-used`
 - **cost** — 1 to 3 min
+- **implementation** — declarative
 - **profiles** — `guarded-everything`: `off` · `standard`: `on` · `fast`: `on`
 
 ### `dispatch.model_per_role`
@@ -72,6 +79,7 @@ the model of every dispatch read from the runtime template
 - **reads** — `roleModelRecs`
 - **band** — `loop/token-budget-used`
 - **cost** — not measured — the model is the input the token band divides by, never a cost of its own
+- **implementation** — operational
 - **profiles** — `guarded-everything`: `by-hand` · `standard`: `from-the-template` · `fast`: `from-the-template`
 
 ### `dispatch.ask_watcher`
@@ -85,6 +93,8 @@ the derived watcher over the live lanes' ask and report files
 - **reads** — `processLedger`
 - **band** — no band measures this yet
 - **cost** — not measured
+- **implementation** — manual
+- **manual action** — after every dispatch derive the watch list from the live lanes and watch each lane's ask file, firing on a new file and on a CHANGED one; this repository publishes no watcher of its own
 - **profiles** — `guarded-everything`: `on` · `standard`: `on` · `fast`: `on`
 
 ### `dispatch.preflight`
@@ -98,6 +108,7 @@ the card preflight at dispatch
 - **reads** — `processLedger`
 - **band** — no band measures this yet
 - **cost** — seconds
+- **implementation** — declarative
 - **profiles** — `guarded-everything`: `on` · `standard`: `on` · `fast`: `on`
 
 ### `template.roles`
@@ -111,6 +122,8 @@ the runtime template's own roles block, which the model per role is read from
 - **reads** — `processLedger`
 - **band** — no band measures this yet
 - **cost** — seconds
+- **implementation** — manual
+- **manual action** — keep a roles block in the runtime template naming a model for every role the arm dispatches
 - **profiles** — `guarded-everything`: `on` · `standard`: `on` · `fast`: `on`
 
 ### `build.suites`
@@ -124,6 +137,8 @@ what the executor runs at its final commit
 - **reads** — `processLedger`
 - **band** — `loop/cycle-budget-used`
 - **cost** — 5 to 15 min
+- **implementation** — manual
+- **manual action** — the executor runs the suites this value names ONCE, at its final code-and-notes commit, through the blessed gate-runner, and reports each leg with its ref, its count and its exit
 - **profiles** — `guarded-everything`: `fence-owes` · `standard`: `owed-set` · `fast`: `owed-set`
 
 ### `build.self_drill`
@@ -137,6 +152,8 @@ one mutant per new body, red, restored and proved, in the report
 - **reads** — `processLedger`
 - **band** — `loop/cycle-budget-used`
 - **cost** — minutes in the lane
+- **implementation** — manual
+- **manual action** — the executor's report carries a self-drill block: one mutant per new body, planted where the property lives, shown red, restored, and the restore proved by hash
 - **profiles** — `guarded-everything`: `practised` · `standard`: `required` · `fast`: `required`
 
 ### `build.criteria_echo`
@@ -150,6 +167,8 @@ the criteria restated as a checklist before coding
 - **reads** — `processLedger`
 - **band** — `loop/cycle-budget-used`
 - **cost** — 1 min
+- **implementation** — manual
+- **manual action** — the executor restates every acceptance criterion as a checklist in the notes before it writes a line of the implementation
 - **profiles** — `guarded-everything`: `off` · `standard`: `on` · `fast`: `on`
 
 ### `build.preflight_before_stamp`
@@ -163,6 +182,8 @@ the card preflight on the executor's own prose
 - **reads** — `processLedger`
 - **band** — `loop/cycle-budget-used`
 - **cost** — seconds
+- **implementation** — manual
+- **manual action** — the executor re-derives the card's own claims over its finished notes and reaches a clean exit before it stamps the card verifying
 - **profiles** — `guarded-everything`: `off` · `standard`: `on` · `fast`: `on`
 
 ### `verify.tier`
@@ -176,6 +197,7 @@ how a card is verified
 - **reads** — `classifyTier`
 - **band** — `loop/cycle-budget-used` · `loop/token-budget-used` · `loop/soft-verifier`
 - **cost** — the tiers' own budgets: 20 min and 80K bounded, 75 min and 310K standard, 100 min and 450K guarded
+- **implementation** — operational
 - **profiles** — `guarded-everything`: `guarded-for-every-card` · `standard`: `by-the-classifier` · `fast`: `by-the-classifier`
 
 ### `verify.phase1`
@@ -189,6 +211,7 @@ the tool-less attack set written from the card before the diff
 - **reads** — `phase1Owed`
 - **band** — `loop/token-budget-used`
 - **cost** — about 60K tokens, 4 min beside the build
+- **implementation** — operational
 - **profiles** — `guarded-everything`: `by-the-seat` · `standard`: `by-the-arm` · `fast`: `by-the-arm`
 
 ### `verify.ground`
@@ -202,6 +225,7 @@ the ground truths at the base that phase 2 judges on
 - **reads** — `processLedger`
 - **band** — `loop/cycle-budget-used`
 - **cost** — 10 to 15 min of the seat
+- **implementation** — declarative
 - **profiles** — `guarded-everything`: `by-hand` · `standard`: `by-a-script` · `fast`: `by-a-script`
 
 ### `verify.sealed_inputs`
@@ -215,6 +239,8 @@ the attack set and the grounds hashed and cited
 - **reads** — `processLedger`
 - **band** — `loop/soft-verifier`
 - **cost** — seconds
+- **implementation** — manual
+- **manual action** — hash the attack set and the ground truths taken at the base, and cite those digests in the verdict so a reader can re-derive what it judged on
 - **profiles** — `guarded-everything`: `on` · `standard`: `standard-and-guarded` · `fast`: `standard-and-guarded`
 
 ### `verify.separate_bench`
@@ -228,6 +254,7 @@ phase 2 on a detached worktree at the tip
 - **reads** — `processLedger`
 - **band** — `loop/cycle-budget-used`
 - **cost** — a worktree
+- **implementation** — declarative
 - **profiles** — `guarded-everything`: `on` · `standard`: `standard-and-guarded` · `fast`: `standard-and-guarded`
 
 ### `verify.suites`
@@ -241,6 +268,8 @@ what the verifier runs at the tip
 - **reads** — `processLedger`
 - **band** — `loop/cycle-budget-used`
 - **cost** — 15 to 20 min, down to about 5
+- **implementation** — manual
+- **manual action** — the verifier runs the suites this value names at the lane's tip and reports each with the ref it ran at and its body count
 - **profiles** — `guarded-everything`: `whole` · `standard`: `owed-set-except-guarded` · `fast`: `owed-set-except-guarded`
 
 ### `verify.mutants`
@@ -254,6 +283,8 @@ data mutants where the property is data, code mutants for containment
 - **reads** — `processLedger`
 - **band** — `loop/soft-verifier`
 - **cost** — inside phase 2
+- **implementation** — manual
+- **manual action** — prove each keeper by planting the defect it claims to catch, and plant a DATA mutant wherever the property lives in data rather than in code
 - **profiles** — `guarded-everything`: `on` · `standard`: `on` · `fast`: `on`
 
 ### `verify.corrections_as_bodies`
@@ -267,6 +298,8 @@ a correction is a body the verifier commits plus a mutant block
 - **reads** — `processLedger`
 - **band** — `loop/soft-verifier`
 - **cost** — not measured
+- **implementation** — manual
+- **manual action** — the verifier commits each assigned correction as a body with the mutant block that drills it, rather than as prose for the integrator to interpret
 - **profiles** — `guarded-everything`: `on` · `standard`: `on` · `fast`: `on`
 
 ### `verify.reads_notes_last`
@@ -280,6 +313,8 @@ the verifier reads the diff before the executor's notes
 - **reads** — `processLedger`
 - **band** — `loop/soft-verifier`
 - **cost** — not measured
+- **implementation** — manual
+- **manual action** — the verifier judges the diff on its own before it reads the lane's implementation notes
 - **profiles** — `guarded-everything`: `on` · `standard`: `on` · `fast`: `on`
 
 ### `merge.by`
@@ -293,6 +328,8 @@ who runs the merge ritual
 - **reads** — `processLedger`
 - **band** — `loop/cycle-budget-used`
 - **cost** — 15 to 21 min, down to about 5
+- **implementation** — manual
+- **manual action** — run the merge through the arm's merge verb and rule on each step it stops at, rather than typing the ritual's steps by hand
 - **profiles** — `guarded-everything`: `by-the-seat` · `standard`: `by-the-arm` · `fast`: `by-the-arm`
 
 ### `merge.redrill`
@@ -306,6 +343,8 @@ the re-drill of the verdict's correction blocks
 - **reads** — `processLedger`
 - **band** — `loop/cycle-budget-used`
 - **cost** — minutes
+- **implementation** — manual
+- **manual action** — re-drill each mutant block the newest verdict carries against the spec that block names, and stop on a survivor or on a body that reds more than itself
 - **profiles** — `guarded-everything`: `whole-spec` · `standard`: `scoped` · `fast`: `scoped`
 
 ### `merge.regen_graph`
@@ -319,6 +358,7 @@ the code graph regenerated when a source under the walk moved
 - **reads** — `regenPlace`
 - **band** — `loop/cycle-budget-used`
 - **cost** — about 3 min when it fires
+- **implementation** — operational
 - **profiles** — `guarded-everything`: `by-the-seat` · `standard`: `by-the-arm` · `fast`: `by-the-arm`
 
 ### `merge.regen_census`
@@ -332,6 +372,7 @@ the behaviour census regenerated when a spec name moved
 - **reads** — `regenPlace`
 - **band** — `loop/cycle-budget-used`
 - **cost** — about 1 min when it fires
+- **implementation** — operational
 - **profiles** — `guarded-everything`: `by-the-seat` · `standard`: `by-the-arm` · `fast`: `by-the-arm`
 
 ### `merge.keepers`
@@ -345,6 +386,7 @@ the cheap keepers at the merge — the pinned-sentence, forbidden-content and di
 - **reads** — `keeperSteps`
 - **band** — `loop/cycle-budget-used`
 - **cost** — seconds
+- **implementation** — operational
 - **profiles** — `guarded-everything`: `off` · `standard`: `on` · `fast`: `on`
 
 ### `merge.meters_to_bands`
@@ -358,6 +400,8 @@ the reports' meters appended to the bands at the merge
 - **reads** — `processLedger`
 - **band** — no band measures this yet
 - **cost** — seconds
+- **implementation** — manual
+- **manual action** — hand the lane's and the verifier's reports to the merge, so their meters blocks reach the readings the bands parse
 - **profiles** — `guarded-everything`: `off` · `standard`: `on` · `fast`: `on`
 
 ### `merge.message`
@@ -371,6 +415,8 @@ the merge message
 - **reads** — `processLedger`
 - **band** — no band measures this yet
 - **cost** — not measured
+- **implementation** — manual
+- **manual action** — take every sentence of the merge message out of the verdict or out of a figure the run measured
 - **profiles** — `guarded-everything`: `by-the-seat` · `standard`: `from-the-verdict` · `fast`: `from-the-verdict`
 
 ### `push.owed`
@@ -384,6 +430,8 @@ what a push must have graded
 - **reads** — `processLedger`
 - **band** — `loop/cycle-budget-used`
 - **cost** — 15 min, down to 1 to 5
+- **implementation** — manual
+- **manual action** — grade the set the pushed range owes, last, and then push bare
 - **profiles** — `guarded-everything`: `whole` · `standard`: `owed-set` · `fast`: `owed-set`
 
 ### `push.batching`
@@ -397,6 +445,8 @@ several merges per push
 - **reads** — `processLedger`
 - **band** — `loop/cycle-budget-used`
 - **cost** — fewer CI runs
+- **implementation** — manual
+- **manual action** — let merges accumulate and carry them in one push rather than pushing after each
 - **profiles** — `guarded-everything`: `off` · `standard`: `on` · `fast`: `on`
 
 ### `push.wait_previous_run`
@@ -410,6 +460,8 @@ the guard refuses a push while a run is in flight
 - **reads** — `processLedger`
 - **band** — `loop/cycle-budget-used`
 - **cost** — up to 35 min
+- **implementation** — manual
+- **manual action** — read the verdict the push guard announces before pushing, and at on wait for the run in flight to conclude first
 - **profiles** — `guarded-everything`: `on` · `standard`: `off` · `fast`: `off`
 
 ### `push.token`
@@ -423,6 +475,7 @@ the owed-set token and the push guard
 - **reads** — `processLedger`
 - **band** — no band measures this yet
 - **cost** — seconds
+- **implementation** — declarative
 - **profiles** — `guarded-everything`: `on` · `standard`: `on` · `fast`: `on`
 
 ### `ci.owed`
@@ -436,6 +489,7 @@ what CI runs per push
 - **reads** — `processLedger`
 - **band** — `loop/cycle-budget-used`
 - **cost** — 34 min, down to about 10
+- **implementation** — declarative
 - **profiles** — `guarded-everything`: `everything` · `standard`: `owed-set` · `fast`: `owed-set`
 
 ### `ci.sharding`
@@ -449,6 +503,7 @@ the e2e lane split across runners by owning spec
 - **reads** — `processLedger`
 - **band** — `loop/cycle-budget-used`
 - **cost** — 21 min, down to about 5
+- **implementation** — declarative
 - **profiles** — `guarded-everything`: `off` · `standard`: `on` · `fast`: `on`
 
 ### `ci.regen_check`
@@ -462,6 +517,7 @@ graph and census currency checked on the runner
 - **reads** — `processLedger`
 - **band** — no band measures this yet
 - **cost** — seconds
+- **implementation** — declarative
 - **profiles** — `guarded-everything`: `on` · `standard`: `on` · `fast`: `on`
 
 ### `ci.per_push_runs`
@@ -475,6 +531,7 @@ how many runs a push starts
 - **reads** — `processLedger`
 - **band** — `loop/cycle-budget-used`
 - **cost** — one run per push
+- **implementation** — declarative
 - **profiles** — `guarded-everything`: `per-merge` · `standard`: `one` · `fast`: `one`
 
 ### `record.whole_suite_net`
@@ -488,6 +545,8 @@ when the whole four suites run
 - **reads** — `wholeSuiteNet`
 - **band** — `loop/cycle-budget-used`
 - **cost** — 15 min per run
+- **implementation** — manual
+- **manual action** — run the four legs end to end on the clock this value names: the integrating seat takes the checkpoint half and the scheduled run takes the nightly one
 - **profiles** — `guarded-everything`: `every-push` · `standard`: `checkpoint-and-nightly` · `fast`: `nightly`
 
 ### `record.bands`
@@ -501,6 +560,8 @@ cycle time and tokens per size and tier, with budgets
 - **reads** — `processLedger`
 - **band** — no band measures this yet
 - **cost** — seconds
+- **implementation** — manual
+- **manual action** — record each lane's readings in the bands' own file at the merge, and read the bands at every checkpoint
 - **profiles** — `guarded-everything`: `off` · `standard`: `on` · `fast`: `on`
 
 ### `record.checkpoint`
@@ -514,6 +575,8 @@ the record and STATE regenerated at a sitting
 - **reads** — `processLedger`
 - **band** — `loop/cycle-budget-used`
 - **cost** — 20 min per sitting
+- **implementation** — manual
+- **manual action** — write the sitting's record and replace STATE from its template in the same commit
 - **profiles** — `guarded-everything`: `on` · `standard`: `on` · `fast`: `on`
 
 ### `fence.hook`
@@ -527,6 +590,7 @@ the lane fence and the write hook that keeps it
 - **reads** — `processLedger`
 - **band** — no band measures this yet
 - **cost** — seconds
+- **implementation** — declarative
 - **profiles** — `guarded-everything`: `on` · `standard`: `on` · `fast`: `on`
 
 ### `landing.gate`
@@ -540,6 +604,7 @@ the landing gate
 - **reads** — `processLedger`
 - **band** — no band measures this yet
 - **cost** — seconds
+- **implementation** — declarative
 - **profiles** — `guarded-everything`: `on` · `standard`: `on` · `fast`: `on`
 
 ### `docs.gate`
@@ -553,6 +618,7 @@ the docs gate
 - **reads** — `processLedger`
 - **band** — no band measures this yet
 - **cost** — seconds
+- **implementation** — declarative
 - **profiles** — `guarded-everything`: `on` · `standard`: `on` · `fast`: `on`
 
 ### `method.stamp`
@@ -566,6 +632,8 @@ the method stamp and its eval gate when method text moves
 - **reads** — `processLedger`
 - **band** — no band measures this yet
 - **cost** — seconds
+- **implementation** — manual
+- **manual action** — bump the method stamp in every file that carries it, and run the method evals, in the merge that moves method text
 - **profiles** — `guarded-everything`: `on` · `standard`: `on` · `fast`: `on`
 
 ### `record.immutable`
@@ -579,4 +647,6 @@ records never rewritten
 - **reads** — `processLedger`
 - **band** — no band measures this yet
 - **cost** — seconds
+- **implementation** — manual
+- **manual action** — append to a checkpoint, a verdict or a room entry; never edit one
 - **profiles** — `guarded-everything`: `on` · `standard`: `on` · `fast`: `on`

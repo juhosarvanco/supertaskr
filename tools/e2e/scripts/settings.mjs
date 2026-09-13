@@ -158,7 +158,9 @@ export const USAGE = [
   "  --root <path>  the project to read; defaults to the checkout this script sits in",
   "",
   "  Every switch is declared ONCE, in method/runtime/process-schema.yaml, and this",
-  "  command renders that file rather than restating it. exit codes: 0 clean · 1 found ·",
+  "  command renders that file rather than restating it. Every row carries its LABEL —",
+  "  operational, manual or declarative — and a declarative row is a RECORD rather than",
+  "  a control, so `set` refuses one. exit codes: 0 clean · 1 found ·",
   "  2 called wrong · 3 could not run.",
 ].join("\n");
 
@@ -263,6 +265,8 @@ export function measuredFor(row, readings, units) {
  * @property {string} what
  * @property {boolean} floor
  * @property {boolean} overridden
+ * @property {string} implementation  operational, manual or declarative — what makes the row true
+ * @property {string} manualAction    the instruction on a manual row, and "" on every other
  * @property {string} profileValue   the value this switch takes under the profile itself
  * @property {Measured} measured
  */
@@ -290,6 +294,8 @@ export function settingsRows(input) {
       what: row.what,
       floor: row.floor,
       overridden: row.overridden,
+      implementation: row.implementation,
+      manualAction: row.manualAction,
       profileValue: sw === undefined ? row.value : (sw.profiles.get(settings.profile) ?? row.value),
       measured: measuredFor(row, readings, units),
     };
@@ -322,8 +328,22 @@ export function renderSettings(input) {
       row.floor ? "FLOOR" : "",
       row.overridden ? `DEPARTURE — ${settings.profile} is ${row.profileValue}` : "",
     ].filter((m) => m !== "");
-    out.push(`  ${row.id} = ${row.value}${marks.length === 0 ? "" : `  [${marks.join("; ")}]`}`);
+    // THE LABEL RIDES IN A BRACKET OF ITS OWN, AFTER THE MARKS (T-299-s6).
+    // `FLOOR` and `DEPARTURE` say what this PROJECT has done with the row;
+    // the label says what the row IS, which is a different question and the
+    // one that decides whether editing it is worth anything. Its own
+    // bracket is also what keeps the marks bracket the string it has always
+    // been, so a reader — and a body — that matches on `[FLOOR` or on a
+    // whole `[DEPARTURE — …]` still reads what it read before.
+    out.push(
+      `  ${row.id} = ${row.value}${marks.length === 0 ? "" : `  [${marks.join("; ")}]`}` +
+        `  [${row.implementation}]`,
+    );
     out.push(`      ${row.what}`);
+    // AND A MANUAL ROW CARRIES ITS INSTRUCTION BESIDE THE VALUE. The label
+    // alone tells a reader the setting does nothing by itself; the action
+    // is the half that tells them what does.
+    if (row.manualAction !== "") out.push(`      manual action: ${row.manualAction}`);
     out.push(`      measured: ${row.measured.text}`);
   }
   out.push("");
@@ -345,9 +365,11 @@ export function renderSettings(input) {
  * WHAT `set` WOULD DO, and every refusal it owes, DECIDED BEFORE
  * ANYTHING IS WRITTEN.
  *
- * Four mistakes, each reported as itself: an id the schema does not
- * declare, a FLOOR switch, a value outside that switch's own set, and a
- * combination the constraints forbid. The fourth is not this file's
+ * Five mistakes, each reported as itself: an id the schema does not
+ * declare, a FLOOR switch, a DECLARATIVE row — one nothing reads, so a
+ * departure would move the template and change nothing else — a value
+ * outside that switch's own set, and a
+ * combination the constraints forbid. The last is not this file's
  * judgement — it is `constraintFindings`, the PARSER LIBRARY'S own,
  * run over the settings the write WOULD produce, so the refusal names
  * both switches and both values in the schema's own words, and a
@@ -376,6 +398,29 @@ export function setPlan(input) {
     throw new SettingsFinding(
       `settings set: \`${id}\` is FLOOR — no profile turns it off (${sw.what}). The floor is the ` +
         "set the room ruled a project may not refine, so this is refused rather than written.",
+    );
+  }
+  // A DECLARATIVE ROW IS A RECORD AND NOT A CONTROL, SO THE WRITE IS
+  // REFUSED (T-299-s6, the card's third criterion). Nothing reads such a
+  // row's value and no instruction is addressed to a seat by it, so a
+  // departure written here would move the template and change nothing
+  // else — which is worse than changing nothing, because the template
+  // would then say this project had made a decision it has not made.
+  //
+  // THE CODE IS IN THE MESSAGE AND THE EXIT IS THE HOUSE'S. The card's
+  // amendment of 2026-09-13 rules this a finding CODE at the existing
+  // refusal exit rather than a fifth exit: the caller asked for something
+  // the schema does not allow, which is what CALLED WRONG already means,
+  // and a new exit would fork this verb's vocabulary from every other.
+  if (sw.implementation === "declarative") {
+    throw new SettingsFinding(
+      `settings set: declarative — \`${id}\` is a DECLARATIVE row: nothing reads its value and ` +
+        "no instruction is addressed to a seat by it, so a departure written here would move " +
+        `${RUNTIME_TEMPLATE} and change nothing else. That is not the same as the behaviour ` +
+        "being absent — what the row describes lives in code or in CI configuration that never " +
+        `consults ${PROCESS_SCHEMA}, and moving it means moving that. NOTHING was written. Run ` +
+        "`supertaskr settings` for each row's label: an operational row is the one this command " +
+        "can change.",
     );
   }
   if (!sw.values.includes(value)) {
@@ -536,6 +581,12 @@ export function editTemplate(templateYaml, plan) {
  */
 export function renderReference(schema) {
   const floors = [...schema.switches.values()].filter((s) => s.floor);
+  // THE LABEL COUNTS, DERIVED FROM THE ROWS AND NEVER TYPED (T-299-s6).
+  // How many of the loop's switches are executable controls is the first
+  // thing a reader of this page wants and the last thing a sentence
+  // typed here would keep true.
+  /** @param {string} want @returns {number} */
+  const labelled = (want) => [...schema.switches.values()].filter((s) => s.implementation === want).length;
   /** @type {string[]} */
   const out = [
     "# 15 — Settings",
@@ -552,6 +603,14 @@ export function renderReference(schema) {
     `The loop's own switches, at schema version ${String(schema.version)}: ` +
       `${String(schema.switches.size)} of them under ${String(schema.profiles.size)} profiles, ` +
       `${String(floors.length)} of which are FLOOR — no profile turns them off.`,
+    "",
+    `Each row says what makes it true: ${String(labelled("operational"))} are OPERATIONAL — the ` +
+      `arm reads them and changing the value changes what it does — ${String(labelled("manual"))} ` +
+      "are MANUAL, where a person or a seat performs what the row names and the row carries that " +
+      `instruction, and ${String(labelled("declarative"))} are DECLARATIVE: a record rather than ` +
+      "a control, read by nothing and addressed to nobody, so editing one alone changes nothing. " +
+      "A declarative row is not an absent behaviour — what it describes lives in code or in CI " +
+      "configuration that never consults this schema.",
     "",
     "## The command",
     "",
@@ -582,6 +641,8 @@ export function renderReference(schema) {
       `- **band** — ${sw.band.length === 0 ? "no band measures this yet" : sw.band.map((b) => `\`${b}\``).join(" · ")}`,
     );
     out.push(`- **cost** — ${sw.cost}`);
+    out.push(`- **implementation** — ${sw.implementation}`);
+    if (sw.manualAction !== "") out.push(`- **manual action** — ${sw.manualAction}`);
     out.push(
       `- **profiles** — ${[...sw.profiles].map(([p, v]) => `\`${p}\`: \`${v}\``).join(" · ")}`,
     );

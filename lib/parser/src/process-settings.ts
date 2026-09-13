@@ -58,7 +58,9 @@ export const RUNTIME_TEMPLATE = 'method/runtime/supertaskr.yaml';
  * `what` it does, `effect` how the loop changes, `reads` which arm
  * symbol consults it, `needs` what it needs on, `floor` whether it may
  * be turned off, `band` which band measures it, `cost` what this project
- * measured, `type`/`values` the value set, `profiles` the three columns.
+ * measured, `implementation` what makes the row TRUE, `manualAction` the
+ * instruction when that is a person, `type`/`values` the value set,
+ * `profiles` the three columns.
  */
 export const SWITCH_FIELDS: readonly string[] = Object.freeze([
   'type',
@@ -70,8 +72,39 @@ export const SWITCH_FIELDS: readonly string[] = Object.freeze([
   'floor',
   'band',
   'cost',
+  'implementation',
+  'manualAction',
   'profiles',
 ]);
+
+/**
+ * HOW A SWITCH IS IMPLEMENTED, and the set is closed (T-299-s6).
+ *
+ * `operational` — a program in this tree reads the row and branches on
+ * it, so changing the value changes what that program DOES. The label is
+ * earned by a body that changes the value and observes the change; a
+ * read site shows the value is read, and a surface printing the value
+ * back shows nothing at all.
+ *
+ * `manual` — no program reads the row; a person or a seat performs what
+ * it names, and `manualAction` is that instruction.
+ *
+ * `declarative` — the row is a RECORD and not a control: nothing reads
+ * its value and no instruction is addressed to a seat by it, so editing
+ * it alone changes nothing. IT DOES NOT MEAN THE BEHAVIOUR IS ABSENT —
+ * a gate whose row reads `declarative` is still in force; what it is not
+ * is a setting, because it lives in code or in CI configuration that
+ * never consults this file. That is why the terminal refuses to edit
+ * one: the write would move the template and change nothing else.
+ */
+export const IMPLEMENTATIONS: readonly string[] = Object.freeze([
+  'operational',
+  'manual',
+  'declarative',
+]);
+
+/** The one label whose `manualAction` is required to say something. */
+export const MANUAL_IMPLEMENTATION = 'manual';
 
 /** The two shapes a switch may take. */
 export const SWITCH_TYPES: readonly string[] = Object.freeze(['toggle', 'choice']);
@@ -88,6 +121,10 @@ export interface ProcessSwitch {
   floor: boolean;
   band: string[];
   cost: string;
+  /** one of `IMPLEMENTATIONS` — what makes this row true */
+  implementation: string;
+  /** the instruction on a manual row, and the empty string on every other */
+  manualAction: string;
   /** profile id -> this switch's value under it */
   profiles: Map<string, string>;
 }
@@ -129,6 +166,8 @@ export interface LedgerRow {
   floor: boolean;
   band: string[];
   cost: string;
+  implementation: string;
+  manualAction: string;
   overridden: boolean;
 }
 
@@ -250,6 +289,32 @@ export function processSettingsReader(options: ProcessReaderOptions = {}): Proce
             `${SWITCH_FIELDS.join(', ')} — a row missing one of them is a settings screen with a ` +
             'blank in it, and a reader cannot tell an option that costs nothing from one nobody ' +
             'has measured.',
+        );
+      }
+      const impl = String(cur['implementation'] ?? '');
+      if (!IMPLEMENTATIONS.includes(impl)) {
+        throw new Finding(
+          `${PROCESS_SCHEMA}: the switch \`${curId}\` declares \`implementation: ${impl}\`, which is ` +
+            `not one of ${IMPLEMENTATIONS.join(', ')}. The label is what tells an executable ` +
+            'control from a recorded intention, and a label this reader does not know would be ' +
+            'rendered to somebody deciding whether the row is worth editing.',
+        );
+      }
+      const action = String(cur['manualAction'] ?? '');
+      if (impl === MANUAL_IMPLEMENTATION && action.trim() === '') {
+        throw new Finding(
+          `${PROCESS_SCHEMA}: the switch \`${curId}\` is \`${MANUAL_IMPLEMENTATION}\` and its ` +
+            '`manualAction` is empty. A manual row is one a person or a seat performs, so the row ' +
+            'that says so owes the instruction — without it the label tells a reader the setting ' +
+            'does nothing by itself and nothing else.',
+        );
+      }
+      if (impl !== MANUAL_IMPLEMENTATION && action !== '') {
+        throw new Finding(
+          `${PROCESS_SCHEMA}: the switch \`${curId}\` is \`${impl}\` and carries a ` +
+            '`manualAction` anyway. Only a manual row names an action; an action on an ' +
+            'operational row would be an instruction nobody has to follow, and on a declarative ' +
+            'one an instruction that changes nothing.',
         );
       }
       switches.set(curId, { id: curId, ...cur } as unknown as ProcessSwitch);
@@ -512,6 +577,8 @@ export function processSettingsReader(options: ProcessReaderOptions = {}): Proce
         floor: sw.floor,
         band: sw.band,
         cost: sw.cost,
+        implementation: sw.implementation,
+        manualAction: sw.manualAction,
         overridden: settings.overridden.has(id),
       });
     }
