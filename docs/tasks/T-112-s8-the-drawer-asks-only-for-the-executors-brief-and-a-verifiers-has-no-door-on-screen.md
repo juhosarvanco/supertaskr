@@ -5,7 +5,8 @@ feature: F-04
 milestone: 4
 size: S
 priority: 7
-status: suggested
+status: parked
+wake: T-205-s5
 suggested_by: "executor claude-opus-5@subagent @T-112-s5, 2026-09-09"
 blocked_by: []
 touches: [app-board]
@@ -48,3 +49,5 @@ Nothing outside `[app-board]` if the answer is a control in the drawer:
 its call site, and the second answer would key on the same card id. If
 the answer is *"keyed on status"* it is smaller still and needs no
 control at all. **The blocker is the ruling, not the fence.**
+
+Parked 2026-09-13 (the pile-2 sitting, the owner's approval of 2026-09-13): kept separate with a wake — wake T-205-s5; the drawer cannot offer a verifier's brief until the assembler produces one, and whether the front serves one is a product decision this card keeps.
