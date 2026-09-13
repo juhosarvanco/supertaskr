@@ -252,3 +252,246 @@ reds rather than waiting for the next merge to discover it.
 ## Verdicts
 
 Promoted 2026-09-13 (the owner's ruling 5 of 2026-09-13): to planned at priority 2, one of the four instrument fixes the T-311 and T-300 lanes filed; before its lane the seat confirms the defect still exists at the dispatch base and assesses whether it shares a lane with its siblings while every requirement is preserved. Not dispatched by this ruling.
+
+### 2026-09-13 — APPROVED WITH ASSIGNED CORRECTIONS — claude-opus-5@subagent (verifier, phase 2, guarded)
+
+The four criteria are met — one rule imported rather than copied, the depth
+named in words and kept by a body that reds on a card by id, the verdict
+reader widened to the rule it enforces and re-narrowed only where a
+correction block would slice a verdict in half, and the one heading shape
+published where a verifier reads it. Two assigned corrections pin properties
+the diff HAS and no body measures: the two readers still reach their one
+shared rule through different prose models, and the follow-through's own
+stated hazard — a global pattern asked through `.test` — is written in a
+comment and measured by nothing.
+
+#### THE FRAME I ACTUALLY HAD, said rather than promised
+
+Two spawns. Phase 1 ran tool-less and wrote the attack set from the card at
+the base; this spawn opened the diff first and the executor's notes only
+after the diff was read, in the order the role file names. The brief's
+duties section named no executor-derived specific — no mutant count, no path
+count, no suite figure. The figures it carried (491 live cards, 14 at depth
+three, "the third false stop in eight runs") are the CARD's own, measured
+before the lane. I did not `git log` the lane before writing, and the notes
+were opened after the code diff, the two spec diffs and the method diffs.
+
+Sealed inputs, cited against the files as saved:
+
+| input | sha256 |
+|---|---|
+| the attack set | `5c4cb00a4d41837eb1fc56620ea28ec9f6d55c1016acbd8338846bb585544443` |
+| the ground, at the base | `37aa28ae950c402e8e5e1c90b48a09bdfaa3e9fef4d9bad083ffe8faa243c7a2` |
+| the card at `71b52a01` | `06c650778796da6c7e931df2eb7b94acc446cd3c1c93923f26b8d1cd7f8d8323` |
+| the card as amended at `ee9ed3cd` | `9f3e464a04b3817ee62e8d799592e4911f219ae1508aa9f53a40ba241761a08e` |
+
+All four recomputed on this bench and matching. The amended card moves the
+two absorbed criteria into the canonical section unchanged; the contract is
+the same four criteria either way, and the lane's copy keeps the old
+placement, which is the executor's unchanged contract and not a deviation.
+
+Measured at the lane tip `163a46c7` unless a line names another ref. The
+whole battery is owed at the tip THIS verdict creates, and it is recorded in
+the postscript below the corrections, because a figure measured at the
+commit I was sent is stale at the tip my own commits make.
+
+#### A ROW PER ACCEPTANCE CRITERION, WITH THE EVIDENCE THAT DECIDED IT
+
+| # | criterion | verdict | what decided it |
+|---|---|---|---|
+| 1 | the advisory seat reader matches the heading by the card preflight's own rule; a body drives both readers over a card at each depth and requires agreement | MET, with correction 1 | `session-economics.mjs` imports `CRITERIA_HEADING` from `card-preflight.mjs` and re-exports it; the body asserts IDENTITY (`toBe`), not equality, so a second copy cannot satisfy it. Driven over `##`, `###`, `####` with the absolute count 2 asserted for BOTH readers, and a depth-one heading refused by both as the negative control. The corpus body drives the pair over every card under `docs/tasks/`. I re-measured the section END independently: `optionalSection`'s new `/^#{2,}\s/` is byte-identical to the switch `cardLines` makes at `card-preflight.mjs`, so the two now stop in the same place as well as start there. Residual, assigned as correction 1 below. |
+| 2 | the task format states the one spelling with the depth named, and a body over the cards reds naming any card at another depth — green at landing, red on the fifteenth | MET | `TASK-FORMAT.md` states it in WORDS ("WRITTEN AT DEPTH TWO — two hash marks and a space"), not only in an example, which is what the fourteen were drafted from. The body reads the depth the document NAMES, cross-checks it against the depth the document's own block SPELLS, and measures the board against that one number. **The fifteenth-card control, which the body does not run for itself, I ran**: a planted `T-905` with `### Acceptance criteria` and an id not on the list reds the body with `+ "T-905"` in the printed array. **The reciprocal control**: `T-312` repaired to depth two leaves the body GREEN (1 passed), so the owner's ruling-to-repair does not red the suite — the list is an exclusion and not an equality. The exclusion is ten literal ids with no predicate anywhere in the path. |
+| 3 | (T-311-s7) a depth-three verdict heading carrying a date anywhere is found; date-first and date-last found, undated refused | MET, with a filed finding | `VERDICT_HEADING` is now `/^###\s+.*\d{4}-\d{2}-\d{2}/` behind `isVerdictHeading`, which also refuses a heading the file already counts as a CORRECTION. The body drives all three cases, both orderings, and a dated heading ABOVE the section. Near-misses refused by the date pattern: `T-300-s7` and `claude-opus-5@subagent` carry no `\d{4}-\d{2}-\d{2}`. `newestVerdict` is the only verdict-heading matcher in the script and the refusal message lives inside it, so there is no second site left narrow. I re-ran the board census myself and reproduced the executor's figures exactly — see the finding below for the one card whose answer moves. |
+| 4 | (T-311-s7) the role file spells the one shape with the date's place named; product-agnostic | MET | Step 5a is added immediately after step 5, where a verifier following step 5 reads it, and it names the date's place in words while saying plainly that the reader accepts every shape the rule allows — so the sentence and the regex are a spelling and a reader rather than a guess and a regex. Product-agnostic: no product noun, no script name, no tool name. The pinning body BUILDS the heading out of the published shape and requires the reader to find it — the data-derived shape step 2b asks for, not a grep for a string. **`git diff 71b52a01 163a46c7 -- method/` removes ZERO lines**, so no pinned sentence was reworded or deleted by either method edit. |
+
+#### THE IN-FENCE FOLLOW-THROUGH, GRADED AS PART OF THE DIFF
+
+One entry is declared: the correction-block heading pattern in `merge.mjs`,
+spelled three times, becomes one source string with three compiled forms.
+It is inside the manifest, it is the T-057 property this project names by
+number, and it is what makes the entry reader's exclusion the same shape the
+file already counts rather than a fourth spelling — so it is in-fence, small
+and load-bearing. **Its stated hazard has no body**: the comment explains
+that the "does it head one" form is not the global one because `RegExp.test`
+on a global regex carries `lastIndex` and answers true, false, true over one
+unchanging input, and nothing in the suite asks the question twice.
+`assignsCorrections` has no direct body in `merge.spec.ts` at all. That is
+correction 2.
+
+Nothing else in the diff is unlisted surface: the six fenced paths, this
+card, and the two cards filed under step 6. No parser-library file, no
+repair of any pinned card, no census or graph regeneration.
+
+#### THE ATTACK SET, ANSWERED WHERE THE ANSWER IS NOT IN A ROW ABOVE
+
+- **Two copies of one regex (A1.1)** — answered by import and re-export, and
+  pinned by identity. There is no second literal.
+- **The agreement body as a tautology (A1.2)** — it is not: the two readers
+  are driven through `acceptanceCriteria` and `cardLines(...).hasCriteria`,
+  their real entry points, over fixtures and over 796 real cards.
+- **The card's own absorbed sub-heading, and any annotated heading (A1.5,
+  A2.6)** — the shared rule matches the WHOLE line, so
+  `### T-311-s7's acceptance criteria (kept whole)` is not a criteria
+  heading for either reader. Probed directly: the advisory reader returns
+  the card's own criterion and not the absorbed one. The lane's escape
+  routes — weakening the matcher, or adding this card to the exclusion —
+  were not taken.
+- **The allowlist as a blanket (A2.1)** — ten literal ids, `Array.includes`,
+  no predicate, and the ids are never used as a path.
+- **The fourteen that are ten (A2.4)** — the card counted fourteen with a
+  looser scan; under the rule the criterion itself names, four of them
+  (T-093, T-112-s3, T-177, T-208) carry their criteria at depth TWO and a
+  SECOND heading of that name inside a verdict. The ground taken at the base
+  independently counts ten at depth three over the 794 flat cards, and my own
+  census reproduces the same ten ids. The difference is a reader, not a
+  repair, and the notes declare it. Not a silent scope change.
+- **Exit 0 over zero cards (A2.5)** — both corpus bodies assert
+  `read > 200` before they assert an empty list.
+- **The sibling's removal (X2)** — `docs/tasks/T-311-s7-*.md` was removed at
+  `b8b2c89d`, which `git merge-base --is-ancestor` confirms is an ancestor of
+  this lane's base. It is not this diff's to make, and the board is clean
+  without it.
+- **The parser library's depth-two documentation (A1.9)** — the lane did not
+  touch it and owes it nothing: the library's comments say the section is
+  spelled at depth two, and depth two is precisely what the task format now
+  states. The third site agrees with the new rule rather than contradicting
+  it.
+- **ReDoS and injection on the new input paths (step 3, mandatory)** — no
+  finding. Every pattern is a literal; the only `new RegExp` calls take a
+  module-level source string with no interpolation of file content.
+  `optionalSection` accepts a `RegExp` from its caller and every caller
+  passes a constant. `/^###\s+.*\d{4}-\d{2}-\d{2}/` backtracks over a
+  heading line at worst linearly per whitespace position and cannot blow up;
+  `/^#{2,}\s/` and the shared heading rule are anchored and bounded. No
+  secret, no dependency addition, no endpoint, no path built from card data.
+
+#### CORRECTION 1 (assigned) — the two readers share a rule and a section end, but not a prose model, and the corpus body cannot see it
+
+The heading rule is one object and the section end is now the preflight's
+own. What is still two rules is how each reader gets to the card: the
+preflight looks at `proseOnly(cardBody(...))`, which BLANKS fenced lines and
+lines indented four spaces or more, and the advisory reader looks at the card
+as written. So a card that QUOTES the heading in a fence and then carries its
+own section is read from two different places.
+
+Measured on this bench with both readers driven directly:
+
+    preflight opens at line 13  |  advisory opens at line 8
+    advisory criteria: ["WHEN a card QUOTES the format THE quotation SHALL not be its criteria. ```"]
+
+Both readers say "there IS a criteria section", so **the committed corpus
+body — which compares two booleans — is GREEN on that card** while the two
+collect different criteria from it. That is the defect this card exists to
+kill, surviving one axis over, and the criterion's own words are "so both
+answer the same criteria for the same card".
+
+The body compares the SITE, driven through each reader's own entry point:
+`cardLines(...)`'s first criteria-scoped line against `optionalSection`'s
+returned section. 509 cards on this board carry a criteria section and all
+509 agree, so the body is green at landing; the day a card quotes the format
+before spelling it, the body reds naming that card. Its positive control is
+run where the arming is ABSENT — the quoting card above — and shows BOTH
+halves: the boolean comparison green, the site comparison not.
+
+Read RED against an implementation lacking the property and GREEN against one
+carrying it: with `findIndex` (the tip) `15 passed`; with the mutant below
+`1 failed, 14 passed`, and the one failure is this body. The kill set is this
+body alone — it contains no existing body and no existing body contains it:
+the mutant leaves `session-economics.spec.ts`'s other 14 bodies and all 58
+of `card-preflight.spec.ts` green (73 passed under the mutant, measured
+before this body existed).
+
+The mutant lands at the line that CHOOSES the site, which is where the
+property lives. The first draft of this body re-derived the advisory site
+with a `findIndex` of its own, and that draft SURVIVED this very mutant —
+73 passed — which is the `T-210` shape the role file names. It was rewritten
+to drive `optionalSection`, and the reading above is the rewritten one.
+
+```mutant
+correction: 1 — the two readers open the criteria section in the same place
+file: tools/e2e/scripts/session-economics.mjs
+spec: tools/e2e/tests/session-economics.spec.ts
+body: the two readers open the criteria section in the SAME PLACE, and not merely both somewhere
+message: different places on ONE card
+--- old
+  const start = lines.findIndex((l) => opens(l.trim()));
+--- new
+  const start = lines.findLastIndex((l) => opens(l.trim()));
+```
+
+#### CORRECTION 2 (assigned) — the follow-through's own stated hazard is written in a comment and measured by nothing
+
+The three compiled forms of one source differ only in their FLAGS, and the
+comment beside them says why the "does this verdict head a correction" form
+is not the global one: `RegExp.test` on a global regex carries `lastIndex`
+from call to call. The verb asks that question more than once in a run — the
+plan asks it, the read at the tip asks it again — and the second answer is
+the one that would silently drop every block. Nothing measures it, and
+`assignsCorrections` has no direct body in the spec at all.
+
+The body asks the same unchanging verdict three times in a row. The three
+readings are consecutive on purpose: `String.match` resets a global regex's
+`lastIndex`, so a `correctionHeadings` call between two of them would hide
+exactly the carry this pins — the first draft interleaved them and would
+have been vacuous. The fixture deliberately omits the words `ASSIGNED
+CORRECTIONS`, which would answer through the other half of the disjunction
+so that the flagged half is never asked, and the body asserts that omission
+before it asserts anything else. A negative control reads a verdict heading
+no correction twice and requires false both times.
+
+Read RED against an implementation lacking the property and GREEN against one
+carrying it: at the tip `30 passed`; with the mutant below `1 failed, 30
+passed` and the one failure is this body, on its SECOND reading. No other
+body in `merge.spec.ts` moves, so the kill set is this body alone.
+
+```mutant
+correction: 2 — assignsCorrections answers the same over one unchanging input
+file: tools/e2e/scripts/merge.mjs
+spec: tools/e2e/tests/merge.spec.ts
+body: assignsCorrections answers the same over one unchanging input, however often it is asked
+message: the SECOND reading of one unchanging verdict
+--- old
+    /\bASSIGNED\s+CORRECTIONS?\b/i.test(verdictText) || CORRECTION_IN_TEXT.test(verdictText)
+--- new
+    /\bASSIGNED\s+CORRECTIONS?\b/i.test(verdictText) || CORRECTION_HEADINGS.test(verdictText)
+```
+
+Two corrections, two mutant blocks.
+
+#### A FINDING THAT DOES NOT BLOCK, FILED AS T-311-s10
+
+The widening makes EVERY dated depth-three heading under `## Verdicts` a
+verdict entry, and only a `CORRECTION` heading is excluded. I re-ran the
+census on this bench with both patterns and reproduced the executor's
+figures to the card: of 312 cards carrying the section at the lane tip (310
+at the base the comment names, plus the two cards this lane files), 19 gain
+an entry the anchored reader missed entirely, and ONE moves. The one that
+moves is `T-238-s1`, from its own `APPROVED WITH ASSIGNED CORRECTIONS` entry
+to a later `### Amendment of 2026-09-12 …` appended under the same section;
+`T-317-s3` elects a heading that reads `### The seat's note, 2026-09-13 …`.
+
+`verdictState` answers `verdict` for such a heading and `preludePlan` refuses
+anything that is not `APPROVED` or `ACCEPTED`, so this is FAIL-CLOSED and its
+refusal now NAMES the heading it read, which is a far better message than the
+one the absorbed card was filed about. It is still a false stop of the same
+class, now reachable on a card carrying a perfectly good approval, and the
+executor's notes name `T-238-s1` and call the move correct. I do not reject on
+it — the alternative, requiring a verdict WORD, re-narrows the reader below
+the rule — but the class belongs on the board.
+
+#### WHAT THIS VERDICT DOES NOT ESTABLISH
+
+- The switch of criterion 2's body from an equality to an exclusion rests on
+  a seat note in this lane's ask file carrying the owner's ruling of
+  2026-09-13. I did not read the ask file; I graded the exclusion against the
+  criterion's own words — "green at landing and reds on the fifteenth" — and
+  ran both controls. The equality would have been stricter than the card.
+- The body pinning the published heading shape requires EXACTLY ONE line in
+  `verifier.md` that begins with `### ` and contains `<`. That is true today
+  and is a fair way to find the shape without re-typing it, but it is a
+  whole-file uniqueness claim, and a second illustrative heading anywhere in
+  the file reds it. Noted, not filed.
+- `newestVerdict` scans from the `## Verdicts` heading to the END OF FILE
+  rather than to the end of that section. That is unchanged by this diff and
+  harmless while `## Verdicts` is the last section a card carries, but the
+  widening enlarges what it would pick up if one ever were not.
