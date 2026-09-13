@@ -32,6 +32,15 @@ The schema's `reads:` field names `processLedger` for most switches, which the s
 
 In the third criterion, "refuse with the code `declarative`" means the refusal's finding code in the message, at the command's existing refusal exit (2); the exit vocabulary stays the four codes T-300-s6 pinned as unchanged, and a body SHALL show the refusal's exit equals the other refusals'.
 
+## Amendment of 2026-09-13, second — the `declarative` label's definition (the owner's ruling of 2026-09-13, after the verifier's correction 3)
+
+This section supersedes ONE part of the second criterion: its sentence that a `declarative` label is supported by inspection establishing that the promised effect is not implemented. It is recorded as an accepted CHANGE to the criterion, not as a finding that the original wording was satisfied; the lane's tree departs from that sentence and the departure is the ruled definition. Everything else in the criterion stands.
+
+- `declarative` is an informational value: the row's value neither controls what the arm runs nor prescribes a manual action. The distinction the label draws is whether changing the setting changes what runs — which is separate from whether the underlying behaviour exists. The schema's own `implementation` field states this (the field that tells an executable control from a recorded intention), and the lane's body pins it: `declarative` means the arm carries no read site for the row and the ledger alone reads it.
+- The label alone establishes neither that the underlying behaviour exists nor that it is absent. A fence hook, a landing gate or a CI job can be active while its settings row is informational, and calling such a feature "not implemented" would be misleading; equally, a declarative row does not certify that anything runs.
+- The criterion's evidence requirements are preserved unchanged: a `declarative` label is supported by inspection and evidence recorded on the card, and uncertainty never becomes `declarative` by default — a row whose read site or effect is unknown is inspected, and an operational effect found is labelled `operational` with its body, as the criterion already requires.
+- A fourth label separating "implemented elsewhere" from "not implemented" is deferred; this amendment authorizes no additional development. For the settings screen, the distinction can be carried by explanatory text beside the value (for example that a behaviour is active and controlled by the hook rather than by this setting) — an input to T-301's design step, not a requirement placed here.
+
 ## Implementation notes
 
 ### The criteria, echoed as a checklist before any code (T-279, the criteria echo)
