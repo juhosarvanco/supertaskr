@@ -13,6 +13,11 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { parse as parseYaml } from "yaml";
+// THE LIBRARY ITSELF, BY THE SAME BUILT ENTRY THE COMMAND READS — so the
+// body below compares the surface against the module rather than against
+// the arm's re-export of it (T-300-s6). `brief.spec.ts` loads it the same
+// way for the arm.
+import * as parserPure from "../../../lib/parser/dist/pure.js";
 import { repoRoot } from "../preflight";
 import {
   ARCHITECTURE_VERBS,
@@ -2466,4 +2471,207 @@ test("a DEPARTURE is listed at the value the PROJECT resolves to, marked against
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+
+// ── T-300-s6: the command reads through the parser library ────────────
+//
+// T-300 landed importing the resolver from the ARM, which re-exports the
+// library's own module bound to its own finding class. The card's whole
+// question is WHICH of the two this surface reads, and the two return
+// identical values — so a body written against the output could never
+// decide it. This one is written against the READING: where the symbols
+// come from, and that what the command renders IS what the library
+// answers over the same inputs.
+
+test("the settings command reads the loop through the PARSER LIBRARY's own module, and keeps no reader, resolver or constraint engine of its own", () => {
+  // THE FILE THE VERB ACTUALLY REACHES, derived from the front's own
+  // table rather than typed — a body that scanned a path somebody typed
+  // would keep passing after the verb was pointed somewhere else.
+  const entry = VERBS.find((v) => v.verb === "settings");
+  expect(entry, "the front carries a settings verb").toBeDefined();
+  const target = entry!.target as { kind: string; file: string };
+  expect(target.kind, "and it fronts a script").toBe("script");
+  const source = readFileSync(path.join(packageRoot, "scripts", target.file), "utf8");
+
+  // WHERE IT READS FROM: the parser library's BUILT browser-safe entry,
+  // by the relative spelling this package uses for every reach outside
+  // itself.
+  expect(
+    source,
+    "the command does not load the parser library's built browser entry at all",
+  ).toContain("lib/parser/dist/pure.js");
+
+  // AND NOT THROUGH THE ARM. The arm re-exports the same symbols under
+  // the same names, so the import list is the one place the two readings
+  // are distinguishable in the source.
+  const armImport = /import\s*\{([^}]*)\}\s*from\s*"\.\/dispatch-brief\.mjs"/.exec(source);
+  expect(armImport, "the command no longer imports from the arm at all").not.toBeNull();
+  const fromArm = (armImport![1] as string)
+    .split(",")
+    .map((n) => n.trim())
+    .filter((n) => n !== "")
+    .sort();
+  expect(
+    fromArm,
+    "the only two symbols the arm still owes this command are the house's exit vocabulary and " +
+      "the ONE function that opens the schema and the template off disk — the library's module " +
+      "is browser-safe by construction and reads no file, so a copy of that half here would be " +
+      "the second reader this card exists to remove",
+  ).toEqual(["EXIT", "loadProcess"]);
+
+  // AND IT KEEPS NONE OF ITS OWN. Not one of the six reader symbols is
+  // declared in this file; each reaches it off the library's namespace.
+  for (const name of [
+    "parseProcessSchema",
+    "processSection",
+    "resolveProcess",
+    "switchValue",
+    "processLedger",
+    "constraintFindings",
+  ]) {
+    expect(
+      source,
+      `${name} is declared in the command rather than read from the library`,
+    ).not.toMatch(new RegExp(`function\\s+${name}\\b`));
+  }
+  expect(
+    source,
+    "the ledger and the constraint findings are taken off the library's own namespace",
+  ).toMatch(/=\s*processPure;/);
+
+  // THE RELATION A NAME CHECK CANNOT SEE: the rows the listing renders
+  // ARE the library's own ledger over this project's schema and
+  // settings, field for field.
+  const loaded = process300();
+  const flat = (r: { id: string; value: string; what: string; floor: boolean; overridden: boolean }) => ({
+    id: r.id,
+    value: r.value,
+    what: r.what,
+    floor: r.floor,
+    overridden: r.overridden,
+  });
+  expect(
+    settingsRows({ ...loaded, readings: new Map(), units: new Map() }).map(flat),
+    "the command's rows and the library's ledger disagree about this project's loop",
+  ).toEqual(parserPure.processLedger(loaded.schema, loaded.settings).map(flat));
+
+  // AND THE REFUSAL IS THE LIBRARY'S JUDGEMENT, QUOTED RATHER THAN
+  // RESTATED: the command's fourth refusal carries the library's own
+  // finding strings, word for word.
+  const forbid = { id: "record.bands", value: "off" };
+  const would = {
+    profile: loaded.settings.profile,
+    available: loaded.settings.available,
+    values: new Map(loaded.settings.values).set(forbid.id, forbid.value),
+    overridden: new Set(loaded.settings.overridden).add(forbid.id),
+  };
+  const theirs = parserPure.constraintFindings(loaded.schema, would);
+  expect(
+    theirs.length,
+    "the library refuses this combination, which is the arrangement this half needs",
+  ).toBeGreaterThan(0);
+  let said = "";
+  try {
+    setPlan({ schema: loaded.schema, settings: loaded.settings, id: forbid.id, value: forbid.value });
+  } catch (e) {
+    said = e instanceof Error ? e.message : String(e);
+  }
+  for (const finding of theirs) {
+    expect(
+      said,
+      "the command's refusal is a sentence of its own rather than the library's finding",
+    ).toContain(finding);
+  }
+
+  // THE POSITIVE CONTROL, evaluated where the arrangement that decides
+  // the subject is ABSENT: a combination the schema allows produces no
+  // finding from the library and no refusal from the command, so the
+  // half above is reading the judgement rather than refusing everything.
+  const allowed = { id: "dispatch.keeper_at_base", value: "off" };
+  expect(
+    parserPure.constraintFindings(loaded.schema, {
+      profile: loaded.settings.profile,
+      available: loaded.settings.available,
+      values: new Map(loaded.settings.values).set(allowed.id, allowed.value),
+      overridden: new Set(loaded.settings.overridden).add(allowed.id),
+    }),
+    "the control: the library allows this combination",
+  ).toEqual([]);
+  expect(
+    () => setPlan({ schema: loaded.schema, settings: loaded.settings, id: allowed.id, value: allowed.value }),
+    "and the command does not refuse it either",
+  ).not.toThrow();
+});
+
+
+// ── T-300-s6, verifier correction 1: WHICH MODULE THE COMMAND LOADS ───
+//
+// The body above reads the command's source for the entry's path with a
+// bare `toContain`. That file spells the same path four more times, in
+// JSDoc type annotations — documentation ABOUT the pin, which the poison
+// catalogue in docs/CONVENTIONS.md names as the likeliest author of the
+// second copy (shape EIGHT) — so the needle outlives the import itself.
+// Measured at this card's lane tip: with the one dynamic load pointed
+// back at `./dispatch-brief.mjs`, which re-exports the same four symbols
+// under the same names, all 57 bodies of this spec stayed green. The
+// reading through the LIBRARY'S own browser entry rather than through the
+// arm's re-export of it is the whole of what this card changed, and it
+// had no body under it.
+//
+// So the haystack here is the CODE and never the file, the entry is read
+// off the parser package's own `exports` map rather than typed, and every
+// specifier is RESOLVED from the command's own directory — a relative
+// path is a claim about a layout, and a claim about a layout goes stale
+// in silence.
+
+test("the settings command LOADS the parser library's own browser entry — the module it imports, and not a path its comments also spell", () => {
+  const entry = VERBS.find((v) => v.verb === "settings");
+  expect(entry, "the front carries a settings verb").toBeDefined();
+  const target = entry!.target as { kind: string; file: string };
+  expect(target.kind, "and it fronts a script").toBe("script");
+  const scriptPath = path.join(packageRoot, "scripts", target.file);
+  const source = readFileSync(scriptPath, "utf8");
+
+  // STRIP THE COMMENTS, AND PROVE THE STRIP RAN. A strip that quietly
+  // stopped matching would widen the haystack back to the shape this body
+  // exists to close, and it would do it while staying green.
+  const code = source.replace(/\/\*[\s\S]*?\*\//g, "");
+  expect(
+    code.length,
+    "the comment strip removed nothing, so the JSDoc copies of the entry's path are still in the haystack",
+  ).toBeLessThan(source.length);
+  expect(code, "the comment strip ate the command's own code").toContain("processPure");
+
+  // THE BROWSER ENTRY IS THE PARSER PACKAGE'S OWN ANSWER, never this
+  // body's. The criterion says "its browser entry"; `exports["./pure"]` is
+  // where that library says which file that is.
+  const parserDir = path.join(repoRoot, "lib", "parser");
+  const manifest = JSON.parse(readFileSync(path.join(parserDir, "package.json"), "utf8")) as {
+    exports?: Record<string, { import?: string }>;
+  };
+  const declared = manifest.exports?.["./pure"]?.import;
+  expect(
+    declared,
+    "the parser package declares no `./pure` entry for a surface to read the loop through",
+  ).toBeTruthy();
+  const browserEntry = path.resolve(parserDir, declared as string);
+  expect(existsSync(browserEntry), "the parser's browser entry is not built").toBe(true);
+
+  // WHAT THE COMMAND ACTUALLY LOADS — static and dynamic alike, resolved
+  // from its own directory, and narrowed to the reaches that land inside
+  // the parser library.
+  const specifiers = [
+    ...[...code.matchAll(/\bfrom\s+"([^"]+)"/g)].map((m) => m[1] as string),
+    ...[...code.matchAll(/\bimport\(\s*"([^"]+)"\s*\)/g)].map((m) => m[1] as string),
+  ].filter((s) => s.startsWith("."));
+  const intoParser = specifiers
+    .map((s) => path.resolve(path.dirname(scriptPath), s))
+    .filter((p) => p.startsWith(parserDir + path.sep));
+  expect(
+    intoParser,
+    "the command does not load the parser library's browser entry ITSELF — reading the loop through " +
+      "the arm's re-export of that same module passes every name check this spec makes elsewhere, " +
+      "and it is the one thing this card changed",
+  ).toEqual([browserEntry]);
 });

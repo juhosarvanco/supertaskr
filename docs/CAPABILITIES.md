@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1042 behaviours** — 1040 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1044 behaviours** — 1042 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -435,6 +435,8 @@ Census: **1042 behaviours** — 1040 extracted sentences + 2 named-not-extracted
 - the committed settings chapter is a GENERATION of the schema, and a schema nobody regenerated for reds
 - the listing goes to the PROJECT'S OWN tree for its readings — the measured column is not a rendering of numbers somebody handed in
 - a DEPARTURE is listed at the value the PROJECT resolves to, marked against the profile's own
+- the settings command reads the loop through the PARSER LIBRARY's own module, and keeps no reader, resolver or constraint engine of its own
+- the settings command LOADS the parser library's own browser entry — the module it imports, and not a path its comments also spell
 
 ## crescendo
 
