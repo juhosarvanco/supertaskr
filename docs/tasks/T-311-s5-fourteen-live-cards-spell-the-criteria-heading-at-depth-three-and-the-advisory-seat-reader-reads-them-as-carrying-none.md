@@ -41,6 +41,8 @@ tool asked.
 
 - WHEN a card's criteria section is read by the advisory seat reader THE heading SHALL be matched by the same rule the card preflight uses, so both answer the same criteria for the same card; a body drives both readers over a card at each depth and requires agreement.
 - WHEN the task format is read THE one spelling SHALL be stated there with the depth named, and a body over the live cards SHALL red naming any card at another depth — with the fourteen measured here listed as the known set at this ref so the body is green at landing and reds on the fifteenth; whether those fourteen are repaired is the owner's ruling, recorded on this card, since records are appended and not rewritten.
+- WHEN a verdict entry under `## Verdicts` is a depth-three heading carrying a date anywhere in it THE newest-verdict reader SHALL find it, and a body drives the reader over the two spellings seen so far (date first, date last) and a heading with no date, requiring the first two found and the third refused. (absorbed from T-311-s7)
+- WHEN the role file states the verdict's heading THE one shape SHALL be spelled there with the date's place named, so a verifier does not have to guess what a later reader wants; the sentence stays product-agnostic. (absorbed from T-311-s7)
 
 ## Absorbed from T-311-s7 — a verdict whose heading carries its date at the end is invisible to the merge verb (kept whole)
 
@@ -67,8 +69,7 @@ reader narrower than the rule it enforces.
 
 ### T-311-s7's acceptance criteria (kept whole)
 
-- WHEN a verdict entry under `## Verdicts` is a depth-three heading carrying a date anywhere in it THE newest-verdict reader SHALL find it, and a body drives the reader over the two spellings seen so far (date first, date last) and a heading with no date, requiring the first two found and the third refused.
-- WHEN the role file states the verdict's heading THE one shape SHALL be spelled there with the date's place named, so a verifier does not have to guess what a later reader wants; the sentence stays product-agnostic.
+Moved on 2026-09-13, by the owner's ruling, into this card's `## Acceptance criteria` section above, unchanged and tagged with their source card, so that every reader, the preflight's coverage checks and the verifier's citations see one four-criterion contract; the finding above stays as history.
 
 ## Implementation notes
 <!-- executor appends before finishing -->
