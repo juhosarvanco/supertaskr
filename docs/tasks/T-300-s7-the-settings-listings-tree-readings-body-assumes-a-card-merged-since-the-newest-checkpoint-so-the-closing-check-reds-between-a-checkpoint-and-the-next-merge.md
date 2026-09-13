@@ -631,3 +631,43 @@ this merge whatever the diff does, because this entry ADDS a line matching the c
 grammar under `docs/tasks/` — run the model-free set and record its exit. And correction 1's
 block names a file and a spec that are both already inside the card's `touches:`, so the
 merge's fence-widening step has nothing to widen.
+
+#### Where phase 1's fourteen measurement requests were answered
+
+This tier's ground is the SCRIPTED one and the seat wrote no addendum, so the requests are
+answered by that file where it happens to cover them and otherwise by my own reading at the
+tip. Said explicitly, because a request silently answered by the grader is a request the
+grader could have answered to fit.
+
+**Answered by the scripted ground, taken at the base and unshapeable by the diff:** M10's
+before-counts in part — the fenced files' blobs and byte sizes at `63555a5d2290`, and the
+two fenced specs' base body counts, `brief.spec.ts` 143 and `cli.spec.ts` 62 by the census's
+own count — and the full base body-name list for both specs, which is what let me see that
+`cli.spec.ts`'s readings body was REWRITTEN rather than added to and that no base body was
+dropped. The arm's own preflight at the base, exit 0 over 0 findings, is there too.
+
+**Answered by my own reading at the tip, and named as such:** M1 (the calendar — the newest
+`Checkpoint:` on this bench is `d19fe25b` at 2026-09-13T13:46:42Z and the newest meters
+record is 2026-09-13T16:58:12Z, so the base checkout is in the POPULATED state today and C3
+needed a constructed reproduction, which is what I built); M3, the mechanism, read out of
+`loopReadings`, `cardMeters` and `recentCheckpoints` at the tip and stated in the C1a row;
+M4, the empty listing's existing text, answered structurally by the reader being
+byte-identical at both refs rather than by quoting a string; M5, the reader takes a root and
+spends it on `git -C`, which is why the fixtures need no `chdir`; M6, the arm at the base,
+read from the diff's own `-` side; M7, the docs gate's mapping, read from
+`gate-run.mjs --owed-set --range` and from `docs-gate.mjs --census`, both at the tip, and
+`tools/e2e/tests/cli.spec.ts` is in the owed set for this range; M8, the runner, read from
+the blessed runner's own output; M9 and M14, the existing fixture helpers and the hygiene
+question, answered by `git status` being clean after four suite runs on this bench; M11, the
+platform, exercised rather than quoted — every fixture git call ran; M12, memoization, read
+at the tip: `settings.mjs` holds no module-scope cache around readings or checkpoints, which
+is why the borrowed-reading attack has no channel; M13, the named intermittents, read from
+`docs/STATE.md`'s standing hazards at the tip, which names none for this range beyond the one
+the brief names by card. M2 is answered by my own reproduction under C3 rather than at the
+base, and that is the stronger reading: I ran the base body in the failing state at a
+commit I made, rather than taking a note's word for a state that had since moved.
+
+**And the last reading of the owed set cannot be written into the commit it measures.** Each
+of my commits was followed by a graded run of this range's owed set; the final one names the
+bench tip this entry's own commit creates, and it is reported in the handoff at that ref
+rather than here, because a figure about a commit cannot live inside it.
