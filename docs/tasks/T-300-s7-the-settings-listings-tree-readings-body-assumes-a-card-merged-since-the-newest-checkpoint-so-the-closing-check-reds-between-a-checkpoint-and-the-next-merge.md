@@ -596,3 +596,38 @@ The corner above has a second half worth a card of its own and it is NOT part of
 anchor and labels it the anchor, which is C4's WHEN with a false answer under it. Nothing the
 arm produces reaches that state, so it is an improvement rather than a failure, and this seat
 proposes rather than performs. It is filed as `T-300-s12` beside this verdict.
+
+#### Postscript — step 7, at the tip MY OWN commits created
+
+Every figure above was measured at the lane tip `751d741a`. This seat then wrote three
+commits — the verdict, correction 1's body, and the filing of T-300-s12 — so those figures
+are stale at the tip they created and this block re-derives at that tip,
+`7f15559b3511ed9c307439b8b1ae15d54536377e`.
+
+`gate-run.mjs e2e --range 63555a5d2290..7f15559b3511`, the owed set of the range at my own
+tip — 8 changed paths owing app, e2e and parser, the end-to-end leg scoped to the same 19
+owning spec files, run in the foreground as a child of the harness:
+
+- parser **GREEN, exit 0, 413 bodies**
+- app **GREEN, exit 0, 1171 bodies**
+- e2e **GREEN, exit 0, 868 bodies** — one more than at the lane tip, which is correction 1's
+  body and nothing else
+
+`npm run typecheck` from `tools/e2e` is exit 0 with the correction body in the tree.
+
+`cargo run -p supertaskr-index -- index --check --root ../..` from `app/src-tauri`:
+**CURRENT, exit 0**, 1216090 bytes, 203 files, 2593 symbols, 2488 edges. GRAPH REGEN fires
+by its trigger — correction 1 moves a `.ts` outside `docs/` — and has nothing to regenerate;
+the integrator re-derives at the merge.
+
+`npm run capabilities:check` from `tools/e2e`: **STALE, exit 1** — 99770 bytes committed
+against a fresh 100133. Three test names moved across this whole range: the executor's two
+and correction 1's one, which is why this figure is 116 bytes past the one the notes report
+at `21c1e9c5`. The regeneration is the merge's and `docs/CAPABILITIES.md` is outside this
+lane's fence.
+
+**For the integrator, two things this verdict itself causes.** The METHOD EVAL GATE fires at
+this merge whatever the diff does, because this entry ADDS a line matching the citation
+grammar under `docs/tasks/` — run the model-free set and record its exit. And correction 1's
+block names a file and a spec that are both already inside the card's `touches:`, so the
+merge's fence-widening step has nothing to widen.
