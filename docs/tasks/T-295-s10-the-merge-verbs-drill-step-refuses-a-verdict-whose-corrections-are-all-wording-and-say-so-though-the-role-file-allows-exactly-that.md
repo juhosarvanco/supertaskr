@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 size: S
 priority: 2
-status: suggested
+status: planned
 suggested_by: "the architect seat at the T-314-s6 merge, 2026-09-14"
 blocked_by: []
 touches: [tools/e2e/scripts/merge.mjs, tools/e2e/tests/merge.spec.ts]
@@ -28,3 +28,5 @@ At the T-314-s6 merge (2026-09-14) the verdict at the bench tip fc4e3bad assigne
 ## Implementation notes
 
 ## Verdicts
+
+Promoted 2026-09-14 (the architect seat's step-2 triage on the owner's yes of 2026-09-14): to planned at priority 2 — the verb's drill stopped the T-314-s6 merge on the shape the role file allows; dispatched right after T-295-s9 merges, sharing its fence.

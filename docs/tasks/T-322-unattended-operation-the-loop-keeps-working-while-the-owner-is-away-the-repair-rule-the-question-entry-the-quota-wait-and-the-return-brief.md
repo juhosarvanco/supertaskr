@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 size: M
 priority: 2
-status: suggested
+status: planned
 suggested_by: "the architect seat on 2026-09-13, from the owner's question the same evening about leaving the computer for hours; filing authorizes no development"
 blocked_by: [T-319]
 touches: [method/roles/orchestrator.md, method/rooms/ROOM-FORMAT.md, tools/e2e/scripts/brief.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md]
@@ -41,3 +41,5 @@ Supersedes the quota criterion and the last criterion above and adds to the firs
 ## Implementation notes
 
 ## Verdicts
+
+Promoted 2026-09-14 (the architect seat's step-2 triage on the owner's yes of 2026-09-14 to the seat's recommendation): to planned at priority 2 — after T-319, which it is blocked by, and before the T-312 rerun; the owner's ruling of 2026-09-13 that the work must not stop for their absence runs on the seat's hand until this lands.

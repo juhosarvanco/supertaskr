@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 size: M
 priority: 2
-status: suggested
+status: planned
 suggested_by: "the architect seat on 2026-09-13, from the Codex orchestrator's lean-delivery plan v2 and its reconciliation review of the same day, filed on the owner's ruling; filing authorizes no development"
 blocked_by: []
 touches: [method/roles/orchestrator.md, method/runtime/process-schema.yaml, method/runtime/supertaskr.yaml, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/scripts/run-record.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/run-record.spec.ts, docs/windows/README.md, docs/CONVENTIONS.md]
@@ -59,3 +59,5 @@ Adds to the amendments of 2026-09-13; where they conflict this section governs. 
 ## Implementation notes
 
 ## Verdicts
+
+Promoted 2026-09-14 (the architect seat's step-2 triage on the owner's yes of 2026-09-14 to the seat's recommendation): to planned at priority 2 — after the merge-verb repairs and T-298-s3, before the T-312 rerun, so that later lanes run under the approval mode and the recovery policy the arm reads; dispatched when its fence is free of T-298-s3 (brief.spec.ts) and T-295-s4 (CONVENTIONS).
