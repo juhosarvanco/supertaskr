@@ -297,3 +297,269 @@ not one to promote.
 ## Verdicts
 
 Promoted 2026-09-13 (the architect seat's step-2 triage, under the owner's ruling of 2026-09-13 to run the regular ceremony without token or time limits, the lane order delegated to the seat the same day): to planned at priority 1 — main is red on the runner at 8d26c8c5 on the two bodies this card names, and the remedy is the helper the preflight spec already has; dispatched next after T-300-s7 merges, under the standing authorization of 2026-09-12.
+
+### 2026-09-14 — APPROVED WITH ASSIGNED CORRECTIONS — claude-opus-5@subagent
+
+Phase 2 of the STANDARD tier, one pass at the lane tip be9d6a25 on the
+bench worktree, the diff read before the executor's notes. The two
+corrections below are both accuracy corrections to the implementation
+notes and neither touches code; the diff itself I would take unchanged.
+
+#### The sealed inputs, by their digests
+
+- the attack set, written at the base without the diff —
+  sha256 04651425242c93a243fce43dc36c598c96eca680f35ac214083ad42542ee91f9
+- the ground, taken at the base by a script —
+  sha256 9a1a9c8a2539c18b4f7df8c7b6d7065385b37f21375b53c25f1478e662123c5d
+- the card at fec37e5f, the contract both phases were written against —
+  sha256 db22435476f5525cbcce574ec0899433e17e7fab9a299958fd564beb422dc201
+
+All three matched the saved files at the start of this pass.
+
+#### A row per acceptance criterion
+
+| # | criterion | verdict | the command, body or reading that decided it |
+|---|---|---|---|
+| 1a | the verb spawned under a harness-shaped ancestor, the helper SHARED rather than copied | MET | `gate-run.mjs --owed-set` at the tip answers that tools/e2e/tests/fake-harness.ts is owned by **2 spec file(s) over the static import graph**, naming both specs. Sharing is not nominal: mutant M2, at the module's single naming site, reds **3 bodies in tools/e2e/tests/card-preflight.spec.ts and 2 in tools/e2e/tests/push-guard.spec.ts** under the runner's ancestry — one mutant, two files, so both specs CONSUME the module |
+| 1b | so the body passes on the runner as well as under a local harness | MET, measured rather than argued | I reproduced the runner's ancestry locally — a shell reparented to the reaper, where `sessionIdentity` answers not-ok — and ran the seat bodies there. At the tip: **4 passed** (the two named, the third seat body, the added control). With `seatVerb` reverted to the base's direct spawn in that same tree: **2 failed**, the two the card names, `Expected: 1` `Received: 3`. The same mutant under this seat's own harness: **2 passed**. Two-sided, and the red side is the CI red reproduced |
+| 1c | the two named bodies green on CI at the merge, read from the run rather than assumed | CARRIED TO THE MERGE, correctly | The run does not exist while the lane is open. Phase 1 pre-committed that a local battery is NON-EVIDENCE here and that the honest verdict is unmet-and-unmeetable-yet; the executor reached the same reading independently and declined to substitute a local green. Discharged at the merge, under "What the merge owes" below |
+| 2a | the bodies that already use the helper unchanged in what they assert | MET | The diff of tools/e2e/tests/card-preflight.spec.ts touches an import, a comment block and three function bodies — no hunk falls inside a `test(`. Body count there is **59 at the base and 59 at the tip**, so nothing was deleted or retitled |
+| 2b | pinned by their own existing controls | MET, and the pin was ARMED rather than assumed | Phase 1 flagged that this clause delegates to controls whose strength is unverified (its C6). I drilled it: a mutant at the verb's own identity gate in tools/e2e/scripts/brief.mjs reds all three preflight seat bodies. The pin holds after the sharing |
+| 2c | no body gains a skip or a runner-only branch | MET | No `skip`, `fixme`, `only`, `test.slow`, retry or timeout change anywhere in the diff. Every environment read in the new module reviewed BY HAND, not by keyword: three, and none is a predicate — `process.execPath` twice (the binary to link, the binary to spawn) and one unconditional `process.env` spread. The stand-in is installed by the identical path on every machine. Playwright's `retries: 0` and `workers: 1` are untouched, so phase 1's A2.4 has nothing to hide behind |
+| 3a | the closing check's owed set for the range includes the push-guard spec | MET as a RESULT, not as set membership | Phase 1 called the membership half degenerate and asked for the result instead. I re-ran the owed set of the range myself at be9d6a25: parser exit 0 / 413 bodies / GREEN, app exit 0 / 1171 bodies / GREEN, e2e exit 0 / **713 bodies over 13 spec files** / GREEN, tools/e2e/tests/push-guard.spec.ts among them |
+| 3b | the merge's CI run read and named in the notes | CARRIED TO THE MERGE | Same structure as 1c. The notes name what the integrator must record: the run id, the sha it ran on, and the conclusion of the shard carrying the push-guard spec |
+
+#### What I measured that the lane could not, and what it confirms
+
+The property this card repairs is invisible to a local suite, so I built
+the runner's condition instead of trusting either side's word for it: a
+process whose parent exits is reparented to the reaper, and the identity
+walk then ends there with no harness anywhere. Three readings, at the
+tip:
+
+- an ordinary foreground node process — identity OK, the ancestor being
+  this seat's own harness two levels up;
+- the same script reparented — identity NOT OK, the walk ending at the
+  reaper, which is the runner's answer verbatim;
+- the same script reparented and started through the stand-in symlink —
+  identity OK, and the pid it answers with is the stand-in's OWN.
+
+That third reading is the whole mechanism, and it holds where no harness
+exists. The runner's own record agrees independently: in CI run
+34772159066 at 8d26c8c5, shard 2 of 4 is `failure` and shards 1, 3 and 4
+are `success` — and shard 3 is the one carrying the preflight spec,
+whose seat bodies have run under THIS stand-in since T-238. I read that
+run through the API rather than taking the citation's word for it; the
+sha and all four shard conclusions match what the notes claim.
+
+Main is STILL red at the newest run on the integration branch,
+34779927372 at e528a5d5 — `e2e shard 2 of 4`, step `e2e lane`, a job
+that ran three and a half minutes with steps rather than failing in
+seconds. So the card's premise had not moved out from under it at the
+base, and this lane is the repair rather than a fix for something
+already gone.
+
+#### The mutants
+
+| # | where it sits | ancestry | what died |
+|---|---|---|---|
+| M1 | `seatVerb` reverted to the base's direct spawn | reparented | the 2 named bodies. **Under a local harness the same mutant is GREEN** — which is the defect's whole shape, stated as a measurement |
+| M2 | the shared module's single naming site | reparented | 5 bodies across BOTH specs (3 preflight, 2 push-guard) |
+| M2 | the same mutant | local harness | ONLY the added control body. Every other body stays green — the added body is the only thing in the tree that sees this |
+| C3 | the verb's OWN identity gate in tools/e2e/scripts/brief.mjs, inverted so it answers COULD NOT RUN with the ancestor INTACT | local harness | both named bodies. They still pin the exact exit codes; they did not relax to "not 2" or start accepting 3 |
+| C4a | the guard is installed but its line is not announced | local harness | body one only |
+| C4b | a holder record IS written over a refused install | local harness | body two only |
+| D1 | DATA: the no-session checkout replaced by the repository root | local harness | nothing. An unpinned parameter — see the note below |
+| D2 | DATA: `maxBuffer` squeezed to 512 bytes | local harness | body one. The new parameter is load-bearing and exercised |
+
+Every mutant was reverted with `git checkout --` and the bench confirmed
+clean after each; tools/e2e/scripts/brief.mjs is outside this fence and
+is byte-identical to the tip.
+
+D1 is worth stating plainly rather than burying: the `projectDir` the
+new `seatVerb` passes is not pinned by any body — point it at the
+repository root instead and all three seat bodies stay green. The
+executor found the same thing, ran it as a probe rather than a mutant,
+and disclosed it. I checked the argument it rests on against the arm
+itself: the stale-checkout catcher is armed by `--preflight`,
+`--write-fence`, `--dispatch-lane` and `--merge` and by nothing else, so
+the seat arm genuinely does not consult it. The parameter buys
+determinism and disarms no guard. Accepted as an argued, unpinned
+choice.
+
+#### The attack set, answered
+
+Every entry was probed at the tip; the sharing pilot means an attack the
+executor answered by name is evidence of a body and not of a property,
+so each was re-asked of the tree rather than of the notes.
+
+- **A1.1 and S5 — fix the walk, not the spawn.** Dispositive and clean:
+  the diff moves six paths, three of them the card and the two cards the
+  lane filed, three of them the fenced test files. tools/e2e/scripts/checkout-currency.mjs
+  is untouched. Phase 1's C1 — that the verb STILL answers exit 3 with
+  no harness ancestor — is proved by M1 under the reparented tree, which
+  reaches the verb by a path that does not route through the helper at
+  all.
+- **A1.2, A1.3, C2 — copied or nominally shared.** Closed by M2 reddening
+  both specs and by the owed set's 2-spec ownership. The preflight
+  spec's three local names are one-line binders over the module; no
+  shadowing, no type-only import.
+- **A1.4, A1.12, C5 — only the two named bodies converted.** Enumerated
+  over the SPAWN HELPER rather than over the flag spelling, as phase 1
+  required: tools/e2e/scripts/brief.mjs is named at exactly one site in
+  the push-guard spec, inside `seatVerb`, and every seat-verb call site
+  in that file goes through it — five `--take-seat` and one
+  `--release-seat`, so A1.12's second verb is covered by the same
+  mechanism. The remaining seat-verb sites in the test tree are the
+  preflight spec's nine under the stand-in, the currency spec's, which
+  stub the process table on PATH, and a handful where the identity is
+  never derived because the not-integration branch is taken first. A
+  keeper that would enforce this mechanically is filed as T-314-s8.
+- **A1.5 — harness-shaped by coincidence.** The attack that produced the
+  card, and the one a local green cannot answer. Answered three ways: my
+  reparented reading, the added control body asking the claim of the
+  PRODUCTION derivation from inside the stand-in, and shard 3's record
+  on the runner itself.
+- **A1.6, A2.3, A2.5 — green by not running, or by relocation.** Body
+  counts 123 at the base and 124 at the tip for the push-guard spec, 59
+  and 59 for the preflight spec: exactly one body added, none removed,
+  none retitled. Both titles the card quotes are present verbatim, once
+  each, and both ran in my own graded e2e leg.
+- **A1.7 and C3 — green by asserting less.** Closed by the C3 mutant,
+  which sits at the verb's exit path with the ancestor intact — the site
+  phase 1 named, and NOT the helper-side site phase 1 warned would prove
+  the other property. See assigned correction 1.
+- **A1.8 and C4 — the guard property lost in the conversion.** Closed by
+  C4a and C4b, each of which reds only its own body. The conversion
+  hollowed nothing.
+- **A1.9 — the install-failure precondition faked by the stand-in.** It
+  is not: the precondition is a git config written into the fixture, and
+  body two asserts the failure explicitly by the code's own sentence in
+  stderr, independently of the helper.
+- **A1.10, A2.4, C9 — parallelism and retries.** `workers: 1`,
+  `retries: 0`, both untouched. Every stand-in directory and the
+  no-session checkout come from `mkdtemp`, so there is no fixed path for
+  concurrent bodies to race on.
+- **A1.11 — the stand-in outlives the body.** It cannot: every run is a
+  synchronous spawn that is waited on, and the scratch directories are
+  torn down in this spec's own `afterAll`.
+- **A2.1, A2.6, C6 — the same assertions in a weaker world.** Closed by
+  C6, above. The preflight spec's binders pass that spec's own two
+  module constants, so the world behind its assertions is the world it
+  always had. The e2e leg's 713 bodies carry no timeout.
+- **A2.2 and C8 — a runner-only branch by another name.** Closed by the
+  hand review of every environment read in the new module.
+- **A3.1 — membership is not execution.** Closed by my own graded run.
+- **A3.2, A3.3, A3.4, C7 — a run id with no reading behind it.** The one
+  run the notes cite was checked against the API: the sha, the four
+  shard conclusions and the failing job's duration all match. It is the
+  RED run rather than the merge's, and the notes say so.
+
+#### The security sweep
+
+- **S1 — injection through the stand-in's spawn.** No shell anywhere:
+  arguments are arrays, and every caller-supplied string reaching the
+  generated script goes through `JSON.stringify`. The two numeric
+  parameters are typed as numbers and stringified. Clean.
+- **S2 — a test double of an identity control.** The stand-in is
+  confined to the test tree and reachable from nothing the verb ships,
+  and the real check still refuses an unnamed session — M1 under the
+  reparented tree is exactly that proof. It is worth recording that the
+  derivation's acceptance rests on a program basename, so the stand-in
+  works by genuinely BEING what the derivation accepts rather than by
+  bypassing it; that is a pre-existing property of the derivation, which
+  the module's own header argues, and not something this card
+  introduces.
+- **S3 — predictable temp paths.** Every one is a `mkdtemp`.
+- **S4 — the environment in the spawn.** The child inherits the
+  environment exactly as the base already did, and nothing dumps it into
+  test output; failures print the child's own stdout and stderr.
+- **S5** — see A1.1. No hunk outside the fence.
+
+#### Where phase 1's ten measurement requests were answered
+
+The scripted ground answers **M1 in part** (the fenced blobs, and the
+body names of both specs at the base) and **M9** (the helper's home is
+absent at the base, confirmed rather than assumed). The rest are my own
+reading at the tip and are named as such: **M2** and **M3** by reading
+the derivation and the base's three helper bodies; **M4** by reading the
+preflight spec's nine seat invocations and then ARMING them with C6;
+**M5** and **M7** from the playwright configuration, which the diff does
+not touch; **M6** from run 34772159066 through the API; **M8** by the
+enumeration above; **M10** from the integration branch's run list. M1's
+timing half was not in the ground and I took the e2e leg's own figures
+instead. Nothing was refused and nothing was assumed.
+
+#### The assigned corrections
+
+**Correction 1 — the drill the notes call C3 sits at the helper, not at
+the verb. Wording; it carries no mutant block.** Under "The drills", the
+MUTANT B bullet ends "which is the attack set's A1.7 and C3". Mutant B
+mutates the status the STAND-IN reports, and the attack set names that
+exact substitution as the form which proves the OTHER property: its A1.7
+says the mutant must sit at the verb's exit path with the ancestor
+intact, and that a mutant applied to the fake harness instead is the
+control failing. Mutant B is a real and useful drill and the property it
+claims does hold — I drilled the verb-side form myself and both named
+bodies died — but the record should not say a helper-side mutant
+discharged C3. The bullet should say what mutant B sits at, and that the
+verb-side form was drilled at phase 2.
+
+**Correction 2 — the seat-verb invocation count is six, not seven.
+Wording; it carries no mutant block.** The figure appears TWICE and both
+sites need it, which is why it is named rather than anchored: under
+"What was built", "the one helper all seven `--take-seat` and
+`--release-seat` invocations in that file go through", and under "The
+enumeration, by hand and recorded here", "all 7 in
+tools/e2e/tests/push-guard.spec.ts, through `seatVerb`". There are six
+call sites at b7274d54 and six at be9d6a25 — five `--take-seat` and one
+`--release-seat`. A count of `seatVerb(` answers seven because it also
+matches the declaration line. The enumeration's conclusion is unchanged
+and correct; only the figure is wrong, and a figure in this project
+carries its ref.
+
+#### What the merge owes
+
+- **THE CENSUS REGEN, before the merge commit.** One body was added, so
+  `capabilities:check` answers STALE at this tip. This fence carries
+  neither the census file nor the index, so the lane could not have
+  fixed it; the precedent the notes cite is real — the T-300-s7 merge at
+  e528a5d5 carries the census change in the merge commit itself. The
+  integrator runs the regen as the last write before the merge commit.
+- **THE MERGE'S CI RUN, for criteria 1c and 3b.** Both are discharged
+  only there. The run's shard logs list every body by title, so the
+  integrator records the run id, the sha it ran on, the conclusion of
+  the shard carrying tools/e2e/tests/push-guard.spec.ts, and the results
+  of the two bodies the card names BY TITLE — a shard roll-up is not
+  enough, because sharding can move which shard they land in.
+- **THE GRAPH REGEN FIRES** and has nothing to move: the graph indexes
+  the app and the parser, and this diff is entirely under tools/e2e and
+  docs/tasks.
+
+#### The shared-pitfalls pilot
+
+Phase 1's return was shared with the executor by the seat and read at
+20:20:54Z, after the diff was written and before the drills; the
+disclosure is on the card with the file's digest, and that digest is the
+attack set's own, so the sharing is verifiable rather than asserted.
+
+**Did a shared pitfall cause a concrete code or test change? YES, one:
+the added body.** The notes name A1.5 as its reason, and A1.5 is the
+entry arguing that a stand-in can agree with the walk by coincidence and
+that a local green is by construction not evidence. That body exists
+because the pitfalls file was read, it is the only body added, and it is
+the only thing in the tree that reds locally when the stand-in stops
+being harness-shaped — which I confirmed by drilling M2 under a local
+harness, where every other body in both specs stays green. Nothing else
+in the diff traces to the sharing: the helper's promotion and the
+parameterisation are the card's own amendment.
+
+The cost the pilot has to weigh against that: the executor had seen
+every attack, so its answers-by-name are evidence of bodies rather than
+of properties, and phase 2 had to re-ask each one of the tree. Two of
+the notes' evidence claims did not survive that re-asking — both
+corrections above are of exactly that kind, and one of them is an attack
+the notes answer by NAME while the drill sits at the site the attack
+itself rules out. That is the pilot's characteristic failure mode, it is
+cheap to catch, and it is worth recording in the table beside the
+benefit.
