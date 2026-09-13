@@ -76,3 +76,5 @@ reader narrower than the rule it enforces.
 ## Verdicts
 
 Promoted 2026-09-13 (the owner's ruling 5 of 2026-09-13): to planned at priority 2, one of the four instrument fixes the T-311 and T-300 lanes filed; before its lane the seat confirms the defect still exists at the dispatch base and assesses whether it shares a lane with its siblings while every requirement is preserved. Not dispatched by this ruling.
+
+Ruling recorded 2026-09-13 (the owner, before this lane's stamp): the six live cards that spelled the criteria heading at depth three at this lane's base (T-299-s6, T-312, T-313, T-314, T-315, T-316) are repaired on the integration branch to the canonical depth two, no criteria text changed, in the same records commit as this line; the readers continue to accept both depths, and the known set the second criterion lists is the set measured at the lane's base, kept as an exclusion so a repaired card stays green and a new card at another depth reds by name.

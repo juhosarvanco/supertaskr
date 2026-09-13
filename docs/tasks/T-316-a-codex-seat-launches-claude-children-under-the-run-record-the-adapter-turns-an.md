@@ -20,7 +20,7 @@ review: independent
 
 The Claude CLI on this host runs headless with `-p`, `--output-format stream-json`, `--model`, `--session-id` and `--resume`, and effort is a model configuration the harness documents with model-dependent support; a headless process reads the repository's `.claude/settings.json`, so the write-time fence hook should apply to it, which has not been measured under a Codex seat's sandbox; a Codex seat's `workspace-write` sandbox denies network by default.
 
-### Acceptance criteria
+## Acceptance criteria
 
 - WHEN a Codex seat starts a child whose harness is Claude THE adapter SHALL launch `claude -p` from the lane with the brief, the requested model and effort, a session id and the JSON stream, bind session id, process identity and stream to the run record, and on the child's end collect the final message, the usage or `unknown`, and the resulting ref; both adapters SHALL honour the same requirements: the requested harness, model, effort and permission configuration, refusal by name of an unsupported assignment, no substitution at quota exhaustion, and the requested and the runtime-reported values recorded separately.
 - WHEN the child writes outside its card's paths THE fence hook SHALL refuse the write, demonstrated from inside a Codex seat's session with the ref recorded; WHEN the seat's sandbox would deny the child the network or its credentials THE launch SHALL be refused by name with the boundary the seat lacks, never widened silently.

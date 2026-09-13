@@ -20,7 +20,7 @@ review: independent
 
 The push guard and landing gate are registered only as a Claude PreToolUse hook on the Bash tool; under Codex nothing runs, and under Claude the guard judges the command a session typed and derives its range from the checkout's upstream and HEAD: a push spelled with a leading `cd` once passed unjudged. No git-level hook exists and `core.hooksPath` is unset. A git pre-push hook receives each proposed update on standard input as local ref, local object, remote ref and remote object, and can be skipped with `--no-verify`.
 
-### Acceptance criteria
+## Acceptance criteria
 
 - WHEN a push is attempted from an integration checkout THE pre-push hook SHALL read each proposed update from its standard input and judge the range from the update's remote old object to its local new object with the token, the owed set and the unchanged-tree check read from the candidate being pushed, refusing an unqualified update with the guard's own reason; bodies SHALL cover a pushed commit that differs from HEAD, a remote old object that differs from the local tracking ref, several proposed updates of which one is unqualified (the whole push refused), and an unsupported update shape refused by name.
 - WHEN the guard judges a pushed commit THE token SHALL be required to match the pushed commit's tree in addition to, never instead of, the range-derived owed set and the check that the tree stayed unchanged during grading; a body SHALL show a token minted for a different tree refused, and a token minted for the pushed tree with a stale owed set refused.
