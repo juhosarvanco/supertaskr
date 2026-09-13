@@ -3,8 +3,8 @@ id: T-155-s6
 title: Three model-in-loop acceptance functions score the shape of a report rather than the behaviour they name
 feature: F-01
 milestone: 4
-priority: 12
-size: S
+priority: 3
+size: M
 status: planned
 blocked_by: []
 touches: [tools/method-evals]
@@ -15,6 +15,8 @@ built_by:
 verified_by:
 review: independent
 ---
+
+Absorbs: T-229-s3 (2026-09-13, pile 2 batch 2, the owner's approval of 2026-09-13). The sibling's file is removed in the same commit as this line. This card carried no canonical criteria section until this commit; the section below is derived from its own measurements, its shape of the work and its absorbed T-159-s5 line, nothing invented, then the sibling's obligation tagged with its source. Priority 12 becomes 3 (the sibling's); size S becomes M, re-sized from the combined work (the scorer repairs plus a real runner adapter). Three rulings stay reserved for before dispatch, each its own: the model the adapter drives, the budget per bump, whether a bump may ship without the run.
 
 **PROMOTED at the first standing triage, 2026-08-30. GUARD-CLASS: the subject is a set of acceptance functions whose job is to REFUSE, so it dispatches `review: independent` and owes a POSITIVE CONTROL.**
 
@@ -122,3 +124,62 @@ becomes a figure somebody quotes.
 - Whatever is chosen, the acceptance functions themselves want the
   treatment their evals give the method: a positive control per shape, not
   per eval.
+
+## Acceptance criteria
+
+- WHEN MIL-02 scores a handback THE acceptance SHALL accept the card as a PATCH as well as a file, or the module SHALL state that a diff-shaped handback scores as a failure and why; silently scoring the report's format is refused. (from T-155-s6's measurement)
+- WHEN MIL-01 scores a rejection THE planted defect SHALL be required inside the rejecting passage, not anywhere in the transcript. (from T-155-s6)
+- WHEN MIL-04 scores a derivation THE signature SHALL match on token boundaries rather than as substrings; whether the COMMAND is required beside its output is considered and the conclusion of that consideration recorded on this card. (from T-155-s6)
+- WHEN MIL-01, MIL-02 and MIL-04 are controlled THE corpus SHALL carry a SECOND recorded pass and a SECOND recorded fail for each of those three, drawn from the planted transcripts the card reproduces, so the control tests discrimination and not only non-constancy — a positive control per shape; MIL-03 keeps its existing controls and behaviour, which the source names as correct; the rates the card cites (0.00 / 1.00 / 1.00) are re-measured by the lane with a runner of its own. (from T-155-s6)
+- WHEN the five per-seat run-hygiene sections are checked THE shared four-sentence skeleton SHALL have a checker that reds when one copy drifts. (absorbed T-159-s5, carried)
+- WHEN the method version bumps THE model-in-loop set SHALL be runnable by ONE committed adapter honouring the contract in tools/method-evals/lib/model-run.mjs around an agent CLI the operator has, so `run.mjs --bump` no longer answers `Runner: NONE`; the replay runner stays a fixture and its rate is never recorded as one; the first real run's figures are recorded as the calibration of the four declared floors. (absorbed from T-229-s3)
+- BEFORE dispatch THE three rulings SHALL be on this card, each its own: which model the adapter drives; the budget per bump; whether a bump may ship without the run. Model settings (T-318) may inform the first and decide neither of the others. (absorbed from T-229-s3's triage)
+
+## Absorbed from T-229-s3 — No real NPUTER_EVAL_RUNNER exists in this tree, so the bump's fourth obligation has a half nobody can measure and a replay runner that scores 1.00 by construction (kept whole)
+
+Title as filed: "No real NPUTER_EVAL_RUNNER exists in this tree, so the bump's fourth obligation has a half nobody can measure and a replay runner that scores 1.00 by construction"
+
+Filed as: status suggested, priority 3, size M, touches [tools/method-evals], wake None, suggested_by executor claude-opus-5@subagent @T-229.
+
+**Class parent: `T-155-s6`** (three model-in-loop acceptance functions
+score the shape of a report rather than the thing they name) — same
+half of the suite, different defect. **Disposition hint: promote; this
+is the precondition for T-155-s6 being answerable at all.**
+
+`docs/CONVENTIONS.md`'s METHOD EVAL GATE says the model-in-loop set *"is
+owed at a METHOD VERSION BUMP"*, and T-229 is the first bump since the
+suite landed. Measured at `0c7227b`: `node tools/method-evals/run.mjs
+--bump` exits **3**, prints `Runner: NONE`, and lists MIL-01..04 as not
+attempted. The only runner in the tree is
+`tools/method-evals/fixtures/runners/replay.mjs`, whose own header says
+a replayed rate *"must never be recorded as one"* — driven at `0c7227b`
+it returns 5/5 = 1.00 on all four evals, 0 tokens, which is 1.00 by
+construction.
+
+**So the obligation is currently unsatisfiable rather than skipped, and
+the two read the same afterwards** — which is the failure the `--bump`
+block's own wording exists to prevent. What is missing is one committed
+ADAPTER honouring the contract in `tools/method-evals/lib/model-run.mjs`
+(`<program> <eval-id>`, prompt on stdin, transcript on stdout, a
+`tokens: <n>` line on stderr, exit 0) around an agent CLI the operator
+already has — NORTH_STAR's model-agnostic constraint and ADR-003's
+shell-out architecture both point at exactly that shape, and the suite
+was designed for it.
+
+**AND THE FIRST REAL RUN IS ITSELF A MEASUREMENT NOBODY HAS TAKEN**:
+`--list` says every model-in-loop `model:` and threshold is a DECLARED
+FLOOR with no calibration behind it. The adapter is what turns four
+declared floors into figures, and until it exists every bump's
+model-in-loop line is the honest `Runner: NONE`.
+
+### TRIAGE, 2026-09-02 — stays `suggested`; a ruling is owed first (T-229-s3)
+
+The architect seat, at the stamp of T-229's merge (d641846). A real
+model-in-loop runner spends tokens against a real model at every bump;
+which model, what budget per bump, and whether a bump may ship without
+it are @human's rulings, not a card's. Held for that ruling; the
+precondition for T-155-s6 is noted.
+
+## Implementation notes
+
+## Verdicts
