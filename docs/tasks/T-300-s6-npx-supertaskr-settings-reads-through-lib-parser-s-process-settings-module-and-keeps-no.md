@@ -407,3 +407,36 @@ new card.
 | Mutants drilled | 4 — one survivor that is this pass's finding, two kill-set probes, one the correction body's own RED. Every restore proved by sha256. |
 | Corrections assigned | 2 — one with a mutant block, one a wording correction that owes none and says so. |
 | Cards filed | 0. |
+
+#### The step-7 readings, taken at the tip THIS verdict created
+
+The suite figures in the table above name `b62b706b`, the commit I was sent. My own
+verdict and two correction commits made a tip nobody had tested, and one of them added a
+body — so every one of those figures is stale at the tip an integrator will actually
+merge. Re-derived at `a5a6061d000024f0d04085fe34cd829b55d7b064`, the bench tip, through the
+blessed runner's range form over `869534e2..a5a6061d`:
+
+| suite | ref | bodies | exit | verdict |
+|---|---|---|---|---|
+| parser | a5a6061d | 412 | 0 | GREEN |
+| app | a5a6061d | 1171 | 0 | GREEN |
+| e2e, the same eleven owning spec files | a5a6061d | 607 | 0 | GREEN |
+
+One body more than at the lane tip, which is correction 1's. Beside it, at the same ref:
+`brief.mjs --task T-300-s6 --preflight` exit 0 · `npm run typecheck` from tools/e2e exit 0
+· `npm run lint:tokens` exit 0, clean over 187 token files and 1576 tracked text files ·
+`npm run lint:docs` exit 0 over the whole-tree half.
+
+**And one gate my own commits TURNED ON.** The METHOD EVAL GATE fires on a merge that adds
+a line matching the citation grammar under `docs/tasks/`, and the lane's diff added none —
+the executor's report correctly derived it NOT OWED. This verdict's `attack set:` line is
+exactly that trigger, so the gate is owed at the merge because of me. Run at this tip:
+`node tools/method-evals/run.mjs` exit 0 over 11 model-free evals, and
+`node tools/method-evals/verdict-digest.mjs` on this card, handed the dispatching session's
+scratchpad, answers VERIFIED for the one citation — 1 verified, 0 REFUSED, 0 unavailable,
+exit 0.
+
+`npm run capabilities:check` is exit 1 at this tip — STALE, 96059 bytes committed against a
+fresh generation of 96334. It was 96200 at the lane tip; the extra 134 bytes are correction
+1's body. The integrator regenerates against THIS tip and not against the lane's. The graph
+regeneration fires on the range and is the merge's.
