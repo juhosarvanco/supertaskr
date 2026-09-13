@@ -28,6 +28,10 @@ On 2026-09-13 the seat's ledger records sixteen answers from the owner, four of 
 - WHEN the coordinator meets one of the five boundaries — a scope change the card's approved revision does not cover, a ceiling reached, an uncertain writer, an integrity failure the standing procedures do not address, a decision the record reserves to the owner — THE coordinator SHALL stop with one consolidated question naming the boundary, the cost so far and the remaining allowance, pinned by a body per boundary against the seat-facing report the arm prints; and the role file's step 5 SHALL say that a dispatch inside an active window is approved by the window and that every other dispatch still waits for the owner, the existing sentences kept and extended rather than reworded.
 - WHEN the arm reports what it enforces THE report SHALL separate the refusals it tested (a card outside the window, a stale revision, an expired or revoked window, a ceiling exceeded on observed counts) from the coordinator's obligations the arm cannot check (scope interpretation, an unreported integrity problem, a provider's live usage the harness does not expose) and from advisory accounting; the conventions carry the rule and the record's spelling once, at the loop's section, and the README under the windows directory carries the record's shape.
 
+## Note of 2026-09-13 — the owner's ruling on limits for this project's own loop
+
+On 2026-09-13, shown a proposed repair window with token ceilings, a coordinator allowance and an expiry, the owner ruled that this project's own loop runs without token or time limits and keeps its regular ceremony: the standing authorization, one lane at a time, the seat proposing and the owner approving. This card therefore stays suggested as product direction — a window with ceilings is a choice a user makes in their own project through the template's per-provider constraints (T-318), never this loop's instrument — and its promotion needs the owner's separate ruling.
+
 ## Implementation notes
 
 ## Verdicts

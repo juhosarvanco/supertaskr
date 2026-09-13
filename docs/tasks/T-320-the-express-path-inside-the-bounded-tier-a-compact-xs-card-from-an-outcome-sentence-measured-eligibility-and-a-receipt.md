@@ -30,6 +30,10 @@ On 2026-09-13 a change of half a minute to three minutes of editing (a one-line 
 - WHEN the demonstration runs on a real eligible change THE notes SHALL record, separately and from stamped instants, dispatch and record overhead (from the outcome sentence to the lane cut), executor time (to the candidate), check time (the owed set), publication time (merge to push) and the request-to-delivery total, and SHALL state whether the plan's targets were met, as measured objectives and not as a stopwatch body that flakes — a slow run recorded is not the objective achieved.
 - WHEN the seat coordinates an express change THE seat SHALL NOT be its implementer: the role file says the seat edits no code under the express label, and a coordinator edit at a merge keeps the standing comparison against verified content (T-295-s9), pinned by a method eval on the role file's text.
 
+## Note of 2026-09-13 — the window dependency follows T-319's fate
+
+The owner ruled on 2026-09-13 that this project's own loop runs without token or time limits under its regular ceremony (see T-319's note of the same day). The criterion that ties a compact card to an active window follows T-319: where no window class is wanted, the express path's authorization is the regular ceremony's dispatch approval, and that substitution is a re-triage item for the owner before this card is promoted, not a rewrite of the card.
+
 ## Implementation notes
 
 ## Verdicts
