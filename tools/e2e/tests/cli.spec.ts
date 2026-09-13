@@ -2615,8 +2615,18 @@ test("a `set` naming a DECLARATIVE switch is refused with the code `declarative`
     // THE EXIT IS THE HOUSE'S, NOT A FIFTH ONE: the amendment rules this
     // a finding code in the message at the refusal exit the other
     // refusals already take, so the two are compared rather than typed.
-    const floorRefusal = run(["set", "push.token", "off"]);
+    // AND EACH CONTROL IS THE REFUSAL IT IS NAMED FOR. The first
+    // spelling of this compared against `push.token`, which is FLOOR and
+    // ALSO declarative — so a check order that put the label first would
+    // have left this body comparing the subject against itself and still
+    // green, which is one arrangement deciding both answers.
+    // `template.roles` is FLOOR and MANUAL, so it can answer the floor
+    // refusal and no other, and the messages are what prove each control
+    // is the refusal it claims to be.
+    const floorRefusal = run(["set", "template.roles", "off"]);
     const valueRefusal = run(["set", "read.standing", "banana"]);
+    expect(floorRefusal.out, "the floor control answered some other refusal").toContain("is FLOOR");
+    expect(valueRefusal.out, "the value control answered some other refusal").toContain("is not one of");
     expect(floorRefusal.status, "the arrangement: the floor refusal is CALLED WRONG").toBe(EXIT.USAGE);
     expect(
       refused.status,
