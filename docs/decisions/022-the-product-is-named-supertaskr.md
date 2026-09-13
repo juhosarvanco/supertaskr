@@ -61,3 +61,7 @@ spelling not yet run.
   developer-native homes and `getsupertaskr.com` is the SaaS pattern.
 - The trademark search for the new spelling is a gate before any public
   launch, not before the rename.
+
+## Amendment of 2026-09-13
+
+Amendment of 2026-09-13 (the owner, asked with options): the app's `productName` and its window `title` are prose and take the capital S; decision 2's entry for the app is read as the bundle identifier `dev.supertaskr.app` only. Nothing else in decision 2 moves.
