@@ -58,6 +58,7 @@ import {
   metersBlocks,
   movesMethodText,
   newestVerdict,
+  occurrences,
   personalNames,
   pinnedSentenceFindings,
   preludePlan,
@@ -1044,6 +1045,85 @@ test("an ambiguous anchor REFUSES the correction step with both counts, and leav
       removeGitFixture(fx.root, FIXTURE);
     }
   }
+});
+
+test("what the correction step WROTE is also STAGED, so the working file it counted IS the content the commit will take", () => {
+  // THE INVARIANT THE COUNTS REST ON (T-295-s9). Criterion 1 says both
+  // counts are taken in the block's file AS IT WILL BE COMMITTED, and
+  // the step counts the bytes on disk. Those are the same bytes only
+  // because the verb proves the tree clean before it merges and every
+  // step that writes also STAGES what it wrote — a `git commit` takes
+  // the INDEX, never the working tree, and the card's own later
+  // amendment exists because a wrong line can sit staged under a clean
+  // working file. Nothing asserted that invariant, so this body does.
+  const fx = mergeFixture();
+  try {
+    const said: string[] = [];
+    const ledger: { id: string; title: string; exit: number }[] = [];
+    mergeMain(
+      [
+        "T-900",
+        "--slug",
+        "a-card",
+        "--verdict",
+        fx.git("rev-parse", "task/T-900-a-card").trim(),
+        "--root",
+        fx.root,
+        "--built-by",
+        "a-model@subagent",
+        "--verified-by",
+        "a-model@subagent",
+        "--readings",
+        path.join(fx.root, "readings.jsonl"),
+        "--message",
+        path.join(fx.root, "MSG.txt"),
+      ],
+      { cwd: fx.root, out: (s) => said.push(s), err: (s) => said.push(s), ledger },
+    );
+    expect(ledger.some((s) => s.id === "correction:1" && s.exit === 0), "the correction was applied").toBe(true);
+    // THE INDEX, read straight: this is what the commit would take.
+    expect(fx.git("show", ":src/a.ts"), "the STAGED content carries the correction").toBe(
+      "export const guard = true;\n",
+    );
+    // AND THE TWO CONTENTS AGREE, which is what makes the count the step
+    // took on the working file a count of the committed file.
+    expect(fx.git("diff", "--name-only", "--", "src/a.ts"), "nothing the step wrote is left unstaged").toBe("");
+  } finally {
+    removeGitFixture(fx.root, FIXTURE);
+  }
+});
+
+test("the counter counts OVERLAPPING sites, so an anchor whose prefix is also its suffix names TWO sites and is refused", () => {
+  // THE SAFETY CLAIM IS THE COUNT (T-295-s9), so a counter that walks
+  // past a site makes the claim false exactly where it matters. A
+  // stride of the needle's own length skips an overlapping match: the
+  // step then reads ONE site where the text names two, and writes at
+  // the first of them — a line of verified code rewritten at a site
+  // nobody named, which is this card's whole subject reached through
+  // the counter instead of through the state table. One block already
+  // committed under docs/tasks carries anchors that self-overlap.
+  expect(occurrences("YYY", "YY"), "three Ys carry two overlapping YY sites").toBe(2);
+  expect(occurrences("  });\n  });\n  });\n", "  });\n  });"), "and so does a run of three closers").toBe(2);
+  const b = {
+    correction: "C1",
+    file: "src/a.ts",
+    spec: "tools/e2e/tests/shared.spec.ts",
+    body: "a body",
+    message: "a message",
+    old: "XX",
+    new: "YY",
+  };
+  const two = correctionFor({ source: "zz YYY zz", block: b });
+  expect("problem" in two, "two overlapping sites is a REFUSAL, never a write at the first of them").toBe(true);
+  expect("text" in two, "and nothing is written").toBe(false);
+  if (!("problem" in two)) return;
+  expect(two.problem, "and the line states the count the text really carries").toContain(
+    "`old` matches 0 site(s), `new` matches 2 site(s)",
+  );
+  // THE CONTROL, the same block over a tree carrying the site once: it
+  // is still applied, so the counter was made honest and not deaf.
+  const one = correctionFor({ source: "zz YY zz", block: b });
+  expect("text" in one, "one site is still one site").toBe(true);
 });
 
 test("a single git diff against the bench tip answers EMPTY over a wrong STAGED line, which is why the standing comparison reads the index and the working tree separately", () => {
