@@ -138,10 +138,26 @@ heading is written at depth two and why the depth is part of the
 spelling. The body reads the depth the document NAMES in words, checks
 it against the depth the document's own block SPELLS, and measures the
 board against that one number, so the sentence cannot drift from the
-block and neither can drift from the cards. The known set is pinned as
-an EQUALITY in both directions: a card drafted at another depth reds,
-and so does a repair or a fold that removes one, because a set that only
-forbids additions rots into a licence.
+block and neither can drift from the cards. The known set is an
+EXCLUSION: a card named in it is allowed to be where it is, so a repair
+leaves the body green, while a card that is not named reds by name. The
+list is not a licence either — the body requires at least one of the
+pinned ids to still be on the board at another depth, so when the last
+one is repaired it reds and asks for the list to be deleted rather than
+extended.
+
+The first draft of that body pinned the set as an EQUALITY in both
+directions, so that a repair was as visible as a fifteenth card. The
+seat's note in this lane's ask file, dated 2026-09-13, carries the
+owner's ruling the criterion was waiting for: the cards still open at
+depth three are repaired to depth two on the integration branch with no
+criteria text changed, the readers go on accepting both depths, and this
+body lists the measured set as an exclusion so that a repaired card
+stays green. The criterion asks for a body "green at landing and reds on
+the fifteenth", which is that exclusion; the equality was stricter than
+the card and would have red on the ruling's own repair. Changed before
+the graded run, with the repair simulated on one pinned card and the
+body shown green under it.
 
 The set at this lane's base is ten cards, not the fourteen the card's
 finding counted, and the difference is a reader rather than a repair.
@@ -218,9 +234,15 @@ reds rather than waiting for the next merge to discover it.
 ### For the verifier
 
 - The corpus bodies are the ones that can surprise: they read every file
-  under the tasks directory, so they move with the board. The pinned set
-  in the depth body is an equality and is the thing most likely to red
-  next, deliberately.
+  under the tasks directory, DONE cards included, because a done card's
+  heading is still read by both readers. The seat's own census of the
+  same base counts the live cards only and finds 6 at depth three; the
+  ten pinned here are those 6 plus 4 done cards, and the two figures
+  agree.
+- The pinned set is an exclusion and the repair it anticipates lands on
+  the integration branch rather than in this lane, so the body is green
+  before and after it. What reds is a card at another depth that is not
+  on the list, or the day the last pinned card is repaired.
 - The merge verb's reader change is behavioural at a merge. The widening
   is measured above card by card; the one card whose answer MOVES rather
   than arrives is named.

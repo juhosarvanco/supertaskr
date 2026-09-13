@@ -831,13 +831,20 @@ test("the two readers agree about the criteria section on every live card", () =
  * one document and inherited its depth, and one card whose only heading
  * of that name is a verifier's per-criterion table.
  *
- * **IT IS PINNED AS AN EQUALITY IN BOTH DIRECTIONS, and that is
- * deliberate.** A set that only forbids ADDITIONS rots into a licence:
- * an id repaired or a card folded away leaves a name here that pins
- * nothing, and nobody finds out. So the reading has to EQUAL this list —
- * a card drafted at the wrong depth reds, and so does a repair, which is
- * news the same way. Whether these are repaired is the owner's ruling and
- * this list is a measurement, never a permission.
+ * **IT IS AN EXCLUSION, NOT AN EQUALITY.** A card named here is allowed
+ * to be where it is, so a repair that takes one back to depth two leaves
+ * this body green, while a card that is NOT named reds by name. The
+ * owner ruled on 2026-09-13 that the cards still open here are repaired
+ * on the integration branch with no criteria text changed, and a body
+ * that required the reading to EQUAL this list would red on exactly that
+ * repair — the list is a measurement of what was already written, never
+ * a judgement about what should be.
+ *
+ * **AND IT IS NOT A LICENCE EITHER.** A pinned set that has stopped
+ * pinning anything is a permission nobody notices, so the body below
+ * requires at least one of these ids to still be on the board at another
+ * depth: when the last one is repaired this reds, and what it asks for
+ * is the deletion of the list rather than its extension.
  */
 const KNOWN_OFF_DEPTH = [
   "T-229-s4",
@@ -898,9 +905,14 @@ test("the task format names ONE depth for a card's sections, and the board spell
   }
   expect(read, "no card on this board carries a criteria heading — nothing was measured").toBeGreaterThan(200);
   expect(
-    off.slice().sort(),
-    "the set of cards spelling the criteria heading at a depth the task format does not name has " +
-      "MOVED: a card drafted at the wrong depth, or one of these repaired or folded away. Both are " +
-      "news and neither is silent",
-  ).toEqual(KNOWN_OFF_DEPTH.slice().sort());
+    off.filter((id) => !KNOWN_OFF_DEPTH.includes(id)).sort(),
+    "a card spells its criteria heading at a depth the task format does not name, and it is not one " +
+      "of the cards measured when that depth was written down — one reader will see its criteria and " +
+      "another will not",
+  ).toEqual([]);
+  expect(
+    off.length,
+    "every card pinned above has been repaired, so this list now permits a depth nobody spells: " +
+      "delete it and the exclusion with it rather than leaving a licence behind",
+  ).toBeGreaterThan(0);
 });
