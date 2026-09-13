@@ -32,6 +32,13 @@ The role file's step 5b says each anchor matches its file EXACTLY ONCE and a blo
 
 After the merge verb stops, and before the seat drills or commits, the seat compares every file a mutant block names against the verified bench tip: `git diff <bench tip> HEAD -- <file>` for each such file MUST be empty, because the bench tip is the verified content. A non-empty diff means the correction step applied a block at a site other than the block's own (this card's finding); the seat restores the file from the bench tip (`git show <bench tip>:<file>`), re-runs the spec the block names, drills by hand at the site the verdict names, and records the restoration in the merge message. A block whose anchor matches more than one site is not handed to the verb's drill at all.
 
+## Amendment of 2026-09-13 — the valid states of a block, and the comparison's subject (the Codex orchestrator's lean-delivery plan review of 2026-09-13; the seat's own correction)
+
+This section supersedes the first criterion's rule "refuse when either count is not exactly one" and the standing procedure's `git diff <bench tip> HEAD` spelling; everything else stands.
+
+- WHEN the correction step reads a mutant block THE step SHALL count, in the block's file as it will be committed, the sites the `old` text matches and the sites the `new` text matches, and SHALL act on exactly these states: `old` once and `new` absent — the correction is already applied, nothing is written; `old` absent and `new` once — the block is applied at that one site; any other combination (either text at two or more sites, both present, both absent) — REFUSED by name before any write, the file left in its pre-operation state, the two counts printed on the step's line. The safety claim rests on the counts the step measures, never on the block's sentence that its anchor is unique. Bodies cover all four states and the idempotent re-run.
+- WHEN the seat applies the standing procedure THE comparison against the verified bench tip is over the content that will be committed — the staged merge and the working file (`git diff <bench tip> -- <file>` from the integration checkout, not `HEAD`, which does not describe a staged merge) — and a non-empty diff is INVESTIGATED before any restore: an authorized integration change (a correction the seat applied by hand, a keeper's redaction) is accounted for, not overwritten to produce an empty diff; only a change the step made outside the block's own site is restored from the bench tip.
+
 ## Implementation notes
 
 ## Verdicts
