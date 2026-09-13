@@ -4400,6 +4400,22 @@ test("THE COINCIDENCE LINE IS KEYED ON `cut === checkpoint` AND NOTHING ELSE —
   );
   expect(after.finding, "a later non-merge commit is what the base rule admits").toBeNull();
 
+  // THE SUPERSESSION, PINNED DIRECTLY. The absorbed card's condition was
+  // "no stamp follows the checkpoint", and the shape that satisfies it
+  // while the two do NOT coincide is a cut at the integration TIP: the arm
+  // writes no stamp when the card already carries every stamped field, and
+  // then cuts where HEAD already stands. A derivation keyed on that — on
+  // the cut being the tip, or on a stamp being absent — answers `true`
+  // here, and the amendment of 2026-09-13 says it must not.
+  const atTip = baseVerdict({ logText: log, branch, cut: tip });
+  expect(atTip.base, "the base is still the cut").toBe(tip);
+  expect(
+    atTip.coincide,
+    "the cut being the integration TIP is not the cut being the CHECKPOINT, and only the second " +
+      "makes the two coincide",
+  ).toBe(false);
+  expect(atTip.checkpoint, "the anchor is stated beside it, unchanged").toBe(anchor);
+
   // THE TWO SHAPES THE BASE RULE DOES NOT ADMIT ARE FINDINGS, not silent
   // bases: a merge commit (rule two bans it by name) and a commit behind
   // the newest checkpoint.
