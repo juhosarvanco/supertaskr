@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 size: S
 priority: 2
-status: suggested
+status: planned
 suggested_by: "the architect seat at the T-314 merge, 2026-09-13"
 blocked_by: []
 touches: [tools/e2e/scripts/merge.mjs, tools/e2e/tests/merge.spec.ts]
@@ -49,3 +49,5 @@ This section supersedes criterion 2 and the comparison spelling of the earlier a
 ## Implementation notes
 
 ## Verdicts
+
+Promoted 2026-09-13 (the architect seat's step-2 triage, under the owner's ruling of 2026-09-13 to run the regular ceremony without token or time limits; the Codex orchestrator's reconciliation review of the same day supported the order): to planned at priority 2 — the verb rewrote one line of verified code on main at the T-314 merge and the standing procedure is the seat's hand until this lands; dispatched after T-314-s6 and before the T-312 rerun.

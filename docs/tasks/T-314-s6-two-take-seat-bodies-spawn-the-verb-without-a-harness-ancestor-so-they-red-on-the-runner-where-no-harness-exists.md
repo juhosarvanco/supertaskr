@@ -5,10 +5,10 @@ feature: F-04
 milestone: 4
 size: S
 priority: 1
-status: suggested
+status: planned
 suggested_by: "the architect seat, reading CI run 34772159066 on 2026-09-13"
 blocked_by: []
-touches: [tools/e2e/tests/push-guard.spec.ts, tools/e2e/tests/card-preflight.spec.ts]
+touches: [tools/e2e/tests/push-guard.spec.ts, tools/e2e/tests/card-preflight.spec.ts, tools/e2e/tests/fake-harness.ts]
 builder:
 verifier:
 built_by:
@@ -26,6 +26,12 @@ CI run 34772159066 on main at 8d26c8c5 (2026-09-13): e2e shard 2 of 4 red, two b
 - WHEN the helper is shared THE bodies that already use it SHALL be unchanged in what they assert, pinned by their own existing controls; no body SHALL gain a skip or a runner-only branch.
 - WHEN this card lands THE closing check's owed set for the range SHALL include the push-guard spec and the merge's CI run SHALL be read and named in the notes.
 
+## Amendment of 2026-09-13 — the helper's home (the seat's step-2 triage before promotion)
+
+`fakeHarness`, `harnessScript` and `underHarness` are local functions of the preflight spec and read the spec's own CLI path and no-session checkout from module constants. Sharing them rather than copying them means a helper module both specs import, so the fence gains that module as a new-file reservation, tools/e2e/tests/fake-harness.ts; the two helper modules that exist beside the specs are the app's page helpers and the shell harness, neither a home for a process-table stand-in. The helper takes the CLI path and the no-session checkout as parameters, and the preflight spec's bodies keep their assertions unchanged, as the criteria already require.
+
 ## Implementation notes
 
 ## Verdicts
+
+Promoted 2026-09-13 (the architect seat's step-2 triage, under the owner's ruling of 2026-09-13 to run the regular ceremony without token or time limits, the lane order delegated to the seat the same day): to planned at priority 1 — main is red on the runner at 8d26c8c5 on the two bodies this card names, and the remedy is the helper the preflight spec already has; dispatched next after T-300-s7 merges, under the standing authorization of 2026-09-12.
