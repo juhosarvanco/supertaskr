@@ -5,7 +5,8 @@ feature: F-01
 milestone: 4
 size: S
 priority: 3
-status: suggested
+status: parked
+wake: T-284
 suggested_by: "verifier claude-opus-5@subagent (phase 2) @T-307, measured at b78f9f507aba638617462ea284d5c02913360977, 2026-09-10"
 blocked_by: []
 touches: [tools/method-evals/evals/mf-11-room-entries-paraphrase.mjs]
@@ -51,3 +52,5 @@ voice is a check nobody can keep green.
 WEIGH: closing only the blockquote, and saying in the eval's header that
 the reported form is out of reach, is a smaller and more honest card than
 one that promises both.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-284; the eval is quotation-mark-shaped, so the two shapes that carry a message without punctuation are its blind spot.

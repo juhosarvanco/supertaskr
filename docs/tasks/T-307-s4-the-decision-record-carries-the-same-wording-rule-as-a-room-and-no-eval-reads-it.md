@@ -5,7 +5,8 @@ feature: F-01
 milestone: 4
 size: S
 priority: 3
-status: suggested
+status: parked
+wake: T-284
 suggested_by: "verifier claude-opus-5@subagent (phase 2) @T-307, measured at b78f9f507aba638617462ea284d5c02913360977, 2026-09-10"
 blocked_by: []
 touches: [tools/method-evals/evals/mf-11-room-entries-paraphrase.mjs]
@@ -56,3 +57,5 @@ TWO THINGS TO DECIDE FIRST, neither inherited:
   lower the floor by a day too far and the eval reds on records the
   method says are never rewritten, which is the one outcome T-307's card
   forbids.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-284; a decision record carries the same wording rule and nothing reads it.

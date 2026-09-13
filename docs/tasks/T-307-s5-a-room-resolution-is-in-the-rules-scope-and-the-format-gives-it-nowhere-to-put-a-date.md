@@ -5,7 +5,8 @@ feature: F-01
 milestone: 4
 size: S
 priority: 3
-status: suggested
+status: parked
+wake: T-284
 suggested_by: "verifier claude-opus-5@subagent (phase 2) @T-307, measured at b78f9f507aba638617462ea284d5c02913360977, 2026-09-10"
 blocked_by: []
 touches: [method/rooms/ROOM-FORMAT.md]
@@ -44,3 +45,5 @@ WEIGH AGAINST BOTH: this file ships nothing to a genesis'd project
 (`KIT_FILES` excludes it deliberately), so the change is this
 repository's method text only and costs no migration. And it closes half
 of T-307-s2 without any git call, which is that card's expensive option.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-284; a room Resolution is inside the rule's scope and the format gives it nowhere to put a date.

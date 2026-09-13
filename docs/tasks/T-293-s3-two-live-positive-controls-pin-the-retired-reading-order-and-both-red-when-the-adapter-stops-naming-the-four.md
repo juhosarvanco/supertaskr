@@ -5,7 +5,8 @@ feature: F-01
 milestone: 4
 size: S
 priority: 1
-status: suggested
+status: parked
+wake: T-292
 suggested_by: "executor claude-opus-5@subagent @T-293, measured at cbdafa4e9d9853291eacf9d9bd39134cf4204a76 with T-293's tree"
 blocked_by: []
 touches: [app/src-tauri/src/dispatch/brief.rs, tools/e2e/tests/brief.spec.ts]
@@ -117,3 +118,5 @@ bodies prove the subtraction from the role-file side only. Giving
 separate card in a separate fence, and nothing in this one needs it.
 
 ## Verdicts
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-292; two positive controls pin the retired reading order; whether they still do needs a body-level read of the split specs.

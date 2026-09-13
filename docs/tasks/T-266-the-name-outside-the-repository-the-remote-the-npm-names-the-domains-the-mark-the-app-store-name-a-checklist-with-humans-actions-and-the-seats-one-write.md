@@ -46,3 +46,5 @@ the repository rename: the remote URL in CI, CONVENTIONS and the README.
 - Open: the domains, the mark search. The App Store name: the seat recommends striking it until a store release is a decision — a Tauri app ships as a notarised download from GitHub Releases, which needs no store name.
 - 2026-09-10 — the trademark search for the new spelling done by @human: "the trademark search came out with no results" — no conflict, the room does not reopen. The domains: @human, later.
 - 2026-09-10 — PARKED by the seat with `wake: 2026-10-01`: every act inside the repository is done (the rename, the README's reserved-name sentence), the placeholder is published and the mark search found no conflict; what remains is @human's domains ("I will get the domains later"). The card resurfaces on 1 October to record them; the App Store name is struck unless a store release is ruled.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake 2026-10-01; unchanged; the only parked card that already carried a date, and it stays.

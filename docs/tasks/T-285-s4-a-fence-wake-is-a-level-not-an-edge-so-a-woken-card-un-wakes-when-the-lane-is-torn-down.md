@@ -5,7 +5,8 @@ feature: F-06
 milestone: 4
 size: S
 priority: 3
-status: suggested
+status: parked
+wake: T-292
 suggested_by: "verifier claude-opus-5@subagent @T-285 phase 2, 2026-09-09, measured at ce46115 on the bench /Users/ujju/Projects/nputer-V-T-285"
 blocked_by: [T-285]
 touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts]
@@ -74,3 +75,5 @@ Three readings, and the choice is a ruling rather than a preference:
 
 The third is the cheapest if it holds, and it is outside this fence,
 which is why this is a suggestion and not a correction.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-292; a fence wake is a level and not an edge, so a park resurfaces and is re-forgotten unread.

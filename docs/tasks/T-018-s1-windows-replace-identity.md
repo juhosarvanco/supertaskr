@@ -2,6 +2,7 @@
 id: T-018-s1
 title: Windows cannot detect a replaced docs/ (dir identity is unix-only)
 status: parked
+wake: T-303
 suggested_by: executor claude-fable-5 @T-018
 ---
 
@@ -39,3 +40,5 @@ Windows lane, and CI has still never run on ANY platform — the "watch
 the first CI run" launch item is carried forward again. Building
 ReadDirectoryChangesW-adjacent identity blind would be untested code
 on an untested platform reached by an untested pipeline.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-303; a replaced docs directory cannot be detected off unix, and the detector's platform is a configuration reading.

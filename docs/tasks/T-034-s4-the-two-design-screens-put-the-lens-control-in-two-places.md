@@ -2,6 +2,7 @@
 id: T-034-s4
 title: The two design screens put the lens control in two places — T-034 picked one, and it is an @human call
 status: parked
+wake: T-173
 suggested_by: executor claude-opus-5 @T-034
 ---
 
@@ -59,3 +60,5 @@ measurement. Cheapest alternative if the human prefers the mock is
 three lines — identical markup, right group on the tasks lens only —
 and the round-trip DOM-identity test still holds, because it measures
 the architecture lens. Unpark on the human's look.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-173; where the lens control goes is the owner's ruled UX territory.

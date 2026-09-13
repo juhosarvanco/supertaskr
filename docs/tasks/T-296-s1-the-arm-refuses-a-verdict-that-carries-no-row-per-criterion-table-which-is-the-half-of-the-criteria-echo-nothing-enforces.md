@@ -5,7 +5,8 @@ feature: F-01
 milestone: 4
 size: S
 priority: 2
-status: suggested
+status: parked
+wake: T-262
 suggested_by: "executor claude-opus-5@subagent @T-296, 2026-09-10"
 blocked_by: []
 touches: [tools/e2e/scripts/merge.mjs, tools/e2e/tests/merge.spec.ts]
@@ -38,3 +39,5 @@ find.
 
 - WHEN the merge reads a verdict THE arm SHALL count the card's acceptance criteria and the verdict's criterion rows, and SHALL refuse when the verdict carries fewer rows than the card carries criteria, naming both counts.
 - WHEN a card carries no acceptance-criteria heading THE keeper SHALL say so and judge nothing, rather than refusing a card it cannot count.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-262; the arm refuses a verdict with no row per criterion, which is the same machine-readable verdict shape.

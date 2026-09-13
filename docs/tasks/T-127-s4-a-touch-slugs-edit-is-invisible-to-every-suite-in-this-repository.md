@@ -2,6 +2,7 @@
 id: T-127-s4
 title: A touch_slugs edit is invisible to every suite in this repository — the field that decides who may edit what has no gate at all, measured 973 of 973 green under a change
 status: parked
+wake: T-303
 suggested_by: executor claude-opus-5 @T-127
 ---
 
@@ -64,3 +65,5 @@ diagnosis above was.
 which is the change this absence would let through.
 
 Amnesty triage 2026-08-29 (triage seat): PARKED — the measurement is unarguable — one line changed in C-10's touch_slugs: took its task rollup from twenty cards to zero and npm test answered 973/973 exit 0 — and the contrast is the argument: DECLARING a component is loud enough to have its own CONVENTIONS gotcha, while RE-DRAWING a fence is silent. It is held rather than promoted for one reason: T-154 is a LIVE LANE building write-time fence enforcement with a dispatch-time manifest, and whether that manifest closes this is not knowable until it lands. RESURFACES: the merge of T-154 — at which point the next seat SHALL re-derive whether the dispatch-time manifest sees a touch_slugs: edit, and if it does not, this is owed. All three remedy shapes on this card are MARKED UNVERIFIED and none was built.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-303; the field that decides who may edit what has no gate at all, and the audit is where the registry is read.

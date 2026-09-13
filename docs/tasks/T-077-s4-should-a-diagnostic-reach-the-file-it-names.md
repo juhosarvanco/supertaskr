@@ -2,6 +2,7 @@
 id: T-077-s4
 title: Should a diagnostic row reach the file it names? — the product question T-077 ruled around
 status: parked
+wake: T-173
 suggested_by: executor claude-opus-5 @T-077
 ---
 
@@ -57,3 +58,5 @@ Nothing is blocked on this. T-077 shipped inert rows and the strip reads
 correctly without it.
 
 **PARKED at the fifth triage (2026-08-20).** Unpark when @human/@architect rules whether the app may reveal or open a docs file — this is a room, not a card: it would be the first path travelling webview to process under ADR-012.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-173; whether a diagnostic row reaches the file it names is the product question the card says it ruled around.

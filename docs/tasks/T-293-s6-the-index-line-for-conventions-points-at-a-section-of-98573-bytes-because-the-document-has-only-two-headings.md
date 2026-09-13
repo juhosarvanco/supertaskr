@@ -5,7 +5,8 @@ feature: F-01
 milestone: 4
 size: S
 priority: 4
-status: suggested
+status: parked
+wake: T-290
 suggested_by: "verifier claude-opus-5@subagent @T-293 (phase 2), measured at 6d904bf72ca0dc57cd674c419c898b7f3f8f293c"
 blocked_by: []
 touches: [tools/e2e/scripts/docs-scan.mjs, tools/e2e/tests/docs-input-gate.spec.ts]
@@ -58,3 +59,5 @@ open; this is about making the second move worth taking.
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-290; the index's pointer resolves to a single 98,573-byte section until that document is re-landed with sub-headings.

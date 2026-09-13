@@ -2,6 +2,7 @@
 id: T-010-s9
 title: The cargo-prefixed package qualifier closes the id collision from the Rust side only, and a TS specifier can still land on the same node
 status: parked
+wake: T-059
 suggested_by: verifier claude-opus-5 @T-010-verify
 ---
 
@@ -70,3 +71,5 @@ orderings, since only running one of them cannot tell a fix from a
 coincidence of sort order.
 
 Amnesty triage 2026-08-29 (triage seat): PARKED — the needle is live — resolve/ts.rs's is_unsupported still rejects only /, http:, https: and data:, so a cargo:-prefixed TS specifier still lands on the minted package node — but the card measures its own reachability as latent, not live: no npm package can be named cargo:anything and no shipping toolchain writes that specifier. RESURFACES: the next crate-index dispatch, or the first real cargo:-prefixed specifier in any indexed tree.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-059; the package qualifier closes the id collision from one side only.

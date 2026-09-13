@@ -2,6 +2,7 @@
 id: T-052-s1
 title: The fresh-install refusal is a hand-run ritual and every ingredient for a real gate already exists
 status: parked
+wake: T-304
 suggested_by: executor claude-opus-5 @T-052
 ---
 
@@ -58,3 +59,5 @@ a spec pinning both arms — the refusal AND the positive control. Fence
 runnable and documented is the whole of what the ritual lacks.
 
 Amnesty triage 2026-08-29 (triage seat): PARKED — real and fully designed — the hand sequence was demonstrated with both arms, and both stack probes are already the PORT RULE's own lesson — but the ritual has not failed since it was written, and the exit-code contract it proposes (3 for could-not-run) is exactly the contract T-132-s1 shows the DOCS GATE itself does not yet honour. RESURFACES: the next tools/e2e dispatch, or the first time the ritual is skipped and a checkout's node_modules is deleted under a live server.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-304; the fresh-install refusal is a hand-run ritual, and a project that is not this one is the first real fresh install.

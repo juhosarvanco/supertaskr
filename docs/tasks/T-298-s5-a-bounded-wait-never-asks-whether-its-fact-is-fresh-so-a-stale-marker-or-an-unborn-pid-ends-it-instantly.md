@@ -5,7 +5,8 @@ feature: F-04
 milestone: 4
 size: S
 priority: 3
-status: suggested
+status: parked
+wake: T-292
 suggested_by: "verifier claude-opus-5@subagent @T-298 phase 2, measured at 9169545120b54c6e0845efa6de1b65ed524bd3b6, 2026-09-10"
 blocked_by: []
 touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts]
@@ -67,3 +68,5 @@ run writes.
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-292; a bounded wait never asks whether its fact is fresh, so a stale marker satisfies it in milliseconds.

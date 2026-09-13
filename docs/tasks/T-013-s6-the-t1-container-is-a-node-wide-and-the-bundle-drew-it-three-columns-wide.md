@@ -2,6 +2,7 @@
 id: T-013-s6
 title: The T1 container is one node wide because the criterion says "within its own column"; the bundle drew it three columns wide, and nobody has ruled
 status: parked
+wake: T-032
 suggested_by: executor claude-opus-5 @T-013
 ---
 
@@ -43,3 +44,5 @@ state has no designed treatment THEN the pass is not done", and the two
 sentences above are one state with two treatments.
 
 **PARKED at the seventh triage (2026-08-24).** Unpark at the same design pass — the finding calls it "the architect's call and a DESIGN question": two sentences of record, one state, two treatments.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-032; the container's width is one node by the criterion and three columns in the bundle, and nobody has ruled.

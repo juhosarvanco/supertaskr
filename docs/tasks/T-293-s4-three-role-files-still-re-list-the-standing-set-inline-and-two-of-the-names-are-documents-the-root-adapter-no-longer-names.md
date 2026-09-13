@@ -5,7 +5,8 @@ feature: F-01
 milestone: 4
 size: S
 priority: 2
-status: suggested
+status: parked
+wake: T-255
 suggested_by: "verifier claude-opus-5@subagent @T-293 (phase 2), measured at 6d904bf72ca0dc57cd674c419c898b7f3f8f293c"
 blocked_by: []
 touches: [method/roles/, tools/e2e/tests/docs-input-gate.spec.ts]
@@ -73,3 +74,5 @@ prose spelling comes back empty and reds nothing.
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-255; three role files re-list the standing set inline, which the protocol compaction is where to cut.

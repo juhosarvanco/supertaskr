@@ -6,6 +6,7 @@ milestone: 4
 priority: 30
 size: S
 status: parked
+wake: T-292
 suggested_by: executor claude-opus-5@subagent @T-112
 blocked_by: []
 touches: [method/roles/executor.md, docs/CONVENTIONS.md, method/interview/plan-interview.md, app-agent]
@@ -106,3 +107,5 @@ and `row_fives_residual_is_closed_at_this_ref_and_the_document_says_so`
 are both live in `app/src-tauri/src/dispatch/brief.rs`, which is the
 card's own evidence that row 9 still truncates and row 5 is still
 closed.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-292; two brief-contract rows are open at this ref and the rows move when the assembler is split.

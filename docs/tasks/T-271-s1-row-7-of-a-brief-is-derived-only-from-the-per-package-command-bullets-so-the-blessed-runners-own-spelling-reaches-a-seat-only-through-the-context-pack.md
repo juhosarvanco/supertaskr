@@ -5,7 +5,8 @@ feature: F-04
 milestone: 4
 size: S
 priority: 30
-status: suggested
+status: parked
+wake: T-292
 suggested_by: "executor claude-opus-5@subagent @T-271, 2026-09-09, at cc41ff3"
 blocked_by: []
 touches: [tools/e2e/scripts/dispatch-brief.mjs]
@@ -46,3 +47,5 @@ card requires briefs to carry crosses the limit — the limit is already
 an exported constant. The expensive half, widening row 7 to name the
 graded readings, wants a ruling first: row 7's contract says "every
 package the full suite spans", and the blessed runner is not a package.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-292; row 7 has 397 bytes of margin before it flips to a citation, and the row's deriver is inside the split.

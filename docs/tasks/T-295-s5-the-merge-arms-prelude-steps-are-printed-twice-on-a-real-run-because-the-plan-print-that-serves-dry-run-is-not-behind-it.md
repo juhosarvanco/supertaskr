@@ -5,7 +5,8 @@ feature: F-04
 milestone: 4
 size: S
 priority: 3
-status: suggested
+status: parked
+wake: T-284
 suggested_by: "the T-295 verifier (phase 2), 2026-09-10, reading its own fixture transcript: precondition:clean, precondition:verdict, branch:move, merge and stamp each appeared twice before the tail began"
 blocked_by: [T-295]
 touches: [tools/e2e/scripts/merge.mjs, tools/e2e/tests/merge.spec.ts]
@@ -43,3 +44,5 @@ reader to skim.
 ## Implementation notes
 
 ## Verdicts
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-284; the prelude steps print twice on a real run because the plan print sits ahead of the dry-run branch.

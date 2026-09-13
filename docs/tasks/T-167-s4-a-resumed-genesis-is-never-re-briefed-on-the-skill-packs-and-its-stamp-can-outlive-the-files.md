@@ -6,6 +6,7 @@ milestone: 4
 priority: 3
 size: S
 status: parked
+wake: T-304
 suggested_by: executor claude-opus-5@subagent @T-167
 blocked_by: []
 touches: [app-agent]
@@ -82,3 +83,5 @@ Question 2 needs the schema answer first.
 2. **The skills discovery gains a caller outside genesis.** Derive with `git grep -n "report_skills" -- app/src-tauri`; today it answers the two genesis entry points and its own definition. A third call site is the signal.
 
 **And question 2 additionally waits on `T-167-s1`** — the schema ruling there decides whether a second stamp is even expressible. Read them together; whoever unparks re-derives both, because the code paths described above are stamped at T-167's landing and not at the reader's ref.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-304; a resumed genesis is never re-briefed on the organization's skill packs; the owner has not decided whether it should be.

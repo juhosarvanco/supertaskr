@@ -5,7 +5,8 @@ feature: F-01
 milestone: 4
 size: S
 priority: 2
-status: suggested
+status: parked
+wake: T-303
 suggested_by: "executor claude-opus-5@subagent @T-296, 2026-09-10"
 blocked_by: [T-299]
 touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md]
@@ -40,3 +41,5 @@ map itself, and the keeper body reads the template.
 
 - WHEN the arm classifies a card THE guard-class path map SHALL be read from the runtime template, and a project whose template names no map SHALL be refused with a sentence that names the template and the field.
 - WHEN docs/CONVENTIONS.md is read THE guard-class bullet SHALL cite the template rather than carrying a second copy of the map.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-303; the guard-class map belongs in the runtime template, which is the audit's own criterion.

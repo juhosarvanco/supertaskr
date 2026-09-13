@@ -5,7 +5,8 @@ feature: F-04
 milestone: 4
 size: S
 priority: 2
-status: suggested
+status: parked
+wake: T-304
 suggested_by: "verifier claude-opus-5@subagent (phase 2) @T-307, measured at b78f9f507aba638617462ea284d5c02913360977, 2026-09-10"
 blocked_by: []
 touches: [app/src-tauri/src/agent/kit.rs, method/docs-templates/decisions/000-template.md]
@@ -52,3 +53,5 @@ one; or the ACT stated in `roles/planner.md`, which is the one role file
 the kit does ship, with the templates pointing at it — which puts the
 rule where a scaffolded project's only role file already is. Either way
 the vocabulary question above is settled in the same edit.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-304; the propose-before-record act is stated only in files the kit does not ship.

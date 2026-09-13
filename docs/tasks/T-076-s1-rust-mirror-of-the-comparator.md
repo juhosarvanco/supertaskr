@@ -2,6 +2,7 @@
 id: T-076-s1
 title: The Rust mirror of compareComponentIds is now wrong in a different way than the original
 status: parked
+wake: T-059
 suggested_by: executor claude-opus-5 @T-076
 ---
 
@@ -36,3 +37,5 @@ this was noticed is that a card went looking at the comparator.
 use two-digit ids.
 
 **PARKED at the fifth triage (2026-08-20).** Unpark when T-076-s4's promoted card lands a shared pin, or when any C- id exceeds 15 digits. Verified: the live registry is C-01..C-14, so the divergence is unreachable today.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-059; the Rust mirror of the comparison is now wrong in a different way than the original.

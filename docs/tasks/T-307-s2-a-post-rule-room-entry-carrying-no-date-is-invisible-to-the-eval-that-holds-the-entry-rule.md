@@ -5,7 +5,8 @@ feature: F-01
 milestone: 4
 size: S
 priority: 3
-status: suggested
+status: parked
+wake: T-284
 suggested_by: "executor claude-opus-5@subagent @T-307, measured at a00acf00bf6000d646c96218986032b599c2159c, 2026-09-10"
 blocked_by: []
 touches: [tools/method-evals/evals/mf-11-room-entries-paraphrase.mjs, method/rooms/ROOM-FORMAT.md]
@@ -52,3 +53,5 @@ and DATES it"), it needs no git, and it makes the hole visible instead
 of closing it silently. The cost is that it reds on an undated section
 of a room OPENED after the floor even where nothing was quoted, so the
 scope needs the same care.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-284; an undated room entry is invisible to the eval, which is the one entry an evading seat would write.

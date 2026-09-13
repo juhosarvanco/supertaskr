@@ -5,7 +5,8 @@ feature: F-04
 milestone: 4
 size: S
 priority: 3
-status: suggested
+status: parked
+wake: T-263
 suggested_by: "executor claude-opus-5@subagent @T-294, 2026-09-10"
 blocked_by: [T-294]
 touches: [tools/e2e/scripts/ci-owed.mjs, tools/e2e/tests/gate-run.spec.ts]
@@ -61,3 +62,5 @@ the lightest shard by virtue of being unmeasured.
   flat one it replaces, so an absent record costs nothing.
 - WHEN a spec has no recorded weight THE split SHALL give it the median
   of the recorded ones and never zero.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-263; the shard split is unweighted because no per-spec duration is kept, which is the band T-263 fixes.

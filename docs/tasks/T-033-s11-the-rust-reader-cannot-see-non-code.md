@@ -2,6 +2,7 @@
 id: T-033-s11
 title: The Rust reader cannot see `non_code`, so `arch drift --fail-on any` can never go green — and this is the FIRST LIVE two-engine divergence ADR-015 names as its own revisit trigger
 status: parked
+wake: T-059
 suggested_by: verifier claude-opus-5 @T-033-verify
 ---
 
@@ -98,3 +99,5 @@ rather than the expensive one. **That card does not mention `non_code`,
 crate and not a duplicate of it.
 
 Amnesty triage 2026-08-29 (triage seat): PARKED — the needle is live — grep for non_code across the crate returns nothing while app/src/lib/architecture/derive.ts reads the flag — so the two engines really do disagree, but the consequence is bounded: CONVENTIONS records arch drift --fail-on as LOCAL ONLY and no gate in this repository runs it, so the divergence costs a hand-run command and nothing else today. RESURFACES: the next crate-index dispatch, or the moment arch drift becomes a gate — ADR-015 names a live two-engine divergence as its own revisit trigger and this is it.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-059; one engine cannot see a field the other emits, the first live two-engine divergence the decision named as its revisit.

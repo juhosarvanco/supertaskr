@@ -2,6 +2,7 @@
 id: T-170
 title: Competitive execution — two or more assigned models build the same card in sibling lanes, a blinded comparative judge applies the card's own criteria, and exactly one winner merges
 status: parked
+wake: T-274
 suggested_by: "@human (2026-08-30): do we have the feature where different models execute the same task and an evaluator chooses the better result and merges it? — carded at @human's yes"
 ---
 
@@ -46,3 +47,5 @@ OR @human prioritizes it earlier by hand — a hand-driven competition
 the current method and would be this card's best pre-decomposition
 measurement. Decomposes at its own sitting; the fence-exception
 question is that sitting's opener.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-274; the model experiment is the cheaper first cut at the same question and runs before any seat rule changes.

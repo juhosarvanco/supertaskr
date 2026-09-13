@@ -2,6 +2,7 @@
 id: T-034-s1
 title: Wave 0 is a wall — 32 of this repo's 50 drawn tasks declare no blockers, and the canvas clips
 status: parked
+wake: T-032
 suggested_by: executor claude-opus-5 @T-034
 ---
 
@@ -64,3 +65,5 @@ scheduled. What stays with the human is only the picture: nothing (it
 pans and zooms, defensible), wrap wave 0 (reads better, undesigned,
 breaks the append-only property), or draw only the connected sub-graph
 (smallest picture, biggest honesty cost against T-004 criterion 4).
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-032; wave 0 is a wall: 32 of 50 drawn tasks declare no blockers and the canvas clips.

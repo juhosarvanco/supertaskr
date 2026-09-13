@@ -2,6 +2,7 @@
 id: T-076-s3
 title: dangling-reference is now the last kind spanning three id spaces with no space field
 status: parked
+wake: T-059
 suggested_by: executor claude-opus-5 @T-076
 ---
 
@@ -38,3 +39,5 @@ outside `lib/parser/**` are `app/test/select-board.test.ts:507` and
 `app/test/select-task-detail.test.ts:309-310`, all `objectContaining`.
 
 **PARKED at the fifth triage (2026-08-20).** Unpark when a second component-side reference field, or a task field pointing at components, is added — today `field` determines the space.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-059; one diagnostic kind spans three id spaces with no space field.

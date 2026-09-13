@@ -5,7 +5,8 @@ feature: F-04
 milestone: 4
 size: M
 priority: 4
-status: suggested
+status: parked
+wake: T-292
 suggested_by: "T-254's executor, 2026-09-09, reading its own pack output back"
 blocked_by: [T-254]
 touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts]
@@ -38,3 +39,5 @@ spends it on the pack's first part.
 - IF the ordinals a file publishes cannot be read THEN the pack SHALL say
   so and name the file whole — the failure is disclosed, never a silently
   shorter list.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-292; the pack names whole method files, and the larger half of the seat's read moves with the pack module.

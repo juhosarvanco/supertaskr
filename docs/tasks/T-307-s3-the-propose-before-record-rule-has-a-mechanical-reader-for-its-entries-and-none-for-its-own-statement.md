@@ -5,7 +5,8 @@ feature: F-01
 milestone: 4
 size: S
 priority: 3
-status: suggested
+status: parked
+wake: T-284
 suggested_by: "executor claude-opus-5@subagent @T-307, measured at a00acf00bf6000d646c96218986032b599c2159c, 2026-09-10"
 blocked_by: []
 touches: [tools/method-evals/, method/rooms/ROOM-FORMAT.md, method/roles/orchestrator.md, method/docs-templates/decisions/000-template.md]
@@ -53,3 +54,5 @@ block being read instead. The three anchors exist today, one per file.
 The trap: pinning the rule's whole sentence. A method sentence is
 re-wrapped and re-worded constantly, and a check that reds on a re-flow
 teaches the next editor to delete the check.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-284; the propose-before-record rule has a reader for what it governs and none for its own three statements.

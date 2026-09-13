@@ -5,7 +5,8 @@ feature: F-06
 milestone: 4
 size: M
 priority: 4
-status: suggested
+status: parked
+wake: T-284
 suggested_by: executor claude-opus-5@subagent @T-205
 blocked_by: []
 touches: [tools/method-evals]
@@ -48,3 +49,5 @@ arm BETTER**, which is the degenerate reader this card must not build.
   the same code path; a richer test-only paste measures a phase 1 that
   does not exist.
 - THE grader SHALL NOT be the seat that produced the set.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-284; the parent of the method-eval batch: the usefulness floor has no mechanical reader, so blindness by uselessness passes.

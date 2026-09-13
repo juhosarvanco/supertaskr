@@ -5,7 +5,8 @@ feature: F-06
 milestone: 4
 size: S
 priority: 2
-status: suggested
+status: parked
+wake: T-285-s2
 suggested_by: "executor claude-opus-5@subagent @T-285, 2026-09-09, measured at 488e495 by the view T-285 built"
 blocked_by: [T-285]
 touches: []
@@ -76,3 +77,5 @@ paragraph.
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-285-s2; the default is inert for 96 of 129 parked cards; the refusal T-285-s2 adds is what stops the next 96.

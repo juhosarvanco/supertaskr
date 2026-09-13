@@ -2,6 +2,7 @@
 id: T-028-s2
 title: On the genesis board, clicking a card opens the detail panel over the whole window
 status: parked
+wake: T-032
 suggested_by: executor claude-opus-5 @T-028
 ---
 
@@ -67,3 +68,5 @@ running? The third is defensible — the board is the reward, not yet the
 workspace. **OR WHEN** T-022 or T-031 next adds a prop to `Board`, since
 the honest fix is one `onOpen`/`renderPanel` seam done ONCE in the
 board's lane rather than three times from outside it.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-032; a click opens the detail panel over the whole window on the genesis board.

@@ -5,7 +5,8 @@ feature: F-01
 milestone: 4
 size: S
 priority: 4
-status: suggested
+status: parked
+wake: T-284
 suggested_by: "executor claude-opus-5@subagent @T-293, measured at cbdafa4e9d9853291eacf9d9bd39134cf4204a76"
 blocked_by: []
 touches: [tools/e2e/scripts/merge.mjs, tools/e2e/tests/cli.spec.ts]
@@ -64,3 +65,5 @@ seat will actually meet.
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-284; the ritual stages the census and nobody stages the index that rides the same command.

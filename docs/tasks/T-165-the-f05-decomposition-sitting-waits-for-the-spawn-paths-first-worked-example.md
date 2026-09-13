@@ -2,6 +2,7 @@
 id: T-165
 title: The F-05 decomposition sitting — held until the spawn path has one worked example, so the cards are born against real interfaces instead of invented ones
 status: parked
+wake: T-242
 suggested_by: "@human (2026-08-30): file the parked hook card for F-05 planning timing"
 ---
 
@@ -37,3 +38,5 @@ and cards born beside their ruling do not block on it. The
 and board — asked 2026-08-30) is ALSO this sitting's natural agenda:
 F-05's daemon and rooms ARE the team surface, and the sitting should
 read that question's assessment before cutting cards.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-242; the spawn path's first worked example is the interview skill, which is what this sitting was held for.

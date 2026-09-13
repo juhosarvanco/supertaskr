@@ -5,7 +5,8 @@ feature: F-06
 milestone: 4
 size: S
 priority: 11
-status: suggested
+status: parked
+wake: T-292
 suggested_by: "verifier claude-opus-5@subagent @T-282 phase 2, 2026-09-09, measured at bf22ede on the bench"
 blocked_by: [T-282]
 touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts]
@@ -49,3 +50,5 @@ current fixture has no member for.
 
 Class parent: T-282. Disposition hint: promote behind T-282-s1 — the
 view has to render before its readability is worth tuning.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-292; the broadest fence cluster now holds 112 of 183 suggestions on a bare package token, worse than when it was filed.

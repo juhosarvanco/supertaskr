@@ -5,7 +5,8 @@ feature: F-01
 milestone: 4
 size: S
 priority: 2
-status: suggested
+status: parked
+wake: T-306
 suggested_by: "executor claude-opus-5@subagent @T-297, 2026-09-10"
 blocked_by: []
 touches: [docs/decisions/019-governing-docs-rules-truths-records.md]
@@ -37,3 +38,5 @@ through the `--readings` route the template already describes.
 
 - WHEN ADR-019 is next opened by its owner THE Records clause SHALL carry an addendum naming the machine-written readings file and the reader ADR-024 gave it.
 - WHEN the addendum lands THE two governing documents that carry the reading today SHALL cite it rather than argue it.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-306; the decision's records clause owes an addendum, and that sentence is the owner's to write at a sitting.

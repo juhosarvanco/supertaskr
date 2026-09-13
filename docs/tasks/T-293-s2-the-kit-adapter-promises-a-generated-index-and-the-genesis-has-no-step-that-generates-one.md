@@ -5,7 +5,8 @@ feature: F-01
 milestone: 4
 size: S
 priority: 5
-status: suggested
+status: parked
+wake: T-304
 suggested_by: "executor claude-opus-5@subagent @T-293, measured at cbdafa4e9d9853291eacf9d9bd39134cf4204a76"
 blocked_by: [T-293]
 touches: [method/docs-templates/, method/roles/planner.md, app/src-tauri/src/agent/kit.rs]
@@ -56,3 +57,5 @@ to.
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-304; the kit tells a new project its standing read includes an index the genesis has no step to generate.

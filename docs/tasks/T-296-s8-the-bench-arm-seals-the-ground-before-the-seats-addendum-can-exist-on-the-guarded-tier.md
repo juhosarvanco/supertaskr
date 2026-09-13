@@ -5,7 +5,8 @@ feature: F-04
 milestone: 4
 size: S
 priority: 2
-status: suggested
+status: parked
+wake: T-292
 suggested_by: "the seat (2026-09-10): read in dispatch-brief.mjs while preparing T-298's guarded bench — the ground step writes the file with its addendum heading, the seal step hashes it in the same run, and a second run rewrites the ground"
 blocked_by: []
 touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/tests/brief.spec.ts, method/roles/orchestrator.md]
@@ -29,3 +30,5 @@ review: independent
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-292; the bench arm seals the ground before the seat's addendum can exist.

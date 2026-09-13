@@ -2,6 +2,7 @@
 id: T-021-s1
 title: ACL pin's expected grant set is macOS-derived — decide per-platform pins when the Linux lane lands
 status: parked
+wake: T-303
 suggested_by: executor claude-fable-5 @T-021
 ---
 
@@ -41,3 +42,5 @@ finding that CI has never gated graph currency: this pin does not
 depend on CI catching anything, it depends on CI RUNNING once so the
 diff exists to read. Nothing goes silent meanwhile — the pin fails
 loudly with the full +/- diff and a re-pin list if the set moves.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-303; the expected grant set is one platform's, and per-platform pins are what the audit enumerates.

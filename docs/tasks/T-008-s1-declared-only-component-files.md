@@ -2,6 +2,7 @@
 id: T-008-s1
 title: Author component files for C-02/C-03/C-04 once locations are decided
 status: parked
+wake: T-165
 suggested_by: executor claude-fable-5 @T-008
 ---
 
@@ -33,3 +34,5 @@ lives, and if it takes arm (b) — move `arch` to the Node CLI when C-02
 exists — then C-02 gains a concrete reason to exist and its layout
 decision arrives with it. Revisit at the F-04 planning pass, or at
 that ruling, whichever lands first.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-165; the three component files wait on the layout the decomposition sitting decides, which the card says itself.

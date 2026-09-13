@@ -5,7 +5,8 @@ feature: F-04
 milestone: 4
 size: S
 priority: 2
-status: suggested
+status: parked
+wake: T-292
 suggested_by: "executor claude-opus-5@subagent @T-298, measured at d8e4a9dd07a1f9b8beaad0e808a0e6742f5a0177, 2026-09-10"
 blocked_by: []
 touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts]
@@ -64,3 +65,5 @@ and a criterion is what carries it.
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-292; the arm's own subprocesses carry no ceiling, so a keeper that hangs at the base hangs the dispatch.

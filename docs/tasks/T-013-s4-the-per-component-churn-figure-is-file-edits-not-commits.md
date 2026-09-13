@@ -2,6 +2,7 @@
 id: T-013-s4
 title: The per-component churn figure is FILE EDITS, not commits — the design says commits, and the exact number needs a payload this card did not ship
 status: parked
+wake: T-032
 suggested_by: executor claude-opus-5 @T-013
 ---
 
@@ -41,3 +42,5 @@ edits and say so, which is what this card did. Weigh (a) against the
 payload size on a real monorepo before choosing.
 
 **PARKED at the seventh triage (2026-08-24).** Unpark at the design pass that owns the map-behavior screen — the finding's own words: "Weigh (a) against the payload size on a real monorepo before choosing." Answer together with T-013-s6 in one pass.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-032; the churn figure is file edits where the design says commits, and the payload that would fix it is the map's.

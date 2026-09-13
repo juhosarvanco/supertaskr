@@ -5,7 +5,8 @@ feature: F-06
 milestone: 4
 size: S
 priority: 2
-status: suggested
+status: parked
+wake: T-262
 suggested_by: "the T-295 executor, 2026-09-10, reading its own fixture run: the counts step reported one leg unjudged for want of a claim and three for want of a reading, and refused nothing"
 blocked_by: [T-295]
 touches: [tools/e2e/scripts/merge.mjs, method/roles/verifier.md, tools/e2e/tests/merge.spec.ts]
@@ -49,3 +50,5 @@ exactly that).
 - WHEN a claimed count and a read count disagree THE merge SHALL refuse
   before the commit, seen on a planted history where exactly one leg
   moved by one body.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-262; the counts guard can almost never judge, because a verdict states its counts in prose.

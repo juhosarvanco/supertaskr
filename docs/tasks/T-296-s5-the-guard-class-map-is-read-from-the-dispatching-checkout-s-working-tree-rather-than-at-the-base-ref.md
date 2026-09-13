@@ -5,7 +5,8 @@ feature: F-01
 milestone: 4
 size: S
 priority: 2
-status: suggested
+status: parked
+wake: T-292
 suggested_by: "verifier claude-opus-5@subagent @T-296, 2026-09-10"
 touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts]
 builder:
@@ -36,3 +37,5 @@ the seat something true.
 ## Acceptance criteria
 
 - WHEN the arm derives a tier THE guard-class classes and their mapping SHALL be read at the ref the lane will inherit, or the dispatch SHALL be refused naming the file whose uncommitted state would have changed the answer.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-292; the map is read from the working tree rather than the base ref, so an uncommitted edit re-tiers a card.

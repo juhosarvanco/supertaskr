@@ -5,7 +5,8 @@ feature: F-04
 milestone: 4
 size: S
 priority: 3
-status: suggested
+status: parked
+wake: T-292
 suggested_by: "verifier claude-opus-5@subagent (phase 2) @T-279, 2026-09-09, drilled at 7b9f2ee"
 blocked_by: []
 touches: [tools/e2e/tests/brief.spec.ts, tools/e2e/scripts/dispatch-brief.mjs]
@@ -72,3 +73,5 @@ the one that "matters most to you" — and no gate anywhere would say so.
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-292; a stray sentence in a role file silently subtracts a document from every brief; the reader is in the pack module.

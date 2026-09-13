@@ -5,7 +5,8 @@ feature: F-01
 milestone: 4
 size: S
 priority: 2
-status: suggested
+status: parked
+wake: T-292
 suggested_by: "verifier claude-opus-5@subagent @T-296, 2026-09-10"
 touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md]
 builder:
@@ -41,3 +42,5 @@ them.
 
 - WHEN the guard-class candidates are derived THE derivation SHALL reach every local module a mapped guard-class file imports, and red naming any that no class covers.
 - WHEN a card's fence names the module the tier classifier lives in, or the document carrying the guard-class map, THE arm SHALL classify it guarded.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-292; the guard-class mechanism does not guard itself, and its module is one of the three being split out.

@@ -5,7 +5,8 @@ feature: F-04
 milestone: 4
 size: M
 priority: 3
-status: suggested
+status: parked
+wake: T-292
 suggested_by: "T-254's executor, 2026-09-09, from its own measurement: the saving came back as the same 59,716 bytes for three different cards"
 blocked_by: [T-254]
 touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts]
@@ -52,3 +53,5 @@ Two derivations, both of which have a starting point in the tree already:
   silently drop it, which would narrow the pack by breaking the reader.
 - WHEN two cards with different fences are measured THE saving SHALL
   differ, and the card SHALL record both figures with their ref.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-292; narrowing the pack to the gates that fire on the card's own fence is a change to a module being carved.

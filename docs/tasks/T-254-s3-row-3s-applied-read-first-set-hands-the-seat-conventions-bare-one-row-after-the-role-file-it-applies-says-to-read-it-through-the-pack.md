@@ -5,7 +5,8 @@ feature: F-04
 milestone: 4
 size: S
 priority: 3
-status: suggested
+status: parked
+wake: T-292
 suggested_by: "T-254's executor, 2026-09-09, applying executor.md's own internal-consistency rule to the row its card moved"
 blocked_by: [T-254]
 touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts]
@@ -44,3 +45,5 @@ three existing bodies that pin the subtraction reader's cardinality.
   subtraction reader already keeps.
 - WHEN the qualification names the pack THE row SHALL point at the pack
   block by name rather than restating what the pack carries.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-292; row 3 hands a governing document bare, one row after the role file says to read it through the pack.

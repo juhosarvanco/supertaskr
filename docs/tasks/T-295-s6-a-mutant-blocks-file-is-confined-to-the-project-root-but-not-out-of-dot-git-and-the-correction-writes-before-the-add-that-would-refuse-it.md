@@ -5,7 +5,8 @@ feature: F-04
 milestone: 4
 size: S
 priority: 2
-status: suggested
+status: parked
+wake: T-284
 suggested_by: "the T-295 verifier (phase 2), 2026-09-10, security sweep: a block naming a path inside the repository's own git directory parses and is accepted, where a traversal or an absolute path is refused"
 blocked_by: [T-295]
 touches: [tools/e2e/scripts/merge.mjs, tools/e2e/tests/cli.spec.ts]
@@ -50,3 +51,5 @@ shape differently.
 ## Implementation notes
 
 ## Verdicts
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-284; a mutant block's file is not confined out of the git directory, and the write precedes the add that would refuse it.

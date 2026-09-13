@@ -5,7 +5,8 @@ feature: F-06
 milestone: 4
 size: S
 priority: 12
-status: suggested
+status: parked
+wake: T-292
 suggested_by: "verifier claude-opus-5@subagent @T-282 phase 2, 2026-09-09, measured at bf22ede on the bench"
 blocked_by: []
 touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts]
@@ -48,3 +49,5 @@ the authority and must not be transcribed.
 Class parent: T-282. Disposition hint: promote with any dispatch-brief
 lane; it is one funnel and one body, and it is worth doing before the
 triage section starts rendering card text a filer chose.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-292; card-derived text reaches the terminal with no control-character filter, at three sites inside the view module.

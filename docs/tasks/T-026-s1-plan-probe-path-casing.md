@@ -2,6 +2,7 @@
 id: T-026-s1
 title: The plan probe matches docs/ROADMAP.md case-sensitively — decide the casing rule before Linux
 status: parked
+wake: T-303
 suggested_by: executor claude-opus-5 @T-026
 ---
 
@@ -54,3 +55,5 @@ moments), and its preferred arm re-derives `has_plan` from the
 snapshot rather than from a separate stat. If that arm is taken, the
 casing rule moves with it — one predicate, one place to decide. Read
 this file before building T-064.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-303; the plan probe matches a filename case-sensitively, and the casing rule belongs beside the other configured names.

@@ -2,6 +2,7 @@
 id: T-072-s4
 title: The repo now counts renders in exactly one place, and the card that exists to reduce them counts none
 status: parked
+wake: T-032
 suggested_by: executor claude-opus-5 @T-072
 ---
 
@@ -44,3 +45,5 @@ Filed rather than done because every one of them is outside
 `[app-interview]`.
 
 **PARKED at the fifth triage (2026-08-20).** Unpark when the first card claiming a render-cost property (T-056's memo, the board pane, or a map lens) lands — it takes the idiom with it.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-032; the repository counts renders in one place and the card that exists to reduce them counts none.

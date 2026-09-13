@@ -2,6 +2,7 @@
 id: T-072-s3
 title: The empty banking observation is a shared mutable Map wearing a readonly type
 status: parked
+wake: T-032
 suggested_by: executor claude-opus-5 @T-072
 ---
 
@@ -49,3 +50,5 @@ and where it is OBSERVED, which T-072 measured at three unrelated test
 bodies and one file.
 
 **PARKED at the fifth triage (2026-08-20).** Unpark when a second consumer of EMPTY_BANKING_OBSERVATION appears, or when a test-pollution failure is attributed to the shared map. Verified at the fifth triage: live code copies before writing and always has.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-032; the empty banking observation is a shared mutable map wearing a read-only type.

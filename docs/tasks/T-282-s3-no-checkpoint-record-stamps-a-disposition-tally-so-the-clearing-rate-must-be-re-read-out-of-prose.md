@@ -5,7 +5,8 @@ feature: F-06
 milestone: 4
 size: S
 priority: 12
-status: suggested
+status: parked
+wake: T-306
 suggested_by: "executor claude-opus-5@subagent @T-282, 2026-09-09, at 3a69385"
 blocked_by: []
 touches: [docs/checkpoints/TEMPLATE.md]
@@ -47,3 +48,5 @@ paragraphs, exactly the way `Gate runtime:` exists for
 Class parent: T-282. Disposition hint: promote with any lane already
 holding `docs/checkpoints/TEMPLATE.md`; it is a writing instruction and
 no program changes.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-306; no checkpoint stamps a disposition tally, which is precisely this card's third acceptance criterion.

@@ -5,7 +5,8 @@ feature: F-04
 milestone: 4
 size: S
 priority: 2
-status: suggested
+status: parked
+wake: T-284
 suggested_by: "the seat (2026-09-10): at the T-296 merge, the first through the verb, both assigned corrections' bodies redded under their mutants and three unrelated bodies of brief.spec.ts redded COULD NOT RUN beside them; the same three passed at the bench tip and failed on the merged tree without any mutant — the difference was .git/MERGE_HEAD"
 blocked_by: []
 touches: [tools/e2e/scripts/merge.mjs, tools/e2e/tests/merge.spec.ts]
@@ -29,3 +30,5 @@ review: independent
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-284; the narrow re-drill runs the owning spec against a staged checkout, so every dispatching body reds could-not-run.

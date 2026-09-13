@@ -2,6 +2,7 @@
 id: T-033-s4
 title: ADR-015 still owes its half of T-033's clause, and docs/decisions/ sits in no component's paths and no card's fence
 status: parked
+wake: T-291
 suggested_by: executor claude-opus-5 @T-033
 ---
 
@@ -87,3 +88,5 @@ paragraph, or rule that ADR clauses are written at checkpoints and stop
 putting *"in the same change as"* into criteria that no fence can satisfy.
 
 Amnesty triage 2026-08-29 (triage seat): PARKED — the CLAUSE half is discharged (ruling bb26a93 chose arm (a); build 1baed94 amended ADR-015 and C-07), and the surviving half is a governance question rather than a build: docs/decisions/ still sits in no component's paths:, so no touch_slugs: and no card fence can name it, and criteria of the form "amend the ADR in the same change" remain unsatisfiable from a lane. RESURFACES: the next docs/architecture/components/ dispatch, or the next card whose criteria order an ADR edit — whichever comes first; the choice is either a fence word for docs/decisions/ or a written rule that ADR clauses are architect work at checkpoints.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-291; the decisions directory sits in no component's paths and no card's fence, which is the coverage T-291 argues about.

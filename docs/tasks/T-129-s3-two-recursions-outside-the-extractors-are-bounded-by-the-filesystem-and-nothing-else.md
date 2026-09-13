@@ -2,6 +2,7 @@
 id: T-129-s3
 title: Two recursions in nputer-index sit outside the extractors, are bounded by filesystem path depth and nothing else, and one of them is on index()'s own in-app path
 status: parked
+wake: T-111-s11
 suggested_by: executor claude-opus-5 @T-129
 ---
 
@@ -69,3 +70,5 @@ is a much louder thing to ask a user to clone.
 Fence `[crate-index]`, free at this filing.
 
 Amnesty triage 2026-08-29 (triage seat): PARKED — correctly filed and correctly narrowed by its own author: T-129's class is driven by a file's CONTENTS (200 KB of text breaks it), while these three are driven by the DIRECTORY TREE, which canonicalize() bounds at a few hundred levels on this platform. The card's own sentence is the honest one — narrow is not closed, and nobody has measured where these actually break. Its first instruction is MEASURE FIRST, and if canonicalize refuses before the recursion does, the finding closes as bounded-by-the-platform with a number. RESURFACES: the next crate-index dispatch, which SHALL run the measurement before deciding whether there is anything to build; arch::glob::go is explicitly NOT to be taken in the same commit unless the measurement says so, since it can only take a CLI reporter down.
+
+Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-111-s11; two recursions bounded by path depth alone, in the walk that card re-fences.
