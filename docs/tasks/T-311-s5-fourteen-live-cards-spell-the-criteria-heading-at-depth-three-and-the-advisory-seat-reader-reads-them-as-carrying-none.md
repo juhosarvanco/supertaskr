@@ -495,3 +495,51 @@ the rule — but the class belongs on the board.
   rather than to the end of that section. That is unchanged by this diff and
   harmless while `## Verdicts` is the last section a card carries, but the
   widening enlarges what it would pick up if one ever were not.
+
+#### STEP 7 — THE GATES MY OWN COMMITS COULD MOVE, RUN AT THE TIP I CREATED
+
+Appended INSIDE this verdict entry rather than as a new dated heading of its
+own, because a second dated `### ` under this section would become the newest
+entry and the verb would read this card from its middle — which is the very
+finding filed as T-311-s10 one screen above.
+
+My four commits — this verdict, the two corrections, and T-311-s10 — put two
+new bodies in the tree and two cards on the board, so the figures the section
+above measured at `163a46c7` are not the figures at my tip. Re-derived at
+`a57634c5`, the whole battery through the blessed runner, one run, clean tree
+(`dirty: false`, one tree hash across all four legs):
+
+| suite | ref | bodies | exit | verdict |
+|---|---|---|---|---|
+| parser | `a57634c5` | 412 | 0 | GREEN |
+| app | `a57634c5` | 1171 | 0 | GREEN |
+| rust | `a57634c5` | 655 (18 targets) | 0 | GREEN |
+| e2e | `a57634c5` | 1052 | 0 | GREEN |
+
+The e2e count is the lane's 1050 plus the two bodies the corrections commit.
+The guarded tier owes the whole battery and this is it, run after the writes
+rather than before them.
+
+`node scripts/capabilities.mjs --check` from `tools/e2e` exits 1: STALE,
+committed 96334 bytes against a fresh generation of 97105. At the lane tip it
+was 96921 — the lane's six new bodies — and the 184 bytes between them are my
+two. The regeneration is the merge's, as the lane's notes already say; I name
+the number so the integrator knows it grew by two after the verdict and does
+not read a six-body staleness against an eight-body tree.
+
+#### A FIGURE OF MY OWN, RE-DERIVED AND WRONG IN THE TEXT ABOVE
+
+Records are appended and not rewritten, so the error stays where it is and
+the reading stands here. In the second assigned correction I wrote "at the
+tip `30 passed`". 30 was the count BEFORE that body existed; with it the spec
+carries 31 and the green reading at my tip is `31 passed`. The mutant reading
+is unaffected and was already right — `1 failed, 30 passed`, 31 bodies, the
+one failure the new body. The first correction's figures are right as
+written: 15 bodies, `15 passed` green, `1 failed, 14 passed` under the mutant,
+and `card-preflight.spec.ts` carries 58 bodies, which is the 73 in that
+paragraph less the 15.
+
+Nothing else in this verdict was measured at a commit my own writes moved: the
+board censuses (312 cards with a Verdicts section, 509 with a criteria
+section, ten cards off depth) were taken at `163a46c7` and name that ref, and
+my two cards are already counted in the 312.
