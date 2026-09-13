@@ -543,3 +543,77 @@ lane renamed one body and added two. My own two bodies add to that. The
 lane REPORTS it and the integrator regenerates `docs/CAPABILITIES.md`
 and `docs/INDEX.md` in the merge commit, which is the convention
 `docs/CONVENTIONS.md` publishes and not a defect of this diff.
+
+#### Step 7 — the gates at the tip I CREATED, which is not the tip I was sent
+
+Every figure in this section is measured at
+`a225c8b622f52b2d6ee4284811e8b8603c2c02a0` — this bench after the verdict
+commit, the correction-bodies commit and the filed card. The tables above
+name `ade1b2de` and stay true there; these name this ref, because a
+count without its ref is wrong the moment anybody writes again, and I
+wrote three times.
+
+| leg | bodies | exit | verdict |
+|---|---|---|---|
+| the parser leg | 413 | 0 | GREEN |
+| the app leg | 1171 | 0 | GREEN |
+| the rust leg | 655 over 18 targets | 0 | GREEN |
+| the e2e leg | 1085 | 1 | RED, by design — one body, named below |
+
+**The one red is mine, it is deliberate, and it is the RED reading step
+5b requires.** 1 failed, 1084 passed, 17.3 minutes. The failure is
+`tests/merge.spec.ts` › `the counter counts OVERLAPPING sites, so an
+anchor whose prefix is also its suffix names TWO sites and is refused`,
+failing on `three Ys carry two overlapping YY sites`. That body is
+correction 3, committed here against an implementation that lacks the
+property, exactly as step 5b describes: a body committed without both
+readings is a body nobody has graded, and the only way to take the RED
+reading is to commit it before the correction is applied. The verb
+applies every correction BEFORE it regenerates or drills, so this body is
+green at the merged tree and the leg is 1085 of 1085 there. **A seat that
+picks this branch up before the merge will see this red: it is this
+verdict's, not the lane's, and it is healed by applying correction 3.**
+
+No other red anywhere. The push-guard leg is green, so the named
+intermittent at this base — the body that reds when two hook runs
+straddle a minute boundary (T-314-s5) — did not fire on this run and
+nothing here needs attributing to it. The `range-rule` DISCLOSURE line
+about GRAPH REGEN's flip figures printed in the run and is a
+measurement, not a failure, by its own words.
+
+`npm run capabilities:check` from `tools/e2e` — **exit 1, STALE**:
+committed 100241 bytes against a fresh generation of 100770. It was
+already stale at the tip I was sent, at 100538, because the lane renamed
+one body and added two; my two correction bodies account for the rest.
+The lane REPORTS this and the integrator regenerates
+`docs/CAPABILITIES.md` and `docs/INDEX.md` in the merge commit, which is
+the convention `docs/CONVENTIONS.md` publishes for a fence that leaves
+the census read-only. **The fresh figure to expect at the merge is not
+this one** — it is taken over the merged tree, which carries main's own
+moves as well.
+
+`cargo run -p supertaskr-index -- index --check --root ../..` from
+`app/src-tauri` — **exit 0, CURRENT**: 1216090 bytes, 203 files, 2593
+symbols, 2488 edges; budget 1216090 of 2145959 bytes (56.7%), 929869
+left; floor 240298 of 2145959 (11.2%). My three commits are two markdown
+files and one spec file, and the committed graph carries no path under
+`tools/e2e`, so the regen could not move for them and did not.
+
+I also re-read the two fenced files at this tip:
+`tools/e2e/scripts/merge.mjs` still hashes to
+`f4f57e19669d36905b91c212677cac14b675d75b95976bfb5650a73952696dc2`,
+which is the lane's own restore hash — I drilled six mutants into it and
+every one is backed out. `tools/e2e/tests/merge.spec.ts` has moved, as it
+must, since corrections 2 and 3 are committed in it.
+
+#### What I wrote to the tree, so a later reader can subtract it
+
+Three commits on this bench after the tip I was sent: the verdict; the
+two correction bodies in `tools/e2e/tests/merge.spec.ts`, which add two
+bodies and one import and change no other line of that file; and
+`docs/tasks/T-295-s11-…md`, a suggested card filed under step 6. No code
+file was changed by me: corrections 1 and 4 are wording repairs stated in
+this verdict for the merging seat, and corrections 2 and 3 reach
+`tools/e2e/scripts/merge.mjs` only through the mutant blocks above. The
+lane's own tip is untouched; nothing was pushed; no other checkout was
+written to.
