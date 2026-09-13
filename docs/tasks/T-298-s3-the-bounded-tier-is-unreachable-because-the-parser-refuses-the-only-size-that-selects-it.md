@@ -128,14 +128,19 @@ size, both read from the document and neither from `lightestTier`.
   vocabulary in its own `size:` comment; it and the one `.replace()`
   that anchors on that line moved together.
 
-**Figures, each at the ref it was measured at.** At tip 9d7a1582 the
-owed set for 39515fad..HEAD was app, e2e, parser and rust with the e2e
-leg WHOLE, because `method/tasks/TASK-FORMAT.md` lies under no package
-root and no spec reaches it — gate-run says so in the token. Parser 416
-of 416 GREEN (413 at the base; three bodies added), app 1171 of 1171
-GREEN, rust 655 of 655 over 18 targets GREEN, e2e 1082 of 1083 with the
-one body above. The eleven model-free method evals are green and their
-positive-control self-test passes.
+**Figures, each at the ref it was measured at.** The owed set for
+39515fad..HEAD is app, e2e, parser and rust with the e2e leg WHOLE,
+because `method/tasks/TASK-FORMAT.md` lies under no package root and no
+spec reaches it — gate-run says so in the token. It was run twice, and
+the first run is kept here because the red it found is the whole reason
+the fence widened. At 9d7a1582: parser 416 of 416 GREEN, app 1171 of
+1171 GREEN, rust 655 of 655 over 18 targets GREEN, e2e RED at 1082 of
+1083 on the typed lightest tier. At the graded tip 2ccf7cde, after the
+repair: parser 416 GREEN, app 1171 GREEN, rust 655 over 18 targets
+GREEN, e2e 1083 GREEN — four legs, no red. Parser was 413 at the base,
+derived from the mutant run below in which the three added bodies were
+exactly the three that fell. The eleven model-free method evals are
+green at this tip and their positive-control self-test passes.
 
 **What this change does to the seat advisory, which nobody ruled.**
 `seatVerdict` scores the size signal as `size === lightest`, so with XS
@@ -155,7 +160,7 @@ MF-05 pins only one of the four spellings), T-298-s8 (the advisory
 shift above).
 
 **What the merge owes and this lane does not.** `npm run capabilities`
-— the census is stale by 204 bytes at this tip because three bodies were
+— the census is stale by 345 bytes at 2ccf7cde (committed 100241, a fresh generation 100586) because three bodies were
 added to two specs, and docs/CONVENTIONS.md puts that regeneration in
 the merge commit. The graph regen fires too (`.ts` outside docs/). The
 BOOT GATE does not fire: nothing under `app/src-tauri/**`, `app/src/**`
