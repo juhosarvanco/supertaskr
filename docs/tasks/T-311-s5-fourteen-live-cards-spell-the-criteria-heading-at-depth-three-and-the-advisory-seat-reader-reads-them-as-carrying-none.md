@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 size: S
 priority: 2
-status: suggested
+status: planned
 suggested_by: "executor claude-opus-5@subagent @T-311, reported in its notes after the stamp at a98e5a067ca815b984d133ed8b311366899499f4 and filed by the seat, 2026-09-12"
 blocked_by: []
 touches: [tools/e2e/scripts/session-economics.mjs, tools/e2e/tests/session-economics.spec.ts, method/tasks/TASK-FORMAT.md]
@@ -43,3 +43,5 @@ tool asked.
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+Promoted 2026-09-13 (the owner's ruling 5 of 2026-09-13): to planned at priority 2, one of the four instrument fixes the T-311 and T-300 lanes filed; before its lane the seat confirms the defect still exists at the dispatch base and assesses whether it shares a lane with its siblings while every requirement is preserved. Not dispatched by this ruling.

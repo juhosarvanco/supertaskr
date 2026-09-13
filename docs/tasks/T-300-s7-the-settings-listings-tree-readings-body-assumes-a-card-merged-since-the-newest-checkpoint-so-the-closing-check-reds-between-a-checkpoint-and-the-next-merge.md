@@ -4,8 +4,8 @@ title: "The settings listing's tree-readings body assumes a card merged since th
 feature: F-04
 milestone: 4
 size: S
-priority: 2
-status: suggested
+priority: 1
+status: planned
 suggested_by: "the Claude seat, the closing check on the range from origin/main to 37dfff4c66bbcd488383a43c0be1ffd5f55eb6b4, 2026-09-12"
 blocked_by: []
 touches: [tools/e2e/tests/cli.spec.ts, tools/e2e/scripts/settings.mjs]
@@ -73,3 +73,5 @@ than rely on.
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+Promoted 2026-09-13 (the owner's ruling 5 of 2026-09-13): to planned at priority 1, one of the four instrument fixes the T-311 and T-300 lanes filed; before its lane the seat confirms the defect still exists at the dispatch base and assesses whether it shares a lane with its siblings while every requirement is preserved. Not dispatched by this ruling.

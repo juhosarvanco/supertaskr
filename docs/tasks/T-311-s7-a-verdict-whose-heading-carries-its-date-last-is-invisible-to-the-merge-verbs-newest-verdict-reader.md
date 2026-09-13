@@ -4,8 +4,8 @@ title: "A verdict whose heading carries its date at the end is invisible to the 
 feature: F-04
 milestone: 4
 size: S
-priority: 2
-status: suggested
+priority: 1
+status: planned
 suggested_by: "the Claude seat, the T-311 merge on 2026-09-12 (the verb stopped at drill:refused with the verdict committed on the bench at 22170bc5)"
 blocked_by: []
 touches: [tools/e2e/scripts/merge.mjs, tools/e2e/tests/merge.spec.ts, method/roles/verifier.md]
@@ -44,3 +44,5 @@ reader narrower than the rule it enforces.
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+Promoted 2026-09-13 (the owner's ruling 5 of 2026-09-13): to planned at priority 1, one of the four instrument fixes the T-311 and T-300 lanes filed; before its lane the seat confirms the defect still exists at the dispatch base and assesses whether it shares a lane with its siblings while every requirement is preserved. Not dispatched by this ruling.
