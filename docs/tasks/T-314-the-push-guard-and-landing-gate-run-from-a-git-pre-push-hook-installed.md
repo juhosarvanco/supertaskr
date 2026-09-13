@@ -4,13 +4,14 @@ title: "The push guard and landing gate run from a git pre-push hook installed b
 feature: F-04
 milestone: 4
 size: S
+tier: guarded
 priority: 1
-status: planned
+status: building
 suggested_by: "ADR-025 decision 3, approved by the owner on 2026-09-12 with the v1 limitation accepted the same day; card 5a of its plan"
 blocked_by: []
 touches: [.claude/hooks/, tools/e2e/scripts/brief.mjs, tools/e2e/tests/push-guard.spec.ts, tools/e2e/tests/brief-flush.spec.ts, docs/CONVENTIONS.md]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
