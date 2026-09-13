@@ -43,6 +43,20 @@ review: independent      # independent | same-model | self-verified (stamped)
                            APPROVED, or REJECTED + concrete failures
 ```
 
+**AND EVERY ONE OF THOSE HEADINGS IS WRITTEN AT DEPTH TWO — two hash
+marks and a space, exactly as the block above spells them. THE DEPTH IS
+PART OF THE SPELLING RATHER THAN TYPOGRAPHY.** A deeper heading still
+LOOKS like the section it names, which is the whole trouble: one reader
+compares the heading whole and answers "this card carries no acceptance
+criteria", another matches the name at any depth and answers with the
+criteria, and neither reader can see that the other disagreed. A card
+drafted inside another document inherits that document's depth without
+anybody choosing it, so the fault arrives a batch at a time and lands on
+the section the dispatch is bought on. ONE SPELLING, AT DEPTH TWO, for
+every section named above — and a tool that reads a card's sections says
+which rule it matches them by, so two readers can be compared instead of
+trusted.
+
 **A CARD'S FIRST PARAGRAPH IS ITS SUMMARY — one paragraph a seat may
 read and STOP at**, and everything below it is the RECORD, read when a
 seat needs the world rather than the ask. No field and no status carries

@@ -71,6 +71,7 @@
 
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { CRITERIA_HEADING } from "./card-preflight.mjs";
 import {
   ceremonyRows,
   expandFenceEntry,
@@ -162,7 +163,17 @@ export function earsKeywords(md) {
 }
 
 /**
- * A `## ` section's body, or null where the card has no such section.
+ * WHERE A SECTION ENDS, and it is the CARD PREFLIGHT'S rule rather than a
+ * second one: that reader switches scope at every heading of depth two or
+ * deeper, whatever depth the section's own heading had, so a section runs
+ * to the next such heading and no further. Two readers of one card have
+ * to end the section in the same place or they answer different criteria
+ * from the same file, which is the defect T-311-s5 is about.
+ */
+const SECTION_END = /^#{2,}\s/;
+
+/**
+ * A section's body, or null where the card has no such section.
  *
  * dispatch-brief.mjs's `section()` THROWS on a missing heading, which is
  * right for the documents it quotes — a renamed contract heading is a
@@ -170,26 +181,50 @@ export function earsKeywords(md) {
  * an ordinary (and very informative) reading of a card, and it must
  * arrive as a SIGNAL rather than as a crash.
  *
+ * The heading is a STRING compared whole, or a PATTERN the trimmed line
+ * is tested against — the second because the one rule that says which
+ * heading opens the criteria lives in one place and is a pattern there.
+ *
  * @param {string} md
- * @param {string} heading
+ * @param {string | RegExp} heading
  * @returns {string | null}
  */
 export function optionalSection(md, heading) {
+  const opens =
+    typeof heading === "string"
+      ? /** @param {string} l */ (l) => l === heading
+      : /** @param {string} l */ (l) => heading.test(l);
   const lines = md.split(/\r?\n/);
-  const start = lines.findIndex((l) => l.trim() === heading);
+  const start = lines.findIndex((l) => opens(l.trim()));
   if (start < 0) return null;
   /** @type {string[]} */
   const held = [];
   for (let i = start + 1; i < lines.length; i += 1) {
     const line = /** @type {string} */ (lines[i]);
-    if (/^#{1,2} /.test(line)) break;
+    if (SECTION_END.test(line)) break;
     held.push(line);
   }
   return held.join("\n").trim();
 }
 
-/** The heading the task format gives the criteria section. */
-export const CRITERIA_HEADING = "## Acceptance criteria";
+/**
+ * THE HEADING THE TASK FORMAT GIVES THE CRITERIA SECTION — the CARD
+ * PREFLIGHT'S OWN CONSTANT, imported and re-exported rather than spelled
+ * a second time here (T-311-s5).
+ *
+ * It used to be the exact string `## Acceptance criteria`, compared at
+ * depth two, while the preflight accepted the heading at any depth from
+ * two. So the two readers disagreed about the same file: the nine cards
+ * of one planning batch were drafted with `### Acceptance criteria` and
+ * inherited one depth, their criteria were checked by the preflight, and
+ * this module reported "the card carries no acceptance criteria" and
+ * answered TRY on that basis — the stronger seat, so nothing was lost,
+ * and a signal derived from a reading only one tool makes is a signal
+ * nobody can audit. ONE RULE, ONE PLACE: a widening there is a widening
+ * here on the same day, and `method/tasks/TASK-FORMAT.md` names the ONE
+ * depth a card is written at.
+ */
+export { CRITERIA_HEADING };
 
 /**
  * The card's acceptance criteria, one collapsed string each.

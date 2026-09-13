@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1044 behaviours** — 1042 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1052 behaviours** — 1050 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -878,6 +878,10 @@ Census: **1044 behaviours** — 1042 extracted sentences + 2 named-not-extracted
 - a correction is applied whenever the tree carries its NEW text once, even where the OLD text also occurs elsewhere
 - a forbidden-spelling refusal names the file and the class and REDACTS the value, on every class it carries
 - a merge is what an APPROVED verdict authorises, so a REJECTED newest verdict refuses the drill
+- a dated `### ` entry is found wherever its date sits, and an undated heading is still refused
+- a CORRECTION block's own heading is never read as a verdict entry, however it is dated
+- the heading shape verifier.md publishes IS a heading this reader finds, and the date's place is named there
+- assignsCorrections answers the same over one unchanging input, however often it is asked
 
 ## no-plan-card
 
@@ -1086,6 +1090,10 @@ Census: **1044 behaviours** — 1042 extracted sentences + 2 named-not-extracted
 - the recommendation names a seat strength and never a model, because this project passes no --model
 - every line of the advisory block carries its provenance, and the detector is not vacuous here either
 - the lightest ceremony tier is read off the table's first row rather than typed into the tool
+- the criteria heading is matched by the CARD PREFLIGHT'S OWN RULE, and the two readers answer one card the same way
+- the two readers agree about the criteria section on every live card
+- the task format names ONE depth for a card's sections, and the board spells the criteria heading there
+- the two readers open the criteria section in the SAME PLACE, and not merely both somewhere
 
 ## shell-frame
 

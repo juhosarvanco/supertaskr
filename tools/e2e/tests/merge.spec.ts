@@ -40,19 +40,23 @@ import {
   cardTier,
   bumpSteps,
   classifyConflict,
+  assignsCorrections,
   claimedCounts,
   correctionFor,
+  correctionHeadings,
   correctionSteps,
   dedentBlock,
   drillScope,
   drillSteps,
   forbiddenSpellingFindings,
   gradeCounts,
+  isVerdictHeading,
   keeperSteps,
   mergeDials,
   mergeMessage,
   metersBlocks,
   movesMethodText,
+  newestVerdict,
   personalNames,
   pinnedSentenceFindings,
   preludePlan,
@@ -1203,4 +1207,175 @@ test("a merge is what an APPROVED verdict authorises, so a REJECTED newest verdi
   // AND THE STATE READER IS THE ONE THE MESSAGE ALREADY USES, so the
   // two cannot drift apart into two answers about one heading.
   expect(verdictState("### VERDICT 2026-09-10 — REJECTED — a verifier")).toBe("REJECTED");
+});
+
+/* ────────────────────────────────────────────────────────────────────
+ * THE NEWEST-VERDICT READER, AND WHERE A HEADING'S DATE MAY SIT
+ * (T-311-s5, absorbing T-311-s7).
+ *
+ * The reader wanted the date at the START of the heading, after at most
+ * one capitalised word. `method/roles/verifier.md` asked for a verdict
+ * that is dated and names its model and session, and said nothing about
+ * where the date goes — so a verdict spelled with its date LAST obeyed
+ * the rule and was invisible to the reader, which then refused the drill
+ * with "carries no dated `### ` entry" while the entry stood one screen
+ * above the message. These bodies drive the two spellings that have
+ * actually been written on this board, the undated heading that is still
+ * refused, and the shape the role file now publishes.
+ */
+
+/** A card carrying one `## Verdicts` section and the entries given. */
+function verdictCard(...entries: string[]): string {
+  return ["---", "id: T-900", "---", "", "## Verdicts", "", ...entries, ""].join("\n");
+}
+
+const DATE_FIRST = "### 2026-09-13 — APPROVED WITH ASSIGNED CORRECTIONS — a-model@a-session";
+const DATE_LAST =
+  "### APPROVED WITH ASSIGNED CORRECTIONS — a-model@a-session, verifier phase 2, 2026-09-12";
+
+test("a dated `### ` entry is found wherever its date sits, and an undated heading is still refused", () => {
+  const first = newestVerdict(verdictCard(DATE_FIRST, "", "Everything reproduced."));
+  expect("heading" in first ? first.heading : first.problem, "the date-first spelling").toBe(DATE_FIRST);
+
+  // THE SPELLING THAT WAS INVISIBLE, and the reason this card exists.
+  const last = newestVerdict(verdictCard(DATE_LAST, "", "Everything reproduced."));
+  expect("heading" in last ? last.heading : last.problem, "the date-last spelling").toBe(DATE_LAST);
+  expect("text" in last ? last.text : "", "and the entry's body comes with it").toContain(
+    "Everything reproduced.",
+  );
+
+  // THE REFUSAL IS STILL A REFUSAL. "Dated" is the rule, so a heading
+  // with no date at all is not an entry — the widening is about WHERE
+  // the date sits, never about whether there is one.
+  const undated = newestVerdict(verdictCard("### APPROVED — a-model@a-session", "", "No date here."));
+  expect("problem" in undated ? undated.problem : "", "an undated heading was read as an entry").toContain(
+    "no dated `### ` entry",
+  );
+
+  // NEWEST MEANS LAST, whichever spelling each entry took — verdicts are
+  // appended, and a reader that took the first would act on a superseded
+  // pass.
+  const both = newestVerdict(verdictCard(DATE_LAST, "", "The older pass.", "", DATE_FIRST, "", "The newer pass."));
+  expect("heading" in both ? both.heading : both.problem).toBe(DATE_FIRST);
+  const reversed = newestVerdict(verdictCard(DATE_FIRST, "", "The older pass.", "", DATE_LAST, "", "The newer pass."));
+  expect("heading" in reversed ? reversed.heading : reversed.problem).toBe(DATE_LAST);
+
+  // AND THE SECTION IS STILL THE SECTION: a dated `### ` heading above
+  // the Verdicts heading is somebody else's section.
+  const above = newestVerdict(["---", "id: T-900", "---", "", DATE_FIRST, "", "Not a verdict.", "", "## Verdicts", ""].join("\n"));
+  expect("problem" in above ? above.problem : "", "a heading above the section was read as an entry").toContain(
+    "no dated `### ` entry",
+  );
+});
+
+test("a CORRECTION block's own heading is never read as a verdict entry, however it is dated", () => {
+  // WHAT THE DATE ANCHOR USED TO PROTECT. A verdict's sub-headings are
+  // `###` too. With the date required at the start, a correction heading
+  // could not be mistaken for an entry; with the date allowed anywhere,
+  // one that carries a date would become the "newest entry" and the
+  // verdict would be read from its middle — dropping exactly the blocks
+  // the drill is about.
+  const correction = "### CORRECTION 2 — the ruling of 2026-09-13, applied here";
+  const card = verdictCard(DATE_LAST, "", "The verdict's own prose.", "", correction, "", "The block.");
+  const read = newestVerdict(card);
+  expect("heading" in read ? read.heading : read.problem, "the correction heading was taken as the entry").toBe(
+    DATE_LAST,
+  );
+  expect("text" in read ? read.text : "", "and the whole entry is returned, block and all").toContain(
+    "The verdict's own prose.",
+  );
+  expect(isVerdictHeading(correction), "a correction heading is not an entry heading").toBe(false);
+
+  // THE POSITIVE CONTROL, and it is the one that makes the line above a
+  // claim about CORRECTION rather than about dated sub-headings in
+  // general: the same card with the same date, under a heading that is
+  // not a correction block's, DOES move the reader.
+  const amendment = "### Amendment of 2026-09-13, appended after the pass";
+  const moved = newestVerdict(
+    verdictCard(DATE_LAST, "", "The verdict's own prose.", "", amendment, "", "The later entry."),
+  );
+  expect("heading" in moved ? moved.heading : moved.problem, "a later dated entry is the newest one").toBe(
+    amendment,
+  );
+  expect(isVerdictHeading(amendment)).toBe(true);
+
+  // AND THE EXCLUSION IS THE SHAPE THIS FILE ALREADY COUNTS, not a
+  // second spelling of it: what `correctionHeadings` counts is what the
+  // entry reader skips.
+  expect(correctionHeadings(`${correction}\n${amendment}\n${DATE_LAST}`), "one correction heading").toBe(1);
+});
+
+test("the heading shape verifier.md publishes IS a heading this reader finds, and the date's place is named there", () => {
+  // T-057 AGAIN: the shape is stated in the role file, where the verifier
+  // reads it, and matched in this script, where a merge acts on it. This
+  // body is the only thing that compares them — and it builds the heading
+  // FROM the document rather than re-typing it, so a rewrite of the
+  // published shape into something the reader cannot find reds here.
+  const verifier = readFileSync(path.join(repoRoot, "method", "roles", "verifier.md"), "utf8");
+  const published = verifier.split("\n").filter((l) => /^\s*### /.test(l) && l.includes("<"));
+  expect(published.length, "verifier.md publishes no verdict heading shape at all").toBe(1);
+  const shape = String(published[0]).trim();
+
+  // THE DATE'S PLACE IS NAMED, and named where a reader of the shape can
+  // see it: the date placeholder is the FIRST thing after the hashes.
+  expect(shape, "the published shape does not open with the date").toMatch(/^###\s+<[^>]*-[^>]*>/);
+  expect(shape, "and the shape names who wrote it").toContain("model@session");
+
+  const heading = shape
+    .replace(/<Y{4}-M{2}-D{2}>/, "2026-09-13")
+    .replace(/<VERDICT>/, "APPROVED")
+    .replace(/<model@session>/, "a-model@a-session");
+  expect(heading, "the shape carries a placeholder this body cannot fill").not.toContain("<");
+  const read = newestVerdict(verdictCard(heading, "", "Everything reproduced."));
+  expect(
+    "heading" in read ? read.heading : read.problem,
+    "the shape the role file publishes is not one this reader finds",
+  ).toBe(heading);
+  expect(verdictState(heading), "and the state reader agrees about the same heading").toBe("APPROVED");
+});
+
+test("assignsCorrections answers the same over one unchanging input, however often it is asked", () => {
+  // THE HAZARD THE SOURCE-SHARING FOLLOW-THROUGH NAMES, PINNED BY A BODY.
+  // One pattern source now feeds three readers and the only thing holding
+  // them apart is the FLAGS each compiled form carries: `RegExp.test` on a
+  // GLOBAL regex carries `lastIndex` from call to call, so a "does this
+  // verdict head a correction" form compiled global answers true, then
+  // false, then true over one unchanging string. The verb asks this
+  // question more than once in a run — the plan asks it, the read at the
+  // tip asks it again — and the second answer is the one that would
+  // silently drop every block. The comment beside the constant says all
+  // of this; nothing measured it.
+  const verdict = [
+    "### 2026-09-13 — APPROVED — a-model@a-session",
+    "",
+    "The pass reproduced.",
+    "",
+    "### CORRECTION 1 — a body this verdict commits",
+    "",
+    "The block.",
+  ].join("\n");
+
+  // THE WORDS `ASSIGNED CORRECTIONS` ARE DELIBERATELY ABSENT. They would
+  // answer through the other half of the disjunction and the heading
+  // pattern — the half that carries the flag — would never be asked.
+  expect(
+    /ASSIGNED\s+CORRECTIONS?/i.test(verdict),
+    "the fixture answers through the other half of the disjunction",
+  ).toBe(false);
+
+  // THE THREE READINGS ARE CONSECUTIVE ON PURPOSE: `String.match` resets a
+  // global regex's `lastIndex`, so a `correctionHeadings` call between two
+  // of these would hide exactly the carry this body exists to catch.
+  expect(assignsCorrections(verdict), "the first reading").toBe(true);
+  expect(assignsCorrections(verdict), "the SECOND reading of one unchanging verdict").toBe(true);
+  expect(assignsCorrections(verdict), "the third reading of one unchanging verdict").toBe(true);
+  expect(correctionHeadings(verdict), "and the count is the same question asked another way").toBe(1);
+
+  // NEGATIVE CONTROL, so the three readings above are a claim about this
+  // verdict rather than about a function that answers true to everything.
+  const none = ["### 2026-09-13 — APPROVED — a-model@a-session", "", "Nothing was assigned."].join(
+    "\n",
+  );
+  expect(assignsCorrections(none), "a verdict heading no correction, read once").toBe(false);
+  expect(assignsCorrections(none), "the same verdict read again").toBe(false);
 });

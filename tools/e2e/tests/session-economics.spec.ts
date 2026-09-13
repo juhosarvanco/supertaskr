@@ -1,9 +1,10 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { repoRoot } from "../preflight";
+import { CRITERIA_HEADING as PREFLIGHT_RULE, cardLines } from "../scripts/card-preflight.mjs";
 import {
   EXIT,
   assembleBrief,
@@ -11,12 +12,14 @@ import {
   contractRows,
   fenceOverlaps,
   fieldList,
+  frontmatterFields,
   render,
   roleText,
   unstampedLines,
 } from "../scripts/dispatch-brief.mjs";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import {
+  CRITERIA_HEADING as ADVISORY_RULE,
   DECOMPOSITION_FILE,
   EARS_ANCHOR,
   KNOW,
@@ -727,4 +730,295 @@ test("the lightest ceremony tier is read off the table's first row rather than t
   expect(lightestTier(md.replace("| S, diff outside shipped code |", "| XS, diff outside shipped code |"))).toBe(
     "XS",
   );
+});
+
+/* ────────────────────────────────────────────────────────────────────
+ * THE CRITERIA HEADING — ONE RULE, TWO READERS, ONE DEPTH (T-311-s5).
+ *
+ * The advisory reader compared the heading whole, at depth two, while
+ * the card preflight matched the name at any depth from two. So the two
+ * answered different criteria for the same file: a batch of cards
+ * drafted in one document inherited `### `, their criteria were checked
+ * by the preflight, and the advisory line reported that they carried
+ * none. A card whose signals depend on which tool asked is the defect,
+ * and the repair is one rule imported rather than a second copy kept in
+ * step by hand.
+ */
+
+/** A fixture card whose criteria heading sits at the depth asked for. */
+function cardAtDepth(hashes: string): string {
+  return [
+    "---",
+    "id: T-900",
+    "title: A fixture card",
+    "---",
+    "",
+    "The summary paragraph.",
+    "",
+    `${hashes} Acceptance criteria`,
+    "",
+    "- WHEN a card is read THE reader SHALL find this criterion.",
+    "- WHEN it is read again THE reader SHALL find the second one too.",
+    "",
+    "## Implementation notes",
+    "",
+    "- this bullet is below the section and belongs to neither reader",
+    "",
+  ].join("\n");
+}
+
+test("the criteria heading is matched by the CARD PREFLIGHT'S OWN RULE, and the two readers answer one card the same way", () => {
+  // IDENTITY, NOT EQUALITY. A copy of the pattern is a second rule that
+  // has to be kept in step by hand, and the day either widens is the day
+  // they disagree again — which is exactly how this defect arrived.
+  expect(
+    ADVISORY_RULE,
+    "the advisory reader spells its own copy of the criteria heading rule",
+  ).toBe(PREFLIGHT_RULE);
+
+  for (const hashes of ["##", "###", "####"]) {
+    const text = cardAtDepth(hashes);
+    expect(acceptanceCriteria(text).length, `the advisory reader at ${hashes}`).toBe(2);
+    expect(cardLines(text).hasCriteria, `the preflight at ${hashes}`).toBe(true);
+  }
+
+  // THE NEGATIVE CONTROL IS THE RULE'S OWN BOUNDARY: a depth-ONE heading
+  // is not the criteria section, and it is not the section for EITHER
+  // reader. Without this the body above would pass against a rule that
+  // matched every heading ending in those two words.
+  const one = cardAtDepth("#");
+  expect(acceptanceCriteria(one), "a depth-one heading is read as the section").toEqual([]);
+  expect(cardLines(one).hasCriteria, "and the preflight reads it as one").toBe(false);
+
+  // AND THE SECTION ENDS IN THE SAME PLACE, which is the other half of
+  // "the same criteria": the bullet under the notes heading is not a
+  // criterion for either reader, whatever depth the section opened at.
+  for (const hashes of ["##", "###"]) {
+    const read = acceptanceCriteria(cardAtDepth(hashes)).join(" | ");
+    expect(read, `the section at ${hashes} ran past its own end`).not.toContain("neither reader");
+  }
+});
+
+test("the two readers agree about the criteria section on every live card", () => {
+  // THE CORPUS IS THE MEASUREMENT. The fixtures above prove the rule; the
+  // board is where a disagreement actually cost something, and it is the
+  // only input that can surprise this pair.
+  const dir = path.join(repoRoot, "docs", "tasks");
+  const disagreed: string[] = [];
+  let read = 0;
+  for (const name of readdirSync(dir)) {
+    if (!name.endsWith(".md")) continue;
+    read += 1;
+    const text = readFileSync(path.join(dir, name), "utf8");
+    const advisory = optionalSection(text, ADVISORY_RULE) !== null;
+    const preflight = cardLines(text).hasCriteria;
+    if (advisory !== preflight) {
+      disagreed.push(`${name}: advisory=${String(advisory)} preflight=${String(preflight)}`);
+    }
+  }
+  expect(read, "no cards under docs/tasks/ — this body measured nothing").toBeGreaterThan(200);
+  expect(
+    disagreed,
+    "a card whose criteria section one reader finds and the other does not — the two rules have " +
+      "drifted apart again",
+  ).toEqual([]);
+});
+
+/**
+ * THE CARDS THAT SPELL THE CRITERIA HEADING AT ANOTHER DEPTH, measured
+ * over `docs/tasks/` at `71b52a01125d` with the rule the body below
+ * applies — the nine cards of one planning batch, which were drafted in
+ * one document and inherited its depth, and one card whose only heading
+ * of that name is a verifier's per-criterion table.
+ *
+ * **IT IS AN EXCLUSION, NOT AN EQUALITY.** A card named here is allowed
+ * to be where it is, so a repair that takes one back to depth two leaves
+ * this body green, while a card that is NOT named reds by name. The
+ * owner ruled on 2026-09-13 that the cards still open here are repaired
+ * on the integration branch with no criteria text changed, and a body
+ * that required the reading to EQUAL this list would red on exactly that
+ * repair — the list is a measurement of what was already written, never
+ * a judgement about what should be.
+ *
+ * **AND IT IS NOT A LICENCE EITHER.** A pinned set that has stopped
+ * pinning anything is a permission nobody notices, so the body below
+ * requires at least one of these ids to still be on the board at another
+ * depth: when the last one is repaired this reds, and what it asks for
+ * is the deletion of the list rather than its extension.
+ */
+const KNOWN_OFF_DEPTH = [
+  "T-229-s4",
+  "T-299-s6",
+  "T-300-s6",
+  "T-311",
+  "T-312",
+  "T-313",
+  "T-314",
+  "T-315",
+  "T-316",
+  "T-317",
+];
+
+test("the task format names ONE depth for a card's sections, and the board spells the criteria heading there", () => {
+  const md = readFileSync(path.join(repoRoot, "method", "tasks", "TASK-FORMAT.md"), "utf8");
+
+  // THE DOCUMENT IS THE AUTHORITY AND THE NUMBER COMES OUT OF IT. A body
+  // that greps for a sentence is satisfied by the sentence; this one
+  // takes the depth the document NAMES in words, checks it against the
+  // depth the document's own block SPELLS, and then measures the board
+  // against that one number. Move either statement and this reds.
+  const named = /WRITTEN AT DEPTH ([A-Z]+)/.exec(md);
+  expect(named, "the task format no longer names the depth its sections are written at").not.toBeNull();
+  const words: Record<string, number> = { ONE: 1, TWO: 2, THREE: 3, FOUR: 4 };
+  const depth = words[String(named?.[1])];
+  expect(depth, `the task format names a depth this body cannot read: ${String(named?.[1])}`).toBeGreaterThan(0);
+  const spelled = /^(#+) Acceptance criteria\b/m.exec(md);
+  expect(spelled, "the body-sections block no longer spells the criteria heading").not.toBeNull();
+  expect(
+    String(spelled?.[1]).length,
+    "the block and the sentence beside it name different depths, so a card cannot obey both",
+  ).toBe(depth);
+
+  /** The depth a card spells its criteria heading at, or undefined. */
+  const depthOf = (text: string): number | undefined => {
+    const heading = cardLines(text).lines.find((l) => PREFLIGHT_RULE.test(l.text.trim()));
+    if (heading === undefined) return undefined;
+    return String(/^(#+)/.exec(heading.text.trim())?.[1]).length;
+  };
+
+  // POSITIVE CONTROL, RUN BEFORE THE LOOP IS TRUSTED: the reading tells
+  // the two depths apart on a planted card. A loop whose reader answered
+  // the same thing for every card would report an empty set forever.
+  expect(depthOf(cardAtDepth("##")), "the reading cannot see depth two").toBe(2);
+  expect(depthOf(cardAtDepth("###")), "the reading cannot see depth three").toBe(3);
+
+  const dir = path.join(repoRoot, "docs", "tasks");
+  const off: string[] = [];
+  let read = 0;
+  for (const name of readdirSync(dir)) {
+    if (!name.endsWith(".md")) continue;
+    const text = readFileSync(path.join(dir, name), "utf8");
+    const at = depthOf(text);
+    if (at === undefined) continue;
+    read += 1;
+    if (at !== depth) off.push(String(frontmatterFields(text).id ?? name));
+  }
+  expect(read, "no card on this board carries a criteria heading — nothing was measured").toBeGreaterThan(200);
+  expect(
+    off.filter((id) => !KNOWN_OFF_DEPTH.includes(id)).sort(),
+    "a card spells its criteria heading at a depth the task format does not name, and it is not one " +
+      "of the cards measured when that depth was written down — one reader will see its criteria and " +
+      "another will not",
+  ).toEqual([]);
+  expect(
+    off.length,
+    "every card pinned above has been repaired, so this list now permits a depth nobody spells: " +
+      "delete it and the exclusion with it rather than leaving a licence behind",
+  ).toBeGreaterThan(0);
+});
+
+test("the two readers open the criteria section in the SAME PLACE, and not merely both somewhere", () => {
+  // THE CORPUS BODY ABOVE COMPARES TWO BOOLEANS, and both readers
+  // answering "there IS a section" is not both readers answering the SAME
+  // section. What the card asks for is the same CRITERIA, and the site is
+  // where that is decided: the heading rule is one object now, but the two
+  // readers still reach it through different prose models — the preflight
+  // blanks fenced and deeply indented lines before it looks, this one
+  // reads the card as it is written — so a card carrying the heading
+  // inside a quotation AND again as its own section passes the boolean
+  // comparison while the two stand in different places.
+  //
+  // THE READING IS DRIVEN THROUGH EACH READER'S OWN ENTRY POINT. A body
+  // that re-derived the advisory site with a `findIndex` of its own would
+  // be asserting about its own copy of the rule, and no mutant planted in
+  // the module could reach it.
+  const firstLine = (text: string): string =>
+    text
+      .split("\n")
+      .map((l) => l.trim())
+      .find((l) => l !== "") ?? "";
+
+  const dir = path.join(repoRoot, "docs", "tasks");
+  const apart: string[] = [];
+  let seen = 0;
+  for (const name of readdirSync(dir)) {
+    if (!name.endsWith(".md")) continue;
+    const text = readFileSync(path.join(dir, name), "utf8");
+    const lines = cardLines(text).lines;
+    const at = lines.findIndex((l) => l.scope === "criteria");
+    const advisory = optionalSection(text, ADVISORY_RULE);
+    if (at < 0 && advisory === null) continue;
+    seen += 1;
+    if (at < 0 || advisory === null) {
+      apart.push(`${name}: one reader found a section and the other did not`);
+      continue;
+    }
+    const preflight = firstLine(
+      lines
+        .slice(at + 1)
+        .map((l) => l.text)
+        .join("\n"),
+    );
+    if (preflight !== firstLine(advisory)) {
+      apart.push(`${name}\n  preflight: ${preflight}\n  advisory : ${firstLine(advisory)}`);
+    }
+  }
+  expect(
+    seen,
+    "no card on this board carries a criteria section — nothing was measured",
+  ).toBeGreaterThan(200);
+  expect(
+    apart,
+    "the two readers open the criteria section in different places on ONE card, so they collect " +
+      "different criteria from it however much their heading rule agrees",
+  ).toEqual([]);
+
+  // THE POSITIVE CONTROL, RUN WHERE THE ARMING IS ABSENT. Every card above
+  // answers `x === x`, and a reading that could not tell two sites apart
+  // would report an empty list forever. So the same reading is put to a
+  // card built to split them — the heading quoted in a fence before the
+  // card's own section — and BOTH halves are shown: the boolean comparison
+  // the body above makes is GREEN on this card, and this one is not.
+  const fence = "`".repeat(3);
+  const quoting = [
+    "---",
+    "id: T-904",
+    "---",
+    "",
+    "The summary paragraph.",
+    "",
+    `${fence}markdown`,
+    "## Acceptance criteria",
+    "",
+    "- WHEN a card QUOTES the task format THE quotation SHALL not be read as its criteria.",
+    fence,
+    "",
+    "## Acceptance criteria",
+    "",
+    "- WHEN the card is read THE reader SHALL find this one.",
+    "",
+  ].join("\n");
+  expect(
+    optionalSection(quoting, ADVISORY_RULE) !== null && cardLines(quoting).hasCriteria,
+    "the control card does not pass the boolean comparison, so it demonstrates nothing",
+  ).toBe(true);
+  const controlLines = cardLines(quoting).lines;
+  const controlAt = controlLines.findIndex((l) => l.scope === "criteria");
+  const controlPreflight = firstLine(
+    controlLines
+      .slice(controlAt + 1)
+      .map((l) => l.text)
+      .join("\n"),
+  );
+  const controlAdvisory = firstLine(String(optionalSection(quoting, ADVISORY_RULE)));
+  expect(controlPreflight, "the reading cannot see the preflight's section").toContain(
+    "SHALL find this one",
+  );
+  expect(controlAdvisory, "the reading cannot see the advisory reader's section").toContain(
+    "SHALL not be read as its criteria",
+  );
+  expect(
+    controlPreflight === controlAdvisory,
+    "the reading answers the same for two different sections, so the loop above measures nothing",
+  ).toBe(false);
 });
