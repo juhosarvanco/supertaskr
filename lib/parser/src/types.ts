@@ -19,8 +19,24 @@ export const TASK_STATUSES = [
 
 export type TaskStatus = (typeof TASK_STATUSES)[number];
 
-/** Task sizes; size sets the ceremony tier (S | M | L). */
-export const TASK_SIZES = ['S', 'M', 'L'] as const;
+/**
+ * Task sizes; size sets the ceremony tier (XS | S | M | L).
+ *
+ * XS IS HERE BECAUSE THE METHOD'S TIER TABLE SELECTS ON IT (T-298-s3).
+ * `method/tasks/TASK-FORMAT.md`'s tier table admits `bounded` on size XS
+ * and on nothing else, so a set of S, M and L made the cheapest tier
+ * unreachable by any card this parser would hold: a card written in the
+ * tier table's own vocabulary was an `invalid-field` issue, and the
+ * three suites that require the live board to parse with zero issues
+ * went red on it. S, M and L are unchanged, and every other value is
+ * still refused.
+ *
+ * THIS SET AND THAT DOCUMENT'S `size:` COMMENT ARE ONE VOCABULARY, and
+ * the MF-05 method eval compares them mechanically — a value added to
+ * either side alone is a red there, which is the check the method text
+ * asks a project to have.
+ */
+export const TASK_SIZES = ['XS', 'S', 'M', 'L'] as const;
 
 export type TaskSize = (typeof TASK_SIZES)[number];
 

@@ -11,7 +11,7 @@ title: Audit log
 feature: F-03            # story map column
 milestone: 2             # above/below the slice line
 priority: 2              # position in column; 1 = top = next
-size: M                  # S | M | L — sets the ceremony tier
+size: M                  # XS | S | M | L — sets the ceremony tier
 tier:                    # DERIVED — bounded | standard | guarded, written by
                          # the arm at the dispatch stamp and never by an
                          # author. Read "The tier" below before typing one
