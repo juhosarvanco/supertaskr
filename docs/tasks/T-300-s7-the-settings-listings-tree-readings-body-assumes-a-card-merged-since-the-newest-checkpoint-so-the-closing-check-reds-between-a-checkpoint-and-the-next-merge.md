@@ -6,7 +6,7 @@ milestone: 4
 size: M
 tier: standard
 priority: 1
-status: building
+status: verifying
 suggested_by: "the Claude seat, the closing check on the range from origin/main to 37dfff4c66bbcd488383a43c0be1ffd5f55eb6b4, 2026-09-12"
 blocked_by: []
 touches: [tools/e2e/tests/cli.spec.ts, tools/e2e/scripts/settings.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts]
