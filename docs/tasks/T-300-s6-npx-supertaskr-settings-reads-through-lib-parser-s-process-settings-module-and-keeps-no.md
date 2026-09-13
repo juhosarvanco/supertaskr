@@ -6,7 +6,7 @@ milestone: 4
 size: S
 tier: standard
 priority: 2
-status: building
+status: verifying
 suggested_by: "the owner's ruling of 2026-09-12 that T-300 lands first and adopts the shared reader in a follow-up; the Codex orchestrator's review of 2026-09-12 on the planning boundary"
 blocked_by: [T-317]
 touches: [tools/e2e/scripts/settings.mjs, tools/e2e/tests/cli.spec.ts, docs/reference/15-settings.md]
