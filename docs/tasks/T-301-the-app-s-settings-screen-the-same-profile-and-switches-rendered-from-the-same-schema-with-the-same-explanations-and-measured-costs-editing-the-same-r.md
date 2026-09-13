@@ -75,6 +75,8 @@ The owner ruled on 2026-09-13 that this card is parked formally and resumed late
 - The recovery clone's candidate (its own T-301 checkout at e1e1b14b, whose working tree equals that commit) was compared file by file: three files are byte-identical (App.tsx, PaneRail.tsx, map-shell-dom.test.tsx) and nine differ, several substantially (the recovery's settings.rs is 2420 lines to the lane's 996; its process-settings.ts 8 lines to the lane's 708). The two are different candidates from a common start; the recovery clone does not contain this lane's work, so the fresh dispatch reads BOTH as input material, as the first amendment already says of the recovery's.
 - The lane worktree and the bench worktree are removed through the normal procedure once the preservation above is verified, so the card's fence (app/src/, app/src-tauri/src/, app/test/) no longer reads as live against the app cards.
 
+Clarified by the owner on 2026-09-13, after the Codex orchestrator verified the archive and the evidence commit: the wake date 2026-09-20 is a RECONSIDERATION only; resumption still requires the design ruling the third amendment names AND a separate dispatch authorization, neither implied by the date.
+
 ## Implementation notes
 <!-- executor appends before finishing -->
 

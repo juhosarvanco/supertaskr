@@ -28,6 +28,10 @@ The role file's step 5b says each anchor matches its file EXACTLY ONCE and a blo
 - WHEN a block is refused for an ambiguous anchor THE merged tree SHALL be left byte-identical to the bench tip for that file, pinned by a body that compares the file against the bench tip after the refusal.
 - WHEN the verb's plan is printed THE correction step's line SHALL state both counts it measured, so a seat reading one line per step sees the anchor's ambiguity before the drill.
 
+## Standing procedure until this card lands (the owner's instruction of 2026-09-13, for both harnesses)
+
+After the merge verb stops, and before the seat drills or commits, the seat compares every file a mutant block names against the verified bench tip: `git diff <bench tip> HEAD -- <file>` for each such file MUST be empty, because the bench tip is the verified content. A non-empty diff means the correction step applied a block at a site other than the block's own (this card's finding); the seat restores the file from the bench tip (`git show <bench tip>:<file>`), re-runs the spec the block names, drills by hand at the site the verdict names, and records the restoration in the merge message. A block whose anchor matches more than one site is not handed to the verb's drill at all.
+
 ## Implementation notes
 
 ## Verdicts
