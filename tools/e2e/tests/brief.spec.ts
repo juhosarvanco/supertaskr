@@ -6541,6 +6541,26 @@ test("THE BOUNDED TIER IS REACHABLE FROM A CARD THIS TREE WOULD HOLD: the size i
   // that must survive: guard-class outranks every size, and a size that
   // bought a cheap bench for a guard would be this card making the tree
   // worse rather than better.
+  // THE FIRST CONDITION THE TIER TABLE NAMES IS THE SIZE, so it is
+  // controlled the same way as the rest: the SAME card, one field moved,
+  // at every other size this parser declares legal. Without this arm the
+  // chain above is equally green for a classifier that stopped reading
+  // size at all — the answer would still be `bounded`, and the card's
+  // whole claim is that the SIZE is what buys the cheapest tier.
+  // The sizes are taken from the parser's own vocabulary rather than
+  // typed, and the answer is pinned to one of the two real alternatives
+  // rather than to "not bounded", which a classifier returning nothing
+  // would also satisfy.
+  const others = [...parserPure.TASK_SIZES].filter((s) => s !== boundedSize);
+  expect(others.length, "this parser declares only one size, so there is no other size to move to").toBeGreaterThan(0);
+  for (const other of others) {
+    expect(
+      classifyTier({ ...asDispatched, size: other }).tier,
+      `the same card at size ${other} reached bounded too, so the size the tier table selects on ` +
+        "is not what bought the cheapest tier",
+    ).toMatch(/^(standard|guarded)$/);
+  }
+
   const guardPath = guardClassCandidates()[0] ?? "";
   expect(guardPath, "this tree exposes no guard-class file, so the override cannot be controlled").not.toBe("");
   expect(
