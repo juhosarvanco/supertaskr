@@ -25,6 +25,10 @@ The verb's counts step takes "the counts this merge's own runs read" from whatev
 - WHEN the merge's own runs produced a count over a DIFFERENT scope than the verdict's claim (a spec alone against a leg, or a range against the whole) THE counts step SHALL say the scopes differ and grade nothing, never call the count moved; WHEN the scopes are the same THE comparison SHALL stand as it is.
 - WHEN a body in merge.spec.ts plants a verdict claiming a leg's count beside a drill that ran one spec THE step SHALL pass with the scope difference named.
 
+## Amendment of 2026-09-13 — count-scope evidence (proposed by the Codex orchestrator's queue review of 2026-09-13, approved by the owner on 2026-09-13)
+
+Amendment proposed 2026-09-13 — count-scope evidence. The step distinguishes established same scope, established different scope and unknown scope. Scope is derived from the available execution selection and the verdict's stated measurement context, never inferred from the numeric count or a shared leg name alone. Established same-scope measurements keep the existing comparison and its refusal on a changed count; established different scopes are reported and not compared. Missing or unresolved scope is reported as not judged for lack of scope evidence, never as a demonstrated scope difference or a passed comparison. Bodies cover a same-scope mismatch, equal counts from different selected sets and missing scope evidence, in addition to the scoped-drill case. A count comparison that is not judged does not erase a failed required test or another merge refusal.
+
 ## Implementation notes
 <!-- executor appends before finishing -->
 

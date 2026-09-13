@@ -31,6 +31,10 @@ What was measured, 2026-09-13 (the seat's pre-dispatch read, after the T-312 inv
 - WHEN a test participant is instructed to find another's position THE demonstration SHALL record its search and its outcome as evidence, labelled evidence, never as proof of non-access.
 - WHEN the consultation is recorded THE room SHALL carry each position under its participant's id, model, harness and effort, the packet's digest, the mode and the guarantee each participant actually had, and the owner's ruling paraphrased when it comes; the method version SHALL bump with its release note and evaluation block.
 
+## Amendment of 2026-09-13 — failure after reveal (proposed by the Codex orchestrator's queue review of 2026-09-13, approved by the owner on 2026-09-13)
+
+Amendment proposed 2026-09-13 — failure after reveal. Once the successful participants' positions have been published, a failed participant is recorded absent unless its required independence profile can still be met by the demonstrated launch configuration. Supplying only the original packet does not establish non-access to positions already published in files or transcripts. Any later response without that guarantee is recorded separately as a follow-up with its actual context-separation limitation, never presented as a blind original position. A body covers failure followed by reveal under a configuration without enforced read isolation and records absence rather than claiming a blind retry. The verb validates each participant's required permission and independence profile before launching it; unavailable coverage is refused by name, not counted as a successful consultation.
+
 ## Implementation notes
 <!-- executor appends before finishing -->
 

@@ -55,6 +55,10 @@ pays.
   `--blocks-absent` does for an absent block — a kept spelling is news,
   never silence.
 
+## Amendment of 2026-09-13 — bounded fixture classification (proposed by the Codex orchestrator's queue review of 2026-09-13, approved by the owner on 2026-09-13)
+
+Amendment proposed 2026-09-13 — bounded fixture classification. At this review's base the integration checkout runs the merge arm, and no corresponding fixture classification exists for the secret, address, home or name checks. The new classifier permits only explicitly synthetic keeper-test inputs under a stated recognition rule; a spec filename, a fixture comment or placement in a test directory alone does not qualify a value. The exception is per matched value and class, so keeping one synthetic instance does not suppress another unclassified forbidden value on the same line or in the same fixture block. Bodies cover an allowed synthetic keeper fixture, the corresponding value outside that fixture context, an unrecognized near-match and a mixed allowed-and-forbidden case. The last three retain the applicable refusal, and each allowed exception is announced. The classifier does not claim to prove an arbitrary credential-shaped value harmless merely because it appears in a test.
+
 ## Implementation notes
 
 ## Verdicts

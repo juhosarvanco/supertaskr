@@ -50,6 +50,10 @@ prompt so the two lenses cannot drift.
   the Claude form alone.
 - The method eval gate SHALL run since method/ moves.
 
+## Amendment of 2026-09-13 — native interview delivery at the current stage (proposed by the Codex orchestrator's queue review of 2026-09-13, approved by the owner on 2026-09-13)
+
+Amendment proposed 2026-09-13 — native interview delivery at the current stage. This card delivers the native-harness interview over the existing canonical banks and project-file contract, preserving the shipped app behavior and adding no in-app steering conversation. Before dispatch, its delivery draft names the discoverable entry, every required pack file, the fresh-project installation or materialization path when the app is absent, and the exact corresponding implementation and test fence. A shipped mechanism used by that route is a landed prerequisite; an unlanded installer is not assumed available. A fresh-project body exercises the delivered entry and its actual referenced files outside the source checkout. The prompt-parity body checks the canonical interview source consumed by both paths, with a control that catches either path using a different source; harness-specific kickoff context is not required to be byte-identical. The interview always completes to files. Until T-243's external-open entry lands, it reports that limitation and gives the existing manual way to open the folder in the mirror; it does not print an unimplemented command. The automatic-open integration is rechecked when T-243 lands. The current skill-pack and honestly measured harness-coverage criteria remain. This is a scope decision, not a complete fence: the seat brings a concrete delivery-and-fence draft before this card is cut.
+
 ## Implementation notes
 <!-- executor appends before finishing -->
 

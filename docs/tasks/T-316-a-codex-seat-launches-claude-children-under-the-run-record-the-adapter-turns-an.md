@@ -28,6 +28,10 @@ The Claude CLI on this host runs headless with `-p`, `--output-format stream-jso
 - WHEN one card is dispatched by a Codex seat, built by a Claude child, verified by a Claude phase two and merged by the Codex seat THE closing check and push SHALL pass, and the records SHALL name the harness, model, effort and usage of each child.
 - WHEN the sitting ends THE Codex seat SHALL hand the seat back with work parked, in the packet form, and the receiving seat SHALL take it with the verb and recheck the live state before writing; the method version SHALL bump with its release note and evaluation block.
 
+## Amendment of 2026-09-13 — the Claude hook's demonstrated boundary (proposed by the Codex orchestrator's queue review of 2026-09-13, approved by the owner on 2026-09-13)
+
+Amendment proposed 2026-09-13 — the Claude hook's demonstrated boundary. The write-refusal criterion applies to the tool operations actually routed through the lane fence in the demonstrated launch configuration. Qualification records the resolved project configuration, hook source and lane manifest used by the headless child, and demonstrates an allowed in-fence write and a refused out-of-fence write through the actual child tool path. A missing, disabled or unjudging hook does not qualify that path, pinned by a negative control. The demonstration also probes an out-of-fence shell write and records whether that channel is judged; it does not generalize a tool-hook refusal into OS write confinement. The adapter refuses an assignment requiring a stronger boundary than the configuration establishes. The accepted procedural limitation for ordinary Claude tool use remains; no read-secrecy or tamper-proof-control guarantee is added.
+
 ## Implementation notes
 <!-- executor appends before finishing -->
 
