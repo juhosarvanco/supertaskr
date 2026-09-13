@@ -203,3 +203,343 @@ apply branch's, and this lane read the card's measurement as that.
 ## Verdicts
 
 Promoted 2026-09-13 (the architect seat's step-2 triage, under the owner's ruling of 2026-09-13 to run the regular ceremony without token or time limits; the Codex orchestrator's reconciliation review of the same day supported the order): to planned at priority 2 — the verb rewrote one line of verified code on main at the T-314 merge and the standing procedure is the seat's hand until this lands; dispatched after T-314-s6 and before the T-312 rerun.
+
+### 2026-09-14 — APPROVED WITH ASSIGNED CORRECTIONS — claude-opus-5@subagent
+
+The measured fault is closed on its own real input. I took the block the
+T-314 verdict actually committed — `correction: C3`, whose `old` is the
+three lines opening `if (!executable(site.hookFile)) {` and whose `new`
+is the same three with `!present(...)` — and ran it against the real
+blob `.claude/hooks/hook-install.mjs` at 88ca5166, through the reader
+this diff removes and through the reader it installs. The base reader
+**writes**: exactly one line moves, and it is the presence check the
+block was never about — `if (!present(site.hookFile)) {` becomes
+`if (!executable(site.hookFile)) {`, the exact line main lost.
+The tip's reader **refuses**, writes nothing, and prints
+`` `old` matches 1 site(s), `new` matches 1 site(s) ``. That is the card's
+whole subject reproduced and killed, not a miniature of it.
+
+Three criteria are met, and four corrections are assigned: two are
+wording repairs to statements this diff commits into living code that my
+own measurements contradict, and two are bodies committed on this bench
+after this verdict, each with a mutant block.
+
+#### The frame I actually had, and the seals
+
+The pass was TWO SPAWNS. Phase 1 held no tools, no diff and no notes; it
+wrote the attack set and the eighteen measurement requests from the card
+at the base alone. I am a fresh spawn: I hold tools, I read the diff and
+the specs before the executor's report, and I cannot return to phase 1's
+frame. Nothing executor-derived reached me above the line — the brief's
+duties section named no mutant count, no path count and no suite figure.
+
+- the attack set, sha256
+  `29d163a5fc1241b16510c7b630edab4b4bb8d4c5ca1624d3f3063a7f936d73f8`
+- the ground with the seat's addendum (M1 to M18), sha256
+  `72a8ecc449e69cd44f0a12290555ba77fd4123bd6779e51cce7c6f4f89b8f507`
+- the addendum's raw transcript beside it, sha256
+  `053e81696af65853eaee46fcebbb313fdd79738ecd61424f9ec70d270f7bda9c`
+- the card at the base 329041c5, sha256
+  `0817c7de2e11985e16e37cadbc51dd3f389f82bb8ab09cefb8d02bd629a96b0e`,
+  re-derived on this bench and equal.
+
+Every one of the eighteen measurements was taken. None came back "not
+taken", so no criterion below rests on unmeasured ground.
+
+#### The counts this verdict CLAIMS, which are the ones at the tree a merge grades
+
+This table is first on purpose. The reader that grades a merge's own runs
+against a verdict takes the FIRST count it finds beside each leg's name,
+and my two correction bodies move the e2e count off the tip I was sent —
+so the claim has to be the tree the merge will actually read, not the one
+I was handed, or the verb stops on a count that moved for no fault of the
+diff.
+
+| leg | bodies | measured |
+|---|---|---|
+| parser | 413 | unmoved by this verdict |
+| app | 1171 | unmoved by this verdict |
+| rust | 655 | unmoved by this verdict, over 18 targets |
+| e2e | 1085 | ade1b2de plus this verdict's two correction bodies, taken before either was committed |
+
+The e2e leg reads RED at that count until correction 3 is applied — 1
+failed, 1084 passed, and the one failure is correction 3's own body,
+which is the RED reading step 5b requires and is named as such below. The
+verb applies every correction BEFORE it regenerates or drills, so the
+merged tree's own e2e run is over the same 1085 bodies with none failing.
+
+#### The suites, whole, at the tip I was sent
+
+The guarded tier keeps the whole battery. All four legs at
+ade1b2dec9226258137f881f190b33aa88c9b797, on this bench, port 25295:
+the parser leg 413 bodies exit 0 GREEN; the app leg 1171 bodies exit 0
+GREEN; the rust leg 655 bodies over 18 targets exit 0 GREEN; the e2e leg
+1083 bodies exit 0 GREEN. Not one red, and nothing to attribute to a
+named intermittent.
+
+`tools/e2e/tests/merge.spec.ts` alone: 33 passed, and the two fenced
+files hash to `f4f57e19669d36905b91c212677cac14b675d75b95976bfb5650a73952696dc2`
+and `1e4534ef260775b262ba1b14d72dbaa55c25ea3976b655d74606e2f10209df36`,
+equal to the restore hashes the lane's notes publish — so the tree the
+lane drilled is the tree I graded.
+
+#### A row per acceptance criterion, with the reading that decided it
+
+| criterion | verdict | the reading that decided it |
+|---|---|---|
+| C1 and C2, the originals | SUPERSEDED, not graded | The card's two amendments of 2026-09-13 replace both in as many words; each is graded below under the text that supersedes it. C1's language survives only in "count both texts", which A1-1 carries. |
+| A1-1 — count both anchors in the block's file as it will be committed; act on `old` 1 / `new` 0 and `old` 0 / `new` 1; REFUSE every other arrangement by name before any write; the claim rests on the counts, never on the block's sentence | **MET**, with two corrections | `correctionFor` counts raw occurrences of both texts and branches on nothing else; the mask and its inference are gone. Driven, not read: my own run of the real T-314 block over the real 88ca5166 blob refuses where the base writes (above). The state table is pinned arm by arm at (1,0), (0,1), (0,0), (1,1), (2,1), (0,2) and on the idempotent re-run. My mutant V1 — the apply state widened to any `new`-once tree, which IS the masked reader — reds 2 bodies at 31 passed, so the guard was seen failing where it is absent. My mutant V3 — apply on `new` at two or more sites — reds a DIFFERENT single body, so neither refusal body's kill set contains the other. **Correction 1**: the step's comment gives a false reason for counting the working file. **Correction 3**: the counter walks past an overlapping site, so a `new` text matching twice can be counted once and written at the first. |
+| A2-1 — a refused block is written not at all, and the file is byte-identical to its state immediately before the step ran; the reference is the PRE-OPERATION state, never the bench tip; the control is that an applied block moves the hash | **MET** | The refusal branch returns before any `writeFileSync`, read off the diff. The body hashes `src/a.ts` on the runner's own plan line for `correction:1` and again after the run. I checked the boundary the card names rather than trusting it: the runner's loop is `printStep(out, step); const code = runStep(step, stepIo);`, so that plan line is printed immediately before that step runs and the hash is genuinely pre-operation, not pre-verb. My mutant V2 — the refusal branch made to write before returning — reds EXACTLY the byte-identity assertion, 1 failed / 32 passed: the pin is isolated. The control arm is a distinct fixture and a distinct invocation, and requires the hash to MOVE. My DATA mutant V5 — the ambiguous fixture disarmed by deleting the second site the block's `new` text matched — reds the refusal body alone, which is what separates "refused because ambiguous" from "refused, full stop". |
+| A2-2 — the standing comparison reads the index and the working tree separately, because one `git diff <bench tip> -- <file>` answers empty while a wrong line sits staged; the evidence covers a staged-only corruption and a legitimate integration difference that survives unchanged | **MET**, with a residual | Delivered as executable evidence inside the fence, which is what I pre-committed to demand: a real git fixture takes all three readings and requires the single spelling to answer the empty string while `--cached` names the line. That negative control is the only thing that makes the criterion non-vacuous and it is OBSERVED, not asserted. The second half carries both a wrong staged line and an authorized integration change, and requires the whole-file restore to lose the authorized change while the site-scoped one keeps it. Residual, recorded as a finding and not a correction: the fixture is a clean checkout rather than an in-progress merge, and the criterion's scenario is a staged merge — measurement M11 took the same three readings inside a real in-progress merge with MERGE_HEAD standing and got the same three answers, so the property holds on measured ground the body does not itself carry. |
+| C3 — the correction step's line states both counts it measured, so a seat reading one line per step sees the ambiguity before the drill | **MET**, in the only coherent reading | I pre-committed that this sentence is degenerate as written and that I would accept it only with a single-measurement binding pinned by fixtures with DIFFERENT count pairs. Both are here. One `CorrectionCounts` object is measured once in `correctionFor`, spread onto all three answers, and printed through one `correctionCountsLine` — the number printed IS the number branched on, and there is no second measurement to disagree with the first. All three outcomes print it, applied as well as refused, which is the "counts only on refusal" attack refuted. My mutant V4 — `correctionCountsLine` returning the ambiguous pair as a CONSTANT — reds 3 bodies at 30 passed, because four distinct pairs are asserted; a constant or a placeholder cannot pass. The literal "when the plan is printed" cannot be satisfied by any implementation: the plan is printed before any step runs, so the counts do not exist yet. The step's own run line is the only place they can be, and it is before the drill, which is the sentence's stated purpose. |
+
+#### The pre-commitments from the attack set, honoured one by one
+
+- **D1, C3 degenerate as written.** Resolved in the diff's favour on the
+  single-measurement binding and the differing fixtures, above.
+- **D2, A2-2 might be out of fence or delivered as prose.** It is neither:
+  a git-fixture body inside `tools/e2e/tests/merge.spec.ts`. The preflight
+  at the base answered 0 criteria naming a path the fence does not reserve
+  (M10), so the suspicion was mine and the tree refutes it.
+- **D3, the `old`/`new` direction might be inverted.** Measurement M3
+  settled it before the diff: the base step writes `old` where the tree
+  carries `new`, and the diff keeps that direction. I pinned it myself
+  rather than take the label's word — a block with `old: "GOOD"`,
+  `new: "BAD"` over `"p\nBAD\nq\n"` returns `"p\nGOOD\nq\n"`. The
+  card's amendment and the code agree, and my pre-commitment to report a
+  card defect if they had not is discharged unused.
+- **D4, "as it will be committed" is under-determined.** Upheld, and it
+  is correction 1 and correction 2 below. The diff names ONE content and
+  it is the working file; the content a commit takes is the index. They
+  agree at the correction step for a reason the diff does not name.
+
+#### The attacks that failed, which is most of them
+
+`$&`, `$1` and `$'` inside a block's `old` are written literally — the
+apply uses a FUNCTION replacement, and I drove a block whose `old` is
+`X$&Y$1Z$'` through it to see the literal come out. No regex is built
+from block text, so the metacharacter and ReDoS attacks have no surface.
+`old === new` is refused twice over, at the reader and again by the
+counts. An empty `new` cannot reach a write. A second site differing by
+indentation or by CRLF is counted as its own site and refused, so the
+byte-exactness attack turns out to defend rather than expose. Counts are
+taken inside the step, per step, from a fresh read, so the stale-counts
+and TOCTOU attacks find nothing. "Refused by name" is not cosmetic: the
+step returns `EXIT.FOUND`, the runner stops the verb, and the body
+asserts the ledger exit and `stopped at correction:1` rather than a log
+line. The guard is not off the real path — one body drives `mergeMain`
+end to end, and my V1 and V5 mutants both land through it. The refusal
+is a named return, not a throw, so the plan line survives it.
+
+#### The drills I ran myself, each restored and the restoration proved
+
+Aiming stated, landing read from `git diff` and from the planter's own
+refusal to plant a non-unique anchor, never from a mutator's report. All
+at ade1b2de; after every one, `tools/e2e/scripts/merge.mjs` hashes back
+to `f4f57e19…96dc2` and `tools/e2e/tests/merge.spec.ts` to
+`1e4534ef…09df36`.
+
+| # | mutant, and where it is aimed | reading | what it proves |
+|---|---|---|---|
+| V1 | the apply state widened to `counts.newSites === 1` — the masked reader's own answer restored, at the state table | 2 failed, 31 passed | the positive control on the guard, SEEN red where the property is absent |
+| V2 | the refusal branch writes before it returns, at the no-write site | 1 failed, 32 passed | A2-1's hash pin is isolated to exactly that assertion |
+| V3 | apply when `new` matches two or more sites, at the state table | 1 failed, 32 passed | the two refusal bodies' kill sets are disjoint; neither contains the other |
+| V4 | `correctionCountsLine` returns the ambiguous pair as a constant, at the one spelling | 3 failed, 30 passed | C3 survives no constant; four distinct pairs are asserted |
+| V5 | DATA — the ambiguous fixture disarmed: the second site the block's `new` text matched is deleted | 1 failed, 32 passed | the refusal is caused by the ambiguity, not by an implementation that refuses everything |
+| V7 | the correction step writes but does not STAGE, at the `git add` | 1 failed beyond the correction-3 body, 33 passed | correction 2's body bites, and bites alone |
+
+#### The security sweep, concrete to what this diff changes
+
+No new input path, no new endpoint, no new dependency, no secret. The
+diff adds no subprocess: the one `git` call in the step is the
+pre-existing `spawnSync` in array form with a `--` separator, so no
+shell string exists to inject into and a path beginning with `-` cannot
+be read as a flag. A block's `file` is validated at the read, which
+refuses a path escaping the root, so the step's `path.join` cannot be
+walked out of the tree. Nothing is built into a regex, so neither a
+metacharacter nor a catastrophic pattern reaches a matcher. The refusal
+line prints the block's own repo-relative path and no file content, so
+it cannot carry a home path into a merge message and stop a later push
+at the forbidden-spelling keeper. Both new fixtures build under
+`os.tmpdir()` and tear down through `removeGitFixture`; neither runs
+`git` in a live checkout, and the one that sets an identity uses
+`fixture@example.invalid`, which the suite already carries. A malformed
+block still cannot reach this function at all. Nothing here is
+REJECTED-level.
+
+#### Adjacent features, checked rather than assumed
+
+The apply branch now runs only where `old` was absent and lands it once,
+so the tree `plantMutant` meets carries the `old` anchor exactly once —
+the precondition it refuses to proceed without is strengthened, not
+weakened. The `already` branch narrows: a tree carrying `old` at two
+sites with `new` absent used to be waved through as "already" and would
+then have been refused one step later by the drill; it is now refused at
+the step, which moves the same answer earlier and loses nothing. The
+usage text and the step title moved, and no body pinned either verbatim
+— the whole e2e leg is green at 1083 bodies. `correctionSteps`,
+`assignsCorrections`, `drillSteps` and the message writer are untouched
+in shape.
+
+#### The findings that are not corrections
+
+1. **The substring retreat is real, argued, and costs the seat hand
+   work.** Where a block's `new` text is a substring of its own `old` — a
+   clause deleted, a guard dropped — an already-corrected tree carries
+   both, which is now a refusal. Its idempotent re-run is therefore
+   refused too, so "run it twice, write once" holds for ordinary blocks
+   and not for overlapping ones. The card's amendment orders exactly this
+   and the lane argues it in the body and in the notes rather than hiding
+   it, which is the right handling; I record it so the next seat to meet
+   a refused block knows it may be honest. I file **T-295-s11** for the
+   remedy the lane proposed and did not file.
+2. **A2-2's body is a clean checkout, not an in-progress merge.** Graded
+   MET above on M11's measured ground. Worth a body some day; not worth a
+   correction, because the reading it would add has already been taken.
+3. **The card's own central figures are off, and the record stands.** The
+   card says the `old` text occurs at TWO sites in
+   `.claude/hooks/hook-install.mjs` at 88ca5166 and the `new` text at
+   one. Measured: the block's three-line `old` occurs ONCE and its
+   three-line `new` ONCE (M15 says the same, and my own run over the real
+   blob confirms it — it is the single-line needle that occurs twice,
+   because the two-space form is a substring of a four-space line). The
+   card's narrative also attributes the damage to the "already carries"
+   line when the branch that did it is the apply branch. The lane found
+   the second half and said so; the first half is correction 4 below,
+   because the lane copied the wrong figure into living code.
+
+#### The assigned corrections
+
+Four corrections, two mutant blocks. Corrections 1 and 4 are wording
+repairs to statements about measurements: **each pins no property and
+owes no block, and I say so here in as many words** so the shortfall
+between four corrections and two blocks is not read as two bodies nobody
+wrote. Corrections 2 and 3 are bodies committed on this bench in the
+commit after this verdict, in `tools/e2e/tests/merge.spec.ts`, each run
+both ways before it was committed.
+
+**Correction 1 — the step's comment gives a FALSE reason for counting
+the working file, and the true reason is worth naming.** Not blocking.
+The comment above the read in `applyCorrectionStep` says "the merge is
+staged and the working copy is what the commit takes". A commit takes
+the INDEX, never the working tree, and the card's own later amendment
+exists precisely because a wrong line can sit staged under a clean
+working file. The counts are nevertheless taken on the committed content
+— but for a reason the diff never states: the verb's own
+`precondition:clean` step refuses to merge onto a dirty tree, so the
+index and the working tree agree before the merge, and every step that
+writes between there and here also stages what it wrote. Replace the
+false claim with that one. The invariant it names is what correction 2
+pins.
+
+**Correction 2 — the invariant the counts rest on is asserted by
+nobody, and now is.** Committed on this bench after this verdict, in
+`tools/e2e/tests/merge.spec.ts`. The body drives the whole verb on a
+fixture and reads the INDEX straight — `git show :src/a.ts` — requiring
+the staged content to carry the correction, and requiring `git diff
+--name-only -- src/a.ts` to be empty, so that what the step counted on
+disk is what the commit would take. Read **RED** against an
+implementation lacking the property — the step's `git add` replaced by a
+`git status --porcelain` that stages nothing and still exits 0 — at 1
+failed beyond the correction-3 body / 33 passed, failing on `the STAGED
+content carries the correction`; and **GREEN** against the implementation
+carrying it, in the 35-passed run. Note for the drill: this block is in
+the already-applied state, so nothing is written for it and the drill is
+what grades it.
+
+**Correction 3 — the counter walks past an overlapping site, so a text
+matching TWO sites can be counted as one and written at the first.**
+Committed on this bench after this verdict, in
+`tools/e2e/tests/merge.spec.ts`. `occurrences` advances by the needle's
+own length, so a needle whose prefix is also its suffix is counted low:
+`occurrences("YYY", "YY")` answers 1 where the text carries two sites.
+A block with `old: "XX"`, `new: "YY"` over `"zz YYY zz"` is therefore
+read as `old` 0 / `new` 1 — an actionable state — and applied, leaving
+`"zz XXY zz"`. That is this card's whole subject reached through the
+counter rather than through the state table, and the card says in as many
+words that the safety claim rests on the counts. I measured the size of
+it rather than assert it: over all 56 mutant blocks committed under
+`docs/tasks`, one block already carries anchors that self-overlap, and
+across every block against its live file the two strides disagree ZERO
+times today — so this is a latent hardening, not a live fault, and it is
+assigned rather than rejected for that reason. The fix strides by one,
+which can only ever raise a count; every caller of this function —
+`plantMutant`'s anchor, `plantMutant`'s back-check and `bumpOne`'s stamp
+anchor — asks "exactly once", so no caller can be weakened by it. Read
+**RED** against the implementation lacking the property, which is the
+tip as it stands, at 1 failed / 34 passed, failing on `three Ys carry two
+overlapping YY sites`; and **GREEN** against one carrying it at 35
+passed, with the whole file's other 33 bodies green under the change.
+
+**Correction 4 — the "TWO sites" figure is copied from the card into
+living code, and it is wrong.** Not blocking. Three places now state that
+at the T-314 merge the block's `old` text matched
+`.claude/hooks/hook-install.mjs` at TWO sites and its `new` text at ONE:
+the doc comment above `correctionFor`, the comment opening the rewritten
+refusal body, and the criterion-by-criterion paragraph of the
+implementation notes. Measured against the real blob at 88ca5166 with
+the real block, both three-line texts match exactly ONCE, and the
+arrangement that cost main a line is one-of-each — which is the same
+arrangement the lane's own ambiguous fixture builds and the same one its
+body asserts as `` `old` matches 1 site(s), `new` matches 1 site(s) ``.
+The prose contradicts the body beside it. Restate all three as one site
+each, and keep the two-site case where it belongs: as the further
+arrangement the state table also refuses, which the body already covers
+at (2,1). The card's own "What was measured" section is the RECORD and is
+not rewritten; this verdict corrects it.
+
+```mutant
+correction: correction 2 — the invariant the counts rest on is asserted by nobody
+file: tools/e2e/scripts/merge.mjs
+spec: tools/e2e/tests/merge.spec.ts
+body: what the correction step WROTE is also STAGED, so the working file it counted IS the content the commit will take
+message: the STAGED content carries the correction
+--- old
+  const added = spawnSync("git", ["-C", io.projectRoot, "add", "--", block.file], { encoding: "utf8" });
+--- new
+  const added = spawnSync("git", ["-C", io.projectRoot, "status", "--porcelain", "--", block.file], { encoding: "utf8" });
+```
+
+```mutant
+correction: correction 3 — the counter walks past an overlapping site
+file: tools/e2e/scripts/merge.mjs
+spec: tools/e2e/tests/merge.spec.ts
+body: the counter counts OVERLAPPING sites, so an anchor whose prefix is also its suffix names TWO sites and is refused
+message: three Ys carry two overlapping YY sites
+--- old
+    // STRIDE BY ONE, never by the needle's length (T-295-s9): a needle
+    // whose prefix is also its suffix matches at OVERLAPPING positions,
+    // and a stride of `needle.length` walks past the second one and
+    // reports ONE site where the text names two. Every caller of this
+    // function asks "exactly once", so a count that is low by one is a
+    // write at a site nobody named.
+    at = haystack.indexOf(needle, at + 1)
+--- new
+    at = haystack.indexOf(needle, at + needle.length)
+```
+
+I checked both anchors with the very function under test before writing
+them here: in `tools/e2e/scripts/merge.mjs` at this bench, correction 2's
+`old` matches 1 and its `new` 0 — the already-applied state, nothing
+written; correction 3's `old` matches 0 and its `new` 1 — the owed state,
+applied at that one site. Neither is an arrangement this card's own step
+refuses, and neither anchor matches twice.
+
+#### The order the merge owes these two blocks
+
+Correction 3's block is APPLIED and correction 2's is ALREADY, so both
+are actionable and the verb's own step will say so on its line. The
+corrections all run before any drill, which the plan already guarantees,
+and that order matters here: correction 3's body is RED until correction
+3 is applied, so a drill of correction 2's block taken before correction
+3 is applied would red two bodies and be refused as a mutant that reds
+more than its own body. In the verb's own order it reds exactly one.
+
+#### The census, which this verdict makes staler
+
+`npm run capabilities:check` from `tools/e2e` answers STALE at the tip I
+was sent — committed 100241 bytes against a fresh 100538 — because the
+lane renamed one body and added two. My own two bodies add to that. The
+lane REPORTS it and the integrator regenerates `docs/CAPABILITIES.md`
+and `docs/INDEX.md` in the merge commit, which is the convention
+`docs/CONVENTIONS.md` publishes and not a defect of this diff.
