@@ -4,13 +4,14 @@ title: "The bounded tier is UNREACHABLE: the classifier selects it on size XS an
 feature: F-04
 milestone: 4
 size: S
+tier: guarded
 priority: 1
-status: planned
+status: building
 suggested_by: "executor claude-opus-5@subagent @T-298, measured at 885153d11a92a913382e0da2032982c21b6e0e0f, 2026-09-11"
 blocked_by: []
 touches: [lib/parser/src/types.ts, lib/parser/test/task.test.ts, method/tasks/TASK-FORMAT.md, tools/e2e/tests/brief.spec.ts]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
