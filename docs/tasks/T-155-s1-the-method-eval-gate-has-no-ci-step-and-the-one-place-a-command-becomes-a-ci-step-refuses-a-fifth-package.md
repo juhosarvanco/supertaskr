@@ -3,7 +3,7 @@ id: T-155-s1
 title: The method eval gate has no CI step, and the one place a command becomes a CI step refuses a fifth package
 feature: F-01
 milestone: 4
-priority: 9
+priority: 2
 size: M
 status: planned
 blocked_by: []
@@ -15,6 +15,8 @@ built_by:
 verified_by:
 review:
 ---
+
+Absorbs: T-307-s1 (2026-09-13, pile 2 batch 2, the owner's approval of 2026-09-13). The sibling's file is removed in the same commit as this line. This card carried no canonical criteria section until this commit; the section below is derived from its own prose and its three absorbed lines (T-155-s2, s3, s7), nothing invented, then the sibling's obligations tagged with their source. Priority 9 becomes 2, the sibling's. One decision is reserved for before dispatch: the execution arrangement for the workflow file's edit.
 
 **PROMOTED at the first standing triage, 2026-08-30, as the OWNER OF ITS CLASS: `tools/method-evals` is absent from every hand-maintained enumeration of this repository's trees.**
 
@@ -98,3 +100,69 @@ a nondeterministic process, and its cadence is a method version bump —
 CONVENTIONS' first gotcha carries that obligation. A per-commit
 model-in-loop set is the ritual-with-extra-steps T-155's own card warns
 about.
+
+## Acceptance criteria
+
+- WHEN the method-eval commands are documented THE card SHALL record the reconciliation between the existing repo-root invocation and the proposed package-relative invocation before editing either; the Build & test entry, METHOD EVAL GATE instructions and CI SHALL consistently use the selected command-and-working-directory contract for both the model-free run and its selftest. The card SHALL identify the selected spelling and working directory. (from T-155-s1's own reconciliation paragraph, in the review's words)
+- WHEN workflow parity is derived THE spec's package/command inventory SHALL include the method-eval suite and both selected invocations, with parity checked in BOTH directions between the documented commands and ci.yml. (from T-155-s1, in the review's words)
+- WHEN CI runs THE model-free evals SHALL run as an early step ahead of every `npm ci`, the selftest FIRST as the positive control (a suite whose checks went vacuous reports the same green as an intact one), the zero-install property measured rather than assumed; the model-in-loop set SHALL NOT be wired into CI. (from T-155-s1; T-307-s1's CI half)
+- WHEN the token lint and the typecheck run THE suite SHALL be inside the token lint's corpus (`TOKEN_ROOTS`, `MUST_TOKEN_COVER`) and inside a typechecked program, without breaking the zero-install property the CI placement depends on. (absorbed T-155-s2, carried)
+- WHEN ARCHITECTURE's code-layout bullet enumerates the trees THE method eval suite SHALL be among them. (absorbed T-155-s3, carried)
+- WHEN the docs gate derives its readers THE suite's readers of the governing documents SHALL be visible to it (docs-scan's SUITES and READERS). (absorbed T-155-s7, carried)
+- WHEN the METHOD EVAL GATE decides whether to run THE trigger SHALL be derived from the eval corpus's own declared `reads`, never a hand-kept list of directories beside the corpus, so that a docs-only commit touching docs/rooms/ runs MF-11 and the next eval added is in the trigger without anyone editing it; a body degrades a copy of the declaration and requires the trigger to move. (absorbed from T-307-s1)
+- BEFORE dispatch THE execution arrangement for the workflow file's edit SHALL be recorded on this card (the harness refuses a subagent's write under .github/workflows/; the one prior seat edit was a one-merge ruling, not a standing permission). (the reserved decision)
+
+## Absorbed from T-307-s1 — The METHOD EVAL GATE fires on a method/** diff, but the eval that holds the room-entry rule reads docs/rooms/ — a room entry lands in a docs-only commit and the eval that would refuse it never runs (kept whole)
+
+Title as filed: "The METHOD EVAL GATE fires on a method/** diff, but the eval that holds the room-entry rule reads docs/rooms/ — a room entry lands in a docs-only commit and the eval that would refuse it never runs"
+
+Filed as: status suggested, priority 2, size S, touches [docs/CONVENTIONS.md, .github/workflows/ci.yml, tools/e2e/scripts/ci-owed.mjs], wake None, suggested_by "executor claude-opus-5@subagent @T-307, measured at a00acf00bf6000d646c96218986032b599c2159c, 2026-09-10".
+
+### The finding, measured at `a00acf00bf6000d646c96218986032b599c2159c` (T-307-s1)
+
+T-307 added MF-11 to the method eval corpus: it reads every room entry
+dated on or after the rule's floor and refuses one that quotes the
+owner's message or names a person. Its SUBJECT is `docs/rooms/**`. The
+gate that runs it fires on something else.
+
+- docs/CONVENTIONS.md's METHOD EVAL GATE bullet: the trigger is a merge
+  whose diff touches `method/**`, or one that adds a line matching the
+  citation grammar under `docs/tasks/`.
+- `.github/workflows/ci.yml` at this ref runs no method-eval step at
+  all — derived by grepping the workflow for the runner's one spelling,
+  which returns nothing — so the gate is a hand run at a merge.
+- `tools/e2e/scripts/ci-owed.mjs` names four suites, and none of them is
+  the method eval set.
+
+So the ordinary way a room entry arrives — a seat appends to a room and
+commits under `docs/`, with nothing under `method/` in the diff — is
+exactly the case in which nothing runs MF-11. The eval is real, its
+positive control is real, and the entry it exists to refuse can reach
+main without it ever being asked.
+
+### Why it was not fixed in T-307 (T-307-s1)
+
+Every one of the three files above is outside that card's fence, and
+docs/CONVENTIONS.md was held by a live lane beside it (T-295). T-307's
+own criterion 4 already routes its one CONVENTIONS line to the
+integrator at the merge; widening a standing gate's trigger is a
+different write and wants its own card.
+
+### The shape that would work (T-307-s1)
+
+Widen the METHOD EVAL GATE's trigger to name the eval corpus's declared
+`reads`, rather than one directory: every model-free eval already
+declares the paths it depends on, so the trigger can be derived from the
+corpus instead of restated beside it — the same move the DOCS GATE makes
+when it derives its readers rather than listing them. A CI step is the
+cheaper half and buys the whole tree rather than the merge: the runner
+needs no install (the suite reads no `node_modules`), so it can sit
+beside the token lint as an early step.
+
+The trap to avoid: adding `docs/rooms/**` to the trigger by hand. That
+is a second list of what the evals read, and the next eval added to the
+corpus will not be in it.
+
+## Implementation notes
+
+## Verdicts
