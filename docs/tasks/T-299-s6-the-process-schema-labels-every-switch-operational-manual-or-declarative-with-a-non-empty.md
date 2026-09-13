@@ -6,7 +6,7 @@ milestone: 4
 size: S
 tier: guarded
 priority: 2
-status: building
+status: verifying
 suggested_by: "the recovery candidate of 2026-09-11 carried these labels inside an expanded T-301; the owner ruled on 2026-09-12 that the app is a mirror first and that the pieces of that candidate return as small cards; the Codex orchestrator's review of 2026-09-12 on evidence for operational labels"
 blocked_by: [T-317, T-300-s6]
 touches: [method/runtime/process-schema.yaml, lib/parser/src/process-settings.ts, lib/parser/test/process-settings.test.ts, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/scripts/settings.mjs, tools/e2e/tests/cli.spec.ts, docs/reference/15-settings.md, docs/CONVENTIONS.md]
