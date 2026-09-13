@@ -32,6 +32,14 @@ On 2026-09-13 the seat's ledger records sixteen answers from the owner, four of 
 
 On 2026-09-13, shown a proposed repair window with token ceilings, a coordinator allowance and an expiry, the owner ruled that this project's own loop runs without token or time limits and keeps its regular ceremony: the standing authorization, one lane at a time, the seat proposing and the owner approving. This card therefore stays suggested as product direction — a window with ceilings is a choice a user makes in their own project through the template's per-provider constraints (T-318), never this loop's instrument — and its promotion needs the owner's separate ruling.
 
+## Attribution correction of 2026-09-13
+
+The suggested_by field says this card was filed on the owner's ruling. It was not: the filing was the seat's own step-2 act on the Codex orchestrator's recommendation of 2026-09-13, which the owner relayed without ruling on it; the owner's rulings of that day concern limits and the ceremony, not this filing. The field's clause is withdrawn by this line and the field is left as written, because a record is appended and never rewritten.
+
+## Amendment of 2026-09-13 — ceilings and expiry are optional; a window is first a set of cards approved once (the Codex orchestrator's review of the filed cards, 2026-09-13)
+
+This section supersedes the ceilings and runtime clauses of the criterion that names the record's fields, and the reading of the owner's ruling in the note of 2026-09-13; everything else stands. A window's required fields are the outcome, the coordinator, the model settings by reference to the runtime template's roles, the eligible cards at their approved revisions, and the attempt rule (one build; a REJECTED verdict returns to the owner, unless the record says otherwise). Numeric ceilings per provider and account and an expiry instant are OPTIONAL fields, each ceiling labelled enforced, advisory or unknown when present; the refusals on a ceiling and on expiry exist only for a window that carries one, and a window without them stands until a dated revocation. The owner's ruling of 2026-09-13 declined token and time limits for this project's own loop; whether the owner also wants a window without limits — one yes for a set of cards, the arm refusing a dispatch outside the set — is a separate choice that ruling did not make, and this card keeps it open. The standing authorization of 2026-09-12 and the delegated lane order are such a window today, held in the seat's ledger and in chat rather than in a record the arm reads.
+
 ## Implementation notes
 
 ## Verdicts

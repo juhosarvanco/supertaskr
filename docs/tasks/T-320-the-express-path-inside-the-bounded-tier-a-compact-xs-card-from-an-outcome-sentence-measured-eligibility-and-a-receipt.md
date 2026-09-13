@@ -7,7 +7,7 @@ size: M
 priority: 2
 status: suggested
 suggested_by: "the architect seat on 2026-09-13, from the Codex orchestrator's lean-delivery plan v2 and its reconciliation review of the same day, filed on the owner's ruling; filing authorizes no development"
-blocked_by: [T-298-s3, T-319]
+blocked_by: [T-298-s3]
 touches: [tools/e2e/scripts/brief.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/card-preflight.mjs, tools/e2e/scripts/run-record.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/card-preflight.spec.ts, tools/e2e/tests/run-record.spec.ts, method/tasks/TASK-FORMAT.md, method/roles/orchestrator.md, docs/CONVENTIONS.md]
 builder:
 verifier:
@@ -33,6 +33,14 @@ On 2026-09-13 a change of half a minute to three minutes of editing (a one-line 
 ## Note of 2026-09-13 — the window dependency follows T-319's fate
 
 The owner ruled on 2026-09-13 that this project's own loop runs without token or time limits under its regular ceremony (see T-319's note of the same day). The criterion that ties a compact card to an active window follows T-319: where no window class is wanted, the express path's authorization is the regular ceremony's dispatch approval, and that substitution is a re-triage item for the owner before this card is promoted, not a rewrite of the card.
+
+## Attribution correction of 2026-09-13
+
+The suggested_by field says this card was filed on the owner's ruling. It was not: the filing was the seat's own step-2 act on the Codex orchestrator's recommendation of 2026-09-13, which the owner relayed without ruling on it; the owner's rulings of that day concern limits and the ceremony, not this filing. The field's clause is withdrawn by this line and the field is left as written, because a record is appended and never rewritten.
+
+## Amendment of 2026-09-13 — the express path does not depend on the window mechanism (the Codex orchestrator's review of the filed cards, 2026-09-13)
+
+This section supersedes the window clause of the criterion that creates the compact card, the blocked_by entry on T-319 (now T-298-s3 alone, changed with this line) and the note of 2026-09-13; everything else stands. The compact card is created under the ordinary dispatch approval — the orchestrator's step 5 as the owner practises it, the standing authorization of 2026-09-12 included — and, where a window record exists and names it or the card it corrects, under the window; neither is a precondition of the other, and an optional budget control never blocks the fast path. The launch criterion's model-only route, with effort recorded as not configured, is an intermediate step: it completes no configurable effort, which stays with T-318 and its excluded launch follow-up.
 
 ## Implementation notes
 

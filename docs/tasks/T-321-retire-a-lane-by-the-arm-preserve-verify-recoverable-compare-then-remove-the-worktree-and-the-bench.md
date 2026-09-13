@@ -28,6 +28,16 @@ On 2026-09-13 the owner parked T-301 and ruled that its unfinished candidate be 
 - WHEN every check passes THE verb SHALL remove the worktree and the bench, keep the lane branch and the evidence ref, and write a receipt into the archive directory and to its stdout naming the surviving refs and their tips, the archive path, the manifest's hash and the checks it ran, so that a fresh seat resumes from the receipt without reconstructing the procedure; the receipt SHALL name the retirement authorization the verb ran under (the card's parked status with its dated ruling line, or an owner's ruling named by date), and a lane without one SHALL be refused, pinned by a body.
 - WHEN this card lands THE conventions SHALL carry the verb's spelling once at the loop's section and SHALL name the seat's hand procedure of 2026-09-13 as retired by it.
 
+## Attribution correction of 2026-09-13
+
+The suggested_by field says this card was filed on the owner's ruling for a later window. It was not: the filing was the seat's own step-2 act on the Codex orchestrator's recommendation of 2026-09-13, which the owner relayed without ruling on it; the owner's rulings of that day concern limits and the ceremony, not this filing. The field's clause is withdrawn by this line and the field is left as written, because a record is appended and never rewritten.
+
+## Amendment of 2026-09-13 — the bench's own commits and the verifier-only material survive the removal (the Codex orchestrator's review of the filed cards, 2026-09-13)
+
+This section adds to the capture and removal criteria; everything else stands.
+
+- WHEN the lane has a bench THE verb SHALL, before any removal, put the bench's unique commits — the bench tip and every commit it carries beyond the lane tip: verdicts, corrections, cards the verifier filed — on an evidence ref of their own, SHALL preserve the bench's verifier-only material (the reviews directory and the verifier's scratch the ground names) into a verifier-only archive at a path the invocation names separately, never into the executor-readable archive, with its own manifest and restore-and-hash check, and SHALL refuse the bench's removal by name when either is missing; the receipt names both, and the role boundary survives the handoff — an executor is handed the lane's archive and the evidence refs, never the verifier-only archive. Pinned by bodies: a bench with commits beyond the lane tip whose removal is attempted without the evidence ref (refused); a planted verifier-only file that must be absent from the lane archive and present in the verifier-only archive; the restore-and-hash of the verifier-only archive.
+
 ## Implementation notes
 
 ## Verdicts
