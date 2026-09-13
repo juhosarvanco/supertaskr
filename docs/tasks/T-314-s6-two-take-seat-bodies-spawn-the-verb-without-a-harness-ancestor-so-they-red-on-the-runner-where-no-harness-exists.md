@@ -6,7 +6,7 @@ milestone: 4
 size: S
 tier: standard
 priority: 1
-status: building
+status: verifying
 suggested_by: "the architect seat, reading CI run 34772159066 on 2026-09-13"
 blocked_by: []
 touches: [tools/e2e/tests/push-guard.spec.ts, tools/e2e/tests/card-preflight.spec.ts, tools/e2e/tests/fake-harness.ts]
