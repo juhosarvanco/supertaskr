@@ -48,6 +48,10 @@ This section supersedes the record's field list in the criteria above and the ea
 - WHEN the mode or its grant changes THE change SHALL be a dated append to the record, proposed verbatim and approved by the owner as any decision entry is (T-307), and the arm SHALL read the newest dated state, pinned by a body that appends a pause after a standing grant and requires the refusal.
 - WHEN the arm reports the mode THE report SHALL name the mode, the grant's date and giver, the named card where one applies, and what the arm cannot check (scope interpretation, an unreported integrity problem), so that a mode is never mistaken for a guarantee about the work.
 
+## Amendment of 2026-09-13, later the same evening — the standing mode names its scope (the owner's ruling on leaving the computer)
+
+Adds to the amendment above; everything else stands. The owner's case: away for hours, a lane is rejected or a CI run reds, and the fix must not wait. So the standing grant carries a SCOPE with two values — the listed cards only, or the listed cards and the repairs the work produces: a fix card a lane's failure or a CI red files (priority 1, inside the standing order at the point the failure occurred), the re-entry of a rejected lane, and an express fix where the bounded tier is reachable (T-298-s3, T-320). WHEN the scope is listed-plus-repairs THE arm SHALL dispatch such a repair without a further approval and SHALL record on the repair card the failure it repairs, pinned by a body; WHEN a decision the mode does not cover arises — a room or decision entry that must be shown, a product-scope or design decision — THE coordinator SHALL park it and continue every lane that does not depend on it, and the pause SHALL apply only to that decision, pinned by a body that parks one decision and requires the next unrelated dispatch to proceed.
+
 ## Implementation notes
 
 ## Verdicts
