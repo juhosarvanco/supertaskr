@@ -101,7 +101,7 @@ elapsed label is display-only; no telemetry (NORTH_STAR non-goal).
 
 Title as filed: "The adapter's minimum version reaches the frontend through nothing, so the notice can refuse to transcribe it and cannot name it either"
 
-Filed as: status parked, priority None, size None, touches None, wake None, suggested_by executor claude-opus-5 @T-107.
+Filed as (the pre-rename identifier in the copied text is spelled "the product" or "the pre-rename identifier" here, on the living-text rule; the original wording is in the removed file's history): status parked, priority None, size None, touches None, wake None, suggested_by executor claude-opus-5 @T-107.
 
 **T-107's criterion 3 says `CLAUDE_V1.min_major` is the authority and a
 notice hard-coding "2" is a second implementation (T-057). It is right,
@@ -124,7 +124,7 @@ Derived at `c4c15c8`, from both ends:
 **SO T-107 SHIPPED THE ONLY HONEST SENTENCE AVAILABLE** — "older than
 this app can drive" — which is exactly what this side can derive from
 the type, and it deliberately does not say "2". **THE CARD'S OWN
-SUGGESTED SHAPE-2 WORDING CANNOT BE TAKEN AS WRITTEN**: it reads *"nputer
+SUGGESTED SHAPE-2 WORDING CANNOT BE TAKEN AS WRITTEN**: it reads *"the pre-rename identifier
 needs claude 2 or newer; update it however you installed it"*, and that
 first clause is precisely the transcription its own criterion 3 forbids.
 That contradiction is recorded on the card's implementation notes and is
@@ -163,14 +163,14 @@ sentence is a card rather than an edit.
 **Whether the notice should name a number at all.** T-107 argues in the
 renderer that it should not need to: the user's actionable instruction is
 "update to the current release", which is right under any floor, and a
-major-version integer on a user-facing screen is a fact about nputer's
+major-version integer on a user-facing screen is a fact about the product's
 internals rather than about the user's machine. If that reading wins,
 this finding is closed by ruling rather than by code — and the ruling
 should be written beside `noticeRoutesToHandDriven` in
 `app/src/genesis/interview-model.ts`, which is where the refusal to
 transcribe is already recorded.
 
-Amnesty triage 2026-08-29 (triage seat): PARKED — TRIAGE TAKES THE RULING THE CARD ASKED FOR: the notice names no number. T-107's shipped sentence — "older than this app can drive" — is the honest one, criterion 3 forbids the transcription, and a major-version integer on a user-facing screen is a fact about nputer's internals rather than about the user's machine. The plumbing this card designs (min_major on the payload, one field at three construction sites) is correct and is not owed until the ruling changes. RESURFACES: the arrival of a SECOND adapter with a different min_major, at which point the floor must reach the frontend from its authority rather than from a sentence; or the next app-agent dispatch, if the ruling above is to be written down beside noticeRoutesToHandDriven where the refusal to transcribe already lives.
+Amnesty triage 2026-08-29 (triage seat): PARKED — TRIAGE TAKES THE RULING THE CARD ASKED FOR: the notice names no number. T-107's shipped sentence — "older than this app can drive" — is the honest one, criterion 3 forbids the transcription, and a major-version integer on a user-facing screen is a fact about the product's internals rather than about the user's machine. The plumbing this card designs (min_major on the payload, one field at three construction sites) is correct and is not owed until the ruling changes. RESURFACES: the arrival of a SECOND adapter with a different min_major, at which point the floor must reach the frontend from its authority rather than from a sentence; or the next app-agent dispatch, if the ruling above is to be written down beside noticeRoutesToHandDriven where the refusal to transcribe already lives.
 
 ## Implementation notes
 

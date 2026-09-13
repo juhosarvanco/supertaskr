@@ -135,9 +135,9 @@ becomes a figure somebody quotes.
 - WHEN the method version bumps THE model-in-loop set SHALL be runnable by ONE committed adapter honouring the contract in tools/method-evals/lib/model-run.mjs around an agent CLI the operator has, so `run.mjs --bump` no longer answers `Runner: NONE`; the replay runner stays a fixture and its rate is never recorded as one; the first real run's figures are recorded as the calibration of the four declared floors. (absorbed from T-229-s3)
 - BEFORE dispatch THE three rulings SHALL be on this card, each its own: which model the adapter drives; the budget per bump; whether a bump may ship without the run. Model settings (T-318) may inform the first and decide neither of the others. (absorbed from T-229-s3's triage)
 
-## Absorbed from T-229-s3 — No real NPUTER_EVAL_RUNNER exists in this tree, so the bump's fourth obligation has a half nobody can measure and a replay runner that scores 1.00 by construction (kept whole)
+## Absorbed from T-229-s3 — no real eval runner (the environment variable named with the pre-rename identifier) exists in this tree, so the bump's model-in-loop obligation, the fourth of the four the bump owes at 0c7227b, has a half nobody can measure and a replay runner that scores 1.00 by construction (kept whole)
 
-Title as filed: "No real NPUTER_EVAL_RUNNER exists in this tree, so the bump's fourth obligation has a half nobody can measure and a replay runner that scores 1.00 by construction"
+Title as filed (the runner variable's name spelled with the pre-rename identifier in the original, redacted here on the living-text rule; the ordinal is the fourth of the four obligations the bump owes, measured at 0c7227b): "No real <the pre-rename identifier>_EVAL_RUNNER exists in this tree, so the bump's fourth obligation has a half nobody can measure and a replay runner that scores 1.00 by construction"
 
 Filed as: status suggested, priority 3, size M, touches [tools/method-evals], wake None, suggested_by executor claude-opus-5@subagent @T-229.
 
