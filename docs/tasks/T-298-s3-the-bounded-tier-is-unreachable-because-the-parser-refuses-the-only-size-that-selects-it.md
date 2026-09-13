@@ -177,8 +177,9 @@ Promoted 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-
 
 Tier GUARDED, the two-spawn bench, base 39515fad002fb274b4beae223f2eb7eaafbad205, tip
 900e6626f3ca6c54655f3bad009064275ee699cd. Four legs GREEN at the tip I was sent, every
-acceptance criterion met, and the two corrections below are a shortfall inside a body and a
-shortfall inside a card this lane filed — neither of them a defect in what ships.
+acceptance criterion met. ONE correction is assigned below — a shortfall inside a card this lane
+filed — and a second was proposed, graded and withdrawn by the containment rule. Neither is a
+defect in what ships.
 
 #### The frame I actually had
 
@@ -223,9 +224,9 @@ All three re-hashed on this bench and all three match the stamp file.
 
 - *"add XS to the parser's legal sizes and the task format's size vocabulary, preserving S, M and L"* — done at both ends and nowhere else; the disjunct that would have deleted the tier table's bounded row is not taken.
 - *"The arm's existing bounded conditions and guarded overrides are unchanged"* — BYTE-unchanged. `tools/e2e/scripts/dispatch-brief.mjs` is not in the diff at all. I verified the classifier's text at the tip against its digest before and after my own drills.
-- *"XS is necessary under that selector and is not sufficient by itself"* — necessary is pinned by the pre-existing classifier body and by correction 1; not-sufficient is pinned by the new body's four removed conditions.
+- *"XS is necessary under that selector and is not sufficient by itself"* — necessary is pinned by the pre-existing classifier body, which drill D2 below kills and the new bodies survive; not-sufficient is pinned by the new body's four removed conditions.
 - *"a tracked fixture card"* — stronger than asked. No fixture card was added; the body derives one from the live board and moves one field in memory, so nothing entered the board, nothing had to be gitignore-checked, and the census, the roadmap and the graph did not move. The card-lives-in-the-tree clause and the zero-issues clause do not collide at all.
-- *"Existing invalid-size refusals remain"* — the second added body is exactly that assertion, and my drill D3 below shows it fails when the refusal is removed.
+- *"Existing invalid-size refusals remain"* — the second added body is exactly that assertion, and drill D3 below shows it reds when the refusal is taken away.
 
 #### What the attack set predicted, and what the measurement did to it
 
@@ -250,7 +251,7 @@ deaths because an attack set whose every line lands is a set written after the f
 
 - **D1 — a DATA mutant the lane did not drill.** Removed XS from `method/tasks/TASK-FORMAT.md`'s `size:` comment ALONE, leaving the parser's array and the tier table intact. Parser leg 1 failed of 416: *"the vocabulary the tier table selects on is not in the vocabulary it declares: expected [ 'S', 'M', 'L' ] to include 'XS'"*. This is the finding's own shape — two documents disagreeing about one word — and the battery now catches it in 1.4 seconds. Restored; digest of the document identical before and after.
 - **D2 — the containment question A2.2 raises.** Neutered the classifier's size branch so no size can send a card to standard. The PRE-EXISTING body *"the classifier answers from the card and the tree..."* red at line 6357 (`size: "S"` expected standard, received bounded); BOTH new bodies passed. So the property is pinned in the suite, by a body three screens above the new one, and the two kill sets contain each other in neither direction — D1 and the vocabulary mutant kill the new bodies and not the old, D2 kills the old and not the new. Under the role file's containment test both are load-bearing and the count of one is not a defect. Restored; digest identical.
-- **D3 — the graded correction.** Recorded under correction 1.
+- **D3 — the refusal itself, because a vocabulary that stopped refusing would satisfy C1's letter.** Replaced the membership test in `lib/parser/src/task.ts` with `false`, so every size is legal. TWO of the three added bodies red, by name and with the message they were written to print: *"size \"XXL\" is not one of the method's values and was accepted anyway: expected +0 to be 1"*, and the message body's `expected undefined to be defined`. So the widen-to-`string` attack and the downgrade-the-issue attack both die on bodies the lane wrote, measured here rather than taken from the notes. Restored; digest of the source identical before and after, 9e6cf7d3….
 
 **And I am declining my own pre-commitment, in as many words.** The attack set pre-committed to REFUSING on A2.2 — *"a proving body with no negative control on the size field is a refusal, because without it nothing in the diff shows XS is load-bearing"*. The stated reason is what I measured and it is false: something in the TREE shows it, D2 names the body and the line, and the role file's 2b rules containment over counting. A pre-commitment exists to make me state a reason for relaxing it rather than relax it quietly, and that is the reason. What survives is a gap in one body rather than in the suite — and when I tried to assign even that as a correction, the containment rule took it back, which is recorded below rather than quietly dropped.
 
