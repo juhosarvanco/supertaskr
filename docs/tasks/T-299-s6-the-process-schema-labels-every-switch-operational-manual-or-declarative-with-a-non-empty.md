@@ -367,3 +367,33 @@ weakest clause, satisfied by a non-empty check alone — **half right**: the tri
 (6) I predicted C3-C's exit equality would be typed as a literal on both sides — **wrong**,
 and the lane did the stronger thing. (7) Six operational with the candidate's relabelling
 would draw the strongest evidence standard — triggered, applied, and it held.
+
+#### The gates at the tip I created, because a figure measured at the commit I was sent is stale at the tip my verdict made
+
+Prose is a code input here — a verdict and two committed bodies create a
+commit nobody has tested — so the whole battery ran again at
+**c19d77519f616e132b9503b8be8a126d85b5b49d**, the tip carrying this
+verdict and both corrections:
+
+| suite | ref | bodies | targets | exit | verdict |
+|---|---|---|---|---|---|
+| parser | c19d7751 | 413 | 1 | 0 | GREEN |
+| app | c19d7751 | 1171 | 1 | 0 | GREEN |
+| rust | c19d7751 | 655 | 18 | 0 | GREEN |
+| e2e | c19d7751 | 1049 | 1 | 0 | GREEN |
+
+Both corrections add ASSERTIONS and no body NAME, so every count is the
+same at my tip as at the lane's, and the census figure this verdict quotes
+is unmoved by my own writes for the same reason: committed 96334 against a
+fresh 96924 at `c19d7751`, exactly as at `baea2697`. The docs gate answers
+0 findings at my tip with the ADR-019 budget still at WARN and unmoved at
+159357 bytes — my writes went into a task card, not into
+`docs/CONVENTIONS.md` — and the card preflight answers 0 for T-299-s6. The
+two cards the lane filed as `suggested` cannot be preflighted at all: that
+command answers about a card the board's schedule draws, and a suggested
+card is not a dispatch candidate.
+
+This postscript sits INSIDE this verdict's own heading, so the merge verb
+still finds one verdict on this card and both mutant blocks above are
+still the newest verdict's. It moves prose only, and nothing above it
+changed.
