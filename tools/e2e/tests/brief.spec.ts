@@ -4359,6 +4359,94 @@ test("ROW 4's BASE IS THE COMMIT THE CUT USED, the newest Checkpoint STANDS BESI
   }
 });
 
+test("ROW 4's BASE SURVIVES THE LANE'S OWN HEAD MOVING — the cut is what the lane was cut AT, not where it has got to", () => {
+  // KILLED BY: a cut read as the LANE BRANCH's own head rather than as the
+  // commit `git worktree add` was handed — one word in `laneCutCommit`,
+  // `rev-parse` for `merge-base`.
+  //
+  // WHY THIS IS A SECOND BODY AND NOT A THIRD ARM ABOVE. The amendment of
+  // 2026-09-13 names two ways the recorded cut may not be replaced when a
+  // brief is rendered again: "the lane's later HEAD" and "a later
+  // integration tip". The body above drives the second — it appends two
+  // commits to the integration branch across each of the three
+  // arrangements and requires row 4 to hold while row 5 moves — and never
+  // the first, because no arrangement there ever commits on the lane. A
+  // derivation that read the lane's head answers correctly in all three,
+  // and a lane that has committed is not an exotic state: it is every
+  // lane, from its first commit onward, and it is the state a brief is
+  // re-rendered in.
+  const fx = ritualFixture("ddd", { at: BASE_CHECKPOINT_AT });
+  try {
+    const ran = spawnSync(
+      process.execPath,
+      [
+        CLI,
+        "--dispatch-lane",
+        FIXTURE_CARD_ID,
+        "--slug",
+        FIXTURE_SLUG,
+        "--root",
+        fx.root,
+        "--scratch",
+        fx.scratch,
+        "--executor",
+        BASE_EXECUTOR,
+        "--verifier",
+        BASE_VERIFIER,
+      ],
+      { cwd: repoRoot, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
+    );
+    expectDispatched(ran, fx, "the lane-head dispatch");
+    // THE ARM'S OWN RECORD of what it cut at, exactly as the body above
+    // takes it: the dispatch ledger's `base hash:` line.
+    const ledger = ran.stdout.split("\n").find((l) => l.trim().startsWith("base hash: ")) ?? "";
+    const cut = hashIn(ledger, "the arm's dispatch ledger");
+    const render = () => {
+      const out = spawnSync(process.execPath, [CLI, "--task", FIXTURE_CARD_ID, "--root", fx.root], {
+        cwd: repoRoot,
+        encoding: "utf8",
+        maxBuffer: 64 * 1024 * 1024,
+      });
+      expect([EXIT.CLEAN, EXIT.FOUND], out.stderr ?? "").toContain(out.status);
+      return out.stdout;
+    };
+    expect(
+      hashIn(row4Base(render()), "row 4's base before the lane committed"),
+      "the arrangement is the ordinary one: row 4 names the cut while the lane still sits on it",
+    ).toBe(cut);
+
+    // ── THE LANE COMMITS, WHICH IS WHAT A LANE IS FOR ─────────────────
+    const found = laneWorktrees(
+      fixtureGit(fx.root, ["worktree", "list", "--porcelain"]),
+      laneSpellings(conventions()),
+    ).find((l) => l.taskId === FIXTURE_CARD_ID);
+    expect(found, "the dispatch cut a lane worktree for this card").toBeDefined();
+    const lane = found as { path: string; branch: string };
+    fixtureCommit(lane.path, "the lane's own first commit", "2026-01-02T03:00:00Z", true);
+    const laneHead = fixtureGit(lane.path, ["rev-parse", "HEAD"]).trim();
+    expect(laneHead, "and the lane's head really did move off the cut").not.toBe(cut);
+    // THE EXPORTED DERIVATION, DRIVEN DIRECTLY, and it answers the same:
+    // the cut is a fact about where the branch PARTED from the integration
+    // branch, never about where either has got to since.
+    expect(
+      laneCutCommit(fx.root, lane.branch, "main"),
+      "the cut derivation itself is unmoved by the lane's own commit",
+    ).toBe(cut);
+
+    const baseLine = row4Base(render());
+    expect(
+      hashIn(baseLine, "row 4's base after the lane committed"),
+      "the lane committed and row 4 still names the commit the cut USED",
+    ).toBe(cut);
+    expect(
+      baseLine,
+      "and the base field does not carry the lane's later HEAD, which the amendment names by that word",
+    ).not.toContain(laneHead);
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture");
+  }
+});
+
 test("THE COINCIDENCE LINE IS KEYED ON `cut === checkpoint` AND NOTHING ELSE — the pure half, driven at every shape", () => {
   // KILLED BY: the absorbed card's own superseded condition. Every case
   // below is decided from ONE input pair, so a derivation that consulted
