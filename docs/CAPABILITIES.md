@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1080 behaviours** — 1078 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1081 behaviours** — 1079 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -999,6 +999,7 @@ Census: **1080 behaviours** — 1078 extracted sentences + 2 named-not-extracted
 - the branch reaches `gh` as ONE argument, through no shell
 - CI is not asked for a push the LOCAL arms already refused
 - the elapsed time comes from the run's own start, and `updatedAt` is not it
+- a process started through the stand-in link IS the nearest harness ancestor, asked of the real derivation
 - a push from a checkout ANOTHER LIVE SESSION holds is refused, and the same push goes through once the seat is this session's
 - a DEAD holder is announced and the push proceeds; an UNCLAIMED seat is silent
 - a holder record this guard cannot READ is announced and allowed, never refused

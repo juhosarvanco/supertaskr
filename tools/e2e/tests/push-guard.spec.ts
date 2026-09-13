@@ -116,6 +116,7 @@ import {
 } from "../../../.claude/hooks/hook-install.mjs";
 import { holderVerdict, processRow, writeHolder } from "../scripts/checkout-currency.mjs";
 import { repoRoot } from "../preflight";
+import { fakeHarness, underHarness } from "./fake-harness";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import { conventionsBullet, conventionsText } from "../scripts/docs-scan.mjs";
 // T-305 — THE VERDICT WORD IS ASKED OF THE PROGRAM THAT WRITES IT. This
@@ -3014,16 +3015,56 @@ test("the elapsed time comes from the run's own start, and `updatedAt` is not it
  * could later be used to silence the guard.
  */
 
-/** A stand-in harness: a symlink to this node, named the way the real one is. */
+/**
+ * A stand-in harness: a symlink to this node, named the way the real one
+ * is. **THE LINK ITSELF IS `./fake-harness`'s SINCE T-314-s6** — this
+ * file wrote its own copy of those four lines, card-preflight.spec.ts
+ * wrote another, and a recipe in two places is two chances to disagree
+ * (T-057). What stays here is this file's own scratch bookkeeping.
+ */
 function harnessLink(name: string): string {
   const dir = mkdtempSync(path.join(os.tmpdir(), `T-238-harness-${name}-`));
   SCRATCH.push(dir);
-  const link = path.join(dir, "claude");
-  symlinkSync(process.execPath, link);
-  return link;
+  return fakeHarness(dir);
 }
 
 const CURRENCY_MODULE = path.join(repoRoot, "tools", "e2e", "scripts", "checkout-currency.mjs");
+
+/**
+ * THE ONE PROPERTY THE STAND-IN HAS TO HAVE, ASKED OF THE DERIVATION
+ * ITSELF (T-314-s6).
+ *
+ * Everything below that runs a verb under `harnessLink` rests on one
+ * claim: a process started through that symlink is what `sessionIdentity`
+ * calls the nearest harness ancestor. **AND NOTHING LOCAL REDS WHEN THAT
+ * STOPS BEING TRUE** — on a developer's machine the real harness is an
+ * ancestor two levels up, so a stand-in the derivation no longer accepts
+ * is simply walked past, every body stays green, and the red arrives on
+ * the runner, which is the exact failure this card exists to repair. One
+ * level up, the same shape.
+ *
+ * So the claim is asked HERE, of the production derivation, from INSIDE
+ * the stand-in. The walk includes the process it starts from, so a link
+ * the derivation accepts answers with the stand-in's OWN pid; a link it
+ * does not climbs past it to whatever else is up there — a different pid
+ * on this machine, and nothing at all on a runner. Both are red, and
+ * both are red LOCALLY, which is the point.
+ */
+test("a process started through the stand-in link IS the nearest harness ancestor, asked of the real derivation", () => {
+  const script =
+    `import(${JSON.stringify(`file://${CURRENCY_MODULE}`)}).then((m)=>{` +
+    `const me=m.sessionIdentity();` +
+    `process.stdout.write(JSON.stringify({ok:me.ok,pid:me.ok?me.identity.pid:0,` +
+    `why:me.ok?"":me.why,mine:process.pid}));});`;
+  const run = spawnSync(harnessLink("is-a-harness"), ["-e", script], { encoding: "utf8" });
+  const said = String(run.stdout ?? "");
+  if (said === "") throw new Error(`the stand-in produced nothing: ${String(run.stderr)}`);
+  const got = JSON.parse(said) as { ok: boolean; pid: number; why: string; mine: number };
+  expect(got.ok, got.why).toBe(true);
+  expect(got.pid, "and it is the stand-in ITSELF, not something further up this machine").toBe(
+    got.mine,
+  );
+});
 
 /** What the seat looks like when the guarded push is made. */
 type Seat = "vacant" | "mine" | "other-live" | "dead" | "unreadable";
@@ -5383,14 +5424,42 @@ function seatFixture(name: string, opts: { lane?: boolean; hook?: boolean } = {}
   return { root, git };
 }
 
-/** `brief.mjs`, run against a fixture. */
+/**
+ * A DIRECTORY IN NO CHECKOUT OF THIS REPOSITORY, pointed at by the seat
+ * verbs below — the shape card-preflight.spec.ts already gives its own
+ * CLI calls. The seat arm does not run the stale-checkout catcher (only
+ * `--preflight`, `--write-fence`, `--dispatch-lane` and `--merge` arm
+ * it), so this buys determinism rather than a disarmed guard: what the
+ * verb answers stops depending on where the suite happened to be
+ * started and on how far behind that checkout is.
+ */
+const NO_SESSION_CHECKOUT = mkdtempSync(path.join(os.tmpdir(), "T-314-s6-no-session-"));
+SCRATCH.push(NO_SESSION_CHECKOUT);
+
+/**
+ * `brief.mjs`, run against a fixture — UNDER A STAND-IN HARNESS, and
+ * that is the whole of T-314-s6.
+ *
+ * This helper used to spawn the verb straight from the test process.
+ * Every seat verb first derives the acting session by walking the
+ * process table upward for a harness-shaped ancestor, which a local test
+ * process always has and a CI runner never does, so the two bodies
+ * beneath this line asserted exit 0 and exit 1 here and met exit 3 —
+ * COULD NOT RUN — on the runner: main red at 8d26c8c5, CI run
+ * 34772159066, e2e shard 2. The stand-in harness is the same fixture
+ * `pushUnderHarness` above and card-preflight.spec.ts's own seat bodies
+ * already run under, and it composes the ancestor on ANY machine, so
+ * these bodies now measure the arm rather than the tree they ran in.
+ */
 function seatVerb(root: string, ...args: string[]): { status: number | null; out: string; err: string } {
-  const out = spawnSync(
-    process.execPath,
-    [path.join(repoRoot, "tools", "e2e", "scripts", "brief.mjs"), ...args, "--root", root],
-    { cwd: repoRoot, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
-  );
-  return { status: out.status, out: String(out.stdout ?? ""), err: String(out.stderr ?? "") };
+  const run = underHarness(harnessLink(`seat-${path.basename(root)}`), {
+    cli: path.join(repoRoot, "tools", "e2e", "scripts", "brief.mjs"),
+    args: [...args, "--root", root],
+    cwd: repoRoot,
+    projectDir: NO_SESSION_CHECKOUT,
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  return { status: run.status, out: String(run.out ?? ""), err: String(run.err ?? "") };
 }
 
 test("`--take-seat` installs the guard and announces it, and BOTH seat verbs report a checkout without the hook as UNGUARDED", () => {

@@ -7,13 +7,18 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
-  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { repoRoot } from "../preflight";
+import {
+  type HarnessRun,
+  fakeHarness as harnessLinkIn,
+  harnessScript as sharedHarnessScript,
+  underHarness as runUnderHarness,
+} from "./fake-harness";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import {
   CLAIM_CLASSES,
@@ -2465,40 +2470,31 @@ test("every DISPLAY site in the quotes arm escapes the author's string", async (
  * production flag and no environment override to be abused later.
  */
 
+/*
+ * ── AND SINCE T-314-s6 THE HELPER IS A MODULE, NOT THIS FILE'S ───────
+ * The three functions below were written here and then NEEDED by
+ * push-guard.spec.ts, whose own seat bodies spawned the verb straight
+ * from the test process and reddened on the runner for exactly the
+ * reason the paragraph above gives. They live in `./fake-harness` now
+ * and take the CLI path and the no-session checkout as ARGUMENTS; what
+ * is left here binds THIS file's two constants to them, so every call
+ * site below is the call it always was and every body asserts what it
+ * always asserted.
+ */
+
 /** A stand-in harness: a symlink to this node, named the way the real one is. */
 function fakeHarness(name: string): string {
-  const dir = path.join(scratchRoot(), name, "bin");
-  mkdirSync(dir, { recursive: true });
-  const link = path.join(dir, "claude");
-  symlinkSync(process.execPath, link);
-  return link;
-}
-
-interface HarnessRun {
-  status: number | null;
-  out: string;
-  err: string;
-  harnessPid: number;
+  return harnessLinkIn(path.join(scratchRoot(), name, "bin"));
 }
 
 /** The script a stand-in harness runs: spawn the CLI, report what it said. */
 function harnessScript(args: string[], cwd: string, holdMs = 0): string {
-  return (
-    `const {spawnSync}=require("node:child_process");` +
-    `const r=spawnSync(process.execPath,${JSON.stringify([CLI, ...args])},` +
-    `{cwd:${JSON.stringify(cwd)},encoding:"utf8",` +
-    `env:{...process.env,CLAUDE_PROJECT_DIR:${JSON.stringify(NO_SESSION_CHECKOUT)}}});` +
-    `process.stdout.write(JSON.stringify({status:r.status,out:r.stdout,err:r.stderr,harnessPid:process.pid}));` +
-    (holdMs > 0 ? `setTimeout(()=>{},${String(holdMs)});` : "")
-  );
+  return sharedHarnessScript({ cli: CLI, args, cwd, projectDir: NO_SESSION_CHECKOUT, holdMs });
 }
 
 /** Run the CLI as a child of a stand-in harness, and wait for it. */
 function underHarness(harness: string, args: string[], cwd: string): HarnessRun {
-  const outer = spawnSync(harness, ["-e", harnessScript(args, cwd)], { encoding: "utf8" });
-  const text = String(outer.stdout ?? "");
-  if (text === "") throw new Error(`the stand-in harness produced nothing: ${String(outer.stderr)}`);
-  return JSON.parse(text) as HarnessRun;
+  return runUnderHarness(harness, { cli: CLI, args, cwd, projectDir: NO_SESSION_CHECKOUT });
 }
 
 /** Poll until `ready`, so a body never sleeps a fixed guess. */
