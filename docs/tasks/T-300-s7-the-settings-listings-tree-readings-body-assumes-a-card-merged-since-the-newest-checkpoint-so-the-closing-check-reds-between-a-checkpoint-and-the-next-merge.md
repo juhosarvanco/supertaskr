@@ -4,13 +4,14 @@ title: "The settings listing's tree-readings body assumes a card merged since th
 feature: F-04
 milestone: 4
 size: M
+tier: standard
 priority: 1
-status: planned
+status: building
 suggested_by: "the Claude seat, the closing check on the range from origin/main to 37dfff4c66bbcd488383a43c0be1ffd5f55eb6b4, 2026-09-12"
 blocked_by: []
 touches: [tools/e2e/tests/cli.spec.ts, tools/e2e/scripts/settings.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review:
