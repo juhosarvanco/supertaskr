@@ -23,6 +23,7 @@
  * do.
  */
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -170,17 +171,22 @@ test("a correction is the block's OLD text, applied where the merged tree carrie
   expect(defective.text).toContain("guard = true");
   expect(defective.text, "and the defect is gone").not.toContain("guard = false");
 
+  expect(defective, "and the reading carries the two counts it measured").toMatchObject({ oldSites: 0, newSites: 1 });
+
   // ALREADY CORRECTED IS A THIRD ANSWER, never a silent write. The lane's
   // own fix pass had landed the correction at four of the merges this
   // card was cut from.
   const done = correctionFor({ source: "const x = 1;\nguard = true\n", block: b });
   expect("already" in done, "a tree that already carries `old` is left alone").toBe(true);
+  expect(done, "`old` once and `new` absent is the already-applied state").toMatchObject({ oldSites: 1, newSites: 0 });
 
   // AND NEITHER SIDE IS A REFUSAL, not a best effort.
   const neither = correctionFor({ source: "const x = 1;\n", block: b });
   expect("problem" in neither).toBe(true);
   if (!("problem" in neither)) return;
-  expect(neither.problem, "the refusal names both counts").toContain("0 time(s)");
+  expect(neither.problem, "the refusal names both counts").toContain(
+    "`old` matches 0 site(s), `new` matches 0 site(s)",
+  );
 });
 
 test("the corrections are planned BEFORE every regeneration, and the keepers before the commit", () => {
@@ -773,12 +779,19 @@ test("a verdict-named spec outside the lane's fence widens the card on the integ
 /**
  * A repository with a lane branch, a bench commit carrying a verdict
  * with one mutant block, and the defect that verdict corrects.
+ *
+ * `secondSite` is the T-314 merge in miniature (T-295-s9): the
+ * correction is ALREADY in the tree at the block's own site, and the
+ * block's `new` text also matches a legitimate line elsewhere in the
+ * same file — the arrangement whose "one surviving `new`" the masked
+ * reader answered by writing, and which rewrote verified code on main.
  */
-function mergeFixture(opts: { conflict?: "append" | "fence" } = {}): {
+function mergeFixture(opts: { conflict?: "append" | "fence"; secondSite?: boolean } = {}): {
   root: string;
   git: (...args: string[]) => string;
   card: string;
 } {
+  const ambiguous = opts.secondSite === true;
   const root = mkdtempSync(path.join(tmpdir(), "supertaskr-merge-"));
   const git = (...args: string[]): string =>
     execFileSync("git", ["-C", root, ...NO_BACKGROUND_MAINTENANCE, ...args], { encoding: "utf8" });
@@ -807,7 +820,12 @@ function mergeFixture(opts: { conflict?: "append" | "fence" } = {}): {
       "",
     ].join("\n"),
   );
-  writeFileSync(path.join(root, "src", "a.ts"), "export const guard = true;\n");
+  writeFileSync(
+    path.join(root, "src", "a.ts"),
+    ambiguous
+      ? ["export const guard = true;", "export function reset() {", "  guard = false;", "}", ""].join("\n")
+      : "export const guard = true;\n",
+  );
   writeFileSync(path.join(root, "tools", "e2e", "tests", "shared.spec.ts"), "// shared\n");
   git("add", "-A");
   git("commit", "-qm", "the tree before the lane");
@@ -815,8 +833,10 @@ function mergeFixture(opts: { conflict?: "append" | "fence" } = {}): {
   git("checkout", "-q", "-b", "task/T-900-a-card");
   // THE LANE'S OWN WRITE carries the DEFECT the verdict corrects: the
   // block's `new` text, which is what a merged tree looks like before
-  // the correction is applied.
-  writeFileSync(path.join(root, "src", "a.ts"), "export const guard = false;\n");
+  // the correction is applied. In the ambiguous arrangement the lane's
+  // own fix pass already landed it, which is the state four of the
+  // merges this verb was cut from were in.
+  if (!ambiguous) writeFileSync(path.join(root, "src", "a.ts"), "export const guard = false;\n");
   if (opts.conflict !== undefined) {
     writeFileSync(
       path.join(root, "tools", "e2e", "tests", "shared.spec.ts"),
@@ -844,7 +864,17 @@ function mergeFixture(opts: { conflict?: "append" | "fence" } = {}): {
       "The guard is inverted and the body below pins it; one assigned correction.",
       "",
       // AT A MARGIN, deliberately: this fixture is the T-293 shape.
-      block({ file: "src/a.ts", spec: "tools/e2e/tests/shared.spec.ts" }, "    "),
+      block(
+        {
+          file: "src/a.ts",
+          spec: "tools/e2e/tests/shared.spec.ts",
+          // SHORTER ANCHORS in the ambiguous arrangement, because what
+          // makes it ambiguous is that the block's `new` text matches a
+          // line the correction was never about.
+          ...(ambiguous ? { old: "guard = true;", new: "guard = false;" } : {}),
+        },
+        "    ",
+      ),
       "",
       "## Meters",
       "",
@@ -933,6 +963,146 @@ test("the verb performs the ritual on a fixture, applies the correction off the 
     expect(code === EXIT.CLEAN || code === EXIT.FOUND, "the verb ends by stopping, never by committing").toBe(true);
   } finally {
     removeGitFixture(fx.root, FIXTURE);
+  }
+});
+
+test("an ambiguous anchor REFUSES the correction step with both counts, and leaves the file byte-identical to what the step found", () => {
+  // THE WHOLE VERB, on the T-314 arrangement and on its control. The
+  // ambiguous arm's `src/a.ts` carries the block's `old` text at its own
+  // site AND the block's `new` text at a line the correction was never
+  // about; the reader this card replaces wrote `old` over that line and
+  // reported exit 0. Here the step refuses, prints both counts, and
+  // writes nothing.
+  for (const arrangement of ["ambiguous", "one site"] as const) {
+    const ambiguous = arrangement === "ambiguous";
+    const fx = mergeFixture(ambiguous ? { secondSite: true } : {});
+    const file = path.join(fx.root, "src", "a.ts");
+    const sha = (): string => createHash("sha256").update(readFileSync(file)).digest("hex");
+    try {
+      const said: string[] = [];
+      const ledger: { id: string; title: string; exit: number }[] = [];
+      // THE HASH BEFORE THE STEP RAN, taken on the runner's own plan
+      // line — which it prints immediately before it runs that step, and
+      // which is therefore the one moment "the file as the step found
+      // it" is readable from outside. The pre-operation state is the
+      // reference, never the bench tip: at a merge the two may
+      // legitimately differ by an authorized integration change.
+      const beforeTheStep: string[] = [];
+      const out = (s: string): void => {
+        said.push(s);
+        if (beforeTheStep.length === 0 && s.includes("apply CORRECTION 1 in src/a.ts")) beforeTheStep.push(sha());
+      };
+      mergeMain(
+        [
+          "T-900",
+          "--slug",
+          "a-card",
+          "--verdict",
+          fx.git("rev-parse", "task/T-900-a-card").trim(),
+          "--root",
+          fx.root,
+          "--built-by",
+          "a-model@subagent",
+          "--verified-by",
+          "a-model@subagent",
+          "--readings",
+          path.join(fx.root, "readings.jsonl"),
+          "--message",
+          path.join(fx.root, "MSG.txt"),
+        ],
+        { cwd: fx.root, out, err: out, ledger },
+      );
+      const after = sha();
+      const text = said.join("\n");
+      expect(beforeTheStep, `${arrangement}: the correction step was reached and its plan line printed`).toHaveLength(1);
+      const step = ledger.find((s) => s.id === "correction:1");
+      if (ambiguous) {
+        expect(step?.exit, "an ambiguous anchor stops the verb").not.toBe(0);
+        expect(text, "the refusal names the block").toContain("CORRECTION 1: REFUSED");
+        expect(text, "and states BOTH counts on the step's own line").toContain(
+          "`old` matches 1 site(s), `new` matches 1 site(s)",
+        );
+        expect(after, "the file is byte-identical to its pre-operation state").toBe(beforeTheStep[0]);
+        expect(
+          readFileSync(file, "utf8"),
+          "and the legitimate line the block's `new` text matched is untouched",
+        ).toContain("  guard = false;");
+        expect(text, "the run stops at the step, staged, for the seat to rule").toContain("stopped at correction:1");
+      } else {
+        // THE CONTROL, differing only in the arrangement: one site, so
+        // the block is still applied and the hash MOVES.
+        expect(step?.exit, "a block matching exactly one site is applied").toBe(0);
+        expect(after, "and an applied block moves the hash").not.toBe(beforeTheStep[0]);
+        expect(readFileSync(file, "utf8"), "the site now carries the block's `old` text").toBe(
+          "export const guard = true;\n",
+        );
+        expect(text, "and that line states both counts too").toContain(
+          "before the write, `old` matches 0 site(s), `new` matches 1 site(s)",
+        );
+      }
+    } finally {
+      removeGitFixture(fx.root, FIXTURE);
+    }
+  }
+});
+
+test("a single git diff against the bench tip answers EMPTY over a wrong STAGED line, which is why the standing comparison reads the index and the working tree separately", () => {
+  // THE PROCEDURE'S SPELLING IS A MEASUREMENT, not a preference
+  // (T-295-s9, the amendment of 2026-09-13). The verb stops STAGED, so
+  // "the content that will be committed" is the index plus the working
+  // tree, and a single `git diff <bench tip> -- <file>` reads only the
+  // working tree: it answers empty while a wrong line sits staged and
+  // ready to commit — the exact state this card's fault produced.
+  const root = mkdtempSync(path.join(tmpdir(), "supertaskr-standing-"));
+  const git = (...args: string[]): string =>
+    execFileSync("git", ["-C", root, ...NO_BACKGROUND_MAINTENANCE, ...args], { encoding: "utf8" });
+  try {
+    execFileSync("git", ["init", "-q", "-b", "main", root], { stdio: "pipe" });
+    git("config", "user.email", "fixture@example.invalid");
+    git("config", "user.name", "T-295 fixture");
+    const file = path.join(root, "a.ts");
+    const verified = ["export const guard = true;", "export const other = 1;", ""].join("\n");
+    writeFileSync(file, verified);
+    git("add", "-A");
+    git("commit", "-qm", "the verified content");
+    const benchTip = git("rev-parse", "HEAD").trim();
+
+    // A WRONG LINE STAGED — what the step wrote at a site the block never
+    // named — under a working file restored to the verified content.
+    writeFileSync(file, ["export const guard = false;", "export const other = 1;", ""].join("\n"));
+    git("add", "--", "a.ts");
+    writeFileSync(file, verified);
+    expect(git("diff", benchTip, "--", "a.ts"), "the single reading answers EMPTY over it").toBe("");
+    expect(
+      git("diff", "--cached", benchTip, "--", "a.ts"),
+      "while the reading of the INDEX names the line that would be committed",
+    ).toContain("guard = false;");
+    expect(git("diff", "--", "a.ts"), "and the working tree's own reading says what it adds").not.toBe("");
+
+    // AND THE SECOND HALF OF THE PROCEDURE: a difference that is an
+    // AUTHORIZED integration change is accounted for, never overwritten
+    // to make a reading empty. Here the staged content carries both — a
+    // wrong line at a site no block named, and the seat's own hand
+    // correction on the line below it.
+    git("checkout", "--", "a.ts");
+    const staged = ["export const guard = false;", "export const other = 2;", ""].join("\n");
+    writeFileSync(file, staged);
+    git("add", "--", "a.ts");
+    const reading = git("diff", "--cached", benchTip, "--", "a.ts");
+    expect(reading, "both differences are reported, and both are investigated").toContain("guard = false;");
+    expect(reading).toContain("other = 2;");
+    // THE POSITIVE CONTROL, where the site-scoping is ABSENT: restoring
+    // the WHOLE file from the bench tip makes the reading empty and
+    // erases the authorized change with it.
+    const whole = git("show", `${benchTip}:a.ts`);
+    expect(whole, "a whole-file restore loses the authorized integration change").not.toContain("other = 2;");
+    // THE SITE-SCOPED RESTORE, which is what the procedure names: only
+    // the line the step wrote outside the block's own site.
+    const restored = staged.replace("export const guard = false;", "export const guard = true;");
+    expect(restored, "the wrong line is back to the verified content").toContain("export const guard = true;");
+    expect(restored, "and the authorized change survives the procedure unchanged").toContain("other = 2;");
+  } finally {
+    removeGitFixture(root, FIXTURE);
   }
 });
 
@@ -1077,18 +1247,23 @@ test("the card arm takes ITS OWN card and no other, so a SUGGESTED card of the s
   expect(classifyConflict({ path: "docs/tasks/T-9001-other.md", id: "T-900", text: conflicted }).kind).toBe("fence");
 });
 
-test("a correction is applied whenever the tree carries its NEW text once, even where the OLD text also occurs elsewhere", () => {
-  // MEASURED ON THIS BENCH. `correctionFor` asks whether the `old` text
-  // occurs AT ALL before it asks where the `new` text is, so a block
-  // whose `old` text also appears somewhere else in the same file is
-  // answered "already carries the block's `old` text" — and the defect
-  // the verdict assigned a correction for is left in the merged tree,
-  // reported as a correction already made.
+test("a block whose OLD text also occurs elsewhere is REFUSED with both counts, never applied at the site its NEW text names", () => {
+  // THE MEASURED FAULT, at the T-314 merge of 2026-09-13. The third
+  // correction's `old` text matched `.claude/hooks/hook-install.mjs` at
+  // TWO sites and its `new` text at ONE — a presence check that
+  // legitimately preceded the executable check the block was about. The
+  // reader this body replaces masked every occurrence of `old` and asked
+  // whether exactly one `new` survived; one did, at the LEGITIMATE site,
+  // and the step wrote the block's `old` text over it. The merged tree
+  // then differed from the verified bench tip by one line and the
+  // correction's own body redded on the closing check while it had been
+  // green on the bench.
   //
-  // The site is named by the `new` text, which is the text the tree
-  // carries and the one the block requires to occur exactly once. That
-  // question is the one that decides, and "already" is the answer only
-  // when the site is NOT there.
+  // AND THE BODY THIS ONE REPLACES PINNED THAT WRITE AS THE BEHAVIOUR.
+  // What it was really protecting against — a defect left in the merged
+  // tree and reported as a correction already made — survives here in
+  // the answer that costs nothing: a REFUSAL, which is neither a false
+  // "already" nor a write at a site nobody named.
   const b = {
     correction: "C1",
     file: "src/a.ts",
@@ -1102,31 +1277,66 @@ test("a correction is applied whenever the tree carries its NEW text once, even 
     source: ["export function other() {", "  return n > 0;", "}", "export function guard(n) {", "  return n >= 0;", "}", ""].join("\n"),
     block: b,
   });
-  expect("text" in both, "the site is there, so the correction is applied").toBe(true);
-  if (!("text" in both)) return;
-  expect(both.text, "the defect is gone from the site").not.toContain("return n >= 0;");
-  expect(
-    both.text.split("return n > 0;").length - 1,
-    "and the untouched occurrence elsewhere is still there beside the corrected one",
-  ).toBe(2);
-  // THE CONTROLS, each differing from the case above only in the arming.
-  expect("already" in correctionFor({ source: "  return n > 0;\n", block: b }), "no site: already").toBe(true);
-  expect("text" in correctionFor({ source: "  return n >= 0;\n", block: b }), "a bare site: applied").toBe(true);
-  expect("problem" in correctionFor({ source: "  return 1;\n", block: b }), "neither: a refusal").toBe(true);
-  // AND THE CONTROL THAT KEEPS THE EXISTING ORDER'S REASON, which the
-  // lane's notes state and which a naive "ask about `new` first" would
-  // destroy: where the block's `new` text is a SUBSTRING of its own
-  // `old`, a tree carrying `old` carries `new` inside it, and the
-  // answer is still ALREADY. Counting alone cannot tell that from the
-  // case above — only asking which occurrences of `new` lie OUTSIDE an
-  // occurrence of `old` can.
-  const nested = {
-    ...b,
-    old: "  return n > 0 && n < 10;",
-    new: "  return n > 0",
-  };
-  const corrected = correctionFor({ source: "x\n  return n > 0 && n < 10;\ny\n", block: nested });
-  expect("already" in corrected, "a nested `new` inside a present `old` is already corrected").toBe(true);
+  expect("problem" in both, "one `old` elsewhere beside one `new` here names no single site").toBe(true);
+  expect("text" in both, "and nothing is written").toBe(false);
+  if (!("problem" in both)) return;
+  expect(both.problem, "the refusal names the block").toContain("C1");
+  expect(both.problem, "and states both counts").toContain("`old` matches 1 site(s), `new` matches 1 site(s)");
+
+  // THE T-314 ARRANGEMENT ITSELF, in miniature: `old` at two sites and
+  // `new` at one legitimate site elsewhere. This is the input the masked
+  // reader answered by writing, and it is the input this card exists for.
+  const twice = correctionFor({
+    source: ["export function a() {", "  return n > 0;", "}", "export function c() {", "  return n > 0;", "}", "export function guard(n) {", "  return n >= 0;", "}", ""].join("\n"),
+    block: b,
+  });
+  expect("problem" in twice, "two `old` sites and one `new` is the T-314 shape, and it is refused").toBe(true);
+  if (!("problem" in twice)) return;
+  expect(twice.problem).toContain("`old` matches 2 site(s), `new` matches 1 site(s)");
+
+  // THE STATE TABLE, each arm differing from the others only in the
+  // arrangement of the two anchors. Two states act; every other refuses.
+  expect(correctionFor({ source: "  return n > 0;\n", block: b }), "`old` once, `new` absent: already").toMatchObject({ oldSites: 1, newSites: 0 });
+  expect("already" in correctionFor({ source: "  return n > 0;\n", block: b })).toBe(true);
+  expect("text" in correctionFor({ source: "  return n >= 0;\n", block: b }), "`old` absent, `new` once: applied").toBe(true);
+  expect("problem" in correctionFor({ source: "  return 1;\n", block: b }), "both absent: a refusal").toBe(true);
+  const twiceNew = correctionFor({
+    source: ["export function guard(n) {", "  return n >= 0;", "}", "export function also(n) {", "  return n >= 0;", "}", ""].join("\n"),
+    block: b,
+  });
+  expect("problem" in twiceNew, "`new` at two sites: a refusal, and the site is not guessed").toBe(true);
+  if (!("problem" in twiceNew)) return;
+  expect(twiceNew.problem).toContain("`old` matches 0 site(s), `new` matches 2 site(s)");
+
+  // THE IDEMPOTENT RE-RUN: what an apply leaves behind reads as the
+  // already-applied state, so a step run twice writes once. It is also
+  // what the drill downstream requires — `plantMutant` refuses an `old`
+  // anchor that does not match exactly once, and an apply is the only
+  // path that reaches it.
+  const applied = correctionFor({ source: "x\n  return n >= 0;\ny\n", block: b });
+  expect("text" in applied).toBe(true);
+  if (!("text" in applied)) return;
+  const again = correctionFor({ source: applied.text, block: b });
+  expect("already" in again, "the same block over its own result writes nothing").toBe(true);
+  expect(again).toMatchObject({ oldSites: 1, newSites: 0 });
+
+  // AND THE ANSWER THAT DELIBERATELY CHANGED, recorded because it is a
+  // retreat from an inference rather than an oversight: where the
+  // block's `new` text is a SUBSTRING of its own `old`, an
+  // already-corrected tree carries both, and the masked reader deduced
+  // "already" from that. The two counts cannot tell that arrangement
+  // from "the correction is owed here and its `old` text also occurs
+  // elsewhere" — the arrangement above, which cost main a line — so
+  // both-present is now a refusal. The seat applies such a block by hand
+  // at the site the verdict names.
+  const nested = { ...b, old: "  return n > 0 && n < 10;", new: "  return n > 0" };
+  const overlapping = correctionFor({ source: "x\n  return n > 0 && n < 10;\ny\n", block: nested });
+  expect("problem" in overlapping, "both texts present is a refusal, not a deduction").toBe(true);
+  if (!("problem" in overlapping)) return;
+  expect(overlapping.problem).toContain("`old` matches 1 site(s), `new` matches 1 site(s)");
+  // AND THE CONTROL, the same block over a tree carrying only the site:
+  // `old` absent, `new` once, so it is applied and the whole `old` text
+  // is restored.
   const owed = correctionFor({ source: "x\n  return n > 0;\ny\n", block: nested });
   expect("text" in owed, "and the same block still corrects a tree that carries only the site").toBe(true);
   if (!("text" in owed)) return;
