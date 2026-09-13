@@ -6,7 +6,8 @@ milestone: 4
 size: L
 tier: guarded
 priority: 1
-status: building
+status: parked
+wake: 2026-09-14
 suggested_by: "ADR-025 decisions 2 and 5, approved by the owner on 2026-09-12; card 3 of its plan; the owner's ruling of 2026-09-12 that a Codex child's fence is the sandbox plus the path checks, accepted on this demonstration and not before"
 blocked_by: [T-311]
 touches: [tools/e2e/scripts/adapter-codex.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/scripts/run-record.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/merge.mjs, tools/e2e/tests/adapter-codex.spec.ts, tools/e2e/tests/merge.spec.ts, tools/e2e/tests/brief-flush.spec.ts, lib/parser/src/model-session.ts, lib/parser/test/model-session.test.ts, method/runtime/supertaskr.yaml, docs/CONVENTIONS.md]
@@ -34,3 +35,25 @@ The Codex CLI on this host (`codex exec`, version 0.153.4) takes a working direc
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+## Parked 2026-09-13 — after the REJECTED verdict, for the seat's configuration investigation
+
+The verdict of 2026-09-13 (bench `4e78e9bf`, verdict commit `b2827df0`, lane tip `41ec2363` on
+`task/T-312-the-codex-adapter-under-a-named-configuration`) rejected the lane: the confinement
+demonstration failed under the configuration the lane chose, the recorded refusals were the
+patch tool's rather than the sandbox's, the notes pointed at scratch rather than at the ref,
+and the tip fails the tools/e2e typecheck. The owner ruled on 2026-09-13 that the card is parked
+with its evidence preserved while the seat runs a bounded configuration investigation (at most
+twelve low-effort Codex runs, 600K input tokens, two hours, per-role findings, nothing
+unestablished becoming eligible), and that the seat returns with the findings and the cost of
+a rerun before any lane is started; the rerun is a separate authorization. The lane branch and
+the bench worktree stand; the bench tip is held by the ref `evidence/T-312-bench-4e78e9bf`
+because its verdict commits are reachable from the bench worktree alone. One measurement is
+already on record in the seat's scratch (M9, 2026-09-13T10:19Z): with
+`sandbox_workspace_write.exclude_slash_tmp` and `exclude_tmpdir_env_var` on, a child under
+`workspace-write` wrote inside its own directory and was refused by the operating system's
+sandbox on a sibling directory, on a seal-shaped file and on the temp root. The wake date is a
+placeholder for the investigation's end; the real condition is the findings reaching the owner.
+The four cards the lane filed (T-312-s1 to s4) remain on the lane branch until it lands or the
+owner rules otherwise.
+
