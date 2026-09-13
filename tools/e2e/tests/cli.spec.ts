@@ -2603,3 +2603,75 @@ test("the settings command reads the loop through the PARSER LIBRARY's own modul
     "and the command does not refuse it either",
   ).not.toThrow();
 });
+
+
+// ── T-300-s6, verifier correction 1: WHICH MODULE THE COMMAND LOADS ───
+//
+// The body above reads the command's source for the entry's path with a
+// bare `toContain`. That file spells the same path four more times, in
+// JSDoc type annotations — documentation ABOUT the pin, which the poison
+// catalogue in docs/CONVENTIONS.md names as the likeliest author of the
+// second copy (shape EIGHT) — so the needle outlives the import itself.
+// Measured at this card's lane tip: with the one dynamic load pointed
+// back at `./dispatch-brief.mjs`, which re-exports the same four symbols
+// under the same names, all 57 bodies of this spec stayed green. The
+// reading through the LIBRARY'S own browser entry rather than through the
+// arm's re-export of it is the whole of what this card changed, and it
+// had no body under it.
+//
+// So the haystack here is the CODE and never the file, the entry is read
+// off the parser package's own `exports` map rather than typed, and every
+// specifier is RESOLVED from the command's own directory — a relative
+// path is a claim about a layout, and a claim about a layout goes stale
+// in silence.
+
+test("the settings command LOADS the parser library's own browser entry — the module it imports, and not a path its comments also spell", () => {
+  const entry = VERBS.find((v) => v.verb === "settings");
+  expect(entry, "the front carries a settings verb").toBeDefined();
+  const target = entry!.target as { kind: string; file: string };
+  expect(target.kind, "and it fronts a script").toBe("script");
+  const scriptPath = path.join(packageRoot, "scripts", target.file);
+  const source = readFileSync(scriptPath, "utf8");
+
+  // STRIP THE COMMENTS, AND PROVE THE STRIP RAN. A strip that quietly
+  // stopped matching would widen the haystack back to the shape this body
+  // exists to close, and it would do it while staying green.
+  const code = source.replace(/\/\*[\s\S]*?\*\//g, "");
+  expect(
+    code.length,
+    "the comment strip removed nothing, so the JSDoc copies of the entry's path are still in the haystack",
+  ).toBeLessThan(source.length);
+  expect(code, "the comment strip ate the command's own code").toContain("processPure");
+
+  // THE BROWSER ENTRY IS THE PARSER PACKAGE'S OWN ANSWER, never this
+  // body's. The criterion says "its browser entry"; `exports["./pure"]` is
+  // where that library says which file that is.
+  const parserDir = path.join(repoRoot, "lib", "parser");
+  const manifest = JSON.parse(readFileSync(path.join(parserDir, "package.json"), "utf8")) as {
+    exports?: Record<string, { import?: string }>;
+  };
+  const declared = manifest.exports?.["./pure"]?.import;
+  expect(
+    declared,
+    "the parser package declares no `./pure` entry for a surface to read the loop through",
+  ).toBeTruthy();
+  const browserEntry = path.resolve(parserDir, declared as string);
+  expect(existsSync(browserEntry), "the parser's browser entry is not built").toBe(true);
+
+  // WHAT THE COMMAND ACTUALLY LOADS — static and dynamic alike, resolved
+  // from its own directory, and narrowed to the reaches that land inside
+  // the parser library.
+  const specifiers = [
+    ...[...code.matchAll(/\bfrom\s+"([^"]+)"/g)].map((m) => m[1] as string),
+    ...[...code.matchAll(/\bimport\(\s*"([^"]+)"\s*\)/g)].map((m) => m[1] as string),
+  ].filter((s) => s.startsWith("."));
+  const intoParser = specifiers
+    .map((s) => path.resolve(path.dirname(scriptPath), s))
+    .filter((p) => p.startsWith(parserDir + path.sep));
+  expect(
+    intoParser,
+    "the command does not load the parser library's browser entry ITSELF — reading the loop through " +
+      "the arm's re-export of that same module passes every name check this spec makes elsewhere, " +
+      "and it is the one thing this card changed",
+  ).toEqual([browserEntry]);
+});
