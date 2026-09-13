@@ -646,11 +646,12 @@ and T-236 (2026-09-02, whose pre-compaction text is
 ## Gotchas
 - method/ is the generic, product-agnostic convention — nothing
   supertaskr-specific goes in it; product docs live in docs/. Changes to
-  method/ formats are version-bumped (currently v0.1.25) and noted here.
+  method/ formats are version-bumped (currently v0.1.26) and noted here.
   **A VERSION'S NOTE HERE IS ITS DATE, ITS CARD AND ITS THEME; WHAT
   MOVED IS THE RELEASE'S OWN RECORD** (ADR-019's law applied to this
   changelog at T-162): the per-clause itemisation is RECORD-shaped, and
   the AUTHORITY for what a version says is `method/` itself at that tag.
+  v0.1.26 (T-299-s6, 2026-09-13) — the LABELS release: every process switch carries an implementation label, `operational`, `manual` or `declarative`, with a manual switch's action beside it; an operational label is proved by a body that changes the value and observes the arm behave differently; the terminal shows the label beside the value and refuses to edit a declarative switch with its file unchanged; the reference carries the labels.
   v0.1.25 (T-311-s5, 2026-09-13) — the READERS release: the task format names the criteria heading's depth in words and a body keeps every card to it; the advisory seat reader and the card preflight hold one heading rule, so both answer the same criteria for the same card; the verifier role file spells the verdict entry's one shape with the date first, and the merge verb's newest-verdict reader finds a dated depth-three entry wherever its date sits, a correction block's heading excluded.
   v0.1.24 (T-311, 2026-09-12) — the RUN RECORD release: every child run, native subagent or foreign process, writer or
   read-only participant, runs under a file-backed run record and the same seven operations; a writer reserves its resource exclusively before launch, and an uncertain record is reconciled before any replacement.
@@ -905,7 +906,34 @@ and T-236 (2026-09-02, whose pre-compaction text is
   importing it and re-exporting every symbol unchanged — so the terminal
   command, the app's settings screen and the skill render ONE
   implementation rather than a spelling each, and the app can render it
-  at all. The switch inventory the schema was built
+  at all. **AND SINCE T-299-s6 EVERY ROW SAYS WHAT MAKES IT TRUE**, in an
+  `implementation:` field that is one of three words, because the
+  `reads:` field answers a narrower question than a reader of a settings
+  screen is asking and `processLedger` there reads as *"nothing"*.
+  `operational` means the arm reads the row and branches on it, and the
+  label is EARNED: the lane that assigns it shows a body that CHANGES the
+  value and watches the arm answer differently, with every value of the
+  row erased from the answers before they are compared — a read site
+  shows the value is read, and a surface printing the value back shows
+  less than that. `manual` means a person or a seat performs what the row
+  names, and the row carries that instruction in a non-empty
+  `manualAction:`. `declarative` means the row is a RECORD rather than a
+  control: nothing reads its value and no instruction is addressed to a
+  seat by it, so editing it alone changes nothing — **AND IT DOES NOT
+  MEAN THE BEHAVIOUR IS ABSENT.** The fence hook, the docs gate and the
+  landing gate all read `declarative` and are all in force; what they are
+  not is settings, because they live in code and in CI configuration that
+  never consults the schema. The parser refuses a missing or unknown
+  label, an empty action on a manual row and an action on a row that is
+  not manual; `supertaskr settings` shows the label beside the value and
+  the action beside a manual one, REFUSES a `set` naming a declarative
+  row with the finding code `declarative` at the exit its other refusals
+  already take, and the generated chapter carries both. **AN UNRESOLVED
+  CLASSIFICATION IS A FINDING AND NEVER A `declarative`**: the label is
+  what a reader trusts when deciding whether editing a row is worth
+  anything, and a row filed under it to end an argument is the one way
+  this field can be worse than the absence it replaced. The switch
+  inventory the schema was built
   from — every row with its old and ruled value, its measured cost and
   its constraint — is in `docs/rooms/loop-cost-and-speed.md`.
 - GUARD-CLASS PATHS, IN THIS PROJECT'S OWN SPELLING (T-296, ADR-024

@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1052 behaviours** — 1050 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1057 behaviours** — 1055 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -181,6 +181,9 @@ Census: **1052 behaviours** — 1050 extracted sentences + 2 named-not-extracted
 - THE MODEL PER ROLE IS READ FROM THE SECTION — by-hand names no model and says so
 - THE STANDARD PROFILE REPRODUCES THE MERGE PLAN THIS VERB BUILT BEFORE THE SWITCHES EXISTED
 - THE READ SITES ARE DERIVED FROM THE ARM'S OWN SOURCE, never from a table beside it
+- EVERY ROW SAYS WHAT MAKES IT TRUE, only a manual row names an action, and an `operational` row is one an arm reads
+- EVERY `operational` ROW IS PROVED BY CHANGING ITS VALUE AND WATCHING THE ARM ANSWER DIFFERENTLY
+- A READ SITE IS NOT AN OPERATIONAL EFFECT — the arm reads `record.whole_suite_net` and nothing it DOES moves with it
 - THE ARM'S PHASE-1 STEP READS `verify.phase1` — the brief is written or it is not, and the skip names the switch
 - THE SCHEMA'S TWO COLUMNS MOVE EXACTLY WHERE THE ROOM'S OLD AND RULED COLUMNS MOVE
 - the process switch read.standing is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
@@ -435,6 +438,8 @@ Census: **1052 behaviours** — 1050 extracted sentences + 2 named-not-extracted
 - the committed settings chapter is a GENERATION of the schema, and a schema nobody regenerated for reds
 - the listing goes to the PROJECT'S OWN tree for its readings — the measured column is not a rendering of numbers somebody handed in
 - a DEPARTURE is listed at the value the PROJECT resolves to, marked against the profile's own
+- the listing and the generated page carry each switch's LABEL, and a manual switch's ACTION beside it
+- a `set` naming a DECLARATIVE switch is refused with the code `declarative`, at the exit every other refusal takes, and the template is byte-identical
 - the settings command reads the loop through the PARSER LIBRARY's own module, and keeps no reader, resolver or constraint engine of its own
 - the settings command LOADS the parser library's own browser entry — the module it imports, and not a path its comments also spell
 

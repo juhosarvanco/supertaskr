@@ -2153,7 +2153,7 @@ test("an allowed set writes ONE departure that a real yaml parser and the arm's 
   const plan = setPlan({
     schema: loaded.schema,
     settings: loaded.settings,
-    id: "dispatch.keeper_at_base",
+    id: "build.criteria_echo",
     value: "off",
   });
   expect(plan.remove, "`off` is not the standard profile's own value, so it IS a departure").toBe(false);
@@ -2178,13 +2178,13 @@ test("an allowed set writes ONE departure that a real yaml parser and the arm's 
   // was to keep it consistent.
   const real = parseYaml(after) as { process: { switches: Record<string, unknown> } };
   expect(
-    real.process.switches["dispatch.keeper_at_base"],
+    real.process.switches["build.criteria_echo"],
     "a real yaml parser reads back the STRING, not the boolean",
   ).toBe("off");
   const section = processSection(after);
   expect(section, "the arm's own reader finds the section").not.toBeNull();
-  expect(section!.overrides.get("dispatch.keeper_at_base")).toBe("off");
-  expect(resolveProcess(loaded.schema, section!).values.get("dispatch.keeper_at_base")).toBe("off");
+  expect(section!.overrides.get("build.criteria_echo")).toBe("off");
+  expect(resolveProcess(loaded.schema, section!).values.get("build.criteria_echo")).toBe("off");
 
   // And the quoting rule itself, both ways round.
   expect(yamlScalar("off"), "a boolean-shaped value is quoted").toBe('"off"');
@@ -2196,20 +2196,20 @@ test("setting a switch to the profile's OWN value removes the departure rather t
   const before = readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8");
   const departed = editTemplate(
     before,
-    setPlan({ schema: loaded.schema, settings: loaded.settings, id: "dispatch.keeper_at_base", value: "off" }),
+    setPlan({ schema: loaded.schema, settings: loaded.settings, id: "build.criteria_echo", value: "off" }),
   );
-  expect(processSection(departed)!.overrides.get("dispatch.keeper_at_base")).toBe("off");
+  expect(processSection(departed)!.overrides.get("build.criteria_echo")).toBe("off");
 
   const back = setPlan({
     schema: loaded.schema,
     settings: resolveProcess(loaded.schema, processSection(departed)!),
-    id: "dispatch.keeper_at_base",
-    value: loaded.settings.values.get("dispatch.keeper_at_base") ?? "",
+    id: "build.criteria_echo",
+    value: loaded.settings.values.get("build.criteria_echo") ?? "",
   });
   expect(back.remove, "a value that IS the profile's own is not a departure").toBe(true);
   const restored = editTemplate(departed, back);
   expect(
-    processSection(restored)!.overrides.has("dispatch.keeper_at_base"),
+    processSection(restored)!.overrides.has("build.criteria_echo"),
     "the section names the profile and the DEPARTURES only, so a departure that departs from " +
       "nothing is removed rather than left to read as a decision",
   ).toBe(false);
@@ -2273,7 +2273,7 @@ test("each of the four refusals a set owes is ITSELF, and the template is not to
       expect(readFileSync(templateAt, "utf8"), `${args.join(" ")} wrote nothing`).toBe(untouched);
     }
     // THE POSITIVE CONTROL: the same entry point, one legal value, DOES write.
-    const ok = settingsMain(["--root", root, "set", "dispatch.keeper_at_base", "off"], {
+    const ok = settingsMain(["--root", root, "set", "build.criteria_echo", "off"], {
       stdout: () => {},
       stderr: () => {},
       readings: new Map(),
@@ -2323,7 +2323,7 @@ test("the committed settings chapter is a GENERATION of the schema, and a schema
   const loaded = process300();
   const edited = editTemplate(
     readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8"),
-    setPlan({ schema, settings: loaded.settings, id: "dispatch.keeper_at_base", value: "off" }),
+    setPlan({ schema, settings: loaded.settings, id: "build.criteria_echo", value: "off" }),
   );
   expect(edited, "the template really moved").not.toBe(
     readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8"),
@@ -2413,7 +2413,7 @@ test("a DEPARTURE is listed at the value the PROJECT resolves to, marked against
   try {
     const base = loadProcess(root);
     expect(base, "the fixture carries this repository's schema and template").not.toBeNull();
-    const id = "dispatch.keeper_at_base";
+    const id = "build.criteria_echo";
     const sw = base!.schema.switches.get(id);
     expect(sw, `${id} is a switch the schema declares`).toBeDefined();
     const profileValue = base!.settings.values.get(id) as string;
@@ -2473,6 +2473,183 @@ test("a DEPARTURE is listed at the value the PROJECT resolves to, marked against
   }
 });
 
+
+// ── T-299-s6: the LABEL, on both surfaces and in the one refusal ──────
+//
+// The schema's `reads:` field says `processLedger` for most rows, which
+// means no arm branches on them — and a reader of this command could not
+// tell an executable control from a recorded intention. Every row now
+// carries `implementation`, and the two bodies below are the surfaces'
+// half of that: the listing and the generated page SHOW the label (and a
+// manual row's instruction), and `set` REFUSES a declarative row, which
+// is a record rather than a control.
+
+test("the listing and the generated page carry each switch's LABEL, and a manual switch's ACTION beside it", () => {
+  // KILLED BY: a surface that renders the labels for some rows and not
+  // others, one that prints a manual row's instruction on rows that have
+  // none (which would make the label unreadable), and one that carries
+  // the label in the listing while the generated page still says nothing
+  // — the page is the copy a reader meets without a terminal.
+  const loaded = process300();
+  const rows = [...loaded.schema.switches.values()];
+  const labels = new Set(rows.map((sw) => sw.implementation));
+  // NOT VACUOUS: this schema really uses more than one label, so the
+  // assertions below cannot be satisfied by a page that prints one word.
+  expect([...labels].sort(), "the shipped schema no longer carries all three labels").toEqual([
+    "declarative",
+    "manual",
+    "operational",
+  ]);
+
+  const said: string[] = [];
+  expect(
+    settingsMain(["--root", repoRoot], {
+      stdout: (s) => said.push(s),
+      stderr: (s) => said.push(s),
+      readings: new Map(),
+    }),
+  ).toBe(EXIT.CLEAN);
+  const out = said.join("\n");
+  const page = renderReference(loaded.schema);
+  for (const sw of rows) {
+    expect(out, `${sw.id} is listed without its label`).toContain(
+      `${sw.id} = ${loaded.settings.values.get(sw.id) ?? ""}`,
+    );
+    expect(
+      out.split("\n").find((l) => l.trimStart().startsWith(`${sw.id} = `)) ?? "",
+      `${sw.id}'s label is not beside its value`,
+    ).toContain(`[${sw.implementation}]`);
+    expect(page, `${sw.id} reaches the generated page without its label`).toContain(
+      `- **implementation** — ${sw.implementation}`,
+    );
+    if (sw.implementation === "manual") {
+      expect(sw.manualAction, `${sw.id} is manual and names no action`).not.toBe("");
+      expect(out, `${sw.id} is manual and the listing does not say what to do`).toContain(
+        `      manual action: ${sw.manualAction}`,
+      );
+      expect(page, `${sw.id} is manual and the page does not say what to do`).toContain(
+        `- **manual action** — ${sw.manualAction}`,
+      );
+    }
+  }
+  // AND ONLY A MANUAL ROW CARRIES ONE, which is what makes the label
+  // worth reading: an instruction on every row is an instruction on none.
+  const manual = rows.filter((sw) => sw.implementation === "manual");
+  expect(
+    out.split("\n").filter((l) => l.trimStart().startsWith("manual action: ")).length,
+    "the listing prints an action for rows that have none, or drops one that has",
+  ).toBe(manual.length);
+  expect(
+    page.split("\n").filter((l) => l.startsWith("- **manual action** — ")).length,
+    "the page prints an action for rows that have none, or drops one that has",
+  ).toBe(manual.length);
+
+  // THE DATA MUTANT: the label lives in the SCHEMA, so the plant is a
+  // schema edit, and both surfaces have to move with it. A code mutant
+  // would leave this property untouched.
+  const relabelled = parseProcessSchema(
+    readFileSync(path.join(repoRoot, PROCESS_SCHEMA), "utf8").replace(
+      "    implementation: operational\n    manualAction: \"\"",
+      "    implementation: declarative\n    manualAction: \"\"",
+    ),
+  );
+  expect(
+    renderReference(relabelled),
+    "a row relabelled in the schema did not move the generated page",
+  ).not.toBe(page);
+});
+
+test("a `set` naming a DECLARATIVE switch is refused with the code `declarative`, at the exit every other refusal takes, and the template is byte-identical", () => {
+  // T-299-s6 criterion 3 and the card's amendment of 2026-09-13. KILLED
+  // BY: a command that writes a departure into a row nothing reads, one
+  // that refuses without the finding code a caller can act on, one that
+  // invents a fifth exit for it, and one that refuses everything —
+  // which the positive control at the foot is what rules out.
+  const loaded = process300();
+  // DERIVED, NEVER TYPED: a declarative row that is not ALSO floor, so
+  // what this body measures is the declarative refusal rather than the
+  // floor one that would fire first.
+  const subject = [...loaded.schema.switches.values()].find(
+    (sw) => sw.implementation === "declarative" && !sw.floor,
+  );
+  expect(subject, "the schema declares no switchable declarative row, so this body measures nothing").toBeDefined();
+  const id = (subject as NonNullable<typeof subject>).id;
+  const value = ((subject as NonNullable<typeof subject>).values.find(
+    (v) => v !== loaded.settings.values.get(id),
+  ) ?? "") as string;
+  expect(value, `${id} declares no second value to depart to`).not.toBe("");
+
+  let said = "";
+  try {
+    setPlan({ schema: loaded.schema, settings: loaded.settings, id, value });
+  } catch (e) {
+    said = e instanceof Error ? e.message : String(e);
+  }
+  expect(said, `${id} was planned as an ordinary departure`).not.toBe("");
+  expect(said, "the refusal does not carry the code a caller acts on").toContain("declarative");
+  expect(said, "nor name the row it refused").toContain(id);
+  expect(said, "nor say that nothing was written").toContain("NOTHING was written");
+
+  // THROUGH THE REAL ENTRY POINT, over a project of its own, where
+  // "byte-identical" is a fact about a file rather than about a throw.
+  const root = settingsProject();
+  try {
+    const templateAt = path.join(root, RUNTIME_TEMPLATE);
+    const untouched = readFileSync(templateAt, "utf8");
+    const run = (args: string[]) => {
+      const lines: string[] = [];
+      const status = settingsMain(["--root", root, ...args], {
+        stdout: (s) => lines.push(s),
+        stderr: (s) => lines.push(s),
+        readings: new Map(),
+      });
+      return { status, out: lines.join("\n") };
+    };
+    const refused = run(["set", id, value]);
+    expect(refused.out, "the refusal does not reach the caller").toContain("declarative");
+    expect(
+      readFileSync(templateAt, "utf8"),
+      "a refused set moved the template, so `nothing was written` is not true",
+    ).toBe(untouched);
+
+    // THE EXIT IS THE HOUSE'S, NOT A FIFTH ONE: the amendment rules this
+    // a finding code in the message at the refusal exit the other
+    // refusals already take, so the two are compared rather than typed.
+    // AND EACH CONTROL IS THE REFUSAL IT IS NAMED FOR. The first
+    // spelling of this compared against `push.token`, which is FLOOR and
+    // ALSO declarative — so a check order that put the label first would
+    // have left this body comparing the subject against itself and still
+    // green, which is one arrangement deciding both answers.
+    // `template.roles` is FLOOR and MANUAL, so it can answer the floor
+    // refusal and no other, and the messages are what prove each control
+    // is the refusal it claims to be.
+    const floorRefusal = run(["set", "template.roles", "off"]);
+    const valueRefusal = run(["set", "read.standing", "banana"]);
+    expect(floorRefusal.out, "the floor control answered some other refusal").toContain("is FLOOR");
+    expect(valueRefusal.out, "the value control answered some other refusal").toContain("is not one of");
+    expect(floorRefusal.status, "the arrangement: the floor refusal is CALLED WRONG").toBe(EXIT.USAGE);
+    expect(
+      refused.status,
+      "the declarative refusal answers a different exit from the other refusals",
+    ).toBe(floorRefusal.status);
+    expect(refused.status, "and from the value refusal").toBe(valueRefusal.status);
+    expect(refused.status, "the vocabulary grew a fifth code").toBe(EXIT.USAGE);
+
+    // THE POSITIVE CONTROL: a row this command CAN change still changes,
+    // so the refusal above is about the label and not about `set`.
+    const control = loaded.schema.switches.get("build.criteria_echo");
+    expect(control, "the control row is no longer declared").toBeDefined();
+    expect(
+      (control as NonNullable<typeof control>).implementation,
+      "the control row became declarative, so it is a second subject rather than a control",
+    ).not.toBe("declarative");
+    const ok = run(["set", "build.criteria_echo", "off"]);
+    expect(ok.status, "the control: an allowed set is clean").toBe(EXIT.CLEAN);
+    expect(readFileSync(templateAt, "utf8"), "the control: and it really moved the file").not.toBe(untouched);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
 
 // ── T-300-s6: the command reads through the parser library ────────────
 //
@@ -2544,12 +2721,22 @@ test("the settings command reads the loop through the PARSER LIBRARY's own modul
   // ARE the library's own ledger over this project's schema and
   // settings, field for field.
   const loaded = process300();
-  const flat = (r: { id: string; value: string; what: string; floor: boolean; overridden: boolean }) => ({
+  const flat = (r: {
+    id: string;
+    value: string;
+    what: string;
+    floor: boolean;
+    overridden: boolean;
+    implementation: string;
+    manualAction: string;
+  }) => ({
     id: r.id,
     value: r.value,
     what: r.what,
     floor: r.floor,
     overridden: r.overridden,
+    implementation: r.implementation,
+    manualAction: r.manualAction,
   });
   expect(
     settingsRows({ ...loaded, readings: new Map(), units: new Map() }).map(flat),
@@ -2588,7 +2775,7 @@ test("the settings command reads the loop through the PARSER LIBRARY's own modul
   // the subject is ABSENT: a combination the schema allows produces no
   // finding from the library and no refusal from the command, so the
   // half above is reading the judgement rather than refusing everything.
-  const allowed = { id: "dispatch.keeper_at_base", value: "off" };
+  const allowed = { id: "build.criteria_echo", value: "off" };
   expect(
     parserPure.constraintFindings(loaded.schema, {
       profile: loaded.settings.profile,

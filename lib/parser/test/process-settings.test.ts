@@ -35,7 +35,10 @@ import {
  * and every constraint — against documents this file can show you.
  */
 
-/** A whole, legal schema — two profiles, three switches, one of them floor. */
+/**
+ * A whole, legal schema — two profiles, three switches, one of them floor,
+ * and one of each implementation label so a body can tell them apart.
+ */
 const FIXTURE = `version: 1
 
 profiles:
@@ -54,6 +57,8 @@ switches:
     floor: false
     band: [loop/token-budget-used]
     cost: "about 50K tokens per seat"
+    implementation: manual
+    manualAction: "every seat reads the set the adapter names before it works"
     profiles:
       slow: whole
       quick: index
@@ -68,6 +73,8 @@ switches:
     floor: false
     band: []
     cost: "about an hour a card"
+    implementation: operational
+    manualAction: ""
     profiles:
       slow: on
       quick: off
@@ -82,6 +89,8 @@ switches:
     floor: true
     band: []
     cost: "nothing measurable"
+    implementation: declarative
+    manualAction: ""
     profiles:
       slow: on
       quick: on
@@ -220,6 +229,83 @@ describe('the schema parser', () => {
       expect(err, `${name}: an empty schema was accepted`).toBeInstanceOf(ProcessFinding);
       expect(err?.message, `${name}: the refusal does not say what it read`).toContain('which cannot be right');
     }
+  });
+
+  it('REFUSES a label it does not know, a manual row with no action, and an action on a row that is not manual', () => {
+    // T-299-s6 criterion 1. KILLED BY: a parser that accepts any string
+    // as the label (a settings screen would then render a word no
+    // surface knows how to read), one that lets a manual row ship
+    // without the instruction that is the whole point of the label, and
+    // one that lets a non-manual row carry an instruction nobody has to
+    // follow. Each is a different mistake and each is reported as
+    // itself, naming the switch.
+    const cases: [string, string, string, string][] = [
+      [
+        'a label outside the set',
+        'implementation: declarative',
+        'implementation: aspirational',
+        'which is not one of',
+      ],
+      [
+        'a label the author left blank',
+        '    implementation: manual\n',
+        '    implementation:\n',
+        'which is not one of',
+      ],
+      [
+        'a manual row with an empty action',
+        'manualAction: "every seat reads the set the adapter names before it works"',
+        'manualAction: ""',
+        'owes the instruction',
+      ],
+      [
+        'a manual action that is only whitespace',
+        'manualAction: "every seat reads the set the adapter names before it works"',
+        'manualAction: "   "',
+        'owes the instruction',
+      ],
+      [
+        'an action on a row that is not manual',
+        '    implementation: declarative\n    manualAction: ""',
+        '    implementation: declarative\n    manualAction: "go and do something about it"',
+        'Only a manual row names an action',
+      ],
+    ];
+    for (const [name, from, to, want] of cases) {
+      const text = FIXTURE.replace(from, to);
+      expect(text, `${name}: the edit changed nothing, so this case measures nothing`).not.toBe(FIXTURE);
+      const err = refusal(() => parseProcessSchema(text));
+      expect(err, `${name}: the schema parsed without a murmur`).toBeInstanceOf(ProcessFinding);
+      expect(err?.message, `${name}: the refusal does not say what it found`).toContain(want);
+      expect(err?.message, `${name}: the refusal does not name the file`).toContain(PROCESS_SCHEMA);
+    }
+    // A MISSING LABEL IS THE FIFTH MISTAKE AND IT IS THE FIELD CHECK'S,
+    // which is what makes the two fields fields rather than decoration:
+    // a row that declares neither is a row with a hole in it.
+    for (const missing of ['    implementation: manual\n', '    manualAction: "every seat reads the set the adapter names before it works"\n']) {
+      const err = refusal(() => parseProcessSchema(FIXTURE.replace(missing, '')));
+      expect(err, `a switch missing ${missing.trim()} parsed`).toBeInstanceOf(ProcessFinding);
+      expect(err?.message, 'the refusal does not name the switch').toContain('read.standing');
+      expect(err?.message, 'the refusal does not name the missing field').toContain(
+        missing.trim().split(':')[0] as string,
+      );
+    }
+    // THE POSITIVE CONTROL: unedited, the fixture parses and each row
+    // reads back the label it declares — so every refusal above is for
+    // its own edit rather than for the fixture being a fixture.
+    const read = fixture();
+    expect(
+      [...read.switches.values()].map((sw) => `${sw.id}=${sw.implementation}`),
+      'the control: the labels do not read back off an unedited schema',
+    ).toEqual(['read.standing=manual', 'verify.bench=operational', 'fence.write_hook=declarative']);
+    expect(
+      read.switches.get('read.standing')?.manualAction,
+      'the control: a manual row carries its instruction through the reader',
+    ).toBe('every seat reads the set the adapter names before it works');
+    expect(
+      [...read.switches.values()].filter((sw) => sw.implementation !== 'manual').map((sw) => sw.manualAction),
+      'the control: a row that is not manual carries no action',
+    ).toEqual(['', '']);
   });
 
   it('declares the two shapes a switch may take, and every switch it reads takes one of them', () => {

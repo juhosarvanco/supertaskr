@@ -32,6 +32,30 @@
 #            tools/e2e/scripts/health-bands.config.mjs. An empty list is
 #            "no band measures this yet" and `cost` says so.
 #   cost     the project's own measured cost, from the room's table
+#   implementation
+#            WHAT MAKES THIS ROW TRUE, and it is the field that tells an
+#            executable control from a recorded intention (T-299-s6).
+#            `operational` — the arm READS this row and branches on it, so
+#            changing the value changes what the arm does; the label is
+#            earned by a body that changes the value and watches the arm
+#            answer differently, never by a read site alone and never by a
+#            surface printing the value back. `manual` — no program reads
+#            the row and a person or a seat performs what it names;
+#            `manualAction` is that instruction. `declarative` — the row is
+#            a RECORD rather than a control: nothing reads its value and no
+#            instruction is addressed to a seat by it, so editing it alone
+#            changes nothing. **`declarative` DOES NOT MEAN THE BEHAVIOUR
+#            IS ABSENT** — the fence hook, the docs gate and the landing
+#            gate are all in force; what they are not is settings, because
+#            they live in code and in CI configuration that never consults
+#            this file. The terminal REFUSES to edit a declarative row for
+#            exactly that reason: the write would move the template and
+#            nothing else.
+#   manualAction
+#            the instruction that makes a MANUAL row true, in the
+#            imperative and actionable enough to follow. Non-empty on a
+#            manual row and empty on every other, and the parser refuses
+#            both mistakes.
 #   type     `toggle` or `choice`, with `values` its whole value set
 #   profiles the value under each of the three profiles
 #
@@ -60,6 +84,8 @@ switches:
     floor: false
     band: [loop/token-budget-used]
     cost: "about 50K tokens per seat"
+    implementation: manual
+    manualAction: "every seat reads the standing set before it works: the root adapter names that set and each role file applies its own subtractions to it, so changing this value means editing the adapter and those role files"
     profiles:
       guarded-everything: five-documents-whole
       standard: state-and-index
@@ -76,6 +102,8 @@ switches:
     floor: false
     band: [loop/cycle-budget-used]
     cost: "1 to 3 min"
+    implementation: declarative
+    manualAction: ""
     profiles:
       guarded-everything: "off"
       standard: "on"
@@ -91,6 +119,8 @@ switches:
     floor: false
     band: [loop/token-budget-used]
     cost: "not measured — the model is the input the token band divides by, never a cost of its own"
+    implementation: operational
+    manualAction: ""
     profiles:
       guarded-everything: by-hand
       standard: from-the-template
@@ -106,6 +136,8 @@ switches:
     floor: false
     band: []
     cost: "not measured"
+    implementation: manual
+    manualAction: "after every dispatch derive the watch list from the live lanes and watch each lane's ask file, firing on a new file and on a CHANGED one; this repository publishes no watcher of its own"
     profiles:
       guarded-everything: "on"
       standard: "on"
@@ -121,6 +153,8 @@ switches:
     floor: true
     band: []
     cost: "seconds"
+    implementation: declarative
+    manualAction: ""
     profiles:
       guarded-everything: "on"
       standard: "on"
@@ -136,6 +170,8 @@ switches:
     floor: true
     band: []
     cost: "seconds"
+    implementation: manual
+    manualAction: "keep a roles block in the runtime template naming a model for every role the arm dispatches"
     profiles:
       guarded-everything: "on"
       standard: "on"
@@ -152,6 +188,8 @@ switches:
     floor: false
     band: [loop/cycle-budget-used]
     cost: "5 to 15 min"
+    implementation: manual
+    manualAction: "the executor runs the suites this value names ONCE, at its final code-and-notes commit, through the blessed gate-runner, and reports each leg with its ref, its count and its exit"
     profiles:
       guarded-everything: fence-owes
       standard: owed-set
@@ -167,6 +205,8 @@ switches:
     floor: false
     band: [loop/cycle-budget-used]
     cost: "minutes in the lane"
+    implementation: manual
+    manualAction: "the executor's report carries a self-drill block: one mutant per new body, planted where the property lives, shown red, restored, and the restore proved by hash"
     profiles:
       guarded-everything: practised
       standard: required
@@ -182,6 +222,8 @@ switches:
     floor: false
     band: [loop/cycle-budget-used]
     cost: "1 min"
+    implementation: manual
+    manualAction: "the executor restates every acceptance criterion as a checklist in the notes before it writes a line of the implementation"
     profiles:
       guarded-everything: "off"
       standard: "on"
@@ -197,6 +239,8 @@ switches:
     floor: false
     band: [loop/cycle-budget-used]
     cost: "seconds"
+    implementation: manual
+    manualAction: "the executor re-derives the card's own claims over its finished notes and reaches a clean exit before it stamps the card verifying"
     profiles:
       guarded-everything: "off"
       standard: "on"
@@ -213,6 +257,8 @@ switches:
     floor: false
     band: [loop/cycle-budget-used, loop/token-budget-used, loop/soft-verifier]
     cost: "the tiers' own budgets: 20 min and 80K bounded, 75 min and 310K standard, 100 min and 450K guarded"
+    implementation: operational
+    manualAction: ""
     profiles:
       guarded-everything: guarded-for-every-card
       standard: by-the-classifier
@@ -228,6 +274,8 @@ switches:
     floor: false
     band: [loop/token-budget-used]
     cost: "about 60K tokens, 4 min beside the build"
+    implementation: operational
+    manualAction: ""
     profiles:
       guarded-everything: by-the-seat
       standard: by-the-arm
@@ -243,6 +291,8 @@ switches:
     floor: false
     band: [loop/cycle-budget-used]
     cost: "10 to 15 min of the seat"
+    implementation: declarative
+    manualAction: ""
     profiles:
       guarded-everything: by-hand
       standard: by-a-script
@@ -258,6 +308,8 @@ switches:
     floor: false
     band: [loop/soft-verifier]
     cost: "seconds"
+    implementation: manual
+    manualAction: "hash the attack set and the ground truths taken at the base, and cite those digests in the verdict so a reader can re-derive what it judged on"
     profiles:
       guarded-everything: "on"
       standard: standard-and-guarded
@@ -273,6 +325,8 @@ switches:
     floor: false
     band: [loop/cycle-budget-used]
     cost: "a worktree"
+    implementation: declarative
+    manualAction: ""
     profiles:
       guarded-everything: "on"
       standard: standard-and-guarded
@@ -288,6 +342,8 @@ switches:
     floor: false
     band: [loop/cycle-budget-used]
     cost: "15 to 20 min, down to about 5"
+    implementation: manual
+    manualAction: "the verifier runs the suites this value names at the lane's tip and reports each with the ref it ran at and its body count"
     profiles:
       guarded-everything: whole
       standard: owed-set-except-guarded
@@ -303,6 +359,8 @@ switches:
     floor: false
     band: [loop/soft-verifier]
     cost: "inside phase 2"
+    implementation: manual
+    manualAction: "prove each keeper by planting the defect it claims to catch, and plant a DATA mutant wherever the property lives in data rather than in code"
     profiles:
       guarded-everything: "on"
       standard: "on"
@@ -318,6 +376,8 @@ switches:
     floor: false
     band: [loop/soft-verifier]
     cost: "not measured"
+    implementation: manual
+    manualAction: "the verifier commits each assigned correction as a body with the mutant block that drills it, rather than as prose for the integrator to interpret"
     profiles:
       guarded-everything: "on"
       standard: "on"
@@ -333,6 +393,8 @@ switches:
     floor: true
     band: [loop/soft-verifier]
     cost: "not measured"
+    implementation: manual
+    manualAction: "the verifier judges the diff on its own before it reads the lane's implementation notes"
     profiles:
       guarded-everything: "on"
       standard: "on"
@@ -349,6 +411,8 @@ switches:
     floor: false
     band: [loop/cycle-budget-used]
     cost: "15 to 21 min, down to about 5"
+    implementation: manual
+    manualAction: "run the merge through the arm's merge verb and rule on each step it stops at, rather than typing the ritual's steps by hand"
     profiles:
       guarded-everything: by-the-seat
       standard: by-the-arm
@@ -364,6 +428,8 @@ switches:
     floor: false
     band: [loop/cycle-budget-used]
     cost: "minutes"
+    implementation: manual
+    manualAction: "re-drill each mutant block the newest verdict carries against the spec that block names, and stop on a survivor or on a body that reds more than itself"
     profiles:
       guarded-everything: whole-spec
       standard: scoped
@@ -379,6 +445,8 @@ switches:
     floor: false
     band: [loop/cycle-budget-used]
     cost: "about 3 min when it fires"
+    implementation: operational
+    manualAction: ""
     profiles:
       guarded-everything: by-the-seat
       standard: by-the-arm
@@ -394,6 +462,8 @@ switches:
     floor: false
     band: [loop/cycle-budget-used]
     cost: "about 1 min when it fires"
+    implementation: operational
+    manualAction: ""
     profiles:
       guarded-everything: by-the-seat
       standard: by-the-arm
@@ -409,6 +479,8 @@ switches:
     floor: false
     band: [loop/cycle-budget-used]
     cost: "seconds"
+    implementation: operational
+    manualAction: ""
     profiles:
       guarded-everything: "off"
       standard: "on"
@@ -424,6 +496,8 @@ switches:
     floor: false
     band: []
     cost: "seconds"
+    implementation: manual
+    manualAction: "hand the lane's and the verifier's reports to the merge, so their meters blocks reach the readings the bands parse"
     profiles:
       guarded-everything: "off"
       standard: "on"
@@ -439,6 +513,8 @@ switches:
     floor: false
     band: []
     cost: "not measured"
+    implementation: manual
+    manualAction: "take every sentence of the merge message out of the verdict or out of a figure the run measured"
     profiles:
       guarded-everything: by-the-seat
       standard: from-the-verdict
@@ -455,6 +531,8 @@ switches:
     floor: false
     band: [loop/cycle-budget-used]
     cost: "15 min, down to 1 to 5"
+    implementation: manual
+    manualAction: "grade the set the pushed range owes, last, and then push bare"
     profiles:
       guarded-everything: whole
       standard: owed-set
@@ -470,6 +548,8 @@ switches:
     floor: false
     band: [loop/cycle-budget-used]
     cost: "fewer CI runs"
+    implementation: manual
+    manualAction: "let merges accumulate and carry them in one push rather than pushing after each"
     profiles:
       guarded-everything: "off"
       standard: "on"
@@ -485,6 +565,8 @@ switches:
     floor: false
     band: [loop/cycle-budget-used]
     cost: "up to 35 min"
+    implementation: manual
+    manualAction: "read the verdict the push guard announces before pushing, and at on wait for the run in flight to conclude first"
     profiles:
       guarded-everything: "on"
       standard: "off"
@@ -500,6 +582,8 @@ switches:
     floor: true
     band: []
     cost: "seconds"
+    implementation: declarative
+    manualAction: ""
     profiles:
       guarded-everything: "on"
       standard: "on"
@@ -516,6 +600,8 @@ switches:
     floor: false
     band: [loop/cycle-budget-used]
     cost: "34 min, down to about 10"
+    implementation: declarative
+    manualAction: ""
     profiles:
       guarded-everything: everything
       standard: owed-set
@@ -531,6 +617,8 @@ switches:
     floor: false
     band: [loop/cycle-budget-used]
     cost: "21 min, down to about 5"
+    implementation: declarative
+    manualAction: ""
     profiles:
       guarded-everything: "off"
       standard: "on"
@@ -546,6 +634,8 @@ switches:
     floor: false
     band: []
     cost: "seconds"
+    implementation: declarative
+    manualAction: ""
     profiles:
       guarded-everything: "on"
       standard: "on"
@@ -561,6 +651,8 @@ switches:
     floor: false
     band: [loop/cycle-budget-used]
     cost: "one run per push"
+    implementation: declarative
+    manualAction: ""
     profiles:
       guarded-everything: per-merge
       standard: one
@@ -577,6 +669,8 @@ switches:
     floor: false
     band: [loop/cycle-budget-used]
     cost: "15 min per run"
+    implementation: manual
+    manualAction: "run the four legs end to end on the clock this value names: the integrating seat takes the checkpoint half and the scheduled run takes the nightly one"
     profiles:
       guarded-everything: every-push
       standard: checkpoint-and-nightly
@@ -592,6 +686,8 @@ switches:
     floor: false
     band: []
     cost: "seconds"
+    implementation: manual
+    manualAction: "record each lane's readings in the bands' own file at the merge, and read the bands at every checkpoint"
     profiles:
       guarded-everything: "off"
       standard: "on"
@@ -607,6 +703,8 @@ switches:
     floor: true
     band: [loop/cycle-budget-used]
     cost: "20 min per sitting"
+    implementation: manual
+    manualAction: "write the sitting's record and replace STATE from its template in the same commit"
     profiles:
       guarded-everything: "on"
       standard: "on"
@@ -623,6 +721,8 @@ switches:
     floor: true
     band: []
     cost: "seconds"
+    implementation: declarative
+    manualAction: ""
     profiles:
       guarded-everything: "on"
       standard: "on"
@@ -638,6 +738,8 @@ switches:
     floor: true
     band: []
     cost: "seconds"
+    implementation: declarative
+    manualAction: ""
     profiles:
       guarded-everything: "on"
       standard: "on"
@@ -653,6 +755,8 @@ switches:
     floor: true
     band: []
     cost: "seconds"
+    implementation: declarative
+    manualAction: ""
     profiles:
       guarded-everything: "on"
       standard: "on"
@@ -668,6 +772,8 @@ switches:
     floor: true
     band: []
     cost: "seconds"
+    implementation: manual
+    manualAction: "bump the method stamp in every file that carries it, and run the method evals, in the merge that moves method text"
     profiles:
       guarded-everything: "on"
       standard: "on"
@@ -683,6 +789,8 @@ switches:
     floor: true
     band: []
     cost: "seconds"
+    implementation: manual
+    manualAction: "append to a checkpoint, a verdict or a room entry; never edit one"
     profiles:
       guarded-everything: "on"
       standard: "on"

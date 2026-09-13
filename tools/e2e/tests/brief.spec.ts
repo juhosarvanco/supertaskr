@@ -7081,6 +7081,8 @@ test("THE ARM'S FIVE SYMBOLS ARE THE PARSER LIBRARY'S, and this file carries no 
     "    floor: false",
     "    band: []",
     '    cost: "d"',
+    "    implementation: declarative",
+    '    manualAction: ""',
     "    profiles:",
     "      only: on",
     "",
@@ -7094,6 +7096,8 @@ test("THE ARM'S FIVE SYMBOLS ARE THE PARSER LIBRARY'S, and this file carries no 
     "    floor: false",
     "    band: []",
     '    cost: "h"',
+    "    implementation: manual",
+    '    manualAction: "somebody does this one by hand, and here is what they do"',
     "    profiles:",
     "      only: on",
     "",
@@ -7582,6 +7586,238 @@ test("THE READ SITES ARE DERIVED FROM THE ARM'S OWN SOURCE, never from a table b
   ]) {
     expect([...sites.keys()], `the arm reads no switch called ${id}`).toContain(id);
   }
+});
+
+/* ── T-299-s6: WHAT MAKES EACH ROW TRUE ────────────────────────────────
+ *
+ * A read site shows the value is READ. It does not show that changing it
+ * changes anything, and a surface that prints the value back shows less
+ * than that. So every row now says what makes it true — `operational`,
+ * `manual` or `declarative` — and the three bodies below are the schema's
+ * half of that: the label set and the action rule over the shipped rows,
+ * every `operational` row proved by CHANGING its value and watching the
+ * arm answer differently, and the one row the arm reads whose reading
+ * changes nothing the arm does.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/** The three labels, TYPED HERE for the reason the switch ids are: a set read out of the module the schema feeds would be vacuous. */
+const IMPLEMENTATION_LABELS = ["operational", "manual", "declarative"];
+
+test("EVERY ROW SAYS WHAT MAKES IT TRUE, only a manual row names an action, and an `operational` row is one an arm reads", () => {
+  // KILLED BY: a row carrying a label no surface knows, a manual row
+  // whose instruction is missing or a placeholder, an action on a row
+  // nobody has to act on, an `operational` label on a row whose own
+  // `reads:` says the ledger is its only reader, and a `declarative`
+  // label on a row an arm branches on. THE PROPERTY LIVES IN DATA, so
+  // this body reads the SHIPPED schema and a code mutant leaves it green.
+  const schema = shippedSchema();
+  const sites = armReadSites();
+  /** @type {Record<string, number>} */
+  const counts: Record<string, number> = { operational: 0, manual: 0, declarative: 0 };
+  for (const sw of schema.switches.values()) {
+    expect(IMPLEMENTATION_LABELS, `${sw.id} carries a label no surface knows how to render`).toContain(
+      sw.implementation,
+    );
+    counts[sw.implementation] = (counts[sw.implementation] ?? 0) + 1;
+    if (sw.implementation === "manual") {
+      expect(
+        sw.manualAction.trim().length,
+        `${sw.id} is manual and its action says nothing a reader could follow`,
+      ).toBeGreaterThan(20);
+    } else {
+      expect(
+        sw.manualAction,
+        `${sw.id} is ${sw.implementation} and carries an action anyway — an instruction nobody has to follow`,
+      ).toBe("");
+    }
+    const found = (sites.get(sw.id) ?? []).map((s) => s.symbol);
+    if (sw.implementation === "operational") {
+      expect(sw.reads, `${sw.id} is operational and names the ledger as its only reader`).not.toBe(LEDGER_READER);
+      expect(found, `${sw.id} is operational and the arm carries no read site for it`).toContain(sw.reads);
+    }
+    if (sw.implementation === "declarative") {
+      expect(sw.reads, `${sw.id} is declarative and names an arm symbol as its reader`).toBe(LEDGER_READER);
+      expect(found, `${sw.id} is declarative and an arm branches on it`).toEqual([]);
+    }
+  }
+  // ALL THREE LABELS ARE IN USE, so the assertions above cannot be
+  // satisfied by a schema that answers one word everywhere.
+  for (const label of IMPLEMENTATION_LABELS) {
+    expect(counts[label], `no row is labelled ${label}, so that arm of this body measures nothing`).toBeGreaterThan(0);
+  }
+  // AND THE COUNT OF OPERATIONAL ROWS IS A FIGURE THIS LANE MEASURED
+  // rather than a number fixed in advance (T-299-s6's second criterion).
+  // Six of forty-two rows are executable controls; moving this number is
+  // a decision somebody makes, and the body is what makes it one.
+  expect(counts["operational"] ?? 0, "the count of operational rows moved").toBe(6);
+  expect(
+    IMPLEMENTATION_LABELS.reduce((n, label) => n + (counts[label] ?? 0), 0),
+    "the labels do not account for every switch the schema declares",
+  ).toBe(schema.switches.size);
+});
+
+test("EVERY `operational` ROW IS PROVED BY CHANGING ITS VALUE AND WATCHING THE ARM ANSWER DIFFERENTLY", () => {
+  // THE CARD'S SECOND CRITERION, MECHANISED. KILLED BY: an `operational`
+  // label handed to a row with no observer (the table and the labelled
+  // set are required to be the same set, so the label cannot be given
+  // out without evidence), an observer whose answer is the same at every
+  // value, and an observer whose only difference IS the value printed
+  // back — which the strip below removes before comparing, because a
+  // displayed value is not an operational effect.
+  const schema = shippedSchema();
+  const guardMap = new Map([["parser", ["lib/parser/"]]]);
+  const keeper = { pinned: true, answered: true, why: "a keeper pins it" };
+  const tierIn = { size: "XS", fencePaths: ["app/src/x.ts"], unresolved: [], untracked: [], guardMap, keeper };
+  const moved = ["tools/e2e/tests/brief.spec.ts", "app/src/x.ts"];
+  const at = (id: string, v: string) => atProfile("standard", [[id, v]]);
+
+  const fx = ritualFixture("labelswitch");
+  try {
+    /** The MODEL ROW the arm prints, as a function of the setting — the arm's act, never the resolver's return. */
+    const modelRow = (v: string): string => {
+      const template = path.join(fx.root, RUNTIME_TEMPLATE);
+      writeFileSync(
+        template,
+        readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8")
+          .replace(/^(\s+)builder:.*$/m, "$1builder: planted-model@probe")
+          .replace(/^(  switches:)[ \t]*$/m, `$1\n    dispatch.model_per_role: ${v}`),
+      );
+      const printed = render(assembleBrief(context({ root: fx.root, taskId: FIXTURE_CARD_ID })).recs);
+      if (printed.includes("NAMED BY HAND")) return "row:the seat names it";
+      if (printed.includes("planted-model@probe")) return "row:the template named it";
+      return "row:neither";
+    };
+
+    const observers: Record<string, (v: string) => string> = {
+      "dispatch.model_per_role": modelRow,
+      "verify.tier": (v) => classifyTier({ ...tierIn, process: at("verify.tier", v) }).tier,
+      "verify.phase1": (v) => {
+        const owed = phase1Owed(at("verify.phase1", v), "guarded");
+        return `${String(owed.render)}/${owed.by}`;
+      },
+      "merge.regen_graph": (v) =>
+        tailPlan({ paths: moved, projectRoot: repoRoot, id: "T-000", process: at("merge.regen_graph", v) })
+          .map((s) => s.id)
+          .join(","),
+      "merge.regen_census": (v) =>
+        tailPlan({ paths: moved, projectRoot: repoRoot, id: "T-000", process: at("merge.regen_census", v) })
+          .map((s) => s.id)
+          .join(","),
+      "merge.keepers": (v) =>
+        keeperSteps({
+          projectRoot: repoRoot,
+          id: "T-000",
+          card: "docs/tasks/T-000.md",
+          process: at("merge.keepers", v),
+        })
+          .map((s) => s.id)
+          .join(","),
+    };
+
+    const labelled = [...schema.switches.values()]
+      .filter((sw) => sw.implementation === "operational")
+      .map((sw) => sw.id)
+      .sort();
+    expect(
+      Object.keys(observers).sort(),
+      "a row is labelled operational with no body that changes its value, or a body stands for a " +
+        "row the schema no longer calls operational",
+    ).toEqual(labelled);
+
+    for (const [id, observe] of Object.entries(observers)) {
+      const sw = schema.switches.get(id);
+      expect(sw, `${id} is not declared`).toBeDefined();
+      const values = (sw as NonNullable<typeof sw>).values;
+      expect(values.length, `${id} declares one value, so nothing can be changed`).toBeGreaterThan(1);
+      const answers = values.map((v) => observe(v));
+      expect(
+        new Set(answers).size,
+        `${id} is labelled operational and the arm answered the SAME at every value: ` +
+          `${answers.join(" | ")}`,
+      ).toBe(values.length);
+      // AND THE DIFFERENCE IS NOT THE VALUE ITSELF. Every value of the
+      // row is erased from every answer before they are compared, so an
+      // observer that reads back what it was handed collapses here.
+      const strip = (s: string) => values.reduce((acc, v) => acc.split(v).join(""), s);
+      expect(
+        new Set(answers.map(strip)).size,
+        `${id}'s answers differ only by the value printed back, which is not an operational effect`,
+      ).toBe(values.length);
+    }
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(labelswitch)");
+  }
+});
+
+test("A READ SITE IS NOT AN OPERATIONAL EFFECT — the arm reads `record.whole_suite_net` and nothing it DOES moves with it", () => {
+  // THE ROW THE CARD'S SECOND CRITERION EXISTS FOR. `record.whole_suite_net`
+  // has a read site, an arm symbol of its own and a body proving that
+  // symbol answers differently at every value — and still nothing the arm
+  // DOES changes when it moves, because the symbol's answer is a sentence
+  // the brief prints. KILLED BY: the row relabelled operational on the
+  // strength of its read site, an observer too blunt to see a plan change
+  // (the positive control at the foot), and a row that stops naming who
+  // keeps the clock.
+  const schema = shippedSchema();
+  const sw = schema.switches.get("record.whole_suite_net");
+  expect(sw, "the row is no longer declared").toBeDefined();
+  const row = sw as NonNullable<typeof sw>;
+  expect(row.reads, "the row no longer names an arm symbol, so there is no claim here to test").not.toBe(
+    LEDGER_READER,
+  );
+  expect(
+    [...armReadSites().keys()],
+    "the arm has no read site for it, so the interesting case is gone",
+  ).toContain("record.whole_suite_net");
+  expect(row.implementation, "a row the arm merely READS was labelled an executable control").toBe("manual");
+  expect(
+    row.manualAction,
+    "and it names nobody, so a reader is not told who keeps the clock instead",
+  ).not.toBe("");
+
+  const guardMap = new Map([["parser", ["lib/parser/"]]]);
+  const keeper = { pinned: true, answered: true, why: "a keeper pins it" };
+  const tierIn = { size: "XS", fencePaths: ["app/src/x.ts"], unresolved: [], untracked: [], guardMap, keeper };
+  const moved = ["tools/e2e/tests/brief.spec.ts", "app/src/x.ts"];
+  /** Everything the arm DOES that a setting could reach, at one value of this row. */
+  const acts = (v: string) => {
+    const p = atProfile("standard", [["record.whole_suite_net", v]]);
+    return [
+      tailPlan({ paths: moved, projectRoot: repoRoot, id: "T-000", process: p }).map((s) => s.id).join(","),
+      keeperSteps({ projectRoot: repoRoot, id: "T-000", card: "docs/tasks/T-000.md", process: p })
+        .map((s) => s.id)
+        .join(","),
+      classifyTier({ ...tierIn, process: p }).tier,
+      `${String(phase1Owed(p, "guarded").render)}/${phase1Owed(p, "guarded").by}`,
+    ].join(" | ");
+  };
+  expect(
+    new Set(row.values.map(acts)).size,
+    "the arm's plan moved with this row after all, which would make it operational",
+  ).toBe(1);
+
+  // THE POSITIVE CONTROL, and it is what makes "nothing moved" mean
+  // anything: the SAME observer over an operational row does move.
+  const keepersAt = (v: string) =>
+    keeperSteps({
+      projectRoot: repoRoot,
+      id: "T-000",
+      card: "docs/tasks/T-000.md",
+      process: atProfile("standard", [["merge.keepers", v]]),
+    })
+      .map((s) => s.id)
+      .join(",");
+  expect(
+    keepersAt("on"),
+    "the control: this observer cannot tell two merge plans apart, so it could not have seen a change above",
+  ).not.toBe(keepersAt("off"));
+
+  // AND WHAT DOES MOVE IS THE SENTENCE THE BRIEF PRINTS, which is
+  // precisely what the card says is not evidence.
+  expect(
+    wholeSuiteNet(atProfile("standard", [["record.whole_suite_net", "every-push"]])).why,
+    "even the sentence stopped moving, so the read site is doing nothing at all",
+  ).not.toBe(wholeSuiteNet(atProfile("standard")).why);
 });
 
 /* ── THE VERIFIER'S ASSIGNED CORRECTIONS (T-299, phase 2) ──────────── */

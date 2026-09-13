@@ -4950,7 +4950,7 @@
       "id": "f:app/src-tauri/src/agent/kit.rs",
       "path": "app/src-tauri/src/agent/kit.rs",
       "lang": "rust",
-      "hash": "blake3:4ec156a8ebbfe69b6896dc3c4eb69183b72d909d0fffc70f69218945a65fb568",
+      "hash": "blake3:3ee7ccb8ff9ed5d74b9dc1f32d43d744bf15e1474d79c3d69428039c2bc4dc93",
       "loc": 1175,
       "symbols": [
         {
@@ -26014,8 +26014,8 @@
       "id": "f:lib/parser/src/process-settings.ts",
       "path": "lib/parser/src/process-settings.ts",
       "lang": "ts",
-      "hash": "blake3:0bfb3347fd8f505eed97af7cd5b016ff35d78391a7f498e315ee66a34e3e467d",
-      "loc": 592,
+      "hash": "blake3:3a10aeb986c9a29d62d7ec8a91b991b0df7ee268bf96d0734f8e138daf8a73dc",
+      "loc": 659,
       "symbols": [
         {
           "id": "s:lib/parser/src/process-settings.ts#FindingConstructor",
@@ -26023,8 +26023,18 @@
           "kind": "type",
           "exported": true,
           "range": [
-            136,
-            136
+            175,
+            175
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#IMPLEMENTATIONS",
+          "name": "IMPLEMENTATIONS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            100,
+            104
           ]
         },
         {
@@ -26033,8 +26043,18 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            123,
-            133
+            160,
+            172
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#MANUAL_IMPLEMENTATION",
+          "name": "MANUAL_IMPLEMENTATION",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            107,
+            107
           ]
         },
         {
@@ -26073,8 +26093,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            139,
-            146
+            178,
+            185
           ]
         },
         {
@@ -26083,8 +26103,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            96,
-            102
+            133,
+            139
           ]
         },
         {
@@ -26093,8 +26113,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            105,
-            110
+            142,
+            147
           ]
         },
         {
@@ -26103,8 +26123,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            113,
-            120
+            150,
+            157
           ]
         },
         {
@@ -26113,8 +26133,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            149,
-            156
+            188,
+            195
           ]
         },
         {
@@ -26123,8 +26143,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            80,
-            93
+            113,
+            130
           ]
         },
         {
@@ -26143,8 +26163,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            63,
-            74
+            65,
+            78
           ]
         },
         {
@@ -26153,8 +26173,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            77,
-            77
+            110,
+            110
           ]
         },
         {
@@ -26163,8 +26183,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            585,
-            585
+            652,
+            652
           ]
         },
         {
@@ -26173,8 +26193,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            592,
-            592
+            659,
+            659
           ]
         },
         {
@@ -26183,8 +26203,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            206,
-            208
+            245,
+            247
           ]
         },
         {
@@ -26193,8 +26213,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            211,
-            217
+            250,
+            256
           ]
         },
         {
@@ -26203,8 +26223,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            587,
-            587
+            654,
+            654
           ]
         },
         {
@@ -26213,8 +26233,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            177,
-            204
+            216,
+            243
           ]
         },
         {
@@ -26223,8 +26243,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            591,
-            591
+            658,
+            658
           ]
         },
         {
@@ -26233,8 +26253,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            165,
-            171
+            204,
+            210
           ]
         },
         {
@@ -26243,8 +26263,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            588,
-            588
+            655,
+            655
           ]
         },
         {
@@ -26253,8 +26273,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            224,
-            577
+            263,
+            644
           ]
         },
         {
@@ -26263,8 +26283,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            589,
-            589
+            656,
+            656
           ]
         },
         {
@@ -26273,8 +26293,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            590,
-            590
+            657,
+            657
           ]
         }
       ]
@@ -27385,8 +27405,8 @@
       "id": "f:lib/parser/test/process-settings.test.ts",
       "path": "lib/parser/test/process-settings.test.ts",
       "lang": "ts",
-      "hash": "blake3:2e16ec1a5fb7b0da7d09e02ed406d41a47d72348b8450a0a3149291641d49f8a",
-      "loc": 516,
+      "hash": "blake3:88c3457cdd20235f4ca6756043d32cf3d6b05ac0283bb049a6def0c53b3cbeb7",
+      "loc": 602,
       "symbols": [
         {
           "id": "s:lib/parser/test/process-settings.test.ts#FIXTURE",
@@ -27394,8 +27414,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            39,
-            88
+            42,
+            97
           ]
         },
         {
@@ -27404,8 +27424,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            91,
-            98
+            100,
+            107
           ]
         },
         {
@@ -27414,8 +27434,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            100,
-            100
+            109,
+            109
           ]
         },
         {
@@ -27424,8 +27444,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            103,
-            110
+            112,
+            119
           ]
         }
       ]
@@ -45916,7 +45936,7 @@
   ],
   "stats": {
     "files": 203,
-    "symbols": 2591,
+    "symbols": 2593,
     "edges": 2488
   }
 }
