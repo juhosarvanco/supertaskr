@@ -299,6 +299,10 @@ not one to promote.
 - The notes above say mutant B discharges the attack set's C3. It does not: mutant B sits at the stand-in helper, the site C3's own text rules out; the verifier drilled the verb-side form (the verb's exit path with the ancestor intact) and the property holds. The claim is withdrawn by this line.
 - The notes above count seven `--take-seat` / `--release-seat` invocations, twice. There are six call sites; the count included the declaration. The figure is corrected by this line.
 
+### The integrator's CI reading of 2026-09-14 (criterion 3, the merge's run)
+
+The merge acbef50c was pushed in the range e528a5d5..831bfeac; the runner's run 34784008978 on 831bfeac completed success at 2026-09-13T21:52Z with every job green (owed, checks, app, parser, native, e2e shards 1 to 4). In e2e shard 2 of 4, the shard carrying tools/e2e/tests/push-guard.spec.ts, the two bodies this card names passed by title — "`--take-seat` installs the guard and announces it, and BOTH seat verbs report a checkout without the hook as UNGUARDED" at body 318 and "`--take-seat` records NO seat when the guard cannot be installed, and leaves the configuration and the index alone" at body 319 — with 336 passed on the shard; the previous run on the parent range, 34779927372 on e528a5d5, had those two bodies red and 333 passed. Criterion 1's second half and criterion 3's second half are discharged by that run, read from the runner and not from a local battery.
+
 ## Verdicts
 
 Promoted 2026-09-13 (the architect seat's step-2 triage, under the owner's ruling of 2026-09-13 to run the regular ceremony without token or time limits, the lane order delegated to the seat the same day): to planned at priority 1 — main is red on the runner at 8d26c8c5 on the two bodies this card names, and the remedy is the helper the preflight spec already has; dispatched next after T-300-s7 merges, under the standing authorization of 2026-09-12.
