@@ -1,0 +1,33 @@
+---
+id: T-319
+title: "Approved work windows: the orchestrator's per-dispatch approval becomes a window the owner approves once — a verbatim record naming the outcome, the cards at their approved revisions, the coordinator, the model settings, the ceilings per provider and account, the attempt limit and the expiry; the arm refuses a dispatch the window does not cover and reserves every attempt against it, and the coordinator stops at five boundaries with one consolidated question"
+feature: F-04
+milestone: 4
+size: M
+priority: 2
+status: suggested
+suggested_by: "the architect seat on 2026-09-13, from the Codex orchestrator's lean-delivery plan v2 and its reconciliation review of the same day, filed on the owner's ruling; filing authorizes no development"
+blocked_by: []
+touches: [method/roles/orchestrator.md, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/scripts/run-record.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/run-record.spec.ts, docs/windows/README.md, docs/CONVENTIONS.md]
+builder:
+verifier:
+built_by:
+verified_by:
+review: independent
+---
+
+## What was measured
+
+On 2026-09-13 the seat's ledger records sixteen answers from the owner, four of them bound to a lane (a pre-dispatch ruling on heading depth, the declarative ruling, three pre-dispatch texts in one yes, the lane order) and the rest records and policy administration. The orchestrator role file's step 5 says the seat proposes each dispatch and waits for approval. The owner's standing authorization of 2026-09-12 (dispatch the filed cards in prerequisite order, one lane at a time, stop at four named events) and the delegated lane order of 2026-09-13 are blanket approvals of that step, and they live only in the seat's ledger and in chat. Nothing in the tree carries them: the dispatch arm cannot tell an authorized dispatch from an unauthorized one, the ceilings the owner named are the seat's memory, and a replacement seat after a compaction inherits them only through a checkpoint's prose. The lean-delivery plan v2 (kept beside the repository in the evidence directory) proposes a window contract: an outcome, two or three eligible cards with fixed scope, one coordinator, the permitted model settings, numeric ceilings per provider and account, an attempt limit and a permitted runtime, approved once; the coordinator runs inside it and stops at five boundaries with one consolidated question. The run record (T-311, run-record.mjs) already owns reservations, attempts and observed usage per child run; the tier budgets are the schema's; T-318 plans the template's budget and eligibility constraints per provider and account with the enforced-or-advisory label. A window is the missing record between the owner's yes and the arm's dispatch. The record class proposed here is a directory of window records under docs (its contract in a README, one file per window with frontmatter the arm reads), a records class beside tasks and decisions rather than a runtime file, because a window is proposed verbatim and approved on the owner's yes like a decision entry (T-307) and is never rewritten: activation, exhaustion, expiry and revocation are dated appends. The window approved by hand before this card lands (the repair window proposed for 2026-09-14) is transcribed into the class by the seat, as a records act, once the class exists.
+
+## Acceptance criteria
+
+- WHEN a window is proposed THE record SHALL name the outcome, the coordinator (harness and model), the permitted model settings for each role by reference to the runtime template's roles, each eligible card by id AND by the blob sha of its card file at approval (its criteria and fence at that revision), numeric ceilings per provider and account (each labelled enforced, advisory or unknown), the attempt limit per card (one build plus one authorized correction or re-entry unless the record says otherwise), the permitted runtime (an activation instant and an expiry instant), and SHALL be proposed verbatim and approved on the owner's yes as a decision entry is (T-307); a record missing any field SHALL be refused by name by the arm's reader, pinned by a body per field.
+- WHEN the dispatch arm plans a lane THE arm SHALL read the active window (at most one), SHALL refuse by name — before any side effect: no stamp, no worktree, no spawn — a dispatch of a card the window does not name, a card whose file differs from its approved blob by more than a mechanical append (a status stamp, a notes or verdicts append, a filed follow-up line), a window past its expiry or revoked, or a coordinator other than the record's, and SHALL record the dispatch as an attempt reserved against the window through the run record's own reservation (T-311's takeReservation and release), never through a second ledger; a crashed or uncertain writer keeps its reservation until it is reconciled.
+- WHEN the next attempt's planning figure would exceed a ceiling THE arm SHALL refuse the dispatch by name with the remaining allowance and the figure, and a correction round or a re-entry SHALL obey the same remaining allowance; the accounting distinguishes observed usage (the harness's own count from a completion) from an estimate (a planning figure standing in for an unknown), and an unknown stays unknown rather than counting as zero, pinned by bodies for the refusal, the correction round and the unknown.
+- WHEN the coordinator meets one of the five boundaries — a scope change the card's approved revision does not cover, a ceiling reached, an uncertain writer, an integrity failure the standing procedures do not address, a decision the record reserves to the owner — THE coordinator SHALL stop with one consolidated question naming the boundary, the cost so far and the remaining allowance, pinned by a body per boundary against the seat-facing report the arm prints; and the role file's step 5 SHALL say that a dispatch inside an active window is approved by the window and that every other dispatch still waits for the owner, the existing sentences kept and extended rather than reworded.
+- WHEN the arm reports what it enforces THE report SHALL separate the refusals it tested (a card outside the window, a stale revision, an expired or revoked window, a ceiling exceeded on observed counts) from the coordinator's obligations the arm cannot check (scope interpretation, an unreported integrity problem, a provider's live usage the harness does not expose) and from advisory accounting; the conventions carry the rule and the record's spelling once, at the loop's section, and the README under the windows directory carries the record's shape.
+
+## Implementation notes
+
+## Verdicts
