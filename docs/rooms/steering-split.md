@@ -91,3 +91,7 @@ deliberately, which is the practice today and is recorded on `T-180`.
 
 RESOLUTION: none yet — @human plans this one; the positions above are a
 seat's draft for that planning, not a vote.
+
+## Resolution for the current stage — 2026-09-13 (the owner, asked with options; appended on the owner's yes)
+
+The owner ruled on 2026-09-13 that the room's question is resolved for the current stage by the ruling of 2026-09-09 that the native harness apps are the cockpit for now, clarified by the mirror-first direction of 2026-09-12: the app renders and re-renders the loop's state, and an edit runs the terminal command through the app's native half in a later card; no in-app steering conversation is planned at this stage. The status line above stands with this entry as its record. T-180, parked on this room's resolution since 2026-08-30, wakes for re-triage at the next pruning batch, where its app-spawn scope is reassessed against the current plan; waking it authorizes neither its promotion nor its dispatch. A later stage may reopen the question by a new entry, never by editing this one.

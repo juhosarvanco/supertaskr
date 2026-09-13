@@ -144,3 +144,5 @@ sets the model on the subagent it launches, which is what happened on
 DISCIPLINE — if a future dispatcher forgets, nothing catches it at spawn
 time and only `T-169`'s after-the-fact flag would notice. That is the
 cost of the park, stated so the room can weigh it.
+
+Woken 2026-09-13 (the owner's ruling 8 of 2026-09-13): docs/rooms/steering-split.md now records its resolution for the current stage (the native apps are the cockpit for now, the app a mirror first), which is this card's wake condition; it is re-triaged at the next pruning batch, its app-spawn scope reassessed against the current plan; waking authorizes neither promotion nor dispatch, and the status stays parked until that triage.
