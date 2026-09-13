@@ -57,3 +57,5 @@ placeholder for the investigation's end; the real condition is the findings reac
 The four cards the lane filed (T-312-s1 to s4) remain on the lane branch until it lands or the
 owner rules otherwise.
 
+
+Note of 2026-09-13, later the same day: with the owner's permission, on the Codex orchestrator's check that both were clean, the lane worktree and the bench worktree were removed with plain `git worktree remove` so the parked fence no longer counts as live; the lane branch (tip `41ec2363`) and the ref `evidence/T-312-bench-4e78e9bf` hold every commit, and the ignored evidence both folders carried (`.supertaskr/gate-verdict.json` from each, the lane's lock and fence manifest, the test-results and generated schemas) is preserved in the seat's scratch under `t312-evidence/`. Either worktree can be recreated from its reference.
