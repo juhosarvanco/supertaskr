@@ -192,13 +192,78 @@ const PATH_WITH_LINE = /:\d+(?::\d+)?$/;
 const PROSE_LINE = /\blines?\s+\d+\b/i;
 
 /**
+ * A CORRECTION BLOCK'S OWN HEADING — ONE SOURCE, THREE READERS.
+ *
+ * `assignsCorrections` asks whether a verdict heads any, `correctionHeadings`
+ * counts them, and `isVerdictHeading` below refuses to read one as a verdict
+ * entry. The pattern was spelled three times; a second spelling of one rule
+ * is the T-057 failure this project names by number, and here the three
+ * would have had to move together the day a block heading changed shape.
+ */
+const CORRECTION_HEADING_SOURCE = String.raw`^#+\s*CORRECTION\b`;
+
+/** One line judged against that source. */
+const CORRECTION_HEADING = new RegExp(CORRECTION_HEADING_SOURCE, "i");
+
+/**
+ * The same source asked of a whole verdict — DOES it head one — and it is
+ * deliberately not the global form below: `RegExp.test` on a global regex
+ * carries `lastIndex` from call to call and answers true, false, true over
+ * one unchanging input.
+ */
+const CORRECTION_IN_TEXT = new RegExp(CORRECTION_HEADING_SOURCE, "im");
+
+/** The same source, global, for the COUNT — used through `String.match`. */
+const CORRECTION_HEADINGS = new RegExp(CORRECTION_HEADING_SOURCE, "gim");
+
+/**
  * A VERDICT ENTRY'S OWN HEADING, which is what separates one pass from
  * the next. Verdicts are APPENDED (method/tasks/TASK-FORMAT.md, "one
  * dated entry per pass"), so the NEWEST is the LAST such heading — and
  * the sub-headings a verdict carries inside itself are `###` too, which
  * is why this is anchored on the date rather than on the level alone.
+ *
+ * **AND THE DATE MAY SIT ANYWHERE IN THE LINE** (T-311-s5, absorbing
+ * T-311-s7). It used to have to come first, after at most one capitalised
+ * word. `roles/verifier.md` asked for a verdict that is dated and names
+ * the model and session, and said nothing about where the date goes — so
+ * a verifier that wrote `### APPROVED WITH ASSIGNED CORRECTIONS —
+ * <model@session>, verifier phase 2, 2026-09-12` obeyed the rule and was
+ * invisible to this reader, which then refused the drill with "carries no
+ * dated `### ` entry" while the entry stood one screen above the message.
+ * A reader narrower than the rule it enforces is the defect; the rule is
+ * a DATED entry, and this is now that rule. The role file names one shape
+ * beside it, so the two halves are a spelling and a reader rather than a
+ * guess and a regex.
+ *
+ * **WHAT THE DATE ANCHOR WAS PROTECTING IS KEPT BY THE EXCLUSION BESIDE
+ * IT.** A correction block's heading is `###` too and may carry a date of
+ * its own; taken as the newest entry it would slice the verdict in half
+ * and drop exactly the blocks the drill is about. So a heading this file
+ * already counts as a CORRECTION is never a verdict entry.
+ *
+ * MEASURED OVER `docs/tasks/` AT `71b52a01125d`: 310 cards carry a
+ * `## Verdicts` section; on 19 of them this reader finds an entry the
+ * anchored one missed entirely, and on one (T-238-s1) it moves from the
+ * verdict to a later dated entry appended under the same heading, which
+ * is what "the newest entry" means. No live card's answer turns on the
+ * correction exclusion at that ref — it is kept by a body over a planted
+ * card, because the shape it guards against is one nobody has written
+ * yet and the cost of meeting it for the first time inside a merge is
+ * a verdict read from its middle.
  */
-const VERDICT_HEADING = /^###\s+(?:[A-Z]+\s+)?\d{4}-\d{2}-\d{2}\b/;
+const VERDICT_HEADING = /^###\s+.*\d{4}-\d{2}-\d{2}/;
+
+/**
+ * Is this line a verdict ENTRY's heading — dated, at depth three, and not
+ * a correction block's own heading?
+ *
+ * @param {string} line
+ * @returns {boolean}
+ */
+export function isVerdictHeading(line) {
+  return VERDICT_HEADING.test(line) && !CORRECTION_HEADING.test(line);
+}
 
 /**
  * THE NEWEST VERDICT ON A CARD — the one a merge is entitled to act on.
@@ -212,7 +277,7 @@ export function newestVerdict(cardText) {
   if (section === -1) return { problem: "the card carries no `## Verdicts` section" };
   let start = -1;
   for (let i = section + 1; i < lines.length; i += 1) {
-    if (VERDICT_HEADING.test(lines[i] ?? "")) start = i;
+    if (isVerdictHeading(lines[i] ?? "")) start = i;
   }
   if (start === -1) {
     return {
@@ -236,13 +301,13 @@ export function newestVerdict(cardText) {
  */
 export function assignsCorrections(verdictText) {
   return (
-    /\bASSIGNED\s+CORRECTIONS?\b/i.test(verdictText) || /^#+\s*CORRECTION\b/im.test(verdictText)
+    /\bASSIGNED\s+CORRECTIONS?\b/i.test(verdictText) || CORRECTION_IN_TEXT.test(verdictText)
   );
 }
 
 /** @param {string} verdictText @returns {number} how many corrections the verdict heads */
 export function correctionHeadings(verdictText) {
-  return (verdictText.match(/^#+\s*CORRECTION\b/gim) ?? []).length;
+  return (verdictText.match(CORRECTION_HEADINGS) ?? []).length;
 }
 
 /** @param {string} haystack @param {string} needle @returns {number} */

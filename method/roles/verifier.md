@@ -157,6 +157,22 @@ to catch.
 5. Verdict, appended to the task file — dated, with your model@session:
    APPROVED, or REJECTED with concrete, reproducible failures (commands,
    inputs, expected vs actual). Vague objections are not verdicts.
+5a. **THE ENTRY'S HEADING IS A DEPTH-THREE HEADING THAT OPENS WITH THE
+   DATE**, so that the verdict a later reader looks for is the verdict
+   you wrote:
+
+       ### <YYYY-MM-DD> — <VERDICT> — <model@session>
+
+   The date first, then the verdict word, then who wrote it; whatever
+   else the heading needs follows on the same line. **"Dated" above says
+   a date must be THERE and says nothing about WHERE**, and a heading
+   that carries its date at the end is dated by that rule — which is how
+   a verdict came to be invisible to a reader that wanted the date at
+   the start, refusing the pass with "no dated entry" while the entry
+   stood one screen above the refusal. Both halves of that are repairs:
+   a reader accepts every shape the rule allows, and this is the shape a
+   verifier writes, so neither seat has to read the other's regex to
+   learn how to spell a heading.
 5b. **A CORRECTION YOU ASSIGN IS A BODY YOU COMMIT, AND A BLOCK THE
    MERGE CAN READ.** You have already written the body — that is how you
    know the correction is real — and you have already run it both ways on

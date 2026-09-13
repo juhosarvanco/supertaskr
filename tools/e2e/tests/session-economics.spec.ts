@@ -1,9 +1,10 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { repoRoot } from "../preflight";
+import { CRITERIA_HEADING as PREFLIGHT_RULE, cardLines } from "../scripts/card-preflight.mjs";
 import {
   EXIT,
   assembleBrief,
@@ -11,12 +12,14 @@ import {
   contractRows,
   fenceOverlaps,
   fieldList,
+  frontmatterFields,
   render,
   roleText,
   unstampedLines,
 } from "../scripts/dispatch-brief.mjs";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import {
+  CRITERIA_HEADING as ADVISORY_RULE,
   DECOMPOSITION_FILE,
   EARS_ANCHOR,
   KNOW,
@@ -727,4 +730,177 @@ test("the lightest ceremony tier is read off the table's first row rather than t
   expect(lightestTier(md.replace("| S, diff outside shipped code |", "| XS, diff outside shipped code |"))).toBe(
     "XS",
   );
+});
+
+/* ────────────────────────────────────────────────────────────────────
+ * THE CRITERIA HEADING — ONE RULE, TWO READERS, ONE DEPTH (T-311-s5).
+ *
+ * The advisory reader compared the heading whole, at depth two, while
+ * the card preflight matched the name at any depth from two. So the two
+ * answered different criteria for the same file: a batch of cards
+ * drafted in one document inherited `### `, their criteria were checked
+ * by the preflight, and the advisory line reported that they carried
+ * none. A card whose signals depend on which tool asked is the defect,
+ * and the repair is one rule imported rather than a second copy kept in
+ * step by hand.
+ */
+
+/** A fixture card whose criteria heading sits at the depth asked for. */
+function cardAtDepth(hashes: string): string {
+  return [
+    "---",
+    "id: T-900",
+    "title: A fixture card",
+    "---",
+    "",
+    "The summary paragraph.",
+    "",
+    `${hashes} Acceptance criteria`,
+    "",
+    "- WHEN a card is read THE reader SHALL find this criterion.",
+    "- WHEN it is read again THE reader SHALL find the second one too.",
+    "",
+    "## Implementation notes",
+    "",
+    "- this bullet is below the section and belongs to neither reader",
+    "",
+  ].join("\n");
+}
+
+test("the criteria heading is matched by the CARD PREFLIGHT'S OWN RULE, and the two readers answer one card the same way", () => {
+  // IDENTITY, NOT EQUALITY. A copy of the pattern is a second rule that
+  // has to be kept in step by hand, and the day either widens is the day
+  // they disagree again — which is exactly how this defect arrived.
+  expect(
+    ADVISORY_RULE,
+    "the advisory reader spells its own copy of the criteria heading rule",
+  ).toBe(PREFLIGHT_RULE);
+
+  for (const hashes of ["##", "###", "####"]) {
+    const text = cardAtDepth(hashes);
+    expect(acceptanceCriteria(text).length, `the advisory reader at ${hashes}`).toBe(2);
+    expect(cardLines(text).hasCriteria, `the preflight at ${hashes}`).toBe(true);
+  }
+
+  // THE NEGATIVE CONTROL IS THE RULE'S OWN BOUNDARY: a depth-ONE heading
+  // is not the criteria section, and it is not the section for EITHER
+  // reader. Without this the body above would pass against a rule that
+  // matched every heading ending in those two words.
+  const one = cardAtDepth("#");
+  expect(acceptanceCriteria(one), "a depth-one heading is read as the section").toEqual([]);
+  expect(cardLines(one).hasCriteria, "and the preflight reads it as one").toBe(false);
+
+  // AND THE SECTION ENDS IN THE SAME PLACE, which is the other half of
+  // "the same criteria": the bullet under the notes heading is not a
+  // criterion for either reader, whatever depth the section opened at.
+  for (const hashes of ["##", "###"]) {
+    const read = acceptanceCriteria(cardAtDepth(hashes)).join(" | ");
+    expect(read, `the section at ${hashes} ran past its own end`).not.toContain("neither reader");
+  }
+});
+
+test("the two readers agree about the criteria section on every live card", () => {
+  // THE CORPUS IS THE MEASUREMENT. The fixtures above prove the rule; the
+  // board is where a disagreement actually cost something, and it is the
+  // only input that can surprise this pair.
+  const dir = path.join(repoRoot, "docs", "tasks");
+  const disagreed: string[] = [];
+  let read = 0;
+  for (const name of readdirSync(dir)) {
+    if (!name.endsWith(".md")) continue;
+    read += 1;
+    const text = readFileSync(path.join(dir, name), "utf8");
+    const advisory = optionalSection(text, ADVISORY_RULE) !== null;
+    const preflight = cardLines(text).hasCriteria;
+    if (advisory !== preflight) {
+      disagreed.push(`${name}: advisory=${String(advisory)} preflight=${String(preflight)}`);
+    }
+  }
+  expect(read, "no cards under docs/tasks/ — this body measured nothing").toBeGreaterThan(200);
+  expect(
+    disagreed,
+    "a card whose criteria section one reader finds and the other does not — the two rules have " +
+      "drifted apart again",
+  ).toEqual([]);
+});
+
+/**
+ * THE CARDS THAT SPELL THE CRITERIA HEADING AT ANOTHER DEPTH, measured
+ * over `docs/tasks/` at `71b52a01125d` with the rule the body below
+ * applies — the nine cards of one planning batch, which were drafted in
+ * one document and inherited its depth, and one card whose only heading
+ * of that name is a verifier's per-criterion table.
+ *
+ * **IT IS PINNED AS AN EQUALITY IN BOTH DIRECTIONS, and that is
+ * deliberate.** A set that only forbids ADDITIONS rots into a licence:
+ * an id repaired or a card folded away leaves a name here that pins
+ * nothing, and nobody finds out. So the reading has to EQUAL this list —
+ * a card drafted at the wrong depth reds, and so does a repair, which is
+ * news the same way. Whether these are repaired is the owner's ruling and
+ * this list is a measurement, never a permission.
+ */
+const KNOWN_OFF_DEPTH = [
+  "T-229-s4",
+  "T-299-s6",
+  "T-300-s6",
+  "T-311",
+  "T-312",
+  "T-313",
+  "T-314",
+  "T-315",
+  "T-316",
+  "T-317",
+];
+
+test("the task format names ONE depth for a card's sections, and the board spells the criteria heading there", () => {
+  const md = readFileSync(path.join(repoRoot, "method", "tasks", "TASK-FORMAT.md"), "utf8");
+
+  // THE DOCUMENT IS THE AUTHORITY AND THE NUMBER COMES OUT OF IT. A body
+  // that greps for a sentence is satisfied by the sentence; this one
+  // takes the depth the document NAMES in words, checks it against the
+  // depth the document's own block SPELLS, and then measures the board
+  // against that one number. Move either statement and this reds.
+  const named = /WRITTEN AT DEPTH ([A-Z]+)/.exec(md);
+  expect(named, "the task format no longer names the depth its sections are written at").not.toBeNull();
+  const words: Record<string, number> = { ONE: 1, TWO: 2, THREE: 3, FOUR: 4 };
+  const depth = words[String(named?.[1])];
+  expect(depth, `the task format names a depth this body cannot read: ${String(named?.[1])}`).toBeGreaterThan(0);
+  const spelled = /^(#+) Acceptance criteria\b/m.exec(md);
+  expect(spelled, "the body-sections block no longer spells the criteria heading").not.toBeNull();
+  expect(
+    String(spelled?.[1]).length,
+    "the block and the sentence beside it name different depths, so a card cannot obey both",
+  ).toBe(depth);
+
+  /** The depth a card spells its criteria heading at, or undefined. */
+  const depthOf = (text: string): number | undefined => {
+    const heading = cardLines(text).lines.find((l) => PREFLIGHT_RULE.test(l.text.trim()));
+    if (heading === undefined) return undefined;
+    return String(/^(#+)/.exec(heading.text.trim())?.[1]).length;
+  };
+
+  // POSITIVE CONTROL, RUN BEFORE THE LOOP IS TRUSTED: the reading tells
+  // the two depths apart on a planted card. A loop whose reader answered
+  // the same thing for every card would report an empty set forever.
+  expect(depthOf(cardAtDepth("##")), "the reading cannot see depth two").toBe(2);
+  expect(depthOf(cardAtDepth("###")), "the reading cannot see depth three").toBe(3);
+
+  const dir = path.join(repoRoot, "docs", "tasks");
+  const off: string[] = [];
+  let read = 0;
+  for (const name of readdirSync(dir)) {
+    if (!name.endsWith(".md")) continue;
+    const text = readFileSync(path.join(dir, name), "utf8");
+    const at = depthOf(text);
+    if (at === undefined) continue;
+    read += 1;
+    if (at !== depth) off.push(String(frontmatterFields(text).id ?? name));
+  }
+  expect(read, "no card on this board carries a criteria heading — nothing was measured").toBeGreaterThan(200);
+  expect(
+    off.slice().sort(),
+    "the set of cards spelling the criteria heading at a depth the task format does not name has " +
+      "MOVED: a card drafted at the wrong depth, or one of these repaired or folded away. Both are " +
+      "news and neither is silent",
+  ).toEqual(KNOWN_OFF_DEPTH.slice().sort());
 });
