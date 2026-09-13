@@ -8,7 +8,7 @@ priority: 4
 status: suggested
 suggested_by: "executor claude-opus-5@subagent @T-298-s3, measured at 4e24160be293ab6a34d2a0043a55db76a7557176, 2026-09-14"
 blocked_by: []
-touches: [docs/reference/02-cards.md, app/src/components/board/badges/SizeBadge.tsx, tools/e2e/tests/docs-input-gate.spec.ts]
+touches: [docs/reference/02-cards.md, app/src/components/board/badges/SizeBadge.tsx, method/interview/decomposition.md, tools/e2e/scripts/merge.mjs, tools/e2e/tests/merge.spec.ts, tools/e2e/tests/docs-input-gate.spec.ts]
 builder:
 verifier:
 built_by:
@@ -42,6 +42,35 @@ repair moves. The interesting half is not the two edits: it is that
 MF-05 pins exactly one pair and this tree has four spellings, so the
 next value added to the set will go stale in the same two places for the
 same reason. A fix that only retypes the two lines has not closed it.
+
+## Correction of 2026-09-14 — the census is five copies, not two (assigned by the verifier of T-298-s3, claude-opus-5@subagent)
+
+The title and the finding above say the vocabulary is spelled TWICE more
+outside the parser. The record stands and this section corrects it: at
+T-298-s3's tip 900e6626 three further live copies still read the old set,
+and all three were in the architect seat's own census of the spellings,
+taken at that lane's base before its diff existed.
+
+- method/interview/decomposition.md line 62 — "Size honestly (S/M/L per
+  TASK-FORMAT.md)". This is the worst of the three and the reason the
+  fence gains a guard-class path. It is METHOD TEXT, and it is the line
+  that tells an author how to size a card — so the interview still
+  teaches the vocabulary that made the cheapest tier unreachable, which
+  is T-298-s3's own finding one document further out.
+- tools/e2e/scripts/merge.mjs line 2204 — "The board's parser knows S, M
+  and L today", in the header of the live XS bound. The sentence is now
+  false about the tree the script runs in. The keeper's BEHAVIOUR is
+  correct and unchanged; only the sentence explaining it is stale.
+- tools/e2e/tests/merge.spec.ts line 508 — the same sentence again, as
+  the stated reason for a control loop over S, M and L.
+
+So the tree carries FIVE copies of this vocabulary outside the pair MF-05
+compares, and a fence naming two of them is a fence the first criterion
+below cannot be satisfied inside. The touches line above is widened to
+all five sites plus the spec the check would live in. Nothing here
+changes what the criteria ask for: the point was never the retyping, and
+a fix that only moves five lines has closed this no better than one that
+moved two.
 
 ## Acceptance criteria
 
