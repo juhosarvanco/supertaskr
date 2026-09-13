@@ -5072,6 +5072,87 @@ test("the Claude PreToolUse guard is untouched, and the two nets are wired to tw
   );
 });
 
+test("standard input this hook could not READ is refused by name, and is NOT git's own empty input", () => {
+  // KILLED BY: handing an unreadable standard input over as the empty
+  // string, which is what `pre-push-hook.mjs` did while its own header
+  // said it refused. Git runs a pre-push hook with EMPTY input when every
+  // ref is already up to date — an allow — so the two meanings shared one
+  // string and the allow won both. This body is the pair, one respect
+  // apart.
+  const fx = guardedFixture("unread-input");
+  const unread = decidePrePush({ cwd: fx.root, stdin: "", stdinReadable: false });
+  expect(unread.verdict, "a push whose contents this guard never learned is not an allow").toBe("block");
+  expect(unread.code).toBe("update-input-unread");
+  expect(unread.reason).toContain("NOTHING ABOUT THIS PUSH COULD BE JUDGED");
+
+  // THE CONTROL: the same empty string, READ.
+  const empty = decidePrePush({ cwd: fx.root, stdin: "", stdinReadable: true });
+  expect(empty.verdict, "git's own empty input is every ref already up to date").toBe("allow");
+  expect(empty.code).toBe("no-updates-proposed");
+
+  // AND THE DEFAULT IS THE READ ONE, so no caller that omits the flag
+  // changed meaning when it was added.
+  expect(decidePrePush({ cwd: fx.root, stdin: "" }).code).toBe("no-updates-proposed");
+});
+
+test("docs/CONVENTIONS.md records the accepted bypass, the public check and T-310 — the fifth criterion, pinned", () => {
+  // KILLED BY: a DATA mutant. This criterion's whole property lives in
+  // PROSE, and prose no body reads is deletable tomorrow over a green
+  // suite — which is why the three other CONVENTIONS bullets this file
+  // depends on are pinned above. This one was not, and every clause below
+  // is one the card names in its own words.
+  const bullet = String(
+    conventionsBullet(conventionsText(), "THE PUSH IS JUDGED BY GIT ITSELF SINCE T-314"),
+  );
+  expect(bullet.length, "an empty bullet would satisfy every assertion below").toBeGreaterThan(500);
+
+  // (i) THE LIMITATION, ITS DATE, AND BOTH SPELLINGS OF THE BYPASS.
+  expect(bullet, "the v1 procedural limitation is not recorded").toContain("CLOSED BY PROCEDURE");
+  expect(bullet, "the owner's acceptance is not dated").toContain("2026-09-12");
+  expect(bullet, "`--no-verify` is not named as the bypass").toContain("--no-verify");
+  expect(bullet, "a push from a checkout the hook was never installed in is the other bypass").toContain(
+    "never installed",
+  );
+
+  // (ii) WHAT STILL CHECKS, WHICH IS NOT THIS HOOK AND NOT THIS MACHINE.
+  expect(bullet, "the runner's owed set is not recorded as the public check").toContain(
+    "THE RUNNER'S OWED SET ON THE PUSHED RANGE REMAINS THE PUBLIC CHECK",
+  );
+
+  // (iii) WHAT WOULD CLOSE IT, AND WHOSE CARD THAT IS.
+  expect(bullet, "the separate proposals are not named").toContain("T-310");
+  expect(bullet, "and what they are is not said").toContain("A PROTECTED RECEIVING GATE");
+});
+
+test("a hook git cannot EXECUTE is UNGUARDED with the path pointed straight at it — the state git answers by SKIPPING", () => {
+  // KILLED BY: dropping `hookStatus`'s executable check. Git IGNORES a
+  // non-executable hook under `core.hooksPath` — it prints a hint and the
+  // push SUCCEEDS — so this is the one unguarded state that is
+  // indistinguishable from a guarded one by reading the configuration,
+  // and the verb that reports it is the only thing that can say so. The
+  // body above that names this property asserts it in a fixture whose
+  // hooks path is UNSET, where the unset path is what answers.
+  const fx = installFixture("unexecutable");
+  const hook = path.join(fx.root, HOOK_DIR_REL_PATH, HOOK_FILE_NAME);
+  expect(installHook({ root: fx.root }).state).toBe("installed");
+  expect(hookStatus(fx.root).guarded, "the control: pointed at it AND able to run it").toBe(true);
+
+  // ONE RESPECT APART — the same path, the same file, the mode gone.
+  chmodSync(hook, 0o644);
+  const lost = hookStatus(fx.root);
+  expect(lost.guarded, "a hook git cannot execute guards nothing").toBe(false);
+  expect(lost.detail).toContain("UNGUARDED");
+  expect(lost.detail, "and it says WHICH of the three conditions failed").toContain("not executable");
+  expect(
+    String(lost.configured),
+    "while the configuration still points straight at this checkout's own directory",
+  ).toContain(HOOK_DIR_REL_PATH);
+
+  // AND BACK, so the difference above is the mode and nothing else.
+  chmodSync(hook, 0o755);
+  expect(hookStatus(fx.root).guarded).toBe(true);
+});
+
 /* ───────────── the installer, and the seat verbs that call it ──────── */
 
 /** A scratch repository whose `.claude/hooks` carries the real hook file. */
@@ -5224,9 +5305,11 @@ test("the arm sets an executable mode the checkout lost, and it stages nothing t
   fx.git("add", "staged.txt");
   const stagedBefore = fx.git("diff", "--cached", "--name-only");
   expect(stagedBefore, "the fixture must really have something staged").toBe("staged.txt");
-  expect(hookStatus(fx.root).detail, "an unexecutable hook is UNGUARDED, whatever is configured").toContain(
-    "UNGUARDED",
-  );
+  expect(
+    hookStatus(fx.root).detail,
+    "this fixture is UNGUARDED because nothing is configured yet — the MODE's own branch is the " +
+      "body above, which points the path straight at the file first",
+  ).toContain("UNGUARDED");
 
   const done = installHook({ root: fx.root });
   expect(done.state).toBe("installed");

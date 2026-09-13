@@ -508,6 +508,7 @@ export function refusalLines(v) {
  * @typedef {object} Request
  * @property {string} [cwd]      where git ran the hook, which is the checkout
  * @property {string} [stdin]    the proposed updates, verbatim
+ * @property {boolean} [stdinReadable] whether that input could be READ at all
  * @property {string} [remote]   the remote's name or URL, as git's argv gave it
  */
 
@@ -568,6 +569,25 @@ function decideWith(request, seams, notices) {
       "not-this-repository",
       `${root} carries no ${INDEX_CRATE_MANIFEST_REL_PATH}, so none of this guard's questions can ` +
         "be asked here",
+    );
+  }
+
+  // ── AN INPUT THAT COULD NOT BE READ IS NOT AN EMPTY ONE ──────────
+  // `pre-push-hook.mjs`'s header argues that a standard input it could
+  // not read is refused HERE by name rather than allowed there in
+  // silence, and it handed the failure over as the empty string — which
+  // is exactly what git writes when every ref is already up to date, and
+  // that is an ALLOW. One string carried two opposite meanings and the
+  // guard answered both with the allow. They arrive apart now.
+  if (request.stdinReadable === false) {
+    return block(
+      "update-input-unread",
+      "PUSH REFUSED — NOTHING ABOUT THIS PUSH COULD BE JUDGED: this hook could not READ the " +
+        "standard input git hands it, so the list of objects about to leave this machine is not " +
+        "known to it at all.\n" +
+        "  An EMPTY input is git saying every ref is already up to date, and that is allowed. An " +
+        "input that could not be read says nothing, and a guard that cannot tell the two apart " +
+        "allows the second every time it meets it.",
     );
   }
 

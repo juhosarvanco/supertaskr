@@ -24,8 +24,13 @@
  * hook is only ever run by git, at a push, and its input is the list of
  * things about to leave the machine. An input that cannot be read is a
  * push nothing could be judged about, which is T-216-s8's case exactly —
- * so it reaches `decidePrePush` as the empty string and is refused there
- * by name rather than allowed here in silence.
+ * so it is carried to `decidePrePush` as `stdinReadable: false` and
+ * refused there by name rather than allowed here in silence.
+ *
+ * IT IS A FLAG AND NOT THE EMPTY STRING, deliberately. Git runs this hook
+ * with EMPTY input when every ref is already up to date, which is an
+ * allow; handing a failed read over as that same empty string makes the
+ * refusal above unreachable and the sentence claiming it false.
  *
  * ── GIT'S OWN ARGV IS PASSED THROUGH AND NOT PARSED ─────────────────
  * A `pre-push` hook is handed the remote's NAME and its URL. This guard
@@ -37,18 +42,18 @@
 import { readFileSync } from "node:fs";
 import { decidePrePush } from "./pre-push-guard.mjs";
 
-/** The proposed updates, or the empty string when stdin could not be read. */
+/** The proposed updates, and whether standard input could be read at all. */
 function updates() {
   try {
-    return readFileSync(0, "utf8");
+    return { stdin: readFileSync(0, "utf8"), stdinReadable: true };
   } catch {
-    return "";
+    return { stdin: "", stdinReadable: false };
   }
 }
 
 const decision = decidePrePush({
   cwd: process.cwd(),
-  stdin: updates(),
+  ...updates(),
   ...(typeof process.argv[2] === "string" ? { remote: process.argv[2] } : {}),
 });
 
