@@ -172,3 +172,170 @@ the bump and the release note are the merge's.
 ## Verdicts
 
 Promoted 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): to planned at priority 1 — the bounded tier is unreachable: the classifier selects on a size the parser refuses, so the cheapest tier of ADR-024 decision 1 can never run. Not dispatched by this sitting.
+
+### 2026-09-14 — APPROVED WITH ASSIGNED CORRECTIONS — claude-opus-5@subagent
+
+Tier GUARDED, the two-spawn bench, base 39515fad002fb274b4beae223f2eb7eaafbad205, tip
+900e6626f3ca6c54655f3bad009064275ee699cd. Four legs GREEN at the tip I was sent, every
+acceptance criterion met, and the two corrections below are a shortfall inside a body and a
+shortfall inside a card this lane filed — neither of them a defect in what ships.
+
+#### The frame I actually had
+
+Two spawns, and the blindness was real rather than kept. Phase 1 wrote the attack set with no
+tools and no diff, from the card at the base; it asked for eighteen measurements (M1 to M18)
+precisely because it could take none, and its section 5 reads as a request rather than a
+finding. I am the second spawn: I hold tools, I read the diff, and I cannot return to that
+frame. I read the diff and the spec bodies BEFORE the executor's notes, the report and the
+lane's asks, in that order.
+
+One disclosure the role file requires rather than permits. My PHASE-2 brief named two outcomes
+of the lane's asks before I opened the diff — that the XS ceremony row was ruled in scope and
+that the fence was widened for the session-economics spec. That is seat-derived rather than
+executor-derived, and it reached me after the seal, so phase 1's blindness is intact and the
+attack set proves it: attack A1.5 and measurement M15 both ask whether the fence moved and by
+whose authority, which is not a question a spawn that had been told the answer would write. It
+did give phase 2 a step it would otherwise have taken from the diff, and I say so rather than
+present my reading of the ceremony row as unprompted.
+
+#### The sealed inputs, by digest
+
+- attack set — sha256:6129b7fbdd5556474a31f992789b1375bc2c08d639d1ff25d91a4d5ed5f6253e
+- ground, with the seat's M1 to M18 addendum — sha256:44a3126d2c57d6332fdc5ce82b40dd502446680350ff966ecd850c9105bab44d
+- the card at 39515fad — sha256:0bc8a6355d85ac12d2abecd3a067af80095727f501a81f2f465cc189eaebb6d2
+
+All three re-hashed on this bench and all three match the stamp file.
+
+#### Every acceptance criterion, with the evidence that decided it
+
+| criterion | verdict | the command, body or reading that decided it |
+|---|---|---|
+| C1 — a card declaring the size the tier table names for bounded parses as a legal field | MET | `lib/parser/src/types.ts` declares `TASK_SIZES = ['XS','S','M','L']` and the exported type is derived from that array, so there is ONE site and not two — the type-without-runtime split attack has no seam to live in. Three bodies in `lib/parser/test/task.test.ts` read the vocabulary out of `method/tasks/TASK-FORMAT.md` instead of spelling it. Parser leg 416 of 416 GREEN at 900e6626 (413 at the base per M1: the three added bodies are the whole difference). |
+| C1, second half — S, M and L survive and every other value is still refused | MET | The second added body loops every value the METHOD declares and requires zero issues for each, then requires EXACTLY ONE `invalid-field`-or-`missing-field` issue for `XXL`, `xs`, `Small` and an empty size. A parser widened to `string`, or one that downgraded the issue to a warning, reds on the second half. |
+| C1, the diagnostic | MET | The refusal message at `lib/parser/src/task.ts:220` is the declared set joined with a pipe separator, derived from `TASK_SIZES` itself, so it cannot enumerate a stale set; the third added body asserts every declared value appears in the message and that the rejected value is quoted. |
+| C2 — the bounded verdict is reachable end to end from a card that lives in the tree, with a body proving it | MET, with correction 1 | The new body in `tools/e2e/tests/brief.spec.ts` derives the bounded size from the tier table's own row, DERIVES a fixture from the live board rather than typing one (the live card with the smallest wholly-tracked guard-free fence), moves exactly one field, parses it through the BUILT browser entry the arm imports, requires zero issues AND `task.size` equal to that size, then classifies the parser's own frontmatter through `classifyTier` and reads `bounded`. I re-ran it on this bench: 1 passed (1.4s). |
+| C2, "not sufficient by itself" | MET, with correction 1 | The body removes the guarded override, the tracked-fence condition and the keeper condition one at a time from the SAME card and lands on `guarded`, `standard`, `standard`, and throws `TierFinding` on the unanswered keeper. It does NOT move the size, which is the first condition the tier table names — correction 1. |
+| C3 — the three zero-issue suites are green | MET | gate-run's own token at 900e6626, `dirty:false`: parser exit 0 bodies 416 GREEN; app exit 0 bodies 1171 GREEN; e2e exit 0 bodies 1083 GREEN. Rust exit 0 bodies 655 over 18 targets GREEN. No count fell against the base (413 / 1171 / M3's scoped 184). |
+| C3, green-by-subtraction | RULED OUT | The diff adds no `.skip`, `.only`, `.todo`, `xit` or `fixme`; its eleven deleted lines are the status stamp, the `touches:` line, four vocabulary spellings and the two session-economics assertions that were replaced. Nothing was deleted that was asserting. |
+| C3, green-by-moving-the-expectation | RULED OUT | M4 placed the parse-error count in `tools/e2e/tests/shell-frame.spec.ts`, a literal 60 on both sides, and `tools/e2e/tests/brief.spec.ts` asserts no such count at all. The diff does not touch shell-frame.spec.ts, so the 60-against-61 the card records was repaired at the cause and not at the expectation. |
+
+#### The amendment's own clauses, each checked
+
+- *"add XS to the parser's legal sizes and the task format's size vocabulary, preserving S, M and L"* — done at both ends and nowhere else; the disjunct that would have deleted the tier table's bounded row is not taken.
+- *"The arm's existing bounded conditions and guarded overrides are unchanged"* — BYTE-unchanged. `tools/e2e/scripts/dispatch-brief.mjs` is not in the diff at all. I verified the classifier's text at the tip against its digest before and after my own drills.
+- *"XS is necessary under that selector and is not sufficient by itself"* — necessary is pinned by the pre-existing classifier body and by correction 1; not-sufficient is pinned by the new body's four removed conditions.
+- *"a tracked fixture card"* — stronger than asked. No fixture card was added; the body derives one from the live board and moves one field in memory, so nothing entered the board, nothing had to be gitignore-checked, and the census, the roadmap and the graph did not move. The card-lives-in-the-tree clause and the zero-issues clause do not collide at all.
+- *"Existing invalid-size refusals remain"* — the second added body is exactly that assertion, and my drill D3 below shows it fails when the refusal is removed.
+
+#### What the attack set predicted, and what the measurement did to it
+
+Most of it died on contact with a diff that had already thought about it, and I record the
+deaths because an attack set whose every line lands is a set written after the fact.
+
+- **A1.1, A1.2, A1.3, A1.4, A1.7 — dead.** One declaration site, the model's `size` asserted equal to the declared value rather than merely issue-free, and a message derived from the set.
+- **A1.5 — dead.** The tier table's bounded row is byte-identical to M8's reading; the ceremony table gained a row and lost none, and the S, M and L rows are unchanged.
+- **A1.6 — dead by M10 and it stayed dead.** Nothing orders or compares sizes. The one order-dependent reading is a DOCUMENT order, `lightestTier` reading the ceremony table's first row, and it is the live consequence discussed below.
+- **A2.1 — dead.** No spread re-introduces a hand-built value: the object handed to the classifier carries the size read off the same card text the parser was given, and the body asserts the two readers agree before classifying.
+- **A2.2 — LANDED, and it is correction 1.** This was the set's "single most important control" and the body does not carry it.
+- **A2.3 — dead.** The guarded control trips a DERIVED override — `guardClassCandidates()[0]` against the tree's own guard map — and not a declared `tier:` field, which is exactly the arming the attack asked for.
+- **A2.4 — dead, and it was the lane's best find rather than mine.** The second new body closes the one downstream site that would still have refused: row 11's `deriveDeliverable` reads the ceremony ROW, a size with no row is a finding, and `brief.mjs` turns any finding into a non-zero exit. I checked the other downstream enumerations M9 named and none of them refuses an XS card: the frozen `TIERS` triple, `health-bands.mjs`'s per-tier budgets, `merge.mjs`'s XS bound, and the app's own Rust `ceremony_row`, which scans the same table by the same rule and now finds the new row.
+- **A2.4's settings layer, which phase 1 could not see and I checked.** `classifyTier` is gated by a `verify.tier` switch that can turn the whole ladder off. This project runs `profile: standard` with an empty departures block, and `method/runtime/process-schema.yaml` resolves `verify.tier` to `by-the-classifier` under that profile. So bounded is reachable in this project's own configuration and not only in the library — measured, not assumed.
+- **A2.5, A2.6 — dissolved.** See the tracked-fixture clause above.
+- **A2.7 — dead.** Each body builds its own input from a fresh read.
+- **A3.x — dead**, as the criterion rows record.
+- **A4.2 — the set's own open question, and the lane closed it better than the set expected.** The attack set said it would not fail the lane for the absence of an agreement-keeper. One exists twice over: MF-05 compares the two ends mechanically at the merge, and — the stronger half — the added parser bodies read the method document's vocabulary at run time, so the agreement is pinned inside the battery rather than only in a merge-time eval.
+- **A4.4, the fence — clean.** Every path in the diff is granted: four by the card, the fifth by the seat's dated widening, which I compared against main's card at 3b8d8a44 and found byte-identical prose. Filed cards are the role's own step 6. Nothing touched the classifier, the dogfood test, a built artefact, a CI workflow, the census or the index.
+
+#### The drills I ran myself, each restore proved by digest
+
+- **D1 — a DATA mutant the lane did not drill.** Removed XS from `method/tasks/TASK-FORMAT.md`'s `size:` comment ALONE, leaving the parser's array and the tier table intact. Parser leg 1 failed of 416: *"the vocabulary the tier table selects on is not in the vocabulary it declares: expected [ 'S', 'M', 'L' ] to include 'XS'"*. This is the finding's own shape — two documents disagreeing about one word — and the battery now catches it in 1.4 seconds. Restored; digest of the document identical before and after.
+- **D2 — the containment question A2.2 raises.** Neutered the classifier's size branch so no size can send a card to standard. The PRE-EXISTING body *"the classifier answers from the card and the tree..."* red at line 6357 (`size: "S"` expected standard, received bounded); BOTH new bodies passed. So the property is pinned in the suite, by a body three screens above the new one, and the two kill sets contain each other in neither direction — D1 and the vocabulary mutant kill the new bodies and not the old, D2 kills the old and not the new. Under the role file's containment test both are load-bearing and the count of one is not a defect. Restored; digest identical.
+- **D3 — the graded correction.** Recorded under correction 1.
+
+**And I am declining my own pre-commitment, in as many words.** The attack set pre-committed to REFUSING on A2.2 — *"a proving body with no negative control on the size field is a refusal, because without it nothing in the diff shows XS is load-bearing"*. The stated reason is what I measured and it is false: something in the TREE shows it, D2 names the body and the line, and the role file's 2b rules containment over counting. A pre-commitment exists to make me state a reason for relaxing it rather than relax it quietly, and that is the reason. What survives is a gap in one body rather than in the suite, and it is assigned as a correction rather than a rejection.
+
+#### Security sweep, mandatory and not empty here
+
+The one input-validation shape in this diff is a validated closed set gaining exactly one
+literal. It is still a closed set, the runtime membership check is unchanged, and D1 and the
+refusal body both show it still refuses. No dependency is added, no manifest and no workflow
+file is touched, no endpoint, query or credential path appears, no secret or key is in the
+diff, and no fixture with a synthetic git identity was created. The added lines carry no home
+path and no absolute path, and the pre-rename identifier is not spelled anywhere in them. The
+four card files added or edited carry no `<-` in prose.
+
+#### Two things I measured that belong to somebody else, named so they are not attributed here
+
+- **The card preflight is exit 1 at this tip**, on one CENSUS finding at the card's line 71: the word FIRST in the widening section, read as an unattested ordinal. That paragraph is the SEAT's, byte-identical to main's copy at 3b8d8a44, and the same finding stands in the sealed ground taken before this diff existed. It is not this lane's to repair and the merge does not create it.
+- **The whole end-to-end lane took 17.6 minutes** for 1083 bodies at 900e6626, against a `suite/e2e-seconds` band whose drift line is 234s and whose breach line is 312s, measured at 279 bodies. The band is three and a half times outgrown by the suite it watches and this lane added two bodies to it; the breach is the suite's growth, not this diff. My reading is additionally CONTENDED — a second lane's end-to-end run, T-295-s9's, was live on this machine throughout — so it is an upper bound and not a clean figure.
+
+#### Assigned corrections
+
+Two corrections, and ONE mutant block: the second is a wording correction and carries no block,
+which is said here in as many words so the shortfall between two corrections and one block is
+not read as a body nobody wrote.
+
+##### Correction 1 — the end-to-end chain controls every bounded condition except the first one the tier table names
+
+The tier table's bounded row names five conditions and the first of them is the size. The new
+body removes the other four one at a time from the same card and reads the alternative answer
+each time; it never moves the size. A classifier that stopped reading size altogether leaves
+that body GREEN — I ran exactly that and it did — so the chain this card exists to create is
+pinned everywhere except at the word the card is about.
+
+The body is committed on this bench after this verdict. It takes the sizes from the parser's
+own vocabulary rather than typing a letter, moves one field on the same fixture, and pins the
+answer to one of the two real alternatives rather than to "not bounded", which a classifier
+returning nothing would also satisfy.
+
+Both readings, run on this bench: GREEN against the tip's own classifier — 1 passed (1.4s),
+and `npm run typecheck` from tools/e2e clean. RED against a classifier whose size branch is
+neutered — *"the same card at size S reached bounded too, so the size the tier table selects on
+is not what bought the cheapest tier"*, expected pattern `/^(standard|guarded)$/`, received
+`"bounded"`.
+
+```mutant
+correction: the end-to-end chain controls every bounded condition except the first one the tier table names
+file: tools/e2e/scripts/dispatch-brief.mjs
+spec: tools/e2e/tests/brief.spec.ts
+body: THE BOUNDED TIER IS REACHABLE FROM A CARD THIS TREE WOULD HOLD: the size its tier table admits bounded on parses clean and classifies bounded, and every bounded condition removed one at a time does not
+message: reached bounded too, so the size the tier table selects on
+--- old
+  if (size !== "XS") {
+    return {
+      tier: "standard",
+      reason: `size ${size}, no guard-class path in a fence of ${String(input.fencePaths.length)} path(s)`,
+    };
+  }
+--- new
+  if (false) {
+    return {
+      tier: "standard",
+      reason: `size ${size}, no guard-class path in a fence of ${String(input.fencePaths.length)} path(s)`,
+    };
+  }
+```
+
+##### Correction 2 — T-298-s7 names two of the five live copies, and THIS CORRECTION CARRIES NO MUTANT BLOCK because it pins no property
+
+T-298-s7 is the right card and its criterion is the right criterion: *"WHEN the parser's
+declared size set changes THE tree SHALL red on any in-repository copy of that vocabulary that
+did not move with it"*. Its census is short. The seat's own M7 enumerated the spellings at the
+base, and at this tip three live copies outside the two the card names still read the old set:
+
+- `method/interview/decomposition.md:62` — *"Size honestly (S/M/L per TASK-FORMAT.md)"*. This is the worst of the three: it is METHOD TEXT, it is guard-class, and it is the line that tells an author how to size a card — so the interview still teaches the vocabulary that makes the cheapest tier unreachable, which is this card's own finding one document further out.
+- `tools/e2e/scripts/merge.mjs:2204` — *"The board's parser knows S, M and L today"*, in the header of the live XS bound. The sentence is now false about the tree it runs in.
+- `tools/e2e/tests/merge.spec.ts:508` — the same sentence again, as the stated reason for a control loop over S, M and L.
+
+The behaviour at all three sites is correct and nothing is broken; what is wrong is that a card
+filed to close a class names two members of it, and a `touches:` naming two of five is a fence
+the next executor cannot satisfy the criterion inside. The correction widens the card's finding
+and its fence to name all five. It is prose about prose and there is no property to pin, so no
+body and no block: the count above is two corrections against one block, deliberately.
+
+#### What I am NOT failing this lane for, each with its reason
+
+- **The executor departed from the seat's letter on the session-economics mutant arm.** The seat said the arm stays exactly as it is; as written it renamed the 2026 first row to XS and asserted XS, which after this diff is the answer the UNMUTATED document gives — a control that could no longer fail. The executor rederived it to rename whichever row is first. That is the role files' own rule about controls applied against an instruction, the departure is disclosed in the notes and the report rather than buried, and a seat's sentence does not outrank a known-vacuous keeper. Correct, and I would have assigned it as a correction had it not been done.
+- **The ceremony table's XS row was not named by the amendment.** It was parked as an ask and ruled in scope by the seat under criterion 2, and it is the difference between a reachable tier and an outage moved one step down the dispatch. In fence, pinned by a body with a real control.
+- **The advisory shift — 487 of 701 sized cards moving from KNOW to TRY on the size signal.** This is a live behaviour change of a shipped tool caused by a document edit, and it is the sharpest thing in the lane. It is also ruled: the seat kept `tools/e2e/scripts/session-economics.mjs` outside the fence, required the measurement in the notes, and required the card. All three were done, the figures carry their ref, and T-298-s8 states both readings of the signal rather than presuming one. Not the lane's to decide.
+- **The census is stale by 345 bytes at this tip.** `docs/CONVENTIONS.md` puts that regeneration in the INTEGRATOR's commit at the merge, by name, and I confirmed the bullet rather than taking the notes' word for it.
