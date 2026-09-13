@@ -1,0 +1,38 @@
+#!/bin/sh
+# THE PUSH IS JUDGED BY GIT ITSELF (T-314) — the file git executes.
+#
+# `core.hooksPath` points at this directory, so git runs THIS file at
+# every push, in every harness and in none, with the proposed updates on
+# standard input and the remote's name and URL in its arguments. Git runs
+# a hook from the top level of the working tree, which is how the module
+# below learns which checkout is being pushed without parsing a command
+# line for it.
+#
+# IT IS A SHELL WRAPPER AND NOT A NODE SCRIPT, for one mechanical reason:
+# a git hook has no file extension, and node decides a file's module
+# system from its extension. An extensionless file carrying `import` is
+# read as CommonJS on older node and as a module only where syntax
+# detection is on — a difference that would make this guard's presence a
+# function of the node version on the machine. The decision lives in
+# `pre-push-guard.mjs`, whose extension says what it is, and this file
+# does nothing but reach it.
+#
+# NODE'S ABSENCE IS SAID OUT LOUD RATHER THAN LEFT TO THE SHELL. Without
+# this arm a checkout with no node on PATH refuses every push with `sh:
+# node: not found`, which reads as a broken hook rather than as what it
+# is. The direction is still a refusal: this guard is the only thing
+# standing between an ungraded tree and the remote, and a push that
+# silently skipped it is the state this card exists to end.
+set -eu
+
+dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "PUSH REFUSED: this repository's pre-push guard needs \`node\` and there is none on PATH." >&2
+  echo "  The hook is ${dir}/pre-push and the guard it runs is pre-push-guard.mjs." >&2
+  echo "  Install node, or push from a checkout that has one — a push this guard could not run" >&2
+  echo "  is a push nothing graded, which is the state it exists to refuse." >&2
+  exit 1
+fi
+
+exec node "${dir}/pre-push-hook.mjs" "$@"

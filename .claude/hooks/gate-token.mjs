@@ -558,10 +558,21 @@ export const SCOPABLE_SUITE = "e2e";
  * `owed` is STRICTER than passing one on both axes, which is what the
  * word "fail closed" was always claiming.
  *
- * @param {{ token?: Token, problem?: string, tree: string, required?: readonly string[], owed?: OwedSet }} input
+ * ── AND THE TREE IT COMPARES AGAINST IS NOT ALWAYS HEAD'S (T-314) ───
+ * `pre-push-guard.mjs` keys this same judgement to the tree of the
+ * COMMIT BEING PUSHED, which is a different object whenever a push does
+ * not carry HEAD. Nothing about the judgement changes there — the same
+ * six states in the same order over the same entries — but the SENTENCES
+ * would be false, because three of them name HEAD as the owner of the
+ * key. `treeOwner` is that one word, and its default is the literal this
+ * function has always printed, so every existing caller's refusal is
+ * byte-identical. A label is never read for a verdict: it is the noun in
+ * a sentence and nothing else consults it.
+ *
+ * @param {{ token?: Token, problem?: string, tree: string, required?: readonly string[], owed?: OwedSet, treeOwner?: string }} input
  * @returns {TokenJudgement}
  */
-export function judgeToken({ token, problem, tree, required, owed }) {
+export function judgeToken({ token, problem, tree, required, owed, treeOwner = "HEAD" }) {
   const need = required ?? (owed === undefined ? REQUIRED_SUITES : [...owed.suites].sort());
   if (token === undefined) {
     return {
@@ -694,7 +705,7 @@ export function judgeToken({ token, problem, tree, required, owed }) {
       state: "stale",
       code: "token-stale",
       detail:
-        `the verdict token is STALE against HEAD's tree ${tree}: ${stale.join("; ")}. ` +
+        `the verdict token is STALE against ${treeOwner}'s tree ${tree}: ${stale.join("; ")}. ` +
         "The tree hash is the key because it names the CONTENT the suites graded — an amend " +
         "that changed only a commit message keeps a token valid, and one that changed a file " +
         "does not",
@@ -740,7 +751,7 @@ export function judgeToken({ token, problem, tree, required, owed }) {
       detail:
         "the verdict token's key does not describe what its suites ran against: " +
         `${unkeyed.join("; ")}. A suite grades the WORKING TREE and this token is keyed to ` +
-        `HEAD's tree ${tree}, so a battery run over uncommitted work — or one that spanned a ` +
+        `${treeOwner}'s tree ${tree}, so a battery run over uncommitted work — or one that spanned a ` +
         "commit — certifies content that no single tree carries. Commit or stash, then run the " +
         "battery again, LAST, after every commit",
     };
@@ -785,7 +796,7 @@ export function judgeToken({ token, problem, tree, required, owed }) {
     state: "fresh",
     code: "token-green",
     detail:
-      `${need.length} graded suite(s) recorded ${GREEN} against HEAD's own tree ${tree} ` +
+      `${need.length} graded suite(s) recorded ${GREEN} against ${treeOwner}'s own tree ${tree} ` +
       `(${need.map((s) => `${s}=${/** @type {SuiteEntry} */ (token.suites[s]).bodies}`).join(" ")} bodies)`,
   };
 }

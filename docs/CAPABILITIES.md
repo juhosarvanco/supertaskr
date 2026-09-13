@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1057 behaviours** — 1055 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1077 behaviours** — 1075 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -1025,6 +1025,26 @@ Census: **1057 behaviours** — 1055 extracted sentences + 2 named-not-extracted
 - a leg this table cannot price is disclosed as a FLOOR, never counted as nothing
 - the whole browser leg's over-run minutes are the leg LESS the subset the range owed, and the owed figure is that subset's own
 - a leg beyond the owed set that ran NARROWED is priced by the scope it records, never by the leg it did not run
+- the hook file is committed EXECUTABLE, which is the only thing that makes git run it
+- WITHOUT the hook an ungraded push reaches the remote; WITH it the same push never does
+- each proposed update is read from standard input, and a line this hook cannot split is refused rather than guessed at
+- a pushed commit that differs from HEAD is judged on ITS OWN tree, and HEAD's token does not cover it
+- the range is the update's own remote OLD OBJECT, not the local tracking ref — which can be a lie
+- several proposed updates, one unqualified: the WHOLE push is refused and the qualified one is named
+- an unsupported update shape is refused BY NAME — a deletion, and a ref that is not a branch
+- the token must match the PUSHED tree in ADDITION to covering the owed set, never instead of it
+- the Claude PreToolUse guard is untouched, and the two nets are wired to two different mechanisms
+- standard input this hook could not READ is refused by name, and is NOT git's own empty input
+- docs/CONVENTIONS.md records the accepted bypass, the public check and T-310 — the fifth criterion, pinned
+- a hook git cannot EXECUTE is UNGUARDED with the path pointed straight at it — the state git answers by SKIPPING
+- the installer points git at the tracked hooks directory only when the key is unset or already ours
+- a hook already live in the checkout's own hooks directory is refused BY NAME, and a linked worktree's is the COMMON one
+- installing preserves a sibling worktree's effective routing, and a SHARED configuration change is refused by name until it is authorized
+- the arm sets an executable mode the checkout lost, and it stages nothing to do it
+- the PLAN writes nothing at all, which is what makes every refusal above leave a checkout untouched
+- `--take-seat` installs the guard and announces it, and BOTH seat verbs report a checkout without the hook as UNGUARDED
+- `--take-seat` records NO seat when the guard cannot be installed, and leaves the configuration and the index alone
+- a seat acquisition that fails for a reason of its own configures nothing
 
 ## range-rule
 

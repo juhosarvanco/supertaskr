@@ -284,6 +284,40 @@ and T-236 (2026-09-02, whose pre-compaction text is
   that is not yours, and `workflow-parity` keeps it on four legs: the
   local rule narrows what a SEAT must measure before pushing, and
   narrows nothing about what the runner then measures.
+- **THE PUSH IS JUDGED BY GIT ITSELF SINCE T-314, AND THE BYPASS THAT
+  LEAVES IS CLOSED BY PROCEDURE** (ADR-025 decision 3, approved by the
+  owner on 2026-09-12 with the v1 limitation accepted the same day). `.claude/hooks/pre-push` is a git `pre-push` hook, installed by
+  `brief.mjs --take-seat` by pointing `core.hooksPath` at the tracked
+  hooks directory — refusing BY NAME, and changing nothing, where a
+  different hooks path is configured, where the checkout's own active
+  hooks would be deactivated, or where the only way through would be a
+  SHARED configuration change in a repository with other worktrees. It
+  judges EACH PROPOSED UPDATE on the two objects git hands it, the
+  remote's OLD object and the local NEW one: the range is
+  `<old>..<new>`, the token is required to match the PUSHED commit's
+  tree — an ADDITIONAL binding and never a substitute — and the
+  range-derived owed set and the unchanged-tree check are asked exactly
+  as the bullets above ask them. One unqualified update refuses the
+  WHOLE push, because a `pre-push` hook has one exit code for the whole
+  invocation; an update shape this guard has no rule for, a deletion or
+  a ref outside `refs/heads/`, is refused by name. The `PreToolUse`
+  guard above is UNCHANGED and stays as a second net.
+  **A DELIBERATE BYPASS IS CLOSED BY PROCEDURE IN V1, WHICH THE OWNER
+  ACCEPTED ON 2026-09-12 AND WHICH IS WRITTEN HERE RATHER THAN
+  PRETENDED AWAY**: `git push --no-verify` skips every client-side hook
+  by git's own design, and a push from a checkout where the hook was
+  never installed runs nothing at all. Neither is closeable from inside
+  a hook — a client-side hook is advice the client can decline — so
+  what closes them is the procedure: take the seat, which installs it,
+  and read the seat verbs' own line, which reports a checkout without
+  the hook as UNGUARDED. **THE RUNNER'S OWED SET ON THE PUSHED RANGE
+  REMAINS THE PUBLIC CHECK**, on a machine that is not yours: the local
+  hook narrows the window in which an ungraded tree can reach the
+  remote, and replaces nothing about what the runner then measures.
+  **A PROTECTED RECEIVING GATE AND CREDENTIAL ISOLATION ARE SEPARATE
+  PROPOSALS** (T-310) — they are what would close the bypass at the far
+  end, where declining is not the client's to do, and they are not part
+  of this one.
 - **AN EDIT SCRIPT'S SUCCESS IS A GATE, NOT A STEP** (`18d8166`): never
   chain a commit after a scripted edit — read the diff back FIRST. The
   rule was earned, recorded ONLY in checkpoint records, and then broken
