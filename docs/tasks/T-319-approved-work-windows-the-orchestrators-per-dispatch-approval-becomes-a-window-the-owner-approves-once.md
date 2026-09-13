@@ -8,7 +8,7 @@ priority: 2
 status: planned
 suggested_by: "the architect seat on 2026-09-13, from the Codex orchestrator's lean-delivery plan v2 and its reconciliation review of the same day, filed on the owner's ruling; filing authorizes no development"
 blocked_by: []
-touches: [method/roles/orchestrator.md, method/runtime/process-schema.yaml, method/runtime/supertaskr.yaml, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/scripts/run-record.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/run-record.spec.ts, docs/windows/README.md, docs/CONVENTIONS.md]
+touches: [method/roles/orchestrator.md, method/runtime/process-schema.yaml, method/runtime/supertaskr.yaml, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/scripts/run-record.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/run-record.spec.ts, docs/CONVENTIONS.md]
 builder:
 verifier:
 built_by:
@@ -55,6 +55,10 @@ Adds to the amendment above; everything else stands. The owner's case: away for 
 ## Amendment of 2026-09-14 — recovery permission is a policy of its own, and the schema is in the fence (the Codex orchestrator's review of T-319 and T-322, relayed by the owner)
 
 Adds to the amendments of 2026-09-13; where they conflict this section governs. The approval mode (each, until a named card, standing) says when work STARTS. Whether the coordinator may dispatch a correction round, a re-entry after a rejection, or a repair the work discovers is a SEPARATE recovery policy with two values — none, or the repairs necessary to the approved work — valid under every mode, so that a grant until a named card can carry its necessary repairs without granting indefinite standing permission; the standing-mode scope clause of 2026-09-13 is this policy under one mode and is superseded by it. WHEN the recovery policy is none THE arm SHALL refuse a repair dispatch by name and queue it as a question; WHEN it is the necessary repairs THE arm SHALL dispatch a repair only for a failure attributed to the approved work and SHALL record the failure it repairs on the repair card, pinned by bodies for each mode paired with each policy value. Both are switches declared once in the process schema beside the runtime template's value, which puts method/runtime/process-schema.yaml and method/runtime/supertaskr.yaml in this fence; the reader is the one the arm already has for the schema (T-317), and this card adds no parser code.
+
+## Amendment of 2026-09-14, at promotion — the record is the runtime template's own dispatch block (the seat's step-2 triage; the preflight's DEAD FENCE ENTRY)
+
+The fence token docs/windows/README.md is removed with this line: the preflight reads it as a dead entry, since nothing tracked sits under a windows directory, and the subject no longer needs one. The approval mode, the recovery policy and the grant that sets them (who gave it, when, the named card where one applies) are one dispatch block in the runtime template, method/runtime/supertaskr.yaml, declared once in the process schema beside it — both already in the fence — so the tracked record the arm reads is the template itself, and a change of mode or grant is a dated edit to that block proposed verbatim and approved on the owner's yes (T-307), with the dated line kept in the block's own history rather than a separate record class.
 
 ## Implementation notes
 
