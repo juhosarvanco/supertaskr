@@ -286,10 +286,12 @@ each time; it never moves the size. A classifier that stopped reading size altog
 that body GREEN — I ran exactly that and it did — so the chain this card exists to create is
 pinned everywhere except at the word the card is about.
 
-The body is committed on this bench after this verdict. It takes the sizes from the parser's
-own vocabulary rather than typing a letter, moves one field on the same fixture, and pins the
-answer to one of the two real alternatives rather than to "not bounded", which a classifier
-returning nothing would also satisfy.
+The body WAS to be committed on this bench after this verdict — that is what this paragraph
+said when it was written, and it is kept as the record of what was proposed rather than
+rewritten. It is NOT committed; the withdrawal below is why. What it did: take the sizes from
+the parser's own vocabulary rather than typing a letter, move one field on the same fixture,
+and pin the answer to one of the two real alternatives rather than to "not bounded", which a
+classifier returning nothing would also satisfy.
 
 Both readings, run on this bench: GREEN against the tip's own classifier — 1 passed (1.4s),
 and `npm run typecheck` from tools/e2e clean. RED against a classifier whose size branch is
