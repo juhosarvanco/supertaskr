@@ -121,6 +121,213 @@ Promoted 2026-09-13 (the owner's ruling 5 of 2026-09-13): to planned at priority
 ## Implementation notes
 <!-- executor appends before finishing -->
 
+Built by the executor seat, claude-opus-5 subagent, in the lane worktree
+on branch task/T-300-s7-the-checkpoint-anchor-readings-window-and-row-4-base,
+cut at 63555a5d2290 (the dispatch stamp).
+
+**THE VERIFIER'S PHASE-1 RETURN WAS SHARED WITH ME BY THE SEAT** under
+the shared-pitfalls pilot of 2026-09-13 (the owner's ruling, recorded in
+docs/rooms/loop-cost-and-speed.md). I read it at 2026-09-13T17:54Z,
+before writing a line of the implementation, as the file named
+pitfalls-T-300-s7.md in this lane's scratch directory, sha256
+54520f495ef3f3836d258b86d999d0fa7d504b22a419d853457636677c038f20. Its
+attacks A1.6, A1.8, A2.5, A4.1, A4.3, A4.4, A5.2 and A5.4 are each
+answered by a named assertion below; its measurement requests M1 to M14
+are the verifier's asks of the seat and were not mine to answer, though
+M1, M3, M7 and M11 were taken here because the build needed them.
+
+### The criteria echo
+
+Written per criterion from the card before the code, and transcribed
+here afterwards; the reading it records is the one the design was built
+against, and the checklist FORM is what is late rather than the reading.
+
+1. The priced column is asserted from an arrangement the body BUILDS, not
+   from whatever the calendar leaves in the checkout, and the bare
+   control stays.
+2. The empty-window state is asserted honestly rather than skipped:
+   an empty map, the seat-estimate and awaiting-band text, nothing
+   borrowed.
+3. The closing check on a docs-only range pushed straight after a
+   checkpoint is green on this spec, demonstrated once and named here.
+4. Row 4's base names the commit the cut used, with the newest
+   checkpoint beside it as the anchor and the reason the later commit
+   qualifies, driven through the arm on a fixture.
+5. The two are reported as coinciding only where the actual cut EQUALS
+   the newest checkpoint, which supersedes the absorbed condition about
+   a stamp.
+
+### What the window really is, measured rather than paraphrased
+
+The card's prose says the window is "the merges since the newest
+Checkpoint: commit". The mechanism is a comparison of TIMESTAMPS: each
+card's record is priced against that card's own dispatch-stamp commit,
+and the window keeps the cards whose merge second is at or after the
+newest checkpoint commit's second. A fixture built to the prose (a
+checkpoint, and a merge commit after it) and one built to the mechanism
+are different trees, and the fixtures here are built to the mechanism.
+This is stated because a populated case built to the prose could be an
+empty window wearing a pass.
+
+### The readings body
+
+One body, the one this card names, rewritten rather than added to. It
+now builds four arrangements and exercises every one of them on every
+run, each through the command's own tree read with no readings map
+handed in:
+
+- A POPULATED window: this repository's schema and template, a meters
+  file holding one valid record at 2026-01-02T01:00:00Z for a standard
+  card, a dispatch-stamp commit at 2026-01-02T00:45:00Z and a
+  `Checkpoint:` commit at 2026-01-02T00:50:00Z. Every commit date is
+  written into the fixture rather than taken from the clock. The body
+  computes the two expected shares from those numbers and the project's
+  own tier budgets (fifteen minutes against seventy-five is 20 percent;
+  31,000 tokens against 310,000 is 10 percent) and requires the listing
+  to carry exactly those figures in the bands' own units.
+- The SAME records with the `Checkpoint:` moved to 2026-01-02T02:00:00Z.
+  One date differs and nothing else does, so what the pair measures is
+  the window. The reader answers an empty map, the listing carries no
+  band figure at all, and every switch that names a loop band stands at
+  the seat's estimate in the text the listing printed before this card.
+- The populated arrangement with TWICE the tokens, which requires the
+  column to double. A body that survived that mutation would be
+  asserting that something was printed.
+- The BARE control: the same schema and template, no meters file and no
+  history. It is a separate arrangement from the empty window on
+  purpose, because an empty window and an absent record are two
+  different reasons for an empty map and one fixture answering for both
+  would be one act arming both sides.
+
+And the integration checkout is still spoken about rather than dropped.
+One unconditional assertion holds in both states: every switch's
+measured column equals what THIS tree's own reading renders, which a
+command reading an injected or cached map fails whatever the calendar
+says. Beneath it the state is NAMED, with a failable assertion in each
+arm. The listing's format is untouched: naming the window is fixture
+evidence here, not new output.
+
+### Row 4's base
+
+Row 4 now names the commit the lane was cut at, derived as the merge
+base of the lane's branch against the integration branch, which is the
+hash `git worktree add` was handed and does not move when either ref
+advances. Beside it, on their own lines, stand the rule's anchor (the
+newest `Checkpoint:`) and the reason this base is the one the rule
+admits, derived from the history: how far past the anchor the cut sits
+and whether it is a merge commit. Where no lane is cut the row says so
+and reports the anchor as the anchor. A cut the rule does NOT admit (a
+merge commit, a commit behind the checkpoint, a commit off the
+first-parent line) is a FINDING naming both commits, not a silent base.
+The create command substitutes the same hash, so the field a dispatcher
+pastes agrees with the field a reader reads.
+
+The coincidence line is keyed on the cut EQUALING the checkpoint and on
+nothing else. The absorbed card's condition (no stamp follows the
+checkpoint) is satisfied by an arm that writes no stamp and still cuts
+at a later integration tip, and that arrangement is one of the three the
+fixture drives.
+
+Measured live at this lane: the brief handed to this seat says
+`base commit: d19fe25b` and the cut was `63555a5d`. Re-rendered in this
+worktree after the change, row 4 says `63555a5d` while row 5's tip had
+already moved to `d4c1ef68` under it.
+
+### Criterion 3, demonstrated
+
+The lane checkout was put into 37dfff4c's state and the spec was graded
+there. Reproduced by a scratch docs-only commit whose subject opens with
+`Checkpoint:` (it touched this card only, and was reset away afterwards;
+its hash was fc9fc3ba). At that commit the newest `Checkpoint:` was
+2026-09-13T18:15:57Z and the newest meters record 2026-09-13T16:58:12Z,
+so the checkpoint was newer than every record and the reader answered an
+empty map, which is the arrangement the card's finding describes.
+
+- What such a range owes, derived and not assumed: the owed set for the
+  range HEAD~1..HEAD at that commit is the parser, app and e2e legs,
+  with tools/e2e/tests/cli.spec.ts named in the e2e set. The same answer
+  comes back for a real docs-only range already on the branch
+  (7b897ccf..d2c3a44f).
+- The graded reading, through the blessed gate runner:
+  `gate-run.mjs e2e --owning tools/e2e/tests/cli.spec.ts` at
+  fc9fc3ba, exit 0, 60 bodies, verdict SCOPED-GREEN.
+- THE CONTROL, where the fix is absent: the base-ref version of the spec
+  file was checked out over the fixed one at that same commit and the
+  same body was run. It failed with its own precondition message,
+  "Expected: greater than 0, Received: 0" — the card's finding
+  reproduced live, at the same ref where the fixed body is green. The
+  spec file was restored and the restoration proved by sha256
+  (a1d8b3e4cd4de119e4d360f4f3495dcc81f730f8d6404e1477806c09d9fcafe5
+  before and after).
+
+Worth recording beside it: at the lane's own tip the reader answers TWO
+bands, because the T-314 merge appended a record after the checkpoint
+d19fe25b. The calendar had already flipped this body back to green with
+no change to the tree, which is exactly why the card says a constructed
+fixture is owed rather than a re-run.
+
+### In-fence follow-through
+
+- `ritualFixture` in tools/e2e/tests/brief.spec.ts gained two options, a
+  card text and a commit date, both defaulted so every existing caller
+  is unchanged. The card text is the only way to arrange a dispatch that
+  writes no stamp commit, because the pre-stamped card has to be inside
+  the `Checkpoint:` commit itself.
+- Row 4's reason line does NOT quote the cut commit's subject, though an
+  earlier draft did. A subject is a message rather than a fact about the
+  history, and the end-to-end ritual body compares two dispatches of one
+  card whose stamp messages deliberately differ; a brief value that
+  moved with it made that body red. The refusal still quotes the subject,
+  because a refusal has to say what it saw.
+
+### The drills
+
+Nine mutants, each planted at the site its property lives, each shown
+RED, each restored and the restoration proved by sha256 (before and
+after equal on every one).
+
+| id | site | mutant | killed by |
+|---|---|---|---|
+| D1 | the spec's fixture | the populated window's checkpoint moved past the record | the readings body |
+| D2 | the spec's fixture | the empty window's checkpoint moved behind the record | the readings body |
+| D3 | the readings reader | an empty window answers a 0 reading instead of UNREAD | the readings body |
+| D4 | the readings reader | a module-scope memo, so the second project gets the first's map | the readings body |
+| D5 | the listing | the command renders an empty map instead of going to the tree | the readings body |
+| D6 | row 4 | the base derived from the newest checkpoint again, the defect restored | the row-4 body |
+| D7 | the base verdict | coincidence keyed on the cut being the integration TIP | the pure-half body |
+| D8 | the cut read | the cut read as the integration ref's head rather than the merge base | the row-4 body |
+| D9 | the base verdict | the coincidence reason replaced by the generic one | the row-4 body |
+
+D9 SURVIVED the pure-half body and was killed by the body that drives
+the arm, which is recorded rather than smoothed over: the pure half
+owns the condition and the arm's body owns the sentence.
+
+### Figures, each with its ref
+
+- Base: 63555a5d2290. Code tip before the cards and these notes:
+  21c1e9c5.
+- End-to-end bodies: 1077 at the base, 1079 at 21c1e9c5. brief.spec.ts
+  128 to 130; cli.spec.ts 60 to 60, because the readings body was
+  rewritten rather than added to.
+- The graph at 21c1e9c5: `index --check` reports CURRENT, 203 files,
+  2593 symbols, 2488 edges, exit 0. GRAPH REGEN fires by its trigger and
+  has nothing to regenerate here; the integrator re-derives at the merge.
+- The behaviour census at 21c1e9c5: STALE, 99770 bytes committed against
+  100017 fresh, because two test names were added. The regeneration is
+  the merge's, and docs/CAPABILITIES.md is outside this lane's fence.
+- The graded run of the suites this fence owes is at the tip this commit
+  makes, run once after it, and its figures are in the executor's report
+  and in the merge's meters record.
+
+### Suggested cards
+
+- T-300-s10: the commit a lane was cut at is now answered by two
+  derivations, and the merge-base one holds only while a lane never
+  merges the integration branch into itself, which nothing enforces.
+- T-300-s11: the readings reader catches every failure, so a corrupt
+  meters file and a project with no records are one answer on the
+  listing.
+
 ## Verdicts
 
 Promoted 2026-09-13 (the owner's ruling 5 of 2026-09-13): to planned at priority 1, one of the four instrument fixes the T-311 and T-300 lanes filed; before its lane the seat confirms the defect still exists at the dispatch base and assesses whether it shares a lane with its siblings while every requirement is preserved. Not dispatched by this ruling.
