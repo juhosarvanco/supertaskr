@@ -476,3 +476,40 @@ its readings", failing at its arrangement assertion because every record in
 named in my own brief as the known red at this base and reported by the
 executor at the same body from the same cause. The diff touches nothing
 under `docs/checkpoints/` and nothing under `tools/e2e/tests/cli.spec.ts`.
+
+#### Postscript — step 7, at MY OWN tip `4b0f52a4`
+
+Every figure above was measured at the lane tip `6eef8786`. These were
+measured at `4b0f52a43174e99883a6821723d47fe2c19d72a7`, which is the tip
+my own three commits created — the verdict, the three assigned
+corrections, and T-314-s4 — because a figure measured at the commit I was
+sent is stale at the tip my verdict made.
+
+- The whole battery, `gate-run.mjs parser app rust e2e` at
+  `SUPERTASKR_E2E_PORT=15314`: parser **GREEN 413**, app **GREEN 1171**,
+  rust **GREEN 655 over 18 targets**, e2e **RED 1077 bodies** —
+  `1 failed / 1076 passed (16.7m)`. Exit 1.
+- **The one red is the same one, and is still not this lane's.**
+  `tests/cli.spec.ts:2346`, "the listing goes to the PROJECT'S OWN tree for
+  its readings" — T-300-s7's class, base-inherited, named in my brief as
+  the known red at this base and reported at the same body by the executor.
+  The body count moved 1074 → 1077, which is my three correction bodies
+  and nothing else.
+- `push-guard.spec.ts` carries **122 bodies** at this tip, from 119 at the
+  lane tip and 102 at the base.
+- `npm run capabilities:check` exits **1 — STALE**: committed 97695 bytes
+  against a fresh generation of 99770. That is the lane's own by-design
+  staleness (seventeen new test names move `docs/CAPABILITIES.md` and
+  `docs/INDEX.md`, neither of which this fence carries) plus my three; the
+  regeneration is `npm run capabilities` in the merge commit, which is the
+  standing rule for a lane that adds bodies.
+- `cargo run -p supertaskr-index -- index --check --root ../..` from
+  `app/src-tauri` exits **0 — CURRENT**: 203 files, 2593 symbols, 2488
+  edges, 1216090 bytes, 56.7% of budget. My commits are a card, a spec file
+  and two hook modules, none of which the graph indexes. GRAPH REGEN still
+  FIRES at the merge by its own trigger.
+- `npx tsc --noEmit` in `tools/e2e` exits **0** after the corrections.
+
+The bench working tree is clean at this tip apart from
+`.supertaskr/gate-verdict.json`, which the runner writes and the tree
+ignores.
