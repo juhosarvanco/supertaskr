@@ -3,7 +3,7 @@ id: T-156-s3
 title: The token-scan restoration proof reds for any lane holding an uncommitted edit to one of its seven plant targets, and the message names the restore rather than the working tree
 feature: F-06
 milestone: 4
-priority: 15
+priority: 9
 size: S
 status: planned
 blocked_by: []
@@ -15,6 +15,8 @@ built_by:
 verified_by:
 review: independent
 ---
+
+Consolidates T-278-s3 (2026-09-13, pile 2 batch 2, the owner's approval of 2026-09-13): not a verbatim duplicate — this card describes the older restoration proof, T-278-s3 today's `expectUntouched` after fixture isolation, which still combines per-file hashes with `git diff --quiet` over the targets; the remaining defect is one and this file is the survivor. T-278-s3's file is removed in the same commit as this line and its full text kept under the absorbed heading. This card carried no canonical criteria section until this commit; the section below is against the CURRENT helper. Priority 15 becomes 9 (the sibling's). The fence stays `[tools/e2e]` (provisionally guarded, since the token reaches gate runners and the merge script); a narrower token, tools/e2e/tests/token-scan.spec.ts, is an explicit choice to settle before dispatch.
 
 **PROMOTED at the first standing triage, 2026-08-30. It is on `docs/STATE.md`'s standing-hazard list, which is where a defect goes to be survived rather than fixed.**
 
@@ -105,3 +107,38 @@ full strength.
 ## Suggested fence
 
 `[tools/e2e]`.
+
+## Acceptance criteria
+
+- WHEN the no-write proof runs THE helper SHALL compare the live targets with their pre-body snapshots so that pre-existing working-tree changes are not attributed to the body. A retained Git comparison SHALL distinguish the pre-existing state from changes during the body. The chosen approach SHALL be stated in the notes. (T-156-s3 and T-278-s3, in the review's words)
+- WHEN a body leaves a live target changed from its pre-body snapshot THE proof SHALL fail and name that target and the body-written change, regardless of whether the tree was already dirty. Positive controls SHALL cover both unchanged pre-existing dirt and an actual body-written change. The no-write proof SHALL neither be dropped nor weakened to a different spelling of the same index comparison. (T-156-s3, T-092's history; in the review's words)
+- IF a separate cleanliness check is retained and refuses pre-existing dirt while the no-write proof passes THEN its diagnostic SHALL identify the working-tree condition and affected file, with the commit-and-rerun remedy, rather than blame a body write or failed restoration. If no separate cleanliness check is retained, no Git-based diagnostic is required. (T-278-s3's discriminator, in the review's words)
+
+## Absorbed from T-278-s3 — token-scan's seven-roots body reds with `every target stays diff-clean in the live tree` when the SEAT has uncommitted work in one of its targets, which reads exactly like the body having written the repository (kept whole)
+
+Title as filed: "token-scan's seven-roots body reds with `every target stays diff-clean in the live tree` when the SEAT has uncommitted work in one of its targets, which reads exactly like the body having written the repository"
+
+Filed as: status suggested, priority 9, size S, touches [tools/e2e/tests/token-scan.spec.ts], wake None, suggested_by "executor claude-opus-5@subagent @T-278, 2026-09-09, at 6fe5a23".
+
+Measured in this lane: a `gate-run e2e` over an UNCOMMITTED edit to
+`.github/workflows/ci.yml` reds `one runtime-built control byte reds all
+seven first-party roots at exact byte offsets` at
+`token-scan.spec.ts:171` with *"and every target stays diff-clean in the
+live tree"*, expected 0, received 1. The body wrote nothing: the
+`git diff --quiet` half of `expectUntouched` (T-216-s4) cannot tell a
+seat's own working-tree change from a body that wrote the repository,
+and its message asserts the second. The per-file sha256 half already
+passed, which is the discriminator: hashes equal to `before` plus a
+dirty diff is a DIRTY TREE, and hashes unequal is a body that wrote.
+Saying so costs one branch and one sentence, and turns a five-minute
+misattribution — the executor's, here — into a line that names the file
+and says "commit it, then run the lane".
+
+Class parent: T-216-s4, which built `expectUntouched` and drilled it.
+Disposition hint: promote at any lane that already holds
+tools/e2e/tests/token-scan.spec.ts; it is one branch, and its own drill
+is a dirty tree.
+
+## Implementation notes
+
+## Verdicts
