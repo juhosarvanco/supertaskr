@@ -604,12 +604,22 @@ divergence.
 
 | Size | Pipeline |
 |------|----------|
+| XS | executor + the keeper that already pins the property; no verifier bench, and no *separate* integrator — the executor runs the keeper SCOPED, the push owes its range, and the executor is its OWN integrator: it merges, checkpoints and removes its own worktree WHILE IT HOLDS THE INTEGRATION CHECKOUT, and hands all three to the holder when it does not (lane-protocol.md rules 4, 6). |
 | S, diff outside shipped code | executor + tests; the executor is its OWN integrator — it merges, checkpoints and removes its own worktree WHILE IT HOLDS THE INTEGRATION CHECKOUT, and hands all three to the holder when it does not (lane-protocol.md rules 4, 6). No verifier, no *separate* integrator. |
 | S, touching shipped code | executor → verifier, then the executor integrates its OWN work once the verdict is in AND while it holds the integration checkout (lane-protocol.md rules 4, 6). One extra session, not two: the *separate* integrator is still not owed. |
 | M | executor → verifier → integrator. |
 | L | planning pass (or debate room) → executor → verifier → integrator. |
 
 The default path must feel lighter than not using the system.
+
+**XS IS A ROW HERE BECAUSE THE TIER IS NOT A SEAT.** The tier table below
+admits `bounded` on size XS and on nothing else, and a size this table has
+no row for is a size the dispatch cannot derive a ceremony for at all — so
+a vocabulary that gains XS without this row moves the outage one step down
+the dispatch instead of closing it (T-298-s3, where both halves were
+measured). The row says which SEATS an XS card owes; the tier table still
+says how hard the verifying one looks, and the two axes do not replace
+each other here either.
 
 **WHY SIZE S SPLITS, AND WHAT DECIDES WHICH ROW.** A single row gave
 every S card self-integration, so the cards where nothing adversarial was

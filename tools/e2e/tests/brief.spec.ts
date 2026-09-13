@@ -6561,6 +6561,75 @@ test("THE BOUNDED TIER IS REACHABLE FROM A CARD THIS TREE WOULD HOLD: the size i
   ).toThrow(TierFinding);
 });
 
+test("THE CEREMONY TABLE CARRIES A ROW FOR THE SIZE THE TIER TABLE SELECTS BOUNDED ON, so row 11 derives a ceremony for it rather than a finding", () => {
+  // KILLED BY: a size vocabulary that gains a value the ceremony table
+  // has no row for. Row 11 reads the ROW and refuses to reason from the
+  // letter, so a size with no row is a FINDING — and `brief.mjs` turns
+  // any finding into a non-zero exit. Before T-298-s3 that could not
+  // happen, because no card could carry the size at all; adding the size
+  // to the vocabulary without adding the row would move the outage one
+  // step down the dispatch rather than close it, and the lane would have
+  // reported a reachable tier that still refused at the dispatch.
+  const taskFormat = readDoc("method/tasks/TASK-FORMAT.md");
+  const tierRow = taskFormat.split("\n").find((l) => /^\|\s*bounded\s*\|/.test(l));
+  const boundedSize = /size\s+([A-Za-z]+)/.exec(tierRow ?? "")?.[1] ?? "";
+  expect(boundedSize, "the tier table names no size for bounded, so this body tests nothing").not.toBe("");
+
+  // `DERIVERS` holds every row's deriver, and they do not all take the
+  // same arity, so the map's value type is a union TypeScript cannot
+  // narrow by key. The row is named here and the shape row 11's own
+  // deriver has is asserted by the call below rather than assumed.
+  type Row11 = (ctx: ReturnType<typeof context>) => Parameters<typeof render>[0];
+  const deriver = DERIVERS.get("the deliverable") as Row11 | undefined;
+  expect(deriver, "row 11 has no deriver, so nothing here drives the derivation it is about").toBeDefined();
+  const base = context({ taskId: "T-133" });
+  expect(base.card, "the card this body drives row 11 with is not in this tree").toBeDefined();
+  // ONE FIELD MOVES. Row 11's ceremony derivation reads the card's
+  // `size:` and the table, so the fixture is a card that lives in the
+  // tree with that one field set to the size under test.
+  const atSize = (size: string): { findings: string[]; text: string } => {
+    const findings: string[] = [];
+    const ctx = {
+      ...base,
+      findings,
+      card: { ...base.card!, fields: { ...base.card!.fields, size } },
+    };
+    const text = render(deriver!(ctx));
+    return { findings, text };
+  };
+
+  const bounded = atSize(boundedSize);
+  expect(
+    bounded.findings,
+    `row 11 cannot derive a ceremony for size ${boundedSize}, which is the size the tier table ` +
+      "admits the cheapest tier on — the dispatch of such a card answers non-zero",
+  ).toEqual([]);
+  expect(bounded.text, "the derivation named no ceremony row for the size it was asked about").toContain(
+    `ceremony row ${boundedSize}`,
+  );
+
+  // THE CONTROL, RUN WHERE THE ARRANGEMENT IS ABSENT: a size this table
+  // carries no row for still answers with the finding, by name. Without
+  // it the green above is equally explained by a derivation that stopped
+  // asking, which is the failure this row exists to keep visible.
+  const heads = ceremonyRows(taskFormat).map((r) => r.size);
+  const absent = ["XXS", "XL", "XXL"].find((c) => !heads.some((h) => h === c || h.startsWith(`${c},`)));
+  expect(absent, "every control size already has a row, so none of them controls anything").toBeDefined();
+  const missing = atSize(absent ?? "");
+  expect(
+    missing.findings.join("\n"),
+    "a size with no ceremony row was derived anyway, so the refusal row 11 rests on is gone",
+  ).toContain(`no row for size ${absent ?? ""}`);
+
+  // AND THE NEW ROW DOES NOT LEAK INTO ANOTHER SIZE'S ANSWER: the letter
+  // alone does not decide the row here either, so a card at S must not
+  // pick up the row written for the size the bounded tier selects on.
+  expect(
+    atSize("S").text,
+    `an S card picked up the ${boundedSize} row — the match is reading a suffix rather than the head`,
+  ).not.toContain(`ceremony row ${boundedSize}`);
+});
+
 test("THE KEEPER RUN IS READ OFF ITS OUTPUT, so a derivation that graded nothing is not a red baseline", () => {
   // KILLED BY: reading the exit code alone, which folds "could not place
   // a fenced path" into "the baseline is red" — and every card whose
