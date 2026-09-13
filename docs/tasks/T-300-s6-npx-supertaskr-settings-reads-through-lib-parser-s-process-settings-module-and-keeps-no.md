@@ -440,3 +440,11 @@ exit 0.
 fresh generation of 96334. It was 96200 at the lane tip; the extra 134 bytes are correction
 1's body. The integrator regenerates against THIS tip and not against the lane's. The graph
 regeneration fires on the range and is the merge's.
+
+**Amendment to the Meters block above, and the reason it is one.** Those two figures were
+written before the step-7 runs, so they are estimates where every other number in this
+verdict is a reading. The record stands and this corrects it: the pass ran 12:58 to 13:35
+(+03:00), about 37 minutes, and the context consumed is **about 293K tokens**, read off this
+session's own remaining-budget line at this commit — not about 265K. The loop band sums this
+figure, and a seat that under-reports it hands the band a lower bound wearing a
+measurement's clothes.
