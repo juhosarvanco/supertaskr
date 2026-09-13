@@ -4,13 +4,14 @@ title: "`npx supertaskr settings` reads through lib/parser's process settings mo
 feature: F-04
 milestone: 4
 size: S
+tier: standard
 priority: 2
-status: planned
+status: building
 suggested_by: "the owner's ruling of 2026-09-12 that T-300 lands first and adopts the shared reader in a follow-up; the Codex orchestrator's review of 2026-09-12 on the planning boundary"
 blocked_by: [T-317]
 touches: [tools/e2e/scripts/settings.mjs, tools/e2e/tests/cli.spec.ts, docs/reference/15-settings.md]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
