@@ -42,7 +42,9 @@ b7274d54, and every figure below carries the ref it was measured at.
 the shared-pitfalls pilot of 2026-09-13 (the owner's ruling, recorded in
 docs/rooms/loop-cost-and-speed.md). I read it at 2026-09-13T20:20:54Z,
 after the diff was written and before the drills, as the file named
-pitfalls-T-314-s6.md in this lane's scratch directory. Its attacks are
+pitfalls-T-314-s6.md in this lane's scratch directory, sha256
+04651425242c93a243fce43dc36c598c96eca680f35ac214083ad42542ee91f9. Its
+attacks are
 answered by name below; its measurement requests M1 to M10 are the
 verifier's asks of the seat at the base and were not mine to answer,
 though M5, M6, M8 and M9 are answered here because the build needed
@@ -232,6 +234,38 @@ mechanically is filed as T-314-s8.
   gate's verdict over the full path list is recorded under the closing
   check.
 
+### The closing check
+
+Run ONCE, as the RANGE's owed set rather than the scoped form, because
+the notes above put docs/tasks in the range and the docs gate fires on
+it: `gate-run.mjs --range fec37e5f3838..d9f68902` over 6 moved paths
+owes app, e2e and parser, the e2e leg narrowed to 13 spec files. All
+three GREEN at d9f68902 — parser exit 0 over 413 bodies, app exit 0 over
+1171 bodies, e2e exit 0 over 713 bodies in 6.2m.
+
+**AND IT WAS RUN IN THE RUNNER'S OWN SHAPE.** The whole battery was
+started from a shell reparented to the reaper, so no harness was an
+ancestor of any test process in it — the exact condition that reddened
+main. Nothing in the owed set depends on this machine's ancestry: 713 of
+713.
+
+The RESULT for the spec this card's third criterion names, rather than
+its membership in a set: tools/e2e/tests/push-guard.spec.ts ran 123
+bodies, all green, and the three that drive a seat verb are positions
+651, 652 and 653 of that leg's listing — the two this card names among
+them. The body added here is position 604. In the same leg
+tools/e2e/tests/card-preflight.spec.ts ran 58 bodies, all green,
+including the five that have used this stand-in since T-238.
+
+What the sharing costs, for the attack set's A2.6: the only path that
+grew is `seatVerb`, which now spawns a stand-in as well as the verb, 7
+times in the whole suite. Measured under a local harness, the three seat
+bodies together go from 1.87s at fec37e5f3838 to 2.10s at b7274d54, and
+the added body costs 48ms at d9f68902. Every other body's path is
+unchanged: the preflight spec's binders pass the same two constants the
+module constants always were. The whole spec is 109.7s of body time at
+d9f68902, against 30.9s for the preflight spec.
+
 ### Where the brief was wrong
 
 Nowhere that changed a decision. Two corrections of detail: the
@@ -251,6 +285,14 @@ not one to promote.
 - The `seatVerb` helper gained a no-session checkout of this file's own
   rather than inheriting whatever the suite was started under. Same
   shape as the preflight spec's, argued at the site.
+- ONE BODY ADDED beyond the letter of the criteria, at the stand-in's own
+  property, because the failure this card repairs is invisible to a
+  local suite and the body makes it visible there. It is why
+  `capabilities:check` is stale for the merge to regenerate.
+- tools/e2e/tests/push-guard.spec.ts's own copy of the symlink recipe was
+  collapsed into the shared module rather than left beside it: the card
+  says shared rather than copied, and that file had a copy of its own.
+  Its SCRIPT half is left, and filed as T-314-s7.
 
 ## Verdicts
 
