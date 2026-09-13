@@ -632,7 +632,7 @@ export function hookStatus(root, git = runGit) {
     ...(site.configured === undefined ? {} : { configured: site.configured }),
     ...(site.configuredScope === undefined ? {} : { scope: site.configuredScope }),
   };
-  if (!executable(site.hookFile)) {
+  if (!present(site.hookFile)) {
     return {
       guarded: false,
       ...stamp,
