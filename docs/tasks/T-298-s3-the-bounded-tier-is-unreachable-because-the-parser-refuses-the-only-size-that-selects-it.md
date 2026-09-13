@@ -6,7 +6,7 @@ milestone: 4
 size: S
 tier: guarded
 priority: 1
-status: building
+status: verifying
 suggested_by: "executor claude-opus-5@subagent @T-298, measured at 885153d11a92a913382e0da2032982c21b6e0e0f, 2026-09-11"
 blocked_by: []
 touches: [lib/parser/src/types.ts, lib/parser/test/task.test.ts, method/tasks/TASK-FORMAT.md, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/session-economics.spec.ts]
