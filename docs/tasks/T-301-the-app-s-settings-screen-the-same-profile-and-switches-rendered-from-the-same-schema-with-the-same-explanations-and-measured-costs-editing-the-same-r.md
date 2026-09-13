@@ -6,7 +6,8 @@ milestone: 4
 size: M
 tier: standard
 priority: 3
-status: building
+status: parked
+wake: 2026-09-20
 suggested_by: "@human (2026-09-10): \"Rule the loop room, A to I as amended: yes\" — docs/rooms/loop-cost-and-speed.md, ADR-024"
 blocked_by: [T-299]
 touches: [app/src/, app/src-tauri/src/, app/test/]
@@ -64,6 +65,15 @@ The owner ruled on 2026-09-13, reading the customization-form room, that this sc
 - This card resumes only when, in addition to the three merges the second amendment names, a design ruling is recorded on this card: what a person does on the screen, how the resolved values and their reasons are previewed, how a diagnostic on a forbidden combination is shown, and where the models section from T-318 sits. The seat proposes; the owner rules; the ruling is paraphrased here, dated, before the executor's brief is rendered.
 - The edit follow-up card (a click runs the terminal command through the native half) is not cut until the same design ruling covers the edit flow and the shape of a refused edit.
 - The design step is the owner's to take up; it is not started by the seat without telling the owner, and it does not begin a lane.
+
+## Parked 2026-09-13 — formally, on the owner's ruling, until the design ruling; resumed later through a fresh dispatch
+
+The owner ruled on 2026-09-13 that this card is parked formally and resumed later through a FRESH dispatch after the design ruling the third amendment requires; the design sitting and the fresh dispatch are separate authorizations. The wake date is a placeholder for that ruling. The lane had stood dormant at its dispatch stamp since the quota interruption of 2026-09-11 with its executor's work uncommitted; before the worktrees were removed the seat preserved and verified that work on the owner's instruction:
+
+- The unfinished candidate — five modified files (app/src-tauri/src/lib.rs, app/src/App.tsx, app/src/components/shell/PaneRail.tsx, app/test/crescendo-dom.test.tsx, app/test/map-shell-dom.test.tsx), seven untracked files (app/src-tauri/src/settings.rs, app/src/components/shell/SettingsScreen.tsx, process-settings.ts, settings-source.ts, app/test/process-settings.test.ts, settings-screen.test.tsx, settings-source.test.ts) and the lane's fence manifest and lock under .supertaskr/ — is committed whole on the evidence branch `evidence/T-301-wip-2026-09-13` (15 files, 6170 insertions), one commit above the task branch `task/T-301-settings-screen`, which stays at de5805b1. Neither is a resumption and neither is for merging.
+- The same fifteen files are archived outside every checkout under the evidence directory beside the checkouts (`supertaskr-evidence/T-301-2026-09-13/`: the tar archive, a sha256 manifest of all fifteen, the diff of the five modified files against de5805b1, the status listing and the branch tips), and the archive was extracted and its manifest verified before the worktrees were removed.
+- The recovery clone's candidate (its own T-301 checkout at e1e1b14b, whose working tree equals that commit) was compared file by file: three files are byte-identical (App.tsx, PaneRail.tsx, map-shell-dom.test.tsx) and nine differ, several substantially (the recovery's settings.rs is 2420 lines to the lane's 996; its process-settings.ts 8 lines to the lane's 708). The two are different candidates from a common start; the recovery clone does not contain this lane's work, so the fresh dispatch reads BOTH as input material, as the first amendment already says of the recovery's.
+- The lane worktree and the bench worktree are removed through the normal procedure once the preservation above is verified, so the card's fence (app/src/, app/src-tauri/src/, app/test/) no longer reads as live against the app cards.
 
 ## Implementation notes
 <!-- executor appends before finishing -->
