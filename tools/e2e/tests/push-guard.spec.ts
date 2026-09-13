@@ -1,6 +1,8 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import {
   chmodSync,
+  copyFileSync,
+  cpSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -8,6 +10,7 @@ import {
   readdirSync,
   realpathSync,
   rmSync,
+  statSync,
   symlinkSync,
   writeFileSync,
 } from "node:fs";
@@ -90,6 +93,27 @@ import {
   headTree,
   writeToken,
 } from "../../../.claude/hooks/gate-token.mjs";
+// T-314 — THE OTHER GUARD, AND THE ARM THAT INSTALLS IT. Imported rather
+// than spawned wherever a body is about a decision; the bodies about a
+// PUSH drive the real hook through a real `git push` instead, because the
+// property there is what reaches a remote and not what a function
+// returned.
+import {
+  HOOK_DIR_REL_PATH,
+  HOOK_FILE_NAME,
+  TREE_OWNER,
+  decidePrePush,
+  parseUpdates,
+  updateShape,
+} from "../../../.claude/hooks/pre-push-guard.mjs";
+import {
+  GIT_HOOK_NAMES,
+  HOOKS_PATH_KEY,
+  WORKTREE_CONFIG_KEY,
+  hookInstallPlan,
+  hookStatus,
+  installHook,
+} from "../../../.claude/hooks/hook-install.mjs";
 import { holderVerdict, processRow, writeHolder } from "../scripts/checkout-currency.mjs";
 import { repoRoot } from "../preflight";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
@@ -4640,4 +4664,721 @@ test("a leg beyond the owed set that ran NARROWED is priced by the scope it reco
   expect(scoped, "and never by the leg it did not run").not.toContain(
     "Those legs are about 10.0 minute(s)",
   );
+});
+
+/* ════════════════════════════════════════════════════════════════════
+ * T-314 — THE PUSH GIT ITSELF JUDGES.
+ *
+ * Everything above this line is about `.claude/hooks/push-guard.mjs`, a
+ * hook ONE harness registers on ONE tool call, judging a command string a
+ * session typed and keying its token to HEAD. The bodies below are about
+ * `.claude/hooks/pre-push`, which git runs at every push in every harness
+ * and none, judging each proposed update on the two objects git itself
+ * hands it.
+ *
+ * ── THE FIXTURE POINTS GIT AT THIS REPOSITORY'S OWN HOOK ────────────
+ * `core.hooksPath` in a scratch repository is set to `repoRoot`'s
+ * `.claude/hooks`, which is `runWiredHook`'s treatment one mechanism
+ * over: the code under test is THIS checkout's committed copy and the
+ * tree under test is a fixture. So a push below is a real `git push`,
+ * through a real hook, against a real bare remote inside one `mkdtemp`
+ * root — and "did it reach the remote" has a mechanical answer rather
+ * than an inferred one (the amendment of 2026-09-13, requirement 4).
+ *
+ * ── AND EVERY ALLOW CARRIES ITS POSITIVE CONTROL ────────────────────
+ * docs/CONVENTIONS.md's rule, which this file already obeys above: an
+ * allow asserted without a control is satisfied by a hook that always
+ * says yes, so every body that measures a push REACHING the remote also
+ * measures the same fixture refusing one.
+ * ════════════════════════════════════════════════════════════════════ */
+
+/** This repository's own tracked hooks directory — derived, never typed. */
+const HOOK_DIR = path.join(repoRoot, ".claude", "hooks");
+
+/** The hook file git executes. */
+const HOOK_FILE = path.join(HOOK_DIR, HOOK_FILE_NAME);
+
+/**
+ * A fixture whose git runs THIS repository's pre-push hook.
+ *
+ * THE EXECUTABLE BIT IS ASSERTED RATHER THAN SET. Setting it would be
+ * this suite writing into the repository, which the header above forbids;
+ * and the body that asserts the COMMITTED mode is what makes it true in
+ * every checkout. A checkout where it is false is a checkout whose guard
+ * does not run, and a body that quietly repaired it would hide exactly
+ * that.
+ */
+function guardedFixture(
+  name: string,
+  opts: Parameters<typeof fixture>[3] = {},
+): Fixture {
+  expect(
+    existsSync(HOOK_FILE),
+    `${HOOK_FILE_NAME} is not in this checkout, so nothing below is measuring a guard`,
+  ).toBe(true);
+  expect(
+    (statSync(HOOK_FILE).mode & 0o111) !== 0,
+    `${HOOK_FILE} is not executable in this working tree — git cannot run it, and the bodies ` +
+      "below would be measuring a checkout whose guard is absent rather than the guard",
+  ).toBe(true);
+  const fx = fixture(name, CHECK_EXIT.CURRENT, CURRENT_REPORT, opts);
+  execFileSync("git", ["-C", fx.root, "config", "--local", HOOKS_PATH_KEY, HOOK_DIR], {
+    stdio: "pipe",
+  });
+  return fx;
+}
+
+/** A real `git push` from a fixture, with the fixture's own PATH. */
+function realPush(fx: Fixture, ...args: string[]): { status: number | null; stderr: string } {
+  const out = spawnSync("git", ["-C", fx.root, ...NO_BACKGROUND_MAINTENANCE, "push", ...args], {
+    encoding: "utf8",
+    env: { ...process.env, PATH: fixturePath(fx) },
+  });
+  return { status: out.status, stderr: String(out.stderr ?? "") };
+}
+
+/** What `origin` holds for `ref` right now, or `(absent)`. */
+function remoteRef(fx: Fixture, ref: string): string {
+  const out = spawnSync("git", ["-C", fx.remote, "rev-parse", "--verify", "--quiet", ref], {
+    encoding: "utf8",
+  });
+  return out.status === 0 ? String(out.stdout).trim() : "(absent)";
+}
+
+/** A commit id in the fixture. */
+function rev(fx: Fixture, spec: string): string {
+  return execFileSync("git", ["-C", fx.root, "rev-parse", spec], { encoding: "utf8" }).trim();
+}
+
+/**
+ * A token recording EXACTLY these suites GREEN against `tree`.
+ *
+ * IT REPLACES RATHER THAN MERGES, which `writeToken` deliberately does
+ * not: a body that plants a four-suite token and then plants a one-suite
+ * one is otherwise measuring the union of the two, and the difference
+ * between `token-stale` (an entry exists and names another tree) and
+ * `token-partial` (no entry at all) is exactly what the union hides.
+ */
+function plantAtTree(root: string, tree: string, suites: readonly string[] = REQUIRED_SUITES): void {
+  const ref = execFileSync("git", ["-C", root, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  rmSync(path.join(root, TOKEN_REL_PATH), { force: true });
+  writeToken(
+    root,
+    suites.map((s) => ({ ...suiteVerdict(s, GREEN, ref), tree })),
+    { tree, treeAtWrite: tree, dirty: false },
+  );
+}
+
+test("the hook file is committed EXECUTABLE, which is the only thing that makes git run it", () => {
+  // KILLED BY: a hook committed at 100644. Git silently declines to run a
+  // hook it cannot execute — no error, no refusal, no line anywhere — so
+  // the mode is not a detail of this file: it IS whether the guard
+  // exists. The amendment of 2026-09-13 puts it at 100755 and says the
+  // mode is recorded through git's own index rather than assumed from
+  // whatever a checkout happens to carry, which is what this body reads.
+  const staged = execFileSync(
+    "git",
+    ["-C", repoRoot, "ls-files", "-s", `${HOOK_DIR_REL_PATH}/${HOOK_FILE_NAME}`],
+    { encoding: "utf8" },
+  ).trim();
+  expect(staged, "the hook is not tracked at all").not.toBe("");
+  expect(staged.startsWith("100755 "), `the committed mode is not 100755: ${staged}`).toBe(true);
+
+  // THE POSITIVE CONTROL IS THE DIRECTORY IT SITS IN: its neighbours are
+  // ordinary files at 100644, so "100755" above is a fact about this file
+  // and not about how this repository stores everything.
+  const neighbours = execFileSync("git", ["-C", repoRoot, "ls-files", "-s", HOOK_DIR_REL_PATH], {
+    encoding: "utf8",
+  })
+    .split("\n")
+    .filter((l) => l.trim() !== "" && !l.endsWith(`${HOOK_DIR_REL_PATH}/${HOOK_FILE_NAME}`));
+  expect(neighbours.length, "the hook has no neighbours, so this control proves nothing").toBeGreaterThan(2);
+  expect(
+    neighbours.filter((l) => !l.startsWith("100644 ")),
+    "these neighbours are executable too, so the mode above is not this file's own property",
+  ).toEqual([]);
+  disclose("hook-mode", `${staged.split("\t")[0] ?? ""}, beside ${String(neighbours.length)} file(s) at 100644`);
+});
+
+test("WITHOUT the hook an ungraded push reaches the remote; WITH it the same push never does", () => {
+  // THE DEFECT AND ITS CLOSURE IN ONE FIXTURE, through REAL pushes. The
+  // first half is the state this card was written about: under a harness
+  // that registers no `PreToolUse` hook, nothing at all judges a push.
+  // The second half is the same repository, the same command, the same
+  // ungraded tree — refused by git itself.
+  const fx = guardedFixture("actual-push", { token: "missing" });
+  execFileSync("git", ["-C", fx.root, "config", "--local", "--unset", HOOKS_PATH_KEY], { stdio: "pipe" });
+
+  const unguarded = realPush(fx, "origin", "HEAD:refs/heads/main");
+  expect(unguarded.status, `an unguarded push should have gone: ${unguarded.stderr}`).toBe(0);
+  expect(remoteRef(fx, "refs/heads/main"), "the defect, reproduced: an ungraded tree reached the remote").toBe(
+    rev(fx, "HEAD"),
+  );
+
+  // A THIRD COMMIT, so there is something left to refuse, and the hook.
+  writeFileSync(path.join(fx.root, "README.md"), "a third commit\n");
+  execFileSync("git", ["-C", fx.root, ...NO_BACKGROUND_MAINTENANCE, "add", "-A"], { stdio: "pipe" });
+  execFileSync("git", ["-C", fx.root, ...NO_BACKGROUND_MAINTENANCE, "commit", "-qm", "third"], { stdio: "pipe" });
+  execFileSync("git", ["-C", fx.root, "config", "--local", HOOKS_PATH_KEY, HOOK_DIR], { stdio: "pipe" });
+  const before = remoteRef(fx, "refs/heads/main");
+
+  const guarded = realPush(fx, "origin", "HEAD:refs/heads/main");
+  expect(guarded.status, "a guarded ungraded push must not exit 0").not.toBe(0);
+  expect(guarded.stderr).toContain("PUSH REFUSED");
+  expect(guarded.stderr).toContain("token-missing");
+  expect(remoteRef(fx, "refs/heads/main"), "and the remote never moved").toBe(before);
+
+  // AND THE DECLARED BYPASS IS DECLARED RATHER THAN PRETENDED AWAY: the
+  // same push with `--no-verify` lands, which is what docs/CONVENTIONS.md
+  // records as closed by procedure in v1.
+  const bypassed = realPush(fx, "--no-verify", "origin", "HEAD:refs/heads/main");
+  expect(bypassed.status, "`--no-verify` skips every pre-push hook, by git's design").toBe(0);
+  expect(remoteRef(fx, "refs/heads/main"), "which is the accepted procedural limitation").toBe(rev(fx, "HEAD"));
+});
+
+test("each proposed update is read from standard input, and a line this hook cannot split is refused rather than guessed at", () => {
+  // KILLED BY: a reader that takes the first three fields and invents the
+  // fourth, and by one that drops a line it cannot parse.
+  const good = parseUpdates(
+    "refs/heads/main aaa refs/heads/main bbb\n\nrefs/heads/x ccc refs/heads/x ddd\n",
+  );
+  expect("updates" in good && good.updates.length, "two lines, one blank").toBe(2);
+  expect("updates" in good ? good.updates[1]?.remoteOid : "").toBe("ddd");
+  expect("updates" in parseUpdates(""), "no lines at all is not an error").toBe(true);
+
+  const short = parseUpdates("refs/heads/main aaa refs/heads/main\n");
+  expect("problem" in short, "a three-field line must not be read as an update").toBe(true);
+  expect("problem" in short ? short.problem : "").toContain("4");
+
+  // AND THE RUNNER TURNS THAT INTO A REFUSAL, not into an allow: a push
+  // this hook could not read is a push nothing about it was judged.
+  const fx = guardedFixture("unreadable-input");
+  const decision = decidePrePush({ cwd: fx.root, stdin: "one two three\n" });
+  expect(decision.verdict).toBe("block");
+  expect(decision.code).toBe("update-input-unreadable");
+
+  // THE CONTROL: the same fixture, a WELL-FORMED input, is not refused
+  // for this reason — so the refusal above is about the input's shape.
+  const wellFormed = decidePrePush({
+    cwd: fx.root,
+    stdin: `HEAD ${rev(fx, "HEAD")} refs/heads/main ${fx.base}\n`,
+  });
+  expect(wellFormed.code, "a readable input reaches the arms that judge it").not.toBe(
+    "update-input-unreadable",
+  );
+});
+
+test("a pushed commit that differs from HEAD is judged on ITS OWN tree, and HEAD's token does not cover it", () => {
+  // THE CARD'S THIRD PROPERTY. `push-guard.mjs` keys its token arm to
+  // `headTree(root)`, so a push of anything but HEAD was judged against
+  // content it does not carry — in the safe direction only by accident.
+  const fx = guardedFixture("not-head");
+  const headTreeNow = headTree(fx.root) ?? "";
+  const earlierTree = execFileSync("git", ["-C", fx.root, "rev-parse", "HEAD~1^{tree}"], {
+    encoding: "utf8",
+  }).trim();
+  expect(earlierTree, "the two commits must carry different trees or this proves nothing").not.toBe(
+    headTreeNow,
+  );
+
+  // THE POSITIVE CONTROL FIRST, IN THE SAME FIXTURE: HEAD's own push,
+  // with HEAD's own token, goes.
+  const ok = realPush(fx, "origin", "HEAD:refs/heads/main");
+  expect(ok.status, `HEAD's push with HEAD's token: ${ok.stderr}`).toBe(0);
+
+  const refused = realPush(fx, "origin", "HEAD~1:refs/heads/side");
+  expect(refused.status, "the same token must not certify a different tree").not.toBe(0);
+  expect(refused.stderr).toContain("token-stale");
+  expect(refused.stderr, "the refusal names the tree it actually compared").toContain(earlierTree);
+  expect(
+    refused.stderr,
+    "and it says whose tree that is — `judgeToken`'s sentences name HEAD by default, and HEAD " +
+      "is not what this push carries",
+  ).toContain(TREE_OWNER);
+  expect(remoteRef(fx, "refs/heads/side"), "and the branch was never created").toBe("(absent)");
+});
+
+test("the range is the update's own remote OLD OBJECT, not the local tracking ref — which can be a lie", () => {
+  // THE DISCRIMINATOR, AND IT IS THE WHOLE REASON A GIT HOOK BEATS A
+  // COMMAND SCANNER. `pushRange` derives `@{upstream}..HEAD` from this
+  // checkout's own administration; git hands the hook what the REMOTE
+  // actually holds. A tracking ref that is ahead of the remote — a
+  // failed push, a fetch from a rewound remote, a hand `update-ref` —
+  // makes the first answer an EMPTY range, which owes nothing at all.
+  const fx = guardedFixture("old-object", { token: "missing" });
+  const head = rev(fx, "HEAD");
+  execFileSync("git", ["-C", fx.root, "update-ref", "refs/remotes/origin/main", head], { stdio: "pipe" });
+  execFileSync("git", ["-C", fx.root, "config", "branch.main.remote", "origin"], { stdio: "pipe" });
+  execFileSync("git", ["-C", fx.root, "config", "branch.main.merge", "refs/heads/main"], { stdio: "pipe" });
+
+  const byTrackingRef = pushRange(fx.root);
+  expect("range" in byTrackingRef ? byTrackingRef.range : "", "the tracking ref claims there is nothing to add").toBe(
+    `${head}..${head}`,
+  );
+  expect(remoteRef(fx, "refs/heads/main"), "while the remote is really still one commit behind").toBe(fx.base);
+
+  const refused = realPush(fx, "origin", "HEAD:refs/heads/main");
+  expect(refused.status).not.toBe(0);
+  expect(
+    refused.stderr,
+    "the hook's range runs from what the REMOTE holds to what the push carries",
+  ).toContain(`${fx.base}..${head}`);
+  expect(
+    refused.stderr,
+    "and never from the tracking ref, whose range is empty and owes nothing",
+  ).not.toContain(`${head}..${head}`);
+  disclose("range-source", `remote old object ${fx.base.slice(0, 12)}, tracking ref ${head.slice(0, 12)}`);
+});
+
+test("several proposed updates, one unqualified: the WHOLE push is refused and the qualified one is named", () => {
+  // GIT HAS ONE EXIT CODE FOR THE WHOLE INVOCATION, so a seat reading a
+  // refusal about one branch would otherwise believe the other landed.
+  const fx = guardedFixture("several-updates");
+  execFileSync("git", ["-C", fx.root, "branch", "keeper"], { stdio: "pipe" });
+  execFileSync("git", ["-C", fx.root, "branch", "stray", "HEAD~1"], { stdio: "pipe" });
+
+  // THE CONTROL: `keeper` ALONE is qualified — same fixture, same token.
+  const alone = realPush(fx, "origin", "keeper:refs/heads/keeper");
+  expect(alone.status, `keeper alone should go: ${alone.stderr}`).toBe(0);
+  expect(remoteRef(fx, "refs/heads/keeper")).toBe(rev(fx, "keeper"));
+
+  const both = realPush(fx, "origin", "keeper:refs/heads/keeper-two", "stray:refs/heads/stray");
+  expect(both.status, "one unqualified update refuses the invocation").not.toBe(0);
+  expect(both.stderr).toContain("WHOLE PUSH IS REFUSED");
+  expect(both.stderr, "the qualified update is named, so nobody infers that it landed").toContain(
+    "refs/heads/keeper-two",
+  );
+  expect(remoteRef(fx, "refs/heads/keeper-two"), "and it did not").toBe("(absent)");
+  expect(remoteRef(fx, "refs/heads/stray")).toBe("(absent)");
+});
+
+test("an unsupported update shape is refused BY NAME — a deletion, and a ref that is not a branch", () => {
+  // AN UNSUPPORTED SHAPE IS THE ONE INABILITY THIS GUARD REFUSES ON, and
+  // the direction is argued in the module: a shape it was never given a
+  // rule for is a push asking for the rule to be optional, while an
+  // inability of its OWN falls back to the whole battery.
+  const fx = guardedFixture("shapes");
+  const head = rev(fx, "HEAD");
+  execFileSync("git", ["-C", fx.root, ...NO_BACKGROUND_MAINTENANCE, "push", "-q", "--no-verify", "origin", "HEAD~1:refs/heads/doomed"], { stdio: "pipe" });
+  execFileSync("git", ["-C", fx.root, "tag", "v0"], { stdio: "pipe" });
+
+  const deletion = realPush(fx, "origin", "--delete", "refs/heads/doomed");
+  expect(deletion.status).not.toBe(0);
+  expect(deletion.stderr).toContain("update-shape-unsupported");
+  expect(deletion.stderr, "and it says WHICH shape").toContain("DELETION");
+  expect(remoteRef(fx, "refs/heads/doomed"), "the branch still stands").not.toBe("(absent)");
+
+  const tag = realPush(fx, "origin", "refs/tags/v0");
+  expect(tag.status).not.toBe(0);
+  expect(tag.stderr).toContain("update-shape-unsupported");
+  expect(remoteRef(fx, "refs/tags/v0")).toBe("(absent)");
+
+  // AND THE SHAPE READER ITSELF, both directions, on the objects rather
+  // than through a push: a branch update is supported and the two above
+  // are named.
+  expect(
+    updateShape({ localRef: "HEAD", localOid: head, remoteRef: "refs/heads/main", remoteOid: fx.base, line: "" }),
+  ).toEqual({ branch: "main" });
+  expect(
+    "unsupported" in
+      updateShape({ localRef: "HEAD", localOid: "0".repeat(40), remoteRef: "refs/heads/x", remoteOid: head, line: "" }),
+  ).toBe(true);
+  expect(
+    "unsupported" in
+      updateShape({ localRef: "v0", localOid: head, remoteRef: "refs/tags/v0", remoteOid: "0".repeat(40), line: "" }),
+  ).toBe(true);
+});
+
+test("the token must match the PUSHED tree in ADDITION to covering the owed set, never instead of it", () => {
+  // THE SECOND CRITERION, IN ITS TWO HALVES AND WITH THE THIRD BINDING
+  // THE CARD SAYS IS PRESERVED: a token minted for a DIFFERENT tree is
+  // refused; a token minted for the PUSHED tree whose measured set does
+  // not cover what the range owes is refused too; and a token that is
+  // right on both axes is still refused when it was minted over a tree
+  // that moved while it ran.
+  const fx = guardedFixture("additional-binding", { token: "missing", change: "lib/parser/src/x.ts" });
+  const head = rev(fx, "HEAD");
+  const tree = headTree(fx.root) ?? "";
+  execFileSync("git", ["-C", fx.root, "update-ref", "refs/remotes/origin/main", fx.base], { stdio: "pipe" });
+
+  const owed = runOwedSet(fx.root, `${fx.base}..${head}`);
+  expect("owed" in owed ? owed.owed.suites : [], "this range owes one package's suite").toEqual(["parser"]);
+
+  // (a) A DIFFERENT TREE. Every suite green, the whole battery, and the
+  // key names content this push does not carry.
+  plantAtTree(fx.root, FOREIGN_TREE);
+  const other = realPush(fx, "origin", "HEAD:refs/heads/main");
+  expect(other.status).not.toBe(0);
+  expect(other.stderr).toContain("token-stale");
+
+  // (b) THE PUSHED TREE, AND A SET THAT DOES NOT COVER THE RANGE. The
+  // key is right and the measurement is not the one this push owes.
+  plantAtTree(fx.root, tree, ["rust"]);
+  const partial = realPush(fx, "origin", "HEAD:refs/heads/main");
+  expect(partial.status).not.toBe(0);
+  expect(partial.stderr).toContain("token-partial");
+  expect(partial.stderr, "naming the suite the range owes and the token never measured").toContain("parser");
+
+  // (c) THE PUSHED TREE, THE OWED SET, AND A TREE THAT MOVED WHILE IT
+  // RAN — the check this card says is PRESERVED rather than replaced.
+  const ref = rev(fx, "HEAD");
+  rmSync(path.join(fx.root, TOKEN_REL_PATH), { force: true });
+  writeToken(fx.root, [{ ...suiteVerdict("parser", GREEN, ref), tree }], {
+    tree,
+    treeAtWrite: FOREIGN_TREE,
+    dirty: false,
+  });
+  const unkeyed = realPush(fx, "origin", "HEAD:refs/heads/main");
+  expect(unkeyed.status).not.toBe(0);
+  expect(unkeyed.stderr).toContain("token-unkeyed");
+
+  // THE POSITIVE CONTROL, LAST AND IN THE SAME FIXTURE: right tree,
+  // right set, clean key — and the push goes.
+  plantAtTree(fx.root, tree, ["parser"]);
+  const ok = realPush(fx, "origin", "HEAD:refs/heads/main");
+  expect(ok.status, `the qualified push should go: ${ok.stderr}`).toBe(0);
+  expect(remoteRef(fx, "refs/heads/main")).toBe(head);
+});
+
+test("the Claude PreToolUse guard is untouched, and the two nets are wired to two different mechanisms", () => {
+  // THE FOURTH CRITERION. The whole of this file above is the evidence
+  // that the older guard still behaves; what nothing else states is that
+  // the two nets are REGISTERED differently — one in this repository's
+  // settings, one in git's own configuration key — so neither can be
+  // retired by whatever retires the other.
+  const settings = JSON.parse(readFileSync(path.join(repoRoot, ".claude", "settings.json"), "utf8")) as {
+    hooks: { PreToolUse: { matcher: string; hooks: { command: string }[] }[] };
+  };
+  const bash = settings.hooks.PreToolUse.find((h) => new RegExp(`^(${h.matcher})$`).test("Bash"));
+  expect(bash, "the Bash matcher is gone, so the second net is gone").toBeDefined();
+  expect(
+    bash?.hooks.map((h) => h.command).join(" "),
+    "and it still points at the guard this card left alone",
+  ).toContain("push-guard-hook.mjs");
+  expect(
+    JSON.stringify(settings),
+    "the pre-push hook is NOT registered here — git's core.hooksPath is its mechanism, and a " +
+      "settings entry would make it one harness's after all",
+  ).not.toContain(HOOK_FILE_NAME);
+
+  // AND THE OLDER GUARD STILL REFUSES WHAT IT ALWAYS REFUSED, through
+  // the wired command, in a fixture whose pre-push hook is not installed
+  // — so this is the `PreToolUse` net alone.
+  const fx = fixture("second-net", CHECK_EXIT.STALE, STALE_REPORT);
+  const run = runWiredHook(fx, "git push origin HEAD:refs/heads/main");
+  expect(run.status, "the PreToolUse guard's own refusal").toBe(2);
+  expect(run.stderr, "and it is that guard's own sentence, unchanged by this card").toContain(
+    "`index --check` exited 1 — the committed graph is STALE",
+  );
+});
+
+/* ───────────── the installer, and the seat verbs that call it ──────── */
+
+/** A scratch repository whose `.claude/hooks` carries the real hook file. */
+function installFixture(
+  name: string,
+  opts: { mode?: number; worktree?: boolean; worktreeConfig?: boolean } = {},
+): { root: string; git: (...args: string[]) => string; sibling?: string } {
+  const root = mkdtempSync(path.join(os.tmpdir(), `T-314-install-${name}-`));
+  SCRATCH.push(root);
+  const git = (...args: string[]): string =>
+    execFileSync("git", ["-C", root, ...NO_BACKGROUND_MAINTENANCE, ...args], {
+      encoding: "utf8",
+      stdio: "pipe",
+    }).trim();
+  execFileSync("git", ["init", "-q", "-b", "main", root], { stdio: "pipe" });
+  git("config", "user.email", "fixture@example.invalid");
+  git("config", "user.name", "T-314 fixture");
+  mkdirSync(path.join(root, HOOK_DIR_REL_PATH), { recursive: true });
+  copyFileSync(HOOK_FILE, path.join(root, HOOK_DIR_REL_PATH, HOOK_FILE_NAME));
+  chmodSync(path.join(root, HOOK_DIR_REL_PATH, HOOK_FILE_NAME), opts.mode ?? 0o755);
+  writeFileSync(path.join(root, "README.md"), "install fixture\n");
+  git("add", "-A");
+  git("commit", "-qm", "fixture");
+  /** @type {string | undefined} */
+  let sibling: string | undefined;
+  if (opts.worktree === true) {
+    sibling = path.join(root, "..", `${path.basename(root)}-lane`);
+    git("worktree", "add", "-q", "-b", "task/T-901-a-lane", sibling, "HEAD");
+    SCRATCH.push(sibling);
+  }
+  if (opts.worktreeConfig === true) git("config", "--local", WORKTREE_CONFIG_KEY, "true");
+  return { root, git, ...(sibling === undefined ? {} : { sibling }) };
+}
+
+/** `core.hooksPath` as git reports it, or `(unset)`. */
+function configuredHooksPath(root: string): string {
+  const out = spawnSync("git", ["-C", root, "config", "--show-scope", "--get", HOOKS_PATH_KEY], {
+    encoding: "utf8",
+  });
+  return out.status === 0 ? String(out.stdout).trim() : "(unset)";
+}
+
+test("the installer points git at the tracked hooks directory only when the key is unset or already ours", () => {
+  // KILLED BY: an installer that overwrites a hooks path somebody else
+  // configured, and by one that re-installs over its own work as though
+  // it had not run.
+  const fx = installFixture("unset");
+  expect(hookStatus(fx.root).guarded, "the fixture starts unguarded, so the control is not degenerate").toBe(false);
+  const first = installHook({ root: fx.root });
+  expect(first.state).toBe("installed");
+  expect(first.scope).toBe("local");
+  expect(hookStatus(fx.root).guarded).toBe(true);
+  expect(configuredHooksPath(fx.root)).toContain(HOOK_DIR_REL_PATH);
+
+  // ALREADY OURS IS NOT AN INSTALL and does not write again.
+  const again = installHook({ root: fx.root });
+  expect(again.state).toBe("already-installed");
+
+  // AND A PATH THAT IS NOT OURS IS REFUSED BY NAME, with nothing changed.
+  const other = installFixture("elsewhere");
+  const elsewhere = path.join(other.root, "their-hooks");
+  mkdirSync(elsewhere);
+  other.git("config", "--local", HOOKS_PATH_KEY, elsewhere);
+  const before = configuredHooksPath(other.root);
+  const refused = installHook({ root: other.root });
+  expect(refused.state).toBe("refused");
+  expect(refused.code).toBe("hooks-path-elsewhere");
+  expect(refused.detail, "the refusal names the value it left alone").toContain("their-hooks");
+  expect(configuredHooksPath(other.root), "and nothing was written").toBe(before);
+  expect(hookStatus(other.root).guarded).toBe(false);
+  expect(hookStatus(other.root).detail).toContain("UNGUARDED");
+});
+
+test("a hook already live in the checkout's own hooks directory is refused BY NAME, and a linked worktree's is the COMMON one", () => {
+  // THE AMENDMENT OF 2026-09-13 ON HOOK-INSTALLATION SCOPE, and the
+  // defect it names: `hooks` is not on git's per-worktree path list, so a
+  // linked worktree's live hooks are the repository's SHARED ones.
+  // Pointing `core.hooksPath` elsewhere would deactivate every one of
+  // them in silence.
+  const fx = installFixture("occupied", { worktree: true, worktreeConfig: true });
+  const common = fx.git("rev-parse", "--git-common-dir");
+  writeFileSync(path.join(path.resolve(fx.root, common), "hooks", "pre-commit"), "#!/bin/sh\nexit 0\n");
+
+  const sibling = fx.sibling as string;
+  const fromLinked = installHook({ root: sibling });
+  expect(fromLinked.state, "asked from the LINKED worktree, whose own git directory holds no hooks").toBe(
+    "refused",
+  );
+  expect(fromLinked.code).toBe("active-hooks-present");
+  expect(fromLinked.detail, "and it names the hook it would have deactivated").toContain("pre-commit");
+  expect(configuredHooksPath(sibling), "nothing was configured").toBe("(unset)");
+
+  // THE POSITIVE CONTROL: the same fixture with that hook gone installs.
+  rmSync(path.join(path.resolve(fx.root, common), "hooks", "pre-commit"));
+  expect(installHook({ root: sibling }).state, "so the refusal above was about the hook").toBe("installed");
+
+  // AND A GIT-HOOK NAME IN THE TRACKED DIRECTORY IS THE SAME HARM FROM
+  // THE OTHER SIDE: pointing the path there makes every such name live.
+  const foreign = installFixture("foreign");
+  const name = GIT_HOOK_NAMES.find((n) => n !== HOOK_FILE_NAME) as string;
+  writeFileSync(path.join(foreign.root, HOOK_DIR_REL_PATH, name), "#!/bin/sh\nexit 0\n");
+  const refused = installHook({ root: foreign.root });
+  expect(refused.state).toBe("refused");
+  expect(refused.code).toBe("foreign-hook-names");
+  expect(refused.detail).toContain(name);
+  expect(configuredHooksPath(foreign.root)).toBe("(unset)");
+});
+
+test("installing preserves a sibling worktree's effective routing, and a SHARED configuration change is refused by name until it is authorized", () => {
+  // THE OTHER HALF OF THE SCOPE AMENDMENT. `core.hooksPath` at LOCAL
+  // scope is read by every worktree of the repository, so in a repository
+  // with lanes live it is not this checkout's key to set.
+  const scoped = installFixture("scoped", { worktree: true, worktreeConfig: true });
+  const sibling = scoped.sibling as string;
+  const siblingBefore = configuredHooksPath(sibling);
+  const installed = installHook({ root: scoped.root });
+  expect(installed.state).toBe("installed");
+  expect(installed.scope, "written where this worktree alone reads it").toBe("worktree");
+  expect(hookStatus(scoped.root).guarded).toBe(true);
+  expect(configuredHooksPath(sibling), "the sibling's effective configuration is unchanged").toBe(siblingBefore);
+  expect(hookStatus(sibling).guarded, "and it is still routed exactly as it was").toBe(false);
+
+  // AND WITHOUT THE PER-WORKTREE FILE THERE IS NO SAFE SCOPE, so the
+  // installer refuses and NAMES the setting rather than turning it on.
+  const shared = installFixture("shared", { worktree: true });
+  const refused = installHook({ root: shared.root });
+  expect(refused.state).toBe("refused");
+  expect(refused.code).toBe("shared-config-change-needed");
+  expect(refused.detail, "the refusal names the shared switch").toContain(WORKTREE_CONFIG_KEY);
+  expect(configuredHooksPath(shared.root)).toBe("(unset)");
+  expect(
+    spawnSync("git", ["-C", shared.root, "config", "--get", WORKTREE_CONFIG_KEY], { encoding: "utf8" }).status,
+    "and it did not turn it on behind the caller's back",
+  ).not.toBe(0);
+
+  // THE POSITIVE CONTROL IS THE AUTHORIZATION: the same fixture, the same
+  // repository, with the caller saying the change was authorized.
+  const authorized = installHook({ root: shared.root, authorizeSharedConfig: true });
+  expect(authorized.state).toBe("installed");
+  expect(authorized.scope).toBe("worktree");
+  expect(configuredHooksPath(shared.root)).toContain("worktree");
+});
+
+test("the arm sets an executable mode the checkout lost, and it stages nothing to do it", () => {
+  // THE AMENDMENT'S SECOND REQUIREMENT. `git update-index --chmod=+x`
+  // would STAGE something, and an arm that stages can carry a seat's
+  // unrelated work into a commit it never meant to make.
+  const fx = installFixture("mode", { mode: 0o644 });
+  writeFileSync(path.join(fx.root, "staged.txt"), "content a seat staged and has not committed\n");
+  fx.git("add", "staged.txt");
+  const stagedBefore = fx.git("diff", "--cached", "--name-only");
+  expect(stagedBefore, "the fixture must really have something staged").toBe("staged.txt");
+  expect(hookStatus(fx.root).detail, "an unexecutable hook is UNGUARDED, whatever is configured").toContain(
+    "UNGUARDED",
+  );
+
+  const done = installHook({ root: fx.root });
+  expect(done.state).toBe("installed");
+  expect(done.modeSet, "the arm says it set the mode").toBe(true);
+  expect((statSync(path.join(fx.root, HOOK_DIR_REL_PATH, HOOK_FILE_NAME)).mode & 0o111) !== 0).toBe(true);
+  expect(hookStatus(fx.root).guarded).toBe(true);
+  expect(fx.git("diff", "--cached", "--name-only"), "and it staged nothing of its own").toBe(stagedBefore);
+});
+
+test("the PLAN writes nothing at all, which is what makes every refusal above leave a checkout untouched", () => {
+  // KILLED BY: a planner that configures as a side effect of deciding.
+  // The split is what lets the seat verb refuse BEFORE it records a
+  // holder — the amendment's ordering, and the difference between a
+  // checkout that is unguarded and one everything downstream believes is
+  // guarded.
+  const fx = installFixture("plan");
+  const plan = hookInstallPlan({ root: fx.root });
+  expect(plan.action).toBe("install");
+  expect(configuredHooksPath(fx.root), "deciding is not doing").toBe("(unset)");
+  expect(hookStatus(fx.root).guarded).toBe(false);
+
+  // AND AN ABSENT HOOK FILE IS REPORTED, NEVER REFUSED: a checkout older
+  // than this card has nothing to install, and a seat that could not be
+  // taken there is a seat nobody could use to update it.
+  const bare = installFixture("bare");
+  rmSync(path.join(bare.root, HOOK_DIR_REL_PATH, HOOK_FILE_NAME));
+  const nothing = installHook({ root: bare.root });
+  expect(nothing.state).toBe("unguarded");
+  expect(nothing.code).toBe("hook-file-absent");
+  expect(hookStatus(bare.root).detail).toContain("UNGUARDED");
+});
+
+/**
+ * A repository `brief.mjs` will derive a context in — the governing
+ * documents and the method text, copied from this checkout so nothing
+ * here is a second copy of a document that can drift.
+ *
+ * ONLY THE SEVEN DOCUMENTS AND `method/`. `docs/tasks/` is fourteen
+ * megabytes at this ref and none of it is read by the seat arm, so a
+ * fixture that copied `docs/` whole would spend a second per body
+ * proving nothing.
+ */
+function seatFixture(name: string, opts: { lane?: boolean; hook?: boolean } = {}): {
+  root: string;
+  git: (...args: string[]) => string;
+} {
+  const root = mkdtempSync(path.join(os.tmpdir(), `T-314-seat-${name}-`));
+  SCRATCH.push(root);
+  const git = (...args: string[]): string =>
+    execFileSync("git", ["-C", root, ...NO_BACKGROUND_MAINTENANCE, ...args], {
+      encoding: "utf8",
+      stdio: "pipe",
+    }).trim();
+  execFileSync("git", ["init", "-q", "-b", "main", root], { stdio: "pipe" });
+  git("config", "user.email", "fixture@example.invalid");
+  git("config", "user.name", "T-314 fixture");
+  mkdirSync(path.join(root, "docs", "tasks"), { recursive: true });
+  for (const doc of readdirSync(path.join(repoRoot, "docs")).filter((f) => f.endsWith(".md"))) {
+    copyFileSync(path.join(repoRoot, "docs", doc), path.join(root, "docs", doc));
+  }
+  cpSync(path.join(repoRoot, "method"), path.join(root, "method"), { recursive: true });
+  mkdirSync(path.join(root, HOOK_DIR_REL_PATH), { recursive: true });
+  if (opts.hook !== false) {
+    copyFileSync(HOOK_FILE, path.join(root, HOOK_DIR_REL_PATH, HOOK_FILE_NAME));
+    chmodSync(path.join(root, HOOK_DIR_REL_PATH, HOOK_FILE_NAME), 0o755);
+  }
+  writeFileSync(path.join(root, "README.md"), "seat fixture\n");
+  git("add", "-A");
+  git("commit", "-qm", "fixture");
+  if (opts.lane === true) git("checkout", "-q", "-b", "task/T-901-a-lane");
+  return { root, git };
+}
+
+/** `brief.mjs`, run against a fixture. */
+function seatVerb(root: string, ...args: string[]): { status: number | null; out: string; err: string } {
+  const out = spawnSync(
+    process.execPath,
+    [path.join(repoRoot, "tools", "e2e", "scripts", "brief.mjs"), ...args, "--root", root],
+    { cwd: repoRoot, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
+  );
+  return { status: out.status, out: String(out.stdout ?? ""), err: String(out.stderr ?? "") };
+}
+
+test("`--take-seat` installs the guard and announces it, and BOTH seat verbs report a checkout without the hook as UNGUARDED", () => {
+  // THE THIRD CRITERION, AT THE ARM. The seat is the one moment a session
+  // declares it is acting in an integration checkout, so it is the moment
+  // to install the guard and the moment a missing one is worth a line.
+  const fx = seatFixture("takes");
+  const take = seatVerb(fx.root, "--take-seat");
+  expect(take.status, `${take.out}\n${take.err}`).toBe(0);
+  expect(take.out).toContain("THE SEAT — TAKEN");
+  expect(take.out, "it says the guard was installed, and at which scope").toContain("the pre-push guard: installed");
+  expect(take.out).toContain("THE PUSH GUARD GIT ITSELF RUNS");
+  expect(hookStatus(fx.root).guarded, "and the checkout really is guarded afterwards").toBe(true);
+
+  // AND THE UNGUARDED REPORT, FROM BOTH VERBS, in a checkout that carries
+  // no hook at all — which is every checkout older than this card.
+  const bare = seatFixture("bare", { hook: false });
+  const bareTake = seatVerb(bare.root, "--take-seat");
+  expect(bareTake.status, "an absent hook is reported, never a refusal — or the seat is unobtainable").toBe(0);
+  expect(bareTake.out).toContain("UNGUARDED");
+  expect(bareTake.out).toContain("THE SEAT — TAKEN");
+  expect(configuredHooksPath(bare.root), "and nothing was configured to point at a hook that is not there").toBe(
+    "(unset)",
+  );
+  const bareRelease = seatVerb(bare.root, "--release-seat");
+  expect(bareRelease.status, `${bareRelease.out}\n${bareRelease.err}`).toBe(0);
+  expect(bareRelease.out, "the other verb says it too").toContain("UNGUARDED");
+  expect(bareRelease.out).toContain("THE SEAT — RELEASED");
+});
+
+test("`--take-seat` records NO seat when the guard cannot be installed, and leaves the configuration and the index alone", () => {
+  // THE AMENDMENT'S ORDERING, MEASURED: the install is performed BEFORE
+  // the holder record is written, so a refusal leaves a checkout that is
+  // plainly unguarded rather than one everything downstream believes is
+  // guarded because a seat was recorded in it.
+  const fx = seatFixture("refuses");
+  const theirs = path.join(fx.root, "their-hooks");
+  mkdirSync(theirs);
+  fx.git("config", "--local", HOOKS_PATH_KEY, theirs);
+  writeFileSync(path.join(fx.root, "staged.txt"), "staged, and not this arm's to touch\n");
+  fx.git("add", "staged.txt");
+  const stagedBefore = fx.git("diff", "--cached", "--name-only");
+
+  const take = seatVerb(fx.root, "--take-seat");
+  expect(take.status, "a refusal is a FINDING, never a clean run").toBe(1);
+  expect(take.out).toContain("THE SEAT — NOT TAKEN");
+  expect(take.err, "and the finding names the reason by its code's own sentence").toContain(
+    "the pre-push guard could not be installed",
+  );
+  expect(existsSync(path.join(fx.root, ".supertaskr", "holder.json")), "no holder record was written").toBe(false);
+  expect(configuredHooksPath(fx.root), "and the hooks path they configured is untouched").toContain("their-hooks");
+  expect(fx.git("diff", "--cached", "--name-only"), "and so is the index").toBe(stagedBefore);
+
+  // THE POSITIVE CONTROL: the same fixture with their hooks path removed
+  // takes the seat, so the refusal above is about the path and not about
+  // this fixture being unable to take a seat at all.
+  fx.git("config", "--local", "--unset", HOOKS_PATH_KEY);
+  const second = seatVerb(fx.root, "--take-seat");
+  expect(second.status, `${second.out}\n${second.err}`).toBe(0);
+  expect(existsSync(path.join(fx.root, ".supertaskr", "holder.json"))).toBe(true);
+});
+
+test("a seat acquisition that fails for a reason of its own configures nothing", () => {
+  // THE THIRD CRITERION'S THIRD CLAUSE. A lane holds no seat, so both
+  // verbs refuse there — and the guard must not be installed on the way
+  // past, because an arm that acts before its own precondition is an arm
+  // whose refusals are decorative.
+  const fx = seatFixture("lane", { lane: true });
+  const take = seatVerb(fx.root, "--take-seat");
+  expect(take.status, "a lane is not the integration checkout").toBe(1);
+  expect(take.out).toContain("nothing was taken and nothing was released");
+  expect(configuredHooksPath(fx.root), "and nothing was configured").toBe("(unset)");
+  expect(existsSync(path.join(fx.root, ".supertaskr", "holder.json"))).toBe(false);
 });

@@ -691,6 +691,10 @@ const NOT_AN_ARM: ReadonlyArray<{ flag: string; why: string }> = [
     why: "a WRITER, and the more dangerous half — it REMOVES a holder record, which is somebody else's declaration.",
   },
   {
+    flag: "--allow-shared-git-config",
+    why: "a MODIFIER of --take-seat (T-314), and of the one act inside it that is not this checkout's to make alone: it says the caller authorized turning `extensions.worktreeConfig` on, which every worktree of the repository reads. It renders no row of its own — without it that install is REFUSED and with it the same lines are printed — so an arm here would measure --take-seat's size a second time, and it would take the seat to do it.",
+  },
+  {
     flag: "--dispatch-lane",
     why: "THE WRITER THAT COMMITS (T-239). It stamps a card on the integration branch and commits that, cuts two worktrees and writes a brief — so a guard that measured its size would perform a dispatch every time this suite ran, which is the same argument the three writers above already make and one degree worse. `brief.spec.ts` drives it end to end against scratch repositories instead.",
   },

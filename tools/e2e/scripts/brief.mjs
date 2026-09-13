@@ -220,6 +220,11 @@ import {
   waitRun,
 } from "./run-record.mjs";
 import { findCheckoutRoot } from "../../../.claude/hooks/lane-fence.mjs";
+// T-314 — THE ARM INSTALLS THE GUARD GIT ITSELF RUNS. Reached the way the
+// line above reaches its neighbour: the installer imports node builtins and
+// the hooks beside it and nothing else, so it loads in a lane worktree
+// ninety seconds old exactly as `lane-fence.mjs` does.
+import { hookStatus, installHook } from "../../../.claude/hooks/hook-install.mjs";
 import { main as mergeMain, mergeDials } from "./merge.mjs";
 import { LaneLockFinding, applyLaneLock } from "./lane-lock.mjs";
 import { seatRecs } from "./session-economics.mjs";
@@ -236,6 +241,7 @@ const FLAGS = Object.freeze([
   "--write-fence",
   "--take-seat",
   "--release-seat",
+  "--allow-shared-git-config",
   "--dispatch-lane",
   "--merge",
   "--bench",
@@ -330,6 +336,7 @@ async function main(argv) {
   let wantsPreflight = false;
   let wantsTakeSeat = false;
   let wantsReleaseSeat = false;
+  let allowSharedGitConfig = false;
   let dryRun = false;
   let replace = false;
   let full = false;
@@ -351,7 +358,7 @@ async function main(argv) {
       console.log(
         "usage: node tools/e2e/scripts/brief.mjs --task <T-NNN> [--role <role>] [--state] " +
           "[--dispatch] [--card <T-NNN>] [--audit <path>] [--preflight] " +
-          "[--write-fence <worktree>] [--take-seat] [--release-seat] " +
+          "[--write-fence <worktree>] [--take-seat [--allow-shared-git-config]] [--release-seat] " +
           "[--dispatch-lane <T-NNN> --slug <slug> [--executor <seat>] [--verifier <seat>] " +
           "[--scratch <dir>] [--dry-run]] " +
           "[--merge <T-NNN> [--bump <old>..<new>] [--meters <path>] [--tier <tier>] " +
@@ -384,6 +391,10 @@ async function main(argv) {
     }
     if (a === "--release-seat") {
       wantsReleaseSeat = true;
+      continue;
+    }
+    if (a === "--allow-shared-git-config") {
+      allowSharedGitConfig = true;
       continue;
     }
     if (a === "--dry-run") {
@@ -1023,6 +1034,27 @@ async function main(argv) {
     const h = /** @type {NonNullable<typeof holder>} */ (holder);
     const asked = wantsTakeSeat ? "--take-seat" : "--release-seat";
     say("");
+    // ── IS THIS CHECKOUT GUARDED AT ALL? (T-314) ────────────────────
+    // BOTH VERBS SAY IT AND BOTH SAY IT BEFORE THEY ACT. A `PreToolUse`
+    // hook is one harness's; the guard git itself runs is every
+    // harness's, and a checkout where `core.hooksPath` was never pointed
+    // at the tracked hooks directory runs NEITHER when the session is
+    // not Claude's. The seat is the one moment a session declares it is
+    // acting in an integration checkout, so it is the one moment this
+    // is worth a line — and it is a line whether the answer is good or
+    // bad, because "UNGUARDED" is only legible beside the other answer.
+    const guardBefore = hookStatus(ctx.root);
+    say(
+      render([
+        note("THE PUSH GUARD GIT ITSELF RUNS — the pre-push hook, which every harness runs and"),
+        note("none can be told to skip by being a different harness"),
+        value(
+          guardBefore.detail,
+          liveProv(ctx.at, ctx.host, "core.hooksPath and the hook file, read in the checkout --root names"),
+        ),
+      ]),
+    );
+    say("");
     if (h.state !== "not-integration" && ownershipIdentity !== undefined && !ownershipIdentity.ok) {
       console.error("brief: COULD NOT RUN");
       console.error(`  ${ownershipIdentity.why}`);
@@ -1062,7 +1094,44 @@ async function main(argv) {
       const mine = /** @type {Extract<ReturnType<typeof sessionIdentity>, {ok: true}>} */ (
         ownershipIdentity
       );
+      // ── THE GUARD IS INSTALLED BEFORE THE SEAT IS RECORDED (T-314) ─
+      // THE ORDER IS THE AMENDMENT'S AND IT IS THE WHOLE OF IT: a
+      // refusal here leaves the holder record, the git configuration and
+      // the index exactly as they were. A session that recorded a seat
+      // on the strength of a guard that was never installed is a
+      // checkout believed guarded by everything downstream that reads
+      // that record — which is worse than one that is plainly unguarded.
+      const installed = installHook({
+        root: ctx.root,
+        authorizeSharedConfig: allowSharedGitConfig,
+      });
+      // AN ABSENT HOOK FILE IS NOT A REFUSAL, it is the UNGUARDED
+      // report this card's third criterion asks the seat verbs for: a
+      // checkout older than the hook has nothing to install, and a seat
+      // that could not be taken there is a seat nobody could use to
+      // update it.
+      if (installed.state === "refused") {
+        say(
+          render([
+            note("THE SEAT — NOT TAKEN, because the pre-push guard could not be installed and a"),
+            note("seat recorded over an uninstalled guard is a checkout everything downstream"),
+            note("believes is guarded. Nothing was written: no hooks path, no holder record."),
+            value(
+              `${asked} refused: ${installed.detail}`,
+              liveProv(ctx.at, ctx.host, "git config, and the hooks directories it names"),
+            ),
+            value(
+              "an authorized shared-configuration change is asked for explicitly: --allow-shared-git-config",
+              liveProv(ctx.at, ctx.host, "this command's own flag set"),
+            ),
+          ]),
+        );
+        holderFindings.push(
+          `${asked} took no seat because the pre-push guard could not be installed — ${installed.detail}`,
+        );
+      } else {
       const written = writeHolder(ctx.root, mine.identity, { at: ctx.at, host: ctx.host });
+      const guardAfter = hookStatus(ctx.root);
       say(
         render([
           note("THE SEAT — TAKEN. Every arming step and every push in this checkout now reads it"),
@@ -1091,11 +1160,22 @@ async function main(argv) {
           // has one in it. The rule caught this line rather than the
           // reader having to.
           value(
+            `the pre-push guard: ${installed.state} [${installed.code}]` +
+              (installed.scope === undefined ? "" : ` at ${installed.scope} scope`) +
+              (installed.modeSet === true ? ", and its executable mode was set" : ""),
+            liveProv(ctx.at, ctx.host, "git config, written in the checkout --root names"),
+          ),
+          value(
+            guardAfter.detail,
+            liveProv(ctx.at, ctx.host, "core.hooksPath and the hook file, re-read after the install"),
+          ),
+          value(
             "release it when you retire: node tools/e2e/scripts/brief.mjs --release-seat",
             liveProv(ctx.at, ctx.host, "this command's own spelling, from docs/CONVENTIONS.md"),
           ),
         ]),
       );
+      }
     } else if (h.code === HOLDER_CODES.UNREADABLE) {
       // ── ITEM 2 OF T-238-s1 ────────────────────────────────────────
       // A RECORD THIS COMMAND COULD NOT READ WAS REMOVED AND REPORTED
