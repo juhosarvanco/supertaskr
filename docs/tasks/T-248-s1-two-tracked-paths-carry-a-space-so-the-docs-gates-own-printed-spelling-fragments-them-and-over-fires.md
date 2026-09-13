@@ -62,18 +62,6 @@ not run on. Before that, the over-fire was a silent count.
 - The two shapes SHALL be told apart: a DELETED path in a real merge
   diff, and a FRAGMENT produced by word-splitting. They arrive
   identically today.
-
-## Implementation notes
-
-## Verdicts
-
-## Triage (2026-09-08, the wave sitting)
-
-Promoted as filed: the gate's own printed invocation must survive a
-tracked path with a space, F-06 milestone 4, S, p7, guard-class.
-
-## Acceptance criteria
-
 - WHEN the DOCS GATE bullet in CONVENTIONS prints the whole-tree
   invocation THE spelling SHALL be NUL-safe (`git ls-files -z` into an
   array, or the gate reading `-z` input itself), so the two tracked
@@ -87,3 +75,21 @@ tracked path with a space, F-06 milestone 4, S, p7, guard-class.
   path in the fixture and reds on either failure.
 - The header sentence that claimed the tree holds no such path SHALL
   say what is true, derived (`git ls-files | grep ' '`).
+  (the four bullets above were moved from the triage block of 2026-09-08 on 2026-09-14)
+
+## Design note of 2026-09-14 — open before dispatch
+
+The deletion-versus-fragment distinction this card's criteria demand has no evidence source yet: docs-gate.mjs takes paths, never a diff or a range (its header leaves range ownership with the caller), so two identical missing-path strings cannot say which was a deleted path and which a word-split fragment. Before dispatch the card names an explicit evidence source and input contract for that distinction, preserving the caller's range ownership and both required outcomes; nothing here settles it.
+
+## Implementation notes
+
+## Verdicts
+
+## Triage (2026-09-08, the wave sitting)
+
+Promoted as filed: the gate's own printed invocation must survive a
+tracked path with a space, F-06 milestone 4, S, p7, guard-class.
+
+## The triage's criteria of 2026-09-08 (moved into the canonical section above on 2026-09-14)
+
+The four bullets that stood here were moved whole into the canonical `## Acceptance criteria` section on 2026-09-14 (pile 2 batch 3a), so the readers count one section; nothing was reworded.

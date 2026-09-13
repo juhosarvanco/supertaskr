@@ -3,11 +3,11 @@ id: T-164-s1
 title: The launcher cannot tell whether the app is already running, because T-164's own criterion forbids it to look — and its second step is the one install channel that CORRUPTS rather than interrupts
 feature: F-02
 milestone: 4
-priority: 20
+priority: 8
 size: S
 status: planned
 blocked_by: []
-touches: [bin]
+touches: [bin, tools/e2e/scripts/rename-scan.mjs, tools/e2e/tests/identifier-rename.spec.ts, tools/e2e/tests/app-dev.spec.ts]
 suggested_by: executor claude-opus-5@subagent @T-164
 builder:
 verifier:
@@ -15,6 +15,8 @@ built_by:
 verified_by:
 review:
 ---
+
+Absorbs: T-264-s10 (2026-09-14, the owner's approval of 2026-09-14, pile 2 batch 3a, after the Codex orchestrator's review). The launcher half of the child is inside this card's `bin` token; its rename-keeper class puts the keeper and its spec in this fence, and a headless launcher spec, tools/e2e/tests/app-dev.spec.ts, is reserved as a new file under the tracked tests directory (the lane-lock spec does not drive the launcher; the dry-run boundary stands: no live app launch). The parent takes the child's priority (8). Ordering: T-264-s9 (planned, not live) holds the same keeper files in the delegated list ahead of this card; the two are not dispatched while the other is live.
 
 **FOUND WHILE BUILDING T-164, NOT DECIDED THERE — it is a question about
 that card's own criteria, and an executor does not rule on its card.**
@@ -111,6 +113,68 @@ hatch that gets used.
 --preflight`, run from the e2e package at `@ 51fa31c0964c`: **exit 0**,
 the card ruled `startable` — `bin` is fenced by nothing else on the
 board, as T-164's own fence note predicted.
+- WHEN a variable carrying the pre-rename environment prefix is set and
+  `SUPERTASKR_APP_WORKTREE` is not THE launcher SHALL refuse, naming both
+  spellings, rather than falling back to its default.
+- WHEN both are set THE launcher SHALL read `SUPERTASKR_APP_WORKTREE` and
+  say in as many words which one it used.
+- IF the guard spells the pre-rename prefix THEN
+  `tools/e2e/scripts/rename-scan.mjs` SHALL carry an enumerated class for
+  it naming the ruling that holds it, and
+  `only the enumerated classes of the pre-rename identifier survive in the
+  corpus` SHALL stay green.
+  (the bullets above are absorbed whole from T-264-s10, pile 2 batch 3a, 2026-09-14; its retirement condition kept with it)
+- WHEN the compatibility guard for the pre-rename prefix is kept THE card SHALL state the observation under which that guard retires — the guard is removed only when a measured survey of the project's own shells and configuration finds no exporter of the old prefix — as the absorbed child asks; no expiry date is set here and no retirement condition is claimed to exist already.
+- Amendment of 2026-09-14 to the third criterion above: WHERE no listener is found THE launcher's behaviour SHALL be byte-identical to today for every input OUTSIDE the environment guards the absorbed criteria add (a variable carrying the pre-rename prefix set without the new spelling; both set) — those inputs now refuse or announce as the absorbed criteria say, and the unchanged-behaviour promise is narrowed to that extent and no further.
+
+## Absorbed from T-264-s10 — The launcher renamed its environment variable and a shell still exporting the pre-rename one is answered by the default, in silence — the one variable a human sets by hand is the one whose rename cannot be seen (kept whole)
+
+Title as filed: "The launcher renamed its environment variable and a shell still exporting the pre-rename one is answered by the default, in silence — the one variable a human sets by hand is the one whose rename cannot be seen"
+
+Filed as: status suggested, priority 8, size S, touches [bin/app-dev.mjs, tools/e2e/tests/], wake None, suggested_by verifier claude-opus-5@subagent, at T-264-s3's bench, 2026-09-10 — measured while checking that no pre-rename environment prefix survives outside docs/.
+
+### The finding (T-264-s10)
+
+`bin/app-dev.mjs` reads exactly one environment variable and it moved to
+`SUPERTASKR_APP_WORKTREE` in T-264-s3. Measured at that lane's tip: the
+file reads `process.env[ENV_VAR]` once and nowhere else, so there is one
+name and no compatibility read — which is what the criterion asked for.
+
+**The cost lands on the one caller the variable exists for.** Every other
+variable in this repository is set by a script or a suite, which moved in
+the same commit. This one is set by a human, by hand, in a shell that
+outlives the rename: an exported pre-rename name is now simply not read,
+the launcher falls back to its stated default, and the run succeeds
+against a directory the human did not choose. There is no error, because
+from the launcher's side nothing is wrong.
+
+The remedy is one guard and one message: if a variable spelled with the
+pre-rename prefix is set and `SUPERTASKR_APP_WORKTREE` is not, refuse
+loudly and name both spellings. A REFUSAL rather than a fallback, because
+the file's own header says one variable and one stated default with no
+second source — and a silent fallback IS a second source wearing the
+default's clothes.
+
+Two things the card owes whoever takes it. First, a guard that spells the
+pre-rename prefix puts an occurrence back in `bin/`, which the rename
+scan now walks — so the guard needs an enumerated class in
+`tools/e2e/scripts/rename-scan.mjs`'s table naming the ruling that holds
+it, exactly as the migration refusal in the fence hook is held today.
+Second, the guard is dead code the day the last such shell is gone, so it
+wants a stated expiry rather than a permanent seat.
+
+### T-264-s10's acceptance criteria as filed (absorbed into the criteria above)
+
+- WHEN a variable carrying the pre-rename environment prefix is set and
+  `SUPERTASKR_APP_WORKTREE` is not THE launcher SHALL refuse, naming both
+  spellings, rather than falling back to its default.
+- WHEN both are set THE launcher SHALL read `SUPERTASKR_APP_WORKTREE` and
+  say in as many words which one it used.
+- IF the guard spells the pre-rename prefix THEN
+  `tools/e2e/scripts/rename-scan.mjs` SHALL carry an enumerated class for
+  it naming the ruling that holds it, and
+  `only the enumerated classes of the pre-rename identifier survive in the
+  corpus` SHALL stay green.
 
 ## Implementation notes
 <!-- executor appends before finishing -->

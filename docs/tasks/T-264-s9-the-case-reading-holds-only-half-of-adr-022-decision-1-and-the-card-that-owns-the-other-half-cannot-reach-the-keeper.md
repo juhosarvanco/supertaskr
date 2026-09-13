@@ -16,6 +16,8 @@ verified_by:
 review: independent
 ---
 
+Absorbs: T-264-s11 (2026-09-14, the owner's approval of 2026-09-14, pile 2 batch 3a, after the Codex orchestrator's review): the same fence. Supersession of 2026-09-14: where the finding below reads as if this card's commit would also carry T-264-s4's two configuration strings, it does not — under pile 2 batch 3a T-264-s4 is absorbed into T-265-s2 with app/src-tauri/tauri.conf.json in that card's fence, and this card stays blocked by T-265-s2 and absorbs T-264-s11 only.
+
 ## The finding
 
 ADR-022 decision 1 is one sentence with two halves: **capital S in
@@ -59,6 +61,62 @@ card is it.
 - The three root documents SHALL NOT be edited here: they are
   `T-265-s2`'s, and a card that fixes the sites it is meant to detect
   proves nothing about the detector.
+- WHEN the survivor table is graded THE occupancy body SHALL require
+  every ROW of `KEPT_CLASSES` to have classified at least one hit, not
+  merely every id.
+- WHEN a row is deliberately empty THE row SHALL say so in the table
+  itself, and the body SHALL red on a row that is empty without saying so.
+- The body SHALL carry a data mutant shown failing first: a row whose
+  pattern is changed to one the tree does not contain reds by name, while
+  its sibling rows under the same id keep that id occupied.
+  (the bullets above are absorbed whole from T-264-s11, pile 2 batch 3a, 2026-09-14; all three as filed, the deliberately empty row included)
+
+## Absorbed from T-264-s11 — The occupancy body grades class IDS and the survivor table is ROWS — a dead row inside a live class is invisible, and the pre-rename table carried two of them (kept whole)
+
+Title as filed: "The occupancy body grades class IDS and the survivor table is ROWS — a dead row inside a live class is invisible, and the pre-rename table carried two of them"
+
+Filed as: status suggested, priority 8, size S, touches [tools/e2e/scripts/rename-scan.mjs, tools/e2e/tests/identifier-rename.spec.ts], wake None, suggested_by verifier claude-opus-5@subagent, at T-264-s3's bench, 2026-09-10 — measured while re-deriving the class table base against tip.
+
+### The finding (T-264-s11)
+
+`every enumerated survivor class is occupied — a class nobody hits has
+stopped meaning anything` collects the class IDS the scan classified into
+and requires each id in `KEPT_CLASS_IDS` to be among them. `KEPT_CLASSES`
+is a list of ROWS, and several ids own more than one row: at T-264-s3's
+tip `verbatim-quotation` is two rows and `naming-history` is one, and the
+per-row check beside the id check asks only that a row's `files` list is
+non-empty — never that the row MATCHES anything.
+
+So a row that has stopped hitting the tree is invisible for as long as
+one sibling row under the same id still hits. That is not hypothetical:
+at this card's base the `method-source` id owned three rows, and two of
+them — the one scoped to `app/src/genesis/genesis-derive.ts` and the one
+scoped to a backticked directory inside `app/src-tauri/src/agent/kit.rs`
+— matched nothing at all, while the id read as occupied because the
+third row did. Measured at `130f4c4c`: the census names neither file.
+
+The body's own comment says a class nobody hits has stopped meaning
+something. A row nobody hits has stopped meaning something in exactly the
+same way, and it is the row — not the id — that carries the ruling, the
+file scope and the comment explaining why the survivor is held. A dead
+row is a ruling the tree no longer needs, still standing, still widening
+what the classifier will say yes to.
+
+The remedy is to grade the table at the granularity it is written at:
+require every ROW to be hit, and give a row that is deliberately empty an
+explicit way to say so, so that "this ruling is spent" is a written
+decision rather than a silence.
+
+### T-264-s11's acceptance criteria as filed (absorbed into the criteria above)
+
+- WHEN the survivor table is graded THE occupancy body SHALL require
+  every ROW of `KEPT_CLASSES` to have classified at least one hit, not
+  merely every id.
+- WHEN a row is deliberately empty THE row SHALL say so in the table
+  itself, and the body SHALL red on a row that is empty without saying so.
+- The body SHALL carry a data mutant shown failing first: a row whose
+  pattern is changed to one the tree does not contain reds by name, while
+  its sibling rows under the same id keep that id occupied.
 
 ## Implementation notes
 <!-- executor appends before finishing -->
