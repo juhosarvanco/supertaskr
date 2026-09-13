@@ -1017,6 +1017,174 @@ export function integrationRefs(logText, branch) {
   return { tip: first.slice(0, 40), base: checkpoint.slice(0, 40) };
 }
 
+/**
+ * THE COMMIT A LIVE LANE WAS ACTUALLY CUT AT, read out of the repository
+ * rather than out of this render (T-300-s7, absorbing T-311-s6).
+ *
+ * ── THE DEFECT THIS ANSWERS ──────────────────────────────────────────
+ * Row 4 printed the newest `Checkpoint:` commit under the label `base
+ * commit:` while the arm's own step 4 cut the lane at the integration
+ * checkout's HEAD **after the dispatch stamp** — a different commit
+ * whenever the stamp wrote one, and a different commit again whenever the
+ * stamp wrote nothing and the checkout's tip had moved past the
+ * checkpoint. So one brief carried two commits called the base and the
+ * executor had to resolve it by reading the repository. The base rule
+ * PERMITS that cut; what it does not permit is quoting the rule's anchor
+ * as if it were the cut.
+ *
+ * ── WHY THE MERGE BASE AND NOT A RECORDED FIELD ──────────────────────
+ * The cut is a fact about the lane's BRANCH, and the branch carries it:
+ * the lane is cut with `git worktree add -b <branch> <base>` and never
+ * merges the integration branch back into itself, so the newest commit
+ * the two share IS the commit the cut used. That answer does not move
+ * when the lane commits, and it does not move when the integration branch
+ * advances — which is exactly what a brief rendered a second time has to
+ * survive. A field written into a file at dispatch would have to be
+ * trusted; this is re-derivable by one command, and the row prints that
+ * command as its provenance.
+ *
+ * It is a LIVE fact for the reason every other figure row 4 takes off the
+ * integration branch is: it is a read of two mutable refs, so it carries
+ * the time and host it was read at and never a commit ref.
+ *
+ * @param {string} root
+ * @param {string} branch the lane's own ref, as the worktree porcelain spells it
+ * @param {string} integrationRef the revision this checkout spells the integration branch with
+ * @returns {string | null} the 40-hex cut, or null where this checkout cannot answer
+ */
+export function laneCutCommit(root, branch, integrationRef) {
+  const probe = spawnSync("git", ["-C", root, "merge-base", branch, integrationRef], {
+    encoding: "utf8",
+  });
+  if (probe.error !== undefined && probe.error !== null) return null;
+  const out = (probe.stdout ?? "").trim();
+  return probe.status === 0 && /^[0-9a-f]{40}$/.test(out) ? out : null;
+}
+
+/**
+ * @typedef {object} BaseVerdict
+ * @property {string} tip
+ * @property {string} checkpoint  the newest `Checkpoint:` commit — the rule's ANCHOR
+ * @property {string | null} cut  the commit a live lane was cut at, where there is one
+ * @property {string} base        what row 4 calls the base: the cut where there is one
+ * @property {boolean} coincide   the cut and the anchor are the SAME commit
+ * @property {string} why         why this base is the one the base rule admits
+ * @property {string | null} finding  a cut the base rule does NOT admit
+ */
+
+/**
+ * WHICH COMMIT ROW 4 CALLS THE BASE, AND WHY — the pure half.
+ *
+ * The condition on the coincidence line is `cut === checkpoint` and
+ * nothing else (the amendment of 2026-09-13, superseding the absorbed
+ * card's "no stamp follows the checkpoint"). The two are not the same
+ * question: an arm that writes no stamp because the card already carries
+ * every stamped field still cuts at the integration checkout's HEAD, and
+ * where that HEAD has moved past the checkpoint the cut and the anchor
+ * are DIFFERENT commits while no stamp was written at all.
+ *
+ * @param {{ logText: string, branch: string, cut: string | null }} opts
+ * @returns {BaseVerdict}
+ */
+export function baseVerdict({ logText, branch, cut }) {
+  const { tip, base: checkpoint } = integrationRefs(logText, branch);
+  if (cut === null) {
+    return {
+      tip,
+      checkpoint,
+      cut: null,
+      base: checkpoint,
+      coincide: false,
+      why:
+        "no lane worktree is cut for this card in this checkout, so there is no cut to name and " +
+        "the base above is the rule's ANCHOR rather than a report of one: a dispatch that stamps " +
+        "the card cuts at the commit its own stamp makes, which is later than this.",
+      finding: null,
+    };
+  }
+  if (cut === checkpoint) {
+    return {
+      tip,
+      checkpoint,
+      cut,
+      base: cut,
+      coincide: true,
+      why:
+        "the cut and the rule's anchor are ONE commit here — the lane was cut at the newest " +
+        "`Checkpoint:` itself — so nothing later had to qualify.",
+      finding: null,
+    };
+  }
+  const lines = logText.split(/\r?\n/).filter((l) => l.trim() !== "");
+  const cutAt = lines.findIndex((l) => l.startsWith(`${cut} `));
+  const anchorAt = lines.findIndex((l) => l.startsWith(`${checkpoint} `));
+  if (cutAt < 0) {
+    return {
+      tip,
+      checkpoint,
+      cut,
+      base: cut,
+      coincide: false,
+      why:
+        `the cut is not on ${branch}'s first-parent line at all, so the base rule's own argument ` +
+        "for a later commit — that it carries the checkpoint's graph — cannot be made about it.",
+      finding:
+        `the lane for this card was cut at ${cut}, which is not a first-parent commit of ` +
+        `${branch}. The base rule's permission for a commit later than the checkpoint rests on ` +
+        "that commit carrying the checkpoint's regenerated graph, and a commit off the " +
+        "first-parent line carries no such guarantee.",
+    };
+  }
+  const subject = (lines[cutAt] ?? "").slice(41);
+  const distance = anchorAt - cutAt;
+  if (distance <= 0) {
+    return {
+      tip,
+      checkpoint,
+      cut,
+      base: cut,
+      coincide: false,
+      why:
+        `the cut sits ${String(-distance)} commit(s) BEHIND the newest \`Checkpoint:\` on ` +
+        `${branch}, so it is an older commit rather than a later one and the base rule's ` +
+        "permission does not reach it.",
+      finding:
+        `the lane for this card was cut at ${cut}, which is OLDER than the newest \`Checkpoint:\` ` +
+        `commit ${checkpoint} on ${branch}. A lane cut behind the checkpoint carries a graph the ` +
+        "checkpoint has since regenerated, which is the red the base rule exists to prevent.",
+    };
+  }
+  const merge = subject.startsWith("Merge ");
+  return {
+    tip,
+    checkpoint,
+    cut,
+    base: cut,
+    coincide: false,
+    // THE REASON IS DERIVED FROM THE COMMIT — how far past the anchor it
+    // sits and whether it is a merge — and it does NOT quote that commit's
+    // subject. The subject is the one thing here that is a message rather
+    // than a fact about the history, and a brief value that moved with it
+    // would move between two dispatches of one card that differ in nothing
+    // else (the end-to-end ritual body compares exactly that). The
+    // FINDING below quotes it, because a refusal has to say what it saw.
+    why: merge
+      ? `the cut is ${String(distance)} commit(s) newer than the anchor on ${branch}'s ` +
+        "first-parent line and is a MERGE commit, which lane-protocol rule two bans by name."
+      : `the cut is ${String(distance)} commit(s) newer than the anchor on ${branch}'s ` +
+        "first-parent line and is not a merge commit, which is what the base rule admits: a " +
+        "non-merge commit later than the checkpoint carries the checkpoint's graph, and is " +
+        "trusted for its OWN green gates rather than for being a checkpoint — a claim this row " +
+        "states and does not measure.",
+    finding: merge
+      ? `the lane for this card was cut at ${cut}, whose subject is ${JSON.stringify(subject)} — a ` +
+        `MERGE commit on ${branch}. method/lane-protocol.md rule two bans exactly that: a merge ` +
+        "commit carries a graph the checkpoint has not regenerated yet, so a lane cut from one " +
+        "inherits a red gate it did not cause and its fence usually forbids it to fix."
+      : null,
+  };
+}
+
 /* ────────────────────────────────────────────────────────────────────
  * Cards, components and the fence.
  * ──────────────────────────────────────────────────────────────────── */
@@ -1718,6 +1886,10 @@ export function withMargin(body, opts) {
  *   beside the porcelain and for the same reason: it is a read of something
  *   MUTABLE, so the figures taken from it are live facts and a pin has to be
  *   able to drive a second read of it at one ref
+ * @property {string | null} laneCut  the commit THIS card's live lane was cut
+ *   at, where one is live and this checkout can answer — see `laneCutCommit`.
+ *   Held beside the log for the same reason and read once, so a pin can drive
+ *   a second answer at one ref
  * @property {LaneSpellings} spellings
  * @property {string} conventions
  * @property {string} roleMd
@@ -2024,7 +2196,26 @@ function deriveLane(ctx) {
   // answers, and a provenance naming a revision the checkout does not hold
   // is a provenance nobody can re-run.
   const logVia = `git log --first-parent --format=%H %s ${ctx.integrationRef}`;
-  const { tip, base } = integrationRefs(ctx.integrationLog, ctx.integrationRef);
+  // THE BASE IS THE COMMIT THE CUT USED, and the checkpoint stands beside
+  // it as the rule's anchor (T-300-s7, absorbing T-311-s6). Where no lane
+  // is cut there is no cut to report and the anchor IS the base — which
+  // is what this row printed for every card before, correctly for a card
+  // with no lane and wrongly for every card with one.
+  const laneRef = ctx.lanes.find((l) => l.taskId === ctx.taskId);
+  const verdict = baseVerdict({
+    logText: ctx.integrationLog,
+    branch: ctx.integrationRef,
+    cut: ctx.laneCut,
+  });
+  const { tip } = verdict;
+  const base = verdict.base;
+  if (verdict.finding !== null) ctx.findings.push(verdict.finding);
+  const cutVia =
+    laneRef === undefined
+      ? logVia
+      : `git merge-base ${laneRef.branch} ${ctx.integrationRef} — the newest commit the lane's ` +
+        "branch and the integration branch share, which is the commit `git worktree add` was " +
+        "given and does not move when either advances";
   const laneBullet = rawBullet(ctx.conventions, "THE LANE PROTOCOL");
   const dispatchBullet = rawBullet(ctx.conventions, "DISPATCH FROM THE LAST CHECKPOINT").replace(
     /\s+/g,
@@ -2137,7 +2328,21 @@ function deriveLane(ctx) {
     // base is SUBSTITUTED INTO IT: the document it is otherwise a
     // transcription of cannot produce that hash, and the line a dispatcher
     // pastes is the one rule 2 is about.
-    value(`base commit: ${base}`, live(ctx, `${logVia}, newest Checkpoint`)),
+    value(
+      `base commit: ${base}${
+        verdict.cut === null
+          ? " — NO LANE IS CUT for this card here, so this is the rule's ANCHOR (the newest `Checkpoint:`) and not a report of a cut"
+          : verdict.coincide
+            ? " — the commit the CUT used, and the rule's anchor is the same commit: the two COINCIDE here"
+            : " — the commit the CUT used, which is NOT the rule's anchor; the anchor is on the line below"
+      }`,
+      live(ctx, verdict.cut === null ? `${logVia}, newest Checkpoint` : cutVia),
+    ),
+    value(
+      `the rule's anchor, the newest Checkpoint: on ${s.integrationBranch}: ${verdict.checkpoint}`,
+      live(ctx, `${logVia}, newest Checkpoint`),
+    ),
+    value(`why this base is the one the rule admits: ${verdict.why}`, live(ctx, cutVia)),
     value(`integration tip right now: ${tip}`, live(ctx, logVia)),
     value(
       `create: ${createLine}`,
@@ -2145,7 +2350,7 @@ function deriveLane(ctx) {
         ? live(
             ctx,
             "docs/CONVENTIONS.md lane bullet create command" +
-              (carriesBase ? `, base substituted from ${logVia}` : "") +
+              (carriesBase ? `, base substituted from ${cutVia}` : "") +
               (spelledAbsolutely
                 ? `, worktree path spelled absolutely against the repository's main worktree from ${repo.via}`
                 : ""),
@@ -3176,6 +3381,13 @@ export function context(opts = {}) {
   // on a `push` runner and on a `pull_request` one — so it is read here,
   // once, and every consumer spends the answer rather than the name.
   const integration = resolveIntegrationRef(root, spellings.integrationBranch);
+  const lanes = laneWorktrees(porcelain, spellings);
+  // THE CUT, READ ONCE, BESIDE THE LOG (T-300-s7). Row 4's base is the
+  // commit the lane was cut at wherever there IS a lane, and that is a
+  // read of two mutable refs — so it belongs here with the other live
+  // reads rather than inside a deriver, and a body can drive a second
+  // answer at one ref exactly as it can for the log.
+  const mine = taskId === "" ? undefined : lanes.find((l) => l.taskId === taskId);
   return {
     root,
     ref: git(root, ["rev-parse", "HEAD"]).trim(),
@@ -3187,10 +3399,11 @@ export function context(opts = {}) {
     cards,
     comps,
     slugs: slugMapFromFields(comps),
-    lanes: laneWorktrees(porcelain, spellings),
+    lanes,
     porcelain,
     integrationRef: integration.rev,
     integrationLog: git(root, ["log", "--first-parent", "--format=%H %s", integration.rev]),
+    laneCut: mine === undefined ? null : laneCutCommit(root, mine.branch, integration.rev),
     spellings,
     conventions,
     roleMd: roleText(role, root),
