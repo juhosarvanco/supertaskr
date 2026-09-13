@@ -213,8 +213,8 @@ All three re-hashed on this bench and all three match the stamp file.
 | C1 — a card declaring the size the tier table names for bounded parses as a legal field | MET | `lib/parser/src/types.ts` declares `TASK_SIZES = ['XS','S','M','L']` and the exported type is derived from that array, so there is ONE site and not two — the type-without-runtime split attack has no seam to live in. Three bodies in `lib/parser/test/task.test.ts` read the vocabulary out of `method/tasks/TASK-FORMAT.md` instead of spelling it. Parser leg 416 of 416 GREEN at 900e6626 (413 at the base per M1: the three added bodies are the whole difference). |
 | C1, second half — S, M and L survive and every other value is still refused | MET | The second added body loops every value the METHOD declares and requires zero issues for each, then requires EXACTLY ONE `invalid-field`-or-`missing-field` issue for `XXL`, `xs`, `Small` and an empty size. A parser widened to `string`, or one that downgraded the issue to a warning, reds on the second half. |
 | C1, the diagnostic | MET | The refusal message at `lib/parser/src/task.ts:220` is the declared set joined with a pipe separator, derived from `TASK_SIZES` itself, so it cannot enumerate a stale set; the third added body asserts every declared value appears in the message and that the rejected value is quoted. |
-| C2 — the bounded verdict is reachable end to end from a card that lives in the tree, with a body proving it | MET, with correction 1 | The new body in `tools/e2e/tests/brief.spec.ts` derives the bounded size from the tier table's own row, DERIVES a fixture from the live board rather than typing one (the live card with the smallest wholly-tracked guard-free fence), moves exactly one field, parses it through the BUILT browser entry the arm imports, requires zero issues AND `task.size` equal to that size, then classifies the parser's own frontmatter through `classifyTier` and reads `bounded`. I re-ran it on this bench: 1 passed (1.4s). |
-| C2, "not sufficient by itself" | MET, with correction 1 | The body removes the guarded override, the tracked-fence condition and the keeper condition one at a time from the SAME card and lands on `guarded`, `standard`, `standard`, and throws `TierFinding` on the unanswered keeper. It does NOT move the size, which is the first condition the tier table names — correction 1. |
+| C2 — the bounded verdict is reachable end to end from a card that lives in the tree, with a body proving it | MET | The new body in `tools/e2e/tests/brief.spec.ts` derives the bounded size from the tier table's own row, DERIVES a fixture from the live board rather than typing one (the live card with the smallest wholly-tracked guard-free fence), moves exactly one field, parses it through the BUILT browser entry the arm imports, requires zero issues AND `task.size` equal to that size, then classifies the parser's own frontmatter through `classifyTier` and reads `bounded`. I re-ran it on this bench: 1 passed (1.4s). |
+| C2, "not sufficient by itself" | MET | The body removes the guarded override, the tracked-fence condition and the keeper condition one at a time from the SAME card and lands on `guarded`, `standard`, `standard`, and throws `TierFinding` on the unanswered keeper. It does NOT move the size, which is the first condition the tier table names; the pre-existing classifier body pins that, which is why the arm I wrote for it was withdrawn below. |
 | C3 — the three zero-issue suites are green | MET | gate-run's own token at 900e6626, `dirty:false`: parser exit 0 bodies 416 GREEN; app exit 0 bodies 1171 GREEN; e2e exit 0 bodies 1083 GREEN. Rust exit 0 bodies 655 over 18 targets GREEN. No count fell against the base (413 / 1171 / M3's scoped 184). |
 | C3, green-by-subtraction | RULED OUT | The diff adds no `.skip`, `.only`, `.todo`, `xit` or `fixme`; its eleven deleted lines are the status stamp, the `touches:` line, four vocabulary spellings and the two session-economics assertions that were replaced. Nothing was deleted that was asserting. |
 | C3, green-by-moving-the-expectation | RULED OUT | M4 placed the parse-error count in `tools/e2e/tests/shell-frame.spec.ts`, a literal 60 on both sides, and `tools/e2e/tests/brief.spec.ts` asserts no such count at all. The diff does not touch shell-frame.spec.ts, so the 60-against-61 the card records was repaired at the cause and not at the expectation. |
@@ -236,7 +236,7 @@ deaths because an attack set whose every line lands is a set written after the f
 - **A1.5 — dead.** The tier table's bounded row is byte-identical to M8's reading; the ceremony table gained a row and lost none, and the S, M and L rows are unchanged.
 - **A1.6 — dead by M10 and it stayed dead.** Nothing orders or compares sizes. The one order-dependent reading is a DOCUMENT order, `lightestTier` reading the ceremony table's first row, and it is the live consequence discussed below.
 - **A2.1 — dead.** No spread re-introduces a hand-built value: the object handed to the classifier carries the size read off the same card text the parser was given, and the body asserts the two readers agree before classifying.
-- **A2.2 — LANDED, and it is correction 1.** This was the set's "single most important control" and the body does not carry it.
+- **A2.2 — LANDED on the body and NOT on the suite.** This was the set's "single most important control", the new body does not carry it, and the body three screens above it does. I tried to close the gap anyway and withdrew the attempt — see the withdrawn proposal below.
 - **A2.3 — dead.** The guarded control trips a DERIVED override — `guardClassCandidates()[0]` against the tree's own guard map — and not a declared `tier:` field, which is exactly the arming the attack asked for.
 - **A2.4 — dead, and it was the lane's best find rather than mine.** The second new body closes the one downstream site that would still have refused: row 11's `deriveDeliverable` reads the ceremony ROW, a size with no row is a finding, and `brief.mjs` turns any finding into a non-zero exit. I checked the other downstream enumerations M9 named and none of them refuses an XS card: the frozen `TIERS` triple, `health-bands.mjs`'s per-tier budgets, `merge.mjs`'s XS bound, and the app's own Rust `ceremony_row`, which scans the same table by the same rule and now finds the new row.
 - **A2.4's settings layer, which phase 1 could not see and I checked.** `classifyTier` is gated by a `verify.tier` switch that can turn the whole ladder off. This project runs `profile: standard` with an empty departures block, and `method/runtime/process-schema.yaml` resolves `verify.tier` to `by-the-classifier` under that profile. So bounded is reachable in this project's own configuration and not only in the library — measured, not assumed.
@@ -252,7 +252,7 @@ deaths because an attack set whose every line lands is a set written after the f
 - **D2 — the containment question A2.2 raises.** Neutered the classifier's size branch so no size can send a card to standard. The PRE-EXISTING body *"the classifier answers from the card and the tree..."* red at line 6357 (`size: "S"` expected standard, received bounded); BOTH new bodies passed. So the property is pinned in the suite, by a body three screens above the new one, and the two kill sets contain each other in neither direction — D1 and the vocabulary mutant kill the new bodies and not the old, D2 kills the old and not the new. Under the role file's containment test both are load-bearing and the count of one is not a defect. Restored; digest identical.
 - **D3 — the graded correction.** Recorded under correction 1.
 
-**And I am declining my own pre-commitment, in as many words.** The attack set pre-committed to REFUSING on A2.2 — *"a proving body with no negative control on the size field is a refusal, because without it nothing in the diff shows XS is load-bearing"*. The stated reason is what I measured and it is false: something in the TREE shows it, D2 names the body and the line, and the role file's 2b rules containment over counting. A pre-commitment exists to make me state a reason for relaxing it rather than relax it quietly, and that is the reason. What survives is a gap in one body rather than in the suite, and it is assigned as a correction rather than a rejection.
+**And I am declining my own pre-commitment, in as many words.** The attack set pre-committed to REFUSING on A2.2 — *"a proving body with no negative control on the size field is a refusal, because without it nothing in the diff shows XS is load-bearing"*. The stated reason is what I measured and it is false: something in the TREE shows it, D2 names the body and the line, and the role file's 2b rules containment over counting. A pre-commitment exists to make me state a reason for relaxing it rather than relax it quietly, and that is the reason. What survives is a gap in one body rather than in the suite — and when I tried to assign even that as a correction, the containment rule took it back, which is recorded below rather than quietly dropped.
 
 #### Security sweep, mandatory and not empty here
 
@@ -271,11 +271,14 @@ four card files added or edited carry no `<-` in prose.
 
 #### Assigned corrections
 
-Two corrections, and ONE mutant block: the second is a wording correction and carries no block,
-which is said here in as many words so the shortfall between two corrections and one block is
-not read as a body nobody wrote.
+ONE assigned correction, and NO MUTANT BLOCK — said here in as many words, because a verdict
+that assigns corrections and carries no block is the shape `merge.mjs`'s drill step STOPS on,
+and the seat reading this should know why before it meets the refusal. The one correction is a
+WORDING correction, which step 5b says owes no block. A second was proposed, written, graded
+both ways and then WITHDRAWN by the containment test; it stands below with its reasoning intact
+and is deliberately NOT headed as a correction, because it is not one.
 
-##### Correction 1 — the end-to-end chain controls every bounded condition except the first one the tier table names
+##### A proposal I wrote, graded, and then WITHDREW — the end-to-end chain and the first condition the tier table names
 
 The tier table's bounded row names five conditions and the first of them is the size. The new
 body removes the other four one at a time from the same card and reads the alternative answer
@@ -294,29 +297,29 @@ neutered — *"the same card at size S reached bounded too, so the size the tier
 is not what bought the cheapest tier"*, expected pattern `/^(standard|guarded)$/`, received
 `"bounded"`.
 
-```mutant
-correction: the end-to-end chain controls every bounded condition except the first one the tier table names
-file: tools/e2e/scripts/dispatch-brief.mjs
-spec: tools/e2e/tests/brief.spec.ts
-body: THE BOUNDED TIER IS REACHABLE FROM A CARD THIS TREE WOULD HOLD: the size its tier table admits bounded on parses clean and classifies bounded, and every bounded condition removed one at a time does not
-message: reached bounded too, so the size the tier table selects on
---- old
-  if (size !== "XS") {
-    return {
-      tier: "standard",
-      reason: `size ${size}, no guard-class path in a fence of ${String(input.fencePaths.length)} path(s)`,
-    };
-  }
---- new
-  if (false) {
-    return {
-      tier: "standard",
-      reason: `size ${size}, no guard-class path in a fence of ${String(input.fencePaths.length)} path(s)`,
-    };
-  }
-```
+**WITHDRAWN on 2026-09-14, by the same test I applied to the diff.** Step 2b says two bodies
+are both load-bearing only when NEITHER kill set contains the other, and that where one contains
+the other the contained body is a RESTATEMENT. I could not build a mutant that reds my arm and
+not the pre-existing classifier body: every change that lets a non-bounded size reach `bounded`
+on a DERIVED fixture also lets it reach `bounded` on a hand-built one, which is exactly what
+drill D2 measured — one mutant, two dead bodies, mine not among the ones that died alone.
 
-##### Correction 2 — T-298-s7 names two of the five live copies, and THIS CORRECTION CARRIES NO MUTANT BLOCK because it pins no property
+The merge verb says the same thing mechanically, and finding that is what settled it.
+`gradeDrill` in `tools/e2e/scripts/merge.mjs` REFUSES a block whose mutant "REDS MORE THAN
+ITSELF — a mutant that kills a set is not evidence about this one property", and the drill's
+scope is the whole spec file the block names. So the block I had written could never have been
+drilled at the merge, and the reason it could not is the reason the arm was not a correction.
+
+**So the body is NOT committed and no block is carried.** `tools/e2e/tests/brief.spec.ts` is
+byte-identical to the lane's own, digest 4e2a744… on this bench. What this section leaves behind
+is the reasoning rather than twenty lines of test, which is the honest yield of the exercise:
+the attack set's headline demand was answered by the tree before I arrived, and the second time
+I tried to collect on it the method's own containment rule took it away. Asking of my own
+suggestion what I ask of the diff is the rule that produced this paragraph, and it is the rule I
+opened this verdict by citing against the lane.
+
+
+##### Correction 1, the only one assigned — T-298-s7 names two of the five live copies, and THIS CORRECTION CARRIES NO MUTANT BLOCK because it pins no property
 
 T-298-s7 is the right card and its criterion is the right criterion: *"WHEN the parser's
 declared size set changes THE tree SHALL red on any in-repository copy of that vocabulary that
