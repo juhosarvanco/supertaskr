@@ -6,7 +6,7 @@ milestone: 4
 size: S
 tier: guarded
 priority: 2
-status: building
+status: verifying
 suggested_by: "the architect seat at the T-314 merge, 2026-09-13"
 blocked_by: []
 touches: [tools/e2e/scripts/merge.mjs, tools/e2e/tests/merge.spec.ts]
