@@ -191,3 +191,179 @@ evaluation block are the integrator's writes at the merge; the method
 text this card moved is `method/runtime/process-schema.yaml`.
 
 ## Verdicts
+
+### 2026-09-13 — APPROVED WITH ASSIGNED CORRECTIONS — claude-opus-5@subagent
+
+Phase 2 of a GUARDED pass, on the bench `/Users/ujju/Projects/supertaskr-V-T-299-s6`
+detached at `baea26970d5fdd03da07973910db7ee6fc0dd548`, base
+`3297a658e62d0ae0f945ec50bbc1769d3abb73fc`. Every figure below names the ref it was
+measured at.
+
+**THE FRAME I ACTUALLY HAD.** Two spawns, guaranteed rather than kept: phase 1 held no
+file, git or shell tool and wrote its attack set from the card at the base; this spawn
+holds tools, read the diff and the notes together, and opened the executor's report only
+after the attack set was hashed and the diff was read. The brief's duties section named no
+executor-derived figure — no mutant count, no path count, no suite number — so phase 1 was
+not broken above the line. The seat's facts about the tree (the graded tip, the expected
+census and graph staleness, the bench rebuild) arrived as facts and I re-measured every one
+I used.
+
+**SEALED INPUTS, CITED.** Each digest recomputed on this bench and matching the saved file:
+
+- attack set `sha256:e187e1cff10021de7a4dbd2cf0644464dcda72197f17cc86db42cfd854cdf01e`
+- ground truths `sha256:273a101213265d62765fd7b4c6c293fa3c0b55d54f8dcb9e6340b5c1b251fba6`
+- the card at `3297a658` `sha256:9989bb990ff659a210bcb913eb052ed0b48d56917477eab034a231a616ecf9ea`
+
+#### The suites, at `baea2697` — the whole battery, which the guarded tier keeps
+
+`SUPERTASKR_E2E_PORT=15299 node tools/e2e/scripts/gate-run.mjs parser app rust e2e`, exit 0.
+
+| leg | ref | bodies | targets | exit | verdict |
+|---|---|---|---|---|---|
+| parser | baea2697 | 413 | 1 | 0 | GREEN |
+| app | baea2697 | 1171 | 1 | 0 | GREEN |
+| rust | baea2697 | 655 | 18 | 0 | GREEN |
+| e2e | baea2697 | 1049 | 1 | 0 | GREEN |
+
+Beside them, at the same ref: `settings.mjs reference --check` exit 0 (the committed
+chapter IS a current generation); `npm run lint:docs` 0 findings with the ADR-019 budget at
+WARN — `docs/CONVENTIONS.md` is 159357 bytes against a 146878 warn and a 176253 fail, and it
+was already warning at the base (157456); `brief.mjs --task T-299-s6 --preflight` exit 0;
+`capabilities:check` STALE (96334 committed, 96924 fresh) and the graph stale — both
+regenerations and the method stamp are the merge's by the schema's own `merge.regen_*` and
+`method.stamp` rows.
+
+#### A row per acceptance criterion, with the evidence that decided it
+
+| # | criterion | verdict | the evidence |
+|---|---|---|---|
+| C1 | every row labelled, `manualAction` non-empty and actionable for manual and empty otherwise; the parser refuses a missing or unknown label and an empty manual action | MET, with correction 1 | All 42 rows carry both fields (enumerated at `baea2697`: 6 operational, 24 manual, 12 declarative). The refusals live in `lib/parser/src/process-settings.ts` — the library T-317 made the single source — not in the arm's wrapper, so C1-B's attack finds nothing above the library. A MISSING field is the pre-existing every-field refusal because both fields joined `SWITCH_FIELDS`, and the new parser body drives that direction too. Drill D1: `!IMPLEMENTATIONS.includes(impl)` → `false` reds exactly 1 of 413. "Empty otherwise" IS policed (`impl !== manual && action !== ''`), which C1-D expected to be skipped. Type confusion is closed by the hand parser upstream: every field but `values`/`needs`/`band`/`floor` is `processScalar`, so `implementation: 123` and `implementation: [operational]` arrive as strings outside the set and refuse. **The gap:** `action.trim() === ''` is pinned by nothing — drill D2 replaced it with `action === ''` and all 413 parser bodies stayed green, so "non-empty" degrades to "not the empty string" and `manualAction: "   "` parses. Correction 1. |
+| C2 | an operational label requires behavioural evidence; a declarative label requires inspection; a person's act is manual; an unresolved classification stays a finding; the count is this lane's | MET, with a named departure (correction 3) | The proof body holds one observer per operational row, requires the observer table to EQUAL the labelled set (so no label is handed out without evidence), requires the arm's answers to differ pairwise, and — the part that answers C2-B — erases every value of the row from every answer before comparing, so an observer that reads back what it was handed collapses. Each observer reads an arm ACT: a rendered model row, a tier, a merge plan's step ids, a keeper plan's step ids. **P1, the control I pre-committed to and owed a demonstration for:** drill D5 neutered the BRANCH (`switchValue(process, "merge.keepers")` → `"on"` in `merge.mjs`, not the read site and not the schema) and all three label bodies red, including the third body's own positive control. The other half of the demonstration: drill D7 changed a `cost:` string in the schema — a schema edit touching no label and no branch — and all three stayed green, so the control does not fire spuriously. **C2-A, the concealment the criterion names, is mechanically blocked:** drill D6, a DATA mutant relabelling the operational `merge.keepers` as `declarative`, reds three bodies (the label body, the proof body, and the reference-currency body). The count landed at exactly six with the candidate's seventh row relabelled, so per my pre-commitment I applied the strongest evidence standard and say so: each of the six carries its own independently written observer, and the seventh, `record.whole_suite_net`, has a body of its own that observes four arm acts at every value and requires none to move, with an operational row as the positive control and the moving brief SENTENCE shown as the thing that is not evidence. C2-H is answered by disclosure rather than by a clean sweep: T-299-s8 is filed for the four ritual rows, and the notes flag `verify.ground` and `verify.separate_bench` as the judgement a reader could weigh the other way. |
+| C3 | the terminal lists the label and the manual action beside the value; an edit naming a declarative switch refuses with the code `declarative`, template byte-identical, pinned by a body; the reference carries the labels. Amendment: a finding code at the existing refusal exit, the four-code vocabulary unchanged, and a body showing the exit equals the other refusals' | MET, with correction 2 | The listing asserts per row, on the row's OWN line, for all 42 — not `stdout.includes`, which C3-E predicted — and counts the `manual action:` lines against the manual rows so an action on a row that has none also reds. The reference is GENERATOR-emitted (`renderReference`), its three counts DERIVED, and `reference --check` is green; the currency body compares the committed page against a fresh generation, so C3-G's hand-edit is caught (D6 reds it). C3-B's "refuses for everything" is ruled out by the positive control: drill D4a made the refusal fire for every row and the body red at "the control: an allowed set is clean". Byte-identity is a fact about a FILE, read off disk in a temp project through `settingsMain`, and structurally true besides — `setPlan` throws before the template is ever read. The exit vocabulary did not grow a fifth code and T-300-s6's pinning bodies are untouched. **I recorded the opposite prediction before seeing the work (C3-C) and it was wrong: the body compares `refused.status` against the OBSERVED exits of two other refusals, not against a literal on both sides.** Credit is real. **The gap:** the floor control was `push.token`, which is FLOOR and ALSO declarative — one arrangement deciding both the subject's answer and the control's. Drill D4b (`if (sw.floor)` → `if (sw.floor && sw.implementation !== "declarative")`) leaves the new body GREEN while its stated arrangement is false; the neighbouring four-refusals body catches that particular mutant, so the defect is contained rather than open, but a body whose control can become its own subject is the defect this method produces most. Correction 2. |
+| C4 | the notes identify T-301 and T-302; the sequencing; this card edits neither card nor a live lane; the method version bumps with its release note and evaluation block | MET for the notes and the prohibition; the version bump is OUTSTANDING and is the merge's | `git diff --name-status 3297a658 baea2697` names eleven paths and no task card but this one and the two findings it filed, so pre-commitment 3 is clear: nothing under `docs/tasks/T-301-*` or `T-302-*` moved, and the fence was not widened. The notes name both consumers and what each owes. On the live conditional: the notes take the conservative branch and never claim the adoption is assigned — they state the condition and decline to assume which side of it T-301 is on. That satisfies the clause, which binds only "before claiming the adoption is assigned"; my pre-commitment 4 does not fire, and I say so rather than letting a rule I wrote in advance decide a case it does not cover. It is still weaker than it needed to be: "LIVE in its own lane" is a claim about another card's state carried at no ref, and the ground taken at the base shows the favourable branch was true and measurable (T-301 `building`, its worktree and bench dormant at one commit since 2026-09-11, and the only brief file predating both amendments, so nothing is frozen and no work has finished). A figure with its ref stays true; this one has none. **The version bump, the release note and the evaluation block are not at this tip.** The lane's position — that they are the integrator's writes at the merge — is the project's own rule (`method.stamp`: "bump the method stamp in every file that carries it, and run the method evals, in the merge that moves method text"), and this lane moves `method/runtime/process-schema.yaml`. So the criterion is not met AT THIS COMMIT and cannot be; it is an obligation the merge carries, and this verdict names it so the merge cannot mistake it for discharged. |
+
+#### The security sweep (step 3, mandatory)
+
+No dependency added, no secret, no key. The edit path takes a switch NAME from the caller
+and resolves it through a `Map`, so `settings set __proto__ …` is an unknown-switch refusal
+rather than a prototype write; the schema's hand parser refuses any field name outside
+`SWITCH_FIELDS`, which closes the same door on the file side. The refusal fires before the
+template is read or written, and the template path is `path.join(root, RUNTIME_TEMPLATE)` —
+a fixed constant, never caller-supplied. `manualAction` is a new schema string rendered
+unescaped into the terminal listing and into the generated Markdown page; the ground taken
+at the base establishes that this is the file's EXISTING convention rather than a new class
+of path (`what`, `effect` and `cost` already flow to both surfaces unescaped), so it is
+recorded here as a standing property of the surface and not charged to this lane.
+
+#### Adjacent features and the architecture
+
+`tools/e2e/scripts/dispatch-brief.mjs` is unchanged, so the brief's rendered output does not
+move: the 236 lines in `brief.spec.ts` are three new bodies plus four lines of a typed
+fixture the parser's new refusals made mandatory. No node builtin enters `lib/parser/src`,
+so T-317-s4's unguarded browser-safety hazard was not tripped. T-317's re-export invariant
+IS dented: `IMPLEMENTATIONS` and `MANUAL_IMPLEMENTATION` are exported by the module and
+re-exported by neither barrel, and `settings.mjs` consequently carries the literal
+`"declarative"` — a second spelling of a vocabulary the library declares. Both barrels are
+outside this card's fence, the lane filed T-299-s7 rather than reaching for them, and that
+is the right call; it is named here because a dent nobody records is a dent nobody repairs.
+Five existing bodies moved their subject from `dispatch.keeper_at_base` to
+`build.criteria_echo` because the inspection made the first row declarative — forced by a
+criterion, declared in the notes, and no assertion weakened. One consequence the lane did
+not name: `setPlan` now owes FIVE refusals while the body called "each of the four refusals
+a set owes is ITSELF" still says four, and the census publishes that sentence. The body is
+not wrong about what it tests; it is no longer the whole set. Worth a line on whatever card
+next touches that file, and not worth a correction here.
+
+#### The corrections
+
+Two bodies, committed on this bench AFTER this verdict so the figures above still name the
+tip they were measured at, and one wording correction that has no property to pin.
+
+**Correction 1 — a manual action that is only whitespace parses.** The parser's emptiness
+check trims and nothing pins the trim. Body: the existing label-refusal body gains a
+whitespace-only case. RED against an implementation lacking the property (mutant below): 1
+of 413 parser bodies, "a manual action that is only whitespace: the schema parsed without a
+murmur". GREEN against the implementation as it stands: 413 of 413. Restore proved by
+sha256 `4d8969c7…`, equal to the pre-drill reading.
+
+**Correction 2 — the declarative refusal's floor control could become its own subject.**
+`push.token` is FLOOR and declarative, so a check order that put the label first would have
+left the body comparing the subject against itself. The control moves to `template.roles`,
+which is FLOOR and MANUAL and can therefore answer the floor refusal and no other, and both
+controls now assert the refusal they claim to be. RED against an implementation lacking the
+property (mutant below): exactly 1 of 241 bodies across `cli.spec.ts` and `brief.spec.ts`,
+"the floor control answered some other refusal". GREEN against the implementation as it
+stands. Restore proved by sha256 `d65234bd…`, equal to the pre-drill reading.
+
+**Correction 3 — the card's own sentence about `declarative` is false of the tree this lane
+built, and the notes do not say so. THIS CORRECTION CARRIES NO MUTANT BLOCK, because a
+card's wording has no property a body can pin.** The criterion reads "A `declarative` label
+SHALL be supported by inspection establishing that the promised effect is not implemented."
+The lane's `declarative` means something different and says so loudly in four places: the
+row is not a CONTROL — nothing reads its value — and the behaviour is emphatically NOT
+absent. That is true of at least eight of the twelve: `fence.hook`, `landing.gate`,
+`docs.gate`, `push.token` and the four `ci.*` rows all describe behaviour that is
+implemented and in force, and would fail the card's literal test. I judge the departure
+CORRECT rather than a defect — the card's three buckets have no home for "implemented, but
+not by this file", the lane found that gap, chose the only remaining word, and pinned its
+operative definition in a body (`declarative` ⇒ `reads` is the ledger AND the arm carries no
+read site) so a future reader is held to the lane's rule and not to the card's sentence. But
+the departure is nowhere named AS a departure, and a criterion that no longer describes the
+tree it governs is how a later seat "fixes" the labels back. The correction is a sentence in
+the notes naming the departure and the ruling it wants, and the ruling is the owner's to
+give — I neither write an amendment nor claim one.
+
+```mutant
+correction: a manual action that is only whitespace parses
+file: lib/parser/src/process-settings.ts
+spec: lib/parser/test/process-settings.test.ts
+body: REFUSES a label it does not know, a manual row with no action, and an action on a row that is not manual
+message: a manual action that is only whitespace
+--- old
+      if (impl === MANUAL_IMPLEMENTATION && action.trim() === '') {
+--- new
+      if (impl === MANUAL_IMPLEMENTATION && action === '') {
+```
+
+```mutant
+correction: the declarative refusal's floor control could become its own subject
+file: tools/e2e/scripts/settings.mjs
+spec: tools/e2e/tests/cli.spec.ts
+body: a `set` naming a DECLARATIVE switch is refused with the code `declarative`, at the exit every other refusal takes, and the template is byte-identical
+message: the floor control answered some other refusal
+--- old
+  if (sw.floor) {
+--- new
+  if (sw.floor && sw.implementation !== "manual") {
+```
+
+#### The drills, read off `git diff` rather than off a mutator's report
+
+| # | site | mutant | kill set | restore proved |
+|---|---|---|---|---|
+| D1 | `lib/parser/src/process-settings.ts` | the unknown-label refusal never fires | the new parser body alone, 1 of 413 | `4d8969c7…` |
+| D2 | `lib/parser/src/process-settings.ts` | `action.trim() === ''` → `action === ''` | **SURVIVOR** — 413 of 413 green; correction 1 | `4d8969c7…` |
+| D3 | `tools/e2e/scripts/settings.mjs` | `set` stops refusing declarative | the new refusal body alone | `d65234bd…` |
+| D4a | `tools/e2e/scripts/settings.mjs` | the refusal fires for EVERY row | the new refusal body, at its positive control | `d65234bd…` |
+| D4b | `tools/e2e/scripts/settings.mjs` | the label is checked before FLOOR | the four-refusals body; the new body SURVIVES it; correction 2 | `d65234bd…` |
+| D5 | `tools/e2e/scripts/merge.mjs` | the `merge.keepers` BRANCH neutered (P1) | all three label bodies, including the third's own control | `e38b9ebd…` |
+| D6 | `method/runtime/process-schema.yaml` (DATA) | an operational row hidden as `declarative` (P2, C2-A) | the label body, the proof body, the reference-currency body | `a4e0f58f…` |
+| D7 | `method/runtime/process-schema.yaml` (DATA) | a `cost:` string, no label and no branch | **none, as required** — the P1 control does not fire spuriously | `a4e0f58f…` |
+
+**The control the rule owes.** Before spending these on bodies they fail, they passed one
+they should: the four-refusals body survived D1, D2, D3, D4a, D5, D6 and D7 and died only to
+D4b, the one mutant that is actually about it. A drill that graded that body degenerate
+would have been a broken drill, not a broken tree.
+
+**My pre-commitments, and how they came out.** (1) Hand-written reference labels would be
+REJECT-level — not triggered; the generator emits them and `reference --check` is green.
+(2) An operational label whose body survives its branch being neutered is unproven — not
+triggered; D5 killed all three. (3) Touching T-301/T-302 is a REJECT-level scope violation —
+not triggered. (4) C4's conditional unestablished makes the adoption claim unfounded — not
+triggered, because no adoption claim was made. (5) I predicted "actionable" would be the
+weakest clause, satisfied by a non-empty check alone — **half right**: the trim is unpinned
+(correction 1), but "actionable" is more mechanised than I predicted, by a
+`trim().length > 20` floor over every shipped manual row, and the credit for that is real.
+(6) I predicted C3-C's exit equality would be typed as a literal on both sides — **wrong**,
+and the lane did the stronger thing. (7) Six operational with the candidate's relabelling
+would draw the strongest evidence standard — triggered, applied, and it held.
