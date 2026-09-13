@@ -7,7 +7,7 @@ size: M
 priority: 2
 status: suggested
 suggested_by: "the architect seat on 2026-09-13, from the owner's question the same evening about leaving the computer for hours; filing authorizes no development"
-blocked_by: []
+blocked_by: [T-319]
 touches: [method/roles/orchestrator.md, method/rooms/ROOM-FORMAT.md, tools/e2e/scripts/brief.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md]
 builder:
 verifier:
@@ -27,6 +27,16 @@ On 2026-09-13 the owner asked what happens when they leave the computer for five
 - WHEN a spawn is refused for quota THE coordinator SHALL wait with the wait verb until the window reopens, retry the same spawn, and record the wait, never abandoning the lane or the order; a stop on quota exists only where the approval mode's record says so; pinned by a body over a fixture refusal.
 - WHEN the owner returns THE return brief (`brief.mjs --since <instant>`) SHALL list what merged with its CI conclusion by name, what was parked and why, the question entries awaiting a ruling, the lanes live and their phase, and the repairs dispatched under the scope, each item with its ref, and SHALL say plainly what it cannot know (a run still in progress, a lane's phase unreported); pinned by bodies over a fixture history.
 - WHEN this card lands THE conventions SHALL carry, at the loop's section, the host keep-awake requirement and the resumption of a dead seat from the run record and the ledger (ADR-025), each as an operational rule with its derive command, and the orchestrator role file's stop list SHALL name only the stops the approval mode's record reserves.
+
+## Amendment of 2026-09-14 — the repair loop cannot get stuck, the wait can actually wake, unrelated work checks the shared conditions first, and the dead coordinator is another card's (the Codex orchestrator's review of T-319 and T-322, relayed by the owner)
+
+Supersedes the quota criterion and the last criterion above and adds to the first two; where they conflict this section governs. The blocked_by entry on T-319 is added with this line: the repairs this card dispatches are authorized by T-319's recovery policy, not by this card. A correction of the measured section's wording: the policy AUTHORIZES a repair; the coordinator still diagnoses the failure and chooses a valid fix by engineering judgement, and a repair is classified and verified like any other card — a small diff qualifies for the express path only by T-320's measured eligibility, never by its size.
+
+- WHEN a repair is attempted THE coordinator SHALL record on the failing card the failure's signature (the red body's name or the rejection's stated failures, with the run or verdict ref) and each remedy attempted; WHEN a further attempt would repeat without progress — the same signature after a remedy, or two attempts with no new signature — THE coordinator SHALL park that problem with the record and continue eligible work, never spawning a fresh executor at the same failure; this is protection against getting stuck and no token ceiling; pinned by bodies over a fixture history with progress and one without.
+- WHEN a spawn is refused for quota THE coordinator SHALL wait until the provider's stated reset instant where the refusal carries one, and otherwise SHALL check again with a delay that grows on each refusal, SHALL reconcile the refused attempt's run record before any retry, and SHALL record each wait; pinned by bodies over a fixture refusal with a reset instant and one without.
+- WHEN a decision is parked and other cards could continue THE coordinator SHALL first check the shared conditions — main green on the runner or its red attributed to a named cause, the verification path intact (the bench verb and the sealed inputs answering), and every live writer's ownership known from the run record — and SHALL continue only where those permit; where one fails THE coordinator SHALL hold every dispatch and record why, pinned by a body per condition.
+- WHEN a CI run on main reds THE coordinator SHALL attribute the red by name before treating it as a repair trigger — the failing bodies from the run's own log, compared with the previous run at the parent commit and with the merge's diff — and a red the comparison does not attribute to the merge SHALL become a question entry and not a repair, pinned by a body over two fixture logs.
+- WHEN this card lands THE conventions SHALL carry the host keep-awake requirement at the loop's section as an operational rule with its derive command, and the orchestrator role file's stop list SHALL name only the stops the approval mode's record reserves; the resumption of a dead or quota-exhausted coordinator is NOT this card's — it is T-323's, a capability demonstrated by a restart and not a conventions entry.
 
 ## Implementation notes
 

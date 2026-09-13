@@ -8,7 +8,7 @@ priority: 2
 status: suggested
 suggested_by: "the architect seat on 2026-09-13, from the Codex orchestrator's lean-delivery plan v2 and its reconciliation review of the same day, filed on the owner's ruling; filing authorizes no development"
 blocked_by: []
-touches: [method/roles/orchestrator.md, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/scripts/run-record.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/run-record.spec.ts, docs/windows/README.md, docs/CONVENTIONS.md]
+touches: [method/roles/orchestrator.md, method/runtime/process-schema.yaml, method/runtime/supertaskr.yaml, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/scripts/run-record.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/run-record.spec.ts, docs/windows/README.md, docs/CONVENTIONS.md]
 builder:
 verifier:
 built_by:
@@ -51,6 +51,10 @@ This section supersedes the record's field list in the criteria above and the ea
 ## Amendment of 2026-09-13, later the same evening — the standing mode names its scope (the owner's ruling on leaving the computer)
 
 Adds to the amendment above; everything else stands. The owner's case: away for hours, a lane is rejected or a CI run reds, and the fix must not wait. So the standing grant carries a SCOPE with two values — the listed cards only, or the listed cards and the repairs the work produces: a fix card a lane's failure or a CI red files (priority 1, inside the standing order at the point the failure occurred), the re-entry of a rejected lane, and an express fix where the bounded tier is reachable (T-298-s3, T-320). WHEN the scope is listed-plus-repairs THE arm SHALL dispatch such a repair without a further approval and SHALL record on the repair card the failure it repairs, pinned by a body; WHEN a decision the mode does not cover arises — a room or decision entry that must be shown, a product-scope or design decision — THE coordinator SHALL park it and continue every lane that does not depend on it, and the pause SHALL apply only to that decision, pinned by a body that parks one decision and requires the next unrelated dispatch to proceed.
+
+## Amendment of 2026-09-14 — recovery permission is a policy of its own, and the schema is in the fence (the Codex orchestrator's review of T-319 and T-322, relayed by the owner)
+
+Adds to the amendments of 2026-09-13; where they conflict this section governs. The approval mode (each, until a named card, standing) says when work STARTS. Whether the coordinator may dispatch a correction round, a re-entry after a rejection, or a repair the work discovers is a SEPARATE recovery policy with two values — none, or the repairs necessary to the approved work — valid under every mode, so that a grant until a named card can carry its necessary repairs without granting indefinite standing permission; the standing-mode scope clause of 2026-09-13 is this policy under one mode and is superseded by it. WHEN the recovery policy is none THE arm SHALL refuse a repair dispatch by name and queue it as a question; WHEN it is the necessary repairs THE arm SHALL dispatch a repair only for a failure attributed to the approved work and SHALL record the failure it repairs on the repair card, pinned by bodies for each mode paired with each policy value. Both are switches declared once in the process schema beside the runtime template's value, which puts method/runtime/process-schema.yaml and method/runtime/supertaskr.yaml in this fence; the reader is the one the arm already has for the schema (T-317), and this card adds no parser code.
 
 ## Implementation notes
 
