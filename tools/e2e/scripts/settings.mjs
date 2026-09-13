@@ -270,12 +270,12 @@ export function measuredFor(row, readings, units) {
 /**
  * EVERY SWITCH, IN THE SCHEMA'S ORDER, as rows.
  *
- * The order is the ledger's, and the ledger is the ARM'S own read —
- * built by asking for each switch by name rather than by walking the
- * resolution's map, so a switch the resolution lost is a throw here
- * exactly as it is at a dispatch. A settings screen that quietly
- * rendered one row fewer than the loop has is the failure this borrows
- * its way out of.
+ * The order is the ledger's, and the ledger is the PARSER LIBRARY'S
+ * own read — built by asking for each switch by name rather than by
+ * walking the resolution's map, so a switch the resolution lost is a
+ * throw here exactly as it is at a dispatch. A settings screen that
+ * quietly rendered one row fewer than the loop has is the failure this
+ * borrows its way out of.
  *
  * @param {{ schema: import("../../../lib/parser/dist/pure.js").ProcessSchema, settings: import("../../../lib/parser/dist/pure.js").ProcessSettings, readings: Map<string, { value: number, derivation: string }>, units: Map<string, string> }} input
  * @returns {SettingsRow[]}
@@ -348,10 +348,10 @@ export function renderSettings(input) {
  * Four mistakes, each reported as itself: an id the schema does not
  * declare, a FLOOR switch, a value outside that switch's own set, and a
  * combination the constraints forbid. The fourth is not this file's
- * judgement — it is `constraintFindings`, the arm's own, run over the
- * settings the write WOULD produce, so the refusal names both switches
- * and both values in the schema's own words and a constraint added to
- * the schema is enforced here the day it lands.
+ * judgement — it is `constraintFindings`, the PARSER LIBRARY'S own,
+ * run over the settings the write WOULD produce, so the refusal names
+ * both switches and both values in the schema's own words, and a
+ * constraint added to the schema is enforced here the day it lands.
  *
  * SETTING A SWITCH TO THE PROFILE'S OWN VALUE REMOVES THE DEPARTURE
  * rather than writing one. The template's section names the profile and
