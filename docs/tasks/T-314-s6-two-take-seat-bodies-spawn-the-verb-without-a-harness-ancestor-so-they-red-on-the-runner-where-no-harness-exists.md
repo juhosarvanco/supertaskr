@@ -563,3 +563,39 @@ the notes answer by NAME while the drill sits at the site the attack
 itself rules out. That is the pilot's characteristic failure mode, it is
 cheap to catch, and it is worth recording in the table beside the
 benefit.
+
+#### Postscript — the step-7 readings, at MY OWN tip
+
+Every figure below was measured at f144a99e, the verdict commit, and not
+at the tip I was sent: a reading taken at be9d6a25 is stale the moment
+the verdict is appended, and the range the merge will judge is the one
+that ends here.
+
+- **The owed set of fec37e5f..f144a99e**, six paths moved, owing app,
+  e2e and parser with the e2e leg narrowed to 13 spec files. All three
+  GREEN at f144a99e: parser exit 0 over **413 bodies**, app exit 0 over
+  **1171 bodies**, e2e exit 0 over **713 bodies**, the leg's own summary
+  line reading `713 passed (6.2m)`. Run in the FOREGROUND, so this
+  machine's ancestry is the one the seat verbs saw; the runner's shape
+  was measured separately and is reported above.
+- In that leg's own listing, the added body is `50ms` and the two bodies
+  the card names are `1.0s` and `689ms`, all three green.
+- **`capabilities:check` exit 1 — STALE**, committed 100133 bytes
+  against a fresh generation of 100241. This is the added body and
+  nothing else, it is disclosed on this card, and this fence carries
+  neither the census nor the index, so the lane could not have closed
+  it. It is the merge's regen and it is named again under "What the
+  merge owes".
+- **`index --check` exit 0 — CURRENT** at f144a99e: 1216090 bytes, 203
+  files, 2593 symbols, 2488 edges; the budget line reads 1216090 of
+  2145959 bytes (56.7%), 929869 left, with the floor at 240298 bytes
+  (11.2%).
+- **T-314-s5's known flake did not fire** in either of my graded runs —
+  the push-guard body that reds when two hook runs straddle a minute
+  boundary. Had it, it would have been attributed to that card and not
+  to this diff.
+- **The corrections assigned above are both wording and neither carries
+  a mutant block**, so no correction body follows this postscript. The
+  bench is clean at f144a99e, and tools/e2e/scripts/brief.mjs — the file
+  I mutated four times and which is outside this fence — is
+  byte-identical to the tip I was sent.
