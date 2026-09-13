@@ -1,7 +1,7 @@
 ---
 id: T-043-s1
 title: Two orphaned fake_agent processes from nputer-T-060 are alive on this machine, and the briefing's "five orphaned nputer binaries" did not reproduce
-status: parked
+status: rejected
 suggested_by: executor claude-opus-5 @T-043
 ---
 
@@ -55,3 +55,5 @@ family as the stray `nputer-t025-realsmoke-*` directories STATE.md
 already carries.
 
 **PARKED at the fifth triage (2026-08-20).** Unpark when @human rules delete-or-keep on the fake_agent orphans (pids 52504/52505), or when they leave ps. Signalling is blocked in the executor environment; no card can act until the human does.
+
+Disposition 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): discharged — the work landed elsewhere: the two fake_agent processes the card names are absent from this machine's process list (pgrep -fl fake_agent: 0) — the observation, not the rename. the binary it names is spelled with the pre-rename identifier, which is gone from the tree; the finding was two live processes on one machine on one day.

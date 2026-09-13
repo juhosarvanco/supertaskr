@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 4
 size: S
-status: suggested
+status: rejected
 suggested_by: executor claude-opus-5@subagent @T-238-s1
 blocked_by: []
 touches: [tools/e2e/scripts/brief.mjs, tools/e2e/tests/checkout-currency.spec.ts]
@@ -52,3 +52,5 @@ The mechanism sentence overstates: `--take-seat` DOES print `holder: unknown [ho
 ### Note of 2026-09-12 — premise retired by T-303-s1
 
 The T-303-s1 verifier observed on 2026-09-12 that this card's premise, that re-taking the seat is the right remedy for an unreadable holder record, no longer holds: both ownership commands now refuse such a record and preserve it for inspection. This note records the observation; whether the card is closed is the pruning sitting's decision, not this note's.
+
+Disposition 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): discharged — the work landed elsewhere: T-189-s3. the seat record is overwritten without saying so, and T-189-s3 owns the holder declaration's carrier.

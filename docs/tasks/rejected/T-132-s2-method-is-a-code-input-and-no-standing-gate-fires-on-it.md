@@ -1,7 +1,7 @@
 ---
 id: T-132-s2
 title: method/ is a code input exactly the way docs/ is, and a method-only diff matches NO standing gate — the argument that created the DOCS GATE, one directory over
-status: parked
+status: rejected
 suggested_by: executor claude-opus-5 @T-132
 touches: [docs/CONVENTIONS.md, tools/e2e]
 ---
@@ -104,3 +104,5 @@ Amnesty triage 2026-08-29 (triage seat): PARKED — the gap is real and the deri
 **WHAT SURVIVES IS ARM ONE ALONE — WIDEN THE TRIGGER — AND IT SURVIVES EXACTLY BECAUSE ITS AUTHOR MARKED IT UNVERIFIED.** The same CONVENTIONS bullet says so in its own voice: *"widening this gate's trigger to fire cargo is NOT done here and stays that card's, because it needs the reader census re-run and the root-anchor ledger re-asserted rather than a word changed in a trigger."* The two halves it names are live and countable at this ref, from the same command's `--census` output: **24 derived docs readers across 4 suites**, **150 docs-shaped sites in 31 files**, and **6 root-anchored files sitting in a suite not already owed for all of `docs/`, each argued in `ROOT_ANCHOR_LEDGER` (`tools/e2e/scripts/docs-scan.mjs`), with the two sets asserted equal**. The second axis this card added is also still open and still unanswerable from a directory name: whether the widened trigger reaches all of `method/` or only the `KIT_FILES` subset.
 
 **NEW RESURFACING CONDITION: the merge of `T-127-s8`** — `status: planned`, `touches: [tools/e2e]` at this ref, and its subject IS this census (*"the docs-gate census cannot see a reader that reaches docs/ through a helper it does not know"*). That lane must re-derive the reader set and re-assert the ledger to do its own job, which is precisely the precondition this arm was refused for; taking this arm there costs the census once instead of twice. **If `T-127-s8` is disposed of without touching the scanner, the condition falls back to the next dispatch whose fence reaches `tools/e2e/scripts/docs-gate.mjs` AND `tools/e2e/scripts/docs-scan.mjs`** — both, because the census lives in one and the ledger in the other, and an arm that can only reach one of them is the half-fix this card already warns against. Checkable by whoever cuts that lane, off the card's own `touches:`, without remembering this card. **NOT a method/ dispatch and NOT T-159**: this is a tools/e2e scanner change, the method text it wanted is already written, and a second bump would have nothing to carry.
+
+Disposition 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): discharged — the work landed elsewhere: T-155 (done). the method eval gate is the fourth standing gate, and merge.mjs carries the step "the METHOD EVAL GATE — method/ moved" that fires on any diff touching method/**.

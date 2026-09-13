@@ -1,7 +1,7 @@
 ---
 id: T-226
 title: STAMPING AFTER THE CUT MANUFACTURES A THREE-WAY CONFLICT IN EVERY LANE IT DISPATCHES — orchestrator 5b's ordering is load-bearing for a reason the rule never states, and the seat that inverted it recorded the inversion as harmless
-status: parked
+status: rejected
 suggested_by: "the architect/integrator seat, 2026-09-01 — inverted the ordering, recorded it as costing nothing, and was corrected by the first lane to report; measured at 3a842e2 across all three lanes of that dispatch"
 ---
 
@@ -85,3 +85,5 @@ fence-write arm. RESURFACES when a card next opens that arm — T-222 does,
 publishing the slug map through it — and is offered to that lane as a
 rider; IF T-222 lands without it THEN promote this card at that
 checkpoint.
+
+Disposition 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): discharged — the work landed elsewhere: T-239 (done). brief.mjs puts the dispatch stamp on the integration branch and the lane inherits it in its base, which is exactly the ordering the card says nothing enforces.

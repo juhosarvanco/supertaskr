@@ -1,7 +1,7 @@
 ---
 id: T-025-s3
 title: The kit snapshot ships 14 files, not the plan's "13" — and nothing yet reads nputer.yaml
-status: parked
+status: rejected
 suggested_by: executor claude-opus-5 @T-025
 ---
 
@@ -56,3 +56,5 @@ halves. The 13-vs-14 off-by-one still rides T-043 as a criterion and
 T-043 is still planned and undispatched; `runtime/nputer.yaml` is
 still packaged, still reachable, and still consulted by nobody, and no
 second adapter has landed. Unpark with the second adapter.
+
+Disposition 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): discharged — the work landed elsewhere: the tree at HEAD. the runtime template is the dot-directory read by seven modules, and the kit table now holds 19 entries pinned by two assertions.

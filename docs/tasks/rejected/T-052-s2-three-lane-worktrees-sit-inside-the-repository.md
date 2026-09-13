@@ -1,7 +1,7 @@
 ---
 id: T-052-s2
 title: Three lane worktrees sit inside the repository, and the mechanism that put them there is a relative path nobody verified
-status: parked
+status: rejected
 suggested_by: executor claude-opus-5 @T-052
 ---
 
@@ -71,3 +71,5 @@ measured blast radius, which makes it the better worked example of the
 two and the reason the rule is now written with a remedy attached.
 
 Amnesty triage 2026-08-29 (triage seat): PARKED — arm 1 is discharged by the environment: git worktree list at this base shows every live entry outside the repository root (two lanes, the app checkout, two scratch trees), so the three misplaced worktrees this card names are gone. Arm 2 — the one-line assertion that no entry resolves inside the root — is unbuilt, and it is the durable half. RESURFACES: the next tools/e2e or app-dispatch dispatch; the lane reader already walks git worktree list, so the assertion is one predicate on a list it holds.
+
+Disposition 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): discharged — the work landed elsewhere: T-239 (done). the arm cuts every lane as a sibling directory, and `git worktree list` at HEAD holds no worktree inside the repository.
