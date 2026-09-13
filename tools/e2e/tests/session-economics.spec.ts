@@ -916,3 +916,109 @@ test("the task format names ONE depth for a card's sections, and the board spell
       "delete it and the exclusion with it rather than leaving a licence behind",
   ).toBeGreaterThan(0);
 });
+
+test("the two readers open the criteria section in the SAME PLACE, and not merely both somewhere", () => {
+  // THE CORPUS BODY ABOVE COMPARES TWO BOOLEANS, and both readers
+  // answering "there IS a section" is not both readers answering the SAME
+  // section. What the card asks for is the same CRITERIA, and the site is
+  // where that is decided: the heading rule is one object now, but the two
+  // readers still reach it through different prose models — the preflight
+  // blanks fenced and deeply indented lines before it looks, this one
+  // reads the card as it is written — so a card carrying the heading
+  // inside a quotation AND again as its own section passes the boolean
+  // comparison while the two stand in different places.
+  //
+  // THE READING IS DRIVEN THROUGH EACH READER'S OWN ENTRY POINT. A body
+  // that re-derived the advisory site with a `findIndex` of its own would
+  // be asserting about its own copy of the rule, and no mutant planted in
+  // the module could reach it.
+  const firstLine = (text: string): string =>
+    text
+      .split("\n")
+      .map((l) => l.trim())
+      .find((l) => l !== "") ?? "";
+
+  const dir = path.join(repoRoot, "docs", "tasks");
+  const apart: string[] = [];
+  let seen = 0;
+  for (const name of readdirSync(dir)) {
+    if (!name.endsWith(".md")) continue;
+    const text = readFileSync(path.join(dir, name), "utf8");
+    const lines = cardLines(text).lines;
+    const at = lines.findIndex((l) => l.scope === "criteria");
+    const advisory = optionalSection(text, ADVISORY_RULE);
+    if (at < 0 && advisory === null) continue;
+    seen += 1;
+    if (at < 0 || advisory === null) {
+      apart.push(`${name}: one reader found a section and the other did not`);
+      continue;
+    }
+    const preflight = firstLine(
+      lines
+        .slice(at + 1)
+        .map((l) => l.text)
+        .join("\n"),
+    );
+    if (preflight !== firstLine(advisory)) {
+      apart.push(`${name}\n  preflight: ${preflight}\n  advisory : ${firstLine(advisory)}`);
+    }
+  }
+  expect(
+    seen,
+    "no card on this board carries a criteria section — nothing was measured",
+  ).toBeGreaterThan(200);
+  expect(
+    apart,
+    "the two readers open the criteria section in different places on ONE card, so they collect " +
+      "different criteria from it however much their heading rule agrees",
+  ).toEqual([]);
+
+  // THE POSITIVE CONTROL, RUN WHERE THE ARMING IS ABSENT. Every card above
+  // answers `x === x`, and a reading that could not tell two sites apart
+  // would report an empty list forever. So the same reading is put to a
+  // card built to split them — the heading quoted in a fence before the
+  // card's own section — and BOTH halves are shown: the boolean comparison
+  // the body above makes is GREEN on this card, and this one is not.
+  const fence = "`".repeat(3);
+  const quoting = [
+    "---",
+    "id: T-904",
+    "---",
+    "",
+    "The summary paragraph.",
+    "",
+    `${fence}markdown`,
+    "## Acceptance criteria",
+    "",
+    "- WHEN a card QUOTES the task format THE quotation SHALL not be read as its criteria.",
+    fence,
+    "",
+    "## Acceptance criteria",
+    "",
+    "- WHEN the card is read THE reader SHALL find this one.",
+    "",
+  ].join("\n");
+  expect(
+    optionalSection(quoting, ADVISORY_RULE) !== null && cardLines(quoting).hasCriteria,
+    "the control card does not pass the boolean comparison, so it demonstrates nothing",
+  ).toBe(true);
+  const controlLines = cardLines(quoting).lines;
+  const controlAt = controlLines.findIndex((l) => l.scope === "criteria");
+  const controlPreflight = firstLine(
+    controlLines
+      .slice(controlAt + 1)
+      .map((l) => l.text)
+      .join("\n"),
+  );
+  const controlAdvisory = firstLine(String(optionalSection(quoting, ADVISORY_RULE)));
+  expect(controlPreflight, "the reading cannot see the preflight's section").toContain(
+    "SHALL find this one",
+  );
+  expect(controlAdvisory, "the reading cannot see the advisory reader's section").toContain(
+    "SHALL not be read as its criteria",
+  );
+  expect(
+    controlPreflight === controlAdvisory,
+    "the reading answers the same for two different sections, so the loop above measures nothing",
+  ).toBe(false);
+});
