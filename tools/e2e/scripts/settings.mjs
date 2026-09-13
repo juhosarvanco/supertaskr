@@ -13,12 +13,27 @@
  *
  * So this file HOLDS NO KNOWLEDGE OF THE LOOP. It parses nothing, it
  * resolves nothing and it validates nothing: the parser, the resolver,
- * the value sets, the floor and the constraints all live in
- * `dispatch-brief.mjs`, which is the arm's own reader, and this command
- * IMPORTS them. A second reader would be a second chance to disagree
- * with the arm about what this project's loop is, and the disagreement
- * would surface as a settings screen that says one thing while the
- * dispatch does another.
+ * the value sets, the floor and the constraints all live in the parser
+ * library's `process-settings` module, and SINCE T-300-s6 this command
+ * imports them through that library's own browser-safe entry rather than
+ * through the dispatch arm's re-export of it. A second reader would be a
+ * second chance to disagree with the arm about what this project's loop
+ * is, and the disagreement would surface as a settings screen that says
+ * one thing while the dispatch does another. Reading the library
+ * DIRECTLY is that same guarantee with one hop fewer, and it is the
+ * spelling the app's settings screen and the skill read it by too — the
+ * arm stops being a place a surface reads the loop THROUGH, and goes
+ * back to being one more reader of it.
+ *
+ * WHAT STILL COMES FROM THE ARM, AND WHY NEITHER OF THEM IS A READER.
+ * Two symbols. `EXIT` is the house's exit vocabulary, which this command
+ * spells nowhere of its own. `loadProcess` is the one function in this
+ * repository that opens the schema and the template OFF DISK: the
+ * library's module is browser-safe by construction and imports no node
+ * builtin, so the file-reading half has to live where `node:fs` may be
+ * imported, and a second copy of it here would be precisely the second
+ * reader the paragraph above refuses. Everything it hands back — the
+ * parsed schema, the resolved settings — is the library's own work.
  *
  * What is genuinely this command's own is three things:
  *
@@ -63,14 +78,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { DOC_BUDGETS, repoRoot } from "./docs-scan.mjs";
-import {
-  EXIT,
-  PROCESS_SCHEMA,
-  RUNTIME_TEMPLATE,
-  constraintFindings,
-  loadProcess,
-  processLedger,
-} from "./dispatch-brief.mjs";
+import { EXIT, loadProcess } from "./dispatch-brief.mjs";
 import { allBands } from "./health-bands.config.mjs";
 import {
   cardMeters,
@@ -80,6 +88,48 @@ import {
   metersFromTree,
   recentCheckpoints,
 } from "./health-bands.mjs";
+
+/* ─────────────────────────────────────────────────────────────────────
+ * THE LOOP, READ FROM THE PARSER LIBRARY'S BUILT BROWSER ENTRY
+ * (T-300-s6).
+ *
+ * WHY BY PATH. `tools/e2e` is this repository's third npm package and
+ * declares no dependency on the parser (ADR-011 family; its own manifest
+ * says it imports neither app nor parser), so the parser's BUILT
+ * browser-safe entry is loaded by relative path — the same spelling
+ * `dispatch-brief.mjs` and `dispatch-order.mjs` already use, and the
+ * same artefact `preflight.ts` asserts into existence for this package.
+ *
+ * WHY A DYNAMIC IMPORT RATHER THAN A STATIC ONE, AND IT IS MEASURED
+ * RATHER THAN PREFERRED. Two things a static `from` would move, both of
+ * them measured at this card's tip. A missing build would be refused by
+ * the ESM LINKER, which runs over the whole graph before anything
+ * evaluates — so `ERR_MODULE_NOT_FOUND` would print where the arm's loud
+ * refusal naming the ADR-011 build order prints today, and the message
+ * that tells a reader WHAT TO BUILD would never run. And `cli.mjs`'s
+ * `packageEscapes` derives a verb's out-of-package reach from `from "…"`
+ * specifiers alone, so a static import would make this verb refuse in an
+ * installed copy through a path no other verb of the loop takes — a
+ * change to this command's public behaviour, which the card forbids.
+ *
+ * AND THERE IS NO SECOND REFUSAL MESSAGE HERE ON PURPOSE. The static
+ * import of `dispatch-brief.mjs` above is evaluated BEFORE this line, and
+ * the arm loads the same file with a catch that names the build order —
+ * measured at this card's tip: with both imports in place and no
+ * `lib/parser/dist`, the ARM's message is the one that prints. A copy of
+ * it here would be a refusal no arrangement can reach, which is the
+ * shape of a guard nobody can show red.
+ * ──────────────────────────────────────────────────────────────────── */
+
+const processPure = await import("../../../lib/parser/dist/pure.js");
+
+/**
+ * The schema's own vocabulary, and the two functions this command reads
+ * the loop with: the LEDGER, which is every switch at the value this
+ * project resolves it to, and the CONSTRAINT FINDINGS, which is the
+ * judgement about a combination that this command does not hold.
+ */
+const { PROCESS_SCHEMA, RUNTIME_TEMPLATE, constraintFindings, processLedger } = processPure;
 
 /** A refusal this command owns: the caller asked for something the schema does not allow. */
 export class SettingsFinding extends Error {}
@@ -227,7 +277,7 @@ export function measuredFor(row, readings, units) {
  * rendered one row fewer than the loop has is the failure this borrows
  * its way out of.
  *
- * @param {{ schema: import("./dispatch-brief.mjs").ProcessSchema, settings: import("./dispatch-brief.mjs").ProcessSettings, readings: Map<string, { value: number, derivation: string }>, units: Map<string, string> }} input
+ * @param {{ schema: import("../../../lib/parser/dist/pure.js").ProcessSchema, settings: import("../../../lib/parser/dist/pure.js").ProcessSettings, readings: Map<string, { value: number, derivation: string }>, units: Map<string, string> }} input
  * @returns {SettingsRow[]}
  */
 export function settingsRows(input) {
@@ -309,7 +359,7 @@ export function renderSettings(input) {
  * line that will read as a decision to the next person to open the
  * file.
  *
- * @param {{ schema: import("./dispatch-brief.mjs").ProcessSchema, settings: import("./dispatch-brief.mjs").ProcessSettings, id: string, value: string }} input
+ * @param {{ schema: import("../../../lib/parser/dist/pure.js").ProcessSchema, settings: import("../../../lib/parser/dist/pure.js").ProcessSettings, id: string, value: string }} input
  * @returns {SetPlan}
  */
 export function setPlan(input) {
@@ -333,7 +383,7 @@ export function setPlan(input) {
       `settings set: \`${value}\` is not one of \`${id}\`'s values (${sw.values.join(", ")}).`,
     );
   }
-  /** @type {import("./dispatch-brief.mjs").ProcessSettings} */
+  /** @type {import("../../../lib/parser/dist/pure.js").ProcessSettings} */
   const next = {
     profile: settings.profile,
     available: settings.available,
@@ -481,7 +531,7 @@ export function editTemplate(templateYaml, plan) {
  * set` never stales it and the currency body reds for exactly one
  * reason — a schema that changed and a page nobody regenerated.
  *
- * @param {import("./dispatch-brief.mjs").ProcessSchema} schema
+ * @param {import("../../../lib/parser/dist/pure.js").ProcessSchema} schema
  * @returns {string}
  */
 export function renderReference(schema) {
