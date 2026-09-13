@@ -49,6 +49,157 @@ This section supersedes criterion 2 and the comparison spelling of the earlier a
 
 ## Implementation notes
 
+Built 2026-09-14 by claude-opus-5@subagent in lane T-295-s9, base
+329041c5, implementation commit b5746fa5. Two files, both in the fence:
+tools/e2e/scripts/merge.mjs and tools/e2e/tests/merge.spec.ts.
+
+**The step now counts, and the counting is the whole safety claim.**
+`correctionFor` takes two readings of the block's file as it will be
+committed — the sites the `old` text matches and the sites the `new`
+text matches — and acts on exactly the two states the amendment of
+2026-09-13 names: `old` once with `new` absent is already applied and
+nothing is written; `old` absent with `new` once is applied at that one
+site. Every other arrangement, including the T-314 one, is REFUSED by
+name before any write, with both counts on the step's own line, and the
+file left byte-identical to what the step found. The counts ride on
+every answer the function gives (`oldSites`, `newSites`) and are printed
+in one spelling, `correctionCountsLine`, so the three outcomes cannot
+report their measurement three different ways.
+
+**What went, and it went deliberately.** The reader this replaces MASKED
+every occurrence of `old` and asked whether exactly one `new` survived.
+At the T-314 merge one did — at the presence check that legitimately
+preceded the executable check the block was about — and the step wrote
+the block's `old` text over it. The mask also carried a second inference:
+where a block's `new` text is a substring of its own `old`, an
+already-corrected tree carries both and the mask deduced "already". The
+two counts cannot tell that arrangement from "the correction is owed
+here and its `old` text also occurs elsewhere", which is the arrangement
+that cost main a line, so both-present is now a refusal rather than a
+deduction. That is a retreat from an inference, not an oversight: a
+refusal costs the seat one correction applied by hand at the site the
+verdict names, and the inference cost verified code. The body that
+pinned the old answer was rewritten to pin the refusal, and the thing it
+was really protecting against — a defect left in the merged tree and
+reported as a correction already made — survives, because the answer is
+now loud instead of falsely "already".
+
+**A property the refusal also buys**: an apply happens only where `old`
+was absent and lands it once, so the tree the drill meets carries the
+`old` anchor exactly once, which is what `plantMutant` already refuses
+to proceed without.
+
+**Criterion by criterion, as amended.** Criterion 1 (as amended): the
+two actionable states and the refusal of every other, with the counts
+never taken from the block's own sentence, pinned by "a block whose OLD
+text also occurs elsewhere is REFUSED with both counts, never applied at
+the site its NEW text names" — which carries the T-314 arrangement in
+miniature (`old` at two sites, `new` at one legitimate site), the
+one-of-each arrangement, `new` at two sites, both absent, the idempotent
+re-run, and the control that a block naming one site is still applied.
+Criterion 2 (as amended by the later amendment of 2026-09-13): "an
+ambiguous anchor REFUSES the correction step with both counts, and
+leaves the file byte-identical to what the step found" runs the whole
+verb on a fixture repository, hashes the file on the runner's own plan
+line for that step and again after the run, and requires the two hashes
+equal, with the control arm — the same fixture with one site — requiring
+the hash to MOVE. The reference is the pre-operation state, never the
+bench tip, and the step's refusal branch performs no write at all.
+Criterion 3: both counts are on the step's line in all three outcomes,
+asserted on the refusal, on the applied line and in the unit bodies; the
+step's own plan title and the verb's usage text say the line will carry
+them.
+
+**In-fence follow-through.**
+
+- The body that pinned the masked reader's answer was replaced rather
+  than deleted: same file, opposite property, with the measurement that
+  changed the answer written into it.
+- The verb's usage text now states the counting rule, because a seat
+  reads the usage before it reads the step.
+- A second new body, "a single git diff against the bench tip answers
+  EMPTY over a wrong STAGED line", is the standing procedure's own
+  acceptance evidence: it measures that a single `git diff` against the
+  bench tip reads only the working tree and answers empty over a wrong
+  line that is staged and ready to commit, that the index reading names
+  it, and that a whole-file restore erases an authorized integration
+  change the site-scoped restore keeps. The procedure itself stays the
+  seat's hand and is not implemented here.
+
+**Figures, every one at the implementation commit b5746fa5.**
+
+- tools/e2e/tests/merge.spec.ts: 33 bodies, all green, the file's own
+  run.
+- The graded reading: `gate-run.mjs e2e --owning` over the two changed
+  paths, exit 0, SCOPED-GREEN, 620 bodies across the 8 owning spec
+  files. It is not the leg and does not mint a token, by its own words.
+- `npm run typecheck` from tools/e2e: exit 0. `npm run lint:tokens`:
+  clean, 188 TOKEN files and 1590 CONTROL files.
+- The committed graph docs/architecture/graph.json carries 203 files and
+  2488 edges at this ref and NOT ONE path under tools/e2e, so GRAPH
+  REGEN fires by the letter of its path trigger over two changed files
+  outside docs/ while the regen itself cannot move for this diff. The
+  lane has no target/ and did not build the index crate to say so from
+  the check's own mouth; that reading is the merge's.
+- The census is STALE by construction and the merge regenerates it: one
+  body title changed and two were added, and docs/CAPABILITIES.md is
+  outside this fence. `npm run capabilities` at the merge, in the merge
+  commit, also regenerates docs/INDEX.md.
+- BOOT GATE: not owed, no path under app/src-tauri, app/src or either
+  manifest. METHOD EVAL GATE: not owed, no path under method/ and no
+  citation line added. DOCS GATE: FIRES on this card itself, which is a
+  code input to 16 readers, and owes the app, parser and e2e suites.
+
+**The drills, six mutants at b5746fa5, each restored and proved by
+sha256 against the commit.** The restored hashes are
+f4f57e19669d36905b91c212677cac14b675d75b95976bfb5650a73952696dc2 for
+tools/e2e/scripts/merge.mjs and
+1e4534ef260775b262ba1b14d72dbaa55c25ea3976b655d74606e2f10209df36 for
+tools/e2e/tests/merge.spec.ts.
+
+1. The state rule widened to apply on any `new`-once tree, which is the
+   masked reader's answer: the two new refusal bodies RED, 31 passed,
+   nothing else touched.
+2. `correctionCountsLine` returning a constant: three bodies RED, the
+   two new ones and the first correction body, which is the whole set
+   that asserts the counts, 30 passed.
+3. The refusal branch made to write before it returns: ONLY the
+   byte-identity hash assertion RED, 32 passed — the criterion-2 pin,
+   isolated.
+4. A DATA mutant on the standing-procedure body: the wrong line left
+   unstaged, so the index reading is empty and its assertion REDS.
+5. A DATA mutant on the same body: the site-scoped restore replaced by
+   the whole-file one, and the authorized change's assertion REDS.
+6. The applied line's counts dropped: ONLY the control arm's assertion
+   RED, 32 passed.
+
+**Two suggestions, neither built here.**
+
+- T-295-s11, size S: the mutant block grammar admits a block whose two
+  anchors overlap — a `new` text that is a substring of its own `old` —
+  and after this card such a block can only ever be refused at the
+  merge, however honest it is. The reader could name that shape when it
+  reads the block, so the verifier fixes the block rather than the merge
+  stopping on it. Fence: tools/e2e/scripts/merge.mjs and
+  tools/e2e/tests/merge.spec.ts.
+- T-295-s12, size S: "the file as it will be committed" is the INDEX
+  plus the working tree, and the step counts in the working file alone.
+  The two agree today only because every step that writes also stages,
+  which is a property nothing asserts — and the later amendment's own
+  reason for reading the index separately is that a wrong line can sit
+  staged under a clean working file. Either pin the agreement with a
+  body or count where the commit reads. Fence:
+  tools/e2e/scripts/merge.mjs and tools/e2e/tests/merge.spec.ts.
+
+**Where the brief was wrong: nowhere I could measure.** Its facts about
+the verb, the block layout, the T-314 slip and the drill's expectations
+all held against the tree. One correction of the card's own record: the
+"What was measured" section quotes the step as reporting "the tree
+already carries the block's old text", and the code path that produces
+the damage it then describes is the APPLY branch, whose line reads "now
+carries the block's `old` text". The damage the section describes is the
+apply branch's, and this lane read the card's measurement as that.
+
 ## Verdicts
 
 Promoted 2026-09-13 (the architect seat's step-2 triage, under the owner's ruling of 2026-09-13 to run the regular ceremony without token or time limits; the Codex orchestrator's reconciliation review of the same day supported the order): to planned at priority 2 — the verb rewrote one line of verified code on main at the T-314 merge and the standing procedure is the seat's hand until this lands; dispatched after T-314-s6 and before the T-312 rerun.
