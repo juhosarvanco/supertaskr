@@ -4,13 +4,14 @@ title: "Two of T-314's `--take-seat` bodies spawn the verb straight from the tes
 feature: F-04
 milestone: 4
 size: S
+tier: standard
 priority: 1
-status: planned
+status: building
 suggested_by: "the architect seat, reading CI run 34772159066 on 2026-09-13"
 blocked_by: []
 touches: [tools/e2e/tests/push-guard.spec.ts, tools/e2e/tests/card-preflight.spec.ts, tools/e2e/tests/fake-harness.ts]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
