@@ -259,6 +259,12 @@ describe('the schema parser', () => {
         'owes the instruction',
       ],
       [
+        'a manual action that is only whitespace',
+        'manualAction: "every seat reads the set the adapter names before it works"',
+        'manualAction: "   "',
+        'owes the instruction',
+      ],
+      [
         'an action on a row that is not manual',
         '    implementation: declarative\n    manualAction: ""',
         '    implementation: declarative\n    manualAction: "go and do something about it"',
