@@ -52,6 +52,7 @@ import {
   architectureText,
   assembleBrief,
   awaitPlan,
+  baseVerdict,
   boardCensus,
   byCardId,
   ceremonyRows,
@@ -90,6 +91,7 @@ import {
   lanePort,
   laneScratchName,
   laneScratchStem,
+  laneCutCommit,
   laneSpellings,
   laneWorktrees,
   liveProv,
@@ -3262,7 +3264,10 @@ function configureFixtureIdentity(root: string): void {
   fixtureGit(root, ["config", "user.email", FIXTURE_IDENT.email]);
 }
 
-function ritualFixture(name: string, opts: { identity?: boolean } = {}): RitualFixture {
+function ritualFixture(
+  name: string,
+  opts: { identity?: boolean; card?: string; at?: string } = {},
+): RitualFixture {
   // REALPATH, and it is load-bearing for the same reason `nestedShapes`
   // gives: `/var` is a symlink to `/private/var` on macOS, git reports the
   // resolved spelling and `mkdtemp` hands back the symlinked one.
@@ -3276,15 +3281,41 @@ function ritualFixture(name: string, opts: { identity?: boolean } = {}): RitualF
     execFileSync("git", ["-C", repoRoot, "archive", "HEAD"], { maxBuffer: 512 * 1024 * 1024 }),
   );
   execFileSync("tar", ["-x", "-f", tar, "-C", root]);
-  writeFileSync(path.join(root, FIXTURE_CARD_FILE), FIXTURE_CARD);
+  // `card` PUTS ITS TEXT IN THE CHECKPOINT COMMIT ITSELF (T-300-s7), which
+  // is the only way to arrange a dispatch that writes NO stamp commit and
+  // therefore cuts where the checkout's HEAD already stands. A card
+  // written afterwards would need a commit of its own, and that commit
+  // would be the later tip rather than the checkpoint.
+  writeFileSync(path.join(root, FIXTURE_CARD_FILE), opts.card ?? FIXTURE_CARD);
   fixtureGit(root, ["init", "--initial-branch=main", "--quiet"]);
   if (opts.identity !== false) configureFixtureIdentity(root);
   fixtureGit(root, ["add", "-A"]);
   // A `Checkpoint:` commit, because the base rule reads the newest one out
   // of the first-parent log and a fixture with none would fail for a
-  // reason that has nothing to do with this card.
-  fixtureGit(root, ["commit", "--quiet", "-m", "Checkpoint: fixture base"]);
+  // reason that has nothing to do with this card. `at` DATES it, so a
+  // fixture whose ordering matters cannot have it decided by two commits
+  // landing in the same second.
+  fixtureCommit(root, "Checkpoint: fixture base", opts.at);
   return { dir, root, scratch: path.join(home, "scratch") };
+}
+
+/**
+ * One fixture commit, optionally at a date WRITTEN rather than taken from
+ * the clock. `git` reads the author and committer dates out of the
+ * environment, and the committer one is what `%ct` and every ordering
+ * question in this repository answer from.
+ */
+function fixtureCommit(root: string, message: string, at?: string, empty = false): void {
+  const argv = ["commit", "--quiet", ...(empty ? ["--allow-empty"] : []), "-m", message];
+  if (at === undefined) {
+    fixtureGit(root, argv);
+    return;
+  }
+  execFileSync("git", ["-C", root, ...NO_BACKGROUND_MAINTENANCE, ...argv], {
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+    env: { ...FIXTURE_GIT_ENV, GIT_AUTHOR_DATE: at, GIT_COMMITTER_DATE: at },
+  });
 }
 
 /** Every file under one tree, repository-relative and sorted. */
@@ -4101,6 +4132,391 @@ test("THE CREATE COMMAND IS THE ONE CONVENTIONS PUBLISHES, SUBSTITUTED — never
   };
   expect(() => createLaneArgv(broken, lane)).toThrow(DispatchLaneFinding);
   expect(() => createLaneArgv(broken, lane)).toThrow(/typed from memory/);
+});
+
+/* ════════════════════════════════════════════════════════════════════
+ * ROW 4's BASE IS THE COMMIT THE CUT USED (T-300-s7, absorbing T-311-s6)
+ *
+ * The brief said `base commit: <newest Checkpoint:>` while the arm's own
+ * step 4 cut the lane at the integration checkout's HEAD after the
+ * dispatch stamp. One brief, two commits called the base, and the
+ * executor had to resolve it by reading the repository — which the
+ * T-311 executor did, in its correction clause, and which is a brief
+ * teaching executors to distrust the brief.
+ *
+ * THE THREE ARRANGEMENTS BELOW ARE THE THREE THE CARD NAMES, and each
+ * carries an assertion the other two would fail:
+ *   · `stamp`    — the card arrives unstamped, so the arm writes a stamp
+ *                  commit and cuts THERE: cut newer than the anchor.
+ *   · `coincide` — the card arrives carrying every field this dispatch
+ *                  stamps, so no stamp commit is written and HEAD is the
+ *                  `Checkpoint:` itself: cut EQUALS the anchor.
+ *   · `laterTip` — the same pre-stamped card with one more non-merge
+ *                  commit on the integration branch, so again no stamp is
+ *                  written and the cut is a LATER commit that is not the
+ *                  anchor. This is the arrangement the amendment of
+ *                  2026-09-13 exists for: the absorbed card's condition
+ *                  was "no stamp follows the checkpoint", and here no
+ *                  stamp was written and the two still do not coincide.
+ * ════════════════════════════════════════════════════════════════════ */
+
+/** The seats the three dispatches are driven with, so the pre-stamped card can carry them. */
+const BASE_EXECUTOR = "fixture-builder@subagent";
+const BASE_VERIFIER = "fixture-verifier@subagent";
+
+/**
+ * The fixture card ALREADY carrying every field a dispatch stamps, so
+ * `stampCard` changes nothing and the arm makes no stamp commit. The tier
+ * is `standard` by the classifier's own rule — size S, and no
+ * guard-class path in a fence of README.md — which the end-to-end body
+ * above types on its hand side for the same reason.
+ */
+const FIXTURE_CARD_STAMPED = FIXTURE_CARD.replace("status: planned", "status: building")
+  .replace("size: S", "size: S\ntier: standard")
+  .replace(/^builder:$/m, `builder: ${BASE_EXECUTOR}`)
+  .replace(/^verifier:$/m, `verifier: ${BASE_VERIFIER}`);
+
+/** The `Checkpoint:` commit's date in these fixtures — written, never taken from the clock. */
+const BASE_CHECKPOINT_AT = "2026-01-02T00:50:00Z";
+
+/** Row 4's base line, out of a rendered brief. */
+function row4Base(rendered: string): string {
+  const line = rendered.split("\n").find((l) => l.trim().startsWith("base commit: ")) ?? "";
+  expect(line, "the rendered brief carries no `base commit:` line at all").not.toBe("");
+  return line;
+}
+
+/** The 40-hex hash a row-4 line states, in full — never a prefix. */
+function hashIn(line: string, what: string): string {
+  const m = /\b[0-9a-f]{40}\b/.exec(line);
+  expect(m, `${what} states no full 40-hex commit: ${line}`).not.toBeNull();
+  return m![0];
+}
+
+test("ROW 4's BASE IS THE COMMIT THE CUT USED, the newest Checkpoint STANDS BESIDE IT as the anchor, and a later render does not move it", () => {
+  // KILLED BY: the defect this card removes — row 4 deriving its base from
+  // the newest `Checkpoint:` — and equally by the two cheap ways of
+  // satisfying its letter: reading the integration tip at render time (the
+  // `laterTip` and re-render arms red), and keying the coincidence line on
+  // whether a stamp was written rather than on `cut === checkpoint` (the
+  // `laterTip` arm reds, because no stamp was written there either).
+  const stamp = ritualFixture("aaa", { at: BASE_CHECKPOINT_AT });
+  const coincide = ritualFixture("bbb", { card: FIXTURE_CARD_STAMPED, at: BASE_CHECKPOINT_AT });
+  const laterTip = ritualFixture("ccc", { card: FIXTURE_CARD_STAMPED, at: BASE_CHECKPOINT_AT });
+  try {
+    // The third fixture's later tip: a NON-MERGE commit on the integration
+    // branch, after the checkpoint — the shape the base rule admits, and
+    // dated so its position cannot be decided by a same-second collision.
+    fixtureCommit(
+      laterTip.root,
+      "a later non-merge commit on the integration branch, after the checkpoint",
+      "2026-01-02T01:30:00Z",
+      true,
+    );
+
+    const dispatch = (fx: RitualFixture) =>
+      spawnSync(
+        process.execPath,
+        [
+          CLI,
+          "--dispatch-lane",
+          FIXTURE_CARD_ID,
+          "--slug",
+          FIXTURE_SLUG,
+          "--root",
+          fx.root,
+          "--scratch",
+          fx.scratch,
+          "--executor",
+          BASE_EXECUTOR,
+          "--verifier",
+          BASE_VERIFIER,
+        ],
+        { cwd: repoRoot, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
+      );
+    const render = (fx: RitualFixture) => {
+      const ran = spawnSync(process.execPath, [CLI, "--task", FIXTURE_CARD_ID, "--root", fx.root], {
+        cwd: repoRoot,
+        encoding: "utf8",
+        maxBuffer: 64 * 1024 * 1024,
+      });
+      expect([EXIT.CLEAN, EXIT.FOUND], ran.stderr ?? "").toContain(ran.status);
+      return ran.stdout;
+    };
+
+    for (const [label, fx, wroteStamp] of [
+      ["stamp", stamp, true],
+      ["coincide", coincide, false],
+      ["laterTip", laterTip, false],
+    ] as const) {
+      const anchor = fixtureGit(fx.root, ["log", "-1", "--grep=^Checkpoint:", "--format=%H"]).trim();
+      expect(anchor, `${label}: the fixture carries a Checkpoint: commit`).toMatch(/^[0-9a-f]{40}$/);
+
+      const ran = dispatch(fx);
+      expectDispatched(ran, fx, `${label}: the dispatch`);
+      // THE ARM'S OWN RECORD OF WHAT IT CUT AT — the dispatch ledger's
+      // `base hash:` line, which the ritual takes from `git rev-parse HEAD`
+      // immediately after the stamp step. It is the ground truth every
+      // assertion below is compared against, and it is read from the arm's
+      // own report rather than re-derived here.
+      const ledger = ran.stdout.split("\n").find((l) => l.trim().startsWith("base hash: ")) ?? "";
+      const cut = hashIn(ledger, `${label}: the arm's dispatch ledger`);
+      // THE ARRANGEMENT IS WHAT IT CLAIMS TO BE — asserted before the
+      // subject, so a fixture that quietly built the wrong shape cannot
+      // pass this body by satisfying an assertion about a different state.
+      expect(
+        ran.stdout.includes("so no stamp commit was made and the lane is cut at the integration tip"),
+        `${label}: this arrangement ${wroteStamp ? "must" : "must NOT"} write a stamp commit, and ` +
+          "that is what decides whether the cut can be the checkpoint at all",
+      ).toBe(!wroteStamp);
+      expect(
+        cut === anchor,
+        `${label}: the cut (${cut}) and the anchor (${anchor}) ${
+          label === "coincide" ? "must be" : "must NOT be"
+        } the same commit, or this arrangement is not the one it is named for`,
+      ).toBe(label === "coincide");
+
+      // ── ROW 4, IN THE BRIEF THE ARM ITSELF WROTE ────────────────────
+      const armBrief = readFileSync(
+        path.join(fx.scratch, laneScratchName("brief", "txt", FIXTURE_CARD_ID, dispatchSpellings(conventions()))),
+        "utf8",
+      );
+      for (const [where, rendered] of [
+        ["the arm's own brief", armBrief],
+        ["a second render", render(fx)],
+      ] as const) {
+        const baseLine = row4Base(rendered);
+        expect(
+          hashIn(baseLine, `${label}/${where}: row 4's base`),
+          `${label}/${where}: row 4's base is the commit the cut USED, in full and not by prefix`,
+        ).toBe(cut);
+        if (label !== "coincide") {
+          expect(
+            baseLine,
+            `${label}/${where}: the anchor may not also sit in the base field, where a reader takes ` +
+              "it for the base",
+          ).not.toContain(anchor);
+          expect(
+            baseLine,
+            `${label}/${where}: the cut is not the anchor here, so the line may not claim they coincide`,
+          ).not.toContain("COINCIDE");
+        } else {
+          expect(
+            baseLine,
+            `${label}/${where}: the cut IS the anchor here, and the line says so`,
+          ).toContain("COINCIDE");
+        }
+        // THE ANCHOR STANDS BESIDE IT, on its own line, named as the rule's.
+        const anchorLine =
+          rendered.split("\n").find((l) => l.includes("the rule's anchor, the newest Checkpoint:")) ?? "";
+        expect(anchorLine, `${label}/${where}: the anchor is stated beside the base`).not.toBe("");
+        expect(hashIn(anchorLine, `${label}/${where}: the anchor line`)).toBe(anchor);
+        // AND THE REASON THE COMMIT QUALIFIES, derived from the commit
+        // rather than printed as a constant: it names the distance and the
+        // subject where there is one, and says the OTHER thing entirely
+        // where the cut is the anchor.
+        const whyLine = rendered.split("\n").find((l) => l.includes("why this base is the one the rule admits:")) ?? "";
+        expect(whyLine, `${label}/${where}: the row says why this base qualifies`).not.toBe("");
+        expect(
+          whyLine,
+          `${label}/${where}: the reason is derived from the commit, not a sentence that fits every case`,
+        ).toContain(label === "coincide" ? "ONE commit here" : "commit(s) newer than the anchor");
+        // EVERY ROW-4 FIELD THAT CLAIMS TO IDENTIFY THE CUT AGREES WITH IT:
+        // the create command is the one a dispatcher pastes, so it is the
+        // field where a stale hash is an act rather than a report.
+        const createLine = rendered.split("\n").find((l) => l.trim().startsWith("create: ")) ?? "";
+        expect(createLine, `${label}/${where}: row 4 carries its create command`).not.toBe("");
+        expect(
+          hashIn(createLine, `${label}/${where}: the create command`),
+          `${label}/${where}: the create command substitutes the commit the cut used`,
+        ).toBe(cut);
+      }
+
+      // ── THE RE-RENDER, WITH THE BRANCH MOVED UNDER IT ───────────────
+      // Two commits on the integration branch AFTER the cut. Row 4's base
+      // must not move — it is a record of what happened — and row 5's tip
+      // must, because it is a read of where the branch is now. The
+      // asymmetry is what separates "recorded the cut" from "froze the
+      // output".
+      const tipBefore = render(fx).split("\n").find((l) => l.includes("integration tip right now:")) ?? "";
+      for (const n of [1, 2]) {
+        fixtureCommit(fx.root, `a commit landing after the lane was cut (${String(n)})`, undefined, true);
+      }
+      const after = render(fx);
+      expect(
+        hashIn(row4Base(after), `${label}: row 4's base after the branch moved`),
+        `${label}: the integration branch moved twice and row 4 still names the commit the cut used`,
+      ).toBe(cut);
+      const tipAfter = after.split("\n").find((l) => l.includes("integration tip right now:")) ?? "";
+      expect(
+        hashIn(tipAfter, `${label}: the tip after`),
+        `${label}: row 5's tip is a read of a moving ref and DID move — without this the body ` +
+          "above is satisfied by a brief that froze",
+      ).not.toBe(hashIn(tipBefore, `${label}: the tip before`));
+    }
+  } finally {
+    for (const fx of [stamp, coincide, laterTip]) removeGitFixture(fx.dir, "ritualFixture");
+  }
+});
+
+test("ROW 4's BASE SURVIVES THE LANE'S OWN HEAD MOVING — the cut is what the lane was cut AT, not where it has got to", () => {
+  // KILLED BY: a cut read as the LANE BRANCH's own head rather than as the
+  // commit `git worktree add` was handed — one word in `laneCutCommit`,
+  // `rev-parse` for `merge-base`.
+  //
+  // WHY THIS IS A SECOND BODY AND NOT A THIRD ARM ABOVE. The amendment of
+  // 2026-09-13 names two ways the recorded cut may not be replaced when a
+  // brief is rendered again: "the lane's later HEAD" and "a later
+  // integration tip". The body above drives the second — it appends two
+  // commits to the integration branch across each of the three
+  // arrangements and requires row 4 to hold while row 5 moves — and never
+  // the first, because no arrangement there ever commits on the lane. A
+  // derivation that read the lane's head answers correctly in all three,
+  // and a lane that has committed is not an exotic state: it is every
+  // lane, from its first commit onward, and it is the state a brief is
+  // re-rendered in.
+  const fx = ritualFixture("ddd", { at: BASE_CHECKPOINT_AT });
+  try {
+    const ran = spawnSync(
+      process.execPath,
+      [
+        CLI,
+        "--dispatch-lane",
+        FIXTURE_CARD_ID,
+        "--slug",
+        FIXTURE_SLUG,
+        "--root",
+        fx.root,
+        "--scratch",
+        fx.scratch,
+        "--executor",
+        BASE_EXECUTOR,
+        "--verifier",
+        BASE_VERIFIER,
+      ],
+      { cwd: repoRoot, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
+    );
+    expectDispatched(ran, fx, "the lane-head dispatch");
+    // THE ARM'S OWN RECORD of what it cut at, exactly as the body above
+    // takes it: the dispatch ledger's `base hash:` line.
+    const ledger = ran.stdout.split("\n").find((l) => l.trim().startsWith("base hash: ")) ?? "";
+    const cut = hashIn(ledger, "the arm's dispatch ledger");
+    const render = () => {
+      const out = spawnSync(process.execPath, [CLI, "--task", FIXTURE_CARD_ID, "--root", fx.root], {
+        cwd: repoRoot,
+        encoding: "utf8",
+        maxBuffer: 64 * 1024 * 1024,
+      });
+      expect([EXIT.CLEAN, EXIT.FOUND], out.stderr ?? "").toContain(out.status);
+      return out.stdout;
+    };
+    expect(
+      hashIn(row4Base(render()), "row 4's base before the lane committed"),
+      "the arrangement is the ordinary one: row 4 names the cut while the lane still sits on it",
+    ).toBe(cut);
+
+    // ── THE LANE COMMITS, WHICH IS WHAT A LANE IS FOR ─────────────────
+    const found = laneWorktrees(
+      fixtureGit(fx.root, ["worktree", "list", "--porcelain"]),
+      laneSpellings(conventions()),
+    ).find((l) => l.taskId === FIXTURE_CARD_ID);
+    expect(found, "the dispatch cut a lane worktree for this card").toBeDefined();
+    const lane = found as { path: string; branch: string };
+    fixtureCommit(lane.path, "the lane's own first commit", "2026-01-02T03:00:00Z", true);
+    const laneHead = fixtureGit(lane.path, ["rev-parse", "HEAD"]).trim();
+    expect(laneHead, "and the lane's head really did move off the cut").not.toBe(cut);
+    // THE EXPORTED DERIVATION, DRIVEN DIRECTLY, and it answers the same:
+    // the cut is a fact about where the branch PARTED from the integration
+    // branch, never about where either has got to since.
+    expect(
+      laneCutCommit(fx.root, lane.branch, "main"),
+      "the cut derivation itself is unmoved by the lane's own commit",
+    ).toBe(cut);
+
+    const baseLine = row4Base(render());
+    expect(
+      hashIn(baseLine, "row 4's base after the lane committed"),
+      "the lane committed and row 4 still names the commit the cut USED",
+    ).toBe(cut);
+    expect(
+      baseLine,
+      "and the base field does not carry the lane's later HEAD, which the amendment names by that word",
+    ).not.toContain(laneHead);
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture");
+  }
+});
+
+test("THE COINCIDENCE LINE IS KEYED ON `cut === checkpoint` AND NOTHING ELSE — the pure half, driven at every shape", () => {
+  // KILLED BY: the absorbed card's own superseded condition. Every case
+  // below is decided from ONE input pair, so a derivation that consulted
+  // anything else — whether a stamp was written, where HEAD is — cannot
+  // reproduce this table.
+  const branch = "main";
+  const anchor = "a".repeat(40);
+  const later = "b".repeat(40);
+  const tip = "c".repeat(40);
+  const merge = "d".repeat(40);
+  const log = [
+    `${tip} a commit after everything`,
+    `${merge} Merge T-900 (APPROVED)`,
+    `${later} T-900: dispatch stamp — status: building`,
+    `${anchor} Checkpoint: the anchor`,
+    `${"e".repeat(40)} an older commit still`,
+  ].join("\n");
+
+  const noLane = baseVerdict({ logText: log, branch, cut: null });
+  expect(noLane.base, "with no lane cut there is no cut to report, so the base is the anchor").toBe(anchor);
+  expect(noLane.coincide, "and a row with no cut does not claim a coincidence").toBe(false);
+  expect(noLane.finding).toBeNull();
+
+  const same = baseVerdict({ logText: log, branch, cut: anchor });
+  expect(same.base).toBe(anchor);
+  expect(same.coincide, "the cut IS the checkpoint, which is the one case that coincides").toBe(true);
+  expect(same.finding).toBeNull();
+
+  const after = baseVerdict({ logText: log, branch, cut: later });
+  expect(after.base, "the base is the cut, never the anchor").toBe(later);
+  expect(
+    after.coincide,
+    "a cut at a later eligible tip does not coincide with the anchor — and whether a stamp was " +
+      "written is not an input to this answer at all",
+  ).toBe(false);
+  expect(after.checkpoint, "the anchor is reported beside it rather than replaced").toBe(anchor);
+  expect(after.why, "and the reason is derived: how far past the anchor, and the commit's subject").toContain(
+    "1 commit(s) newer",
+  );
+  expect(after.finding, "a later non-merge commit is what the base rule admits").toBeNull();
+
+  // THE SUPERSESSION, PINNED DIRECTLY. The absorbed card's condition was
+  // "no stamp follows the checkpoint", and the shape that satisfies it
+  // while the two do NOT coincide is a cut at the integration TIP: the arm
+  // writes no stamp when the card already carries every stamped field, and
+  // then cuts where HEAD already stands. A derivation keyed on that — on
+  // the cut being the tip, or on a stamp being absent — answers `true`
+  // here, and the amendment of 2026-09-13 says it must not.
+  const atTip = baseVerdict({ logText: log, branch, cut: tip });
+  expect(atTip.base, "the base is still the cut").toBe(tip);
+  expect(
+    atTip.coincide,
+    "the cut being the integration TIP is not the cut being the CHECKPOINT, and only the second " +
+      "makes the two coincide",
+  ).toBe(false);
+  expect(atTip.checkpoint, "the anchor is stated beside it, unchanged").toBe(anchor);
+
+  // THE TWO SHAPES THE BASE RULE DOES NOT ADMIT ARE FINDINGS, not silent
+  // bases: a merge commit (rule two bans it by name) and a commit behind
+  // the newest checkpoint.
+  const onMerge = baseVerdict({ logText: log, branch, cut: merge });
+  expect(onMerge.base, "the base is still the commit the cut used — the row reports, it does not lie").toBe(merge);
+  expect(onMerge.finding, "and a lane cut at a merge commit is a FINDING").toContain("MERGE commit");
+  const behind = baseVerdict({ logText: log, branch, cut: "e".repeat(40) });
+  expect(behind.finding, "a lane cut BEHIND the newest checkpoint is a finding too").toContain("OLDER than");
+  const stranger = baseVerdict({ logText: log, branch, cut: "f".repeat(40) });
+  expect(
+    stranger.finding,
+    "and a cut that is not on the first-parent line at all cannot carry the rule's argument",
+  ).toContain("not a first-parent commit");
 });
 
 test("THE DRY RUN PRINTS THE PLAN IN ORDER AND WRITES NOTHING", () => {

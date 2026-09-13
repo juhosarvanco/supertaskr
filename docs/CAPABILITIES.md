@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1077 behaviours** — 1075 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1080 behaviours** — 1078 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -106,6 +106,9 @@ Census: **1077 behaviours** — 1075 extracted sentences + 2 named-not-extracted
 - THE MANIFEST IS READ BACK, and a manifest for another lane is not this lane's fence
 - THE PORT, THE SCRATCH STEM AND THE BENCH FOLLOW THE SPELLINGS CONVENTIONS PUBLISHES
 - THE CREATE COMMAND IS THE ONE CONVENTIONS PUBLISHES, SUBSTITUTED — never one typed here
+- ROW 4's BASE IS THE COMMIT THE CUT USED, the newest Checkpoint STANDS BESIDE IT as the anchor, and a later render does not move it
+- ROW 4's BASE SURVIVES THE LANE'S OWN HEAD MOVING — the cut is what the lane was cut AT, not where it has got to
+- THE COINCIDENCE LINE IS KEYED ON `cut === checkpoint` AND NOTHING ELSE — the pure half, driven at every shape
 - THE DRY RUN PRINTS THE PLAN IN ORDER AND WRITES NOTHING
 - A CHECKOUT THAT IS NOT THE INTEGRATION ONE IS REFUSED BEFORE THE RITUAL'S FIRST STEP
 - THE RITUAL IS A NAMED ARM — its dials mean nothing without it, and it refuses the acts it performs

@@ -85,7 +85,7 @@ import {
   treeReadings,
   yamlScalar,
 } from "../scripts/settings.mjs";
-import { fmt } from "../scripts/health-bands.mjs";
+import { TIER_BUDGETS, fmt } from "../scripts/health-bands.mjs";
 import { docsReaders } from "../scripts/docs-scan.mjs";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 
@@ -2084,6 +2084,118 @@ function settingsProject(): string {
   return root;
 }
 
+/* ── THE CHECKPOINT WINDOW, CONSTRUCTED (T-300-s7) ────────────────────
+ *
+ * `treeReadings` prices the loop bands the way `npm run health` does: the
+ * records in docs/checkpoints/meters.jsonl are priced per card against
+ * that card's own `T-NNN: dispatch stamp` commit, and `loopReadings` then
+ * keeps the cards whose MERGE SECOND is at or after the newest
+ * `Checkpoint:` commit's second. The window is a comparison of
+ * TIMESTAMPS, not a count of merge commits — so an arrangement built to
+ * the prose ("a merge has landed since the checkpoint") and one built to
+ * the mechanism are different fixtures, and these are built to the
+ * mechanism.
+ *
+ * AN EMPTY WINDOW IS A LEGITIMATE STATE: it has no worst card, so the
+ * bands read UNREAD rather than 0 and the listing shows every switch
+ * against the seat's estimate. That is the state this repository is in
+ * between a checkpoint and the next merge — which is exactly when a
+ * checkpoint is pushed — and a body whose PRECONDITION was the other
+ * state reddened every such push (the closing check on the range behind
+ * 37dfff4c, T-300-s7's finding).
+ *
+ * So both windows are CONSTRUCTED below and both are exercised on every
+ * run, through the command's own tree read and with no readings map
+ * handed in. The two fixtures differ in one thing: the committer date on
+ * the `Checkpoint:` commit. The records, the stamp, the schema and the
+ * template are identical, which is what makes the pair a measurement of
+ * the WINDOW rather than of two unrelated trees.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/** The fixture's own card id — the one its `dispatch stamp` commit names. */
+const WINDOW_CARD = "T-901";
+
+/** The fixture's dispatch stamp. Every date here is WRITTEN, never taken from the clock. */
+const WINDOW_STAMP_AT = "2026-01-02T00:45:00Z";
+
+/** The fixture's one meters record: fifteen minutes after the stamp. */
+const WINDOW_RECORD_AT = "2026-01-02T01:00:00Z";
+
+/** A `Checkpoint:` ten minutes BEFORE the record — the window is populated. */
+const WINDOW_CHECKPOINT_INSIDE = "2026-01-02T00:50:00Z";
+
+/** A `Checkpoint:` an hour AFTER the record — the window is empty, and honestly so. */
+const WINDOW_CHECKPOINT_AFTER = "2026-01-02T02:00:00Z";
+
+/** The seat token figure the fixture's meters block states, in the prose the parser reads. */
+const WINDOW_TOKENS = 31000;
+
+/** The tier the fixture's record declares, and therefore the budget its shares are taken against. */
+const WINDOW_TIER = "standard";
+
+/**
+ * A scratch project carrying this repository's schema and template, a
+ * meters file holding ONE VALID record, and a real git history carrying
+ * the card's dispatch stamp and a `Checkpoint:` commit — every commit at
+ * a date written above rather than taken from the clock, so the ordering
+ * this fixture depends on can never be decided by two commits landing in
+ * the same second.
+ */
+function windowProject(opts: { checkpointAt: string; tokens?: number }): string {
+  const root = settingsProject();
+  const tokens = opts.tokens ?? WINDOW_TOKENS;
+  mkdirSync(path.join(root, "docs", "checkpoints"), { recursive: true });
+  writeFileSync(
+    path.join(root, "docs", "checkpoints", "meters.jsonl"),
+    `${JSON.stringify({
+      at: WINDOW_RECORD_AT,
+      card: WINDOW_CARD,
+      size: "S",
+      tier: WINDOW_TIER,
+      seat: "executor",
+      meters: `## Meters\n- context consumed: about ${tokens.toLocaleString("en-US")} tokens of the 15,000,000 budget.`,
+    })}\n`,
+  );
+  const git = (args: string[], at: string): string =>
+    execFileSync("git", ["-C", root, ...NO_BACKGROUND_MAINTENANCE, ...args], {
+      encoding: "utf8",
+      env: { ...process.env, GIT_AUTHOR_DATE: at, GIT_COMMITTER_DATE: at },
+    });
+  // `-b main`, never bare `git init`: `init.defaultBranch` is MACHINE
+  // config, and an unpinned fixture builds a different repository here
+  // than on the runner (docs/CONVENTIONS.md).
+  execFileSync("git", ["init", "-q", "-b", "main", root], { stdio: "pipe" });
+  git(["config", "user.email", "fixture@example.invalid"], WINDOW_STAMP_AT);
+  git(["config", "user.name", "T-300-s7 fixture"], WINDOW_STAMP_AT);
+  // THE STAMP FIRST, THE CHECKPOINT SECOND, AND THE RECORD'S OWN `at`
+  // WRITTEN INTO THE FILE. The cycle this prices is stamp-to-record; the
+  // window is checkpoint-to-record; and only the second commit's date
+  // moves between the two arrangements.
+  git(
+    ["commit", "-q", "--allow-empty", "-m", `${WINDOW_CARD}: dispatch stamp — status: building`],
+    WINDOW_STAMP_AT,
+  );
+  git(["commit", "-q", "--allow-empty", "-m", "Checkpoint: the fixture's own anchor"], opts.checkpointAt);
+  return root;
+}
+
+/** The listing this command prints for one project, with NOTHING handed in but the root. */
+function listingOf(root: string): string {
+  const said: string[] = [];
+  // NO `readings` INJECTED, here or anywhere in this body's fixtures.
+  // This is the one channel that makes the command go and FIND them,
+  // which is what "the project's own band reading" means and what a
+  // hand-built map can never decide.
+  const status = settingsMain(["--root", root], {
+    stdout: (s) => said.push(s),
+    stderr: (s) => said.push(s),
+  });
+  expect(status, `the listing is the one verb that must work everywhere, and it did not on ${root}`).toBe(
+    EXIT.CLEAN,
+  );
+  return said.join("\n");
+}
+
 test("the settings listing names the profile and EVERY switch the schema declares, in the schema's order", () => {
   const loaded = process300();
   const rows = settingsRows({ ...loaded, readings: new Map(), units: new Map() });
@@ -2344,66 +2456,161 @@ test("the committed settings chapter is a GENERATION of the schema, and a schema
 // six bodies do not build.
 
 test("the listing goes to the PROJECT'S OWN tree for its readings — the measured column is not a rendering of numbers somebody handed in", () => {
-  // The readings this checkout really prices, by the same functions
-  // `npm run health` uses, so this command cannot report a different
-  // number than the band report does.
-  const readings = treeReadings(repoRoot);
-  expect(
-    readings.size,
-    `${repoRoot} has recorded meters, so at least one loop band prices here — the arrangement ` +
-      "this body needs is present",
-  ).toBeGreaterThan(0);
   const units = bandUnits();
-
-  const said: string[] = [];
-  // NO `readings` INJECTED. This is the one body that asks the command
-  // to go and FIND them, which is what "the project's own band reading"
-  // means and what a hand-built map can never decide.
-  const status = settingsMain(["--root", repoRoot], {
-    stdout: (s) => said.push(s),
-    stderr: (s) => said.push(s),
-  });
-  expect(status).toBe(EXIT.CLEAN);
-  const out = said.join("\n");
-
   const loaded = process300();
-  const priced = [...loaded.schema.switches.values()].filter((sw) =>
-    sw.band.some((b) => readings.has(b)),
-  );
-  expect(priced.length, "at least one switch names a band this tree has read").toBeGreaterThan(0);
-  for (const sw of priced) {
-    const band = sw.band.find((b) => readings.has(b)) as string;
-    const reading = readings.get(band);
-    const unit = units.get(band);
-    expect(unit, `${band} carries its own unit, read off the band config`).toBeTruthy();
-    expect(
-      out,
-      `${sw.id} shows this tree's reading for ${band}, in that band's own unit`,
-    ).toContain(`measured: ${band} = ${fmt(reading!.value)} ${unit ?? ""}`);
-    expect(out, `and ${sw.id} is not dressed as an estimate instead`).not.toContain(
-      `measured: the seat's estimate — ${sw.cost} (awaiting ${sw.band.join(", ")})`,
-    );
-  }
+  // THE TWO SHARES, COMPUTED HERE FROM THE FIXTURE'S OWN NUMBERS and not
+  // by asking the reader what it thinks. The budgets are the project's
+  // table, asserted first so the arithmetic below is visible rather than
+  // implied: a fixture priced against a budget nobody stated is a number
+  // with no derivation.
+  const budget = TIER_BUDGETS[WINDOW_TIER as keyof typeof TIER_BUDGETS];
+  expect(budget, `${WINDOW_TIER} is a tier ADR-024 decision 1 sets a budget for`).toBeDefined();
+  const cycleMinutes = (Date.parse(WINDOW_RECORD_AT) - Date.parse(WINDOW_STAMP_AT)) / 60000;
+  const expectedCycle = (cycleMinutes * 100) / budget.minutes;
+  const expectedToken = (WINDOW_TOKENS * 100) / budget.tokens;
+  const cycleLine = `measured: loop/cycle-budget-used = ${fmt(expectedCycle)} ${units.get("loop/cycle-budget-used") ?? ""}`;
+  const tokenLine = `measured: loop/token-budget-used = ${fmt(expectedToken)} ${units.get("loop/token-budget-used") ?? ""}`;
 
-  // THE CONTROL, EVALUATED WHERE THE ARRANGEMENT THAT DECIDES THE
-  // SUBJECT IS ABSENT: the same schema, the same template, no meters.
-  // Nothing prices, every switch falls back to the seat's estimate, and
-  // the listing — the one verb that has to work everywhere — still runs.
+  // ── ARRANGEMENT ONE: A POPULATED WINDOW, BUILT ────────────────────
+  const populated = windowProject({ checkpointAt: WINDOW_CHECKPOINT_INSIDE });
+  // ── ARRANGEMENT TWO: THE SAME RECORDS, THE CHECKPOINT MOVED PAST
+  //    THEM. One date differs from arrangement one and nothing else does,
+  //    so what the pair measures is the WINDOW.
+  const empty = windowProject({ checkpointAt: WINDOW_CHECKPOINT_AFTER });
+  // ── ARRANGEMENT THREE: THE POPULATED ONE WITH TWICE THE TOKENS. The
+  //    reading has to MOVE with it, or the column is not a derivation of
+  //    the tree's own data — which is this body's whole subject.
+  const doubled = windowProject({ checkpointAt: WINDOW_CHECKPOINT_INSIDE, tokens: WINDOW_TOKENS * 2 });
+  // ── THE BARE CONTROL: the same schema and template, NO meters file at
+  //    all. It is a separate arrangement from arrangement two on purpose:
+  //    an empty window and an absent record are two different reasons for
+  //    an empty map, and one fixture answering for both would be one act
+  //    arming both sides.
   const bare = settingsProject();
   try {
-    expect(treeReadings(bare).size, "a tree with no recorded meter prices no band").toBe(0);
-    const alone: string[] = [];
+    // THE POPULATED WINDOW PRICES, AND PRICES WHAT THE FIXTURE SUPPLIED.
+    const priced = treeReadings(populated);
     expect(
-      settingsMain(["--root", bare], {
-        stdout: (s) => alone.push(s),
-        stderr: (s) => alone.push(s),
-      }),
-    ).toBe(EXIT.CLEAN);
+      [...priced.keys()].sort(),
+      `the fixture puts a ${WINDOW_TIER} card's record at ${WINDOW_RECORD_AT} and a ` +
+        `\`Checkpoint:\` at ${WINDOW_CHECKPOINT_INSIDE}, so the window holds that card and the ` +
+        "two budget bands price — if this is empty the fixture, not the reader, is what moved",
+    ).toEqual(["loop/cycle-budget-used", "loop/token-budget-used"]);
     expect(
-      alone.join("\n"),
-      "and a project with no readings shows none, rather than borrowing this one's",
+      priced.get("loop/cycle-budget-used")?.value,
+      `${String(cycleMinutes)} min from the stamp to the record, against the ${WINDOW_TIER} tier's ` +
+        `${String(budget.minutes)} min`,
+    ).toBeCloseTo(expectedCycle, 10);
+    expect(
+      priced.get("loop/token-budget-used")?.value,
+      `${String(WINDOW_TOKENS)} tokens against the ${WINDOW_TIER} tier's ${String(budget.tokens)}`,
+    ).toBeCloseTo(expectedToken, 10);
+
+    const out = listingOf(populated);
+    const namesBand = [...loaded.schema.switches.values()].filter((sw) =>
+      sw.band.some((b) => priced.has(b)),
+    );
+    expect(
+      namesBand.length,
+      "at least one switch names a loop band, so the priced column has a subject",
+    ).toBeGreaterThan(0);
+    for (const sw of namesBand) {
+      const band = sw.band.find((b) => priced.has(b)) as string;
+      expect(
+        out,
+        `${sw.id} shows the FIXTURE's reading for ${band}, in that band's own unit`,
+      ).toContain(band === "loop/cycle-budget-used" ? cycleLine : tokenLine);
+      expect(out, `and ${sw.id} is not dressed as an estimate instead`).not.toContain(
+        `measured: the seat's estimate — ${sw.cost} (awaiting ${sw.band.join(", ")})`,
+      );
+    }
+
+    // THE VALUE IS A DERIVATION, NOT A SHAPE. Double the tokens the
+    // fixture states and the column has to double with them; a body that
+    // survived this would be asserting that SOMETHING was printed.
+    const twice = treeReadings(doubled);
+    expect(
+      twice.get("loop/token-budget-used")?.value,
+      "twice the tokens in the record is twice the share in the column",
+    ).toBeCloseTo(expectedToken * 2, 10);
+    expect(listingOf(doubled), "and the listing prints that moved value, not the first one").toContain(
+      `measured: loop/token-budget-used = ${fmt(expectedToken * 2)} ${units.get("loop/token-budget-used") ?? ""}`,
+    );
+
+    // THE EMPTY WINDOW, ASSERTED HONESTLY RATHER THAN SKIPPED. The same
+    // valid record, priced by the same reader, in a tree whose newest
+    // `Checkpoint:` is NEWER than it: the window holds no card, so it has
+    // no worst card, so the bands read UNREAD by design — and the listing
+    // says every switch is the seat's estimate, in the text it already
+    // printed before this card existed.
+    expect(
+      treeReadings(empty).size,
+      `the only difference from the populated fixture is the \`Checkpoint:\` date ` +
+        `(${WINDOW_CHECKPOINT_AFTER} against ${WINDOW_CHECKPOINT_INSIDE}), so an answer here is ` +
+        "the window not being applied at all",
+    ).toBe(0);
+    const none = listingOf(empty);
+    expect(
+      none,
+      "an empty window borrows no band figure — not from the populated fixture beside it and not " +
+        "from anywhere else",
     ).not.toContain("measured: loop/");
+    for (const sw of namesBand) {
+      expect(
+        none,
+        `${sw.id} falls back to the seat's estimate, naming the bands that are awaiting a reading`,
+      ).toContain(`measured: the seat's estimate — ${sw.cost} (awaiting ${sw.band.join(", ")})`);
+    }
+
+    // AND THE BARE CONTROL, EVALUATED WHERE THE ARRANGEMENT THAT DECIDES
+    // THE SUBJECT IS ABSENT ALTOGETHER: the same schema, the same
+    // template, no meters and no history. Nothing prices, every switch
+    // falls back, and the listing — the one verb that has to work
+    // everywhere — still runs.
+    expect(treeReadings(bare).size, "a tree with no recorded meter prices no band").toBe(0);
+    expect(
+      listingOf(bare),
+      "and a project with no readings shows none, rather than borrowing a fixture's",
+    ).not.toContain("measured: loop/");
+
+    // ── AND THIS CHECKOUT, WHICHEVER STATE THE CALENDAR LEAVES IT IN ──
+    // The fixtures above are what make the priced column assertable on
+    // every run. This section is the other half: the command's reading of
+    // THIS repository is asserted too, and never skipped — but what is
+    // asserted is what is TRUE here, which depends on when the newest
+    // checkpoint landed and not on anything this body can arrange.
+    //
+    // The unconditional claim first, and it holds in both states: every
+    // switch's measured column is what THIS tree's own reading renders.
+    // A command that went to a different map — an injected one, a cached
+    // one, a fixture's — disagrees here whatever the calendar says.
+    const live = treeReadings(repoRoot);
+    const here = listingOf(repoRoot);
+    for (const row of settingsRows({ ...loaded, readings: live, units })) {
+      expect(
+        here,
+        `${row.id}'s measured column is this checkout's own tree read, rendered — not a map handed in`,
+      ).toContain(`measured: ${row.measured.text}`);
+    }
+    // Then the state, NAMED, with a failable assertion in each arm.
+    const state =
+      `${repoRoot}: treeReadings answers ${String(live.size)} band(s) — ` +
+      `${live.size === 0 ? "the newest Checkpoint: is newer than every meters record" : "a record sits inside the newest checkpoint's window"}`;
+    if (live.size === 0) {
+      expect(here, `${state}, so no band figure may appear`).not.toContain("measured: loop/");
+      expect(
+        here,
+        `${state}, so at least one switch stands at the seat's estimate awaiting its band`,
+      ).toContain("measured: the seat's estimate — ");
+    } else {
+      const band = [...live.keys()][0] as string;
+      expect(
+        here,
+        `${state}, so ${band}'s reading is on the listing in that band's own unit`,
+      ).toContain(`measured: ${band} = ${fmt(live.get(band)!.value)} ${units.get(band) ?? ""}`);
+    }
   } finally {
+    for (const root of [populated, empty, doubled]) removeGitFixture(root, FIXTURE);
     rmSync(bare, { recursive: true, force: true });
   }
 });
