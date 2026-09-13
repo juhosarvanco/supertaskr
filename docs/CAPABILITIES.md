@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1081 behaviours** — 1079 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1085 behaviours** — 1083 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -879,11 +879,15 @@ Census: **1081 behaviours** — 1079 extracted sentences + 2 named-not-extracted
 - a verdict-named spec outside the lane's fence widens the card on the integration branch BEFORE the merge
 - the verb derives every dial off git — the lane branch, the worktree and both seats — and never off a document
 - the verb performs the ritual on a fixture, applies the correction off the verdict, and STOPS with the merge staged
+- an ambiguous anchor REFUSES the correction step with both counts, and leaves the file byte-identical to what the step found
+- what the correction step WROTE is also STAGED, so the working file it counted IS the content the commit will take
+- the counter counts OVERLAPPING sites, so an anchor whose prefix is also its suffix names TWO sites and is refused
+- a single git diff against the bench tip answers EMPTY over a wrong STAGED line, which is why the standing comparison reads the index and the working tree separately
 - a same-file end-of-file append is resolved by keeping both sides, and any other conflict stops the verb as a fence finding
 - the bound, the floor and the readings path this file computes are the ones docs/CONVENTIONS.md publishes
 - the verb never pushes, and the keeper steps it plans are the four the card names
 - the card arm takes ITS OWN card and no other, so a SUGGESTED card of the same lane is a fence finding
-- a correction is applied whenever the tree carries its NEW text once, even where the OLD text also occurs elsewhere
+- a block whose OLD text also occurs elsewhere is REFUSED with both counts, never applied at the site its NEW text names
 - a forbidden-spelling refusal names the file and the class and REDACTS the value, on every class it carries
 - a merge is what an APPROVED verdict authorises, so a REJECTED newest verdict refuses the drill
 - a dated `### ` entry is found wherever its date sits, and an undated heading is still refused

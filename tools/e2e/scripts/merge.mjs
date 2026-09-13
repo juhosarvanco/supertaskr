@@ -317,7 +317,13 @@ export function occurrences(haystack, needle) {
   for (
     let at = haystack.indexOf(needle);
     at !== -1;
-    at = haystack.indexOf(needle, at + needle.length)
+    // STRIDE BY ONE, never by the needle's length (T-295-s9): a needle
+    // whose prefix is also its suffix matches at OVERLAPPING positions,
+    // and a stride of `needle.length` walks past the second one and
+    // reports ONE site where the text names two. Every caller of this
+    // function asks "exactly once", so a count that is low by one is a
+    // write at a site nobody named.
+    at = haystack.indexOf(needle, at + 1)
   ) {
     n += 1;
   }
@@ -1641,8 +1647,42 @@ export function stampDone(input) {
 // left staged for the seat to judge.
 
 /**
- * ONE CORRECTION, DECIDED FROM THE TREE RATHER THAN FROM THE VERDICT'S
- * PROSE.
+ * WHAT ONE CORRECTION'S READING MEASURED, carried on every answer it can
+ * give. Criterion 3 of T-295-s9: the step's own line states both counts,
+ * so a seat reading one line per step sees an ambiguous anchor BEFORE
+ * the drill rather than after the merge.
+ *
+ * @typedef {object} CorrectionCounts
+ * @property {number} oldSites the sites the block's `old` text matches in the file as it will be committed
+ * @property {number} newSites the sites its `new` text matches in that same file
+ */
+
+/**
+ * @typedef {(CorrectionCounts & { text: string })
+ *   | (CorrectionCounts & { already: string })
+ *   | (CorrectionCounts & { problem: string })} CorrectionDecision
+ */
+
+/**
+ * THE TWO COUNTS, IN THE ONE SPELLING EVERY OUTCOME PRINTS.
+ *
+ * One spelling because there is one claim: a step that reported its
+ * counts three different ways would be three sentences to keep true.
+ *
+ * @param {CorrectionCounts} counts
+ * @returns {string}
+ */
+export function correctionCountsLine(counts) {
+  return (
+    `\`old\` matches ${String(counts.oldSites)} site(s), ` +
+    `\`new\` matches ${String(counts.newSites)} site(s)`
+  );
+}
+
+/**
+ * ONE CORRECTION, DECIDED BY COUNTING BOTH ANCHORS IN THE FILE AS IT
+ * WILL BE COMMITTED — never by trusting the block's own sentence that
+ * its anchor is unique.
  *
  * A MUTANT BLOCK's `old` is the text the drill requires to be IN the
  * tree, because the drill plants `new` over it and requires the named
@@ -1650,51 +1690,80 @@ export function stampDone(input) {
  * them can be the correction: when the merged tree carries the block's
  * `new` text, the tree carries the DEFECT and the `old` text is the fix.
  *
- * WHICH SIDE THE TREE IS ON IS ASKED OF THE TREE. A verdict says the
- * correction is assigned; it does not say whether the lane's own fix
- * pass already landed it, and at four of the merges it had. So `old` is
- * looked for FIRST: a tree that already carries it is already corrected,
- * and applying anything there would be this file editing a tree that
- * agrees with it.
+ * THE ONLY TWO STATES THIS FUNCTION ACTS ON (T-295-s9, the amendments
+ * of 2026-09-13), and both are read off the tree rather than off the
+ * verdict's prose — a verdict says a correction is assigned, it does not
+ * say whether the lane's own fix pass already landed it, and at four of
+ * the merges this verb was cut from it had:
  *
- * THE OVERLAP CASE IS WHY THE ORDER MATTERS. A `new` text is often a
- * substring of its own `old` (a clause deleted, a guard dropped), so
- * counting `new` on an already-corrected tree returns 1 and a reader
- * that asked that question first would "correct" a correct tree back to
- * the mutant. Asking for `old` first cannot make that mistake.
+ *   `old` 1 · `new` 0  the correction is already in the merged tree, so
+ *                      nothing is written.
+ *   `old` 0 · `new` 1  the correction is owed at that ONE site, and it
+ *                      is applied there.
+ *   anything else      REFUSED by name, before any write: either text at
+ *                      two or more sites, both present, or both absent.
+ *                      The file is left exactly as the step found it.
+ *
+ * THE MEASURED FAULT THIS SHAPE CLOSES, at the T-314 merge of
+ * 2026-09-13: the third correction's three-line `old` text matched
+ * `.claude/hooks/hook-install.mjs` ONCE — the correction was already in the
+ * tree — and its `new` text ONCE, at a presence check that legitimately
+ * preceded the executable check the block was about (the single-line
+ * needle occurs twice; the three-line texts once each, measured at
+ * 88ca5166 — the verdict's correction 4). The reader this replaces answered that
+ * arrangement by MASKING every occurrence of `old` and asking whether
+ * exactly one `new` survived. One did, at the legitimate site, and the
+ * step wrote the block's `old` text over it: the merged tree then
+ * differed from the verified bench tip by one line, a presence check
+ * turned into an executable one, and the correction's own body redded on
+ * the closing check while it had been green on the bench.
+ *
+ * SO THE MASK IS GONE, AND WITH IT THE INFERENCE IT WAS FOR. A `new`
+ * text that is a SUBSTRING of its own `old` (a clause deleted, a guard
+ * dropped) reads as both-present on an already-corrected tree — and
+ * both-present is now a REFUSAL rather than a deduction, because the
+ * counts cannot tell that arrangement from "the correction is owed here
+ * and its `old` text also occurs elsewhere", which is the arrangement
+ * that cost main a line. A refusal costs the seat one correction applied
+ * by hand at the site the verdict names; the guess cost verified code.
+ *
+ * AND THE REFUSAL IS ALSO WHAT KEEPS THE DRILL'S OWN PRECONDITION: an
+ * apply happens only where `old` was absent and lands it once, so the
+ * tree `plantMutant` meets carries `old` exactly once — the thing it
+ * refuses to proceed without.
  *
  * @param {{ source: string, block: MutantBlock }} input
- * @returns {{ text: string } | { already: string } | { problem: string }}
+ * @returns {CorrectionDecision}
  */
 export function correctionFor(input) {
   const { source, block } = input;
-  const hasOld = occurrences(source, block.old);
-  const hasNew = occurrences(source, block.new);
-  // EVERY OCCURRENCE OF `new` THAT IS NOT PART OF ONE OF `old`. The two
-  // counts alone cannot tell "already corrected, and this block's `new`
-  // text is a substring of its own `old`" from "the correction is owed
-  // HERE, and its `old` text also occurs elsewhere in the file" — both
-  // read as one of each, and answering them alike leaves the defect in
-  // the merged tree under the word "already".
-  const MASK = "\u0000";
-  const masked = source.split(block.old).join(MASK);
-  if (occurrences(masked, block.new) === 1) {
-    return { text: masked.replace(block.new, () => block.old).split(MASK).join(block.old) };
-  }
-  if (hasOld > 0) {
+  const counts = {
+    oldSites: occurrences(source, block.old),
+    newSites: occurrences(source, block.new),
+  };
+  if (counts.oldSites === 1 && counts.newSites === 0) {
     return {
+      ...counts,
       already:
         `${block.correction}: ${block.file} already carries the block's \`old\` text, so this ` +
         "correction is in the merged tree and nothing was written. The re-drill below is what " +
-        "says whether the body still pins it",
+        `says whether the body still pins it — ${correctionCountsLine(counts)}`,
     };
   }
+  if (counts.oldSites === 0 && counts.newSites === 1) {
+    // A FUNCTION REPLACEMENT, never a string one: `$&`, `$1` and `$'`
+    // are substitution syntax in a string replacement, so an `old` text
+    // carrying one would be written as something else entirely.
+    return { ...counts, text: source.replace(block.new, () => block.old) };
+  }
   return {
+    ...counts,
     problem:
-      `${block.correction}: ${block.file} carries the block's \`old\` text 0 time(s) and its ` +
-      `\`new\` text ${String(hasNew)} time(s), so this merge cannot tell whether the correction ` +
-      "is owed or already made. An anchor that names no site, or names several, is not a " +
-      "correction — the merge stops here rather than guessing",
+      `${block.correction}: REFUSED — ${correctionCountsLine(counts)} in ${block.file}. A ` +
+      "correction names ONE site, which is `old` once with `new` absent (already applied) or " +
+      "`old` absent with `new` once (owed here); every other arrangement names no site or " +
+      "several, so NOTHING was written and the file is exactly as this step found it. The merge " +
+      "stops here rather than guessing which site was meant",
   };
 }
 
@@ -1719,11 +1788,14 @@ export function correctionSteps(input) {
     block,
     title:
       `apply ${block.correction} in ${block.file} — the block's \`old\` text where the tree ` +
-      "carries its `new`",
+      "carries its `new`, and BOTH anchor counts on this step's own line",
     why:
       "T-295 criterion 2: a correction assigned by a verdict is the block's own `old` text, and " +
       "the drill that follows requires exactly that text to be in the tree. Applying it here, " +
-      "before every regeneration, is what keeps a generated file describing the corrected source",
+      "before every regeneration, is what keeps a generated file describing the corrected " +
+      "source. T-295-s9 criterion 3: the step counts both anchors in the file as it will be " +
+      "committed and prints the two counts, so an ambiguous anchor is a refusal a seat reads " +
+      "before the drill rather than a line of verified code rewritten at a site nobody named",
     run: null,
   }));
 }
@@ -2712,7 +2784,9 @@ export function usageText() {
     "  Since T-295 it also widens the card's fence on the integration branch for a",
     "  verdict-named spec outside it (the ONE commit this verb makes, because the landing",
     "  gate reads a merge's fence from its first parent), applies each block's correction",
-    "  BEFORE every regeneration, runs the four cheap keepers as steps with exits, bumps",
+    "  BEFORE every regeneration — counting BOTH anchors in the file as it will be committed",
+    "  and REFUSING, with the two counts on the step's line, any block whose anchors name no",
+    "  site or several (T-295-s9) — runs the four cheap keepers as steps with exits, bumps",
     "  the three method stamp files when method text moved, grades the counts its own runs",
     "  read against the counts the verdict claims, writes the merge message FROM the",
     "  verdict's own sentences, and appends every `## Meters` block to the bands' readings.",
@@ -3683,9 +3757,23 @@ function applyCorrectionStep(step, io) {
     io.err(`      ${block.correction}: ${block.file} is not in the merged tree`);
     return EXIT.CANNOT_RUN;
   }
+  // THE FILE AS IT WILL BE COMMITTED (T-295-s9): the bytes on disk are the
+  // subject of both counts because here they ARE the staged content — the
+  // verb's own precondition:clean step refuses to merge onto a dirty tree,
+  // and every step between there and this one that writes also stages (the
+  // body the verdict's correction 2 names asserts exactly that). A commit
+  // takes the INDEX, never the working copy; the two agree by construction.
   const source = readFileSync(file, "utf8");
   const decided = correctionFor({ source, block });
   if ("problem" in decided) {
+    // NO WRITE HAS HAPPENED AND NONE WILL. The file is byte-identical to
+    // what this step found — its PRE-OPERATION state, which is not the
+    // bench tip's: at a merge the two may legitimately differ by an
+    // authorized integration change (a correction the seat applied by
+    // hand, a keeper's redaction), and a refusal that restored the bench
+    // tip's bytes would erase it. Whether the file matches the verified
+    // content is the seat's separate investigation, never this step's
+    // write.
     io.err(`      ${decided.problem}`);
     return EXIT.FOUND;
   }
@@ -3702,7 +3790,10 @@ function applyCorrectionStep(step, io) {
   }
   if (!io.state.fixed.includes(block.file)) io.state.fixed.push(block.file);
   io.state.corrections.push(block.correction);
-  io.out(`      applied: ${block.correction} — ${block.file} now carries the block's \`old\` text`);
+  io.out(
+    `      applied: ${block.correction} — ${block.file} now carries the block's \`old\` text; ` +
+      `before the write, ${correctionCountsLine(decided)}`,
+  );
   return EXIT.CLEAN;
 }
 
