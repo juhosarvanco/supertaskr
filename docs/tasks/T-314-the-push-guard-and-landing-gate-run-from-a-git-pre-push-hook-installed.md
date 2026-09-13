@@ -38,6 +38,130 @@ The push guard and landing gate are registered only as a Claude PreToolUse hook 
 Amendment proposed 2026-09-13 — hook installation scope. The installer derives the checkout's effective hook location and configuration scope through Git, including a linked worktree's common directory and any worktree override; it does not assume that its private Git directory holds the active hooks. Installation must preserve the effective hook routing of other worktrees. A configuration that cannot be installed without an additional shared-configuration change is refused by name before that change or a new holder record is written, unless that configuration change has been explicitly authorized. A body covers a linked integration worktree with an existing enabled hook in the common hooks directory, and a successful installation with a sibling worktree's effective configuration unchanged. Hook-installation refusals leave the holder record, Git configuration and index unchanged. The existing executable-mode, competing-hooks, actual-push and procedural-bypass requirements stand.
 
 ## Implementation notes
-<!-- executor appends before finishing -->
+
+Built by claude-opus-5@subagent, executor, 2026-09-13. Base
+fea4397d9dbb1d94326c79317a385e0ee4d36603 (the dispatch stamp); the
+implementation landed at 3017ff4566b62b5f9bca9243fdb0304dd3a96296 and
+every figure below names the ref it was measured at.
+
+### What was built
+
+Three files carry the guard. `.claude/hooks/pre-push` is the file git
+executes, and it is a POSIX shell wrapper for one mechanical reason: a
+git hook has no extension and node decides a file's module system from
+one, so an extensionless file carrying import statements is CommonJS on
+one node and a module on another. The wrapper refuses with its own
+sentence where node is absent, rather than leaving the shell to say
+`node: not found` at a push. It runs `.claude/hooks/pre-push-hook.mjs`,
+which reads the proposed updates off standard input and answers with an
+exit code, and that asks `.claude/hooks/pre-push-guard.mjs`, which
+decides. The split is the one `push-guard.mjs` and `push-guard-hook.mjs`
+already use, for its reason: importing the decision is side-effect-free.
+
+Each proposed update is judged on its own two objects. The range is the
+remote's OLD object to the local NEW one; the verdict token is required
+to match the tree of the PUSHED commit; the range-derived owed set and
+the unchanged-tree checks are asked through the same exported functions
+the older guard asks them through, so the strictness is additive on all
+three axes rather than substituted on one. A remote object of all zeros,
+an old object this checkout does not carry, and an old object that is not
+an ancestor all fail CLOSED to the whole battery, which is what
+`owedSetForPush` does one file over when a branch names no upstream.
+
+The guard also asks the seat, the landing gate, the cheap checks and the
+graph, in the order `decideWith` argues for them. It does NOT ask the CI
+arm: that arm makes a network round trip with a fifteen-second hang
+bound, a git hook runs at every push including ones no session typed, and
+the guard that adds a network call to `git push` is the guard somebody
+runs with the bypass. The omission is argued in the module header and
+filed as T-314-s1 rather than left to be discovered.
+
+`.claude/hooks/hook-install.mjs` is the arm's half. It derives the
+checkout's effective hook location and configuration scope through git
+rather than assuming either: `hooks` is not on git's per-worktree path
+list, so a linked worktree's live hooks are the repository's COMMON ones,
+and a reader that assumed otherwise would report a linked worktree as
+hook-free and then silently deactivate a hook the whole repository
+shared. It writes `core.hooksPath` at WORKTREE scope where the
+per-worktree config file is already live, at LOCAL scope where the
+repository has one worktree, and refuses by name otherwise.
+
+### Every refusal leaves a checkout untouched, and that includes the seat
+
+`hookInstallPlan` decides and writes nothing; `installHook` performs.
+That split is what lets `brief.mjs --take-seat` install BEFORE it records
+a holder: a refusal leaves the hooks path, the index and the holder
+record exactly as they were, which is the amendment's ordering and the
+difference between a checkout that is plainly unguarded and one
+everything downstream believes is guarded because a seat was recorded in
+it. Both seat verbs print the checkout's guard state before they act, and
+report a checkout without the hook as UNGUARDED.
+
+An ABSENT hook file is reported, never refused. Refusing there would make
+the seat unobtainable in every checkout older than this card, including
+the ones a seat most needs to be able to take in order to update them.
+
+### The executable mode, and the harness refusal the amendment predicted
+
+The hook is committed at 100755, read back with `git ls-files -s` by a
+body that also proves its ten neighbours in the same directory are
+100644, so the mode is a fact about this file rather than about how this
+repository stores everything (measured at 3017ff45).
+
+The lane never needed a shell `chmod` and never met the refusal the
+amendment named. The mode was set by node's own file-mode call inside a
+script the lane ran, which is the same mechanism the installer uses as
+its authorized operation; `git update-index --chmod` was therefore not
+needed either, because git records the mode it finds. The installer sets
+the mode on the WORKING TREE FILE and never through the index, and a body
+proves it preserves content a seat had staged.
+
+### Figures, each at its ref
+
+- `.claude/hooks/pre-push` 1933 bytes, `pre-push-hook.mjs` 3077,
+  `pre-push-guard.mjs` 32944, `hook-install.mjs` 24751 (at 3017ff45).
+- `tools/e2e/tests/push-guard.spec.ts` 102 bodies at fea4397d and 119 at
+  3017ff45: seventeen added, every one of the push bodies driving a real
+  `git push` through the real hook against a real bare remote inside one
+  temporary directory.
+- `tools/e2e/scripts/brief.mjs` 83430 bytes at fea4397d, 87593 at
+  3017ff45. `.claude/hooks/gate-token.mjs` 38183 and 38956.
+  `docs/CONVENTIONS.md` 160297 and 162655.
+- The committed graph is CURRENT at 3017ff45 (exit 0, 203 files, 2593
+  symbols, 2488 edges): the new modules are outside the graph's own
+  scope. GRAPH REGEN still FIRES at the merge by its own trigger, because
+  the diff carries two `.ts` files outside docs.
+- The census is STALE at 3017ff45 by design and by fence: seventeen new
+  test names move `docs/CAPABILITIES.md` and `docs/INDEX.md`, neither of
+  which this lane's fence carries. `npm run capabilities` in the merge
+  commit is what closes it, which is the standing rule for a lane that
+  adds bodies.
+- The docs gate answers 0 findings at 3017ff45 and warns that
+  `docs/CONVENTIONS.md` is past its byte warn line. It was past it at the
+  base too (160297 against a 146878-byte warn line, fail at 176253), and
+  it is already filed as T-311-s3; this card adds 2358 bytes to a
+  document that was already warning, and nothing here is a new instance.
+
+### In-fence follow-through
+
+- `judgeToken` in `.claude/hooks/gate-token.mjs` gained one optional
+  argument, `treeOwner`. Three of its sentences name HEAD as the owner of
+  the key, and this card's whole subject is a key that is NOT HEAD's — so
+  a refusal would have told a seat its token was stale against "HEAD's
+  tree" while printing a hash that is not HEAD's. The default is the
+  literal the function has always printed, so every existing caller's
+  refusal is byte-identical and the two bodies that pin that wording did
+  not move. Nothing else about the judgement changed: the label is a noun
+  in a sentence and no arm reads it.
+
+### What was deliberately not done
+
+- A rule for a tag push. A ref outside `refs/heads/` is refused as an
+  unsupported shape, which is the card's own first criterion, and giving
+  tags a rule is a different question with its own range semantics. Filed
+  as T-314-s3, with the operational consequence named: the first release
+  tag will meet a guard that has no rule for it.
+- Uninstalling at `--release-seat`. Leaving a guard installed is the safe
+  direction and the card asks for neither.
 
 ## Verdicts
