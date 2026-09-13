@@ -28,6 +28,10 @@ The push guard and landing gate are registered only as a Claude PreToolUse hook 
 - WHEN the Claude PreToolUse guard runs THE existing behaviour SHALL be unchanged, as a second net.
 - WHEN this card lands THE conventions SHALL record, at the push bullet, that a deliberate bypass (`--no-verify`, a push from a checkout without the hook) is closed by procedure in v1 as the owner accepted on 2026-09-12, that the runner's owed set on the pushed range remains the public check, and that a protected receiving gate and credential isolation are separate proposals (T-310).
 
+## Amendment of 2026-09-13 — the seat's pre-dispatch read (approved by the owner on 2026-09-13)
+
+(1) The hook file is `.claude/hooks/pre-push`, committed with the executable mode (100755) by the lane at implementation, the mode recorded through git's own index operation and never assumed from a checkout. (2) Installation is a separate act: `--take-seat` verifies that the working-tree file is executable and, where it is not, establishes the permission through an authorized operation of the arm; it stages nothing and preserves any staged content it finds. (3) Before changing `core.hooksPath` the installer reads the checkout's active hooks (`$GIT_DIR/hooks`, non-sample files, which an unset `core.hooksPath` makes live) and refuses with their names when any exists, since pointing the path elsewhere would silently deactivate them; it also refuses when `.claude/hooks/` carries any other git-hook-named file, since the path makes every such name live. (4) A fixture SHALL show an ACTUAL push invoking the hook and refused when unqualified, beside the seat verbs' "unguarded" diagnostic, which is not proof on its own. Measured 2026-09-13: this harness refuses a subagent's shell `chmod`; that refusal is reported for authorization, not routed around, and the lane's inability to set a mode is a finding for the seat at the merge.
+
 ## Implementation notes
 <!-- executor appends before finishing -->
 

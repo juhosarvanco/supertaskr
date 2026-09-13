@@ -27,6 +27,10 @@ The schema's `reads:` field names `processLedger` for most switches, which the s
 - WHEN the terminal lists a switch THE label and, for a manual switch, the action SHALL be shown beside the value; WHEN an edit names a declarative switch THE command SHALL refuse with the code `declarative` and leave the template byte-identical, pinned by a body; the reference SHALL carry the labels.
 - WHEN this card lands THE notes SHALL identify T-301 and T-302 as the remaining label consumers. Under the proposed sequence, T-301 SHALL resume only after T-317, T-300-s6 and this card are merged on its resumption base and its separately authorized amendment includes displaying each label and the manual action before the new brief is frozen; T-302's dispatch contract SHALL likewise include label adoption and this landed prerequisite. This card does not authorize editing either card or an active lane. If T-301's brief is already frozen or its work has finished, the seat SHALL name and obtain authorization for a separate app-label follow-up before claiming the adoption is assigned. The method version SHALL bump with its release note and evaluation block.
 
+## Amendment of 2026-09-13 — the seat's pre-dispatch read (approved by the owner on 2026-09-13)
+
+In the third criterion, "refuse with the code `declarative`" means the refusal's finding code in the message, at the command's existing refusal exit (2); the exit vocabulary stays the four codes T-300-s6 pinned as unchanged, and a body SHALL show the refusal's exit equals the other refusals'.
+
 ## Implementation notes
 <!-- executor appends before finishing -->
 
