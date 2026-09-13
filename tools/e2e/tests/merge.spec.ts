@@ -40,6 +40,7 @@ import {
   cardTier,
   bumpSteps,
   classifyConflict,
+  assignsCorrections,
   claimedCounts,
   correctionFor,
   correctionHeadings,
@@ -1331,4 +1332,50 @@ test("the heading shape verifier.md publishes IS a heading this reader finds, an
     "the shape the role file publishes is not one this reader finds",
   ).toBe(heading);
   expect(verdictState(heading), "and the state reader agrees about the same heading").toBe("APPROVED");
+});
+
+test("assignsCorrections answers the same over one unchanging input, however often it is asked", () => {
+  // THE HAZARD THE SOURCE-SHARING FOLLOW-THROUGH NAMES, PINNED BY A BODY.
+  // One pattern source now feeds three readers and the only thing holding
+  // them apart is the FLAGS each compiled form carries: `RegExp.test` on a
+  // GLOBAL regex carries `lastIndex` from call to call, so a "does this
+  // verdict head a correction" form compiled global answers true, then
+  // false, then true over one unchanging string. The verb asks this
+  // question more than once in a run — the plan asks it, the read at the
+  // tip asks it again — and the second answer is the one that would
+  // silently drop every block. The comment beside the constant says all
+  // of this; nothing measured it.
+  const verdict = [
+    "### 2026-09-13 — APPROVED — a-model@a-session",
+    "",
+    "The pass reproduced.",
+    "",
+    "### CORRECTION 1 — a body this verdict commits",
+    "",
+    "The block.",
+  ].join("\n");
+
+  // THE WORDS `ASSIGNED CORRECTIONS` ARE DELIBERATELY ABSENT. They would
+  // answer through the other half of the disjunction and the heading
+  // pattern — the half that carries the flag — would never be asked.
+  expect(
+    /ASSIGNED\s+CORRECTIONS?/i.test(verdict),
+    "the fixture answers through the other half of the disjunction",
+  ).toBe(false);
+
+  // THE THREE READINGS ARE CONSECUTIVE ON PURPOSE: `String.match` resets a
+  // global regex's `lastIndex`, so a `correctionHeadings` call between two
+  // of these would hide exactly the carry this body exists to catch.
+  expect(assignsCorrections(verdict), "the first reading").toBe(true);
+  expect(assignsCorrections(verdict), "the SECOND reading of one unchanging verdict").toBe(true);
+  expect(assignsCorrections(verdict), "the third reading of one unchanging verdict").toBe(true);
+  expect(correctionHeadings(verdict), "and the count is the same question asked another way").toBe(1);
+
+  // NEGATIVE CONTROL, so the three readings above are a claim about this
+  // verdict rather than about a function that answers true to everything.
+  const none = ["### 2026-09-13 — APPROVED — a-model@a-session", "", "Nothing was assigned."].join(
+    "\n",
+  );
+  expect(assignsCorrections(none), "a verdict heading no correction, read once").toBe(false);
+  expect(assignsCorrections(none), "the same verdict read again").toBe(false);
 });
