@@ -57,6 +57,14 @@ The nine cards filed on 2026-09-12 sequence the settings track as T-317, then T-
 - The screen SHALL show, beside each switch's value, its label (operational, manual or declarative) and, for a manual switch, its action, read through the parser library's browser entry; a declarative switch SHALL be shown as read-only in the screen's own terms. Editing stays with the follow-up card that runs the terminal command.
 - The executor's brief SHALL be rendered only after this section is on the card, so the requirement is in the sealed contract and never added to a live lane.
 
+## Amendment of 2026-09-13, third — the design step with the owner
+
+The owner ruled on 2026-09-13, reading the customization-form room, that this screen is designed with the owner before it is built: the seat tells the owner when it is time to design it and brings a proposal, and no lane builds the screen from the card alone. This section adds one prerequisite to the second amendment's resume condition; everything else above stands.
+
+- This card resumes only when, in addition to the three merges the second amendment names, a design ruling is recorded on this card: what a person does on the screen, how the resolved values and their reasons are previewed, how a diagnostic on a forbidden combination is shown, and where the models section from T-318 sits. The seat proposes; the owner rules; the ruling is paraphrased here, dated, before the executor's brief is rendered.
+- The edit follow-up card (a click runs the terminal command through the native half) is not cut until the same design ruling covers the edit flow and the shape of a refused edit.
+- The design step is the owner's to take up; it is not started by the seat without telling the owner, and it does not begin a lane.
+
 ## Implementation notes
 <!-- executor appends before finishing -->
 
