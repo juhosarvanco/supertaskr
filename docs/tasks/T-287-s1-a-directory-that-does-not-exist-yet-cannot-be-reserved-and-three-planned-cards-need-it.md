@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 size: S
 priority: 2
-status: suggested
+status: planned
 suggested_by: "executor claude-opus-5@subagent @T-287, measured over the whole board at 8cd11020e631, 2026-09-09"
 blocked_by: []
 touches: [tools/e2e/scripts/card-preflight.mjs, tools/e2e/tests/card-preflight.spec.ts]
@@ -82,3 +82,5 @@ says on purpose rather than a thing a typo achieves by accident.
 Whichever is chosen, the same discipline `T-287` kept applies: one
 derivation, in `newFileReservation`, shared by every reader that judges a
 fence, and a body seen red on a board that lacks the arrangement.
+
+Promoted 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): to planned at priority 2 — a directory that does not exist yet still refuses as a dead fence entry, so three planned cards that create one cannot be dispatched. Not dispatched by this sitting.

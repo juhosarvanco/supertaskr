@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 size: S
 priority: 2
-status: suggested
+status: planned
 suggested_by: "the seat (2026-09-11): at T-298's stamp `brief.mjs --bench T-298` printed tip d8e4a9dd, the base, because the bench worktree the dispatch cut still stood at the base; the seat checked out the lane's tip 91695451 on the bench and ran the arm again"
 blocked_by: []
 touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/tests/brief.spec.ts]
@@ -29,3 +29,5 @@ The dispatch cuts the bench worktree detached at the base; phase 2's first actio
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+Promoted 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): to planned at priority 2 — the bench arm reads the tip off a worktree still at the base, sealing base-as-tip and rendering a phase-2 brief with an empty range. Not dispatched by this sitting.

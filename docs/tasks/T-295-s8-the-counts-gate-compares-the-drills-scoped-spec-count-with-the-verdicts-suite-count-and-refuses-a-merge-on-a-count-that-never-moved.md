@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 size: S
 priority: 2
-status: suggested
+status: planned
 suggested_by: "the seat (2026-09-11): the second merge through the verb stopped at `counts` with e2e 35 versus 714; the 35 was health-bands.spec.ts run alone by the re-drill, the 714 the verifier's owed range at the tip — two different measurements of two different things"
 blocked_by: []
 touches: [tools/e2e/scripts/merge.mjs, tools/e2e/tests/merge.spec.ts]
@@ -29,3 +29,5 @@ The verb's counts step takes "the counts this merge's own runs read" from whatev
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+Promoted 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): to planned at priority 2 — the counts gate compares a scoped drill count with a whole-suite count and refuses a merge on a number that never moved. Not dispatched by this sitting.

@@ -5,7 +5,7 @@ feature: F-01
 milestone: 4
 size: S
 priority: 3
-status: suggested
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-256
 blocked_by: []
 touches: [app/README.md, bin/app-dev.mjs, app/test/graph-budget-bench.mjs]
@@ -76,3 +76,5 @@ on its own when the board moves.
 - WHEN the esbuild message in `app/test/graph-budget-bench.mjs` fires IT
   SHALL name a command a fenced lane can run.
 - Verification: headless.
+
+Promoted 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): to planned at priority 3 — the second install spelling survives at three named sites outside the fence that retired it. Not dispatched by this sitting.

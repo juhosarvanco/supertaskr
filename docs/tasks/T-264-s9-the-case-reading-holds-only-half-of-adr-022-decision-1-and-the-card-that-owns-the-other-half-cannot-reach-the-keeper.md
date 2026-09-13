@@ -4,8 +4,8 @@ title: The rename scan's case reading holds only ADR-022 decision 1's IDENTIFIER
 feature: F-01
 milestone: 4
 size: S
-priority: 7
-status: suggested
+priority: 3
+status: planned
 suggested_by: executor claude-opus-5@subagent, at T-264-s3's lane, 2026-09-10 — decided while landing T-265-s3's case criterion, and routed rather than landed as a red another card owns
 blocked_by: [T-265-s2]
 touches: [tools/e2e/scripts/rename-scan.mjs, tools/e2e/tests/identifier-rename.spec.ts]
@@ -65,3 +65,5 @@ card is it.
 
 ## Verdicts
 <!-- verifier appends: date, model@session, APPROVED / REJECTED + failures -->
+
+Promoted 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): to planned at priority 3 — the prose half of the naming rule has no tree-wide body; absorbs T-264-s4, T-264-s11 and T-265-s2, which own the failing sites. Not dispatched by this sitting.

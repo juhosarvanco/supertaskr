@@ -4,8 +4,8 @@ title: "Nothing REFUSES an unplaceable `wake:` value — T-285's view reports on
 feature: F-06
 milestone: 4
 size: S
-priority: 3
-status: suggested
+priority: 2
+status: planned
 suggested_by: "executor claude-opus-5@subagent @T-285, 2026-09-09, measured at 488e495"
 blocked_by: [T-285]
 touches: [tools/e2e/scripts/card-preflight.mjs, tools/e2e/tests/card-preflight.spec.ts]
@@ -77,3 +77,5 @@ the typo with one check.
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+Promoted 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): to planned at priority 2 — nothing refuses an unplaceable wake value, and this sitting is about to write about 129 of them by hand. Not dispatched by this sitting.

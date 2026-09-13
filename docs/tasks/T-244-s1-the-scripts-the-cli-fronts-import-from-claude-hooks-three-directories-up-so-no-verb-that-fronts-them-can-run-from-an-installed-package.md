@@ -4,8 +4,8 @@ title: "The scripts the CLI fronts import `../../../.claude/hooks/*`, so every v
 feature: F-01
 milestone: 4
 size: M
-priority: 5
-status: suggested
+priority: 2
+status: planned
 suggested_by: "executor claude-opus-5@subagent, in T-244's lane, 2026-09-09 — measured while proving `npx supertaskr` against an npm pack tarball"
 blocked_by: []
 touches: [tools/e2e/]
@@ -65,3 +65,5 @@ scratch project and runs `npx supertaskr` there. Extend that body: after
 the install, `npx supertaskr status --root <the project>` answers rather
 than refusing, and `packageEscapes` over `brief.mjs` returns the empty
 list — the positive control being that it does NOT return empty today.
+
+Promoted 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): to planned at priority 2 — every CLI verb that fronts a hook dies with a module-not-found in an installed package; absorbs T-244-s2's packaging half. Not dispatched by this sitting.

@@ -4,8 +4,8 @@ title: "A suggestion duplicating a card that is IN VERIFICATION is never flagged
 feature: F-06
 milestone: 4
 size: S
-priority: 11
-status: suggested
+priority: 3
+status: planned
 suggested_by: "verifier claude-opus-5@subagent @T-282 phase 2, 2026-09-09, measured at bf22ede on the bench"
 blocked_by: []
 touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts]
@@ -42,3 +42,5 @@ the change is one entry plus the body that says why `done`, `parked` and
 
 Class parent: T-282. Disposition hint: promote with T-282-s1 or any
 later dispatch-brief lane; it is one array entry and one assertion.
+
+Promoted 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): to planned at priority 3 — the triage statuses omit `verifying`, so a suggestion duplicating a card in verification is never flagged: this sitting's own instrument. Not dispatched by this sitting.

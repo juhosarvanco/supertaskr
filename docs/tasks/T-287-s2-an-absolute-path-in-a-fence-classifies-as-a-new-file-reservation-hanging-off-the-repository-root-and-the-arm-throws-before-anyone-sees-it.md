@@ -4,8 +4,8 @@ title: "An ABSOLUTE path in a fence classifies as a NEW-FILE RESERVATION hanging
 feature: F-04
 milestone: 4
 size: S
-priority: 3
-status: suggested
+priority: 2
+status: planned
 suggested_by: "verifier claude-opus-5@subagent @T-287 (phase 2), measured at 6ff8201107ac57e42db94d974512febc6abeed00 and at the base 8cd11020e631f195952b4921c045a622b3df7809, 2026-09-09"
 blocked_by: []
 touches: [tools/e2e/scripts/card-preflight.mjs, tools/e2e/tests/card-preflight.spec.ts]
@@ -109,3 +109,5 @@ never has to hold an opinion about paths outside the tree.
 Whichever end it is fixed at, both halves need a body, and the classifier
 body should assert the ROOT case still reserves — that is the case the
 sentinel exists for and it must not be lost to the fix.
+
+Promoted 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): to planned at priority 2 — an absolute fence token classifies as a reservation off the root and the arm throws on it one arm earlier; each half hides the other. Not dispatched by this sitting.

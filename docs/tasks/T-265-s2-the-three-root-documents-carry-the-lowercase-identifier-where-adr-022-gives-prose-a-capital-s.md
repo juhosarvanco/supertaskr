@@ -4,8 +4,8 @@ title: "The three root documents open with the lowercase identifier `supertaskr`
 feature: F-01
 milestone: 4
 size: S
-priority: 6
-status: suggested
+priority: 3
+status: planned
 suggested_by: "executor claude-opus-5@subagent, at T-265's lane, 2026-09-08 — measured while ruling the case question T-264's verdict routed to this card"
 blocked_by: []
 touches: [README.md, CLAUDE.md, AGENTS.md]
@@ -62,3 +62,5 @@ the adapter sentence is addressed to a reading agent.
 - IF a body anywhere greps one of these strings THEN it moves in the
   same commit; derive that set at your own ref rather than trusting this
   sentence.
+
+Promoted 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): to planned at priority 3 — the three root documents open with the identifier spelling, and T-264-s9's own card says this card owns those sites. Not dispatched by this sitting.

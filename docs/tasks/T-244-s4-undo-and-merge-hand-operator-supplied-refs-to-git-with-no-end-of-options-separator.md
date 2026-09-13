@@ -4,8 +4,8 @@ title: "`undo` and `merge` hand operator-supplied refs to git with no `--` separ
 feature: F-01
 milestone: 4
 size: S
-priority: 8
-status: suggested
+priority: 2
+status: planned
 suggested_by: "verifier claude-opus-5@subagent, in T-244's verification bench, 2026-09-09 — measured while probing the CLI front's argument handling"
 blocked_by: []
 touches: [tools/e2e/]
@@ -62,3 +62,5 @@ A body in `tools/e2e/tests/cli.spec.ts` passing `--branch
 repository and asserting a non-zero refusal with the file NOT created —
 with the positive control that the same fixture accepts an ordinary
 branch name and an ordinary sha.
+
+Promoted 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): to planned at priority 2 — operator-supplied refs reach git with no separator, so a value shaped like an option is parsed as one; absorbs T-244-s5's unescaped-id arm. Not dispatched by this sitting.

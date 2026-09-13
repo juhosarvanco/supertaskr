@@ -4,8 +4,8 @@ title: "The e2e lane's vite server outlives an interrupted or refused playwright
 feature: F-06
 milestone: 4
 size: S
-priority: 2
-status: suggested
+priority: 3
+status: planned
 suggested_by: "the T-295 executor, 2026-09-10: after two interrupted drill runs, ports 15295 and 15990 were both held by leftover node servers and the lane's own preflight refused with EADDRINUSE; the sitting finished on a third port"
 blocked_by: []
 touches: [tools/e2e/preflight.ts, tools/e2e/scripts/orphan-drill.mjs, docs/CONVENTIONS.md]
@@ -44,3 +44,5 @@ tauri process; nothing covers the e2e vite.
   detection SHALL plant one.
 - WHEN a playwright run ends by any route THE server it started SHALL be
   gone, or the departure SHALL be measured and the gap named.
+
+Promoted 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): to planned at priority 3 — the lane's dev server outlives an interrupted run and keeps listening; three ports were burned in one sitting and nothing reclaims them. Not dispatched by this sitting.

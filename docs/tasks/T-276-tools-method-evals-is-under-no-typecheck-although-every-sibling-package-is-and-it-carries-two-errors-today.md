@@ -4,8 +4,8 @@ title: tools/method-evals is under NO typecheck although every sibling package i
 feature: F-06
 milestone: 4
 size: S
-priority: 9
-status: suggested
+priority: 3
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-205-s1, 2026-09-09
 blocked_by: []
 touches: [tools/method-evals]
@@ -49,3 +49,5 @@ check must be a step that BORROWS `tools/e2e`'s installed toolchain (a
 config with an explicit `typeRoots`, which is how the measurement above
 was taken) rather than anything the suite itself imports. The suite must
 stay runnable with nothing installed.
+
+Promoted 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): to planned at priority 3 — the package that judges the method text is the one package under no typecheck, and it carries two real errors today. Not dispatched by this sitting.
