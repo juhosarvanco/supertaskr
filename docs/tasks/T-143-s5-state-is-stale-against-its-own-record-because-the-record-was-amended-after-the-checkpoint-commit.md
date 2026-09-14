@@ -5,12 +5,13 @@ feature: F-06
 milestone: 4
 priority: 8
 size: S
-status: planned
+tier: guarded
+status: building
 suggested_by: executor claude-opus-5@subagent @T-143-s4
 blocked_by: []
 touches: [tools/e2e/scripts/docs-scan.mjs, tools/e2e/scripts/docs-gate.mjs, tools/e2e/scripts/push-checks.mjs, tools/e2e/tests/push-checks.spec.ts, tools/e2e/tests/docs-input-gate.spec.ts, docs/STATE-template.md, docs/STATE.md, method/docs-protocol.md]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review:
