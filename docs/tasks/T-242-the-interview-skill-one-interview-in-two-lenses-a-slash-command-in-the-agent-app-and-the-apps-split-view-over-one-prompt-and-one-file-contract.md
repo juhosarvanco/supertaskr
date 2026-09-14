@@ -6,7 +6,7 @@ milestone: 4
 size: M
 tier: guarded
 priority: 1
-status: building
+status: verifying
 suggested_by: "@human (2026-09-03): \"Should we move the interview also to Claude or Codex as a skill or in other format?\" — ruled with ADR-021 (rooms/cockpit-or-mirror.md RE-RULED)"
 blocked_by: []
 touches: [method/skills/, method/interview/plan-interview.md, method/interview/decomposition.md, method/adapters/CLAUDE.md, method/adapters/AGENTS.md, app/src-tauri/src/agent/kit.rs, tools/e2e/scripts/cli.mjs, tools/e2e/scripts/interview-skill.mjs, tools/e2e/package.json, tools/e2e/tests/interview-skill.spec.ts, tools/e2e/tests/interview.spec.ts, docs/CAPABILITIES.md, docs/INDEX.md, docs/architecture/graph.json]
