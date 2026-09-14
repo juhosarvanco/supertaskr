@@ -9,7 +9,7 @@ priority: 2
 status: building
 suggested_by: "@human (2026-09-09): \"Rule A–D as proposed\" — decision B of docs/rooms/foundation-files-standard.md"
 blocked_by: []
-touches: [docs/CONVENTIONS.md, docs/conventions/, docs/reference/, docs/INDEX.md, docs/CAPABILITIES.md, tools/e2e/scripts/, tools/e2e/tests/, .claude/hooks/, app/src-tauri/src/agent/kit.rs, app/src-tauri/src/dispatch/brief.rs, app/src-tauri/src/lib.rs, tools/method-evals/, method/skills/supertaskr-seat/scripts/]
+touches: [docs/CONVENTIONS.md, docs/conventions/, docs/reference/, docs/INDEX.md, docs/CAPABILITIES.md, tools/e2e/scripts/, tools/e2e/tests/, .claude/hooks/, app/src-tauri/src/agent/kit.rs, app/src-tauri/src/dispatch/brief.rs, app/src-tauri/src/lib.rs, tools/method-evals/, method/skills/supertaskr-seat/scripts/, tools/e2e/tests/docs-input-gate.spec.ts]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by:
