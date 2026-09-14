@@ -18,6 +18,11 @@ import { parse as parseYaml } from "yaml";
 import { repoRoot } from "../preflight";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import { conventionsText, liveTaskCards, taskStatuses, trackedFiles } from "../scripts/docs-scan.mjs";
+// THE EARS PATTERNS ARE THE METHOD'S AND THEIR READER IS session-economics's
+// (T-320): `dispatch-brief.mjs` cannot import it — that module imports THIS
+// one's subject — so the express arm takes the reading as an argument and
+// the bodies below hand in the same one `brief.mjs` does.
+import { DECOMPOSITION_FILE, earsKeywords, isEars } from "../scripts/session-economics.mjs";
 // THE PARSER LIBRARY'S BUILT BROWSER ENTRY — the one `dispatch-brief.mjs`
 // imports since T-317, read here so a body can compare the arm's reading
 // of the settings with the library's rather than take the move on trust.
@@ -75,8 +80,29 @@ import {
   TRIAGE_STATUSES,
   WAKE_FENCE,
   WOKEN_BY_STATUS,
+  EFFORT_NOT_CONFIGURED,
+  EXPRESS_CODES,
+  EXPRESS_REQUIREMENTS,
+  EXPRESS_STEPS,
+  ExpressFinding,
+  ACTIVE_STATUSES,
+  compactCard,
+  expressEligibility,
+  expressLabel,
+  expressMeasurements,
+  expressPlacement,
+  expressPlan,
+  expressReuse,
+  expressWithdrawal,
+  hashObject,
+  isGenerated,
+  nextCardId,
+  outcomeSlug,
+  roleEffort,
+  runExpress,
   architectureText,
   assembleBrief,
+  defaultDispatchIo,
   awaitPlan,
   baseVerdict,
   boardCensus,
@@ -8150,10 +8176,14 @@ test("THE CHEAP KEEPERS ARE READ FROM THE SECTION, and the card's own preflight 
   // switch that also takes the FLOOR preflight away with them, and an
   // off setting that plans three steps fewer without saying so.
   const on = keeperSteps({ projectRoot: repoRoot, id: "T-000", card: "docs/tasks/T-000.md", process: atProfile("standard") });
+  // THE LAUNCH RECEIPT (T-320) SITS WITH THE PREFLIGHT AT THE END, and is
+  // FLOOR beside it: `merge.keepers` switches the three cheap readings of
+  // the DIFF, and a receipt mismatch is not a property of the diff.
   expect(on.map((s) => s.id), "standard does not plan the cheap keepers").toEqual([
     "keeper:pinned-sentence",
     "keeper:forbidden-spelling",
     "keeper:xs-bound",
+    "keeper:receipt",
     "keeper:preflight",
   ]);
   const off = keeperSteps({
@@ -8164,6 +8194,7 @@ test("THE CHEAP KEEPERS ARE READ FROM THE SECTION, and the card's own preflight 
   });
   expect(off.map((s) => s.id), "the switch off did not change the plan, or took the floor with it").toEqual([
     "keeper:off",
+    "keeper:receipt",
     "keeper:preflight",
   ]);
   expect(off[0]?.title ?? "", "the skip is silent rather than announced").toContain("merge.keepers");
@@ -10374,4 +10405,1135 @@ test("T-322 VC3 — PROGRESS IS THE NEWEST ATTEMPT'S, so one old partial does no
     }).act,
     "the control: demonstrated partial progress at the newest attempt stopped continuing",
   ).toBe("continue");
+});
+
+/* ────────────────────────────────────────────────────────────────────
+ * T-320 — THE EXPRESS PATH INSIDE THE BOUNDED TIER.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/** The METHOD's own EARS reading, handed in exactly as `brief.mjs` hands it in. */
+const EARS = (criterion: string): boolean => isEars(criterion, earsKeywords(readDoc(DECOMPOSITION_FILE)));
+
+/** An outcome sentence in EARS form, used by every body below that needs one. */
+const OUTCOME =
+  "WHEN the collect verb runs THE run record SHALL print the reservation's release instant.";
+
+/** The express fence these bodies use: one ordinary, non-guard-class script. */
+const EXPRESS_FENCE = ["tools/e2e/scripts/run-record.mjs"];
+
+/** One compact card, composed the way the arm composes it. */
+function compactFixtureCard(over: Partial<Parameters<typeof compactCard>[0]> = {}) {
+  return compactCard({
+    id: "T-901",
+    at: "2026-09-14",
+    outcome: OUTCOME,
+    fence: EXPRESS_FENCE,
+    feature: "F-04",
+    milestone: "4",
+    suggestedBy: "a body",
+    ears: EARS,
+    ...over,
+  });
+}
+
+/** An eligibility input whose every requirement is MET, for a body to break ONE of. */
+function eligibleInput(over: Partial<Parameters<typeof expressEligibility>[0]> = {}) {
+  return expressEligibility({
+    fence: EXPRESS_FENCE,
+    paths: EXPRESS_FENCE,
+    unresolved: [],
+    changed: EXPRESS_FENCE,
+    tracked: () => true,
+    present: () => true,
+    generated: () => false,
+    guardMap: new Map([["gate-runners", ["tools/e2e/scripts/gate-*"]]]),
+    owning: { byPath: [{ path: EXPRESS_FENCE[0] as string, specs: ["tools/e2e/tests/run-record.spec.ts"] }], unplaceable: [] },
+    admission: {
+      admitted: true,
+      kind: "explicit",
+      boundary: "lane-cut",
+      card: "T-901",
+      phase: "implementation",
+      code: "",
+      why: "the grant names it",
+      revision: 3,
+      blob: "",
+      parent: null,
+      evidence: "",
+      consumed: true,
+      reuses: null,
+      resource: null,
+      drift: [],
+      advisory: [],
+      obligations: [],
+    },
+    refusal: null,
+    ...over,
+  });
+}
+
+test("T-320 C1 — THE COMPACT CARD CARRIES EVERY REQUIRED FIELD, BOTH STANDING SECTIONS, AND THE OUTCOME SENTENCE VERBATIM AS ITS CRITERION", () => {
+  // THE CARD'S FIRST CRITERION, the SHAPE half. A compact card is a card
+  // like any other the moment it is written: the board reads it, the
+  // preflight re-derives it, the merge verb finds its verdict by heading.
+  // A shape missing one field is a card every one of those readers
+  // answers differently about.
+  //
+  // KILLED BY: a composer that drops a required field, one that drops
+  // either standing section, one that paraphrases the outcome sentence
+  // into a criterion of its own, and one that puts the fence somewhere
+  // other than `touches:`.
+  const card = compactFixtureCard();
+  const fields = frontmatterFields(card.text);
+  // THE REQUIRED FIELD SET IS DERIVED FROM TWO SOURCES AND FROM NEITHER
+  // ALONE, and a list typed in this body would be a third statement of a
+  // rule that already has two (T-057).
+  //
+  //   THE METHOD DECLARES the field set — `method/tasks/TASK-FORMAT.md`'s
+  //   own frontmatter block — but not every field in it is required: the
+  //   block carries `wake:`, which is a PARKED card's field and belongs on
+  //   no other.
+  //
+  //   THE BOARD SHOWS which of them a card actually carries. Not every
+  //   live card carries every field — this board runs back to cards filed
+  //   before several of them existed — so the reading is a THRESHOLD and
+  //   the threshold is stated: a field two thirds of the live cards carry
+  //   is a field this project files cards with, and its absence from a
+  //   compact card would make that card read differently to some existing
+  //   reader. The two CONDITIONAL fields fall far below it — `wake:` is a
+  //   parked card's and `tier:` is written by the arm at the dispatch
+  //   stamp — and the body asserts the SEPARATION below rather than
+  //   trusting the cut-off, because a derivation sitting on its own
+  //   boundary would change its answer on the next card filed.
+  const block = /```yaml\n---\n([\s\S]*?)\n---\n```/.exec(readDoc("method/tasks/TASK-FORMAT.md"));
+  expect(block, "TASK-FORMAT.md no longer carries its frontmatter block, so this body has no field set to read").not.toBeNull();
+  const declared = new Set([...(block?.[1] ?? "").matchAll(/^([a-z_]+):/gm)].map((m) => String(m[1])));
+  expect(declared.size, "the field set read off the method is empty, which would make this body assert nothing").toBeGreaterThan(10);
+  const live = liveTaskCards(repoRoot).map((c) => new Set(Object.keys(frontmatterFields(c.content))));
+  expect(live.length, "no live card was read, so the derivation below would be empty").toBeGreaterThan(20);
+  const carried = (key: string): number => live.filter((keys) => keys.has(key)).length / live.length;
+  const required = [...declared].filter((key) => carried(key) >= 2 / 3);
+  expect(required.length, "the field set derived from the method and the board is too small to assert anything").toBeGreaterThan(9);
+  for (const key of required) {
+    expect(Object.keys(fields), `the compact card carries no \`${key}:\``).toContain(key);
+  }
+  expect(required, "`wake:` is a PARKED card's field and this derivation has stopped excluding it").not.toContain("wake");
+  // AND THE THRESHOLD IS NOWHERE NEAR A BOUNDARY, asserted rather than
+  // assumed: the least-carried field it admits and the most-carried one it
+  // excludes are half the board apart, so no card filed tomorrow moves a
+  // field across it.
+  const admitted = Math.min(...required.map(carried));
+  const excluded = Math.max(0, ...[...declared].filter((k) => !required.includes(k)).map(carried));
+  expect(
+    admitted - excluded,
+    `the field set's two groups are only ${((admitted - excluded) * 100).toFixed(1)} points apart, ` +
+      "so this threshold is a cut-off a single card could move a field across",
+  ).toBeGreaterThan(0.5);
+  // BOTH STANDING SECTIONS, AT DEPTH TWO — the depth is part of the
+  // spelling (TASK-FORMAT.md says so in as many words).
+  expect(card.text, "no `## Implementation notes` section").toMatch(/^## Implementation notes$/m);
+  expect(card.text, "no `## Verdicts` section").toMatch(/^## Verdicts$/m);
+  expect(card.text, "no `## Acceptance criteria` section").toMatch(/^## Acceptance criteria$/m);
+  // THE OUTCOME SENTENCE, VERBATIM, AS THE ONE CRITERION.
+  const criteria = [...card.text.matchAll(/^- (.+)$/gm)].map((m) => String(m[1]));
+  expect(criteria, "the outcome sentence is not the card's criterion, verbatim").toEqual([OUTCOME]);
+  expect(EARS(criteria[0] as string), "the criterion is not in EARS form").toBe(true);
+  // THE FENCE AS THE TOUCHES, AND THE SIZE AS XS.
+  expect(fieldList(fields, "touches"), "the fence is not the card's touches").toEqual(EXPRESS_FENCE);
+  expect(fieldScalar(fields, "size"), "a compact card is XS or it is not compact").toBe("XS");
+  expect(fieldScalar(fields, "tier"), "the compact card carries a tier, which is the ARM's to derive at the stamp").toBe("");
+  expect(fieldScalar(fields, "status"), "a compact card is filed planned and stamped building by the ritual").toBe("planned");
+});
+
+test("T-320 C1 — AN OUTCOME SENTENCE NOT IN EARS FORM IS REFUSED BY NAME, and the arm composes no criterion of its own", () => {
+  // THE POSITIVE CONTROL for the body above, and it is the half that
+  // matters: the whole card is bought on one line, and a composer that
+  // WRAPPED a wish into a requirement would put words nobody wrote into
+  // the contract a lane is answerable to.
+  //
+  // KILLED BY: a composer that accepts any sentence, one that wraps a
+  // non-EARS sentence into EARS form, and one that skips the check when
+  // no reading is handed in.
+  const cases: [string, string][] = [
+    ["make the thing faster", "a wish with no keyword and no SHALL"],
+    ["WHEN the verb runs the record prints the instant", "a keyword with no SHALL"],
+    ["the record SHALL print the instant", "a SHALL with no opening keyword"],
+  ];
+  for (const [outcome, why] of cases) {
+    let code = "";
+    try {
+      compactFixtureCard({ outcome });
+    } catch (err) {
+      if (!(err instanceof ExpressFinding)) throw err;
+      code = String(err.code);
+      expect(err.message, `the refusal of ${why} does not name the method file that owns the patterns`).toContain(
+        "method/interview/decomposition.md",
+      );
+    }
+    expect(code, `${JSON.stringify(outcome)} (${why}) was accepted as a criterion`).toBe(
+      EXPRESS_CODES.OUTCOME_SHAPE,
+    );
+  }
+  // AND A CHECK THAT CAN BE SKIPPED BY OMITTING AN ARGUMENT IS NO CHECK.
+  let omitted = "";
+  try {
+    compactCard({
+      id: "T-901",
+      at: "2026-09-14",
+      outcome: "make the thing faster",
+      fence: EXPRESS_FENCE,
+      feature: "F-04",
+      milestone: "4",
+      suggestedBy: "a body",
+      // @ts-expect-error — the whole point: a caller that hands in no reading
+      ears: undefined,
+    });
+  } catch (err) {
+    if (!(err instanceof ExpressFinding)) throw err;
+    omitted = String(err.code);
+  }
+  expect(omitted, "a compact card was composed with NO EARS reading at all").toBe(EXPRESS_CODES.NO_EARS);
+  // A MULTI-LINE OUTCOME IS REFUSED TOO: it becomes the `title:` field and
+  // a criterion bullet, and a line break ends both early.
+  let lines = "";
+  try {
+    compactFixtureCard({ outcome: "WHEN a thing happens THE arm SHALL do it.\nAnd also something else." });
+  } catch (err) {
+    if (!(err instanceof ExpressFinding)) throw err;
+    lines = String(err.code);
+  }
+  expect(lines, "a two-line outcome sentence was written into a frontmatter field").toBe(
+    EXPRESS_CODES.OUTCOME_LINES,
+  );
+  // THE CLEAN TWIN: the same composer, the same fence, an EARS sentence.
+  expect(compactFixtureCard().criterion, "the well-formed sentence was refused too, so the three above prove nothing").toBe(
+    OUTCOME,
+  );
+});
+
+/**
+ * THE EXPRESS PLAN OVER A FIXTURE, TWICE — and the two passes are the
+ * point rather than a convenience. The first learns the id the board
+ * would give the compact card and the BLOB its bytes would have; the
+ * grant is then written naming exactly that blob; the second is the plan
+ * an owner who approved a compact card in advance would get. A grant can
+ * bind to a card that does not exist yet precisely because its bytes are
+ * determined the moment the arm composes them.
+ */
+function expressPlanned(
+  root: string,
+  block: ((id: string, blob: string) => string) | null,
+  opts: Partial<Parameters<typeof expressPlan>[1]> = {},
+) {
+  const base = {
+    outcome: OUTCOME,
+    fence: EXPRESS_FENCE,
+    ears: EARS,
+    suggestedBy: "a body",
+    ...opts,
+  };
+  const first = expressPlan(context({ root }), base);
+  if (block !== null) grantIn(root, block(first.id, first.blob));
+  const second = expressPlan(context({ root }), base);
+  expect(second.blob, "the compact card's blob moved between two identical compositions").toBe(first.blob);
+  return second;
+}
+
+test("T-320 C1 — UNDER A STANDING GRANT THE COMPACT CARD IS ADMITTED, and the admission binds the blob the grant approved", () => {
+  // THE CARD'S FIRST CRITERION, the `all` mode — which this repository's
+  // schema spells `standing` (method/runtime/process-schema.yaml declares
+  // the value set each/until/standing and carries no `all`). The card's
+  // word is read as that mode: the one that admits without spending a
+  // per-card approval.
+  //
+  // KILLED BY: a plan that admits without reading the grant, one that
+  // admits a card the grant does not name, and one whose admission binds
+  // to something other than the blob the compact card actually has.
+  const fx = ritualFixture("express-standing");
+  try {
+    const plan = expressPlanned(fx.root, (id, blob) =>
+      dispatchBlockText({ approval: "standing", recovery: "none", order: [id], blobs: { [id]: blob } }),
+    );
+    expect(plan.refusal, `the express path refused under a grant that names its card: ${plan.refusal?.why ?? ""}`).toBeNull();
+    expect(plan.admission?.admitted, "the card the grant names was not admitted").toBe(true);
+    expect(plan.admission?.blob, "the admission did not bind to the compact card's own blob").toBe(plan.blob);
+    expect(plan.admission?.revision, "the admission did not bind to the grant's revision").toBe(3);
+    expect(plan.admission?.boundary, "the express admission is made at a boundary other than the lane cut").toBe("lane-cut");
+    const admissionFinding = plan.eligibility.findings.find((f) => f.id === "admission");
+    expect(admissionFinding?.met, "the eligibility's admission requirement did not read the admission").toBe(true);
+    // AND THE PLAN WROTE NOTHING: the card exists only as bytes and a sha.
+    expect(existsSync(path.join(fx.root, plan.card.file)), "the express PLAN wrote the compact card").toBe(false);
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(express-standing)");
+  }
+});
+
+test("T-320 C1 — UNDER `each` THE COMPACT CARD'S APPROVAL IS SPENT ONCE, and a second express dispatch of it is refused by name", () => {
+  // THE CARD'S FIRST CRITERION, the `each` mode: "its approved blob needs
+  // the per-dispatch approval that mode requires, consumed once".
+  //
+  // KILLED BY: a plan that never reads the ledger, one that admits a
+  // second run of a card whose approval was spent, and one that reports
+  // the first admission as consuming nothing.
+  const fx = ritualFixture("express-each");
+  try {
+    const first = expressPlanned(fx.root, (id, blob) =>
+      dispatchBlockText({ approval: "each", recovery: "none", order: [id], blobs: { [id]: blob } }),
+    );
+    expect(first.admission?.admitted, "the first express dispatch under `each` was refused").toBe(true);
+    expect(first.admission?.consumed, "the first admission under `each` consumed nothing").toBe(true);
+
+    // THE SECOND, WITH THE LEDGER THE FIRST WOULD HAVE LEFT. The ledger is
+    // the run records themselves (T-324), so this is what the arm reads
+    // after one attempt of this card has concluded.
+    const second = expressPlan(context({ root: fx.root }), {
+      outcome: OUTCOME,
+      fence: EXPRESS_FENCE,
+      ears: EARS,
+      suggestedBy: "a body",
+      ledger: [
+        {
+          card: first.id,
+          attempt: `${first.id}-a1`,
+          kind: "explicit",
+          revision: 3,
+          blob: first.blob,
+          parent: null,
+          evidence: "",
+          state: "finished",
+          terminal: true,
+          resource: null,
+        },
+      ],
+    });
+    expect(second.admission, "a card whose `each` approval was spent was admitted again").toBeNull();
+    expect(second.refusal?.code, "the second dispatch was not refused by the consumed-approval name").toBe(
+      "ADMISSION_APPROVAL_CONSUMED",
+    );
+    expect(second.eligibility.eligible, "an unadmitted express change was measured eligible").toBe(false);
+    expect(second.eligibility.refusals.join(" "), "the refusal does not name the admission requirement").toContain(
+      "admission",
+    );
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(express-each)");
+  }
+});
+
+test("T-320 C1 — UNDER `until` THE COMPACT CARD IS ADMITTED ONLY AS A DERIVED REPAIR INSIDE THE RECOVERY POLICY, and refused by name otherwise", () => {
+  // THE CARD'S FIRST CRITERION, the `until` mode. A grant that runs up to
+  // a named card approves THAT card and the ones before it; a compact card
+  // composed seconds ago is in no such order, so the only way it is
+  // admitted is as a repair the approved work needs — which is an
+  // authorization INHERITED rather than minted, and only where the
+  // recovery policy allows one.
+  //
+  // KILLED BY: a plan that admits a compact card the `until` order does
+  // not reach, one that admits a derived repair under recovery `none`, and
+  // one that admits a repair naming no parent.
+  const fx = ritualFixture("express-until");
+  try {
+    // THE PARENT IS THE FIXTURE'S OWN CARD, which the grant lists and runs
+    // up to. The compact card is not in the order at all.
+    const parentBlob = blobOf(fx.root, FIXTURE_CARD_FILE);
+    const bare = expressPlanned(fx.root, () =>
+      dispatchBlockText({
+        approval: "until",
+        recovery: "repairs",
+        order: [FIXTURE_CARD_ID],
+        until: FIXTURE_CARD_ID,
+        blobs: { [FIXTURE_CARD_ID]: parentBlob },
+      }),
+    );
+    expect(bare.admission, "a compact card outside the `until` order was admitted as ordinary work").toBeNull();
+    expect(bare.refusal?.code, "the refusal does not name the grant's card list").toBe("ADMISSION_CARD_NOT_APPROVED");
+
+    // AND AS A DERIVED REPAIR OF THE CARD THE GRANT LISTS, INSIDE THE
+    // RECOVERY POLICY: admitted, bound to the failure evidence.
+    const repair = expressPlan(context({ root: fx.root }), {
+      outcome: OUTCOME,
+      fence: EXPRESS_FENCE,
+      ears: EARS,
+      suggestedBy: "a body",
+      derivedFrom: FIXTURE_CARD_ID,
+      failure: "the owed set redded run-record.spec.ts at the candidate",
+    });
+    expect(repair.refusal, `the derived repair was refused: ${repair.refusal?.why ?? ""}`).toBeNull();
+    expect(repair.admission?.admitted, "a repair the recovery policy allows was not admitted").toBe(true);
+    expect(repair.admission?.kind, "the repair was admitted as ordinary explicit work").toBe("derived");
+    expect(repair.admission?.parent, "the derived admission did not bind to its parent").toBe(FIXTURE_CARD_ID);
+    expect(repair.admission?.evidence, "the derived admission did not bind to the failure evidence").not.toBe("");
+
+    // THE POSITIVE CONTROL FOR THE RECOVERY POLICY: the same repair under
+    // recovery `none` is refused, so the admission above is about the
+    // policy and not about a plan that says yes to repairs.
+    writeFileSync(
+      path.join(fx.root, RUNTIME_TEMPLATE),
+      readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8"),
+    );
+    grantIn(
+      fx.root,
+      dispatchBlockText({
+        approval: "until",
+        recovery: "none",
+        order: [FIXTURE_CARD_ID],
+        until: FIXTURE_CARD_ID,
+        blobs: { [FIXTURE_CARD_ID]: parentBlob },
+      }),
+    );
+    const noRecovery = expressPlan(context({ root: fx.root }), {
+      outcome: OUTCOME,
+      fence: EXPRESS_FENCE,
+      ears: EARS,
+      suggestedBy: "a body",
+      derivedFrom: FIXTURE_CARD_ID,
+      failure: "the owed set redded run-record.spec.ts at the candidate",
+    });
+    expect(noRecovery.refusal?.code, "a derived repair was admitted under recovery `none`").toBe(
+      "ADMISSION_RECOVERY_NONE",
+    );
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(express-until)");
+  }
+});
+
+test("T-320 C1 — WITH NO GRANT THE EXPRESS PATH IS REFUSED BY NAME, because an outcome sentence alone authorizes no work", () => {
+  // THE CARD'S FIRST CRITERION, the no-grant state — and this is the ONE
+  // place the express path departs from the ordinary cut, which is why it
+  // has a body of its own. For a card a person filed and triaged, `admit`
+  // under no grant answers "made, and NOTHING was enforced", and the
+  // standing authorization the loop runs under is the seat's. A COMPACT
+  // CARD has no such history: it was composed by a command out of a
+  // sentence, and nobody has triaged it.
+  //
+  // KILLED BY: an arm that rides the unenforced admission into a lane, one
+  // that refuses without naming the state, and one that writes the card
+  // anyway.
+  const fx = ritualFixture("express-no-grant");
+  try {
+    // THIS PROJECT'S OWN TEMPLATE IS THE NO-GRANT STATE, so the fixture
+    // needs nothing done to it — which is the honest arrangement and is
+    // asserted rather than assumed.
+    expect(
+      readFileSync(path.join(fx.root, RUNTIME_TEMPLATE), "utf8"),
+      "the fixture's template carries a dispatch block, so this body is not testing the no-grant state",
+    ).not.toMatch(/^dispatch:/m);
+    const plan = expressPlanned(fx.root, null);
+    expect(plan.admission, "an admission was made under no grant at all").toBeNull();
+    expect(plan.refusal?.code, "the express path was not refused by the no-grant name").toBe(
+      EXPRESS_CODES.NO_GRANT,
+    );
+    expect(plan.refusal?.why, "the refusal does not say why an outcome sentence is not an authorization").toContain(
+      "an outcome sentence alone authorizes no work",
+    );
+    expect(plan.eligibility.eligible, "an unadmitted express change was measured eligible").toBe(false);
+
+    // AND THE ORDINARY CUT IS UNAFFECTED — the positive control that keeps
+    // this refusal a property of the EXPRESS path rather than of the tree:
+    // the same no-grant template still admits a card a person filed.
+    const cut = dispatchLanePlan(context({ root: fx.root, taskId: FIXTURE_CARD_ID }), {
+      taskId: FIXTURE_CARD_ID,
+      slug: FIXTURE_SLUG,
+      scratch: fx.scratch,
+    });
+    expect(cut.admission.admitted, "the no-grant refusal leaked onto the ordinary lane cut").toBe(true);
+    expect(cut.admission.kind, "the ordinary cut's admission is no longer the unenforced one").toBe("unenforced");
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(express-no-grant)");
+  }
+});
+
+/** A fixture card that is ACTIVE and fences exactly the express change's ground. */
+const OWNING_CARD = [
+  "---",
+  `id: ${FIXTURE_CARD_ID}`,
+  "title: A FIXTURE CARD THAT ALREADY OWNS THIS GROUND",
+  "feature: F-06",
+  "milestone: 4",
+  "priority: 3",
+  "size: S",
+  "status: building",
+  "blocked_by: []",
+  `touches: [${EXPRESS_FENCE.join(", ")}]`,
+  "builder:",
+  "verifier:",
+  "built_by:",
+  "verified_by:",
+  "review: default",
+  "---",
+  "",
+  "The fixture's own card. It claims nothing a preflight cannot re-derive.",
+  "",
+  "## Acceptance criteria",
+  "",
+  "- THE card SHALL exist.",
+  "",
+  "## Implementation notes",
+  "",
+  "## Verdicts",
+  "",
+].join("\n");
+
+test("T-320 C2 — A CHANGE THAT ALREADY BELONGS TO AN ACTIVE CARD WITH A RESUMABLE WRITER REUSES THAT CARD AND ITS RUN RECORD, and mints neither a card nor a second writer", () => {
+  // THE CARD'S SECOND CRITERION. A correction round and a re-entry are not
+  // new work: the card that owns the ground already has a run record, and
+  // a compact card for the same change would be two writers on one
+  // resource, one piece of work across two records, and a second approval
+  // spent on work the first one carries.
+  //
+  // KILLED BY: an arm that mints a card whenever it is given a sentence,
+  // one that reuses a card whose writer has FINISHED, one that reuses a
+  // card whose fence does not cover the change, and one that reuses a card
+  // nobody is working on.
+  const fx = ritualFixture("express-reuse", { card: OWNING_CARD });
+  try {
+    const live = {
+      attempt: `${FIXTURE_CARD_ID}-a1`,
+      card: FIXTURE_CARD_ID,
+      state: "blocked",
+      terminal: false,
+    };
+    const reused = expressPlan(context({ root: fx.root }), {
+      outcome: OUTCOME,
+      fence: EXPRESS_FENCE,
+      ears: EARS,
+      suggestedBy: "a body",
+      writers: [live],
+    });
+    expect(reused.reuse?.card, "an active card whose fence covers the change was not reused").toBe(FIXTURE_CARD_ID);
+    expect(reused.reuse?.attempt, "the reuse does not name the run record the correction round rides").toBe(live.attempt);
+
+    // AND THE RUN PROVES IT MINTS NOTHING: no card written, no second
+    // writer, and the ledger says why in one line.
+    const before = inventory(fx.root);
+    const result = runExpress(reused, defaultDispatchIo());
+    expect(result.code, "the reuse answer was reported as a failure").toBe(EXIT.CLEAN);
+    expect(result.cardFile, "a compact card was created for a change that already had a home").toBe("");
+    expect(result.done.length, "the run went past the reuse step").toBe(1);
+    expect(inventory(fx.root), "the reuse wrote something into the tree").toEqual(before);
+    expect(result.notes.join(" "), "the reuse does not point at the continuation that resumes the writer").toContain(
+      `--run continue --attempt ${live.attempt}`,
+    );
+
+    // ── THE THREE POSITIVE CONTROLS, each breaking ONE arm of the rule ──
+    // A TERMINAL WRITER IS NOT A RESUMABLE ONE: the lane is over and a
+    // fresh change to the same ground is a fresh card.
+    expect(
+      expressPlan(context({ root: fx.root }), {
+        outcome: OUTCOME,
+        fence: EXPRESS_FENCE,
+        ears: EARS,
+        suggestedBy: "a body",
+        writers: [{ ...live, state: "finished", terminal: true }],
+      }).reuse,
+      "a card whose writer had FINISHED was reused, which resumes a lane that is over",
+    ).toBeNull();
+    // NO WRITER AT ALL IS NOT A RESUMABLE ONE EITHER.
+    expect(
+      expressPlan(context({ root: fx.root }), {
+        outcome: OUTCOME,
+        fence: EXPRESS_FENCE,
+        ears: EARS,
+        suggestedBy: "a body",
+        writers: [],
+      }).reuse,
+      "a card with no writer at all was reused",
+    ).toBeNull();
+    // AND A CARD WHOSE FENCE DOES NOT COVER THE CHANGE OWNS NOTHING OF IT.
+    expect(
+      expressPlan(context({ root: fx.root }), {
+        outcome: OUTCOME,
+        fence: [...EXPRESS_FENCE, "tools/e2e/scripts/merge.mjs"],
+        ears: EARS,
+        suggestedBy: "a body",
+        writers: [live],
+      }).reuse,
+      "a card was reused for a change reaching outside its own fence",
+    ).toBeNull();
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(express-reuse)");
+  }
+});
+
+test("T-320 C2 — AN ACTIVE STATUS IS WHAT MAKES A CARD SOMEBODY'S WORK, and a done card is not reused however live its record looks", () => {
+  // THE SECOND HALF OF THE SAME RULE, and it is separated because it fails
+  // the other way round: a card the board calls DONE is finished work, and
+  // a stale non-terminal record beside it is a record nobody reconciled —
+  // not an invitation to resume.
+  //
+  // KILLED BY: a reuse that reads only the run records, and one that reads
+  // only the board.
+  const done = OWNING_CARD.replace(/^status: building$/m, "status: done");
+  const writers = [{ attempt: `${FIXTURE_CARD_ID}-a1`, card: FIXTURE_CARD_ID, state: "running", terminal: false }];
+  const board = new Map([
+    [
+      FIXTURE_CARD_ID,
+      { id: FIXTURE_CARD_ID, file: FIXTURE_CARD_FILE, title: "", fields: frontmatterFields(done) },
+    ],
+  ]);
+  expect(
+    expressReuse({ paths: EXPRESS_FENCE, cards: board, slugs: new Map(), comps: [], active: ACTIVE_STATUSES, writers }),
+    "a DONE card with a stale running record was reused",
+  ).toBeNull();
+  // THE CLEAN TWIN: the same record, the same fence, an ACTIVE status.
+  const building = new Map([
+    [
+      FIXTURE_CARD_ID,
+      {
+        id: FIXTURE_CARD_ID,
+        file: FIXTURE_CARD_FILE,
+        title: "",
+        fields: frontmatterFields(OWNING_CARD),
+      },
+    ],
+  ]);
+  expect(
+    expressReuse({ paths: EXPRESS_FENCE, cards: building, slugs: new Map(), comps: [], active: ACTIVE_STATUSES, writers })?.card,
+    "the active twin was not reused either, so the refusal above is about nothing",
+  ).toBe(FIXTURE_CARD_ID);
+  expect(ACTIVE_STATUSES, "`done` has become an active status, which would make this rule vacuous").not.toContain("done");
+});
+
+test("T-320 C3 — THE ELIGIBILITY PRINTS ALL FIVE REQUIREMENTS AS MEASURED FINDINGS, whether they held or not", () => {
+  // THE CARD'S THIRD CRITERION, the PRINTING half — and it is a half worth
+  // a body of its own. A report that printed only the refusals would leave
+  // a reader unable to tell a requirement that PASSED from one nobody
+  // asked, which is the same failure a skipped gate is: a gate nobody ran
+  // and a gate that passed look identical afterwards.
+  //
+  // KILLED BY: a measurement that reports only failures, one that drops a
+  // requirement, one whose findings carry no measurement, and one whose
+  // order drifts from the card's.
+  const whole = eligibleInput();
+  expect(whole.eligible, "the all-met arrangement was measured ineligible, so every control below proves nothing").toBe(true);
+  expect(
+    whole.findings.map((f) => f.id),
+    "the findings are not the five requirements in the card's own order",
+  ).toEqual([...EXPRESS_REQUIREMENTS]);
+  for (const f of whole.findings) {
+    expect(f.measured.trim(), `the ${f.id} finding carries no measurement`).not.toBe("");
+    expect(f.requires.trim(), `the ${f.id} finding does not say what it requires`).not.toBe("");
+    expect(f.met, `the ${f.id} finding was not met in the all-met arrangement`).toBe(true);
+  }
+  expect(whole.refusals, "an all-met measurement produced refusals").toEqual([]);
+});
+
+test("T-320 C3 — EACH OF THE FIVE REQUIREMENTS REFUSES BY NAME ON ITS OWN, and the guard-class one is the demonstration's refused control", () => {
+  // THE CARD'S THIRD CRITERION, the REFUSAL half. Each arm breaks exactly
+  // ONE requirement of an otherwise eligible change, so a finding that
+  // fired is a finding about that requirement and not about an arrangement
+  // that was broken in several ways at once.
+  //
+  // THE GUARD-CLASS ARM IS THE CARD'S OWN NAMED CONTROL: "a superficially
+  // small change to one line of a guard-class file is the demonstration's
+  // refused control". One line is exactly the change the bounded tier
+  // looks cheapest on, and a one-line change to a guard can retire the
+  // guard in silence.
+  //
+  // KILLED BY: a measurement that refuses for the wrong reason, one that
+  // passes any of these five, and one whose refusal does not name the
+  // thing that failed.
+  const guard = "tools/e2e/scripts/gate-run.mjs";
+  const broken: [string, ReturnType<typeof eligibleInput>, string][] = [
+    [
+      "admission",
+      eligibleInput({ admission: null, refusal: { code: "ADMISSION_CARD_NOT_APPROVED", why: "the grant does not name it" } }),
+      "ADMISSION_CARD_NOT_APPROVED",
+    ],
+    [
+      "fence",
+      eligibleInput({ changed: [...EXPRESS_FENCE, "app/src/main.ts"] }),
+      "app/src/main.ts",
+    ],
+    [
+      "keeper",
+      eligibleInput({
+        owning: { byPath: [], unplaceable: [{ path: EXPRESS_FENCE[0] as string, why: "no spec in this lane reaches it" }] },
+      }),
+      "no spec in this lane reaches it",
+    ],
+    [
+      "guard-class",
+      eligibleInput({
+        paths: [guard],
+        changed: [guard],
+        owning: { byPath: [{ path: guard, specs: ["tools/e2e/tests/gate-run.spec.ts"] }], unplaceable: [] },
+      }),
+      "gate-runners",
+    ],
+    ["reversible", eligibleInput({ tracked: () => false }), "UNTRACKED"],
+  ];
+  for (const [id, measured, names] of broken) {
+    expect(measured.eligible, `breaking the ${id} requirement left the change ELIGIBLE`).toBe(false);
+    const finding = measured.findings.find((f) => f.id === id);
+    expect(finding?.met, `the ${id} requirement was broken and its own finding still says MET`).toBe(false);
+    expect(finding?.measured, `the ${id} refusal does not name what failed`).toContain(names);
+    // AND EXACTLY ONE FAILED: a finding that fired because the whole
+    // arrangement was broken proves nothing about its own requirement.
+    expect(
+      measured.findings.filter((f) => !f.met).map((f) => f.id),
+      `breaking the ${id} requirement moved another finding too`,
+    ).toEqual([id]);
+    expect(measured.refusals.join(" "), `the refusal list does not name ${id}`).toContain(id);
+  }
+  // THE GUARD-CLASS ARM ONCE MORE, THROUGH THE REAL MAP RATHER THAN A
+  // FIXTURE ONE — because the map is this project's own document and a
+  // body that only ever saw a two-entry stub would not notice the day the
+  // real one stopped covering the runners.
+  const realMap = guardClassMap(conventionsText(repoRoot), guardClassIds(readDoc("method/tasks/TASK-FORMAT.md")));
+  expect(guardClassHits([guard], realMap).length, "the conventions' own guard-class map no longer covers the gate runners").toBeGreaterThan(0);
+  const real = eligibleInput({
+    paths: [guard],
+    changed: [guard],
+    guardMap: realMap,
+    owning: { byPath: [{ path: guard, specs: ["tools/e2e/tests/gate-run.spec.ts"] }], unplaceable: [] },
+  });
+  expect(real.eligible, "a one-line change to a gate runner was measured eligible for the express path").toBe(false);
+  // AND THE CLEAN TWIN THROUGH THE SAME REAL MAP: an ordinary script is
+  // eligible, so the refusal above is about the guard class and not about
+  // a map that refuses everything.
+  expect(
+    eligibleInput({ guardMap: realMap }).eligible,
+    "the real map refuses an ordinary fenced script too, so the control above discriminates nothing",
+  ).toBe(true);
+});
+
+test("T-320 C3 — REVERSIBLE MEANS TRACKED, PRESENT AND NOT GENERATED, and each of the three is measured on its own", () => {
+  // THE FIFTH REQUIREMENT, whose three halves fail for three different
+  // reasons: an UNTRACKED file cannot be restored by `git checkout --`, an
+  // ABSENT one means the change is a creation rather than an edit, and a
+  // GENERATED one means the change is a regeneration its generator will
+  // undo at the next merge.
+  //
+  // KILLED BY: a measurement that tests only one of the three, and one
+  // that reads a generated file as an ordinary one.
+  expect(eligibleInput({ tracked: () => false }).findings.find((f) => f.id === "reversible")?.measured).toContain("UNTRACKED");
+  expect(eligibleInput({ present: () => false }).findings.find((f) => f.id === "reversible")?.measured).toContain("ABSENT");
+  expect(eligibleInput({ generated: () => true }).findings.find((f) => f.id === "reversible")?.measured).toContain("GENERATED");
+  // AND THE GENERATED READING IS THE TREE'S OWN, not a list: three
+  // generators in this repository write the same marker into the head of
+  // every file they write, and the reading is that marker.
+  expect(isGenerated(repoRoot, "docs/INDEX.md"), "docs/INDEX.md is generated and was read as hand-written").toBe(true);
+  expect(isGenerated(repoRoot, "docs/CAPABILITIES.md"), "docs/CAPABILITIES.md is generated and was read as hand-written").toBe(true);
+  expect(isGenerated(repoRoot, "docs/STATE.md"), "docs/STATE.md is hand-written and was read as generated").toBe(false);
+  expect(isGenerated(repoRoot, "docs/nothing-is-here.md"), "a path that does not exist was read as generated").toBe(false);
+  // THE FINDING SAYS WHAT IT CANNOT SEE, rather than leaving it to be
+  // discovered: a rename and a deletion are properties of a diff that does
+  // not exist when eligibility is measured.
+  expect(
+    eligibleInput().findings.find((f) => f.id === "reversible")?.measured,
+    "the reversible finding does not disclose what it cannot measure",
+  ).toContain("does not exist at this moment");
+});
+
+test("T-320 C4 — AT THE BOUNDED TIER THE RITUAL RUNS THE EXECUTOR ONLY: no bench is cut, no phase 1 is rendered, and both skips are said out loud", () => {
+  // THE CARD'S FOURTH CRITERION, the "executor only, as the bounded
+  // contract permits" half. The bounded tier takes no verifier at all
+  // (method/tasks/TASK-FORMAT.md, The tier), so a bench worktree is a
+  // second checkout of this tree cut for somebody who is never spawned,
+  // and a phase 1 brief is an attack set nobody reads.
+  //
+  // AND EACH SKIP IS A LEDGER ROW AND A NOTE, never a silence: a worktree
+  // this arm skipped on purpose and one it forgot look the same on disk.
+  //
+  // KILLED BY: a ritual that cuts the bench whatever the tier, one that
+  // skips it silently, one that skips it at a tier that DOES take a
+  // verifier, and one that reports the skipped steps as failures.
+  const bounded = stubPlan();
+  // THE TIER'S INPUTS, MOVED THE ONE WAY A BODY MAY MOVE THEM (the same
+  // door `ritualStub` uses for its own tier failure): the classifier is a
+  // function of the card and the tree, so a bounded card is arranged by
+  // handing it a bounded card's inputs rather than by naming a tier.
+  bounded.tierInput.size = "XS";
+  bounded.tierInput.fencePaths = ["README.md"];
+  bounded.tierInput.unresolved = [];
+  bounded.tierInput.untracked = [];
+  const stub = ritualStub(bounded, "");
+  const result = runDispatchLane(bounded, stub.io);
+  expect(result.stopped, `the bounded dispatch stopped: ${result.findings.join(" | ")}`).toBeUndefined();
+  expect(result.code, "the bounded dispatch did not finish clean").toBe(EXIT.CLEAN);
+  const tier = result.done.find((s) => s.id === "tier");
+  expect(tier?.detail, "the arranged card did not classify bounded, so this body is about another tier").toContain("bounded");
+
+  // NO BENCH WAS CUT — asserted on the COMMANDS the ritual actually ran,
+  // not on its own summary of them.
+  const cuts = stub.calls.filter((c) => c.argv.includes("worktree") && c.argv.includes("add"));
+  expect(cuts.length, "the bounded dispatch cut more than the lane worktree").toBe(1);
+  expect(cuts[0]?.argv.includes("--detach"), "the one worktree cut was the detached bench rather than the lane").toBe(false);
+  // NO PHASE 1 WAS RENDERED.
+  expect(stub.writes, "a phase 1 brief was rendered for a bounded card").not.toContain(bounded.phase1File);
+  // AND BOTH SKIPS ARE IN THE LEDGER AND IN THE NOTES.
+  for (const id of ["bench", "phase1"]) {
+    const step = result.done.find((s) => s.id === id);
+    expect(step, `the ${id} step is missing from the ledger entirely, which is a silence`).toBeDefined();
+    expect(step?.exit, `the ${id} step was reported as a failure rather than as not owed`).toBe(EXIT.CLEAN);
+    expect(step?.detail, `the ${id} step does not say it was not owed`).toContain("not owed");
+  }
+  expect(result.notes.join(" "), "the bench skip is not said out loud").toContain("no bench was cut and none is owed");
+  expect(result.notes.join(" "), "the phase 1 skip is not said out loud").toContain("no phase 1 was rendered");
+
+  // ── THE POSITIVE CONTROL, AND IT IS THE WHOLE BODY ─────────────────
+  // The SAME ritual over a card that is NOT bounded cuts the bench and
+  // renders the phase 1. Without this arm the assertions above would hold
+  // for a ritual that had simply stopped doing either.
+  const guarded = stubPlan();
+  const stub2 = ritualStub(guarded, "");
+  const result2 = runDispatchLane(guarded, stub2.io);
+  expect(result2.stopped, `the control dispatch stopped: ${result2.findings.join(" | ")}`).toBeUndefined();
+  expect(
+    result2.done.find((s) => s.id === "tier")?.detail,
+    "the control card classified bounded too, so it controls nothing",
+  ).not.toContain("bounded");
+  expect(
+    stub2.calls.filter((c) => c.argv.includes("worktree") && c.argv.includes("add") && c.argv.includes("--detach")).length,
+    "the control dispatch cut no bench either, so the bounded assertion above is about nothing",
+  ).toBe(1);
+  expect(stub2.writes, "the control dispatch rendered no phase 1 either").toContain(guarded.phase1File);
+});
+
+test("T-320 C4 — THE CONFIGURED MODEL AND THE UNCONFIGURED EFFORT BOTH REACH THE LAUNCH RECEIPT'S REQUESTED HALF, and `not configured` is a recorded value", () => {
+  // THE CARD'S FOURTH CRITERION, the REQUESTED half. The model is the
+  // template's and is read from it; the effort is nowhere yet (T-318 is
+  // the card that adds it), and the difference between a blank field and
+  // a field nobody has configured is exactly the difference between a gap
+  // somebody should close and one nobody can see.
+  //
+  // KILLED BY: a reader that takes the model from the session, one that
+  // leaves the effort blank, and one that invents an effort.
+  const fx = ritualFixture("express-requested");
+  try {
+    const plan = expressPlanned(fx.root, (id, blob) =>
+      dispatchBlockText({ approval: "standing", recovery: "none", order: [id], blobs: { [id]: blob } }),
+    );
+    const template = readFileSync(path.join(fx.root, RUNTIME_TEMPLATE), "utf8");
+    const declared = /^\s+builder:\s*(\S+)/m.exec(template);
+    expect(declared, "the fixture template names no builder model, so this body has nothing to compare").not.toBeNull();
+    expect(plan.requested.model, "the requested model is not the template's").toBe(String(declared?.[1]));
+    expect(plan.requested.effort, "the effort is not recorded as unconfigured").toBe(EFFORT_NOT_CONFIGURED);
+    expect(plan.requested.effort, "the effort was left blank rather than recorded").not.toBe("");
+
+    // AND THE READER ANSWERS FROM THE BLOCK THE DAY THERE IS ONE, which is
+    // what makes `not configured` a READING rather than a hard-coded
+    // sentence: the same function over a template that carries an
+    // `efforts:` block answers from it.
+    expect(roleEffort("roles:\n  builder: m\nefforts:\n  builder: high\n", "executor"), "an effort the template declares was not read").toBe("high");
+    expect(roleEffort("roles:\n  builder: m\n", "executor"), "a template with no efforts block did not answer `not configured`").toBe(
+      EFFORT_NOT_CONFIGURED,
+    );
+    expect(roleEffort("roles:\n  builder: m\nefforts:\n  verifier: high\n", "executor"), "another role's effort was read as this one's").toBe(
+      EFFORT_NOT_CONFIGURED,
+    );
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(express-requested)");
+  }
+});
+
+test("T-320 C1/C3 — THE EXPRESS RUN WRITES THE CARD, PREFLIGHTS IT WITH THE EXISTING PREFLIGHT, and an INELIGIBLE change leaves the tree exactly as it found it", () => {
+  // TWO CRITERIA MEET HERE BECAUSE ONE RUN ANSWERS BOTH. The first
+  // criterion says the compact card is preflighted with the EXISTING
+  // preflight, and the third says an ineligible change is refused by name
+  // and re-triaged through the existing path.
+  //
+  // THE TREE IS THE ASSERTION. A refused express change that left a card
+  // in docs/tasks would be untracked dirt the next merge counts, and one
+  // that left nothing at all would throw away the sentence and the fence
+  // somebody wrote — so the draft goes to the LANE'S OWN SCRATCH file and
+  // the refusal points at it.
+  //
+  // KILLED BY: a run that skips the preflight, one that preflights with
+  // something other than the existing arm, one that writes a card for an
+  // ineligible change, and one that refuses without keeping the draft.
+  const fx = ritualFixture("express-run");
+  try {
+    mkdirSync(fx.scratch, { recursive: true });
+    const before = inventory(fx.root);
+
+    // ── THE INELIGIBLE ARM: NO GRANT, so the admission requirement fails.
+    const refused = expressPlan(context({ root: fx.root }), {
+      outcome: OUTCOME,
+      fence: EXPRESS_FENCE,
+      ears: EARS,
+      suggestedBy: "a body",
+      scratch: fx.scratch,
+    });
+    expect(refused.eligibility.eligible, "the no-grant arrangement was measured eligible").toBe(false);
+    const stopped = runExpress(refused, defaultDispatchIo());
+    expect(stopped.code, "an ineligible express change was not refused").toBe(EXIT.FOUND);
+    expect(stopped.stopped?.id, "the run stopped somewhere other than the eligibility step").toBe("eligible");
+    expect(stopped.findings.join(" "), "the refusal does not name the requirement that failed").toContain("admission");
+    expect(stopped.cardFile, "a card was filed for an ineligible change").toBe("");
+    expect(inventory(fx.root), "the refused express run left something in the tree").toEqual(before);
+    // THE DRAFT IS KEPT, OUTSIDE THE TREE, AND THE REFUSAL POINTS AT IT.
+    expect(existsSync(refused.draftFile), "the refused run threw the composed card away").toBe(true);
+    expect(readFileSync(refused.draftFile, "utf8"), "the draft is not the card that was composed").toBe(refused.card.text);
+    expect(stopped.notes.join(" "), "the refusal does not point at the existing path").toContain(
+      "Re-triage it through the existing path",
+    );
+    // AND THE DRAFT'S NAME IS THE LANE'S, which is the SCRATCH RULE
+    // applied to a file this arm invented.
+    expect(path.basename(refused.draftFile), "the draft file is not named for the card that owns it").toContain(refused.id);
+
+    // ── THE ELIGIBLE ARM: the same change under a grant that names it.
+    grantIn(
+      fx.root,
+      dispatchBlockText({
+        approval: "standing",
+        recovery: "none",
+        order: [refused.id],
+        blobs: { [refused.id]: refused.blob },
+      }),
+    );
+    const plan = expressPlan(context({ root: fx.root }), {
+      outcome: OUTCOME,
+      fence: EXPRESS_FENCE,
+      ears: EARS,
+      suggestedBy: "a body",
+      scratch: fx.scratch,
+    });
+    expect(plan.eligibility.eligible, `the granted arrangement is still ineligible: ${plan.eligibility.refusals.join(" | ")}`).toBe(true);
+    // THE HAND-OVER IS STUBBED AND NOTHING ELSE IS, and the reason is
+    // stated rather than left as a convenience: the ordinary ritual needs
+    // this project's own installed suites to answer its keeper question,
+    // which a scratch checkout of the tree does not have — its step two
+    // refuses honestly, and a refusal there would unwind the card this
+    // body is about. So the four steps that ARE this arm's run for real
+    // and the fifth returns clean, with its argv captured: what this body
+    // asserts about the fifth is that it hands over to the ordinary
+    // ritual, which has bodies of its own.
+    const handovers: string[][] = [];
+    const real = defaultDispatchIo();
+    const io = {
+      ...real,
+      run: (argv: string[], opts: { cwd: string; out?: string }) => {
+        if (argv.includes("--dispatch-lane")) {
+          handovers.push(argv);
+          return { status: EXIT.CLEAN, stdout: "the ordinary ritual's ledger\n", stderr: "" };
+        }
+        return real.run(argv, opts);
+      },
+    };
+    const run = runExpress(plan, io);
+    expect(run.stopped, `the express run stopped: ${run.findings.join(" | ")}`).toBeNull();
+    expect(handovers.length, "the express run did not hand over to the ordinary lane ritual").toBe(1);
+    const handover = handovers[0] as string[];
+    expect(handover, "the hand-over does not name the compact card").toContain(plan.id);
+    expect(handover, "the hand-over does not carry a slug for the branch").toContain("--slug");
+    expect(handover, "the hand-over does not point the ritual at this checkout").toContain(fx.root);
+    expect(run.transcript.join(" "), "the ritual's own ledger was not carried through").toContain(
+      "the ordinary ritual's ledger",
+    );
+    const ledger = new Map(run.done.map((s) => [s.id, s]));
+    expect(ledger.get("card")?.exit, "the card step did not run clean").toBe(EXIT.CLEAN);
+    expect(existsSync(path.join(fx.root, plan.card.file)), "the express run wrote no card").toBe(true);
+    // THE PREFLIGHT IS THE EXISTING ARM, asserted on the command that ran.
+    const preflight = ledger.get("preflight");
+    expect(preflight, "the express run performed no preflight step at all").toBeDefined();
+    expect(preflight?.ran, "the preflight step did not run the existing preflight arm").toContain("--preflight");
+    expect(preflight?.ran, "the preflight step did not run it against the compact card").toContain(plan.id);
+    expect(preflight?.exit, `the compact card the arm composed does not pass this repository's own preflight: ${preflight?.detail ?? ""}`).toBe(
+      EXIT.CLEAN,
+    );
+    // AND THE CARD IS STAGED RATHER THAN COMMITTED, so the dispatch stamp
+    // lands the card and its stamp in ONE commit.
+    const staged = execFileSync("git", ["-C", fx.root, "diff", "--cached", "--name-only"], { encoding: "utf8" });
+    expect(staged, "the compact card was not staged for the dispatch stamp's own commit").toContain(plan.card.file);
+    expect(
+      execFileSync("git", ["-C", fx.root, "log", "--oneline", "-1"], { encoding: "utf8" }),
+      "the express run made a commit of its own, which is a second round trip on the integration branch",
+    ).toContain("Checkpoint: fixture base");
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(express-run)");
+  }
+});
+
+test("T-320 C5 — A WITHDRAWAL PRESERVES THE CANDIDATE, takes the label off by a DATED APPEND, and re-triages the card to a standard or guarded lane", () => {
+  // THE CARD'S FIFTH CRITERION. A failed check or a scope the executor
+  // discovered is news about the WORK and not about the candidate: the
+  // branch still holds what was built and the run record still holds what
+  // it cost, and both are what the ordinary path picks the card up with.
+  //
+  // KILLED BY: a withdrawal that deletes the branch or the record, one
+  // that rewrites the line that put the label on, one that leaves the card
+  // bounded, and one that withdraws a label nobody put on.
+  const card = compactFixtureCard();
+  expect(expressLabel(card.text).labelled, "a compact card is born without the express label").toBe(true);
+  const w = expressWithdrawal({
+    cardText: card.text,
+    id: "T-901",
+    at: "2026-09-15",
+    why: "the owed set redded a body the outcome sentence never mentions.",
+    branch: "task/T-901-a-slug",
+    attempt: "T-901-a1",
+    tier: "standard",
+  });
+  // THE LABEL IS OFF, AND THE LINE THAT PUT IT ON STANDS.
+  expect(expressLabel(w.text).labelled, "the label is still on after a withdrawal").toBe(false);
+  expect(expressLabel(w.text).withdrawn, "the withdrawal is not readable as one").toBe(true);
+  expect(w.text, "the withdrawal rewrote the line that put the label on").toContain("EXPRESS PATH (2026-09-14)");
+  expect(w.line, "the withdrawal carries no date").toContain("2026-09-15");
+  expect(w.line, "the withdrawal does not say what happened").toContain("the owed set redded");
+  // THE APPEND IS UNDER THE SECTION THE LOOP'S OWN CEREMONY MAY APPEND TO,
+  // so the withdrawal does not cost the card its admission.
+  const notes = w.text.slice(w.text.indexOf("## Implementation notes"));
+  expect(notes, "the withdrawal was written outside the implementation notes").toContain("EXPRESS PATH WITHDRAWN");
+  expect(notes.indexOf("EXPRESS PATH WITHDRAWN"), "the withdrawal was written ABOVE the line it supersedes").toBeGreaterThan(
+    notes.indexOf("EXPRESS PATH ("),
+  );
+  expect(cardDrift(card.text, w.text).mechanical, "the withdrawal cost the card the approval it was admitted under").toBe(true);
+  // THE CANDIDATE IS PRESERVED, AND THE CARD IS RE-TRIAGED.
+  expect(w.preserved.join(" "), "the withdrawal does not say the branch is kept").toContain("task/T-901-a-slug is KEPT");
+  expect(w.preserved.join(" "), "the withdrawal does not say the run record is kept").toContain("T-901-a1 is KEPT");
+  expect(/^tier: standard$/m.test(w.text), "the card was not re-triaged to a standard lane").toBe(true);
+  // A CANDIDATE WITH NO RECORD SAYS SO rather than rounding it to none.
+  expect(
+    expressWithdrawal({ ...{ cardText: card.text, id: "T-901", at: "2026-09-15", why: "a red.", branch: "b", tier: "guarded" }, attempt: "" })
+      .preserved.join(" "),
+    "a candidate with no run record was reported as if it had one",
+  ).toContain("no run record was bound");
+
+  // ── THE THREE REFUSALS, each a positive control for one clause ──────
+  const refusal = (over: Partial<Parameters<typeof expressWithdrawal>[0]>): string => {
+    try {
+      expressWithdrawal({
+        cardText: card.text,
+        id: "T-901",
+        at: "2026-09-15",
+        why: "a red.",
+        branch: "b",
+        attempt: "a1",
+        tier: "standard",
+        ...over,
+      });
+      return "";
+    } catch (err) {
+      if (!(err instanceof ExpressFinding)) throw err;
+      return String(err.code);
+    }
+  };
+  expect(refusal({ why: "  " }), "a label was taken off for no recorded reason").toBe(EXPRESS_CODES.NO_REASON);
+  expect(refusal({ tier: "bounded" }), "a withdrawn card was re-triaged back onto the road it just left").toBe(
+    EXPRESS_CODES.NOT_EXPRESS,
+  );
+  expect(refusal({ cardText: w.text }), "a label already withdrawn was withdrawn again").toBe(EXPRESS_CODES.NOT_EXPRESS);
+  expect(refusal({ cardText: FIXTURE_CARD }), "a card that was never on the express path was withdrawn from it").toBe(
+    EXPRESS_CODES.NOT_EXPRESS,
+  );
+  // AND THE CLEAN TWIN ONE MORE TIME, so the four refusals above are
+  // about their own clauses and not about a function that refuses always.
+  expect(refusal({}), "the well-formed withdrawal was refused too").toBe("");
+});
+
+test("T-320 C6 — THE FIVE MEASUREMENTS ARE DIFFERENCES OF STAMPED INSTANTS, each naming both, and the verdict says whether the targets were met", () => {
+  // THE CARD'S SIXTH CRITERION, and the shape is the whole point: a
+  // function over instants the records already carry, driven here over
+  // FIXED ones. Nothing reads a clock, so nothing flakes — which is what
+  // the criterion asks for in as many words: measured objectives, not a
+  // stopwatch body.
+  //
+  // KILLED BY: an arithmetic that folds two rows together, one that scores
+  // a row against a target the card does not set, one that reports a
+  // target met when it was missed, and one that names only one of the two
+  // instants a row is a difference of.
+  const met = expressMeasurements({
+    requested: "2026-09-14T10:00:00.000Z",
+    cut: "2026-09-14T10:00:40.000Z", //  40s — under the one-minute target
+    candidate: "2026-09-14T10:04:00.000Z", // 200s — inside two to five minutes
+    checked: "2026-09-14T10:12:00.000Z",
+    merged: "2026-09-14T10:15:00.000Z",
+    pushed: "2026-09-14T10:15:30.000Z",
+  });
+  const rows = new Map(met.rows.map((r) => [r.id, r]));
+  expect([...rows.keys()], "the five measurements are not the ones the card names, in its order").toEqual([
+    "overhead",
+    "executor",
+    "check",
+    "publication",
+    "request-to-delivery",
+  ]);
+  expect(rows.get("overhead")?.seconds, "the overhead is not the difference between the sentence and the cut").toBe(40);
+  expect(rows.get("executor")?.seconds, "the executor time is not the difference between the cut and the candidate").toBe(200);
+  expect(rows.get("check")?.seconds, "the check time is not the difference between the candidate and its conclusion").toBe(480);
+  expect(rows.get("publication")?.seconds, "the publication time is not the difference between the merge and the push").toBe(30);
+  expect(rows.get("request-to-delivery")?.seconds, "the total is not the difference between the sentence and the push").toBe(930);
+  // EVERY ROW NAMES BOTH INSTANTS IT IS A DIFFERENCE OF.
+  for (const r of met.rows) {
+    expect(r.from, `the ${r.id} row does not name the instant it starts at`).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(r.to, `the ${r.id} row does not name the instant it ends at`).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  }
+  // TWO ROWS CARRY A TARGET AND THREE DO NOT, by the card's own words.
+  expect(met.rows.filter((r) => r.target !== "").map((r) => r.id), "the targeted rows are not the two the card names").toEqual([
+    "overhead",
+    "executor",
+  ]);
+  for (const id of ["check", "publication", "request-to-delivery"]) {
+    expect(rows.get(id)?.met, `the ${id} row was scored against a target the card does not set`).toBeNull();
+    expect(rows.get(id)?.why, `the ${id} row does not say it is recorded rather than scored`).toContain("NO target");
+  }
+  expect(met.verdict, "a run inside both targets was not reported as meeting them").toContain("THE TARGETS WERE MET");
+  expect(met.unknown, "every instant was given and something was reported unknown").toEqual([]);
+
+  // ── THE POSITIVE CONTROL: A SLOW RUN RECORDED IS NOT THE OBJECTIVE ──
+  const slow = expressMeasurements({
+    requested: "2026-09-14T10:00:00.000Z",
+    cut: "2026-09-14T10:03:00.000Z", // 180s — three times the target
+    candidate: "2026-09-14T10:30:00.000Z",
+    checked: "2026-09-14T10:40:00.000Z",
+    merged: "2026-09-14T10:45:00.000Z",
+    pushed: "2026-09-14T10:46:00.000Z",
+  });
+  expect(slow.verdict, "a run three times over its target was reported as meeting it").toContain("THE TARGETS WERE NOT MET");
+  expect(slow.verdict, "the verdict does not say that a slow run recorded is not the objective").toContain(
+    "A slow run RECORDED is not the objective achieved",
+  );
+  expect(slow.rows.find((r) => r.id === "overhead")?.met, "the overhead row was scored met at 180s").toBe(false);
+
+  // ── AND AN UNKNOWN IS NEVER SUBSTITUTED ────────────────────────────
+  const partial = expressMeasurements({
+    requested: "2026-09-14T10:00:00.000Z",
+    cut: "2026-09-14T10:00:40.000Z",
+    candidate: "2026-09-14T10:04:00.000Z",
+    checked: "",
+    merged: "",
+    pushed: "",
+  });
+  expect(partial.unknown.length, "three missing instants were not reported as unknown").toBe(3);
+  expect(partial.rows.find((r) => r.id === "publication")?.seconds, "a row with no instants was given a duration").toBeNull();
+  expect(partial.rows.find((r) => r.id === "publication")?.to, "an unknown instant was substituted").toBe("unknown");
+  // THE ROWS THAT CAN STILL BE MEASURED STILL ARE — a partial record is
+  // worth more than a refusal, and the verdict says what it judged.
+  expect(partial.rows.find((r) => r.id === "overhead")?.seconds, "a measurable row was dropped because another was not").toBe(40);
+  expect(partial.verdict, "a partial record was reported as meeting nothing").toContain("THE TARGETS WERE MET");
+  // AND A RECORD WITH NO TARGETED INSTANTS AT ALL JUDGES NOTHING, and says so.
+  const none = expressMeasurements({ requested: "", cut: "", candidate: "", checked: "", merged: "", pushed: "" });
+  expect(none.verdict, "a record with no instants at all claimed a verdict").toContain("NO TARGET WAS JUDGED");
+  expect(none.rows.every((r) => r.seconds === null), "a duration was computed from no instants").toBe(true);
+});
+
+test("T-320 C6 — THE RUNNER'S CONCLUSION IS RECORDED BESIDE THE TOTAL AS A SEPARATE FIGURE, never folded into it", () => {
+  // THE SIXTH CRITERION'S own parenthesis: "the request-to-delivery total
+  // ... with the runner's conclusion instant recorded beside it as a
+  // separate figure". A local green and a runner green are different
+  // measurements and only one of them runs on a machine that is not ours,
+  // so a total that quietly ran to whichever was later would be two
+  // different numbers wearing one name.
+  //
+  // KILLED BY: a total that ends at the runner's conclusion, and one that
+  // drops the runner's instant altogether.
+  const input = {
+    requested: "2026-09-14T10:00:00.000Z",
+    cut: "2026-09-14T10:00:40.000Z",
+    candidate: "2026-09-14T10:04:00.000Z",
+    checked: "2026-09-14T10:12:00.000Z",
+    merged: "2026-09-14T10:15:00.000Z",
+    pushed: "2026-09-14T10:15:30.000Z",
+  };
+  const without = expressMeasurements(input);
+  const withRunner = expressMeasurements({ ...input, runner: "2026-09-14T10:29:00.000Z" });
+  expect(
+    withRunner.rows.find((r) => r.id === "request-to-delivery")?.seconds,
+    "the runner's conclusion moved the request-to-delivery total, which is two figures under one name",
+  ).toBe(without.rows.find((r) => r.id === "request-to-delivery")?.seconds);
+  expect(
+    withRunner.rows.find((r) => r.id === "request-to-delivery")?.to,
+    "the total no longer ends at the push of the merge",
+  ).toBe(input.pushed);
 });

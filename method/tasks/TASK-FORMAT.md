@@ -689,6 +689,30 @@ standard at the merge, and the bump is recorded rather than argued: the
 card was mis-sized, which is a fact for the next triage and not a reason
 to stop a finished lane at its last step.
 
+**A COMPACT CARD IS A CARD, AND THE EXPRESS PATH COMPOSES ONE RATHER
+THAN SKIPPING IT.** Inside the bounded tier an edit may be dispatched
+from one OUTCOME SENTENCE and a NAMED FENCE (`roles/orchestrator.md`
+5h): the arm writes the card, with every required field above, both
+standing sections, `size: XS`, the fence as its `touches:` and the
+OUTCOME SENTENCE VERBATIM as its single acceptance criterion. **The
+sentence is not paraphrased into a criterion and it is not wrapped into
+one**: the whole card is bought on that line, so a sentence that is not
+already in EARS form (`../interview/decomposition.md`) is REFUSED rather
+than repaired — a criterion a command composed is a requirement nobody
+wrote. `tier:` is left empty like any other author's card, because it is
+DERIVED and the arm writes it at the dispatch stamp.
+
+**AND THE LABEL IS A DATED LINE UNDER `## Implementation notes`, NEVER A
+FIELD.** The field set above is what every reader of a card is written
+against, and a card that took the short road has to stay readable to all
+of them; a dated line in a section the loop's own ceremony already
+appends to is visible to a person, greppable by a program, and invisible
+to nothing. **A withdrawal is a second dated line and never an erasure**:
+when a check fails or the work outgrows its sentence, the label comes off
+by an append that names what happened, the candidate is preserved, and
+the card is re-triaged to a standard or a guarded lane. The line that put
+the label on stands, because a record is appended and never rewritten.
+
 ### The guard-class list
 
 **GUARD-CLASS IS A PROPERTY OF WHAT A FILE DOES, NOT OF HOW BIG THE

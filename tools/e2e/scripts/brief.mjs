@@ -150,7 +150,7 @@
  *      repository at all. Every throw out of the derivation lands here,
  *      and every one of them names the sentence it could not find.
  */
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {
@@ -173,6 +173,8 @@ import {
   awaitRecs,
   admissionLedger,
   blank,
+  normaliseTaskId,
+  readDoc,
   defaultRunnerIo,
   dueRetries,
   firstParentLine,
@@ -208,6 +210,12 @@ import {
   withMargin,
   triageClusterRecs,
   wakeRecs,
+  EXPRESS_CODES,
+  ExpressFinding,
+  expressPlan,
+  expressRecs,
+  expressWithdrawal,
+  runExpress,
 } from "./dispatch-brief.mjs";
 import {
   HOLDER_CODES,
@@ -248,7 +256,7 @@ import { findCheckoutRoot } from "../../../.claude/hooks/lane-fence.mjs";
 import { hookStatus, installHook } from "../../../.claude/hooks/hook-install.mjs";
 import { main as mergeMain, mergeDials } from "./merge.mjs";
 import { LaneLockFinding, applyLaneLock } from "./lane-lock.mjs";
-import { seatRecs } from "./session-economics.mjs";
+import { DECOMPOSITION_FILE, earsKeywords, isEars, seatRecs } from "./session-economics.mjs";
 
 const FLAGS = Object.freeze([
   "--task",
@@ -282,6 +290,7 @@ const FLAGS = Object.freeze([
   "--usage",
   "--ref",
   "--report",
+  "--instant",
   "--replace",
   "--bump",
   "--meters",
@@ -289,6 +298,16 @@ const FLAGS = Object.freeze([
   "--blocks-absent",
   "--derived-from",
   "--failure",
+  "--express",
+  "--express-withdraw",
+  "--express-id",
+  "--fence",
+  "--changed",
+  "--feature",
+  "--milestone",
+  "--requested",
+  "--why",
+  "--branch",
   "--slug",
   "--executor",
   "--verifier",
@@ -297,6 +316,23 @@ const FLAGS = Object.freeze([
   "--full",
   "--help",
 ]);
+
+/**
+ * A COMMA-SEPARATED LIST FLAG, SPLIT. Every flag here takes ONE value, so
+ * a fence of several paths arrives as one string — and a list split on
+ * whitespace would break on a path nobody can spell any other way. The
+ * separator is the comma the card's own `touches:` uses, so what a seat
+ * types at `--fence` is exactly what the card will carry.
+ *
+ * @param {string} raw
+ * @returns {string[]}
+ */
+function splitList(raw) {
+  return String(raw ?? "")
+    .split(",")
+    .map((p) => p.trim())
+    .filter((p) => p !== "");
+}
 
 /**
  * THE ANSWER IS COLLECTED BEFORE IT IS WRITTEN (T-225), and the reason is
@@ -415,6 +451,12 @@ async function main(argv) {
           "[--write-fence <worktree>] [--take-seat [--allow-shared-git-config]] [--release-seat] " +
           "[--dispatch-lane <T-NNN> --slug <slug> [--executor <seat>] [--verifier <seat>] " +
           "[--scratch <dir>] [--derived-from <T-NNN> --failure <text|@file>] [--dry-run]] " +
+          "[--express <outcome sentence> --fence <path[,path...]> [--changed <path[,path...]>] " +
+          "[--express-id <T-NNN>] [--feature <F-nn> --milestone <n>] [--requested <iso>] " +
+          "[--slug <slug>] " +
+          "[--scratch <dir>] [--executor <seat>] [--verifier <seat>] [--dry-run]] " +
+          "[--express-withdraw <T-NNN> --why <text|@file> --tier <standard|guarded> " +
+          "[--branch <b>] [--attempt <id>]] " +
           "[--merge <T-NNN> [--bump <old>..<new>] [--meters <path>] [--tier <tier>] " +
           "[--blocks-absent <sha>] [--dry-run]] [--bench <T-NNN> [--scratch <dir>]] " +
           "[[--await <marker> | --await-pid <pid> | --await-until <instant>] --ceiling <seconds>] " +
@@ -423,7 +465,7 @@ async function main(argv) {
           "[--run bind|observe|send|wait|collect|continue|stop --attempt <id> " +
           "[--session <id>] [--pid <n>] [--question <id>] [--answer <text|@file>] " +
           "[--evidence <text|@file>] [--ceiling <seconds>] [--usage <text>] [--ref <sha>] " +
-          "[--report <path>] [--replace]] " +
+          "[--report <path>] [--instant <name>=<iso>[,...]] [--replace]] " +
           "[--full] [--root <path>]",
       );
       return EXIT.CLEAN;
@@ -509,6 +551,19 @@ async function main(argv) {
    * derived a brief would decide by argument order which act this seat
    * was performing.
    */
+  /**
+   * ARM FIFTEEN'S VERBS (T-320) — THE EXPRESS PATH. `--express` takes an
+   * outcome sentence and a fence and performs the short road through the
+   * ordinary ritual; `--express-withdraw` takes the label back off a card
+   * whose check failed or whose scope outgrew the sentence, and re-triages
+   * it. Both WRITE in the integration checkout, so both are held to the
+   * holder gate `--dispatch-lane` is held to, and neither shares an
+   * invocation with another writer.
+   */
+  const expressOutcome = opts["express"] ?? "";
+  const wantsExpress = expressOutcome !== "";
+  const withdrawId = opts["express-withdraw"] ?? "";
+  const wantsWithdraw = withdrawId !== "";
   const runVerb = opts["run"] ?? "";
   const wantsRun = runVerb !== "";
   if (!wantsAwait && !wantsRun && opts["ceiling"] !== undefined) {
@@ -545,8 +600,14 @@ async function main(argv) {
    * something it did not.
    */
   const mergeDialNames = ["bump", "meters", "tier", "blocks-absent"];
-  const strayMergeDials = mergeDialNames.filter((d) => opts[d] !== undefined);
-  if (!wantsMerge && strayMergeDials.length > 0) {
+  // `--tier` IS SHARED WITH THE WITHDRAWAL (T-320): a withdrawn express
+  // card is re-triaged to a standard or a guarded lane, and the tier it
+  // is re-triaged to is the one thing that act cannot derive — it is the
+  // seat's ruling on what the discovered scope needs.
+  const strayMergeDials = mergeDialNames.filter(
+    (d) => opts[d] !== undefined && !(wantsWithdraw && d === "tier"),
+  );
+  if (!wantsMerge && !wantsWithdraw && strayMergeDials.length > 0) {
     console.error(
       `brief: ${strayMergeDials.map((d) => `--${d}`).join(", ")} only mean something to ` +
         "--merge <T-NNN>, and nothing else on this command reads them.",
@@ -561,6 +622,52 @@ async function main(argv) {
     );
     return EXIT.USAGE;
   }
+  /**
+   * THE EXPRESS ARM'S OWN DIALS, held to the rule the lane's and the
+   * merge's are: a flag this command accepted and ignored is a seat
+   * believing it said something it did not.
+   */
+  const expressDialNames = ["express-id", "fence", "changed", "feature", "milestone", "requested"];
+  const strayExpressDials = expressDialNames.filter((d) => opts[d] !== undefined);
+  if (!wantsExpress && strayExpressDials.length > 0) {
+    console.error(
+      `brief: ${strayExpressDials.map((d) => `--${d}`).join(", ")} only mean something to ` +
+        "--express <outcome sentence>, and nothing else on this command reads them.",
+    );
+    return EXIT.USAGE;
+  }
+  const withdrawDialNames = ["why", "branch"];
+  const strayWithdrawDials = withdrawDialNames.filter((d) => opts[d] !== undefined);
+  if (!wantsWithdraw && strayWithdrawDials.length > 0) {
+    console.error(
+      `brief: ${strayWithdrawDials.map((d) => `--${d}`).join(", ")} only mean something to ` +
+        "--express-withdraw <T-NNN>, and nothing else on this command reads them.",
+    );
+    return EXIT.USAGE;
+  }
+  if (wantsExpress && (opts["fence"] ?? "") === "") {
+    console.error(
+      "brief: --express takes an outcome sentence and a NAMED FENCE — --fence <path[,path...]>. " +
+        "The bounded tier is bounded by exactly that list, and an eligibility measured over no " +
+        "paths is a measurement of nothing.",
+    );
+    return EXIT.USAGE;
+  }
+  if ((wantsExpress || wantsWithdraw) && (wantsMerge || wantsDispatchLane || wantsBench || wantsRun)) {
+    console.error(
+      "brief: --express and --express-withdraw are WRITERS in the integration checkout, like " +
+        "--dispatch-lane and --merge. One invocation cannot do two of them — a command that did " +
+        "would decide by argument order which act this seat was performing.",
+    );
+    return EXIT.USAGE;
+  }
+  if (wantsExpress && wantsWithdraw) {
+    console.error(
+      "brief: --express puts a card on the express path and --express-withdraw takes it off. One " +
+        "invocation cannot do both.",
+    );
+    return EXIT.USAGE;
+  }
   if (wantsBench && (wantsMerge || wantsDispatchLane)) {
     console.error(
       "brief: --bench arms the VERIFICATION of a lane that is already built, and --dispatch-lane " +
@@ -570,7 +677,7 @@ async function main(argv) {
     );
     return EXIT.USAGE;
   }
-  if (!wantsDispatchLane && !wantsMerge && !wantsRun && (strayDials.length > 0 || dryRun)) {
+  if (!wantsDispatchLane && !wantsMerge && !wantsRun && !wantsExpress && (strayDials.length > 0 || dryRun)) {
     console.error(
       `brief: ${[...strayDials.map((d) => `--${d}`), ...(dryRun ? ["--dry-run"] : [])].join(", ")} ` +
         "only mean something to --dispatch-lane <T-NNN>, and nothing else on this command reads " +
@@ -696,6 +803,7 @@ async function main(argv) {
           ...(plan.usage === undefined ? {} : { usage: plan.usage }),
           ...(plan.ref === undefined ? {} : { ref: plan.ref }),
           ...(plan.report === undefined ? {} : { report: plan.report }),
+          ...(plan.instants === undefined ? {} : { instants: plan.instants }),
           at,
         });
         record = got.record;
@@ -1057,7 +1165,9 @@ async function main(argv) {
     !wantsDispatchLane &&
     !wantsMerge &&
     !wantsBench &&
-    !wantsRun
+    !wantsRun &&
+    !wantsExpress &&
+    !wantsWithdraw
   ) {
     console.error(
       "brief: nothing asked for — give --task <T-NNN> for a dispatch brief, --state for the " +
@@ -1065,7 +1175,9 @@ async function main(argv) {
         "and why the rest are not, --card <T-NNN> for the figures a card author would " +
         "otherwise type, --take-seat or --release-seat for the integration checkout's holder, " +
         "--dispatch-lane <T-NNN> --slug <slug> to perform the whole dispatch ritual, --bench " +
-        "<T-NNN> to take the verifier's ground and render its phase 2 brief, " +
+        "<T-NNN> to take the verifier's ground and render its phase 2 brief, --express " +
+        "<outcome sentence> --fence <path[,path...]> for the express path inside the bounded " +
+        "tier, --express-withdraw <T-NNN> to take that label back off a card, " +
         "or any combination.\n" +
         "  An empty request is not a clean run; it is a question this command was never asked.",
     );
@@ -1130,7 +1242,8 @@ async function main(argv) {
    */
   const sessionFindings = [];
   /** Every invocation that ARMS a lane, and therefore owes the catcher below. */
-  const arming = wantsPreflight || fenceWorktree !== "" || wantsDispatchLane || wantsMerge;
+  const arming =
+    wantsPreflight || fenceWorktree !== "" || wantsDispatchLane || wantsMerge || wantsExpress || wantsWithdraw;
   const session = arming ? sessionCheckout() : undefined;
   if (arming && session === undefined) {
     // NEITHER SIGNAL RESOLVED: no `CLAUDE_PROJECT_DIR`, and this command's
@@ -1634,6 +1747,138 @@ async function main(argv) {
   }
 
   /**
+   * ARM FIFTEEN — THE EXPRESS PATH (T-320), and it is a short road
+   * through the ordinary one rather than a second road.
+   *
+   * IT WRITES IN THE INTEGRATION CHECKOUT — one compact card, staged so
+   * that the dispatch stamp commits it and the stamp in ONE commit — so
+   * it takes the SAME holder gate `--dispatch-lane` takes. The EARS
+   * reading it needs is handed IN from here, because the module that owns
+   * the patterns (`session-economics.mjs`) imports the module that owns
+   * the arm and the dependency may not run both ways; and so is the
+   * admission LEDGER, for T-324's own reason.
+   *
+   * @type {string[]}
+   */
+  const expressFindings = [];
+  if (wantsExpress || wantsWithdraw) {
+    const h = /** @type {NonNullable<typeof holder>} */ (holder);
+    say("");
+    if (h.state === "not-integration" || h.state === "held") {
+      say(
+        render([
+          note("THE EXPRESS PATH — REFUSED before its first step, and nothing was written"),
+          value(
+            `--${wantsExpress ? "express" : "express-withdraw"} was refused: ${h.detail}`,
+            liveProv(ctx.at, ctx.host, "git symbolic-ref HEAD and the holder record, read in that checkout"),
+          ),
+        ]),
+      );
+      expressFindings.push(
+        `the express path writes a card into the integration checkout and re-triages one there, ` +
+          `so it is held to the same gate the dispatch is — ${h.detail}`,
+      );
+    } else if (wantsWithdraw) {
+      try {
+        const id = normaliseTaskId(withdrawId);
+        const card = ctx.cards.get(id);
+        if (card === undefined) {
+          throw new ExpressFinding(
+            EXPRESS_CODES.NO_CARD,
+            `brief: no live card declares id ${id}, so there is no express label to withdraw.`,
+          );
+        }
+        const at = path.join(ctx.root, card.file);
+        const written = expressWithdrawal({
+          cardText: readFileSync(at, "utf8"),
+          id,
+          at: ctx.at.slice(0, 10),
+          why: opts["why"] === undefined ? "" : textOrFile(opts["why"]),
+          branch: opts["branch"] ?? `the lane's own branch (none was named with --branch)`,
+          attempt: opts["attempt"] ?? "",
+          tier: opts["tier"] ?? "",
+        });
+        if (!dryRun) writeFileSync(at, written.text);
+        say(
+          render([
+            note("THE EXPRESS LABEL, WITHDRAWN — and NOTHING was deleted or unwound"),
+            value(`card: ${card.file}${dryRun ? " (--dry-run: nothing was written)" : ""}`, liveProv(ctx.at, ctx.host, "the withdrawal, over the card it wrote")),
+            value(`re-triaged to: tier ${written.tier}`, liveProv(ctx.at, ctx.host, "the withdrawal, over the card it wrote")),
+            ...written.preserved.map((line) =>
+              value(line, liveProv(ctx.at, ctx.host, "the withdrawal's own preservation rule")),
+            ),
+            note(`  ${written.line}`),
+          ]),
+        );
+      } catch (err) {
+        if (err instanceof DispatchLaneFinding) {
+          expressFindings.push(err.message);
+        } else throw err;
+      }
+    } else {
+      try {
+        const keywords = earsKeywords(readDoc(DECOMPOSITION_FILE, ctx.root));
+        const records = allRecords(ctx.root);
+        const plan = expressPlan(ctx, {
+          outcome: expressOutcome,
+          fence: splitList(opts["fence"] ?? ""),
+          ears: (criterion) => isEars(criterion, keywords),
+          suggestedBy: `the express path on ${ctx.at.slice(0, 10)}, from one outcome sentence and a named fence`,
+          ledger: admissionLedger(records, TERMINAL_STATES),
+          writers: records.map((rec) => ({
+            attempt: rec.attempt,
+            card: rec.assignment.id,
+            state: rec.state,
+            terminal: TERMINAL_STATES.includes(rec.state),
+          })),
+          ...(opts["changed"] === undefined ? {} : { changed: splitList(opts["changed"]) }),
+          ...(opts["express-id"] === undefined ? {} : { id: opts["express-id"] }),
+          ...(opts["feature"] === undefined ? {} : { feature: opts["feature"] }),
+          ...(opts["milestone"] === undefined ? {} : { milestone: opts["milestone"] }),
+          ...(opts["requested"] === undefined ? {} : { requestedAt: opts["requested"] }),
+          ...(opts["slug"] === undefined ? {} : { slug: opts["slug"] }),
+          ...(opts["scratch"] === undefined ? {} : { scratch: opts["scratch"] }),
+          ...(opts["executor"] === undefined ? {} : { executor: opts["executor"] }),
+          ...(opts["verifier"] === undefined ? {} : { verifier: opts["verifier"] }),
+          ...(opts["derived-from"] === undefined ? {} : { derivedFrom: opts["derived-from"] }),
+          ...(opts["failure"] === undefined ? {} : { failure: textOrFile(opts["failure"]) }),
+        });
+        if (dryRun) {
+          say(render(expressRecs(ctx, plan, null)));
+          say(render([note("--dry-run: the compact card below was composed and NOTHING was written"), blank()]));
+          say(plan.card.text);
+        } else {
+          const result = runExpress(plan, defaultDispatchIo());
+          say(render(expressRecs(ctx, plan, result)));
+          for (const n of result.notes) {
+            say(render([value(n, liveProv(ctx.at, ctx.host, "the express arm's own steps"))]));
+          }
+          if (result.transcript.length > 0) {
+            // THE ORDINARY RITUAL'S OWN ANSWER, VERBATIM. Every line of it
+            // already carries that command's provenance stamp, so it goes
+            // out as a transcript rather than through this arm's renderer,
+            // which would append a second arrow to a line that had one.
+            say("");
+            say("# THE ORDINARY LANE RITUAL'S OWN LEDGER, VERBATIM — this arm ran it and did not rewrite it");
+            for (const line of result.transcript) say(line);
+          }
+          for (const f of result.findings) expressFindings.push(f);
+          if (result.code === EXIT.CANNOT_RUN) {
+            console.error("brief: COULD NOT RUN");
+            for (const f of result.findings) console.error(`  ${f}`);
+            flush();
+            return EXIT.CANNOT_RUN;
+          }
+        }
+      } catch (err) {
+        if (err instanceof DispatchLaneFinding) {
+          expressFindings.push(err.message);
+        } else throw err;
+      }
+    }
+  }
+
+  /**
    * ARM ELEVEN — THE BENCH (T-296), the ritual BETWEEN the two ends.
    *
    * `--dispatch-lane` renders phase 1 from the card at the base; this arm
@@ -2118,6 +2363,7 @@ async function main(argv) {
     ...sessionFindings,
     ...holderFindings,
     ...laneFindings,
+    ...expressFindings,
     ...benchFindings,
     ...mergeFindings,
     ...preflightFindings,

@@ -43,6 +43,11 @@ import {
   unwrapScalar,
 } from "../scripts/card-preflight.mjs";
 import { DATED_INSTANCES, NEAR_MISS, T203_CASE, TRUE_CLAIM } from "../fixtures/card-claims";
+// T-320 — THE COMPACT CARD'S COMPOSER, whose whole output this reader has
+// to be able to re-derive: a card a command wrote and this arm refuses is
+// a dispatch that stops at its own fourth step.
+import { compactCard, readDoc } from "../scripts/dispatch-brief.mjs";
+import { DECOMPOSITION_FILE, earsKeywords, isEars } from "../scripts/session-economics.mjs";
 import { context, render } from "../scripts/dispatch-brief.mjs";
 import { buildLaneFence, writeLaneFence } from "../scripts/lane-fence.mjs";
 import { conventionsFiles } from "../scripts/docs-scan.mjs";
@@ -2695,4 +2700,56 @@ test("a HAND-WRITTEN tier on an undispatched card is a finding, and a card witho
   ).toEqual([]);
   expect(clean.text, "and the report still names the class it checked").toContain("THE DERIVED FIELD tier");
   expect(clean.text, "reporting the absence as the absence").toContain("unset, which is how an author leaves it");
+});
+
+test("T-320 — THE COMPACT CARD THE EXPRESS PATH COMPOSES CARRIES NO CLAIM THIS PREFLIGHT RAISES, whatever sentence it is given", () => {
+  // THE EXPRESS PATH'S FOURTH STEP RUNS THIS ARM over a card a COMMAND
+  // wrote (T-320 criterion 1), so the composer and this reader have to
+  // agree by construction rather than by luck. The three shapes this
+  // reader refuses are all shapes a composer could emit without noticing:
+  // a provenance arrow, an absolute path, and a quoted needle it cannot
+  // find.
+  //
+  // KILLED BY: a composer whose own prose carries a provenance arrow, one
+  // that spells an absolute path, one that quotes a phrase as if citing
+  // it, and a claim reader that stopped looking.
+  const ears = (criterion: string): boolean => isEars(criterion, earsKeywords(readDoc(DECOMPOSITION_FILE)));
+  const card = compactCard({
+    id: "T-901",
+    at: "2026-09-14",
+    outcome: "WHEN the collect verb runs THE run record SHALL print the reservation's release instant.",
+    fence: ["tools/e2e/scripts/run-record.mjs"],
+    feature: "F-04",
+    milestone: "4",
+    suggestedBy: "a body",
+    ears,
+  });
+  // A PROVENANCE ARROW IN CARD PROSE IS A CLAIM TO THIS READER.
+  expect(card.text, "the composed card carries a provenance arrow in its prose").not.toMatch(/\s<-\s\S/);
+  // AN ABSOLUTE PATH IN PROSE IS EXIT 3.
+  expect(card.text, "the composed card spells an absolute path").not.toMatch(/(?:^|\s)\/(?:Users|home|private|tmp)\//);
+  // AND NOTHING IN IT IS A CARD CLAIM OR A QUOTED NEEDLE THIS ARM WOULD
+  // GO LOOKING FOR — the composer's own paragraphs are about the card, not
+  // about the repository.
+  expect(cardClaims(card.text), "the composed card carries a CARD CLAIM line nobody can re-derive").toEqual([]);
+  expect(
+    unmarkedQuotes(card.text, pathOracle(repoRoot)).length,
+    "the composed card quotes a phrase this arm then cannot find",
+  ).toBe(0);
+  expect(unseenMarkers(card.text).length, "the composed card carries a marker this arm cannot see").toBe(0);
+  expect(refClaims(card.text), "the composed card names a commit ref it cannot resolve").toEqual([]);
+
+  // THE CONTROL: this reader is still looking. The same three readers over
+  // a card that DOES carry each shape find each one, so the four empty
+  // answers above are about the composed card and not about a reader that
+  // has stopped.
+  const spoiled = card.text.replace(
+    "## Acceptance criteria",
+    ['A line with a provenance arrow  <- @ 0123456 ; a source', "", "## Acceptance criteria"].join("\n"),
+  );
+  expect(spoiled, "the control card carries no arrow, so it controls nothing").toMatch(/\s<-\s\S/);
+  expect(
+    unseenMarkers(card.text).length + cardClaims(card.text).length,
+    "the composed card was already dirty before the control was applied",
+  ).toBe(0);
 });

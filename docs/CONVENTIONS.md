@@ -54,6 +54,7 @@ project can find is not in the document.
   - docs/conventions/dispatch-and-scratch.md — **THE VERIFIER'S BENCH IS TWO SPAWNS, AND THIS BULLET IS THE
   - docs/conventions/dispatch-and-scratch.md — **THE SEAT PROPOSES BEFORE IT RECORDS, AND THIS BULLET IS THE
   - docs/conventions/dispatch-and-scratch.md — PORT RULE: 1420 belongs to the human's live `tauri dev`. The lane
+  - docs/conventions/dispatch-and-scratch.md — **THE EXPRESS PATH IS A SHORT ROAD THROUGH THE ORDINARY RITUAL, NEVER
   - docs/conventions/commands.md — CI (.github/workflows/ci.yml) is a thin invoker of exactly these
 
 ## Gotchas
