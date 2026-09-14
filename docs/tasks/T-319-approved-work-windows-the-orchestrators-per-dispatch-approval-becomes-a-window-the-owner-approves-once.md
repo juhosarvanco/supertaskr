@@ -4,13 +4,14 @@ title: "Approved work windows: the orchestrator's per-dispatch approval becomes 
 feature: F-04
 milestone: 4
 size: M
+tier: guarded
 priority: 2
-status: planned
+status: building
 suggested_by: "the architect seat on 2026-09-13, from the Codex orchestrator's lean-delivery plan v2 and its reconciliation review of the same day, filed on the owner's ruling; filing authorizes no development"
 blocked_by: []
 touches: [method/runtime/process-schema.yaml, method/runtime/supertaskr.yaml, lib/parser/src/process-settings.ts, lib/parser/src/pure.ts, lib/parser/test/process-settings.test.ts, tools/e2e/scripts/settings.mjs, tools/e2e/tests/cli.spec.ts, docs/reference/15-settings.md, docs/CONVENTIONS.md]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
