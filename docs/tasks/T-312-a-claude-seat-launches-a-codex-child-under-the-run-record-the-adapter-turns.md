@@ -6,7 +6,7 @@ milestone: 4
 size: L
 tier: guarded
 priority: 1
-status: parked
+status: planned
 wake: 2026-09-14
 suggested_by: "ADR-025 decisions 2 and 5, approved by the owner on 2026-09-12; card 3 of its plan; the owner's ruling of 2026-09-12 that a Codex child's fence is the sandbox plus the path checks, accepted on this demonstration and not before"
 blocked_by: [T-311]
@@ -35,6 +35,8 @@ The Codex CLI on this host (`codex exec`, version 0.153.4) takes a working direc
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+Promoted 2026-09-14 (the architect seat's step-2 triage on the owner's yes of 2026-09-14 to the seat's recommendation order, which names this card's rerun after the merge-verb repairs and the approval-mode cards): parked to planned at priority 1, the wake condition met — the configuration investigation's findings reached the owner on 2026-09-13 and the read-boundary amendment above records what they settled. The rejected lane's branch is kept as the ref evidence/T-312-lane-41ec2363 (its tip 41ec2363, the four cards it filed on it) beside evidence/T-312-bench-4e78e9bf, so the rerun cuts a fresh lane from main and reads the previous attempt as evidence. The rerun waits for its fence to be free: tools/e2e/scripts/merge.mjs (T-295-s10, then T-295-s4), method/runtime/supertaskr.yaml and docs/CONVENTIONS.md (T-319, then T-324 and T-322 in the owner's order).
 
 ## Parked 2026-09-13 — after the REJECTED verdict, for the seat's configuration investigation
 
