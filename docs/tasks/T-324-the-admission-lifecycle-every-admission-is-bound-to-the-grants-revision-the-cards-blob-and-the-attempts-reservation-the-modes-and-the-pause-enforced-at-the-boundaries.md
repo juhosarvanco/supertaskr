@@ -198,3 +198,327 @@ of every spec in the class.
 ## Verdicts
 
 Promoted 2026-09-14 (the architect seat's step-2 split of T-319 under the owner's yes of 2026-09-14 to the order T-319, T-322 before the T-312 rerun): to planned at priority 2, in T-319's slot after it; T-322 is blocked by this card.
+
+### 2026-09-14 — APPROVED WITH ASSIGNED CORRECTIONS — claude-opus-5@subagent
+
+Verified at the lane tip `291b3778c26ce9c061c336c0055edc17b5493bdf`, base
+`07b1f7aa154e35459ed45449c6b5d48cfb31f830`, on the guarded tier, from the bench worktree
+`supertaskr-V-T-324`. The build is sound and the design is the right one: the grant reaches
+the arm through the parser's reader and through nothing else, the ledger is the run records
+and no second one was added, the admission precedes the reservation at the child start, and
+the blob binding tolerates the loop's own ceremony while refusing a rewritten criterion.
+THREE CORRECTIONS ARE ASSIGNED, all three of them fail-open holes at the pause and the
+endpoint — the two controls this card exists to build — and each is committed on this bench
+after this verdict with a body and a mutant block.
+
+#### The frame I actually had, and the sealed inputs
+
+Two spawns. Phase 1 held no tools, no diff and no executor material, and wrote the attack set
+against the card at the base; I am a fresh spawn that holds tools and read the diff. I read
+the diff and the specs BEFORE the executor's notes, the ask file and the report, in that order.
+
+- attack set `attack-set-T-324.md` — sha256 `661ca256307bd3f939620e4bef70024bc7138900f5fbede789557dcea3783c36`
+- ground `ground-T-324.md` — sha256 `abe4dbf1d3ea190ff0ed861c837bf158267a6c67cf593cab2f7fb6c03488157f`
+- the card at the base — sha256 `298335f5e3915844161f442986f4df3e3c410d7e8b9e85fca10e11611ed29c88`
+
+All three re-hashed on this bench and matched. The ground carries the seat's answers to phase
+1's fifteen measurement requests under its own addendum heading, taken at the base before the
+diff existed.
+
+ONE DISCLOSURE, because the rule is that I report the frame I had rather than the one I was
+promised: my own phase-2 brief carried two executor-derived facts before I opened the diff —
+that `docs/CONVENTIONS.md` stands 4,123 bytes under its fail line at the tip, and that
+`T-324-s1` to `T-324-s3` are the executor's filings. Neither says anything about the shape of
+the implementation, and phase 1's set was sealed and hashed before either existed; I name them
+because a later reader cannot tell a disclosed leak from an undisclosed one.
+
+#### A row per acceptance criterion
+
+| # | criterion | what decided it | verdict |
+|---|---|---|---|
+| 1 | admission at four boundaries, explicit or derived, bound to the revision, the blob and the reservation; retry consumes nothing twice; no second ownership ledger | bodies `THE ADMISSION COMES BEFORE THE RESERVATION…`, `A CONSUMED APPROVAL PRESENTED AGAIN…`, `A RETRY OF AN INTERRUPTED ADMISSION…` (run-record.spec.ts) and `THE LANE CUT IS AN ADMISSION…`, `A MECHANICAL APPEND IS STILL THE CARD…`, `THE ADMISSION AT THE CUT TOLERATES…` (brief.spec.ts); my own inspection of every path the admission decision reads and writes | MET |
+| 2 | the three approval modes, per-card and never a batch, the `until` endpoint inclusive and the next card refused by name | six parameterized bodies `THE MODE AND THE POLICY ARE ENFORCED TOGETHER — approval X paired with recovery Y`; endpoint admitted at stage 6 of the lifecycle fixture | MET after CORRECTION 3 |
+| 3 | the two recovery values, one lifecycle fixture with six stages | body `THE REPAIR LIFECYCLE — one fixture, its stages in sequence…`, stages 1 to 6 asserted in order with a different-failure control at stage 5 | MET |
+| 4 | the pause, its two scopes, the admitted candidate, the immediate stop routed elsewhere | body `A PAUSE DISTINGUISHES NEW WORK FROM THE VERIFICATION OF A CANDIDATE ALREADY ADMITTED…`; my probes at the two boundaries the body does not reach | MET after CORRECTIONS 1 and 2 |
+| 5 | the optional limits read, reported by name, enforced by nothing, the deferral named | body `THE GRANT'S LIMITS ARE READ, REPORTED BY NAME AS ADVISORY…`; plus the negative evidence: `advisoryLimits` is the ONLY reader of `state.block.limits` in the three arm files, and `T-324-s3` is the deferral's filed card | MET |
+| 6 | a successor coordinator inherits the grant from the block | body `A SUCCESSOR COORDINATOR INHERITS THE GRANT FROM THE BLOCK…` over a fixture runtime directory carrying a holder record, asserting the predecessor's label and pid are absent from what is inherited and that `remaining` continues from the ledger | MET |
+| 7 | the switches operational with their read sites named, the reader the only reader, the report's three groups, step 5 extended, the conventions once | bodies `THE SCHEMA'S DISPATCH BLOCK NAMES A READ SITE FOR EVERY ROW…`, `THE ARM READS THE GRANT THROUGH THE PARSER'S READER AND THROUGH NOTHING ELSE`, `THE ARM'S RUN REPORT KEEPS THE REFUSALS IT TESTED APART…`, `THE ORCHESTRATOR'S STEP 5 KEEPS ITS TWO SENTENCES AND EXTENDS THEM`, `THE CONVENTIONS CARRY THE ADMISSION RULE ONCE, AT THE LOOP'S OWN SECTION`; plus my own grep: `dispatchBlock(` is called at exactly one site, inside `grantState`, and `grantState` at exactly three | MET |
+
+#### The three corrections
+
+**CORRECTION 1 — A PAUSE THE OWNER WROTE CORRECTLY STOPPED NOTHING IN THIS PROJECT'S OWN
+TREE, WHILE ONE HE WROTE BADLY STOPPED EVERYTHING.** `admit` returns the unenforced answer
+for a tree with no `dispatch:` block BEFORE it reads the pause, so the pause is read by
+`grantState` and then discarded. This project's own runtime template carries no dispatch block
+(the ground's M1), which makes the tree this card ships in the exact tree in which the control
+does nothing — and the conventions this card wrote now tell the owner that
+`.supertaskr/pause.json` is how a pause is recorded. The function's own doc comment says the
+opposite of what the code does: "the PAUSE is read first because it is the owner's most recent
+act and a paused loop is paused whatever the grant says". What makes this a defect rather than
+a judgement about grantless trees is the inversion: `readPause` refuses inside `grantState`,
+so an UNREADABLE record refuses every admission in that same tree while a readable one refuses
+none. Reproduced on this bench against a grantless fixture:
+
+```
+a WELL-FORMED `all` pause : ADMITTED (unenforced)
+a MALFORMED pause record  : REFUSED [ADMISSION_SCOPE]
+```
+
+The correction lifts the pause block above the no-grant return, which is where its own comment
+already says it belongs. Criterion 4's `WHEN a pause is recorded` is unconditional on a grant.
+
+**CORRECTION 2 — A `new-work` PAUSE ADMITS ANY VERIFICATION OR INTEGRATION, INCLUDING OF A
+CARD NO ATTEMPT EVER ADMITTED, AND SPENDS THAT CARD'S APPROVAL DOING IT.** The scope's branch
+discriminates on the PHASE alone (`if (phase === "implementation")`), while the criterion
+permits "the verification and integration of THE ADMITTED CANDIDATE". The pinned body only
+exercises the case where the candidate exists, so the hole is invisible to it. Reproduced on
+this bench, grant `each` over `T-901`, a `new-work` pause recorded, an EMPTY ledger:
+
+```
+executor   (implementation): REFUSED [ADMISSION_PAUSED_NEW_WORK]
+verifier,  EMPTY ledger    : ADMITTED kind=explicit consumed=true
+integrator, EMPTY ledger   : ADMITTED kind=explicit consumed=true
+```
+
+So new work passes a pause by relabelling the seat, and burns the card's own per-card approval
+while it does — after which the legitimate executor start meets `ADMISSION_APPROVAL_CONSUMED`.
+The correction refuses a non-implementation phase whose card the ledger does not carry.
+
+**CORRECTION 3 — THE `until` ENDPOINT IS CROSSED BY NAMING AN UNREACHABLE PARENT.** The
+derived branch requires only `grant.order.includes(parent)`. Under `until`, a card in the
+order but AFTER the endpoint is work the grant refuses — and a repair naming it as its parent
+inherits an authorization the grant never made. Reproduced on this bench, order
+`[T-901, T-902, T-903]`, `until: T-901`, recovery `repairs`:
+
+```
+explicit T-903 (past the endpoint)   : REFUSED [ADMISSION_UNTIL_ENDPOINT]
+DERIVED T-904, parent T-903 (past it): ADMITTED kind=derived consumed=true
+```
+
+Criterion 2 admits under `until` only "the repairs that card's delivery needs", and a card the
+grant does not reach delivers nothing. The correction refuses a parent beyond the endpoint by
+name.
+
+#### The attack set, answered where the answer is not a row above
+
+- **The read-once cache (A1.1) and the mid-run mutation (A2.7).** There is no memo. `grantState`
+  reads the schema, the template and the pause from disk on every call, and it is called once
+  per boundary — `dispatchLanePlan`, and `admissionAt` from `startRun` and from `continueRun`.
+  The pause fixture writes the record as RAW JSON on disk and the grant as RAW YAML into the
+  template, never through an arm helper, which is the arming A1.1 asked for and X1 called the
+  highest-value control in the set. It is the fixture shape throughout.
+- **The four boundaries, one chokepoint (A1.2).** All four reach one `admit`. The replacement
+  writer is not an independent call site: it is `continueRun`'s one `admissionAt` call with the
+  boundary string chosen by `opts.replace`. That is not a hedge — the ground's M4 established at
+  the base that the replacement IS a branch inside `continueRun` — so A1.2's demand for a mutant
+  that reds the replacement independently of the re-entry has no site to aim at, and I record
+  that rather than grade it a miss. The boundary label is asserted at each of the three
+  (`child-start`, `re-entry`, `replacement`).
+- **The blob binding that binds to nothing (A1.3).** It binds. `cardDrift` reads the approved
+  revision back out of the object database by `git cat-file` on the sha the grant recorded and
+  compares it to the card now, and the edit the body uses is a SEMANTIC one inside the
+  acceptance criteria, not whitespace — which is exactly what A1.3 demanded. A deleted line and
+  a widened `touches:` are both refused, and the four mechanical shapes are all admitted.
+- **The mechanical-append escape hatch (A1.6, D3).** It is a CLOSED enumeration:
+  `MECHANICAL_FIELDS` is six frontmatter keys, `MECHANICAL_SECTIONS` is two headings, plus one
+  follow-up-id pattern. An amendment under a heading of its own is substantive and refuses,
+  which is this project's own recorded lesson honoured in code. I withdraw A1.6's demand that an
+  Implementation-notes append be refused: the card's own words allow "a notes or verdicts
+  append", so the implementation follows the criterion and my attack was over-tight.
+- **The derived admission with a decorative evidence field (A1.4) and attribution by timing
+  (A3.2).** The arm checks that a parent and an evidence were NAMED, never that the naming is
+  true — and it says so, by name, in `coordinatorObligations`, which the report prints under
+  `THE COORDINATOR'S, NOT THIS ARM'S`. That is criterion 7's required separation used for
+  exactly the thing A3.3 said must land there rather than be presented as enforcement. Graded as
+  disclosed, not hidden. The de-duplication is keyed on the FAILURE EVIDENCE digest and the
+  parent, not on the card id, and the lifecycle fixture's stage 5 carries the different-failure
+  control that proves it (A3.5).
+- **Minting a grant (A1.5).** Nothing in the admission path writes the template or the block.
+  The mode-matrix body asserts a derived admission's `revision` is still 1.
+- **The retry seam (A1.7) and the uncertain old writer (A1.8).** The retry body constructs the
+  real intermediate on-disk state — the attempt left `reserved`, the lock held, nothing bound —
+  rather than calling `startRun` twice, which is the arrangement A1.7 asked for. The uncertain
+  writer is T-311's `CONTINUE_UNCERTAIN`, a third state between live and dead, and the body
+  asserts the refused continuation wrote no second record, moved no admission and touched no
+  reservation.
+- **The second ownership ledger (A1.11, D5), by inspection as I pre-committed.** The admission
+  decision READS the schema, the template through the reader, `.supertaskr/pause.json`, the run
+  records under `.supertaskr/runs/`, git's object database and the card index. It WRITES exactly
+  one thing: an `admission` field on the run record the boundary was already writing. No lock,
+  no marker, no `.consumed`, no table. `readPause` has no writer anywhere in the arm — the pause
+  is the owner's file and the arm only reads it.
+- **`each` as a batch (A2.1) and refusal by name (A2.2).** Consumption is per card and derived
+  per card (`ledger.filter(e => e.card === card …)`); every refusal message carries the card id,
+  and the bodies assert on the id rather than on a boolean.
+- **`until` by recorded order (A2.3).** The grant's `order` is the only recorded order the data
+  has — the ground's M1 shows the declaration's own `what:` says "the approved cards in dispatch
+  order". A2.3 collapses to a definitional point, as I said it would.
+- **The inclusive endpoint (A2.4).** Two separate readings: the endpoint card itself is started
+  and carried to completion at stage 6 of the lifecycle fixture, and the card after it is
+  refused BY NAME in the `until` arm of the mode matrix, naming both the endpoint and the
+  refused card.
+- **Crossing a parked endpoint (A2.5).** The arm refuses EVERY card past the endpoint, parked or
+  not, so the requirement holds a fortiori and the status set's completeness cannot matter. One
+  residual, recorded rather than assigned: the parked reading only decorates the refusal
+  message, and `request.board` is supplied only at the lane cut — at the three run-record
+  boundaries the message says the endpoint's status "was not read here". Nothing behavioural
+  turns on it.
+- **The mode × recovery matrix (A2.8).** Six distinct bodies, parameterized, each naming its own
+  pair. I counted them: three approvals × two recoveries.
+- **An unknown mode (A2.9) and failing open (X3).** Fails CLOSED, and before `admit` is reached:
+  the parser's reader validates a mode against the declaration's own `values:` list and throws
+  `ProcessFinding` (`approval is sometimes, which is not one of…`). `admit` carries its own
+  `UNKNOWN_MODE`/`UNKNOWN_RECOVERY` refusals as defence in depth. A pause with a scope outside
+  the closed set, with no `by`, with no `at`, with a wrong `version` or that does not parse all
+  refuse (A4.6). An unreadable pause is never silence.
+- **`none` refusing everything (A3.1).** `RECOVERY_NONE` fires only for `kind === "derived"`; an
+  explicitly approved repair takes the explicit path and is admitted under `none`, which the
+  `none` arms of the matrix exercise.
+- **The new-work scope proved by one arrangement (A4.1).** The permitted verifier and the
+  refused replacement executor go through the SAME entry point, `startRun`, with different
+  assignment roles — not two different functions. That is the defect my role file names most
+  often, and it is not present here.
+- **"The admitted candidate" identified loosely (A4.2).** Present. CORRECTION 2.
+- **The replacement under a pause (A4.3).** Refused, and by the pause rather than by the
+  re-entry rule: the refusal is `ADMISSION_PAUSED_NEW_WORK` at `startRun`, a fresh implementation
+  attempt.
+- **`all` stopping mid-phase (A4.4) and the staged merge (A4.5).** The `all` refusal stops the
+  next ADMISSION and names each phase's declared safe boundary in its message; it kills nothing
+  in flight, because the arm has no way to. A4.5's two-record branch has no implementation to
+  test here — no code in this card decides whether a staged merge finishes or aborts — and the
+  criterion's clause is a statement about what a pause MEANS for a mechanism outside this arm. I
+  grade the clause as stated rather than as enforced, and say so rather than crediting it.
+- **"Needs no second approval to be read" (A4.7).** Vacuous, as I pre-committed it might be:
+  there is no general "records need approval" rule for it to be an exemption from. `readPause`
+  requires a `by` so that the record says whose act it is, which is the nearest real content.
+  Recorded as vacuous, not as met by a mechanism.
+- **The pause written where nobody looks (A4.9).** The fixture writes `.supertaskr/pause.json`
+  as raw bytes at the documented path, not through an arm helper. The shape is documented once
+  in the conventions at the loop's own bullet, which is what a later owner would follow.
+- **Limits (A5.1 to A5.4, D1).** Each present limit is named individually in the report
+  (`limits.tokens.<provider> = N`, `limits.expires_at = …`), absence is reported as "no ceiling
+  nobody wrote down" rather than defaulted to a number, `advisoryLimits` is the only reader of
+  the limits in the three arm files, and the deferral has an addressee: `T-324-s3`. My D1
+  pre-commitment said I would not credit the criterion's PURPOSE on a report line alone; the
+  grep and the filed card are the negative evidence I demanded, so I credit it.
+- **Succession (A6.1 to A6.4).** The inherited answer is asserted NOT to contain the
+  predecessor's label or pid, the remaining order is continued from the ledger rather than
+  restarted, and the grantless control says so rather than inventing an order. A6.3's demand for
+  an ungraceful predecessor's leavings is partly unmet — the fixture writes a holder record but
+  no partial run record and no stale lock — and it cannot change the answer, because
+  `grantInheritance` reads neither; recorded, not assigned. A6.4's interaction is coherent: the
+  successor inherits the GRANT from the block while the uncertain old writer still holds its own
+  admission at the reservation, and the two rules do not touch.
+- **The read sites (A7.1) and text-presence (A7.2, A7.5, D2).** The read-site table is parsed
+  back out of the schema by `dispatchReadSites` and held by a body that requires every declared
+  row to name a site and every named symbol to be a function this arm EXPORTS — so a site naming
+  nothing real reds. I judged placement and singularity for the prose clauses as I pre-committed:
+  the conventions rule is consolidated INTO the loop's existing bullet (one occurrence, asserted
+  by a count), not added under a heading of its own; step 5's two standing sentences are present
+  verbatim, with the new clause between them and `5b.`, and the ground's M10 confirmed no spec
+  pins a sentence of step 5 proper, so nothing was paraphrased away.
+- **Concurrency (X4).** Not addressed by the diff and not required by any criterion. Consumption
+  is derived by a read of the run records with no atomicity of its own; the named atomic
+  primitive is T-311's `wx` reservation, which serialises two WRITERS over one resource but not
+  two admissions of a card whose assignment carries `resource: none`. Filed as `T-324-s4` rather
+  than assigned, because no criterion asks for it.
+
+#### Security sweep (mandatory, and it found no REJECTED-level finding)
+
+- **No dependency was added.** No `package.json`, no lockfile and no new import outside the tree
+  except `RUNTIME_DIR` from `.claude/hooks/lane-fence.mjs`, which is the one file that declares
+  that name (`run-record.mjs` reaches the same constant through `gate-token.mjs`, which
+  re-exports it) — so the new path has one spelling and not two.
+- **The one new input path is `.supertaskr/pause.json`.** It is parsed inside a try/catch,
+  pinned to `version: 1`, its `scope` validated against a closed two-value set, `by` and `at`
+  required, and a record that fails any of those REFUSES rather than being half-read. That is
+  the right direction for a control whose failure mode is a loop that keeps running.
+- **No identifier from owner-authored data reaches a path join or a shell.** `approvedCardText`
+  validates `^[0-9a-f]{40}$` before `git cat-file`; `cardFileOf` resolves a card id through the
+  board index rather than building a path out of it, which is T-311's own charset rule honoured;
+  `cardBlobSha` joins only a repository-relative path the index gave it; every git call is an
+  argv array.
+- **The derived admission is the privilege-escalation surface by design** — it is the one path
+  that admits work no owner named. Its whole guard is `recovery === "repairs"` plus a parent in
+  the order plus a non-empty evidence plus `scope === "repair"`. CORRECTION 3 closes the leak in
+  that guard, and I grade it as a security finding rather than a correctness one, exactly as I
+  pre-committed in X5(d). The residual — that attribution is a NAMING and not a truth — is
+  declared in the report's obligations group.
+- **No credential, no key, no home path and no owner-identifying string** lands in a record or a
+  report. The run record's `resource` is an absolute path, but no run record is tracked by git
+  (the ground's M13).
+- **The grant's owner-authored strings** (`given_by`, `at`, the card ids) are interpolated into
+  rendered report lines that reach a brief. They sit at the same trust level the runtime
+  template already had, reach no shell and no path, and are not a finding.
+
+#### What I checked that no criterion asked for
+
+- The in-fence follow-through list names three entries: the conventions size reading, the census
+  staleness, and the regeneration of `docs/reference/15-settings.md`. The first two are readings
+  rather than changes; the third is a generated file inside the widened fence and nothing in it
+  is typed. The two remaining out-of-criterion changes — the rewritten `cli.spec.ts` body and the
+  two `brief-flush.spec.ts` excuse entries — are declared in the notes under `The fence widenings
+  of 2026-09-14` rather than under the follow-through heading. They are consequences of criterion
+  7's flip and of criterion 1's lane-cut boundary, both inside the widened fence and both argued;
+  I record the heading mismatch and do not treat either as undeclared surface.
+- The claim that the `git-fixture.spec.ts` red was repaired from INSIDE the fence holds: that
+  file is untouched, and the repair is in `run-record.spec.ts`'s own `grantBench`, which now
+  spreads `NO_BACKGROUND_MAINTENANCE` and tears down through `removeGitFixture`.
+- Every path the diff touches is one of the card's eleven `touches:` entries or a card under
+  `docs/tasks/`. The fixture git identity in the new bench is `fixture@example.invalid`, which
+  the keeper's own table already names.
+
+#### The mutant blocks — three corrections, three blocks
+
+```mutant
+correction: a pause read after the no-grant state stops nothing in the tree this project ships
+file: tools/e2e/scripts/dispatch-brief.mjs
+spec: tools/e2e/tests/run-record.spec.ts
+body: A PAUSE THE OWNER RECORDED STOPS THE LOOP EVEN WHERE THERE IS NO GRANT TO ENFORCE — and a tree with no block is this project's own
+message: a pause recorded in a tree with no grant stopped nothing
+--- old
+  if (pause !== null) {
+--- new
+  if (pause !== null && state.enforced) {
+```
+
+```mutant
+correction: a new-work pause discriminating on the phase alone admits work no attempt ever admitted
+file: tools/e2e/scripts/dispatch-brief.mjs
+spec: tools/e2e/tests/run-record.spec.ts
+body: A `new-work` PAUSE PERMITS THE VERIFICATION OF A CANDIDATE ALREADY ADMITTED AND OF NOTHING ELSE — a verifier start for a card this loop never admitted is refused
+message: a new-work pause admitted a verifier for a card no attempt ever admitted
+--- old
+      String(request.work ?? "card") !== "card" || ledger.some((e) => e.card === card);
+--- new
+      true;
+```
+
+```mutant
+correction: a derived repair whose parent lies past the until endpoint inherits an authorization the grant never made
+file: tools/e2e/scripts/dispatch-brief.mjs
+spec: tools/e2e/tests/run-record.spec.ts
+body: A DERIVED REPAIR CANNOT EXCEED THE AUTHORIZATION IT INHERITS — a parent past the `until` endpoint is refused, so the endpoint is not crossed by naming an unreachable parent
+message: a repair crossed the until endpoint by naming an unreachable parent
+--- old
+    const beyondEndpoint = endpointAt >= 0 && parentAt > endpointAt;
+--- new
+    const beyondEndpoint = false;
+```
+
+Three corrections, three blocks, no shortfall. Each body was run RED against the arm as this
+lane built it and GREEN against the arm as this bench corrected it; the readings are in the
+postscript below.
+
+#### Findings filed, which block nothing
+
+- `T-324-s4` — the consumption is derived by a read with no atomicity of its own, so two
+  admissions of one card that reserve no resource can both spend one per-card approval. No
+  criterion asks for it; the retry rule the card DOES ask for is held correctly.
+- `T-324-s5` — an `all` pause reaches the admission reader and nothing else: `readPause` has one
+  caller and `grantState` has three, all of them admission boundaries, so the staged merge the
+  criterion names by hand is decided by no pause.
+
+The executor's own three — `T-324-s1` (the pause row in the block), `T-324-s2` (the lane cut
+records no admission) and `T-324-s3` (the limits' deferral) — are the right three and I would
+have filed the second and third myself.
