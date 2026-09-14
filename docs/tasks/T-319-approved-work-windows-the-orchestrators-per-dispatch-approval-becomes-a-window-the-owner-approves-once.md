@@ -589,3 +589,82 @@ census 101115 bytes against a fresh 101547, `index --check` exit 1 over 203 unch
 files with symbols 2593 to 2626 and edges 2488 to 2505 — are at `163d0740`; mine at my
 own tip are in the postscript below. Both are stale for the same reason and the merge
 regenerates both.
+
+#### The readings at MY OWN tip, not the one I was sent
+
+A figure measured at the commit I was sent is stale at the tip my verdict created,
+so the whole battery was run again, through the blessed gate-runner on this bench's
+own port, over the tree carrying this verdict, both committed correction bodies and
+the two filed cards — at `d97dbdf5a7d30e61ea8ea32a48df347015de58f4`.
+
+| suite | bodies | targets | exit | verdict | at the tip I was sent |
+|---|---|---|---|---|---|
+| parser | 454 | 1 | 1 | **RED**, by construction — read the paragraph below | 452, exit 0 |
+| app | 1171 | 1 | 0 | GREEN | 1171, exit 0 |
+| rust | 655 | 18 | 0 | GREEN | 655, exit 0 |
+| e2e | 1091 | 1 | 0 | GREEN | 1091, exit 0 |
+
+The parser count moves by exactly the two bodies this verdict commits.
+
+**The parser leg's red is this verdict's own, and it is the RED reading step 5b
+owes.** Correction 1 needs a code change a verifier does not commit — the block
+carries it and the merge applies it — so at this tip the property is absent and the
+body that pins it fails. It fails ALONE, and the claim is as wide as the whole
+library suite rather than one spec: 1 failed and 453 passed of 454, over 17 files,
+and the one failure is the body named by the mutant block above — the declaration's
+refusal of an advisory label spelled neither true nor false.
+The merge applies correction 1 before its regenerations and the leg is green from
+that commit onward. Correction 2's body is GREEN at this tip, because its correction
+needed no code change and its block exists only to give the drill a mutant to plant.
+Nothing else in the battery moved: every other leg carries the same count and the
+same exit as at the tip I was sent.
+
+**Neither generated file was regenerated here, and both are stale by construction.**
+
+- the census: STALE, committed 101115 bytes against a fresh 101547.
+- the graph: `index --check` exit 1 — 203 files unchanged, symbols 2593 to 2626,
+  edges 2488 to 2505, over three changed .ts files. A regeneration moves six
+  dogfood pins under a path this card's fence does not carry, which is why it
+  belongs to the merge and not to a bench.
+
+Both readings are identical to the executor's at the lane tip: the two bodies this
+verdict adds move no symbol and no census sentence.
+
+`lint:docs` exit 0 (so `docs/INDEX.md` is not stale) and `lint:tokens` clean —
+TOKEN 188 files, CONTROL 1596 tracked text files, six more than the base's 1590,
+which is the four cards the lane filed and the two this verdict files.
+`lib/parser/dist` was verified CURRENT with `src` at this tip by building to a
+scratch directory and comparing: every emitted file identical but the source maps,
+whose only difference is the output path. So no reading in this verdict is a
+stale-dist green.
+
+#### Three notes the integrator should not have to rediscover
+
+**THE VERIFIER'S WRITE OWES NO FENCE WIDENING HERE.** Both correction bodies live in
+`lib/parser/test/process-settings.test.ts`, which is already the card's own fence
+token, and both mutant blocks plant into `lib/parser/src/process-settings.ts`, also
+in the fence. The widening step exists for a verdict whose spec sits outside the
+fence; this one does not, and the landing gate reading this merge's first parent
+will find every path admitted.
+
+**THE TWO AMENDMENTS OF 2026-09-14 ARE HONOURED, AND ONE OF THEM WAS OVERTAKEN BY
+THE FENCE.** The promotion amendment put the record in the runtime template's own
+`dispatch:` block, declared beside it, with no separate record class — which is what
+landed. The recovery-policy amendment asked for the two modes as SWITCHES declared
+once in the schema, and that spelling was not available: I checked the constraint
+the notes cite rather than taking it on trust, and it holds — `tools/e2e/tests/brief.spec.ts`
+carries a typed `PROCESS_SWITCH_IDS` list the schema's switch set must equal exactly,
+and another body there requires every non-floor switch to be a row of
+`docs/rooms/loop-cost-and-speed.md`; neither file is in this fence. The declaration
+became a schema section of its own instead, the switch set is unchanged at 42, and
+the M4 byte comparison above is the proof that nothing about the switches moved. The
+same amendment's "this card adds no parser code" was withdrawn by the card's own
+canonical section, so the reader is owed and was built.
+
+**"THE SAME `readGrant`" HAS ONE ARGUED EXCEPTION.** A history entry's `until` is
+optional where the current grant's is conditioned on the block's mode, because the
+approval mode belongs to the block and not to a grant — an earlier grant may
+legitimately carry an `until` under a block that now reads `standing`. What is still
+checked for a history entry is that its own `order` carries the card it names. The
+reader says this in a comment at the site; it is a decision rather than a gap, and
+it is the one place the two readings differ.
