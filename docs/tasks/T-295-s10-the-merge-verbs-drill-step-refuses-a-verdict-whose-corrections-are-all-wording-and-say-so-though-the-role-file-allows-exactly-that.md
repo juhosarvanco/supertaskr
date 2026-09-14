@@ -178,3 +178,408 @@ own re-derivation.
 ## Verdicts
 
 Promoted 2026-09-14 (the architect seat's step-2 triage on the owner's yes of 2026-09-14): to planned at priority 2 — the verb's drill stopped the T-314-s6 merge on the shape the role file allows; dispatched right after T-295-s9 merges, sharing its fence.
+
+### 2026-09-14 — APPROVED WITH ASSIGNED CORRECTIONS — claude-opus-5@subagent
+
+Phase 2 of the guarded bench, at the lane tip `f7161421`, base
+`14ff31af`. Three corrections: two are bodies committed on this bench in
+the commit after this verdict, each with a mutant block below; the third
+is wording and **carries no mutant block, and this sentence is that
+statement in as many words**, so the shortfall between three corrections
+and two blocks is not read as a body nobody wrote.
+
+#### The frame I actually had
+
+Two spawns, as the tier requires. Phase 1 wrote the attack set with no
+tools and no diff; this spawn is a fresh one that never held phase 1's
+context. The dispatcher's postscript carried ground rules and paths only
+and named no executor-derived figure — no mutant count, no path count, no
+suite reading — so phase 1's blindness was not broken above the line. I
+read the card at its base, then the sealed inputs, then the role file,
+then the DIFF, then the specs, and the executor's report LAST. I did not
+open `docs/ROADMAP.md`.
+
+**The brief carried no CONTEXT PACK**, which `roles/verifier.md` step 0
+names as a dispatch fault. I say so rather than pretend otherwise, and I
+contained it the way that step allows: I read `docs/STATE.md` and
+`docs/INDEX.md` whole, and opened `docs/CONVENTIONS.md` at the two
+sections steps 1 and 4 need — *Build & test* for the fence's commands and
+the census-currency rule, *Gotchas* by grep for this fence's entries —
+rather than end to end.
+
+#### The sealed inputs, by digest
+
+| input | sha256 |
+|---|---|
+| the attack set | `6b7b930db2a9ba450fccdd68a0faba00960b9276c0e1997f336906a2c982f2f7` |
+| the ground | `c210eb25d3a0519cb35f3165ea5193f970833978757b8ef3410db00dfcf08454` |
+| the ground's measurement transcript | `d2f70eb555785e7a9f3d71d5a47611214ac886a77236c5d5059cd058211d585d` |
+| the card at `14ff31af` | `f8225f2210563034231c0079045837796ee433bf70c496da0a89567255222350` |
+
+All four re-computed on this bench and matching the stamp file.
+
+#### A pre-commitment of mine that measured FALSE
+
+Phase 1 pre-committed (P1) that criterion 1's third pin — a correction
+with neither a block nor the statement, refused by name — is **degenerate
+as evidence**, because the base refuses every shortfall. It is not. At
+the base the shortfall check ran **only inside `read.blocks.length === 0`**,
+so a verdict carrying one block and a forgotten body took no shortfall
+check at all and planned its drill. The third pin is therefore an
+ADDITION to the gate and not a narrowing of it, its fixture reds at the
+base, and the one live verdict in the shape is `T-282`'s. I record the
+prediction and its refutation rather than quietly dropping it.
+
+#### Criterion by criterion
+
+| # | criterion | verdict | the reading that decided it |
+|---|---|---|---|
+| 1a | the step reads, PER CORRECTION, whether the verdict states it carries no block | **MET, with correction 2** | `correctionEntries` + `statedNoBlock` + `correctionShortfall` in `tools/e2e/scripts/merge.mjs`; body *"which correction a no-block statement is ABOUT is read from the ordinals it names AND from the stretch it sits in"*. The per-correction binding is real — my A1/A2 attacks (one statement, two corrections) refuse correctly. Correction 2 below is the one place the binding leaks: the ordinals are harvested from the whole SENTENCE, so a sentence whose other clause names a correction that HAS a body excuses it too. |
+| 1b | it SHALL drill each block it finds | **MET, with correction 1** | `drillSteps` still ends in `read.blocks.map(...)`; body *"a block and a stated wording correction is ONE drill and no refusal"*. Correction 1 below: with `--blocks-absent` and a PARTIAL shortfall the new branch returns one acknowledged step and drills nothing, against this function's own docblock and the usage text this diff edited. |
+| 1c | a stated no-block correction is nothing to drill | **MET** | Body *"a verdict whose corrections are ALL wording and SAY SO is nothing to drill"*: `drill:none`, `problem` undefined, `wording` length 2, and the control with the statements struck out refusing. Independently: the whole board swept, base reader against this one, `T-314-s6` is the one verdict that moves from `drill:refused` to `drill:none`. |
+| 1d | refusing ONLY an unexplained shortfall | **MET, with correction 2** | Bodies 1-3's controls, and my own probes: a statement inside a fence does not excuse (`drill:refused`); `"No block names a line number."`, the one confusable class the ground measured, does not excuse; prose merely mentioning *wording* and *block* does not excuse. The leak is correction 2's clause boundary. |
+| 1e | pin — two stated wording corrections, the step passes and prints both as wording | **MET** | `a verdict whose corrections are ALL wording and SAY SO is nothing to drill, and the step's line names each one`. RED at the base (base answers `drill:refused`). |
+| 1f | pin — one block and one stated wording correction, one drill, no refusal | **MET** | `a block and a stated wording correction is ONE drill and no refusal, and the drill's own line still names the wording one`. RED at the base on the title assertions. |
+| 1g | pin — a correction with neither, refused by name | **MET** | `a correction with NEITHER a block nor the statement is refused BY NAME, beside corrections that have one`; refuses naming CORRECTION 3, does not name the one with a block nor the one that said so. RED at the base, which plans `drill:1` and runs no shortfall check. |
+| 2 | the plan's line names each such correction as wording with no drill | **MET, with correction 2** | The `drill:none` title and the first `drill:` title both carry `WORDING, no block by the verdict's own words: <name> / <name>`, `printStep` prints `step.title` for every step, and the names also reach the runner as the step's own `wording` list rather than a re-parse. Correction 2 below: on `T-300-s7`, a live card, the line names a correction as wording on the same line that re-drills that correction's block. |
+
+#### What I attacked, and what held
+
+Every letter-satisfying attack phase 1 wrote, run against the tip. What
+held:
+
+- **The arithmetic and global-scan attacks (A1, A2).** The reading is per
+  correction and not a sum. One statement over two corrections refuses
+  and names the bare one; a statement in a preamble that names no ordinal
+  excuses nobody.
+- **The loose-recogniser attack (A5).** `NO_BLOCK_SAID` is five patterns
+  over the phrasings the board has written, and the second requires the
+  phrase to END its clause — which is what separates *"No block."* from
+  *"No block names a line number"*, the one confusable class the ground's
+  M12 found in the corpus. Measured: neither of that class's live
+  spellings excuses, and neither does ordinary prose carrying *wording*
+  and *block*.
+- **The self-reference attack (A6).** `fencedLines` is walked in BOTH
+  readers, so an announcement inside a mutant block's own `old`/`new`
+  text is not a correction and a statement inside a fence does not
+  excuse. I drove both and both refuse. (An HTML comment is not fenced
+  and does excuse — a finding below, not a correction.)
+- **The brittle-recogniser attack (A7).** The opposite failure, and the
+  one that matters most here: I ran the tip's reader over all **799**
+  cards under `docs/tasks/`. 83 newest verdicts approve, 48 assign
+  corrections, 81 corrections are read, 13 are stated wording across nine
+  cards — `T-264-s3`, `T-282`, `T-295-s9`, `T-296`, `T-299-s6`,
+  `T-300-s6`, `T-300-s7`, `T-314-s6`, `T-317` — and every one is
+  recognised. That is nine real phrasings, not three invented ones.
+- **The demotion attack (A9).** `refuse()` is untouched, so a refusal is
+  still a `Step` carrying a `problem`, `runStep` returns `EXIT.FOUND` and
+  the tail loop stops the run. Nothing was downgraded to a warning.
+- **The zero-correction path (A13) and the assigning guard.** An
+  approving verdict that assigns none is not read for corrections at all;
+  body *"a verdict that assigns NO correction is not read for
+  corrections, however often it writes the word"*, with the control that
+  the same paragraph under an assigning heading IS read.
+- **Boundaries (C3, C7, S2).** Emphasis, backticks, upper case, an em
+  dash lead-in, a non-breaking space and a statement wrapped across two
+  source lines are all recognised — `plainProse` joins the paragraph
+  first. A verdict of 400 corrections and 124 KB plans in **11 ms**; a
+  90 KB pathological single line in **2 ms**. No regex is built from
+  verdict-derived content and no pattern nests a quantifier, so there is
+  no injection point and no catastrophic backtracking.
+- **Idempotence (C8).** Same input, same decision, same line.
+
+#### The whole-board sweep, which is the strongest evidence here
+
+Running the base reader — recomputed from `newestVerdict`,
+`verdictState`, `readMutantBlocks` and `assignsCorrections`, none of
+which this diff touches — against the tip's `drillSteps` over every card
+under `docs/tasks/`, **exactly two answers move**, and they are the two
+the notes name:
+
+- `T-314-s6`, this card's own subject: `drill:refused` to `drill:none`,
+  both corrections named as wording on the step's own line.
+- `T-282` (`status: done`, so the refusal is latent): `drill:2` to
+  `drill:refused`, because its CORRECTION 4 carries no block and no
+  statement. Criterion 1's third case found in the wild, and correct.
+
+I derived this independently of the lane, and it agrees with the notes
+figure for figure.
+
+#### The findings that ARE corrections
+
+**Correction 1 — `--blocks-absent` now stands in for the blocks a verdict
+DOES carry.** The acknowledgement branch used to be reachable only inside
+`read.blocks.length === 0`; the per-correction shortfall moves it outside
+that guard, and the branch still `return`s a single `drill:none` step. So
+a verdict with two committed bodies and one unexplained correction, run
+with `--blocks-absent <its own sha>`, comes back acknowledged with
+**neither body drilled** — against this very function's docblock ("Blocks
+that ARE present are drilled either way") and against the usage text this
+diff itself edited ("it is not a blanket, and blocks that are present are
+drilled anyway"). Reproduced on this bench by calling the exported
+`drillSteps` with three corrections, two blocks and a matching
+`verdictSha`/`blocksAbsent` pair: one step, id `drill:none`, no `block`
+on it. No body at the base or at the tip passes `blocksAbsent` at all,
+which is why it slipped. The correction confines the flag to the shape it
+was written for and refuses a partial shortfall by name instead.
+
+**Correction 2 — the ordinals a no-block statement credits are the whole
+SENTENCE's, so one clause excuses a correction another clause says has a
+body.** `statedNoBlock` splits a paragraph into sentences, tests each for
+the no-block phrasings, and then credits every ordinal the SENTENCE
+names. A verdict preamble that says both things in one breath therefore
+credits both corrections. This is not hypothetical: `T-300-s7`'s own
+newest verdict opens its corrections section with *"Correction 1 adds the
+keeper the amendment's other half never got; correction 2 is a wording
+repair and carries no block."* Run against that live card, the tip's step
+prints, on the line that re-drills correction 1's block, `WORDING, no
+block by the verdict's own words: Correction 1 — the recorded cut must
+survive the LANE's own HEAD moving ... / Correction 2 — ...`. One line
+that both drills a correction and says it carries no block. And the same
+mechanism buys a false pass: with correction 1's block removed and
+nothing else changed, the step plans `drill:none` — a correction with
+neither a block nor a statement, waved through — and the control that
+strikes correction 1's ordinal out of that one sentence flips it to
+`drill:refused`. The correction reads the ordinals from the clause the
+phrase is in, splitting on the semicolon and on nothing else, which is
+the boundary the measured instance uses and the one boundary that leaves
+both shapes the lane pinned (`T-295-s9`'s preamble and `T-317`'s
+cross-naming sentence) working.
+
+**Correction 3 — two sentences now promise more than the step delivers,
+and they are the sentences a seat reads to learn what the flag does.
+THIS CORRECTION CARRIES NO MUTANT BLOCK: it is a wording repair with no
+property to pin, and it is said here in as many words rather than left as
+a shortfall between three corrections and two blocks.** With correction 1
+applied, `--blocks-absent` on a partial shortfall STOPS rather than
+drilling, so `drillSteps`'s docblock sentence *"Blocks that ARE present
+are drilled either way"* and the usage text's *"it is not a blanket, and
+blocks that are present are drilled anyway"* both overstate: what is true
+is that the flag never stands in for a block, and a verdict that carries
+blocks either has them drilled or is stopped. Say that in both places.
+The integrator applies this as prose at the merge.
+
+#### The findings that are NOT corrections
+
+1. **A no-block statement inside an HTML comment excuses.** `fencedLines`
+   covers code fences; an HTML comment is ordinary paragraph text, so
+   `<!-- Wording; it carries no mutant block. -->` under a bare correction
+   plans `drill:none`. No verdict on this board uses HTML comments, and a
+   comment in a verdict is still the verifier's own words, so this is
+   noted rather than assigned.
+2. **Two corrections numbered alike fold into one, and the second inherits
+   the first's statement.** `correctionEntries` folds repeats by key,
+   which is deliberate and documented — a verdict comes back to a
+   correction it has already announced. The cost is that a verdict that
+   mis-numbers two different corrections both "Correction 2" excuses the
+   bare one. Mis-numbering is a defect of the verdict, and the fold is
+   what makes the count honest in the shape that actually occurs.
+3. **A correction that is stated wording AND carries a block whose label
+   matches nothing is still reported as wording on the line.** The
+   name pass runs before the statement check, so a name-matching block
+   always wins; only a mislabelled block leaves the correction "stated".
+   Correction 2 removes the live instance of this class; the residue
+   needs a verdict that both mislabels a block and declares the same
+   correction wording, which no card does.
+4. **The step's line is one line however long it gets.** 400 stated
+   corrections render a 44,896-byte plan line. The criterion's "each" is
+   honoured literally; the shape a seat reads is not. Not worth a card at
+   the sizes this board writes (the largest live verdict assigns four).
+5. **The count fallback can credit a bare correction with another
+   correction's second block.** Two blocks both labelled "correction 1"
+   beside a bare correction 2 plans two drills and no refusal. This is the
+   documented fallback working as designed — there ARE two committed
+   bodies and only a label missed — and both blocks are drilled either
+   way, so nothing goes unchecked.
+6. **`T-295-s12` is a good card and its finding is real.** No body drives
+   the verb as far as its drill step, so the run-time half of this
+   change — `runStep`'s new sentence — is graded by nothing. The lane
+   declares it under `In-fence follow-through` and files the card rather
+   than stubbing two legitimate gates, which is the right handling.
+
+#### The in-fence follow-through, graded
+
+Both entries are listed, both are inside the stamped manifest
+(`tools/e2e/scripts/merge.mjs`), neither adds an acceptance criterion,
+and each moves about ten lines counted as added plus removed — inside
+`roles/executor.md` step 5's three limits.
+
+- The runner's line for a step that drills nothing: the base sentence
+  *"the newest verdict assigns no correction"* is FALSE on a verdict whose
+  corrections are all wording, and it now says which of the two reasons it
+  is, off the step's own `wording` list rather than a re-parse. It is
+  criterion 2's sentence at run time; it is graded by no body, which the
+  lane states and files as `T-295-s12`. **No finding.**
+- The first drill step's line saying the count the step actually READ
+  where it differs from the heading count: a verdict announcing its
+  corrections in bold heads none of them, so `0 correction heading(s)`
+  beside two corrections read is a figure a seat would have to
+  re-derive. Pinned by the body's `"2 correction(s) read"` assertion and
+  by `"3 correction heading(s), 1 block(s)"` where the two agree.
+  **No finding.**
+
+#### The security sweep (step 3, mandatory)
+
+The lane's whole effect is a new way for an assigned correction to pass
+undrilled, so the recogniser is a trust boundary and verdict text is data
+written by a spawn. **Injection:** no `RegExp` is built from
+verdict-derived content, no pattern nests a quantifier over
+attacker-sized input, and the 90 KB pathological probe answers in 2 ms —
+no ReDoS. **Shell:** nothing verdict-derived reaches a child process or a
+shell; no new dependency. **Path handling:** a wording correction carries
+no `file` key into any read or write, and no path is derived from a
+correction name. **Log forging:** correction names reach `step.title`,
+`step.warning` and `io.out`; `plainProse` collapses all whitespace, so
+no newline or carriage return can forge a plan line — an ANSI escape
+sequence would survive into the terminal, which is worth knowing and is
+not new surface this diff opened. **Secrets, home paths, the pre-rename
+identifier, a synthetic git identity:** none in the diff; the new
+fixtures build no repository and set no `user.email`. **Privilege
+escalation by prose** is the real risk class here, and it is the subject
+of corrections 1 and 2.
+
+#### Architecture and adjacent features (step 4)
+
+The four new symbols are pure functions in `tools/e2e/scripts/merge.mjs`
+with no I/O, no imports added, and no reach into the parser library entry
+— `merge.mjs`'s import list is unchanged. `newestVerdict`,
+`readMutantBlocks`, `assignsCorrections`, `correctionHeadings`,
+`correctionFor`, `correctionSteps`, `runMutantDrill` and `drillScope` are
+untouched in shape, and the whole-board sweep is the evidence that no
+adjacent answer moved: `T-311-s5`'s newest-verdict reader, `T-295-s9`'s
+overlapping-anchor counter and the correction step's state table all
+answer exactly as they did. The census is STALE at this tip and the
+integrator owes `npm run capabilities` as the last write before the merge
+commit, which the lane states on the card.
+
+#### The assigned corrections
+
+Three corrections. Corrections 1 and 2 are bodies committed on this
+bench in the commit after this verdict, in
+`tools/e2e/tests/merge.spec.ts`, each run both ways before it was
+committed. Correction 3 is wording and says below, in as many words,
+that it carries no mutant block.
+
+**Correction 1 — `--blocks-absent` stands in for the blocks a verdict
+DOES carry.** Committed on this bench after this verdict. The body is
+*"--blocks-absent acknowledges a verdict carrying NO block at all, and
+never stands in for the blocks one DOES carry"*. It drives the exported
+`drillSteps` over a verdict with three corrections, two committed blocks
+and one bare correction, with a matching `verdictSha`/`blocksAbsent`
+pair, and requires the step to refuse rather than return one
+acknowledged step; and it carries its own arming as a control — the SAME
+flag and the SAME sha over a verdict that carries no block at all is
+still acknowledged, as news and not as a stop, so what moved between the
+arms is the presence of the blocks and nothing else. Read **RED**
+against the implementation lacking the property — the tip as it stands —
+at **2 failed / 40 passed, exit 1**, failing on *"a PARTIAL shortfall is
+not the shape this flag acknowledges: two committed bodies must not be
+waved past"*, expected `["drill:refused"]`, received `["drill:none"]`;
+and **GREEN** against one carrying it at **42 passed, exit 0**, with
+`npm run typecheck` from `tools/e2e` exit 0 in both states.
+
+**Correction 2 — the ordinals a no-block statement credits are the whole
+SENTENCE's, not its own clause's.** Committed on this bench after this
+verdict. The body is *"the ordinals a no-block statement credits are its
+OWN clause's, so a sentence naming a correction that HAS a body does not
+excuse it"*. It builds `T-300-s7`'s measured preamble shape — one
+sentence, two clauses, one ordinal in each — and requires three things:
+that the correction the other clause names is refused BY NAME when it
+carries no block, that the step's own line does not call a correction it
+is DRILLING a wording one when it does, and, as the arming control, that
+one clause naming both ordinals still credits both. Read **RED** against
+the implementation lacking the property — the tip as it stands — at **2
+failed / 40 passed, exit 1**, failing on *"correction 1 carries neither
+a block nor a statement, and the clause that said so was about
+correction 2"*, expected `["drill:refused"]`, received `["drill:none"]`;
+and **GREEN** against one carrying it at **42 passed, exit 0**.
+
+With both corrections applied I re-ran the whole-board sweep: the same
+**two** answers move and no others, the live stated-wording count falls
+from 13 to 12 — the one that goes is `T-300-s7`'s correction 1, which
+was never wording — and `T-300-s7`'s own plan line now names only
+correction 2 as wording while it re-drills correction 1's block.
+
+**Correction 3 — two sentences promise more than the step will deliver
+once correction 1 is applied, and they are the sentences a seat reads to
+learn what the flag does. THIS CORRECTION CARRIES NO MUTANT BLOCK: it is
+a wording repair with no property to pin, and it is said here in as many
+words so the shortfall between three corrections and two blocks is not
+read as a body nobody wrote.** `drillSteps`'s docblock says *"Blocks
+that ARE present are drilled either way"* and `usageText` says *"it is
+not a blanket, and blocks that are present are drilled anyway"*. With
+correction 1 applied, a partial shortfall named by the flag STOPS rather
+than drilling, so both sentences overstate. What is true in every state
+is that the flag never stands in for a block: a verdict that carries
+blocks either has them drilled or is stopped, and the flag reaches only
+a verdict that carries none. Say that in both places. The integrator
+applies this as prose at the merge.
+
+I checked both anchors with the very counter this verb uses before
+writing them here. In `tools/e2e/scripts/merge.mjs` at this bench,
+correction 1's `old` matches 0 sites and its `new` 1; correction 2's
+`old` matches 0 and its `new` 1. Both are the OWED state the correction
+step applies, neither anchor matches twice, and both `old` texts are
+absent, so nothing here is the arrangement that step refuses.
+
+```mutant
+correction: correction 1 — --blocks-absent stands in for the blocks a verdict DOES carry
+file: tools/e2e/scripts/merge.mjs
+spec: tools/e2e/tests/merge.spec.ts
+body: --blocks-absent acknowledges a verdict carrying NO block at all, and never stands in for the blocks one DOES carry
+message: a PARTIAL shortfall is not the shape this flag acknowledges
+--- old
+    if (named !== undefined && named.length >= ACKNOWLEDGE_PREFIX && sha !== undefined && sha.startsWith(named)) {
+      // THE ACKNOWLEDGEMENT IS THE WHOLE-VERDICT ONE AND CANNOT REACH A
+      // PARTIAL SHORTFALL (T-295-s10's verdict, correction 1). This
+      // function's own docblock says the flag never stands in for a
+      // block, and at the base that held BY CONSTRUCTION: this branch
+      // was reachable only inside `read.blocks.length === 0`. Reading the
+      // shortfall per correction makes it reachable WITH blocks present,
+      // where returning this one step leaves every committed body
+      // undrilled — the one thing this step exists to stop.
+      if (!nothingRead) {
+        return refuse(
+          "--blocks-absent acknowledges a verdict that carries NO mutant block at all, and " +
+            `this one carries ${String(read.blocks.length)}: the bodies it DOES carry are ` +
+            "drilled rather than waved past, and a correction that carries none is answered " +
+            `by the verdict saying so in as many words. ${said}`,
+        );
+      }
+      return [
+--- new
+    if (named !== undefined && named.length >= ACKNOWLEDGE_PREFIX && sha !== undefined && sha.startsWith(named)) {
+      return [
+```
+
+```mutant
+correction: correction 2 — the ordinals a no-block statement credits are the whole sentence's
+file: tools/e2e/scripts/merge.mjs
+spec: tools/e2e/tests/merge.spec.ts
+body: the ordinals a no-block statement credits are its OWN clause's, so a sentence naming a correction that HAS a body does not excuse it
+message: the clause that said so was about correction 2
+--- old
+      // THE CLAUSE, NEVER THE WHOLE SENTENCE (T-295-s10's verdict,
+      // correction 2). One sentence carries two independent clauses about
+      // two different corrections — "Correction 1 adds the keeper the
+      // amendment's other half never got; correction 2 is a wording repair
+      // and carries no block." is T-300-s7's own corrections preamble,
+      // measured — and a sentence-wide harvest credits correction 1 with a
+      // statement that says the opposite of it, then names a correction the
+      // same plan is DRILLING as wording on the step's own line.
+      for (const sentence of flat.split(/(?<=[.!?])\s+|\s*;\s*/)) {
+--- new
+      for (const sentence of flat.split(/(?<=[.!?])\s+/)) {
+```
+
+#### What I would have done differently, said once
+
+Correction 1 confines the flag rather than teaching the acknowledgement
+to lead a plan that still drills. The friendlier shape is the second
+one — emit the acknowledgement and follow it with the drills — and it is
+the shape the docblock's sentence already describes. I chose the
+confining one because it is a single contiguous edit a merge can apply
+mechanically, where the other hoists the drill mapping and is two sites.
+A seat that prefers the other reading should take it; the body pins that
+the committed bodies are not waved past, which both shapes satisfy, and
+only the arm of it asserting `drill:refused` would move.
