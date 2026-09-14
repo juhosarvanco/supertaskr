@@ -53,7 +53,7 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 // THE INDEX AND ITS CHAPTERS ARE ONE TEXT (T-290). This front derives its
@@ -488,6 +488,51 @@ export function shippedSkills(projectRoot) {
   return readdirSync(dir)
     .filter((name) => existsSync(path.join(dir, name, "SKILL.md")))
     .sort();
+}
+
+/**
+ * THE SKILLS THIS PACKAGE CARRIES ITS OWN COPY OF, staged inside the
+ * package so the TARBALL holds them (T-242 criterion 5).
+ *
+ * WHY A SECOND ROOT EXISTS AT ALL. Until T-242 the installer's source
+ * and destination shared ONE root — it copied `<project>/method/skills/
+ * <name>/SKILL.md` to `<project>/<harness dir>/…`, which is exactly
+ * right inside a checkout and answers "this project ships no skills" in
+ * a FRESH FOLDER, where `method/skills/` is precisely what is missing.
+ * The entry a fresh folder is supposed to RECEIVE is the one thing that
+ * arrangement cannot deliver. So the SOURCE root is derived below while
+ * the DESTINATION root stays the project's: a checkout still installs
+ * its own tree's skills, byte for byte as before, and an installed
+ * package installs the ones it was packed with.
+ *
+ * WHY `dist/`. The staged copy is a BUILD OUTPUT of `prepack`, and
+ * `dist/` is the one directory this repository's `.gitignore` already
+ * covers at every depth — so the staging can never be committed by
+ * accident, which is what would turn one generated file into two. Inside
+ * it the layout is the project layout unchanged, so `installPlan` needs
+ * no second shape and `from` still reads `method/skills/…`.
+ */
+export const CARRIED_SKILLS_ROOT = path.join(packageRoot, "dist");
+
+/**
+ * WHERE THIS RUN'S SKILLS COME FROM — the project when it ships any, and
+ * otherwise whatever this package carried in with it.
+ *
+ * The order is not a preference, it is the rule: a checkout's own
+ * `method/skills/` is the live tree and always wins, so running the
+ * installer inside this repository is unchanged by T-242, and a project
+ * that vendors its own packs still installs its own. When neither root
+ * ships anything the project root is answered, so the refusal below
+ * still names the path a user would look at.
+ *
+ * @param {string} projectRoot
+ * @param {string} [carriedRoot]
+ * @returns {string}
+ */
+export function skillSourceRoot(projectRoot, carriedRoot = CARRIED_SKILLS_ROOT) {
+  if (shippedSkills(projectRoot).length > 0) return projectRoot;
+  if (shippedSkills(carriedRoot).length > 0) return carriedRoot;
+  return projectRoot;
 }
 
 // ── the verb table ───────────────────────────────────────────────────
@@ -983,7 +1028,7 @@ export function main(argv, io = {}) {
  * there is no script in this tree to front for it.
  *
  * @param {string[]} args
- * @param {{ projectRoot: string, out: (s: string) => void, err: (s: string) => void }} io
+ * @param {{ projectRoot: string, out: (s: string) => void, err: (s: string) => void, carriedRoot?: string }} io
  * @returns {number}
  */
 export function runInstall(args, io) {
@@ -1008,15 +1053,27 @@ export function runInstall(args, io) {
     }
   }
   const harnesses = wanted.length > 0 ? wanted : HARNESSES;
-  const skills = shippedSkills(projectRoot);
+  // THE SOURCE ROOT IS DERIVED AND THE DESTINATION ROOT IS NOT (T-242):
+  // a checkout installs its own tree's skills; an installed package
+  // installs the ones it was packed with. Either way they land in THIS
+  // project's harness directory.
+  // `carriedRoot` is the spec's injection point and nothing else passes
+  // it: a body needs to arrange BOTH a package that carried the entry and
+  // one that carried nothing, and a control that cannot arrange the
+  // absent case is not a control.
+  const sourceRoot = skillSourceRoot(projectRoot, io.carriedRoot ?? CARRIED_SKILLS_ROOT);
+  const skills = shippedSkills(sourceRoot);
   if (skills.length === 0) {
     err(
       `supertaskr install: this project ships no skills — ${SKILL_SOURCE_DIR}/ carries no ` +
-        "<name>/SKILL.md. Nothing was written.",
+        "<name>/SKILL.md, and neither does this installed package. Nothing was written.",
     );
     return EXIT.CANNOT_RUN;
   }
   const plan = installPlan({ harnesses, skills });
+  if (sourceRoot !== projectRoot) {
+    out(`supertaskr install: source ${sourceRoot} (carried by this package — this folder ships no skills)`);
+  }
   for (const step of plan) {
     out(`${step.harness}: ${step.from} -> ${step.to}    (${step.invoke})`);
   }
@@ -1031,7 +1088,7 @@ export function runInstall(args, io) {
   const collisions = plan.filter((step) => {
     const to = path.join(projectRoot, step.to);
     if (!existsSync(to)) return false;
-    return readFileSync(to, "utf8") !== readFileSync(path.join(projectRoot, step.from), "utf8");
+    return readFileSync(to, "utf8") !== readFileSync(path.join(sourceRoot, step.from), "utf8");
   });
   if (collisions.length > 0 && !args.includes("--force")) {
     err(
@@ -1042,12 +1099,31 @@ export function runInstall(args, io) {
     );
     return EXIT.FOUND;
   }
+  // AN IDENTICAL DESTINATION IS NOT WRITTEN, and "no-op" is the card's
+  // own word for it (T-242 criterion 4, the owner's ruling 1). Until the
+  // verifier's correction this loop copied unconditionally, which is a
+  // no-op in what the bytes say and in nothing else, and the difference
+  // was not cosmetic: `copyFileSync` gives the destination the SOURCE'S
+  // mode, so a read-only source — which is exactly what a lane worktree's
+  // fence makes of `method/` — left a `0444` destination, and the SECOND
+  // run over it threw an uncaught EACCES instead of answering the house
+  // exit contract at all. That is the class T-242-s4 filed against a test
+  // fixture, met again here in shipped code. Two moves close it: skip a
+  // destination that already matches, and WRITE THE BYTES rather than
+  // copy the file, so an installed entry is never left read-only because
+  // the tree it came from was.
+  let written = 0;
   for (const step of plan) {
-    const from = path.join(projectRoot, step.from);
+    const bytes = readFileSync(path.join(sourceRoot, step.from), "utf8");
     const to = path.join(projectRoot, step.to);
+    if (existsSync(to) && readFileSync(to, "utf8") === bytes) continue;
     mkdirSync(path.dirname(to), { recursive: true });
-    copyFileSync(from, to);
+    writeFileSync(to, bytes);
+    written += 1;
   }
-  out(`supertaskr install: ${String(plan.length)} file(s) written.`);
+  out(
+    `supertaskr install: ${String(written)} file(s) written, ` +
+      `${String(plan.length - written)} already current.`,
+  );
   return EXIT.CLEAN;
 }
