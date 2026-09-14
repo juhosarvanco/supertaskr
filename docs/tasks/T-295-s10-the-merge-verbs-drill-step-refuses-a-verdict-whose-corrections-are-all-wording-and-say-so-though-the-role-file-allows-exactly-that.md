@@ -164,6 +164,17 @@ shortfall check at all, so the refusal criterion 1 asks for is an
 ADDITION and not only a narrowing, and `T-282` is the one live verdict
 that meets it.
 
+**What the merge owes, said loudly because this fence cannot pay it.**
+`npm run capabilities:check` from `tools/e2e/` answers STALE at this tip
+— committed 100770 bytes against a fresh generation of 101331 — because
+five bodies were added. The census file and `docs/INDEX.md` are outside
+this card's fence, so the lane could not have fixed it; the integrator
+runs `npm run capabilities` as the LAST write before the merge commit,
+which is the same thing the T-300-s7 and T-314-s6 merges carried. The
+graph is CURRENT at this tip (`index --check`, exit 0, 203 files, 2593
+symbols, 2488 edges), so GRAPH REGEN has nothing owed before the merge's
+own re-derivation.
+
 ## Verdicts
 
 Promoted 2026-09-14 (the architect seat's step-2 triage on the owner's yes of 2026-09-14): to planned at priority 2 — the verb's drill stopped the T-314-s6 merge on the shape the role file allows; dispatched right after T-295-s9 merges, sharing its fence.
