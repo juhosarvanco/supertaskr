@@ -690,3 +690,78 @@ STALE**, at tip `9cfca369` — Rust moved and `docs/architecture/graph.json` is 
 lane's fence, so this is stale BY CONSTRUCTION and the merge regenerates it. Budget line at
 that ref: `1230259 of 2145959 bytes (57.3%) - 915700 left`. My own corrections move
 `app/src-tauri/src/dispatch/brief.rs` again, so the regen is owed at the merge and not before.
+
+#### Step 7 — the gates at MY OWN tip, `a6e1dfacde1fcda15472b1df8d98b58796eee7bd`
+
+Every figure above the corrections was measured at the tip I was sent,
+`9cfca369c3e2c2cf4c0786d01b3a7173773b7dc0`. My verdict, five correction commits and the census
+regeneration created a new tip, and a figure without its ref is wrong the moment anybody writes
+again — so the whole battery was re-run here, not re-quoted.
+
+| gate | at `9cfca369` (the tip I was sent) | at `a6e1dfac` (my own tip) |
+|---|---|---|
+| `gate-run.mjs parser` | GREEN, 454 bodies, 1 target | GREEN, 454 bodies, 1 target |
+| `gate-run.mjs app` | GREEN, 1171 bodies, 1 target | GREEN, 1171 bodies, 1 target |
+| `gate-run.mjs rust` | GREEN, 657 bodies, 18 targets | GREEN, **658** bodies, 18 targets |
+| `gate-run.mjs e2e` | GREEN, 1164 bodies, 1 target | GREEN, **1167** bodies, 1 target |
+| `gate-run` exit | 0 | 0 |
+| `lint:docs` (docs gate) | 0 — 36 readers, 0 findings, 15 budgets hold | 0 — 36 readers, 0 findings, 15 budgets hold |
+| `capabilities:check` | 0 — CURRENT (110330 bytes), INDEX.md CURRENT | 0 — CURRENT (110629 bytes), INDEX.md CURRENT |
+| `index --check` | 1 STALE — by construction, see below | 1 STALE — by construction, see below |
+| `lint:tokens` | 0 | 0 |
+| `rename-scan.mjs` | 0 | 0 |
+| `npx tsc --noEmit` (tools/e2e) | 0 | 0 |
+| `health-bands-run.mjs` | 3 — 28 bands, 13 inside, 2 drifting, 4 BREACHED | 3 — 28 bands, 13 inside, 2 drifting, 4 BREACHED |
+| **`tools/method-evals/run.mjs`** | **1 — MF-01 and MF-09 FAILED** | **0 — 12 of 12** |
+| **`host-command-check.mjs --repo .`** | **1 — 7 of 24 resolved, 28 findings** | **0 — 24 of 24, 0 findings** |
+| `host-command-check.mjs --selftest` | 0 — 7 degradations, 7 caught | 0 — 7 degradations, 7 caught |
+
+The two rows in bold are findings 1 and 2, measured at the base as well: `run.mjs` exits **0 with
+12 of 12** at `37d89ff7`, and `host-command-check` resolves **24 of 24** there with 0 findings.
+Both base readings were taken in a clean clone checked out at the base ref, not in a `git
+archive` export — an export has no `.git`, and MF-06 and MF-11 need one, so an export would have
+compared two different things.
+
+`docs/CAPABILITIES.md` went 110,330 → 110,629 bytes here because the corrections add four bodies
+(three in `tools/e2e/tests/docs-input-gate.spec.ts`, one in
+`app/src-tauri/src/dispatch/brief.rs`); the census is CURRENT at my tip, regenerated in its own
+commit, and `docs/INDEX.md` is unchanged at 7,736 bytes.
+
+**The graph, still stale and still by construction.** `index --check` from `app/src-tauri` exits
+1 at `a6e1dfac` with `files +0 -0 ~2`: `app/src-tauri/src/dispatch/brief.rs` (loc 3634 → 3855,
+symbols 85 → 90) and `app/src-tauri/src/lib.rs` (loc 1375 → 1382), plus one import edge gained
+for `VecDeque`. `docs/architecture/graph.json` is outside this lane's fence; the regen is the
+integrator's at the merge. Budget at my tip: `1230259 of 2145959 bytes (57.3%) - 915700 left`.
+
+#### Two readings I took that nothing asked me for, and both are clean
+
+**The docs gate at every intermediate commit of the lane.** Attack 4.1 in the sealed set says
+criterion 4's *"the re-pointing SHALL land in the same commit as the move"* is vacuous in a
+single-commit lane. This lane is six commits, so the clause has content — and `npm run
+lint:docs` exits 0 at `a1aaad16`, `a50bbd0c` and `7e0ee2c9` in a clean clone at each. No commit
+in the range leaves a tree the docs gate refuses.
+
+**Every mutant anchor matches exactly once, both ways.** For each of the four blocks I counted
+the `--- old` text in the file as committed and the `--- new` text in the mutated file: 1 and 1,
+four times. An anchor matching twice names no site and was applied at the wrong site on this
+project once already.
+
+#### What the integrator owes that this verdict cannot do for it
+
+1. **Widen the fence on main before merging**, to carry `tools/method-evals/` and
+   `method/skills/supertaskr-seat/scripts/`. Three of the five corrections land there because
+   the readers they repair live there, and the landing gate reads the fence from the merge's
+   first parent.
+2. **Regenerate the graph at the merged tree**, then the dogfood pins — `app/src-tauri` moved
+   twice, once in the lane and once in correction 4.
+3. **The METHOD EVAL GATE fires at this merge**, because this verdict adds a line matching the
+   citation grammar under `docs/tasks/`. It is green at my tip and was red at the one I was
+   sent; run it at the merged tree and record its exit, as the gate's own bullet asks.
+4. **The seat's records action stands**: 71 non-done cards fence the index alone and will each
+   meet a write hook refusing the only file that matters. T-290-s5 is the keeper for it.
+
+The two body counts that moved are the corrections' own: rust 657 → **658** for
+`a_chapter_spelling_the_e2e_arm_refuses_is_not_a_pointer_here_either`, and e2e 1164 → **1167**
+for the three bodies in `tools/e2e/tests/docs-input-gate.spec.ts`. Every `gate-verdict` line
+above carries `ref=a6e1dfacde1fcda15472b1df8d98b58796eee7bd`, which is the tip this postscript
+is committed onto — the figures and the tree agree, and neither is quoted from the other run.
