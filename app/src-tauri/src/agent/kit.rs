@@ -152,6 +152,24 @@ pub const KIT_FILES: &[KitFile] = &[
             "../../../../method/skills/supertaskr-seat/scripts/host-command-check.mjs"
         ),
     },
+    // T-242: THE INTERVIEW SKILL, and it is ONE FILE by construction
+    // rather than by economy. It is GENERATED from the same canonical
+    // sources this table already carries — the banks, decomposition, the
+    // templates, the adapters, the card skeleton — by
+    // `tools/e2e/scripts/interview-skill.mjs`, which embeds each of them
+    // as a fenced block labelled with the path it lands at. So there is
+    // nothing beside it to carry: a pack file whose every reference is
+    // INSIDE it cannot be half-carried, which is the failure the comment
+    // above this one is about.
+    //
+    // It rides here for ADR-021's reason, the same one the seat skill
+    // rides for: what this product ships for the PLANNER'S chair is the
+    // interview as a skill, so a project that got the method without it
+    // got the method without the one entry that starts a project.
+    KitFile {
+        rel: "skills/supertaskr-interview/SKILL.md",
+        content: include_str!("../../../../method/skills/supertaskr-interview/SKILL.md"),
+    },
 ];
 
 /// What `kit.json` records beside the materialized files — the version
@@ -603,6 +621,180 @@ mod tests {
                 table.contains(rel),
                 "{rel} must ride the kit - SKILL.md points at every one of these by name, \
                  and a pointer to a file the kit did not carry resolves to nothing (T-241)"
+            );
+        }
+    }
+
+    /// The kit-relative path of the interview entry, spelled once.
+    const INTERVIEW_SKILL_REL: &str = "skills/supertaskr-interview/SKILL.md";
+
+    /// T-242 criterion 2, the SIZE half, and it is the condition the whole
+    /// shape of this card hangs on.
+    ///
+    /// The owner's ruling of 2026-09-14 accepts ONE generated `SKILL.md`
+    /// *"on the condition that it is genuinely self-contained"*, with the
+    /// whole-pack route (T-241-s6) as the fallback *"if that stops being
+    /// small"*. `skills::MAX_SKILL_BYTES` is what "small" means
+    /// MECHANICALLY: a pack file over it is reported and skipped by the
+    /// very discoverer that has to read this one, so the entry would
+    /// install and then not load. The margin is asserted rather than
+    /// admired - the failure names both figures, so whoever adds the
+    /// source that breaks it reads the fallback in the message.
+    #[test]
+    fn the_shipped_interview_skill_stays_under_the_cap_its_own_discoverer_enforces() {
+        let entry = KIT_FILES
+            .iter()
+            .find(|f| f.rel == INTERVIEW_SKILL_REL)
+            .expect("the interview skill rides the kit");
+        let bytes = entry.content.len() as u64;
+        assert!(
+            bytes < skills::MAX_SKILL_BYTES,
+            "the generated interview skill is {bytes} bytes against the {} the discoverer \
+             accepts - a pack over the cap is REPORTED AND SKIPPED, so the entry would install \
+             and never load. Either shrink what the generator embeds, or take the WHOLE-PACK \
+             route the card names (T-241-s6) and say so by a dated append",
+            skills::MAX_SKILL_BYTES
+        );
+    }
+
+    /// T-242 criteria 2 and 4: the generated entry parses under the SAME
+    /// discoverer an organization's own packs go through, and it is ONE
+    /// FILE on disk - there is nothing beside it that could be left
+    /// behind by an installer that copies one file per skill.
+    ///
+    /// **THE CONTROL IS IN THE SAME TEST**, the shape
+    /// [`the_shipped_seat_skill_parses_under_the_discoverer_that_reads_real_packs`]
+    /// set: a test that only shows the good pack accepted cannot tell
+    /// "the format is satisfied" from "this discoverer accepts anything",
+    /// so the second half plants the same bytes with `name:` removed and
+    /// requires them back REJECTED.
+    #[test]
+    fn the_shipped_interview_skill_is_one_file_the_discoverer_accepts() {
+        let entry = KIT_FILES
+            .iter()
+            .find(|f| f.rel == INTERVIEW_SKILL_REL)
+            .expect("the interview skill rides the kit");
+
+        // ONE FILE, measured on the tree rather than argued: the pack
+        // directory holds exactly its SKILL.md. A second file here would
+        // be a reference the installer does not copy.
+        let pack_on_disk = walk_rel(&repo_root().join("method/skills/supertaskr-interview"), "");
+        assert_eq!(
+            pack_on_disk,
+            BTreeSet::from(["SKILL.md".to_string()]),
+            "the interview entry is ONE generated file by construction (T-242 criterion 2); \
+             `supertaskr install` copies one file per skill, so anything else in this \
+             directory would land nowhere"
+        );
+
+        let tmp = TempTree::new("interview-skill");
+        let pack_dir = tmp.0.join(skills::SKILLS_REL_DIR).join("supertaskr-interview");
+        fs::create_dir_all(&pack_dir).expect("mk pack dir");
+        fs::write(pack_dir.join(skills::SKILL_FILE), entry.content).expect("write SKILL.md");
+
+        let found = skills::discover(&tmp.0);
+        assert!(
+            found.rejected.is_empty(),
+            "the generated pack was REJECTED by the discoverer: {:?}",
+            found.rejected.iter().map(|r| (&r.dir, &r.why)).collect::<Vec<_>>()
+        );
+        assert_eq!(found.packs.len(), 1, "exactly one pack");
+        let pack = &found.packs[0];
+        assert_eq!(pack.name, "supertaskr-interview", "the frontmatter name");
+        assert_eq!(pack.dir, "supertaskr-interview", "name matches its directory");
+        assert!(
+            pack.description.contains("Use when"),
+            "the description must carry its own trigger clause: {:?}",
+            pack.description
+        );
+        assert!(
+            pack.description.chars().count() < skills::MAX_DESCRIPTION_CHARS,
+            "the description is {} chars against a {}-char cap that TRUNCATES rather than \
+             refuses - at the cap the trailing trigger clause disappears silently",
+            pack.description.chars().count(),
+            skills::MAX_DESCRIPTION_CHARS
+        );
+
+        // THE POSITIVE CONTROL: the same bytes, one required key removed.
+        let ctl = TempTree::new("interview-skill-control");
+        let ctl_dir = ctl.0.join(skills::SKILLS_REL_DIR).join("supertaskr-interview");
+        fs::create_dir_all(&ctl_dir).expect("mk control dir");
+        let degraded: String = entry
+            .content
+            .lines()
+            .filter(|l| !l.starts_with("name:"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        fs::write(ctl_dir.join(skills::SKILL_FILE), degraded).expect("write control");
+        let ctl_found = skills::discover(&ctl.0);
+        assert!(
+            ctl_found.packs.is_empty(),
+            "CONTROL FAILED: a pack with no `name:` was ACCEPTED, so the acceptance above \
+             proves nothing about the format"
+        );
+        assert_eq!(ctl_found.rejected.len(), 1, "the control is rejected, once");
+        assert!(
+            ctl_found.rejected[0].why.contains("name"),
+            "the refusal must name the missing key: {:?}",
+            ctl_found.rejected[0].why
+        );
+    }
+
+    /// T-242 criterion 1, the SELF-CONTAINMENT half, measured from the
+    /// RUST side because this is where the kit's other parity walks live.
+    ///
+    /// The generated entry has to carry the scaffold the app's genesis
+    /// writes, or a folder interviewed through the skill is a folder the
+    /// app's watcher renders differently. The expected set is derived
+    /// from the METHOD TREE - every `docs-templates/**` file and every
+    /// `adapters/*` file - and the produced set is read off the shipped
+    /// bytes, so the two sides do not move together: dropping a template
+    /// from the generator leaves the expectation where it was and reds.
+    #[test]
+    fn the_shipped_interview_skill_seeds_every_scaffold_file_the_genesis_writes() {
+        let skill = KIT_FILES
+            .iter()
+            .find(|f| f.rel == INTERVIEW_SKILL_REL)
+            .expect("the interview skill rides the kit")
+            .content;
+
+        // The produced set: the destination on every seed fence line.
+        let seeds: BTreeSet<&str> = skill
+            .lines()
+            .filter_map(|l| l.strip_prefix("````supertaskr-seed "))
+            .map(str::trim)
+            .collect();
+        assert!(!seeds.is_empty(), "the generated skill carries no seed block at all");
+
+        let root = repo_root().join("method");
+        for rel in walk_rel(&root.join("docs-templates"), "") {
+            let want = format!("docs/{rel}");
+            assert!(
+                seeds.contains(want.as_str()),
+                "method/docs-templates/{rel} is part of the scaffold the banking map's stage 0 \
+                 copies, but the generated skill carries no seed for {want} - a fresh folder \
+                 interviewed through the skill would be missing it. Regenerate with \
+                 `npm run skill` from tools/e2e/"
+            );
+        }
+        for rel in walk_rel(&root.join("adapters"), "") {
+            assert!(
+                seeds.contains(rel.as_str()),
+                "method/adapters/{rel} lands at the PROJECT ROOT in stage 0, and the generated \
+                 skill carries no seed for it"
+            );
+        }
+        // And the two the banking map names by pointing at them: the
+        // interview it runs and the decomposition it ends with, seeded at
+        // the kit root this module owns - so a folder interviewed by the
+        // skill and one interviewed by the app hold the same file in the
+        // same place.
+        for rel in ["interview/plan-interview.md", "interview/decomposition.md"] {
+            let want = format!("{KIT_REL_DIR}/{rel}");
+            assert!(
+                seeds.contains(want.as_str()),
+                "the generated skill must seed {want} - the kit root is THIS module's \
+                 ({KIT_REL_DIR}), and the two lenses land the same bytes there"
             );
         }
     }

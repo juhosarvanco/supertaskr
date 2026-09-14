@@ -12,7 +12,8 @@
   },
   "files": [
     "bin/",
-    "scripts/"
+    "scripts/",
+    "dist/"
   ],
   "scripts": {
     "test": "playwright test",
@@ -20,8 +21,12 @@
     "lint:tokens": "node scripts/lint-tokens.mjs",
     "lint:docs": "node scripts/docs-gate.mjs --census",
     "health": "node scripts/health-bands-run.mjs",
-    "capabilities": "node scripts/capabilities.mjs",
-    "capabilities:check": "node scripts/capabilities.mjs --check",
+    "capabilities": "node scripts/capabilities.mjs && node scripts/interview-skill.mjs",
+    "capabilities:check": "node scripts/capabilities.mjs --check && node scripts/interview-skill.mjs --check",
+    "skill": "node scripts/interview-skill.mjs",
+    "skill:check": "node scripts/interview-skill.mjs --check",
+    "prepack": "node scripts/interview-skill.mjs --stage",
+    "postpack": "node scripts/interview-skill.mjs --unstage",
     "session:check": "node scripts/checkout-currency.mjs",
     "boot:check": "node scripts/tauri-boot-check.mjs",
     "boot:orphan-drill": "node scripts/orphan-drill.mjs",
