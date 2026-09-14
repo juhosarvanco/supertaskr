@@ -1021,13 +1021,70 @@ and T-236 (2026-09-02, whose pre-compaction text is
   grant, revision 0 — because no grant is ever created by guessing a
   person, an instant or a past authorization; an existing authorized way
   of working reaches the template only through a migration grant the seat
-  proposes verbatim and the owner approves. **AND EVERY ROW IS
-  `declarative` UNTIL T-324**: the block is readable configuration, the
-  arm admits and refuses nothing by it, and the `limits` rows are
-  advisory on top of that — recorded, rendered and validated, read by
-  nothing that stops anything. The switch inventory the schema was built
-  from — every row with its old and ruled value, its measured cost and
-  its constraint — is in `docs/rooms/loop-cost-and-speed.md`.
+  proposes verbatim and the owner approves. **AND SINCE T-324 THE BLOCK
+  IS OPERATIONAL: EVERY ADMISSION THE ARM MAKES IS BOUND TO THE GRANT'S
+  REVISION, THE CARD'S APPROVED BLOB AND THE ATTEMPT'S RESERVATION.**
+  Four boundaries admit work — the lane cut (`--dispatch-lane`), a child
+  start (`--run start`), a re-entry (`--run continue`) and a replacement
+  writer (`--run continue --replace`) — and the grant is RE-READ at each,
+  because an approval read once at the cut is one a revocation four hours
+  later cannot reach. An admission is EXPLICIT (a card the grant names,
+  bound to the grant's revision and to the card's approved blob, with the
+  loop's own mechanical appends allowed: a status or tier stamp, a notes
+  or verdicts append, a filed follow-up line — anything else is a
+  different card and refuses) or DERIVED (a repair the recovery policy
+  allows, bound to its parent authorized work, the failure evidence, the
+  PARENT grant's revision and its own blob at filing; it inherits that
+  authorization and mints no grant, a repair's description establishes
+  nothing, a repeated delivery event produces no duplicate repair, and a
+  scope change re-evaluates it). The modes are enforced at those
+  boundaries: `each` spends a card's own approval ONCE and refuses it
+  presented again; `until` admits the prefix up to and including the
+  endpoint and refuses the next card BY NAME, a parked endpoint being no
+  more a delivered one than an undone card is; `standing` admits until a
+  pause is recorded. `recovery: none` refuses a derived admission by name
+  and records it as needing its own explicit approval; `recovery:
+  repairs` admits a repair of approved work and never a product-scope
+  change or a waived verification. **THE ADMISSION COMES BEFORE THE
+  RESERVATION**, on the same argument that puts the reservation before
+  the launch: a lock taken for work nobody admitted is a writer this loop
+  had no authority to start. **THE LEDGER IS THE RUN RECORDS AND THERE IS
+  NO SECOND ONE**: each record carries the admission it was started
+  under, so what has been consumed is derived from `.supertaskr/runs/`
+  rather than from a table beside it, and a retry of an interrupted
+  admission RE-PRESENTS it rather than spending a second approval. **A
+  PAUSE IS A RECORD IN THE RUNTIME DIRECTORY, NOT A ROW OF THE BLOCK**
+  (T-324, and T-324-s1 is the card that would move it): the owner writes
+  `.supertaskr/pause.json` — `version`, `at`, `by`, `scope` (`new-work`
+  or `all`) and an optional `why` — beside T-238's holder record, ONE
+  reader reads it (`readPause`), a record this reader cannot parse
+  REFUSES rather than reading as silence, and the block itself is read
+  through the parser's reader and through nothing else. It lives there
+  rather than in the block because T-319's reader answers each declared
+  field BY NAME and would refuse a whole block carrying a row it does not
+  return — so a `pause:` row today would be a control that silently did
+  nothing. Under `new-work` every new implementation attempt and re-entry
+  is refused while the verification and integration of a candidate
+  already admitted may start and finish; under `all` every further phase
+  stops at its declared safe boundary — an executor at its stamp, a
+  verifier at its verdict, a staged merge finished or aborted as the
+  record says. An IMMEDIATE stop is a separate request through the
+  applicable stopping mechanism and never a reading of the grant. **THE
+  `limits` ROWS STAY ADVISORY AND THIS CARD DOES NOT ENFORCE THEM**: they
+  are read and REPORTED BY NAME as advisory and unenforced, their absence
+  imposes no ceiling, an expiry that has passed refuses nothing, and
+  enforcement is deferred to a later card so that no control silently
+  does nothing. **A SUCCESSOR COORDINATOR INHERITS THE GRANT FROM THE
+  BLOCK** (T-238's seat): the same revision, the same order, the same
+  blobs, continuing the order without the previous coordinator's
+  identity, which is no part of an approval. **AND THE ARM'S REPORT KEEPS
+  THREE THINGS APART** — the refusals it TESTED, the coordinator's
+  obligations it CANNOT check (scope interpretation, an unreported
+  integrity problem, a provider's live usage) and the advisory
+  accounting — because a list that mixed them would let the second and
+  the third borrow the first's authority. The switch inventory the schema
+  was built from — every row with its old and ruled value, its measured
+  cost and its constraint — is in `docs/rooms/loop-cost-and-speed.md`.
 - GUARD-CLASS PATHS, IN THIS PROJECT'S OWN SPELLING (T-296, ADR-024
   decision 1): `method/tasks/TASK-FORMAT.md` names the guard-class
   CLASSES and is product-agnostic, so the mapping onto this repository

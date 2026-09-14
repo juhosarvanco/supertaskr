@@ -88,6 +88,12 @@ import {
 } from "./docs-scan.mjs";
 import { isRecordablePid, processRow } from "./checkout-currency.mjs";
 import { rawBullet } from "./range-rule.mjs";
+// THE RUNTIME DIRECTORY'S NAME, FROM THE ONE FILE THAT DECLARES IT
+// (T-324). The admission arm reads an owner-written pause record that
+// lives beside T-238's holder record, and a second spelling of that
+// directory here would be the duplication every other reader of it
+// avoids by importing this constant.
+import { RUNTIME_DIR } from "../../../.claude/hooks/lane-fence.mjs";
 
 /* ────────────────────────────────────────────────────────────────────
  * THE PROCESS SETTINGS READER, IMPORTED FROM THE PARSER LIBRARY (T-317).
@@ -6122,7 +6128,7 @@ export function roleModel(models, role) {
 export class ProcessFinding extends DispatchLaneFinding {}
 
 /**
- * THE SIX SYMBOLS, BOUND TO THIS ARM'S FINDING CLASS AND RE-EXPORTED
+ * THE SEVEN SYMBOLS, BOUND TO THIS ARM'S FINDING CLASS AND RE-EXPORTED
  * UNDER THE NAMES THEY HAVE ALWAYS CARRIED.
  *
  * What each one does, and why it refuses what it refuses, is documented
@@ -6131,6 +6137,13 @@ export class ProcessFinding extends DispatchLaneFinding {}
  * The hand parser is still a hand parser and the e2e suite still checks
  * it against a real YAML library — the reading moved, the argument did
  * not.
+ *
+ * **AND THE SEVENTH IS `dispatchBlock` (T-324, closing T-319-s1.)** The
+ * arm re-exported six of the reader's seven until the admission arm
+ * below needed the grant, and a seventh spelling of the block's reading
+ * would have been the second implementation the whole move exists to
+ * stop. This is the ONLY way the grant reaches this arm, which is this
+ * card's seventh criterion in one line of code.
  */
 export const {
   parseProcessSchema,
@@ -6139,6 +6152,7 @@ export const {
   switchValue,
   processLedger,
   constraintFindings,
+  dispatchBlock,
 } = processPure.processSettingsReader({ Finding: ProcessFinding });
 
 /**
@@ -6861,6 +6875,11 @@ export function awaitRecs(ctx, plan, result) {
  * @property {string} [executor] the seat to stamp as `builder:`
  * @property {string} [verifier] the seat to stamp as `verifier:`
  * @property {string} [scratch]  the directory the brief is written into
+ * @property {GrantState} [grant] the grant, read once by the caller; read here when it is not
+ * @property {AdmissionEntry[]} [ledger] what has already been admitted, from the run records
+ * @property {string} [derivedFrom] the parent authorized card, making this a DERIVED admission
+ * @property {string} [failure] a derived admission's failure evidence
+ * @property {string} [derivedScope] a derived admission's own scope, one of DERIVED_SCOPES
  */
 
 /**
@@ -6868,6 +6887,8 @@ export function awaitRecs(ctx, plan, result) {
  * @property {string} root
  * @property {string} taskId
  * @property {string} slug
+ * @property {GrantState} grant  the grant this dispatch was read against
+ * @property {Admission} admission  the lane cut's own admission, which reserves nothing
  * @property {string} card       repository-relative
  * @property {string} cardFile   absolute
  * @property {string} branch     the FULL ref the lane will be on
@@ -6991,10 +7012,39 @@ export function dispatchLanePlan(ctx, opts) {
   const guardMap = guardClassMap(ctx.conventions, guardClassIds(taskFormatText(ctx.root)));
   const runner = blessedRunner(ctx.conventions);
 
+  // ── THE ADMISSION AT THE LANE CUT (T-324) ──────────────────────────
+  // IT IS RESOLVED HERE, IN THE PURE PLAN, FOR THE REASON THE MODEL
+  // ABOVE IS: a dispatch that has to be unwound costs a commit and two
+  // worktrees, and an admission refused here costs nothing. **AND THE
+  // LANE CUT IS NOT THE WRITER RESERVATION**: this admission names no
+  // resource, takes none, and the reservation is the child start's — the
+  // two are separate facts and this plan writes neither.
+  const grant = opts.grant ?? grantState(ctx.root);
+  const derivedFrom = (opts.derivedFrom ?? "").trim();
+  const admission = admit(
+    grant,
+    {
+      boundary: "lane-cut",
+      kind: derivedFrom === "" ? "explicit" : "derived",
+      card: taskId,
+      role: "executor",
+      blob: cardBlobSha(ctx.root, card.file),
+      cardText: readFileSync(path.join(ctx.root, card.file), "utf8"),
+      approvedText: (sha) => approvedCardText(ctx.root, sha),
+      resource: null,
+      board: admissionBoard(ctx),
+      ...(derivedFrom === "" ? {} : { parent: derivedFrom, evidence: opts.failure ?? "" }),
+      ...(opts.derivedScope === undefined ? {} : { scope: opts.derivedScope }),
+    },
+    opts.ledger ?? [],
+  );
+
   return {
     root: ctx.root,
     taskId,
     slug,
+    grant,
+    admission,
     card: card.file,
     cardFile: path.join(ctx.root, card.file),
     branch: `refs/heads/${branchName}`,
@@ -7745,6 +7795,11 @@ export function dispatchLaneRecs(ctx, plan, result) {
         "the scratch directory this dispatch was given, with the SCRATCH RULE's own file name in it",
       ),
     ),
+    // THE ADMISSION THIS CUT WAS MADE UNDER (T-324), and it is printed on
+    // a dry run exactly as it is on a performed one: it is a property of
+    // the DISPATCH, refused before the ritual writes anything, and a
+    // reader of a dry run is the reader most in need of seeing it.
+    ...admissionRecs(ctx, plan.grant, plan.admission),
   ];
 }
 
@@ -7779,5 +7834,1158 @@ export function dispatchLedgerRecs(ctx, result) {
     recs.push(value(`removed the worktree this run cut: ${gone}`, p));
   }
   for (const n of result.notes) recs.push(value(n, p));
+  return recs;
+}
+
+/* ────────────────────────────────────────────────────────────────────
+ * ARM THIRTEEN — THE ADMISSION LIFECYCLE (T-324).
+ *
+ * **AN ADMISSION IS THE MOMENT THIS LOOP SPENDS SOMEBODY'S APPROVAL, AND
+ * UNTIL THIS CARD THERE WAS NO SUCH MOMENT.** T-319 landed the dispatch
+ * block as readable configuration: the owner's grant, the cards it
+ * approves, the blob of each card AT the yes, the mode the approval runs
+ * under and whether repairs may follow. Nothing read it. `--dispatch-lane`
+ * cut a lane, `startRun` reserved a resource, `continueRun` reconciled a
+ * previous execution, and not one of the three asked whether the work had
+ * been approved — so a lane could be cut, a pause recorded in chat, and a
+ * start or a re-entry still follow.
+ *
+ * ── THE FOUR BOUNDARIES, AND THEY ARE THE WHOLE SURFACE ──────────────
+ * The lane cut (`dispatchLanePlan`), a child start (`startRun`), a
+ * re-entry or continuation (`continueRun`) and a replacement writer
+ * (`continueRun` with `--replace`). The grant is RE-READ at every one of
+ * them, because an approval read once at the cut is an approval a
+ * revocation four hours later cannot reach.
+ *
+ * ── THE TWO KINDS, AND THE SECOND ONE IS WHY THIS IS NOT A LIST CHECK ─
+ * An EXPLICIT admission is of a card the grant NAMES: it binds to the
+ * grant's revision and to the card's approved blob, and a mechanical
+ * append to the card — a status stamp, a notes or verdicts append, a
+ * filed follow-up line — does not break the binding, because the loop's
+ * own ceremony writes those onto a card between the yes and the build.
+ * A DERIVED admission is of a REPAIR the recovery policy allows: it binds
+ * to its parent authorized work, to the failure evidence, to the PARENT
+ * grant's revision and to the repair card's own blob at its filing. It
+ * needs no owner round trip and it MINTS NO GRANT — it inherits the
+ * parent's authorization, which is the difference between a repair and a
+ * second approval nobody gave. **A REPAIR'S DESCRIPTION ESTABLISHES
+ * NOTHING**: what admits it is the parent and the evidence, and a scope
+ * change re-evaluates it from the beginning.
+ *
+ * ── THE LEDGER IS THE RUN RECORDS AND THERE IS NO SECOND ONE ─────────
+ * What has been admitted is derived from `.supertaskr/runs/` — the
+ * records T-311 already writes, each carrying the admission it was
+ * started under. A consumption table of its own would be a second
+ * ownership ledger, which the card forbids in as many words, and the two
+ * would disagree the first time one of them was written and the other was
+ * not.
+ *
+ * ── THE PAUSE IS A RECORD, NOT A ROW OF THE BLOCK, AND THAT IS RULED ──
+ * The schema's `dispatch_block:` declaration carries no `pause` field and
+ * the parser's reader answers each field BY NAME, so a pause row added to
+ * the declaration would be a control the reader never returns — which is
+ * exactly what this card's fifth criterion forbids ("so no control
+ * silently does nothing"). The pause is therefore an owner-written record
+ * in the runtime directory beside T-238's holder record, read here; the
+ * GRANT is read through the parser's reader and through nothing else.
+ *
+ * ── WHAT THE ARM CANNOT CHECK, SAID OUT LOUD RATHER THAN IMPLIED ─────
+ * Whether a repair is really inside the approved scope, whether an
+ * integrity problem went unreported, and what a provider's live usage
+ * actually is. Those are the COORDINATOR'S obligations; this arm names
+ * them in its own report so that a reader never mistakes the refusals it
+ * DOES perform for the whole of the promise.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/** The four moments an admission is made, and there is no fifth. */
+export const ADMISSION_BOUNDARIES = Object.freeze(["lane-cut", "child-start", "re-entry", "replacement"]);
+
+/** The two kinds of admission the card separates. */
+export const ADMISSION_KINDS = Object.freeze(["explicit", "derived"]);
+
+/**
+ * THE PHASE A BOUNDARY SERVES, which is what a `new-work` pause
+ * discriminates on. Implementation is the CONSERVATIVE answer for a role
+ * this arm does not know, because the cost of being wrong that way is a
+ * spawn and the cost of being wrong the other way is work nobody approved.
+ */
+export const ADMISSION_PHASES = Object.freeze(["implementation", "verification", "integration"]);
+
+/** The two scopes a recorded pause may carry. */
+export const PAUSE_SCOPES = Object.freeze(["new-work", "all"]);
+
+/** Where an owner-written pause lives, beside T-238's holder record. */
+export const PAUSE_REL_PATH = `${RUNTIME_DIR}/pause.json`;
+
+/** The record format this reader knows; a record declaring another is refused. */
+export const PAUSE_VERSION = 1;
+
+/**
+ * THE SCOPE A DERIVED ADMISSION DECLARES FOR ITSELF, and two of the three
+ * are refusals under every recovery policy: a repair that is really a
+ * product-scope change, and a repair whose delivery is a verification
+ * somebody waived.
+ */
+export const DERIVED_SCOPES = Object.freeze(["repair", "product-change", "waived-verification"]);
+
+/**
+ * THE FRONTMATTER KEYS THE LOOP'S OWN CEREMONY WRITES ONTO A CARD AFTER
+ * THE YES. A change confined to these is the mechanical append the card's
+ * first criterion allows; a change to any other key is a different card.
+ */
+export const MECHANICAL_FIELDS = Object.freeze([
+  "status",
+  "tier",
+  "builder",
+  "verifier",
+  "built_by",
+  "verified_by",
+]);
+
+/** The two sections of a card a mechanical append may add lines to. */
+export const MECHANICAL_SECTIONS = Object.freeze(["Implementation notes", "Verdicts"]);
+
+/** A filed follow-up card's id, the one addition allowed anywhere in a card. */
+export const FOLLOW_UP_PATTERN = /\bT-\d+-s\d+\b/;
+
+/**
+ * EVERY REFUSAL CARRIES A CODE — a stable, greppable name for WHY, on
+ * `run-record.mjs`'s own model, because a refusal a caller can only match
+ * on a sentence becomes prose the day the sentence is improved.
+ */
+export const ADMISSION_CODES = Object.freeze({
+  BOUNDARY: "ADMISSION_BOUNDARY",
+  KIND: "ADMISSION_KIND",
+  SCOPE: "ADMISSION_SCOPE",
+  NO_CARD: "ADMISSION_NO_CARD",
+  NO_CURRENT_GRANT: "ADMISSION_NO_CURRENT_GRANT",
+  UNKNOWN_MODE: "ADMISSION_UNKNOWN_MODE",
+  UNKNOWN_RECOVERY: "ADMISSION_UNKNOWN_RECOVERY",
+  PAUSED_NEW_WORK: "ADMISSION_PAUSED_NEW_WORK",
+  PAUSED_ALL: "ADMISSION_PAUSED_ALL",
+  CARD_NOT_APPROVED: "ADMISSION_CARD_NOT_APPROVED",
+  CARD_BLOB_MOVED: "ADMISSION_CARD_BLOB_MOVED",
+  APPROVAL_CONSUMED: "ADMISSION_APPROVAL_CONSUMED",
+  UNTIL_ENDPOINT: "ADMISSION_UNTIL_ENDPOINT",
+  RECOVERY_NONE: "ADMISSION_RECOVERY_NONE",
+  DERIVED_NO_PARENT: "ADMISSION_DERIVED_NO_PARENT",
+  DERIVED_NO_EVIDENCE: "ADMISSION_DERIVED_NO_EVIDENCE",
+  DERIVED_OUT_OF_SCOPE: "ADMISSION_DERIVED_OUT_OF_SCOPE",
+  CONSULTATION_WRITER: "ADMISSION_CONSULTATION_WRITER",
+});
+
+/** An admission this arm was asked for and will not make. */
+export class AdmissionFinding extends DispatchLaneFinding {
+  /** @param {string} code @param {string} message */
+  constructor(code, message) {
+    super(message);
+    this.name = "AdmissionFinding";
+    /** @type {string} */
+    this.code = code;
+  }
+}
+
+/**
+ * @typedef {object} Pause
+ * @property {string} at     the ISO instant the pause was recorded
+ * @property {string} by     who recorded it, as the record names them
+ * @property {string} scope  one of PAUSE_SCOPES
+ * @property {string} why    the sentence the record carries, or ""
+ * @property {string} file   where it was read from
+ */
+
+/**
+ * @typedef {object} GrantState
+ * @property {boolean} enforced   whether this tree carries a block to enforce
+ * @property {import("../../../lib/parser/dist/pure.js").DispatchBlock | null} block
+ * @property {?Pause} pause
+ * @property {string} approval
+ * @property {string} recovery
+ * @property {number} revision
+ * @property {string} source      where the block was read from, or why there is none
+ */
+
+/**
+ * @typedef {object} AdmissionRequest
+ * @property {string} boundary       one of ADMISSION_BOUNDARIES
+ * @property {string} kind           one of ADMISSION_KINDS
+ * @property {string} card           the card this admission is for
+ * @property {string} [work]         `card` (the default) or `consultation`
+ * @property {string} [role]         the seat's role, which decides the phase
+ * @property {string} [phase]        one of ADMISSION_PHASES, where the caller knows it
+ * @property {string} [blob]         the card file's blob sha NOW
+ * @property {string} [cardText]     the card as it stands, for the mechanical-append reading
+ * @property {(sha: string) => ?string} [approvedText]  the card at the blob the grant approved
+ * @property {string} [parent]       a derived admission's parent authorized card
+ * @property {string} [evidence]     a derived admission's failure evidence
+ * @property {string} [scope]        a derived admission's own scope, one of DERIVED_SCOPES
+ * @property {string} [attempt]      the attempt this admission binds to
+ * @property {?string} [resource]    the resource whose reservation binds it, or null at the lane cut
+ * @property {Map<string, string>} [board]  card id -> its status, for the until endpoint
+ */
+
+/**
+ * @typedef {object} Admission
+ * @property {boolean} admitted
+ * @property {string} kind        explicit, derived, or unenforced
+ * @property {string} boundary
+ * @property {string} card
+ * @property {string} phase
+ * @property {string} code        the refusal's code, and "" when admitted
+ * @property {string} why         one sentence a reader can act on
+ * @property {number} revision    the grant revision this admission binds to, 0 under no grant
+ * @property {string} blob        the card blob this admission binds to, "" under no grant
+ * @property {?string} parent     a derived admission's parent, null otherwise
+ * @property {string} evidence    a derived admission's failure evidence digest, "" otherwise
+ * @property {boolean} consumed   whether this admission SPENT an approval rather than re-presenting one
+ * @property {?string} reuses     the attempt whose admission this re-presents, or null
+ * @property {?string} resource   the resource whose reservation binds it, or null
+ * @property {string[]} drift     the mechanical appends the card carries since the yes
+ * @property {string[]} advisory  the limits, read and NOT enforced
+ * @property {string[]} obligations the coordinator's, which this arm cannot check
+ */
+
+/**
+ * @typedef {object} AdmissionEntry
+ * @property {string} card
+ * @property {string} attempt
+ * @property {string} kind
+ * @property {number} revision
+ * @property {string} blob
+ * @property {?string} parent
+ * @property {string} evidence
+ * @property {string} state
+ * @property {boolean} terminal
+ * @property {?string} resource
+ */
+
+/**
+ * THE PAUSE, READ — or a refusal naming what is wrong with the record.
+ *
+ * **AN UNREADABLE PAUSE IS NEVER "NO PAUSE".** A record somebody wrote
+ * and this reader cannot parse is the one case where guessing costs the
+ * most: the owner asked the loop to stop and the loop would carry on. So
+ * a malformed record REFUSES, and only a record that is not there at all
+ * answers "nothing is paused".
+ *
+ * @param {string} root
+ * @returns {?Pause}
+ */
+export function readPause(root = repoRoot) {
+  const file = path.join(root, PAUSE_REL_PATH);
+  if (!existsSync(file)) return null;
+  let parsed;
+  try {
+    parsed = JSON.parse(readFileSync(file, "utf8"));
+  } catch (err) {
+    throw new AdmissionFinding(
+      ADMISSION_CODES.SCOPE,
+      `dispatch-brief: the pause record at ${PAUSE_REL_PATH} did not parse as JSON ` +
+        `(${err instanceof Error ? err.message : String(err)}). A pause this reader cannot read is ` +
+        "not the same thing as no pause: the owner asked the loop to stop, and an unreadable " +
+        "record read as silence is the loop carrying on anyway.",
+    );
+  }
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new AdmissionFinding(
+      ADMISSION_CODES.SCOPE,
+      `dispatch-brief: the pause record at ${PAUSE_REL_PATH} is not a JSON object.`,
+    );
+  }
+  const rec = /** @type {Record<string, unknown>} */ (parsed);
+  const version = Number(rec["version"] ?? 0);
+  if (version !== PAUSE_VERSION) {
+    throw new AdmissionFinding(
+      ADMISSION_CODES.SCOPE,
+      `dispatch-brief: the pause record at ${PAUSE_REL_PATH} declares version ${String(version)} ` +
+        `and this reader knows ${String(PAUSE_VERSION)}. A record shaped for a different reader is ` +
+        "refused rather than half-read.",
+    );
+  }
+  const scope = String(rec["scope"] ?? "").trim();
+  if (!PAUSE_SCOPES.includes(scope)) {
+    throw new AdmissionFinding(
+      ADMISSION_CODES.SCOPE,
+      `dispatch-brief: the pause record at ${PAUSE_REL_PATH} carries scope ` +
+        `${JSON.stringify(scope)}, which is not one of ${PAUSE_SCOPES.join(", ")}. The scope is ` +
+        "what says whether the verification of a candidate already admitted may finish, so a " +
+        "word this reader does not know decides nothing.",
+    );
+  }
+  const by = String(rec["by"] ?? "").trim();
+  const at = String(rec["at"] ?? "").trim();
+  if (by === "" || at === "") {
+    throw new AdmissionFinding(
+      ADMISSION_CODES.SCOPE,
+      `dispatch-brief: the pause record at ${PAUSE_REL_PATH} carries no ${by === "" ? "by" : "at"}. ` +
+        "A pause is an owner's act and the record says whose and when — it needs no second " +
+        "approval to be READ, which is precisely why it has to say who issued it.",
+    );
+  }
+  return { at, by, scope, why: String(rec["why"] ?? "").trim(), file: PAUSE_REL_PATH };
+}
+
+/**
+ * THE GRANT, READ THROUGH THE PARSER'S READER AND THROUGH NOTHING ELSE
+ * (this card's seventh criterion), with the pause beside it.
+ *
+ * **A TREE WITH NO BLOCK IS THE EXPLICIT NO-GRANT STATE AND THE LOOP
+ * KEEPS RUNNING.** This project's own template carries no dispatch block,
+ * and the standing authorization it actually runs under lives in the
+ * seat's ledger where the arm cannot read it. So the honest answer is
+ * `enforced: false` — every admission is made, every one is REPORTED as
+ * unenforced, and the refusals below apply wherever a block exists. No
+ * grant is ever invented from a person, an instant or a past
+ * authorization (T-307), and an arm that refused everything here would
+ * stop a loop nobody asked it to stop.
+ *
+ * @param {string} root
+ * @returns {GrantState}
+ */
+export function grantState(root = repoRoot) {
+  const pause = readPause(root);
+  /** @param {string} source @returns {GrantState} */
+  const unenforced = (source) => ({
+    enforced: false,
+    block: null,
+    pause,
+    approval: "",
+    recovery: "",
+    revision: 0,
+    source,
+  });
+  let schemaText = "";
+  try {
+    schemaText = readFileSync(path.join(root, PROCESS_SCHEMA), "utf8");
+  } catch {
+    return unenforced(`${root} carries no ${PROCESS_SCHEMA}, so there is no declaration to read a grant against`);
+  }
+  let templateText = "";
+  try {
+    templateText = readFileSync(path.join(root, RUNTIME_TEMPLATE), "utf8");
+  } catch {
+    return unenforced(`${root} carries no ${RUNTIME_TEMPLATE}, so there is no block to read`);
+  }
+  const schema = parseProcessSchema(schemaText);
+  if (schema.dispatch === null) {
+    return unenforced(`${PROCESS_SCHEMA} declares no dispatch block, so a grant has nothing to be validated against`);
+  }
+  const block = dispatchBlock(templateText, schema);
+  if (!block.present) {
+    return {
+      enforced: false,
+      block,
+      pause,
+      approval: block.approval,
+      recovery: block.recovery,
+      revision: 0,
+      source:
+        `${RUNTIME_TEMPLATE} carries no dispatch block: the EXPLICIT no-grant state — approval ` +
+        `${block.approval}, recovery ${block.recovery}, no grant, revision 0 — and the standing ` +
+        "authorization this loop runs under is the seat's, which this arm cannot read",
+    };
+  }
+  return {
+    enforced: true,
+    block,
+    pause,
+    approval: block.approval,
+    recovery: block.recovery,
+    revision: block.revision,
+    source: `${RUNTIME_TEMPLATE}'s dispatch block, read through the parser library's dispatchBlock`,
+  };
+}
+
+/**
+ * THE CARD'S BLOB SHA AS IT STANDS, from git's own hash of the file —
+ * the same 40 hex characters the grant records, computed the same way,
+ * so the two are comparable without either side agreeing on a digest.
+ *
+ * @param {string} root @param {string} rel repository-relative
+ * @returns {string} the sha, or "" where the file cannot be hashed
+ */
+export function cardBlobSha(root, rel) {
+  try {
+    return git(root, ["hash-object", "--", path.join(root, rel)]).trim();
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * THE CARD AT THE BLOB THE OWNER APPROVED, read back out of the object
+ * database. **THE APPROVED REVISION IS NOT GONE, IT IS ADDRESSED**: the
+ * grant records the blob sha and git still holds those bytes, so the
+ * question "is this the card that was approved, or only a stamp away
+ * from it" is answerable rather than a matter of trust.
+ *
+ * @param {string} root @param {string} sha
+ * @returns {?string} the text, or null where the object cannot be read
+ */
+export function approvedCardText(root, sha) {
+  if (!/^[0-9a-f]{40}$/.test(sha)) return null;
+  try {
+    return git(root, ["cat-file", "-p", sha]);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * THE DISPATCH BLOCK'S READ SITES, PARSED OFF THE SCHEMA'S OWN COMMENT
+ * TABLE (T-324's seventh criterion).
+ *
+ * **THE TABLE IS IN THE SCHEMA BECAUSE THAT IS WHERE THE CRITERION PUTS
+ * IT, AND IT IS PARSED BECAUSE A TABLE NOBODY READS GOES STALE.** The
+ * declaration's own field set is CLOSED by the parser library (a
+ * `reads:` attribute on a row would be refused there, and the library is
+ * not this card's to change), so the read site of each row lives in the
+ * section's comment — and a body derives it back out of the file,
+ * requires every symbol named to be one this arm exports, and reds when
+ * an `operational` row has no site named for it. That is the same shape
+ * the guard-class map keeps: kept by a body, not by a memory.
+ *
+ * @param {string} schemaText
+ * @returns {Map<string, { symbol: string, why: string }>}
+ */
+export function dispatchReadSites(schemaText) {
+  /** @type {Map<string, { symbol: string, why: string }>} */
+  const out = new Map();
+  let inTable = false;
+  for (const line of schemaText.split(/\r?\n/)) {
+    if (/^#\s+THE READ SITES, AND A CITATION NAMES A SYMBOL, NOT A LINE\./.test(line)) {
+      inTable = true;
+      continue;
+    }
+    if (!inTable) continue;
+    if (!line.startsWith("#")) break;
+    // THE TABLE ENDS AT THE FIRST BARE `#`, and it has to end at
+    // something: the comment block around it carries other indented
+    // prose, and a scan that ran on would read the field GLOSSARY above
+    // as read sites and name symbols nobody wrote.
+    if (out.size > 0 && line.trim() === "#") break;
+    const m = /^#\s{3}([A-Za-z_][A-Za-z0-9_.]*)\s+([A-Za-z][A-Za-z0-9_]*)\s+(.*)$/.exec(line);
+    if (m === null) continue;
+    out.set(/** @type {string} */ (m[1]), {
+      symbol: /** @type {string} */ (m[2]),
+      why: /** @type {string} */ (m[3]).trim(),
+    });
+  }
+  return out;
+}
+
+/**
+ * THE CARD FILE A WORK ID NAMES, derived from the board rather than
+ * built out of the id — an id is not a path fragment (T-311's verifier
+ * said so in as many words) and a tree with no such card answers "".
+ *
+ * @param {string} root @param {string} id
+ * @returns {string} repository-relative, or "" where no live card declares it
+ */
+export function cardFileOf(root, id) {
+  try {
+    return cardIndex(root).get(id)?.file ?? "";
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * THE BOARD'S STATUSES, for the one question the until endpoint asks:
+ * whether the card a grant runs up to is PARKED, since a parked endpoint
+ * is not a delivered one.
+ *
+ * @param {Ctx} ctx
+ * @returns {Map<string, string>}
+ */
+export function admissionBoard(ctx) {
+  /** @type {Map<string, string>} */
+  const out = new Map();
+  for (const [id, card] of ctx.cards) out.set(id, fieldScalar(card.fields, "status"));
+  return out;
+}
+
+/**
+ * THE PHASE A ROLE SERVES. Anything this arm does not recognise is
+ * IMPLEMENTATION, which is the answer a `new-work` pause refuses.
+ *
+ * @param {string} role
+ * @returns {string}
+ */
+export function admissionPhase(role) {
+  const r = String(role ?? "").trim().toLowerCase();
+  if (r === "verifier") return "verification";
+  if (r === "integrator") return "integration";
+  return "implementation";
+}
+
+/**
+ * WHAT HAS ALREADY BEEN ADMITTED, DERIVED FROM THE RUN RECORDS THEMSELVES.
+ *
+ * `records` is what `allRecords` answers, passed in rather than read here
+ * so that this module keeps importing nothing from `run-record.mjs` — the
+ * dependency runs the other way and a cycle between the two would be a
+ * load-order bug nobody could see from either file.
+ *
+ * @param {{ attempt: string, state: string, assignment: { id: string, resource: string }, admission?: unknown }[]} records
+ * @param {readonly string[]} terminalStates
+ * @returns {AdmissionEntry[]}
+ */
+export function admissionLedger(records, terminalStates) {
+  /** @type {AdmissionEntry[]} */
+  const out = [];
+  for (const rec of records) {
+    const a = /** @type {Record<string, unknown> | undefined} */ (
+      rec.admission === null || typeof rec.admission !== "object" ? undefined : rec.admission
+    );
+    if (a === undefined) continue;
+    out.push({
+      card: String(a["card"] ?? rec.assignment.id),
+      attempt: rec.attempt,
+      kind: String(a["kind"] ?? ""),
+      revision: Number(a["revision"] ?? 0),
+      blob: String(a["blob"] ?? ""),
+      parent: a["parent"] === null || a["parent"] === undefined ? null : String(a["parent"]),
+      evidence: String(a["evidence"] ?? ""),
+      state: rec.state,
+      terminal: terminalStates.includes(rec.state),
+      resource: rec.assignment.resource === "none" ? null : rec.assignment.resource,
+    });
+  }
+  return out;
+}
+
+/**
+ * HOW A CARD HAS MOVED SINCE THE YES, and whether the movement is the
+ * MECHANICAL APPEND this loop's own ceremony performs.
+ *
+ * **THE BINDING IS TO THE CARD, NOT TO THE BYTES**, and the difference is
+ * the whole of why this function exists. Between the owner's yes and the
+ * executor's first write the arm itself stamps `status:`, `tier:` and the
+ * two seat fields onto the card; the executor appends implementation
+ * notes; the verifier appends a verdict; either may file a follow-up. A
+ * blob comparison alone would read every one of those as "a different
+ * card" and refuse the work the owner approved. Anything ELSE — a changed
+ * criterion, a widened fence, a deleted line — is a different card and is
+ * refused, because a criterion edited after the yes is an approval of
+ * something nobody read.
+ *
+ * @param {string} approved  the card at the blob the grant recorded
+ * @param {string} current   the card as it stands now
+ * @returns {{ mechanical: boolean, drift: string[], substantive: string[] }}
+ */
+export function cardDrift(approved, current) {
+  /** @type {string[]} */
+  const drift = [];
+  /** @type {string[]} */
+  const substantive = [];
+  const a = frontmatterFields(approved);
+  const c = frontmatterFields(current);
+  const keys = new Set([...Object.keys(a), ...Object.keys(c)]);
+  for (const key of keys) {
+    const was = a[key];
+    const now = c[key];
+    if (JSON.stringify(was ?? null) === JSON.stringify(now ?? null)) continue;
+    const line = `frontmatter \`${key}\`: ${was === undefined ? "added" : now === undefined ? "removed" : "changed"}`;
+    // A KEY THE CEREMONY WRITES IS MECHANICAL WHETHER IT WAS THERE OR
+    // NOT: `tier:` is written by the arm and left out by the author, so
+    // the card the owner approved commonly has no line to change.
+    if (MECHANICAL_FIELDS.includes(key)) drift.push(line);
+    else substantive.push(line);
+  }
+  /** The card's prose, with the frontmatter block and its fence removed. */
+  const bodyOf = (/** @type {string} */ text) => {
+    const block = frontmatterBlock(text);
+    if (block === null) return text.split(/\r?\n/);
+    const rest = text.slice(text.indexOf(block) + block.length);
+    const close = /^---[ \t]*(?:\r?\n|$)/m.exec(rest);
+    return (close === null ? rest : rest.slice(close.index + close[0].length)).split(/\r?\n/);
+  };
+  const was = bodyOf(approved);
+  const now = bodyOf(current);
+  let i = 0;
+  let heading = "";
+  for (const line of now) {
+    const h = /^##\s+(.*)$/.exec(line);
+    if (h !== null) heading = /** @type {string} */ (h[1]).trim();
+    if (i < was.length && line === was[i]) {
+      i += 1;
+      continue;
+    }
+    // AN ADDED LINE. It is mechanical where it sits under one of the two
+    // sections the ceremony appends to, or where it names a filed
+    // follow-up card; a blank line is neither news nor a change.
+    if (line.trim() === "") continue;
+    if (MECHANICAL_SECTIONS.includes(heading)) {
+      drift.push(`an append under \`## ${heading}\``);
+      continue;
+    }
+    if (FOLLOW_UP_PATTERN.test(line)) {
+      drift.push("a filed follow-up line");
+      continue;
+    }
+    substantive.push(`a line added outside ${MECHANICAL_SECTIONS.join(" and ")}: ${line.trim().slice(0, 60)}`);
+  }
+  if (i < was.length) {
+    const lost = was.slice(i).filter((l) => l.trim() !== "");
+    if (lost.length > 0) {
+      substantive.push(`${String(lost.length)} line(s) the approved card carried are gone or changed`);
+    }
+  }
+  return {
+    mechanical: substantive.length === 0,
+    drift: [...new Set(drift)],
+    substantive,
+  };
+}
+
+/**
+ * THE LIMITS, READ AND NOT ENFORCED — this card's fifth criterion, and
+ * the sentence each line carries is the point of the criterion rather
+ * than decoration.
+ *
+ * **THEIR ABSENCE IMPOSES NO CEILING AND THEIR PRESENCE STOPS NOTHING.**
+ * An expired `expires_at` does not refuse an admission here; enforcement
+ * is a later card's, and saying so by name is what stops a control from
+ * silently doing nothing.
+ *
+ * @param {GrantState} state
+ * @returns {string[]}
+ */
+export function advisoryLimits(state) {
+  const limits = state.block?.limits ?? null;
+  if (limits === null) {
+    return [
+      "no limits are recorded on this grant, and their absence imposes NO token or time ceiling — " +
+        "an absent ceiling is not an infinite one, it is a ceiling nobody wrote down",
+    ];
+  }
+  /** @type {string[]} */
+  const out = [];
+  for (const [provider, ceiling] of limits.tokens) {
+    out.push(
+      `limits.tokens.${provider} = ${String(ceiling)} — ADVISORY: read and reported here, ` +
+        "enforced by nothing in this tree, and deferred to a later card",
+    );
+  }
+  if (limits.expiresAt !== "") {
+    out.push(
+      `limits.expires_at = ${limits.expiresAt} — ADVISORY: read and reported here, enforced by ` +
+        "nothing in this tree, and an expiry that has passed refuses no admission at this card",
+    );
+  }
+  if (out.length === 0) {
+    out.push("the grant carries a limits block with nothing in it, which is a record of no ceiling");
+  }
+  return out;
+}
+
+/**
+ * THE COORDINATOR'S OBLIGATIONS — the promises this arm CANNOT keep, so
+ * that a reader never mistakes the refusals it does perform for the whole
+ * of the guarantee. This card's seventh criterion names all three.
+ *
+ * @returns {string[]}
+ */
+export function coordinatorObligations() {
+  return [
+    "SCOPE INTERPRETATION — whether a repair is really inside the approved work is a judgement " +
+      "about meaning; this arm checks that a parent and an evidence were NAMED, never that the " +
+      "naming is true",
+    "AN UNREPORTED INTEGRITY PROBLEM — a seat that finds a defect and does not say so leaves " +
+      "nothing on disk for an admission reader to refuse",
+    "A PROVIDER'S LIVE USAGE — what has actually been spent is the provider's number and reaches " +
+      "no file this arm reads; the grant's limits are recorded here and enforced nowhere",
+  ];
+}
+
+/**
+ * THE ADMISSION ITSELF — admit, or refuse by name.
+ *
+ * The order of the checks is the design and not an accident: the PAUSE is
+ * read first because it is the owner's most recent act and a paused loop
+ * is paused whatever the grant says; the CURRENT GRANT next, because a
+ * revoked block approves nothing; then the kind, because an explicit and
+ * a derived admission are answerable to different things.
+ *
+ * @param {GrantState} state
+ * @param {AdmissionRequest} request
+ * @param {AdmissionEntry[]} [ledger]
+ * @returns {Admission}
+ */
+export function admit(state, request, ledger = []) {
+  const boundary = String(request.boundary ?? "");
+  if (!ADMISSION_BOUNDARIES.includes(boundary)) {
+    throw new AdmissionFinding(
+      ADMISSION_CODES.BOUNDARY,
+      `dispatch-brief: ${JSON.stringify(boundary)} is not an admission boundary. The boundaries ` +
+        `are ${ADMISSION_BOUNDARIES.join(", ")}, and an admission made at a moment this arm does ` +
+        "not know is an admission nothing re-reads the grant at.",
+    );
+  }
+  const kind = String(request.kind ?? "");
+  if (!ADMISSION_KINDS.includes(kind)) {
+    throw new AdmissionFinding(
+      ADMISSION_CODES.KIND,
+      `dispatch-brief: ${JSON.stringify(kind)} is not a kind of admission. An admission is ` +
+        `${ADMISSION_KINDS.join(" or ")}: a card the grant names, or a repair the recovery policy ` +
+        "allows, bound to its parent work and the failure evidence.",
+    );
+  }
+  const card = String(request.card ?? "").trim();
+  if (card === "") {
+    throw new AdmissionFinding(
+      ADMISSION_CODES.NO_CARD,
+      "dispatch-brief: an admission is an admission OF something, and this one names no card.",
+    );
+  }
+  const phase = request.phase === undefined ? admissionPhase(request.role ?? "") : String(request.phase);
+  if (!ADMISSION_PHASES.includes(phase)) {
+    throw new AdmissionFinding(
+      ADMISSION_CODES.SCOPE,
+      `dispatch-brief: ${JSON.stringify(phase)} is not a phase. The phases are ` +
+        `${ADMISSION_PHASES.join(", ")}, and the phase is what a new-work pause discriminates on.`,
+    );
+  }
+  const resource = request.resource ?? null;
+  const advisory = advisoryLimits(state);
+  const obligations = coordinatorObligations();
+
+  /** @param {Partial<Admission>} extra @returns {Admission} */
+  const answer = (extra) => ({
+    admitted: true,
+    kind,
+    boundary,
+    card,
+    phase,
+    code: "",
+    why: "",
+    revision: state.revision,
+    blob: String(request.blob ?? ""),
+    parent: request.parent === undefined ? null : request.parent,
+    evidence: request.evidence === undefined ? "" : sha256(request.evidence),
+    consumed: false,
+    reuses: null,
+    resource,
+    drift: [],
+    advisory,
+    obligations,
+    ...extra,
+  });
+
+  /** @param {string} code @param {string} why @returns {never} */
+  const refuse = (code, why) => {
+    throw new AdmissionFinding(code, `dispatch-brief: the ${boundary} admission of ${card} is REFUSED — ${why}`);
+  };
+
+  // ── THE NO-GRANT STATE: ADMIT, AND SAY THAT NOTHING WAS ENFORCED ───
+  if (!state.enforced) {
+    return answer({
+      kind: "unenforced",
+      why:
+        `${state.source}. Every admission is made and NONE is enforced: the refusals below apply ` +
+        "wherever a block exists, and this tree carries none.",
+      revision: 0,
+    });
+  }
+
+  // ── THE PAUSE ──────────────────────────────────────────────────────
+  const pause = state.pause;
+  if (pause !== null) {
+    if (pause.scope === "all") {
+      refuse(
+        ADMISSION_CODES.PAUSED_ALL,
+        `a pause of scope \`all\` was recorded by ${pause.by} at ${pause.at} in ${pause.file}` +
+          (pause.why === "" ? "" : ` (${pause.why})`) +
+          ". Every further phase stops at its DECLARED SAFE BOUNDARY — a running executor at its " +
+          "stamp, a running verifier at its verdict, a staged merge finished or aborted as the " +
+          "record says — and no new admission is made at any of them. An IMMEDIATE stop is a " +
+          "separate request routed through the applicable stopping mechanism and not through this " +
+          "reader, and interrupting a job preserves uncertainty until the jobs are reconciled.",
+      );
+    }
+    if (phase === "implementation") {
+      refuse(
+        ADMISSION_CODES.PAUSED_NEW_WORK,
+        `a pause of scope \`new-work\` was recorded by ${pause.by} at ${pause.at} in ${pause.file}` +
+          (pause.why === "" ? "" : ` (${pause.why})`) +
+          ". New implementation work and re-entry into it are refused while the VERIFICATION and " +
+          "INTEGRATION of a candidate already admitted are permitted to start and to finish — so " +
+          "a verifier start for an existing candidate is admitted and a replacement executor is " +
+          "not. An owner-issued pause needs no second approval to be read.",
+      );
+    }
+  }
+
+  // ── THE CURRENT GRANT ──────────────────────────────────────────────
+  const block = /** @type {NonNullable<GrantState["block"]>} */ (state.block);
+  const grant = block.current;
+  if (grant === null) {
+    refuse(
+      ADMISSION_CODES.NO_CURRENT_GRANT,
+      `the block is REVOKED (at ${block.revoked?.at ?? "an unrecorded instant"} by ` +
+        `${block.revoked?.by ?? "an unrecorded person"}), so it carries no current grant. The ` +
+        "revoked grant stays in the record and approves nothing; a new grant is the owner's to give.",
+    );
+  }
+  if (!["each", "until", "standing"].includes(state.approval)) {
+    refuse(
+      ADMISSION_CODES.UNKNOWN_MODE,
+      `the approval mode is \`${state.approval}\` and this arm branches on each, until and ` +
+        "standing. A mode the arm has no branch for is a mode nothing enforces, which is worse " +
+        "than a refusal.",
+    );
+  }
+  if (!["none", "repairs"].includes(state.recovery)) {
+    refuse(
+      ADMISSION_CODES.UNKNOWN_RECOVERY,
+      `the recovery policy is \`${state.recovery}\` and this arm branches on none and repairs.`,
+    );
+  }
+
+  // ── A CONSULTATION IS WORK THE GRANT'S CARD LIST DOES NOT NAME ─────
+  // **AND IT IS ADMITTED ONLY WHILE IT WRITES NOTHING.** T-311 separates
+  // the WORK SERVED from the RESOURCE a child may write, and a
+  // consultation is the read-only half of that separation: a tool-less
+  // phase one beside its executor, a question asked of a second model.
+  // A grant approves CARDS, so a consultation could never appear in an
+  // order — refusing it would stop a participant the owner's approval of
+  // the card already covers. What is NOT covered is a consultation that
+  // claims write ownership of a resource, and that is refused by name:
+  // work that writes is work that needs its own approval, whatever the
+  // assignment calls it.
+  if (String(request.work ?? "card") === "consultation") {
+    if (resource !== null) {
+      refuse(
+        ADMISSION_CODES.CONSULTATION_WRITER,
+        `it is a CONSULTATION claiming write ownership of ${resource}. A consultation is the ` +
+          "read-only half of the work/resource separation — it runs beside a writer and reserves " +
+          "nothing — and one that writes is work needing its own approval by name, whatever the " +
+          "assignment calls it.",
+      );
+    }
+    return answer({
+      why:
+        `a CONSULTATION, bound to the grant's revision ${String(grant.revision)} and writing ` +
+        "nothing. A grant approves cards, so a consultation is never in an order; it consumes no " +
+        "approval and takes no reservation, and the pause above still reaches it.",
+      consumed: false,
+    });
+  }
+
+  // ── THE LEDGER: WHAT THIS CARD ALREADY HOLDS AT THIS REVISION ──────
+  const mine = ledger.filter((e) => e.card === card && e.revision === grant.revision);
+  const open = mine.find((e) => !e.terminal) ?? null;
+
+  // ── THE KIND ───────────────────────────────────────────────────────
+  if (kind === "derived") {
+    if (state.recovery === "none") {
+      refuse(
+        ADMISSION_CODES.RECOVERY_NONE,
+        `the recovery policy is \`none\`, so a DERIVED admission is refused and recorded as ` +
+          "NEEDING ITS OWN EXPLICIT APPROVAL: add this card to the grant's order, with its blob, " +
+          "and it is admitted as an explicitly approved repair. An automatic repair and an " +
+          "approved one are the same work under two different authorizations, and only one of " +
+          "them is this policy's to make.",
+      );
+    }
+    const parent = String(request.parent ?? "").trim();
+    if (parent === "" || !grant.order.includes(parent)) {
+      refuse(
+        ADMISSION_CODES.DERIVED_NO_PARENT,
+        parent === ""
+          ? "a derived admission names no PARENT authorized work. It inherits an authorization " +
+              "rather than minting one, and there is nothing here to inherit from."
+          : `its parent \`${parent}\` is not work this grant approved (the order is ` +
+              `${grant.order.join(", ")}). A repair attributed to work nobody approved is a second ` +
+              "approval wearing a repair's clothes.",
+      );
+    }
+    const evidence = String(request.evidence ?? "").trim();
+    if (evidence === "") {
+      refuse(
+        ADMISSION_CODES.DERIVED_NO_EVIDENCE,
+        "a derived admission carries no FAILURE EVIDENCE. A repair's description establishes " +
+          "nothing on its own — what admits it is the failure attributed to the approved work, " +
+          "and a repair with no evidence is a description.",
+      );
+    }
+    const scope = String(request.scope ?? "repair").trim();
+    if (!DERIVED_SCOPES.includes(scope)) {
+      throw new AdmissionFinding(
+        ADMISSION_CODES.SCOPE,
+        `dispatch-brief: ${JSON.stringify(scope)} is not a derived admission's scope. The scopes ` +
+          `are ${DERIVED_SCOPES.join(", ")}.`,
+      );
+    }
+    if (scope !== "repair") {
+      refuse(
+        ADMISSION_CODES.DERIVED_OUT_OF_SCOPE,
+        scope === "product-change"
+          ? "it declares itself a PRODUCT-SCOPE CHANGE. `repairs` admits the repairs the approved " +
+              "work needs and never a change to what the product does, which is the owner's to " +
+              "approve on its own."
+          : "it declares itself a WAIVED VERIFICATION. A repair is classified and verified as any " +
+              "other card is; a repair that skips its verification is not a repair the recovery " +
+              "policy allows.",
+      );
+    }
+    // A REPEATED DELIVERY EVENT PRODUCES NO DUPLICATE REPAIR. The same
+    // failure, attributed to the same parent, is the SAME derived
+    // admission re-presented — and a scope change (a different parent,
+    // or a repair card whose own blob has moved) re-evaluates it, which
+    // is what falling through to a fresh admission means.
+    const digest = sha256(evidence);
+    const already = mine.find(
+      (e) => e.kind === "derived" && e.parent === parent && e.evidence === digest,
+    );
+    if (already !== undefined) {
+      return answer({
+        why:
+          `a derived repair of ${parent}, already admitted at attempt ${already.attempt} on the ` +
+          "same failure evidence. The same delivery event reported twice is ONE repair, so this " +
+          "re-presents that admission rather than minting a second one.",
+        evidence: digest,
+        reuses: already.attempt,
+      });
+    }
+    return answer({
+      why:
+        `a derived repair of ${parent} under recovery \`repairs\`, bound to the failure evidence, ` +
+        `to the parent grant's revision ${String(grant.revision)} and to this repair card's own ` +
+        "blob at its filing. It inherits the parent's authorization and mints no grant, and it is " +
+        "classified and verified as any other card.",
+      evidence: digest,
+      consumed: true,
+    });
+  }
+
+  // ── AN EXPLICIT ADMISSION: A CARD THE GRANT NAMES ──────────────────
+  if (!grant.order.includes(card)) {
+    refuse(
+      ADMISSION_CODES.CARD_NOT_APPROVED,
+      `the grant at revision ${String(grant.revision)} does not name it. The grant's list is ` +
+        `PER-CARD APPROVALS and never a batch: it approves ${grant.order.join(", ")}, and a card ` +
+        "outside that list needs its own approval by name.",
+    );
+  }
+
+  // THE UNTIL ENDPOINT. The grant runs up to and INCLUDING the named
+  // card; the next card in the order is refused BY NAME, and a parked
+  // endpoint is not a delivered one, so the grant does not move past it.
+  if (state.approval === "until" && grant.until !== null) {
+    const stop = grant.order.indexOf(grant.until);
+    const at = grant.order.indexOf(card);
+    if (at > stop) {
+      const next = grant.order[stop + 1] ?? "";
+      const status = request.board?.get(grant.until) ?? "";
+      refuse(
+        ADMISSION_CODES.UNTIL_ENDPOINT,
+        `this grant runs up to and including ${grant.until}, and ${card} is after it in the order ` +
+          (next === card ? "— it is the NEXT card, " : `(the next card is ${next}, ` + `and ${card} is further on) `) +
+          `— so it waits for its own approval. ` +
+          (status === PARKED_STATUS
+            ? `And ${grant.until} is PARKED: a parked endpoint is not a delivered one, so this ` +
+              "grant does not move past it either."
+            : status === ""
+              ? `${grant.until}'s own status was not read here, and it does not change this answer.`
+              : `${grant.until} is ${status}.`),
+      );
+    }
+  }
+
+  // THE BLOB THE OWNER APPROVED, and the mechanical appends the loop's
+  // own ceremony writes onto a card between the yes and the build.
+  const approvedBlob = grant.cards.get(card) ?? "";
+  const nowBlob = String(request.blob ?? "").trim();
+  /** @type {string[]} */
+  let drift = [];
+  if (nowBlob !== "" && approvedBlob !== "" && nowBlob !== approvedBlob) {
+    const approvedText = request.approvedText?.(approvedBlob) ?? null;
+    const currentText = request.cardText ?? null;
+    if (approvedText === null || currentText === null) {
+      refuse(
+        ADMISSION_CODES.CARD_BLOB_MOVED,
+        `the grant approved blob ${approvedBlob.slice(0, 12)} and the card is now ` +
+          `${nowBlob.slice(0, 12)}, and neither revision could be READ here — so whether the ` +
+          "movement is the loop's own mechanical append or a rewritten criterion is undecided, " +
+          "and undecided is refused.",
+      );
+    }
+    const moved = cardDrift(approvedText, currentText);
+    if (!moved.mechanical) {
+      refuse(
+        ADMISSION_CODES.CARD_BLOB_MOVED,
+        `the grant approved blob ${approvedBlob.slice(0, 12)} and the card is now ` +
+          `${nowBlob.slice(0, 12)}, and the difference is NOT a mechanical append: ` +
+          `${moved.substantive.join("; ")}. A card edited after the yes is a different card, and ` +
+          "an approval of a criterion nobody read is not an approval.",
+      );
+    }
+    drift = moved.drift;
+  }
+
+  // THE CONSUMPTION, AND IT IS WHAT SEPARATES THE THREE MODES.
+  if (open !== null) {
+    return answer({
+      why:
+        `the grant at revision ${String(grant.revision)} approves it, and attempt ${open.attempt} ` +
+        `already holds this admission (${open.state}). This ${boundary} RE-PRESENTS that ` +
+        "admission rather than consuming a second approval, and it creates no second writer: the " +
+        "resource's own reservation is what decides that, and it is untouched here.",
+      blob: nowBlob,
+      drift,
+      reuses: open.attempt,
+    });
+  }
+  // THE VERIFICATION AND THE INTEGRATION OF A CANDIDATE ALREADY
+  // ADMITTED RUN UNDER THAT SAME ADMISSION, and that is not a loophole —
+  // it is what "the admitted candidate" in the pause's own scope MEANS.
+  // A card's approval is spent when the card is admitted; the phases
+  // that carry it to a verdict and into the integration branch are the
+  // rest of that one lifecycle, not three approvals. What IS a second
+  // approval is a fresh IMPLEMENTATION attempt after the lifecycle
+  // concluded, and that is the refusal below.
+  const prior = mine.length === 0 ? null : /** @type {AdmissionEntry} */ (mine[mine.length - 1]);
+  if (prior !== null && phase !== "implementation") {
+    return answer({
+      why:
+        `the grant at revision ${String(grant.revision)} approves it and attempt ${prior.attempt} ` +
+        `carried its admission (${prior.state}). The ${phase} of a candidate already admitted runs ` +
+        "under that same admission and consumes no second approval — a card's approval is spent " +
+        "when the CARD is admitted, and the phases that carry it to a verdict are the rest of one " +
+        "lifecycle.",
+      blob: nowBlob,
+      drift,
+      reuses: prior.attempt,
+    });
+  }
+  if (state.approval === "each" && prior !== null) {
+    refuse(
+      ADMISSION_CODES.APPROVAL_CONSUMED,
+      `the approval mode is \`each\` and this card's approval at revision ` +
+        `${String(grant.revision)} was already CONSUMED by attempt ${mine[0]?.attempt ?? "an " +
+          "earlier attempt"}, which concluded ${mine[0]?.state ?? "elsewhere"}. Under \`each\` the ` +
+        "approval is per card and is spent once; a second run of the same card is a second " +
+        "approval, and only the owner gives one.",
+    );
+  }
+  return answer({
+    why:
+      `the grant at revision ${String(grant.revision)} names it, its approved blob still matches ` +
+      (drift.length === 0 ? "byte for byte" : `under the mechanical appends (${drift.join("; ")})`) +
+      `, and the approval mode is \`${state.approval}\`` +
+      (state.approval === "each"
+        ? ": this admission CONSUMES that card's own approval, once"
+        : state.approval === "until"
+          ? `: the grant runs up to and including ${grant.until ?? "its endpoint"}`
+          : ": the grant is standing and runs until a pause is recorded"),
+    blob: nowBlob,
+    drift,
+    consumed: true,
+  });
+}
+
+/**
+ * WHAT A SUCCESSOR COORDINATOR INHERITS (this card's sixth criterion,
+ * over T-238's seat).
+ *
+ * **THE GRANT IS THE BLOCK'S AND NEVER THE PREVIOUS COORDINATOR'S.** A
+ * seat is taken and released; the approval is the owner's and sits in the
+ * template, so a successor reads the same revision, the same order and
+ * the same blobs the predecessor read, and the predecessor's identity is
+ * no part of it. That is the whole difference between a loop whose
+ * authority lives in a checkpoint's prose and one whose authority lives
+ * in a record.
+ *
+ * @param {GrantState} state
+ * @param {AdmissionEntry[]} ledger
+ * @returns {{ inherits: boolean, revision: number, order: string[], remaining: string[], why: string }}
+ */
+export function grantInheritance(state, ledger = []) {
+  if (!state.enforced || state.block?.current == null) {
+    return {
+      inherits: false,
+      revision: 0,
+      order: [],
+      remaining: [],
+      why:
+        `${state.source}. A successor inherits NOTHING because there is nothing recorded to ` +
+        "inherit — and nothing is invented from the predecessor's memory of what was approved.",
+    };
+  }
+  const grant = state.block.current;
+  const done = new Set(ledger.filter((e) => e.revision === grant.revision && e.terminal).map((e) => e.card));
+  const remaining = grant.order.filter((c) => !done.has(c));
+  return {
+    inherits: true,
+    revision: grant.revision,
+    order: [...grant.order],
+    remaining,
+    why:
+      `the grant at revision ${String(grant.revision)}, given by ${grant.givenBy} at ${grant.at}, ` +
+      `is inherited FROM THE BLOCK: the order is ${grant.order.join(", ")} and ` +
+      `${remaining.length === 0 ? "none of it remains" : `${remaining.join(", ")} remain(s)`}. ` +
+      "The previous coordinator's identity is no part of it — a seat is taken and released, and " +
+      "the approval is the owner's.",
+  };
+}
+
+/**
+ * THE ADMISSION, REPORTED — and the three groups are the report's whole
+ * point (this card's seventh criterion).
+ *
+ * A reader of a dispatch has to be able to tell what this arm REFUSED
+ * from what it merely RECORDED and from what nobody in this tree can
+ * check at all. Printing the three in one list would let the second and
+ * third borrow the first's authority, which is the exact way a guarantee
+ * gets overstated.
+ *
+ * @param {Ctx} ctx
+ * @param {GrantState} state
+ * @param {Admission | null} admission
+ * @returns {Rec[]}
+ */
+export function admissionRecs(ctx, state, admission) {
+  const t = treeProv(ctx.ref, `${RUNTIME_TEMPLATE}'s dispatch block, read through the parser library's reader`);
+  const live = liveProv(ctx.at, ctx.host, `${PAUSE_REL_PATH}, as it is on disk`);
+  /** @type {Rec[]} */
+  const recs = [
+    blank(),
+    note("THE ADMISSION — every admission is bound to the grant's revision, the card's approved"),
+    note("blob and the attempt's reservation; the grant is RE-READ at every boundary"),
+    value(`grant: ${state.source}`, t),
+  ];
+  if (state.enforced) {
+    recs.push(
+      value(`approval: ${state.approval} · recovery: ${state.recovery} · revision: ${String(state.revision)}`, t),
+    );
+  }
+  recs.push(
+    value(
+      state.pause === null
+        ? "pause: none is recorded, so no boundary is stopped by one"
+        : `pause: scope ${state.pause.scope}, recorded by ${state.pause.by} at ${state.pause.at}`,
+      live,
+    ),
+  );
+  if (admission !== null) {
+    // THE LABEL IS THE CLAIM AND IT IS DERIVED, never typed: a tree with
+    // no block ENFORCES NOTHING, and a line that said otherwise would be
+    // the overstatement the three groups exist to prevent.
+    const tested = state.enforced ? "THE REFUSALS THIS ARM TESTED" : "NOT ENFORCED — THERE IS NO BLOCK TO ENFORCE";
+    recs.push(
+      value(
+        `${tested} — ${admission.boundary} admission of ${admission.card} (${admission.kind}, ` +
+          `phase ${admission.phase}): ${admission.why}`,
+        t,
+      ),
+    );
+    for (const d of admission.drift) recs.push(value(`${tested} — mechanical append allowed: ${d}`, t));
+    for (const a of admission.advisory) recs.push(value(`ADVISORY ACCOUNTING — ${a}`, t));
+    for (const o of admission.obligations) {
+      recs.push(value(`THE COORDINATOR'S, NOT THIS ARM'S — ${o}`, t));
+    }
+  }
   return recs;
 }

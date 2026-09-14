@@ -2511,21 +2511,41 @@ test("THE SHIPPED SCHEMA'S DISPATCH BLOCK DECLARATION reads the same to the hand
   }
 });
 
-test("EVERY ROW OF THE SHIPPED DISPATCH BLOCK IS DECLARATIVE, the limits are the advisory ones, and the no-grant words are `each` and `none`", () => {
-  // THE CARD'S FOURTH CRITERION, AND THE LABEL IS THE CLAIM: this card
-  // lands the block as readable configuration, so no row may say the arm
-  // branches on it. KILLED BY: a row relabelled operational or manual
-  // before T-324 makes it one, a limits row that stops saying it is
-  // advisory, and a no-grant value edited to something this project's own
-  // criterion does not say.
+test("THE SHIPPED DISPATCH BLOCK'S OPERATIONAL ROWS ARE THE ONES THE ARM BRANCHES ON, the limits are the advisory ones, and the no-grant words are `each` and `none`", () => {
+  // T-319's FOURTH CRITERION, MOVED BY T-324 AS THAT BODY SAID IT WOULD
+  // BE. Under T-319 the block was readable configuration and every row
+  // was declarative; T-324 built the admission lifecycle on it, so the
+  // rows the arm BRANCHES on say `operational` and the rows that are a
+  // record still say `declarative`. KILLED BY: a row relabelled with no
+  // read site behind it, a manual row appearing in a block no seat
+  // performs by hand, a limits row that stops saying it is advisory, and
+  // a no-grant value edited to something this project's own criterion
+  // does not say.
   const decl = parseProcessSchema(readFileSync(path.join(repoRoot, PROCESS_SCHEMA), "utf8")).dispatch;
   expect(decl, "the shipped schema declares no dispatch block").not.toBeNull();
   const rows = [...(decl as NonNullable<typeof decl>).fields.values()];
+  // NOT ONE ROW IS MANUAL: the block is a record the owner edits and a
+  // reader reads, and there is no instruction in it addressed to a seat.
   expect(
-    rows.filter((r) => r.implementation !== "declarative").map((r) => `${r.id}=${r.implementation}`),
-    "a dispatch block row claims the arm reads it, and this card's criterion says it does not " +
-      "until T-324 makes it so",
+    rows.filter((r) => r.implementation === "manual").map((r) => r.id),
+    "a dispatch block row says a person performs it, and no row of this block names an action",
   ).toEqual([]);
+  // THE OPERATIONAL ROWS ARE EXACTLY THE ONES T-324 MADE OPERATIONAL,
+  // and the list is here rather than derived because the claim IS the
+  // list: a row added to it silently would be a label nobody argued for.
+  expect(
+    rows.filter((r) => r.implementation === "operational").map((r) => r.id),
+    "the operational rows of the dispatch block moved",
+  ).toEqual([
+    "approval",
+    "recovery",
+    "grant",
+    "grant.revision",
+    "grant.order",
+    "grant.until",
+    "grant.cards",
+    "revoked",
+  ]);
   expect(rows.length, "the declaration parsed to too few rows to be the block").toBeGreaterThan(10);
   // THE ADVISORY ROWS ARE THE LIMITS AND NOTHING ELSE: the two the card
   // names are advisory, and no row outside that container is.

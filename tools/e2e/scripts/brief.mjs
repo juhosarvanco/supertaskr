@@ -161,12 +161,14 @@ import {
 } from "./card-figures.mjs";
 import { preflight } from "./card-preflight.mjs";
 import {
+  AdmissionFinding,
   AwaitFinding,
   DispatchLaneFinding,
   EXIT,
   assembleBrief,
   awaitPlan,
   awaitRecs,
+  admissionLedger,
   blank,
   context,
   defaultAwaitIo,
@@ -177,6 +179,8 @@ import {
   dispatchLaneRecs,
   dispatchLedgerRecs,
   dispatchPlanRecs,
+  grantInheritance,
+  grantState,
   liveProv,
   mainWorktree,
   note,
@@ -207,6 +211,8 @@ import { dispatchContext, dispatchReport, listedCards } from "./dispatch-order.m
 import { LaneFenceFinding, buildLaneFence, writeLaneFence } from "./lane-fence.mjs";
 import {
   RunRecordFinding,
+  TERMINAL_STATES,
+  allRecords,
   bindRun,
   collectRun,
   continueRun,
@@ -217,6 +223,7 @@ import {
   sendAnswer,
   startRun,
   stopRun,
+  textOrFile,
   waitRun,
 } from "./run-record.mjs";
 import { findCheckoutRoot } from "../../../.claude/hooks/lane-fence.mjs";
@@ -264,6 +271,8 @@ const FLAGS = Object.freeze([
   "--meters",
   "--tier",
   "--blocks-absent",
+  "--derived-from",
+  "--failure",
   "--slug",
   "--executor",
   "--verifier",
@@ -297,6 +306,35 @@ const OUT = [];
 /** @param {string} text */
 function say(text) {
   OUT.push(text);
+}
+
+/**
+ * THE GRANT A SUCCESSOR COORDINATOR INHERITS FROM THE BLOCK (T-324's
+ * sixth criterion, over T-238's seat).
+ *
+ * It is a function here rather than three lines inside the seat arm
+ * because a body has to be able to drive it over a FIXTURE runtime
+ * directory — a checkout with a holder record and a template of its own —
+ * without taking a seat in the checkout the body is running in.
+ *
+ * @param {ReturnType<typeof context>} ctx
+ * @returns {ReturnType<typeof value>[]}
+ */
+export function succession(ctx) {
+  const state = grantState(ctx.root);
+  const inherited = grantInheritance(state, admissionLedger(allRecords(ctx.root), TERMINAL_STATES));
+  const p = treeProv(
+    ctx.ref,
+    "the runtime template's dispatch block, read through the parser library's own reader",
+  );
+  return [
+    value(`the grant this seat inherits: ${inherited.why}`, p),
+    value(
+      "it continues that order, and the previous coordinator's identity is no part of what it " +
+        "inherits — a seat is taken and released, and the approval is the owner's",
+      p,
+    ),
+  ];
 }
 
 /**
@@ -360,7 +398,7 @@ async function main(argv) {
           "[--dispatch] [--card <T-NNN>] [--audit <path>] [--preflight] " +
           "[--write-fence <worktree>] [--take-seat [--allow-shared-git-config]] [--release-seat] " +
           "[--dispatch-lane <T-NNN> --slug <slug> [--executor <seat>] [--verifier <seat>] " +
-          "[--scratch <dir>] [--dry-run]] " +
+          "[--scratch <dir>] [--derived-from <T-NNN> --failure <text|@file>] [--dry-run]] " +
           "[--merge <T-NNN> [--bump <old>..<new>] [--meters <path>] [--tier <tier>] " +
           "[--blocks-absent <sha>] [--dry-run]] [--bench <T-NNN> [--scratch <dir>]] " +
           "[[--await <marker> | --await-pid <pid>] --ceiling <seconds>] " +
@@ -458,7 +496,12 @@ async function main(argv) {
    * ignoring it — a flag silently dropped is a dispatcher believing it
    * said something it did not.
    */
-  const laneDials = ["slug", "executor", "verifier", "scratch"];
+  // `--derived-from` and `--failure` ARE THE DERIVED ADMISSION'S OWN
+  // (T-324): a lane cut for a REPAIR names its parent authorized work and
+  // the failure evidence, and it inherits that parent's authorization
+  // rather than minting a grant. They are lane dials like the rest, so a
+  // parent named at an invocation that cuts no lane is USAGE.
+  const laneDials = ["slug", "executor", "verifier", "scratch", "derived-from", "failure"];
   // `--scratch` IS SHARED WITH THE BENCH ARM, because both write into the
   // ONE directory the lane owns (docs/CONVENTIONS.md's SCRATCH RULE): the
   // phase 1 brief the dispatch renders and the phase 2 brief the bench
@@ -663,7 +706,11 @@ async function main(argv) {
       flush();
       return satisfied ? EXIT.CLEAN : EXIT.FOUND;
     } catch (err) {
-      if (err instanceof RunRecordFinding) {
+      // AN ADMISSION REFUSED IS A FINDING AND IT CARRIES ITS CODE
+      // (T-324), by exactly the path a run-record refusal takes: the
+      // admission comes BEFORE the reservation, so a refusal here has
+      // written nothing and left no lock behind.
+      if (err instanceof RunRecordFinding || err instanceof AdmissionFinding) {
         console.error(`brief: [${err.code}] ${err.message}`);
         return EXIT.FOUND;
       }
@@ -1173,6 +1220,15 @@ async function main(argv) {
             "release it when you retire: node tools/e2e/scripts/brief.mjs --release-seat",
             liveProv(ctx.at, ctx.host, "this command's own spelling, from docs/CONVENTIONS.md"),
           ),
+          // ── WHAT THE SUCCESSOR INHERITS (T-324, over T-238's seat) ──
+          // **THE GRANT IS THE BLOCK'S AND NEVER THE PREDECESSOR'S.** A
+          // seat is taken and released; the owner's approval lives in the
+          // runtime template, so a successor coordinator reads the same
+          // revision, the same order and the same blobs, continues the
+          // order from where the records say it stands, and inherits none
+          // of the previous coordinator's identity. Before this card the
+          // only thing there was to inherit was a checkpoint's prose.
+          ...succession(ctx),
         ]),
       );
       }
@@ -1308,12 +1364,20 @@ async function main(argv) {
       );
     } else {
       try {
+        // THE LEDGER IS DERIVED HERE AND HANDED IN (T-324). The plan is
+        // pure and the records are `run-record.mjs`'s, so this command —
+        // the one file that imports both halves — is where the two meet;
+        // a `dispatch-brief.mjs` that imported the run record would be a
+        // cycle, since the run record already imports it.
         const plan = dispatchLanePlan(ctx, {
           taskId: laneId,
           slug: /** @type {string} */ (opts["slug"]),
+          ledger: admissionLedger(allRecords(ctx.root), TERMINAL_STATES),
           ...(opts["executor"] === undefined ? {} : { executor: opts["executor"] }),
           ...(opts["verifier"] === undefined ? {} : { verifier: opts["verifier"] }),
           ...(opts["scratch"] === undefined ? {} : { scratch: opts["scratch"] }),
+          ...(opts["derived-from"] === undefined ? {} : { derivedFrom: opts["derived-from"] }),
+          ...(opts["failure"] === undefined ? {} : { failure: textOrFile(opts["failure"]) }),
         });
         if (dryRun) {
           say(render(dispatchPlanRecs(ctx, plan)));
