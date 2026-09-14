@@ -7,8 +7,8 @@ size: L
 priority: 2
 status: planned
 suggested_by: "@human (2026-09-09): \"Rule A–D as proposed\" — decision B of docs/rooms/foundation-files-standard.md"
-blocked_by: [T-287]
-touches: [docs/CONVENTIONS.md, docs/conventions/, docs/reference/, tools/e2e/scripts/docs-scan.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/, .claude/hooks/, app/src-tauri/src/agent/kit.rs]
+blocked_by: []
+touches: [docs/CONVENTIONS.md, docs/conventions/, docs/reference/, tools/e2e/scripts/docs-scan.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/cli.mjs, tools/e2e/scripts/merge.mjs, tools/e2e/scripts/range-rule.mjs, tools/e2e/tests/, .claude/hooks/, app/src-tauri/src/agent/kit.rs]
 builder:
 verifier:
 built_by:
@@ -28,6 +28,10 @@ docs/CONVENTIONS.md is 134,029 bytes at 6c7c7e6 against a budget of 117,502 / 14
 - WHEN a reader is re-pointed THE re-pointing SHALL land in the same commit as the move, the docs gate's DOC_BUDGETS SHALL carry a budget per topic file of the same order as the other governing documents, and the pack's reader SHALL find a bullet across the topic files.
 - WHEN the lane is done THE fence census SHALL be re-read: the planned cards fencing docs/CONVENTIONS.md whole before and after, and the four legs green at the tip; the health band docs-headroom/docs/CONVENTIONS.md SHALL read inside.
 - IF a bullet's rule cannot be separated from its argument THEN the card SHALL say which and why, and the bullet SHALL move whole to the reference chapter with its rule restated in one line in the index — never left in place.
+
+## Refresh of 2026-09-14, before dispatch (the architect seat's step-2 triage on the owner's ruling of 2026-09-14)
+
+The blocker is cleared: T-287 is done, and the dead fence entry it left — docs/conventions/, a directory with nothing tracked under it — is answered by the bootstrap records action of 2026-09-14 (docs/conventions/README.md, the neutral note that reserves the directory and readies nothing else). The fence gains the three scripts the docs gate derives as readers of docs/CONVENTIONS.md beside the specs it already reserved: tools/e2e/scripts/cli.mjs, tools/e2e/scripts/merge.mjs and tools/e2e/scripts/range-rule.mjs, so a reader re-pointed by the split is edited inside the fence. The reader inventory as measured today, for the census the lane takes as its own opening act: the docs gate derives fourteen readers (app/src-tauri/src/agent/kit.rs; tools/e2e/scripts/cli.mjs and merge.mjs; the specs brief, cli, dispatch-order, docs-input-gate, gate-run, lane-fence, merge, push-guard, range-rule, run-record and workflow-parity), five hooks under .claude/hooks/ name the file (expand-fence, lane-fence, pre-push-guard, push-guard, landing-gate), and the kit carries the genesis template copy under method/docs-templates/, which is not this file. The size is L and the work is substantial — readers, budgets and tests, not a text trim; dispatched after T-322 in the owner's order, and only where the measured CONVENTIONS headroom permits that order.
 
 ## Implementation notes
 <!-- executor appends before finishing -->
