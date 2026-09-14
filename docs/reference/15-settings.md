@@ -657,7 +657,7 @@ The runtime template's own `dispatch:` block — the dispatch approval mode, the
 
 a fresh seat in either harness inherits the owner's approval from the template rather than from a checkpoint's prose; a grant, a pause or a revocation is a dated edit to the block that appends the previous grant to its history and RAISES the revision, and which grant is current is decided by that revision and never by a date
 
-Each row says what makes it true: 0 OPERATIONAL, 0 MANUAL, 16 DECLARATIVE. 3 row(s) are ADVISORY — recorded, rendered and validated, and read by nothing that stops anything: `limits` · `limits.tokens` · `limits.expires_at`.
+Each row says what makes it true: 8 OPERATIONAL, 0 MANUAL, 8 DECLARATIVE. 3 row(s) are ADVISORY — recorded, rendered and validated, and read by nothing that stops anything: `limits` · `limits.tokens` · `limits.expires_at`.
 
 When the block is ABSENT the reader answers the explicit no-grant state: `approval` is `each`, `recovery` is `none`, no grant, revision 0.
 
@@ -670,7 +670,7 @@ when work STARTS — approval asked before every dispatch, a grant that runs up 
 - **values** — `each` · `until` · `standing`
 - **absent** — `each`
 - **advisory** — no
-- **implementation** — declarative
+- **implementation** — operational
 
 ### `dispatch.recovery`
 
@@ -681,7 +681,7 @@ whether the coordinator may dispatch a correction round, a re-entry after a reje
 - **values** — `none` · `repairs`
 - **absent** — `none`
 - **advisory** — no
-- **implementation** — declarative
+- **implementation** — operational
 
 ### `dispatch.grant`
 
@@ -690,7 +690,7 @@ the approval itself, as the owner gave it; a block that carries no grant is a bl
 - **required** — always
 - **shape** — map
 - **advisory** — no
-- **implementation** — declarative
+- **implementation** — operational
 
 ### `dispatch.grant.given_by`
 
@@ -717,7 +717,7 @@ the revision of this grant, a positive integer strictly above every revision in 
 - **required** — with-parent
 - **shape** — revision
 - **advisory** — no
-- **implementation** — declarative
+- **implementation** — operational
 
 ### `dispatch.grant.order`
 
@@ -726,7 +726,7 @@ the approved cards in dispatch order, each id once
 - **required** — with-parent
 - **shape** — card-ids
 - **advisory** — no
-- **implementation** — declarative
+- **implementation** — operational
 
 ### `dispatch.grant.until`
 
@@ -735,7 +735,7 @@ the card the grant runs up to and including, which must belong to the order — 
 - **required** — with-until
 - **shape** — card-id
 - **advisory** — no
-- **implementation** — declarative
+- **implementation** — operational
 
 ### `dispatch.grant.cards`
 
@@ -744,7 +744,7 @@ each approved card at the revision it was approved AT — the 40-hex blob sha of
 - **required** — with-parent
 - **shape** — card-blobs
 - **advisory** — no
-- **implementation** — declarative
+- **implementation** — operational
 
 ### `dispatch.revoked`
 
@@ -753,7 +753,7 @@ the dated revocation of the grant, when there is one; a revoked block reads as N
 - **required** — optional
 - **shape** — map
 - **advisory** — no
-- **implementation** — declarative
+- **implementation** — operational
 
 ### `dispatch.revoked.at`
 

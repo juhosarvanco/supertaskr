@@ -23,8 +23,15 @@ import { conventionsText, liveTaskCards, taskStatuses, trackedFiles } from "../s
 // of the settings with the library's rather than take the move on trust.
 import * as parserPure from "../../../lib/parser/dist/pure.js";
 import {
+  AdmissionFinding,
   BASE_TOKEN,
   DERIVERS,
+  admit,
+  cardDrift,
+  dispatchBlock,
+  dispatchReadSites,
+  grantInheritance,
+  grantState,
   DISPATCH_STEPS,
   AwaitFinding,
   DispatchLaneFinding,
@@ -8700,5 +8707,603 @@ test("ARM THIRTEEN performs ONE run operation against the root it is handed, and
     expect(alone.stdout, "the control did not render a state").toContain("state: reserved");
   } finally {
     rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+/* ════════════════════════════════════════════════════════════════════
+ * T-324 — THE ADMISSION LIFECYCLE, at the LANE CUT and in the reader
+ * every boundary shares.
+ *
+ * The other three boundaries — a child start, a re-entry and a
+ * replacement writer — are graded in `run-record.spec.ts`, where the
+ * record and the reservation live. What is here is the fourth boundary,
+ * the reader's own refusals, and the method text and schema labels the
+ * card's seventh criterion asks for.
+ * ════════════════════════════════════════════════════════════════════ */
+
+/**
+ * A FIXTURE CARD SHAPED LIKE A REAL ONE FOR THE DRIFT BODIES — it carries
+ * the two sections the ceremony appends to and an EARS criterion to
+ * rewrite, because what is under test is which movements are the loop's
+ * own and which are a different card.
+ */
+const DRIFT_CARD = [
+  "---",
+  `id: ${FIXTURE_CARD_ID}`,
+  "title: A FIXTURE CARD THE RITUAL CAN DISPATCH — it exists only inside a scratch repository",
+  "feature: F-06",
+  "milestone: 4",
+  "priority: 3",
+  "size: S",
+  "status: planned",
+  "blocked_by: []",
+  "touches: [README.md]",
+  "builder:",
+  "verifier:",
+  "built_by:",
+  "verified_by:",
+  "review: default",
+  "---",
+  "",
+  "The fixture's own card. It claims nothing a preflight cannot re-derive.",
+  "",
+  "## Acceptance criteria",
+  "",
+  "- WHEN the fixture is read THE card SHALL exist.",
+  "",
+  "## Implementation notes",
+  "",
+  "## Verdicts",
+  "",
+].join("\n");
+
+/** The runtime template's dispatch block, spelled as the shipped declaration reads it. */
+function dispatchBlockText(o: {
+  approval: string;
+  recovery: string;
+  order: string[];
+  blobs: Record<string, string>;
+  until?: string;
+  revoked?: { at: string; by: string };
+}): string {
+  const lines = [
+    "",
+    "dispatch:",
+    `  approval: ${o.approval}`,
+    `  recovery: ${o.recovery}`,
+    "  grant:",
+    '    given_by: "the fixture owner"',
+    '    at: "2026-09-14T00:00:00Z"',
+    "    revision: 3",
+    `    order: [${o.order.join(", ")}]`,
+    ...(o.until === undefined ? [] : [`    until: ${o.until}`]),
+    "    cards:",
+    ...o.order.map((id) => `      ${id}: ${o.blobs[id] as string}`),
+  ];
+  if (o.revoked !== undefined) {
+    lines.push("  revoked:", `    at: "${o.revoked.at}"`, `    by: "${o.revoked.by}"`);
+  }
+  lines.push("  history: []", "");
+  return lines.join("\n");
+}
+
+/** Write a dispatch block into a fixture's runtime template, keeping everything already in it. */
+function grantIn(root: string, block: string): void {
+  const at = path.join(root, RUNTIME_TEMPLATE);
+  writeFileSync(at, `${readFileSync(at, "utf8").replace(/\n*$/, "\n")}${block}`);
+}
+
+/** The blob sha of a fixture file, computed the way the grant records it. */
+function blobOf(root: string, rel: string): string {
+  return execFileSync("git", ["-C", root, "hash-object", "--", rel], { encoding: "utf8" }).trim();
+}
+
+/** The admission refusal a lane-cut plan answers with, or null where it was admitted. */
+function refusalOfPlan(root: string, scratch: string): { code: string; message: string } | null {
+  try {
+    dispatchLanePlan(context({ root, taskId: FIXTURE_CARD_ID }), {
+      taskId: FIXTURE_CARD_ID,
+      slug: FIXTURE_SLUG,
+      scratch,
+    });
+    return null;
+  } catch (err) {
+    if (err instanceof AdmissionFinding) return { code: String(err.code), message: err.message };
+    throw err;
+  }
+}
+
+test("THE LANE CUT IS AN ADMISSION, AND IT IS DISTINGUISHED FROM THE WRITER RESERVATION — it binds to the grant's revision and the card's approved blob, reserves nothing, and a card the grant does not name is refused before anything is written", () => {
+  // THE CARD'S FIRST CRITERION at the FOURTH boundary. Two halves: the
+  // admission happens at the cut, and the cut is NOT the reservation —
+  // the writer reservation belongs to the child start, and a lane cut
+  // that took one would be a lock held by a plan that spawns nothing.
+  //
+  // KILLED BY: a plan that admits without reading the grant, one that
+  // takes a reservation, one that refuses after the stamp commit, and one
+  // whose admission forgets which revision it bound to.
+  const fx = ritualFixture("admission-cut");
+  try {
+    const blob = blobOf(fx.root, FIXTURE_CARD_FILE);
+    grantIn(fx.root, dispatchBlockText({
+      approval: "standing",
+      recovery: "repairs",
+      order: [FIXTURE_CARD_ID],
+      blobs: { [FIXTURE_CARD_ID]: blob },
+    }));
+    const before = inventory(fx.root);
+    const plan = dispatchLanePlan(context({ root: fx.root, taskId: FIXTURE_CARD_ID }), {
+      taskId: FIXTURE_CARD_ID,
+      slug: FIXTURE_SLUG,
+      scratch: fx.scratch,
+    });
+    expect(plan.admission.admitted, "the card the grant names was refused at the cut").toBe(true);
+    expect(plan.admission.boundary, "the boundary the plan admitted at").toBe("lane-cut");
+    expect(plan.admission.kind, "the kind").toBe("explicit");
+    expect(plan.admission.revision, "the admission did not bind to the grant's revision").toBe(3);
+    expect(plan.admission.blob, "the admission did not bind to the card's approved blob").toBe(blob);
+    // THE HALF THAT IS THE WHOLE POINT OF THIS BODY.
+    expect(plan.admission.resource, "the lane cut took a writer reservation").toBeNull();
+    expect(
+      existsSync(path.join(fx.root, ".supertaskr", "runs", "reservations")),
+      "the lane cut created a reservations directory",
+    ).toBe(false);
+    expect(inventory(fx.root), "the lane cut's admission wrote something").toEqual(before);
+
+    // AND A CARD THE GRANT DOES NOT NAME IS REFUSED BEFORE THE RITUAL
+    // BEGINS — the plan is pure, so the refusal costs no stamp commit and
+    // no worktree.
+    grantIn(fx.root, "");
+    writeFileSync(
+      path.join(fx.root, RUNTIME_TEMPLATE),
+      readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8"),
+    );
+    grantIn(fx.root, dispatchBlockText({
+      approval: "each",
+      recovery: "none",
+      order: ["T-999"],
+      blobs: { "T-999": blob },
+    }));
+    const refused = refusalOfPlan(fx.root, fx.scratch);
+    expect(refused?.code, "a card outside the grant's order was dispatched").toBe("ADMISSION_CARD_NOT_APPROVED");
+    expect(refused?.message, "the refusal does not name the card it refused").toContain(FIXTURE_CARD_ID);
+    expect(inventory(fx.root), "the refused dispatch left something behind").toEqual(before);
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(admission-cut)");
+  }
+});
+
+test("A MECHANICAL APPEND IS STILL THE CARD THE OWNER APPROVED, AND A REWRITTEN CRITERION IS NOT", () => {
+  // THE CARD'S FIRST CRITERION, the blob clause. The loop's own ceremony
+  // writes onto a card between the yes and the build — the dispatch stamp
+  // writes `status:` and `tier:`, the executor appends notes, the
+  // verifier appends a verdict, either may file a follow-up — so a blob
+  // comparison alone would refuse the work the owner approved. Anything
+  // ELSE is a different card, because a criterion edited after the yes is
+  // an approval of something nobody read.
+  //
+  // KILLED BY: a comparison that refuses the stamp, one that accepts a
+  // rewritten criterion, one that accepts a DELETED line, and one that
+  // reads an added line outside the two appendable sections as an append.
+  const approved = DRIFT_CARD;
+  // THE MECHANICAL HALF, each of the four the criterion names.
+  const stamped = approved.replace(/^status: .*$/m, "status: building").replace(/^size: /m, "tier: guarded\nsize: ");
+  expect(cardDrift(approved, stamped).mechanical, "a status and tier stamp was read as a different card").toBe(true);
+  const noted = `${approved.replace(/## Implementation notes\n/, "## Implementation notes\n\nwhat the lane built.\n")}`;
+  expect(cardDrift(approved, noted).mechanical, "an implementation-notes append was read as a different card").toBe(
+    true,
+  );
+  const verdict = approved.replace(/## Verdicts\n/, "## Verdicts\n\n### 2026-09-14 APPROVED\n");
+  expect(cardDrift(approved, verdict).mechanical, "a verdict append was read as a different card").toBe(true);
+  const filed = approved.replace(/## Implementation notes\n/, "## Implementation notes\n\nFiled T-901-s1.\n");
+  expect(cardDrift(approved, filed).mechanical, "a filed follow-up line was read as a different card").toBe(true);
+
+  // THE SUBSTANTIVE HALF, AND IT IS THE POSITIVE CONTROL: the same
+  // function over the same card with a CRITERION moved says the opposite,
+  // so the four answers above are about what changed and not about a
+  // comparison that says yes to everything.
+  const rewritten = approved.replace(/^- WHEN .*$/m, "- WHEN anything at all happens THE arm SHALL do whatever it likes.");
+  expect(rewritten, "the fixture card carries no criterion to rewrite").not.toBe(approved);
+  const moved = cardDrift(approved, rewritten);
+  expect(moved.mechanical, "a rewritten criterion was read as a mechanical append").toBe(false);
+  expect(moved.substantive.length, "the refusal names nothing that moved").toBeGreaterThan(0);
+  // A DELETION IS SUBSTANTIVE TOO — an append-only reading would miss it.
+  const cut = approved.split("\n").filter((l) => !l.startsWith("- WHEN ")).join("\n");
+  expect(cardDrift(approved, cut).mechanical, "a criterion DELETED after the yes was read as an append").toBe(false);
+  // AND A FENCE WIDENED AFTER THE YES IS A DIFFERENT CARD, which is the
+  // frontmatter half of the same rule.
+  const widened = approved.replace(/^touches: .*$/m, "touches: [docs/tasks, app/src]");
+  expect(cardDrift(approved, widened).mechanical, "a fence widened after the yes was read as an append").toBe(false);
+});
+
+test("THE ADMISSION AT THE CUT TOLERATES THE LOOP'S OWN STAMP AND REFUSES A CARD REWRITTEN AFTER THE YES", () => {
+  // THE SAME CLAUSE, through the boundary rather than through the pure
+  // function — because what a reader needs to know is that the ARM
+  // behaves this way, and a pure function can be right while nothing
+  // calls it.
+  //
+  // KILLED BY: a lane cut that never compares the blob, one that compares
+  // it and refuses the stamp, and one that accepts a rewritten criterion.
+  const fx = ritualFixture("admission-drift", { card: DRIFT_CARD });
+  try {
+    const approvedBlob = blobOf(fx.root, FIXTURE_CARD_FILE);
+    grantIn(fx.root, dispatchBlockText({
+      approval: "standing",
+      recovery: "none",
+      order: [FIXTURE_CARD_ID],
+      blobs: { [FIXTURE_CARD_ID]: approvedBlob },
+    }));
+    // THE STAMP THE LOOP ITSELF WRITES, applied to the working tree.
+    const cardAt = path.join(fx.root, FIXTURE_CARD_FILE);
+    writeFileSync(cardAt, readFileSync(cardAt, "utf8").replace(/^status: .*$/m, "status: building"));
+    expect(blobOf(fx.root, FIXTURE_CARD_FILE), "the stamp did not move the blob, so this body proves nothing").not.toBe(
+      approvedBlob,
+    );
+    const plan = dispatchLanePlan(context({ root: fx.root, taskId: FIXTURE_CARD_ID }), {
+      taskId: FIXTURE_CARD_ID,
+      slug: FIXTURE_SLUG,
+      scratch: fx.scratch,
+    });
+    expect(plan.admission.admitted, "the loop's own stamp made the card unadmittable").toBe(true);
+    expect(plan.admission.drift.join(" "), "the append was allowed silently rather than reported").toContain("status");
+
+    // AND THE CRITERION REWRITTEN AFTER THE YES IS REFUSED.
+    writeFileSync(
+      cardAt,
+      readFileSync(cardAt, "utf8").replace(/^- WHEN .*$/m, "- WHEN anything happens THE arm SHALL do as it likes."),
+    );
+    const refused = refusalOfPlan(fx.root, fx.scratch);
+    expect(refused?.code, "a card rewritten after the yes was dispatched anyway").toBe("ADMISSION_CARD_BLOB_MOVED");
+    expect(refused?.message, "the refusal does not name the blob the grant approved").toContain(
+      approvedBlob.slice(0, 12),
+    );
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(admission-drift)");
+  }
+});
+
+test("A REVOKED BLOCK CARRIES NO CURRENT GRANT, and every admission under it is refused by name", () => {
+  // THE READER ANSWERS `current: null` FOR A REVOKED BLOCK (T-319) AND
+  // THIS CARD IS WHERE THAT ANSWER FINALLY DOES SOMETHING. The revoked
+  // grant stays in the record; what it stops being is current.
+  //
+  // KILLED BY: an arm that reads `grant` instead of `current`, and one
+  // that treats a revocation as a pause.
+  const fx = ritualFixture("admission-revoked");
+  try {
+    const blob = blobOf(fx.root, FIXTURE_CARD_FILE);
+    grantIn(fx.root, dispatchBlockText({
+      approval: "standing",
+      recovery: "repairs",
+      order: [FIXTURE_CARD_ID],
+      blobs: { [FIXTURE_CARD_ID]: blob },
+      revoked: { at: "2026-09-14T12:00:00Z", by: "the fixture owner" },
+    }));
+    const refused = refusalOfPlan(fx.root, fx.scratch);
+    expect(refused?.code, "a revoked block still admitted work").toBe("ADMISSION_NO_CURRENT_GRANT");
+    expect(refused?.message, "the refusal does not name who revoked it").toContain("the fixture owner");
+    // THE POSITIVE CONTROL, WHERE THE ARRANGEMENT IS ABSENT: the same
+    // grant without the revocation admits.
+    writeFileSync(
+      path.join(fx.root, RUNTIME_TEMPLATE),
+      readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8"),
+    );
+    grantIn(fx.root, dispatchBlockText({
+      approval: "standing",
+      recovery: "repairs",
+      order: [FIXTURE_CARD_ID],
+      blobs: { [FIXTURE_CARD_ID]: blob },
+    }));
+    expect(refusalOfPlan(fx.root, fx.scratch), "the control: the same grant unrevoked was refused too").toBeNull();
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(admission-revoked)");
+  }
+});
+
+test("A SUCCESSOR COORDINATOR INHERITS THE GRANT FROM THE BLOCK and continues the order without the previous coordinator's identity", () => {
+  // THE CARD'S SIXTH CRITERION, over a fixture runtime directory carrying
+  // T-238's holder record. Before this card a successor inherited nothing
+  // but a checkpoint's prose; the grant is the owner's and lives in the
+  // template, so a seat change moves no part of it.
+  //
+  // KILLED BY: an inheritance read off the holder record, one that
+  // carries the predecessor's identity into what it inherits, one that
+  // re-derives the order from the board instead of the block, and one
+  // that inherits a grant where there is none.
+  const fx = ritualFixture("succession");
+  try {
+    const blob = blobOf(fx.root, FIXTURE_CARD_FILE);
+    // THE PREDECESSOR'S RECORD, in the runtime directory beside the runs.
+    const runtime = path.join(fx.root, ".supertaskr");
+    mkdirSync(runtime, { recursive: true });
+    writeFileSync(
+      path.join(runtime, "holder.json"),
+      `${JSON.stringify(
+        {
+          version: 1,
+          takenAt: "2026-09-13T00:00:00Z",
+          identity: { pid: 424242, startedAt: "2026-09-13T00:00:00Z", label: "the-previous-coordinator" },
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    grantIn(fx.root, dispatchBlockText({
+      approval: "until",
+      recovery: "repairs",
+      order: [FIXTURE_CARD_ID, "T-902", "T-903"],
+      until: "T-903",
+      blobs: { [FIXTURE_CARD_ID]: blob, "T-902": blob, "T-903": blob },
+    }));
+    const inherited = grantInheritance(grantState(fx.root), []);
+    expect(inherited.inherits, "the successor inherited no grant from a block that carries one").toBe(true);
+    expect(inherited.revision, "the inherited revision is not the block's").toBe(3);
+    expect(inherited.order, "the inherited order is not the block's").toEqual([FIXTURE_CARD_ID, "T-902", "T-903"]);
+    expect(inherited.remaining, "nothing has been done, so the whole order remains").toEqual([
+      FIXTURE_CARD_ID,
+      "T-902",
+      "T-903",
+    ]);
+    expect(inherited.why, "the successor's inheritance carries the previous coordinator's identity").not.toContain(
+      "the-previous-coordinator",
+    );
+    expect(inherited.why, "the successor's inheritance carries the previous coordinator's pid").not.toContain("424242");
+    expect(inherited.why, "the inheritance does not say the identity is no part of it").toContain(
+      "previous coordinator's identity",
+    );
+    // AND THE ORDER CONTINUES FROM WHAT THE RECORDS SAY IS DONE, which is
+    // the half that makes it a continuation rather than a restart.
+    const done = grantInheritance(grantState(fx.root), [
+      {
+        card: FIXTURE_CARD_ID,
+        attempt: `${FIXTURE_CARD_ID}-a1`,
+        kind: "explicit",
+        revision: 3,
+        blob,
+        parent: null,
+        evidence: "",
+        state: "finished",
+        terminal: true,
+        resource: null,
+      },
+    ]);
+    expect(done.remaining, "a finished card is still on the successor's remaining order").toEqual(["T-902", "T-903"]);
+
+    // THE POSITIVE CONTROL, WHERE THE ARRANGEMENT IS ABSENT: a tree with
+    // no block hands a successor nothing, and says so rather than
+    // inventing an order from the board.
+    writeFileSync(
+      path.join(fx.root, RUNTIME_TEMPLATE),
+      readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8"),
+    );
+    const none = grantInheritance(grantState(fx.root), []);
+    expect(none.inherits, "the control: a successor inherited a grant out of a tree with none").toBe(false);
+    expect(none.order, "the control: an order was invented").toEqual([]);
+    expect(none.why, "the control: the absence is not stated").toContain("nothing recorded to");
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(succession)");
+  }
+});
+
+test("THE ARM READS THE GRANT THROUGH THE PARSER'S READER AND THROUGH NOTHING ELSE", () => {
+  // THE CARD'S SEVENTH CRITERION. T-319 moved the reading into the parser
+  // library and the arm re-exported SIX of its seven symbols (T-319-s1);
+  // this card needed the seventh, and the way it took it is the way T-317
+  // took the other six — bound to this arm's finding class and
+  // re-exported under the name it has always carried.
+  //
+  // KILLED BY: a second hand parse of the `dispatch:` block anywhere in
+  // the arm, a reading that agrees with the library only by accident, and
+  // a symbol that is not the library's at all.
+  const schema = parseProcessSchema(readFileSync(path.join(repoRoot, PROCESS_SCHEMA), "utf8"));
+  const template = readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8");
+  const block = [
+    "",
+    "dispatch:",
+    "  approval: until",
+    "  recovery: repairs",
+    "  grant:",
+    '    given_by: "a fixture owner"',
+    '    at: "2026-01-02T03:04:05Z"',
+    "    revision: 7",
+    "    order: [T-901, T-902]",
+    "    until: T-902",
+    "    cards:",
+    "      T-901: a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+    "      T-902: b2c3d4e5f60718293a4b5c6d7e8f90123456789a",
+    "  history: []",
+    "",
+  ].join("\n");
+  const theirs = parserPure.dispatchBlock(`${template}${block}`, schema);
+  const mine = dispatchBlock(`${template}${block}`, schema);
+  expect(mine.approval, "the arm's reading of the mode differs from the library's").toBe(theirs.approval);
+  expect(mine.recovery, "the arm's reading of the policy differs from the library's").toBe(theirs.recovery);
+  expect(mine.revision, "the arm's reading of the revision differs from the library's").toBe(theirs.revision);
+  expect(mine.grant?.order, "the arm's reading of the order differs from the library's").toEqual(theirs.grant?.order);
+  expect([...(mine.grant?.cards ?? [])], "the arm's reading of the blobs differs from the library's").toEqual([
+    ...(theirs.grant?.cards ?? []),
+  ]);
+  // AND THE ARM'S REFUSAL IS ITS OWN CLASS, which is why the reader is
+  // BOUND rather than taken whole: a class declared in the parser package
+  // cannot extend one declared here, so the class travels the other way.
+  let refused: unknown;
+  try {
+    dispatchBlock(`${template}\ndispatch:\n  approval: sometimes\n`, schema);
+  } catch (err) {
+    refused = err;
+  }
+  expect(refused, "a mode outside the declared value set was read").toBeInstanceOf(ProcessFinding);
+
+  // THERE IS NO SECOND READING IN THE ARM. The block's own keys appear in
+  // the arm's source only inside the admission's prose and its read-site
+  // table — never as a parse of the template.
+  const arm = readFileSync(path.join(repoRoot, "tools/e2e/scripts/dispatch-brief.mjs"), "utf8");
+  for (const spelling of ["given_by", "expires_at"]) {
+    const parsing = arm
+      .split("\n")
+      .filter((l) => l.includes(spelling) && /exec\(|match\(|split\(|indexOf\(/.test(l));
+    expect(parsing, `the arm parses \`${spelling}\` out of the template itself`).toEqual([]);
+  }
+});
+
+test("THE SCHEMA'S DISPATCH BLOCK NAMES A READ SITE FOR EVERY ROW, AND EVERY OPERATIONAL ROW'S SITE IS A SYMBOL THIS ARM EXPORTS", async () => {
+  // THE CARD'S SEVENTH CRITERION, the schema half: the block's switches
+  // become operational and their read sites are NAMED THERE. The
+  // declaration's attribute set is closed by the parser library, which is
+  // not this card's to change, so the sites live in the section's own
+  // comment — and this body is what stops that comment going stale, the
+  // same way the guard-class map is kept by a body rather than by a
+  // memory.
+  //
+  // KILLED BY: a row relabelled operational with no site named, a site
+  // naming a symbol the arm does not export, a table that drifts from the
+  // declaration's row set, and a comment nobody parses.
+  const text = readFileSync(path.join(repoRoot, PROCESS_SCHEMA), "utf8");
+  const decl = parseProcessSchema(text).dispatch;
+  expect(decl, "the shipped schema declares no dispatch block").not.toBeNull();
+  const rows = [...(decl as NonNullable<typeof decl>).fields.values()];
+  const sites = dispatchReadSites(text);
+  expect(sites.size, "the read-site table was not found in the schema at all").toBeGreaterThan(0);
+  expect(
+    rows.filter((r) => !sites.has(r.id)).map((r) => r.id),
+    "a declared row names no read site",
+  ).toEqual([]);
+  expect(
+    [...sites.keys()].filter((id) => !(decl as NonNullable<typeof decl>).fields.has(id)),
+    "the read-site table names a row the declaration does not carry",
+  ).toEqual([]);
+  const arm = (await import("../scripts/dispatch-brief.mjs")) as Record<string, unknown>;
+  for (const [id, site] of sites) {
+    expect(
+      typeof arm[site.symbol],
+      `${id}'s read site names \`${site.symbol}\`, which this arm does not export`,
+    ).toBe("function");
+  }
+  // AND THE OPERATIONAL ROWS ARE THE ONES THE ARM BRANCHES ON, which is
+  // the claim the label makes.
+  expect(
+    rows.filter((r) => r.implementation === "operational").map((r) => r.id),
+    "the operational rows of the dispatch block moved without this body moving",
+  ).toEqual(["approval", "recovery", "grant", "grant.revision", "grant.order", "grant.until", "grant.cards", "revoked"]);
+  // THE LIMITS ARE STILL ADVISORY AND STILL DECLARATIVE, because this
+  // card reads them and enforces nothing — a row labelled operational
+  // here would be a control that silently does nothing.
+  for (const id of ["limits", "limits.tokens", "limits.expires_at"]) {
+    const row = (decl as NonNullable<typeof decl>).fields.get(id);
+    expect(row?.advisory, `${id} stopped saying it is advisory`).toBe(true);
+    expect(row?.implementation, `${id} claims the arm enforces it, and this card does not`).toBe("declarative");
+  }
+});
+
+test("THIS PROJECT'S OWN TREE IS THE EXPLICIT NO-GRANT STATE, the ceremony keeps working, and the arm says NOTHING WAS ENFORCED rather than pretending it was", () => {
+  // THE CARD'S FIRST CRITERION READ TOGETHER WITH T-319's NO-GRANT
+  // CLAUSE. This project's template carries no dispatch block and the
+  // standing authorization the seat actually dispatches under lives where
+  // the arm cannot read it, so the honest answer is: admit, and report
+  // that nothing was enforced. An arm that refused here would stop a loop
+  // nobody asked it to stop, and one that claimed to have enforced
+  // something would be the overstatement the three report groups exist
+  // against.
+  //
+  // KILLED BY: an arm that refuses under the no-grant state, one that
+  // reports an unenforced admission as an enforced one, and one that
+  // invents a grant out of a template that has none.
+  const here = grantState(repoRoot);
+  expect(here.enforced, `${RUNTIME_TEMPLATE} carries a dispatch block nobody granted`).toBe(false);
+  expect(here.revision, "a revision was read out of a tree with no grant").toBe(0);
+  expect(here.source, "the no-grant state is not stated in as many words").toContain("no dispatch block");
+  const open = admit(here, { boundary: "lane-cut", kind: "explicit", card: "T-324", role: "executor" });
+  expect(open.admitted, "the no-grant state refused a dispatch this loop makes every day").toBe(true);
+  expect(open.kind, "an unenforced admission was reported as an enforced one").toBe("unenforced");
+  expect(open.why, "the admission does not say that nothing was enforced").toContain("NONE is enforced");
+
+  // THE POSITIVE CONTROL, AND IT IS WHERE THE ARRANGEMENT IS ABSENT: the
+  // same reader over a tree that DOES carry a block enforces, so the
+  // answer above is about this project's template rather than about a
+  // reader that admits everything.
+  const fx = ritualFixture("no-grant-control");
+  try {
+    grantIn(fx.root, dispatchBlockText({
+      approval: "each",
+      recovery: "none",
+      order: ["T-902"],
+      blobs: { "T-902": blobOf(fx.root, FIXTURE_CARD_FILE) },
+    }));
+    const enforced = grantState(fx.root);
+    expect(enforced.enforced, "the control: a template WITH a block still read as no-grant").toBe(true);
+    let refused: unknown;
+    try {
+      admit(enforced, { boundary: "lane-cut", kind: "explicit", card: "T-324", role: "executor" });
+    } catch (err) {
+      refused = err;
+    }
+    expect(refused, "the control: a grant that names another card admitted this one").toBeInstanceOf(AdmissionFinding);
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(no-grant-control)");
+  }
+});
+
+test("THE ORCHESTRATOR'S STEP 5 KEEPS ITS TWO SENTENCES AND EXTENDS THEM — a dispatch inside the current grant is approved by the grant, and every other dispatch still waits for the owner", () => {
+  // THE CARD'S SEVENTH CRITERION, the method-text half, and the FIRST
+  // half of it is that the existing sentences are KEPT. A rule rewritten
+  // rather than extended is a rule whose old readers are now wrong, and
+  // this file's own history is why: the two sentences below have governed
+  // every dispatch this project has made.
+  //
+  // KILLED BY: a step 5 that reworded either standing sentence, one that
+  // dropped the L-task clause, one that says the grant approves a
+  // dispatch without saying what still waits, and one that lets a
+  // coordinator write its own grant.
+  const step5 = readDoc("method/roles/orchestrator.md");
+  expect(step5, "step 5's first sentence was reworded rather than extended").toContain(
+    "5. Propose the dispatch to the human and wait for approval.",
+  );
+  expect(step5, "step 5's L-task sentence was reworded rather than extended").toContain(
+    "Never dispatch\n   an L task without one.",
+  );
+  expect(step5, "step 5 does not say a dispatch inside the grant is approved by it").toContain(
+    "A DISPATCH INSIDE THE CURRENT GRANT IS APPROVED BY THE GRANT",
+  );
+  expect(step5, "step 5 does not say what still waits for the owner").toContain(
+    "EVERY OTHER DISPATCH STILL WAITS FOR THE OWNER",
+  );
+  expect(step5, "step 5 does not name the boundaries the grant is re-read at").toContain("re-reads it at every boundary");
+  expect(step5, "step 5 lets a coordinator grant its own dispatches").toContain(
+    "YOU DO NOT WRITE THE GRANT AND YOU DO NOT WIDEN IT",
+  );
+  // AND THE FILE IS PRODUCT-AGNOSTIC: the rule lives here and the
+  // SPELLING of every command lives in the project's conventions, which
+  // is the split this file already takes for every lane name.
+  expect(step5, "the role file took a project's own command spelling").not.toContain("tools/e2e/scripts");
+});
+
+test("THE CONVENTIONS CARRY THE ADMISSION RULE ONCE, AT THE LOOP'S OWN SECTION", () => {
+  // THE CARD'S SEVENTH CRITERION, the conventions half: ONCE, and at the
+  // loop's section rather than in a bullet of its own — the dispatch
+  // block is already declared in the settings bullet, and a second bullet
+  // about the same block is the duplication this project's compaction
+  // rule exists against.
+  //
+  // KILLED BY: the rule written twice, the rule written in a bullet that
+  // is not the loop's, and a pause whose shape and location the document
+  // does not state.
+  const text = conventionsText(repoRoot);
+  const anchor = "THE PROCESS IS SETTINGS, AND EVERY SWITCH IS DECLARED ONCE";
+  expect(text.split(anchor).length - 1, "the loop's settings bullet is written more than once").toBe(1);
+  const marker = "EVERY ADMISSION THE ARM MAKES IS BOUND TO THE GRANT'S";
+  expect(text.split(marker).length - 1, "the admission rule is written more than once").toBe(1);
+  const bullet = text.slice(text.indexOf(anchor));
+  const nextBullet = bullet.indexOf("\n- ");
+  const section = nextBullet === -1 ? bullet : bullet.slice(0, nextBullet);
+  expect(section.includes(marker), "the admission rule does not sit in the loop's own section").toBe(true);
+  for (const owed of [
+    "ADMISSION COMES BEFORE THE",
+    "THE LEDGER IS THE RUN RECORDS AND THERE IS",
+    "A\n  PAUSE IS A RECORD IN THE RUNTIME DIRECTORY",
+    ".supertaskr/pause.json",
+    "new-work",
+    "SUCCESSOR COORDINATOR INHERITS THE GRANT FROM THE\n  BLOCK",
+  ]) {
+    expect(section, `the loop's section does not carry: ${owed}`).toContain(owed);
   }
 });

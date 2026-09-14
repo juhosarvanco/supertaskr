@@ -783,6 +783,14 @@ const NOT_AN_ARM: ReadonlyArray<{ flag: string; why: string }> = [
     why: "a MODIFIER of --merge: the acknowledgement that names a pre-T-281 verdict carrying no mutant block. It is a sha the seat has read and typed, and it is meaningless without --merge.",
   },
   {
+    flag: "--derived-from",
+    why: "a MODIFIER of --dispatch-lane (T-324): the parent AUTHORIZED WORK a repair lane derives its admission from, so that the cut inherits that parent's authorization rather than minting a grant nobody gave. It moves no row this file measures — it changes which REFUSALS the admission reader performs before the ritual begins — and alone it is a usage error.",
+  },
+  {
+    flag: "--failure",
+    why: "a MODIFIER of --dispatch-lane (T-324) and the other half of --derived-from: the failure evidence a derived admission binds to, because a repair's description establishes nothing on its own. It takes text or a path, so its size is a function of whatever it is handed rather than of this repository, and alone it is a usage error.",
+  },
+  {
     flag: "--slug",
     why: "a MODIFIER of --dispatch-lane, and the one input in that whole ritual the documents leave to a person: the branch name a reader of `git branch` sees for the life of the repository. It changes no size this file measures, and alone it is a usage error.",
   },

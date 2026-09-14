@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { repoRoot } from "../preflight";
+import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import {
   ACK_TOKEN,
   ASK_TOKEN,
@@ -23,6 +24,7 @@ import {
   recordPath,
   reservationPath,
   runPlan,
+  runRecs,
   sendAnswer,
   startRun,
   stopRun,
@@ -1199,4 +1201,1092 @@ test("an attempt id and a work id are a CHARSET, never a path fragment — an id
       "the control assignment could not start",
     ).toBe(`${WORK}-a1`);
   } finally { b.cleanup(); }
+});
+
+/* ════════════════════════════════════════════════════════════════════
+ * T-324 — THE ADMISSION LIFECYCLE AT THE RUN RECORD'S OWN BOUNDARIES.
+ *
+ * The three boundaries this file owns are the CHILD START, the RE-ENTRY
+ * and the REPLACEMENT WRITER; the fourth, the lane cut, is the dispatch
+ * arm's and is graded in `brief.spec.ts` beside the rest of the reader.
+ *
+ * **EVERY BENCH ABOVE IS A BARE DIRECTORY AND THEREFORE THE NO-GRANT
+ * STATE**, which is why not one of the T-311 bodies changed: a tree with
+ * no `dispatch:` block admits everything and enforces nothing, and this
+ * project's own template is exactly that tree. The benches below are the
+ * other arrangement — a real git fixture carrying the SHIPPED schema, a
+ * template with a block in it, and cards whose blobs the grant records —
+ * because a refusal can only be measured where there is a grant to
+ * refuse against.
+ * ════════════════════════════════════════════════════════════════════ */
+
+/** A git invocation inside a fixture, with the background-maintenance race shut off. */
+function fixtureGit(dir: string, argv: string[]): string {
+  const r = spawnSync("git", ["-C", dir, ...NO_BACKGROUND_MAINTENANCE, ...argv], { encoding: "utf8" });
+  if (r.status !== 0) {
+    throw new Error(`fixture git ${argv.join(" ")} failed: ${String(r.stderr ?? "")}`);
+  }
+  return String(r.stdout ?? "");
+}
+
+interface GrantBench extends Bench {
+  /** the blob sha of a fixture card AS IT STANDS — what the grant records at approval */
+  blob(id: string): string;
+  /** rewrite a fixture card whole */
+  rewrite(id: string, text: string): void;
+  /** the fixture card's text */
+  cardText(id: string): string;
+  /** write the runtime template's dispatch block */
+  grant(block: string): void;
+  /** write (or clear) the owner's pause record */
+  pause(rec: object | null): void;
+}
+
+/** A fixture card, complete enough for the board reader and nothing more. */
+function fixtureCard(id: string, status = "planned"): string {
+  return [
+    "---",
+    `id: ${id}`,
+    `title: "a fixture card for the admission lifecycle"`,
+    "feature: F-00",
+    "milestone: 0",
+    "size: S",
+    `status: ${status}`,
+    "touches: [docs/tasks]",
+    "---",
+    "",
+    "## Acceptance criteria",
+    "",
+    "- WHEN a fixture is read THE reader SHALL find a card.",
+    "",
+    "## Implementation notes",
+    "",
+    "## Verdicts",
+    "",
+  ].join("\n");
+}
+
+/**
+ * A BENCH WITH A GRANT TO REFUSE AGAINST.
+ *
+ * **THE SCHEMA IS THE SHIPPED ONE, COPIED RATHER THAN INVENTED.** The
+ * declaration is what every refusal below is validated against, so a
+ * fixture declaration of its own would be a body checking the arm
+ * against a schema nobody ships — the fixture would share the property
+ * it asserts, which is the failure T-210 named.
+ */
+function grantBench(stem: string, cards: string[]): GrantBench {
+  const b = bench(stem);
+  // THE TEARDOWN IS THE SHARED ONE (T-178), because this bench COMMITS
+  // into a repository it later removes: a detached `git maintenance`
+  // refilling `.git/objects` between the walk's readdir and its rmdir is
+  // what reds whichever body the teardown happens to follow. The commits
+  // below spread `NO_BACKGROUND_MAINTENANCE` to remove the cause, and
+  // this removal reports itself AS THE FIXTURE if it still cannot finish.
+  const dir = path.dirname(b.root);
+  b.cleanup = () => {
+    const finding = removeGitFixture(dir, `grantBench(${stem})`);
+    if (finding !== null) console.warn(finding);
+  };
+  fixtureGit(b.root, ["init", "-q", "."]);
+  fixtureGit(b.root, ["config", "user.email", "fixture@example.invalid"]);
+  fixtureGit(b.root, ["config", "user.name", "fixture"]);
+  mkdirSync(path.join(b.root, "method", "runtime"), { recursive: true });
+  mkdirSync(path.join(b.root, "docs", "tasks"), { recursive: true });
+  writeFileSync(
+    path.join(b.root, "method", "runtime", "process-schema.yaml"),
+    readFileSync(path.join(repoRoot, "method/runtime/process-schema.yaml"), "utf8"),
+  );
+  const file = (id: string) => `docs/tasks/${id}-a-fixture-card.md`;
+  for (const id of cards) writeFileSync(path.join(b.root, file(id)), fixtureCard(id));
+  writeFileSync(path.join(b.root, "method", "runtime", "supertaskr.yaml"), "roles:\n  executor: fixture@subagent\n");
+  fixtureGit(b.root, ["add", "-A"]);
+  fixtureGit(b.root, ["commit", "-q", "-m", "the fixture tree"]);
+  return {
+    ...b,
+    blob: (id) => fixtureGit(b.root, ["hash-object", "--", file(id)]).trim(),
+    cardText: (id) => readFileSync(path.join(b.root, file(id)), "utf8"),
+    rewrite: (id, text) => {
+      writeFileSync(path.join(b.root, file(id)), text);
+    },
+    grant: (block) => {
+      writeFileSync(
+        path.join(b.root, "method", "runtime", "supertaskr.yaml"),
+        `roles:\n  executor: fixture@subagent\n${block}`,
+      );
+    },
+    pause: (rec) => {
+      const at = path.join(b.root, ".supertaskr", "pause.json");
+      mkdirSync(path.dirname(at), { recursive: true });
+      if (rec === null) rmSync(at, { force: true });
+      else writeFileSync(at, `${JSON.stringify(rec, null, 2)}\n`);
+    },
+  };
+}
+
+/** The template's dispatch block, spelled the way the shipped declaration reads it. */
+function grantBlock(o: {
+  approval: string;
+  recovery: string;
+  order: string[];
+  blobs: Record<string, string>;
+  until?: string;
+  revision?: number;
+  revoked?: { at: string; by: string };
+  limits?: { tokens: Record<string, number>; expiresAt: string };
+}): string {
+  const lines = [
+    "dispatch:",
+    `  approval: ${o.approval}`,
+    `  recovery: ${o.recovery}`,
+    "  grant:",
+    '    given_by: "the fixture owner"',
+    '    at: "2026-09-14T00:00:00Z"',
+    `    revision: ${String(o.revision ?? 1)}`,
+    `    order: [${o.order.join(", ")}]`,
+    ...(o.until === undefined ? [] : [`    until: ${o.until}`]),
+    "    cards:",
+    ...o.order.map((id) => `      ${id}: ${o.blobs[id] as string}`),
+  ];
+  if (o.revoked !== undefined) {
+    lines.push("  revoked:", `    at: "${o.revoked.at}"`, `    by: "${o.revoked.by}"`);
+  }
+  if (o.limits !== undefined) {
+    lines.push("  limits:", "    tokens:");
+    for (const [k, v] of Object.entries(o.limits.tokens)) lines.push(`      ${k}: ${String(v)}`);
+    lines.push(`    expires_at: "${o.limits.expiresAt}"`);
+  }
+  lines.push("  history: []", "");
+  return lines.join("\n");
+}
+
+/** An assignment naming one of the fixture's own cards. */
+function grantAssignment(b: GrantBench, id: string, over: Partial<Assignment> = {}): Assignment {
+  writeFileSync(path.join(b.scratch, `brief-${id}.txt`), `the brief ${id} is answerable to\n`);
+  return {
+    kind: "card",
+    id,
+    role: "executor",
+    resource: b.lane,
+    harness: "claude-code",
+    model: "claude-opus-5",
+    effort: "high",
+    base: "f608f5fa617f36e9ef30ed7806d32b54bff00bad",
+    brief: path.join(b.scratch, `brief-${id}.txt`),
+    cwd: b.lane,
+    deadline: "none",
+    budget: "none",
+    ...over,
+  };
+}
+
+/** Start a run and give back the refusal, or `null` where it was admitted. */
+function refusalOfStart(root: string, a: Assignment, at: string): { code: string; message: string } | null {
+  try {
+    startRun(root, { assignment: a, at, io: io() });
+    return null;
+  } catch (err) {
+    if (err instanceof Error && "code" in err) {
+      return { code: String((err as { code: unknown }).code), message: err.message };
+    }
+    throw err;
+  }
+}
+
+/** Every reservation file the bench holds right now. */
+function reservationsIn(root: string): string[] {
+  const dir = path.join(root, ".supertaskr", "runs", "reservations");
+  return existsSync(dir) ? readdirSync(dir) : [];
+}
+
+/** Every record the bench holds, newest last, as the ledger derives them. */
+function recordsIn(root: string): RunRecord[] {
+  const dir = path.join(root, ".supertaskr", "runs");
+  if (!existsSync(dir)) return [];
+  const out: RunRecord[] = [];
+  for (const work of readdirSync(dir)) {
+    const at = path.join(dir, work);
+    if (work === "reservations" || !existsSync(at)) continue;
+    for (const f of readdirSync(at)) {
+      if (f.endsWith(".json")) out.push(JSON.parse(readFileSync(path.join(at, f), "utf8")) as RunRecord);
+    }
+  }
+  return out.sort((x, y) => x.attempt.localeCompare(y.attempt));
+}
+
+test("THE ADMISSION COMES BEFORE THE RESERVATION — a child start the grant does not approve takes no lock and writes no record", () => {
+  // THE CARD'S FIRST CRITERION, at the child-start boundary. The order
+  // is the property: a reservation taken for work nobody admitted is a
+  // writer this loop had no authority to start, and a refusal AFTER the
+  // take would leave a lock behind for the next arm to reconcile.
+  //
+  // KILLED BY: an admission checked after `takeReservation`, an
+  // admission not checked at all, and a refusal that wrote the record
+  // anyway.
+  const b = grantBench("admission-before-reservation", ["T-901", "T-902"]);
+  try {
+    b.grant(grantBlock({
+      approval: "each",
+      recovery: "none",
+      order: ["T-901"],
+      blobs: { "T-901": b.blob("T-901") },
+    }));
+    const refused = refusalOfStart(b.root, grantAssignment(b, "T-902"), "2026-09-14T00:00:01.000Z");
+    expect(refused?.code, "a card the grant does not name was admitted").toBe("ADMISSION_CARD_NOT_APPROVED");
+    expect(refused?.message, "the refusal does not name the card").toContain("T-902");
+    expect(refused?.message, "the refusal does not name what the grant DOES approve").toContain("T-901");
+    expect(reservationsIn(b.root), "a refused admission left a reservation behind").toEqual([]);
+    expect(recordsIn(b.root), "a refused admission wrote a record").toEqual([]);
+
+    // THE POSITIVE CONTROL, AND IT IS WHERE THE ARRANGEMENT IS ABSENT:
+    // the same bench, the same command, the card the grant DOES name.
+    const ok = startRun(b.root, {
+      assignment: grantAssignment(b, "T-901"),
+      at: "2026-09-14T00:00:02.000Z",
+      io: io(),
+    });
+    expect(ok.record.admission?.admitted, "the control: an approved card was refused").toBe(true);
+    expect(ok.record.admission?.kind, "the control: the kind").toBe("explicit");
+    expect(ok.record.admission?.boundary, "the control: the boundary").toBe("child-start");
+    expect(ok.record.admission?.consumed, "the control: the approval was not consumed").toBe(true);
+    expect(ok.record.admission?.revision, "the control: the grant revision it binds to").toBe(1);
+    expect(ok.record.admission?.blob, "the control: the card blob it binds to").toBe(b.blob("T-901"));
+    expect(ok.record.admission?.resource, "the control: the reservation it binds to").toBe(path.resolve(b.lane));
+    expect(reservationsIn(b.root).length, "the control took no reservation").toBe(1);
+  } finally {
+    b.cleanup();
+  }
+});
+
+test("A CONSUMED APPROVAL PRESENTED AGAIN IS REFUSED AS CONSUMED under `each`, and the same second run is admitted under `standing`", () => {
+  // THE CARD'S FIRST CRITERION's own body list, and the second criterion's
+  // `each` clause: the grant's list is PER-CARD APPROVALS and never a
+  // batch, so a card's approval is spent once. The `standing` half is the
+  // POSITIVE CONTROL and it is the arrangement where the refusal must be
+  // ABSENT — without it a reader cannot tell "spent" from "this arm
+  // refuses every second run".
+  //
+  // KILLED BY: a consumption that never records, a ledger that reads a
+  // finished attempt as still holding the approval, and a `standing`
+  // grant that inherited `each`'s spending.
+  for (const [approval, secondIsRefused] of [
+    ["each", true],
+    ["standing", false],
+  ] as const) {
+    const b = grantBench(`consumed-${approval}`, ["T-901"]);
+    try {
+      b.grant(grantBlock({ approval, recovery: "none", order: ["T-901"], blobs: { "T-901": b.blob("T-901") } }));
+      const first = startRun(b.root, {
+        assignment: grantAssignment(b, "T-901"),
+        at: "2026-09-14T00:00:01.000Z",
+        io: io(),
+      });
+      // THE FIRST ATTEMPT IS CARRIED TO A TERMINAL STATE, because an OPEN
+      // admission is a re-presentation rather than a second consumption —
+      // which is the distinction this body exists to hold.
+      bindRun(b.root, { attempt: first.record.attempt, harnessId: "harness-1", at: "2026-09-14T00:00:02.000Z", io: io() });
+      observeRun(b.root, {
+        attempt: first.record.attempt,
+        evidence: `${DONE_TOKEN} ok`,
+        at: "2026-09-14T00:00:03.000Z",
+        io: io(),
+      });
+      collectRun(b.root, { attempt: first.record.attempt, at: "2026-09-14T00:00:04.000Z", io: io() });
+      expect(
+        TERMINAL_STATES.includes(readRecord(b.root, first.record.attempt).state),
+        `${approval}: the first attempt did not reach a terminal state, so this body proves nothing`,
+      ).toBe(true);
+
+      const second = refusalOfStart(b.root, grantAssignment(b, "T-901"), "2026-09-14T00:00:05.000Z");
+      if (secondIsRefused) {
+        expect(second?.code, "a spent approval was spent twice").toBe("ADMISSION_APPROVAL_CONSUMED");
+        expect(second?.message, "the refusal does not name the attempt that consumed it").toContain(
+          first.record.attempt,
+        );
+        expect(reservationsIn(b.root), "a refused second run left a reservation behind").toEqual([]);
+      } else {
+        expect(second, "the control: a standing grant refused a second run as consumed").toBeNull();
+      }
+    } finally {
+      b.cleanup();
+    }
+  }
+});
+
+for (const approval of ["each", "until", "standing"] as const) {
+  for (const recovery of ["none", "repairs"] as const) {
+    test(`THE MODE AND THE POLICY ARE ENFORCED TOGETHER — approval \`${approval}\` paired with recovery \`${recovery}\``, () => {
+      // THE CARD'S SECOND CRITERION, which asks for a body per mode
+      // paired with EACH recovery value — six arrangements, because the
+      // two are orthogonal and an implementation that read one off the
+      // other would pass any three of them.
+      //
+      // KILLED BY: an `until` that admits past its endpoint, a
+      // `standing` that stops at one, an `each` that admits a card it
+      // does not name, a `none` that admits a derived repair, and a
+      // `repairs` that refuses one.
+      const b = grantBench(`mode-${approval}-${recovery}`, ["T-901", "T-902", "T-903", "T-904"]);
+      try {
+        const order = ["T-901", "T-902", "T-903"];
+        b.grant(grantBlock({
+          approval,
+          recovery,
+          order,
+          ...(approval === "until" ? { until: "T-902" } : {}),
+          blobs: Object.fromEntries(order.map((id) => [id, b.blob(id)])),
+        }));
+        // THE FIRST CARD OF THE ORDER IS ADMITTED UNDER EVERY MODE.
+        const first = startRun(b.root, {
+          assignment: grantAssignment(b, "T-901"),
+          at: "2026-09-14T00:00:01.000Z",
+          io: io(),
+        });
+        expect(first.record.admission?.admitted, `${approval}: the first card of the order was refused`).toBe(true);
+
+        // A CARD OUTSIDE THE ORDER IS REFUSED UNDER EVERY MODE: an
+        // explicit admission is of a card the grant NAMES, and `standing`
+        // is a grant that runs until a pause rather than a grant of
+        // everything.
+        const outside = refusalOfStart(
+          b.root,
+          grantAssignment(b, "T-904", { resource: "none" }),
+          "2026-09-14T00:00:02.000Z",
+        );
+        expect(outside?.code, `${approval}: a card outside the order was admitted`).toBe(
+          "ADMISSION_CARD_NOT_APPROVED",
+        );
+
+        // THE ENDPOINT IS `until`'s ALONE. `T-903` is inside the order
+        // and AFTER the endpoint, so it is refused by name under `until`
+        // and admitted under the two modes that have no endpoint.
+        const past = refusalOfStart(
+          b.root,
+          grantAssignment(b, "T-903", { resource: "none" }),
+          "2026-09-14T00:00:03.000Z",
+        );
+        if (approval === "until") {
+          expect(past?.code, "a card after the until endpoint was admitted").toBe("ADMISSION_UNTIL_ENDPOINT");
+          expect(past?.message, "the refusal does not name the endpoint").toContain("T-902");
+          expect(past?.message, "the refusal does not name the card it refused").toContain("T-903");
+        } else {
+          expect(past, `${approval}: a mode with no endpoint refused a card inside its order`).toBeNull();
+        }
+
+        // AND THE RECOVERY POLICY IS THE OTHER AXIS, read at the same
+        // boundary: a DERIVED repair of the card just admitted.
+        const repair = refusalOfStart(
+          b.root,
+          grantAssignment(b, "T-904", {
+            resource: "none",
+            admission: { kind: "derived", parent: "T-901", evidence: "the fixture delivery failed", scope: "repair" },
+          }),
+          "2026-09-14T00:00:04.000Z",
+        );
+        if (recovery === "none") {
+          expect(repair?.code, "a derived repair was admitted under recovery none").toBe(
+            "ADMISSION_RECOVERY_NONE",
+          );
+          expect(repair?.message, "the refusal does not say what the repair needs instead").toContain(
+            "EXPLICIT APPROVAL",
+          );
+        } else {
+          expect(repair, "a derived repair of approved work was refused under recovery repairs").toBeNull();
+          const derived = recordsIn(b.root).find((r) => r.assignment.id === "T-904");
+          expect(derived?.admission?.kind, "the derived admission was not recorded as derived").toBe("derived");
+          expect(derived?.admission?.parent, "the derived admission lost its parent").toBe("T-901");
+          expect(derived?.admission?.revision, "a derived admission minted a grant of its own").toBe(1);
+        }
+        expect(first.record.attempt, "the first attempt id moved").toBe("T-901-a1");
+      } finally {
+        b.cleanup();
+      }
+    });
+  }
+}
+
+test("THE REPAIR LIFECYCLE — one fixture, its stages in sequence: approved work, a failure, a derived repair, an out-of-scope repair refused, a repeated delivery producing no duplicate, and the endpoint's completion refusing the next feature", () => {
+  // THE CARD'S THIRD CRITERION, and it asks for ONE fixture whose stages
+  // are asserted IN SEQUENCE rather than six unrelated bodies — because
+  // what is under test is a LIFECYCLE, and six independent arrangements
+  // would each start from a state the one before it never produced.
+  //
+  // KILLED BY: a derived admission that does not need its parent to be
+  // approved work, one admitted for a product-scope change, a repeated
+  // delivery event minting a second repair, and an endpoint whose
+  // completion opens the next card.
+  const b = grantBench("repair-lifecycle", ["T-901", "T-902", "T-903", "T-904", "T-905"]);
+  try {
+    const order = ["T-901", "T-902"];
+    b.grant(grantBlock({
+      approval: "until",
+      recovery: "repairs",
+      order,
+      until: "T-902",
+      blobs: Object.fromEntries(order.map((id) => [id, b.blob(id)])),
+    }));
+
+    // ── STAGE 1: the authorized initial card is admitted and starts. ──
+    const initial = startRun(b.root, {
+      assignment: grantAssignment(b, "T-901"),
+      at: "2026-09-14T01:00:00.000Z",
+      io: io(),
+    });
+    expect(initial.record.admission?.kind, "stage 1: the initial card was not an explicit admission").toBe("explicit");
+    bindRun(b.root, { attempt: initial.record.attempt, harnessId: "harness-lifecycle", at: "2026-09-14T01:00:01.000Z", io: io() });
+
+    // ── STAGE 2: it FAILS, and the failure is on the record. ──────────
+    observeRun(b.root, {
+      attempt: initial.record.attempt,
+      evidence: `${DONE_TOKEN} failed`,
+      at: "2026-09-14T01:00:02.000Z",
+      io: io(),
+    });
+    collectRun(b.root, { attempt: initial.record.attempt, at: "2026-09-14T01:00:03.000Z", io: io() });
+    expect(
+      TERMINAL_STATES.includes(readRecord(b.root, initial.record.attempt).state),
+      "stage 2: the initial attempt never concluded, so there is no failure to repair",
+    ).toBe(true);
+
+    // ── STAGE 3: a PREVIOUSLY UNLISTED repair is admitted by derivation.
+    const failure = "the keeper the delivery of T-901 owes is red at the tip";
+    const repair = startRun(b.root, {
+      assignment: grantAssignment(b, "T-903", {
+        resource: "none",
+        admission: { kind: "derived", parent: "T-901", evidence: failure, scope: "repair" },
+      }),
+      at: "2026-09-14T01:00:04.000Z",
+      io: io(),
+    });
+    expect(repair.record.admission?.admitted, "stage 3: an in-scope repair of approved work was refused").toBe(true);
+    expect(
+      repair.record.admission?.card,
+      "stage 3: the repair was admitted for a card the grant names, which would make it explicit",
+    ).toBe("T-903");
+    expect(
+      order.includes("T-903"),
+      "stage 3: the fixture's repair card is IN the order, so this stage proves nothing",
+    ).toBe(false);
+    expect(repair.record.admission?.parent, "stage 3: the repair did not bind to its parent").toBe("T-901");
+    expect(repair.record.admission?.consumed, "stage 3: the repair re-presented an admission instead of making one").toBe(true);
+
+    // ── STAGE 4: an OUT-OF-SCOPE repair is refused. ───────────────────
+    const outOfScope = refusalOfStart(
+      b.root,
+      grantAssignment(b, "T-904", {
+        resource: "none",
+        admission: { kind: "derived", parent: "T-901", evidence: failure, scope: "product-change" },
+      }),
+      "2026-09-14T01:00:05.000Z",
+    );
+    expect(outOfScope?.code, "stage 4: a product-scope change was admitted as a repair").toBe(
+      "ADMISSION_DERIVED_OUT_OF_SCOPE",
+    );
+    const waived = refusalOfStart(
+      b.root,
+      grantAssignment(b, "T-905", {
+        resource: "none",
+        admission: { kind: "derived", parent: "T-901", evidence: failure, scope: "waived-verification" },
+      }),
+      "2026-09-14T01:00:06.000Z",
+    );
+    expect(waived?.code, "stage 4: a repair that waives its verification was admitted").toBe(
+      "ADMISSION_DERIVED_OUT_OF_SCOPE",
+    );
+
+    // ── STAGE 5: the SAME delivery event, reported again, produces no
+    //    second repair — it RE-PRESENTS the admission stage 3 made.
+    const again = startRun(b.root, {
+      assignment: grantAssignment(b, "T-903", {
+        resource: "none",
+        admission: { kind: "derived", parent: "T-901", evidence: failure, scope: "repair" },
+      }),
+      at: "2026-09-14T01:00:07.000Z",
+      io: io(),
+    });
+    expect(again.record.admission?.consumed, "stage 5: a repeated delivery event minted a second repair").toBe(false);
+    expect(again.record.admission?.reuses, "stage 5: the repeat did not re-present the first repair's admission").toBe(
+      repair.record.attempt,
+    );
+    // AND A DIFFERENT FAILURE IS A DIFFERENT REPAIR — the control that
+    // says stage 5 measured the EVIDENCE rather than the card id.
+    const other = startRun(b.root, {
+      assignment: grantAssignment(b, "T-903", {
+        resource: "none",
+        admission: { kind: "derived", parent: "T-901", evidence: "a second, different failure", scope: "repair" },
+      }),
+      at: "2026-09-14T01:00:08.000Z",
+      io: io(),
+    });
+    expect(other.record.admission?.consumed, "the control: a different failure re-presented the first repair").toBe(true);
+
+    // ── STAGE 6: the until endpoint's COMPLETION refuses the next
+    //    feature by name. A parked or a delivered endpoint alike: the
+    //    grant runs up to and including it and no further.
+    const endpoint = startRun(b.root, {
+      assignment: grantAssignment(b, "T-902", { resource: "none" }),
+      at: "2026-09-14T01:00:09.000Z",
+      io: io(),
+    });
+    bindRun(b.root, { attempt: endpoint.record.attempt, harnessId: "harness-endpoint", at: "2026-09-14T01:00:10.000Z", io: io() });
+    observeRun(b.root, {
+      attempt: endpoint.record.attempt,
+      evidence: `${DONE_TOKEN} ok`,
+      at: "2026-09-14T01:00:11.000Z",
+      io: io(),
+    });
+    collectRun(b.root, { attempt: endpoint.record.attempt, at: "2026-09-14T01:00:12.000Z", io: io() });
+    const next = refusalOfStart(
+      b.root,
+      grantAssignment(b, "T-904", { resource: "none" }),
+      "2026-09-14T01:00:13.000Z",
+    );
+    expect(next?.code, "stage 6: the next feature ran on the completed grant's authority").toBe(
+      "ADMISSION_CARD_NOT_APPROVED",
+    );
+  } finally {
+    b.cleanup();
+  }
+});
+
+test("A PAUSE DISTINGUISHES NEW WORK FROM THE VERIFICATION OF A CANDIDATE ALREADY ADMITTED — the verifier starts, the replacement executor does not, and an `all` pause refuses that verifier too", () => {
+  // THE CARD'S FOURTH CRITERION, and its three pinned bodies in one
+  // sequence because the third is the same verifier the second admitted:
+  // an arrangement, not three.
+  //
+  // KILLED BY: a pause that stops everything, a pause that stops nothing,
+  // a `new-work` scope that lets a replacement executor through, and an
+  // `all` scope that still admits the verification.
+  const b = grantBench("pause-scopes", ["T-901"]);
+  try {
+    b.grant(grantBlock({
+      approval: "standing",
+      recovery: "none",
+      order: ["T-901"],
+      blobs: { "T-901": b.blob("T-901") },
+    }));
+    // AN EXECUTOR CANDIDATE, ADMITTED AND STARTED BEFORE ANY PAUSE.
+    const executor = startRun(b.root, {
+      assignment: grantAssignment(b, "T-901"),
+      at: "2026-09-14T02:00:00.000Z",
+      io: io(),
+    });
+    bindRun(b.root, { attempt: executor.record.attempt, harnessId: "harness-exec", at: "2026-09-14T02:00:01.000Z", io: io() });
+    observeRun(b.root, {
+      attempt: executor.record.attempt,
+      evidence: `${DONE_TOKEN} ok`,
+      at: "2026-09-14T02:00:02.000Z",
+      io: io(),
+    });
+
+    // ── THE NEW-WORK PAUSE ───────────────────────────────────────────
+    b.pause({ version: 1, at: "2026-09-14T02:10:00Z", by: "the fixture owner", scope: "new-work", why: "a scheduled hold" });
+
+    // THE VERIFIER OF THE ADMITTED CANDIDATE IS PERMITTED TO START.
+    const verifier = startRun(b.root, {
+      assignment: grantAssignment(b, "T-901", { role: "verifier", resource: "none" }),
+      at: "2026-09-14T02:10:01.000Z",
+      io: io(),
+    });
+    expect(verifier.record.admission?.admitted, "a new-work pause stopped the verification of an admitted candidate").toBe(true);
+    expect(verifier.record.admission?.phase, "the verifier's phase").toBe("verification");
+    expect(verifier.record.admission?.reuses, "the verifier did not re-present the candidate's own admission").toBe(
+      executor.record.attempt,
+    );
+
+    // A REPLACEMENT EXECUTOR UNDER THE SAME PAUSE IS REFUSED.
+    const replacement = refusalOfStart(
+      b.root,
+      grantAssignment(b, "T-901", { resource: "none" }),
+      "2026-09-14T02:10:02.000Z",
+    );
+    expect(replacement?.code, "a new-work pause admitted a fresh implementation attempt").toBe(
+      "ADMISSION_PAUSED_NEW_WORK",
+    );
+    expect(replacement?.message, "the refusal does not name who recorded the pause").toContain("the fixture owner");
+
+    // ── THE `all` PAUSE STOPS THE VERIFIER TOO ───────────────────────
+    b.pause({ version: 1, at: "2026-09-14T02:20:00Z", by: "the fixture owner", scope: "all" });
+    const stopped = refusalOfStart(
+      b.root,
+      grantAssignment(b, "T-901", { role: "verifier", resource: "none" }),
+      "2026-09-14T02:20:01.000Z",
+    );
+    expect(stopped?.code, "an `all` pause still admitted the verification").toBe("ADMISSION_PAUSED_ALL");
+    expect(stopped?.message, "the refusal does not name the safe boundary each phase stops at").toContain(
+      "SAFE BOUNDARY",
+    );
+    expect(stopped?.message, "the refusal does not route an immediate stop elsewhere").toContain("IMMEDIATE stop");
+
+    // AND A PAUSE RECORD THIS READER CANNOT PARSE IS NEVER READ AS "NO
+    // PAUSE" — the one case where guessing costs the most.
+    writeFileSync(path.join(b.root, ".supertaskr", "pause.json"), "{ not json\n");
+    const unreadable = refusalOfStart(
+      b.root,
+      grantAssignment(b, "T-901", { resource: "none" }),
+      "2026-09-14T02:30:00.000Z",
+    );
+    expect(unreadable?.code, "an unreadable pause record was read as silence").toBe("ADMISSION_SCOPE");
+
+    // THE POSITIVE CONTROL, WHERE THE ARRANGEMENT IS ABSENT: with the
+    // record gone, the same replacement executor is admitted.
+    b.pause(null);
+    expect(
+      refusalOfStart(b.root, grantAssignment(b, "T-901", { resource: "none" }), "2026-09-14T02:40:00.000Z"),
+      "the control: with no pause recorded, a fresh attempt was still refused",
+    ).toBeNull();
+  } finally {
+    b.cleanup();
+  }
+});
+
+test("A RETRY OF AN INTERRUPTED ADMISSION NEITHER CONSUMES AN APPROVAL TWICE NOR CREATES A SECOND WRITER — and an UNCERTAIN old writer holds the admission until it is reconciled", () => {
+  // THE CARD'S FIRST CRITERION, and the interruption is REAL: the attempt
+  // is left `reserved` with its lock held and nothing bound, which is
+  // exactly the state the spawn happens in and the one the recovery day
+  // of 2026-09-11 had to reconstruct from worktrees. Calling `startRun`
+  // twice would be a different arrangement and would prove nothing about
+  // a retry.
+  //
+  // KILLED BY: a continuation that consumes a second approval, one that
+  // takes a second reservation, and a reconciliation whose `undetermined`
+  // still let the admission move.
+  const b = grantBench("interrupted-retry", ["T-901"]);
+  try {
+    b.grant(grantBlock({
+      approval: "each",
+      recovery: "none",
+      order: ["T-901"],
+      blobs: { "T-901": b.blob("T-901") },
+    }));
+    const started = startRun(b.root, {
+      assignment: grantAssignment(b, "T-901"),
+      at: "2026-09-14T03:00:00.000Z",
+      io: io(),
+    });
+    // THE INTERRUPTION. Nothing is bound, the reservation is held, and
+    // the record says `reserved` — the arm died between the take and the
+    // bind, which is the window the reservation exists for.
+    expect(readRecord(b.root, started.record.attempt).state, "the interruption did not leave a reserved attempt").toBe(
+      "reserved",
+    );
+    expect(reservationsIn(b.root).length, "the interrupted attempt left no reservation to find").toBe(1);
+
+    // AN UNCERTAIN OLD WRITER HOLDS THE ADMISSION. The reconciliation
+    // cannot tell an un-started attempt from a running child nothing
+    // named, so it answers `undetermined` and the continuation refuses.
+    let held: unknown;
+    try {
+      continueRun(b.root, { attempt: started.record.attempt, at: "2026-09-14T03:00:01.000Z", io: io() });
+    } catch (err) {
+      held = err;
+    }
+    expect(held, "a continuation ran while the prior execution might still exist").toBeInstanceOf(RunRecordFinding);
+    expect((held as RunRecordFinding).code, "the refusal's code").toBe("CONTINUE_UNCERTAIN");
+    const afterRefusal = recordsIn(b.root);
+    expect(afterRefusal.length, "the refused continuation wrote a second record").toBe(1);
+    expect(
+      afterRefusal[0]?.attempt,
+      "the refused continuation moved the admission",
+    ).toBe(started.record.attempt);
+    expect(reservationsIn(b.root).length, "the refused continuation touched the reservation").toBe(1);
+
+    // NOW THE TERMINATION IS ESTABLISHED — the seat reads its own harness
+    // and passes the evidence — and the retry re-presents the SAME
+    // admission rather than spending a second approval.
+    const carried = continueRun(b.root, {
+      attempt: started.record.attempt,
+      evidence: `${DONE_TOKEN} gone`,
+      at: "2026-09-14T03:00:02.000Z",
+      io: io(),
+    });
+    expect(carried.record.admission?.consumed, "a retry of an interrupted admission consumed a second approval").toBe(
+      false,
+    );
+    expect(carried.record.admission?.reuses, "the retry did not re-present its own admission").toBe(
+      started.record.attempt,
+    );
+    expect(carried.record.admission?.boundary, "the retry's boundary").toBe("re-entry");
+    expect(reservationsIn(b.root).length, "the retry created a second writer").toBe(1);
+    expect(
+      readReservation(b.root, b.lane)?.attempt,
+      "the retry moved the reservation to somebody else",
+    ).toBe(started.record.attempt);
+
+    // AND A REPLACEMENT WRITER INHERITS THE SAME ADMISSION, still
+    // spending nothing: the approval was consumed once, at the start.
+    const replaced = continueRun(b.root, {
+      attempt: carried.record.attempt,
+      replace: true,
+      evidence: `${DONE_TOKEN} gone`,
+      at: "2026-09-14T03:00:03.000Z",
+      io: io(),
+    });
+    expect(replaced.record.admission?.consumed, "a replacement writer consumed a second approval").toBe(false);
+    expect(replaced.record.attempt, "the replacement did not take a fresh attempt id").not.toBe(
+      carried.record.attempt,
+    );
+    expect(reservationsIn(b.root).length, "the replacement left two reservations over one resource").toBe(1);
+  } finally {
+    b.cleanup();
+  }
+});
+
+test("THE GRANT'S LIMITS ARE READ, REPORTED BY NAME AS ADVISORY, AND ENFORCED BY NOTHING — an expiry that has passed refuses no admission", () => {
+  // THE CARD'S FIFTH CRITERION. The point of the criterion is that a
+  // control must not silently do nothing: the limits are recorded and
+  // rendered, so they are REPORTED BY NAME as unenforced rather than
+  // left to look like a ceiling somebody is keeping.
+  //
+  // KILLED BY: limits that quietly refuse, limits that are read and never
+  // reported, and an absence that invents a ceiling.
+  const b = grantBench("limits-advisory", ["T-901"]);
+  try {
+    b.grant(grantBlock({
+      approval: "standing",
+      recovery: "none",
+      order: ["T-901"],
+      blobs: { "T-901": b.blob("T-901") },
+      limits: { tokens: { anthropic: 5000000 }, expiresAt: "2020-01-01T00:00:00Z" },
+    }));
+    const started = startRun(b.root, {
+      assignment: grantAssignment(b, "T-901"),
+      at: "2026-09-14T04:00:00.000Z",
+      io: io(),
+    });
+    expect(
+      started.record.admission?.admitted,
+      "a grant whose recorded expiry has long passed refused an admission this card does not enforce",
+    ).toBe(true);
+    const advisory = started.record.admission?.advisory ?? [];
+    expect(
+      advisory.some((l) => l.includes("limits.tokens.anthropic") && l.includes("5000000")),
+      "the token ceiling was not reported by name",
+    ).toBe(true);
+    expect(
+      advisory.some((l) => l.includes("limits.expires_at") && l.includes("2020-01-01")),
+      "the expiry was not reported by name",
+    ).toBe(true);
+    for (const line of advisory) {
+      expect(line.includes("ADVISORY"), `a limits line does not say it is advisory: ${line}`).toBe(true);
+    }
+    // AND THE ABSENCE IMPOSES NOTHING — the same grant with no limits
+    // block says so in as many words rather than saying nothing.
+    b.grant(grantBlock({
+      approval: "standing",
+      recovery: "none",
+      order: ["T-901"],
+      blobs: { "T-901": b.blob("T-901") },
+    }));
+    const bare = startRun(b.root, {
+      assignment: grantAssignment(b, "T-901", { resource: "none" }),
+      at: "2026-09-14T04:00:01.000Z",
+      io: io(),
+    });
+    expect(
+      (bare.record.admission?.advisory ?? []).join(" "),
+      "an absent limits block said nothing about the ceiling it does not impose",
+    ).toContain("imposes NO token or time ceiling");
+  } finally {
+    b.cleanup();
+  }
+});
+
+test("THE ARM'S RUN REPORT KEEPS THE REFUSALS IT TESTED APART FROM THE COORDINATOR'S OBLIGATIONS AND FROM THE ADVISORY ACCOUNTING", () => {
+  // THE CARD'S SEVENTH CRITERION, the report half. A list that mixed the
+  // three would let the second and the third borrow the first's
+  // authority, which is exactly how a guarantee gets overstated.
+  //
+  // KILLED BY: a report that prints the obligations as refusals, one that
+  // drops them, and one that never names the three the criterion does.
+  const b = grantBench("report-groups", ["T-901"]);
+  try {
+    b.grant(grantBlock({
+      approval: "each",
+      recovery: "repairs",
+      order: ["T-901"],
+      blobs: { "T-901": b.blob("T-901") },
+    }));
+    const started = startRun(b.root, {
+      assignment: grantAssignment(b, "T-901"),
+      at: "2026-09-14T05:00:00.000Z",
+      io: io(),
+    });
+    const rendered = runRecs(
+      { at: "2026-09-14T05:00:00.000Z", host: "fixture-host", root: b.root },
+      "start",
+      started.record,
+      [],
+    )
+      .map((r) => ("text" in r ? r.text : ""))
+      .join("\n");
+    expect(rendered, "the report does not label what this arm actually refused").toContain(
+      "THE REFUSALS THIS ARM TESTED",
+    );
+    expect(rendered, "the report does not separate the advisory accounting").toContain("ADVISORY ACCOUNTING");
+    expect(rendered, "the report does not separate the coordinator's obligations").toContain(
+      "THE COORDINATOR'S, NOT THIS ARM'S",
+    );
+    for (const owed of ["SCOPE INTERPRETATION", "AN UNREPORTED INTEGRITY PROBLEM", "A PROVIDER'S LIVE USAGE"]) {
+      expect(rendered, `the report does not name the obligation ${owed}`).toContain(owed);
+    }
+    // THE THREE ARE NOT ONE LIST: no obligation line carries the tested
+    // label, which is the property "kept apart" actually means.
+    for (const line of rendered.split("\n").filter((l: string) => l.includes("THE COORDINATOR'S, NOT THIS ARM'S"))) {
+      expect(line.includes("THE REFUSALS THIS ARM TESTED"), `an obligation borrowed the refusals' label: ${line}`).toBe(
+        false,
+      );
+    }
+  } finally {
+    b.cleanup();
+  }
+});
+
+test("A CONSULTATION IS ADMITTED WHILE IT WRITES NOTHING, AND REFUSED THE MOMENT IT CLAIMS A RESOURCE", () => {
+  // THE WORK SERVED IS NOT THE RESOURCE A CHILD MAY WRITE (T-311's own
+  // design), and this card had to say what an admission means on the
+  // read-only side of that split. A grant approves CARDS, so a
+  // consultation can never appear in an order — refusing it would stop
+  // the tool-less participant that runs beside an executor the owner
+  // already approved. What is NOT covered is a consultation that claims
+  // write ownership, and that is work needing its own approval whatever
+  // the assignment calls it.
+  //
+  // KILLED BY: a reader that refuses every consultation as a card the
+  // grant does not name, one that admits a consultation holding a lane,
+  // and one that lets a consultation consume a card's approval.
+  const b = grantBench("consultation", ["T-901"]);
+  try {
+    b.grant(grantBlock({
+      approval: "each",
+      recovery: "none",
+      order: ["T-901"],
+      blobs: { "T-901": b.blob("T-901") },
+    }));
+    writeFileSync(path.join(b.scratch, "brief-C-1.txt"), "the consultation's own brief\n");
+    const readOnly: Assignment = {
+      ...grantAssignment(b, "T-901"),
+      kind: "consultation",
+      id: "C-1",
+      role: "verifier",
+      resource: "none",
+      brief: path.join(b.scratch, "brief-C-1.txt"),
+    };
+    const admitted = startRun(b.root, { assignment: readOnly, at: "2026-09-14T06:00:00.000Z", io: io() });
+    expect(admitted.record.admission?.admitted, "a read-only consultation was refused by a grant of cards").toBe(true);
+    expect(admitted.record.admission?.consumed, "a consultation consumed a card's approval").toBe(false);
+    expect(admitted.record.admission?.revision, "the consultation did not bind to the grant's revision").toBe(1);
+    expect(admitted.record.reservation.takenAt, "a read-only participant took a writer reservation").toBeNull();
+
+    // AND THE APPROVED CARD'S OWN APPROVAL IS STILL THERE TO SPEND,
+    // which is what "consumed no approval" has to mean on disk.
+    const card = startRun(b.root, {
+      assignment: grantAssignment(b, "T-901"),
+      at: "2026-09-14T06:00:01.000Z",
+      io: io(),
+    });
+    expect(card.record.admission?.consumed, "the consultation had spent the card's approval after all").toBe(true);
+
+    // THE OTHER HALF, AND IT IS WHERE THE ARRANGEMENT DIFFERS BY ONE
+    // FIELD: the same consultation claiming write ownership of the lane.
+    const writer: Assignment = { ...readOnly, id: "C-2", resource: b.lane };
+    writeFileSync(path.join(b.scratch, "brief-C-2.txt"), "the writing consultation's brief\n");
+    const refused = refusalOfStart(
+      b.root,
+      { ...writer, brief: path.join(b.scratch, "brief-C-2.txt") },
+      "2026-09-14T06:00:02.000Z",
+    );
+    expect(refused?.code, "a consultation claiming write ownership was admitted").toBe(
+      "ADMISSION_CONSULTATION_WRITER",
+    );
+    expect(refused?.message, "the refusal does not name the resource it refused").toContain(path.resolve(b.lane));
+  } finally {
+    b.cleanup();
+  }
+});
+
+/* ════════════════════════════════════════════════════════════════════
+ * T-324 — THE VERIFIER'S THREE ASSIGNED CORRECTIONS, each a fail-open at
+ * a boundary this card exists to close. They are here rather than in
+ * `brief.spec.ts` because the property lives in `admit` and the only
+ * fixture that can arm a grant, a pause and a ledger at once is the
+ * `grantBench` above.
+ * ════════════════════════════════════════════════════════════════════ */
+
+test("A PAUSE THE OWNER RECORDED STOPS THE LOOP EVEN WHERE THERE IS NO GRANT TO ENFORCE — and a tree with no block is this project's own", () => {
+  // THE FIRST ASSIGNED CORRECTION. A pause is not a row of the grant: it
+  // is the owner's own record, and a tree with no `dispatch:` block —
+  // which is this project's own template — is exactly the tree in which
+  // the owner has nothing else to stop the loop with. Read after the
+  // no-grant return, a WELL-FORMED pause stopped nothing here while a
+  // MALFORMED one stopped everything, because `readPause` refuses before
+  // `grantState` ever answers. This body holds the ordering that removes
+  // that inversion.
+  //
+  // KILLED BY: a pause read after the no-grant state, and a pause read
+  // only where a block exists.
+  const b = grantBench("pause-without-a-grant", ["T-901"]);
+  try {
+    // NO GRANT IS WRITTEN. The bench's template carries no dispatch
+    // block, which is the state this project's own template is in.
+    b.pause({ version: 1, at: "2026-09-14T04:00:00Z", by: "the fixture owner", scope: "all", why: "stop everything" });
+    const stopped = refusalOfStart(b.root, grantAssignment(b, "T-901"), "2026-09-14T04:00:01.000Z");
+    expect(stopped?.code, "a pause recorded in a tree with no grant stopped nothing").toBe("ADMISSION_PAUSED_ALL");
+    expect(stopped?.message, "the refusal does not name who recorded the pause").toContain("the fixture owner");
+    expect(reservationsIn(b.root), "a refused start left a reservation behind").toEqual([]);
+    expect(recordsIn(b.root), "a refused start wrote a record").toEqual([]);
+
+    // AND THE INVERSION IS GONE: the unreadable record and the readable
+    // one now both stop the loop, where before only the unreadable one
+    // did — which is the shape that made this a defect rather than a
+    // judgement about what a grantless tree should enforce.
+    writeFileSync(path.join(b.root, ".supertaskr", "pause.json"), "{ not json\n");
+    expect(
+      refusalOfStart(b.root, grantAssignment(b, "T-901"), "2026-09-14T04:00:02.000Z")?.code,
+      "an unreadable pause was read as silence in a tree with no grant",
+    ).toBe("ADMISSION_SCOPE");
+
+    // THE POSITIVE CONTROL, WHERE THE ARRANGEMENT IS ABSENT: with no
+    // pause record at all the same grantless tree admits and says that
+    // nothing was enforced, so the two refusals above are about the
+    // PAUSE and not about a bench that refuses everything.
+    b.pause(null);
+    const open = startRun(b.root, {
+      assignment: grantAssignment(b, "T-901"),
+      at: "2026-09-14T04:00:03.000Z",
+      io: io(),
+    });
+    expect(open.record.admission?.kind, "the control: a grantless tree with no pause refused a start").toBe(
+      "unenforced",
+    );
+  } finally {
+    b.cleanup();
+  }
+});
+
+test("A `new-work` PAUSE PERMITS THE VERIFICATION OF A CANDIDATE ALREADY ADMITTED AND OF NOTHING ELSE — a verifier start for a card this loop never admitted is refused", () => {
+  // THE SECOND ASSIGNED CORRECTION. The scope's own words are the
+  // verification and integration OF THE ADMITTED CANDIDATE. A phase that
+  // is not implementation is not by itself a candidate: admitting one
+  // whose card no attempt ever admitted lets new work through a pause by
+  // relabelling the seat, and spends that card's own approval doing it.
+  //
+  // KILLED BY: a pause branch that discriminates on the PHASE alone.
+  const b = grantBench("pause-new-work-candidate", ["T-901", "T-902"]);
+  try {
+    b.grant(grantBlock({
+      approval: "each",
+      recovery: "none",
+      order: ["T-901", "T-902"],
+      blobs: { "T-901": b.blob("T-901"), "T-902": b.blob("T-902") },
+    }));
+    // T-901 IS ADMITTED AND STARTED BEFORE THE PAUSE. T-902 NEVER IS,
+    // and the grant names both — so what separates them here is the
+    // LEDGER and not the order.
+    const admitted = startRun(b.root, {
+      assignment: grantAssignment(b, "T-901"),
+      at: "2026-09-14T05:00:00.000Z",
+      io: io(),
+    });
+    b.pause({ version: 1, at: "2026-09-14T05:10:00Z", by: "the fixture owner", scope: "new-work" });
+
+    const unadmitted = refusalOfStart(
+      b.root,
+      grantAssignment(b, "T-902", { role: "verifier", resource: "none" }),
+      "2026-09-14T05:10:01.000Z",
+    );
+    expect(unadmitted?.code, "a new-work pause admitted a verifier for a card no attempt ever admitted").toBe(
+      "ADMISSION_PAUSED_NEW_WORK",
+    );
+    expect(unadmitted?.message, "the refusal does not say why this verification is new work").toContain(
+      "new work wearing a later phase's name",
+    );
+    // AN INTEGRATOR IS THE SAME ANSWER, because the scope names both
+    // phases and neither is a candidate on its own.
+    expect(
+      refusalOfStart(
+        b.root,
+        grantAssignment(b, "T-902", { role: "integrator", resource: "none" }),
+        "2026-09-14T05:10:02.000Z",
+      )?.code,
+      "a new-work pause admitted an integrator for a card no attempt ever admitted",
+    ).toBe("ADMISSION_PAUSED_NEW_WORK");
+
+    // THE POSITIVE CONTROL, WHERE THE ARRANGEMENT IS ABSENT: the
+    // verifier of the card that WAS admitted still starts and still
+    // re-presents that candidate's own admission, so the refusals above
+    // are about the candidate and not about a pause that stops verifiers.
+    const ofCandidate = startRun(b.root, {
+      assignment: grantAssignment(b, "T-901", { role: "verifier", resource: "none" }),
+      at: "2026-09-14T05:10:03.000Z",
+      io: io(),
+    });
+    expect(
+      ofCandidate.record.admission?.reuses,
+      "the control: the verifier of an admitted candidate was refused or made a fresh admission",
+    ).toBe(admitted.record.attempt);
+    expect(ofCandidate.record.admission?.consumed, "the control: the permitted verification spent an approval").toBe(
+      false,
+    );
+  } finally {
+    b.cleanup();
+  }
+});
+
+test("A DERIVED REPAIR CANNOT EXCEED THE AUTHORIZATION IT INHERITS — a parent past the `until` endpoint is refused, so the endpoint is not crossed by naming an unreachable parent", () => {
+  // THE THIRD ASSIGNED CORRECTION. Membership of the order is not enough
+  // under `until`: the grant runs up to and INCLUDING its endpoint, so a
+  // card after it is work this grant would refuse, and a repair naming
+  // it as its parent inherits an authorization the grant never made.
+  // Criterion 2 admits only "the repairs that card's delivery needs",
+  // and a card the grant does not reach delivers nothing.
+  //
+  // KILLED BY: a parent check that asks only whether the order names it.
+  const b = grantBench("derived-past-the-endpoint", ["T-901", "T-902", "T-903", "T-904"]);
+  try {
+    const order = ["T-901", "T-902", "T-903"];
+    b.grant(grantBlock({
+      approval: "until",
+      recovery: "repairs",
+      order,
+      until: "T-901",
+      blobs: Object.fromEntries(order.map((id) => [id, b.blob(id)])),
+    }));
+    // T-903 IS IN THE ORDER AND PAST THE ENDPOINT, so the grant refuses
+    // it outright — without which this body would prove nothing.
+    expect(
+      refusalOfStart(b.root, grantAssignment(b, "T-903", { resource: "none" }), "2026-09-14T06:00:00.000Z")?.code,
+      "a card past the until endpoint was admitted, so this body proves nothing",
+    ).toBe("ADMISSION_UNTIL_ENDPOINT");
+
+    // AND A REPAIR OF IT IS REFUSED FOR THE SAME REASON.
+    const beyond = refusalOfStart(
+      b.root,
+      grantAssignment(b, "T-904", {
+        resource: "none",
+        admission: { kind: "derived", parent: "T-903", evidence: "a failure of T-903", scope: "repair" },
+      }),
+      "2026-09-14T06:00:01.000Z",
+    );
+    expect(beyond?.code, "a repair crossed the until endpoint by naming an unreachable parent").toBe(
+      "ADMISSION_DERIVED_NO_PARENT",
+    );
+    expect(beyond?.message, "the refusal does not name the endpoint it would have crossed").toContain("T-901");
+
+    // THE POSITIVE CONTROL, WHERE THE ARRANGEMENT IS ABSENT: the same
+    // repair of a parent the grant DOES reach is admitted, so the
+    // refusal above is about the endpoint and not about repairs.
+    expect(
+      refusalOfStart(
+        b.root,
+        grantAssignment(b, "T-904", {
+          resource: "none",
+          admission: { kind: "derived", parent: "T-901", evidence: "a failure of T-901", scope: "repair" },
+        }),
+        "2026-09-14T06:00:02.000Z",
+      ),
+      "the control: a repair of the endpoint's own work was refused too",
+    ).toBeNull();
+  } finally {
+    b.cleanup();
+  }
 });

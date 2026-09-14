@@ -88,7 +88,19 @@ import {
 import path from "node:path";
 import { RUNTIME_DIR, armRuntimeDir } from "../../../.claude/hooks/gate-token.mjs";
 import { isRecordablePid, processRow } from "./checkout-currency.mjs";
-import { AWAIT_INTERVAL_MS, liveProv, note, runAwait, value } from "./dispatch-brief.mjs";
+import {
+  AWAIT_INTERVAL_MS,
+  admissionLedger,
+  admit,
+  approvedCardText,
+  cardBlobSha,
+  cardFileOf,
+  grantState,
+  liveProv,
+  note,
+  runAwait,
+  value,
+} from "./dispatch-brief.mjs";
 
 /** The record format this reader knows. A document declaring another is refused, never guessed at. */
 export const RECORD_VERSION = 1;
@@ -237,6 +249,7 @@ export class RunRecordFinding extends Error {
  * @property {string} deadline
  * @property {string} budget
  * @property {OwnedJob[]} [ownedJobs]
+ * @property {{ kind: string, parent: string, evidence: string, scope: string }} [admission]
  */
 
 /**
@@ -263,6 +276,7 @@ export class RunRecordFinding extends Error {
  * @property {{ seen: string, at: string }} stamp
  * @property {?string} replaces
  * @property {{ at: string, op: string, from: string, to: string, why: string }[]} events
+ * @property {?import("./dispatch-brief.mjs").Admission} admission
  */
 
 /* ────────────────────────────────────────────────────────────────────
@@ -410,6 +424,32 @@ export function readAssignment(file) {
       ownedJobs.push({ kind: String(e["kind"] ?? ""), id: String(e["id"] ?? "") });
     }
   }
+  // THE ADMISSION THE ASSIGNMENT DECLARES (T-324), and its absence is
+  // the EXPLICIT kind rather than a missing field. An explicit admission
+  // needs nothing the assignment does not already carry — the work id IS
+  // the card the grant names — so an assignment that says nothing is
+  // saying "explicit". A DERIVED one has to say so, because it names a
+  // parent and a failure evidence that no other field carries.
+  /** @type {{ kind: string, parent: string, evidence: string, scope: string }} */
+  let admission = { kind: "explicit", parent: "", evidence: "", scope: "repair" };
+  const rawAdmission = obj["admission"];
+  if (rawAdmission !== undefined) {
+    if (rawAdmission === null || typeof rawAdmission !== "object" || Array.isArray(rawAdmission)) {
+      throw new RunRecordFinding(
+        "ASSIGNMENT_ADMISSION",
+        `run-record: the assignment at ${file} carries an \`admission\` that is not an object. It ` +
+          "is the block that says whether this child serves a card the grant NAMES or a repair " +
+          "DERIVED from approved work, and a half-read one would decide neither.",
+      );
+    }
+    const a = /** @type {Record<string, unknown>} */ (rawAdmission);
+    admission = {
+      kind: String(a["kind"] ?? "explicit").trim(),
+      parent: String(a["parent"] ?? "").trim(),
+      evidence: String(a["evidence"] ?? "").trim(),
+      scope: String(a["scope"] ?? "repair").trim(),
+    };
+  }
   const id = String(obj["id"]).trim();
   if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(id)) {
     throw new RunRecordFinding(
@@ -433,7 +473,56 @@ export function readAssignment(file) {
     deadline: String(obj["deadline"]).trim(),
     budget: String(obj["budget"]).trim(),
     ownedJobs,
+    admission,
   };
+}
+
+/**
+ * THE ADMISSION AT A RUN BOUNDARY (T-324) — the grant re-read, the card
+ * re-hashed and the ledger derived from the records that already exist.
+ *
+ * **THE LEDGER IS `allRecords` AND THERE IS NO SECOND ONE.** What has
+ * been admitted is what the run records say was admitted; a consumption
+ * table beside them would be the second ownership ledger this card
+ * forbids, and the two would disagree the first time one was written and
+ * the other was not.
+ *
+ * @param {string} root
+ * @param {Assignment} a
+ * @param {string} boundary one of the admission boundaries
+ * @param {{ resource?: ?string }} [opts]
+ * @returns {import("./dispatch-brief.mjs").Admission}
+ */
+export function admissionAt(root, a, boundary, opts = {}) {
+  const declared = a.admission ?? { kind: "explicit", parent: "", evidence: "", scope: "repair" };
+  const rel = a.kind === "card" ? cardFileOf(root, a.id) : "";
+  const blob = rel === "" ? "" : cardBlobSha(root, rel);
+  let cardText = "";
+  if (rel !== "") {
+    try {
+      cardText = readFileSync(path.join(root, rel), "utf8");
+    } catch {
+      cardText = "";
+    }
+  }
+  return admit(
+    grantState(root),
+    {
+      boundary,
+      kind: declared.kind,
+      work: a.kind,
+      card: a.id,
+      role: a.role,
+      blob,
+      ...(cardText === "" ? {} : { cardText }),
+      approvedText: (/** @type {string} */ sha) => approvedCardText(root, sha),
+      resource: opts.resource ?? (a.resource === "none" ? null : a.resource),
+      ...(declared.kind === "derived"
+        ? { parent: declared.parent, evidence: declared.evidence, scope: declared.scope }
+        : {}),
+    },
+    admissionLedger(allRecords(root), TERMINAL_STATES),
+  );
 }
 
 /**
@@ -758,6 +847,16 @@ export function startRun(root, opts) {
         "mistake that made it.",
     );
   }
+  // ── THE ADMISSION COMES BEFORE THE RESERVATION (T-324) ─────────────
+  // **AND THAT ORDER IS A PROPERTY, exactly as the reservation coming
+  // before the launch is.** A reservation taken for work nobody admitted
+  // is a writer this loop had no authority to start, and a refusal after
+  // the take leaves a lock behind for the next arm to reconcile. The
+  // grant is RE-READ here rather than carried from the lane cut: a
+  // revocation or a pause recorded between the cut and the start has to
+  // reach this boundary, which is the whole reason there are four
+  // boundaries and not one.
+  const admission = admissionAt(root, a, "child-start");
   const attempt = nextAttemptId(root, a.id);
   /** @type {?Reservation} */
   let reservation = null;
@@ -799,6 +898,10 @@ export function startRun(root, opts) {
     stamp: { seen: "unknown", at },
     replaces: null,
     events: [],
+    // THE ADMISSION IS RECORDED ON THE RECORD, and that record IS the
+    // ledger: the next boundary derives what has been admitted from
+    // these documents rather than from a consumption table of its own.
+    admission,
   };
   transition(
     rec,
@@ -1587,6 +1690,26 @@ export function continueRun(root, opts) {
     );
   }
   refuseGrantAfterStamp(rec, "a continuation");
+  // ── THE ADMISSION AT A RE-ENTRY, AND AT A REPLACEMENT WRITER (T-324)
+  // **IT COMES AFTER THE RECONCILIATION AND BEFORE EVERY WRITE.** An
+  // UNCERTAIN old writer has already refused above, which is what "an
+  // uncertain old writer holds the admission until reconciled" means on
+  // disk: nothing is admitted, nothing is consumed and the ledger still
+  // shows exactly the admission the interrupted attempt holds. Once the
+  // prior execution IS established as ended, the grant is re-read — a
+  // pause or a revocation recorded while this attempt was down reaches
+  // the loop here — and the admission answered is the SAME one, because
+  // the ledger carries this card's open entry and a re-presentation
+  // consumes no second approval.
+  const admission = admissionAt(root, rec.assignment, opts.replace === true ? "replacement" : "re-entry", {
+    resource: rec.resource,
+  });
+  // THE ADMISSION GOES ON THE RECORD THAT CONTINUES, and on no other. A
+  // replacement writes a FRESH record and the attempt it replaces keeps
+  // the admission it was started under — overwriting that one would
+  // rewrite the history the recovery day needed, to say something about
+  // a boundary the old attempt never reached.
+  if (opts.replace !== true) rec.admission = admission;
   if (rec.execution !== null && rec.execution.endedAt === null) rec.execution.endedAt = at;
 
   // THE RESERVATION: retained where it was never released, REACQUIRED
@@ -1652,6 +1775,7 @@ export function continueRun(root, opts) {
       ...rec,
       attempt,
       state: "reserved",
+      admission,
       reservation: { file: rec.reservation.file, takenAt: at, releasedAt: null },
       execution: null,
       history: [...rec.history, ...(rec.execution === null ? [] : [rec.execution])],
@@ -1962,6 +2086,49 @@ export function runRecs(ctx, verb, rec, extra) {
     value(`questions: ${q === "" ? "none recorded" : q}`, p),
     value(`usage: ${rec.usage}`, p),
     value(`record: ${recordPath(ctx.root, rec.attempt)}`, p),
+    // THE ADMISSION THIS ATTEMPT RUNS UNDER (T-324), in the three groups
+    // the card's seventh criterion separates: what this arm REFUSED, what
+    // it merely recorded, and what nobody in this tree can check.
+    ...admissionRunRecs(rec, p),
     ...extra.map((line) => value(line, p)),
+  ];
+}
+
+/**
+ * THE ADMISSION ROWS OF A RUN REPORT — the refusals this arm tested, the
+ * coordinator's obligations it cannot check, and the advisory accounting,
+ * kept apart so that the second and the third never borrow the first's
+ * authority.
+ *
+ * @param {RunRecord} rec
+ * @param {ReturnType<typeof liveProv>} p
+ * @returns {ReturnType<typeof value>[]}
+ */
+export function admissionRunRecs(rec, p) {
+  const a = rec.admission ?? null;
+  if (a === null) {
+    return [
+      value(
+        "admission: this record predates the admission lifecycle and carries none — a record " +
+          "written before the boundary existed is not an admission nobody made, it is a record " +
+          "from before there was one to make",
+        p,
+      ),
+    ];
+  }
+  const tested = a.kind === "unenforced" ? "NOT ENFORCED — THERE IS NO BLOCK TO ENFORCE" : "THE REFUSALS THIS ARM TESTED";
+  return [
+    value(
+      `${tested} — admitted at the ${a.boundary} boundary as ${a.kind}, phase ${a.phase}, bound to ` +
+        `grant revision ${String(a.revision)}${a.blob === "" ? "" : `, card blob ${a.blob.slice(0, 12)}`}` +
+        `${a.parent === null ? "" : `, parent ${a.parent}`}` +
+        `${a.reuses === null ? "" : `, re-presenting the admission attempt ${a.reuses} holds`}` +
+        `${a.consumed ? ", CONSUMING an approval" : ", consuming no approval"}` +
+        `${a.resource === null ? ", and reserving nothing" : `, bound to the reservation over ${a.resource}`}`,
+      p,
+    ),
+    ...a.drift.map((d) => value(`${tested} — mechanical append allowed since the yes: ${d}`, p)),
+    ...a.advisory.map((line) => value(`ADVISORY ACCOUNTING — ${line}`, p)),
+    ...a.obligations.map((line) => value(`THE COORDINATOR'S, NOT THIS ARM'S — ${line}`, p)),
   ];
 }

@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1102 behaviours** — 1100 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1125 behaviours** — 1123 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -234,6 +234,16 @@ Census: **1102 behaviours** — 1100 extracted sentences + 2 named-not-extracted
 - the process switch method.stamp is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
 - the process switch record.immutable is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
 - ARM THIRTEEN performs ONE run operation against the root it is handed, and refuses to share an invocation with another arm
+- THE LANE CUT IS AN ADMISSION, AND IT IS DISTINGUISHED FROM THE WRITER RESERVATION — it binds to the grant's revision and the card's approved blob, reserves nothing, and a card the grant does not name is refused before anything is written
+- A MECHANICAL APPEND IS STILL THE CARD THE OWNER APPROVED, AND A REWRITTEN CRITERION IS NOT
+- THE ADMISSION AT THE CUT TOLERATES THE LOOP'S OWN STAMP AND REFUSES A CARD REWRITTEN AFTER THE YES
+- A REVOKED BLOCK CARRIES NO CURRENT GRANT, and every admission under it is refused by name
+- A SUCCESSOR COORDINATOR INHERITS THE GRANT FROM THE BLOCK and continues the order without the previous coordinator's identity
+- THE ARM READS THE GRANT THROUGH THE PARSER'S READER AND THROUGH NOTHING ELSE
+- THE SCHEMA'S DISPATCH BLOCK NAMES A READ SITE FOR EVERY ROW, AND EVERY OPERATIONAL ROW'S SITE IS A SYMBOL THIS ARM EXPORTS
+- THIS PROJECT'S OWN TREE IS THE EXPLICIT NO-GRANT STATE, the ceremony keeps working, and the arm says NOTHING WAS ENFORCED rather than pretending it was
+- THE ORCHESTRATOR'S STEP 5 KEEPS ITS TWO SENTENCES AND EXTENDS THEM — a dispatch inside the current grant is approved by the grant, and every other dispatch still waits for the owner
+- THE CONVENTIONS CARRY THE ADMISSION RULE ONCE, AT THE LOOP'S OWN SECTION
 
 ## card-figures
 
@@ -442,7 +452,7 @@ Census: **1102 behaviours** — 1100 extracted sentences + 2 named-not-extracted
 - each of the four refusals a set owes is ITSELF, and the template is not touched by any of them
 - the committed settings chapter is a GENERATION of the schema, and a schema nobody regenerated for reds
 - THE SHIPPED SCHEMA'S DISPATCH BLOCK DECLARATION reads the same to the hand parser and to a real YAML parser
-- EVERY ROW OF THE SHIPPED DISPATCH BLOCK IS DECLARATIVE, the limits are the advisory ones, and the no-grant words are `each` and `none`
+- THE SHIPPED DISPATCH BLOCK'S OPERATIONAL ROWS ARE THE ONES THE ARM BRANCHES ON, the limits are the advisory ones, and the no-grant words are `each` and `none`
 - THIS PROJECT'S TEMPLATE CARRIES NO GRANT, and the reader says so in as many words
 - THE SETTINGS CHAPTER CARRIES THE DISPATCH BLOCK AS A GENERATION of its declaration, never as prose
 - the listing goes to the PROJECT'S OWN tree for its readings — the measured column is not a rendering of numbers somebody handed in
@@ -1126,6 +1136,19 @@ Census: **1102 behaviours** — 1100 extracted sentences + 2 named-not-extracted
 - the record is one JSON document per attempt under the runs directory, and a continuation keeps the history it continues
 - the reservation is the EXCLUSIVE CREATE ITSELF, not an existence check in front of a write — the one place a check-then-write and an `O_EXCL` open answer differently
 - an attempt id and a work id are a CHARSET, never a path fragment — an id that would leave the runs directory is REFUSED
+- THE ADMISSION COMES BEFORE THE RESERVATION — a child start the grant does not approve takes no lock and writes no record
+- A CONSUMED APPROVAL PRESENTED AGAIN IS REFUSED AS CONSUMED under `each`, and the same second run is admitted under `standing`
+- THE MODE AND THE POLICY ARE ENFORCED TOGETHER — approval \
+- THE MODE AND THE POLICY ARE ENFORCED TOGETHER — approval \
+- THE REPAIR LIFECYCLE — one fixture, its stages in sequence: approved work, a failure, a derived repair, an out-of-scope repair refused, a repeated delivery producing no duplicate, and the endpoint's completion refusing the next feature
+- A PAUSE DISTINGUISHES NEW WORK FROM THE VERIFICATION OF A CANDIDATE ALREADY ADMITTED — the verifier starts, the replacement executor does not, and an `all` pause refuses that verifier too
+- A RETRY OF AN INTERRUPTED ADMISSION NEITHER CONSUMES AN APPROVAL TWICE NOR CREATES A SECOND WRITER — and an UNCERTAIN old writer holds the admission until it is reconciled
+- THE GRANT'S LIMITS ARE READ, REPORTED BY NAME AS ADVISORY, AND ENFORCED BY NOTHING — an expiry that has passed refuses no admission
+- THE ARM'S RUN REPORT KEEPS THE REFUSALS IT TESTED APART FROM THE COORDINATOR'S OBLIGATIONS AND FROM THE ADVISORY ACCOUNTING
+- A CONSULTATION IS ADMITTED WHILE IT WRITES NOTHING, AND REFUSED THE MOMENT IT CLAIMS A RESOURCE
+- A PAUSE THE OWNER RECORDED STOPS THE LOOP EVEN WHERE THERE IS NO GRANT TO ENFORCE — and a tree with no block is this project's own
+- A `new-work` PAUSE PERMITS THE VERIFICATION OF A CANDIDATE ALREADY ADMITTED AND OF NOTHING ELSE — a verifier start for a card this loop never admitted is refused
+- A DERIVED REPAIR CANNOT EXCEED THE AUTHORIZATION IT INHERITS — a parent past the `until` endpoint is refused, so the endpoint is not crossed by naming an unreachable parent
 
 ## session-economics
 

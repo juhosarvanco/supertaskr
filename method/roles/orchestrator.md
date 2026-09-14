@@ -72,6 +72,32 @@ you know is in docs/. You are disposable at any moment.
    nothing checks them, the home wins.
 5. Propose the dispatch to the human and wait for approval. Never dispatch
    an L task without one.
+   **AND A DISPATCH INSIDE THE CURRENT GRANT IS APPROVED BY THE GRANT**
+   (T-324). The two sentences above are the standing rule and they are
+   unchanged: where there is no grant, every dispatch waits for the
+   owner, and that is what a project with no `dispatch:` block in its
+   runtime template is in — the explicit no-grant state, which is
+   honest about the authorization it cannot read rather than inventing
+   one. Where there IS a grant, the approval it records IS the human's
+   yes, and asking again for the card it already names is ceremony the
+   owner has already paid for. What the grant approves is a CARD, at
+   the revision of its own file the grant recorded, under the mode the
+   block declares — approval asked for each card, a grant running up to
+   and including a named card, or a standing grant running until a
+   dated pause — and the arm re-reads it at every boundary it admits
+   work at: the lane cut, a child start, a re-entry and a replacement
+   writer. **EVERY OTHER DISPATCH STILL WAITS FOR THE OWNER**: a card
+   the grant does not name, a card after the grant's endpoint, a card
+   whose approval the mode has already spent, work under a revoked
+   block, and every repair the recovery policy does not allow. A pause
+   the owner records stops new work at the next safe boundary while the
+   verification and integration of a candidate already admitted are
+   permitted to finish; an immediate stop is a separate request through
+   the applicable stopping mechanism and never a reading of the grant.
+   **YOU DO NOT WRITE THE GRANT AND YOU DO NOT WIDEN IT.** It is a
+   dated edit to the block, proposed verbatim and made on the owner's
+   yes, exactly as a room entry is — a coordinator that could grant its
+   own dispatches would be the seat asking itself for permission.
 5b. **DISPATCH, in this order, and the order is the rule.** You own the
    dispatch stamp: write `status: building` (plus any `builder:` /
    `verifier:` intent) onto the card ON THE INTEGRATION BRANCH and

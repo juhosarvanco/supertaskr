@@ -83,11 +83,43 @@ profiles:
 # against this declaration, never as a bag of strings each surface
 # interprets for itself.
 #
-# EVERY ROW IS `declarative` TODAY (T-319). The block is readable
-# configuration and nothing else: the arm admits nothing and refuses
-# nothing by it until T-324 makes these rows operational, and the label
-# is what says so to anyone deciding whether editing the block would
-# change a dispatch. It would not.
+# THE BLOCK BECAME OPERATIONAL AT T-324, AND THE LABELS BELOW SAY WHICH
+# ROWS. Under T-319 every row was `declarative`: the block was readable
+# configuration and the arm admitted nothing and refused nothing by it.
+# T-324 built the admission lifecycle on top of it, so the rows the arm
+# BRANCHES ON now say `operational` — changing one of those values
+# changes what a dispatch, a child start, a re-entry or a replacement
+# writer does — and the rows that are a RECORD rather than a control
+# still say `declarative`, which is the honest label for a field that is
+# read, attributed and printed but decides nothing.
+#
+# THE READ SITES, AND A CITATION NAMES A SYMBOL, NOT A LINE. Each row
+# below is read by the admission arm in `tools/e2e/scripts/dispatch-brief.mjs`
+# at the symbol named here; the BLOCK as a whole is read by the parser
+# library's `dispatchBlock`, which the `reads:` field above names, and the
+# arm reaches it through that reader and through nothing else.
+#
+#   approval        admit             the three-mode branch
+#   recovery        admit             the two-value branch
+#   grant           grantState        the block's one current approval
+#   grant.given_by  grantInheritance  attributed, never branched on
+#   grant.at        grantInheritance  recorded, never branched on
+#   grant.revision  admit             every admission binds to it
+#   grant.order     admit             membership decides an admission
+#   grant.until     admit             the endpoint the grant runs to
+#   grant.cards     admit             the approved blob each admission binds to
+#   revoked         admit             a revoked block has no current grant
+#   revoked.at      admit             named in the refusal, never branched on
+#   revoked.by      admit             named in the refusal, never branched on
+#   limits          advisoryLimits    ADVISORY: read, reported, enforced by nothing
+#   limits.tokens   advisoryLimits    ADVISORY
+#   limits.expires_at advisoryLimits  ADVISORY — an expiry that has passed refuses nothing
+#   history         grantState        validated by the reader; no arm branches on it
+#
+# **KEPT BY A BODY, NOT BY A MEMORY** (the guard-class map's own idiom):
+# tools/e2e/tests/brief.spec.ts derives this table from these comment
+# lines, requires every symbol named to be exported by the arm, and reds
+# when an `operational` row has no read site named for it.
 #
 # AND THE BLOCK IS ABSENT UNTIL SOMEBODY GRANTS SOMETHING. A reader that
 # meets no `dispatch:` block answers the explicit NO-GRANT state — the
@@ -138,7 +170,7 @@ dispatch_block:
       values: [each, until, standing]
       absent: each
       advisory: false
-      implementation: declarative
+      implementation: operational
       what: "when work STARTS — approval asked before every dispatch, a grant that runs up to and including a named card, or a standing grant that runs until a dated pause"
     recovery:
       required: always
@@ -146,7 +178,7 @@ dispatch_block:
       values: [none, repairs]
       absent: none
       advisory: false
-      implementation: declarative
+      implementation: operational
       what: "whether the coordinator may dispatch a correction round, a re-entry after a rejection or a repair the work discovers — none, or the repairs necessary to the approved work"
     grant:
       required: always
@@ -154,7 +186,7 @@ dispatch_block:
       values: []
       absent: ""
       advisory: false
-      implementation: declarative
+      implementation: operational
       what: "the approval itself, as the owner gave it; a block that carries no grant is a block that records nothing"
     grant.given_by:
       required: with-parent
@@ -178,7 +210,7 @@ dispatch_block:
       values: []
       absent: ""
       advisory: false
-      implementation: declarative
+      implementation: operational
       what: "the revision of this grant, a positive integer strictly above every revision in the history — and the ONE thing that decides which grant is current"
     grant.order:
       required: with-parent
@@ -186,7 +218,7 @@ dispatch_block:
       values: []
       absent: ""
       advisory: false
-      implementation: declarative
+      implementation: operational
       what: "the approved cards in dispatch order, each id once"
     grant.until:
       required: with-until
@@ -194,7 +226,7 @@ dispatch_block:
       values: []
       absent: ""
       advisory: false
-      implementation: declarative
+      implementation: operational
       what: "the card the grant runs up to and including, which must belong to the order — required under `until` and refused under every other mode"
     grant.cards:
       required: with-parent
@@ -202,7 +234,7 @@ dispatch_block:
       values: []
       absent: ""
       advisory: false
-      implementation: declarative
+      implementation: operational
       what: "each approved card at the revision it was approved AT — the 40-hex blob sha of its file — so that a card edited after the yes is a different card, keyed by exactly the ids the order names"
     revoked:
       required: optional
@@ -210,7 +242,7 @@ dispatch_block:
       values: []
       absent: ""
       advisory: false
-      implementation: declarative
+      implementation: operational
       what: "the dated revocation of the grant, when there is one; a revoked block reads as NO CURRENT GRANT while the grant it revokes stays in the record"
     revoked.at:
       required: with-parent
