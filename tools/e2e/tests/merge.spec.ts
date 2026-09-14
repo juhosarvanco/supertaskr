@@ -1854,6 +1854,142 @@ test("a verdict that assigns NO correction is not read for corrections, however 
 });
 
 /* ────────────────────────────────────────────────────────────────────
+ * THE VERIFIER'S ASSIGNED CORRECTIONS (T-295-s10 bench, phase 2).
+ */
+
+test("--blocks-absent acknowledges a verdict carrying NO block at all, and never stands in for the blocks one DOES carry", () => {
+  // THE PROMISE THIS PINS IS THIS STEP'S OWN, in two places: the
+  // `drillSteps` docblock says "Blocks that ARE present are drilled
+  // either way" and the verb's usage text says the flag "is not a
+  // blanket, and blocks that are present are drilled anyway". At the
+  // base that held BY CONSTRUCTION — the acknowledgement branch was
+  // reachable only inside `read.blocks.length === 0`. Reading the
+  // shortfall PER CORRECTION makes it reachable with blocks present,
+  // where the branch returns ONE step: a verdict with two committed
+  // bodies and one unexplained correction came back acknowledged with
+  // NEITHER body drilled, which is the one thing this step exists to
+  // stop. No body at the base passed `blocksAbsent` at all.
+  const sha = "0123456789abcdef0123456789abcdef01234567";
+  const partial = verdictCard(
+    "### 2026-09-14 — APPROVED WITH ASSIGNED CORRECTIONS — a-model@a-session",
+    "",
+    ...announced("Correction 1 — the guard is inverted.", "Committed on this bench."),
+    block({ correction: "correction 1 — the guard is inverted" }),
+    "",
+    ...announced("Correction 2 — the counter strides by two.", "Committed on this bench."),
+    block({
+      correction: "correction 2 — the counter strides by two",
+      body: "the counter strides by one",
+      old: "export const stride = 1;",
+      new: "export const stride = 2;",
+    }),
+    "",
+    ...announced("Correction 3 — the live-board figures are the base board's.", "Read over the base tree."),
+  );
+  const waved = drillSteps({
+    cardText: partial,
+    projectRoot: repoRoot,
+    id: "T-900",
+    verdictSha: sha,
+    blocksAbsent: sha.slice(0, 12),
+  });
+  expect(
+    waved.map((s) => s.id),
+    "a PARTIAL shortfall is not the shape this flag acknowledges: two committed bodies must not be waved past",
+  ).toEqual(["drill:refused"]);
+  expect(waved[0]?.problem ?? "", "and the refusal says why the flag does not reach here").toContain(
+    "carries NO mutant block at all",
+  );
+
+  // THE CONTROL, AND IT IS THE WHOLE ARMING: the SAME flag, the same
+  // sha, on the shape the flag was written for — a verdict that assigns
+  // corrections and carries no block at all — is still acknowledged, as
+  // NEWS and not as a stop. So what moved is the presence of the blocks
+  // and nothing else about the run.
+  const preRule = verdictCard(
+    "### 2026-09-14 — APPROVED WITH ASSIGNED CORRECTIONS — a-model@a-session",
+    "",
+    "The corrections are in the transcript, which is the state this flag is for.",
+    "",
+  );
+  const ack = drillSteps({
+    cardText: preRule,
+    projectRoot: repoRoot,
+    id: "T-900",
+    verdictSha: sha,
+    blocksAbsent: sha.slice(0, 12),
+  });
+  expect(ack.map((s) => s.id), "the pre-rule shape is still acknowledged").toEqual(["drill:none"]);
+  expect(ack[0]?.problem, "and it is news rather than a stop").toBeUndefined();
+  expect(ack[0]?.warning ?? "").toContain("ACKNOWLEDGED by --blocks-absent");
+});
+
+test("the ordinals a no-block statement credits are its OWN clause's, so a sentence naming a correction that HAS a body does not excuse it", () => {
+  // MEASURED ON T-300-s7'S OWN NEWEST VERDICT, whose corrections
+  // preamble is one sentence carrying two independent clauses:
+  // "Correction 1 adds the keeper the amendment's other half never got;
+  // correction 2 is a wording repair and carries no block." Harvesting
+  // every ordinal in the SENTENCE credits correction 1 with a statement
+  // that is explicitly about correction 2 — and on that card the step's
+  // own line then names correction 1 as carrying no block on the very
+  // line that re-drills correction 1's block.
+  const preamble =
+    "Correction 1 adds the keeper the amendment's other half never got; correction 2 is a wording repair and carries no block.";
+  const twoClauses = (lead: string, ...body: string[]): string =>
+    verdictCard(
+      "### 2026-09-14 — APPROVED WITH ASSIGNED CORRECTIONS — a-model@a-session",
+      "",
+      "#### The assigned corrections",
+      "",
+      lead,
+      "",
+      ...announced("Correction 1 — the recorded cut must survive the lane's own HEAD moving.", "Committed."),
+      ...body,
+      ...announced("Correction 2 — the no-cut sentence claims more than its condition.", "A wording repair."),
+    );
+
+  const leaky = drillSteps({ cardText: twoClauses(preamble), projectRoot: repoRoot, id: "T-900" });
+  expect(
+    leaky.map((s) => s.id),
+    "correction 1 carries neither a block nor a statement, and the clause that said so was about correction 2",
+  ).toEqual(["drill:refused"]);
+  expect(leaky[0]?.problem ?? "", "and it is refused by name").toContain(
+    "Correction 1 — the recorded cut must survive",
+  );
+  expect(leaky[0]?.problem ?? "", "while the one the clause IS about is not").not.toContain(
+    "Correction 2 — the no-cut sentence",
+  );
+
+  // AND THE LINE THAT LIED, which is criterion 2's half of the same
+  // fault: give correction 1 the body it announces and the step drills
+  // it — while the same line called it WORDING, no block.
+  const drilled = drillSteps({
+    cardText: twoClauses(preamble, block({ correction: "the recorded cut must survive the lane's own HEAD moving" }), ""),
+    projectRoot: repoRoot,
+    id: "T-900",
+  });
+  expect(drilled.map((s) => s.id), "the committed body is drilled").toEqual(["drill:1"]);
+  expect(
+    drilled[0]?.title ?? "",
+    "and the step's line does not call a correction it is DRILLING a wording one",
+  ).not.toContain("Correction 1 — the recorded cut must survive");
+  expect(drilled[0]?.title ?? "", "while the wording one is still named").toContain(
+    "Correction 2 — the no-cut sentence",
+  );
+
+  // THE CONTROL, AND IT IS THE ARMING: one clause naming BOTH ordinals
+  // still credits both, so what moved is the clause boundary and never
+  // the ordinal reading the preamble shape rests on.
+  const shared = drillSteps({
+    cardText: twoClauses("Corrections 1 and 2 are wording repairs and carry no block."),
+    projectRoot: repoRoot,
+    id: "T-900",
+  });
+  expect(shared.map((s) => s.id), "one clause about both ordinals still credits both").toEqual(["drill:none"]);
+  expect(shared[0]?.wording ?? [], "and both are named as wording").toHaveLength(2);
+});
+
+/* ────────────────────────────────────────────────────────────────────
  * THE NEWEST-VERDICT READER, AND WHERE A HEADING'S DATE MAY SIT
  * (T-311-s5, absorbing T-311-s7).
  *
