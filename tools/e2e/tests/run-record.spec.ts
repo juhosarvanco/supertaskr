@@ -2103,3 +2103,63 @@ test("A CONSULTATION IS ADMITTED WHILE IT WRITES NOTHING, AND REFUSED THE MOMENT
     b.cleanup();
   }
 });
+
+/* ════════════════════════════════════════════════════════════════════
+ * T-324 — THE VERIFIER'S THREE ASSIGNED CORRECTIONS, each a fail-open at
+ * a boundary this card exists to close. They are here rather than in
+ * `brief.spec.ts` because the property lives in `admit` and the only
+ * fixture that can arm a grant, a pause and a ledger at once is the
+ * `grantBench` above.
+ * ════════════════════════════════════════════════════════════════════ */
+
+test("A PAUSE THE OWNER RECORDED STOPS THE LOOP EVEN WHERE THERE IS NO GRANT TO ENFORCE — and a tree with no block is this project's own", () => {
+  // THE FIRST ASSIGNED CORRECTION. A pause is not a row of the grant: it
+  // is the owner's own record, and a tree with no `dispatch:` block —
+  // which is this project's own template — is exactly the tree in which
+  // the owner has nothing else to stop the loop with. Read after the
+  // no-grant return, a WELL-FORMED pause stopped nothing here while a
+  // MALFORMED one stopped everything, because `readPause` refuses before
+  // `grantState` ever answers. This body holds the ordering that removes
+  // that inversion.
+  //
+  // KILLED BY: a pause read after the no-grant state, and a pause read
+  // only where a block exists.
+  const b = grantBench("pause-without-a-grant", ["T-901"]);
+  try {
+    // NO GRANT IS WRITTEN. The bench's template carries no dispatch
+    // block, which is the state this project's own template is in.
+    b.pause({ version: 1, at: "2026-09-14T04:00:00Z", by: "the fixture owner", scope: "all", why: "stop everything" });
+    const stopped = refusalOfStart(b.root, grantAssignment(b, "T-901"), "2026-09-14T04:00:01.000Z");
+    expect(stopped?.code, "a pause recorded in a tree with no grant stopped nothing").toBe("ADMISSION_PAUSED_ALL");
+    expect(stopped?.message, "the refusal does not name who recorded the pause").toContain("the fixture owner");
+    expect(reservationsIn(b.root), "a refused start left a reservation behind").toEqual([]);
+    expect(recordsIn(b.root), "a refused start wrote a record").toEqual([]);
+
+    // AND THE INVERSION IS GONE: the unreadable record and the readable
+    // one now both stop the loop, where before only the unreadable one
+    // did — which is the shape that made this a defect rather than a
+    // judgement about what a grantless tree should enforce.
+    writeFileSync(path.join(b.root, ".supertaskr", "pause.json"), "{ not json\n");
+    expect(
+      refusalOfStart(b.root, grantAssignment(b, "T-901"), "2026-09-14T04:00:02.000Z")?.code,
+      "an unreadable pause was read as silence in a tree with no grant",
+    ).toBe("ADMISSION_SCOPE");
+
+    // THE POSITIVE CONTROL, WHERE THE ARRANGEMENT IS ABSENT: with no
+    // pause record at all the same grantless tree admits and says that
+    // nothing was enforced, so the two refusals above are about the
+    // PAUSE and not about a bench that refuses everything.
+    b.pause(null);
+    const open = startRun(b.root, {
+      assignment: grantAssignment(b, "T-901"),
+      at: "2026-09-14T04:00:03.000Z",
+      io: io(),
+    });
+    expect(open.record.admission?.kind, "the control: a grantless tree with no pause refused a start").toBe(
+      "unenforced",
+    );
+  } finally {
+    b.cleanup();
+  }
+});
+

@@ -8578,18 +8578,16 @@ export function admit(state, request, ledger = []) {
     throw new AdmissionFinding(code, `dispatch-brief: the ${boundary} admission of ${card} is REFUSED — ${why}`);
   };
 
-  // ── THE NO-GRANT STATE: ADMIT, AND SAY THAT NOTHING WAS ENFORCED ───
-  if (!state.enforced) {
-    return answer({
-      kind: "unenforced",
-      why:
-        `${state.source}. Every admission is made and NONE is enforced: the refusals below apply ` +
-        "wherever a block exists, and this tree carries none.",
-      revision: 0,
-    });
-  }
-
-  // ── THE PAUSE ──────────────────────────────────────────────────────
+  // ── THE PAUSE, AND IT IS READ BEFORE THE NO-GRANT STATE ────────────
+  // **A PAUSED LOOP IS PAUSED WHATEVER THE GRANT SAYS**, and the order
+  // of these two blocks is the only thing that says so. A pause is not a
+  // row of the grant: it is the owner's own record, and a tree with no
+  // `dispatch:` block — which is this project's own tree — is exactly
+  // the tree in which the owner has nothing else to stop the loop with.
+  // Read after the no-grant return, a WELL-FORMED pause stopped nothing
+  // here while a MALFORMED one stopped everything, since `readPause`
+  // refuses before `grantState` ever answers; that inversion is what
+  // this ordering removes.
   const pause = state.pause;
   if (pause !== null) {
     if (pause.scope === "all") {
@@ -8615,6 +8613,18 @@ export function admit(state, request, ledger = []) {
           "not. An owner-issued pause needs no second approval to be read.",
       );
     }
+  }
+
+
+  // ── THE NO-GRANT STATE: ADMIT, AND SAY THAT NOTHING WAS ENFORCED ───
+  if (!state.enforced) {
+    return answer({
+      kind: "unenforced",
+      why:
+        `${state.source}. Every admission is made and NONE is enforced: the refusals below apply ` +
+        "wherever a block exists, and this tree carries none.",
+      revision: 0,
+    });
   }
 
   // ── THE CURRENT GRANT ──────────────────────────────────────────────
