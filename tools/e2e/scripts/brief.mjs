@@ -1852,8 +1852,31 @@ async function main(argv) {
         });
         if (dryRun) {
           say(render(expressRecs(ctx, plan, null)));
-          say(render([note("--dry-run: the compact card below was composed and NOTHING was written"), blank()]));
-          say(plan.card.text);
+          // THE COMPOSED CARD GOES OUT LINE BY LINE AS STAMPED VALUES, not
+          // verbatim. It is card text rather than this command's answer,
+          // but it leaves on this command's stdout, and the provenance
+          // floor (`unstampedLines`; the margin guard in
+          // brief-flush.spec.ts holds every live arm to it) reads a line
+          // with no stamp as a cut mid-line. The verbatim print was green
+          // in every lane and bench battery, because the holder gate above
+          // refuses this arm in any checkout that is not the integration
+          // one before it composes — the integration checkout at the merge
+          // was the first place these lines were ever printed (T-320-s9).
+          const composed = liveProv(
+            ctx.at,
+            ctx.host,
+            "the compact card, composed by this arm and written nowhere (--dry-run)",
+          );
+          say(
+            render([
+              note("--dry-run: the compact card below was composed and NOTHING was written"),
+              blank(),
+              ...plan.card.text
+                .trimEnd()
+                .split("\n")
+                .map((line) => (line.trim() === "" ? blank() : value(line, composed))),
+            ]),
+          );
         } else {
           const result = runExpress(plan, defaultDispatchIo());
           say(render(expressRecs(ctx, plan, result)));
