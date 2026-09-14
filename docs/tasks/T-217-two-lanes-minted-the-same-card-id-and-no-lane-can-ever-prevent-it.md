@@ -309,6 +309,10 @@ Fence: `[app-dispatch]` — the grammar and its tests are both inside it.
 
 Real and still true; not now. **UN-PARK WHEN:** the first worktree appears on a `tNNN-` branch, or the day the lane list is rendered to a human (`T-111`/`T-112`). A ruling request with no forcing event: `lanes.rs` accepts only `task/T-<digits>-<slug>`, 37 of 69 branches carry the older spelling, and no worktree has ever held one.
 
+## Ruling of 2026-09-14 — the older lane-branch grammar is not a lane namespace, arm (a) (the owner's ruling of 2026-09-14, pile 2 batch 3b row 25)
+
+The decision the absorbed T-110-s2 record left open is ruled: arm (a). A branch in the older `tNNN-` grammar is reported as not-a-lane with its typed reason, the grammar is not widened, and no reader work follows; under this ruling the criterion above that carries the decision is satisfied by this record. Checked before ruling, as the owner asked: at 55fb4072 no worktree is checked out on a branch of that grammar, and the repository carries 37 such branches, all finished work from before the current protocol; none is deleted by this ruling and none is a lane. An exception found later — a worktree appearing on such a branch — is reported on the board as a stray worktree, which is the news the board exists to raise.
+
 ## Implementation notes
 
 ## Verdicts
