@@ -8602,7 +8602,21 @@ export function admit(state, request, ledger = []) {
           "reader, and interrupting a job preserves uncertainty until the jobs are reconciled.",
       );
     }
-    if (phase === "implementation") {
+    // **THE PERMISSION IS OF A CANDIDATE ALREADY ADMITTED, AND OF
+    // NOTHING ELSE.** The scope's own words are the verification and
+    // integration OF THE ADMITTED CANDIDATE; a phase that is not
+    // implementation is not by itself a candidate, and admitting one
+    // whose card this loop never admitted lets new work through a pause
+    // by relabelling the seat — and spend that card's own approval
+    // doing it. The ledger is what says a candidate exists.
+    //
+    // A CONSULTATION IS OUTSIDE THIS GUARD AND ALWAYS WAS: it consumes
+    // no approval and reserves nothing, and the writer it runs beside
+    // carries the admission. What this protects is the CARD admission,
+    // which spends something.
+    const candidate =
+      String(request.work ?? "card") !== "card" || ledger.some((e) => e.card === card);
+    if (phase === "implementation" || !candidate) {
       refuse(
         ADMISSION_CODES.PAUSED_NEW_WORK,
         `a pause of scope \`new-work\` was recorded by ${pause.by} at ${pause.at} in ${pause.file}` +
@@ -8610,7 +8624,13 @@ export function admit(state, request, ledger = []) {
           ". New implementation work and re-entry into it are refused while the VERIFICATION and " +
           "INTEGRATION of a candidate already admitted are permitted to start and to finish — so " +
           "a verifier start for an existing candidate is admitted and a replacement executor is " +
-          "not. An owner-issued pause needs no second approval to be read.",
+          "not." +
+          (candidate
+            ? ""
+            : ` No attempt has admitted ${card}, so this ${phase} is not the ${phase} of a ` +
+              "candidate already admitted — it is new work wearing a later phase's name, and " +
+              "admitting it would spend that card's own approval under a pause.") +
+          " An owner-issued pause needs no second approval to be read.",
       );
     }
   }

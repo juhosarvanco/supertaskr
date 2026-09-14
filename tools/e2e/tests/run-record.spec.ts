@@ -2163,3 +2163,72 @@ test("A PAUSE THE OWNER RECORDED STOPS THE LOOP EVEN WHERE THERE IS NO GRANT TO 
   }
 });
 
+test("A `new-work` PAUSE PERMITS THE VERIFICATION OF A CANDIDATE ALREADY ADMITTED AND OF NOTHING ELSE — a verifier start for a card this loop never admitted is refused", () => {
+  // THE SECOND ASSIGNED CORRECTION. The scope's own words are the
+  // verification and integration OF THE ADMITTED CANDIDATE. A phase that
+  // is not implementation is not by itself a candidate: admitting one
+  // whose card no attempt ever admitted lets new work through a pause by
+  // relabelling the seat, and spends that card's own approval doing it.
+  //
+  // KILLED BY: a pause branch that discriminates on the PHASE alone.
+  const b = grantBench("pause-new-work-candidate", ["T-901", "T-902"]);
+  try {
+    b.grant(grantBlock({
+      approval: "each",
+      recovery: "none",
+      order: ["T-901", "T-902"],
+      blobs: { "T-901": b.blob("T-901"), "T-902": b.blob("T-902") },
+    }));
+    // T-901 IS ADMITTED AND STARTED BEFORE THE PAUSE. T-902 NEVER IS,
+    // and the grant names both — so what separates them here is the
+    // LEDGER and not the order.
+    const admitted = startRun(b.root, {
+      assignment: grantAssignment(b, "T-901"),
+      at: "2026-09-14T05:00:00.000Z",
+      io: io(),
+    });
+    b.pause({ version: 1, at: "2026-09-14T05:10:00Z", by: "the fixture owner", scope: "new-work" });
+
+    const unadmitted = refusalOfStart(
+      b.root,
+      grantAssignment(b, "T-902", { role: "verifier", resource: "none" }),
+      "2026-09-14T05:10:01.000Z",
+    );
+    expect(unadmitted?.code, "a new-work pause admitted a verifier for a card no attempt ever admitted").toBe(
+      "ADMISSION_PAUSED_NEW_WORK",
+    );
+    expect(unadmitted?.message, "the refusal does not say why this verification is new work").toContain(
+      "new work wearing a later phase's name",
+    );
+    // AN INTEGRATOR IS THE SAME ANSWER, because the scope names both
+    // phases and neither is a candidate on its own.
+    expect(
+      refusalOfStart(
+        b.root,
+        grantAssignment(b, "T-902", { role: "integrator", resource: "none" }),
+        "2026-09-14T05:10:02.000Z",
+      )?.code,
+      "a new-work pause admitted an integrator for a card no attempt ever admitted",
+    ).toBe("ADMISSION_PAUSED_NEW_WORK");
+
+    // THE POSITIVE CONTROL, WHERE THE ARRANGEMENT IS ABSENT: the
+    // verifier of the card that WAS admitted still starts and still
+    // re-presents that candidate's own admission, so the refusals above
+    // are about the candidate and not about a pause that stops verifiers.
+    const ofCandidate = startRun(b.root, {
+      assignment: grantAssignment(b, "T-901", { role: "verifier", resource: "none" }),
+      at: "2026-09-14T05:10:03.000Z",
+      io: io(),
+    });
+    expect(
+      ofCandidate.record.admission?.reuses,
+      "the control: the verifier of an admitted candidate was refused or made a fresh admission",
+    ).toBe(admitted.record.attempt);
+    expect(ofCandidate.record.admission?.consumed, "the control: the permitted verification spent an approval").toBe(
+      false,
+    );
+  } finally {
+    b.cleanup();
+  }
+});
+
