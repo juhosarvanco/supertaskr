@@ -6,13 +6,13 @@ milestone: 4
 size: M
 tier: guarded
 priority: 2
-status: building
+status: verifying
 suggested_by: "the architect seat on 2026-09-13, from the Codex orchestrator's lean-delivery plan v2 and its reconciliation review of the same day, filed on the owner's ruling; filing authorizes no development"
 blocked_by: []
 touches: [tools/e2e/scripts/brief.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/card-preflight.mjs, tools/e2e/scripts/run-record.mjs, tools/e2e/scripts/merge.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/card-preflight.spec.ts, tools/e2e/tests/run-record.spec.ts, tools/e2e/tests/merge.spec.ts, tools/method-evals/evals, method/tasks/TASK-FORMAT.md, method/roles/orchestrator.md, docs/CONVENTIONS.md, docs/conventions/architecture.md, docs/conventions/lanes.md, docs/conventions/dispatch-and-scratch.md, tools/e2e/tests/brief-flush.spec.ts]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
-built_by:
+built_by: claude-opus-5@subagent
 verified_by:
 review: independent
 ---
