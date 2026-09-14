@@ -3,12 +3,12 @@ id: T-143-s5
 title: An APPEND to an already-checkpointed record reds the docs gate as though STATE were never regenerated — the instance was discharged by a second STATE commit, the rule that produced it was not
 feature: F-06
 milestone: 4
-priority: 20
+priority: 8
 size: S
-status: parked
+status: planned
 suggested_by: executor claude-opus-5@subagent @T-143-s4
 blocked_by: []
-touches: [tools/e2e]
+touches: [tools/e2e/scripts/docs-scan.mjs, tools/e2e/scripts/docs-gate.mjs, tools/e2e/scripts/push-checks.mjs, tools/e2e/tests/push-checks.spec.ts, tools/e2e/tests/docs-input-gate.spec.ts, docs/STATE-template.md, docs/STATE.md, method/docs-protocol.md]
 builder:
 verifier:
 built_by:
@@ -113,3 +113,17 @@ that (A) is wrong.
 Derive the shape of any suspected instance with `git log --format='%h %cI' -- docs/STATE.md` against `git log --format='%h %cI' -- docs/checkpoints/<record>`: an APPEND is a later commit touching the record alone. **Whoever takes (B) must keep the original slip caught** — poison both shapes, an amended record that must pass and a new record with no STATE commit that must red.
 
 SECOND SIGHTING (2026-08-30, CI run on a23b1a4): the T-135 record's empty-board addendum, committed after STATE's regen, redded the gate again — the resurfacing condition ("a second lane pays the inherited red") is MET; this card queues for the next sitting with two instances.
+
+## Ruling of 2026-09-14 — arm B, as card preparation and promotion only (pile 2 batch 3b row 39; the owner's approval of 2026-09-14 after the Codex orchestrator's reviews)
+
+The two alternatives the record above leaves open are decided for B: the staleness derivation compares an amended record against the commit that CREATED it, so an append to an already-checkpointed record no longer requires a STATE clock-touch commit. The derivation is the shared helper staleStateRecords in tools/e2e/scripts/docs-scan.mjs (docs-gate.mjs's staleAgainst loop only reports its result; push-checks.mjs consumes the same helper), so the change lives there and in its owning tests, never in the reporting loop alone. This ruling promotes the card to planned and authorizes no dispatch; the owner's ruling of the same day schedules the build after the current delivery work (T-324 and T-322), which it does not interrupt, and keeps both safeguards: a new checkpoint without its STATE regeneration still fails, and an amendment that changes a fact or a hazard STATE summarizes still updates STATE. The card's earlier dispositions (suggested, then parked) stand as successive records; nothing above is rewritten.
+
+## Acceptance criteria
+
+- WHEN a record under docs/checkpoints/ that STATE was regenerated for at its creation is later APPENDED to THE staleness derivation — staleStateRecords in tools/e2e/scripts/docs-scan.mjs, the one helper both docs-gate.mjs and push-checks.mjs consume — SHALL compare against the commit that created the record, so the amended record passes; pinned by bodies in tools/e2e/tests/push-checks.spec.ts and tools/e2e/tests/docs-input-gate.spec.ts with the controls poisoned both ways: a new record without its STATE regeneration still reds by name, the same-checkpoint tie still passes, and the committed-history reading is unchanged, each control run where the arrangement is absent and seen to red.
+- WHEN the rule changes THE governing text SHALL say the new rule once — method/docs-protocol.md's rule on regeneration, docs/STATE-template.md's contract paragraph, and the sentence in docs/STATE.md that a later edit to the record re-touches the file — so the old retouch requirement does not remain active anywhere; and the rule SHALL say that an amendment which changes a fact or a hazard STATE summarizes still updates STATE, a rule of conduct the gate does not enforce.
+- WHEN this card lands THE change SHALL remove a recurring administrative commit without weakening the requirement that a new checkpoint lands with its STATE regeneration in the same commit; a body SHALL show that a checkpoint record committed without its STATE regeneration is still refused.
+
+## Implementation notes
+
+## Verdicts
