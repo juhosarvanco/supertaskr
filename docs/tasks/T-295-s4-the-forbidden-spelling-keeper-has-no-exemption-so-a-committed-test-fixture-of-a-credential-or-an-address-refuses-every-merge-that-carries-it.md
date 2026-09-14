@@ -426,3 +426,45 @@ A1.7, a keeper weakened rather than a value kept.
   T-295-s15's subject is live already: the address entry naming the two
   values this keeper's spec plants matched NOTHING in this lane's diff,
   because those lines are already in the tree rather than added by it.
+
+#### Postscript — the step-7 readings, at MY OWN tip 1ccb9e6b
+
+A figure measured at the commit I was sent is stale at the tip my verdict
+and my correction created, so the whole battery was run again after the
+correction body and the filed card were committed.
+
+WHOLE BATTERY at 1ccb9e6bda0e130a1401139a1735b88bd1dc606e, all four legs
+GREEN, exit 0: parser 454 bodies (raw `454 passed`), app 1171 (raw `1171
+passed`), rust 655 across 18 targets (18 `test result: ok` lines), e2e
+1102 (raw `1102 passed (17.3m)`). Identical counts to the reading at the
+lane tip, which is the reading I expect: the correction adds assertions
+inside a body that already existed, so it moves no body count. The
+push-guard body that reds when two hook runs straddle a minute boundary
+(T-314-s5) did not fire in either run.
+
+CENSUS — STALE BY CONSTRUCTION, reported and NOT regenerated on this
+bench. `capabilities:check` at my tip: committed 102360 bytes against a
+fresh generation of 102875, exit 1 — the 4 bodies this diff adds. The
+figure is byte-for-byte the executor's at the lane tip, which confirms
+the correction adds no body. docs/CAPABILITIES.md is outside this card's
+fence and the merge regenerates it.
+
+GRAPH — `index --check` at my tip answers CURRENT: graph.json matches a
+fresh index at 1228940 bytes over 203 files, 2626 symbols and 2505
+edges, and the budget line reads 1228940 of 2145959 bytes (57.3%) with
+917019 left. The graph does not index tools/e2e, which is why a diff of
+this shape moves it not at all.
+
+THE COMMITS THIS BENCH CARRIES, in order after the lane tip: the verdict
+at acc97980; the correction body at 36a0a400, in
+tools/e2e/tests/merge.spec.ts, the file the block names; and T-295-s17
+filed at 1ccb9e6b. The spec the verdict names is inside this card's own
+fence, so the merge needs no widening on the integration branch before
+it lands.
+
+FILED FROM THIS PASS — T-295-s17: the keeper announces a kept spelling
+to stderr and nowhere else, so a merge that exercised an exemption
+commits no trace of having done so; the ledger holds a step id, a title
+and an exit, and the merge message is written from the verdict's own
+sentences. Criterion 3 is met as written and as referenced — that card
+is about the record, not the step.
