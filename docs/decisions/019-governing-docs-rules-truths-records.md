@@ -428,3 +428,48 @@ delta budget — a governing document crossing its warn line again
 Record of execution: T-236's card (Implementation notes) and the
 integrator's checkpoint record for this merge, which is not this
 lane's to write (§Records).
+
+## Addendum 7 (2026-09-14, T-290): CONVENTIONS becomes an index and its chapters, and twelve rows replace one
+
+T-290 re-landed `docs/CONVENTIONS.md` to the foundation-files standard (ADR-023, decision B of `docs/rooms/foundation-files-standard.md`): the document is an INDEX carrying every bullet's opener verbatim beside the chapter it lives in, and the rules themselves are eleven chapters under `docs/conventions/`. A reader of a rule reads the index and its chapters SPLICED — `conventionsText` in `tools/e2e/scripts/docs-scan.mjs`, and the same rule in Rust in `app/src-tauri/src/dispatch/brief.rs`. Measured at the merge commit `1d973e1d`: the single file stood at **176,155 bytes** at the lane's base `37d89ff7` (98 bytes under its hard line); the index is **13,544** bytes and the eleven chapters sum to **157,409**, together **170,953** — the combined conventions text is **5,202 bytes smaller, about 3%**, and that is the whole of the measured reduction: eleven chapter headings and leads and a pointer sentence per moved bullet did not exist at the base; **25,057 bytes** of history, measurement and argument left the conventions verbatim for nine `docs/reference` chapters and their README, which grew by **32,766 bytes** at the merge commit with their own T-290 headings, leads, the new chapter 16 and the release note the bump's writer now places in `14-versions.md`; the card's notes list every move with its destination. What this landing establishes is structural — an index a reader can navigate, a budget per chapter, some reduction in active rule text; it is not evidence of substantially lower reading time, because the compatibility reader still splices the combined rules for every program that reads them.
+
+**SO THE ONE BUDGETED DOCUMENT IS NOW TWELVE**, and §Budgets' rule that a gate value is derived at each document's compaction landing applies to each of them. `landed` is `wc -c` at the landing commit.
+
+**THE FORMULA, ONE FOR EVERY SIZE** (the owner's ruling of 2026-09-14, on the seat's proposal as amended by the Codex orchestrator's review):
+
+    warn = ceil(landed + max(F, landed × 0.25))
+    fail = ceil(max(landed × 1.5, warn + F))
+
+The second term is what addendum 5 left to a reader's judgement: a file under `4F` lands with `fail` exactly `F` above `warn`, and `warn` can never cross `fail`. Two of the rows below are in that case.
+
+**`F` = 1 733 BYTES, RE-DERIVED AT THIS LANDING** by addendum 5's own rule — the mean of the POSITIVE first-parent deltas of the smallest governed document — and recorded beside the standing **2 053**, which it replaces for these rows and for these rows only:
+
+    document              changes   +ve   mean     median    max
+    docs/STATE.md            261    177   1 732.65    581.0   12 039
+    docs/ROADMAP.md          101     86     988.85    547.5    4 963
+    docs/ARCHITECTURE.md      83     74   1 804.18  1 373.5    6 652
+    docs/CONVENTIONS.md      120    114   2 048.47  1 053.0   16 039
+
+(`changes` are first-parent size changes excluding the file's creation; `median` is the ordinary median, the mean of the two middle observations for an even count; `F` uses the mean, which the median convention does not touch.)
+
+**THE CHOICE IS STATED RATHER THAN SMOOTHED OVER**: `docs/STATE.md` is still the smallest governed document on every reading addendum 5 used, and the eleven chapters landed here have no history at the commit that creates them, so they cannot be the derivation's subject at their own landing. `F` fell from 2 053 to 1 733 because STATE's growth distribution filled in over another two weeks of merges; STATE, ROADMAP and ARCHITECTURE keep their landed lines.
+
+**THE ROWS** (`tools/e2e/scripts/docs-scan.mjs`, `DOC_BUDGETS`, at `1d973e1d`):
+
+    document                                   landed    warn    fail   term
+    docs/CONVENTIONS.md                        13 544  16 930  20 316  proportional
+    docs/conventions/app-and-ui.md              6 331   8 064   9 797  FLOOR
+    docs/conventions/architecture.md           14 613  18 267  21 920  proportional
+    docs/conventions/commands.md               18 566  23 208  27 849  proportional
+    docs/conventions/dispatch-and-scratch.md    8 080  10 100  12 120  proportional
+    docs/conventions/gates-and-the-push.md     10 971  13 714  16 457  proportional
+    docs/conventions/lanes.md                  21 524  26 905  32 286  proportional
+    docs/conventions/merging.md                23 347  29 184  35 021  proportional
+    docs/conventions/records-and-rooms.md      22 030  27 538  33 045  proportional
+    docs/conventions/shell-and-scripts.md       5 943   7 676   9 409  FLOOR
+    docs/conventions/standing-gates.md         14 850  18 563  22 275  proportional
+    docs/conventions/verification.md           11 154  13 943  16 731  proportional
+
+**WHAT THE BANDS READ NOW.** `docs-headroom/docs/CONVENTIONS.md` was BREACHED at −19.9% of its warn line at the base; it reads 20.0% at the landing, and every chapter reads at or above 20.0%, which is what a compaction landing means by construction and is why the band is given no weight as evidence of the compaction itself.
+
+**AND THE PER-FILE HEADROOM IS NOT THE OLD FIGURE MADE BETTER.** It is twelve documents' runways where there was one, and the two are not comparable: no sentence in this addendum draws that comparison.
