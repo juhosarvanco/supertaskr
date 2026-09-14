@@ -43,8 +43,10 @@ import {
   classifyConflict,
   assignsCorrections,
   claimedCounts,
+  correctionEntries,
   correctionFor,
   correctionHeadings,
+  correctionKey,
   correctionSteps,
   dedentBlock,
   drillScope,
@@ -1499,6 +1501,289 @@ test("a merge is what an APPROVED verdict authorises, so a REJECTED newest verdi
   // AND THE STATE READER IS THE ONE THE MESSAGE ALREADY USES, so the
   // two cannot drift apart into two answers about one heading.
   expect(verdictState("### VERDICT 2026-09-10 — REJECTED — a verifier")).toBe("REJECTED");
+});
+
+/* ────────────────────────────────────────────────────────────────────
+ * THE SHORTFALL IS READ PER CORRECTION (T-295-s10).
+ *
+ * The step used to read one COUNT against another: corrections assigned
+ * against blocks present, every shortfall a body nobody wrote.
+ * `method/roles/verifier.md` step 5b prescribes the opposite shape for a
+ * wording repair — "A CORRECTION WITH NO PROPERTY TO PIN SAYS SO IN AS
+ * MANY WORDS" — so a verdict obeying the role file was refused by the
+ * verb. MEASURED at the T-314-s6 merge on 2026-09-14: two corrections,
+ * both wording, each saying "Wording; it carries no mutant block", and
+ * the verb stopped at `drill:refused`; the seat ruled through and
+ * finished the tail by hand. The fourth false stop of that weekend.
+ *
+ * The three arrangements below are the three the card names, and each
+ * carries the control where the STATEMENT is absent — which is the only
+ * thing that moves between the arms, so the arming is the statement and
+ * nothing else about the verdict.
+ */
+
+/** A correction announced in the bold-lead shape this board writes. */
+function announced(lead: string, ...prose: string[]): string[] {
+  return [`**${lead}**`, ...prose, ""];
+}
+
+/** The two-wording-corrections verdict, with or without its statements. */
+function allWording(said: boolean): string {
+  return verdictCard(
+    "### 2026-09-14 — APPROVED WITH ASSIGNED CORRECTIONS — a-model@a-session",
+    "",
+    "#### The assigned corrections",
+    "",
+    ...announced(
+      `Correction 1 — the drill the notes call C3 sits at the helper, not at the verb.${
+        said ? " Wording; it carries no mutant block." : ""
+      }`,
+      "The MUTANT B bullet mutates the status the stand-in reports, and the",
+      "record should not say a helper-side mutant discharged C3.",
+    ),
+    ...announced(
+      `Correction 2 — the seat-verb invocation count is six, not seven.${
+        said ? " Wording; it carries no mutant block." : ""
+      }`,
+      "The figure appears TWICE and both sites need it, which is why it is",
+      "named rather than anchored.",
+    ),
+  );
+}
+
+test("a verdict whose corrections are ALL wording and SAY SO is nothing to drill, and the step's line names each one", () => {
+  const plan = (card: string): ReturnType<typeof drillSteps> =>
+    drillSteps({ cardText: card, projectRoot: repoRoot, id: "T-900" });
+
+  const stated = plan(allWording(true));
+  expect(stated.map((s) => s.id), "a stated wording correction is nothing to drill, not a refusal").toEqual([
+    "drill:none",
+  ]);
+  expect(stated[0]?.problem, "and it is not a stop").toBeUndefined();
+  // CRITERION 2: the step's own plan line NAMES each one, so a seat
+  // reading one line per step sees WHY nothing was drilled rather than
+  // reading an absence.
+  const line = stated[0]?.title ?? "";
+  expect(line, "the line says the corrections are wording").toContain("WORDING, no block by the verdict's own words");
+  expect(line, "and it names the first by name").toContain("Correction 1 — the drill the notes call C3");
+  expect(line, "and the second").toContain("Correction 2 — the seat-verb invocation count is six");
+  expect(stated[0]?.wording, "and the runner gets the same list, not a re-parse").toHaveLength(2);
+
+  // THE CONTROL, and it is the whole arming: the SAME two corrections
+  // with the statement struck out of each. Nothing else about the
+  // verdict moves, and the step refuses — so what the pass rests on is
+  // the verdict having said so, never the corrections being short.
+  const silent = plan(allWording(false));
+  expect(silent.map((s) => s.id), "a shortfall the verdict never explained still refuses").toEqual([
+    "drill:refused",
+  ]);
+  expect(silent[0]?.problem ?? "", "and the refusal names BOTH corrections").toContain(
+    "Correction 1 — the drill the notes call C3",
+  );
+  expect(silent[0]?.problem ?? "").toContain("Correction 2 — the seat-verb invocation count is six");
+  expect(silent[0]?.problem ?? "", "and it says what it read").toContain("2 of its 2 correction(s)");
+});
+
+test("a block and a stated wording correction is ONE drill and no refusal, and the drill's own line still names the wording one", () => {
+  const mixed = (said: boolean): string =>
+    verdictCard(
+      "### 2026-09-14 — APPROVED WITH ASSIGNED CORRECTIONS — a-model@a-session",
+      "",
+      ...announced("Correction 1 — the guard is inverted.", "Committed on this bench after this verdict."),
+      block({ correction: "correction 1 — the guard is inverted" }),
+      "",
+      ...announced(
+        `Correction 2 — the notes' figure is one byte stale.${said ? " It owes no mutant block." : ""}`,
+        "A wording repair to a record.",
+      ),
+    );
+
+  const plan = drillSteps({ cardText: mixed(true), projectRoot: repoRoot, id: "T-900" });
+  expect(plan.map((s) => s.id), "the block is still drilled, and the wording one is not a second step").toEqual([
+    "drill:1",
+  ]);
+  expect(plan[0]?.problem, "and nothing refuses").toBeUndefined();
+  const line = plan[0]?.title ?? "";
+  expect(line, "the drill's own line carries the wording correction by name").toContain(
+    "Correction 2 — the notes' figure is one byte stale",
+  );
+  expect(line, "beside the counts it already printed").toContain("1 block(s)");
+  expect(line, "and the count the step actually read, since these are not headings").toContain(
+    "2 correction(s) read",
+  );
+
+  // THE CONTROL: the same block, the same two corrections, and only the
+  // statement gone — refused, and refused for correction 2 ALONE.
+  const silent = drillSteps({ cardText: mixed(false), projectRoot: repoRoot, id: "T-900" });
+  expect(silent.map((s) => s.id), "an unexplained shortfall refuses even beside a block").toEqual([
+    "drill:refused",
+  ]);
+  const problem = silent[0]?.problem ?? "";
+  expect(problem, "naming the correction that carries neither").toContain(
+    "Correction 2 — the notes' figure is one byte stale",
+  );
+  expect(problem, "and NOT the one the block covers").not.toContain("Correction 1 — the guard is inverted");
+  expect(problem, "and it says which of how many").toContain("1 of its 2 correction(s)");
+});
+
+test("a correction with NEITHER a block nor the statement is refused BY NAME, beside corrections that have one", () => {
+  // THE THIRD ARRANGEMENT, and the one this change ADDS a refusal for:
+  // the step used to look only at the total block count, so a verdict
+  // with one block and a forgotten body passed unread. MEASURED over
+  // this board's 798 cards, exactly one newest verdict is that shape —
+  // T-282's, whose correction 4 carries no block and no statement.
+  const three = (said: boolean): string =>
+    verdictCard(
+      "### 2026-09-14 — APPROVED WITH ASSIGNED CORRECTIONS — a-model@a-session",
+      "",
+      "#### CORRECTION 1 — the guard is inverted",
+      "",
+      block({ correction: "CORRECTION 1 — the guard is inverted" }),
+      "",
+      "#### CORRECTION 2 — the step's comment gives a false reason",
+      "",
+      "Not blocking. It pins no property and owes no block.",
+      "",
+      "#### CORRECTION 3 — the live-board figures are the base board's",
+      "",
+      said ? "A wording repair to a record: no block." : "The figures were read over the base tree.",
+      "",
+    );
+
+  const refused = drillSteps({ cardText: three(false), projectRoot: repoRoot, id: "T-900" });
+  expect(refused.map((s) => s.id)).toEqual(["drill:refused"]);
+  const problem = refused[0]?.problem ?? "";
+  expect(problem, "the correction with neither is named").toContain(
+    "CORRECTION 3 — the live-board figures are the base board's",
+  );
+  expect(problem, "the one with a block is not").not.toContain("CORRECTION 1 — the guard is inverted");
+  expect(problem, "nor the one that said so").not.toContain("CORRECTION 2 — the step's comment");
+  expect(problem, "and the refusal keeps the sentence a merge has always stopped on").toContain(
+    "carries NO mutant block",
+  );
+
+  // THE CONTROL: correction 3 gains the statement and nothing else
+  // moves — one drill, no refusal, and the wording pair on the line.
+  const through = drillSteps({ cardText: three(true), projectRoot: repoRoot, id: "T-900" });
+  expect(through.map((s) => s.id), "and with the statement it plans").toEqual(["drill:1"]);
+  expect(through[0]?.title ?? "", "with both wording corrections on the line").toContain("CORRECTION 3");
+  expect(through[0]?.title ?? "").toContain("CORRECTION 2");
+  expect(through[0]?.title ?? "", "and the heading count is the read count here, so it is said once").toContain(
+    "3 correction heading(s), 1 block(s)",
+  );
+});
+
+test("which correction a no-block statement is ABOUT is read from the ordinals it names AND from the stretch it sits in", () => {
+  // BOTH READINGS ARE MEASURED SHAPES, and taking either one alone
+  // refuses a verdict that obeyed the role file.
+  //
+  // T-295-s9's verdict states the shortfall in a PREAMBLE above every
+  // announcement — "Corrections 1 and 4 ... each pins no property and
+  // owes no block" — so a reader that only looked inside a correction's
+  // own stretch would find nothing.
+  //
+  // T-317's verdict states it INSIDE correction 3's own paragraph while
+  // naming correction 1's ordinal in the same sentence — "it pins no
+  // property and owes no mutant block, and the block count below is
+  // short of the correction count for that reason and for correction
+  // 1's" — so a reader that let the ordinals REPLACE the containing
+  // stretch would credit correction 1 and refuse correction 3.
+  const preamble = verdictCard(
+    "### 2026-09-14 — APPROVED WITH ASSIGNED CORRECTIONS — a-model@a-session",
+    "",
+    "#### The assigned corrections",
+    "",
+    "Two corrections, no mutant block. Corrections 1 and 2 are wording repairs to",
+    "statements about measurements: each pins no property and owes no block, and I",
+    "say so here in as many words.",
+    "",
+    ...announced("Correction 1 — the step's comment gives a false reason.", "Not blocking."),
+    ...announced("Correction 2 — the figure is copied from the card.", "Not blocking."),
+  );
+  const read = newestVerdict(preamble);
+  expect("text" in read, "the preamble verdict reads").toBe(true);
+  const entries = correctionEntries("text" in read ? read.text : "");
+  expect(entries.map((e) => e.key), "both corrections are read, and folded to their ordinals").toEqual([
+    "correction 1",
+    "correction 2",
+  ]);
+  // THE FOLD IS WHAT LETS A BLOCK FIND ITS CORRECTION: the verifier
+  // writes the announcement and the block's `correction:` field in two
+  // different lengths, and the ordinal is the half that survives both.
+  expect(correctionKey("**Correction 3 — the counter walks past an overlapping site, so a text**")).toBe(
+    "correction 3",
+  );
+  expect(correctionKey("correction 3 — the counter walks past an overlapping site")).toBe("correction 3");
+  expect(correctionKey("CORRECTION 3"), "however it is cased or headed").toBe("correction 3");
+  expect(correctionKey("the refusal-sentence discriminator"), "and a block that names no ordinal keeps its words").toBe(
+    "the refusal-sentence discriminator",
+  );
+  expect(drillSteps({ cardText: preamble, projectRoot: repoRoot, id: "T-900" }).map((s) => s.id)).toEqual([
+    "drill:none",
+  ]);
+
+  // THE CONTROL FOR THE PREAMBLE READING: strike the ordinals out of the
+  // sentence and it names nobody, so neither correction is explained and
+  // the step refuses. A statement above every announcement has no
+  // stretch to fall back on, which is exactly why the ordinals are read.
+  const unnamed = preamble.replace("Corrections 1 and 2 are wording repairs to", "They are wording repairs to");
+  expect(unnamed, "the control really differs").not.toBe(preamble);
+  expect(drillSteps({ cardText: unnamed, projectRoot: repoRoot, id: "T-900" }).map((s) => s.id)).toEqual([
+    "drill:refused",
+  ]);
+
+  // AND THE OTHER WAY ROUND: a statement in correction 2's own stretch
+  // that names correction 1's ordinal covers BOTH, never correction 1
+  // instead of correction 2.
+  const crossed = verdictCard(
+    "### 2026-09-14 — APPROVED WITH ASSIGNED CORRECTIONS — a-model@a-session",
+    "",
+    ...announced("Correction 1 — the CI job gains the parser build.", "No mutant block is written for it."),
+    ...announced(
+      "Correction 2 — the two false statements in the finding text.",
+      "A wording repair to a record: it pins no property and owes no mutant block,",
+      "and the block count below is short of the correction count for that reason",
+      "and for correction 1's.",
+    ),
+  );
+  const both = drillSteps({ cardText: crossed, projectRoot: repoRoot, id: "T-900" });
+  expect(both.map((s) => s.id), "the statement is about the correction it sits in too").toEqual(["drill:none"]);
+  expect(both[0]?.wording ?? [], "and both are named as wording").toHaveLength(2);
+});
+
+test("a verdict that assigns NO correction is not read for corrections, however often it writes the word", () => {
+  // THE FALSE POSITIVE THE ENUMERATION WOULD HAVE COST, measured in
+  // T-216-s1's own verdict: `**CORRECTION, and it makes the item BIGGER
+  // rather than smaller — this verdict first said ... and that was
+  // wrong.**` is a verifier correcting its OWN prose inside a finding.
+  // Reading it as an assigned correction would invent one the verdict
+  // never assigned and then refuse the merge for its missing body.
+  const selfCorrecting = verdictCard(
+    "### 2026-09-14 — APPROVED — a-model@a-session",
+    "",
+    "Everything reproduced at the tip I was sent.",
+    "",
+    "**CORRECTION, and it makes the item BIGGER rather than smaller — this verdict",
+    "first said every other card spells the heading bare, and that was wrong.** It",
+    "was read off a truncated sample.",
+    "",
+  );
+  const plan = drillSteps({ cardText: selfCorrecting, projectRoot: repoRoot, id: "T-900" });
+  expect(plan.map((s) => s.id), "an approving verdict that assigns none still plans").toEqual(["drill:none"]);
+  expect(plan[0]?.title ?? "", "and it says there was nothing, not that something was wording").toContain(
+    "assigns no correction",
+  );
+
+  // THE CONTROL: the SAME self-correcting paragraph under a heading that
+  // DOES assign corrections is read, because then the verdict has said
+  // it assigns some — and with no block and no statement it refuses.
+  const assigning = selfCorrecting.replace(
+    "### 2026-09-14 — APPROVED — a-model@a-session",
+    "### 2026-09-14 — APPROVED WITH ASSIGNED CORRECTIONS — a-model@a-session",
+  );
+  expect(drillSteps({ cardText: assigning, projectRoot: repoRoot, id: "T-900" }).map((s) => s.id)).toEqual([
+    "drill:refused",
+  ]);
 });
 
 /* ────────────────────────────────────────────────────────────────────
