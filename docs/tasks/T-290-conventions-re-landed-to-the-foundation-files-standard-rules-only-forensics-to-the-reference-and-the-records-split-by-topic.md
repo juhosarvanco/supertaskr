@@ -58,6 +58,193 @@ INDEXED_DOCS in tools/e2e/scripts/docs-scan.mjs is a ruled constant: ruledIndexe
 ## Implementation notes
 <!-- executor appends before finishing -->
 
+### The re-landing, measured (criteria 2, 3 and 5)
+
+Three commits, so the machinery was green before a sentence was cut and
+the repair that followed is legible on its own. Sizes at this lane's tip
+against the single file at the base `37d89ff739d0`:
+
+```
+the document at the base                       176155 bytes, 66 bullets
+docs/CONVENTIONS.md, now the index               13544
+  docs/conventions/app-and-ui.md                  6331
+  docs/conventions/architecture.md               14613
+  docs/conventions/commands.md                   18566
+  docs/conventions/dispatch-and-scratch.md        8080
+  docs/conventions/gates-and-the-push.md         10971
+  docs/conventions/lanes.md                      21524
+  docs/conventions/merging.md                    23347
+  docs/conventions/records-and-rooms.md          22030
+  docs/conventions/shell-and-scripts.md           5943
+  docs/conventions/standing-gates.md             14850
+  docs/conventions/verification.md               11154
+the index and every chapter, summed              170953
+```
+
+The sum is stated because the criteria ask for it and it is NOT the
+interesting figure: it counts eleven chapter headings and eleven leads
+that did not exist at the base, and a pointer sentence in every bullet
+whose forensics moved. What LEFT the conventions is `25057` bytes of
+bullet text, moved verbatim; the docs/reference chapters grew by `32342`
+bytes, the difference being each chapter's own T-290 heading and lead and
+the new chapter 16's introduction.
+
+**Where the forensics went** — verbatim, each entry named for the bullet
+it came out of:
+
+```
+docs/reference/05-dispatch.md         9039 ->  12153   +3114
+docs/reference/07-verification.md     8710 ->  13684   +4974
+docs/reference/08-landing.md          9236 ->  12824   +3588
+docs/reference/09-records.md          7668 ->   9306   +1638
+docs/reference/10-gates.md            8156 ->  12031   +3875
+docs/reference/11-health.md           5942 ->   6557    +615
+docs/reference/13-surfaces.md         5002 ->   5859    +857
+docs/reference/14-versions.md         5864 ->  14664   +8800
+docs/reference/16-the-repository.md      0 ->   4676   +4676   NEW
+docs/reference/README.md              5095 ->   5300    +205   its table
+```
+
+`docs/reference/16-the-repository.md` is new because the other fifteen
+chapters each own a STAGE of the loop and the tree's own build, command
+and shell forensics belong to none of them. It also takes the settings
+material, whose closer home would have been chapter 15 — and chapter 15
+is GENERATED from the schema, so nothing may be appended to it by hand.
+
+**Per-file headroom, per file.** It is NOT the old single-file figure
+made better and no comparison is drawn: that was one document's runway,
+these are twelve, landed fresh and each at the top of its own band by
+construction.
+
+```
+docs-headroom/docs/CONVENTIONS.md      was -19.9% BREACHED, now 20.0% inside
+every chapter                          20.0% or above, inside
+```
+
+### The proof that every program-read sentence is byte-identical
+
+Three checks, each RUN against the written tree rather than claimed:
+
+- **Every literal a reader pins is still in the corpus.** Derived, not
+  typed: every string literal in every tracked source that names the
+  document, comments stripped by the docs gate's own stripper and bare
+  file paths excluded, kept where the base carries it verbatim. `164`
+  literals; `0` missing at this tip.
+- **Every sentence of every bullet is still somewhere.** `878` sentences
+  of the 66 bullets at the base, each found in the corpus or in the
+  docs/reference chapter its forensics moved to. `0` lost. The tool
+  refuses a bullet whose kept and moved runs do not tile it, so the
+  compaction is a partition of the base text and not a rewrite.
+- **Every PARSER this repository points at the document answers.** That
+  is the check the first two could not be: `parseRangeRule` demands
+  twelve measurements out of one bullet with ANCHORED REGULAR
+  EXPRESSIONS, and no string-literal census can see one. Every candidate
+  move was tried against every parser and kept only where all of them
+  still answered.
+
+Three defects in that proof were found by running it, and each is
+recorded because a proof that was wrong once is a proof whose shape
+matters: a sentence quoted in a HEADER COMMENT counted as a pin until
+the stripper was applied; the coverage check read `git ls-files
+docs/reference`, which cannot see a chapter this lane had created and not
+yet staged, and reported a dozen moved sentences as lost; and the regex
+readers were invisible until the blessed gate-runner reported a
+SCOPED-RED over a piped run that had said "1031 passed, exit 0" — the
+exit of `tail`, not of playwright, which is this project's own rule about
+a gate read through a pipe, met in its own lane.
+
+### Where a rule could not be separated from its argument (criterion 6)
+
+The honest finding of this lane, and it is about the document rather than
+the work: **after ADR-019's compaction and T-236's, this document is
+predominantly RULE.** Of `174305` bytes of bullet text at the base,
+`25057` are history, measurement or argument that could be cut away; the
+rest is the rule itself, the keeper it names, an exit-code legend, a
+command spelling, or a sentence a program reads by its exact text. The
+foundation-files standard's remaining gain here is STRUCTURAL — the
+split, the index, the per-file budgets — and not textual.
+
+The bullets whose argument stayed, and why:
+
+- **THE RANGE RULE keeps eight measurements, and a PROBE decided that
+  rather than a judgement.** `parseRangeRule` reads them by anchored
+  regex: the T-027 path counts, the T-078 counts, the scored range, the
+  merges that separate three dots' two scores, the ceiling's
+  denominator, the flip totals, the `Not "rarely"` refusal and the
+  T-083-s1 correction. They are measurements AND the bullet's contract
+  with its own keeper, which is exactly what this criterion is for.
+- **THE LANE PROTOCOL, THE PROCESS IS SETTINGS, GUARD-CLASS PATHS, THE
+  SHIPPED PARTITION, DECLARING A COMPONENT, THE FOUR WALKS, BOUNDED
+  WAITS, THE RUN RECORD, THE VERIFIER'S BENCH, THE SEAT PROPOSES BEFORE
+  IT RECORDS, PORT RULE and the four per-package command bullets** — the
+  argument in each is a MAP, a LEGEND or a SPELLING rather than a story:
+  the guard-class map, the four exit codes, the lane's four backticked
+  names, the settings rows' three labels. A reader who lost them would
+  lose the rule. Nothing moved out of them.
+- **THE PUSH IS JUDGED BY GIT ITSELF SINCE T-314 is pinned clause by
+  clause** by tools/e2e/tests/push-guard.spec.ts — a 500-byte length
+  floor, `--no-verify`, "never installed", the two named proposals. Its
+  argument IS its contract with that body.
+- **A GATE READ THROUGH A PIPE, A LINE NUMBER IS A FIGURE, NEVER TYPE A
+  PATH YOU CAN DERIVE, FIT A BYTE-BANDED DOCUMENT, PIN THE DEFAULT
+  BRANCH, THIS SHELL'S grep IS A SHIM, AND THEN READ IT, DISPATCH FROM
+  THE LAST CHECKPOINT, THE MERGE INTO MAIN IS, [?] MARKS AN UNRESOLVED
+  CLAIM, LIFTING A SAFETY GUARD, THE CHECKPOINT COMMIT'S SUBJECT** — at
+  the standard already, or reduced to it with one sentence moved.
+
+Every one of these keeps its rule as the first thing in it, and the
+chapters group them so a reader opens one topic rather than the whole
+document.
+
+### The fence census, re-read at this tip (criterion 5)
+
+```
+cards fencing docs/CONVENTIONS.md whole      136
+  of them not done                            74
+  of those planned                            45
+  also fencing docs/conventions/               1
+```
+
+The refresh measured 70 not done at `767a68ff`; four more were filed
+before this lane cut. **Every one of the 73 that does not also fence
+docs/conventions/ now fences an INDEX**: its criteria are about a rule,
+and the rule is in a chapter its fence cannot reach, so the first thing
+each lane will meet is a write hook refusing the only file that matters.
+The subject-to-chapter mapping is derivable from the index — it publishes
+every opener beside its chapter — and the keeper that would make the
+preflight say so is filed as T-290-s5. The cards themselves are the
+seat's records action after the merge; this lane edits no card but its
+own.
+
+### The ADR-019 addendum — PROPOSED, never written by the lane
+
+Criterion 5 asks for it to be proposed with the rows' commit, the formula
+and the re-derived F. The verbatim text is in the lane's report and in
+the scratch file `addendum-T-290.md`; the rows are in
+tools/e2e/scripts/docs-scan.mjs at this lane's tip, the formula is the
+one the owner approved on 2026-09-14, and `F` = **1733** re-derived here
+beside the standing **2053** — the mean of docs/STATE.md's 177 positive
+first-parent deltas over 262 changes (median 581, max 12039). STATE is
+still the smallest governed document on every reading addendum 5 used,
+and the eleven chapters have no history at the commit that creates them,
+so they cannot be the derivation's subject at their own landing.
+
+### In-fence follow-through
+
+- The five fixtures that plant this document now plant the chapters,
+  derived through `conventionsFiles` rather than listed: lane-fence,
+  lane-lock, card-preflight, checkout-currency, push-guard's seat
+  fixture and docs-input-gate's index fixture.
+- `conventionsText` refuses BOTH directions by name — a pointer whose
+  chapter cannot be opened or has lost its bullet, and a chapter file the
+  index names nowhere.
+- Every message string that named a bullet's home names the chapter it
+  lives in, and the cli spec's filter reads both spellings with its
+  non-vacuity floor intact.
+- The bump writer names docs/reference/14-versions.md as the release
+  note's home; the stamp sentence stays in docs/CONVENTIONS.md,
+  byte-identical.
+
 ### The census at the base, taken before a byte moved (criterion 1)
 
 Every figure below is `docs/CONVENTIONS.md` as it stands at this lane's
