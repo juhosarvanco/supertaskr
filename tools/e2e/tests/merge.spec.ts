@@ -601,6 +601,21 @@ test("the fixture table's admission rule is kept by this body — every entry na
   for (const entry of FIXTURE_CLASSES) {
     expect(entry.pattern.source.startsWith("^"), `${entry.id} is anchored at its start`).toBe(true);
     expect(entry.pattern.source.endsWith("$"), `${entry.id} is anchored at its end`).toBe(true);
+    // AND THE PATTERN NAMES THE VALUE RATHER THAN ITS SHAPE, which is
+    // the half of the recognition rule an anchored SHAPE satisfies while
+    // defeating it: a class pattern anchored at both ends keeps EVERY
+    // credential of that class at every site the entry names, which is
+    // the claim the card's amendment forbids in as many words. Read off
+    // the pattern's own source — anchors off, an outer alternation split
+    // — and every alternative has to be a literal whose only escape is
+    // an escaped dot.
+    const bareSource = entry.pattern.source.replace(/^\^/, "").replace(/\$$/, "");
+    for (const alternative of (/^\(\?:(.*)\)$/.exec(bareSource)?.[1] ?? bareSource).split("|")) {
+      expect(
+        /^(?:[A-Za-z0-9@_%+-]|\\\.)+$/.test(alternative),
+        `${entry.id} names the VALUE and not its SHAPE`,
+      ).toBe(true);
+    }
     expect(entry.files.length, `${entry.id} names at least one site`).toBeGreaterThan(0);
     expect(
       entry.files.some((f) => f === "" || f === "/" || f === "docs/" || f === "."),
