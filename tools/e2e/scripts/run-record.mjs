@@ -2293,10 +2293,17 @@ export function runPlan(opts, replace = false) {
 
 /**
  * `--instant name=<iso>[,name=<iso>...]`, PARSED AND REFUSED RATHER THAN
- * DROPPED. A name this arm does not recognise, or a value that is not a
- * readable instant, is a measurement the seat believes it recorded and
- * did not — so the dial refuses by name instead of keeping the half it
- * understood.
+ * DROPPED. A pair this arm cannot read — a missing name, a missing value,
+ * or a value that is not a readable instant — is a measurement the seat
+ * believes it recorded and did not, so the dial refuses by name instead
+ * of keeping the half it understood.
+ *
+ * **THE NAME ITSELF IS NOT CHECKED AGAINST A LIST, AND THAT IS THE
+ * DESIGN.** `EXPRESS_INSTANTS` names the six the five measurements are
+ * differences of, but the record's instants map is open on purpose: the
+ * runner's own conclusion is stamped beside those six as a seventh, and a
+ * closed list here would refuse the one instant the card asks to be kept
+ * BESIDE the total rather than folded into it.
  *
  * @param {string} raw
  * @returns {Record<string, string>}

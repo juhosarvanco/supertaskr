@@ -11535,7 +11535,10 @@ export function expressEligibility(input) {
         : `; GENERATED: ${generated.join(", ")}`) +
       ". AND WHAT THIS CANNOT SEE, said rather than left to be discovered: whether the edit turns " +
       "out to be a rename or a deletion is a property of a DIFF that does not exist at this " +
-      "moment; the merge's own keepers and the XS bound read that.",
+      "moment, and NOTHING RE-READS IT AFTERWARDS: the merge reads the diff for forbidden " +
+      "spellings and for its LINE COUNT (the XS bound bumps the tier, which is a different " +
+      "question), and it asks at no step whether a path was renamed or deleted. THE FENCE-TIME " +
+      "READING IS THE WHOLE OF THIS GUARANTEE.",
   );
 
   const refusals = findings
@@ -12324,7 +12327,10 @@ function instantMs(v) {
  * @param {string} input.checked    the owed set's conclusion
  * @param {string} input.merged     the merge commit
  * @param {string} input.pushed     the push of the merge
- * @param {string} [input.runner]   the runner's own conclusion, recorded BESIDE the total
+ * @param {string} [input.runner]   the runner's own conclusion. IT IS ACCEPTED AND
+ *   DELIBERATELY TURNED INTO NO ROW: the card asks for it BESIDE the total, so it must
+ *   end no row and the total still ends at the push. WHERE it is recorded is the record's
+ *   own instants map, which `measurementRunRecs` prints in full above the rows.
  * @returns {{ rows: Measurement[], unknown: string[], verdict: string }}
  */
 export function expressMeasurements(input) {

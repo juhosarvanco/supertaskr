@@ -11558,3 +11558,60 @@ test("T-320 C6 — THE RUNNER'S CONCLUSION IS RECORDED BESIDE THE TOTAL AS A SEP
     "the total no longer ends at the push of the merge",
   ).toBe(input.pushed);
 });
+
+test("T-320 C3 — THE REVERSIBLE FINDING'S DISCLOSURE IS TRUE OF THIS TREE: nothing re-reads a rename or a deletion after the executor writes, and the sentence says so", () => {
+  // THE VERIFIER'S CORRECTION 1, and the property is not the sentence but
+  // the AGREEMENT between the sentence and the tree.
+  //
+  // Reversibility is the one requirement that CANNOT be measured when it
+  // is measured: at eligibility time the change does not exist, so the
+  // reading is over the fence's paths and the rename or the deletion is a
+  // property of a diff nobody has written yet. The finding discloses that
+  // — which is right — and the disclosure has to name what actually
+  // happens afterwards, because a seat reading "the merge's keepers read
+  // that" stops looking. They do not: `merge.mjs` reads the staged diff
+  // for forbidden spellings and for its LINE COUNT, and the XS bound
+  // BUMPS the tier rather than refusing a rename. So the honest sentence
+  // is that the fence-time reading is the whole guarantee.
+  //
+  // AND THE DAY THAT STOPS BEING TRUE THIS BODY REDS, which is what makes
+  // it a pin on the tree rather than on a string: the second half reads
+  // `merge.mjs` for any rename or deletion reading and requires none. A
+  // merge that gains one has to change the sentence with it.
+  //
+  // KILLED BY: a disclosure that names a reader which does not read, one
+  // that drops the disclosure altogether, and a merge that starts reading
+  // renames while the sentence still says nothing does.
+  const measured = eligibleInput().findings.find((f) => f.id === "reversible")?.measured ?? "";
+  expect(measured, "the reversible finding no longer discloses what it cannot measure").toContain(
+    "does not exist at this moment",
+  );
+  expect(measured, "the disclosure does not say that nothing re-reads it afterwards").toContain(
+    "NOTHING RE-READS IT AFTERWARDS",
+  );
+  expect(measured, "the disclosure does not name the fence-time reading as the whole guarantee").toContain(
+    "THE FENCE-TIME READING IS THE WHOLE OF THIS GUARANTEE",
+  );
+  // THE HALF THAT READS THE TREE. `git diff` is asked for renames and for
+  // deletions by a handful of spellings and by no other; the merge uses
+  // none of them, and the day it does this body is the one that says the
+  // sentence above went stale.
+  const verb = readDoc("tools/e2e/scripts/merge.mjs");
+  // THE ONE DIFF-FILTER THE VERB DOES CARRY IS `U`, which lists UNMERGED
+  // paths at a conflict and says nothing about a rename — so it is taken
+  // out of the haystack by name rather than left to make the scan below
+  // answer yes about the wrong thing.
+  const rest = verb.split("--diff-filter=U").join("");
+  for (const spelling of ["--diff-filter", "--find-renames", "--name-status", "--summary"]) {
+    expect(
+      rest.includes(spelling),
+      `merge.mjs now reads the diff with ${spelling}, so the reversible finding's disclosure that ` +
+        "nothing re-reads a rename or a deletion may no longer be true of this tree",
+    ).toBe(false);
+  }
+  // AND THE POSITIVE CONTROL FOR THAT HALF: the reader is still looking.
+  // The one spelling the verb DOES carry answers the other way, so the
+  // four empty answers above are about merge.mjs and not about a search
+  // that matches nothing.
+  expect(verb.includes("--diff-filter=U"), "the reader found nothing at all, so its four answers prove nothing").toBe(true);
+});
