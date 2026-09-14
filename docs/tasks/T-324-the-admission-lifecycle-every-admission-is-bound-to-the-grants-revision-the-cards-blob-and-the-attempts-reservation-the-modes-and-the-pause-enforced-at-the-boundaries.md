@@ -522,3 +522,92 @@ postscript below.
 The executor's own three — `T-324-s1` (the pause row in the block), `T-324-s2` (the lane cut
 records no admission) and `T-324-s3` (the limits' deferral) — are the right three and I would
 have filed the second and third myself.
+
+#### Postscript — every figure with the ref it was measured at
+
+A figure with its ref stays true forever; a figure without one is wrong as soon as anybody,
+including me, writes again. Nothing between a verdict and a merge re-runs the suites a verdict
+quotes, so both trees are measured here: the one I was sent, and the one my own commits made.
+
+##### The whole battery at the tip I was sent, `291b3778c26ce9c061c336c0055edc17b5493bdf`
+
+| leg | exit | bodies | targets | verdict |
+|---|---|---|---|---|
+| parser | 0 | 454 | 1 | GREEN |
+| app | 0 | 1171 | 1 | GREEN |
+| rust | 0 | 655 | 18 | GREEN |
+| e2e | 0 | 1126 | 1 | GREEN (18.4m) |
+
+Every leg through `tools/e2e/scripts/gate-run.mjs`, in the foreground, on the bench's own port.
+The base's own readings for comparison, from the sealed ground's M6 and M7: 1102 e2e bodies and
+454 parser bodies at `07b1f7aa`, both green — so this lane added 24 e2e bodies and no leg was
+red before it.
+
+##### The whole battery at my own tip, `c227752e8b6004e5dd0c64b1b9af7bc8680fc764`
+
+| leg | exit | bodies | targets | verdict |
+|---|---|---|---|---|
+| parser | 0 | 454 | 1 | GREEN |
+| app | 0 | 1171 | 1 | GREEN |
+| rust | 0 | 655 | 18 | GREEN |
+| e2e | 0 | 1129 | 1 | GREEN (18.8m) |
+
+My own tip is four commits above the one I was sent: this verdict, then the three corrections,
+each with its body. The three corrections add 3 bodies to the e2e leg.
+
+##### The two currency checks at my own tip
+
+- `cargo run -p supertaskr-index -- index --check --root ../..` — **CURRENT**, 1228940 of
+  2145959 bytes (57.3%), 203 files, 2626 symbols, 2505 edges. The graph indexes neither
+  `tools/e2e` nor `method`, so nothing this lane or this bench touched could move it.
+- `npm run capabilities:check` from `tools/e2e` — **STALE BY CONSTRUCTION**, committed 102875
+  bytes against a fresh generation of 105999 at `c227752e`. The lane's own notes report 105521
+  at `291b3778`; the difference is the three sentences my three bodies add. `docs/CAPABILITIES.md`
+  is outside this card's fence and the merge regenerates it, so I report the figure with its ref
+  rather than regenerating it on the bench.
+
+##### The corrections, RED before and GREEN after, and the drill
+
+All five readings are over `tools/e2e/tests/run-record.spec.ts` on this bench, through
+`npx playwright test` from `tools/e2e` on port 25324.
+
+- **RED.** The three bodies appended to the spec with the arm exactly as the lane built it:
+  `3 failed, 32 passed` — and the three that failed are the three I added, each on its own first
+  assertion. That is the reading that says the bodies CAN fail.
+- **GREEN.** The same three bodies with the three corrections applied: `35 passed`. No body that
+  passed before this bench touched anything stopped passing — the lane's own 32 are untouched.
+- **THE DRILL, one mutant per correction, planted on the corrected tree.** Each mutant reds
+  EXACTLY ONE body, its own, and 34 pass beside it — so no kill set contains another and none of
+  the three is a restatement of another. Each mutant is planted at the site the property lives:
+  the pause's own guard, the candidate derivation, and the endpoint comparison.
+
+  | mutant | reds | passes beside it |
+  |---|---|---|
+  | `if (pause !== null && state.enforced)` | correction 1's body, alone | 34 |
+  | `candidate` pinned to `true` | correction 2's body, alone | 34 |
+  | `beyondEndpoint` pinned to `false` | correction 3's body, alone | 34 |
+
+  Each failing run prints the `message` its block names, checked by hand against the run's own
+  output: `a pause recorded in a tree with no grant stopped nothing`, `a new-work pause admitted
+  a verifier for a card no attempt ever admitted`, `a repair crossed the until endpoint by naming
+  an unreachable parent`.
+- **THE RESTORE IS PROVED BY SHA256, NOT ASSERTED.** `tools/e2e/scripts/dispatch-brief.mjs` reads
+  `1b146217e9939112a2b5b122a508817162ed61ca6cb032a9d80df1a3e4ba78bf` before each plant and again
+  after each restore, three times over. The file at my committed tip carries that same digest, and
+  `tools/e2e/tests/run-record.spec.ts` carries
+  `6f45d70afb4ba36f49e0c3ecdf2ceeef0c21a794a061d76d4b4b1e49c0e6e73f` — so the tree I drilled and
+  the tree I committed are the same tree, byte for byte.
+- **THE CONTROL THIS BENCH OWES FOR ITS OWN SUGGESTIONS.** Each of the three bodies carries a
+  positive control evaluated where the arming is ABSENT and it is a different arrangement, not
+  the same one read twice: correction 1's is the same grantless tree with the pause record
+  REMOVED (it admits, and says nothing was enforced); correction 2's is the verifier of the card
+  that WAS admitted (it starts, and re-presents that candidate's admission rather than making a
+  fresh one); correction 3's is the same repair of a parent the grant DOES reach (admitted). Each
+  control was run and seen to answer the opposite way.
+
+##### The preflight and the fence at my own tip
+
+`node tools/e2e/scripts/brief.mjs --task <card> --preflight` exits 0 over `T-324`, `T-324-s4` and
+`T-324-s5`. Everything this bench wrote is inside the card's own eleven-path fence or under
+`docs/tasks/`: `tools/e2e/scripts/dispatch-brief.mjs`, `tools/e2e/tests/run-record.spec.ts`, the
+card, and the two filed findings. No file outside the fence moved.
