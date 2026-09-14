@@ -46,3 +46,11 @@ Filed rather than built: it needs both `app-agent` and `app-interview`,
 and T-081's fence is the first alone.
 
 **PARKED at the fifth triage (2026-08-20).** Unpark when T-081-s1's promoted card ships the denial notice — decide the optional TranscriptLine field in the same card, not before.
+
+## Re-triage note of 2026-09-14 (pile 2 batch 3b, the owner's approval of 2026-09-14, pile 2 batch 3b, after the Codex orchestrator's reviews)
+
+The card this note waited on no longer exists under its own id: T-081-s1 was absorbed into T-101, which is done, and T-101's section on the decision this card asked it to make records that the denial notice shipped live-only, that the persistence field was deferred and not taken, and that this card's wake is therefore met. The residual is one decision, the owner's: keep the live-only behaviour, or authorize a separate persistence contract with both owning components (the runner banking an optional transcript field, the interview reading it) and compatibility for the absent field. T-101's remark that triage should promote this card is a suggestion on record, not an authorization; this note promotes nothing and authorizes no persistence work. T-175-s1 stays separate: its own five requirements are its own pre-dispatch consolidation.
+
+## Implementation notes
+
+## Verdicts

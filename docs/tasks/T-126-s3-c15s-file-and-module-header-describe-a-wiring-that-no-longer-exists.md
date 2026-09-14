@@ -104,3 +104,11 @@ commit. Same defect seen from more than one side; this file is the
 survivor because it carries the measurement or the general fix.
 
 Amnesty triage 2026-08-29 (triage seat): PARKED — ITEM 1 IS DISCHARGED — C-15's paths: no longer names the deleted tests/dispatch_lanes.rs (removed in the eleventh triage's cleanup), and the component file now carries the settlement's obituary instead. Items 2 and 3 are live at this base: dispatch/mod.rs:26 still says "No #[tauri::command] registers it and lib.rs does not declare it", and C-15's opening paragraph still says the TS half "joins it against the board", which stopped being true at T-110's rebuild. Item 3 IS T-110-s9's EDIT ONE, and its half-discharge is why it survived a merge and a checkpoint. RESURFACES: the next app-dispatch dispatch, paired with docs/architecture/components/ — one lane takes both surviving items and T-110-s9 with them. Item 4 (C-05's depends_on missing C-15, now visible to arch drift) rides T-135 Half B, which owns ADR-018 and is never re-dispatched whole.
+
+## Re-triage note of 2026-09-14 (pile 2 batch 3b, the owner's approval of 2026-09-14, pile 2 batch 3b, after the Codex orchestrator's reviews) — the obligation map, complete
+
+Item 1 (the deleted shim path in C-15's paths) is discharged, as this card records and C-15's paths confirm. Item 2 (the Rust module header) is app-dispatch work and rides the next app-dispatch dispatch paired with the components directory, this card's own wake. Item 3 (C-15's description of the TypeScript half) is named on T-188 as an in-fence follow-through candidate. Item 4 (C-05 declaring C-15) does NOT ride T-135 Half B any longer: T-135 is done and its integration record left the declaration unchanged on purpose, routing it back to this item; C-05 still declares no C-15. The obligation absorbed from T-149-s1 in this card's opening paragraph — C-05's phantom C-09 dependency, which C-05 still declares — survives beside item 4, unnumbered but not lost. Both dependency questions stay on this card with their graph and fixture reconciliation until a destination or a disposition is established; neither is a prose-only cleanup to take with the C-15 paragraph.
+
+## Implementation notes
+
+## Verdicts

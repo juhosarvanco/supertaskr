@@ -167,3 +167,11 @@ a better brief. This one is not.
   than removing the thing to look at.
 
 PREFLIGHT RULING (2026-09-02): the heading at line 106, "A SECOND CHANNEL, AND THIS ONE IS NOT IN THE REPOSITORY AT ALL", enumerates the channels through which blindness leaks on THIS card — the ref and the message — and is not an ordinal over this repository's history; the preflight's census-claim arm read the ordinal, and the count it wants is two channels named on this page, both above.
+
+## Note of 2026-09-14 (pile 2 batch 3b, the owner's approval of 2026-09-14, pile 2 batch 3b, after the Codex orchestrator's reviews) — re-contract before dispatch; T-283-s4 stays separate
+
+Criterion 1 as written refuses a verifier checkout carrying any executor commit. Since T-296 the verifier is two spawns — phase 1 blind at the base, reading the frozen contract (the card at the base) and producing the attack set, which the seal then supplies to phase 2; phase 2 on the candidate's own tip — so the criterion applied literally refuses every legitimate phase-2 bench. Before dispatch this card is re-contracted to state phase 1's frozen input boundary and phase 2's candidate checkout with its permitted disclosures; T-283-s4's filename-disclosure question joins that re-contracting as an open question, and the orchestrator role file joins the fence if the chosen route changes the dispatcher's duties. No fold and no confidentiality guarantee is approved by this note.
+
+## Implementation notes
+
+## Verdicts

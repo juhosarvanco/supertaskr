@@ -13,6 +13,8 @@ builder:
 review: independent
 ---
 
+Absorbs: T-110-s2 (2026-09-14, the owner's approval of 2026-09-14, pile 2 batch 3b, after the Codex orchestrator's reviews) — the ruling only, no reader work. The child's wake has occurred (T-111 and T-112 are done; the lane list is rendered to a human). The subject is the older lane-branch grammar (`tNNN-` names from before T-110's `task/T-<digits>-<slug>` shape), not the product-name rename.
+
 **THE RULE WAS DELIBERATELY NOT WRITTEN, AND THE CONDITION FOR WRITING IT
 HAS NOW OCCURRED.**
 
@@ -107,6 +109,7 @@ current instrument guarantees it is found at the worst moment.
   resolution.
 - **This card is GUARD-CLASS**: `review: independent`, set at filing.
 - Verification: headless.
+- WHEN this card is dispatched THE card SHALL carry the owner's recorded ruling on the id-minting namespace for branches in the older `tNNN-` grammar — the three arms the absorbed record keeps whole: (a) the older grammar is not a lane namespace and such a branch is reported as not-a-lane with its typed reason, no grammar widening; (b) or (c) a reader change; the seat recommends (a), and the choice is outstanding until ruled. This card's obligation is the recorded decision only; under (b) or (c) the reader and its tests are a named app-dispatch follow-up, never this lane's, and this card's fence is unchanged. (absorbed from T-110-s2, 2026-09-14; the count of such branches on a host is a live observation, not a property of any commit)
 
 ## Read beside
 
@@ -254,3 +257,58 @@ Run against the fixed suite: **13 passed.** Run against either defect it
 reproduces the exact CI failure in seconds. Now in `docs/CONVENTIONS.md`
 as a rule, because a machine-scoped surface is not closed by remembering
 it — it is closed by making the other machine cheap to ask.
+
+## Absorbed from T-110-s2 — The older tNNN- branch spelling reads as "not a lane", and whether that is right is a ruling nobody has made (kept whole)
+
+Title as filed: "The older tNNN- branch spelling reads as "not a lane", and whether that is right is a ruling nobody has made"
+
+Filed as: status parked, priority None, size None, touches None, wake None, suggested_by executor claude-opus-5 @T-110.
+
+**Addressed to the PLANNER or the ARCHITECT** — it is a question about
+what a lane IS, not about the reader that answers it.
+
+T-110's positive shape accepts exactly `task/T-<digits>-<slug>`, which
+is what `docs/CONVENTIONS.md`'s LANE PROTOCOL bullet spells and what the
+card's own problem statement quotes (`ref: refs/heads/task/T-NNN-<slug>`).
+Anything else is reported as `WorktreeEntry::NotALane` with a typed
+reason — reported, never dropped.
+
+**But the same bullet says both branch spellings are live in this
+repository and the older one is not a mistake to fix**: derived at
+`4d2f03c`, 69 branches — 31 `task/T-NNN-…`, 37 the older `tNNN-…`. So a
+worktree checked out on `t042-genesis-switch` would be shown by the
+board as *not a lane*, with `notTheLaneNamespace` as its reason.
+
+### Why this is filed rather than fixed (T-110-s2)
+
+Three arms, and picking one from inside the lane would be inventing:
+
+- **(a) Leave it.** The old spelling belongs to branches that ran and
+  finished; `git worktree list` has never held one in this session, and a
+  reader that accepts only the current protocol is a reader that tells
+  you when someone has departed from it.
+- **(b) Widen the grammar** to a second shape, `t<digits>-<slug>` with
+  the id built as `T-<digits>` — five lines, and it makes an entry that
+  is genuinely a lane read as one.
+- **(c) Widen and MARK it**, so the row carries which spelling it
+  matched. This is the only arm that lets the board say *"this lane is on
+  the old spelling"*, which is a fact worth showing exactly once.
+
+The cost of getting it wrong is asymmetric and that is the argument for
+ruling rather than defaulting: under (a) a real lane reads as a stray
+worktree, and the board's whole point is that a stray worktree is news.
+
+The trigger is written into the module's own header
+(`app/src-tauri/src/dispatch/lanes.rs`, the "WHAT THIS DELIBERATELY DOES
+NOT DO" list), so whoever changes the grammar meets this question in the
+file rather than in a card.
+
+Fence: `[app-dispatch]` — the grammar and its tests are both inside it.
+
+### PARKED — eleventh triage, 2026-08-26 (T-110-s2)
+
+Real and still true; not now. **UN-PARK WHEN:** the first worktree appears on a `tNNN-` branch, or the day the lane list is rendered to a human (`T-111`/`T-112`). A ruling request with no forcing event: `lanes.rs` accepts only `task/T-<digits>-<slug>`, 37 of 69 branches carry the older spelling, and no worktree has ever held one.
+
+## Implementation notes
+
+## Verdicts

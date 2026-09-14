@@ -135,3 +135,11 @@ landing**, and the lane can now hold itself to that without first
 investigating whether it can.
 
 **The `if` is struck: the fixture SHALL be used.**
+
+## Note of 2026-09-14 (pile 2 batch 3b, the owner's approval of 2026-09-14, pile 2 batch 3b, after the Codex orchestrator's reviews) — an in-fence follow-through candidate from T-126-s3
+
+T-126-s3 stays parked and separate. Its item 3 — C-15's sentence that the TypeScript half joins it against the board — is a component-file edit inside this card's fence and is a candidate for this card's lane as an in-fence follow-through; a candidate on record, not evidence the edit has happened. The rest of T-126-s3's obligation map is carried on that card by a note of the same date.
+
+## Implementation notes
+
+## Verdicts

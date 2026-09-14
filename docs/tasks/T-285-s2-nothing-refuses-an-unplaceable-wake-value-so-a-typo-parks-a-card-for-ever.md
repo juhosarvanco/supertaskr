@@ -73,6 +73,10 @@ a legal-looking timestamp gets no signal at the moment they write it. A
 gate that refuses at the write would catch the timestamp spelling and
 the typo with one check.
 
+## Discharge of 2026-09-14 (pile 2 batch 3b, the owner's approval of 2026-09-14, pile 2 batch 3b, after the Codex orchestrator's reviews) — T-159-s6 closed on the implemented wake-field remedy
+
+T-159-s6 (the resurfacing needle over-matches; three arms, none ruled) is discharged: its machine-readable arm landed with T-285 as the `wake:` field, and the current rule and reader (readWake over card.fields) evaluate a parked card's condition from that field, not from a body substring, so no duplicate reader requirement is folded into this card. The residual, stated narrowly: PROSE_WAKE_PATTERN beside readWake is a heuristic flag for a human — its own comment says it is not a parse of the condition and must never become one — so it neither counts genuine prose conditions nor proves the migration complete, and old unconverted prose conditions still need re-triage. The needle T-159-s1 published stays in that card's dated historical measurement as superseded practice; the current field-based contract is TASK-FORMAT's wake section and this card's own criteria. No claim is made that every historical mention disappeared or that manual misuse is impossible. The source's immutable reference: docs/tasks/T-159-s6-the-resurfacing-needle-a-parking-note-publishes-over-matches-and-the-error-grows-with-the-vehicles-own-success.md at 4efd5a7f62c78e02f6cffba52c031e897b79d106, filed 2026-08-30 and parked at the standing triage sitting of that day.
+
 ## Implementation notes
 <!-- executor appends before finishing -->
 
