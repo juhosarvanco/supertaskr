@@ -44,6 +44,37 @@ export function readCorpus(extra = []) {
   return corpus;
 }
 
+/** One pointer line of the conventions index: `  - docs/conventions/x.md — OPENER`. */
+const CONVENTIONS_POINTER = /^ {2}- (docs\/conventions\/[a-z0-9-]+\.md) — /;
+
+/**
+ * EVERY FILE THIS PROJECT'S CONVENTIONS ARE MADE OF — the index and the
+ * chapters it points at, in the index's own order (T-290's verifier).
+ *
+ * T-290 made docs/CONVENTIONS.md an INDEX over docs/conventions/. An eval
+ * that names the index alone in its `reads` names a TABLE OF CONTENTS,
+ * and a rule that moved into a chapter is then a rule the eval reports as
+ * undocumented — which is how MF-09 came to say the citation grammar "is
+ * a grammar nobody documents" while that grammar sat, byte for byte, in
+ * docs/conventions/standing-gates.md.
+ *
+ * DERIVED FROM THE INDEX, NEVER LISTED, for the same reason the arm's own
+ * `conventionsChapters` derives it: a typed list is wrong on the day a
+ * chapter is added, and wrong in the direction that leaves the eval green.
+ *
+ * @returns {string[]}
+ */
+export function conventionsPaths() {
+  const index = readFileSync(path.join(repoRoot, "docs/CONVENTIONS.md"), "utf8");
+  /** @type {string[]} */
+  const out = ["docs/CONVENTIONS.md"];
+  for (const line of index.split("\n")) {
+    const m = CONVENTIONS_POINTER.exec(line);
+    if (m !== null && !out.includes(String(m[1]))) out.push(String(m[1]));
+  }
+  return out;
+}
+
 /**
  * A corpus with ONE entry replaced — the degradation.
  *
