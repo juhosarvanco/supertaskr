@@ -680,11 +680,12 @@ and T-236 (2026-09-02, whose pre-compaction text is
 ## Gotchas
 - method/ is the generic, product-agnostic convention — nothing
   supertaskr-specific goes in it; product docs live in docs/. Changes to
-  method/ formats are version-bumped (currently v0.1.26) and noted here.
+  method/ formats are version-bumped (currently v0.1.27) and noted here.
   **A VERSION'S NOTE HERE IS ITS DATE, ITS CARD AND ITS THEME; WHAT
   MOVED IS THE RELEASE'S OWN RECORD** (ADR-019's law applied to this
   changelog at T-162): the per-clause itemisation is RECORD-shaped, and
   the AUTHORITY for what a version says is `method/` itself at that tag.
+  v0.1.27 (T-298-s3, 2026-09-14) — the XS release: the size vocabulary gains XS in the parser's legal set and the task format's frontmatter block, preserving S, M and L, so the bounded tier the tier table selects on XS is reachable end to end from a card that lives in the tree; the ceremony table gains an XS row restating the bounded line (executor only, the keeper scoped, the push owing its range), written lightest-first; the lightest ceremony row and the tier table's bounded size are pinned as one invariant read from both documents rather than a typed letter.
   v0.1.26 (T-299-s6, 2026-09-13) — the LABELS release: every process switch carries an implementation label, `operational`, `manual` or `declarative`, with a manual switch's action beside it; an operational label is proved by a body that changes the value and observes the arm behave differently; the terminal shows the label beside the value and refuses to edit a declarative switch with its file unchanged; the reference carries the labels.
   v0.1.25 (T-311-s5, 2026-09-13) — the READERS release: the task format names the criteria heading's depth in words and a body keeps every card to it; the advisory seat reader and the card preflight hold one heading rule, so both answer the same criteria for the same card; the verifier role file spells the verdict entry's one shape with the date first, and the merge verb's newest-verdict reader finds a dated depth-three entry wherever its date sits, a correction block's heading excluded.
   v0.1.24 (T-311, 2026-09-12) — the RUN RECORD release: every child run, native subagent or foreign process, writer or

@@ -69,6 +69,7 @@ import {
   dispatchLaneRecs,
   dispatchSpellings,
   docsNamed,
+  expandFenceEntry,
   fenceLedger,
   fenceOverlaps,
   fencePaths,
@@ -6396,6 +6397,237 @@ test("the classifier answers from the card and the tree, and what it cannot read
     }).tier,
     "a question that decides nothing here is not a reason to refuse",
   ).toBe("standard");
+});
+
+test("THE BOUNDED TIER IS REACHABLE FROM A CARD THIS TREE WOULD HOLD: the size its tier table admits bounded on parses clean and classifies bounded, and every bounded condition removed one at a time does not", () => {
+  // KILLED BY: a parser whose size vocabulary drops the size the tier
+  // table selects `bounded` on. That is where this tree stood until
+  // T-298-s3, and it is why the cheapest tier was UNREACHABLE rather
+  // than merely unused: a card written in the tier table's own
+  // vocabulary was an `invalid-field` issue, the three suites that
+  // require the live board to parse with zero issues went red on it,
+  // and so no card carrying that size could live in the tree for the
+  // classifier to be asked about. The two halves are ordered here on
+  // purpose — the parse is a PRECONDITION of the classification and not
+  // a second assertion beside it, because a classifier that answered
+  // `bounded` for a size no card can carry is exactly the green this
+  // body exists to refuse.
+  const taskFormat = readDoc("method/tasks/TASK-FORMAT.md");
+
+  // THE SIZE IS READ OUT OF THE METHOD'S OWN TIER TABLE, never typed.
+  // The whole finding was two documents disagreeing about one word, and
+  // a body that spells the word is a third copy of it — it would stay
+  // green through the exact divergence it is here to catch.
+  const tierRow = taskFormat.split("\n").find((l) => /^\|\s*bounded\s*\|/.test(l));
+  expect(tierRow, "the tier table has no `bounded` row, so this body cannot derive what to test").toBeDefined();
+  const named = /size\s+([A-Za-z]+)/.exec(tierRow ?? "");
+  expect(named, "the bounded row names no size, and the tier it selects is what this body is about").not.toBeNull();
+  const boundedSize = named?.[1] ?? "";
+
+  // THE METHOD'S VOCABULARY AND THE PARSER THE ARM ACTUALLY IMPORTS are
+  // one vocabulary, asked of the BUILT browser entry `dispatch-brief.mjs`
+  // loads since T-317 rather than of the source — a set fixed in src/ and
+  // never rebuilt is the same outage wearing a green diff.
+  expect(
+    [...parserPure.TASK_SIZES],
+    "the parser the arm imports does not hold the size the method's tier table selects bounded on",
+  ).toContain(boundedSize);
+
+  // THE FIXTURE IS A CARD THAT LIVES IN THE TREE: tracked, read off
+  // disk, with a fence this tree really carries — and the ONE thing
+  // this body changes about it is the field the finding is about. A
+  // card typed here would share the property it asserts (T-210), and a
+  // fence invented here would not be testable against the guard map at
+  // all.
+  const comps = components();
+  const slugs = slugMapFromFields(comps);
+  const map = guardClassMap(conventionsText(repoRoot), guardClassIds(taskFormat));
+  const tracked = new Set(trackedFiles(repoRoot));
+  const trackedDirs = new Set<string>();
+  for (const f of tracked) {
+    for (let i = f.indexOf("/"); i !== -1; i = f.indexOf("/", i + 1)) trackedDirs.add(f.slice(0, i));
+  }
+  // The arm's own rule (`dispatchLanePlan`): a path is tracked if the
+  // tree tracks it, or tracks anything under it, or its parent is a
+  // tracked directory — that last case being T-287's new-file
+  // reservation.
+  const isTracked = (rel: string): boolean => {
+    const t = rel.replace(/\/+$/, "");
+    if (tracked.has(t) || trackedDirs.has(t)) return true;
+    const parent = t.includes("/") ? t.slice(0, t.lastIndexOf("/")) : "";
+    return parent !== "" && trackedDirs.has(parent);
+  };
+
+  const candidates = liveTaskCards(repoRoot)
+    .map((c) => {
+      const entries = fieldList(frontmatterFields(c.content), "touches");
+      const paths = fencePaths({ entries }, slugs, comps);
+      return { file: c.path, content: c.content, entries, paths };
+    })
+    .filter(
+      (c) =>
+        c.entries.length > 0 &&
+        c.paths.length > 0 &&
+        c.entries.every((e) => expandFenceEntry(e, slugs, comps).paths.length > 0) &&
+        c.paths.every(isTracked) &&
+        guardClassHits(c.paths, map).length === 0,
+    )
+    .sort((a, b) => a.paths.length - b.paths.length || a.file.localeCompare(b.file));
+  expect(
+    candidates.length,
+    "no card in this tree has a wholly tracked fence naming no guard-class path, so there is " +
+      "nothing here to carry the bounded arrangement and this body would prove nothing",
+  ).toBeGreaterThan(0);
+  const fixture = candidates[0]!;
+
+  // ONE FIELD MOVES, AND IT IS THE FIELD THE FINDING IS ABOUT.
+  const atBounded = fixture.content.replace(/^size:.*$/m, `size: ${boundedSize}`);
+  expect(atBounded, `${fixture.file} carries no size: line to move`).not.toBe(fixture.content);
+
+  // CRITERION ONE, END TO END: a card that lives in this tree, carrying
+  // the size the tier table names, is a card the parser holds — zero
+  // issues, and the size on the model rather than dropped.
+  const parsed = parserPure.parseTaskFile(atBounded, fixture.file);
+  expect(
+    parsed.issues,
+    `${fixture.file} at size ${boundedSize} does not parse, so the board cannot hold the size ` +
+      "the tier table selects the cheapest tier on",
+  ).toEqual([]);
+  expect(parsed.task?.size).toBe(boundedSize);
+
+  // THE POSITIVE CONTROL FOR THAT PARSE, run where the arrangement is
+  // ABSENT: the same card, the same everything, one word the parser's
+  // vocabulary does not carry — and it reds on the `size` field. Without
+  // this the zero-issue assertion above is green for a parser that
+  // stopped checking sizes altogether, which is the cheap way to pass
+  // this card and the one the amendment forbids.
+  const refusedWord = "XXL";
+  expect([...parserPure.TASK_SIZES], "the control word is in the vocabulary, so it controls nothing").not.toContain(
+    refusedWord,
+  );
+  const atRefused = parserPure.parseTaskFile(
+    fixture.content.replace(/^size:.*$/m, `size: ${refusedWord}`),
+    fixture.file,
+  );
+  expect(
+    atRefused.issues.filter((i) => i.kind === "invalid-field" && i.field === "size").length,
+    "an illegal size is no longer refused, so the vocabulary stopped being a vocabulary",
+  ).toBe(1);
+
+  // CRITERION TWO: the arm's classification of that same card, from the
+  // frontmatter the arm itself reads and the fence the tree itself
+  // expands, reaches `bounded`.
+  const fields = frontmatterFields(atBounded);
+  const keeper = { pinned: true, answered: true, why: "a keeper is green at the base" };
+  const asDispatched = {
+    size: fieldScalar(fields, "size"),
+    fencePaths: fixture.paths,
+    unresolved: [] as string[],
+    untracked: [] as string[],
+    guardMap: map,
+    keeper,
+  };
+  expect(asDispatched.size, "the arm reads a different size off the card than the parser does").toBe(boundedSize);
+  const verdict = classifyTier(asDispatched);
+  expect(
+    verdict.tier,
+    `${fixture.file} at size ${boundedSize} meets every bounded condition and did not classify bounded`,
+  ).toBe("bounded");
+  expect(verdict.reason, "and the reason names the keeper the tier is bought on").toContain("keeper");
+
+  // AND `bounded` IS NOT SUFFICIENT ON THE SIZE ALONE — every other
+  // bounded condition, removed one at a time from the SAME card, lands
+  // somewhere else. The guarded override is first because it is the one
+  // that must survive: guard-class outranks every size, and a size that
+  // bought a cheap bench for a guard would be this card making the tree
+  // worse rather than better.
+  const guardPath = guardClassCandidates()[0] ?? "";
+  expect(guardPath, "this tree exposes no guard-class file, so the override cannot be controlled").not.toBe("");
+  expect(
+    classifyTier({ ...asDispatched, fencePaths: [...fixture.paths, guardPath] }).tier,
+    "the size the bounded tier selects on bought a cheap verification for a guard-class path",
+  ).toBe("guarded");
+  expect(
+    classifyTier({ ...asDispatched, untracked: [fixture.paths[0] ?? ""] }).tier,
+    "a fence not wholly inside a tracked one is not bounded",
+  ).toBe("standard");
+  expect(
+    classifyTier({ ...asDispatched, keeper: { pinned: false, answered: true, why: "no spec owns it" } }).tier,
+    "a card no keeper pins is not bounded",
+  ).toBe("standard");
+  expect(
+    () => classifyTier({ ...asDispatched, keeper: { pinned: false, answered: false, why: "the runner graded nothing" } }),
+    "an unanswered keeper question on the one tier with no verifier is refused, not resolved downward",
+  ).toThrow(TierFinding);
+});
+
+test("THE CEREMONY TABLE CARRIES A ROW FOR THE SIZE THE TIER TABLE SELECTS BOUNDED ON, so row 11 derives a ceremony for it rather than a finding", () => {
+  // KILLED BY: a size vocabulary that gains a value the ceremony table
+  // has no row for. Row 11 reads the ROW and refuses to reason from the
+  // letter, so a size with no row is a FINDING — and `brief.mjs` turns
+  // any finding into a non-zero exit. Before T-298-s3 that could not
+  // happen, because no card could carry the size at all; adding the size
+  // to the vocabulary without adding the row would move the outage one
+  // step down the dispatch rather than close it, and the lane would have
+  // reported a reachable tier that still refused at the dispatch.
+  const taskFormat = readDoc("method/tasks/TASK-FORMAT.md");
+  const tierRow = taskFormat.split("\n").find((l) => /^\|\s*bounded\s*\|/.test(l));
+  const boundedSize = /size\s+([A-Za-z]+)/.exec(tierRow ?? "")?.[1] ?? "";
+  expect(boundedSize, "the tier table names no size for bounded, so this body tests nothing").not.toBe("");
+
+  // `DERIVERS` holds every row's deriver, and they do not all take the
+  // same arity, so the map's value type is a union TypeScript cannot
+  // narrow by key. The row is named here and the shape row 11's own
+  // deriver has is asserted by the call below rather than assumed.
+  type Row11 = (ctx: ReturnType<typeof context>) => Parameters<typeof render>[0];
+  const deriver = DERIVERS.get("the deliverable") as Row11 | undefined;
+  expect(deriver, "row 11 has no deriver, so nothing here drives the derivation it is about").toBeDefined();
+  const base = context({ taskId: "T-133" });
+  expect(base.card, "the card this body drives row 11 with is not in this tree").toBeDefined();
+  // ONE FIELD MOVES. Row 11's ceremony derivation reads the card's
+  // `size:` and the table, so the fixture is a card that lives in the
+  // tree with that one field set to the size under test.
+  const atSize = (size: string): { findings: string[]; text: string } => {
+    const findings: string[] = [];
+    const ctx = {
+      ...base,
+      findings,
+      card: { ...base.card!, fields: { ...base.card!.fields, size } },
+    };
+    const text = render(deriver!(ctx));
+    return { findings, text };
+  };
+
+  const bounded = atSize(boundedSize);
+  expect(
+    bounded.findings,
+    `row 11 cannot derive a ceremony for size ${boundedSize}, which is the size the tier table ` +
+      "admits the cheapest tier on — the dispatch of such a card answers non-zero",
+  ).toEqual([]);
+  expect(bounded.text, "the derivation named no ceremony row for the size it was asked about").toContain(
+    `ceremony row ${boundedSize}`,
+  );
+
+  // THE CONTROL, RUN WHERE THE ARRANGEMENT IS ABSENT: a size this table
+  // carries no row for still answers with the finding, by name. Without
+  // it the green above is equally explained by a derivation that stopped
+  // asking, which is the failure this row exists to keep visible.
+  const heads = ceremonyRows(taskFormat).map((r) => r.size);
+  const absent = ["XXS", "XL", "XXL"].find((c) => !heads.some((h) => h === c || h.startsWith(`${c},`)));
+  expect(absent, "every control size already has a row, so none of them controls anything").toBeDefined();
+  const missing = atSize(absent ?? "");
+  expect(
+    missing.findings.join("\n"),
+    "a size with no ceremony row was derived anyway, so the refusal row 11 rests on is gone",
+  ).toContain(`no row for size ${absent ?? ""}`);
+
+  // AND THE NEW ROW DOES NOT LEAK INTO ANOTHER SIZE'S ANSWER: the letter
+  // alone does not decide the row here either, so a card at S must not
+  // pick up the row written for the size the bounded tier selects on.
+  expect(
+    atSize("S").text,
+    `an S card picked up the ${boundedSize} row — the match is reading a suffix rather than the head`,
+  ).not.toContain(`ceremony row ${boundedSize}`);
 });
 
 test("THE KEEPER RUN IS READ OFF ITS OUTPUT, so a derivation that graded nothing is not a red baseline", () => {

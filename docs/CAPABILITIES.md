@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1085 behaviours** — 1083 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1087 behaviours** — 1085 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -145,6 +145,8 @@ Census: **1085 behaviours** — 1083 extracted sentences + 2 named-not-extracted
 - the guard-class CLASSES are the method's and the PATHS are the project's, and a disagreement either way is a hard failure
 - EVERY GUARD-CLASS FILE THIS TREE CARRIES IS COVERED, and the derivation that finds them never reads the map
 - the classifier answers from the card and the tree, and what it cannot read it REFUSES rather than guesses
+- THE BOUNDED TIER IS REACHABLE FROM A CARD THIS TREE WOULD HOLD: the size its tier table admits bounded on parses clean and classifies bounded, and every bounded condition removed one at a time does not
+- THE CEREMONY TABLE CARRIES A ROW FOR THE SIZE THE TIER TABLE SELECTS BOUNDED ON, so row 11 derives a ceremony for it rather than a finding
 - THE KEEPER RUN IS READ OFF ITS OUTPUT, so a derivation that graded nothing is not a red baseline
 - A FENCE NAMING A DIRECTORY NAMES THE GUARDS INSIDE IT, and a leading ./ is not a different path
 - A KEEPER RUN THAT PUBLISHED `verdict=REFUSED` GRADED NOTHING, and a dispatch does not call that a red baseline

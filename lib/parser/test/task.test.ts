@@ -51,7 +51,7 @@ title: Audit log
 feature: F-03            # story map column
 milestone: 2             # above/below the slice line
 priority: 2              # position in column; 1 = top = next
-size: M                  # S | M | L
+size: M                  # XS | S | M | L
 status: planned          # suggested | planned | building | verifying |
                          # rejected | merging | done | parked
 blocked_by: [T-015]
@@ -274,7 +274,7 @@ describe('splitSections — shared inert-span view (T-055)', () => {
 
 describe('parseTaskFile — malformed input', () => {
   it('missing required field: structured issue naming file and field', () => {
-    const noSize = VALID.replace('size: M                  # S | M | L\n', '');
+    const noSize = VALID.replace('size: M                  # XS | S | M | L\n', '');
     const { task, issues } = parseTaskFile(noSize, FILE);
     expect(issues).toEqual([
       {
@@ -510,5 +510,81 @@ Backbone-level idea.
     expect(issues).toEqual([]);
     expect(task?.status).toBe('parked');
     expect(task?.feature).toBe('F-03');
+  });
+});
+
+describe('parseTaskFile — the size vocabulary is the method\'s vocabulary', () => {
+  // THE VOCABULARY IS READ OUT OF THE METHOD DOCUMENT, never typed here.
+  // T-298-s3's whole finding was two files disagreeing about one word —
+  // `method/tasks/TASK-FORMAT.md`'s tier table admitting `bounded` on a
+  // size this parser refused as an `invalid-field` — so a body that
+  // spells the word is a third copy of it and stays green through the
+  // exact divergence it is meant to catch.
+  const taskFormat = readFileSync(join(repoRoot, 'method/tasks/TASK-FORMAT.md'), 'utf8');
+
+  /** The size the method's tier table admits the bounded tier on. */
+  const boundedSize = ((): string => {
+    const row = taskFormat.split('\n').find((l) => /^\|\s*bounded\s*\|/.test(l));
+    const named = row === undefined ? null : /size\s+([A-Za-z]+)/.exec(row);
+    return named?.[1] ?? '';
+  })();
+
+  /** The `size:` field's own `|`-separated comment in the frontmatter block. */
+  const declared = ((): string[] => {
+    const line = taskFormat.split('\n').find((l) => /^size:/.test(l)) ?? '';
+    const comment = /#\s*(.*)$/.exec(line)?.[1] ?? '';
+    return (comment.split('—')[0] ?? '')
+      .split('|')
+      .map((v) => v.trim())
+      .filter((v) => v !== '');
+  })();
+
+  it('accepts the size the tier table selects the bounded tier on', () => {
+    // KILLED BY: the set this parser carried until T-298-s3. `S | M | L`
+    // made the cheapest tier of ADR-024 unreachable rather than unused —
+    // a card written in the tier table's own vocabulary was an
+    // invalid-field issue, and the three suites that require the live
+    // board to parse with zero issues went red on it.
+    expect(boundedSize, 'the tier table names no size for bounded, so this body tests nothing').not.toBe('');
+    const card = VALID.replace(/^size: .*$/m, `size: ${boundedSize}`);
+    expect(card).not.toBe(VALID);
+    const { task, issues } = parseTaskFile(card, FILE);
+    expect(issues).toEqual([]);
+    expect(task?.size).toBe(boundedSize);
+  });
+
+  it('holds every size the method declares, and nothing the method does not', () => {
+    // ONE SIDE ONLY, BOTH WAYS: each value the DOCUMENT names must parse,
+    // and a value it does not name must still be refused. The second half
+    // is what stops the first from being satisfied by a parser that gave
+    // up on sizes altogether, which is the cheap way to pass this card.
+    expect(declared.length, "the method's size: comment could not be read").toBeGreaterThan(1);
+    expect(declared, 'the vocabulary the tier table selects on is not in the vocabulary it declares').toContain(
+      boundedSize,
+    );
+    for (const size of declared) {
+      const { task, issues } = parseTaskFile(VALID.replace(/^size: .*$/m, `size: ${size}`), FILE);
+      expect(issues, `the method declares size ${size} and this parser refuses it`).toEqual([]);
+      expect(task?.size).toBe(size);
+    }
+    for (const refused of ['XXL', 'xs', 'Small', '']) {
+      const { issues } = parseTaskFile(VALID.replace(/^size: .*$/m, `size: ${refused}`), FILE);
+      expect(
+        issues.filter((i) => i.kind === 'invalid-field' || i.kind === 'missing-field').length,
+        `size ${JSON.stringify(refused)} is not one of the method's values and was accepted anyway`,
+      ).toBe(1);
+    }
+  });
+
+  it('names the whole vocabulary when it refuses one, so the message says what IS legal', () => {
+    // KILLED BY: a hard-coded refusal message. The finding was diagnosed
+    // off this sentence — the battery printed the set it would accept
+    // beside the value it would not — so a message that stops tracking
+    // the set costs the next reader the same afternoon.
+    const { issues } = parseTaskFile(VALID.replace(/^size: .*$/m, 'size: XXL'), FILE);
+    const issue = issues.find((i) => i.kind === 'invalid-field' && i.field === 'size');
+    expect(issue).toBeDefined();
+    for (const size of declared) expect(issue?.message).toContain(size);
+    expect(issue?.message).toContain('"XXL"');
   });
 });

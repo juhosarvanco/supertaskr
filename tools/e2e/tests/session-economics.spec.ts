@@ -8,6 +8,7 @@ import { CRITERIA_HEADING as PREFLIGHT_RULE, cardLines } from "../scripts/card-p
 import {
   EXIT,
   assembleBrief,
+  ceremonyRows,
   context,
   contractRows,
   fenceOverlaps,
@@ -722,14 +723,44 @@ test("every line of the advisory block carries its provenance, and the detector 
 
 test("the lightest ceremony tier is read off the table's first row rather than typed into the tool", () => {
   const md = readFileSync(path.join(repoRoot, "method", "tasks", "TASK-FORMAT.md"), "utf8");
-  expect(lightestTier(md)).toBe("S");
+
+  // THE EXPECTATION IS AN INVARIANT, NOT A TRANSCRIPT (T-298-s3). This
+  // line read `.toBe("S")` until the ceremony table gained a lighter
+  // row, and then the tool followed the document — correctly, which is
+  // the whole property — while the typed letter did not, so the body
+  // reported a defect that was its own. What the two tables must agree
+  // about is ONE SIZE: the ceremony table's lightest row and the size
+  // the TIER table admits `bounded` on. Both sides are read out of the
+  // document and neither out of `lightestTier`, so this is a cross-check
+  // between two tables rather than a restatement of the code under test,
+  // and it does not go stale the next time the table gains a row.
+  const tierRow = md.split("\n").find((l) => /^\|\s*bounded\s*\|/.test(l));
+  expect(tierRow, "the tier table carries no `bounded` row to cross-check the lightest row against").toBeDefined();
+  const boundedSize = /size\s+([A-Za-z]+)/.exec(tierRow ?? "")?.[1] ?? "";
+  expect(boundedSize, "the tier table's bounded row names no size").not.toBe("");
+  expect(
+    lightestTier(md),
+    "the ceremony table's lightest row and the size the tier table buys the cheapest verification " +
+      "on are different sizes — one of the two tables moved without the other",
+  ).toBe(boundedSize);
 
   // A RENAMED TIER IS FOLLOWED, NOT OVERRULED — which is the point of
   // reading it. The mutant moves the DOCUMENT and leaves the tool alone,
   // and the tool answers the document.
-  expect(lightestTier(md.replace("| S, diff outside shipped code |", "| XS, diff outside shipped code |"))).toBe(
-    "XS",
-  );
+  //
+  // IT RENAMES WHICHEVER ROW IS FIRST, DERIVED RATHER THAN TYPED, and
+  // that is this arm's own lesson rather than a flourish: it named the
+  // 2026 first row and asserted `XS`, so the moment the table gained an
+  // XS row above it the arm asserted the answer the UNMUTATED document
+  // already gave — a control that could no longer fail. Deriving the row
+  // it damages is what keeps it a control.
+  const firstHead = ceremonyRows(md)[0]?.size ?? "";
+  expect(firstHead, "the ceremony table has no first row to rename").not.toBe("");
+  const renamedTo = "ZZ";
+  expect(lightestTier(md), "the mutant's new name is already the answer, so it damages nothing").not.toBe(renamedTo);
+  const renamed = md.replace(`| ${firstHead} |`, `| ${renamedTo} |`);
+  expect(renamed, "the first row was not found to rename, so this arm mutates nothing").not.toBe(md);
+  expect(lightestTier(renamed)).toBe(renamedTo);
 });
 
 /* ────────────────────────────────────────────────────────────────────

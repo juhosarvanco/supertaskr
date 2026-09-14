@@ -4950,7 +4950,7 @@
       "id": "f:app/src-tauri/src/agent/kit.rs",
       "path": "app/src-tauri/src/agent/kit.rs",
       "lang": "rust",
-      "hash": "blake3:3ee7ccb8ff9ed5d74b9dc1f32d43d744bf15e1474d79c3d69428039c2bc4dc93",
+      "hash": "blake3:d4e337872597ecfb9e4521fa9f9d0a589ed5ad38808b55364553c655caf95bc9",
       "loc": 1175,
       "symbols": [
         {
@@ -26707,8 +26707,8 @@
       "id": "f:lib/parser/src/types.ts",
       "path": "lib/parser/src/types.ts",
       "lang": "ts",
-      "hash": "blake3:4f7e5bbea6cd2f6bbdfc3b920212b360ae6736485c98785323a703b7e05b878a",
-      "loc": 475,
+      "hash": "blake3:27507e918a2a44b37ea4ea03f7e5b5f2b219d65f0d1aba00e93268333e151100",
+      "loc": 491,
       "symbols": [
         {
           "id": "s:lib/parser/src/types.ts#AssignmentReading",
@@ -26716,8 +26716,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            237,
-            253
+            253,
+            269
           ]
         },
         {
@@ -26726,8 +26726,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            222,
-            222
+            238,
+            238
           ]
         },
         {
@@ -26736,8 +26736,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            232,
-            232
+            248,
+            248
           ]
         },
         {
@@ -26746,8 +26746,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            124,
-            132
+            140,
+            148
           ]
         },
         {
@@ -26756,8 +26756,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            451,
-            454
+            467,
+            470
           ]
         },
         {
@@ -26766,8 +26766,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            143,
-            191
+            159,
+            207
           ]
         },
         {
@@ -26776,8 +26776,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            457,
-            460
+            473,
+            476
           ]
         },
         {
@@ -26786,8 +26786,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            134,
-            134
+            150,
+            150
           ]
         },
         {
@@ -26796,8 +26796,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            194,
-            205
+            210,
+            221
           ]
         },
         {
@@ -26806,8 +26806,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            216,
-            216
+            232,
+            232
           ]
         },
         {
@@ -26816,8 +26816,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            44,
-            53
+            60,
+            69
           ]
         },
         {
@@ -26826,8 +26826,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            259,
-            432
+            275,
+            448
           ]
         },
         {
@@ -26836,8 +26836,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            464,
-            475
+            480,
+            491
           ]
         },
         {
@@ -26846,8 +26846,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            28,
-            28
+            44,
+            44
           ]
         },
         {
@@ -26856,8 +26856,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            30,
-            30
+            46,
+            46
           ]
         },
         {
@@ -26866,8 +26866,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            443,
-            446
+            459,
+            462
           ]
         },
         {
@@ -26876,8 +26876,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            37,
-            37
+            53,
+            53
           ]
         },
         {
@@ -26886,8 +26886,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            23,
-            23
+            39,
+            39
           ]
         },
         {
@@ -26906,8 +26906,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            437,
-            440
+            453,
+            456
           ]
         },
         {
@@ -26916,8 +26916,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            82,
-            117
+            98,
+            133
           ]
         },
         {
@@ -26926,8 +26926,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            56,
-            71
+            72,
+            87
           ]
         },
         {
@@ -26936,8 +26936,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            25,
-            25
+            41,
+            41
           ]
         },
         {
@@ -27609,8 +27609,8 @@
       "id": "f:lib/parser/test/task.test.ts",
       "path": "lib/parser/test/task.test.ts",
       "lang": "ts",
-      "hash": "blake3:85304e4e028a8e73bf4ed9e5e7a5b8b5e1561b216041ee138deb627cbf8fe332",
-      "loc": 514,
+      "hash": "blake3:bbea59503e31e873851c331404ba97836850e8364f49ca4b7fd59bf016556a4c",
+      "loc": 590,
       "symbols": [
         {
           "id": "s:lib/parser/test/task.test.ts#FILE",

@@ -23,7 +23,7 @@ compared to what, measured how?" An interview is not a form.
 7. **First slice** — The smallest thing that could ship and teach
    something. Ruthless: milestone 1 should feel too small.
 
-## Output — incremental banking (v0.1.26; supersedes the one-pass rule)
+## Output — incremental banking (v0.1.27; supersedes the one-pass rule)
 
 Artifacts are written AS the interview runs, never in one pass at the
 end. Each stage banks into its artifacts the moment its answer is
