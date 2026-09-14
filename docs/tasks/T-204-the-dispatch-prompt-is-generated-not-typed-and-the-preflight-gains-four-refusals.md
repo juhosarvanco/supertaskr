@@ -129,3 +129,12 @@ lane report describing it.
 card's premise generally: an instruction that must be *remembered at
 dispatch* is not a rule, it is a resolution. The preflight is where it
 becomes a rule.
+
+## Re-triage of 2026-09-14 against what has landed and against T-320 (the architect seat's step-2 triage, owed by T-320's re-check of the same day)
+
+Measured at 37d89ff7 with the card's own four refusals: a nonexistent card path is refused by the preflight (exit 2); a `suggested` card is refused as no dispatch candidate (exit 3); an id already taken by a live lane branch is NOT a preflight refusal — the preflight of a card whose lane is live answers 0, and the refusal lives in the dispatch arm's cut step (`git worktree add -b` of an existing branch), which is the honest home for it since the preflight is a reading and the cut is the act; the guard-class-with-empty-review refusal is unmeasured here (no fixture at hand) and stays this card's to prove. The generated brief exists and is what the dispatch arm renders (the eleven-step verb renders the brief and the phase-one brief from the card, T-296 and after), but the dispatch prompt a lane receives is STILL that brief beside a typed half — the seat's "facts from the seat" paragraph — so this card's opening requirement is not met by what landed; T-320's launch criterion (the executor spawned from the arm's rendered prompt, the model passed explicitly) is the same requirement stated for the express path, and its landing is where this card's opening criterion is re-measured. The two fences overlap (card-preflight.mjs, brief.mjs, dispatch-brief.mjs, their specs, the orchestrator role file), so the two cannot run beside each other; this card stays planned and follows T-320 in the order, re-measured at T-320's merge: what T-320 discharges is recorded here then, and what survives (the typed half for ordinary lanes, the guard-class refusal, the role-file-wins body) is what this lane builds. No fold is made by this line; a fold is the owner's call and none is proposed yet.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts
