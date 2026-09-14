@@ -8,7 +8,7 @@ priority: 2
 status: planned
 suggested_by: "the owner's ruling of 2026-09-12 on the Claude seat's proposal as adjusted by the Codex orchestrator: the packet carries authorization and does not create it; hashes prove integrity only; historical facts are rechecked live before takeover; a compact core with optional attachments; generation of facts by the arm later"
 blocked_by: []
-touches: [method/HANDOFF-FORMAT.md, method/roles/orchestrator.md, method/roles/integrator.md, method/roles/planner.md, docs/CONVENTIONS.md]
+touches: [method/HANDOFF-FORMAT.md, method/roles/orchestrator.md, method/roles/integrator.md, method/roles/planner.md, docs/CONVENTIONS.md, docs/conventions/app-and-ui.md, docs/conventions/merging.md]
 builder:
 verifier:
 built_by:
@@ -27,6 +27,8 @@ format is worth having without that figure. The shape is worth one canonical for
 - WHEN a successor receives a packet THE successor SHALL verify its hashes, state its understanding before acting, recheck the live state the packet reports before claiming a seat or writing, and take the seat with the existing seat verbs; the packet records the handoff and is not the ownership mechanism.
 - WHEN the outgoing seat cannot produce a packet THE successor SHALL reconstruct one from the checkpoint, the refs and the live state, labelled a recovery packet, and SHALL pass the existing ownership checks before writing; missing handoff material implies no permission and never makes recovery impossible.
 - WHEN the format lands THE role files' succession sections SHALL point at it rather than describe it, a subagent launch SHALL owe no packet, and the method version SHALL bump with its release note and evaluation block.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/app-and-ui.md, docs/conventions/merging.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 <!-- executor appends before finishing -->

@@ -8,7 +8,7 @@ priority: 9
 status: planned
 suggested_by: "the architect seat, 2026-09-08, from the GSD Core agent reference (github.com/open-gsd/gsd-core docs/AGENTS.md at 0ebc3cf (read 2026-09-08)): every agent declares its tools and its disallowed tools, checkers get no Write or Edit"
 blocked_by: []
-touches: [.claude/agents, method/roles/orchestrator.md, method/roles/verifier.md, method/roles/executor.md, docs/CONVENTIONS.md, tools/e2e/tests/agent-definitions.spec.ts]
+touches: [.claude/agents, method/roles/orchestrator.md, method/roles/verifier.md, method/roles/executor.md, docs/CONVENTIONS.md, tools/e2e/tests/agent-definitions.spec.ts, docs/conventions/shell-and-scripts.md, docs/conventions/verification.md]
 builder:
 verifier:
 built_by:
@@ -78,3 +78,10 @@ verifier's guarantee, so this is guard-class: `review: independent`.
   prompt, to read the lane's diff; the refusal is the positive control,
   and the same prompt to a general-purpose spawn reading the diff is
   the demonstration that the control can fail.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/shell-and-scripts.md, docs/conventions/verification.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

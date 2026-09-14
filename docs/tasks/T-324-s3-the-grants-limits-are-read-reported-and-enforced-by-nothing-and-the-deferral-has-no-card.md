@@ -8,7 +8,7 @@ priority: 3
 status: suggested
 suggested_by: "executor claude-opus-5@subagent @T-324, from that card's own criterion about the optional limits, which requires the deferral to be named and leaves the later card unfiled"
 blocked_by: [T-324]
-touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/run-record.mjs, method/runtime/process-schema.yaml, tools/e2e/tests/run-record.spec.ts, docs/CONVENTIONS.md]
+touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/run-record.mjs, method/runtime/process-schema.yaml, tools/e2e/tests/run-record.spec.ts, docs/CONVENTIONS.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/records-and-rooms.md, docs/conventions/shell-and-scripts.md]
 builder:
 verifier:
 built_by:
@@ -44,6 +44,8 @@ would be worse than an advisory one.
 - IF no usage figure can be established THEN THE arm SHALL say so and admit, because a ceiling enforced against a number nobody measured is a refusal nobody can reproduce.
 - WHEN a grant carries an expiry THE arm SHALL refuse an admission made after it by name, and the refusal SHALL name the instant it read and the clock it read it from.
 - WHEN the enforcement lands THE schema rows SHALL stop saying advisory and SHALL say operational, with a body that changes each value and watches the arm answer differently, and the conventions SHALL move with them in the same commit.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/dispatch-and-scratch.md, docs/conventions/records-and-rooms.md, docs/conventions/shell-and-scripts.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 <!-- executor appends before finishing -->

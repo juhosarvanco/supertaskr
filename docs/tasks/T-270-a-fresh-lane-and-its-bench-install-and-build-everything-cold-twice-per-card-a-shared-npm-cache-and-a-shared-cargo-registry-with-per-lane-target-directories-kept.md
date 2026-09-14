@@ -8,7 +8,7 @@ priority: 14
 status: planned
 suggested_by: "docs/rooms/loop-efficiency.md item 9 (2026-09-02), ruled 2026-09-09 by @human (\"yes to all four\")"
 blocked_by: []
-touches: [docs/CONVENTIONS.md, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/tests/brief.spec.ts]
+touches: [docs/CONVENTIONS.md, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/tests/brief.spec.ts, docs/conventions/app-and-ui.md, docs/conventions/commands.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/lanes.md, docs/conventions/records-and-rooms.md, docs/conventions/shell-and-scripts.md, docs/conventions/verification.md]
 builder:
 verifier:
 built_by:
@@ -39,3 +39,10 @@ CACHE are read-only inputs that every checkout can share.
 - The per-lane target directory SHALL stay per-lane (a body pins that
   two lanes' `CARGO_TARGET_DIR` differ), and CI SHALL be unaffected
   (the workflow keeps its own caches; the parity spec holds).
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/app-and-ui.md, docs/conventions/commands.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/lanes.md, docs/conventions/records-and-rooms.md, docs/conventions/shell-and-scripts.md, docs/conventions/verification.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

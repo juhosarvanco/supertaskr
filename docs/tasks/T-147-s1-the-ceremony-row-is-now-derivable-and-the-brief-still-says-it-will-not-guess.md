@@ -5,7 +5,7 @@ feature: F-01
 milestone: 4
 status: parked
 suggested_by: executor claude-opus-5@subagent @T-147
-touches: [tools/e2e, docs/CONVENTIONS.md]
+touches: [tools/e2e, docs/CONVENTIONS.md, docs/conventions/dispatch-and-scratch.md]
 ---
 
 **Class parent: `T-135`** (ceremony scales with blast radius, size L,
@@ -65,3 +65,10 @@ renamed — `rawBullet`'s existing throw-on-absence shape is the precedent.
 **RESURFACES when `T-135` reaches `status: done`** — derive with `grep '^status:' docs/tasks/T-135-*.md`, one command, checkable by whoever integrates that card. The seat that unparks re-derives the partition's clauses AT ITS OWN REF rather than trusting the two named here, because the whole point of the wait is that they are expected to have changed.
 
 **And if `T-135` lands without touching row 11's note**, that is the signal this card was right to be separate: unpark it immediately and take it small, since by then the partition is settled and the derivation is the one-pass change this card describes.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/dispatch-and-scratch.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

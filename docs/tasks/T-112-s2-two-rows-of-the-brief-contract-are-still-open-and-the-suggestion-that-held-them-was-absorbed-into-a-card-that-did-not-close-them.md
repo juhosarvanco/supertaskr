@@ -9,7 +9,7 @@ status: parked
 wake: T-292
 suggested_by: executor claude-opus-5@subagent @T-112
 blocked_by: []
-touches: [method/roles/executor.md, docs/CONVENTIONS.md, method/interview/plan-interview.md, app-agent]
+touches: [method/roles/executor.md, docs/CONVENTIONS.md, method/interview/plan-interview.md, app-agent, docs/conventions/standing-gates.md]
 builder:
 verifier:
 built_by:
@@ -109,3 +109,10 @@ card's own evidence that row 9 still truncates and row 5 is still
 closed.
 
 Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-292; two brief-contract rows are open at this ref and the rows move when the assembler is split.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by opener: docs/conventions/standing-gates.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

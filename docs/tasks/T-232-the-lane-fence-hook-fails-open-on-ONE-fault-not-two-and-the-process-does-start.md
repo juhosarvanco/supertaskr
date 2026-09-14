@@ -8,7 +8,7 @@ size: S
 status: planned
 suggested_by: "verifier claude-opus-5@subagent @T-216-s1 phase 1 ground truth, 2026-09-01; re-derived independently at the integration seat before filing"
 blocked_by: []
-touches: [docs/CONVENTIONS.md, tools/e2e/tests/lane-fence.spec.ts]
+touches: [docs/CONVENTIONS.md, tools/e2e/tests/lane-fence.spec.ts, docs/conventions/lanes.md, docs/conventions/shell-and-scripts.md]
 builder:
 verifier:
 built_by:
@@ -115,3 +115,10 @@ the FAILS OPEN sentence still reads the two-fault shape, unchanged.
 byte ceiling that held this promotion no longer binds — `brief.mjs
 --dispatch` answers what can START and `--full` is the triage view — so
 the disposition above is now the stamp: `status: planned`.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/lanes.md, docs/conventions/shell-and-scripts.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

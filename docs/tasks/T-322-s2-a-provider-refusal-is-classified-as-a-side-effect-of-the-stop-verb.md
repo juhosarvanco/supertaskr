@@ -8,7 +8,7 @@ priority: 4
 status: suggested
 suggested_by: "executor claude-opus-5@subagent @T-322, ruled during the lane: method/lane-protocol.md says the operations are the same seven for every kind of child, and a run-record body pins that set exactly, so a refusal verb could not be added from inside this fence"
 blocked_by: [T-322]
-touches: [method/lane-protocol.md, tools/e2e/scripts/run-record.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/tests/run-record.spec.ts, docs/CONVENTIONS.md]
+touches: [method/lane-protocol.md, tools/e2e/scripts/run-record.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/tests/run-record.spec.ts, docs/CONVENTIONS.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/lanes.md, docs/conventions/records-and-rooms.md, docs/conventions/shell-and-scripts.md]
 builder:
 verifier:
 built_by:
@@ -45,6 +45,8 @@ of the verb list will find it.
 - WHEN a refusal rides a verb THE verb's own contract SHALL name the branch, so a reader of the operations learns that a stop may schedule a retry without reading its body.
 - WHEN a refusal is classified THE classification SHALL be drivable without a stop, because a coordinator that wants to know what a refusal is has no termination to record yet.
 - WHEN this lands THE conventions SHALL carry the spelling once, beside the run record's own bullet.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/dispatch-and-scratch.md, docs/conventions/lanes.md, docs/conventions/records-and-rooms.md, docs/conventions/shell-and-scripts.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 <!-- executor appends before finishing -->

@@ -8,7 +8,7 @@ priority: 18
 status: planned
 suggested_by: "@human, 2026-09-09 (\"file the first two\"); measured on T-224: two re-verifications re-ran every attack of the sealed set and the whole battery (211K and 301K tokens, 52 and 40 min) for diffs of one function"
 blocked_by: []
-touches: [method/roles/verifier.md, method/roles/executor.md, method/tasks/TASK-FORMAT.md, docs/CONVENTIONS.md]
+touches: [method/roles/verifier.md, method/roles/executor.md, method/tasks/TASK-FORMAT.md, docs/CONVENTIONS.md, docs/conventions/merging.md, docs/conventions/records-and-rooms.md, docs/conventions/verification.md]
 builder:
 verifier:
 built_by:
@@ -47,3 +47,10 @@ delta, and a delta is judged by what it could move.
   re-judged and which carried, with the hashes, so a later reader can
   see the delta was the delta.
 - The method version SHALL bump; the pin test moves in the same lane.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/merging.md, docs/conventions/records-and-rooms.md, docs/conventions/verification.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

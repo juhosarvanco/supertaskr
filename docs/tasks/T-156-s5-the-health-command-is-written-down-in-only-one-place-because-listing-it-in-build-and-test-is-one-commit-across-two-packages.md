@@ -7,7 +7,7 @@ priority: 14
 size: S
 status: planned
 blocked_by: []
-touches: [docs/CONVENTIONS.md, tools/e2e]
+touches: [docs/CONVENTIONS.md, tools/e2e, docs/conventions/gates-and-the-push.md, docs/conventions/merging.md]
 suggested_by: executor claude-opus-5@subagent @T-156-s1
 builder:
 verifier:
@@ -104,6 +104,8 @@ SHALLs so the coupling is enforceable rather than remembered.
   workflow-parity spec before the edit and after; the before run reds by
   name on the doc's new command and the after run is green, with both
   results recorded here.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by opener: docs/conventions/gates-and-the-push.md, docs/conventions/merging.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 <!-- executor appends before finishing -->

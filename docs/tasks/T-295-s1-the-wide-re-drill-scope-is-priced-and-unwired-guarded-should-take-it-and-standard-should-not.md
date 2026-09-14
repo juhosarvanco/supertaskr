@@ -9,7 +9,7 @@ status: parked
 wake: T-284
 suggested_by: "the T-295 executor, 2026-09-10, measuring its own fixture: one correction to one script under tools/e2e was owned by 13 e2e spec files, and that block's drill ran 443 bodies in 9.6 minutes"
 blocked_by: [T-295]
-touches: [tools/e2e/scripts/merge.mjs, tools/e2e/tests/merge.spec.ts, docs/CONVENTIONS.md]
+touches: [tools/e2e/scripts/merge.mjs, tools/e2e/tests/merge.spec.ts, docs/CONVENTIONS.md, docs/conventions/merging.md, docs/conventions/shell-and-scripts.md, docs/conventions/verification.md]
 builder:
 verifier:
 built_by:
@@ -48,3 +48,10 @@ seat has to remember is the dial this whole arm exists to remove.
   half and it costs nothing.
 
 Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-284; the wide re-drill scope is priced and unwired; the tier classifier is what should choose it.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/merging.md, docs/conventions/shell-and-scripts.md, docs/conventions/verification.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

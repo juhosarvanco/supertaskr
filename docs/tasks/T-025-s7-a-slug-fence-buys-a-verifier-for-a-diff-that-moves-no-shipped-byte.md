@@ -7,7 +7,7 @@ priority: 8
 size: S
 status: planned
 blocked_by: []
-touches: [docs/CONVENTIONS.md, docs/ARCHITECTURE.md]
+touches: [docs/CONVENTIONS.md, docs/ARCHITECTURE.md, docs/conventions/standing-gates.md]
 suggested_by: executor claude-opus-5@subagent @T-025-s6
 builder:
 verifier:
@@ -188,3 +188,10 @@ Everything else ran clean: paths missing **0**, unrunnable figures **0**,
 REPORTED and not refused — `method/tasks/TASK-FORMAT.md`, named by the
 criterion that FORBIDS editing it; a prohibition has to name its subject,
 the path is under no component, and the tool never refuses on that class.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by opener: docs/conventions/standing-gates.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

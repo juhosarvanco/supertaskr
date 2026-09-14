@@ -9,7 +9,7 @@ status: parked
 wake: T-303
 suggested_by: "executor claude-opus-5@subagent @T-296, 2026-09-10"
 blocked_by: [T-299]
-touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md]
+touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md, docs/conventions/architecture.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/shell-and-scripts.md]
 builder:
 verifier:
 built_by:
@@ -43,3 +43,10 @@ map itself, and the keeper body reads the template.
 - WHEN docs/CONVENTIONS.md is read THE guard-class bullet SHALL cite the template rather than carrying a second copy of the map.
 
 Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-303; the guard-class map belongs in the runtime template, which is the audit's own criterion.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/architecture.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/shell-and-scripts.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

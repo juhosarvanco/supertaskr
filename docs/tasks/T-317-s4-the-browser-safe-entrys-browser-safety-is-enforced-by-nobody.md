@@ -8,7 +8,7 @@ priority: 2
 status: suggested
 suggested_by: "verifier claude-opus-5@subagent @T-317, measured at that card's base and again at its tip; pre-existing on both sides and outside that card's criteria, which scope the purity clause to the moved module"
 blocked_by: []
-touches: [lib/parser/test/pure-entry.test.ts, docs/CONVENTIONS.md]
+touches: [lib/parser/test/pure-entry.test.ts, docs/CONVENTIONS.md, docs/conventions/app-and-ui.md, docs/conventions/architecture.md]
 builder:
 verifier:
 built_by:
@@ -46,6 +46,8 @@ the import simply succeeds.
 - WHEN the browser entry is resolved THE transitive import graph reachable from it SHALL carry no node builtin and no dependency that does, derived by walking the graph rather than by reading one file, and a body SHALL red when a builtin is reachable through any module the barrel names.
 - WHEN that body runs THE derivation SHALL be shown failing on an entry that lacks the property — a builtin planted one module deep, not in the barrel itself — so the walk is proved to reach past its first hop rather than asserted to.
 - WHEN the rule is recorded THE conventions SHALL carry it beside the package's other entry rules, so it is a rule with a gate rather than a comment in a source header.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/app-and-ui.md, docs/conventions/architecture.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 <!-- executor appends before finishing -->

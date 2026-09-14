@@ -8,7 +8,7 @@ priority: 4
 status: planned
 suggested_by: executor claude-opus-5@subagent @T-205-s8, 2026-09-02
 blocked_by: []
-touches: [docs/CONVENTIONS.md]
+touches: [docs/CONVENTIONS.md, docs/conventions/dispatch-and-scratch.md]
 builder:
 verifier:
 built_by:
@@ -68,3 +68,10 @@ lanes measured it today (T-205-s8, T-202-s1's margin guard, T-239's
 skew). One sentence in CONVENTIONS' lane bullet naming it beside the
 other three; rides the next CONVENTIONS lane (T-216-s6 or T-228-s2,
 behind T-239).
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by opener: docs/conventions/dispatch-and-scratch.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

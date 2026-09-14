@@ -8,7 +8,7 @@ priority: 2
 status: planned
 suggested_by: "ADR-025 decision 6 and consequences, approved by the owner on 2026-09-12; card 4 of its plan; the first cross-provider interaction, chosen as the lowest-risk one"
 blocked_by: [T-311, T-312]
-touches: [tools/e2e/scripts/consult.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/tests/consult.spec.ts, tools/e2e/tests/brief-flush.spec.ts, method/rooms/ROOM-FORMAT.md, docs/CONVENTIONS.md]
+touches: [tools/e2e/scripts/consult.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/tests/consult.spec.ts, tools/e2e/tests/brief-flush.spec.ts, method/rooms/ROOM-FORMAT.md, docs/CONVENTIONS.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/records-and-rooms.md, docs/conventions/shell-and-scripts.md]
 builder:
 verifier:
 built_by:
@@ -34,6 +34,8 @@ What was measured, 2026-09-13 (the seat's pre-dispatch read, after the T-312 inv
 ## Amendment of 2026-09-13 — failure after reveal (proposed by the Codex orchestrator's queue review of 2026-09-13, approved by the owner on 2026-09-13)
 
 Amendment proposed 2026-09-13 — failure after reveal. Once the successful participants' positions have been published, a failed participant is recorded absent unless its required independence profile can still be met by the demonstrated launch configuration. Supplying only the original packet does not establish non-access to positions already published in files or transcripts. Any later response without that guarantee is recorded separately as a follow-up with its actual context-separation limitation, never presented as a blind original position. A body covers failure followed by reveal under a configuration without enforced read isolation and records absence rather than claiming a blind retry. The verb validates each participant's required permission and independence profile before launching it; unavailable coverage is refused by name, not counted as a successful consultation.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/dispatch-and-scratch.md, docs/conventions/records-and-rooms.md, docs/conventions/shell-and-scripts.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 <!-- executor appends before finishing -->

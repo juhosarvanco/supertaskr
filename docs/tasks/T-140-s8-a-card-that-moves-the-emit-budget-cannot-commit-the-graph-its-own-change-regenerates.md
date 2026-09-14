@@ -8,7 +8,7 @@ size: S
 status: planned
 suggested_by: executor claude-opus-5@subagent @T-140-s4
 blocked_by: []
-touches: [docs/CONVENTIONS.md, method/lane-protocol.md]
+touches: [docs/CONVENTIONS.md, method/lane-protocol.md, docs/conventions/merging.md]
 builder:
 verifier:
 built_by:
@@ -104,3 +104,10 @@ grammar (test 2 probably fails) — but *probably* is not a derivation.
 Re-derive both at the lane's own ref. **IF a bump turns out to be owed,
 the clause becomes a rider for the next method release rather than a
 reason to widen this fence** — `T-154-s3`'s standing shape.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by opener: docs/conventions/merging.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

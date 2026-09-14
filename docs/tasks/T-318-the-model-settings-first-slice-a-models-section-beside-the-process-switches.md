@@ -9,7 +9,7 @@ priority: 2
 status: suggested
 suggested_by: "the owner's rulings of 2026-09-13 in docs/rooms/model-and-effort-settings.md (decisions 1 to 7 with three settled details); the Codex orchestrator's proposal of 2026-09-12 under docs/design/ and its review of the first draft on 2026-09-13"
 blocked_by: [T-299-s6]
-touches: [method/runtime/process-schema.yaml, method/runtime/supertaskr.yaml, lib/parser/src/process-settings.ts, lib/parser/src/pure.ts, lib/parser/test/process-settings.test.ts, tools/e2e/scripts/settings.mjs, tools/e2e/tests/cli.spec.ts, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/brief-flush.spec.ts, docs/reference/15-settings.md, docs/CONVENTIONS.md, tools/e2e/scripts/brief.mjs]
+touches: [method/runtime/process-schema.yaml, method/runtime/supertaskr.yaml, lib/parser/src/process-settings.ts, lib/parser/src/pure.ts, lib/parser/test/process-settings.test.ts, tools/e2e/scripts/settings.mjs, tools/e2e/tests/cli.spec.ts, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/brief-flush.spec.ts, docs/reference/15-settings.md, docs/CONVENTIONS.md, tools/e2e/scripts/brief.mjs, docs/conventions/architecture.md, docs/conventions/commands.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/merging.md, docs/conventions/shell-and-scripts.md]
 builder:
 verifier:
 built_by:
@@ -38,6 +38,8 @@ Amendment proposed 2026-09-13 — account binding. Each resolved assignment iden
 ## Amendment of 2026-09-13 — observed seat reporting (proposed by the Codex orchestrator's queue review of 2026-09-13, approved by the owner on 2026-09-13)
 
 Amendment proposed 2026-09-13 — observed seat reporting. The fence additionally grants tools/e2e/scripts/brief.mjs for the seat-command reporting required by the final criterion. The observation is emitted separately from the configured model and checkout-ownership identity; unavailable runtime evidence is reported as unknown, never inferred from the chosen profile or a process name. Taking or releasing the seat changes no model selection. This criterion requires no holder-record schema change and no run-record receipt integration beyond the follow-up already named. A body preserves the configured selection while the observed value is different or unknown.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/architecture.md, docs/conventions/commands.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/merging.md, docs/conventions/shell-and-scripts.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 <!-- executor appends before finishing -->

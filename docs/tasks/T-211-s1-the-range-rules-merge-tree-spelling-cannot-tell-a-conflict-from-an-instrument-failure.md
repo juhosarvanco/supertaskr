@@ -7,7 +7,7 @@ priority: 2
 size: S
 status: planned
 blocked_by: []
-touches: [docs/CONVENTIONS.md, tools/e2e/scripts/range-rule.mjs, tools/e2e/tests/range-rule.spec.ts]
+touches: [docs/CONVENTIONS.md, tools/e2e/scripts/range-rule.mjs, tools/e2e/tests/range-rule.spec.ts, docs/conventions/merging.md, docs/conventions/standing-gates.md]
 suggested_by: "T-211's executor, which measured the exit codes while writing fast path B's exit typing into method/lane-protocol.md; class parent T-083 (the RANGE RULE's owner). DISPOSITION HINT: promote — it is one sentence in an existing bullet, and the bullet is the one every gate derivation in this repository routes through."
 builder:
 review: independent
@@ -193,6 +193,8 @@ changes what the reader computes** — it is a comment and, at most, one
 guard.
 
 Amnesty triage 2026-08-29 (triage seat): PARKED — both halves are comments on one file's header, both explicitly non-blocking, and neither changes behaviour. The trust boundary is real and correctly reasoned — the reader grants no privilege the test runner does not already grant, and the sentence that matters is the one saying WHY, so the shape is not copied to a document this repository does not own. RESURFACES: the next tools/e2e dispatch — the file is range-rule.mjs's own header and any lane holding that slug can carry both notes.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by opener: docs/conventions/merging.md, docs/conventions/standing-gates.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 

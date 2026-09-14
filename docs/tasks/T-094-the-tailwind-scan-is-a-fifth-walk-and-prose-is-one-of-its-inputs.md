@@ -7,7 +7,7 @@ priority: 50
 size: M
 status: planned
 blocked_by: []
-touches: [app-shell, docs/CONVENTIONS.md]
+touches: [app-shell, docs/CONVENTIONS.md, docs/conventions/architecture.md]
 builder:
 verifier:
 built_by:
@@ -166,3 +166,10 @@ than `git checkout --`. State the built CSS's byte size and content hash
 before and after, at their refs. @human: none — no screen moves, and the
 one visual question (does any real utility change) is answered by the
 selector diff.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by opener: docs/conventions/architecture.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

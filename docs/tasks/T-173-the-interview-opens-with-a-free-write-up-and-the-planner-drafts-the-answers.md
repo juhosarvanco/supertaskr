@@ -8,7 +8,7 @@ size: L
 status: planned
 blocked_by: []
 suggested_by: "@human's genesis walk debrief (2026-08-30) — a direction statement, near-verbatim below"
-touches: [app-interview, method/interview/plan-interview.md, docs/CONVENTIONS.md, app-agent]
+touches: [app-interview, method/interview/plan-interview.md, docs/CONVENTIONS.md, app-agent, docs/conventions/standing-gates.md]
 builder:
 verifier:
 built_by:
@@ -96,3 +96,10 @@ The graph sits at **410 bytes** of headroom at `b60b06d`
 (`wc -c docs/architecture/graph.json` = 1,039,590 against the crate's
 1,040,000 budget), and this card's fence reaches indexed source. The
 sitting records the block rather than lowering the priority.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by opener: docs/conventions/standing-gates.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

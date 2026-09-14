@@ -8,7 +8,7 @@ priority: 3
 status: suggested
 suggested_by: "executor claude-opus-5@subagent @T-295-s4, 2026-09-14, while enumerating the addresses the new table keeps"
 blocked_by: [T-295-s4]
-touches: [tools/e2e/scripts/merge.mjs, tools/e2e/tests/merge.spec.ts, docs/CONVENTIONS.md]
+touches: [tools/e2e/scripts/merge.mjs, tools/e2e/tests/merge.spec.ts, docs/CONVENTIONS.md, docs/conventions/app-and-ui.md, docs/conventions/merging.md, docs/conventions/records-and-rooms.md, docs/conventions/shell-and-scripts.md]
 builder:
 verifier:
 built_by:
@@ -57,6 +57,8 @@ across many spec files and is the more invasive half.
   enumerates THE card SHALL state what an attacker gains by it, because
   the amendment this follows forbids claiming an arbitrary value
   harmless for sitting in a test.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/app-and-ui.md, docs/conventions/merging.md, docs/conventions/records-and-rooms.md, docs/conventions/shell-and-scripts.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 

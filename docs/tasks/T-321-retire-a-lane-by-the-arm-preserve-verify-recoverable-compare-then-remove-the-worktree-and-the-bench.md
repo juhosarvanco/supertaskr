@@ -8,7 +8,7 @@ priority: 3
 status: suggested
 suggested_by: "the architect seat on 2026-09-13, from the T-301 retirement done by hand the same day and the Codex orchestrator's reconciliation review; filed on the owner's ruling for a later window, not the repair window; filing authorizes no development"
 blocked_by: []
-touches: [tools/e2e/scripts/retire-lane.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/tests/retire-lane.spec.ts, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md]
+touches: [tools/e2e/scripts/retire-lane.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/tests/retire-lane.spec.ts, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/lanes.md, docs/conventions/shell-and-scripts.md, docs/conventions/verification.md]
 builder:
 verifier:
 built_by:
@@ -37,6 +37,8 @@ The suggested_by field says this card was filed on the owner's ruling for a late
 This section adds to the capture and removal criteria; everything else stands.
 
 - WHEN the lane has a bench THE verb SHALL, before any removal, put the bench's unique commits — the bench tip and every commit it carries beyond the lane tip: verdicts, corrections, cards the verifier filed — on an evidence ref of their own, SHALL preserve the bench's verifier-only material (the reviews directory and the verifier's scratch the ground names) into a verifier-only archive at a path the invocation names separately, never into the executor-readable archive, with its own manifest and restore-and-hash check, and SHALL refuse the bench's removal by name when either is missing; the receipt names both, and the role boundary survives the handoff — an executor is handed the lane's archive and the evidence refs, never the verifier-only archive. Pinned by bodies: a bench with commits beyond the lane tip whose removal is attempted without the evidence ref (refused); a planted verifier-only file that must be absent from the lane archive and present in the verifier-only archive; the restore-and-hash of the verifier-only archive.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/dispatch-and-scratch.md, docs/conventions/lanes.md, docs/conventions/shell-and-scripts.md, docs/conventions/verification.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 

@@ -8,7 +8,7 @@ priority: 2
 status: suggested
 suggested_by: "the architect seat on 2026-09-14, from the Codex orchestrator's review of T-319 and T-322 relayed by the owner: a surviving ledger does not guarantee a surviving worker; filing authorizes no development"
 blocked_by: []
-touches: [tools/e2e/scripts/watchdog.mjs, tools/e2e/tests/watchdog.spec.ts, tools/e2e/scripts/run-record.mjs, tools/e2e/tests/run-record.spec.ts, tools/e2e/scripts/brief.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md]
+touches: [tools/e2e/scripts/watchdog.mjs, tools/e2e/tests/watchdog.spec.ts, tools/e2e/scripts/run-record.mjs, tools/e2e/tests/run-record.spec.ts, tools/e2e/scripts/brief.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md, docs/conventions/commands.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/records-and-rooms.md, docs/conventions/shell-and-scripts.md]
 builder:
 verifier:
 built_by:
@@ -27,6 +27,8 @@ The coordinator of this loop is a harness session on the owner's machine. It die
 - WHEN the last heartbeat carries a reset instant THE watchdog SHALL start the replacement at that instant rather than at the staleness interval, and where it carries none SHALL retry with a growing delay, pinned by bodies for each.
 - WHEN the replacement starts THE replacement SHALL take the seat (T-238) before any dispatch and SHALL continue from the records rather than from any memory of the dead session — the live lanes derived, the open asks read, the approval mode and recovery policy read from their record (T-319) — pinned by a body over a fixture runtime directory.
 - WHEN the demonstration runs THE notes SHALL record a real restart on this machine: a coordinator fixture killed, the watchdog's detection instant, the replacement's launch and its first heartbeat, each with its ref; a description of how it would work is not the demonstration.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/commands.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/records-and-rooms.md, docs/conventions/shell-and-scripts.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 

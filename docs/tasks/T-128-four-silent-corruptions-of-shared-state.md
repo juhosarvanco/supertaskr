@@ -7,7 +7,7 @@ priority: 8
 size: S
 status: planned
 blocked_by: []
-touches: [method/, docs/CONVENTIONS.md]
+touches: [method/, docs/CONVENTIONS.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/lanes.md, docs/conventions/merging.md, docs/conventions/standing-gates.md]
 builder:
 verifier:
 built_by:
@@ -282,3 +282,10 @@ each exit. `docs/CONVENTIONS.md` is read by five suites at the last
 measurement, so the gate will owe several; run them and state counts and
 exits from `$?` unpiped. GRAPH REGEN does not fire on a method/docs diff —
 **ask rather than predict**. @human: none.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by opener: docs/conventions/dispatch-and-scratch.md, docs/conventions/lanes.md, docs/conventions/merging.md, docs/conventions/standing-gates.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

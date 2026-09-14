@@ -7,7 +7,7 @@ priority: 31
 size: S
 status: planned
 blocked_by: []
-touches: [.claude, docs/CONVENTIONS.md]
+touches: [.claude, docs/CONVENTIONS.md, docs/conventions/merging.md, docs/conventions/records-and-rooms.md]
 suggested_by: executor claude-opus-5 @T-154-s2
 builder:
 verifier:
@@ -118,3 +118,10 @@ What the card now owes, which is bookkeeping rather than judgement:
   checkpoint, so post-merge verdict corrections are still refused unless
   the worktree is removed first (hook limit 6). The ruling keeps the
   carve-out; it does not close that window.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/merging.md, docs/conventions/records-and-rooms.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

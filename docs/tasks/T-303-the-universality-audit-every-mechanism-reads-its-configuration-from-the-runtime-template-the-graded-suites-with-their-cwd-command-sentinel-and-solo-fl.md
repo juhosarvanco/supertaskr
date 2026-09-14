@@ -8,7 +8,7 @@ priority: 1
 status: planned
 suggested_by: "@human (2026-09-10): \"Rule the loop room, A to I as amended: yes\" — docs/rooms/loop-cost-and-speed.md, ADR-024"
 blocked_by: []
-touches: [tools/e2e/scripts/, tools/e2e/tests/, .claude/hooks/, method/runtime/, method/roles/, app/src-tauri/src/agent/kit.rs, docs/CONVENTIONS.md, docs/ARCHITECTURE.md]
+touches: [tools/e2e/scripts/, tools/e2e/tests/, .claude/hooks/, method/runtime/, method/roles/, app/src-tauri/src/agent/kit.rs, docs/CONVENTIONS.md, docs/ARCHITECTURE.md, docs/conventions/app-and-ui.md, docs/conventions/architecture.md, docs/conventions/commands.md, docs/conventions/shell-and-scripts.md, docs/conventions/standing-gates.md]
 builder:
 verifier:
 built_by:
@@ -26,6 +26,8 @@ Today a genesis copies the method text, the templates, the runtime template, the
 - WHEN a mechanism reads its configuration THE source SHALL be the runtime template's sections — `suites:` (id, cwd, argv, sentinel, solo), `smoke:`, `guard_class:`, `bands:`, `names:`, `languages:` — with this repository's own values moved into its template and every body that pinned a literal re-pointed; a fixture project with a different layout SHALL be graded green by the same scripts.
 - WHEN a genesis runs THE kit SHALL install the hooks and the gates' scripts (through the CLI T-244 packages) into the new project with the template filled from the interview's answers, and the new project's first `brief.mjs --dispatch` SHALL render.
 - WHEN docs/ARCHITECTURE.md names the components THE configuration surface SHALL be one component with its interface (the template's sections) and every gate's entry SHALL name what it reads from it.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/app-and-ui.md, docs/conventions/architecture.md, docs/conventions/commands.md, docs/conventions/shell-and-scripts.md, docs/conventions/standing-gates.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 <!-- executor appends before finishing -->

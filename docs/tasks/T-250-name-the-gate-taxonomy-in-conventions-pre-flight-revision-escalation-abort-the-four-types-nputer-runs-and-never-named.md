@@ -8,7 +8,7 @@ priority: 3
 status: planned
 suggested_by: "@human ruling (2026-09-08, version sitting): \"approve the v1 five\" — GSD Core's references/gates.md names four types; the seat's walk of the unruled list found nputer has all four unnamed"
 blocked_by: []
-touches: [docs/CONVENTIONS.md]
+touches: [docs/CONVENTIONS.md, docs/conventions/standing-gates.md]
 builder:
 verifier:
 built_by:
@@ -39,6 +39,8 @@ behaviour; it also exposes the one we run without a cap.
   rules by their ordinal and capitals, never by line number.
 - The method evals SHALL be run if any role file is touched (they
   should not be); the docs gate SHALL be run.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by opener: docs/conventions/standing-gates.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 <!-- executor appends before finishing -->

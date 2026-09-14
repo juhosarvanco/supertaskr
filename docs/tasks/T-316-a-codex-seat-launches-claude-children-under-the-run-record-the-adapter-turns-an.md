@@ -8,7 +8,7 @@ priority: 2
 status: planned
 suggested_by: "ADR-025 decisions 2 and 8, approved by the owner on 2026-09-12; card 6 of its plan; the owner's goal that either harness dispatches lanes in either harness"
 blocked_by: [T-315]
-touches: [tools/e2e/scripts/adapter-claude.mjs, tools/e2e/scripts/adapter-codex.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/scripts/run-record.mjs, tools/e2e/tests/adapter-claude.spec.ts, tools/e2e/tests/brief-flush.spec.ts, method/runtime/supertaskr.yaml, docs/CONVENTIONS.md]
+touches: [tools/e2e/scripts/adapter-claude.mjs, tools/e2e/scripts/adapter-codex.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/scripts/run-record.mjs, tools/e2e/tests/adapter-claude.spec.ts, tools/e2e/tests/brief-flush.spec.ts, method/runtime/supertaskr.yaml, docs/CONVENTIONS.md, docs/conventions/app-and-ui.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/lanes.md, docs/conventions/records-and-rooms.md, docs/conventions/shell-and-scripts.md]
 builder:
 verifier:
 built_by:
@@ -31,6 +31,8 @@ The Claude CLI on this host runs headless with `-p`, `--output-format stream-jso
 ## Amendment of 2026-09-13 — the Claude hook's demonstrated boundary (proposed by the Codex orchestrator's queue review of 2026-09-13, approved by the owner on 2026-09-13)
 
 Amendment proposed 2026-09-13 — the Claude hook's demonstrated boundary. The write-refusal criterion applies to the tool operations actually routed through the lane fence in the demonstrated launch configuration. Qualification records the resolved project configuration, hook source and lane manifest used by the headless child, and demonstrates an allowed in-fence write and a refused out-of-fence write through the actual child tool path. A missing, disabled or unjudging hook does not qualify that path, pinned by a negative control. The demonstration also probes an out-of-fence shell write and records whether that channel is judged; it does not generalize a tool-hook refusal into OS write confinement. The adapter refuses an assignment requiring a stronger boundary than the configuration establishes. The accepted procedural limitation for ordinary Claude tool use remains; no read-secrecy or tamper-proof-control guarantee is added.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/app-and-ui.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/lanes.md, docs/conventions/records-and-rooms.md, docs/conventions/shell-and-scripts.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 <!-- executor appends before finishing -->

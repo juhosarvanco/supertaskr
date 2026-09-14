@@ -7,7 +7,7 @@ priority: 2
 size: M
 status: planned
 blocked_by: []
-touches: [.claude/hooks/, .claude/settings.json, tools/e2e/scripts/health-bands.mjs, tools/e2e/tests/, docs/CONVENTIONS.md]
+touches: [.claude/hooks/, .claude/settings.json, tools/e2e/scripts/health-bands.mjs, tools/e2e/tests/, docs/CONVENTIONS.md, docs/conventions/gates-and-the-push.md, docs/conventions/standing-gates.md]
 suggested_by: "this seat's own skipped-obligations self-audit, returned by the outgoing architect seat with the provenance of three of the four; relayed 2026-08-31, approved in direction by @human"
 builder:
 review: independent
@@ -142,3 +142,10 @@ the next dispatch sets it"* as a correction.
 **So it is set here, at filing, where the judgement is already being
 made.** `T-204`'s refusal 3 will make it mechanical; until that lands,
 setting it early is the only thing between the rule and a fourth miss.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by opener: docs/conventions/gates-and-the-push.md, docs/conventions/standing-gates.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

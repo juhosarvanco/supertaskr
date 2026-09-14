@@ -7,7 +7,7 @@ priority: 2
 size: M
 status: planned
 blocked_by: []
-touches: [tools/e2e, .github/workflows/, docs/CONVENTIONS.md, docs/ARCHITECTURE.md]
+touches: [tools/e2e, .github/workflows/, docs/CONVENTIONS.md, docs/ARCHITECTURE.md, docs/conventions/standing-gates.md]
 suggested_by: executor claude-opus-5 @T-155
 builder:
 verifier:
@@ -162,6 +162,8 @@ beside the token lint as an early step.
 The trap to avoid: adding `docs/rooms/**` to the trigger by hand. That
 is a second list of what the evals read, and the next eval added to the
 corpus will not be in it.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by opener: docs/conventions/standing-gates.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 

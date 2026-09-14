@@ -7,7 +7,7 @@ priority: 6
 size: S
 status: planned
 blocked_by: []
-touches: [tools/e2e, docs/CONVENTIONS.md]
+touches: [tools/e2e, docs/CONVENTIONS.md, docs/conventions/standing-gates.md]
 suggested_by: executor claude-opus-5@subagent @T-153-s6
 builder:
 verifier:
@@ -87,6 +87,8 @@ document. Neither is free and this card does not decide it.
   matrix stays in `docs/CONVENTIONS.md`: `range-rule.mjs` parses it
   there and `T-153-s6`'s per-dialect check reads it as the expectation
   side.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by opener: docs/conventions/standing-gates.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 <!-- executor appends before finishing -->

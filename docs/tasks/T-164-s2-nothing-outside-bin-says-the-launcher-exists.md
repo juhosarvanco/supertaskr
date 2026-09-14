@@ -7,7 +7,7 @@ priority: 21
 size: S
 status: planned
 blocked_by: []
-touches: [docs/CONVENTIONS.md, README.md, tools/e2e]
+touches: [docs/CONVENTIONS.md, README.md, tools/e2e, docs/conventions/commands.md]
 suggested_by: executor claude-opus-5@subagent @T-164
 builder:
 verifier:
@@ -110,6 +110,8 @@ TWO findings and both are the same live lane**: `T-154-s2` holds
 Everything else ran clean: paths missing **0**, criteria naming paths the
 fence does not reserve **0**, unrunnable figures **0**, `blocked_by`
 nothing, ref stamps **1 of 1 resolving**.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/commands.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 <!-- executor appends before finishing -->

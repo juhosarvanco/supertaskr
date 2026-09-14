@@ -8,7 +8,7 @@ priority: 2
 status: suggested
 suggested_by: "executor claude-opus-5@subagent @T-314, measured at that card's own tip; that card's third criterion installs at the seat and reports there, and the population outside the seat is outside its criteria"
 blocked_by: []
-touches: [.claude/hooks/, tools/e2e/tests/push-guard.spec.ts, docs/CONVENTIONS.md]
+touches: [.claude/hooks/, tools/e2e/tests/push-guard.spec.ts, docs/CONVENTIONS.md, docs/conventions/commands.md, docs/conventions/gates-and-the-push.md, docs/conventions/standing-gates.md]
 builder:
 verifier:
 built_by:
@@ -48,6 +48,8 @@ them for an absent hook.
 - WHEN the PreToolUse guard judges a push THE checkout's pre-push hook SHALL be read and an UNGUARDED checkout SHALL be announced at exit zero, never refused, so the one surface a seat reads at a push carries the one fact nothing else reports.
 - WHEN that announcement is written THE positive control SHALL be a checkout where the hook IS live, which stays silent, so the line is a measurement rather than a line on every push.
 - WHEN the conventions record the guard THE population outside the seat SHALL be named there: which checkouts are guarded is a function of an act somebody performed, and that is a procedure with a reader rather than a property.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/commands.md, docs/conventions/gates-and-the-push.md, docs/conventions/standing-gates.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 <!-- executor appends before finishing -->

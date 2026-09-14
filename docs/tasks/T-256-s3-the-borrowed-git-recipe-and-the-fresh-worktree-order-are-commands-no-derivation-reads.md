@@ -8,7 +8,7 @@ priority: 3
 status: suggested
 suggested_by: verifier claude-opus-5@subagent @T-256
 blocked_by: []
-touches: [tools/e2e/tests/workflow-parity.spec.ts, docs/CONVENTIONS.md]
+touches: [tools/e2e/tests/workflow-parity.spec.ts, docs/CONVENTIONS.md, docs/conventions/app-and-ui.md, docs/conventions/commands.md, docs/conventions/gates-and-the-push.md, docs/conventions/lanes.md]
 builder:
 verifier:
 built_by:
@@ -63,3 +63,10 @@ are the ones who meet the exit 243 EACCES when it is wrong.
   the doc, since the property lives in the document rather than in code
   (verifier.md 2b, T-221).
 - Verification: headless.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/app-and-ui.md, docs/conventions/commands.md, docs/conventions/gates-and-the-push.md, docs/conventions/lanes.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

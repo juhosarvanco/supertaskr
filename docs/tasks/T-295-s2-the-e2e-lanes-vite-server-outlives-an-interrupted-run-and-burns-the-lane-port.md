@@ -8,7 +8,7 @@ priority: 3
 status: planned
 suggested_by: "the T-295 executor, 2026-09-10: after two interrupted drill runs, ports 15295 and 15990 were both held by leftover node servers and the lane's own preflight refused with EADDRINUSE; the sitting finished on a third port"
 blocked_by: []
-touches: [tools/e2e/preflight.ts, tools/e2e/scripts/orphan-drill.mjs, docs/CONVENTIONS.md]
+touches: [tools/e2e/preflight.ts, tools/e2e/scripts/orphan-drill.mjs, docs/CONVENTIONS.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/standing-gates.md]
 builder:
 verifier:
 built_by:
@@ -46,3 +46,10 @@ tauri process; nothing covers the e2e vite.
   gone, or the departure SHALL be measured and the gap named.
 
 Promoted 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): to planned at priority 3 — the lane's dev server outlives an interrupted run and keeps listening; three ports were burned in one sitting and nothing reclaims them. Not dispatched by this sitting.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by opener: docs/conventions/dispatch-and-scratch.md, docs/conventions/standing-gates.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

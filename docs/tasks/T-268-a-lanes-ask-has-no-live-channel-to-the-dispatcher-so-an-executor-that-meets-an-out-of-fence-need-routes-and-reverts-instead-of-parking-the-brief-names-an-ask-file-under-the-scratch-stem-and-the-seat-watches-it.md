@@ -8,7 +8,7 @@ priority: 13
 status: planned
 suggested_by: "the architect seat, 2026-09-08, from T-264's lane: the executor met .nputerignore outside its fence, reverted the crate directory move and routed T-264-s1 (measured: 51 fixture files admitted to the graph) instead of parking the edit and asking; the dispatcher learned of it from @human relaying the agent's message, granted fast path A within minutes, and had no way to tell the running lane"
 blocked_by: []
-touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/tests/brief.spec.ts, method/roles/executor.md, docs/CONVENTIONS.md]
+touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/tests/brief.spec.ts, method/roles/executor.md, docs/CONVENTIONS.md, docs/conventions/dispatch-and-scratch.md]
 builder:
 verifier:
 built_by:
@@ -78,3 +78,10 @@ file is one more name under it.
   folded here 2026-09-09).
 - A brief.spec body SHALL pin that the brief names the ask path and
   that a lane-cut without it is a finding.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by opener: docs/conventions/dispatch-and-scratch.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

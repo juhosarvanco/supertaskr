@@ -8,7 +8,7 @@ priority: 3
 status: suggested
 suggested_by: "verifier claude-opus-5@subagent @T-324, measured at phase 2 of that lane: readPause has exactly one caller, grantState, and grantState has three, all of them admission boundaries"
 blocked_by: [T-324]
-touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md]
+touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/merging.md, docs/conventions/records-and-rooms.md, docs/conventions/shell-and-scripts.md, docs/conventions/verification.md]
 builder:
 verifier:
 built_by:
@@ -44,6 +44,8 @@ answer a narrower question than the sentence it was written from.
 - WHEN a staged merge meets an `all` pause THE verb SHALL finish it or abort it as the record says, and both outcomes SHALL be driven by a body over two records rather than one, since a record-decided branch cannot be tested from one side.
 - WHEN a phase is already past its safe boundary THE pause SHALL leave it alone, because an immediate stop is a separate request through the applicable stopping mechanism and never a reading of this record.
 - WHEN the reach lands THE conventions SHALL say which verbs read the pause in one place, so that a later reader can tell a phase the pause governs from one it does not.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/dispatch-and-scratch.md, docs/conventions/merging.md, docs/conventions/records-and-rooms.md, docs/conventions/shell-and-scripts.md, docs/conventions/verification.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 <!-- executor appends before finishing -->

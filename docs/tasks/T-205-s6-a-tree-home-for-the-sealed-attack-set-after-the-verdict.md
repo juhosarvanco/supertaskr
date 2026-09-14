@@ -8,7 +8,7 @@ priority: 8
 status: planned
 suggested_by: "T-205-s1's executor, ask-T-205-s1.md ASK 1 (2026-09-09), refused as a lane write by the architect seat and ruled a card; the card's own design question 2"
 blocked_by: []
-touches: [method/roles/orchestrator.md, method/roles/integrator.md, docs/CONVENTIONS.md, docs/reference/07-verification.md, docs/reference/08-landing.md, tools/e2e/tests/brief.spec.ts, tools/method-evals/, method/roles/verifier.md, docs/benches/README.md]
+touches: [method/roles/orchestrator.md, method/roles/integrator.md, docs/CONVENTIONS.md, docs/reference/07-verification.md, docs/reference/08-landing.md, tools/e2e/tests/brief.spec.ts, tools/method-evals/, method/roles/verifier.md, docs/benches/README.md, docs/conventions/standing-gates.md]
 builder:
 verifier:
 built_by:
@@ -132,6 +132,8 @@ beside a corrupted ground-truths line, expected exit 1 and named in
 `MF-10`'s expectations; and the list-item and bold cases either ruled out
 ("a line of its own" means the line opens with the words) and pinned by
 a fixture expecting 0 cited, or admitted and collected.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by opener: docs/conventions/standing-gates.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 

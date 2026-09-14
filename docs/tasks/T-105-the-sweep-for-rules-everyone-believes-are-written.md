@@ -7,7 +7,7 @@ priority: 61
 size: M
 status: planned
 blocked_by: []
-touches: [docs/CONVENTIONS.md, method/]
+touches: [docs/CONVENTIONS.md, method/, docs/conventions/standing-gates.md, docs/conventions/verification.md]
 builder:
 verifier:
 built_by:
@@ -128,3 +128,10 @@ poisoned. Every command quoted as evidence for an absence SHALL have
 been run once against a planted positive before its zero is written down
 (T-092's proof-command rule) — this card's whole method is absence
 claims. @human: none.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by opener: docs/conventions/standing-gates.md, docs/conventions/verification.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

@@ -7,7 +7,7 @@ priority: 4
 size: M
 status: planned
 blocked_by: []
-touches: [docs/CONVENTIONS.md]
+touches: [docs/CONVENTIONS.md, docs/conventions/verification.md]
 suggested_by: "the outgoing architect seat's fix plan (relayed 2026-08-31, approved in direction by @human); all three additions were measured the same night"
 builder:
 review:
@@ -229,3 +229,10 @@ passes it every time.
 nothing looks like success**, by a verifier attacking a runner built to
 refuse exactly that. If it can happen there, the catalogue needs it
 written down.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by opener: docs/conventions/verification.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

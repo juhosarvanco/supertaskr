@@ -8,7 +8,7 @@ priority: 15
 status: planned
 suggested_by: "@human, 2026-09-09: \"can we develop a faster route for quick fixes? Would it make sense to keep the executor lane existing until the verifier finishes so then if the verifier finds something that needs fixing, it could be sent to the executor session that built the bug for fixing?\""
 blocked_by: [T-268]
-touches: [method/tasks/TASK-FORMAT.md, method/roles/executor.md, method/roles/verifier.md, method/roles/orchestrator.md, docs/CONVENTIONS.md, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts]
+touches: [method/tasks/TASK-FORMAT.md, method/roles/executor.md, method/roles/verifier.md, method/roles/orchestrator.md, docs/CONVENTIONS.md, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, docs/conventions/app-and-ui.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/merging.md, docs/conventions/records-and-rooms.md, docs/conventions/shell-and-scripts.md, docs/conventions/verification.md]
 builder:
 verifier:
 built_by:
@@ -91,3 +91,10 @@ keeps the fresh-seat rule.
 - A brief.spec body SHALL pin that an executor brief names the handoff
   file and the bound, and a method eval SHALL check that the three role
   files and TASK-FORMAT agree on the distinction's wording.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/app-and-ui.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/merging.md, docs/conventions/records-and-rooms.md, docs/conventions/shell-and-scripts.md, docs/conventions/verification.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

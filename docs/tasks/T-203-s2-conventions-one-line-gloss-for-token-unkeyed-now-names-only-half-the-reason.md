@@ -8,7 +8,7 @@ priority: 6
 status: suggested
 suggested_by: "executor claude-opus-5@subagent @T-203-s1, from inside the fence that could not reach the file, 2026-09-09"
 blocked_by: []
-touches: [docs/CONVENTIONS.md]
+touches: [docs/CONVENTIONS.md, docs/conventions/]
 builder:
 verifier:
 built_by:
@@ -53,3 +53,10 @@ parenthesis: name all three cases, or say "the key does not describe
 what the suites ran against" and let the guard's own detail enumerate.
 Worth checking `docs/reference/10-gates.md` in the same pass — it names
 `token-stale` "and their kin" and may be fine as written.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains docs/conventions/ whole, because neither its text, its fence nor its title names a chapter — the lane narrows it to the chapter its rule lives in as its own act. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

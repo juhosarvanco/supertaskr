@@ -8,7 +8,7 @@ priority: 3
 status: suggested
 suggested_by: "executor claude-opus-5@subagent @T-311, 2026-09-12"
 blocked_by: []
-touches: [docs/CONVENTIONS.md, tools/e2e/scripts/docs-scan.mjs]
+touches: [docs/CONVENTIONS.md, tools/e2e/scripts/docs-scan.mjs, docs/conventions/standing-gates.md]
 builder:
 verifier:
 built_by:
@@ -49,6 +49,8 @@ A re-landing that moves the line to wherever the document happens to be
 today, with no content moved and no argument, would retire the tripwire
 while leaving the growth. The budget is a tripwire against relapse, and a
 line raised to match the relapse measures nothing.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by opener: docs/conventions/standing-gates.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 <!-- executor appends before finishing -->

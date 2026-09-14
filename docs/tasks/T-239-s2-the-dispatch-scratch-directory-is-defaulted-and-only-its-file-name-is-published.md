@@ -8,7 +8,7 @@ priority: 4
 status: planned
 suggested_by: executor claude-opus-5@subagent @T-239
 blocked_by: []
-touches: [docs/CONVENTIONS.md]
+touches: [docs/CONVENTIONS.md, docs/conventions/dispatch-and-scratch.md]
 builder:
 verifier:
 built_by:
@@ -41,3 +41,10 @@ hands an executor names a path nobody published.
 ## TRIAGE, 2026-09-02 — promoted to `planned`, priority 4, at the T-239 merge (0f3e7ae)
 
 The architect seat. The scratch directory is a machine-scoped default where only the file name is published; the fourth member of the rule family, beside T-240. No dispatch follows today by the user's instruction.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by opener: docs/conventions/dispatch-and-scratch.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

@@ -7,7 +7,7 @@ priority: 4
 size: M
 status: planned
 blocked_by: []
-touches: [tools/e2e/scripts/lane-fence.mjs, tools/e2e/tests/lane-fence.spec.ts, .github/workflows/ci.yml, docs/CONVENTIONS.md]
+touches: [tools/e2e/scripts/lane-fence.mjs, tools/e2e/tests/lane-fence.spec.ts, .github/workflows/ci.yml, docs/CONVENTIONS.md, docs/conventions/standing-gates.md]
 suggested_by: executor claude-opus-5@subagent @T-160
 builder:
 verifier:
@@ -80,3 +80,10 @@ the handoff and became a property at the moment of the write.
 - IF the manifest arm is taken THEN a lane armed without a preflight
   verdict SHALL be distinguishable from one armed with it, pinned by a
   positive control in tools/e2e/tests/lane-fence.spec.ts's own shape.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by opener: docs/conventions/standing-gates.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

@@ -8,7 +8,7 @@ priority: 6
 status: parked
 suggested_by: "@human's ruling of 2026-09-08 (ADR-022); the sweep in docs/rooms/naming.md"
 blocked_by: []
-touches: [.github/, docs/CONVENTIONS.md, README.md]
+touches: [.github/, docs/CONVENTIONS.md, README.md, docs/conventions/]
 wake: 2026-10-01
 builder:
 verifier:
@@ -48,3 +48,10 @@ the repository rename: the remote URL in CI, CONVENTIONS and the README.
 - 2026-09-10 — PARKED by the seat with `wake: 2026-10-01`: every act inside the repository is done (the rename, the README's reserved-name sentence), the placeholder is published and the mark search found no conflict; what remains is @human's domains ("I will get the domains later"). The card resurfaces on 1 October to record them; the App Store name is struck unless a store release is ruled.
 
 Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake 2026-10-01; unchanged; the only parked card that already carried a date, and it stays.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains docs/conventions/ whole, because neither its text, its fence nor its title names a chapter — the lane narrows it to the chapter its rule lives in as its own act. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

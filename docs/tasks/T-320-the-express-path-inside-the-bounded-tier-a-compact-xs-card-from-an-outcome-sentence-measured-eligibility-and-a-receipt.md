@@ -7,8 +7,8 @@ size: M
 priority: 2
 status: planned
 suggested_by: "the architect seat on 2026-09-13, from the Codex orchestrator's lean-delivery plan v2 and its reconciliation review of the same day, filed on the owner's ruling; filing authorizes no development"
-blocked_by: [T-290]
-touches: [tools/e2e/scripts/brief.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/card-preflight.mjs, tools/e2e/scripts/run-record.mjs, tools/e2e/scripts/merge.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/card-preflight.spec.ts, tools/e2e/tests/run-record.spec.ts, tools/e2e/tests/merge.spec.ts, tools/method-evals/evals, method/tasks/TASK-FORMAT.md, method/roles/orchestrator.md, docs/CONVENTIONS.md]
+blocked_by: []
+touches: [tools/e2e/scripts/brief.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/card-preflight.mjs, tools/e2e/scripts/run-record.mjs, tools/e2e/scripts/merge.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/card-preflight.spec.ts, tools/e2e/tests/run-record.spec.ts, tools/e2e/tests/merge.spec.ts, tools/method-evals/evals, method/tasks/TASK-FORMAT.md, method/roles/orchestrator.md, docs/CONVENTIONS.md, docs/conventions/architecture.md, docs/conventions/lanes.md, docs/conventions/dispatch-and-scratch.md]
 builder:
 verifier:
 built_by:
@@ -55,6 +55,10 @@ This section supersedes the window clause of the criterion that creates the comp
 ## Re-check of 2026-09-14 against the landed authorization machinery (the owner's ruling of 2026-09-14)
 
 The owner set the order after the lanes live today as T-290, then this card re-checked against T-290's resulting structure, then the T-312 rerun, keeping this card's speed objectives and its full request-to-delivery measurement. What landed since the card was filed and what it changes: T-319 (54c22d98) is the dispatch block — the approval mode `each`, `until` or `all`, the recovery policy, an explicit no-grant state — read through the parser's reader; T-324 (120b5c0a) is the admission lifecycle every lane cut, child start, re-entry and replacement writer passes through, bound to the grant's revision, the card's approved blob and the attempt's reservation, with derived admissions for repairs inside the recovery policy. The window clause the amendment of 2026-09-13 superseded is now answered by that machinery, so the criteria above name it: an express card is admitted the way any card is, per mode, and the bounded tier saves the bench and the phase-one pass, not the admission. The launch route is unchanged (the seat's spawn with the model passed explicitly; T-318 is still suggested, so effort stays recorded as not configured). The merge verb joins the fence because the receipt's requested-beside-observed refusal is the verb's to make. What is OWED at T-290's merge, before this card's dispatch: the fence's docs/CONVENTIONS.md entry re-pointed at the topic file that then carries the guard-class map and the dispatch bullets, and the third criterion's citation read again against that structure; T-204 (planned at 767a68ff) still overlaps this fence and its re-triage against what has landed is owed at the same sitting. The criteria of 2026-09-13 stand verbatim under their own heading; the status moves to planned by this line on the owner's order, blocked by T-290 for the structural re-check.
+
+## Re-point of 2026-09-14 at T-290's merge (the architect seat, owed by the re-check of the same day)
+
+T-290 landed docs/CONVENTIONS.md as the index over eleven chapters under docs/conventions/. The rules this card's criteria cite live in three of them, so the fence gains them beside the index: docs/conventions/architecture.md (the guard-class map, criterion 3), docs/conventions/lanes.md (the dispatch-from bullet and the lane rules the express cut obeys) and docs/conventions/dispatch-and-scratch.md (the port and scratch rules a compact lane derives). The express path's own conventions text, if any, lands in the chapter that owns its topic with the index line beside it, never in the index alone. The blocker on T-290 is cleared by this line; T-204's re-triage of 2026-09-14 stands and T-204 follows this card.
 
 ## Implementation notes
 

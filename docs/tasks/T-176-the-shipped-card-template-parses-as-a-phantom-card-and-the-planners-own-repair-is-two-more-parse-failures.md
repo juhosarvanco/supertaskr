@@ -7,7 +7,7 @@ priority: 6
 size: M
 status: planned
 blocked_by: []
-touches: [app-agent, method/tasks, method/interview, docs/CONVENTIONS.md]
+touches: [app-agent, method/tasks, method/interview, docs/CONVENTIONS.md, docs/conventions/standing-gates.md]
 suggested_by: standing triage sitting #4 (2026-08-30), from @human's first-walk board session relayed by the outgoing integrator seat
 builder:
 verifier:
@@ -117,6 +117,8 @@ table.
   and the lane SHALL re-derive both bump tests at its own ref.
 - Verification: headless — `cargo test` from app/src-tauri/ for the kit
   pins, and the parser suite for whatever the parse claim rests on.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by opener: docs/conventions/standing-gates.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 <!-- executor appends before finishing -->

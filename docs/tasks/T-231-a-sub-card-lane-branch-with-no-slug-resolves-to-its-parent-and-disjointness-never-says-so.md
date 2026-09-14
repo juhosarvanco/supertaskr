@@ -8,7 +8,7 @@ size: S
 status: planned
 suggested_by: "the architect/integrator seat, 2026-09-01 — met while dispatching T-216-s1, measured rather than predicted"
 blocked_by: []
-touches: [tools/e2e/scripts/lane-fence.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/lane-fence.spec.ts, docs/CONVENTIONS.md]
+touches: [tools/e2e/scripts/lane-fence.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/lane-fence.spec.ts, docs/CONVENTIONS.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/lanes.md, docs/conventions/records-and-rooms.md, docs/conventions/shell-and-scripts.md]
 builder:
 verifier:
 built_by:
@@ -109,3 +109,10 @@ defective card (TASK-FORMAT), and this is the repair.
 byte ceiling that held this promotion no longer binds — `brief.mjs
 --dispatch` answers what can START and `--full` is the triage view — so
 the disposition above is now the stamp: `status: planned`.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/dispatch-and-scratch.md, docs/conventions/lanes.md, docs/conventions/records-and-rooms.md, docs/conventions/shell-and-scripts.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

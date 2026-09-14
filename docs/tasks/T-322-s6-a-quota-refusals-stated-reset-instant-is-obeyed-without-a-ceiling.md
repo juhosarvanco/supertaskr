@@ -8,7 +8,7 @@ priority: 3
 status: suggested
 suggested_by: "verifier claude-opus-5@subagent @T-322 phase 2, measured at f0ee5ad9 — a refusal stating a reset instant in 2099 schedules the retry at that instant, delayMs 2281521600000, sourced to the provider, and the boundary reader never calls it due"
 blocked_by: [T-322]
-touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md]
+touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/lanes.md, docs/conventions/shell-and-scripts.md]
 builder:
 verifier:
 built_by:
@@ -49,6 +49,8 @@ be.
 - WHEN a stated reset is declined THE loop SHALL keep the refusal's own text on the record, because a provider that states a reset days out may be saying something the owner needs to read rather than something to clamp away.
 - WHEN the ceiling is chosen THE conventions SHALL carry the figure once, beside the run record's own bullet, so a reader finds it where every other loop constant is.
 - WHEN this lands THE bodies SHALL drive a stated reset inside the ceiling and one beyond it, on an injected clock, so the two branches are told apart rather than the cap being pinned by the delay branch alone.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/dispatch-and-scratch.md, docs/conventions/lanes.md, docs/conventions/shell-and-scripts.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 

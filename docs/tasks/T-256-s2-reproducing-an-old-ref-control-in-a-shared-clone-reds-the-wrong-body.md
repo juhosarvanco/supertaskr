@@ -8,7 +8,7 @@ priority: 3
 status: suggested
 suggested_by: verifier claude-opus-5@subagent @T-256
 blocked_by: []
-touches: [docs/CONVENTIONS.md, tools/e2e/tests/brief.spec.ts]
+touches: [docs/CONVENTIONS.md, tools/e2e/tests/brief.spec.ts, docs/conventions/dispatch-and-scratch.md]
 builder:
 verifier:
 built_by:
@@ -61,3 +61,10 @@ remedy, and neither is written down.
   identity refusal it is often mistaken for, so a seat reading only the
   count is not misled.
 - Verification: headless.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/dispatch-and-scratch.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

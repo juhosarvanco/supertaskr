@@ -7,7 +7,7 @@ priority: 53
 size: S
 status: planned
 blocked_by: []
-touches: [app-shell, docs/CONVENTIONS.md]
+touches: [app-shell, docs/CONVENTIONS.md, docs/conventions/lanes.md, docs/conventions/standing-gates.md, docs/conventions/verification.md]
 builder:
 verifier:
 built_by:
@@ -150,3 +150,10 @@ by the lane's `workflow-parity` derivation: ask
 through `xargs`, and run what it owes. **No method version bump is
 possible from this fence** (T-078-s3: the third file is Rust) — if an
 edit here would need one, stop. @human: none.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by opener: docs/conventions/lanes.md, docs/conventions/standing-gates.md, docs/conventions/verification.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

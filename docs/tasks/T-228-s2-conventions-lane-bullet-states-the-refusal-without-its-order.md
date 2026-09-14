@@ -8,7 +8,7 @@ priority: 4
 status: planned
 suggested_by: verifier claude-opus-5@subagent @T-228-verify, verdict de5e71e, 2026-09-02
 blocked_by: []
-touches: [docs/CONVENTIONS.md]
+touches: [docs/CONVENTIONS.md, docs/conventions/merging.md]
 builder:
 verifier:
 built_by:
@@ -83,3 +83,10 @@ The Absorbs sections above were written by a script that cut each absorbed body 
 - T-205-s6: `git show 866ac33^:docs/tasks/T-205-s6-graph-regens-suffix-list-omits-mjs-and-only-a-coincidence-makes-that-safe.md`
 
 A lane building this card reads those before it builds.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by opener: docs/conventions/merging.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

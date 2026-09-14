@@ -8,7 +8,7 @@ priority: 7
 status: planned
 suggested_by: the T-248 executor, 2026-09-08, measured at d1603bb while deriving that card's own docs/ census
 blocked_by: []
-touches: [tools/e2e/scripts/docs-gate.mjs, docs/CONVENTIONS.md, tools/e2e/tests/docs-input-gate.spec.ts]
+touches: [tools/e2e/scripts/docs-gate.mjs, docs/CONVENTIONS.md, tools/e2e/tests/docs-input-gate.spec.ts, docs/conventions/standing-gates.md]
 builder:
 verifier:
 built_by:
@@ -80,6 +80,8 @@ not run on. Before that, the over-fire was a silent count.
 ## Design note of 2026-09-14 — open before dispatch
 
 The deletion-versus-fragment distinction this card's criteria demand has no evidence source yet: docs-gate.mjs takes paths, never a diff or a range (its header leaves range ownership with the caller), so two identical missing-path strings cannot say which was a deleted path and which a word-split fragment. Before dispatch the card names an explicit evidence source and input contract for that distinction, preserving the caller's range ownership and both required outcomes; nothing here settles it.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by opener: docs/conventions/standing-gates.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 

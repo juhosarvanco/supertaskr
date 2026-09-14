@@ -7,7 +7,7 @@ priority: 6
 size: S
 status: parked
 blocked_by: []
-touches: [docs/CONVENTIONS.md]
+touches: [docs/CONVENTIONS.md, docs/conventions/verification.md]
 suggested_by: executor claude-opus-5@subagent @T-153-s5
 builder:
 verifier:
@@ -74,3 +74,10 @@ Standing triage 2026-08-30 (architect seat): PARKED — because its vehicle is I
 **THE RIDER IS REAL AND IS RECORDED IN ONLY ONE PLACE, WHICH IS THE PROBLEM.** `docs/STATE.md:61` says "`T-111-s10` +T-153-s7 rider"; `grep -n 'T-153' docs/tasks/T-111-s10-*.md` returns ZERO matches. T-111-s10 carries seven Absorbs: lines and none names this card — so a lane reading only its own card cannot know s7 is riding. The obvious repair is to write the absorption onto T-111-s10 now.
 **THAT REPAIR IS REFUSED HERE, DELIBERATELY.** `task/T-111-s10-poison-drill-bullet` was cut after this sitting's base and is LIVE: main carries the card at `status: building` (dispatch commit `39f2302`), fields lock at dispatch, and the executor appends to that same card body. Writing an Absorbs: line to it from this branch would make one file writable by two branches — the exact latent conflict TASK-FORMAT's stamp-order rule exists to remove — and would do it to a card whose fence I do not hold. The tie goes to parking: a parked card resurfaces, a wrongly-written one costs a merge.
 RESURFACES: the merge of `T-111-s10`. Whoever integrates that lane either finds this rider already taken (the lane holds `docs/CONVENTIONS.md`, this card's whole fence) and DISCHARGES it naming the commit, or finds it untaken and re-parks it on the next `docs/CONVENTIONS.md` dispatch with the absorption written onto a card that is no longer building. The condition is checkable by the integrator rather than by whoever remembers STATE line 61.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by opener: docs/conventions/verification.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

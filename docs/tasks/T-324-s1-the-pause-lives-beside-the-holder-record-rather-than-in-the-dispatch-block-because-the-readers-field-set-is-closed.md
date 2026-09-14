@@ -8,7 +8,7 @@ priority: 2
 status: suggested
 suggested_by: "executor claude-opus-5@subagent @T-324, ruled with the architect seat in that lane's ask file on 2026-09-14; the shape is accepted for T-324 and this card is the move the ruling asked to be filed rather than left to omission"
 blocked_by: []
-touches: [lib/parser/src/process-settings.ts, lib/parser/test/process-settings.test.ts, method/runtime/process-schema.yaml, docs/CONVENTIONS.md]
+touches: [lib/parser/src/process-settings.ts, lib/parser/test/process-settings.test.ts, method/runtime/process-schema.yaml, docs/CONVENTIONS.md, docs/conventions/architecture.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/records-and-rooms.md]
 builder:
 verifier:
 built_by:
@@ -45,6 +45,8 @@ the two should agree.
 - WHEN the block carries no pause THE reader SHALL answer the explicit no-pause state exactly as it answers the no-grant one, from the declaration's own absent values rather than from a reader that invents them.
 - WHEN a pause is recorded in the block THE revision SHALL rise and the previous grant SHALL be appended to the history, which is the sentence the declaration already makes and nothing keeps.
 - WHEN the move lands THE conventions SHALL say where a pause lives in one place rather than two, and the record beside the holder SHALL either be retired or be documented as what a project with no block uses, so that no reader has to work out which of two shapes is current.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/architecture.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/records-and-rooms.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 <!-- executor appends before finishing -->

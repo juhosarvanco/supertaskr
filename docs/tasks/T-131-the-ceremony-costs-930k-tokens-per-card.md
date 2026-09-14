@@ -7,7 +7,7 @@ priority: 5
 size: M
 status: planned
 blocked_by: [T-104]
-touches: [method/, docs/CONVENTIONS.md]
+touches: [method/, docs/CONVENTIONS.md, docs/conventions/merging.md, docs/conventions/standing-gates.md, docs/conventions/verification.md]
 builder:
 verifier:
 built_by:
@@ -363,3 +363,10 @@ the RANGE RULE bullet since T-091** — if this card edits that file, run
 the method version moves, because `kit.rs` reads the method files off
 disk. **@human: YES — the adoption decision is the deliverable, not the
 prose.**
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by opener: docs/conventions/merging.md, docs/conventions/standing-gates.md, docs/conventions/verification.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

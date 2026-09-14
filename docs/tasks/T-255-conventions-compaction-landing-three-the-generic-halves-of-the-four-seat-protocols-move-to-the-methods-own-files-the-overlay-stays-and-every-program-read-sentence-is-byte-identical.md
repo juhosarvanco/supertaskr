@@ -8,7 +8,7 @@ priority: 2
 status: planned
 suggested_by: "@human (2026-09-08): \"This sounds good\" on \"keep one CONVENTIONS file, move the generic seat protocols out of it into the method's own files … and skip the topic split\" (rooms/loop-efficiency.md item 29); the method's own rule that method/ is the generic convention and CONVENTIONS the project overlay"
 blocked_by: [T-254]
-touches: [docs/CONVENTIONS.md, method/lane-protocol.md, method/roles, tools/e2e/scripts/docs-scan.mjs, docs/decisions/019-governing-docs-rules-truths-records.md]
+touches: [docs/CONVENTIONS.md, method/lane-protocol.md, method/roles, tools/e2e/scripts/docs-scan.mjs, docs/decisions/019-governing-docs-rules-truths-records.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/lanes.md, docs/conventions/merging.md, docs/conventions/standing-gates.md, docs/conventions/verification.md]
 builder:
 verifier:
 built_by:
@@ -56,6 +56,8 @@ bullets the seats still need quoted.
   reading.
 - The docs gate SHALL be run on every path; CAPABILITIES SHALL be
   regenerated if a spec name moves.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by opener: docs/conventions/dispatch-and-scratch.md, docs/conventions/lanes.md, docs/conventions/merging.md, docs/conventions/standing-gates.md, docs/conventions/verification.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 <!-- executor appends before finishing -->

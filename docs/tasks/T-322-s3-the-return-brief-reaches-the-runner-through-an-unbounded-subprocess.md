@@ -8,7 +8,7 @@ priority: 3
 status: suggested
 suggested_by: "executor claude-opus-5@subagent @T-322, measured while building the runner io: both calls are spawnSync with a maxBuffer and no timeout, which is T-298-s2's class one command over"
 blocked_by: [T-322]
-touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md]
+touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md, docs/conventions/commands.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/shell-and-scripts.md]
 builder:
 verifier:
 built_by:
@@ -42,6 +42,8 @@ the report that would say so is the thing that stopped.
 - WHEN the runner cannot be reached in time THE brief SHALL report the runner's history as unreachable, which is a state it already carries, rather than failing or waiting.
 - WHEN a ceiling is reached THE report SHALL name what it was waiting for and how long, on the wait verb's own model, so a reader can tell a slow runner from a dead one.
 - WHEN this lands THE bounded-wait bullet SHALL say that it governs an arm's own children and not only the waits a seat asks for by name.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/commands.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/shell-and-scripts.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 <!-- executor appends before finishing -->

@@ -8,7 +8,7 @@ priority: 2
 status: parked
 wake: T-292
 suggested_by: "verifier claude-opus-5@subagent @T-296, 2026-09-10"
-touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md]
+touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md, docs/conventions/architecture.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/shell-and-scripts.md]
 builder:
 verifier:
 built_by:
@@ -44,3 +44,10 @@ them.
 - WHEN a card's fence names the module the tier classifier lives in, or the document carrying the guard-class map, THE arm SHALL classify it guarded.
 
 Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-292; the guard-class mechanism does not guard itself, and its module is one of the three being split out.
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/architecture.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/shell-and-scripts.md. The index stays fenced for its pointer line.
+
+## Implementation notes
+<!-- executor appends before finishing -->
+
+## Verdicts

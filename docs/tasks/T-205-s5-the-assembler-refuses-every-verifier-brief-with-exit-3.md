@@ -8,7 +8,7 @@ priority: 2
 status: planned
 suggested_by: executor claude-opus-5@subagent @T-205
 blocked_by: []
-touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, method/roles/verifier.md, docs/CONVENTIONS.md]
+touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, method/roles/verifier.md, docs/CONVENTIONS.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/shell-and-scripts.md, docs/conventions/verification.md]
 builder:
 verifier:
 built_by:
@@ -188,6 +188,8 @@ The bench verb renders phase 2 from the sealed inputs and the card at the base, 
 <!-- executor appends before finishing -->
 
 ### T-296-s10's Verdicts (as filed, empty)
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/dispatch-and-scratch.md, docs/conventions/shell-and-scripts.md, docs/conventions/verification.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 

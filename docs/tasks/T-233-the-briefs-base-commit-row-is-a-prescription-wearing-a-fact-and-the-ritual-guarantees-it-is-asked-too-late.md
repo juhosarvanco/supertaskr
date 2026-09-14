@@ -8,7 +8,7 @@ size: S
 status: planned
 suggested_by: "executor claude-opus-5@subagent @T-216-s1, which read the row as its own base; confirmed at the integration seat against the lane it was wrong about"
 blocked_by: []
-touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md]
+touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/lanes.md, docs/conventions/shell-and-scripts.md]
 builder:
 verifier:
 built_by:
@@ -132,6 +132,8 @@ The dispatch brief's lane-facts row derives its base commit from `git log --firs
 <!-- executor appends before finishing -->
 
 ### T-296-s7's Verdicts (as filed, empty)
+
+**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/dispatch-and-scratch.md, docs/conventions/lanes.md, docs/conventions/shell-and-scripts.md. The index stays fenced for its pointer line.
 
 ## Implementation notes
 
