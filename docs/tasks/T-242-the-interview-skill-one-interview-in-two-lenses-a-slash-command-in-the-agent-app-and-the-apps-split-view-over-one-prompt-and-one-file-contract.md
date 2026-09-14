@@ -585,3 +585,71 @@ short of the correction count.
   those are pre-existing and IDENTICAL in both lenses, so they are not
   this card's and the executor already recorded them.
 
+#### The step-7 readings, at MY OWN tip
+
+Taken at the tip THIS pass created, e2f1315ec041e448c8f001d5a7aabc598a80b679,
+because a figure measured at the commit I was handed is stale at the
+commit my corrections made. Port 25242.
+
+| leg | at the tip I was sent (e18e9a2c) | at MY tip (e2f1315e) | verdict |
+|---|---|---|---|
+| parser | 454 | 454 | GREEN |
+| app | 1171 | 1171 | GREEN |
+| rust | 661 across 18 targets | 661 across 18 targets | GREEN |
+| e2e | 1179 | 1181 | GREEN |
+
+The e2e count moves by exactly the two bodies the corrections add, and
+one more body was renamed rather than added. Exit 0 on every leg at both
+tips.
+
+Beside the battery, at the same ref: `capabilities:check` CURRENT — the
+census at 111903 bytes, `docs/INDEX.md` CURRENT, and the generated entry
+current at 28856 bytes, the three that command now answers for. `index
+--check` CURRENT at 1230259 bytes, 203 files, 2631 symbols, 2505 edges,
+budget 57.3 per cent. `lint:docs` exit 0 with 0 findings over 246
+docs-shaped sites in 49 files. The method eval gate exit 0 over 12
+model-free evals. The rename keeper exit 0. The card preflight exit 0
+over the board including the three cards this pass filed. `git status
+--porcelain` empty at the tip and again after a pack.
+
+The tarball at my tip, by `npm pack --dry-run` from the package: 35
+files, 632.0 kB packed, 2.1 MB unpacked, carrying
+`dist/method/skills/supertaskr-interview/SKILL.md` at 28.9 kB — the
+generated entry grew by the seed-path paragraph correction 3 adds, from
+28427 to 28856 bytes against the 65536 the app's own discoverer accepts.
+
+**THE CENSUS IS NOT STALE AT THIS TIP**, which is worth saying because
+the dispatch expected it might be: the corrections added and renamed
+bodies, so `npm run capabilities` was re-run as the LAST write before the
+correction commit and the regenerated census went in with it. The merge
+still owes its own regeneration from the merged tree, and the coupling
+the executor's notes name stands: a `--bump` at the merge rewrites the
+version stamp inside the banks, which the generated entry carries
+verbatim, so the bump and the regeneration belong in one commit. T-242-s1
+is the card for making that a step of the verb.
+
+#### What step 7 found in my OWN correction, said rather than quietly fixed
+
+The gates at my tip caught a defect in the body I committed for
+correction 3, and it is the same defect the executor met and fixed
+earlier in this lane: the body formed a `docs`-first path by joining the
+literal `docs/` onto a scratch project root, which the DOCS GATE's
+silent-miss tripwire cannot tell from a read of THIS repository's own
+`docs/` — and it is right not to be able to. `npm run lint:docs` reported
+it as one unlinked file, `tools/e2e/tests/interview-skill.spec.ts`,
+`bases: project`. Nothing about the property under test needed that first
+segment: what the body measures is the SHAPE of a seed path, so the
+control's destination and one of the three refused labels are now spelled
+without it. `lint:docs` answers 0 findings afterwards.
+
+I record it because the executor's own account of the same tripwire is
+in the notes above, and a verifier who repeats a defect he graded and
+then edits it out of sight has removed the one reading that says the gate
+works. It also cost this pass a whole second e2e leg, which is the honest
+price of committing a body before running the gates over it.
+
+It also adds one reading worth keeping: the e2e leg was GREEN at 1181
+with that body committed, so no spec body caught it — the DOCS GATE's own
+whole-tree half did, and it is the only arm that did. That is the arm
+working as designed, and it is also why `lint:docs` belongs in a step-7
+list rather than only in a merge's owed set.
