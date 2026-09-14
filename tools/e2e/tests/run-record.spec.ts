@@ -2232,3 +2232,61 @@ test("A `new-work` PAUSE PERMITS THE VERIFICATION OF A CANDIDATE ALREADY ADMITTE
   }
 });
 
+test("A DERIVED REPAIR CANNOT EXCEED THE AUTHORIZATION IT INHERITS — a parent past the `until` endpoint is refused, so the endpoint is not crossed by naming an unreachable parent", () => {
+  // THE THIRD ASSIGNED CORRECTION. Membership of the order is not enough
+  // under `until`: the grant runs up to and INCLUDING its endpoint, so a
+  // card after it is work this grant would refuse, and a repair naming
+  // it as its parent inherits an authorization the grant never made.
+  // Criterion 2 admits only "the repairs that card's delivery needs",
+  // and a card the grant does not reach delivers nothing.
+  //
+  // KILLED BY: a parent check that asks only whether the order names it.
+  const b = grantBench("derived-past-the-endpoint", ["T-901", "T-902", "T-903", "T-904"]);
+  try {
+    const order = ["T-901", "T-902", "T-903"];
+    b.grant(grantBlock({
+      approval: "until",
+      recovery: "repairs",
+      order,
+      until: "T-901",
+      blobs: Object.fromEntries(order.map((id) => [id, b.blob(id)])),
+    }));
+    // T-903 IS IN THE ORDER AND PAST THE ENDPOINT, so the grant refuses
+    // it outright — without which this body would prove nothing.
+    expect(
+      refusalOfStart(b.root, grantAssignment(b, "T-903", { resource: "none" }), "2026-09-14T06:00:00.000Z")?.code,
+      "a card past the until endpoint was admitted, so this body proves nothing",
+    ).toBe("ADMISSION_UNTIL_ENDPOINT");
+
+    // AND A REPAIR OF IT IS REFUSED FOR THE SAME REASON.
+    const beyond = refusalOfStart(
+      b.root,
+      grantAssignment(b, "T-904", {
+        resource: "none",
+        admission: { kind: "derived", parent: "T-903", evidence: "a failure of T-903", scope: "repair" },
+      }),
+      "2026-09-14T06:00:01.000Z",
+    );
+    expect(beyond?.code, "a repair crossed the until endpoint by naming an unreachable parent").toBe(
+      "ADMISSION_DERIVED_NO_PARENT",
+    );
+    expect(beyond?.message, "the refusal does not name the endpoint it would have crossed").toContain("T-901");
+
+    // THE POSITIVE CONTROL, WHERE THE ARRANGEMENT IS ABSENT: the same
+    // repair of a parent the grant DOES reach is admitted, so the
+    // refusal above is about the endpoint and not about repairs.
+    expect(
+      refusalOfStart(
+        b.root,
+        grantAssignment(b, "T-904", {
+          resource: "none",
+          admission: { kind: "derived", parent: "T-901", evidence: "a failure of T-901", scope: "repair" },
+        }),
+        "2026-09-14T06:00:02.000Z",
+      ),
+      "the control: a repair of the endpoint's own work was refused too",
+    ).toBeNull();
+  } finally {
+    b.cleanup();
+  }
+});

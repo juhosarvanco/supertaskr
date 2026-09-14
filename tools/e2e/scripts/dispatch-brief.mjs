@@ -8720,15 +8720,31 @@ export function admit(state, request, ledger = []) {
       );
     }
     const parent = String(request.parent ?? "").trim();
-    if (parent === "" || !grant.order.includes(parent)) {
+    // **AN INHERITED AUTHORIZATION CANNOT EXCEED THE ONE IT INHERITS
+    // FROM.** Membership of the order is not enough under `until`: the
+    // grant runs up to and including its endpoint, so a card AFTER the
+    // endpoint is work this grant would refuse, and a repair naming it
+    // as its parent inherits an authorization the grant never made —
+    // which is the endpoint bound bypassed by naming an unreachable
+    // parent. Criterion 2 admits only "the repairs that card's delivery
+    // needs", and a card the grant does not reach delivers nothing.
+    const parentAt = grant.order.indexOf(parent);
+    const endpointAt = state.approval === "until" && grant.until !== null ? grant.order.indexOf(grant.until) : -1;
+    const beyondEndpoint = endpointAt >= 0 && parentAt > endpointAt;
+    if (parent === "" || parentAt < 0 || beyondEndpoint) {
       refuse(
         ADMISSION_CODES.DERIVED_NO_PARENT,
         parent === ""
           ? "a derived admission names no PARENT authorized work. It inherits an authorization " +
               "rather than minting one, and there is nothing here to inherit from."
-          : `its parent \`${parent}\` is not work this grant approved (the order is ` +
-              `${grant.order.join(", ")}). A repair attributed to work nobody approved is a second ` +
-              "approval wearing a repair's clothes.",
+          : beyondEndpoint
+            ? `its parent \`${parent}\` is in the order but AFTER this grant's endpoint ` +
+                `\`${String(grant.until)}\`, so it is work this grant would refuse. A repair ` +
+                "inherits its parent's authorization and cannot exceed it, and a grant whose " +
+                "endpoint could be crossed by naming an unreachable parent has no endpoint."
+            : `its parent \`${parent}\` is not work this grant approved (the order is ` +
+                `${grant.order.join(", ")}). A repair attributed to work nobody approved is a second ` +
+                "approval wearing a repair's clothes.",
       );
     }
     const evidence = String(request.evidence ?? "").trim();
