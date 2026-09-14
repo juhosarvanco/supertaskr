@@ -62,6 +62,90 @@ Amendment proposed 2026-09-13 — bounded fixture classification. At this review
 
 ## Implementation notes
 
+Built 2026-09-14 by claude-opus-5@subagent in lane T-295-s4, base
+74dc490cc8f2e6cb2139955e8c6988518a416ed8.
+
+THE SHAPE. `FIXTURE_CLASSES` in tools/e2e/scripts/merge.mjs is the
+table, on `rename-scan.mjs`'s `KEPT_CLASSES` model and exported beside
+`fixtureClassOf`. An entry is an id, the forbidden CLASS it covers, an
+anchored pattern over the matched VALUE and a list of SITES. The
+recognition rule is the conjunction and nothing else: a value is kept
+only where one entry names both halves, so a spec filename, a comment
+calling something a fixture and a test directory qualify nothing on
+their own, and an arbitrary credential-shaped string is refused in
+exactly the file whose one enumerated credential is kept. A `files`
+token ending in a slash is a directory; the rest are whole paths from
+the repository root. Three entries at this tip: the credential literal
+this keeper's own spec plants, the addresses it plants, and the suite's
+one fixture identity across tools/e2e/tests/.
+
+WHY NO ENTRY COVERS home OR name. Both values are derived from the live
+machine rather than from a shape, so a line carrying this seat's own
+home directory carries it whatever file it sits in; there is no
+synthetic instance of a fact about a disk. A home path stays forbidden,
+which is what the redaction of 2026-09-13 already ruled. A body asserts
+that no entry names either class.
+
+WHY merge.mjs IS A SITE ON THE CREDENTIAL ENTRY. The table has to spell
+the value it keeps, and a table naming a forbidden value refuses itself.
+`rename-scan.mjs` meets the same problem and answers it by excluding its
+own files WHOLE; this answers it per value, so one enumerated literal is
+kept there and every other forbidden value in that file is refused as it
+is anywhere else. This lane's own merge is the worked example in both
+directions: the table line and the kept planted values in the spec are
+lines this merge ADDS, and the values the bodies expect REFUSED are
+assembled from pieces at run time because spelling one whole would
+refuse this lane's own merge.
+
+PER MATCHED VALUE AND PER CLASS. `forbiddenSpellingReport` replaces the
+per-line boolean with every value a shape matched on the line, asks the
+table about each, and refuses when any one is unkept. One finding per
+file per class is unchanged. `forbiddenSpellingFindings` stays as the
+findings half so every caller and body written against it reads what it
+always read.
+
+THE ANNOUNCEMENT. The report's `kept` half carries one line per file,
+class and fixture class with a COUNT and no value, redacted for the
+reason the refusal is; the step prints each as `NEWS — ` on stderr and
+walks on, the spelling an acknowledged drill uses.
+
+DOCUMENTATION. docs/CONVENTIONS.md's merge-arm bullet gains the
+recognition rule, the admission rule for an address entry, the
+home-and-name exclusion, the per-value scope and the announcement. The
+existing body comparing that bullet's figures against the program gains
+the pin, so the sentence and the table cannot drift apart.
+
+FIGURES, all at the lane tip unless named otherwise. tools/e2e
+typecheck exit 0. merge.spec.ts 46 bodies pass in 4.4s, of which 4 are
+new (42 at the base). The docs gate FIRES for docs/CONVENTIONS.md and
+names `cargo test from app/src-tauri/` and `npm test from tools/e2e/`;
+`lint:docs` exit 0; docs/CONVENTIONS.md is 168060 bytes against a
+146878-byte warn line and a 176253-byte fail line, and the warn was
+already standing at the base at 166550 bytes. The card preflight exits
+0. BOOT GATE is NOT OWED: the diff touches no path under app/src-tauri/
+or app/src/ and neither manifest. GRAPH REGEN fires at the merge on the
+two .mjs and .ts files; no file was added, moved or renamed, so no
+component moved. `capabilities:check` reports the census STALE at the
+lane tip, 102360 bytes committed against a 102875-byte generation — the
+4 new bodies — and the regeneration belongs to the merge, after the
+corrections, because docs/CAPABILITIES.md and docs/INDEX.md are outside
+this card's fence.
+
+POISON DRILL, 5 mutants, each run against the whole of merge.spec.ts,
+each restored and the restore proved by sha256 against the pre-drill
+digest 8cc97d853261a187f5514df95c355d823d44992998c55ed68d30e0258629ed75.
+The site check removed: 4 bodies red, including two that predate this
+card. The value pattern removed: 3 red. The exception made per line
+rather than per value: the near-match body red, alone. The
+announcement dropped from the step: the end-to-end body red, alone. A
+DATA mutant moving an address entry to a deliverable domain: 4 red. No
+mutant survived.
+
+### In-fence follow-through
+
+None. Everything this card's criteria and its amendment name is in the
+three fenced files at this tip.
+
 ## Verdicts
 
 Promoted 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): to planned at priority 1 — the forbidden-spelling keeper has no fixture exemption and STATE names it as the thing stopping the merge arm on planted fixtures today. Not dispatched by this sitting.

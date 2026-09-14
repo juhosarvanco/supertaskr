@@ -1446,7 +1446,9 @@ export function keeperSteps(input) {
       why:
         "T-295 criterion 4. The rename half is not hypothetical: a merge on 2026-09-10 carried a " +
         "comment spelling the retired identifier and the keeper spec redded it after the fact. " +
-        "The classifier is rename-scan.mjs's own, so a spelling that file keeps is kept here",
+        "The classifier is rename-scan.mjs's own, so a spelling that file keeps is kept here — " +
+        "and since T-295-s4 the other classes have a bounded one of their own, which keeps a " +
+        "value this project's own table names by VALUE and by SITE and announces every use",
       run: null,
     },
     {
@@ -2557,6 +2559,107 @@ export const SECRET_SHAPES = Object.freeze([
 export const EMAIL_SHAPE = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}\b/;
 
 /**
+ * THE SYNTHETIC KEEPER-TEST INPUTS THIS KEEPER KEEPS (T-295-s4, on the
+ * card's amendment of 2026-09-13).
+ *
+ * THE MEASURED FAULT: the keeper stopped four merges in two days and
+ * three of them on the SAME synthetic fixture identity, added by a new
+ * spec body. Each was ruled through by hand, which is the shape of a
+ * keeper on its way to being turned off — the card's own merge was the
+ * first, because the body that tests this keeper has to PLANT the very
+ * values it keeps out.
+ *
+ * THE RECOGNITION RULE, AND IT IS THE WHOLE OF IT: a matched value is
+ * kept only where an entry below names BOTH the value — by an anchored
+ * pattern, a literal and never a shape — AND the site it may sit at. A
+ * spec filename, a comment calling something a fixture and placement in
+ * a test directory qualify NOTHING on their own: every entry's pattern
+ * has to match the value itself, so an arbitrary credential-shaped
+ * string is refused in exactly the file whose one enumerated credential
+ * is kept. A `files` token ending in `/` is a DIRECTORY and the rest are
+ * whole repository-relative paths.
+ *
+ * WHAT MAKES AN ENTRY ADMISSIBLE, for whoever adds the next one: an
+ * address entry only at a domain the standards reserve for documentation
+ * and testing — `example.com`, `example.net`, `example.org`, and the
+ * `.invalid`, `.test`, `.example` and `.localhost` top-level names —
+ * which cannot be delivered to and so cannot be a person; a credential
+ * entry only where the value is a counted-up placeholder no live
+ * credential could be. That admission rule is kept by a BODY rather than
+ * by this paragraph.
+ *
+ * WHY `merge.mjs` IS A SITE ON THE CREDENTIAL ENTRY: this table has to
+ * spell the value it keeps, and a table that names a forbidden value
+ * refuses itself. `rename-scan.mjs` meets the same problem and answers
+ * it by excluding its own two files WHOLE; this answers it per value, so
+ * the one enumerated literal is kept here and every other forbidden
+ * value in this file is refused exactly as it is anywhere else.
+ *
+ * NO ENTRY COVERS THE `home` OR `name` CLASSES, and none can: both
+ * values are derived from the live machine rather than from a shape, so
+ * a line carrying this seat's own home directory carries this seat's own
+ * home directory whatever file it sits in. A home path stays forbidden
+ * (the 2026-09-13 refusal was redacted, not classified).
+ */
+export const FIXTURE_CLASSES = Object.freeze([
+  Object.freeze({
+    id: "keeper-fixture-credential",
+    cls: "aws-key",
+    pattern: /^AKIA0123456789ABCDEF$/,
+    files: Object.freeze(["tools/e2e/scripts/merge.mjs", "tools/e2e/tests/merge.spec.ts"]),
+  }),
+  Object.freeze({
+    id: "keeper-fixture-address",
+    cls: "email",
+    pattern: /^(?:someone@example\.com|areal\.person@example\.org)$/,
+    files: Object.freeze(["tools/e2e/tests/merge.spec.ts"]),
+  }),
+  // THE SUITE'S ONE FIXTURE IDENTITY, and the standing practice is that a
+  // fixture identity is one that ALREADY EXISTS in the suite rather than
+  // a new one — which this entry builds on and is not: the value is
+  // enumerated here, at a reserved domain, and the site is the suite's
+  // own spec tree. Another synthetic address in that tree is still
+  // refused, and this one is still refused outside it.
+  Object.freeze({
+    id: "suite-fixture-identity",
+    cls: "email",
+    pattern: /^fixture@example\.invalid$/,
+    files: Object.freeze(["tools/e2e/tests/"]),
+  }),
+]);
+
+/**
+ * The fixture class a matched value belongs to at the file it was found
+ * in, or `null` — which is what an unclassified forbidden value looks
+ * like, and it is the answer for every near-match.
+ *
+ * @param {{ value: string, cls: string, file: string }} input
+ * @returns {string | null}
+ */
+export function fixtureClassOf(input) {
+  for (const entry of FIXTURE_CLASSES) {
+    if (entry.cls !== input.cls) continue;
+    if (!entry.files.some((f) => (f.endsWith("/") ? input.file.startsWith(f) : input.file === f))) continue;
+    if (!entry.pattern.test(input.value)) continue;
+    return entry.id;
+  }
+  return null;
+}
+
+/**
+ * EVERY value a shape matches on one line, never the first and never a
+ * boolean: the exception below is PER MATCHED VALUE, so a line carrying
+ * a kept fixture address beside a real one has to yield both.
+ *
+ * @param {RegExp} re @param {string} line
+ * @returns {string[]}
+ */
+function allMatches(re, line) {
+  const all = re.flags.includes("g") ? re : new RegExp(re.source, `${re.flags}g`);
+  return [...line.matchAll(all)].map((m) => m[0]);
+}
+
+/**
  * A FORBIDDEN SPELLING IN THE LINES A MERGE ADDS.
  *
  * ADDITIONS ONLY, for the mirror of the reason the keeper above judges
@@ -2570,12 +2673,22 @@ export const EMAIL_SHAPE = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)
  * sentences and in historical records, and a keeper that could not tell
  * those from a fresh one would have to be turned off.
  *
+ * AND SINCE T-295-s4 THE OTHER CLASSES HAVE A CLASSIFIER TOO, bounded by
+ * `FIXTURE_CLASSES` above and applied PER MATCHED VALUE AND PER CLASS:
+ * keeping one synthetic instance suppresses nothing else on the same
+ * line, in the same block or in the same file, because every value a
+ * shape matched is asked separately and one unkept value still refuses.
+ * A kept value is returned as NEWS rather than dropped — the step says
+ * it out loud, the way `--blocks-absent` does for an absent block.
+ *
  * @param {{ added: readonly { path: string, line: string }[], home?: string, names?: readonly string[], classify?: (line: string, file: string) => { kept: boolean } | null }} input
- * @returns {string[]}
+ * @returns {{ findings: string[], kept: string[] }}
  */
-export function forbiddenSpellingFindings(input) {
+export function forbiddenSpellingReport(input) {
   /** @type {Map<string, string>} */
   const findings = new Map();
+  /** @type {Map<string, { rel: string, why: string, cls: string, n: number }>} */
+  const keeps = new Map();
   const home = (input.home ?? "").trim();
   const names = (input.names ?? []).filter((n) => n.trim().length > 2);
   /**
@@ -2590,45 +2703,85 @@ export function forbiddenSpellingFindings(input) {
   const found = (rel, id, text) => {
     if (!findings.has(`${rel}:${id}`)) findings.set(`${rel}:${id}`, text);
   };
+  /**
+   * EVERY VALUE OF ONE CLASS IN ONE FILE, JUDGED ONE AT A TIME, and the
+   * refusal survives a single kept value beside forty unkept ones. The
+   * announcement is folded the way the finding is — per file, per class,
+   * per fixture class — and carries a count rather than the values.
+   *
+   * @param {{ rel: string, key: string, cls: string, values: readonly string[], why: string, refusal: string }} at
+   */
+  const judge = (at) => {
+    let unkept = 0;
+    for (const value of at.values) {
+      const kept = fixtureClassOf({ value, cls: at.cls, file: at.rel });
+      if (kept === null) {
+        unkept += 1;
+        continue;
+      }
+      const key = `${at.rel}:${at.cls}:${kept}`;
+      const already = keeps.get(key);
+      if (already === undefined) keeps.set(key, { rel: at.rel, why: at.why, cls: kept, n: 1 });
+      else already.n += 1;
+    }
+    if (unkept > 0) found(at.rel, at.key, at.refusal);
+  };
   for (const entry of input.added) {
     const { path: rel, line } = entry;
     for (const shape of SECRET_SHAPES) {
-      if (shape.re.test(line)) {
-        found(
-          rel,
-          shape.id,
-          `${rel}: this merge ADDS a line matching ${shape.why} (${shape.id}). A credential in a ` +
-            "tracked file is a credential published; rotate it and take the line out",
-        );
-      }
-    }
-    if (EMAIL_SHAPE.test(line)) {
-      found(
+      const values = allMatches(shape.re, line);
+      if (values.length === 0) continue;
+      judge({
         rel,
-        "email",
-        `${rel}: this merge ADDS a line carrying an email address. An address in a tracked ` +
+        key: shape.id,
+        cls: shape.id,
+        values,
+        why: shape.why,
+        refusal:
+          `${rel}: this merge ADDS a line matching ${shape.why} (${shape.id}). A credential in a ` +
+          "tracked file is a credential published; rotate it and take the line out",
+      });
+    }
+    const addresses = allMatches(EMAIL_SHAPE, line);
+    if (addresses.length > 0) {
+      judge({
+        rel,
+        key: "email",
+        cls: "email",
+        values: addresses,
+        why: "an email address",
+        refusal:
+          `${rel}: this merge ADDS a line carrying an email address. An address in a tracked ` +
           "file is an address published, and this refusal does not repeat the one it found",
-      );
+      });
     }
     if (home.length > 0 && line.includes(home)) {
-      found(
+      judge({
         rel,
-        "home",
-        `${rel}: this merge ADDS a line carrying THIS MACHINE'S OWN home directory. A home path ` +
+        key: "home",
+        cls: "home",
+        values: [home],
+        why: "this machine's own home directory",
+        refusal:
+          `${rel}: this merge ADDS a line carrying THIS MACHINE'S OWN home directory. A home path ` +
           "is a fact about one seat's disk and it names its owner; spell the path from the " +
           "repository root, or derive it",
-      );
+      });
     }
     for (const name of names) {
-      if (new RegExp(`\\b${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(line)) {
-        found(
-          rel,
-          `name:${name}`,
+      const hit = new RegExp(`\\b${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").exec(line);
+      if (hit === null) continue;
+      judge({
+        rel,
+        key: `name:${name}`,
+        cls: "name",
+        values: [hit[0]],
+        why: "the seat's own account or git name",
+        refusal:
           `${rel}: this merge ADDS a line carrying the seat's own account or git name. A ` +
-            "personal name reaches a tracked file by accident far more often than on purpose, " +
-            "and this refusal does not repeat the one it found",
-        );
-      }
+          "personal name reaches a tracked file by accident far more often than on purpose, " +
+          "and this refusal does not repeat the one it found",
+      });
     }
     if (input.classify !== undefined) {
       const verdict = input.classify(line, rel);
@@ -2643,7 +2796,30 @@ export function forbiddenSpellingFindings(input) {
       }
     }
   }
-  return [...findings.values()];
+  return {
+    findings: [...findings.values()],
+    kept: [...keeps.values()].map(
+      (k) =>
+        `${k.rel}: this merge ADDS ${String(k.n)} value(s) matching ${k.why}, KEPT by the ` +
+        `fixture classifier under \`${k.cls}\` — an explicitly synthetic keeper-test input the ` +
+        "table names by VALUE and by SITE. The exception is per matched value and per class, so " +
+        "every other forbidden value on those lines is refused on its own; the value is not " +
+        "printed here, for the reason a refusal does not print one",
+    ),
+  };
+}
+
+/**
+ * The findings alone, for a caller that wants the refusal and not the
+ * news. The report above is the whole answer and this is its first half:
+ * the name means what it has always meant, so the bodies and callers
+ * written against it keep reading a list of refusals.
+ *
+ * @param {{ added: readonly { path: string, line: string }[], home?: string, names?: readonly string[], classify?: (line: string, file: string) => { kept: boolean } | null }} input
+ * @returns {string[]}
+ */
+export function forbiddenSpellingFindings(input) {
+  return forbiddenSpellingReport(input).findings;
 }
 
 /**
@@ -4205,7 +4381,7 @@ function keeperStep(step, io) {
   }
   if (step.keeper === "forbidden-spelling") {
     const names = personalNames(io.projectRoot);
-    const findings = forbiddenSpellingFindings({
+    const report = forbiddenSpellingReport({
       added: lines.added,
       home: os.homedir(),
       names,
@@ -4214,10 +4390,17 @@ function keeperStep(step, io) {
     io.out(
       `      ${String(lines.added.length)} added line(s) against ` +
         `${String(SECRET_SHAPES.length)} secret shape(s), an address, this machine's home and ` +
-        `${String(names.length)} derived name(s), plus the rename scanner's own classifier`,
+        `${String(names.length)} derived name(s), plus the rename scanner's own classifier and ` +
+        `${String(FIXTURE_CLASSES.length)} fixture class(es)`,
     );
-    if (findings.length === 0) return EXIT.CLEAN;
-    for (const f of findings) io.err(`      ${f}`);
+    // A KEPT SPELLING IS NEWS, NEVER SILENCE (T-295-s4 criterion 3). It
+    // goes to stderr for the reason the acknowledged drill's does — a
+    // seat piping stdout into a record still sees it — and the step does
+    // not stop for it. A way through that nobody can see the exercise of
+    // is a way through nobody audits.
+    for (const k of report.kept) io.err(`      NEWS — ${k}`);
+    if (report.findings.length === 0) return EXIT.CLEAN;
+    for (const f of report.findings) io.err(`      ${f}`);
     return EXIT.FOUND;
   }
   const cardText = existsSync(path.join(io.projectRoot, io.card))
