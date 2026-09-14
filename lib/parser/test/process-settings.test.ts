@@ -1053,6 +1053,35 @@ describe('the dispatch block declaration', () => {
     expect(err?.message, 'the refusal does not say what it found').toContain('with-until');
   });
 
+  it('REFUSES an `advisory` that is neither `true` nor `false`, which a real YAML parser reads as a boolean anyway', () => {
+    // ASSIGNED CORRECTION 1 (verifier, 2026-09-14). `required`, `shape`
+    // and `implementation` are each checked against their own closed set
+    // and `advisory` was not: it was read as `processScalar(rest) ===
+    // 'true'`, so `advisory: yes` — which a real YAML parser reads as
+    // TRUE — read as FALSE without a word, and the one label the card
+    // asks the limits rows to carry would go missing rather than be
+    // refused. Measured at the lane's tip: the shipped schema with
+    // `limits.tokens` written `advisory: yes` parsed, and that row
+    // answered `false`.
+    for (const spelled of ['yes', 'no', 'True', 'FALSE', '1', 'maybe']) {
+      const text = DISPATCH_FIXTURE.replace(
+        '      advisory: true\n      implementation: declarative\n      what: "a ceiling per provider"',
+        `      advisory: ${spelled}\n      implementation: declarative\n      what: "a ceiling per provider"`,
+      );
+      expect(text, `advisory: ${spelled}: the edit changed nothing`).not.toBe(DISPATCH_FIXTURE);
+      const err = refusal(() => parseProcessSchema(text));
+      expect(err, `advisory: ${spelled}: a label nobody can read parsed`).toBeInstanceOf(ProcessFinding);
+      expect(err?.message, `advisory: ${spelled}: the refusal does not say what it found`).toContain(
+        'is neither `true` nor `false`',
+      );
+      expect(err?.message, `advisory: ${spelled}: the refusal does not name the file`).toContain(PROCESS_SCHEMA);
+    }
+    // THE POSITIVE CONTROL: both legal spellings still parse, and each
+    // row still answers the label it was written with.
+    expect(dispatchSchema().dispatch?.fields.get('limits.tokens')?.advisory, 'the control: true').toBe(true);
+    expect(dispatchSchema().dispatch?.fields.get('approval')?.advisory, 'the control: false').toBe(false);
+  });
+
   it('REFUSES an attribute no row declares, a field outside the fields list, and an indent it does not know', () => {
     const cases: [string, string, string, string][] = [
       ['an attribute nobody declares', '      required: always\n      shape: mode\n      values: [ask, until, standing]', '      required: always\n      shape: mode\n      colour: blue\n      values: [ask, until, standing]', 'is not an attribute a dispatch block field declares'],
@@ -1424,6 +1453,38 @@ describe('the dispatch block reader', () => {
       'limits with no expiry',
       'declares no `expires_at`',
     );
+  });
+
+  it('reads the history in the ORDER THE RECORD WRITES IT, neither sorting it nor refusing a sequence', () => {
+    // ASSIGNED CORRECTION 2 (verifier, 2026-09-14). The criterion calls
+    // the history "every earlier grant in order", and the refusals the
+    // card lists do not carry an out-of-sequence one — so `in order` is
+    // the order the FILE writes, which this reader preserves. Measured
+    // at the lane's tip: a history written [2, 1] read as [2, 1] with no
+    // refusal and nothing said whether that was the decision or the
+    // omission. This body is the decision, and it reds if a later hand
+    // sorts the list or refuses the sequence without moving the card.
+    const swapped = BLOCK.replace(
+      '      revision: 1\n      order: [T-1]',
+      '      revision: 2\n      order: [T-1]',
+    ).replace('      revision: 2\n      order: [T-1, T-2]', '      revision: 1\n      order: [T-1, T-2]');
+    expect(swapped, 'the edit changed nothing').not.toBe(BLOCK);
+    const block = readBlock(swapped);
+    expect(
+      block.history.map((h) => h.revision),
+      'the history was re-ordered, or a descending sequence was refused',
+    ).toEqual([2, 1]);
+    // AND THE RULES THAT DO HOLD STILL HOLD: every earlier revision is
+    // below the current one, and the current grant is still the one
+    // `grant:` names.
+    expect(block.revision, 'the current revision moved with the history').toBe(3);
+    expect(
+      block.history.every((h) => h.revision < block.revision),
+      'an earlier grant is not below the current',
+    ).toBe(true);
+    // THE CONTROL: written ascending, the same block reads ascending —
+    // so the assertion above is the file's order and not a constant.
+    expect(readBlock(BLOCK).history.map((h) => h.revision), 'the control: the order as written').toEqual([1, 2]);
   });
 
   it('reads a block with no optional containers at all, and a first grant whose history is empty', () => {
