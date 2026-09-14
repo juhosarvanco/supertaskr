@@ -79,6 +79,205 @@ The fence token docs/windows/README.md is removed with this line: the preflight 
 
 ## Implementation notes
 
+Built by claude-opus-5@subagent on 2026-09-14 in the lane worktree cut at
+0d194f7cba67, landed at 163d0740. Every figure below is measured at that
+tip unless it names another ref.
+
+### What the card asked for, and what the fence allowed
+
+The dispatch approval mode, the recovery policy and the grant that sets
+them are ONE block of the runtime template, `dispatch:` in
+method/runtime/supertaskr.yaml, declared once in
+method/runtime/process-schema.yaml and read by the parser library's
+process-settings module as one typed value through the pure entry.
+
+**THE DECLARATION IS A NEW TOP-LEVEL SECTION OF THE SCHEMA RATHER THAN
+TWO SWITCHES, AND THE FENCE IS WHY.** The obvious reading of "declared
+once in the process schema" is a pair of switches, `dispatch.approval`
+and `dispatch.recovery`, in the existing `switches:` block. That is not
+available to this card. Two bodies outside its fence hold the switch set
+closed, both in tools/e2e/tests/brief.spec.ts: one requires the schema's
+switch ids to equal a typed list in that file exactly, and one requires
+every non-floor switch to be a row of the switch inventory in
+docs/rooms/loop-cost-and-speed.md or to be named by another switch's own
+constraint. A new switch therefore owes an edit to that spec and to that
+room, and the fence carries neither. The block is also not a switch in
+shape: `approval` and `recovery` are two values out of sixteen fields,
+and the rest are a grant, a revocation, ceilings and a history, none of
+which has a profile column or a value set. So the schema gained a
+`dispatch_block:` section of its own — sixteen rows, each declaring its
+requirement, its shape, its value set, its absent value, whether it is
+advisory, its implementation label and what it records. The switch set is
+unchanged at 42 and both of those bodies stay green untouched.
+
+The section is OPTIONAL to the schema parser, which is also forced: the
+drill schema built inline in brief.spec.ts declares version, profiles and
+switches only, and a required section would red it from outside the
+fence. `ProcessSchema.dispatch` is therefore `DispatchDeclaration | null`,
+and what is refused by name is READING a block against a schema that
+declares none.
+
+### Criterion by criterion
+
+1. **The block's fields, declared once.** Sixteen rows under
+   `dispatch_block:` — approval, recovery, grant and its six
+   (given_by, at, revision, order, until, cards), revoked and its two,
+   limits and its two, and history. `grant.until` is
+   `required: with-until`, which the reader reads as required under
+   `approval: until` and refused under every other mode; `revoked` and
+   `limits` are `optional` and their own halves `with-parent`; every
+   other row is `always`. The two limits rows and their container carry
+   `advisory: true` because nothing in this tree enforces them. Pinned by
+   a body per field and per rule in
+   lib/parser/test/process-settings.test.ts, and over the SHIPPED schema
+   in tools/e2e/tests/cli.spec.ts.
+
+2. **The absent block.** The reader answers the explicit no-grant state —
+   approval each, recovery none, no grant, revision 0 — and the two mode
+   values come from the declaration's own `absent:` attribute rather than
+   from a constant, so the one place that says what "no grant" means is
+   the schema. The parser fixture deliberately declares `ask`/`refuse`
+   instead, which no shipped file says: a reader carrying the words
+   itself would answer `each`/`none` there and red. The shipped
+   `each`/`none` is pinned separately over the live tree. Two bodies: a
+   template that never had a block, and one a hand removed it from; both
+   also assert that the profile, the offered profiles and the departures
+   still read, and that the listing still renders every switch.
+
+   This project's template carries NO block. It gains a comment saying
+   the question was asked, in the same idiom as the empty `switches:`
+   block beside it, and an EMPTY `dispatch:` block is refused — a block
+   somebody emptied and a record nobody wrote are different things. No
+   grant was created here: a migration grant is one the seat proposes
+   verbatim and the owner approves (T-307).
+
+3. **One typed value or a named refusal.** `dispatchBlock(templateYaml,
+   schema)` answers `DispatchBlock` or throws; there is no partial value
+   anywhere in it. Every refusal the criterion lists has a body of its
+   own, each asserting that refusal's own sentence: an unknown field at
+   every depth, a duplicate YAML key, `until` with no card, `until`
+   naming a card outside the order, `until` under a mode that is not
+   `until`, an order and a cards map that disagree in either direction, a
+   malformed blob sha at three shapes, a malformed instant on each of the
+   four instant fields, a non-positive revision at five shapes, two
+   grants at one revision in both arrangements, and a history revision
+   not below the current. Beyond the list: a repeated card id, a token
+   ceiling that is not a positive integer, a missing required field per
+   field, a mode outside its own set, an empty block, a value on the key
+   line, and an indent the reader does not know.
+
+   The reading is line-based like the schema parser beside it and for the
+   same reason (a packaged script has no devDependencies), so the
+   duplicate-key refusal is this module's to make; both suites compare
+   the hand reading against a real YAML library on the same documents.
+
+4. **Declarative, and no admission claimed.** All sixteen rows carry
+   `implementation: declarative`, pinned by a body over the shipped
+   schema that reds if any row claims otherwise. **This card lands the
+   block as readable configuration and nothing more: nothing in this tree
+   admits or refuses a dispatch by it, and nothing here claims it does.**
+   T-324 owns admission. Which grant is current is decided by the
+   validated block's revision and never by a date: the fixture dates the
+   current grant at 09:30 and an earlier grant at 23:45 THE SAME DAY,
+   with a third dated the day before, so a reader sorting by date would
+   answer differently in two directions, and a reader taking the last
+   written in a third.
+
+5. **The reference chapter.** `referenceDispatchBlock` renders the
+   section from the declaration alone — the block's prose, the label
+   counts, the advisory list and the no-grant sentence all derived, never
+   typed — and the chapter was regenerated through the command's own
+   `reference --write` path. The existing currency body holds. A new body
+   asserts the section is there and moves with the declaration (a data
+   mutant on one row's own sentence), and runs the control where the
+   arrangement is ABSENT: a schema with the section removed renders no
+   dispatch section and still renders the switches.
+
+### What was measured, and where
+
+At 163d0740, through the blessed gate-runner, each leg run once:
+
+- parser GREEN, exit 0, 452 bodies
+- e2e GREEN, exit 0, 1091 bodies
+- app GREEN, exit 0, 1171 bodies
+- rust GREEN, exit 0, 655 bodies over 18 targets
+
+THE OWED SET FOR THIS RANGE IS THE WHOLE BATTERY, AND FAIL-CLOSED IS WHY:
+`gate-run.mjs --owed-set --range 0d194f7cba67..163d0740` cannot place
+method/runtime/process-schema.yaml or method/runtime/supertaskr.yaml
+("under no package root, no spec reaches it through a static import, and
+not a document the DOCS GATE maps"), so the derivation widens to all
+four legs. The scoped `e2e --owning` form refuses for the same five
+paths and says the full leg is owed. Both were run rather than argued
+around. Anyone dispatching a later card into method/runtime should expect
+the same widening.
+
+THE FIRST e2e RUN WAS AGAINST A DIST ONE EDIT STALE, AND IS DISCLOSED
+RATHER THAN COUNTED. tools/e2e loads the parser's built browser entry by
+path, and the run started before `npm run build` had been re-run over the
+last two edits to the module (the until-value constant and a reworded
+refusal). It answered the same 1091 bodies at exit 0; the GRADED reading
+above is the second run, after the rebuild, and the dist was verified
+current against both sources before it started.
+
+Sizes: method/runtime/process-schema.yaml 33819 to 42142 bytes,
+method/runtime/supertaskr.yaml 2856 to 4471,
+lib/parser/src/process-settings.ts 26346 to 69201,
+docs/reference/15-settings.md 31816 to 37262, docs/CONVENTIONS.md 163225
+to 165648 (its warn line is 146878 and it was already past it at the
+base; the fail line is 176253). Bodies: 24 to 60 in
+lib/parser/test/process-settings.test.ts (36 added), 60 to 64 top-level
+in tools/e2e/tests/cli.spec.ts (4 added).
+
+### The gates
+
+- DOCS GATE FIRES. `docs-gate.mjs` over the changed paths names
+  docs/CONVENTIONS.md and docs/reference/15-settings.md as code inputs
+  and owes `cargo test` from app/src-tauri/ and `npm test` from
+  tools/e2e/. Both were run and are green above. `npm run lint:docs` is
+  GREEN, so docs/INDEX.md is not stale. `npm run lint:tokens` is clean.
+- GRAPH REGEN FIRES and the graph is STALE BY CONSTRUCTION. `index
+  --check` answers exit 1 over exactly the three files this card touches:
+  203 files unchanged, symbols 2593 to 2626, edges 2488 to 2505. It was
+  NOT regenerated here: a regen moves six dogfood pins under app/test,
+  which this fence does not carry, so the regeneration belongs to the
+  merge where the conventions put it.
+- THE CENSUS IS STALE IN THIS LANE AND THE MERGE OWES IT. The four new
+  bodies in tools/e2e/tests/cli.spec.ts move docs/CAPABILITIES.md, which
+  this fence does not carry — the file is read-only in the lane.
+  `capabilities:check` reports STALE, committed 101115 bytes against a
+  fresh 101547, and `npm run capabilities` refuses with EACCES on that
+  path.
+- BOOT GATE IS NOT OWED: the diff touches no path under app/src-tauri/,
+  none under app/src/, and neither manifest. Nothing was listening on
+  1420, read at 2026-09-14T01:28:20Z on Mac.lan.
+- METHOD EVAL GATE FIRES: the diff touches method/**. The method stamp
+  bump is the seat's at the merge and was deliberately not touched here.
+
+### In-fence follow-through
+
+None outstanding. Everything the criteria name landed inside the fence.
+
+### Out of fence, and filed
+
+- **T-319-s1** — the arm re-exports six of the reader's seven symbols, so
+  the block cannot be read through the arm's own finding class.
+  tools/e2e/scripts/dispatch-brief.mjs is outside this fence, and this
+  card needs nothing from the arm because it claims no admission.
+- **T-319-s2** — lib/parser/src/index.ts, the root entry, exports none of
+  the dispatch symbols the browser entry now exports; the two barrels are
+  hand-kept lists and nothing compares them.
+- **T-319-s3** — a blob sha of forty digits reads as a NUMBER to a real
+  YAML parser and as a sha to the hand reader. Measured while writing the
+  fixtures: with all-digit shas the two readings of one document
+  disagreed, and the fixture was changed to carry hex letters rather than
+  the rule being changed.
+- **T-319-s4** — `supertaskr settings` lists every switch and never the
+  dispatch block, so the reference documents what the block IS and no
+  command shows what a project's block SAYS. The listing reads a loaded
+  process that carries the schema and the resolved switches only, and the
+  loader is outside this fence.
+
 ## Verdicts
 
 Promoted 2026-09-14 (the architect seat's step-2 triage on the owner's yes of 2026-09-14 to the seat's recommendation): to planned at priority 2 — after the merge-verb repairs and T-298-s3, before the T-312 rerun, so that later lanes run under the approval mode and the recovery policy the arm reads; dispatched when its fence is free of T-298-s3 (brief.spec.ts) and T-295-s4 (CONVENTIONS).
