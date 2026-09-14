@@ -6,7 +6,7 @@ milestone: 4
 size: M
 tier: guarded
 priority: 2
-status: building
+status: verifying
 suggested_by: "the architect seat on 2026-09-13, from the owner's question the same evening about leaving the computer for hours; filing authorizes no development"
 blocked_by: [T-324]
 touches: [method/roles/orchestrator.md, method/rooms/ROOM-FORMAT.md, tools/e2e/scripts/brief.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/dispatch-order.mjs, tools/e2e/scripts/run-record.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/dispatch-order.spec.ts, tools/e2e/tests/run-record.spec.ts, tools/method-evals/evals, docs/CONVENTIONS.md, tools/e2e/tests/brief-flush.spec.ts]
