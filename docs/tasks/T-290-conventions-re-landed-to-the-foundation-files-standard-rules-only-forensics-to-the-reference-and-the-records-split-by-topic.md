@@ -199,14 +199,23 @@ document.
 ### The fence census, re-read at this tip (criterion 5)
 
 ```
-cards fencing docs/CONVENTIONS.md whole      136
-  of them not done                            74
+cards fencing docs/CONVENTIONS.md whole      134
+  of them not done                            72
   of those planned                            45
   also fencing docs/conventions/               1
 ```
 
-The refresh measured 70 not done at `767a68ff`; four more were filed
-before this lane cut. **Every one of the 73 that does not also fence
+CORRECTED BY THE VERIFIER, 2026-09-14: the lane derived these over every
+card file under docs/tasks/ at any depth, which counts the two `rejected`
+cards under docs/tasks/rejected/ that name the path — and no reader of
+this repository counts those. The derivation that matches every reader is
+`liveTaskCards`, the FLAT non-recursive walk the parser and the docs gate
+both take; over it the figures are 134 at any status, 72 not done, 45
+planned. The planned half was right either way, because both extras are
+`status: rejected`.
+
+The refresh measured 70 not done at `767a68ff`; two more were filed
+before this lane cut. **Every one of the 71 that does not also fence
 docs/conventions/ now fences an INDEX**: its criteria are about a rule,
 and the rule is in a chapter its fence cannot reach, so the first thing
 each lane will meet is a write hook refusing the only file that matters.
@@ -282,7 +291,7 @@ tracked files at the base:
 
 ```
 368  docs/tasks/           (cards)
- 68  tools/e2e/
+ 68  tools/                (47 tools/e2e/, 21 tools/method-evals/)
  24  app/
  22  docs/checkpoints/     (records)
   9  method/
@@ -410,9 +419,13 @@ the fresh-worktree sentence, quoted by .claude/hooks/expand-fence.mjs
   "A FRESH WORKTREE HAS NOTHING INSTALLED AND NOTHING BUILT"
 ```
 
-**The cards whose fences name the file whole.** 136 cards at the base,
-of which 74 are not done and 45 of those are planned. The refresh
-measured 70 not done at `767a68ff`; four more have been filed since.
+**The cards whose fences name the file whole.** 134 cards at the base
+by `liveTaskCards`, the FLAT walk every reader of this board takes — of
+which 72 are not done and 45 of those are planned. The refresh measured
+70 not done at `767a68ff`; two more have been filed since. (This line
+read 136 / 74 until the verifier's correction of 2026-09-14: the lane's
+own derivation walked docs/tasks/ recursively and counted two `rejected`
+cards no reader sees.)
 The per-card mapping of subject to topic file is recorded at the end of
 the lane, as criterion 5 asks.
 
