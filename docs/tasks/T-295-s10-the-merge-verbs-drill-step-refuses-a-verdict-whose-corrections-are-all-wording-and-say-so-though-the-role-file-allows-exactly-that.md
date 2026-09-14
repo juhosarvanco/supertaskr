@@ -583,3 +583,95 @@ mechanically, where the other hoists the drill mapping and is two sites.
 A seat that prefers the other reading should take it; the body pins that
 the committed bodies are not waved past, which both shapes satisfy, and
 only the arm of it asserting `drill:refused` would move.
+
+#### Step 7 — the gates at the tip MY OWN commits created
+
+Every figure in this section is measured at
+`9f34c6c54b278e1a9bbbde6f6b5f49ee258f6e3a` — this bench after the verdict
+commit and the correction-bodies commit. Every figure ABOVE was measured
+at the tip I was sent, `f7161421`, and stays true there; these name this
+ref instead, because a count without its ref is wrong the moment anybody
+writes again, and I wrote twice.
+
+**The whole battery, at the tip I was SENT** (`f7161421`), which is the
+reading that grades the lane:
+
+| leg | bodies | exit | verdict |
+|---|---|---|---|
+| parser | 413 | 0 | GREEN |
+| app | 1171 | 0 | GREEN |
+| rust | 655 over 18 targets | 0 | GREEN |
+| e2e | 1090 | 0 | GREEN |
+
+**The whole battery again, at MY tip** (`9f34c6c5`):
+
+| leg | bodies | exit | verdict |
+|---|---|---|---|
+| parser | 413 | 0 | GREEN |
+| app | 1171 | 0 | GREEN |
+| rust | 655 over 18 targets | 0 | GREEN |
+| e2e | 1092 | 1 | RED, by design — two bodies, named below |
+
+**The two reds are mine, they are deliberate, and they are the RED
+reading step 5b requires.** 2 failed, 1090 passed, 17.8 minutes, and
+both failures are in `tests/merge.spec.ts`: *"--blocks-absent
+acknowledges a verdict carrying NO block at all, and never stands in for
+the blocks one DOES carry"* and *"the ordinals a no-block statement
+credits are its OWN clause's, so a sentence naming a correction that HAS
+a body does not excuse it"*. They are corrections 1 and 2, committed here
+against an implementation that lacks the property, which is the only way
+to take the RED reading step 5b demands: a body committed without both
+readings is a body nobody has graded. The verb applies every correction
+BEFORE it drills, so both are green at the merged tree and the leg is
+1092 of 1092 there. **A seat that picks this branch up before the merge
+will see these two reds: they are this verdict's, not the lane's, and
+they are healed by applying corrections 1 and 2.** No other red anywhere
+— the named intermittent at this base, the push-guard body that reds when
+two hook runs straddle a minute boundary (T-314-s5), did not fire, so
+nothing here needs attributing to it.
+
+`npm run capabilities:check` from `tools/e2e` — **exit 1, STALE**:
+committed 100770 bytes against a fresh generation of 101583. It was
+already STALE at the tip I was sent, at 101331, because the lane added
+five bodies; my two correction bodies account for the remaining 252. The
+lane REPORTS it and the integrator runs `npm run capabilities` as the
+LAST write before the merge commit, regenerating `docs/CAPABILITIES.md`
+and `docs/INDEX.md`, which is the convention `docs/CONVENTIONS.md`
+publishes for a fence that leaves the census read-only. **The fresh
+figure to expect at the merge is not this one** — it is taken over the
+merged tree, which carries main's own moves as well.
+
+`cargo run -p supertaskr-index -- index --check --root ../..` from
+`app/src-tauri` — **exit 0, CURRENT**: 1216090 bytes, 203 files, 2593
+symbols, 2488 edges; budget 1216090 of 2145959 bytes (56.7%), 929869
+left; floor 240298 of 2145959 (11.2%). My two commits are one markdown
+file and one spec file, and the committed graph carries no path under
+`tools/e2e`, so the regeneration could not move for them and did not.
+
+`npm run lint:docs` from `tools/e2e` — **exit 0**, every live task
+card's frontmatter parses with a legal status, 0 findings over the
+whole-tree half, so my verdict and the lane's filed card are both legal
+prose to the board reader. The one WARN it prints is
+`docs/CONVENTIONS.md` at 162655 bytes against its 146878-byte warn line
+(fail at 176253), which stands at this base and is nothing this lane or
+this verdict moved. `npm run lint:tokens` — **exit 0, clean** over 188
+TOKEN files and 1587 tracked CONTROL files. `npm run typecheck` from
+`tools/e2e` — **exit 0**, both with my bodies against the tip's
+implementation and with the corrections applied.
+
+`brief.mjs --preflight --task T-295-s10` — **exit 0** at this tip, so the
+card's derivable claims still hold with the verdict on it.
+`--preflight --task T-295-s12` answers **exit 3** and says why in as many
+words: the parser's dispatch order carries no ruling for a card whose
+status is `suggested`, so that run is a claim about the command and not
+about the card. Not a finding.
+
+I re-read the two fenced files at this tip. `tools/e2e/scripts/merge.mjs`
+still hashes to
+`a6755509aa00707502f75d8431b9861ade92f6dd8cc65225fc466f4d9ab2d564`, which
+is the lane's own restore hash — I planted the base implementation beside
+it and the two corrections into it while taking my readings, and every
+one is backed out. `tools/e2e/tests/merge.spec.ts` has moved, as it must:
+it hashes to
+`1bf578e74d997ac6b5315a34983e0b7a45c6171452fc9a6c6f598c89d784f450` and
+carries 42 bodies, 40 the lane's and 2 mine.
