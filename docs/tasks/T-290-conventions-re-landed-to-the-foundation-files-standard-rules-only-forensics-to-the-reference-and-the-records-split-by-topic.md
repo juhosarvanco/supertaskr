@@ -54,4 +54,176 @@ The blocker is cleared: T-287 is done, and the dead fence entry it left — docs
 ## Implementation notes
 <!-- executor appends before finishing -->
 
+### The census at the base, taken before a byte moved (criterion 1)
+
+Every figure below is `docs/CONVENTIONS.md` as it stands at this lane's
+base commit `37d89ff739d04543c97d972add1f119ca403746d`, derived in the
+lane worktree with the commands each block names. The card's own
+measurement of 134,029 bytes is historical, at `6c7c7e6`; the refresh
+figure of 173,024 bytes is at `767a68ff`. The file has grown by every
+merge since, and the headroom under the hard line is now the smallest
+it has been at any dispatch of this card.
+
+**The document, and what the budget says about it.**
+
+```
+wc -c docs/CONVENTIONS.md          176155 bytes     @ 37d89ff739d0
+wc -l docs/CONVENTIONS.md            2552 lines     @ 37d89ff739d0
+top-level `- ` bullets                 66           @ 37d89ff739d0
+  preamble (before "## Build & test")   516 bytes
+  "## Build & test"                   44830 bytes   (31 bullets)
+  "## Gotchas"                       130809 bytes   (35 bullets)
+DOC_BUDGETS row (tools/e2e/scripts/docs-scan.mjs, ADR-019 addendum 6)
+  landed 117502  warn 146878  fail 176253
+  under the HARD line                    98 bytes
+  headroom under the WARN line       -29277 bytes = -19.9% of warn
+  health band docs-headroom/docs/CONVENTIONS.md: BREACHED
+    (breach line 2% of warn, drift line 10%, healthy above)
+```
+
+Ninety-eight bytes under a hard failure is the reading that matters
+most here: at this base the docs gate reds on any merge that adds a
+hundred bytes to this file, so the compaction is not a tidying job that
+could wait another week.
+
+**Readers by path.** `git grep -l 'docs/CONVENTIONS\.md'` names 520
+tracked files at the base:
+
+```
+368  docs/tasks/           (cards)
+ 68  tools/e2e/
+ 24  app/
+ 22  docs/checkpoints/     (records)
+  9  method/
+  6  docs/rooms/
+  5  .claude/hooks/
+  4  docs/reference/
+  3  lib/parser/
+  3  docs/decisions/
+  1 each: docs/conventions/README.md, docs/architecture/, docs/INDEX.md,
+          docs/CONVENTIONS.md, docs/CAPABILITIES.md, bin/, README.md,
+          .github/workflows/ci.yml
+```
+
+**Readers the docs gate itself derives** (`docsReaders` in
+tools/e2e/scripts/docs-scan.mjs): 36 readers of `docs/` in all, of which
+14 carry the prefix `docs/CONVENTIONS.md` and are therefore the set a
+change to this file OWES a suite for:
+
+```
+app/src-tauri/src/agent/kit.rs                   suite app/src-tauri
+tools/e2e/scripts/cli.mjs                        suite tools/e2e
+tools/e2e/scripts/merge.mjs                      suite tools/e2e
+tools/e2e/tests/brief.spec.ts                    suite tools/e2e
+tools/e2e/tests/cli.spec.ts                      suite tools/e2e
+tools/e2e/tests/dispatch-order.spec.ts           suite tools/e2e
+tools/e2e/tests/docs-input-gate.spec.ts          suite tools/e2e
+tools/e2e/tests/gate-run.spec.ts                 suite tools/e2e
+tools/e2e/tests/lane-fence.spec.ts               suite tools/e2e
+tools/e2e/tests/merge.spec.ts                    suite tools/e2e
+tools/e2e/tests/push-guard.spec.ts               suite tools/e2e
+tools/e2e/tests/range-rule.spec.ts               suite tools/e2e
+tools/e2e/tests/run-record.spec.ts               suite tools/e2e
+tools/e2e/tests/workflow-parity.spec.ts          suite tools/e2e
+```
+
+**The hooks that name the file by path** (all five under .claude/hooks/,
+as the refresh measured):
+
+```
+.claude/hooks/expand-fence.mjs      the fresh-worktree sentence
+.claude/hooks/lane-fence.mjs        the branch spelling, via laneSpellings
+.claude/hooks/pre-push-guard.mjs    cites the file in its refusal text
+.claude/hooks/push-guard.mjs        cites the file in its refusal text
+.claude/hooks/landing-gate.mjs      the integration branch, via laneSpellings
+```
+
+**The scripts that name the file in code or in a message string a
+reader follows** — the reason the fence names tools/e2e/scripts/ whole:
+
+```
+tools/e2e/scripts/brief.mjs                the scratch rule and the serial ritual
+tools/e2e/scripts/cli.mjs                  CONVENTIONS_PATH; every command's `source:`
+tools/e2e/scripts/docs-gate.mjs            the one spelling, in its own message
+tools/e2e/scripts/docs-scan.mjs            conventionsText, conventionsBullet, DOC_BUDGETS
+tools/e2e/scripts/dispatch-brief.mjs       laneSpellings, bulletByOpening, boldedOpeners
+tools/e2e/scripts/dispatch-order.mjs       lanesFrom, through laneSpellings
+tools/e2e/scripts/gate-run.mjs             the blessed runner and the range rule
+tools/e2e/scripts/health-bands.config.mjs  the AUDIT GATE and HEALTH BANDS shapes
+tools/e2e/scripts/lane-fence.mjs           laneSpellings and the fresh-worktree sentence
+tools/e2e/scripts/merge.mjs                CONVENTIONS_PATH, setupSteps, METHOD_STAMP_FILES
+tools/e2e/scripts/range-rule.mjs           the gate triggers, via conventionsBullet
+tools/e2e/scripts/rename-scan.mjs          lists the path
+tools/e2e/scripts/token-scan.mjs           cites the file in its message text
+```
+
+**The bullets a pack reader cites by opener.** `conventionHeadings` in
+tools/e2e/scripts/dispatch-brief.mjs derives 49 openers off the document
+(the standing gates, the named disciplines and every bolded opener);
+`citedConventionBullets` against the 41 tracked `.mjs` gate sources finds
+19 of them cited today, which is the set the context pack transcribes or
+cites at a dispatch:
+
+```
+AUDIT GATE · THE BLESSED GATE-RUNNER · AND SINCE T · AND THEN READ IT ·
+NEVER TYPE A PATH YOU CAN DERIVE · SCRATCH RULE · PORT RULE ·
+THE PROCESS IS SETTINGS, AND EVERY SWITCH IS DECLARED ONCE ·
+GUARD-CLASS PATHS, IN THIS PROJECT'S OWN SPELLING ·
+A CITATION NAMES A SYMBOL, NOT A LINE · THE FOUR WALKS · THE RANGE RULE ·
+GRAPH REGEN · THE LANE PROTOCOL · DISPATCH FROM THE LAST CHECKPOINT ·
+BOOT GATE · DOCS GATE · METHOD EVAL GATE · POISON DRILL
+```
+
+The app's own dispatch brief (app/src-tauri/src/dispatch/brief.rs) reads
+this document for rows 4 and 6 to 10 — more than the refresh recorded,
+and the correction is stated here rather than left to be discovered: not
+only the lane-spelling and dispatch-from bullets, but the build ORDER
+bullet, the fresh-worktree ordering, the four package command bullets,
+the standing gate bullets, the named discipline bullets and the PORT
+RULE bullet. Its test in app/src-tauri/src/lib.rs plants the file as a
+brief source.
+
+**The program-read sentences.** These are the passages a program looks
+for by exact text; each one is byte-identical across this lane's
+landing, and the proof is a diff of the extracted passage against the
+base rather than a claim:
+
+```
+conventionsBullet phrases (tools/e2e/scripts/docs-scan.mjs callers)
+  "DOCS GATE (T-084"                     docs-input-gate.spec.ts
+  "BOOT GATE (T-046"                     range-rule.mjs
+  "GRAPH REGEN (T-009-s1"                range-rule.mjs
+  "THE LANE PROTOCOL"                    lane-fence.spec.ts, laneSpellings
+  "app/src-tauri (C-05 Rust half"        push-guard.spec.ts
+  "AND THEN READ IT"                     push-guard.spec.ts
+  "THE BLESSED GATE-RUNNER (T-202):"     push-guard.spec.ts
+  "THE PUSH IS JUDGED BY GIT ITSELF SINCE T-314"   push-guard.spec.ts
+  "run from lib/parser/:"                docs-input-gate.spec.ts
+  "run from app/:"                       docs-input-gate.spec.ts
+  "run from app/src-tauri/:"             docs-input-gate.spec.ts
+  "run from tools/e2e/:"                 docs-input-gate.spec.ts
+laneSpellings labels, read inside THE LANE PROTOCOL (dispatch-brief.mjs,
+and the same rule in Rust in app/src-tauri/src/dispatch/brief.rs)
+  "integration branch `...`"   "branch `...`"
+  "worktree `...`"             "Created with `...`"
+the method stamp, the one line app/src-tauri/src/agent/kit.rs pins
+  "method/ formats are version-bumped (currently v0.1.31) and noted here."
+the Build & test commands, read verbatim by
+  tools/e2e/tests/workflow-parity.spec.ts against .github/workflows/ci.yml
+  tools/e2e/scripts/cli.mjs (every `source:` and every derived command)
+  tools/e2e/scripts/merge.mjs setupSteps (the fresh-clone ORDER bullet)
+the standing gate TRIGGER sentences, parsed by standingGates
+  GRAPH REGEN · BOOT GATE · DOCS GATE · METHOD EVAL GATE
+the CI bullet, mirrored step for step by workflow-parity.spec.ts
+the fresh-worktree sentence, quoted by .claude/hooks/expand-fence.mjs
+  "A FRESH WORKTREE HAS NOTHING INSTALLED AND NOTHING BUILT"
+```
+
+**The cards whose fences name the file whole.** 136 cards at the base,
+of which 74 are not done and 45 of those are planned. The refresh
+measured 70 not done at `767a68ff`; four more have been filed since.
+The per-card mapping of subject to topic file is recorded at the end of
+the lane, as criterion 5 asks.
+
+
 ## Verdicts
