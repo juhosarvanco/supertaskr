@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1098 behaviours** — 1096 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1102 behaviours** — 1100 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -875,6 +875,9 @@ Census: **1098 behaviours** — 1096 extracted sentences + 2 named-not-extracted
 - a method stamp is bumped at exactly one anchor per file, and a stamp that is not there refuses
 - the pinned-sentence keeper refuses a removed doc line a spec pins VERBATIM, and lets an addition through
 - the forbidden-spelling keeper refuses each class it names on a planted instance, and a clean diff on none
+- the fixture classifier KEEPS an explicitly synthetic keeper-test input, and the same value at any other site is still refused
+- the fixture classifier answers a NEAR-MATCH with a refusal, and its exception is per matched value and per class
+- the fixture table's admission rule is kept by this body — every entry names a VALUE and a SITE, and no entry can reach the machine's own facts
 - the personal name this keeper looks for is DERIVED whole, and never split into its own words
 - the XS-bound keeper BUMPS an XS card over the bound to standard and judges no card of any other size
 - the tier a merge records is the one the DISPATCH stamped, unless the seat overrides it
@@ -887,6 +890,7 @@ Census: **1098 behaviours** — 1096 extracted sentences + 2 named-not-extracted
 - the verb performs the ritual on a fixture, applies the correction off the verdict, and STOPS with the merge staged
 - an ambiguous anchor REFUSES the correction step with both counts, and leaves the file byte-identical to what the step found
 - what the correction step WROTE is also STAGED, so the working file it counted IS the content the commit will take
+- the keeper STEP says a kept spelling out loud and walks on, and the identical value at an unnamed site still stops the run
 - the counter counts OVERLAPPING sites, so an anchor whose prefix is also its suffix names TWO sites and is refused
 - a single git diff against the bench tip answers EMPTY over a wrong STAGED line, which is why the standing comparison reads the index and the working tree separately
 - a same-file end-of-file append is resolved by keeping both sides, and any other conflict stops the verb as a fence finding

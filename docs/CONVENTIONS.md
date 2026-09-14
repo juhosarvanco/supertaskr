@@ -860,6 +860,28 @@ and T-236 (2026-09-02, whose pre-compaction text is
   would stop a finished lane at its last step over a fact for the NEXT
   triage. The other three still refuse, and a card of any other size is
   still not this keeper's to judge.
+  **AND SINCE T-295-s4 THE FORBIDDEN-SPELLING KEEPER CLASSIFIES A
+  SYNTHETIC FIXTURE**, on the rename class's own model and bounded by
+  that card's amendment of 2026-09-13. It exists because the keeper
+  stopped four merges in two days, three of them on the one synthetic
+  fixture identity a new spec body added, and each was ruled through by
+  hand — the shape of a keeper on its way to being turned off. THE
+  RECOGNITION RULE: a matched value is kept only where `FIXTURE_CLASSES`
+  in that file names BOTH the value — by an anchored pattern, a literal
+  and never a shape — AND the site it may sit at, a `files` token ending
+  in `/` being a directory and the rest whole paths. A spec filename, a
+  comment calling something a fixture and placement in a test directory
+  qualify NOTHING on their own, so an arbitrary credential-shaped value
+  is refused in exactly the file whose one enumerated credential is kept;
+  an address entry is admissible only at a domain the standards reserve
+  for documentation and testing; and no entry covers the home or name
+  classes, whose values are DERIVED FROM THE LIVE MACHINE rather than
+  from a shape, so a home path stays forbidden. The exception is PER
+  MATCHED VALUE AND PER CLASS — keeping one synthetic instance suppresses
+  nothing else on the same line, in the same block or in the same file —
+  and **every use is announced**, on the step's own output and in the
+  spelling an acknowledged drill uses: a kept spelling is news, never
+  silence.
 - BOUNDED WAITS, IN THIS PROJECT'S OWN SPELLING (T-298, ADR-024's room
   decision G): `method/roles/orchestrator.md` 5f states the rule — every
   wait is on a FACT with a CEILING and a hand-typed sleep is not a wait —

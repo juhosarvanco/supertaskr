@@ -30,6 +30,7 @@ import path from "node:path";
 import { expect, test } from "@playwright/test";
 import {
   EXIT,
+  FIXTURE_CLASSES,
   METHOD_STAMP_FILES,
   PINNED_SENTENCE_FLOOR,
   READINGS_PATH,
@@ -51,7 +52,9 @@ import {
   dedentBlock,
   drillScope,
   drillSteps,
+  fixtureClassOf,
   forbiddenSpellingFindings,
+  forbiddenSpellingReport,
   gradeCounts,
   isVerdictHeading,
   keeperSteps,
@@ -462,6 +465,198 @@ test("the forbidden-spelling keeper refuses each class it names on a planted ins
     home: "/the/seat/home/dir",
   });
   expect(repeated, "two files, one finding each").toHaveLength(2);
+});
+
+// ── the fixture classifier (T-295-s4, the amendment of 2026-09-13) ────
+//
+// HOW THE VALUES BELOW ARE SPELLED, AND IT IS NOT TIDINESS. A body that
+// tests this keeper has to PLANT the very values the keeper keeps out,
+// and every line of it is a line some merge ADDS — which is the whole
+// card: three merges in two days stopped on a synthetic fixture identity
+// a new spec body added, and each was ruled through by hand. So the
+// values this body expects KEPT are spelled whole, because the table
+// keeps them at this exact file and the merge that lands them announces
+// the exception; the values it expects REFUSED are ASSEMBLED from pieces
+// at run time, because spelling one whole here would refuse this file's
+// own merge and there is no table entry that should ever keep them.
+// Each planted value's class is named where it is built.
+
+test("the fixture classifier KEEPS an explicitly synthetic keeper-test input, and the same value at any other site is still refused", () => {
+  const SPEC = "tools/e2e/tests/merge.spec.ts";
+  // CLASS `aws-key`: the credential literal this keeper's own planted
+  // instance carries, enumerated by `keeper-fixture-credential`.
+  const credential = "AKIA0123456789ABCDEF";
+  // CLASS `email`: the suite's ONE fixture identity, enumerated by
+  // `suite-fixture-identity` at a domain the standards reserve.
+  const identity = "fixture@example.invalid";
+  const kept = forbiddenSpellingReport({
+    added: [
+      { path: SPEC, line: `const credential = "${credential}";` },
+      { path: SPEC, line: `git("config", "user.email", "${identity}");` },
+    ],
+  });
+  expect(kept.findings, "neither planted value is a finding at the site the table names").toEqual([]);
+  expect(kept.kept, "and BOTH exceptions are announced — a kept spelling is news").toHaveLength(2);
+  const news = kept.kept.join("\n");
+  expect(news, "the announcement names the file").toContain(SPEC);
+  expect(news, "and the fixture class it was kept under").toContain("keeper-fixture-credential");
+  expect(news, "and the other one").toContain("suite-fixture-identity");
+  expect(news, "and it says the exception is per value and per class").toContain("per matched value");
+  // THE VALUE IS NOT PUBLISHED BY THE ANNOUNCEMENT, for the same reason
+  // the refusal below does not publish one: a record quotes the step.
+  expect(news, "the credential is not printed").not.toContain(credential);
+  expect(news, "and neither is the address").not.toContain(identity);
+
+  // THE POSITIVE CONTROL, AND IT DIFFERS ONLY IN THE ARRANGEMENT: the
+  // same two values, at a site the table does not name, are refused
+  // exactly as they were before this classifier existed. This is the
+  // card's own criterion 2 and it is what stops the exception being a
+  // claim that a credential-shaped value is harmless because it sits in
+  // a test — the value did not change; the site did.
+  const outside = forbiddenSpellingReport({
+    added: [
+      { path: "docs/X.md", line: `const credential = "${credential}";` },
+      { path: "docs/X.md", line: `git("config", "user.email", "${identity}");` },
+    ],
+  });
+  expect(outside.kept, "nothing is kept outside the fixture context").toEqual([]);
+  expect(outside.findings, "and both classes refuse").toHaveLength(2);
+  expect(outside.findings.join("\n")).toContain("aws-key");
+  expect(outside.findings.join("\n")).toContain("email address");
+  // AND THE SUITE'S IDENTITY IS KEPT ACROSS THE SUITE'S OWN SPEC TREE,
+  // which is the class that stopped three merges — the `files` token
+  // ending in `/` is a directory and the rest are whole paths.
+  expect(
+    forbiddenSpellingFindings({ added: [{ path: "tools/e2e/tests/cli.spec.ts", line: identity }] }),
+    "the same identity in another spec of the same suite",
+  ).toEqual([]);
+  expect(
+    forbiddenSpellingFindings({ added: [{ path: "tools/e2e/scripts/cli.mjs", line: identity }] }),
+    "and NOT one directory over, where no entry names the site",
+  ).toHaveLength(1);
+});
+
+test("the fixture classifier answers a NEAR-MATCH with a refusal, and its exception is per matched value and per class", () => {
+  const SPEC = "tools/e2e/tests/merge.spec.ts";
+  const credential = "AKIA0123456789ABCDEF";
+  const identity = "fixture@example.invalid";
+  // ASSEMBLED, NEVER SPELLED (see the note above this block). CLASS
+  // `aws-key`: the enumerated literal with its last character moved, so
+  // it is the same SHAPE at the same SITE and a different VALUE.
+  const nearCredential = `${credential.slice(0, -1)}G`;
+  // CLASS `email`: a domain one suffix away from a reserved one, so the
+  // shape matches and the recognition rule does not.
+  const nearAddress = identity.replace(".invalid", ".invalidated");
+  // CLASS `email`: a deliverable address, which no entry may ever name.
+  const live = ["areal.person", "a-real-domain.com"].join("@");
+
+  const near = forbiddenSpellingReport({
+    added: [
+      { path: SPEC, line: `const near = "${nearCredential}";` },
+      { path: SPEC, line: `const near = "${nearAddress}";` },
+    ],
+  });
+  expect(near.kept, "a near-match is not recognised, so nothing is kept").toEqual([]);
+  expect(near.findings, "and the shape's own refusal stands, at the very site the table names").toHaveLength(2);
+  expect(fixtureClassOf({ value: nearCredential, cls: "aws-key", file: SPEC }), "no class").toBe(null);
+  expect(fixtureClassOf({ value: nearAddress, cls: "email", file: SPEC }), "nor for the address").toBe(null);
+  expect(fixtureClassOf({ value: credential, cls: "aws-key", file: SPEC }), "the control").toBe(
+    "keeper-fixture-credential",
+  );
+
+  // THE MIXED CASE, ON ONE LINE AND IN ONE CLASS: keeping the fixture
+  // identity does not suppress the deliverable address beside it. A
+  // per-LINE exception would have lost this, which is why the keeper
+  // asks every value a shape matched rather than the first.
+  const mixed = forbiddenSpellingReport({
+    added: [{ path: SPEC, line: `const seats = ["${identity}", "${live}"];` }],
+  });
+  expect(mixed.kept, "the synthetic one is kept and announced").toHaveLength(1);
+  expect(mixed.findings, "and the line is REFUSED anyway, on the unclassified value").toHaveLength(1);
+  expect(mixed.findings[0]).toContain("email address");
+
+  // AND ACROSS CLASSES, IN THE SAME FIXTURE BLOCK: a kept credential on
+  // one line suppresses nothing on the next, and nothing of another
+  // class on its own line either.
+  const across = forbiddenSpellingReport({
+    added: [
+      { path: SPEC, line: `const credential = "${credential}";` },
+      { path: SPEC, line: "const where = '/the/seat/home/dir/projects';" },
+    ],
+    home: "/the/seat/home/dir",
+  });
+  expect(across.kept, "the credential is still kept").toHaveLength(1);
+  expect(across.findings, "and the home path still refuses").toHaveLength(1);
+  expect(across.findings[0]).toContain("home directory");
+});
+
+test("the fixture table's admission rule is kept by this body — every entry names a VALUE and a SITE, and no entry can reach the machine's own facts", () => {
+  // A TABLE THAT ADMITS THE WRONG ENTRY IS THE WHOLE RISK, and the rule
+  // for admitting one is a paragraph in `merge.mjs` — which is a memory.
+  // This is the body that keeps it: an entry whose pattern is a SHAPE
+  // rather than a literal, or whose sites are the whole tree, would
+  // claim an arbitrary credential-shaped value harmless for sitting in a
+  // test, which the card's amendment forbids in as many words.
+  expect(FIXTURE_CLASSES.length, "the table is a stated set").toBeGreaterThan(0);
+  for (const entry of FIXTURE_CLASSES) {
+    expect(entry.pattern.source.startsWith("^"), `${entry.id} is anchored at its start`).toBe(true);
+    expect(entry.pattern.source.endsWith("$"), `${entry.id} is anchored at its end`).toBe(true);
+    // AND THE PATTERN NAMES THE VALUE RATHER THAN ITS SHAPE, which is
+    // the half of the recognition rule an anchored SHAPE satisfies while
+    // defeating it: a class pattern anchored at both ends keeps EVERY
+    // credential of that class at every site the entry names, which is
+    // the claim the card's amendment forbids in as many words. Read off
+    // the pattern's own source — anchors off, an outer alternation split
+    // — and every alternative has to be a literal whose only escape is
+    // an escaped dot.
+    const bareSource = entry.pattern.source.replace(/^\^/, "").replace(/\$$/, "");
+    for (const alternative of (/^\(\?:(.*)\)$/.exec(bareSource)?.[1] ?? bareSource).split("|")) {
+      expect(
+        /^(?:[A-Za-z0-9@_%+-]|\\\.)+$/.test(alternative),
+        `${entry.id} names the VALUE and not its SHAPE`,
+      ).toBe(true);
+    }
+    expect(entry.files.length, `${entry.id} names at least one site`).toBeGreaterThan(0);
+    expect(
+      entry.files.some((f) => f === "" || f === "/" || f === "docs/" || f === "."),
+      `${entry.id} names no site that is the whole tree`,
+    ).toBe(false);
+    expect(
+      ["home", "name"].includes(entry.cls),
+      `${entry.id} does not cover a class DERIVED from the live machine`,
+    ).toBe(false);
+  }
+  // EVERY DOMAIN AN ADDRESS ENTRY SPELLS IS ONE THE STANDARDS RESERVE
+  // for documentation and testing, which is the property that makes the
+  // value not a person — read off the pattern's own source, so a new
+  // entry at a deliverable domain reds this rather than shipping.
+  const RESERVED = ["example.com", "example.net", "example.org", "invalid", "test", "example", "localhost"];
+  const reserved = (d: string): boolean => RESERVED.some((r) => d === r || d.endsWith(`.${r}`));
+  for (const entry of FIXTURE_CLASSES.filter((e) => e.cls === "email")) {
+    const spelled = [...entry.pattern.source.matchAll(/@([A-Za-z0-9.\\-]+)/g)].map((m) =>
+      (m[1] ?? "").replace(/\\/g, ""),
+    );
+    expect(spelled.length, `${entry.id} spells the domain it names`).toBeGreaterThan(0);
+    for (const d of spelled) expect(reserved(d), `${entry.id} names ${d}, which is reserved`).toBe(true);
+  }
+  // THE CONTROL ON THE RULE ITSELF, arrangement absent: a deliverable
+  // domain fails the same predicate, so "every one is reserved" is a
+  // fact about the table rather than about a predicate that says yes.
+  for (const d of ["gmail.com", "a-real-domain.com", "example.community", "examples.com"]) {
+    expect(reserved(d), `${d} is not reserved`).toBe(false);
+  }
+  const site = "tools/e2e/tests/merge.spec.ts";
+  for (const d of ["gmail.com", "a-real-domain.com", "example.community", "examples.com"]) {
+    expect(
+      fixtureClassOf({ value: `someone@${d}`, cls: "email", file: site }),
+      `and no entry reaches a deliverable domain (${d})`,
+    ).toBe(null);
+  }
+  // AND THE TWO CLASSES DERIVED FROM THE MACHINE CANNOT BE CLASSIFIED AT
+  // ALL: a line carrying this seat's own home directory carries this
+  // seat's own home directory whatever file it sits in.
+  expect(fixtureClassOf({ value: "/the/seat/home/dir", cls: "home", file: site })).toBe(null);
+  expect(fixtureClassOf({ value: "Fixturename", cls: "name", file: site })).toBe(null);
 });
 
 test("the personal name this keeper looks for is DERIVED whole, and never split into its own words", () => {
@@ -1095,6 +1290,80 @@ test("what the correction step WROTE is also STAGED, so the working file it coun
   }
 });
 
+test("the keeper STEP says a kept spelling out loud and walks on, and the identical value at an unnamed site still stops the run", () => {
+  // CRITERION 3, AT THE STEP AND NOT ONLY IN THE FUNCTION. A way through
+  // nobody can see exercised is a way through nobody audits, so the step
+  // prints it the way an acknowledged drill prints `NEWS —` and does not
+  // stop for it. Both arms run the whole ritual on a real repository and
+  // differ ONLY in the directory the lane planted the value in, which is
+  // the card's own `What was measured` reproduced end to end.
+  for (const at of ["tools/e2e/tests/planted.spec.ts", "src/planted.ts"]) {
+    const inside = at.startsWith("tools/e2e/tests/");
+    const fx = mergeFixture();
+    try {
+      fx.git("checkout", "-q", "task/T-900-a-card");
+      mkdirSync(path.dirname(path.join(fx.root, at)), { recursive: true });
+      // CLASS `email`: the suite's ONE fixture identity, which the table
+      // enumerates by value and keeps inside `tools/e2e/tests/` alone.
+      writeFileSync(path.join(fx.root, at), 'const identity = "fixture@example.invalid";\n');
+      fx.git("add", "-A");
+      fx.git("commit", "-qm", "the lane plants a synthetic fixture identity");
+      const verdict = fx.git("rev-parse", "task/T-900-a-card").trim();
+      fx.git("checkout", "-q", "main");
+      const said: string[] = [];
+      const ledger: { id: string; title: string; exit: number }[] = [];
+      mergeMain(
+        [
+          "T-900",
+          "--slug",
+          "a-card",
+          "--verdict",
+          verdict,
+          "--root",
+          fx.root,
+          "--built-by",
+          "a-model@subagent",
+          "--verified-by",
+          "a-model@subagent",
+          "--readings",
+          path.join(fx.root, "readings.jsonl"),
+          "--message",
+          path.join(fx.root, "MSG.txt"),
+        ],
+        { cwd: fx.root, out: (s) => said.push(s), err: (s) => said.push(s), ledger },
+      );
+      const step = ledger.find((s) => s.id === "keeper:forbidden-spelling");
+      const text = said.join("\n");
+      expect(step, `${at}: the keeper step ran`).toBeDefined();
+      if (inside) {
+        expect(step?.exit, "a kept spelling does not stop the merge").toBe(0);
+        const news = said.filter((s) => s.includes("NEWS — "));
+        expect(news.length, "and the step announces the exception out loud").toBeGreaterThan(0);
+        expect(news.join("\n"), "naming the fixture class it was kept under").toContain(
+          "suite-fixture-identity",
+        );
+        expect(news.join("\n"), "and naming the file").toContain(at);
+        expect(
+          news.join("\n"),
+          "while publishing no value — a record quotes this step",
+        ).not.toContain("fixture@example.invalid");
+      } else {
+        // THE POSITIVE CONTROL, DIFFERING ONLY IN THE ARRANGEMENT: the
+        // identical line one directory over is refused, and the run stops
+        // — so the announcement above is a fact about the table's site
+        // list rather than about a keeper that stopped looking.
+        expect(step?.exit, "outside every named site the keeper still refuses").not.toBe(0);
+        expect(text, "with the refusal it always gave").toContain(
+          "this merge ADDS a line carrying an email address",
+        );
+        expect(said.filter((s) => s.includes("NEWS — ")), "and nothing is announced kept").toEqual([]);
+      }
+    } finally {
+      removeGitFixture(fx.root, FIXTURE);
+    }
+  }
+});
+
 test("the counter counts OVERLAPPING sites, so an anchor whose prefix is also its suffix names TWO sites and is refused", () => {
   // THE SAFETY CLAIM IS THE COUNT (T-295-s9), so a counter that walks
   // past a site makes the claim false exactly where it matters. A
@@ -1263,6 +1532,17 @@ test("the bound, the floor and the readings path this file computes are the ones
     "thirty\n  characters is the floor",
   );
   expect(PINNED_SENTENCE_FLOOR, "as the program spells it").toBe(30);
+  // AND THE FIXTURE CLASSIFIER'S RECOGNITION RULE IS STATED THERE TOO
+  // (T-295-s4), because the way through a keeper is the half of it a
+  // seat has to be able to read before it plants anything. The document
+  // names the table by the name the program exports, and the program
+  // names the table's own file — a sentence and a symbol, twice stated.
+  expect(conventions, "the recognition rule is stated, and it is BOTH halves").toContain(
+    "names BOTH the value",
+  );
+  expect(conventions, "and the exception's scope with it").toContain("PER\n  MATCHED VALUE AND PER CLASS");
+  expect(conventions, "under the name the program exports").toContain("`FIXTURE_CLASSES`");
+  expect(FIXTURE_CLASSES.length, "which is a table the program carries").toBeGreaterThan(0);
   // AND THE INTEGRATOR'S ROLE FILE STATES THE WIDENING AS A STEP OF THE
   // MERGE, beside the re-drill (T-281-s10's third criterion).
   const integrator = readFileSync(path.join(repoRoot, "method", "roles", "integrator.md"), "utf8");
