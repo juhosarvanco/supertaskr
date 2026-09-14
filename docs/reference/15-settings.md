@@ -650,3 +650,161 @@ records never rewritten
 - **implementation** — manual
 - **manual action** — append to a checkpoint, a verdict or a room entry; never edit one
 - **profiles** — `guarded-everything`: `on` · `standard`: `on` · `fast`: `on`
+
+## The dispatch block
+
+The runtime template's own `dispatch:` block — the dispatch approval mode, the recovery policy, and the grant that sets them. 16 field(s), declared in method/runtime/process-schema.yaml and read as ONE typed value by `dispatchBlock`.
+
+a fresh seat in either harness inherits the owner's approval from the template rather than from a checkpoint's prose; a grant, a pause or a revocation is a dated edit to the block that appends the previous grant to its history and RAISES the revision, and which grant is current is decided by that revision and never by a date
+
+Each row says what makes it true: 0 OPERATIONAL, 0 MANUAL, 16 DECLARATIVE. 3 row(s) are ADVISORY — recorded, rendered and validated, and read by nothing that stops anything: `limits` · `limits.tokens` · `limits.expires_at`.
+
+When the block is ABSENT the reader answers the explicit no-grant state: `approval` is `each`, `recovery` is `none`, no grant, revision 0.
+
+### `dispatch.approval`
+
+when work STARTS — approval asked before every dispatch, a grant that runs up to and including a named card, or a standing grant that runs until a dated pause
+
+- **required** — always
+- **shape** — mode
+- **values** — `each` · `until` · `standing`
+- **absent** — `each`
+- **advisory** — no
+- **implementation** — declarative
+
+### `dispatch.recovery`
+
+whether the coordinator may dispatch a correction round, a re-entry after a rejection or a repair the work discovers — none, or the repairs necessary to the approved work
+
+- **required** — always
+- **shape** — mode
+- **values** — `none` · `repairs`
+- **absent** — `none`
+- **advisory** — no
+- **implementation** — declarative
+
+### `dispatch.grant`
+
+the approval itself, as the owner gave it; a block that carries no grant is a block that records nothing
+
+- **required** — always
+- **shape** — map
+- **advisory** — no
+- **implementation** — declarative
+
+### `dispatch.grant.given_by`
+
+who gave the grant, as the record names them — the reader attributes a grant to this and promises no tamper prevention from an integer
+
+- **required** — with-parent
+- **shape** — text
+- **advisory** — no
+- **implementation** — declarative
+
+### `dispatch.grant.at`
+
+the ISO instant the grant was given, which is a record and never the tie-breaker between two grants
+
+- **required** — with-parent
+- **shape** — instant
+- **advisory** — no
+- **implementation** — declarative
+
+### `dispatch.grant.revision`
+
+the revision of this grant, a positive integer strictly above every revision in the history — and the ONE thing that decides which grant is current
+
+- **required** — with-parent
+- **shape** — revision
+- **advisory** — no
+- **implementation** — declarative
+
+### `dispatch.grant.order`
+
+the approved cards in dispatch order, each id once
+
+- **required** — with-parent
+- **shape** — card-ids
+- **advisory** — no
+- **implementation** — declarative
+
+### `dispatch.grant.until`
+
+the card the grant runs up to and including, which must belong to the order — required under `until` and refused under every other mode
+
+- **required** — with-until
+- **shape** — card-id
+- **advisory** — no
+- **implementation** — declarative
+
+### `dispatch.grant.cards`
+
+each approved card at the revision it was approved AT — the 40-hex blob sha of its file — so that a card edited after the yes is a different card, keyed by exactly the ids the order names
+
+- **required** — with-parent
+- **shape** — card-blobs
+- **advisory** — no
+- **implementation** — declarative
+
+### `dispatch.revoked`
+
+the dated revocation of the grant, when there is one; a revoked block reads as NO CURRENT GRANT while the grant it revokes stays in the record
+
+- **required** — optional
+- **shape** — map
+- **advisory** — no
+- **implementation** — declarative
+
+### `dispatch.revoked.at`
+
+the ISO instant the grant was revoked
+
+- **required** — with-parent
+- **shape** — instant
+- **advisory** — no
+- **implementation** — declarative
+
+### `dispatch.revoked.by`
+
+who revoked it, as the record names them
+
+- **required** — with-parent
+- **shape** — text
+- **advisory** — no
+- **implementation** — declarative
+
+### `dispatch.limits`
+
+the ceilings the grant was given under, recorded and enforced by NOTHING in this tree — the owner's ruling of 2026-09-13 is that this project's own loop runs without them
+
+- **required** — optional
+- **shape** — map
+- **advisory** — yes; nothing in this tree enforces it
+- **implementation** — declarative
+
+### `dispatch.limits.tokens`
+
+a ceiling per provider, each a positive integer — ADVISORY: recorded and rendered, read by nothing that stops anything
+
+- **required** — with-parent
+- **shape** — token-ceilings
+- **advisory** — yes; nothing in this tree enforces it
+- **implementation** — declarative
+
+### `dispatch.limits.expires_at`
+
+the ISO instant the grant expires at — ADVISORY: recorded and rendered, read by nothing that stops anything
+
+- **required** — with-parent
+- **shape** — instant
+- **advisory** — yes; nothing in this tree enforces it
+- **implementation** — declarative
+
+### `dispatch.history`
+
+every earlier grant in order, each shaped exactly like `grant` and each at a revision strictly below the current one; an empty list is the honest shape of a first grant
+
+- **required** — always
+- **shape** — grants
+- **advisory** — no
+- **implementation** — declarative

@@ -2443,6 +2443,203 @@ test("the committed settings chapter is a GENERATION of the schema, and a schema
   expect(renderReference(schema), "and the chapter did not").toBe(committed);
 });
 
+/* ── THE DISPATCH BLOCK OF THE RUNTIME TEMPLATE (T-319) ───────────────
+ *
+ * The parser library's own suite pins the READING — every field, every
+ * refusal — against fixtures it can show you. What it cannot pin is the
+ * SHIPPED tree: which words this project's schema actually declares,
+ * whether this project carries a grant, and whether the generated
+ * chapter is a generation of that declaration. Those four bodies are
+ * here, where the live tree lives.
+ *
+ * AND THIS CARD CLAIMS NO ADMISSION. Nothing below asserts that the arm
+ * admits or refuses a dispatch by the block: it does not, the schema
+ * says so in every row's label, and T-324 owns that half.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/** A block the SHIPPED declaration accepts, for a body that needs one. */
+const SHIPPED_BLOCK_FIXTURE = [
+  "dispatch:",
+  "  approval: until",
+  "  recovery: repairs",
+  "  grant:",
+  '    given_by: "a fixture owner"',
+  '    at: "2026-01-02T03:04:05Z"',
+  "    revision: 2",
+  "    order: [T-901, T-902]",
+  "    until: T-902",
+  "    cards:",
+  "      T-901: a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+  "      T-902: b2c3d4e5f60718293a4b5c6d7e8f90123456789a",
+  "  history:",
+  '    - given_by: "a fixture owner"',
+  '      at: "2026-01-01T00:00:00Z"',
+  "      revision: 1",
+  "      order: [T-901]",
+  "      cards:",
+  "        T-901: a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+  "",
+].join("\n");
+
+test("THE SHIPPED SCHEMA'S DISPATCH BLOCK DECLARATION reads the same to the hand parser and to a real YAML parser", () => {
+  // KILLED BY: a hand parser that drops an attribute of a row, one that
+  // keeps a value's quotes, one that loses a flow list's last item and
+  // one that reads a row off the wrong indent — over the file this
+  // project actually ships rather than over a fixture. The two readings
+  // share no line of code.
+  const text = readFileSync(path.join(repoRoot, PROCESS_SCHEMA), "utf8");
+  const real = (parseYaml(text) as { dispatch_block?: Record<string, unknown> }).dispatch_block;
+  expect(real, `${PROCESS_SCHEMA} carries no dispatch block declaration at all`).toBeDefined();
+  const mine = parseProcessSchema(text).dispatch;
+  expect(mine, "the hand parser read no declaration out of the shipped schema").not.toBeNull();
+  const decl = mine as NonNullable<typeof mine>;
+  const theirs = (real as Record<string, unknown>)["fields"] as Record<string, Record<string, unknown>>;
+  expect(decl.key, "dispatch_block.key").toBe((real as Record<string, unknown>)["key"]);
+  expect(decl.what, "dispatch_block.what").toBe((real as Record<string, unknown>)["what"]);
+  expect(decl.effect, "dispatch_block.effect").toBe((real as Record<string, unknown>)["effect"]);
+  expect(decl.reads, "dispatch_block.reads").toBe((real as Record<string, unknown>)["reads"]);
+  expect([...decl.fields.keys()], "the field ids or their order disagree").toEqual(Object.keys(theirs));
+  for (const [id, row] of decl.fields) {
+    const them = theirs[id] as Record<string, unknown>;
+    expect(row.required, `${id}.required`).toBe(them["required"]);
+    expect(row.shape, `${id}.shape`).toBe(them["shape"]);
+    expect(row.values, `${id}.values`).toEqual(them["values"]);
+    expect(row.absent, `${id}.absent`).toBe(them["absent"]);
+    expect(row.advisory, `${id}.advisory`).toBe(them["advisory"] === true);
+    expect(row.implementation, `${id}.implementation`).toBe(them["implementation"]);
+    expect(row.what, `${id}.what`).toBe(them["what"]);
+  }
+});
+
+test("EVERY ROW OF THE SHIPPED DISPATCH BLOCK IS DECLARATIVE, the limits are the advisory ones, and the no-grant words are `each` and `none`", () => {
+  // THE CARD'S FOURTH CRITERION, AND THE LABEL IS THE CLAIM: this card
+  // lands the block as readable configuration, so no row may say the arm
+  // branches on it. KILLED BY: a row relabelled operational or manual
+  // before T-324 makes it one, a limits row that stops saying it is
+  // advisory, and a no-grant value edited to something this project's own
+  // criterion does not say.
+  const decl = parseProcessSchema(readFileSync(path.join(repoRoot, PROCESS_SCHEMA), "utf8")).dispatch;
+  expect(decl, "the shipped schema declares no dispatch block").not.toBeNull();
+  const rows = [...(decl as NonNullable<typeof decl>).fields.values()];
+  expect(
+    rows.filter((r) => r.implementation !== "declarative").map((r) => `${r.id}=${r.implementation}`),
+    "a dispatch block row claims the arm reads it, and this card's criterion says it does not " +
+      "until T-324 makes it so",
+  ).toEqual([]);
+  expect(rows.length, "the declaration parsed to too few rows to be the block").toBeGreaterThan(10);
+  // THE ADVISORY ROWS ARE THE LIMITS AND NOTHING ELSE: the two the card
+  // names are advisory, and no row outside that container is.
+  expect(
+    rows.filter((r) => r.advisory).map((r) => r.id),
+    "the advisory rows are not the limits family",
+  ).toEqual(["limits", "limits.tokens", "limits.expires_at"]);
+  for (const id of ["limits.tokens", "limits.expires_at"]) {
+    expect(
+      (decl as NonNullable<typeof decl>).fields.get(id)?.advisory,
+      `${id} stopped saying it is advisory, and nothing in this tree enforces it`,
+    ).toBe(true);
+  }
+  // AND THE EXPLICIT NO-GRANT STATE IS THIS PROJECT'S OWN WORDS.
+  expect(
+    (decl as NonNullable<typeof decl>).fields.get("approval")?.absent,
+    "the no-grant approval mode",
+  ).toBe("each");
+  expect(
+    (decl as NonNullable<typeof decl>).fields.get("recovery")?.absent,
+    "the no-grant recovery policy",
+  ).toBe("none");
+  expect(
+    (decl as NonNullable<typeof decl>).fields.get("approval")?.values,
+    "the approval mode's three values",
+  ).toEqual(["each", "until", "standing"]);
+  expect(
+    (decl as NonNullable<typeof decl>).fields.get("recovery")?.values,
+    "the recovery policy's two values",
+  ).toEqual(["none", "repairs"]);
+});
+
+test("THIS PROJECT'S TEMPLATE CARRIES NO GRANT, and the reader says so in as many words", () => {
+  // THE CARD'S SECOND CRITERION, over the shipped tree. No grant is ever
+  // created by guessing a person, an instant or a past authorization: the
+  // standing authorization this project runs under lives in the seat's
+  // ledger, and it reaches the template only through a migration grant
+  // the owner approves (T-307). KILLED BY: a seat writing one down from
+  // memory, and by a reader that answered `undefined` instead of a state.
+  const schema = parseProcessSchema(readFileSync(path.join(repoRoot, PROCESS_SCHEMA), "utf8"));
+  const template = readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8");
+  const block = parserPure.dispatchBlock(template, schema);
+  expect(block.present, `${RUNTIME_TEMPLATE} carries a dispatch block nobody granted`).toBe(false);
+  expect(block.approval, "the no-grant approval mode").toBe("each");
+  expect(block.recovery, "the no-grant recovery policy").toBe("none");
+  expect(block.grant, "a grant was read out of a template that has none").toBeNull();
+  expect(block.current, "a current grant was read out of a template that has none").toBeNull();
+  expect(block.revision, "the no-grant revision").toBe(0);
+  expect(block.history, "a history was read out of a template that has none").toEqual([]);
+
+  // AND EVERY READ-ONLY SETTINGS OPERATION KEEPS WORKING EXACTLY AS
+  // BEFORE — the same template, the same profile, the same listing.
+  const loaded = process300();
+  expect(processSection(template)?.profile, "the profile stopped reading").toBe(loaded.settings.profile);
+  expect(
+    settingsRows({ ...loaded, readings: new Map(), units: new Map() }).length,
+    "the listing lost a row",
+  ).toBe(loaded.schema.switches.size);
+
+  // THE POSITIVE CONTROL, AND IT IS WHERE THE ARRANGEMENT IS ABSENT: the
+  // same reader over the same schema reads a real grant when the block is
+  // there, so the state above is this project's template and not a reader
+  // that answers "no grant" to everything.
+  const granted = parserPure.dispatchBlock(`${template}\n${SHIPPED_BLOCK_FIXTURE}`, schema);
+  expect(granted.present, "the control: a template WITH a block still read as absent").toBe(true);
+  expect(granted.approval, "the control: the mode").toBe("until");
+  expect(granted.recovery, "the control: the policy").toBe("repairs");
+  expect(granted.revision, "the control: the revision").toBe(2);
+  expect(granted.grant?.until, "the control: the card the grant runs up to").toBe("T-902");
+  expect(granted.history.map((h) => h.revision), "the control: the history").toEqual([1]);
+});
+
+test("THE SETTINGS CHAPTER CARRIES THE DISPATCH BLOCK AS A GENERATION of its declaration, never as prose", () => {
+  // THE CARD'S FIFTH CRITERION. The currency body above holds the whole
+  // page equal to a fresh generation; this one says the dispatch block is
+  // IN that page and that it moves with the declaration. KILLED BY: a
+  // renderer that skips the section, one that transcribes a sentence
+  // instead of reading the row, and a page nobody regenerated.
+  const text = readFileSync(path.join(repoRoot, PROCESS_SCHEMA), "utf8");
+  const schema = parseProcessSchema(text);
+  const page = renderReference(schema);
+  const decl = schema.dispatch as NonNullable<typeof schema.dispatch>;
+  expect(page, "the chapter carries no dispatch block section").toContain("## The dispatch block");
+  for (const row of decl.fields.values()) {
+    expect(page, `the chapter renders no row for ${row.id}`).toContain(`### \`${decl.key}.${row.id}\``);
+    expect(page, `the chapter does not carry ${row.id}'s own sentence`).toContain(row.what);
+  }
+  expect(
+    readFileSync(path.join(repoRoot, "docs", "reference", "15-settings.md"), "utf8"),
+    "the committed chapter does not carry the dispatch block at all",
+  ).toContain("## The dispatch block");
+
+  // NOT VACUOUS, AND THE PLANT IS A DATA MUTANT: a declaration that moved
+  // moves the page, which is the shape a stale commit really takes.
+  const first = [...decl.fields.values()][0];
+  expect(first, "the declaration carries a row to plant against").toBeDefined();
+  const moved = parseProcessSchema(
+    text.replace(`what: "${first!.what}"`, `what: "${first!.what}, and something nobody regenerated for"`),
+  );
+  expect(renderReference(moved), "a declaration that moved did not move the page").not.toBe(page);
+
+  // AND A SCHEMA WITH NO DECLARATION RENDERS NO SECTION, which is the
+  // arrangement this project would be in if the section were removed —
+  // run because a control is only a control where the arrangement is
+  // ABSENT.
+  const without = text.slice(0, text.indexOf("dispatch_block:")) + text.slice(text.indexOf("\nswitches:\n") + 1);
+  const bare = parseProcessSchema(without);
+  expect(bare.dispatch, "the control: the section did not come out of the schema").toBeNull();
+  expect(renderReference(bare), "the control: a schema with no declaration rendered a section anyway").not.toContain(
+    "## The dispatch block",
+  );
+  expect(renderReference(bare), "the control: the switches stopped rendering too").toContain("## The switches");
+});
+
 // ── T-300 verdict, assigned corrections (verifier, phase 2) ───────────
 //
 // Two halves of AC1 that this implementation already keeps and that no

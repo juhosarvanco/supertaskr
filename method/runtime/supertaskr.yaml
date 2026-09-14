@@ -29,6 +29,33 @@ ceremony:
   M: [executor, verifier, integrator]
   L: [plan, executor, verifier, integrator]
 
+# THE DISPATCH BLOCK — WHERE AN OWNER'S APPROVAL LIVES, AND THIS PROJECT
+# HAS NONE (T-319). A `dispatch:` block here records the approval mode
+# (each, until a named card, standing), the recovery policy (none, or the
+# repairs necessary to the approved work) and the GRANT that set them:
+# who gave it, when, at which revision, the cards in dispatch order, and
+# each card's blob sha at approval. Its whole shape is declared once in
+# the schema beside this file, under `dispatch_block:`, and read there as
+# one typed value by the parser library.
+#
+# THERE IS NO BLOCK HERE, AND THAT IS THE RECORD RATHER THAN AN OVERSIGHT.
+# A reader that finds none answers the explicit NO-GRANT state — approval
+# each, recovery none, no grant, revision 0 — because no grant is ever
+# created by guessing a person, an instant or a past authorization. The
+# standing authorization this project has been running under lives in the
+# seat's ledger and in chat; it becomes a block here only through a
+# migration grant the seat proposes verbatim and the owner approves
+# (T-307), and never by a seat writing one down from memory. This is
+# written as a comment rather than as an empty block for the same reason
+# the empty `switches:` block below is written out at all: so that a
+# reader can see the question was asked. An EMPTY `dispatch:` block is
+# refused, because a block somebody emptied and a record nobody wrote are
+# different things.
+#
+# AND IT CONTROLS NOTHING YET. Every row of the declaration is
+# `declarative`: the block is readable configuration, and the arm admits
+# and refuses nothing by it until T-324.
+
 # THE PROCESS IS SETTINGS (ADR-024 decision 6). Every step of the loop is
 # a SWITCH, and every switch is DECLARED ONCE — in the schema beside this
 # file, method/runtime/process-schema.yaml, with what it does, how it
