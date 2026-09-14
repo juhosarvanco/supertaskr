@@ -4,13 +4,14 @@ title: "The forbidden-spelling keeper has no exemption for a committed test fixt
 feature: F-04
 milestone: 4
 size: S
+tier: guarded
 priority: 1
-status: planned
+status: building
 suggested_by: "the T-295 verifier (phase 2), 2026-09-10, running the verb against its own card on a shared clone: it stopped at keeper:forbidden-spelling because merge.spec.ts's own keeper body plants an AWS-shaped token and an example address, and both are lines the diff adds"
 blocked_by: [T-295]
 touches: [tools/e2e/scripts/merge.mjs, tools/e2e/tests/merge.spec.ts, docs/CONVENTIONS.md]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
