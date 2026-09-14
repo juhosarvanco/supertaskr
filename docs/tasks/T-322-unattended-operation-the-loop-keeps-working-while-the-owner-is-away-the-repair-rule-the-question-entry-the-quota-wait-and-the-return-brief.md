@@ -405,3 +405,106 @@ does not have to re-find it.
 - The **census is STALE by construction** on this diff (bodies added) and the merge regenerates
   it; I report it rather than regenerate it on the bench.
 
+
+#### The drill, and both readings for every correction
+
+Three corrections and **three blocks — no shortfall to explain**. Every body lives in
+`tools/e2e/tests/brief.spec.ts` and was committed at `669b3a50`, after the verdict commit
+`ebec4e62`, so the figures above still name the tip they were measured at.
+
+| body | RED, against the implementation lacking the property | GREEN, with the named change |
+|---|---|---|
+| `T-322 VC1 …A QUESTION ENTRY MAY NOT CARRY A LINE BREAK INTO A ROOM…` | at `f0ee5ad9` — `a cause that forges a ruling heading was accepted` | 16 of 16 T-322 bodies pass |
+| `T-322 VC2 …THE RETRY INSTANT IS THE RESET THE PROVIDER STATED…` | at `f0ee5ad9` — `a log line's own timestamp was read as a stated reset` | same run |
+| `T-322 VC3 …PROGRESS IS THE NEWEST ATTEMPT'S…` | at `f0ee5ad9` — `one old partial licensed a fourth copy of a remedy shown ineffective three times` | same run |
+
+The GREEN reading is one run of `npx playwright test tests/brief.spec.ts -g "T-322"` with all
+three changes applied: **16 passed**, which is the lane's own thirteen plus these three — so the
+corrections do not move a single pin the executor wrote. `tests/run-record.spec.ts`'s four
+refusal bodies were run under the same changes and all four pass, which is the one other spec
+that reaches `classifyRefusal`. `tsc --noEmit` exits 0 both ways.
+
+**EVERY MUTANT WAS DRILLED OVER THE WHOLE OWNING SPEC (212 bodies), NOT OVER ITS OWN BODY**, and
+each was RED ALONE: 1 failed / 211 passed, three times. Each restore was proved by sha256 —
+`tools/e2e/scripts/dispatch-brief.mjs` returns to
+`ffcf2feb9c8314f513e46fa04bdc315db6b46f6668434be8f84a6d12e4794a0b` (the corrected file) after
+each, and the bench now carries the file byte-identical to `f0ee5ad9`'s, the corrections reverted,
+because the code change is the integrator's (`roles/integrator.md` 2b) and the committed bodies
+are what prove it.
+
+**ONE MUTANT WAS REJECTED BY MY OWN 2b AND REPLACED, AND I RECORD IT RATHER THAN THE TIDY
+VERSION.** Correction 3's first mutant read the demonstrated change off `past[0]` — the OLDEST
+attempt — and it red TWO bodies: VC3 and the lane's own
+`T-322 C2 — A REPAIR CONTINUES ON DEMONSTRATED PROGRESS…`. A body that reds more than itself is
+a block the merge must stop on, so the mutant was re-aimed at the defect itself (`past.some`
+restored) and re-drilled RED ALONE. The kill sets then contain neither the other — VC3 dies on
+recency, C2 dies on the OR — so both bodies are load-bearing and neither is a restatement of the
+other.
+
+```mutant
+correction: 1 — a question entry may not render a line break into a room
+file: tools/e2e/scripts/dispatch-brief.mjs
+spec: tools/e2e/tests/brief.spec.ts
+body: T-322 VC1 — A QUESTION ENTRY MAY NOT CARRY A LINE BREAK INTO A ROOM, because a line break there forges a heading and the reader stops at it
+message: a cause that forges a ruling heading was accepted
+--- old
+    if (/[\r\n]/.test(String(text ?? ""))) {
+--- new
+    if (/[\r\n]/.test(String(field ?? ""))) {
+```
+
+```mutant
+correction: 2 — the retry instant is the reset the provider stated
+file: tools/e2e/scripts/dispatch-brief.mjs
+spec: tools/e2e/tests/brief.spec.ts
+body: T-322 VC2 — THE RETRY INSTANT IS THE RESET THE PROVIDER STATED, never whatever timestamp the refusal text happens to carry
+message: a log line's own timestamp was read as a stated reset
+--- old
+    const iso =
+      /\b(?:reset|retry|resume|try again|available)\w*[^\n]{0,40}?\b(20\d{2}-\d{2}-\d{2}T[\d:.]+(?:Z|[+-]\d{2}:?\d{2}))/i.exec(t);
+--- new
+    const iso = /\b(20\d{2}-\d{2}-\d{2}T[\d:.]+(?:Z|[+-]\d{2}:?\d{2}))/.exec(t);
+```
+
+```mutant
+correction: 3 — a repair's demonstrated progress is the newest attempt's
+file: tools/e2e/scripts/dispatch-brief.mjs
+spec: tools/e2e/tests/brief.spec.ts
+body: T-322 VC3 — PROGRESS IS THE NEWEST ATTEMPT'S, so one old partial does not licence a repeat of an ineffective remedy for ever
+message: one old partial licensed a fourth copy of a remedy shown ineffective three times
+--- old
+  const last = past[past.length - 1];
+  const removed =
+    last !== undefined && (last.removed.length > 0 || last.outcome === "partial");
+--- new
+  const last = past[past.length - 1];
+  const removed =
+    last !== undefined && past.some((a) => a.removed.length > 0 || a.outcome === "partial");
+```
+
+**THE CODE CHANGE EACH BLOCK'S `old` DESCRIBES**, so the integrator makes the same one I drilled:
+
+- **Correction 1.** In `questionEntry`, immediately after the empty-cards refusal and before the
+  resolved-evidence one, walk `cause`, `ref` and `resolution` and throw
+  `UnattendedFinding(UNATTENDED_CODES.QUESTION_SHAPE, …)` on any that carries `\r` or `\n`,
+  naming the field. The loop variables are `field` and `text`, which is what the mutant turns on.
+- **Correction 2.** In `classifyRefusal`'s quota arm, anchor the ISO capture to the same class of
+  word the epoch capture one line below already requires, case-insensitively and without crossing
+  a line: the `old` text is the whole of it.
+- **Correction 3.** In `progressRuling`, replace the `past.some(…)` computation of `removed` with
+  the newest attempt's own — the `old` text is the whole of it.
+
+#### Two follow-ups filed, and neither blocks
+
+- **T-322-s6** — a quota refusal's STATED reset instant is obeyed without a ceiling. Measured at
+  `f0ee5ad9`: a refusal naming `2099-01-01T00:00:00Z` schedules the retry there, `delayMs`
+  2281521600000, and no boundary calls it due. Filed rather than corrected because the criterion
+  says in as many words that the provider's instant is used where the refusal carries one and puts
+  the cap on the other branch — a clamp is a change to the contract and wants the owner's figure.
+- **T-322-s7** — nothing tells an authorized resolution of a question entry from the
+  coordinator's own. The only mechanical defence is that a resolved entry's evidence is not empty,
+  so an unattended coordinator can resolve its own question and unblock itself. Filed rather than
+  corrected because what "authorized" means mechanically is the owner's ruling.
+
+These are additions to the executor's own five (T-322-s1 to s5), each of which I read and none of
+which duplicates them.
