@@ -471,3 +471,47 @@ notes say it owes.
 The step-7 readings at my OWN tip — the verdict commit — are in the
 postscript below, because a figure measured at the commit I was sent is
 stale at the tip my verdict creates.
+
+#### Postscript — the step-7 readings at MY OWN tip
+
+Taken at `e5219c65059a668a19cbecefc0969ff6fe9b176a`, which is the verdict
+commit plus the card this verdict filed — because a figure measured at
+the commit I was sent is stale at the tip my verdict creates, and the
+tree the merge will read is this one.
+
+The whole battery, `gate-run.mjs parser app rust e2e`, exit **0**:
+
+    parser  exit 0  454 bodies   1 target   GREEN  ref e5219c65
+    app     exit 0  1171 bodies  1 target   GREEN  ref e5219c65
+    rust    exit 0  655 bodies   18 targets GREEN  ref e5219c65
+    e2e     exit 0  1136 bodies  1 target   GREEN  ref e5219c65
+
+Identical, leg for leg and body for body, to the run at the tip I was
+sent. The reading worth keeping is that this run had the verdict above
+and T-143-s9 IN the tree, so the bodies that parse every live task card
+and the docs gate that walks the whole of docs/ saw both and stayed
+green — which is the only way a verdict's own prose gets checked.
+
+`capabilities:check` — **STALE** at this ref, committed 105999 bytes
+against a fresh generation of 106689. By construction and not
+regenerated here: the difference is the 7 body names this lane added, and
+`npm run capabilities` at the merge is what writes them, which is what the
+lane's own notes say the merge owes. The figure is identical at the tip I
+was sent, so nothing I committed moved it.
+
+`index --check` from `app/src-tauri/` — **CURRENT**, exit 0: 1228940
+bytes, 203 files, 2626 symbols, 2505 edges. Unmoved from the tip I was
+sent, as expected, since the indexed set carries neither `tools/e2e/` nor
+`method/` nor `docs/`.
+
+The push-guard body that reds when two hook runs straddle a minute
+boundary (T-314-s5) did not fire in either battery; there is no red to
+attribute to it or to anything else.
+
+DISCLOSED CONTENTION: the T-322 lane's own `gate-run` was running on this
+machine during part of the first battery and during the helper timings
+above, which is why my 3327 / 3661 / 3473 ms reading of
+`staleStateRecords` sits above the lane's own 3022 / 3031 / 3018 ms. Both
+sit BELOW the base derivation's 4.00 / 4.03 / 4.39 s in the ground's M12,
+which is the comparison the performance claim rests on, so the contention
+cuts against my own figure and not in its favour.
