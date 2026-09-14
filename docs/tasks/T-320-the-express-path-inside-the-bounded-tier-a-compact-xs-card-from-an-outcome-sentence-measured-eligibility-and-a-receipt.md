@@ -587,8 +587,51 @@ WARN on the dispatch chapter, which T-320-s1 is the move that settles.
 T-204's re-triage against what this card discharges is owed at the same
 sitting by the card's own re-check.
 
-#### Postscript — the readings at my OWN tip
+#### Postscript — the readings at my OWN tip, cfdb9e86
 
-Left for the commit that follows the corrections, because a figure
-measured at the commit I was sent is stale at the tip my verdict
-creates.
+Taken 2026-09-15 after the verdict, the three corrections and the
+regeneration, because a figure measured at the commit I was sent is
+stale at the tip my verdict created. Everything below is at
+`cfdb9e8638b9b2f4ed6136eb633fd737743f2dde` on this bench, port 25320,
+every leg in the foreground.
+
+| leg | bodies | verdict |
+|---|---|---|
+| parser | 454 | GREEN |
+| app | 1171 | GREEN |
+| rust | 658 | GREEN |
+| e2e | 1192 | GREEN |
+
+`gate-run.mjs parser app rust e2e` exits 0. **THE SIX REDS ARE GONE AND
+THE CONTROL IS THIS COMMIT**: the only thing between the two readings is
+the regeneration of the two generated files, so the attribution the seat
+and the executor made is not an argument any more, it is a measurement
+with its control. The e2e count moves 1191 to 1192 — the one body
+correction 1 adds — and against the ground's base reading of 1167 that
+is the lane's 24 plus mine, with nothing removed.
+
+The three raw captures the checkpoint rule asks for, at this tip:
+`docs-gate: governing-document budgets hold — 15 gated, 0 awaiting their
+compaction landing (ADR-019)`; eighteen plain `test result: ok.` headers
+totalling 654 passed, 0 failed, 4 ignored; and the playwright summary
+`1192 passed (23.6m)`.
+
+`capabilities:check` answers `CURRENT (114109 bytes), and docs/INDEX.md
+is CURRENT`. `index --check` answers `graph.json is CURRENT` — 1230259
+bytes, 203 files, 2631 symbols, 2505 edges, 57.3% of budget — which is
+what the graph not indexing tools/e2e or method predicts. The docs
+gate's one finding is the budget WARN on
+docs/conventions/dispatch-and-scratch.md at 10401 bytes against its
+10100-byte warn line (fail at 12120), which is T-320-s1's own figure and
+holds.
+
+Method evals at this tip: 13 model-free, all green. `--selftest` is 1 of
+13 FAILED and it is MF-09, the same eval the ground records failing its
+own positive control at the base; MF-13's control passes. `--selftest`
+is not in the owed set.
+
+Typecheck green at this tip. The correction-1 mutant was drilled once
+more across the WHOLE of brief.spec.ts the way the merge verb will run
+it — 229 passed, 1 failed, and the one is its own body — so the verb's
+reds-more-than-itself reading has its answer in advance. The bench is
+clean at this tip and it stands until the merge.
