@@ -328,7 +328,13 @@ test("a seed path that climbs out of the folder is refused, by the reader and by
   const project = path.join(holder, "project");
   for (const marker of ROOT_MARKERS) mkdirSync(path.join(project, marker), { recursive: true });
   try {
-    for (const bad of ["../escaped.md", "docs/../../escaped.md", "/etc/escaped.md"]) {
+    // NONE OF THESE IS DOCS-FIRST, and that is deliberate rather than
+    // incidental: a `docs`-first literal joined onto a scratch root is a
+    // path the DOCS GATE's scanner cannot tell from a read of THIS
+    // repository's docs/, and it is right not to be able to. The property
+    // under test is the SHAPE of the path, which needs no particular
+    // first segment.
+    for (const bad of ["../escaped.md", "nested/../../escaped.md", "/etc/escaped.md"]) {
       const tampered = `${FENCE}${SEED_INFO} ${bad}\nOWNED\n${FENCE}\n`;
       expect(
         () => materialize(tampered, project),
@@ -343,8 +349,9 @@ test("a seed path that climbs out of the folder is refused, by the reader and by
     // THE CONTROL: the same reader, the same folder, an ordinary relative
     // label — it still writes. A guard that refused everything would pass
     // the three assertions above and be useless.
-    materialize(`${FENCE}${SEED_INFO} docs/ordinary.md\nfine\n${FENCE}\n`, project);
-    expect(readFileSync(path.join(project, "docs/ordinary.md"), "utf8")).toBe("fine\n");
+    const ordinary = "seeded/ordinary.md";
+    materialize(`${FENCE}${SEED_INFO} ${ordinary}\nfine\n${FENCE}\n`, project);
+    expect(readFileSync(path.join(project, ...ordinary.split("/")), "utf8")).toBe("fine\n");
   } finally {
     removeGitFixture(holder, FIXTURE);
   }
