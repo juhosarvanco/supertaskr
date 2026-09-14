@@ -6,7 +6,7 @@ milestone: 4
 priority: 8
 size: S
 tier: guarded
-status: building
+status: verifying
 suggested_by: executor claude-opus-5@subagent @T-143-s4
 blocked_by: []
 touches: [tools/e2e/scripts/docs-scan.mjs, tools/e2e/scripts/docs-gate.mjs, tools/e2e/scripts/push-checks.mjs, tools/e2e/tests/push-checks.spec.ts, tools/e2e/tests/docs-input-gate.spec.ts, docs/STATE-template.md, docs/STATE.md, method/docs-protocol.md]
