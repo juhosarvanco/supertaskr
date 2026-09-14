@@ -1612,6 +1612,37 @@ test("a block and a stated wording correction is ONE drill and no refusal, and t
     "2 correction(s) read",
   );
 
+  // AND THE BLOCK FINDS ITS CORRECTION BY COUNT WHERE THE NAME MISSES.
+  // MEASURED in T-317's verdict: correction 2's announcement reads
+  // "Correction 2 — every refusal sentence is DRIVEN through the public
+  // entry" while its block's `correction:` field reads "the
+  // refusal-sentence discriminator is satisfied by a doc comment" —
+  // two prose labels for one correction, sharing not a word. A block
+  // left over after the name pass covers a correction left over after
+  // it: there IS a committed body, and only the label missed.
+  const unlabelled = verdictCard(
+    "### 2026-09-14 — APPROVED WITH ASSIGNED CORRECTIONS — a-model@a-session",
+    "",
+    ...announced("Correction 1 — every refusal sentence is driven through the public entry.", "Committed."),
+    block({ correction: "the refusal-sentence discriminator is satisfied by a doc comment" }),
+    "",
+    ...announced("Correction 2 — the notes' figure is one byte stale. It owes no mutant block.", "Wording."),
+  );
+  const byCount = drillSteps({ cardText: unlabelled, projectRoot: repoRoot, id: "T-900" });
+  expect(byCount.map((st) => st.id), "a block whose label matches nothing still covers a correction").toEqual([
+    "drill:1",
+  ]);
+  // AND THE CONTROL ON THAT FALLBACK: take the block away and the same
+  // correction 1 is unexplained, so what covered it was the block and
+  // not the leniency.
+  const noBlock = unlabelled.replace(block({ correction: "the refusal-sentence discriminator is satisfied by a doc comment" }), "");
+  expect(noBlock, "the control really differs").not.toBe(unlabelled);
+  const bare = drillSteps({ cardText: noBlock, projectRoot: repoRoot, id: "T-900" });
+  expect(bare.map((st) => st.id)).toEqual(["drill:refused"]);
+  expect(bare[0]?.problem ?? "", "naming the one the block was covering").toContain(
+    "Correction 1 — every refusal sentence is driven through the public entry",
+  );
+
   // THE CONTROL: the same block, the same two corrections, and only the
   // statement gone — refused, and refused for correction 2 ALONE.
   const silent = drillSteps({ cardText: mixed(false), projectRoot: repoRoot, id: "T-900" });
@@ -1718,6 +1749,42 @@ test("which correction a no-block statement is ABOUT is read from the ordinals i
   expect(correctionKey("the refusal-sentence discriminator"), "and a block that names no ordinal keeps its words").toBe(
     "the refusal-sentence discriminator",
   );
+  // AND THE FOLD IS A WHOLE-TOKEN MATCH, never a prefix: a board that
+  // reaches eleven corrections in one verdict must not have correction 1
+  // answer for correction 11's missing body.
+  const eleven = verdictCard(
+    "### 2026-09-14 — APPROVED WITH ASSIGNED CORRECTIONS — a-model@a-session",
+    "",
+    ...announced("Correction 1 — the first one. It carries no mutant block.", "Wording."),
+    ...announced("Correction 11 — the eleventh one.", "The figures were read over the base tree."),
+  );
+  const far = drillSteps({ cardText: eleven, projectRoot: repoRoot, id: "T-900" });
+  expect(far.map((s) => s.id), "correction 1's statement does not answer for correction 11").toEqual([
+    "drill:refused",
+  ]);
+  expect(far[0]?.problem ?? "").toContain("Correction 11 — the eleventh one");
+  expect(far[0]?.problem ?? "", "and correction 1 is not among the unexplained").not.toContain(
+    "Correction 1 — the first one",
+  );
+
+  // AND AN ANNOUNCEMENT INSIDE A FENCE IS TEXT, NEVER A CORRECTION. A
+  // block's own `old` or `new` text can carry any line at all, including
+  // this board's announcement shape, and a reader that counted it would
+  // invent a correction out of a mutant's payload.
+  const quoted = verdictCard(
+    "### 2026-09-14 — APPROVED WITH ASSIGNED CORRECTIONS — a-model@a-session",
+    "",
+    ...announced("Correction 1 — the guard is inverted.", "Committed."),
+    block({
+      correction: "correction 1 — the guard is inverted",
+      old: "**Correction 9 — a line of prose in the tree**",
+      new: "**Correction 9 — the same line, mutated**",
+    }),
+    "",
+  );
+  expect(drillSteps({ cardText: quoted, projectRoot: repoRoot, id: "T-900" }).map((s) => s.id)).toEqual([
+    "drill:1",
+  ]);
   expect(drillSteps({ cardText: preamble, projectRoot: repoRoot, id: "T-900" }).map((s) => s.id)).toEqual([
     "drill:none",
   ]);
