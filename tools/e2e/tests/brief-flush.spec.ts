@@ -644,6 +644,14 @@ const LIVE_ARMS: ReadonlyArray<{ label: string; args: string[] }> = [
   // receipt's requested half and the composed card all go out, and the
   // fence it is given is a path this repository really tracks, so the
   // answer is a function of this tree like every other arm here.
+  //
+  // AND IT IS WHERE `--fence` AND `--dry-run` ARE DRIVEN. Both carried an
+  // EXCUSE in the table below while no arm drove either — `--dry-run` for
+  // the dispatch-lane spelling, whose dry form turns a writer that
+  // commits into a printer — and an excuse for a flag an arm DOES drive
+  // is a contradiction this body refuses by name. The reasons those
+  // entries gave still hold of the OTHER spellings; what changed is that
+  // one spelling now has a size a guard may take.
   {
     label: "--express … --fence … --dry-run",
     args: [
@@ -692,10 +700,6 @@ const NOT_AN_ARM: ReadonlyArray<{ flag: string; why: string }> = [
   {
     flag: "--express-id",
     why: "a MODIFIER of --express: which id the compact card takes instead of the next free one the board gives it. It moves no row of the answer — the same report is rendered either way, with a different three-digit id in it — and the arm above already drives the derived spelling, which is the one a seat uses.",
-  },
-  {
-    flag: "--fence",
-    why: "a REQUIRED companion of --express rather than an arm: alone it is a usage error, and the arm above drives it. Its value is a path list, so the size it produces is a function of how many paths a caller typed, which is the argument --audit makes about a file handed in from outside.",
   },
   {
     flag: "--changed",
@@ -872,10 +876,6 @@ const NOT_AN_ARM: ReadonlyArray<{ flag: string; why: string }> = [
   {
     flag: "--scratch",
     why: "a MODIFIER of --dispatch-lane: the directory the ritual writes its brief into. Its size is the size of the brief that arm ALREADY writes, measured against whatever tree --root names rather than against this command.",
-  },
-  {
-    flag: "--dry-run",
-    why: "a MODIFIER of --dispatch-lane that turns the writer into a printer: the plan and the block of lane facts, a few dozen lines, and no step performed. It is exercised by `brief.spec.ts` where its subject — that NOTHING was written — can actually be asserted.",
   },
   {
     flag: "--help",
