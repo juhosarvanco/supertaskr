@@ -5,15 +5,21 @@ import { pathToFileURL } from "node:url";
 import { conventionsText, repoRoot, trackedFiles } from "./docs-scan.mjs";
 import {
   blank,
+  dueRetries,
   git,
   laneSpellings,
   laneWorktrees,
   liveProv,
   note,
+  questionHolds,
+  readQuestions,
+  roomFiles,
+  sharedHealth,
   treeProv,
   value,
   worktreePorcelain,
 } from "./dispatch-brief.mjs";
+import { TERMINAL_STATES, allRecords } from "./run-record.mjs";
 
 /**
  * WHAT IS DISPATCHABLE, IN WHAT ORDER, GIVEN THE LIVE LANES (T-137) — for
@@ -186,6 +192,14 @@ export function lanesFrom(porcelain, conventionsMd) {
  *   answer: every card a session could start right now, in full, and one
  *   counted line for each set that is not startable. True restores a row
  *   per card in every set. See `dispatchReport`.
+ * @property {import("./dispatch-brief.mjs").RoomQuestion[]} questions the room
+ *   questions (T-322). A PENDING one holds every card it names NOT STARTABLE
+ *   and the LANE CUT refuses by the same derivation, so the display and the
+ *   refusal cannot disagree.
+ * @property {import("./dispatch-brief.mjs").HealthState} health the shared
+ *   conditions this answer checks each proposed action against (T-322).
+ * @property {{ due: any[], scheduled: any[] }} retries the recorded quota
+ *   retries this boundary owes a look at (T-322).
  */
 
 /**
@@ -198,7 +212,7 @@ export function lanesFrom(porcelain, conventionsMd) {
  * rejected once for stamping reads of a mutable ref as tree facts, so the
  * two never share a constructor below.
  *
- * @param {{ root?: string, porcelain?: string, at?: string, host?: string, conventions?: string, files?: {path: string, content: string}[], full?: boolean }} opts
+ * @param {{ root?: string, porcelain?: string, at?: string, host?: string, conventions?: string, files?: {path: string, content: string}[], rooms?: {path: string, content: string}[], records?: any[], health?: import("./dispatch-brief.mjs").HealthState, full?: boolean }} opts
  * @returns {Promise<DispatchCtx>}
  */
 export async function dispatchContext(opts = {}) {
@@ -214,13 +228,52 @@ export async function dispatchContext(opts = {}) {
   // in-flight section's populated arm lost its only live fixture.
   const model = parser.parseProjectFromFiles(opts.files ?? boardFiles(root));
   const order = parser.readDispatchOrder(model, lanes, { knownPaths: knownPathOracle(root) });
+  // THE ROOMS ARE READ HERE AND NOWHERE ELSE IN THIS FILE, on the same
+  // seam every other input takes (`opts.rooms`, symmetric with
+  // `opts.files` and `opts.porcelain`), so a body drives a question over
+  // a fixture room without writing one into the repository.
+  const questions = readQuestions(opts.rooms ?? roomFiles(root));
+  const at = opts.at ?? new Date().toISOString();
+  const records = opts.records ?? allRecords(root);
   return {
     root,
     ref: git(root, ["rev-parse", "HEAD"]).trim(),
-    at: opts.at ?? new Date().toISOString(),
+    at,
     host: opts.host ?? os.hostname(),
     parser,
     order,
+    questions,
+    retries: dueRetries(records, at),
+    // THE DEFAULT HEALTH STATE IS THE HONEST ONE FOR THIS COMMAND'S OWN
+    // STAGE. The writers half is derived here, from the run records: an
+    // unbound writer record that has not reached a terminal state is the
+    // case `reconcile` calls the dangerous one — the spawn happens
+    // between the reservation and the bind, so nothing on disk can tell
+    // an un-started attempt from a running child nobody named.
+    //
+    // The verification half is NOT OWED at this stage and says so: this
+    // answer is about what may be CUT, and a bench for a card nobody has
+    // built is not a broken verification path. The CI half is UNKNOWN
+    // unless a caller that can reach the runner hands it in — `brief.mjs`
+    // does — because this module shells out to git and to nothing else.
+    health: opts.health ?? {
+      ci: { known: false, green: false, attributed: null },
+      verification: {
+        trusted: true,
+        owed: false,
+        why: "no bench and no seal is owed at the lane-cut stage this answer rules on",
+      },
+      writers: {
+        unknown: records
+          .filter(
+            (/** @type {any} */ r) =>
+              r.writer === true &&
+              !TERMINAL_STATES.includes(r.state) &&
+              (r.execution === null || r.execution === undefined || r.state === "unknown"),
+          )
+          .map((/** @type {any} */ r) => String(r.resource ?? r.attempt)),
+      },
+    },
     full: opts.full ?? false,
   };
 }
@@ -450,16 +503,72 @@ export function dispatchReport(ctx) {
     );
   }
 
+  // ── NOT STARTABLE — A PENDING QUESTION HOLDS IT (T-322) ────────────
+  // **THE QUESTION ID IS NAMED ON EVERY CARD IT HOLDS**, which is the
+  // whole of the criterion's display half: a reader who wants the card
+  // back settles the question, and the row says which one and where it
+  // lives. The set is carved out of STARTABLE rather than added beside
+  // it, because a card in both would be a card this answer says a
+  // session may start and the lane cut then refuses.
+  const held = questionHolds(ctx.questions);
+  const questionHeld = o.startable.filter((/** @type {any} */ r) => held.has(r.id));
+  const stillStartable = o.startable.filter((/** @type {any} */ r) => !held.has(r.id));
   recs.push(
     blank(),
-    note("STARTABLE NOW — ready, and PROVED disjoint from every live lane. In dispatch order."),
+    note("NOT STARTABLE — a PENDING question entry holds it, and the question is named. A decision"),
+    note("this coordinator may not make waits in its room; the LANE CUT refuses by the same"),
+    note("resolved state, so this row is not advice a seat can dispatch around."),
+  );
+  if (questionHeld.length === 0) {
+    recs.push(value("no pending question holds a startable card", tree("docs/rooms/*.md, parsed")));
+  }
+  for (const r of questionHeld) {
+    const q = /** @type {any} */ (held.get(r.id));
+    recs.push(
+      value(`${r.id} [${roadmapOf(r.card)}] ${r.card.title}`, tree(`${r.card.file} frontmatter`)),
+      value(`   held by ${q.id} (${q.state}) in ${q.room}, dated ${q.at} — ${q.cause}`, tree("docs/rooms/*.md, parsed")),
+    );
+  }
+
+  recs.push(
+    blank(),
+    note("THE RECORDED RETRIES — a spawn refused for quota is a scheduled retry this loop returns"),
+    note("to at its OWN boundaries while other eligible work continues, never a block on its only"),
+    note("control loop. A DUE one is work to do now; a scheduled one is not."),
+  );
+  if (ctx.retries.due.length === 0 && ctx.retries.scheduled.length === 0) {
+    recs.push(value("no retry is recorded on any run record", live("the run records under the runtime directory")));
+  }
+  for (const r of ctx.retries.due) {
+    recs.push(
+      value(
+        `DUE NOW — ${r.work} attempt ${r.attempt}, instant ${r.at} (refusal ${String(r.attempts)})`,
+        live("the run records under the runtime directory"),
+      ),
+    );
+  }
+  for (const r of ctx.retries.scheduled) {
+    recs.push(
+      value(
+        `scheduled — ${r.work} attempt ${r.attempt}, instant ${r.at} (refusal ${String(r.attempts)})`,
+        live("the run records under the runtime directory"),
+      ),
+    );
+  }
+
+  recs.push(
+    blank(),
+    note("STARTABLE NOW — ready, PROVED disjoint from every live lane, and past the SHARED-HEALTH"),
+    note("check for THIS action rather than for the world. An attributed red permits its own"),
+    note("designated repair and holds a landing the red invalidates; an unknown live writer or an"),
+    note("untrusted verification path holds everything, and no permission bypasses those."),
   );
   // THE EMPTY LINE HAS TO SAY WHICH EMPTY IT IS. "Nothing is startable"
   // because every ready card is held is a board fact; "nothing is
   // startable" because a lane could not be read at all is a LIVE fact
   // about this checkout, with a different remedy — so it is stamped LIVE
   // and it names the lane.
-  if (o.startable.length === 0) {
+  if (stillStartable.length === 0) {
     recs.push(
       o.lanesWithNoCard.length === 0
         ? value("nothing is startable", tree(boardVia))
@@ -471,10 +580,28 @@ export function dispatchReport(ctx) {
           ),
     );
   }
-  for (const r of o.startable) {
+  const pendingQuestions = ctx.questions.filter((q) => q.state === "pending").map((q) => q.id);
+  for (const r of stillStartable) {
+    // THE CHECK IS RUN PER CARD AND THE ACTION IS THE ONE BEING
+    // PROPOSED: cutting a lane for this card. A verdict that held every
+    // card on one red would be the blunt answer this card replaces, so
+    // the row says which condition holds THIS act and says nothing when
+    // none does.
+    const verdict = sharedHealth(ctx.health, {
+      kind: "landing",
+      card: r.id,
+      checks: [],
+      dependsOn: [],
+      pendingQuestions,
+      resource: null,
+    });
     recs.push(
       value(`${r.id} [${roadmapOf(r.card)}] ${r.card.title}`, tree(`${r.card.file} frontmatter`)),
       value(`   ${ruling(r.reason)}`, live(`${laneVia}, joined to the parsed board`)),
+      value(
+        `   shared health: ${verdict.why}${verdict.holds.length === 0 ? "" : ` — ${verdict.holds.join("; ")}`}`,
+        live("the run records, the runner's runs where a caller supplied them, and the rooms"),
+      ),
     );
   }
 

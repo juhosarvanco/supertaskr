@@ -52,6 +52,49 @@ Token refresh races the logout path — spec doesn't say which wins. @planner
 A turn addressed with @role triggers that role's next turn. @human pauses
 the thread for you. Every participant appends; nothing is ever edited.
 
+## The question entry — a decision the coordinator may not make
+
+A coordinator working while the owner is away meets decisions it does
+not hold. It does not stop the loop for them and it does not settle
+them: it appends a QUESTION ENTRY to the relevant room, in its own
+voice, and continues every card that does not depend on it.
+
+```
+## @orchestrator (<model> @<session>) — <date> — QUESTION Q-001 (pending)
+
+**QUESTION — not a ruling.** <what has to be decided, and why nothing
+here can decide it> (<the ref it was found at>)
+
+Cards held: T-401, T-402
+State: pending
+```
+
+- **THE MARKER IS THE POINT AND IT IS NOT DECORATION.** A room is read
+  by people who were not in the conversation. An entry that reads as a
+  settled thing IS a settled thing to them, so a question that lost its
+  marker would be the seat putting a decision in the owner's mouth —
+  the exact failure the entry rule above exists against, arriving from
+  the other direction.
+- **THE ID IS HOW EVERYTHING ELSE FINDS IT.** `Q-` and at least three
+  digits, unique in the project. The dispatch order names it on every
+  card the entry holds, and the lane cut REFUSES those cards by the
+  same state — so an id a reader cannot tell from prose is a hold
+  nothing can lift.
+- **THE CARDS HELD ARE NAMED IN THE ENTRY AND NOWHERE ELSE.** A card
+  gains no field: the link lives here, and a card that stops depending
+  on the question is released by editing this entry. Every card the
+  entry does not name continues.
+- **RESOLVING IT IS AN APPEND, AND THE RESOLUTION CARRIES ITS
+  EVIDENCE.** `State: resolved <date> — <what settled it, and where>`.
+  A state that changed with nothing behind it is the seat settling a
+  decision it does not hold.
+- **AND IT IS NEVER THE RULING ENTRY.** When the owner rules, the
+  ruling is proposed verbatim and appended on their yes, exactly as
+  every other entry recording what the owner settled is
+  (roles/orchestrator.md 8b). The question entry is the seat asking;
+  the ruling entry is the owner answering, and one never becomes the
+  other by being edited.
+
 ## Thread types
 
 **consultation** — a working session hits ambiguity and asks instead of

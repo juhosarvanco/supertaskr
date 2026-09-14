@@ -1031,8 +1031,8 @@ and T-236 (2026-09-02, whose pre-compaction text is
   because an approval read once at the cut is one a revocation four hours
   later cannot reach. An admission is EXPLICIT (a card the grant names,
   bound to the grant's revision and to the card's approved blob, with the
-  loop's own mechanical appends allowed: a status or tier stamp, a notes
-  or verdicts append, a filed follow-up line — anything else is a
+  loop's own mechanical appends allowed: a status or tier stamp, a notes,
+  verdicts or repair-ledger append, a filed follow-up line — anything else is a
   different card and refuses) or DERIVED (a repair the recovery policy
   allows, bound to its parent authorized work, the failure evidence, the
   PARENT grant's revision and its own blob at filing; it inherits that
@@ -1086,6 +1086,33 @@ and T-236 (2026-09-02, whose pre-compaction text is
   the third borrow the first's authority. The switch inventory the schema
   was built from — every row with its old and ruled value, its measured
   cost and its constraint — is in `docs/rooms/loop-cost-and-speed.md`.
+  **AND SINCE T-322 THE LOOP KEEPS WORKING WHILE THE OWNER IS AWAY.**
+  `method/roles/orchestrator.md` 5g states the rules — attribute a red
+  or a rejection before acting and record it; continue a repair on
+  evidence and park it with a wake condition otherwise; check the shared
+  conditions against the ACTION proposed; write a question entry rather
+  than stop; treat a quota refusal as a recorded retry instant — and
+  this bullet carries the two spellings and the one operational rule
+  that is this machine's rather than the method's. From the repository
+  root:
+
+      node tools/e2e/scripts/brief.mjs --since <ISO instant>
+      node tools/e2e/scripts/brief.mjs --await-until <ISO instant> --ceiling <seconds>
+
+  The first is the return brief and the reds in its window attributed;
+  the second is the wait verb's until-instant form, the same loop, the
+  same interval and the same ceiling report as the marker and the pid.
+  A question entry lives in `docs/rooms/`, a repair ledger under
+  `## Repair ledger` on the failing card, and a refusal with its retry
+  instant on the run record — three records that already existed, and
+  no fourth. **THE HOST MUST STAY AWAKE OR THERE IS NO LOOP**: this
+  pipeline runs on the owner's own machine, a sleeping Mac stops every
+  seat mid-turn, and the seat holds the host awake for the span it
+  expects to need — `caffeinate -i -t <seconds>` beside the app's own
+  keep-awake request, both for the night on 2026-09-14. **DERIVE
+  WHETHER IT IS HELD, NEVER ASSUME IT**: `pmset -g assertions` names
+  every holder, and an idle-sleep assertion nobody holds is a loop that
+  will stop at the first idle window rather than at a boundary.
 - GUARD-CLASS PATHS, IN THIS PROJECT'S OWN SPELLING (T-296, ADR-024
   decision 1): `method/tasks/TASK-FORMAT.md` names the guard-class
   CLASSES and is product-agnostic, so the mapping onto this repository

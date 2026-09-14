@@ -715,8 +715,16 @@ const NOT_AN_ARM: ReadonlyArray<{ flag: string; why: string }> = [
     why: "the second half of the same WAITER: it blocks until a process exits. Same argument as --await above, one degree worse, since the process it would wait on in this suite is nobody's.",
   },
   {
+    flag: "--await-until",
+    why: "the THIRD half of the same WAITER (T-322): it blocks until an INSTANT arrives, which is how a spawn refused for quota is waited out where nothing else is eligible. Same argument as --await above and the instant is worse than the marker, because an instant always arrives eventually — an entry in the arm list would make this suite sleep for however long the caller typed. `brief.spec.ts` drives it against an INJECTED clock, where the subject (the fact is a clock read, and the ceiling still bounds it) can actually be asserted in microseconds.",
+  },
+  {
     flag: "--ceiling",
-    why: "a MODIFIER of --await / --await-pid: how many seconds the wait may take before it reports the ceiling instead of hanging. It is required beside either of them and alone it is a usage error, so there is no invocation of it for this file to size.",
+    why: "a MODIFIER of --await / --await-pid / --await-until: how many seconds the wait may take before it reports the ceiling instead of hanging. It is required beside any of them and alone it is a usage error, so there is no invocation of it for this file to size.",
+  },
+  {
+    flag: "--since",
+    why: "THE RETURN BRIEF (T-322), and the one read arm this guard must not drive: it reaches the RUNNER — `gh run list` and `gh run view --log-failed`, a machine that is not this one — so its size is a function of a network answer and of somebody's credentials rather than of this repository, which is the argument --audit above already makes one step further out. An arm here would also make this suite's determinism depend on a service, and the margin body compares two runs of each arm. `brief.spec.ts` drives it against FIXTURE runs and fixture logs through its own io seam instead, where the window, the unknowns and the attribution can be asserted.",
   },
   {
     flag: "--run",

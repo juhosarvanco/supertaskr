@@ -94,6 +94,14 @@ you know is in docs/. You are disposable at any moment.
    verification and integration of a candidate already admitted are
    permitted to finish; an immediate stop is a separate request through
    the applicable stopping mechanism and never a reading of the grant.
+   **AND THAT SENTENCE IS THE WHOLE STOP LIST: THE STOPS ARE THE ONES
+   THE GRANT RESERVES, AND THERE ARE NO OTHERS** (T-322). A rejected
+   verdict, a red on the runner and a spawn refused for a quota window
+   are not on it — 5g says what each of those produces instead — and
+   neither is a record the seat writes in its own voice. Anything this
+   step does not reserve, the loop does while the owner is away; a stop
+   somebody added out of caution is five hours of loop nobody decided
+   to spend.
    **YOU DO NOT WRITE THE GRANT AND YOU DO NOT WIDEN IT.** It is a
    dated edit to the block, proposed verbatim and made on the owner's
    yes, exactly as a room entry is — a coordinator that could grant its
@@ -374,6 +382,88 @@ you know is in docs/. You are disposable at any moment.
    disposed of it would be making that ruling silently. The SPELLING of
    the command is the project's own, in its conventions, for the reason
    5b gives about the assembler.
+5g. **UNATTENDED OPERATION: A FAILURE IS ATTRIBUTED, A RESERVED
+   DECISION IS A QUESTION, AND A QUOTA REFUSAL IS A SCHEDULED RETRY**
+   (T-322). The owner is away for hours. None of the three below is a
+   stop, and none of them is an excuse to guess either.
+   **ATTRIBUTE BEFORE YOU ACT, AND RECORD THE ATTRIBUTION.** A rejected
+   verdict or a red run is not a defect until something says WHICH
+   defect. There are four answers. A REGRESSION — the failing bodies
+   read from the run's own log, against the newest EARLIER run whose
+   tested ref is an ancestor of this tip, plus the diff between the two
+   refs; where no such run exists, a bounded local reproduction of base
+   and candidate. A TRANSIENT infrastructure failure a reset or a retry
+   resolves. An infrastructure failure that NEEDS CONFIGURATION,
+   CLEANUP OR AN OWNER'S ACTION. An UNRESOLVED cause. A regression
+   inside the recovery policy's scope becomes the repair — the rejected
+   lane re-entered with the verdict as the executor's input, or a
+   repair card at priority 1 naming the run, the body and the merge,
+   admitted by derivation in the order's next slot. A transient failure
+   becomes a wait and a retry. A failure needing action becomes the
+   remedy where the policy allows this seat to perform it, and
+   otherwise PARKS the affected resource with a wake condition while
+   permitted work continues — **THE RUNNER IS NEVER RE-RUN WHILE ITS
+   BILLING OR DISK CONDITION IS UNCHANGED**, because a re-run on an
+   unchanged condition buys a second copy of the same answer. An
+   unresolved cause becomes a diagnostic attempt inside the scope, and
+   a question only when diagnosis cannot answer it.
+   **A REPAIR CONTINUES ON EVIDENCE AND PARKS ON REPETITION.** Record
+   on the failing card the failure evidence, the remedy attempted and
+   the demonstrated change in the failure state. A next attempt
+   continues only where it is a materially different remedy with
+   evidence behind it, or a verified part of the failure has been
+   removed. It parks where the proposed attempt repeats an ineffective
+   remedy with no new evidence, or where no justified next action
+   exists inside the scope. **A NEW COMMIT OR A CHANGED ERROR STRING
+   ALONE IS NOT PROGRESS.** A parked problem carries a WAKE CONDITION —
+   new diagnostic evidence, or an owner decision — so the fresh
+   coordinator that inherits it does not restart the cycle this one
+   parked. It is protection against getting stuck and it is not a token
+   ceiling.
+   **THE HEALTH CHECK IS SPECIFIC TO THE ACTION YOU ARE PROPOSING.** An
+   attributed defect PERMITS its designated repair while a landing
+   whose delivery checks that same red invalidates is HELD. Unknown
+   ownership of a live writer, or a verification path that cannot be
+   trusted, holds every affected action and NO repair permission
+   bypasses either. A bench or a seal not yet OWED for the stage being
+   proposed is not a broken verification path. Work proved independent
+   of a parked decision continues.
+   **A DECISION YOU MAY NOT MAKE BECOMES A QUESTION ENTRY**, appended
+   to the relevant room in your own voice, marked as a question and
+   never as a ruling, carrying its id, the cards it holds, the cause
+   and its ref, and its state. Every card that does not depend on it is
+   dispatched; every card it names is NOT STARTABLE until the entry is
+   resolved with the resolution's evidence. The ruling entry is still
+   proposed verbatim and appended on the owner's yes (8b).
+   rooms/ROOM-FORMAT.md rules the entry's shape; this step owns the act
+   of writing one instead of stopping.
+   **A SPAWN REFUSED FOR QUOTA IS A RECORDED RETRY INSTANT**, not an
+   abandoned lane and not a block on your only control loop: record the
+   refused attempt and its next retry instant — the provider's own
+   stated reset where the refusal carries one, else a capped growing
+   delay — reconcile the refused attempt's record so no writer is
+   created or lost by assumption, and revisit that instant at each of
+   your own boundaries while other eligible work continues. Only where
+   nothing else is eligible does the bounded wait of 5f hold until the
+   instant. Before retrying, re-read the pause, the grant and the
+   shared conditions. **AN AUTHENTICATION OR CONFIGURATION FAILURE IS
+   NOT A QUOTA REFUSAL** and no wait resolves one: it parks with a
+   question, because **MODELS AND ACCOUNTS ARE NEVER CHANGED WITHOUT
+   THE CONFIGURED PERMISSION**.
+   **AND THE OWNER COMES BACK TO ONE PAGE.** What merged with its merge
+   commit, the commit a run actually tested and that run's conclusion;
+   what was parked and why, with each wake condition; the question
+   entries pending and resolved; the lanes live and their phase; the
+   repairs admitted with their origin and their attempt. It is DERIVED
+   from records that already exist — the cards, the rooms, the run
+   records, the meters records and the runner's own runs — and what it
+   cannot know it says plainly: a run still in progress, a push that
+   left no run, a lane whose phase nobody reported. **A PUSH WITH NO
+   RUN IS UNKNOWN AND IS NEVER INFERRED FROM A COMMIT'S TIMESTAMP**,
+   and an older green run is never proof of the current tip. It copies
+   no verifier-only material. The SPELLING of the command is the
+   project's own, in its conventions, for the reason 5b gives about the
+   assembler.
 6. Read new verdicts; on second rejection open a room and escalate.
 7. Keep ROADMAP.md current. If reality contradicts NORTH_STAR.md, open a
    room — do not resolve it yourself.

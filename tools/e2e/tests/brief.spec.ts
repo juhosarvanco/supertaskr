@@ -24,6 +24,24 @@ import { conventionsText, liveTaskCards, taskStatuses, trackedFiles } from "../s
 import * as parserPure from "../../../lib/parser/dist/pure.js";
 import {
   AdmissionFinding,
+  REPAIR_LEDGER_HEADING,
+  RETRY_CAP_MS,
+  UnattendedFinding,
+  attribute,
+  classifyRefusal,
+  mergeEvidence,
+  parentRun,
+  progressRuling,
+  questionEntry,
+  questionHolds,
+  readQuestions,
+  assembleReturnBrief,
+  defaultRunnerIo,
+  remedyDigest,
+  repairEntry,
+  repairLedger,
+  retryInstant,
+  sharedHealth,
   BASE_TOKEN,
   DERIVERS,
   admit,
@@ -34,6 +52,7 @@ import {
   grantState,
   DISPATCH_STEPS,
   AwaitFinding,
+  defaultAwaitIo,
   DispatchLaneFinding,
   EXIT,
   ModelFinding,
@@ -9306,4 +9325,877 @@ test("THE CONVENTIONS CARRY THE ADMISSION RULE ONCE, AT THE LOOP'S OWN SECTION",
   ]) {
     expect(section, `the loop's section does not carry: ${owed}`).toContain(owed);
   }
+});
+
+/* ════════════════════════════════════════════════════════════════════
+ * THE UNATTENDED LOOP (T-322) — attribution before action, a repair that
+ * continues on evidence and parks on repetition, a health check specific
+ * to the action, a quota refusal as a scheduled retry, a question entry
+ * that holds only what it names, and the return brief.
+ * ════════════════════════════════════════════════════════════════════ */
+
+/** A playwright-shaped failing log, which is what this project's own e2e leg produces. */
+function failingLog(...bodies: string[]): string {
+  return [
+    "  Running 890 tests using 1 worker",
+    ...bodies.map((b, i) => `  ${i + 1}) [chromium] › tests/a.spec.ts:1:1 › ${b} ─────────`),
+    `  ${bodies.length} failed`,
+  ].join("\n");
+}
+
+const GREEN_PARENT = {
+  databaseId: 100,
+  headSha: "aaaaaaa",
+  conclusion: "success",
+  createdAt: "2026-09-14T08:00:00Z",
+};
+
+test("T-322 C1 — A RED IS ATTRIBUTED BEFORE ANYTHING ACTS ON IT, and the four answers route four different ways", () => {
+  // THE CARD'S FIRST CRITERION, over the four arrangements it names by
+  // hand: a missing parent run, a transient failure, a billing block and
+  // an attributed regression. They are one body because the SUBJECT is
+  // that they are told apart — four bodies that each saw one arrangement
+  // could all be satisfied by a reader that answered the same way every
+  // time.
+  //
+  // KILLED BY: a reader that starts from the failing bodies rather than
+  // from the infrastructure signatures (the billing arm gets a repair
+  // filed against code that is fine); one that treats a billing block as
+  // transient (the runner is re-run for ever on an unchanged condition);
+  // one that calls a red with no baseline a regression; and one that
+  // reads the baseline off the newest run rather than off the newest
+  // EARLIER ANCESTOR.
+  const tip = { sha: "bbbbbbb", at: "2026-09-14T09:00:00Z" };
+  const ancestor = (sha: string) => sha === "aaaaaaa";
+
+  // ONE — AN ATTRIBUTED REGRESSION. A body fails here and did not at the
+  // green baseline, so the red IS the diff's.
+  const regression = attribute({
+    log: failingLog("THE ARM READS THE GRANT", "A SECOND BODY"),
+    runs: [GREEN_PARENT],
+    tip,
+    isAncestor: ancestor,
+    recovery: "repairs",
+  });
+  expect(regression.class).toBe("regression");
+  expect(regression.action).toBe("repair");
+  expect(regression.bodies).toEqual(["THE ARM READS THE GRANT", "A SECOND BODY"]);
+  expect(regression.range, "the diff between the two refs is not named").toBe("aaaaaaa..bbbbbbb");
+  expect(regression.parent?.databaseId).toBe(100);
+
+  // TWO — A MISSING PARENT RUN. Same log, and NO earlier run tested an
+  // ancestor. The honest answer is that there is nothing to compare
+  // against, so it is diagnosed and the local reproduction is the act.
+  const noParent = attribute({
+    log: failingLog("THE ARM READS THE GRANT"),
+    runs: [{ ...GREEN_PARENT, headSha: "zzzzzzz" }],
+    tip,
+    isAncestor: ancestor,
+    recovery: "repairs",
+  });
+  expect(noParent.class, "a red with no baseline was attributed to the diff anyway").toBe("unresolved");
+  expect(noParent.action).toBe("diagnose");
+  expect(noParent.baseline).toContain("no earlier run tested an ancestor of this tip");
+  // ...AND THE BOUNDED LOCAL REPRODUCTION IS THE BASELINE WHERE IT IS
+  // SUPPLIED, which is the card's own answer for this arm.
+  const reproduced = attribute({
+    log: failingLog("THE ARM READS THE GRANT"),
+    runs: [],
+    tip,
+    isAncestor: () => false,
+    reproduction: { base: [], candidate: ["THE ARM READS THE GRANT"] },
+    recovery: "repairs",
+  });
+  expect(reproduced.class).toBe("regression");
+  expect(reproduced.baseline).toContain("bounded local reproduction");
+
+  // THREE — A TRANSIENT INFRASTRUCTURE FAILURE. A wait and a retry, and
+  // NO repair card: there is no defect in the tree to repair.
+  const transient = attribute({
+    log: "The runner has lost communication with the server. Verify the machine is running.",
+    runs: [GREEN_PARENT],
+    tip,
+    isAncestor: ancestor,
+  });
+  expect(transient.class).toBe("transient");
+  expect(transient.action).toBe("wait-and-retry");
+  expect(transient.bodies, "a transient failure named bodies to repair").toEqual([]);
+
+  // FOUR — A BILLING BLOCK. It needs an owner's action, so it PARKS with
+  // a wake and CI is never re-run while the condition is unchanged. The
+  // log also carries a failing body, which is exactly the trap: every job
+  // "fails" when the account is blocked.
+  const billing = attribute({
+    log: `${failingLog("A BODY THAT NEVER RAN")}\nThe job was not started because the account has been suspended for billing.`,
+    runs: [GREEN_PARENT],
+    tip,
+    isAncestor: ancestor,
+    recovery: "repairs",
+  });
+  expect(billing.class, "a billing block was read as a regression in the tree").toBe("needs-action");
+  expect(billing.action).toBe("park");
+  expect(billing.wake).toBe("owner-decision");
+  expect(billing.why).toContain("never re-run while this condition is unchanged");
+  expect(billing.bodies, "a billing block named bodies to repair").toEqual([]);
+});
+
+test("T-322 C1 — THE BASELINE IS THE NEWEST EARLIER ANCESTOR RUN, and a body already failing there is NOT attributed to the merge", () => {
+  // THE ATTRIBUTION'S OWN ARITHMETIC, and the three words that carry it.
+  // NEWEST: an older green tells you less. EARLIER: a run started after
+  // this one is not a baseline for it. ANCESTOR: decided by the
+  // repository, because two branches' runs interleave in time and only
+  // one of them is this tip's history.
+  //
+  // KILLED BY: sorting the candidates the other way; dropping the
+  // earlier-than filter; dropping the ancestor predicate; and accepting a
+  // parent run that did not conclude success as a baseline, whose failing
+  // bodies this reader does not have.
+  const runs = [
+    { databaseId: 1, headSha: "old", conclusion: "success", createdAt: "2026-09-13T00:00:00Z" },
+    { databaseId: 2, headSha: "mid", conclusion: "success", createdAt: "2026-09-14T00:00:00Z" },
+    { databaseId: 3, headSha: "side", conclusion: "success", createdAt: "2026-09-14T08:00:00Z" },
+    { databaseId: 4, headSha: "later", conclusion: "success", createdAt: "2026-09-15T00:00:00Z" },
+  ];
+  const line = new Set(["old", "mid"]);
+  const parent = parentRun(runs, { sha: "tip", at: "2026-09-14T09:00:00Z" }, (s) => line.has(s));
+  expect(parent?.databaseId, "the baseline is not the newest EARLIER ANCESTOR run").toBe(2);
+
+  // AND A BODY ALREADY FAILING AT THE BASELINE IS NOT THIS MERGE'S. A
+  // reproduction supplies the baseline's own bodies, which is the only
+  // arrangement where the comparison has both sides.
+  const inherited = attribute({
+    log: failingLog("AN OLD RED", "A NEW RED"),
+    runs: [],
+    tip: { sha: "tip", at: "2026-09-14T09:00:00Z" },
+    isAncestor: () => false,
+    reproduction: { base: ["AN OLD RED"], candidate: ["AN OLD RED", "A NEW RED"] },
+    recovery: "repairs",
+  });
+  expect(inherited.class).toBe("regression");
+  expect(inherited.bodies, "a body already failing at the baseline was attributed to the merge").toEqual([
+    "A NEW RED",
+  ]);
+
+  // ...AND WHERE NOTHING WAS INTRODUCED, THE RED IS NOT THE MERGE'S AT
+  // ALL. This is the control for the line above: same shape, one body.
+  const none = attribute({
+    log: failingLog("AN OLD RED"),
+    runs: [],
+    tip: { sha: "tip", at: "2026-09-14T09:00:00Z" },
+    isAncestor: () => false,
+    reproduction: { base: ["AN OLD RED"], candidate: ["AN OLD RED"] },
+    recovery: "repairs",
+  });
+  expect(none.class).toBe("unresolved");
+  expect(none.action).toBe("diagnose");
+
+  // AND A RECOVERY POLICY THAT ADMITS NO DERIVED REPAIR TURNS AN
+  // ATTRIBUTED REGRESSION INTO A QUESTION rather than into a repair.
+  const noRecovery = attribute({
+    log: failingLog("A NEW RED"),
+    runs: [],
+    tip: { sha: "tip", at: "2026-09-14T09:00:00Z" },
+    isAncestor: () => false,
+    reproduction: { base: [], candidate: ["A NEW RED"] },
+    recovery: "none",
+  });
+  expect(noRecovery.class).toBe("regression");
+  expect(noRecovery.action, "a repair was admitted under a policy that allows none").toBe("question");
+});
+
+test("T-322 C2 — A REPAIR CONTINUES ON DEMONSTRATED PROGRESS AND PARKS ON A REPEATED INEFFECTIVE REMEDY, with a wake condition either way", () => {
+  // THE CARD'S SECOND CRITERION, pinned BOTH DIRECTIONS as it asks: the
+  // same named failing body with demonstrated partial progress CONTINUES,
+  // and repeated ineffective work with unchanged evidence PARKS.
+  //
+  // KILLED BY: a rule that counts attempts (a fourth different remedy
+  // with evidence would park); one that reads the REF or the error string
+  // as progress; one that never parks; and a park with no wake condition,
+  // which is the park a fresh coordinator restarts.
+  const ledgerText = (entries: string[]) => `## ${REPAIR_LEDGER_HEADING}\n\n${entries.join("\n\n")}\n`;
+  const unchanged = repairEntry({
+    at: "2026-09-14T12:00:00Z",
+    failure: "THE ARM READS THE GRANT",
+    ref: "run 100",
+    remedy: "widened the reader to accept the new field",
+    outcome: "unchanged",
+    removed: [],
+    evidence: "",
+  });
+  const partial = repairEntry({
+    at: "2026-09-14T13:00:00Z",
+    failure: "THE ARM READS THE GRANT",
+    ref: "run 101",
+    remedy: "pinned the oracle to the tracked set",
+    outcome: "partial",
+    removed: ["A SECOND BODY"],
+    evidence: "",
+  });
+  const history = repairLedger(ledgerText([unchanged]));
+  expect(history, "the ledger did not round-trip through its own reader").toHaveLength(1);
+  expect(history[0]?.outcome).toBe("unchanged");
+
+  // PARKS — the same remedy again, dressed in a new ref. **A NEW COMMIT
+  // OR A CHANGED ERROR STRING ALONE IS NOT PROGRESS**, and this is the
+  // arrangement that sentence is about.
+  const repeated = progressRuling(history, {
+    remedy: "widened the reader to accept the new field at 9f3c1aa",
+  });
+  expect(repeated.act, "repeating an ineffective remedy continued").toBe("park");
+  expect(repeated.wake, "a parked problem carries no wake condition").toBe("new-diagnostic-evidence");
+
+  // CONTINUES — a materially different remedy with evidence behind it.
+  const different = progressRuling(history, {
+    remedy: "pinned the oracle to the tracked set",
+    evidence: "the run's log names the oracle in every failing frame",
+  });
+  expect(different.act, "a materially different remedy with evidence parked").toBe("continue");
+
+  // CONTINUES — the SAME named failing body, where an earlier attempt
+  // removed a verified part of the failure. This is the criterion's own
+  // first direction and it does not need a new remedy to earn it.
+  const progressing = repairLedger(ledgerText([unchanged, partial]));
+  expect(
+    progressRuling(progressing, { remedy: "widened the reader to accept the new field" }).act,
+    "demonstrated partial progress did not continue the repair",
+  ).toBe("continue");
+
+  // PARKS — no justified next action inside the scope, which arrives as a
+  // proposal with no remedy at all.
+  const nothing = progressRuling(progressing, {});
+  expect(nothing.act).toBe("park");
+  expect(nothing.why).toContain("no justified next action inside the scope");
+
+  // AND THE REMEDY DIGEST IS WHAT MAKES "NOT PROGRESS" MECHANICAL: two
+  // spellings of one remedy that differ only in a sha and an instant are
+  // ONE remedy.
+  expect(remedyDigest("re-ran the suite at abc1234 on 2026-09-14")).toBe(
+    remedyDigest("re-ran the suite at def5678 on 2026-09-15"),
+  );
+  expect(remedyDigest("re-ran the suite")).not.toBe(remedyDigest("pinned the oracle"));
+});
+
+test("T-322 C1 — THE ATTRIBUTION IS RECORDED WITH THE REMEDY IT JUSTIFIED, and the loop's own ceremony may write that ledger onto an approved card without costing it its approval", () => {
+  // THE FIRST CRITERION'S SECOND HALF ("SHALL record the attribution")
+  // meeting T-324's blob binding, which is where it would otherwise have
+  // broken: a `## Repair ledger` appended to an approved card is a line
+  // outside the two sections the admission calls mechanical, so the
+  // record the progress rule requires would have refused that card's
+  // next admission as ADMISSION_CARD_BLOB_MOVED.
+  //
+  // KILLED BY: an entry that drops the attribution; a free-text
+  // attribution class, which nobody can act on differently; and a
+  // `MECHANICAL_SECTIONS` that does not carry the ledger heading — the
+  // control below is the same card with the same append under a heading
+  // the ceremony does NOT write, which must still refuse.
+  const entry = repairEntry({
+    at: "2026-09-14T12:00:00Z",
+    failure: "A NAMED BODY",
+    ref: "run 4242",
+    remedy: "pinned the oracle to the tracked set",
+    outcome: "partial",
+    removed: ["A SECOND BODY"],
+    evidence: "the run's log names the oracle in every failing frame",
+    attributed: "regression",
+  });
+  expect(entry, "the attribution is not recorded beside the remedy").toContain("attributed: regression");
+  const [read] = repairLedger(`## ${REPAIR_LEDGER_HEADING}\n\n${entry}\n`);
+  expect(read?.attributed, "the attribution did not round-trip through the ledger reader").toBe(
+    "regression",
+  );
+  expect(
+    () =>
+      repairEntry({
+        at: "a",
+        failure: "b",
+        ref: "c",
+        remedy: "d",
+        outcome: "unchanged",
+        removed: [],
+        attributed: "probably the merge",
+      } as never),
+    "a free-text attribution class was accepted",
+  ).toThrow(UnattendedFinding);
+
+  // AND THE APPEND IS MECHANICAL, WHICH IS WHAT KEEPS THE CARD THE ONE
+  // THE OWNER APPROVED. The approved text and the current text differ by
+  // the ledger section and by nothing else.
+  const approved = `${DRIFT_CARD}`;
+  const withLedger = `${approved}\n## ${REPAIR_LEDGER_HEADING}\n\n${entry}\n`;
+  const drift = cardDrift(approved, withLedger);
+  expect(drift.mechanical, "a repair ledger append cost the card its approval").toBe(true);
+  expect(drift.drift.join(" ")).toContain(REPAIR_LEDGER_HEADING);
+
+  // THE POSITIVE CONTROL, WHERE THE ARRANGEMENT IS ABSENT: the same
+  // append under a heading the ceremony does not write is SUBSTANTIVE,
+  // so the enumeration is still closed rather than widened into a hole.
+  const elsewhere = cardDrift(approved, `${approved}\n## A section nobody writes\n\n${entry}\n`);
+  expect(elsewhere.mechanical, "the control: any new section now passes as mechanical").toBe(false);
+});
+
+test("T-322 C3 — THE SHARED-HEALTH CHECK IS SPECIFIC TO THE PROPOSED ACTION: a repair allowed on an attributed red base, a feature held on that same red, an independent card continuing past a parked question", () => {
+  // THE CARD'S THIRD CRITERION, over the three arrangements it names.
+  // They share ONE state and differ only in the ACTION, which is the
+  // whole property: a check that answered about the world would give the
+  // same verdict to all three.
+  //
+  // KILLED BY: a check that holds everything on a red; one that permits
+  // everything; one that lets a repair permission bypass an unknown live
+  // writer or an untrusted seal; and one that treats a bench not yet OWED
+  // as a broken verification path.
+  const red = {
+    ci: { known: true, green: false, attributed: { card: "T-901", bodies: ["A NAMED BODY"] } },
+    verification: { trusted: true, owed: false, why: "no bench is owed at this stage" },
+    writers: { unknown: [] as string[] },
+  };
+  const repair = sharedHealth(red, { kind: "repair", card: "T-902", repairs: "T-901" });
+  expect(repair.permitted, "the designated repair of the attributed defect was held").toBe(true);
+
+  const landing = sharedHealth(red, {
+    kind: "landing",
+    card: "T-903",
+    checks: ["A NAMED BODY", "ANOTHER"],
+  });
+  expect(landing.permitted, "a landing the red invalidates was allowed").toBe(false);
+  expect(landing.holds.join(" ")).toContain("A NAMED BODY");
+
+  const independent = sharedHealth(red, {
+    kind: "independent",
+    card: "T-904",
+    dependsOn: [],
+    pendingQuestions: ["Q-001"],
+  });
+  expect(independent.permitted, "work independent of the parked question was held").toBe(true);
+  expect(
+    sharedHealth(red, {
+      kind: "independent",
+      card: "T-905",
+      dependsOn: ["Q-001"],
+      pendingQuestions: ["Q-001"],
+    }).permitted,
+    "a card depending on the pending question was admitted",
+  ).toBe(false);
+
+  // A REPAIR FOR THE WRONG DEFECT IS NOT THE REPAIR THIS RED PERMITS.
+  expect(
+    sharedHealth(red, { kind: "repair", card: "T-906", repairs: "T-999" }).permitted,
+    "a red permitted a repair it is not specific to",
+  ).toBe(false);
+
+  // THE TWO HARD HOLDS, AND NO REPAIR PERMISSION BYPASSES EITHER.
+  const uncertainWriter = sharedHealth(
+    { ...red, writers: { unknown: ["/a/lane"] } },
+    { kind: "repair", card: "T-902", repairs: "T-901" },
+  );
+  expect(uncertainWriter.permitted, "a repair permission bypassed an unknown live writer").toBe(false);
+  const untrusted = sharedHealth(
+    { ...red, verification: { trusted: false, owed: true, why: "the seal does not answer" } },
+    { kind: "repair", card: "T-902", repairs: "T-901" },
+  );
+  expect(untrusted.permitted, "a repair permission bypassed an untrusted verification path").toBe(false);
+
+  // AND A BENCH NOT YET OWED IS NOT A BROKEN PATH — the same untrusted
+  // flag with `owed: false`, which is the distinction a blunter check
+  // gets wrong in the direction that looks safe.
+  expect(
+    sharedHealth(
+      { ...red, verification: { trusted: false, owed: false, why: "no bench is owed yet" } },
+      { kind: "repair", card: "T-902", repairs: "T-901" },
+    ).permitted,
+    "a verification path not yet owed was treated as broken",
+  ).toBe(true);
+
+  // AND AN UNATTRIBUTED RED HOLDS BOTH, because the attribution is the
+  // next act rather than the permission.
+  const unattributed = { ...red, ci: { known: true, green: false, attributed: null } };
+  expect(sharedHealth(unattributed, { kind: "repair", card: "T-902", repairs: "T-901" }).permitted).toBe(
+    false,
+  );
+  expect(sharedHealth(unattributed, { kind: "landing", card: "T-903", checks: [] }).permitted).toBe(false);
+});
+
+test("T-322 C4 — THE WAIT VERB IS EXTENDED WITH A WAIT-UNTIL-INSTANT FORM, driven by an INJECTED clock, and the ceiling still bounds it", () => {
+  // THE CARD'S FOURTH CRITERION's wait half. It is the SAME verb — the
+  // same loop, the same interval, the same ceiling report — with a fourth
+  // fact, and the seam is `defaultAwaitIo`'s clock so the SHIPPED probe
+  // is what a body drives rather than the body's own arithmetic.
+  //
+  // KILLED BY: a second wait implementation; a plan that drops the
+  // ceiling for the instant arm (a provider's wrong reset then hangs the
+  // loop); a probe that reads the real clock; and an instant that is
+  // accepted unparsed.
+  expect(awaitPlan({ until: "2026-09-14T13:00:00Z", ceiling: "600" }).kind).toBe("instant");
+  for (const [why, opts] of [
+    ["an unparseable instant", { until: "tomorrow-ish", ceiling: "1" }],
+    ["an instant with no ceiling", { until: "2026-09-14T13:00:00Z" }],
+    ["two facts at once", { until: "2026-09-14T13:00:00Z", marker: "/tmp/x", ceiling: "1" }],
+    ["three facts at once", { until: "2026-09-14T13:00:00Z", pid: "42", marker: "/x", ceiling: "1" }],
+  ] as Array<[string, Parameters<typeof awaitPlan>[0]]>) {
+    expect(() => awaitPlan(opts), `${why} was accepted`).toThrow(AwaitFinding);
+  }
+});
+
+test("T-322 C4 — THE INSTANT ARRIVES AND THE WAIT ENDS, and a ceiling short of the instant is REPORTED rather than hung on", async () => {
+  // THE RUNTIME HALF, on a fake clock: no sleep, no paid probe, and the
+  // arithmetic under test is the SHIPPED `happened`, not this body's.
+  //
+  // KILLED BY: a probe that never answers true; one that answers true
+  // immediately; and a ceiling that stops bounding the instant arm, which
+  // is the hang a provider's wrong reset would cause.
+  let clock = Date.parse("2026-09-14T12:59:59Z");
+  const io = defaultAwaitIo(() => clock);
+  io.sleep = async (ms: number) => {
+    clock += ms;
+  };
+  const arrived = await runAwait(awaitPlan({ until: "2026-09-14T13:00:00Z", ceiling: "600" }), io);
+  expect(arrived.satisfied, "the instant never arrived").toBe(true);
+  expect(arrived.waitedMs, "the wait did not end at the instant").toBe(1000);
+  expect(arrived.polls, "the fact was not asked about before the first sleep").toBeGreaterThan(1);
+
+  let slow = Date.parse("2026-09-14T12:00:00Z");
+  const io2 = defaultAwaitIo(() => slow);
+  io2.sleep = async (ms: number) => {
+    slow += ms;
+  };
+  const capped = await runAwait(awaitPlan({ until: "2026-09-14T13:00:00Z", ceiling: "2" }), io2);
+  expect(capped.ceiling, "the ceiling stopped bounding the instant arm").toBe(true);
+  expect(capped.waitedMs).toBe(2000);
+  expect(capped.why).toContain("THE CEILING WAS REACHED AND THIS IS THE REPORT");
+});
+
+test("T-322 C4 — THE REFUSAL IS CLASSIFIED AND THE RETRY INSTANT IS THE PROVIDER'S OWN WHERE IT NAMES ONE", () => {
+  // THE CLASSIFICATION AND THE ARITHMETIC, apart from the record that
+  // holds them (run-record.spec.ts drives that end). The clock here is an
+  // ARGUMENT rather than a default, which is what makes the delay
+  // assertable at all.
+  //
+  // KILLED BY: a classifier that reads an authentication failure as a
+  // quota refusal; one that ignores a stated reset; a delay that does not
+  // grow; a delay that grows past the cap; and a default clock, which
+  // would make every delay assertion a moving target.
+  expect(classifyRefusal("429 rate limit exceeded").kind).toBe("quota");
+  expect(classifyRefusal("401 Unauthorized — invalid api key").kind).toBe("authentication");
+  expect(classifyRefusal("unknown model claude-opus-99").kind).toBe("configuration");
+  expect(classifyRefusal("the executor stamped the card and stopped").kind).toBe("none");
+  const stated = classifyRefusal("rate limit; resets at 2026-09-14T13:30:00Z");
+  expect(stated.resetAt).toBe("2026-09-14T13:30:00Z");
+  const now = Date.parse("2026-09-14T12:00:00Z");
+  expect(retryInstant(stated, 1, now).source).toContain("the provider's own stated reset instant");
+  expect(retryInstant(stated, 1, now).at).toBe("2026-09-14T13:30:00.000Z");
+  const bare = classifyRefusal("429 too many requests");
+  expect([1, 2, 3, 99].map((n) => retryInstant(bare, n, now).delayMs)).toEqual([
+    60_000, 120_000, 240_000, RETRY_CAP_MS,
+  ]);
+  expect(() => retryInstant(bare, 1, Number.NaN), "a clock this caller did not supply was used").toThrow(
+    UnattendedFinding,
+  );
+});
+
+test("T-322 C5 — A QUESTION ENTRY IS MARKED AS A QUESTION AND ROUND-TRIPS THROUGH ITS OWN READER, and every shape that would make it a ruling is refused", () => {
+  // THE CARD'S FIFTH CRITERION, the entry half. The renderer and the
+  // reader are ONE pair — the dispatch order and the lane cut both read
+  // what this writes — so the round trip is the property rather than the
+  // rendering.
+  //
+  // KILLED BY: an entry that drops the marker; an id a reader cannot tell
+  // from prose; an entry that names no cards; and a resolution with no
+  // evidence behind it, which is the seat settling what it does not hold.
+  const entry = questionEntry({
+    id: "Q-001",
+    model: "a-model",
+    session: "a-session",
+    at: "2026-09-14",
+    cards: ["T-901", "T-902"],
+    cause: "whether the express path admits a guard-class fence is a product ruling",
+    ref: "docs/tasks/T-901-a-card.md",
+  });
+  expect(entry, "the entry does not mark itself a question").toContain("QUESTION — not a ruling");
+  const [read] = readQuestions([{ path: "docs/rooms/a.md", content: entry }]);
+  expect(read?.id).toBe("Q-001");
+  expect(read?.state).toBe("pending");
+  expect(read?.cards).toEqual(["T-901", "T-902"]);
+  expect(read?.cause).toContain("product ruling");
+  expect(read?.ref).toBe("docs/tasks/T-901-a-card.md");
+
+  const resolved = questionEntry({
+    id: "Q-001",
+    model: "a-model",
+    session: "a-session",
+    at: "2026-09-15",
+    cards: ["T-901"],
+    cause: "whether the express path admits a guard-class fence",
+    ref: "docs/tasks/T-901-a-card.md",
+    state: "resolved",
+    resolution: "the owner ruled on 2026-09-15, recorded in docs/decisions/026",
+  });
+  const [readResolved] = readQuestions([{ path: "docs/rooms/a.md", content: resolved }]);
+  expect(readResolved?.state).toBe("resolved");
+  expect(readResolved?.resolution).toContain("docs/decisions/026");
+
+  // AND A PENDING ENTRY HOLDS ITS CARDS WHILE A RESOLVED ONE HOLDS NONE
+  // — one derivation, which is what keeps the display and the refusal
+  // from ever disagreeing.
+  expect([...questionHolds([read!]).keys()]).toEqual(["T-901", "T-902"]);
+  expect([...questionHolds([readResolved!]).keys()]).toEqual([]);
+
+  const base = {
+    id: "Q-001",
+    model: "m",
+    session: "s",
+    at: "2026-09-14",
+    cards: ["T-901"],
+    cause: "c",
+    ref: "r",
+  };
+  for (const [why, over] of [
+    ["an id a reader cannot tell from prose", { id: "question one" }],
+    ["an entry naming no cards", { cards: [] }],
+    ["a state outside the closed set", { state: "maybe" }],
+    ["a resolution with no evidence", { state: "resolved" }],
+  ] as Array<[string, Record<string, unknown>]>) {
+    expect(() => questionEntry({ ...base, ...over } as never), `${why} was accepted`).toThrow(
+      UnattendedFinding,
+    );
+  }
+});
+
+/** A second fixture card, independent of the question and of the first one's fence. */
+const INDEPENDENT_CARD_ID = "T-902";
+const INDEPENDENT_CARD_FILE = `docs/tasks/${INDEPENDENT_CARD_ID}-an-independent-fixture-card.md`;
+const INDEPENDENT_CARD = [
+  "---",
+  `id: ${INDEPENDENT_CARD_ID}`,
+  "title: AN INDEPENDENT FIXTURE CARD — it depends on no question and shares no path",
+  "feature: F-06",
+  "milestone: 4",
+  "priority: 4",
+  "size: S",
+  "status: planned",
+  "blocked_by: []",
+  "touches: [docs/NORTH_STAR.md]",
+  "builder:",
+  "verifier:",
+  "built_by:",
+  "verified_by:",
+  "review: default",
+  "---",
+  "",
+  "The fixture's independent card.",
+  "",
+  "## Acceptance criteria",
+  "",
+  "- THE card SHALL exist.",
+  "",
+].join("\n");
+
+const FIXTURE_ROOM = "docs/rooms/an-unattended-question.md";
+
+/** A question entry in the fixture's room, rendered by the shipped writer. */
+function fixtureQuestion(state: string, resolution?: string): string {
+  return [
+    "---",
+    "type: consultation",
+    "status: open",
+    "max_rounds: 3",
+    "---",
+    "",
+    "# Room: a fixture room",
+    "",
+    questionEntry({
+      id: "Q-001",
+      model: "a-model",
+      session: "a-session",
+      at: "2026-09-14",
+      cards: [FIXTURE_CARD_ID],
+      cause: "whether this fixture card may be built at all is a product ruling",
+      ref: FIXTURE_CARD_FILE,
+      ...(resolution === undefined ? { state } : { state, resolution }),
+    }),
+  ].join("\n");
+}
+
+/**
+ * A merge commit in a fixture, at a WRITTEN date. `git merge` takes its
+ * dates from the environment exactly as `git commit` does, and a fixture
+ * whose window edges matter cannot have them decided by the clock the
+ * suite happens to run on.
+ */
+function fixtureMerge(root: string, branch: string, message: string, at: string): string {
+  execFileSync(
+    "git",
+    ["-C", root, ...NO_BACKGROUND_MAINTENANCE, "merge", "--quiet", "--no-ff", "-m", message, branch],
+    {
+      encoding: "utf8",
+      maxBuffer: 64 * 1024 * 1024,
+      env: { ...FIXTURE_GIT_ENV, GIT_AUTHOR_DATE: at, GIT_COMMITTER_DATE: at },
+    },
+  );
+  return fixtureGit(root, ["rev-parse", "HEAD"]).trim();
+}
+
+/** The refusal a lane-cut plan answers with, as an UnattendedFinding. */
+function questionRefusal(root: string, card: string, scratch: string): { code: string; message: string } | null {
+  try {
+    dispatchLanePlan(context({ root, taskId: card }), { taskId: card, slug: FIXTURE_SLUG, scratch });
+    return null;
+  } catch (err) {
+    if (err instanceof UnattendedFinding) return { code: String(err.code), message: err.message };
+    throw err;
+  }
+}
+
+test("T-322 C6 — ONE END-TO-END FIXTURE: a question parked, its dependent card REFUSED at the cut, an independent one admitted, the question resolved by an authorized entry, and the same state and the same brief recovered in a FRESH PROCESS", async () => {
+  // THE CARD'S SIXTH CRITERION, and it is ONE fixture whose stages are
+  // asserted IN SEQUENCE and then recovered in a fresh process — which is
+  // the whole point: a loop whose state lives in a session is a loop that
+  // dies with the session, and the recovery is what proves it does not.
+  //
+  // THE TWO RUNNER ARRANGEMENTS THE CRITERION NAMES BY HAND ARE BOTH
+  // HERE: a merged commit whose run FINISHED AFTER the instant (the owner
+  // left while it was in flight and its conclusion arrived in their
+  // absence), and one push with NO RUN at all.
+  //
+  // KILLED BY: a cut that merely DISPLAYS the question rather than
+  // refusing by it; a hold that catches the independent card too; a
+  // resolved question that keeps holding; a brief that remembers state
+  // across the process boundary rather than deriving it; a push with no
+  // run reported as green; and an older run borrowed as proof of a newer
+  // commit.
+  const fx = ritualFixture("unattended-end-to-end");
+  try {
+    // ── STAGE 1: the fixture's own history, with the two arrangements ──
+    writeFileSync(path.join(fx.root, INDEPENDENT_CARD_FILE), INDEPENDENT_CARD);
+    mkdirSync(path.join(fx.root, "docs", "rooms"), { recursive: true });
+    writeFileSync(path.join(fx.root, FIXTURE_ROOM), fixtureQuestion("pending"));
+    fixtureGit(fx.root, ["add", "-A"]);
+    fixtureCommit(fx.root, "the question and the independent card", "2026-09-14T09:00:00Z");
+    // A REAL MERGE COMMIT, because the return brief reads the first-parent
+    // line's PARENT COUNT rather than a subject that opens with a word.
+    fixtureGit(fx.root, ["checkout", "--quiet", "-b", "a-side-branch"]);
+    writeFileSync(path.join(fx.root, "side.txt"), "a side change\n");
+    fixtureGit(fx.root, ["add", "-A"]);
+    fixtureCommit(fx.root, "a side commit", "2026-09-14T09:30:00Z");
+    fixtureGit(fx.root, ["checkout", "--quiet", "main"]);
+    const coveredMerge = fixtureMerge(
+      fx.root,
+      "a-side-branch",
+      "Merge T-901 (the covered one)",
+      "2026-09-14T09:45:00Z",
+    );
+    fixtureCommit(fx.root, "Checkpoint: after the covered merge", "2026-09-14T10:00:00Z", true);
+    const coveredTip = fixtureGit(fx.root, ["rev-parse", "HEAD"]).trim();
+    // AND A SECOND MERGE WITH NO RUN AT ALL.
+    fixtureGit(fx.root, ["checkout", "--quiet", "-b", "a-second-branch"]);
+    writeFileSync(path.join(fx.root, "second.txt"), "a second change\n");
+    fixtureGit(fx.root, ["add", "-A"]);
+    fixtureCommit(fx.root, "a second side commit", "2026-09-14T11:00:00Z");
+    fixtureGit(fx.root, ["checkout", "--quiet", "main"]);
+    // AND THIS ONE IS INSIDE THE WINDOW BY ITS OWN DATE, so it is
+    // reported for being a merge the owner missed rather than for having
+    // a run — which is the arrangement the criterion names.
+    const unrunMerge = fixtureMerge(
+      fx.root,
+      "a-second-branch",
+      "Merge T-902 (the unrun one)",
+      "2026-09-14T13:00:00Z",
+    );
+
+    // THE RUNNER'S ANSWER, REPLAYED: one run at the covered tip, created
+    // AFTER the instant the owner stepped away, and nothing for the
+    // second merge.
+    const runsFile = path.join(fx.dir, "runs.json");
+    writeFileSync(
+      runsFile,
+      JSON.stringify([
+        {
+          databaseId: 4242,
+          headSha: coveredTip,
+          conclusion: "success",
+          createdAt: "2026-09-14T12:30:00Z",
+        },
+      ]),
+    );
+    const SINCE = "2026-09-14T12:00:00Z";
+
+    // ── STAGE 2: the dependent card is REFUSED at the CUT ─────────────
+    const refused = questionRefusal(fx.root, FIXTURE_CARD_ID, fx.scratch);
+    expect(refused?.code, "the pending question did not refuse the dependent card at the cut").toBe(
+      "UNATTENDED_QUESTION_PENDING",
+    );
+    expect(refused?.message).toContain("Q-001");
+    expect(refused?.message).toContain(FIXTURE_ROOM);
+
+    // ── STAGE 3: the INDEPENDENT card is admitted ─────────────────────
+    expect(
+      questionRefusal(fx.root, INDEPENDENT_CARD_ID, fx.scratch),
+      "a card the question does not name was refused too",
+    ).toBe(null);
+
+    // ── STAGE 4: the question is RESOLVED by an authorized entry ──────
+    writeFileSync(
+      path.join(fx.root, FIXTURE_ROOM),
+      fixtureQuestion("resolved", "the owner ruled on 2026-09-15, recorded in docs/decisions/026"),
+    );
+    fixtureGit(fx.root, ["add", "-A"]);
+    fixtureCommit(fx.root, "the question resolved", "2026-09-14T13:00:00Z");
+    expect(
+      questionRefusal(fx.root, FIXTURE_CARD_ID, fx.scratch),
+      "a RESOLVED question still refused the card at the cut",
+    ).toBe(null);
+
+    // ── STAGE 5: the brief, derived in this process ───────────────────
+    const ctx = context({ root: fx.root });
+    const io = defaultRunnerIo();
+    const input = assembleReturnBrief(ctx, {
+      since: SINCE,
+      io,
+      runs: JSON.parse(readFileSync(runsFile, "utf8")),
+      records: [],
+    });
+    const rows = new Map(input.merges.map((m) => [m.sha, m]));
+    expect(rows.get(coveredMerge)?.conclusion, "the covered merge lost its conclusion").toBe("success");
+    expect(rows.get(coveredMerge)?.tested, "the run's tested sha is not the one it tested").toBe(coveredTip);
+    expect(
+      rows.get(coveredMerge)?.evidence,
+      "a merge older than the instant whose run finished after it is not reported as such",
+    ).toContain("FINISHED AFTER the instant");
+    expect(rows.get(unrunMerge)?.conclusion, "a push with no run was given a conclusion").toBe("unknown");
+    expect(rows.get(unrunMerge)?.evidence).toContain("left NO run");
+    expect(
+      input.unknowns.join(" "),
+      "the brief did not say plainly that a push left no run",
+    ).toContain("left NO run on the runner");
+    expect(input.questions.map((q) => `${q.id} ${q.state}`)).toEqual(["Q-001 resolved"]);
+
+    // ── STAGE 6: THE SAME STATE AND THE SAME BRIEF IN A FRESH PROCESS ─
+    // Nothing above is carried across: a new node, a new read of the
+    // cards, the room, the records and the replayed runs.
+    const fresh = spawnSync(
+      process.execPath,
+      [CLI, "--since", SINCE, "--root", fx.root],
+      {
+        encoding: "utf8",
+        maxBuffer: 64 * 1024 * 1024,
+        env: { ...process.env, SUPERTASKR_RUNNER_RUNS: runsFile, SUPERTASKR_RUNNER_LOGS: fx.dir },
+      },
+    );
+    expect(fresh.status, `the fresh process failed: ${fresh.stderr}`).toBe(0);
+    const out = fresh.stdout;
+    expect(out, "the fresh process lost the covered merge's conclusion").toContain(
+      `conclusion success — run 4242 FINISHED AFTER the instant`,
+    );
+    expect(out, "the fresh process lost the unrun push").toContain(`${unrunMerge} at 2026-09-14`);
+    expect(out).toContain("left NO run");
+    expect(out, "the fresh process lost the resolved question").toContain("Q-001 (resolved)");
+    expect(out).toContain("docs/decisions/026");
+    // AND THE TWO DERIVATIONS AGREE ROW FOR ROW on the merges, which is
+    // the recovery this criterion asks for: the same brief, not a
+    // similar one.
+    for (const m of input.merges) {
+      expect(out, `the fresh process lost the row for ${m.sha}`).toContain(m.sha);
+      expect(out, `the fresh process disagreed about ${m.sha}`).toContain(m.evidence);
+    }
+  } finally {
+    rmSync(fx.dir, { recursive: true, force: true });
+  }
+});
+
+test("T-322 C7 — THE CONVENTIONS CARRY THE HOST KEEP-AWAKE RULE ONCE, AT THE LOOP'S OWN SECTION, WITH ITS DERIVE COMMAND", () => {
+  // THE CARD'S SEVENTH CRITERION, the conventions half. ONCE and at the
+  // loop's section, on T-324's own argument one card later: the loop is
+  // declared there and a second bullet about the same loop is the
+  // duplication this project's compaction rule exists against.
+  //
+  // KILLED BY: the rule written twice; the rule written in a bullet that
+  // is not the loop's; a keep-awake sentence with no DERIVE command,
+  // which is a rule nobody can check; and the two command spellings
+  // living in the role file instead, where a product-agnostic document
+  // would carry a project's own path.
+  const text = conventionsText(repoRoot);
+  const anchor = "THE PROCESS IS SETTINGS, AND EVERY SWITCH IS DECLARED ONCE";
+  const marker = "THE HOST MUST STAY AWAKE OR THERE IS NO LOOP";
+  expect(text.split(marker).length - 1, "the keep-awake rule is written more than once").toBe(1);
+  const bullet = text.slice(text.indexOf(anchor));
+  const nextBullet = bullet.indexOf("\n- ");
+  const section = nextBullet === -1 ? bullet : bullet.slice(0, nextBullet);
+  expect(section.includes(marker), "the keep-awake rule does not sit in the loop's own section").toBe(
+    true,
+  );
+  for (const owed of [
+    "caffeinate -i -t",
+    "DERIVE\n  WHETHER IT IS HELD",
+    "pmset -g assertions",
+    "brief.mjs --since",
+    "brief.mjs --await-until",
+    "## Repair ledger",
+  ]) {
+    expect(section, `the loop's section does not carry: ${owed}`).toContain(owed);
+  }
+});
+
+test("T-322 C7 — THE ORCHESTRATOR'S STOP LIST NAMES ONLY THE STOPS THE GRANT RESERVES, and 5g says what each failure produces instead", () => {
+  // THE CARD'S SEVENTH CRITERION, the role-file half. The stop list is
+  // step 5's own sentence and this card's contribution is that it is
+  // EXHAUSTIVE: a rejected verdict, a red on the runner and a quota
+  // refusal are NOT on it, and 5g says what each of them produces.
+  //
+  // KILLED BY: a stop list that still reserves a stop for a rejection, a
+  // red or a quota refusal; a 5g that names one of the three and not the
+  // others; a role file that took a project's own command spelling; and a
+  // 5g that lets the coordinator settle a question itself.
+  const role = readDoc("method/roles/orchestrator.md");
+  expect(role, "the stop list is not declared exhaustive").toContain(
+    "THE WHOLE STOP LIST: THE STOPS ARE THE ONES\n   THE GRANT RESERVES, AND THERE ARE NO OTHERS",
+  );
+  expect(role, "the three non-stops are not named as such").toContain(
+    "A rejected\n   verdict, a red on the runner and a spawn refused for a quota window\n   are not on it",
+  );
+  for (const owed of [
+    "ATTRIBUTE BEFORE YOU ACT, AND RECORD THE ATTRIBUTION",
+    "A REPAIR CONTINUES ON EVIDENCE AND PARKS ON REPETITION",
+    "THE HEALTH CHECK IS SPECIFIC TO THE ACTION YOU ARE PROPOSING",
+    "A DECISION YOU MAY NOT MAKE BECOMES A QUESTION ENTRY",
+    "A SPAWN REFUSED FOR QUOTA IS A RECORDED RETRY INSTANT",
+    "A NEW COMMIT OR A CHANGED ERROR STRING\n   ALONE IS NOT PROGRESS",
+    "THE RUNNER IS NEVER RE-RUN WHILE ITS\n   BILLING OR DISK CONDITION IS UNCHANGED",
+    "MODELS AND ACCOUNTS ARE NEVER CHANGED WITHOUT\n   THE CONFIGURED PERMISSION",
+    "A PUSH WITH NO\n   RUN IS UNKNOWN AND IS NEVER INFERRED FROM A COMMIT'S TIMESTAMP",
+  ]) {
+    expect(role, `step 5g does not carry: ${owed}`).toContain(owed);
+  }
+  // THE RULING ENTRY STILL WAITS FOR THE OWNER, and 5g says so rather
+  // than letting the question entry become one.
+  expect(role).toContain("The ruling entry is still\n   proposed verbatim and appended on the owner's yes (8b)");
+  // AND THE FILE STAYS PRODUCT-AGNOSTIC: the spellings are the
+  // conventions', which is the split every other step already takes.
+  expect(role, "the role file took a project's own command spelling").not.toContain("tools/e2e/scripts");
+});
+
+test("T-322 C5 — THE ROOM FORMAT RULES THE QUESTION ENTRY'S SHAPE, and the method eval holds it", () => {
+  // THE CARD'S FIFTH CRITERION's method half: the SHAPE is stated in the
+  // method once (T-057) and a program holds it. This body checks the
+  // statement exists and that MF-12 is the reader of it — the eval's own
+  // discrimination set is what checks that it discriminates.
+  //
+  // KILLED BY: a room format with no question-entry section; one that
+  // does not require the marker, the id, the cards or the resolution's
+  // evidence; and an eval that stopped naming the room format as its
+  // contract.
+  const format = readDoc("method/rooms/ROOM-FORMAT.md");
+  expect(format, "the room format states no question-entry shape").toContain(
+    "## The question entry — a decision the coordinator may not make",
+  );
+  for (const owed of [
+    "QUESTION — not a ruling",
+    "THE MARKER IS THE POINT",
+    "THE ID IS HOW EVERYTHING ELSE FINDS IT",
+    "THE CARDS HELD ARE NAMED IN THE ENTRY AND NOWHERE ELSE",
+    "RESOLVING IT IS AN APPEND, AND THE RESOLUTION CARRIES ITS\n  EVIDENCE",
+    "AND IT IS NEVER THE RULING ENTRY",
+  ]) {
+    expect(format, `the question-entry section does not carry: ${owed}`).toContain(owed);
+  }
+  // A CARD GAINS NO FIELD FOR THIS, which the format says in as many
+  // words and the parser's own field set keeps.
+  expect(format).toContain("A card\n  gains no field");
 });
