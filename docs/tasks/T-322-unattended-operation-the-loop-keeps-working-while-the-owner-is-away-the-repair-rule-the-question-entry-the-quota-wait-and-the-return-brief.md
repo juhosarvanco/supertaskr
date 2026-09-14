@@ -9,7 +9,7 @@ priority: 2
 status: building
 suggested_by: "the architect seat on 2026-09-13, from the owner's question the same evening about leaving the computer for hours; filing authorizes no development"
 blocked_by: [T-324]
-touches: [method/roles/orchestrator.md, method/rooms/ROOM-FORMAT.md, tools/e2e/scripts/brief.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/dispatch-order.mjs, tools/e2e/scripts/run-record.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/dispatch-order.spec.ts, tools/e2e/tests/run-record.spec.ts, tools/method-evals/evals, docs/CONVENTIONS.md]
+touches: [method/roles/orchestrator.md, method/rooms/ROOM-FORMAT.md, tools/e2e/scripts/brief.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/dispatch-order.mjs, tools/e2e/scripts/run-record.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/dispatch-order.spec.ts, tools/e2e/tests/run-record.spec.ts, tools/method-evals/evals, docs/CONVENTIONS.md, tools/e2e/tests/brief-flush.spec.ts]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by:
@@ -56,6 +56,10 @@ Supersedes the quota criterion and the last criterion above and adds to the firs
 - WHEN a decision is parked and other cards could continue THE coordinator SHALL first check the shared conditions — main green on the runner or its red attributed to a named cause, the verification path intact (the bench verb and the sealed inputs answering), and every live writer's ownership known from the run record — and SHALL continue only where those permit; where one fails THE coordinator SHALL hold every dispatch and record why, pinned by a body per condition.
 - WHEN a CI run on main reds THE coordinator SHALL attribute the red by name before treating it as a repair trigger — the failing bodies from the run's own log, compared with the previous run at the parent commit and with the merge's diff — and a red the comparison does not attribute to the merge SHALL become a question entry and not a repair, pinned by a body over two fixture logs.
 - WHEN this card lands THE conventions SHALL carry the host keep-awake requirement at the loop's section as an operational rule with its derive command, and the orchestrator role file's stop list SHALL name only the stops the approval mode's record reserves; the resumption of a dead or quota-exhausted coordinator is NOT this card's — it is T-323's, a capability demonstrated by a restart and not a conventions entry.
+
+## Widening of 2026-09-14, during the lane (the architect seat, on the executor's ask)
+
+The fence gains tools/e2e/tests/brief-flush.spec.ts, whose arm-list body derives the command's flag set from brief.mjs and reds on a flag no announced arm drives and no entry excuses: the return brief's flag that criterion 6 names by its own words and the wait verb's until-instant form that criterion 4 names are announced or excused there with their reason, the same class T-324 was widened for at 6b131f69. No live lane holds the spec; nothing else widens.
 
 ## Implementation notes
 
