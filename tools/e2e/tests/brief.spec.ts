@@ -9551,6 +9551,22 @@ test("T-322 C2 — A REPAIR CONTINUES ON DEMONSTRATED PROGRESS AND PARKS ON A RE
   });
   expect(different.act, "a materially different remedy with evidence parked").toBe("continue");
 
+  // AND THE PAIR THAT ISOLATES THE REPEAT RULE FROM THE EVIDENCE RULE.
+  // The two assertions above differ in BOTH the remedy and the evidence,
+  // so a reader that parked on missing evidence alone would satisfy them
+  // both. These two differ in the REMEDY only: the same evidence behind
+  // a remedy already shown ineffective still parks, because evidence
+  // does not make a repeat a materially different remedy.
+  const evidenced = "the run's log names the oracle in every failing frame";
+  expect(
+    progressRuling(history, { remedy: "widened the reader to accept the new field", evidence: evidenced }).act,
+    "evidence turned a repeat of an ineffective remedy into a continue",
+  ).toBe("park");
+  expect(
+    progressRuling(history, { remedy: "pinned the oracle to the tracked set", evidence: evidenced }).act,
+    "the control: a different remedy with the SAME evidence did not continue",
+  ).toBe("continue");
+
   // CONTINUES — the SAME named failing body, where an earlier attempt
   // removed a verified part of the failure. This is the criterion's own
   // first direction and it does not need a new remedy to earn it.
@@ -9757,7 +9773,12 @@ test("T-322 C4 — THE INSTANT ARRIVES AND THE WAIT ENDS, and a ceiling short of
   io2.sleep = async (ms: number) => {
     slow += ms;
   };
-  const capped = await runAwait(awaitPlan({ until: "2026-09-14T13:00:00Z", ceiling: "2" }), io2);
+  const cappedPlan = awaitPlan({ until: "2026-09-14T13:00:00Z", ceiling: "2" });
+  // THE CEILING IS ASSERTED ON THE PLAN AS WELL AS ON THE RESULT: a plan
+  // that carried an unbounded ceiling would still REPORT one eventually
+  // on a clock this body advances, so the number is what pins it.
+  expect(cappedPlan.ceilingMs, "the instant arm's plan lost its ceiling").toBe(2000);
+  const capped = await runAwait(cappedPlan, io2);
   expect(capped.ceiling, "the ceiling stopped bounding the instant arm").toBe(true);
   expect(capped.waitedMs).toBe(2000);
   expect(capped.why).toContain("THE CEILING WAS REACHED AND THIS IS THE REPORT");

@@ -63,6 +63,160 @@ The fence gains tools/e2e/tests/brief-flush.spec.ts, whose arm-list body derives
 
 ## Implementation notes
 
+### Unattended operation, built 2026-09-14 (claude-opus-5@subagent)
+
+**WHERE IT LIVES AND WHY THERE.** One section of
+`tools/e2e/scripts/dispatch-brief.mjs` — `failingBodies`, `parentRun`,
+`attribute`, `repairEntry`, `repairLedger`, `remedyDigest`,
+`progressRuling`, `sharedHealth`, `classifyRefusal`, `retryInstant`,
+`dueRetries`, `questionEntry`, `readQuestions`, `questionHolds`,
+`roomFiles`, `mergeEvidence`, `metersRecords`, `firstParentLine`,
+`defaultRunnerIo`, `assembleReturnBrief`, `returnBriefRecs`. It sits
+there for T-324's reason one card earlier: `run-record.mjs` and
+`dispatch-order.mjs` both import that module and nothing imports either
+of them back, so the arm is the one place the lane cut, the three
+run-record boundaries and the dispatch order can all reach.
+`assembleReturnBrief` takes the run RECORDS as an input rather than
+reading them, because a read of `allRecords` there would be a cycle;
+`brief.mjs` is the one module that imports both halves and gathers them,
+which is the split T-324 already takes for the admission ledger.
+
+**ATTRIBUTION ASKS ITS QUESTIONS IN ONE ORDER AND THE ORDER IS THE
+RULE.** Infrastructure first, bodies second. A red whose cause is a
+billing block has failing bodies in it too — every job "fails" when the
+account is blocked — so a reader that started from the bodies files a
+repair card against code that is fine. That is the seat's own 2026-09-14
+reading (jobs failing in seconds with no steps were a billing block, not
+the tree) turned into a branch. `INFRASTRUCTURE_SIGNS` is a table with
+each row's CLASS on it rather than a chain of conditions, because the
+difference between `transient` and `needs-action` is the whole point: one
+is resolved by waiting and the other is not resolved by any amount of
+repeating, and a row filed under the wrong class turns a billing block
+into an infinite re-run.
+
+**THE BASELINE IS THE NEWEST EARLIER ANCESTOR RUN AND EVERY WORD OF THAT
+IS LOAD-BEARING.** Newest, because an older green tells you less; earlier
+by the run's own creation instant, because a run started after this one
+is not a baseline for it; ancestor decided by the REPOSITORY rather than
+by a clock, because two branches' runs interleave in time and only one of
+them is this tip's history. Where no such run exists the honest answer is
+`unresolved` and the next act is the bounded local reproduction, which is
+an INPUT here rather than a branch this module invents: the card names it
+and the caller performs it.
+
+**THE PROGRESS RULE IS MECHANICAL BECAUSE `remedyDigest` MAKES IT SO.**
+"A new commit or a changed error string alone is not progress" is a
+sentence until something erases shas, run ids, instants and digits before
+two remedies are compared — after which "re-ran the suite at abc1234" and
+"re-ran the suite at def5678" are one remedy tried twice. DEMONSTRATED
+PROGRESS IS ASKED ABOUT FIRST, and that ordering is the criterion read
+literally: the two ways an attempt earns its spawn are an OR, and the
+criterion's own pin says which wins where both clauses could speak — "the
+same named failing body with demonstrated partial progress continues".
+The park clause is about work whose EVIDENCE is unchanged, and a removed
+part of the failure is evidence that changed.
+
+**THE LEDGER IS A CARD SECTION AND THE CEREMONY WAS TAUGHT TO ALLOW IT.**
+`## Repair ledger` on the FAILING card, which is where the second
+criterion puts it and where the return brief reads it back from. That
+required one change to T-324's admission: `MECHANICAL_SECTIONS` gains the
+heading, because a ledger appended to an approved card would otherwise
+refuse the next explicit admission as `ADMISSION_CARD_BLOB_MOVED`. The
+loop's own ceremony writing onto a card after the yes is exactly what
+that enumeration is for.
+
+**THE HEALTH CHECK IS SPECIFIC TO THE ACTION, AND THE TWO HARD HOLDS ARE
+FIRST.** An unknown live writer and an untrusted verification path hold
+every affected action and no repair permission bypasses either — a repair
+merged past a seal nobody trusts is not a repair, and a second writer
+over a resource somebody may still hold is the T-247 race with a reason
+attached. A bench or a seal NOT YET OWED for the stage being proposed is
+not a broken path, which is the distinction a blunter check gets wrong in
+the direction that looks safe.
+
+**THE WAIT VERB GAINED A FOURTH FACT AND NOT A SECOND WAIT.** `awaitPlan`
+answers an `instant` kind; `runAwait` is untouched; `defaultAwaitIo` took
+a CLOCK as its one argument so the SHIPPED probe is what a body drives
+rather than the body's own arithmetic. The ceiling still bounds the
+instant arm, deliberately: a reset instant a provider stated wrongly, or
+one already past when the record was written, must not become the hang
+the arm exists to remove.
+
+**THE REFUSAL RIDES `stop` RATHER THAN A NINTH OPERATION.**
+`method/lane-protocol.md` says the operations are the same seven for
+every kind of child and that file is outside this fence, so the honest
+move was to find the verb a refused spawn already belongs to. It is
+`stop`: nothing is running, the reservation is released, the retry is a
+NEW attempt, and stop's reconciliation is exactly the card's "no writer
+is created or lost by assumption" — already refusing an uncertain record
+before the classification is reached. The classification is made at every
+stop and REPORTED, so a text this reader gets wrong is visible rather
+than silent; only a `quota` kind schedules a retry, and the refusal count
+is derived from the records on disk so a successor seat continues the
+growth rather than restarting it.
+
+**THE QUESTION ENTRY ADDS NO FIELD TO ANY CARD.** The link lives in the
+room and `questionHolds` is the ONE derivation that both the dispatch
+order's NOT STARTABLE rows and the LANE CUT'S REFUSAL read — which is
+what makes the display and the refusal incapable of disagreeing. The cut
+asks about the question BEFORE the grant, because they are different
+questions and the refusal should name which: the grant says whether the
+owner authorized this card, and a pending question says the owner has not
+yet settled something it depends on.
+
+**AND THE RETURN BRIEF DERIVES.** Cards (their repair ledgers), rooms
+(the question entries), run records (the admissions, the retries, the
+live writers), meters records (which seats produced each merge) and the
+runner's runs. A merge is reported against the OLDEST run whose tested
+sha is that merge or a commit newer than it on the same first-parent
+line — because in this project a merge commit is almost never a run's
+head sha, the checkpoint lands on top of it before the push. The search
+runs FORWARD from the merge and never backward, which is "an older green
+run is never proof of the current tip" as an algorithm. A push with no
+run is UNKNOWN. `SUPERTASKR_RUNNER_RUNS` and `SUPERTASKR_RUNNER_LOGS`
+replay the runner's answer from files: a body that drives this command as
+a fresh process cannot inject a function into it, and a person
+re-deriving somebody's return brief months later cannot re-ask a history
+the runner has expired.
+
+**AND THE HEALTH CHECK HAS TWO CALL SITES BECAUSE ONE OF THEM CANNOT
+REACH THE RUNNER.** The dispatch order runs it per startable card with
+its CI half honestly UNKNOWN: that arm's own size is compared across two
+runs by `brief-flush.spec.ts` to derive its loss point, and a network
+answer in the middle of it makes that comparison meaningless. The return
+brief runs the same function with the CI half READ, because it is a
+report rather than a decision and it already has the runner's answer.
+T-322-s4 is the card for closing the gap that leaves.
+
+### In-fence follow-through
+
+- `docs/CONVENTIONS.md` is 174732 bytes at this lane's tip, a NET GROWTH
+  of 1,708 bytes on the base's 173,024 against the owner's 2,000-byte
+  allowance of 2026-09-14, with 1,521 bytes of head-room under the
+  176,253-byte fail line. T-311-s3 is the open card for the document.
+- The behaviour census is STALE by construction: this card adds thirteen
+  bodies to the brief spec, four to the dispatch-order spec and four to
+  the run-record spec, so a fresh generation is 108,830 bytes against the
+  committed 105,999 (from `npm run capabilities:check` from tools/e2e, at
+  this lane's tip). `docs/CAPABILITIES.md` is outside this fence and the
+  regeneration is the merge's, which is where that write belongs.
+- The graph is CURRENT at this tip (2,626 symbols, 2,505 edges): every
+  file this card changed is a `.mjs` script or a spec, and the index
+  covers neither.
+- `MECHANICAL_SECTIONS` gained `Repair ledger` and the conventions'
+  admission sentence gained the clause to match. That is a change to
+  T-324's control made from inside this fence, argued in the constant's
+  own comment and drilled: with the heading removed, the ledger append
+  refuses the card's next admission as substantive drift.
+- The fence was widened once during the lane, on the ask file, by the
+  architect seat: `tools/e2e/tests/brief-flush.spec.ts`, whose arm-list
+  body derives `brief.mjs`'s frozen flag set and reds on a flag no
+  announced arm drives and no entry excuses. Both new flags are argued
+  into that file's excuse list with their reasons — the wait's
+  until-instant form because an entry in the arm list would make the
+  suite sleep for however long the caller typed, and the return brief
+  because it reaches a machine that is not this one.
+
 ## Verdicts
 
 Promoted 2026-09-14 (the architect seat's step-2 triage on the owner's yes of 2026-09-14 to the seat's recommendation): to planned at priority 2 — after T-319, which it is blocked by, and before the T-312 rerun; the owner's ruling of 2026-09-13 that the work must not stop for their absence runs on the seat's hand until this lands.
