@@ -209,6 +209,56 @@ deferred by the ruling that took the project-level slice).
 writes a stamped manifest; an audit of a skill-driven genesis therefore
 cannot read which method version scaffolded it off the kit root alone,
 though the seeded banks carry their own version parenthetical. Too small
-to card on its own and it belongs with T-241-s6's whole-pack work.
+to card on its own and it belongs with T-241-s6's whole-pack work. Both
+adapter templates and the STATE template point at
+`method/docs-protocol.md`, which no genesis carries in either lens — the
+kit's table does not hold it and neither does this entry — so that
+pointer is dangling in a scaffolded folder today and this card changes
+nothing about it either way.
+
+### What the owed set found, and what was done about it
+
+The battery at 80ddb4a7 came back parser GREEN 454, app GREEN 1171, rust
+GREEN 661 across 18 targets, e2e RED with 10 of 1179 bodies failing. Two
+causes, one this lane's and one not.
+
+**Mine, corrected at aba731ed.** Seven bodies in
+`tools/e2e/tests/docs-input-gate.spec.ts` red on the DOCS GATE's
+silent-miss tripwire: the new spec holds this repository's root AND
+joined the literal `docs` onto a scratch project root, so the scanner
+could not tell a scratch path from a read of this repository's own
+`docs/` and said so. It is right not to be able to. Both sites are now
+derived — the scratch markers are `ROOT_MARKERS`, which is what
+`findProjectRoot` really looks for, and the fresh-folder contract's
+destination is read out of the banking map's stage-0 row. That leaves
+the expectation anchored in normative method text instead of in the
+generator's own view of it, so a generator that stopped seeding a
+template still reds. `unlinkedFiles()` is empty again, the root-anchor
+account balances against `ROOT_ANCHOR_LEDGER`, a code-only diff owes
+nothing again at exit 0, and `docs-input-gate.spec.ts` answers 72 of 72.
+The same commit gave the delivered entry the two redirects described
+above.
+
+**Not mine, filed as T-242-s4.** Three bodies in
+`tools/e2e/tests/push-guard.spec.ts` red with EACCES copying
+`docs/CONVENTIONS.md` into the seat fixture. The fixture copies every
+`docs/*.md` flat and then copies what `conventionsFiles()` returns, and
+since T-290 that set returns the index itself as well as its chapters —
+so the index is copied to one destination twice. `copyFileSync` gives
+the destination the source's mode, the fence makes out-of-fence files
+read-only in a lane, and the repeat copy onto a `0444` destination
+fails. Reproduced in isolation at this lane's tip: a read-only source
+copied twice is EACCES, a writable one is fine. `push-guard.spec.ts` and
+`docs-scan.mjs` both last moved at 7e0ee2c9 (T-290), before this lane's
+base, and this lane's diff touches neither file, nor
+`docs/CONVENTIONS.md`, nor any file mode. It is invisible on the runner
+and in the integration checkout, where the index is writable. An ask was
+parked with the seat for a widening to fix it; the card stands either
+way.
+
+**The drills were re-run whole at aba731ed** rather than left at the
+pre-correction commit, since the corrections moved both the spec and the
+generated artifact. All fifteen went RED again, each restored and each
+restore proved by sha256.
 
 ## Verdicts
