@@ -82,6 +82,7 @@ import {
   main as mergeMain,
 } from "../scripts/merge.mjs";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
+import { conventionsText } from "../scripts/docs-scan.mjs";
 import { repoRoot } from "../preflight";
 
 /** The name this fixture reports its own teardown findings under. */
@@ -1517,7 +1518,7 @@ test("the bound, the floor and the readings path this file computes are the ones
   // DOCS GATE, which is not a side effect but the point: a spec that
   // asserts a document's sentence is a spec the docs gate must run when
   // that document moves.
-  const conventions = readFileSync(path.join(repoRoot, "docs", "CONVENTIONS.md"), "utf8");
+  const conventions = conventionsText(repoRoot);
   expect(conventions, "the verb is spelled in the document").toContain(
     "node tools/e2e/scripts/brief.mjs --merge <T-NNN>",
   );

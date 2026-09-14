@@ -26,6 +26,7 @@ import { ALL_SUITES, GRADED_SUITES, SCOPED_SUITE } from "../scripts/gate-run.mjs
 // ...and the argv the runner's own derivation step sends, so the
 // criterion's spelling is READ from the sender rather than retyped.
 import { owedSetArgv } from "../scripts/ci-owed.mjs";
+import { conventionsText } from "../scripts/docs-scan.mjs";
 import { repoRoot } from "../preflight";
 
 /**
@@ -160,7 +161,10 @@ const docKey = (dir: string, cmd: string): string => `[${dir}] ${cmd}`;
 // ── reading docs/CONVENTIONS.md ────────────────────────────────────────
 
 export function readConventions(): string {
-  return readFileSync(path.join(repoRoot, "docs", "CONVENTIONS.md"), "utf8");
+  // THE INDEX AND ITS CHAPTERS AS ONE TEXT (T-290): the command bullets
+  // live in docs/conventions/commands.md and docs/CONVENTIONS.md points
+  // at them, so the parity census reads the spliced document.
+  return conventionsText(repoRoot);
 }
 
 /**

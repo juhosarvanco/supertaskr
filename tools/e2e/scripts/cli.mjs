@@ -56,6 +56,12 @@ import { spawnSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+// THE INDEX AND ITS CHAPTERS ARE ONE TEXT (T-290). This front derives its
+// commands from docs/CONVENTIONS.md, and since that document became an
+// index over docs/conventions/ the splice is the ONE implementation of
+// "read a rule out of this project's conventions" (T-057) — so this front
+// borrows it rather than keeping a second copy that could disagree.
+import { conventionsText } from "./docs-scan.mjs";
 
 /** Where this file lives: `<package>/scripts/`. */
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -342,7 +348,14 @@ export function buildCommandFor(dir, projectRoot) {
   if (!existsSync(conventions)) {
     return `run this project's setup for ${dir}/ (docs/CONVENTIONS.md is not in ${projectRoot ?? packageRepoRoot}, so the command could not be derived)`;
   }
-  const commands = conventionCommandsFor(readFileSync(conventions, "utf8"), dir);
+  // THE INDEX AND ITS CHAPTERS AS ONE TEXT (T-290). The commands live in
+  // docs/conventions/commands.md now and the index points at them; a
+  // project whose CONVENTIONS carries no pointer is spliced unchanged, so
+  // this front reads a split repository and an unsplit one the same way.
+  const commands = conventionCommandsFor(
+    conventionsText(projectRoot ?? packageRepoRoot),
+    dir,
+  );
   if (commands.length === 0) {
     return `run this project's setup for ${dir}/ (docs/CONVENTIONS.md carries no \`run from ${dir}/:\` bullet)`;
   }

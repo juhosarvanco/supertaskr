@@ -2690,11 +2690,145 @@ export function staleStateRecords(root = repoRoot) {
   return stale.sort();
 }
 
-/** docs/CONVENTIONS.md, read off the tree. The gate's own doc is a
- *  first-party text file like any other; reading it is what lets the
- *  bullet below be CHECKED against the derivation instead of trusted. */
+/** The index — the document that carries the openers and the pointers. */
+export const CONVENTIONS_DOC = "docs/CONVENTIONS.md";
+/** Where the chapters the index points at live (T-290, ADR-023). */
+export const CONVENTIONS_DIR = "docs/conventions";
+
+/**
+ * One line of the index's pointer list: a chapter file and the OPENER of
+ * the bullet that lives in it, in the document's own order.
+ *
+ * The opener is the bullet's own first line with its `- ` removed, so the
+ * index quotes the document rather than summarising it, and the splice
+ * below CHECKS every pointer against the bullet it names instead of
+ * trusting the pair.
+ */
+export const CONVENTIONS_POINTER = /^ {2}- (docs\/conventions\/[a-z0-9-]+\.md) — (.*)$/;
+
+/** docs/CONVENTIONS.md ALONE, index and pointers, exactly as it sits on
+ *  the tree. This is what the method stamp is read out of and what the
+ *  byte budget measures; a reader after a RULE wants `conventionsText`. */
+export function conventionsIndexText(root = repoRoot) {
+  return readFileSync(path.join(root, CONVENTIONS_DOC), "utf8");
+}
+
+/**
+ * The chapters the index names, in the order it names them, each with
+ * the opener it published for that bullet. Derived from the index — never
+ * a list here — so a chapter added, renamed or emptied is seen on the day
+ * the index says so.
+ *
+ * @param {string} indexMd
+ * @returns {{ file: string, opener: string }[]}
+ */
+export function conventionsPointers(indexMd) {
+  /** @type {{ file: string, opener: string }[]} */
+  const out = [];
+  for (const line of indexMd.split("\n")) {
+    const m = CONVENTIONS_POINTER.exec(line);
+    if (m !== null) out.push({ file: /** @type {string} */ (m[1]), opener: /** @type {string} */ (m[2]) });
+  }
+  return out;
+}
+
+/** The chapter files the index names, deduplicated, in first-named order.
+ *
+ * @param {string} indexMd
+ * @returns {string[]}
+ */
+export function conventionsChapters(indexMd) {
+  /** @type {string[]} */
+  const out = [];
+  for (const p of conventionsPointers(indexMd)) if (!out.includes(p.file)) out.push(p.file);
+  return out;
+}
+
+/**
+ * THIS PROJECT'S RULES AS ONE TEXT — the index with every pointer line
+ * replaced by the bullet it points at, in the index's own order.
+ *
+ * T-290 split docs/CONVENTIONS.md into the chapters under
+ * docs/conventions/ and left the index behind. THIS FUNCTION IS WHY THAT
+ * SPLIT DID NOT BREAK A SINGLE READER: every caller — `conventionsBullet`
+ * below, `laneSpellings`, `bulletByOpening`, the workflow parity census,
+ * the range rule's gate triggers, the CLI's command derivation — asks for
+ * a RULE, and a rule is found wherever it now lives. The document a
+ * reader sees is the document it always saw.
+ *
+ * AND THE SPLICE IS CHECKED, NEVER TRUSTED. The index publishes each
+ * bullet's opener verbatim; the bullet pulled out of the chapter must
+ * OPEN with exactly that line, in the chapter's own order. A pointer
+ * whose chapter no longer carries its bullet is a hard failure here
+ * rather than a rule that silently stopped being in the document — the
+ * same refusal `conventionsBullet` makes, for the same reason: a
+ * derivation that expects nothing is worse than one that is wrong,
+ * because nothing points at it.
+ *
+ * A bullet the index carries IN PLACE — the method stamp's own paragraph,
+ * which stays in this file because programs read that sentence out of
+ * this path by name — is copied through untouched, like every other
+ * non-pointer line.
+ *
+ * @param {string} [root]
+ * @returns {string}
+ */
 export function conventionsText(root = repoRoot) {
-  return readFileSync(path.join(root, "docs/CONVENTIONS.md"), "utf8");
+  // **THE TWO PATHS ARE SPELLED HERE AND NOT BORROWED, AND THE DOCS GATE
+  // IS WHY.** The reader derivation follows ONE call hop, so a function
+  // that reads its documents through a second one is invisible to it —
+  // measured on this very change: routing this read through
+  // `conventionsIndexText` took merge, run-record, lane-fence, gate-run
+  // and workflow-parity out of the gate's reader set in silence, and the
+  // gate's own unlinked-sites report is what said so. A rule that stops
+  // firing is worse than one that is wrong.
+  const indexMd = readFileSync(path.join(root, "docs/CONVENTIONS.md"), "utf8");
+  /** @type {Map<string, string[]>} */
+  const queued = new Map();
+  for (const file of conventionsChapters(indexMd)) {
+    const text = readFileSync(path.join(root, "docs/conventions", path.basename(file)), "utf8");
+    queued.set(
+      file,
+      text
+        .split(/\n(?=- )/)
+        .filter((b) => b.startsWith("- "))
+        .map((b) => b.replace(/\n+$/, "")),
+    );
+  }
+  /** @type {string[]} */
+  const out = [];
+  for (const line of indexMd.split("\n")) {
+    const m = CONVENTIONS_POINTER.exec(line);
+    if (m === null) {
+      out.push(line);
+      continue;
+    }
+    const file = /** @type {string} */ (m[1]);
+    const opener = /** @type {string} */ (m[2]);
+    const rest = queued.get(file) ?? [];
+    const bullet = rest.shift();
+    if (bullet === undefined || bullet.split("\n")[0] !== `- ${opener}`) {
+      throw new Error(
+        `docs-scan: ${CONVENTIONS_DOC} points at ${file} for a bullet opening ` +
+          `${JSON.stringify(opener)} and that chapter's next bullet is ` +
+          `${bullet === undefined ? "nothing at all" : JSON.stringify(bullet.split("\n")[0]?.slice(2))} — ` +
+          "the index publishes every opener VERBATIM and in the chapter's own order, so a " +
+          "pointer that no longer names its bullet is a hard failure here rather than a rule " +
+          "that quietly left the document.",
+      );
+    }
+    out.push(bullet, "");
+  }
+  const spliced = out.join("\n").replace(/\n{3,}/g, "\n\n");
+  for (const [file, rest] of queued) {
+    if (rest.length === 0) continue;
+    throw new Error(
+      `docs-scan: ${file} carries ${String(rest.length)} bullet(s) ${CONVENTIONS_DOC} does not ` +
+        `point at, beginning ${JSON.stringify(rest[0]?.split("\n")[0]?.slice(2))} — a rule the ` +
+        "index does not name is a rule no reader of this project can find.",
+    );
+  }
+  return spliced;
 }
 
 /**

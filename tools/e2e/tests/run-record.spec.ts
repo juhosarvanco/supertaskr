@@ -33,6 +33,7 @@ import {
   waitRun,
 } from "../scripts/run-record.mjs";
 import type { Assignment, RunIo, RunRecord } from "../scripts/run-record.mjs";
+import { conventionsText } from "../scripts/docs-scan.mjs";
 
 /**
  * THE RUN RECORD (T-311) — no browser.
@@ -973,7 +974,7 @@ test("the lane protocol names the run record as the contract every child runs un
   expect(section.includes(".supertaskr"), "the method text spells a product's own runtime path").toBe(false);
   // AND THE PROJECT'S OWN SPELLING EXISTS, where that opening says it
   // belongs — so the two halves are one rule rather than a gap.
-  const conventions = readFileSync(path.join(repoRoot, "docs/CONVENTIONS.md"), "utf8");
+  const conventions = conventionsText(repoRoot);
   expect(conventions, "this project spells no home for its run records").toContain(".supertaskr/runs/");
   expect(conventions, "the project's bullet does not name the verbs a seat types").toContain("--run");
 });

@@ -62,7 +62,7 @@ import {
   validateRegistry,
   validateSuite,
 } from "../scripts/gate-run.mjs";
-import { docsGate, docsReaders } from "../scripts/docs-scan.mjs";
+import { conventionsText, docsGate, docsReaders } from "../scripts/docs-scan.mjs";
 import {
   GREEN,
   REQUIRED_SUITES,
@@ -777,7 +777,10 @@ test("docs/CONVENTIONS.md names the blessed gate-runner in exactly one place, so
   // unmet and routed, because workflow-parity.spec.ts derives CI's own
   // steps from the per-package bullets, so this body does not pretend to
   // measure it.
-  const text = readFileSync(path.join(repoRoot, "docs/CONVENTIONS.md"), "utf8");
+  // THE INDEX AND ITS CHAPTERS AS ONE TEXT (T-290). docs/CONVENTIONS.md
+  // is the index over docs/conventions/; `conventionsText` splices the two
+  // back into the document this body has always asserted about.
+  const text = conventionsText(repoRoot);
   expect(occurrences(text, "gate-run.mjs")).toBe(1);
   expect(occurrences(text, VERDICT_TOKEN)).toBe(1);
 });
@@ -786,7 +789,7 @@ test("the suites the document offers the runner are exactly the suites the runne
   // A third independent source for criterion 1: the DOCUMENT's own list,
   // checked against the card's, so neither the doc nor the registry can
   // move alone.
-  const text = readFileSync(path.join(repoRoot, "docs/CONVENTIONS.md"), "utf8");
+  const text = conventionsText(repoRoot);
   // `[a-z0-9|]` and not `[a-z|]`: `e2e` carries a digit, and the narrower
   // class silently matched `parser|app|rust|e` — a partial list that
   // would have compared four names against three.

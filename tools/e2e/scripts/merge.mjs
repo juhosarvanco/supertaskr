@@ -72,6 +72,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildCommandFor, conventionCommandsFor } from "./cli.mjs";
+import { conventionsText } from "./docs-scan.mjs";
 // THE PROCESS AS SETTINGS (T-299, ADR-024 decision 6). The schema and
 // its resolution live beside the dispatch arm because the dispatch arm
 // is where the runtime template is already read; the merge reads the
@@ -1536,8 +1537,11 @@ export function setupSteps(projectRoot) {
   /** @type {Step[]} */
   const steps = [];
   for (const dir of ["lib/parser", "app"]) {
+    // THE INDEX AND ITS CHAPTERS AS ONE TEXT (T-290): the fresh-clone
+    // ORDER bullet lives in docs/conventions/commands.md and the index
+    // points at it, so the steps are read out of the spliced document.
     const commands = conventionCommandsFor(
-      existsSync(conventions) ? readFileSync(conventions, "utf8") : "",
+      existsSync(conventions) ? conventionsText(root) : "",
       dir,
     ).filter((c) => /^npm (ci|install)$/.test(c) || c === "npm run build");
     for (const command of commands) {

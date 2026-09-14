@@ -1208,11 +1208,18 @@ mod tests {
         // Row 5 expands the card's `touches:` through the live component
         // registry, so the registry travels with the fixture — the same
         // set `brief.rs`'s own end-to-end body plants.
-        let components = root.join("docs/architecture/components");
-        fs::create_dir_all(&components).expect("dirs");
-        for entry in fs::read_dir(here.join("docs/architecture/components")).expect("components") {
-            let entry = entry.expect("a component file");
-            fs::copy(entry.path(), components.join(entry.file_name())).expect("copy");
+        // AND THE CHAPTERS docs/CONVENTIONS.md POINTS AT (T-290): that
+        // document is an index over docs/conventions/, so planting it
+        // alone plants a project whose rules no row can read. The whole
+        // directory travels, never a list of chapter names, so a chapter
+        // added later cannot leave this fixture silently short.
+        for rel in ["docs/architecture/components", "docs/conventions"] {
+            let dest = root.join(rel);
+            fs::create_dir_all(&dest).expect("dirs");
+            for entry in fs::read_dir(here.join(rel)).expect("a planted directory") {
+                let entry = entry.expect("a file in it");
+                fs::copy(entry.path(), dest.join(entry.file_name())).expect("copy");
+            }
         }
     }
 

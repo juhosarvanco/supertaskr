@@ -86,7 +86,7 @@ import {
   yamlScalar,
 } from "../scripts/settings.mjs";
 import { TIER_BUDGETS, fmt } from "../scripts/health-bands.mjs";
-import { docsReaders } from "../scripts/docs-scan.mjs";
+import { conventionsText, docsReaders } from "../scripts/docs-scan.mjs";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 
 /**
@@ -126,9 +126,10 @@ import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 /** The scratch trees this file builds, removed in a teardown that cannot red a body. */
 const FIXTURE = "cli.spec.ts";
 
-/** docs/CONVENTIONS.md, read off this checkout at body time. */
+/** This project's conventions — the index spliced with its chapters (T-290) — read off
+ *  this checkout at body time. */
 function conventions(): string {
-  return readFileSync(path.join(repoRoot, "docs", "CONVENTIONS.md"), "utf8");
+  return conventionsText(repoRoot);
 }
 
 /** The `run from <dir>/:` markers the "Build & test" section carries, in order. */
