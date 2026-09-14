@@ -508,3 +508,49 @@ message: one old partial licensed a fourth copy of a remedy shown ineffective th
 
 These are additions to the executor's own five (T-322-s1 to s5), each of which I read and none of
 which duplicates them.
+
+#### Step 7 — every gate my own commits could move, re-run at MY tip `1bd0bdc55b521f2f9b28a683962db41524862592`
+
+Four commits stand on this bench above the tip I graded: the verdict `ebec4e62`, the three
+correction bodies `669b3a50`, the two filed findings `b1b881a4`, and the mutant blocks `1bd0bdc5`.
+Three of the four are prose, one is a spec, and both kinds are code inputs here — so the battery
+was run again rather than argued about. **Every figure below carries the ref it was measured at.**
+
+| gate | at `f0ee5ad9`, the tip I was sent | at `1bd0bdc5`, my own tip |
+|---|---|---|
+| `gate-run.mjs parser` | exit 0 GREEN, 454 bodies / 1 target | exit 0 GREEN, 454 / 1 |
+| `gate-run.mjs app` | exit 0 GREEN, 1171 / 1 | exit 0 GREEN, 1171 / 1 |
+| `gate-run.mjs rust` | exit 0 GREEN, 655 / 18 targets | exit 0 GREEN, 655 / 18 |
+| `gate-run.mjs e2e` | exit 0 GREEN, **1150 / 1** | exit 1 **RED**, 1153 bodies: **1150 passed, 3 failed** |
+| `tsc --noEmit` (tools/e2e) | 0 | 0 |
+| `capabilities.mjs --check` | STALE by construction | exit 1 STALE — committed 105,999 bytes, fresh 109,230 |
+| `index --check` (supertaskr-index) | CURRENT | exit 0 CURRENT — 1,228,940 bytes, 203 files, 2,626 symbols, 2,505 edges |
+| `method-evals/run.mjs` | — | exit 0, 12 model-free; `--selftest` exit 0, POSITIVE CONTROL |
+| `brief.mjs --task T-322 --preflight` | exit 0 | exit 0 |
+| `docs/CONVENTIONS.md` | 174,732 bytes | 174,732 bytes — I wrote none of it |
+
+**THE E2E RED IS THE THREE CORRECTION BODIES AND NOTHING ELSE, AND IT IS THE EXPECTED SHAPE OF
+THIS TIER.** The failing set is exactly `T-322 VC1`, `T-322 VC2` and `T-322 VC3` — the bodies this
+verdict committed to pin corrections the bench deliberately does NOT carry, because the code
+change is the integrator's. The other 1,150 are the same 1,150 that passed at `f0ee5ad9`, body for
+body: nothing I committed moved a pin anybody else wrote. **The merge that applies the three
+changes should see 1,153 green, and a whole e2e leg run at the MERGED tree before the merge
+commit is what proves it** (T-295-s10's lesson, one card over).
+
+**THE CENSUS IS STALE AND I DID NOT REGENERATE IT.** `docs/CAPABILITIES.md` is outside this card's
+fence and the regeneration belongs to the merge; the figure is 109,230 bytes fresh against 105,999
+committed at `1bd0bdc5`, which is the executor's 108,830 at `d087b162` plus my three bodies. The
+graph answers CURRENT because nothing this card touched is indexed — every changed file is a
+`.mjs` script, a spec, a method document or a card.
+
+**Nothing was pushed, no worktree was created or removed, and neither the integration checkout nor
+this card's lane worktree was written to** — every write on this pass landed in the verifier's own
+bench. The bench ran on port 25322 throughout. `git status` is clean at `1bd0bdc5`, and
+`tools/e2e/scripts/dispatch-brief.mjs` is byte-identical to the one at `f0ee5ad9`.
+
+**A named intermittent that did NOT appear**: the push-guard body that reds when two hook runs
+straddle a minute boundary (T-314-s5) was green in both full runs. **Both batteries were launched
+DETACHED** from this bench, which the dispatch warned can cost the seat verbs their harness
+ancestor and red them the way the runner does — it did not happen here, no seat-verb body red in
+either run, and no red above is attributed to a launch. The three mutant drills and the red/green
+readings were run in the foreground.
