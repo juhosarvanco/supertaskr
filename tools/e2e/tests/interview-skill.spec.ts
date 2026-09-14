@@ -18,6 +18,7 @@ import {
   CARRIED_SKILLS_ROOT,
   EXIT as CLI_EXIT,
   HARNESSES,
+  ROOT_MARKERS,
   VERBS,
   main as cliMain,
   packageRoot,
@@ -84,12 +85,40 @@ import { removeGitFixture } from "./git-fixture";
 /** The scratch trees this file builds, removed in a teardown that cannot red a body. */
 const FIXTURE = "interview-skill.spec.ts";
 
-/** @returns a scratch directory that looks like a genesis-created project and is NOT this repo. */
+/**
+ * A scratch directory that looks like a genesis-created project and is
+ * NOT this repository.
+ *
+ * The marker directories are `ROOT_MARKERS` rather than two literals,
+ * because they are exactly what `findProjectRoot` looks for and a second
+ * spelling of that list would drift from it. It also keeps this file
+ * honest to the DOCS GATE's silent-miss tripwire: a `docs`-first literal
+ * joined onto a scratch root is a path the scanner cannot tell from a
+ * read of THIS repository's docs/, and it is right not to be able to.
+ */
 function scratchProject(): string {
   const root = mkdtempSync(path.join(tmpdir(), "supertaskr-skill-"));
-  mkdirSync(path.join(root, "docs"), { recursive: true });
-  mkdirSync(path.join(root, "method"), { recursive: true });
+  for (const marker of ROOT_MARKERS) mkdirSync(path.join(root, marker), { recursive: true });
   return root;
+}
+
+/**
+ * The tree stage 0 copies and the directory it copies from, READ OUT OF
+ * THE BANKING MAP's own row 0.
+ *
+ * The expectation a fresh folder is measured against has to be anchored
+ * in something the GENERATOR does not derive, or the check moves with
+ * the thing it checks. The banking map is that anchor: it is normative
+ * method text, it is what the app's runner obeys, and a generator that
+ * quietly stopped seeding a template leaves this row exactly where it
+ * was.
+ */
+function scaffoldTree(): { into: string; from: string } {
+  const md = readFileSync(path.join(repoRoot, "method/interview/plan-interview.md"), "utf8");
+  const row = /\|\s*0\s*\|[^|]*\|([^|]*)\|/.exec(md)?.[1] ?? "";
+  const named = /(\S+)\/ tree copied verbatim from (\S+)\//.exec(row);
+  expect(named, "the banking map's stage-0 row still names the tree it copies").toBeTruthy();
+  return { into: String(named?.[1]), from: String(named?.[2]) };
 }
 
 /** The committed artifact, read off this checkout at body time. */
@@ -583,11 +612,14 @@ test("a fresh folder receives the entry from a packed tarball and materializes t
     // AND THE CONTRACT RESOLVES. The expectation is derived from the
     // METHOD TREE — every docs template and every adapter — so a
     // generator that dropped one leaves this expectation standing.
-    for (const rel of walkRel(path.join(repoRoot, "method/docs-templates"))) {
-      const landed = path.join(project, "docs", ...rel.split("/"));
-      expect(existsSync(landed), `docs/${rel} is missing from the interviewed folder`).toBe(true);
-      expect(readFileSync(landed, "utf8"), `docs/${rel} is not the method's own bytes`).toBe(
-        readFileSync(path.join(repoRoot, "method/docs-templates", rel), "utf8"),
+    const tree = scaffoldTree();
+    for (const rel of walkRel(path.join(repoRoot, "method", tree.from))) {
+      const landed = path.join(project, tree.into, ...rel.split("/"));
+      expect(existsSync(landed), `${tree.into}/${rel} is missing from the interviewed folder`).toBe(
+        true,
+      );
+      expect(readFileSync(landed, "utf8"), `${tree.into}/${rel} is not the method's own bytes`).toBe(
+        readFileSync(path.join(repoRoot, "method", tree.from, rel), "utf8"),
       );
     }
     for (const rel of walkRel(path.join(repoRoot, "method/adapters"))) {

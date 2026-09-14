@@ -172,6 +172,13 @@ use the skeleton carried as a seed block at
 This block is a seed too - write it to disk at the path on its fence
 line.
 
+**WHERE THE STEP BELOW POINTS AT `tasks/TASK-FORMAT.md`, THAT FILE IS
+NOT HERE.** It is larger than this whole entry is allowed to be, so
+what rides instead is the card skeleton and the criteria rules the
+step states itself. Use them; do not go looking for the document, and
+do not invent what you imagine is in it. A project that later adopts
+the method whole gets it with the rest of the method.
+
 ````supertaskr-seed .supertaskr/genesis/kit/interview/decomposition.md
 # Decomposition — from backbone to exact tasks
 
@@ -269,6 +276,12 @@ right thing without asking a single question. Every task must pass it.
 
 Both are quoted verbatim from `method/roles/planner.md`, the role this
 skill is the Claude Code lens of.
+
+**THE OVERWRITE RULE POINTS AT AN ARCHAEOLOGY FILE THAT IS NOT HERE
+EITHER, AND THAT IS THE ANSWER RATHER THAN A GAP.** Adopting a folder
+that already holds real work is not this entry's job. The rule's own
+instruction is the whole of what you do about it: stop, and ask the
+human, instead of writing over what is there.
 
 ````supertaskr-source method/roles/planner.md#resume-rule
 ## Resume rule
