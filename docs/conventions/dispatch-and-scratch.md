@@ -139,9 +139,9 @@ here without asking what reads it.
   **THE FIVE REQUIREMENTS ARE PRINTED WHETHER THEY HELD OR NOT** — a
   requirement that PASSED and one nobody asked look alike in a report of
   refusals — in order: an admission the grant permits; every changed path
-  inside the fence; a keeper or owning spec for every fenced path (from
-  `gate-run.mjs`'s owning rule over the import graph, WITHOUT running a
-  suite); no guard-class path (the map in
+  inside the fence; a keeper or owning spec for every fenced path (the
+  blessed gate-runner's own owning rule over the import graph, WITHOUT
+  running a suite); no guard-class path (the map in
   docs/conventions/architecture.md); reversible — tracked, present, not
   generated.
   **AN OUTCOME SENTENCE ALONE AUTHORIZES NO WORK**: under the explicit

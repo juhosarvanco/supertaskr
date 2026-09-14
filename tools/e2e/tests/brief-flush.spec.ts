@@ -635,6 +635,25 @@ const LIVE_ARMS: ReadonlyArray<{ label: string; args: string[] }> = [
   { label: "--task T-133 --preflight", args: ["--task", "T-133", "--preflight"] },
   { label: "--state", args: ["--state"] },
   { label: "--card T-133", args: ["--card", "T-133"] },
+  // THE EXPRESS PATH'S DRY RUN (T-320). It is the one express invocation
+  // this guard may drive: `--express` WRITES — a compact card into
+  // docs/tasks, staged for the dispatch stamp's own commit — and
+  // `--dry-run` is the form that composes the card, measures the five
+  // eligibility requirements and prints the whole answer WITHOUT
+  // touching the tree. It is a real size: the eligibility report, the
+  // receipt's requested half and the composed card all go out, and the
+  // fence it is given is a path this repository really tracks, so the
+  // answer is a function of this tree like every other arm here.
+  {
+    label: "--express … --fence … --dry-run",
+    args: [
+      "--express",
+      "WHEN the express arm is driven by this guard THE command SHALL compose a card and write nothing.",
+      "--fence",
+      "tools/e2e/scripts/run-record.mjs",
+      "--dry-run",
+    ],
+  },
 ];
 
 /**
@@ -666,6 +685,46 @@ const LIVE_ARMS: ReadonlyArray<{ label: string; args: string[] }> = [
  * routed rather than built.
  */
 const NOT_AN_ARM: ReadonlyArray<{ flag: string; why: string }> = [
+  {
+    flag: "--express-withdraw",
+    why: "THE EXPRESS PATH'S OTHER WRITER (T-320), and it has no dry form that reaches a size: it takes the express label off a card by a dated append and re-triages the card's tier, both writes into docs/tasks on the integration branch, so a guard that measured it would edit somebody's card every time this suite ran. That is `--dispatch-lane`'s own argument at the smallest end of the loop. `brief.spec.ts` drives the withdrawal against a card it composes itself, where the preservation of the branch and the run record can actually be asserted.",
+  },
+  {
+    flag: "--express-id",
+    why: "a MODIFIER of --express: which id the compact card takes instead of the next free one the board gives it. It moves no row of the answer — the same report is rendered either way, with a different three-digit id in it — and the arm above already drives the derived spelling, which is the one a seat uses.",
+  },
+  {
+    flag: "--fence",
+    why: "a REQUIRED companion of --express rather than an arm: alone it is a usage error, and the arm above drives it. Its value is a path list, so the size it produces is a function of how many paths a caller typed, which is the argument --audit makes about a file handed in from outside.",
+  },
+  {
+    flag: "--changed",
+    why: "a MODIFIER of --express: the paths the change actually touches, measured against the fence. It adds at most one clause to one eligibility finding — the arm above drives that finding with the fence's own expansion, which is what the value defaults to — so an entry here would measure the same report twice.",
+  },
+  {
+    flag: "--feature",
+    why: "a MODIFIER of --express: it NAMES the story-map column the compact card is filed under instead of deriving it from the live card that shares the most of the fence. It replaces one derived line with one typed line of the same shape, so it moves the answer by a handful of bytes and never its structure.",
+  },
+  {
+    flag: "--milestone",
+    why: "the second half of --feature above, and required with it: both or neither, because a card filed under a feature with no milestone is not a card the board can place. Same argument, same handful of bytes, and the arm above drives the derived spelling.",
+  },
+  {
+    flag: "--requested",
+    why: "a MODIFIER of --express: the instant the seat gave the outcome sentence, which the first of the five express measurements is a difference from. It substitutes one ISO instant for another in one printed line — the default is this command's own invocation, and the report says which of the two it used — so it moves no row and an arm here would size the same answer again.",
+  },
+  {
+    flag: "--why",
+    why: "a REQUIRED companion of --express-withdraw rather than an arm: it carries the sentence saying what failed, and alone it is a usage error. The arm it belongs to is excused above as a writer, so there is no invocation of it for this file to size.",
+  },
+  {
+    flag: "--branch",
+    why: "a MODIFIER of --express-withdraw: which branch the preserved candidate is on, named in the dated line the withdrawal appends. It belongs to the writer excused above and has no invocation of its own.",
+  },
+  {
+    flag: "--instant",
+    why: "a MODIFIER of `--run collect` (T-320): the named ISO instants the seat stamps onto a run record after the child is gone. `--run` is excused below as the writer it is, and this dial reaches nothing else, so there is no invocation of it for this file to size.",
+  },
   {
     flag: "--role",
     why: "a MODIFIER of --task: it chooses which role file the rows are read against. It moves the answer by the length of one contract table, never its shape, and the arms above already drive the default role.",
