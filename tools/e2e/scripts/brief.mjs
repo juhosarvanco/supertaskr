@@ -166,10 +166,24 @@ import {
   DispatchLaneFinding,
   EXIT,
   assembleBrief,
+  UnattendedFinding,
+  assembleReturnBrief,
+  attribute,
   awaitPlan,
   awaitRecs,
   admissionLedger,
   blank,
+  defaultRunnerIo,
+  dueRetries,
+  firstParentLine,
+  mergeEvidence,
+  metersRecords,
+  questionHolds,
+  readQuestions,
+  repairLedger,
+  returnBriefRecs,
+  roomFiles,
+  sharedHealth,
   context,
   defaultAwaitIo,
   defaultDispatchIo,
@@ -254,6 +268,8 @@ const FLAGS = Object.freeze([
   "--bench",
   "--await",
   "--await-pid",
+  "--await-until",
+  "--since",
   "--ceiling",
   "--run",
   "--assignment",
@@ -401,7 +417,8 @@ async function main(argv) {
           "[--scratch <dir>] [--derived-from <T-NNN> --failure <text|@file>] [--dry-run]] " +
           "[--merge <T-NNN> [--bump <old>..<new>] [--meters <path>] [--tier <tier>] " +
           "[--blocks-absent <sha>] [--dry-run]] [--bench <T-NNN> [--scratch <dir>]] " +
-          "[[--await <marker> | --await-pid <pid>] --ceiling <seconds>] " +
+          "[[--await <marker> | --await-pid <pid> | --await-until <instant>] --ceiling <seconds>] " +
+          "[--since <instant>] " +
           "[--run start --assignment <path>] " +
           "[--run bind|observe|send|wait|collect|continue|stop --attempt <id> " +
           "[--session <id>] [--pid <n>] [--question <id>] [--answer <text|@file>] " +
@@ -472,7 +489,19 @@ async function main(argv) {
    * derived answer behind a fact that may never happen, and the ceiling
    * would then bound the wait while the answer bounded nothing.
    */
-  const wantsAwait = opts["await"] !== undefined || opts["await-pid"] !== undefined;
+  const wantsAwait =
+    opts["await"] !== undefined ||
+    opts["await-pid"] !== undefined ||
+    opts["await-until"] !== undefined;
+  /**
+   * ARM FOURTEEN (`--since`, T-322) — THE RETURN BRIEF. A pure read, and
+   * it is held apart from the two blocking arms rather than from the
+   * derivations: it answers what happened while the owner was away, and
+   * an invocation that also cut a lane would be answering that question
+   * about a world it had just changed.
+   */
+  const sinceRaw = opts["since"] ?? "";
+  const wantsSince = sinceRaw !== "";
   /**
    * ARM THIRTEEN'S VERB (T-311). The run arm is held apart from every
    * other arm for the reason the wait is: it WRITES a run record, and one
@@ -484,8 +513,9 @@ async function main(argv) {
   const wantsRun = runVerb !== "";
   if (!wantsAwait && !wantsRun && opts["ceiling"] !== undefined) {
     console.error(
-      "brief: --ceiling only means something beside --await <marker>, --await-pid <pid> or " +
-        "--run wait — it is the bound on a wait, and there is no wait here for it to bound.",
+      "brief: --ceiling only means something beside --await <marker>, --await-pid <pid>, " +
+        "--await-until <instant> or --run wait — it is the bound on a wait, and there is no wait " +
+        "here for it to bound.",
     );
     return EXIT.USAGE;
   }
@@ -564,6 +594,7 @@ async function main(argv) {
       ...(wantsMerge ? ["--merge"] : []),
       ...(wantsBench ? ["--bench"] : []),
       ...(wantsAwait ? ["--await"] : []),
+      ...(wantsSince ? ["--since"] : []),
     ];
     if (others.length > 0) {
       console.error(
@@ -732,6 +763,7 @@ async function main(argv) {
       ...(wantsMerge ? ["--merge"] : []),
       ...(wantsBench ? ["--bench"] : []),
       ...(wantsRun ? ["--run"] : []),
+      ...(wantsSince ? ["--since"] : []),
     ];
     if (others.length > 0) {
       console.error(
@@ -748,6 +780,7 @@ async function main(argv) {
       plan = awaitPlan({
         ...(opts["await"] === undefined ? {} : { marker: opts["await"] }),
         ...(opts["await-pid"] === undefined ? {} : { pid: opts["await-pid"] }),
+        ...(opts["await-until"] === undefined ? {} : { until: opts["await-until"] }),
         ...(opts["ceiling"] === undefined ? {} : { ceiling: opts["ceiling"] }),
       });
     } catch (err) {
@@ -766,6 +799,204 @@ async function main(argv) {
     // fact, which is the whole difference between a bounded wait and a
     // sleep that a script cannot tell from a success.
     return result.satisfied ? EXIT.CLEAN : EXIT.FOUND;
+  }
+  if (wantsSince) {
+    const others = [
+      ...(taskId === "" ? [] : ["--task"]),
+      ...(wantsState ? ["--state"] : []),
+      ...(wantsDispatch ? ["--dispatch"] : []),
+      ...(cardId === "" ? [] : ["--card"]),
+      ...(auditPath === "" ? [] : ["--audit"]),
+      ...(wantsPreflight ? ["--preflight"] : []),
+      ...(fenceWorktree === "" ? [] : ["--write-fence"]),
+      ...(wantsTakeSeat ? ["--take-seat"] : []),
+      ...(wantsReleaseSeat ? ["--release-seat"] : []),
+      ...(wantsDispatchLane ? ["--dispatch-lane"] : []),
+      ...(wantsMerge ? ["--merge"] : []),
+      ...(wantsBench ? ["--bench"] : []),
+    ];
+    if (others.length > 0) {
+      console.error(
+        `brief: --since cannot share an invocation with ${others.join(", ")}. It answers what ` +
+          "happened while the owner was away, and an invocation that also dispatched, merged or " +
+          "armed a bench would be answering that question about a world it had just changed.",
+      );
+      return EXIT.USAGE;
+    }
+    if (!Number.isFinite(Date.parse(sinceRaw))) {
+      console.error(
+        `brief: ${JSON.stringify(sinceRaw)} is not an instant. --since takes an ISO 8601 instant ` +
+          "— the moment the owner stepped away — because the whole answer is a WINDOW and a " +
+          "window with a guessed edge reports a different set to every reader.",
+      );
+      return EXIT.USAGE;
+    }
+    const ctx = context({ ...(opts["root"] === undefined ? {} : { root: opts["root"] }) });
+    const io = defaultRunnerIo();
+    // THE RUNNER IS ASKED ONCE PER INVOCATION. Both halves below read the
+    // same answer, so the brief and the attribution under it cannot be
+    // describing two different histories.
+    const runs = io.runs(ctx.root);
+    const line = firstParentLine(ctx.root);
+    const onLine = new Set(line.map((c) => c.sha));
+    // THE RECORDS ARE GATHERED HERE, because this wrapper is the one
+    // module that imports both halves (T-324's own split for the
+    // admission ledger, one card later). One read, and both the brief and
+    // the health check below spend it.
+    const records = allRecords(ctx.root);
+    const input = assembleReturnBrief(ctx, { since: sinceRaw, io, runs, records });
+    say(render(returnBriefRecs(ctx, input)));
+    // ── THE ATTRIBUTION OF EVERY RED IN THE WINDOW (T-322 criterion 1) ─
+    // The brief attributes BEFORE it recommends anything, and it reads
+    // the run's OWN log to do it. A red left unattributed here is a red
+    // the loop would act on by guessing, which is the one move the
+    // criterion forbids; and whether the attribution was RECORDED is a
+    // separate line, because deriving one is not the same as filing it.
+    const reds = input.merges.filter((m) => m.conclusion === "failure");
+    const t = liveProv(ctx.at, ctx.host, "the runner's own runs and the failing log of each red");
+    // THE ATTRIBUTIONS ARE DERIVED BEFORE ANYTHING IS RENDERED, because
+    // the health check below reads them: a red that has been attributed
+    // PERMITS its designated repair, and one that has not holds every
+    // action — so the two answers have to come from one derivation.
+    const recovery = grantState(ctx.root).recovery;
+    const attributions = reds.map((m) => {
+      const log = io.log(ctx.root, m.run);
+      const card = /^Merge\s+(T-\d+(?:-s\d+)?)\b/.exec(m.subject);
+      return {
+        run: m.run,
+        tested: m.tested,
+        card: card === null ? m.sha.slice(0, 8) : String(card[1]),
+        attribution:
+          log === null
+            ? null
+            : attribute({
+                log,
+                runs: runs ?? [],
+                // THE TIP IS THE SHA THE RUN TESTED AND THE INSTANT THE
+                // RUN WAS CREATED, never the merge commit and never the
+                // commit's own date: the baseline is the newest EARLIER
+                // run, and "earlier" is a fact about runs.
+                tip: { sha: m.tested, at: m.runAt },
+                isAncestor: (sha) => onLine.has(sha),
+                recovery,
+              }),
+      };
+    });
+    say("");
+    say(
+      render([
+        note("THE REDS IN THIS WINDOW, ATTRIBUTED — a red is not a defect until something says"),
+        note("WHICH defect. Four answers and they route four different ways: a regression becomes"),
+        note("the repair, a transient failure a wait and a retry, a failure needing configuration"),
+        note("or an owner's action a PARK with a wake, and an unresolved cause a diagnosis."),
+        ...(reds.length === 0
+          ? [value("no run in this window concluded failure", t)]
+          : attributions.flatMap((row) =>
+              row.attribution === null
+                ? [
+                    value(`${row.run} at ${row.tested} — RED, and its log could not be read from here`, t),
+                    value(
+                      "   so this run is NOT attributed. An attribution with no log is a guess, and " +
+                        "the next act is to read the log rather than to act on this line.",
+                      t,
+                    ),
+                  ]
+                : [
+                    value(
+                      `${row.run} at ${row.tested} — ${row.attribution.class.toUpperCase()} → ${row.attribution.action}`,
+                      t,
+                    ),
+                    value(`   ${row.attribution.why}`, t),
+                    value(
+                      `   baseline: ${row.attribution.baseline}` +
+                        (row.attribution.range === "" ? "" : ` · range ${row.attribution.range}`),
+                      t,
+                    ),
+                  ],
+            )),
+      ]),
+    );
+    // ── WHAT MAY PROCEED RIGHT NOW (T-322 criterion 3) ────────────────
+    // The health check is run HERE rather than at the dispatch boundary
+    // because this is the one arm that has the runner's answer: the CI
+    // half of the state is a fact about a machine that is not this one,
+    // and `--dispatch` cannot reach it without making its own size
+    // non-deterministic (brief-flush.spec.ts compares two runs of every
+    // arm). So the dispatch order reports the check with its CI half
+    // honestly UNKNOWN, and this arm reports it populated. T-322-s4 is
+    // the card for closing that.
+    const attributedRed = attributions.find(
+      (row) => row.attribution !== null && row.attribution.class === "regression",
+    );
+    const newest = input.merges[0];
+    const health = {
+      ci: {
+        known: runs !== null,
+        green: newest === undefined ? true : newest.conclusion === "success",
+        attributed:
+          attributedRed === undefined || attributedRed.attribution === null
+            ? null
+            : { card: attributedRed.card, bodies: attributedRed.attribution.bodies },
+      },
+      verification: {
+        trusted: true,
+        owed: false,
+        why: "no bench and no seal is owed by a report; this answer proposes no stage of its own",
+      },
+      writers: {
+        unknown: records
+          .filter(
+            (r) => r.writer === true && !TERMINAL_STATES.includes(r.state) && r.execution === null,
+          )
+          .map((r) => String(r.resource ?? r.attempt)),
+      },
+    };
+    const pendingQuestions = input.questions.filter((q) => q.state === "pending").map((q) => q.id);
+    const proposed = [
+      ...input.repairs.map((r) => ({
+        kind: "repair",
+        card: r.card,
+        repairs: r.parent,
+        pendingQuestions,
+        resource: null,
+      })),
+      ...input.lanes.map((l) => ({
+        kind: "landing",
+        card: l.taskId,
+        checks: [],
+        dependsOn: input.questions.filter((q) => q.cards.includes(l.taskId)).map((q) => q.id),
+        pendingQuestions,
+        resource: l.worktree,
+      })),
+    ];
+    say("");
+    say(
+      render([
+        note("WHAT MAY PROCEED RIGHT NOW — the shared-health check, run against each ACTION this"),
+        note("brief can name rather than against the world. An attributed red permits its own"),
+        note("designated repair and holds a landing it invalidates; an unknown live writer or an"),
+        note("untrusted verification path holds everything, and no permission bypasses those."),
+        ...(proposed.length === 0
+          ? [value("this brief names no repair and no live lane, so there is no action to check", t)]
+          : proposed.flatMap((action) => {
+              const verdict = sharedHealth(health, action);
+              return [
+                value(verdict.why, t),
+                ...verdict.holds.map((/** @type {string} */ h) => value(`   HELD — ${h}`, t)),
+              ];
+            })),
+        value(
+          health.ci.known
+            ? `the CI half was READ from the runner: the newest merge in this window concluded ` +
+              `${newest === undefined ? "nothing — the window is empty" : newest.conclusion}`
+            : "the CI half is UNKNOWN — the runner could not be reached, so no rule that turns on " +
+              "a red fired here, and this answer says that rather than assuming green",
+          t,
+        ),
+      ]),
+    );
+    flush();
+    return EXIT.CLEAN;
   }
   if (wantsDispatchLane && (opts["slug"] ?? "") === "") {
     console.error(

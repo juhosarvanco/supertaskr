@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1132 behaviours** — 1130 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1156 behaviours** — 1154 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -244,6 +244,22 @@ Census: **1132 behaviours** — 1130 extracted sentences + 2 named-not-extracted
 - THIS PROJECT'S OWN TREE IS THE EXPLICIT NO-GRANT STATE, the ceremony keeps working, and the arm says NOTHING WAS ENFORCED rather than pretending it was
 - THE ORCHESTRATOR'S STEP 5 KEEPS ITS TWO SENTENCES AND EXTENDS THEM — a dispatch inside the current grant is approved by the grant, and every other dispatch still waits for the owner
 - THE CONVENTIONS CARRY THE ADMISSION RULE ONCE, AT THE LOOP'S OWN SECTION
+- T-322 C1 — A RED IS ATTRIBUTED BEFORE ANYTHING ACTS ON IT, and the four answers route four different ways
+- T-322 C1 — THE BASELINE IS THE NEWEST EARLIER ANCESTOR RUN, and a body already failing there is NOT attributed to the merge
+- T-322 C2 — A REPAIR CONTINUES ON DEMONSTRATED PROGRESS AND PARKS ON A REPEATED INEFFECTIVE REMEDY, with a wake condition either way
+- T-322 C1 — THE ATTRIBUTION IS RECORDED WITH THE REMEDY IT JUSTIFIED, and the loop's own ceremony may write that ledger onto an approved card without costing it its approval
+- T-322 C3 — THE SHARED-HEALTH CHECK IS SPECIFIC TO THE PROPOSED ACTION: a repair allowed on an attributed red base, a feature held on that same red, an independent card continuing past a parked question
+- T-322 C4 — THE WAIT VERB IS EXTENDED WITH A WAIT-UNTIL-INSTANT FORM, driven by an INJECTED clock, and the ceiling still bounds it
+- T-322 C4 — THE INSTANT ARRIVES AND THE WAIT ENDS, and a ceiling short of the instant is REPORTED rather than hung on
+- T-322 C4 — THE REFUSAL IS CLASSIFIED AND THE RETRY INSTANT IS THE PROVIDER'S OWN WHERE IT NAMES ONE
+- T-322 C5 — A QUESTION ENTRY IS MARKED AS A QUESTION AND ROUND-TRIPS THROUGH ITS OWN READER, and every shape that would make it a ruling is refused
+- T-322 C6 — ONE END-TO-END FIXTURE: a question parked, its dependent card REFUSED at the cut, an independent one admitted, the question resolved by an authorized entry, and the same state and the same brief recovered in a FRESH PROCESS
+- T-322 C7 — THE CONVENTIONS CARRY THE HOST KEEP-AWAKE RULE ONCE, AT THE LOOP'S OWN SECTION, WITH ITS DERIVE COMMAND
+- T-322 C7 — THE ORCHESTRATOR'S STOP LIST NAMES ONLY THE STOPS THE GRANT RESERVES, and 5g says what each failure produces instead
+- T-322 C5 — THE ROOM FORMAT RULES THE QUESTION ENTRY'S SHAPE, and the method eval holds it
+- T-322 VC1 — A QUESTION ENTRY MAY NOT CARRY A LINE BREAK INTO A ROOM, because a line break there forges a heading and the reader stops at it
+- T-322 VC2 — THE RETRY INSTANT IS THE RESET THE PROVIDER STATED, never whatever timestamp the refusal text happens to carry
+- T-322 VC3 — PROGRESS IS THE NEWEST ATTEMPT'S, so one old partial does not licence a repeat of an ineffective remedy for ever
 
 ## card-figures
 
@@ -491,6 +507,10 @@ Census: **1132 behaviours** — 1130 extracted sentences + 2 named-not-extracted
 - the in-flight section's POPULATED arm, on an injected board that cannot evaporate
 - A LANE'S ADDRESS IS SPELLED ONCE, and the ruling still NAMES the lane and the shared path
 - ...AND THE SAVING IS MEASURED ON THE REAL BOARD AT THIS REF, never on the fixture alone
+- A PENDING QUESTION MOVES A CARD OUT OF STARTABLE AND NAMES THE QUESTION ON IT — and a RESOLVED one gives it back
+- EVERY CARD THE QUESTION DOES NOT NAME CONTINUES — the hold is per card and never per board
+- THE RECORDED RETRIES ARE SURFACED AT THE BOUNDARY, and a DUE one is told apart from a scheduled one
+- THE SHARED-HEALTH LINE IS PER CARD AND SPECIFIC TO THE ACTION — an unknown live writer holds it and an attributed red does not
 
 ## docs-input-gate
 
@@ -1156,6 +1176,10 @@ Census: **1132 behaviours** — 1130 extracted sentences + 2 named-not-extracted
 - A PAUSE THE OWNER RECORDED STOPS THE LOOP EVEN WHERE THERE IS NO GRANT TO ENFORCE — and a tree with no block is this project's own
 - A `new-work` PAUSE PERMITS THE VERIFICATION OF A CANDIDATE ALREADY ADMITTED AND OF NOTHING ELSE — a verifier start for a card this loop never admitted is refused
 - A DERIVED REPAIR CANNOT EXCEED THE AUTHORIZATION IT INHERITS — a parent past the `until` endpoint is refused, so the endpoint is not crossed by naming an unreachable parent
+- A QUOTA REFUSAL IS RECORDED ON THE RUN RECORD WITH ITS NEXT RETRY INSTANT — the provider's own reset where it names one, a capped growing delay where it does not
+- AN AUTHENTICATION OR CONFIGURATION FAILURE IS NOT A QUOTA REFUSAL — it is recorded, it schedules NO retry, and it parks with a question
+- THE RECORDED INSTANT SURVIVES THE PROCESS — a fresh read of the records separates what is DUE from what is merely scheduled
+- THE REFUSAL PATH NAMES NO MODEL AND NO ACCOUNT — this arm holds no code that could change either
 
 ## session-economics
 

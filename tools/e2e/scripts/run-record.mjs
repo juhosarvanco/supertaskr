@@ -95,9 +95,11 @@ import {
   approvedCardText,
   cardBlobSha,
   cardFileOf,
+  classifyRefusal,
   grantState,
   liveProv,
   note,
+  retryInstant,
   runAwait,
   value,
 } from "./dispatch-brief.mjs";
@@ -277,6 +279,8 @@ export class RunRecordFinding extends Error {
  * @property {?string} replaces
  * @property {{ at: string, op: string, from: string, to: string, why: string }[]} events
  * @property {?import("./dispatch-brief.mjs").Admission} admission
+ * @property {?import("./dispatch-brief.mjs").Refusal & { at: string }} refusal  the provider refusal this attempt met, classified (T-322)
+ * @property {?{ at: string, attempts: number, source: string, why: string }} retry  the next retry instant, on a QUOTA refusal only (T-322)
  */
 
 /* ────────────────────────────────────────────────────────────────────
@@ -902,6 +906,13 @@ export function startRun(root, opts) {
     // ledger: the next boundary derives what has been admitted from
     // these documents rather than from a consumption table of its own.
     admission,
+    // THE PROVIDER REFUSAL AND ITS RETRY INSTANT (T-322). Both are null
+    // at a start and both are written by `stop`, so a record's shape is
+    // the same whether or not this attempt ever met one; a record
+    // written before this card carries neither and is read as carrying
+    // neither, rather than as a retry nobody scheduled.
+    refusal: null,
+    retry: null,
   };
   transition(
     rec,
@@ -1832,7 +1843,7 @@ export function continueRun(root, opts) {
  *
  * @param {string} root
  * @param {{ attempt: string, evidence?: string, at?: string, io?: RunIo }} opts
- * @returns {{ record: RunRecord, reconciliation: Reconciliation }}
+ * @returns {{ record: RunRecord, reconciliation: Reconciliation, refusal: import("./dispatch-brief.mjs").Refusal, retry: RunRecord["retry"] }}
  */
 export function stopRun(root, opts) {
   const io = opts.io ?? defaultRunIo();
@@ -1876,9 +1887,51 @@ export function stopRun(root, opts) {
     `termination established (${reconciliation.why}); the owned jobs are confirmed gone and the ` +
       "shared harness process was never signalled",
   );
+  // ── THE REFUSED SPAWN AND ITS RETRY INSTANT (T-322) ────────────────
+  // **A QUOTA REFUSAL IS A RECORDED RETRY, NOT A STOP AND NOT A WAIT ON
+  // THIS LOOP'S ONLY CONTROL.** The record is the place, for the reason
+  // every other fact about an attempt is here: the coordinator that
+  // revisits the instant may be a successor seat that never met the
+  // refusal, and an instant on the record is the only form of it that
+  // survives the session.
+  //
+  // IT RIDES `stop` RATHER THAN A NINTH OPERATION, and that is the
+  // method's constraint honoured rather than worked around: the
+  // operations are the same seven for every kind of child
+  // (method/lane-protocol.md). A refused spawn IS an established
+  // non-execution — nothing is running, the reservation is released and
+  // the retry is a NEW attempt — and stop's reconciliation is exactly
+  // the "no writer is created or lost by assumption" the card asks for,
+  // already refusing an uncertain record before it gets here.
+  //
+  // THE CLASSIFICATION IS MADE AT EVERY STOP AND REPORTED, so a text
+  // this reader gets wrong is visible rather than silent; only a QUOTA
+  // refusal schedules a retry. An AUTHENTICATION or CONFIGURATION
+  // failure records its kind and NO retry, because neither is resolved
+  // by waiting and changing a model or an account is a decision this
+  // loop does not hold.
+  const refusal = classifyRefusal(opts.evidence ?? "");
+  rec.refusal = refusal.kind === "none" ? null : { ...refusal, at };
+  rec.retry = null;
+  if (refusal.kind === "quota") {
+    const work = workOf(rec.attempt);
+    const met =
+      allRecords(root).filter((r) => workOf(r.attempt) === work && r.refusal?.kind === "quota")
+        .length + 1;
+    const next = retryInstant(refusal, met, Date.parse(at));
+    rec.retry = {
+      at: next.at,
+      attempts: met,
+      source: next.source,
+      why:
+        `${refusal.why} The retry is a FRESH start for this work, which re-reads the pause, the ` +
+        "grant and the shared eligibility at the child-start boundary; nothing here changes a " +
+        "model or an account, and this arm holds no code path that could.",
+    };
+  }
   releaseIfOurs(root, rec, at);
   writeRecord(root, rec);
-  return { record: rec, reconciliation };
+  return { record: rec, reconciliation, refusal, retry: rec.retry };
 }
 
 /* ────────────────────────────────────────────────────────────────────

@@ -883,3 +883,186 @@ test("...AND THE SAVING IS MEASURED ON THE REAL BOARD AT THIS REF, never on the 
     }
   }
 });
+
+/* ────────────────────────────────────────────────────────────────────
+ * THE UNATTENDED LOOP AT THE DISPATCH BOUNDARY (T-322) — the question
+ * hold, the recorded retries and the health check specific to the action.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/** A question entry in a fixture room, in the shape ROOM-FORMAT rules. */
+function questionRoom(o: {
+  id: string;
+  state: string;
+  cards: string[];
+  resolution?: string;
+}): { path: string; content: string } {
+  return {
+    path: "docs/rooms/a-fixture-room.md",
+    content: [
+      "---",
+      "type: consultation",
+      "status: open",
+      "max_rounds: 3",
+      "---",
+      "",
+      `## @orchestrator (a-model @a-session) — 2026-09-14 — QUESTION ${o.id} (${o.state})`,
+      "",
+      "**QUESTION — not a ruling.** Whether the parser's own fence rule admits this card is a",
+      "product ruling (docs/tasks/T-952-startable.md)",
+      "",
+      `Cards held: ${o.cards.join(", ")}`,
+      `State: ${o.state}${o.resolution === undefined ? "" : ` — ${o.resolution}`}`,
+      "",
+    ].join("\n"),
+  };
+}
+
+test("A PENDING QUESTION MOVES A CARD OUT OF STARTABLE AND NAMES THE QUESTION ON IT — and a RESOLVED one gives it back", async () => {
+  // THE CARD'S FIFTH CRITERION, the display half. The set is CARVED OUT
+  // of startable rather than added beside it: a card in both would be a
+  // card this answer says a session may start and the lane cut then
+  // refuses, which is two answers from one derivation.
+  //
+  // KILLED BY: a report that lists the held card as startable anyway, one
+  // that omits the question id from its row, one that holds a card the
+  // entry does not name, and one that keeps holding after the entry is
+  // resolved.
+  const base = { files: FILTER_BOARD, porcelain: ONE_LANE };
+  // THE FIXTURE IS ASSERTED BEFORE IT IS USED: without T-952 startable,
+  // every check below would pass vacuously.
+  const plain = await dispatchContext(base);
+  expect(plain.order.startable.map((r: { id: string }) => r.id)).toEqual(["T-952"]);
+
+  const held = await dispatchContext({
+    ...base,
+    rooms: [questionRoom({ id: "Q-001", state: "pending", cards: ["T-952"] })],
+  });
+  const heldText = render(dispatchReport(held));
+  expect(unstampedLines(heldText)).toEqual([]);
+  expect(heldText, "the NOT STARTABLE section is missing").toContain("NOT STARTABLE");
+  expect(heldText, "the held card's row does not name the question").toContain(
+    "held by Q-001 (pending) in docs/rooms/a-fixture-room.md",
+  );
+  // AND IT IS NO LONGER OFFERED AS STARTABLE.
+  const startableSection = heldText.slice(heldText.indexOf("STARTABLE NOW"));
+  expect(
+    startableSection.split("\n").filter((l) => l.includes("T-952") && l.includes("Startable")),
+    "the held card is still offered as startable",
+  ).toEqual([]);
+
+  // THE RESOLVED STATE GIVES IT BACK, and that is the same derivation
+  // answering the other way rather than a second rule.
+  const freed = await dispatchContext({
+    ...base,
+    rooms: [
+      questionRoom({
+        id: "Q-001",
+        state: "resolved",
+        cards: ["T-952"],
+        resolution: "the owner ruled on 2026-09-15, recorded in docs/decisions/026",
+      }),
+    ],
+  });
+  const freedText = render(dispatchReport(freed));
+  expect(freedText, "a resolved question still holds a card").toContain(
+    "no pending question holds a startable card",
+  );
+  const freedStartable = freedText.slice(freedText.indexOf("STARTABLE NOW"));
+  expect(
+    freedStartable.split("\n").filter((l) => l.includes("T-952") && l.includes("Startable")),
+    "the card did not come back once the question resolved",
+  ).toHaveLength(1);
+});
+
+test("EVERY CARD THE QUESTION DOES NOT NAME CONTINUES — the hold is per card and never per board", async () => {
+  // THE CARD'S FIFTH CRITERION's other half, and the one a blunt
+  // implementation gets wrong: "every card that does not depend on it is
+  // admitted". A pending question over a card that is not even on this
+  // board must move nothing.
+  //
+  // KILLED BY: a hold keyed on the ROOM rather than on the cards the
+  // entry names, and by any implementation that treats a pending question
+  // as a global stop.
+  const ctx = await dispatchContext({
+    files: FILTER_BOARD,
+    porcelain: ONE_LANE,
+    rooms: [questionRoom({ id: "Q-007", state: "pending", cards: ["T-903"] })],
+  });
+  const text = render(dispatchReport(ctx));
+  expect(text, "an unrelated pending question held a startable card").toContain(
+    "no pending question holds a startable card",
+  );
+  const startable = text.slice(text.indexOf("STARTABLE NOW"));
+  expect(
+    startable.split("\n").filter((l) => l.includes("T-952") && l.includes("Startable")),
+    "the independent card stopped continuing past a parked question",
+  ).toHaveLength(1);
+});
+
+test("THE RECORDED RETRIES ARE SURFACED AT THE BOUNDARY, and a DUE one is told apart from a scheduled one", async () => {
+  // THE CARD'S FOURTH CRITERION at the coordinator's own boundary: the
+  // retry is something it RETURNS to while other work continues, so the
+  // answer to "what next" is where it belongs.
+  //
+  // KILLED BY: a report that omits the retries, one that shows a future
+  // instant as due, and one that shows a past instant as merely
+  // scheduled — which is the retry that never happens.
+  const records = [
+    {
+      attempt: "T-950-a1",
+      assignment: { id: "T-950" },
+      writer: false,
+      state: "stopped",
+      retry: { at: "2026-09-14T09:00:00Z", attempts: 1, why: "a quota window" },
+    },
+    {
+      attempt: "T-951-a1",
+      assignment: { id: "T-951" },
+      writer: false,
+      state: "stopped",
+      retry: { at: "2026-09-14T23:00:00Z", attempts: 2, why: "a quota window" },
+    },
+  ];
+  const ctx = await dispatchContext({
+    files: FILTER_BOARD,
+    porcelain: ONE_LANE,
+    records,
+    at: "2026-09-14T12:00:00.000Z",
+  });
+  expect(ctx.retries.due.map((r: { attempt: string }) => r.attempt)).toEqual(["T-950-a1"]);
+  expect(ctx.retries.scheduled.map((r: { attempt: string }) => r.attempt)).toEqual(["T-951-a1"]);
+  const text = render(dispatchReport(ctx));
+  expect(unstampedLines(text)).toEqual([]);
+  expect(text).toContain("DUE NOW — T-950 attempt T-950-a1, instant 2026-09-14T09:00:00Z");
+  expect(text).toContain("scheduled — T-951 attempt T-951-a1, instant 2026-09-14T23:00:00Z");
+});
+
+test("THE SHARED-HEALTH LINE IS PER CARD AND SPECIFIC TO THE ACTION — an unknown live writer holds it and an attributed red does not", async () => {
+  // THE CARD'S THIRD CRITERION where the coordinator actually asks the
+  // question. Two arrangements over ONE fixture board, differing only in
+  // the health state, so the difference in the answer is the state's.
+  //
+  // KILLED BY: a check that answers "is the world healthy" — it would
+  // hold the card in BOTH arrangements — and by one that permits
+  // everything, which would permit it in both.
+  const base = { files: FILTER_BOARD, porcelain: ONE_LANE };
+  const clean = {
+    ci: { known: true, green: false, attributed: { card: "T-950", bodies: ["A NAMED BODY"] } },
+    verification: { trusted: true, owed: false, why: "no bench is owed at the cut" },
+    writers: { unknown: [] as string[] },
+  };
+  const permitted = render(dispatchReport(await dispatchContext({ ...base, health: clean })));
+  expect(permitted, "an attributed red held a card it is not specific to").toContain(
+    "shared health: landing of T-952 is permitted despite the red on main",
+  );
+
+  const uncertain = {
+    ...clean,
+    writers: { unknown: ["/Users/x/supertaskr-T-901"] },
+  };
+  const heldText = render(dispatchReport(await dispatchContext({ ...base, health: uncertain })));
+  expect(heldText, "an unknown live writer did not hold the action").toContain(
+    "shared health: landing of T-952 is HELD by 1 condition(s)",
+  );
+  expect(heldText).toContain("is of UNKNOWN ownership");
+});

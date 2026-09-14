@@ -680,11 +680,12 @@ and T-236 (2026-09-02, whose pre-compaction text is
 ## Gotchas
 - method/ is the generic, product-agnostic convention — nothing
   supertaskr-specific goes in it; product docs live in docs/. Changes to
-  method/ formats are version-bumped (currently v0.1.30) and noted here.
+  method/ formats are version-bumped (currently v0.1.31) and noted here.
   **A VERSION'S NOTE HERE IS ITS DATE, ITS CARD AND ITS THEME; WHAT
   MOVED IS THE RELEASE'S OWN RECORD** (ADR-019's law applied to this
   changelog at T-162): the per-clause itemisation is RECORD-shaped, and
   the AUTHORITY for what a version says is `method/` itself at that tag.
+  v0.1.31 (T-322, 2026-09-14) — the UNATTENDED-OPERATION release: a rejected verdict or a CI red is attributed before anything acts; a repair continues on evidence and parks with a wake condition; the health check is specific to the action; a quota refusal becomes a recorded retry instant (the wait verb gains a wait-until-instant form); a reserved decision becomes a marked question entry the order and the cut read; the return brief (`brief.mjs --since`) derives from the records and the runner's runs; the keep-awake rule lands and the stop list names only the grant's stops.
   v0.1.30 (T-143-s5, 2026-09-14) — the STALENESS-BY-CREATION release: the docs gate's staleness derivation (staleStateRecords, the one helper the docs gate and the push checks consume) compares a checkpoint record against the commit that CREATED it rather than its latest touch, so an append to an already-checkpointed record no longer demands a STATE commit whose only content is a clock; a record created without its STATE regeneration still reds by name, the same-commit tie still passes, the reading stays committed history, and a record git names no creating commit for falls back to its latest touch; docs-protocol.md rule 4 argues the rule once, both halves — the creation obliges, never every later touch, and an amendment that changes a fact or a hazard the state document summarises still updates it, conduct no program keeps.
   v0.1.29 (T-324, 2026-09-14) — the ADMISSION release: every admission the arm makes — the lane cut, a child start, a re-entry or continuation, a replacement writer — is bound to the grant's revision, the card's approved blob and the attempt's reservation; an admission is explicit (a card the grant names) or derived (a repair the recovery policy allows, bound to its parent work and the failure evidence); the three approval modes and the two recovery values are enforced at those boundaries, a pause distinguishes new work from the admitted candidate's verification and integration, optional limits are read and reported as advisory and enforced by nothing, a successor coordinator inherits the grant from the block; the dispatch block's switches become operational in the process schema and the orchestrator's step 5 says a dispatch inside the current grant is approved by the grant.
   v0.1.28 (T-319, 2026-09-14) — the DISPATCH BLOCK release: the runtime template gains an optional dispatch block — the approval mode (each, until a named card, standing), the recovery policy (none, repairs) and the grant that sets them with its revision, order, endpoint, card blobs, optional advisory limits, revocation and history — declared once in the process schema as its own section of sixteen rows, every row labelled declarative because nothing admits or refuses by it until T-324; the parser library's process-settings module reads the block through the pure entry as one typed value validated against the declaration, a named refusal and never a partial value, with the explicit no-grant state (approval each, recovery none, no grant, revision 0) when the block is absent; the settings reference renders the section from the declaration; this project's own template carries no grant.
@@ -1032,8 +1033,8 @@ and T-236 (2026-09-02, whose pre-compaction text is
   because an approval read once at the cut is one a revocation four hours
   later cannot reach. An admission is EXPLICIT (a card the grant names,
   bound to the grant's revision and to the card's approved blob, with the
-  loop's own mechanical appends allowed: a status or tier stamp, a notes
-  or verdicts append, a filed follow-up line — anything else is a
+  loop's own mechanical appends allowed: a status or tier stamp, a notes,
+  verdicts or repair-ledger append, a filed follow-up line — anything else is a
   different card and refuses) or DERIVED (a repair the recovery policy
   allows, bound to its parent authorized work, the failure evidence, the
   PARENT grant's revision and its own blob at filing; it inherits that
@@ -1087,6 +1088,33 @@ and T-236 (2026-09-02, whose pre-compaction text is
   the third borrow the first's authority. The switch inventory the schema
   was built from — every row with its old and ruled value, its measured
   cost and its constraint — is in `docs/rooms/loop-cost-and-speed.md`.
+  **AND SINCE T-322 THE LOOP KEEPS WORKING WHILE THE OWNER IS AWAY.**
+  `method/roles/orchestrator.md` 5g states the rules — attribute a red
+  or a rejection before acting and record it; continue a repair on
+  evidence and park it with a wake condition otherwise; check the shared
+  conditions against the ACTION proposed; write a question entry rather
+  than stop; treat a quota refusal as a recorded retry instant — and
+  this bullet carries the two spellings and the one operational rule
+  that is this machine's rather than the method's. From the repository
+  root:
+
+      node tools/e2e/scripts/brief.mjs --since <ISO instant>
+      node tools/e2e/scripts/brief.mjs --await-until <ISO instant> --ceiling <seconds>
+
+  The first is the return brief and the reds in its window attributed;
+  the second is the wait verb's until-instant form, the same loop, the
+  same interval and the same ceiling report as the marker and the pid.
+  A question entry lives in `docs/rooms/`, a repair ledger under
+  `## Repair ledger` on the failing card, and a refusal with its retry
+  instant on the run record — three records that already existed, and
+  no fourth. **THE HOST MUST STAY AWAKE OR THERE IS NO LOOP**: this
+  pipeline runs on the owner's own machine, a sleeping Mac stops every
+  seat mid-turn, and the seat holds the host awake for the span it
+  expects to need — `caffeinate -i -t <seconds>` beside the app's own
+  keep-awake request, both for the night on 2026-09-14. **DERIVE
+  WHETHER IT IS HELD, NEVER ASSUME IT**: `pmset -g assertions` names
+  every holder, and an idle-sleep assertion nobody holds is a loop that
+  will stop at the first idle window rather than at a boundary.
 - GUARD-CLASS PATHS, IN THIS PROJECT'S OWN SPELLING (T-296, ADR-024
   decision 1): `method/tasks/TASK-FORMAT.md` names the guard-class
   CLASSES and is product-agnostic, so the mapping onto this repository

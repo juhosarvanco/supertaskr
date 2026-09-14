@@ -6668,6 +6668,7 @@ export class AwaitFinding extends Error {}
  * @typedef {object} AwaitOptions
  * @property {string} [marker]  a path whose APPEARANCE ends the wait
  * @property {string} [pid]     a process whose EXIT ends the wait
+ * @property {string} [until]   an INSTANT whose ARRIVAL ends the wait (T-322)
  * @property {string} [ceiling] seconds, as the seat typed them
  */
 
@@ -6683,10 +6684,27 @@ export class AwaitFinding extends Error {}
  * than cast. `defaultAwaitIo` REFUSES it, because the whole point of a
  * derived fact is that this file has no way to ask it.
  *
+ * ── AND THE FOURTH KIND IS AN INSTANT (T-322) ───────────────────────
+ * A quota refusal is waited out until the provider's own reset instant,
+ * and an instant is a FACT in exactly the sense the three properties
+ * above require: it has arrived or it has not, the wait ends the moment
+ * the answer changes, and the CEILING still bounds it — because a reset
+ * instant a provider stated wrongly, or one already past when the record
+ * was written, must not become the hang this arm exists to remove. It is
+ * the same loop, the same interval and the same ceiling report; only the
+ * question `happened` asks is different, and `defaultAwaitIo` can answer
+ * this one because a clock is something this file has.
+ *
+ * **IT IS AN INSTANT AND NEVER A DURATION**, which is what makes it a
+ * fact rather than a sleep: the coordinator that revisits it may be a
+ * successor seat that never saw the refusal, and a duration would have
+ * to be added to a start it cannot see.
+ *
  * @typedef {object} AwaitPlan
- * @property {"marker" | "pid" | "state"} kind
- * @property {string} target     the marker path, the pid as it will be printed, or the attempt id
+ * @property {"marker" | "pid" | "state" | "instant"} kind
+ * @property {string} target     the marker path, the pid as it will be printed, the attempt id, or the instant
  * @property {number} [pid]      the parsed pid, on the pid arm only
+ * @property {number} [untilMs]  the instant as epoch milliseconds, on the instant arm only
  * @property {number} ceilingMs
  * @property {number} intervalMs
  * @property {string} what       one line naming the fact this wait is waiting on
@@ -6710,17 +6728,24 @@ export class AwaitFinding extends Error {}
 export function awaitPlan(opts) {
   const marker = (opts.marker ?? "").trim();
   const pidRaw = (opts.pid ?? "").trim();
-  if (marker !== "" && pidRaw !== "") {
+  const untilRaw = (opts.until ?? "").trim();
+  const named = [
+    ...(marker === "" ? [] : ["a marker file"]),
+    ...(pidRaw === "" ? [] : ["a pid"]),
+    ...(untilRaw === "" ? [] : ["an instant"]),
+  ];
+  if (named.length > 1) {
     throw new AwaitFinding(
-      "dispatch-brief: a wait names ONE fact — a marker file or a pid — and this invocation named " +
-        "both. Two facts are two waits, and which one ended it would then depend on which was " +
-        "asked about first.",
+      "dispatch-brief: a wait names ONE fact — a marker file, a pid or an instant — and this " +
+        `invocation named ${named.join(" and ")}. Two facts are two waits, and which one ended it ` +
+        "would then depend on which was asked about first.",
     );
   }
-  if (marker === "" && pidRaw === "") {
+  if (named.length === 0) {
     throw new AwaitFinding(
-      "dispatch-brief: a wait needs the fact it is waiting on: a marker path, or a pid. A wait on " +
-        "nothing is a sleep, which is the hand-typed thing this arm exists to replace.",
+      "dispatch-brief: a wait needs the fact it is waiting on: a marker path, a pid, or an " +
+        "instant. A wait on nothing is a sleep, which is the hand-typed thing this arm exists to " +
+        "replace.",
     );
   }
   const ceilingRaw = (opts.ceiling ?? "").trim();
@@ -6740,6 +6765,28 @@ export function awaitPlan(opts) {
     );
   }
   const ceilingMs = Math.round(seconds * 1000);
+  if (untilRaw !== "") {
+    // THE INSTANT IS PARSED HERE AND REFUSED HERE, in the pure plan, for
+    // the reason every other refusal in this function is: a wait that
+    // discovered its own instant was unreadable would already be running.
+    const untilMs = Date.parse(untilRaw);
+    if (!Number.isFinite(untilMs)) {
+      throw new AwaitFinding(
+        `dispatch-brief: ${JSON.stringify(untilRaw)} is not an instant this arm will wait until. ` +
+          "It is an ISO 8601 instant — the shape a provider's stated reset carries and the shape " +
+          "the run record stores — because a wait on a fact nobody can date is a sleep with a " +
+          "timestamp written on it.",
+      );
+    }
+    return {
+      kind: "instant",
+      target: new Date(untilMs).toISOString(),
+      untilMs,
+      ceilingMs,
+      intervalMs: AWAIT_INTERVAL_MS,
+      what: `the instant ${new Date(untilMs).toISOString()} to arrive`,
+    };
+  }
   if (marker !== "") {
     return {
       kind: "marker",
@@ -6778,11 +6825,20 @@ export function awaitPlan(opts) {
  * liveness derivation, applied to the wait around it — no body may arm
  * this through the machine it happens to run on.
  *
+ * **AND THE CLOCK IS THE ONE ARGUMENT (T-322).** The instant arm's probe
+ * is a clock read, so a body that supplied its own `happened` would be
+ * testing its own arithmetic and not this file's. Passing the clock in
+ * instead keeps the SHIPPED probe under test and lets a body drive the
+ * instant arm in microseconds: `defaultAwaitIo(() => fake)` is the whole
+ * seam, and the default is the real clock so every existing caller is
+ * unchanged.
+ *
+ * @param {() => number} [now]
  * @returns {{ now: () => number, sleep: (ms: number) => Promise<void>, happened: (plan: AwaitPlan) => boolean }}
  */
-export function defaultAwaitIo() {
+export function defaultAwaitIo(now = () => Date.now()) {
   return {
-    now: () => Date.now(),
+    now,
     sleep: (ms) =>
       new Promise((resolve) => {
         setTimeout(resolve, ms);
@@ -6790,6 +6846,11 @@ export function defaultAwaitIo() {
     happened: (plan) => {
       if (plan.kind === "marker") return existsSync(plan.target);
       if (plan.kind === "pid") return processRow(/** @type {number} */ (plan.pid)) === undefined;
+      // AN INSTANT IS ANSWERED BY THE SAME CLOCK THE WAIT IS TIMED BY,
+      // and that is deliberate: a body driving a fake clock gets the
+      // instant arm in microseconds, exactly as it gets the ceiling arm,
+      // and no body may arm this through the machine it happens to run on.
+      if (plan.kind === "instant") return now() >= /** @type {number} */ (plan.untilMs);
       // A DERIVED FACT HAS NO PROBE HERE, and answering `false` would be
       // this io waiting for ever on a question it never asked — the
       // silent half of the hang this arm exists to remove.
@@ -6877,6 +6938,7 @@ export function awaitRecs(ctx, plan, result) {
  * @property {string} [scratch]  the directory the brief is written into
  * @property {GrantState} [grant] the grant, read once by the caller; read here when it is not
  * @property {AdmissionEntry[]} [ledger] what has already been admitted, from the run records
+ * @property {RoomQuestion[]} [questions] the room questions, read once by the caller; read here when not
  * @property {string} [derivedFrom] the parent authorized card, making this a DERIVED admission
  * @property {string} [failure] a derived admission's failure evidence
  * @property {string} [derivedScope] a derived admission's own scope, one of DERIVED_SCOPES
@@ -6889,6 +6951,7 @@ export function awaitRecs(ctx, plan, result) {
  * @property {string} slug
  * @property {GrantState} grant  the grant this dispatch was read against
  * @property {Admission} admission  the lane cut's own admission, which reserves nothing
+ * @property {RoomQuestion[]} questions  the room questions this cut was ruled against (T-322)
  * @property {string} card       repository-relative
  * @property {string} cardFile   absolute
  * @property {string} branch     the FULL ref the lane will be on
@@ -7012,6 +7075,34 @@ export function dispatchLanePlan(ctx, opts) {
   const guardMap = guardClassMap(ctx.conventions, guardClassIds(taskFormatText(ctx.root)));
   const runner = blessedRunner(ctx.conventions);
 
+  // ── THE QUESTION HOLD AT THE LANE CUT (T-322) ──────────────────────
+  // **THE CUT REFUSES BY THE RESOLVED QUESTION STATE RATHER THAN MERELY
+  // DISPLAYING IT.** The dispatch order names the question id on every
+  // dependent card it holds NOT STARTABLE, and a display is advice: a
+  // seat that had the order's answer in another window would cut the lane
+  // anyway and nothing would stop it. So the SAME derivation —
+  // `questionHolds` over the rooms — decides both, which is what makes
+  // the two answers incapable of disagreeing.
+  //
+  // IT IS ASKED BEFORE THE GRANT because it is cheaper and because it is
+  // a different question: the grant says whether the owner authorized
+  // this card, and a pending question says the owner has not yet settled
+  // something this card depends on. A card can pass one and fail the
+  // other, and the refusal should name which.
+  const questions = opts.questions ?? readQuestions(roomFiles(ctx.root));
+  const holding = questionHolds(questions).get(taskId);
+  if (holding !== undefined) {
+    throw new UnattendedFinding(
+      UNATTENDED_CODES.QUESTION_PENDING,
+      `dispatch-brief: ${taskId} is held by the PENDING question ${holding.id} in ${holding.room} ` +
+        `(dated ${holding.at}) — ${holding.cause}. A question entry is a decision this coordinator ` +
+        "may not make, so a card that depends on one is NOT STARTABLE until the entry's state is " +
+        "resolved with the resolution's evidence. Every card that does not depend on it is " +
+        "admitted, and this refusal names the question rather than the card so the remedy is " +
+        "findable: settle it in the room.",
+    );
+  }
+
   // ── THE ADMISSION AT THE LANE CUT (T-324) ──────────────────────────
   // IT IS RESOLVED HERE, IN THE PURE PLAN, FOR THE REASON THE MODEL
   // ABOVE IS: a dispatch that has to be unwound costs a commit and two
@@ -7045,6 +7136,7 @@ export function dispatchLanePlan(ctx, opts) {
     slug,
     grant,
     admission,
+    questions,
     card: card.file,
     cardFile: path.join(ctx.root, card.file),
     branch: `refs/heads/${branchName}`,
@@ -7942,8 +8034,31 @@ export const MECHANICAL_FIELDS = Object.freeze([
   "verified_by",
 ]);
 
-/** The two sections of a card a mechanical append may add lines to. */
-export const MECHANICAL_SECTIONS = Object.freeze(["Implementation notes", "Verdicts"]);
+/**
+ * THE CARD SECTION THIS LOOP'S OWN CEREMONY WRITES A REPAIR LEDGER UNDER
+ * (T-322). It is declared HERE, above the mechanical-append set that
+ * reads it, rather than in the unattended section it otherwise belongs
+ * to: `MECHANICAL_SECTIONS` is built at module load and a constant
+ * declared later would be in its temporal dead zone.
+ */
+export const REPAIR_LEDGER_HEADING = "Repair ledger";
+
+/**
+ * The sections of a card a mechanical append may add lines to.
+ *
+ * **THE THIRD ONE IS T-322's AND IT IS NOT A WIDENING OF THE ESCAPE
+ * HATCH.** A repair ledger entry is written by the LOOP after the yes,
+ * on exactly the argument the other two ride on — it is the loop's own
+ * ceremony rather than a change to what the owner approved. Without it,
+ * a coordinator that recorded a failed repair on an approved card would
+ * refuse that card's next admission as `ADMISSION_CARD_BLOB_MOVED`: the
+ * record the progress rule requires would cost the card its approval.
+ */
+export const MECHANICAL_SECTIONS = Object.freeze([
+  "Implementation notes",
+  "Verdicts",
+  REPAIR_LEDGER_HEADING,
+]);
 
 /** A filed follow-up card's id, the one addition allowed anywhere in a card. */
 export const FOLLOW_UP_PATTERN = /\bT-\d+-s\d+\b/;
@@ -9035,3 +9150,1757 @@ export function admissionRecs(ctx, state, admission) {
   }
   return recs;
 }
+
+/* ────────────────────────────────────────────────────────────────────
+ * THE UNATTENDED LOOP (T-322) — what the coordinator does with a
+ * failure, a reserved decision and a refused spawn while the owner is
+ * away, and the one page they read when they come back.
+ *
+ * **THE PROBLEM IS NOT THAT THE LOOP STOPS. IT IS THAT IT STOPS FOR
+ * THINGS NOBODY DECIDED IT SHOULD.** Until this card the standing
+ * authorization told the seat to stop at a rejected verdict, at a spawn
+ * refused for quota, at a record that had to be shown before it was
+ * appended, and at every in-card decision — so five hours away from the
+ * machine cost five hours of loop. T-319 says WHICH dispatches need no
+ * yes and T-324 enforces that at four boundaries; this section says what
+ * a FAILURE produces, where a decision the coordinator may not make goes
+ * while it waits, what a refused spawn becomes, and what the owner reads
+ * on return.
+ *
+ * ── ATTRIBUTION COMES BEFORE ACTION, AND IT IS THE WHOLE DISCIPLINE ──
+ * A red is not a defect until something says which defect. The four
+ * answers are a REGRESSION (named failing bodies from the run's own log,
+ * against the newest EARLIER run whose tested ref is an ancestor of this
+ * tip, plus the diff between the two refs), a TRANSIENT infrastructure
+ * failure a retry resolves, an infrastructure failure that NEEDS AN
+ * ACTION — a disk floor, a billing block, a missing secret — and an
+ * UNRESOLVED cause. Each routes somewhere different and only the first
+ * becomes a repair. **CI IS NEVER RE-RUN WHILE ITS BILLING OR DISK
+ * CONDITION IS UNCHANGED**: that is what separates the second class from
+ * the third, and the seat's own 2026-09-14 reading of jobs failing in
+ * seconds with no steps — a billing block, not the tree — is why the
+ * third class exists at all.
+ *
+ * ── THE PROGRESS RULE IS THE PROTECTION AGAINST GETTING STUCK ────────
+ * A repair continues on EVIDENCE and parks on repetition. A new commit
+ * is not progress and neither is a changed error string: what counts is
+ * a materially different remedy with evidence behind it, or a verified
+ * part of the failure removed. A parked problem carries a WAKE
+ * CONDITION, so the fresh coordinator that inherits it does not restart
+ * the cycle the last one parked.
+ *
+ * ── THE HEALTH CHECK IS SPECIFIC TO THE PROPOSED ACTION ─────────────
+ * A red on main is not a reason to stop everything, and it is not a
+ * reason to stop nothing. The designated repair of an attributed defect
+ * is exactly the work that red calls for; a landing whose delivery
+ * checks that same red invalidates is held. What holds EVERYTHING is
+ * unknown ownership of a live writer or a verification path that cannot
+ * be trusted — and no repair permission bypasses those, because a repair
+ * verified by a seal nobody trusts is not a repair. A bench or a seal
+ * not yet OWED for the stage being proposed is not a broken path, which
+ * is the distinction a blunter check gets wrong in the safe-looking
+ * direction.
+ *
+ * ── A QUOTA REFUSAL IS A SCHEDULED RETRY, NOT A BLOCK ───────────────
+ * The refused attempt and its next retry instant are recorded on the run
+ * record, the coordinator revisits that instant at its own boundaries
+ * while continuing other eligible work, and only where NOTHING else is
+ * eligible does the wait verb hold until the instant. An authentication
+ * or a configuration failure is a different thing wearing the same exit
+ * code and it parks with a question instead.
+ *
+ * ── A QUESTION IS AN ENTRY IN A ROOM, MARKED AS A QUESTION ──────────
+ * The seat's own voice, never a ruling — the ruling entry still waits
+ * for the owner's yes (T-307). It carries an id, the cards it holds, the
+ * cause and its ref, and its state; the dispatch order names that id on
+ * every dependent card it holds NOT STARTABLE, and the LANE CUT refuses
+ * by the same resolved state rather than merely displaying it. **NO
+ * TASK-PARSER FIELD IS ADDED**: the link lives in the room and the order
+ * reads it, so a card gains no field whose only writer is this loop.
+ *
+ * ── AND THE RETURN BRIEF DERIVES, IT DOES NOT REMEMBER ──────────────
+ * Cards, rooms, run records, meters records and the RUNNER'S RUNS. A
+ * push with no run is reported UNKNOWN and never inferred from a
+ * commit's timestamp; an older green run is never proof of the current
+ * tip, because a run is evidence about the sha it tested.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/** The four answers an attribution may reach, and there is no fifth. */
+export const ATTRIBUTION_CLASSES = Object.freeze([
+  "regression",
+  "transient",
+  "needs-action",
+  "unresolved",
+]);
+
+/** What an attribution produces. One class may reach two of these; none reaches all. */
+export const ATTRIBUTION_ACTIONS = Object.freeze([
+  "repair",
+  "wait-and-retry",
+  "remedy",
+  "park",
+  "diagnose",
+  "question",
+]);
+
+/** A refusal this loop tells apart from every other exit with the same code. */
+export const REFUSAL_KINDS = Object.freeze(["quota", "authentication", "configuration", "none"]);
+
+/** The two events that wake a parked problem, and a wake is never a duration. */
+export const REPAIR_WAKES = Object.freeze(["new-diagnostic-evidence", "owner-decision"]);
+
+/** The two states a question entry may carry. */
+export const QUESTION_STATES = Object.freeze(["pending", "resolved"]);
+
+/** Where the bands' readings live, relative to the checkout that holds them. */
+export const METERS_REL_PATH = "docs/checkpoints/meters.jsonl";
+
+/** A question id: the room's own handle for one reserved decision. */
+export const QUESTION_ID_PATTERN = /^Q-\d{3,}$/;
+
+/**
+ * THE MARKER THAT MAKES AN ENTRY A QUESTION AND NOT A RULING, spelled
+ * once and required by the reader, the renderer and the method eval. A
+ * question entry that lost this marker would read to a later reader as
+ * something the owner settled.
+ */
+export const QUESTION_MARKER = "QUESTION — not a ruling";
+
+/** The first retry delay where the refusal names no reset instant. */
+export const RETRY_BASE_MS = 60_000;
+
+/** The ceiling that growth is capped at, so a delay cannot become a day. */
+export const RETRY_CAP_MS = 3_600_000;
+
+/**
+ * EVERY REFUSAL AND EVERY HOLD CARRIES A CODE, on `run-record.mjs`'s and
+ * T-324's model: a caller that can only match on a sentence is a caller
+ * that breaks the day the sentence is improved.
+ */
+export const UNATTENDED_CODES = Object.freeze({
+  ATTRIBUTION_INPUT: "UNATTENDED_ATTRIBUTION_INPUT",
+  QUESTION_SHAPE: "UNATTENDED_QUESTION_SHAPE",
+  QUESTION_PENDING: "UNATTENDED_QUESTION_PENDING",
+  REPAIR_LEDGER: "UNATTENDED_REPAIR_LEDGER",
+  RETRY_INSTANT: "UNATTENDED_RETRY_INSTANT",
+});
+
+/** A derivation this section was asked for and will not make. */
+export class UnattendedFinding extends Error {
+  /** @param {string} code @param {string} message */
+  constructor(code, message) {
+    super(message);
+    this.name = "UnattendedFinding";
+    /** @type {string} */
+    this.code = code;
+  }
+}
+
+/* ── ATTRIBUTION ─────────────────────────────────────────────────── */
+
+/**
+ * THE INFRASTRUCTURE SIGNATURES, AS DATA AND WITH THEIR CLASS ON EACH
+ * ROW. A table rather than a chain of `if`s because the DIFFERENCE
+ * between the two infrastructure classes is the whole point: `transient`
+ * is resolved by waiting, `needs-action` is not resolved by anything
+ * this loop can do by repeating itself, and a row that got its class
+ * wrong would turn a billing block into an infinite re-run.
+ *
+ * `remedy` is the cleanup a coordinator MAY perform where the policy
+ * allows it; an empty remedy is a condition only the owner can clear.
+ *
+ * @type {ReadonlyArray<{ sign: RegExp, class: string, name: string, remedy: string }>}
+ */
+export const INFRASTRUCTURE_SIGNS = Object.freeze([
+  {
+    sign: /\b(no space left on device|disk( |-)?(space|quota) (exceeded|exhausted)|ENOSPC)\b/i,
+    class: "needs-action",
+    name: "the runner's disk floor",
+    remedy: "prune the runner's caches and artifacts, where the policy allows that cleanup",
+  },
+  {
+    sign: /\b(billing|payment|spending limit|account has been suspended|has exceeded its budget)\b/i,
+    class: "needs-action",
+    name: "a billing block on the account",
+    remedy: "",
+  },
+  {
+    sign: /\b(secret|credential|token) (is )?(not set|missing|unavailable|empty)\b|\bmissing (secret|credential)\b/i,
+    class: "needs-action",
+    name: "a secret the workflow needs and the runner does not have",
+    remedy: "",
+  },
+  {
+    sign: /\b(the runner (has )?(lost communication|was lost|shut down)|runner outage|lost communication with the server|infrastructure failure)\b/i,
+    class: "transient",
+    name: "a runner outage",
+    remedy: "",
+  },
+  {
+    sign: /\b(rate limit|quota (window|exceeded)|429|too many requests|temporarily unavailable|503 Service Unavailable|ECONNRESET|ETIMEDOUT)\b/i,
+    class: "transient",
+    name: "a quota window or a transport failure",
+    remedy: "",
+  },
+]);
+
+/**
+ * THE FAILING BODIES, READ OUT OF THE RUN'S OWN LOG AND NEVER GUESSED.
+ *
+ * The three shapes this project's own legs produce: playwright's
+ * `N) [project] › file:line › NAME`, vitest's `FAIL file > NAME` and
+ * cargo's `test NAME ... FAILED`. A log that matches none returns an
+ * EMPTY list, which is what makes `unresolved` reachable — a reader that
+ * invented a body name from a stack frame would be attributing a red to
+ * whatever happened to be printed near it.
+ *
+ * @param {string} log
+ * @returns {string[]}  the named bodies, deduped, in the order the log names them
+ */
+export function failingBodies(log) {
+  /** @type {string[]} */
+  const out = [];
+  const add = (/** @type {string} */ name) => {
+    const t = name.trim().replace(/\s+/g, " ");
+    if (t !== "" && !out.includes(t)) out.push(t);
+  };
+  for (const line of String(log ?? "").split("\n")) {
+    const playwright = /^\s*\d+\)\s+(?:\[[^\]]*\]\s*›\s*)?(?:[^›]*›\s*)?(.+?)\s*(?:───|$)/.exec(line);
+    if (playwright !== null && /›/.test(line)) {
+      add(/** @type {string} */ (playwright[1]));
+      continue;
+    }
+    const vitest = /^\s*(?:FAIL|✗|×)\s+(?:\S+\s+>\s+)?(.+?)\s*$/.exec(line);
+    if (vitest !== null) {
+      add(/** @type {string} */ (vitest[1]));
+      continue;
+    }
+    const cargo = /^\s*(?:test\s+)?(\S+)\s+\.\.\.\s+FAILED\s*$/.exec(line);
+    if (cargo !== null) add(/** @type {string} */ (cargo[1]));
+  }
+  return out;
+}
+
+/**
+ * @typedef {object} RunnerRun
+ * @property {number|string} databaseId
+ * @property {string} headSha
+ * @property {string} conclusion   `success`, `failure`, `cancelled`, or "" while in progress
+ * @property {string} createdAt
+ */
+
+/**
+ * THE PARENT RUN IS THE NEWEST EARLIER RUN WHOSE TESTED REF IS AN
+ * ANCESTOR OF THIS TIP, and every word of that is load-bearing.
+ *
+ * NEWEST, because an older green tells you less. EARLIER, by the run's
+ * own creation instant, because a run started after this one is not a
+ * baseline for it. ANCESTOR, decided by the repository and not by a
+ * timestamp, because two branches' runs interleave in time and only one
+ * of them is this tip's history. **AN OLDER GREEN RUN IS NEVER PROOF OF
+ * THE CURRENT TIP** — it is the baseline the failing bodies are compared
+ * against, which is a different claim entirely.
+ *
+ * @param {RunnerRun[]} runs
+ * @param {{ sha: string, at: string }} tip   the run being attributed
+ * @param {(sha: string) => boolean} isAncestor  answers for the REPOSITORY, never for a clock
+ * @returns {?RunnerRun}
+ */
+export function parentRun(runs, tip, isAncestor) {
+  const tipMs = Date.parse(String(tip.at));
+  const earlier = (runs ?? []).filter(
+    (r) =>
+      r.headSha !== tip.sha &&
+      Date.parse(String(r.createdAt)) < tipMs &&
+      String(r.conclusion) !== "" &&
+      isAncestor(r.headSha),
+  );
+  earlier.sort((a, b) => Date.parse(String(a.createdAt)) - Date.parse(String(b.createdAt)));
+  return earlier.length === 0 ? null : /** @type {RunnerRun} */ (earlier[earlier.length - 1]);
+}
+
+/**
+ * @typedef {object} Attribution
+ * @property {string} class     one of ATTRIBUTION_CLASSES
+ * @property {string} action    one of ATTRIBUTION_ACTIONS
+ * @property {string[]} bodies  the failing bodies this attribution names, possibly empty
+ * @property {?RunnerRun} parent  the baseline run, or null where there is none
+ * @property {string} range     `<parent sha>..<tip sha>`, or "" where no parent was found
+ * @property {string} sign      the infrastructure signature that decided it, or ""
+ * @property {string} remedy    the cleanup the coordinator may perform, or ""
+ * @property {string} wake      the parked problem's wake condition, or ""
+ * @property {string} why       one sentence a reader can act on
+ * @property {string} baseline  how the baseline was obtained: a run, a local reproduction, or none
+ */
+
+/**
+ * ATTRIBUTE A RED BEFORE ANYTHING ACTS ON IT.
+ *
+ * THE ORDER OF THE QUESTIONS IS THE RULE. Infrastructure is asked about
+ * FIRST, because a red whose cause is a billing block has failing bodies
+ * in it too — the jobs that never ran — and a reader that started from
+ * the bodies would file a repair card against code that is fine. Only
+ * then are the bodies compared against the baseline.
+ *
+ * WHAT COUNTS AS A BASELINE, in order: the parent run, else a bounded
+ * LOCAL reproduction of base and candidate the caller performed and
+ * hands in, else NOTHING — and nothing is `unresolved`, never a guess.
+ * The card names the local reproduction as the answer where no parent
+ * run exists, so it is an input here rather than a branch this module
+ * invents for itself.
+ *
+ * @param {object} input
+ * @param {string} input.log            the run's own log
+ * @param {RunnerRun[]} [input.runs]    the runner's history
+ * @param {{ sha: string, at: string }} input.tip
+ * @param {(sha: string) => boolean} [input.isAncestor]
+ * @param {{ base: string[], candidate: string[] }} [input.reproduction]  a bounded local run of both refs
+ * @param {string} [input.recovery]     the recovery policy: `repairs` admits a derived repair, `none` does not
+ * @param {boolean} [input.cleanupAllowed]  whether the policy lets this coordinator perform a remedy
+ * @returns {Attribution}
+ */
+export function attribute(input) {
+  const tip = input.tip;
+  if (tip === undefined || typeof tip.sha !== "string" || tip.sha === "") {
+    throw new UnattendedFinding(
+      UNATTENDED_CODES.ATTRIBUTION_INPUT,
+      "dispatch-brief: an attribution needs the tip it is attributing — the sha the red run " +
+        "tested and the instant it was created — because the baseline is the newest EARLIER run " +
+        "whose tested ref is an ANCESTOR of that sha, and neither half of that is answerable " +
+        "without it.",
+    );
+  }
+  const log = String(input.log ?? "");
+  const recovery = String(input.recovery ?? "repairs");
+  for (const row of INFRASTRUCTURE_SIGNS) {
+    if (!row.sign.test(log)) continue;
+    if (row.class === "transient") {
+      return {
+        class: "transient",
+        action: "wait-and-retry",
+        bodies: [],
+        parent: null,
+        range: "",
+        sign: row.name,
+        remedy: "",
+        wake: "",
+        baseline: "none was needed — the cause is in the run's own log",
+        why:
+          `the run's own log carries ${row.name}, which a reset or a retry resolves. This is a ` +
+          "wait and a retry, and no repair card is filed: there is no defect in the tree to repair.",
+      };
+    }
+    const canRemedy = row.remedy !== "" && input.cleanupAllowed === true;
+    return {
+      class: "needs-action",
+      action: canRemedy ? "remedy" : "park",
+      bodies: [],
+      parent: null,
+      range: "",
+      sign: row.name,
+      remedy: row.remedy,
+      wake: canRemedy ? "" : "owner-decision",
+      baseline: "none was needed — the cause is in the run's own log",
+      why: canRemedy
+        ? `the run's own log carries ${row.name}, and the policy allows this coordinator to ` +
+          `perform the remedy: ${row.remedy}. CI is NOT re-run until the condition has changed.`
+        : `the run's own log carries ${row.name}, which no repetition resolves — it needs ` +
+          "configuration, cleanup or an owner's action. The affected resource is PARKED with a " +
+          "wake condition and permitted work continues; CI is never re-run while this condition " +
+          "is unchanged, because a re-run on an unchanged condition buys a second copy of the " +
+          "same answer.",
+    };
+  }
+  const bodies = failingBodies(log);
+  const parent =
+    input.isAncestor === undefined
+      ? null
+      : parentRun(input.runs ?? [], tip, input.isAncestor);
+  /** @type {string[] | null} */
+  let baseBodies = null;
+  let baseline = "";
+  if (parent !== null) {
+    // THE BASELINE'S OWN BODIES ARE NOT IN THIS LOG. A parent run that
+    // SUCCEEDED carries no failing body by construction, which is the
+    // only case the runs list alone can answer; a parent that failed
+    // needs its own log, and without it the comparison is not made.
+    if (String(parent.conclusion) === "success") {
+      baseBodies = [];
+      baseline = `the run at ${parent.headSha} (${String(parent.databaseId)}), which concluded success`;
+    } else {
+      baseline = `the newest earlier ancestor run at ${parent.headSha} did NOT conclude success, so it is no baseline`;
+    }
+  }
+  if (baseBodies === null && input.reproduction !== undefined) {
+    baseBodies = input.reproduction.base;
+    baseline = "a bounded local reproduction of base and candidate, performed by the caller";
+  }
+  if (bodies.length === 0) {
+    return {
+      class: "unresolved",
+      action: "diagnose",
+      bodies: [],
+      parent,
+      range: parent === null ? "" : `${parent.headSha}..${tip.sha}`,
+      sign: "",
+      remedy: "",
+      wake: "",
+      baseline: baseline === "" ? "none" : baseline,
+      why:
+        "the run's own log names no failing body this reader recognises and carries no " +
+        "infrastructure signature either, so nothing here attributes the red to anything. This " +
+        "is a DIAGNOSTIC attempt inside the scope, and a question entry only when diagnosis " +
+        "cannot answer it.",
+    };
+  }
+  if (baseBodies === null) {
+    return {
+      class: "unresolved",
+      action: "diagnose",
+      bodies,
+      parent,
+      range: "",
+      sign: "",
+      remedy: "",
+      wake: "",
+      baseline: baseline === "" ? "none — no earlier run tested an ancestor of this tip" : baseline,
+      why:
+        `${String(bodies.length)} body/bodies failed and there is NO baseline to compare them ` +
+        "against: no earlier run tested an ancestor of this tip and no bounded local " +
+        "reproduction of base and candidate was supplied. A red with no baseline is not " +
+        "attributed to the merge — it is diagnosed, and the reproduction is the next act.",
+    };
+  }
+  const introduced = bodies.filter((b) => !baseBodies.includes(b));
+  if (introduced.length === 0) {
+    return {
+      class: "unresolved",
+      action: "diagnose",
+      bodies,
+      parent,
+      range: parent === null ? "" : `${parent.headSha}..${tip.sha}`,
+      sign: "",
+      remedy: "",
+      wake: "",
+      baseline,
+      why:
+        "every failing body here was already failing at the baseline, so the comparison does NOT " +
+        "attribute this red to the diff. It is diagnosed rather than repaired, and a repair card " +
+        "filed against this merge would name the wrong change.",
+    };
+  }
+  const range = parent === null ? "(the local reproduction's two refs)" : `${parent.headSha}..${tip.sha}`;
+  if (recovery !== "repairs") {
+    return {
+      class: "regression",
+      action: "question",
+      bodies: introduced,
+      parent,
+      range,
+      sign: "",
+      remedy: "",
+      wake: "owner-decision",
+      baseline,
+      why:
+        `${introduced.join(", ")} fail here and did not at the baseline, so this red IS attributed ` +
+        `to ${range}. The recovery policy is ${JSON.stringify(recovery)}, which admits no derived ` +
+        "repair, so the repair needs its own explicit approval and this becomes a question entry.",
+    };
+  }
+  return {
+    class: "regression",
+    action: "repair",
+    bodies: introduced,
+    parent,
+    range,
+    sign: "",
+    remedy: "",
+    wake: "",
+    baseline,
+    why:
+      `${introduced.join(", ")} fail here and did not at the baseline, so this red IS attributed ` +
+      `to ${range}. Inside the recovery policy's scope it becomes the repair: the rejected lane ` +
+      "re-entered with the verdict as the executor's input, or a repair card at priority 1 naming " +
+      "the run, the body and the merge, admitted BY DERIVATION in the order's next slot.",
+  };
+}
+
+/* ── THE REPAIR LEDGER AND THE PROGRESS RULE ─────────────────────── */
+
+/**
+ * @typedef {object} RepairAttempt
+ * @property {string} at        the instant the attempt was recorded
+ * @property {string} failure   the named bodies, or the rejection's stated failures
+ * @property {string} ref       the run id or the verdict ref the failure was read at
+ * @property {string} remedy    what was attempted
+ * @property {string} outcome   `unchanged`, `partial` or `resolved`
+ * @property {string[]} removed the parts of the failure a VERIFICATION showed removed
+ * @property {string} evidence  what is behind the next remedy, or ""
+ * @property {string} [wake]    the wake condition, written when THIS entry is the park
+ * @property {string} [attributed]  the attribution's class, which is what was decided BEFORE this remedy
+ */
+
+/**
+ * ONE LEDGER ENTRY, RENDERED. It goes under `## Repair ledger` on the
+ * FAILING card, which is where the card's second criterion puts it: the
+ * card is a record every later reader already opens, and a ledger beside
+ * it would be a second place for the same fact.
+ *
+ * THE FIELDS ARE FIXED AND EACH IS REQUIRED, because the progress rule
+ * below reads them back: an entry with no outcome cannot say whether the
+ * failure state changed, which is the one thing the rule turns on.
+ *
+ * @param {RepairAttempt} a
+ * @returns {string}
+ */
+export function repairEntry(a) {
+  for (const field of ["at", "failure", "ref", "remedy", "outcome"]) {
+    if (String(/** @type {any} */ (a)[field] ?? "").trim() === "") {
+      throw new UnattendedFinding(
+        UNATTENDED_CODES.REPAIR_LEDGER,
+        `dispatch-brief: a repair ledger entry needs its ${field} — the rule that decides whether ` +
+          "a next attempt continues or parks reads every one of these back, and an entry missing " +
+          "one is an entry that rides to a green by being unreadable.",
+      );
+    }
+  }
+  if (!["unchanged", "partial", "resolved"].includes(a.outcome)) {
+    throw new UnattendedFinding(
+      UNATTENDED_CODES.REPAIR_LEDGER,
+      `dispatch-brief: ${JSON.stringify(a.outcome)} is not a demonstrated change in the failure ` +
+        "state. It is `unchanged`, `partial` or `resolved`, and the word is what the progress rule " +
+        "reads — a free-text outcome would make every attempt look like progress.",
+    );
+  }
+  // **THE ATTRIBUTION IS PART OF THE RECORD AND NOT A PRELUDE TO IT**
+  // (criterion 1's "SHALL record the attribution"). A ledger entry that
+  // carried only the remedy would leave a fresh coordinator with the act
+  // and not the reason for it — and the reason is the half that decides
+  // whether the next act is a repair at all.
+  const attributed = String(a.attributed ?? "").trim();
+  if (attributed !== "" && !ATTRIBUTION_CLASSES.includes(attributed)) {
+    throw new UnattendedFinding(
+      UNATTENDED_CODES.REPAIR_LEDGER,
+      `dispatch-brief: ${JSON.stringify(attributed)} is not an attribution class — it is one of ` +
+        `${ATTRIBUTION_CLASSES.join(", ")}. A free-text attribution is one nobody can act on ` +
+        "differently, which is the whole reason the four classes are closed.",
+    );
+  }
+  const wake = String(a.wake ?? "").trim();
+  if (wake !== "" && !REPAIR_WAKES.includes(wake)) {
+    throw new UnattendedFinding(
+      UNATTENDED_CODES.REPAIR_LEDGER,
+      `dispatch-brief: ${JSON.stringify(wake)} is not a wake condition — it is ` +
+        `${REPAIR_WAKES.join(" or ")}. **A WAKE IS AN EVENT AND NEVER A DURATION**: a parked ` +
+        "problem that came back on a timer would be the cycle the progress rule parked it out of, " +
+        "restarted by a clock.",
+    );
+  }
+  return [
+    `- ${a.at} — failure: ${a.failure} (at ${a.ref})`,
+    ...(attributed === "" ? [] : [`  attributed: ${attributed}`]),
+    `  remedy: ${a.remedy}`,
+    `  outcome: ${a.outcome}${a.removed.length === 0 ? "" : ` — removed: ${a.removed.join(", ")}`}`,
+    ...(String(a.evidence ?? "").trim() === "" ? [] : [`  evidence: ${a.evidence}`]),
+    ...(wake === "" ? [] : [`  parked, wakes on: ${wake}`]),
+  ].join("\n");
+}
+
+/**
+ * READ THE LEDGER BACK OFF THE CARD. A card with no such section has an
+ * EMPTY history, which is the honest answer and not an error: most cards
+ * never fail.
+ *
+ * @param {string} cardText
+ * @returns {RepairAttempt[]}
+ */
+export function repairLedger(cardText) {
+  const text = String(cardText ?? "");
+  const at = text.indexOf(`## ${REPAIR_LEDGER_HEADING}`);
+  if (at < 0) return [];
+  const rest = text.slice(at + REPAIR_LEDGER_HEADING.length + 3);
+  const end = rest.indexOf("\n## ");
+  const section = end < 0 ? rest : rest.slice(0, end);
+  /** @type {RepairAttempt[]} */
+  const out = [];
+  for (const block of section.split(/\n(?=- )/)) {
+    const head = /^-\s+(\S+)\s+—\s+failure:\s+(.+?)\s+\(at\s+(.+?)\)\s*$/m.exec(block);
+    if (head === null) continue;
+    const remedy = /^\s*remedy:\s*(.+?)\s*$/m.exec(block);
+    const outcome = /^\s*outcome:\s*(unchanged|partial|resolved)\s*(?:—\s*removed:\s*(.+?)\s*)?$/m.exec(block);
+    if (remedy === null || outcome === null) continue;
+    const evidence = /^\s*evidence:\s*(.+?)\s*$/m.exec(block);
+    const wake = /^\s*parked, wakes on:\s*(.+?)\s*$/m.exec(block);
+    const attributed = /^\s*attributed:\s*(\S+)\s*$/m.exec(block);
+    out.push({
+      ...(wake === null ? {} : { wake: String(wake[1]) }),
+      ...(attributed === null ? {} : { attributed: String(attributed[1]) }),
+      at: /** @type {string} */ (head[1]),
+      failure: /** @type {string} */ (head[2]),
+      ref: /** @type {string} */ (head[3]),
+      remedy: /** @type {string} */ (remedy[1]),
+      outcome: /** @type {string} */ (outcome[1]),
+      removed:
+        outcome[2] === undefined
+          ? []
+          : String(outcome[2]).split(",").map((s) => s.trim()).filter((s) => s !== ""),
+      evidence: evidence === null ? "" : /** @type {string} */ (evidence[1]),
+    });
+  }
+  return out;
+}
+
+/**
+ * A REMEDY, NORMALISED TO WHAT IT DOES RATHER THAN TO HOW IT WAS TYPED.
+ *
+ * **A NEW COMMIT OR A CHANGED ERROR STRING ALONE IS NOT PROGRESS**, and
+ * this is the function that makes that sentence mechanical: shas, run
+ * ids, instants, attempt ids and digits are erased before two remedies
+ * are compared, so "re-ran the suite at abc1234" and "re-ran the suite
+ * at def5678" are ONE remedy tried twice and not two remedies.
+ *
+ * @param {string} remedy
+ * @returns {string}
+ */
+export function remedyDigest(remedy) {
+  return String(remedy ?? "")
+    .toLowerCase()
+    .replace(/\b[0-9a-f]{7,40}\b/g, " ")
+    .replace(/\b\d[\d:.T_-]*\b/g, " ")
+    .replace(/[^a-z ]+/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length > 2)
+    .sort()
+    .join(" ");
+}
+
+/**
+ * @typedef {object} ProgressRuling
+ * @property {string} act   `continue` or `park`
+ * @property {string} why
+ * @property {string} wake  the parked problem's wake condition, or "" while continuing
+ */
+
+/**
+ * CONTINUE ON EVIDENCE, PARK ON REPETITION.
+ *
+ * The two ways a next attempt earns its spawn, and a proposal needs
+ * exactly one of them: it is a MATERIALLY DIFFERENT remedy with evidence
+ * behind it, or the history shows a VERIFIED part of the failure
+ * removed. Everything else parks — including the case the card names in
+ * as many words, "no justified next action exists inside the scope",
+ * which arrives here as a proposal with no remedy at all.
+ *
+ * **THE PARK IS NOT A TOKEN CEILING AND IT IS NOT A RETRY COUNT.** A
+ * fourth materially different remedy with evidence continues; a second
+ * copy of the first one does not. What the park buys is that a fresh
+ * coordinator reading the ledger does not restart the cycle, which is
+ * why it carries a WAKE CONDITION rather than a timestamp.
+ *
+ * @param {RepairAttempt[]} history
+ * @param {{ remedy?: string, evidence?: string }} proposed
+ * @returns {ProgressRuling}
+ */
+export function progressRuling(history, proposed) {
+  const past = history ?? [];
+  const remedy = String(proposed?.remedy ?? "").trim();
+  const evidence = String(proposed?.evidence ?? "").trim();
+  if (remedy === "") {
+    return {
+      act: "park",
+      why:
+        "no next remedy is proposed, so there is no justified next action inside the scope. The " +
+        "problem is PARKED with its record and permitted work continues — a spawn with nothing " +
+        "to try is the cycle this rule exists to stop.",
+      wake: "new-diagnostic-evidence",
+    };
+  }
+  if (past.length === 0) {
+    return {
+      act: "continue",
+      why: "this is the first attempt at this failure, so there is nothing for it to repeat.",
+      wake: "",
+    };
+  }
+  const digest = remedyDigest(remedy);
+  const ineffective = past.filter((a) => a.outcome === "unchanged").map((a) => remedyDigest(a.remedy));
+  const repeats = ineffective.includes(digest);
+  const last = past[past.length - 1];
+  const removed =
+    last !== undefined && (last.removed.length > 0 || last.outcome === "partial");
+  // **DEMONSTRATED PROGRESS IS ASKED ABOUT FIRST, AND THE ORDER IS THE
+  // CRITERION READ LITERALLY.** The two ways a next attempt earns its
+  // spawn are an OR — a materially different remedy with evidence, OR a
+  // verified part of the failure removed — and the criterion's own pin
+  // says which wins where both clauses could speak: "the same named
+  // failing body with demonstrated partial progress continues". The park
+  // clause is about work whose EVIDENCE is unchanged, and a removed part
+  // of the failure is exactly evidence that changed.
+  if (removed) {
+    return {
+      act: "continue",
+      why:
+        "a verified part of the failure has been removed by an earlier attempt, so the repair is " +
+        "making progress and the next attempt continues — this is the case the rule's own pin " +
+        "names, and it holds whether or not the next remedy is a new one.",
+      wake: "",
+    };
+  }
+  if (repeats) {
+    return {
+      act: "park",
+      why:
+        "the proposed remedy repeats one already attempted with the failure state UNCHANGED, and " +
+        "nothing in the history shows a verified part of the failure removed. A new commit or a " +
+        "changed error string alone is not progress" +
+        (evidence === ""
+          ? ", and no new evidence is offered behind it either"
+          : ", and evidence behind a remedy already shown ineffective does not make it a " +
+            "materially different one") +
+        ". This problem is PARKED with its record and eligible work continues.",
+      wake: "new-diagnostic-evidence",
+    };
+  }
+  if (evidence === "") {
+    return {
+      act: "park",
+      why:
+        "the proposed remedy is different but carries no evidence behind it, and no attempt so " +
+        "far removed a verified part of the failure. A different guess is not a materially " +
+        "different remedy, so this problem is PARKED rather than tried again.",
+      wake: "new-diagnostic-evidence",
+    };
+  }
+  return {
+    act: "continue",
+    why:
+      "the proposed remedy is materially different from every ineffective one already tried and " +
+      "carries evidence behind it, so the next attempt continues.",
+    wake: "",
+  };
+}
+
+/* ── THE SHARED-HEALTH CHECK, SPECIFIC TO THE PROPOSED ACTION ─────── */
+
+/**
+ * @typedef {object} HealthState
+ * @property {{ known: boolean, green: boolean, attributed: ?{ card: string, bodies: string[] } }} ci
+ * @property {{ trusted: boolean, owed: boolean, why: string }} verification
+ * @property {{ unknown: string[] }} writers   resources whose live writer's ownership is unknown
+ */
+
+/**
+ * @typedef {object} ProposedAction
+ * @property {string} kind      `repair`, `landing` or `independent`
+ * @property {string} card
+ * @property {string} [repairs] the card the attributed defect was attributed TO
+ * @property {string[]} [checks] the delivery checks this landing depends on
+ * @property {string[]} [dependsOn] the question ids this action depends on
+ * @property {string[]} [pendingQuestions] the question ids pending right now
+ * @property {?string} [resource] the resource this action would write
+ */
+
+/**
+ * @typedef {object} HealthVerdict
+ * @property {boolean} permitted
+ * @property {string[]} holds  one line per condition that holds this action
+ * @property {string} why
+ */
+
+/**
+ * THE CHECK IS SPECIFIC TO THE ACTION AND THAT IS THE WHOLE CARD.
+ *
+ * A blunt check answers "is the world healthy" and stops the loop on
+ * every red; a specific one answers "may THIS act proceed", which is the
+ * question a coordinator actually has. So an attributed red PERMITS its
+ * designated repair and HOLDS a landing whose delivery checks that red
+ * invalidates, and a card proved independent of a parked question
+ * continues past it.
+ *
+ * **TWO CONDITIONS HOLD EVERYTHING AND NO REPAIR PERMISSION BYPASSES
+ * THEM**: an unknown live writer, and a verification path that cannot be
+ * trusted. They are first here for that reason — a repair merged past an
+ * untrusted seal is not a repair, and a second writer started over a
+ * resource somebody may still hold is the T-247 race with a reason
+ * attached.
+ *
+ * **AND A BENCH OR A SEAL NOT YET OWED IS NOT A BROKEN PATH.** That
+ * distinction is the one a blunter check gets wrong in the direction
+ * that looks safe: holding every dispatch because the verifier's bench
+ * for a card nobody has built yet does not answer.
+ *
+ * @param {HealthState} state
+ * @param {ProposedAction} action
+ * @returns {HealthVerdict}
+ */
+export function sharedHealth(state, action) {
+  /** @type {string[]} */
+  const holds = [];
+  const resource = action.resource ?? null;
+  const unknownWriters = state.writers?.unknown ?? [];
+  const affected =
+    resource === null ? unknownWriters : unknownWriters.filter((r) => r === resource);
+  if (affected.length > 0) {
+    holds.push(
+      `the live writer of ${affected.join(", ")} is of UNKNOWN ownership, which holds every ` +
+        "affected action — and no repair permission bypasses it, because a second writer started " +
+        "over a resource somebody may still hold is a race with a reason attached",
+    );
+  }
+  if (state.verification?.owed === true && state.verification.trusted !== true) {
+    holds.push(
+      `the verification path cannot be trusted at this stage — ${state.verification.why} — which ` +
+        "holds every affected action; a repair verified by a seal nobody trusts is not a repair",
+    );
+  }
+  const pending = action.pendingQuestions ?? [];
+  const dependsOn = (action.dependsOn ?? []).filter((q) => pending.includes(q));
+  if (dependsOn.length > 0) {
+    holds.push(
+      `it depends on the pending question ${dependsOn.join(", ")}, which no coordinator may ` +
+        "settle on the owner's behalf",
+    );
+  }
+  const red = state.ci?.known === true && state.ci.green !== true ? state.ci : null;
+  const attributed = red === null ? null : red.attributed;
+  if (red !== null) {
+    if (attributed === null) {
+      holds.push(
+        "a red stands on main and nothing has attributed it yet, so no landing and no repair is " +
+          "specific to it — the attribution is the next act",
+      );
+    } else if (action.kind === "repair") {
+      if (action.repairs !== attributed.card) {
+        holds.push(
+          `the red on main is attributed to ${attributed.card} and this repair is for ` +
+            `${String(action.repairs)}, so it is not the repair that red permits`,
+        );
+      }
+    } else if (action.kind === "landing") {
+      const invalidated = (action.checks ?? []).filter((c) => attributed.bodies.includes(c));
+      if (invalidated.length > 0) {
+        holds.push(
+          `this landing's delivery checks ${invalidated.join(", ")} are among the bodies the red ` +
+            `on main fails, so the red invalidates the evidence this landing would stand on`,
+        );
+      }
+    }
+  }
+  if (holds.length > 0) {
+    return {
+      permitted: false,
+      holds,
+      why: `${action.kind} of ${action.card} is HELD by ${String(holds.length)} condition(s).`,
+    };
+  }
+  return {
+    permitted: true,
+    holds: [],
+    why:
+      red === null
+        ? `${action.kind} of ${action.card} is permitted: no condition specific to it holds.`
+        : `${action.kind} of ${action.card} is permitted despite the red on main, which is ` +
+          `attributed to ${String(attributed?.card)} and is not specific to this action.`,
+  };
+}
+
+/* ── THE QUOTA REFUSAL, ITS RETRY INSTANT AND THE WAIT ───────────── */
+
+/**
+ * @typedef {object} Refusal
+ * @property {string} kind   one of REFUSAL_KINDS
+ * @property {?string} resetAt  the provider's stated reset instant, where the refusal carries one
+ * @property {string} why
+ */
+
+/**
+ * TELL A QUOTA REFUSAL FROM AN AUTHENTICATION OR CONFIGURATION FAILURE,
+ * BECAUSE THEY ARRIVE WEARING THE SAME EXIT CODE AND THE RIGHT ANSWER
+ * IS OPPOSITE. A quota refusal is waited out; an authentication or
+ * configuration failure is never resolved by waiting and PARKS WITH A
+ * QUESTION, because changing a model or an account to get past it is a
+ * decision this coordinator does not hold.
+ *
+ * The classification is REPORTED at every call, so a text this reader
+ * gets wrong is visible rather than silent.
+ *
+ * @param {string} text
+ * @returns {Refusal}
+ */
+export function classifyRefusal(text) {
+  const t = String(text ?? "");
+  if (/\b(401|403|unauthori[sz]ed|authentication fail|invalid api key|invalid_api_key|expired token|no credentials|not logged in)\b/i.test(t)) {
+    return {
+      kind: "authentication",
+      resetAt: null,
+      why:
+        "the refusal is an AUTHENTICATION failure, which no wait resolves: a credential does not " +
+        "come back on a timer. It parks with a question — changing an account is not this " +
+        "coordinator's decision to make.",
+    };
+  }
+  if (/\b(model .* (not found|is not available|does not exist)|unknown model|unsupported|configuration error|invalid request|400 Bad Request)\b/i.test(t)) {
+    return {
+      kind: "configuration",
+      resetAt: null,
+      why:
+        "the refusal is a CONFIGURATION failure, which no wait resolves. It parks with a " +
+        "question — models and accounts are never changed without the configured permission, so " +
+        "the fix is not one this coordinator may choose.",
+    };
+  }
+  if (/\b(quota|rate limit|rate_limit|429|usage limit|insufficient_quota|over capacity|too many requests)\b/i.test(t)) {
+    const iso =
+      /\b(?:reset|retry|resume|try again|available)\w*[^\n]{0,40}?\b(20\d{2}-\d{2}-\d{2}T[\d:.]+(?:Z|[+-]\d{2}:?\d{2}))/i.exec(t);
+    const epoch = /\b(?:reset|retry)[-_ ]?(?:at|after|s)?\b\D{0,12}(\d{10})\b/i.exec(t);
+    const resetAt =
+      iso !== null
+        ? /** @type {string} */ (iso[1])
+        : epoch !== null
+          ? new Date(Number(epoch[1]) * 1000).toISOString()
+          : null;
+    return {
+      kind: "quota",
+      resetAt,
+      why:
+        resetAt === null
+          ? "the refusal is a QUOTA refusal and names no reset instant, so the retry is scheduled " +
+            "on a capped growing delay."
+          : `the refusal is a QUOTA refusal and names its reset instant (${resetAt}), which is the ` +
+            "retry instant — a provider's own figure beats a guessed delay.",
+    };
+  }
+  return {
+    kind: "none",
+    resetAt: null,
+    why: "nothing in this text is a provider refusal this reader recognises.",
+  };
+}
+
+/**
+ * THE NEXT RETRY INSTANT — the provider's own where the refusal carries
+ * one, else a CAPPED exponential delay.
+ *
+ * IT IS AN INSTANT AND NEVER A DURATION, because the coordinator that
+ * revisits it is not necessarily the one that recorded it: a successor
+ * seat reads the record and a duration would have to be added to a start
+ * it cannot see. The cap exists so a fourth refusal does not schedule a
+ * retry for tomorrow.
+ *
+ * @param {Refusal} refusal
+ * @param {number} attempts  how many refusals this work has already met, including this one
+ * @param {number} nowMs
+ * @returns {{ at: string, delayMs: number, source: string }}
+ */
+export function retryInstant(refusal, attempts, nowMs) {
+  if (!Number.isFinite(nowMs)) {
+    throw new UnattendedFinding(
+      UNATTENDED_CODES.RETRY_INSTANT,
+      "dispatch-brief: a retry instant is computed against a clock this caller supplies, and it " +
+        "got no finite one. The clock is injected so a body drives this with a fake one rather " +
+        "than sleeping, and a default here would be the hidden real clock that makes that " +
+        "impossible.",
+    );
+  }
+  if (refusal.resetAt !== null && refusal.resetAt !== undefined) {
+    const at = Date.parse(refusal.resetAt);
+    if (Number.isFinite(at)) {
+      return {
+        at: new Date(at).toISOString(),
+        delayMs: Math.max(0, at - nowMs),
+        source: "the provider's own stated reset instant",
+      };
+    }
+  }
+  const n = Math.max(1, Math.floor(attempts));
+  const delayMs = Math.min(RETRY_CAP_MS, RETRY_BASE_MS * 2 ** (n - 1));
+  return {
+    at: new Date(nowMs + delayMs).toISOString(),
+    delayMs,
+    source: `a capped exponential delay — refusal ${String(n)}, ${String(delayMs)} ms, capped at ${String(RETRY_CAP_MS)} ms`,
+  };
+}
+
+/**
+ * THE RETRIES THIS BOUNDARY OWES A LOOK AT. The coordinator revisits the
+ * recorded instant at each of its OWN boundaries while continuing other
+ * eligible work — so this is a READ over the run records, never a wait,
+ * and it separates the due from the scheduled rather than merging them.
+ *
+ * @param {{ attempt: string, assignment?: { id?: string } | null, retry?: ?{ at: string, attempts: number, why: string } }[]} records
+ * @param {string} nowIso
+ * @returns {{ due: any[], scheduled: any[] }}
+ */
+export function dueRetries(records, nowIso) {
+  /** @type {any[]} */
+  const due = [];
+  /** @type {any[]} */
+  const scheduled = [];
+  for (const rec of records ?? []) {
+    const retry = rec.retry;
+    if (retry === undefined || retry === null || String(retry.at ?? "") === "") continue;
+    const row = {
+      attempt: rec.attempt,
+      work: rec.assignment?.id ?? "",
+      at: retry.at,
+      attempts: retry.attempts,
+      why: retry.why,
+    };
+    if (Date.parse(String(retry.at)) <= Date.parse(String(nowIso))) due.push(row);
+    else scheduled.push(row);
+  }
+  due.sort((a, b) => Date.parse(String(a.at)) - Date.parse(String(b.at)));
+  scheduled.sort((a, b) => Date.parse(String(a.at)) - Date.parse(String(b.at)));
+  return { due, scheduled };
+}
+
+/* ── THE QUESTION ENTRY ──────────────────────────────────────────── */
+
+/**
+ * @typedef {object} RoomQuestion
+ * @property {string} id
+ * @property {string} room     the room file, root-relative
+ * @property {string} at       the date the entry carries
+ * @property {string} state    one of QUESTION_STATES
+ * @property {string[]} cards  the cards this question holds
+ * @property {string} cause
+ * @property {string} ref
+ * @property {string} resolution  the resolution's evidence, or ""
+ */
+
+/**
+ * THE ENTRY, RENDERED — the room's own turn shape with a marked question
+ * in it, and never a ruling.
+ *
+ * The turn heading is `method/rooms/ROOM-FORMAT.md`'s — the role, the
+ * model and session in parentheses, the date — with the question's id and
+ * state appended, so an entry is found by the id a dispatch order names
+ * and read by a person the same way every other turn is. The MARKER is
+ * the first thing in the body for the reason the format's own entry rule
+ * gives: a room is read by people who were not in the conversation, and
+ * a question that reads as a settled thing is worse than no entry.
+ *
+ * @param {{ id: string, role?: string, model: string, session: string, at: string, cards: string[], cause: string, ref: string, state?: string, resolution?: string }} q
+ * @returns {string}
+ */
+export function questionEntry(q) {
+  if (!QUESTION_ID_PATTERN.test(String(q.id ?? ""))) {
+    throw new UnattendedFinding(
+      UNATTENDED_CODES.QUESTION_SHAPE,
+      `dispatch-brief: ${JSON.stringify(q.id)} is not a question id. It is Q- followed by at ` +
+        "least three digits, because the dispatch order names it on every card it holds and the " +
+        "lane cut refuses by it — an id a reader cannot tell from prose is a link nothing follows.",
+    );
+  }
+  for (const [name, text] of [["cause", q.cause], ["ref", q.ref], ["resolution", q.resolution]]) {
+    if (/[\r\n]/.test(String(text ?? ""))) {
+      throw new UnattendedFinding(
+        UNATTENDED_CODES.QUESTION_SHAPE,
+        `dispatch-brief: a question entry's ${name} carries a line break, and a line break rendered ` +
+          "into a room opens a heading the room did not write — a forged turn the reader stops at, so " +
+          "the entry would hold nothing. Fold the text onto one line.",
+      );
+    }
+  }
+  const state = String(q.state ?? "pending");
+  if (!QUESTION_STATES.includes(state)) {
+    throw new UnattendedFinding(
+      UNATTENDED_CODES.QUESTION_SHAPE,
+      `dispatch-brief: ${JSON.stringify(state)} is not a question state — it is ` +
+        `${QUESTION_STATES.join(" or ")}, and the lane cut refuses a dependent card by exactly ` +
+        "that word.",
+    );
+  }
+  const cards = (q.cards ?? []).map((c) => String(c).trim()).filter((c) => c !== "");
+  if (cards.length === 0) {
+    throw new UnattendedFinding(
+      UNATTENDED_CODES.QUESTION_SHAPE,
+      "dispatch-brief: a question entry names the cards it holds, and this one names none. A " +
+        "question that holds nothing is a note; a question that holds cards and does not say " +
+        "which is a hold nobody can lift.",
+    );
+  }
+  if (state === "resolved" && String(q.resolution ?? "").trim() === "") {
+    throw new UnattendedFinding(
+      UNATTENDED_CODES.QUESTION_SHAPE,
+      "dispatch-brief: a resolved question entry carries the resolution's evidence. A state that " +
+        "changed with nothing behind it is the seat settling a decision it does not hold, which " +
+        "is the one thing this entry exists not to be.",
+    );
+  }
+  return [
+    `## @${q.role ?? "orchestrator"} (${q.model} @${q.session}) — ${q.at} — QUESTION ${q.id} (${state})`,
+    "",
+    `**${QUESTION_MARKER}.** ${q.cause} (${q.ref})`,
+    "",
+    `Cards held: ${cards.join(", ")}`,
+    `State: ${state}${state === "resolved" ? ` — ${String(q.resolution).trim()}` : ""}`,
+    "",
+  ].join("\n");
+}
+
+/**
+ * READ EVERY QUESTION OUT OF THE ROOMS. The room is the record and this
+ * is its reader: no card gains a field, so this is the only place the
+ * link between a question and the cards it holds exists.
+ *
+ * @param {{ path: string, content: string }[]} rooms
+ * @returns {RoomQuestion[]}
+ */
+export function readQuestions(rooms) {
+  /** @type {RoomQuestion[]} */
+  const out = [];
+  for (const room of rooms ?? []) {
+    const lines = String(room.content ?? "").split("\n");
+    for (let i = 0; i < lines.length; i += 1) {
+      const head = /^##\s+.*?—\s*(20\d{2}-\d{2}-\d{2})[^—]*—\s*QUESTION\s+(Q-\d{3,})\s*\((pending|resolved)\)\s*$/.exec(
+        /** @type {string} */ (lines[i]),
+      );
+      if (head === null) continue;
+      /** @type {string[]} */
+      const body = [];
+      for (let j = i + 1; j < lines.length && !String(lines[j]).startsWith("## "); j += 1) {
+        body.push(/** @type {string} */ (lines[j]));
+      }
+      const text = body.join("\n");
+      const cards = /^Cards held:\s*(.+?)\s*$/m.exec(text);
+      const state = /^State:\s*(pending|resolved)\s*(?:—\s*(.+?)\s*)?$/m.exec(text);
+      const cause = new RegExp(`\\*\\*${QUESTION_MARKER.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}\\.\\*\\*\\s*([\\s\\S]*?)\\s*\\(([^()]*)\\)\\s*$`, "m").exec(text);
+      out.push({
+        id: /** @type {string} */ (head[2]),
+        room: room.path,
+        at: /** @type {string} */ (head[1]),
+        // THE HEADING AND THE BODY BOTH CARRY THE STATE AND THE BODY WINS,
+        // because a resolution is appended to the body and a heading that
+        // was not re-edited would otherwise hold a card the room has let go.
+        state: state === null ? /** @type {string} */ (head[3]) : /** @type {string} */ (state[1]),
+        cards:
+          cards === null
+            ? []
+            : String(cards[1]).split(",").map((c) => c.trim()).filter((c) => c !== ""),
+        cause: cause === null ? "" : String(cause[1]).replace(/\s+/g, " ").trim(),
+        ref: cause === null ? "" : String(cause[2]).trim(),
+        resolution: state === null || state[2] === undefined ? "" : String(state[2]),
+      });
+    }
+  }
+  return out;
+}
+
+/**
+ * WHICH CARD IS HELD BY WHICH PENDING QUESTION. A card named by a
+ * RESOLVED question is not held — that is the "same resolved state" the
+ * lane cut refuses by, and it is one derivation feeding both the display
+ * and the refusal rather than two that can disagree.
+ *
+ * @param {RoomQuestion[]} questions
+ * @returns {Map<string, RoomQuestion>}
+ */
+export function questionHolds(questions) {
+  /** @type {Map<string, RoomQuestion>} */
+  const held = new Map();
+  for (const q of questions ?? []) {
+    if (q.state !== "pending") continue;
+    for (const card of q.cards) if (!held.has(card)) held.set(card, q);
+  }
+  return held;
+}
+
+/** Every room file this checkout tracks, as the reader above takes them. */
+/** @param {string} root @returns {{ path: string, content: string }[]} */
+export function roomFiles(root = repoRoot) {
+  return trackedFiles(root)
+    .filter((rel) => /^docs\/rooms\/[^/]+\.md$/.test(rel))
+    .map((rel) => ({ path: rel, content: readFileSync(path.join(root, rel), "utf8") }));
+}
+
+/* ── THE RETURN BRIEF ────────────────────────────────────────────── */
+
+/**
+ * @typedef {object} MergeRow
+ * @property {string} sha       the merge commit
+ * @property {string} at        its committer instant
+ * @property {string} subject
+ * @property {string} tested    the sha a run actually tested, or ""
+ * @property {string} conclusion the run's conclusion, or `unknown`
+ * @property {string} run       the run id, or ""
+ * @property {string} runAt     the run's own creation instant, or ""
+ * @property {string} evidence  one line saying WHERE that conclusion came from
+ */
+
+/**
+ * THE PUSH EVIDENCE IS THE RUNNER'S RUN AND NOTHING ELSE.
+ *
+ * **A PUSH WITH NO RUN IS REPORTED UNKNOWN AND NEVER INFERRED FROM A
+ * COMMIT'S TIMESTAMP.** That is the whole of this function's discipline
+ * and it is measured rather than fastidious: main sat red for roughly
+ * five hours on 2026-09-01 while a seat reported four green suites,
+ * because a local battery and a runner are different measurements and
+ * only one of them runs on a machine that is not yours.
+ *
+ * **A MERGE COMMIT IS ALMOST NEVER A RUN'S HEAD SHA IN THIS PROJECT**,
+ * because the checkpoint lands on top of it before the push. So the run
+ * a merge is reported against is the OLDEST run whose tested sha is that
+ * merge or a commit NEWER than it on the same first-parent line — the
+ * first run that actually covered the merge. That is derived from the
+ * line this caller hands in and never from two timestamps: a run created
+ * after a commit's date says nothing about whether it tested it.
+ *
+ * **AND AN OLDER GREEN RUN IS NEVER PROOF OF THE CURRENT TIP.** The
+ * search runs FORWARD from the merge, never backward: a run at an
+ * ancestor is evidence about the ancestor.
+ *
+ * **A MERGE OLDER THAN THE INSTANT WHOSE RUN FINISHED AFTER IT IS STILL
+ * NEWS.** The owner left while a run was in flight; its conclusion
+ * arrived in their absence, and a window filtering on the COMMIT's date
+ * would drop exactly the row they came back for.
+ *
+ * @param {{ sha: string, at: string, subject: string, merge: boolean }[]} line
+ *   the first-parent log, NEWEST FIRST
+ * @param {?RunnerRun[]} runs   null where the runner's history is unreachable
+ * @param {string} since
+ * @returns {MergeRow[]}
+ */
+export function mergeEvidence(line, runs, since) {
+  const commits = line ?? [];
+  /** @type {MergeRow[]} */
+  const out = [];
+  for (let i = 0; i < commits.length; i += 1) {
+    const m = /** @type {{sha: string, at: string, subject: string, merge: boolean}} */ (commits[i]);
+    if (m.merge !== true) continue;
+    // THIS MERGE AND EVERYTHING NEWER THAN IT ON THE SAME LINE. A run
+    // that tested any of these tested a tree that carries this merge.
+    const covering = new Set(commits.slice(0, i + 1).map((c) => c.sha));
+    const candidates = (runs ?? []).filter((r) => covering.has(r.headSha));
+    candidates.sort((a, b) => Date.parse(String(a.createdAt)) - Date.parse(String(b.createdAt)));
+    const run = candidates.length === 0 ? null : /** @type {RunnerRun} */ (candidates[0]);
+    // THE COMPARISON IS ON MILLISECONDS AND NEVER ON THE TEXT, for the
+    // reason `firstParentLine` normalises: two instants written in two
+    // offsets order correctly as times and wrongly as strings.
+    const sinceMs = Date.parse(String(since));
+    const inWindow = Date.parse(String(m.at)) >= sinceMs;
+    const runAfter = run !== null && Date.parse(String(run.createdAt)) >= sinceMs;
+    if (!inWindow && !runAfter) continue;
+    if (runs === null) {
+      out.push({
+        sha: m.sha,
+        at: m.at,
+        subject: m.subject,
+        tested: "",
+        conclusion: "unknown",
+        run: "",
+        runAt: "",
+        evidence:
+          "the runner's history is UNREACHABLE from here, so this push's run is unknown — and it " +
+          "is reported unknown rather than inferred from the commit's own timestamp",
+      });
+      continue;
+    }
+    if (run === null) {
+      out.push({
+        sha: m.sha,
+        at: m.at,
+        subject: m.subject,
+        tested: "",
+        conclusion: "unknown",
+        run: "",
+        runAt: "",
+        evidence:
+          "no run tested this merge or anything newer than it on this line, so this push left NO " +
+          "run and there is no conclusion to report. An older run at an ancestor is evidence " +
+          "about the ancestor and is not borrowed here.",
+      });
+      continue;
+    }
+    out.push({
+      sha: m.sha,
+      at: m.at,
+      subject: m.subject,
+      tested: run.headSha,
+      conclusion: String(run.conclusion) === "" ? "in progress" : String(run.conclusion),
+      run: String(run.databaseId),
+      runAt: String(run.createdAt),
+      evidence:
+        (runAfter && !inWindow
+          ? `run ${String(run.databaseId)} FINISHED AFTER the instant asked about, so this older ` +
+            "merge is reported with its new conclusion — "
+          : "") +
+        `run ${String(run.databaseId)} tested ${run.headSha}` +
+        (run.headSha === m.sha
+          ? " (the merge commit itself)"
+          : ", the first commit at or after this merge that any run covered") +
+        `, created ${run.createdAt}`,
+    });
+  }
+  return out;
+}
+
+/**
+ * @typedef {object} ReturnBriefInput
+ * @property {string} since
+ * @property {MergeRow[]} merges
+ * @property {RoomQuestion[]} questions
+ * @property {{ card: string, why: string, wake: string, ref: string }[]} parked
+ * @property {{ taskId: string, branch: string, worktree: string, phase: string }[]} lanes
+ * @property {{ card: string, parent: string, evidence: string, attempt: string, state: string }[]} repairs
+ * @property {{ due: any[], scheduled: any[] }} retries
+ * @property {{ at: string, card: string, seat: string, tier: string, merge: string }[]} meters
+ * @property {string[]} unknowns   what this brief cannot know, said plainly
+ */
+
+/**
+ * THE ONE PAGE THE OWNER READS ON RETURN, DERIVED FROM RECORDS THAT
+ * ALREADY EXIST — the cards, the rooms, the run records, the meters
+ * records and the runner's runs. Nothing here is remembered by this
+ * loop, and nothing here is a verifier's material: a return brief that
+ * carried a verifier's findings would be the blind-phase leak that role
+ * file spends four paragraphs on, arriving by a side door.
+ *
+ * **WHAT IT CANNOT KNOW IS SAID PLAINLY AND IS NOT AN APOLOGY.** A run
+ * still in progress, a push with no run, a lane whose phase nobody
+ * reported: each is a row here that names the gap rather than a silence
+ * the owner has to notice.
+ *
+ * @param {Ctx} ctx
+ * @param {ReturnBriefInput} input
+ * @returns {Rec[]}
+ */
+export function returnBriefRecs(ctx, input) {
+  const t = treeProv(ctx.ref, "the cards, the rooms and the merge log this checkout carries");
+  const live = liveProv(ctx.at, ctx.host, "the run records, the worktree list and the runner's runs");
+  /** @type {Rec[]} */
+  const recs = [
+    note("THE RETURN BRIEF — what happened while you were away, derived from records that already"),
+    note("exist and never from this loop's memory. Every row names where it came from; every gap"),
+    note("names itself rather than being left to be noticed."),
+    value(`since: ${input.since}`, live),
+    blank(),
+    note("WHAT MERGED — with its merge commit, the commit a run actually TESTED, and that run's"),
+    note("conclusion. A push with no run is UNKNOWN, never inferred from a commit's timestamp."),
+  ];
+  if (input.merges.length === 0) recs.push(value("nothing merged in this window", t));
+  for (const m of input.merges) {
+    // THE SUBJECT IS TRUNCATED AND SAYS SO. This project's merge subjects
+    // are paragraphs — one of them is 3,000 bytes — and a return brief is
+    // ONE PAGE by its own contract. The sha is beside it and `git show`
+    // is the whole of the recovery, so nothing here is unrecoverable; a
+    // truncation that did not announce itself would be.
+    const subject =
+      m.subject.length > 160 ? `${m.subject.slice(0, 160)}… [truncated; git show ${m.sha.slice(0, 8)}]` : m.subject;
+    // THE METERS RECORDS ARE KEYED BY THE CARD AND NOT BY THE MERGE SHA,
+    // and that is measured rather than chosen: the readings are appended
+    // while the merge is still STAGED, so the field the record calls
+    // `merge` is the BENCH TIP the readings were taken at and the merge
+    // commit does not exist yet. The card id in the merge's own subject
+    // is the key both sides actually share.
+    const card = /^Merge\s+(T-\d+(?:-s\d+)?)\b/.exec(m.subject);
+    const seats = card === null ? [] : input.meters.filter((x) => x.card === card[1]);
+    recs.push(
+      value(`${m.sha} at ${m.at} — ${subject}`, t),
+      value(
+        `   tested ${m.tested === "" ? "(no run)" : m.tested} · conclusion ${m.conclusion} — ${m.evidence}`,
+        live,
+      ),
+      value(
+        seats.length === 0
+          ? "   seats: no meters record names this merge's card, so which seats produced it is not known here"
+          : `   seats: ${seats.map((x) => `${x.seat} (${x.card}, tier ${x.tier})`).join("; ")}`,
+        t,
+      ),
+    );
+  }
+  recs.push(
+    blank(),
+    note("WHAT WAS PARKED, AND WHY — each with the wake condition that brings it back, so a fresh"),
+    note("coordinator inherits the park rather than restarting the cycle that produced it."),
+  );
+  if (input.parked.length === 0) recs.push(value("nothing is parked", t));
+  for (const p of input.parked) {
+    recs.push(value(`${p.card} — ${p.why}`, t), value(`   wakes on: ${p.wake} (${p.ref})`, t));
+  }
+  recs.push(
+    blank(),
+    note("THE QUESTION ENTRIES — a decision this coordinator may not make, marked as a question in"),
+    note("its room and never as a ruling. A PENDING one holds every card it names; a RESOLVED one"),
+    note("holds none, and its resolution carries the evidence behind it."),
+  );
+  if (input.questions.length === 0) recs.push(value("no question entry stands in any room", t));
+  for (const q of input.questions) {
+    recs.push(
+      value(`${q.id} (${q.state}) in ${q.room}, dated ${q.at} — ${q.cause}`, t),
+      value(
+        `   cards held: ${q.cards.join(", ") || "none"}${q.resolution === "" ? "" : ` · resolved: ${q.resolution}`}`,
+        t,
+      ),
+    );
+  }
+  recs.push(blank(), note("THE LANES LIVE AND THEIR PHASE — a phase nobody reported is reported as unreported."));
+  if (input.lanes.length === 0) recs.push(value("no lane is live", live));
+  for (const l of input.lanes) {
+    recs.push(value(`${l.taskId} ${l.phase} — ${l.branch} at ${l.worktree}`, live));
+  }
+  recs.push(
+    blank(),
+    note("THE REPAIRS ADMITTED — each with the work it was derived FROM, the failure evidence that"),
+    note("justified it, and the attempt it was admitted at. A repair with no origin is not one."),
+  );
+  if (input.repairs.length === 0) recs.push(value("no repair was admitted by derivation", live));
+  for (const r of input.repairs) {
+    recs.push(
+      value(`${r.card} (${r.state}) — derived from ${r.parent}, at attempt ${r.attempt}`, live),
+      value(`   failure evidence: ${r.evidence}`, live),
+    );
+  }
+  recs.push(
+    blank(),
+    note("THE RECORDED RETRIES — a spawn refused for quota is a scheduled retry this loop returns"),
+    note("to at its own boundaries, never a block on its only control loop."),
+  );
+  if (input.retries.due.length === 0 && input.retries.scheduled.length === 0) {
+    recs.push(value("no retry is recorded on any run record", live));
+  }
+  for (const r of input.retries.due) {
+    recs.push(value(`DUE NOW — ${r.work} attempt ${r.attempt}, instant ${r.at}: ${r.why}`, live));
+  }
+  for (const r of input.retries.scheduled) {
+    recs.push(value(`scheduled — ${r.work} attempt ${r.attempt}, instant ${r.at}: ${r.why}`, live));
+  }
+  recs.push(
+    blank(),
+    note("WHAT THIS BRIEF CANNOT KNOW — said plainly, because a gap the reader has to notice is a"),
+    note("gap the reader will not notice."),
+  );
+  if (input.unknowns.length === 0) {
+    recs.push(value("every row above was derived from a record this command could read", live));
+  }
+  for (const u of input.unknowns) recs.push(value(u, live));
+  recs.push(
+    blank(),
+    note("AND IT COPIES NO VERIFIER-ONLY MATERIAL. An attack set, a ground truth and a phase-one"),
+    note("return are sealed inputs; this answer reads cards, rooms, run records, meters records"),
+    note("and the runner's runs, and it reads none of those four."),
+  );
+  return recs;
+}
+
+/* ── THE RUNNER'S HISTORY, AND WHAT IT IS WHEN IT IS NOT THERE ────── */
+
+/**
+ * THE RUNNER IS A MACHINE THAT IS NOT YOURS, SO REACHING IT IS AN IO AND
+ * NOT A DERIVATION. Every call goes through this seam: a body drives the
+ * return brief and the attribution over FIXTURE runs and FIXTURE logs
+ * with no network, no `gh` and no credentials, which is the only way
+ * either is testable at all.
+ *
+ * **AN UNREACHABLE RUNNER IS `null` AND NEVER AN EMPTY LIST.** The two
+ * are opposite claims — "this project has no runs" and "I could not ask"
+ * — and every reader downstream branches on which one it got. That
+ * distinction is the whole reason this returns a nullable.
+ *
+ * ── THE REPLAY SEAM, AND WHY IT IS AN ENVIRONMENT VARIABLE ──────────
+ * `SUPERTASKR_RUNNER_RUNS` names a file holding the runner's answer as
+ * JSON — or the word `none`, which is the UNREACHABLE runner said out
+ * loud. It exists for two readers and they want the same thing: a body
+ * that drives this command END TO END as a fresh process cannot inject a
+ * function into it, and a person re-deriving somebody else's return
+ * brief months later cannot re-run a history the runner has since
+ * expired. Both need the same answer replayed rather than re-asked.
+ * `SUPERTASKR_RUNNER_LOGS` is its other half: a directory holding
+ * `<run id>.log`.
+ *
+ * **IT IS A REPLAY AND NEVER A DEFAULT.** Unset, the runner is asked; a
+ * file that will not parse is the unreachable answer rather than an
+ * empty one, on this function's own rule two lines up.
+ *
+ * @returns {{ runs: (root: string) => ?RunnerRun[], log: (root: string, id: string) => ?string }}
+ */
+export function defaultRunnerIo() {
+  const replayRuns = (process.env["SUPERTASKR_RUNNER_RUNS"] ?? "").trim();
+  const replayLogs = (process.env["SUPERTASKR_RUNNER_LOGS"] ?? "").trim();
+  return {
+    runs: (root) => {
+      if (replayRuns !== "") {
+        if (replayRuns === "none") return null;
+        try {
+          const parsed = JSON.parse(readFileSync(replayRuns, "utf8"));
+          return Array.isArray(parsed) ? parsed : null;
+        } catch {
+          return null;
+        }
+      }
+      return liveRuns(root);
+    },
+    log: (root, id) => {
+      if (replayLogs !== "") {
+        const file = path.join(replayLogs, `${id}.log`);
+        return existsSync(file) ? readFileSync(file, "utf8") : null;
+      }
+      return liveLog(root, id);
+    },
+  };
+}
+
+/**
+ * The runner, actually asked. Separated from the seam above so the replay
+ * branch and the live branch are two named things rather than one
+ * function with a flag in the middle of it.
+ *
+ * @param {string} root
+ * @returns {?RunnerRun[]}
+ */
+function liveRuns(root) {
+  const out = spawnSync(
+    "gh",
+    ["run", "list", "--branch", "main", "--limit", "60", "--json", "databaseId,headSha,conclusion,createdAt"],
+    { cwd: root, encoding: "utf8", maxBuffer: 16 * 1024 * 1024 },
+  );
+  if (out.error !== undefined || out.status !== 0 || typeof out.stdout !== "string") return null;
+  try {
+    const parsed = JSON.parse(out.stdout);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * One run's failing log, actually asked for.
+ *
+ * @param {string} root
+ * @param {string} id
+ * @returns {?string}
+ */
+function liveLog(root, id) {
+  const out = spawnSync("gh", ["run", "view", id, "--log-failed", "--attempt", "1"], {
+    cwd: root,
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  // A LOG IS ASKED FOR ONLY ON A RED, and `gh` answers non-zero for a run
+  // it cannot show as well as for a run with no failed step — so the
+  // stdout is taken when there is any, and null otherwise.
+  if (typeof out.stdout === "string" && out.stdout.trim() !== "") return out.stdout;
+  return null;
+}
+
+/**
+ * THE FIRST-PARENT LINE THIS CHECKOUT CARRIES, newest first, with each
+ * commit saying whether it is a MERGE. It is one git call, and the merge
+ * flag is read off the parent count rather than off the subject: a
+ * message opening with the word is prose, and the graph is the fact.
+ *
+ * @param {string} root
+ * @param {number} [limit]
+ * @returns {{ sha: string, at: string, subject: string, merge: boolean }[]}
+ */
+export function firstParentLine(root, limit = 120) {
+  const raw = git(root, [
+    "log",
+    "--first-parent",
+    `--max-count=${String(limit)}`,
+    "--format=%H%x09%cI%x09%P%x09%s",
+  ]);
+  /** @type {{ sha: string, at: string, subject: string, merge: boolean }[]} */
+  const out = [];
+  for (const row of raw.split("\n")) {
+    if (row.trim() === "") continue;
+    const [sha, at, parents, ...rest] = row.split("\t");
+    out.push({
+      sha: String(sha),
+      // NORMALISED TO UTC, because `%cI` carries the committer's own
+      // offset and a run's `createdAt` carries `Z`: comparing those two
+      // as STRINGS puts a `+03:00` commit three hours in the wrong place,
+      // silently, and the window this feeds is decided by exactly that
+      // comparison.
+      at: new Date(String(at)).toISOString(),
+      subject: rest.join("\t"),
+      merge: String(parents ?? "").trim().split(/\s+/).filter((x) => x !== "").length > 1,
+    });
+  }
+  return out;
+}
+
+/**
+ * THE METERS RECORDS — `docs/checkpoints/meters.jsonl`, one JSON object
+ * per line, each keyed to the merge it was appended at (T-297 parses the
+ * same file for the bands). The return brief reads them for ONE thing:
+ * which seats actually produced each merge in its window. That is a fact
+ * about the work the owner missed and it lives nowhere else — the card
+ * carries the INTENT (`builder:`, `verifier:`) and this file carries
+ * what ran.
+ *
+ * A FILE THAT IS NOT THERE IS AN EMPTY LIST AND NOT AN ERROR: a fresh
+ * project has no readings, and a return brief that refused to render
+ * because of that would be useless on the day it is most needed. A line
+ * that will not parse is skipped for the reason `allRecords` skips a
+ * damaged record — one bad line may not hide every good one.
+ *
+ * @param {string} root
+ * @returns {{ at: string, card: string, seat: string, tier: string, merge: string }[]}
+ */
+export function metersRecords(root = repoRoot) {
+  /* THE PATH IS A CONSTANT JOINED TO THE ROOT, and it is spelled that way
+     rather than as `path.join(root, "docs", ...)` because the DOCS GATE's
+     scanner reads a docs-shaped literal joined to a base and has to
+     resolve that base — a function PARAMETER is a base it cannot
+     evaluate, and the honest answer it gives is "a reader may be
+     MISSING". Naming the relative path once, above, is this file's own
+     idiom for every other document it reads. */
+  const file = path.join(root, METERS_REL_PATH);
+  if (!existsSync(file)) return [];
+  /** @type {{ at: string, card: string, seat: string, tier: string, merge: string }[]} */
+  const out = [];
+  for (const line of readFileSync(file, "utf8").split("\n")) {
+    if (line.trim() === "") continue;
+    try {
+      const rec = JSON.parse(line);
+      out.push({
+        at: String(rec.at ?? ""),
+        card: String(rec.card ?? ""),
+        seat: String(rec.seat ?? ""),
+        tier: String(rec.tier ?? ""),
+        merge: String(rec.merge ?? ""),
+      });
+    } catch {
+      // one unparseable line may not hide every readable one
+    }
+  }
+  return out;
+}
+
+/**
+ * THE RETURN BRIEF'S INPUT, ASSEMBLED FROM RECORDS THAT ALREADY EXIST
+ * (T-322). It is a function here, exported and with an IO seam, for the
+ * reason `succession` above is: a body has to drive it over a FIXTURE
+ * checkout with fixture runs and a fixture room, without a network, a
+ * `gh` or a credential.
+ *
+ * **EVERY ROW COMES FROM A RECORD AND NOTHING IS REMEMBERED.** The cards
+ * (their repair ledgers and their statuses), the rooms (the question
+ * entries), the run records (the admissions, the retries, the live
+ * writers), the meters records and the runner's runs — and where one of
+ * those cannot be read, the row says so rather than being dropped.
+ *
+ * **THE RUN RECORDS ARE AN INPUT AND NOT A READ HERE**, and that is a
+ * module boundary rather than a preference: `run-record.mjs` imports THIS
+ * file, so a read of `allRecords` here would be a cycle. `brief.mjs` is
+ * the one module that imports both halves and it is where the records
+ * are gathered — the same split T-324 already takes for the admission
+ * ledger.
+ *
+ * @param {Ctx} ctx
+ * @param {{ since: string, records: any[], io?: ReturnType<typeof defaultRunnerIo>, runs?: any, lanes?: any[] }} opts
+ * @returns {ReturnBriefInput}
+ */
+export function assembleReturnBrief(ctx, opts) {
+  const io = opts.io ?? defaultRunnerIo();
+  const since = new Date(opts.since).toISOString();
+  const runs = opts.runs === undefined ? io.runs(ctx.root) : opts.runs;
+  const line = firstParentLine(ctx.root);
+  const merges = mergeEvidence(line, runs, since);
+  const questions = readQuestions(roomFiles(ctx.root));
+  const records = opts.records;
+  const held = questionHolds(questions);
+
+  /** @type {{ card: string, why: string, wake: string, ref: string }[]} */
+  const parked = [];
+  for (const [id, card] of ctx.cards) {
+    // THE PARK IS READ OFF THE CARD'S OWN LEDGER, never inferred: an
+    // entry carrying a wake IS the park, and a card whose repair is
+    // still running carries none. A brief that guessed which repairs
+    // were parked would be reporting its own arithmetic to the owner.
+    const history = repairLedger(readFileSync(path.join(ctx.root, card.file), "utf8"));
+    const last = history[history.length - 1];
+    if (last === undefined || String(last.wake ?? "") === "") continue;
+    parked.push({
+      card: id,
+      why: `the repair parked after ${String(history.length)} attempt(s); the last was ${last.remedy} and the failure state was ${last.outcome}`,
+      wake: String(last.wake),
+      ref: last.ref,
+    });
+  }
+  for (const q of questions) {
+    if (q.state !== "pending") continue;
+    for (const c of q.cards) {
+      parked.push({
+        card: c,
+        why: `held by the pending question ${q.id} — ${q.cause}`,
+        wake: "owner-decision",
+        ref: q.room,
+      });
+    }
+  }
+
+  /** @type {{ card: string, parent: string, evidence: string, attempt: string, state: string }[]} */
+  const repairs = [];
+  for (const rec of records) {
+    const a = rec.admission;
+    if (a === null || a === undefined || a.kind !== "derived") continue;
+    repairs.push({
+      card: a.card,
+      parent: String(a.parent ?? "unnamed"),
+      evidence: a.evidence === "" ? "none was recorded on the admission" : a.evidence,
+      attempt: rec.attempt,
+      state: rec.state,
+    });
+  }
+
+  const lanes = (opts.lanes ?? ctx.lanes).map((/** @type {any} */ l) => {
+    // THE PHASE IS THE NEWEST RUN RECORD'S, AND A LANE WITH NO RECORD IS
+    // REPORTED UNREPORTED. A card's `status:` is the board's claim about
+    // a lane and the lane list is what holds ground (lane-protocol rule
+    // 7), so a phase taken from the board would be the under-reporting
+    // this brief exists to name.
+    const mine = records.filter((r) => String(r.assignment?.id ?? "") === l.taskId);
+    const newest = mine[mine.length - 1];
+    return {
+      taskId: l.taskId,
+      branch: l.branch,
+      worktree: l.path,
+      phase:
+        newest === undefined
+          ? "phase UNREPORTED — no run record names this lane, so nothing on disk says who is on it"
+          : `${String(newest.assignment?.role ?? "unknown role")} ${newest.state} (attempt ${newest.attempt})`,
+    };
+  });
+
+  /** @type {string[]} */
+  const unknowns = [];
+  if (runs === null) {
+    unknowns.push(
+      "the runner's history is UNREACHABLE from this checkout, so EVERY push above is reported " +
+        "with an unknown conclusion. Nothing here is inferred from a commit's timestamp.",
+    );
+  }
+  const noRun = merges.filter((m) => m.run === "");
+  if (runs !== null && noRun.length > 0) {
+    unknowns.push(
+      `${String(noRun.length)} merge(s) above left NO run on the runner — ${noRun.map((m) => m.sha.slice(0, 8)).join(", ")} ` +
+        "— so whether the tree was green after them is not known here.",
+    );
+  }
+  for (const m of merges.filter((x) => x.conclusion === "in progress")) {
+    unknowns.push(`run ${m.run} for ${m.sha.slice(0, 8)} is STILL IN PROGRESS, so its conclusion is not yet a fact.`);
+  }
+  for (const l of lanes.filter((x) => x.phase.startsWith("phase UNREPORTED"))) {
+    unknowns.push(`${l.taskId} has a live worktree and no run record, so its phase is unreported.`);
+  }
+  if (held.size > 0) {
+    unknowns.push(
+      `${String(held.size)} card(s) are held by a pending question, and what the owner will rule ` +
+        "is exactly what this loop may not decide.",
+    );
+  }
+  return {
+    since,
+    merges,
+    questions,
+    parked,
+    lanes,
+    repairs,
+    retries: dueRetries(records, ctx.at),
+    meters: metersRecords(ctx.root),
+    unknowns,
+  };
+}
+

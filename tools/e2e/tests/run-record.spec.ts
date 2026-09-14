@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { repoRoot } from "../preflight";
+import { dueRetries } from "../scripts/dispatch-brief.mjs";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import {
   ACK_TOKEN,
@@ -12,6 +13,7 @@ import {
   OPERATIONS,
   RunRecordFinding,
   TERMINAL_STATES,
+  allRecords,
   bindRun,
   collectRun,
   continueRun,
@@ -2288,5 +2290,181 @@ test("A DERIVED REPAIR CANNOT EXCEED THE AUTHORIZATION IT INHERITS — a parent 
     ).toBeNull();
   } finally {
     b.cleanup();
+  }
+});
+
+/* ════════════════════════════════════════════════════════════════════
+ * T-322 — A SPAWN REFUSED FOR QUOTA IS A RECORDED RETRY INSTANT.
+ *
+ * These drive the NATIVE path by the verbs, and the shape is the one the
+ * loop actually meets: the record is written and the resource reserved,
+ * the seat asks its harness to spawn, the provider refuses, and the seat
+ * hands the refusal back through the evidence the stop already takes.
+ * Nothing here sleeps and nothing here talks to a provider.
+ * ════════════════════════════════════════════════════════════════════ */
+
+/**
+ * An attempt refused at the spawn: reserved, never bound, and stopped
+ * with the provider's own text as the evidence. `RUN-DONE gone` is the
+ * honest token for a child that never started, and it is what carries
+ * the reconciliation to `ended` — which is the card's "no writer is
+ * created or lost by assumption", enforced rather than asserted.
+ */
+function refusedSpawn(b: Bench, text: string, at = "2026-09-14T12:00:00.000Z") {
+  const started = startRun(b.root, {
+    assignment: assignment(b),
+    at: "2026-09-14T11:59:00.000Z",
+    io: io(),
+  });
+  return stopRun(b.root, {
+    attempt: started.record.attempt,
+    evidence: `${text}\n${DONE_TOKEN} gone\n`,
+    at,
+    io: io(),
+  });
+}
+
+test("A QUOTA REFUSAL IS RECORDED ON THE RUN RECORD WITH ITS NEXT RETRY INSTANT — the provider's own reset where it names one, a capped growing delay where it does not", () => {
+  // THE CARD'S FOURTH CRITERION, the record half. The instant is on the
+  // record and NOT in a session's memory for one reason: the coordinator
+  // that revisits it may be a successor seat that never met the refusal.
+  //
+  // KILLED BY: a stop that records the refusal and no instant; one that
+  // ignores the provider's stated reset and guesses a delay anyway; a
+  // delay that does not grow across refusals; a delay that grows past the
+  // cap; and a reconciliation skipped, which would leave the resource
+  // reserved under a writer nobody established was gone.
+  const b = bench("quota-instant");
+  try {
+    const stated = refusedSpawn(
+      b,
+      "the provider refused: 429 rate limit exceeded, resets at 2026-09-14T13:30:00Z",
+    );
+    expect(stated.refusal.kind, "the refusal was not read as a quota refusal").toBe("quota");
+    expect(stated.record.retry?.at, "the provider's own stated reset was not used").toBe(
+      "2026-09-14T13:30:00.000Z",
+    );
+    expect(stated.record.retry?.source).toContain("the provider's own stated reset instant");
+    // AND THE RECONCILIATION HAPPENED: the reservation is released and
+    // the record is terminal, so nothing is holding the lane.
+    expect(stated.record.state).toBe("stopped");
+    expect(readReservation(b.root, b.lane), "the resource is still reserved after the refusal").toBe(
+      null,
+    );
+
+    // NO STATED RESET: a capped exponential, and it GROWS. The second
+    // refusal is a second attempt for the same work, so the record on
+    // disk is what the count is derived from — not a counter in a
+    // session.
+    const first = refusedSpawn(b, "the provider refused: usage limit reached, try again later");
+    expect(first.refusal.kind).toBe("quota");
+    // THE COUNT IS DERIVED FROM THE RECORDS ON DISK AND NOT FROM A
+    // SESSION, which is why this is the SECOND refusal for this work: the
+    // stated-reset one above is still on disk. A counter held in memory
+    // would say one here, and a successor seat would then restart the
+    // growth from the beginning.
+    expect(first.record.retry?.attempts, "the refusal count was not derived from the records").toBe(2);
+    const secondB = bench("quota-growth");
+    try {
+      const a1 = refusedSpawn(secondB, "429 too many requests");
+      const a2 = refusedSpawn(secondB, "429 too many requests");
+      const a3 = refusedSpawn(secondB, "429 too many requests");
+      const delay = (r: { at: string } | null | undefined, at: string) =>
+        Date.parse(String(r?.at)) - Date.parse(at);
+      const d1 = delay(a1.record.retry, "2026-09-14T12:00:00.000Z");
+      const d2 = delay(a2.record.retry, "2026-09-14T12:00:00.000Z");
+      const d3 = delay(a3.record.retry, "2026-09-14T12:00:00.000Z");
+      expect([d1, d2, d3], "the delay does not grow on each refusal").toEqual([
+        60_000, 120_000, 240_000,
+      ]);
+      expect(a3.record.retry?.attempts).toBe(3);
+    } finally {
+      secondB.cleanup();
+    }
+  } finally {
+    b.cleanup();
+  }
+});
+
+test("AN AUTHENTICATION OR CONFIGURATION FAILURE IS NOT A QUOTA REFUSAL — it is recorded, it schedules NO retry, and it parks with a question", () => {
+  // THE CARD'S FOURTH CRITERION's discrimination, and the reason it is a
+  // separate body: the two arrive wearing the same exit code and the
+  // right answer is OPPOSITE. Waiting never resolves a credential, and
+  // the fix — a different model, a different account — is a decision this
+  // loop does not hold.
+  //
+  // KILLED BY: a classifier that matches on the exit code or on the word
+  // "refused"; one that schedules a retry for an authentication failure;
+  // and one that records nothing at all, which would leave the seat with
+  // a stopped attempt and no reason.
+  const b = bench("auth-refusal");
+  try {
+    const auth = refusedSpawn(b, "the provider refused: 401 Unauthorized — invalid api key");
+    expect(auth.refusal.kind).toBe("authentication");
+    expect(auth.record.retry, "an authentication failure scheduled a retry").toBe(null);
+    expect(auth.record.refusal?.why).toContain("parks with a question");
+
+    const conf = refusedSpawn(b, "the provider refused: unknown model claude-opus-99");
+    expect(conf.refusal.kind).toBe("configuration");
+    expect(conf.record.retry, "a configuration failure scheduled a retry").toBe(null);
+    expect(conf.record.refusal?.why).toContain("configured permission");
+
+    // THE CONTROL, and it is what makes the two above mean anything: an
+    // ordinary stop carries NO refusal and NO retry, so the classifier is
+    // not simply labelling every stop.
+    const plain = refusedSpawn(b, "the executor finished its turn and stamped the card");
+    expect(plain.refusal.kind).toBe("none");
+    expect(plain.record.refusal, "an ordinary stop was labelled a provider refusal").toBe(null);
+    expect(plain.record.retry).toBe(null);
+  } finally {
+    b.cleanup();
+  }
+});
+
+test("THE RECORDED INSTANT SURVIVES THE PROCESS — a fresh read of the records separates what is DUE from what is merely scheduled", () => {
+  // THE CARD'S FOURTH CRITERION's whole point: the coordinator REVISITS
+  // the instant at its own boundaries, and the coordinator that revisits
+  // it may be a successor seat. So the derivation is over the records on
+  // disk, read fresh, and never over anything a session carried.
+  //
+  // KILLED BY: holding the retry in memory; a `dueRetries` that reads the
+  // real clock rather than the instant it is handed; and one that calls a
+  // future instant due, which is the retry that fires early and burns the
+  // window it was waiting for.
+  const b = bench("retry-survives");
+  try {
+    refusedSpawn(b, "429 rate limit exceeded, resets at 2026-09-14T13:30:00Z");
+    const fresh = allRecords(b.root);
+    expect(fresh.length, "the fixture wrote no record to read back").toBe(1);
+    const before = dueRetries(fresh, "2026-09-14T13:00:00.000Z");
+    expect(before.due, "a future instant was called due").toEqual([]);
+    expect(before.scheduled.map((r: { at: string }) => r.at)).toEqual(["2026-09-14T13:30:00.000Z"]);
+    const after = dueRetries(fresh, "2026-09-14T13:31:00.000Z");
+    expect(after.due.map((r: { work: string }) => r.work)).toEqual([WORK]);
+    expect(after.scheduled).toEqual([]);
+    // AND THE RETRY IS A FRESH START RATHER THAN A RESUMED ONE, which is
+    // what re-reads the pause, the grant and the shared eligibility at
+    // the child-start boundary.
+    expect(String(fresh[0]?.retry?.why)).toContain("re-reads the pause, the grant");
+  } finally {
+    b.cleanup();
+  }
+});
+
+test("THE REFUSAL PATH NAMES NO MODEL AND NO ACCOUNT — this arm holds no code that could change either", () => {
+  // THE CARD'S FOURTH CRITERION's last clause, and it is held by
+  // INSPECTION because that is the honest shape for a negative: "models
+  // and accounts are never changed without the configured permission" is
+  // a claim about what the code CANNOT do, and a body that drove one path
+  // would show only that one path does not.
+  //
+  // KILLED BY: any write to the assignment's model or to a provider
+  // account from the refusal path.
+  const source = readFileSync(path.join(repoRoot, "tools", "e2e", "scripts", "run-record.mjs"), "utf8");
+  const stop = source.slice(source.indexOf("export function stopRun"));
+  const body = stop.slice(0, stop.indexOf("\n/* "));
+  expect(body, "the refusal path is not in the stop verb any more").toContain("classifyRefusal");
+  for (const forbidden of ["assignment.model =", "assignment.harness =", "process.env"]) {
+    expect(body, `the refusal path writes ${forbidden}`).not.toContain(forbidden);
   }
 });
