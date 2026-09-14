@@ -2732,3 +2732,81 @@ test("the index and its chapters are pinned BOTH WAYS — a pointer with no file
   expect(() => conventionsText(noPointer)).toThrow(/points at nowhere/);
   rmSync(noPointer, { recursive: true, force: true });
 });
+
+/* ════════════════════════════════════════════════════════════════════
+ * THE READERS OUTSIDE THIS PACKAGE (T-290's verifier)
+ *
+ * The splice above re-points every reader under tools/e2e and every row
+ * of the app's own brief. It does NOT reach the two readers that live
+ * outside both — the model-free eval suite and the seat pack's shipped
+ * host-command check — and each of those resolves a RULE out of
+ * docs/CONVENTIONS.md by path. At the lane's tip both were red while
+ * all four legs were green, which is the whole reason these bodies are
+ * here: a leg that cannot see a reader cannot report it.
+ * ════════════════════════════════════════════════════════════════════ */
+
+test("the model-free eval suite's fixture root plants every file this project's conventions are made of", async () => {
+  const { LIVE_COPY_SET } = await import("../../method-evals/lib/fixture-root.mjs");
+  const wanted = [CONVENTIONS_DOC, ...conventionsChapters(conventionsIndexText())];
+  expect(wanted.length, "the index points at no chapter, so this body measures nothing").toBeGreaterThan(1);
+
+  // THE CONTROL IS THE INDEX ITSELF: it is copied today and always was,
+  // so a body that only checked the index would pass against the very
+  // fixture that carries a table of contents and no rules.
+  const covered = (rel: string): boolean =>
+    (LIVE_COPY_SET as readonly string[]).some((e) => e === rel || rel.startsWith(`${e}/`));
+  expect(covered(String(wanted[0])), "the eval fixture copies no conventions at all").toBe(true);
+  for (const rel of wanted.slice(1)) {
+    expect(
+      covered(rel),
+      `the eval fixture copies nothing that carries ${rel}, so its materialized root is an ` +
+        "index with no chapters and the assembler refuses it",
+    ).toBe(true);
+  }
+});
+
+test("the model-free eval suite reads this project's conventions as the index AND its chapters", async () => {
+  const { conventionsPaths } = await import("../../method-evals/lib/corpus.mjs");
+  const { CITATION } = await import("../../method-evals/evals/mf-09-attack-set-digest-refusal.mjs");
+  const spells = (text: string): boolean =>
+    (CITATION as RegExp).test(text.replace(/\s+/g, " ").replace(/<hex>/g, "0".repeat(64)));
+
+  // THE CONTROL: the index alone does NOT spell the grammar — the bullet
+  // that does moved into a chapter. Without this half, a suite that read
+  // the index alone would satisfy the assertion below.
+  expect(
+    spells(conventionsIndexText()),
+    "the index alone spells the citation grammar, so this body cannot separate the two reads",
+  ).toBe(false);
+
+  const paths = (conventionsPaths as () => string[])();
+  expect(paths, "the eval corpus does not name the index").toContain(CONVENTIONS_DOC);
+  expect(
+    paths.map((rel) => readFileSync(path.join(repoRoot, rel), "utf8")).some(spells),
+    "no file the model-free evals read spells the attack-set citation grammar, so the eval " +
+      "that holds that contract reports it as a grammar nobody documents",
+  ).toBe(true);
+});
+
+test("the seat pack's host-command check resolves every command it publishes against this project's conventions", () => {
+  const script = path.join(repoRoot, "method/skills/supertaskr-seat/scripts/host-command-check.mjs");
+  expect(existsSync(script), "the pack's host-command check is not where this body looks").toBe(true);
+
+  // ITS OWN SELFTEST FIRST — the check's positive control, so a check
+  // that had been softened into always answering 0 fails here rather
+  // than passing the run below.
+  execFileSync(process.execPath, [script, "--selftest"], { stdio: "pipe" });
+
+  let out = "";
+  try {
+    out = execFileSync(process.execPath, [script, "--repo", repoRoot], { encoding: "utf8" });
+  } catch (err) {
+    const e = err as { stdout?: string; stderr?: string };
+    expect(
+      `${e.stdout ?? ""}${e.stderr ?? ""}`,
+      "the pack publishes a command this project's conventions no longer name",
+    ).toBe("");
+  }
+  expect(out, "the check compared no commands, and an exit 0 over zero of them is not a pass")
+    .toMatch(/HOST> commands (\d+) · resolved \1\b/);
+});
