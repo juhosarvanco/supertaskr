@@ -6,7 +6,7 @@ milestone: 4
 size: S
 tier: guarded
 priority: 1
-status: building
+status: verifying
 suggested_by: "the T-295 verifier (phase 2), 2026-09-10, running the verb against its own card on a shared clone: it stopped at keeper:forbidden-spelling because merge.spec.ts's own keeper body plants an AWS-shaped token and an example address, and both are lines the diff adds"
 blocked_by: [T-295]
 touches: [tools/e2e/scripts/merge.mjs, tools/e2e/tests/merge.spec.ts, docs/CONVENTIONS.md]
