@@ -310,6 +310,56 @@ test("the delivered file states the seed rule its own reader applies", () => {
   ).toBe(fences.length / 2);
 });
 
+test("a seed path that climbs out of the folder is refused, by the reader and by the prose", () => {
+  // THE VERIFIER'S CORRECTION 3. The delivered entry is a DOCUMENT THAT
+  // INSTRUCTS A READER TO WRITE FILES, and it is installed into
+  // `.claude/skills/` — the directory this product tells people to keep
+  // their own packs in, and therefore a directory whose contents are
+  // editable by whoever can edit it. Before the correction `materialize`
+  // joined a block's label onto the target directory with no check, so a
+  // climbing label wrote OUTSIDE the folder being interviewed, and the
+  // prose gave a session the same rule with the same missing bound.
+  // THE BODY OWNS ITS OWN PARENT. An earlier draft asserted over
+  // `path.dirname(project)`, which is the SYSTEM TEMP ROOT — shared with
+  // every other run on the machine, so the assertion could red on a file
+  // no run of this body ever wrote, and pass because a sibling cleaned
+  // up. The escape target has to be a directory this body created.
+  const holder = mkdtempSync(path.join(tmpdir(), "supertaskr-seedpath-"));
+  const project = path.join(holder, "project");
+  for (const marker of ROOT_MARKERS) mkdirSync(path.join(project, marker), { recursive: true });
+  try {
+    for (const bad of ["../escaped.md", "docs/../../escaped.md", "/etc/escaped.md"]) {
+      const tampered = `${FENCE}${SEED_INFO} ${bad}\nOWNED\n${FENCE}\n`;
+      expect(
+        () => materialize(tampered, project),
+        `a seed labelled ${bad} must be refused, not obeyed`,
+      ).toThrow(/does not land inside the folder/);
+    }
+    expect(
+      existsSync(path.join(holder, "escaped.md")),
+      "and nothing was written outside the folder being interviewed",
+    ).toBe(false);
+
+    // THE CONTROL: the same reader, the same folder, an ordinary relative
+    // label — it still writes. A guard that refused everything would pass
+    // the three assertions above and be useless.
+    materialize(`${FENCE}${SEED_INFO} docs/ordinary.md\nfine\n${FENCE}\n`, project);
+    expect(readFileSync(path.join(project, "docs/ordinary.md"), "utf8")).toBe("fine\n");
+  } finally {
+    removeGitFixture(holder, FIXTURE);
+  }
+
+  // AND THE PROSE CARRIES THE SAME BOUND, because a session following the
+  // words is the other reader of this rule.
+  const text = committed();
+  const scaffold = text.slice(text.indexOf("## 0."), text.indexOf("## 1."));
+  expect(scaffold, "the scaffold section states where a seed may land").toMatch(
+    /EVERY SEED PATH LANDS INSIDE THIS FOLDER/,
+  );
+  expect(scaffold, "and names the two shapes to refuse").toMatch(/absolute/);
+  expect(scaffold, "and says to stop rather than write").toMatch(/STOP and say so/);
+});
+
 test("the closing line is the owner's, names a control the app really has, and offers no command", () => {
   const text = committed();
   const ending = text.slice(text.indexOf("## 6."), text.indexOf("## 7."));
@@ -323,8 +373,16 @@ test("the closing line is the owner's, names a control the app really has, and o
   // URL scheme and no folder argument; the manual way is the app's own
   // labelled control, and the label is read off the app rather than
   // remembered.
+  //
+  // THE VERIFIER'S CORRECTION 2. Until it, the label was taken by the
+  // first quoted `"Open folder…"` anywhere in the file — which is a DOC
+  // COMMENT four lines below the control, not the control. Rename only
+  // the button's own text and that read returns the old label unchanged,
+  // so the body stayed green through exactly the drift it exists to
+  // catch. The label is now taken from the element the app TESTS BY, so
+  // the thing read and the thing shipped are one thing.
   const appSource = readFileSync(path.join(repoRoot, "app/src/App.tsx"), "utf8");
-  const label = /"(Open folder[^"]*)"/.exec(appSource)?.[1];
+  const label = /data-testid="open-folder"[\s\S]*?>\s*([^<>\n]+?)\s*</.exec(appSource)?.[1];
   expect(label, "the app carries a labelled folder control").toBeTruthy();
   expect(CLOSING_LINE, "the closing line names the app's own label").toContain(String(label));
 
@@ -367,7 +425,17 @@ test("Codex is described as deferred and unverified rather than claimed", () => 
   );
 });
 
-test("organization skill packs are loaded and stamped the way the app's discoverer does", () => {
+test("organization skill packs are read off the surface the app's discoverer reads, and named in the turn", () => {
+  // THE VERIFIER'S CORRECTION 4, and it is a name rather than a property:
+  // this body was called "loaded and stamped the way the app's discoverer
+  // does", and the behaviour census publishes body names as the sentences
+  // that say what this product does. The LOADING half is the app's — the
+  // surface is read out of `skills.rs` below. The STAMPING half is not:
+  // the app persists a `SkillPack` record with a `sha256:` of the file
+  // into its session registry, and what this entry asks for is a SENTENCE
+  // IN THE FIRST TURN, inside a conversation this same file's opening
+  // paragraph calls disposable. Nothing is stamped anywhere, so the name
+  // now says what the body measures. T-242-s6 carries the substance.
   const text = committed();
   const section = text.slice(text.indexOf("## 1. Organization"), text.indexOf("## 2."));
 
@@ -482,6 +550,67 @@ test("install is explicit: identical is a no-op, differing is refused without --
     said = [];
     expect(runInstall(["--harness", "claude", "--force"], io(said))).toBe(CLI_EXIT.CLEAN);
     expect(readFileSync(dest, "utf8")).toBe(committed());
+  } finally {
+    removeGitFixture(project, FIXTURE);
+    removeGitFixture(carried, FIXTURE);
+  }
+});
+
+test("an identical destination is not written, and a read-only source does not make one", () => {
+  // THE VERIFIER'S CORRECTION 1. The card's criterion 4 says an identical
+  // file is a NO-OP, and the body above could only ever read that word as
+  // "the bytes did not change" — which is also true of a rewrite. The
+  // difference is not cosmetic. `copyFileSync` gives the destination the
+  // SOURCE'S mode, so a read-only source left a `0444` destination and the
+  // SECOND run over it threw an uncaught EACCES rather than answering the
+  // house exit contract: the same double-copy-onto-an-inherited-mode class
+  // T-242-s4 filed against a fixture, in shipped code. So this body asks
+  // the two questions the size-and-content pair cannot: did the file MOVE,
+  // and does a read-only source still install twice.
+  const project = scratchProject();
+  const carried = mkdtempSync(path.join(tmpdir(), "supertaskr-ro-carried-"));
+  try {
+    const dir = path.join(carried, "method/skills", SKILL_NAME);
+    mkdirSync(dir, { recursive: true });
+    const source = path.join(dir, "SKILL.md");
+    writeFileSync(source, committed());
+    // EXACTLY WHAT A LANE WORKTREE'S FENCE MAKES OF `method/`: the source
+    // a checkout installs from is read-only there.
+    chmodSync(source, 0o444);
+    const io = { projectRoot: project, out: () => {}, err: () => {}, carriedRoot: carried };
+
+    expect(runInstall(["--harness", "claude"], io), "the first install is clean").toBe(CLI_EXIT.CLEAN);
+    const dest = path.join(project, ".claude/skills", SKILL_NAME, "SKILL.md");
+    expect(readFileSync(dest, "utf8")).toBe(committed());
+    // THE INSTALLED ENTRY IS THE USER'S FILE, not a read-only copy of a
+    // tree they never saw: `.claude/skills/` is the directory the product
+    // tells people to keep their own packs in.
+    expect(
+      (statSync(dest).mode & 0o222) !== 0,
+      "the installed entry is writable even though its source was not",
+    ).toBe(true);
+
+    // THE NO-OP, measured as one: the destination does not move.
+    const before = statSync(dest).mtimeMs;
+    const said: string[] = [];
+    expect(
+      runInstall(["--harness", "claude"], {
+        projectRoot: project,
+        out: (s: string) => said.push(s),
+        err: (s: string) => said.push(s),
+        carriedRoot: carried,
+      }),
+      "a second install over an identical destination is CLEAN, not a throw",
+    ).toBe(CLI_EXIT.CLEAN);
+    expect(statSync(dest).mtimeMs, "and it did not rewrite the file").toBe(before);
+    expect(said.join("\n"), "and it says so").toContain("already current");
+
+    // AND THE CONTROL, run where the arrangement is ABSENT: a destination
+    // that DIFFERS is still written under --force, so the skip above is a
+    // no-op and not a broken installer.
+    writeFileSync(dest, `${committed()}\n<!-- somebody's edit -->\n`);
+    expect(runInstall(["--harness", "claude", "--force"], io)).toBe(CLI_EXIT.CLEAN);
+    expect(readFileSync(dest, "utf8"), "--force still overwrites a differing file").toBe(committed());
   } finally {
     removeGitFixture(project, FIXTURE);
     removeGitFixture(carried, FIXTURE);

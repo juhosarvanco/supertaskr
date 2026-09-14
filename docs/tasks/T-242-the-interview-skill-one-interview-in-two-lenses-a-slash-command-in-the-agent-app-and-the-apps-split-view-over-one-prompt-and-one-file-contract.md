@@ -277,6 +277,34 @@ files, 630.7 kB packed, 2.0 MB unpacked, carrying
 generated entry is 28427 bytes, against the 65536 the app's own
 discoverer accepts.
 
+### What no body here can reach, said plainly rather than left to be inferred (the verifier's correction 5)
+
+**NO VENDOR SESSION WAS EXECUTED IN THIS LANE.** Nothing above ran a
+Claude Code session against the delivered entry, and nothing here could.
+Three clauses of the criteria are therefore pinned as GENERATED TEXT and
+not as behaviour, and a later reader should not take a green body for
+more than it is.
+
+- "asks the banks in their order" is measured as the order the banks
+  stand in inside the delivered file. Order-as-asked is not measured.
+- "starts no second interview" and "prints no unimplemented command" are
+  measured as what the file says — the second as strongly as a file can
+  be measured, since the delivered bytes spell no `supertaskr` verb at
+  all against the CLI's own verb table. Neither is a reading of what a
+  session does.
+- `materialize`, which the fresh-project body runs, is the MACHINE
+  reading of the seed rule the file's prose gives a session. It writes
+  the stage-0 seed files and nothing else: it asks no question, banks no
+  answer, writes no card, and applies neither the resume rule nor the
+  overwrite rule, both of which ride in the file as text for a reader.
+  What that body proves is that the whole stage-0 file contract
+  materializes out of the DELIVERED bytes with neither the checkout nor
+  the app reachable, which is the criterion's hard half — not that an
+  interview ran.
+
+The Codex half is the same shape and the delivered file already says it
+in its own words: deferred and unverified, never measured here.
+
 ## Verdicts
 
 ### 2026-09-14 — APPROVED WITH ASSIGNED CORRECTIONS — claude-opus-5@subagent

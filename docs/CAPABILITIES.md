@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1175 behaviours** — 1173 extracted sentences + 2 named-not-extracted (listed at the end) — across 42 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1177 behaviours** — 1175 extracted sentences + 2 named-not-extracted (listed at the end) — across 42 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -746,11 +746,13 @@ Census: **1175 behaviours** — 1173 extracted sentences + 2 named-not-extracted
 - every embedded block is the owning file's own bytes, so the artifact carries no second copy
 - both lenses read the same bytes of the banks, and repointing either one reds it
 - the delivered file states the seed rule its own reader applies
+- a seed path that climbs out of the folder is refused, by the reader and by the prose
 - the closing line is the owner's, names a control the app really has, and offers no command
 - Codex is described as deferred and unverified rather than claimed
-- organization skill packs are loaded and stamped the way the app's discoverer does
+- organization skill packs are read off the surface the app's discoverer reads, and named in the turn
 - the installer's source root is the project's when it ships skills and the package's otherwise
 - install is explicit: identical is a no-op, differing is refused without --force, --dry-run writes nothing
+- an identical destination is not written, and a read-only source does not make one
 - no verb but install writes into a harness directory, so opening a folder installs nothing
 - the pack staging carries the one-file entry and names the pack it will not carry
 - a fresh folder receives the entry from a packed tarball and materializes the whole file contract

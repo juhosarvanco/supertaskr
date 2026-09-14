@@ -53,7 +53,7 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 // THE INDEX AND ITS CHAPTERS ARE ONE TEXT (T-290). This front derives its
@@ -1099,12 +1099,31 @@ export function runInstall(args, io) {
     );
     return EXIT.FOUND;
   }
+  // AN IDENTICAL DESTINATION IS NOT WRITTEN, and "no-op" is the card's
+  // own word for it (T-242 criterion 4, the owner's ruling 1). Until the
+  // verifier's correction this loop copied unconditionally, which is a
+  // no-op in what the bytes say and in nothing else, and the difference
+  // was not cosmetic: `copyFileSync` gives the destination the SOURCE'S
+  // mode, so a read-only source — which is exactly what a lane worktree's
+  // fence makes of `method/` — left a `0444` destination, and the SECOND
+  // run over it threw an uncaught EACCES instead of answering the house
+  // exit contract at all. That is the class T-242-s4 filed against a test
+  // fixture, met again here in shipped code. Two moves close it: skip a
+  // destination that already matches, and WRITE THE BYTES rather than
+  // copy the file, so an installed entry is never left read-only because
+  // the tree it came from was.
+  let written = 0;
   for (const step of plan) {
-    const from = path.join(sourceRoot, step.from);
+    const bytes = readFileSync(path.join(sourceRoot, step.from), "utf8");
     const to = path.join(projectRoot, step.to);
+    if (existsSync(to) && readFileSync(to, "utf8") === bytes) continue;
     mkdirSync(path.dirname(to), { recursive: true });
-    copyFileSync(from, to);
+    writeFileSync(to, bytes);
+    written += 1;
   }
-  out(`supertaskr install: ${String(plan.length)} file(s) written.`);
+  out(
+    `supertaskr install: ${String(written)} file(s) written, ` +
+      `${String(plan.length - written)} already current.`,
+  );
   return EXIT.CLEAN;
 }
