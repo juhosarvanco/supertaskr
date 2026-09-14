@@ -73,4 +73,253 @@ The fence gains three paths. docs/INDEX.md and docs/CAPABILITIES.md, on T-290's 
 
 ## Implementation notes
 
+### 2026-09-14 — the executor's notes (claude-opus-5@subagent), measured at 12c1d2a8 unless a line says otherwise
+
+**THE ARM IS A SHORT ROAD THROUGH THE ORDINARY RITUAL AND NEVER A SECOND
+ROAD.** `tools/e2e/scripts/dispatch-brief.mjs` gains ARM FIFTEEN —
+`compactCard`, `expressPlacement`, `expressReuse`, `expressEligibility`,
+`expressPlan`, `runExpress`, `expressWithdrawal`, `expressMeasurements`
+and `expressRecs` — and every step of it calls something that already
+existed: the preflight is `card-preflight.mjs` through the same
+`brief.mjs --preflight` invocation the ritual uses, the admission is
+T-324's `admit` against the grant T-319's `grantState` reads, the
+classification is `classifyTier`, the cut is `runDispatchLane`, and the
+record is `run-record.mjs`. The command line is
+`brief.mjs --express "<outcome sentence>" --fence <path[,path...]>`,
+with `--express-withdraw <T-NNN> --why <text> --tier standard|guarded`
+for the other direction.
+
+**THE ARM ADDS NO SECOND ADMISSION.** `expressPlan` calls `admit` to
+MEASURE whether the grant permits the change — a read that writes no run
+record and therefore consumes no approval, since the ledger every mode
+counts against is the run records themselves. The admission that BINDS is
+the lane cut's, made by `dispatchLanePlan` as it is for every other card.
+Criterion 1's four bodies drive the three modes the schema declares and
+the explicit no-grant state.
+
+**ONE DEPARTURE FROM THE ORDINARY CUT, AND IT IS THE CRITERION'S OWN.**
+Under the no-grant state `admit` answers "made, and NOTHING was
+enforced", which is right for a card a person filed and triaged. A
+compact card has no such history — it was composed by a command out of a
+sentence — so the express path refuses by name
+(`EXPRESS_CODES.NO_GRANT`), which is what criterion 1 asks for and what
+its own sentence means: an outcome sentence alone authorizes no work. The
+ordinary cut is untouched, and a body asserts that by cutting one under
+the same no-grant template.
+
+**THE BLOB IS KNOWABLE BEFORE THE CARD EXISTS**, which is what makes that
+refusal workable rather than a dead end: `hashObject` computes the
+compact card's sha from its bytes without writing a file or storing an
+object, `--dry-run` prints it, and an owner who wants a compact card can
+approve exactly that sha in the grant before it is written.
+
+**WHAT THE BOUNDED TIER SAVES.** The phase-one pass was already skipped
+at `bounded`; the bench was not, and a detached worktree cut for a
+verifier who is never spawned is a second checkout of the tree for
+everything that walks it. `runDispatchLane` now skips it at that tier and
+says so in a ledger row and a note, on the phase-one skip's own argument:
+a worktree the arm skipped on purpose and one it forgot look the same on
+disk.
+
+**THE RECEIPT.** `run-record.mjs` gains `OBSERVED_TOKEN`, `readObserved`
+and `launchReceipt`. The requested half is the ASSIGNMENT'S — model, and
+effort reading `not configured` where no template declares one, which
+`roleEffort` reads rather than assumes. The observed half is the
+EXECUTION'S and comes from a line-initial `RUN-OBSERVED model=…
+tokens=… seconds=…` in the completion and from nowhere else; nothing in
+that path reads the assignment, which is what keeps the two halves from
+agreeing by construction. A missing observation is `unknown`, an
+`unknown` is never a mismatch, and `merge.mjs` gains a FLOOR keeper
+(`keeper:receipt`, `receiptKeeperReport`) refusing a contradicted model
+by name while reporting an unobserved one as NEWS.
+
+**THE MEASUREMENTS ARE DIFFERENCES OF STAMPED INSTANTS.** The run record
+gains an `instants` map. The express run writes `requested` and `cut`
+into `instants-<card id>.json` in the lane's scratch directory for the
+assignment to carry, because both happen before any child exists;
+`observeRun` stamps `candidate` at the same instant it records the
+outcome, so the two can never disagree; and the seat stamps `checked`,
+`merged` and `pushed` through the existing collect verb's new
+`--instant <name>=<iso>[,...]` dial, which refuses a half-read pair
+rather than keeping it. `expressMeasurements` derives the five figures
+and the target verdict, `runRecs` prints them, and an attempt with
+nothing to measure prints nothing.
+
+### The drills
+
+Five mutants, each at the SITE the property lives, each restored by
+`git checkout --` and each restore PROVED by sha256 against the reading
+taken before the write. Every one was KILLED by the body it was aimed at.
+
+- `guard-class-arm` — `expressEligibility`'s guard-class reading answers
+  the empty set. Killed by the five-requirements refusal body.
+- `receipt-forgery` — `launchReceipt`'s observed model is filled from the
+  ASSIGNMENT, which is the forgery the receipt exists to make impossible.
+  Killed by the planted-completion body.
+- `bench-at-bounded` — the bounded tier's bench skip is disarmed. Killed
+  by the executor-only body.
+- `requirement-list-data` — a DATA mutant where the property IS data: the
+  requirement list loses `guard-class`. Killed by the all-five-printed
+  body.
+- `no-grant-refusal` — the express path's one departure from the ordinary
+  cut is disarmed. Killed by the no-grant body.
+
+### In-fence follow-through
+
+- **The bench skip at the bounded tier** — criterion 4 says the flow runs
+  the executor only, and the ritual cut the bench whatever the tier.
+- **The receipt keeper is FLOOR, not one of the three cheap ones** —
+  `merge.keepers` switches T-295's three readings of the DIFF, and a
+  receipt mismatch is not a property of the diff. Two standing bodies
+  that pinned the keeper list moved with it, and both say why.
+- **`--run collect --instant` and the record's `instants` map** — the
+  seat's three instants had no door into a record, and a measurement
+  taken off a stopwatch is what criterion 6 forbids.
+- **`defaultDispatchIo().now`** — the clock became an injection point
+  beside `run`, `read` and `write`, so the instant the express run stamps
+  is drivable by a body rather than taken from the wall.
+- **The withdrawal's own line goes out as a stamped value, flattened** —
+  it carries dates and an attempt id, and the renderer refuses a NOTE
+  that carries a digit, so the verb answered CANNOT RUN after it had
+  already written the card.
+- **The unwind takes the card back when the staging never happened** —
+  the card is written and then staged, so a refusal between the two left
+  an untracked compact card in the integration checkout, which the next
+  merge counts as somebody's uncommitted work. A body injects a preflight
+  refusal and requires the tree to come back as it was found.
+- **The conventions bullet's bolded opener is short enough for the pack
+  to resolve** — the pack captures a bolded opener up to a fixed width
+  and then requires the bullet to open with exactly what it captured, so
+  an opener longer than that width truncates MID-WORD and the pack throws
+  the moment a script cites it. The opener is bolded to the rule, the
+  rest of the sentence sits outside the bold, `dispatch-brief.mjs` cites
+  it through `EXPRESS_BULLET_PHRASE`, and the pack carries 20 bullets
+  where it carried 19 — so a seat whose fence implicates the express path
+  meets the rule in its brief rather than going looking. That truncation
+  is a hazard of the pack rather than of this bullet, and any bullet with
+  a long bolded opener carries it.
+
+### Figures, each with its ref
+
+- 24 bodies added, at 12c1d2a8: brief.spec.ts 17, run-record.spec.ts 4,
+  merge.spec.ts 2, card-preflight.spec.ts 1 — derive:
+  `grep -c '^test("T-320' tools/e2e/tests/*.spec.ts`.
+- The diff against the lane's base 4f6a940c — derive:
+  `git diff --stat 4f6a940c..HEAD`.
+- The context pack carries 20 cited bullets at 12c1d2a8 where it carried
+  19 at the lane's base — derive: `brief.mjs --task T-320` and count the
+  `pack bullet:` lines.
+- docs/conventions/dispatch-and-scratch.md is 10401 bytes at 12c1d2a8
+  against its 10100-byte warn line (fail at 12120), so the docs gate
+  WARNS and holds; T-320-s1 is the move that settles it.
+- docs/CONVENTIONS.md is 13662 bytes at 12c1d2a8 against its 16930-byte
+  warn line.
+
+### Criterion 6 — what this lane built and what it did NOT measure
+
+The amendment of 2026-09-14 during the lane rules that the demonstration
+on a real eligible change is the seat's to drive, on the integration
+branch after this merge: three of the five measurements (the executor
+spawn, the merge and the push) are the seat's by construction, and a
+child spawned into a live lane is a standing hazard. **THE MERGE-SIDE
+FIGURES WERE NOT TAKEN BY THIS LANE AND THIS LINE SAYS SO** rather than
+leaving a reader to discover it.
+
+What the lane built is the shape, and it is pinned rather than described:
+every instant stamped by whoever holds it, the five measurements derived
+from the record by `expressMeasurements` over `expressInstants`, and the
+block printed by the run report. Two bodies drive it over FIXED instants
+and assert arithmetic, so nothing here can flake; a third drives the
+whole round trip — assignment, start, outcome, collect — and reads the
+figures back off the record.
+
+**THE HAND-OFF, so the demonstration is a matter of running it.**
+
+- **The precondition, and it is the card's own criterion**: this tree is
+  the explicit no-grant state, so the express path refuses everything
+  until a grant exists. Run the command with `--dry-run` to print the
+  compact card's blob, record a grant naming that card and that blob, and
+  run it again. That sequence is not a workaround: it is criterion 1
+  working, and the dry run exists so the owner can approve bytes that
+  have not been written yet.
+- **The outcome sentence to use**: `WHEN the collect verb stamps an
+  instant THE run report SHALL name each instant that call stamped.`
+- **The command line**:
+  `node tools/e2e/scripts/brief.mjs --express "<that sentence>" --fence
+  tools/e2e/scripts/run-record.mjs --requested <the instant you gave the
+  sentence> --scratch <the scratch directory>` — with `--dry-run` first.
+- **Why that change is eligible, MEASURED rather than asserted**: the
+  arm was run over that sentence and that fence in this lane and answered
+  fence MET, keeper MET (run-record.mjs is owned by several specs through
+  static imports), guard-class MET (no class hit), reversible MET
+  (tracked, present, no generator marker) — and admission NOT MET, which
+  is the no-grant refusal above and the only thing the grant settles.
+- **The blob is a function of the card's bytes and the bytes carry the
+  DATE**, so the sha printed in this lane is not the sha the seat's own
+  run will produce. Take it from that run's own dry run and record THAT
+  in the grant.
+- **The refused control, which the card names as the demonstration's
+  own**: the same command with `--fence tools/e2e/scripts/gate-run.mjs`
+  and a sentence about one line of it — for instance `WHEN the scoped
+  runner refuses THE line SHALL name the flag that scoped it.` Run in
+  this lane, the eligibility answered guard-class NOT MET, naming
+  tools/e2e/scripts/gate-run.mjs and the `gate-runners` class it hit,
+  with every other requirement but the admission met — which is the
+  refusal the card asks the demonstration to show, and the express run
+  writes no card into docs/tasks for it.
+- **Where the figures land**: `--run collect --instant
+  checked=<iso>,merged=<iso>,pushed=<iso>` on the attempt, then the run
+  report's own `measurement …` lines and `measurement verdict:` line are
+  the block to append here as a dated seat note with the run's refs.
+
+### The reading this lane took, and the six reds it carries
+
+**THE GRADED e2e LEG AT 12c1d2a8: 1191 bodies, 1185 passed, SIX FAILED,
+verdict RED** — and the six are ONE cause, named rather than summarised.
+`docs-input-gate.spec.ts` runs the real docs gate against this checkout,
+and `docs-gate.mjs` exits 1 while the committed docs/INDEX.md is stale;
+so every body asserting "exit 0 for a code-only diff" reds with the
+staleness. The six are the hand-run exit codes, the exit matrix, the
+empty-list trap, the census's own question, the advisory scan, and the
+currency check itself.
+
+**THE INDEX IS STALE BECAUSE THIS LANE'S CONVENTIONS BULLET ADDS AN
+OPENER** to the dispatch chapter's index line — 7736 bytes committed
+against 7747 fresh — and docs/INDEX.md is OUTSIDE this fence.
+docs/CAPABILITIES.md is stale too, from this lane's own new bodies
+(110629 against 113944), and no body reds on that one. The seat granted
+both generated files and then WITHDREW the grant the same day, because
+lane-protocol rule five is mechanical and T-242 holds both beside this
+lane; the fence writer would not write a fence that is not disjoint. The
+local regeneration the correction then asked for is refused by the same
+hook for the same reason, which is recorded in the lane's ask file and
+ruled (a): leave them, and the merge regenerates both from the merged
+tree, which is the census step the merge performs in any case.
+
+**WHAT THAT MEANS FOR THE VERIFIER**: the six are a property of the
+generated index and not of this lane's code, they disappear the moment
+`npm run capabilities` runs anywhere with the fence for it, and every
+other body in the leg is green — including the twenty-four this card
+added and the two standing bodies this lane moved.
+
+**THREE EARLIER READS, SO THE PROGRESSION IS ON THE RECORD.** At
+48caf6ac the same leg answered RED on EIGHT: the six above, plus
+`brief-flush.spec.ts`'s arm-list body (eleven new flags nothing
+announced — the stale-enumeration failure that body exists to catch) and
+`gate-run.spec.ts`'s one-mention body (the express bullet named the
+blessed runner a second time, where the document names it once and the
+neighbouring bullet asks for a description). Both were mine, both are
+fixed, and both are green at 12c1d2a8.
+
+### Owed at the merge, not in this lane
+
+- **The census and the generated index**, as the section above records:
+  `npm run capabilities` is owed in the merge commit, it cannot be run
+  here, and six bodies of the graded leg red until it is. T-320-s2 is the
+  finding that the generator says none of this when it refuses.
+- **The graph regeneration**, on the standing trigger: this diff moves
+  .mjs and .ts outside docs/.
+- **The docs gate's budget WARN** on the dispatch chapter, recorded above
+  with its figure and its follow-up card.
+
 ## Verdicts
