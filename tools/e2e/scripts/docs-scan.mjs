@@ -2608,8 +2608,18 @@ export const CHECKPOINTS_DIR = "docs/checkpoints";
 export const STATE_DOC = "docs/STATE.md";
 
 /**
- * Checkpoint records committed AFTER `docs/STATE.md` was last committed —
- * ADR-019 §Records / docs-protocol.md rule 4, step 1 without step 2.
+ * The git argument that picks a path's CREATING commit out of its history
+ * — the newest commit in which the path was ADDED. Held here as a named
+ * constant because `staleStateRecords` is the rule and a body reads this
+ * spelling to prove the rule is asked of the creation rather than of the
+ * latest touch (T-143-s5).
+ */
+export const RECORD_CREATED_FILTER = "--diff-filter=A";
+
+/**
+ * Checkpoint records whose CREATING commit is newer than `docs/STATE.md`'s
+ * last commit — ADR-019 §Records / docs-protocol.md rule 4, step 1
+ * without step 2.
  *
  * IT LIVES HERE RATHER THAN IN ITS FIRST CALLER (T-203), which is the
  * treatment `DOC_BUDGETS` got at T-156 and for the identical reason: a
@@ -2624,28 +2634,58 @@ export const STATE_DOC = "docs/STATE.md";
  * staged — must never false-red, and the correct flow puts the record and
  * the regenerated STATE in ONE commit, where the two timestamps are equal.
  *
+ * THE CREATING COMMIT, NOT THE RECORD'S LATEST TOUCH (T-143-s5, the
+ * owner's ruling of 2026-09-14 taking that card's disposition B). Records
+ * are APPEND-ONLY, not write-once: ADR-019 says so, and the measured
+ * instance was a re-run battery line appended four minutes after a
+ * checkpoint that had done the ritual CORRECTLY — record and regenerated
+ * STATE in one commit. Read against the latest touch, that amendment
+ * moved the record past STATE and the gate reported a ritual slip that
+ * had not happened; the repair cost a STATE commit whose only content was
+ * a clock, and a lane cut in the window between the two inherited a red
+ * CI step its own fence forbade it to fix (T-143-s4). Read against the
+ * CREATION commit, an append to an already-checkpointed record is neither
+ * step 1 nor step 2 and says nothing about STATE's currency.
+ *
+ * WHAT THIS DOES NOT RELAX, and it is the reason the card that ruled it
+ * spent its argument here: a record CREATED without its STATE
+ * regeneration still reds by name, which is the slip the gate was
+ * promoted for after the ritual broke twice in its first two checkpoints.
+ * The amendment that is silent to this rule is silent to the GATE only —
+ * an amendment that changes a fact or a hazard `docs/STATE.md` summarises
+ * still owes a regeneration, a rule of conduct in docs-protocol.md rule 4
+ * that no program enforces.
+ *
+ * AND A RECORD WHOSE CREATION IS NOT IN THIS CHECKOUT'S HISTORY FALLS
+ * BACK TO THE LATEST TOUCH — the OLD reading, which is the suspicious
+ * one. A grafted or truncated history can hide an `A` that a plain
+ * `git log` still answers for, and the one failure this gate must not
+ * have is going quiet: a rule that stops firing on an amendment must
+ * still fire on the original slip.
+ *
  * @param {string} [root]
- * @returns {string[]}  record basenames newer than STATE, sorted
+ * @returns {string[]}  record basenames created after STATE, sorted
  */
 export function staleStateRecords(root = repoRoot) {
   const dir = path.join(root, CHECKPOINTS_DIR);
   if (!existsSync(dir)) return [];
-  /** @param {string} rel @returns {number | null} */
-  const lastCommitSec = (rel) => {
-    const out = execFileSync("git", ["log", "-1", "--format=%ct", "--", rel], {
+  /** @param {string} rel @param {string[]} [filter] @returns {number | null} */
+  const commitSec = (rel, filter = []) => {
+    const out = execFileSync("git", ["log", "-1", ...filter, "--format=%ct", "--", rel], {
       cwd: root,
       encoding: "utf8",
     }).trim();
     return out === "" ? null : Number(out);
   };
-  const stateAt = lastCommitSec(STATE_DOC);
+  const stateAt = commitSec(STATE_DOC);
   if (stateAt === null) return [];
   /** @type {string[]} */
   const stale = [];
   for (const rec of readdirSync(dir)) {
     if (!rec.endsWith(".md") || rec === "TEMPLATE.md") continue;
-    const recAt = lastCommitSec(`${CHECKPOINTS_DIR}/${rec}`);
-    if (recAt !== null && recAt > stateAt) stale.push(rec);
+    const rel = `${CHECKPOINTS_DIR}/${rec}`;
+    const createdAt = commitSec(rel, [RECORD_CREATED_FILTER]) ?? commitSec(rel);
+    if (createdAt !== null && createdAt > stateAt) stale.push(rec);
   }
   return stale.sort();
 }

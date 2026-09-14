@@ -9,16 +9,19 @@ import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import {
   BYTES_PER_TOKEN,
   CALL_SAMPLES,
+  CHECKPOINTS_DIR,
   DISPOSITION_RULING,
   DOCS_EXCLUDED_FILES,
   INDEXED_DOCS,
   INDEX_DOC,
   INDEX_RULING,
   PLANTED_READERS,
+  RECORD_CREATED_FILTER,
   RESOLVE_SAMPLES,
   ROOT_ANCHOR_LEDGER,
   ROOT_FORMS,
   SITE_SAMPLES,
+  STATE_DOC,
   SUITES,
   TASK_STATUS_SOURCE,
   adapterNamedDocs,
@@ -34,6 +37,7 @@ import {
   renderDocsIndex,
   ruledIndexedDocs,
   standingRead,
+  staleStateRecords,
   siteCensus,
   siteSelftest,
   frontmatterBlock,
@@ -2276,4 +2280,323 @@ test("the adapter reader keeps the boundary the DISPATCH BRIEF's own reader keep
     "the adapter's FIRST mention of the index closes a sentence, so it alone does not carry it — " +
       "if this ever passes, the boundary above has stopped being load-bearing here",
   ).not.toContain(INDEX_DOC);
+});
+
+// ── 7. the record staleness rule (T-143-s5, ADR-019 §Records) ────────
+//
+// The gate's oldest whole-tree finding, and the one the card that ruled
+// this change re-opened. A checkpoint record whose CREATING commit is
+// newer than docs/STATE.md's last commit is step 1 without step 2 — the
+// ritual the gate was PROMOTED for after it slipped twice in its first
+// two checkpoints. It used to read the record's LATEST TOUCH, and an
+// APPEND to a record already checkpointed with its regeneration is
+// neither step: the measured instance was a re-run battery line appended
+// four minutes after a checkpoint that had done the ritual correctly, and
+// the repair cost a docs/STATE.md commit whose only content was a clock
+// while a lane cut in the window inherited the red (T-143-s4).
+//
+// THE DERIVATION IS docs-scan.mjs's AND BOTH READERS CALL IT — this gate
+// and the push guard's cheap checks (T-203, T-057). push-checks.spec.ts
+// holds the FINDINGS the push reports; these bodies hold the derivation's
+// discrimination and the wiring that carries it to this gate's exit.
+
+/**
+ * A checkpoint history whose commits are made ONE PER CALL with an
+ * explicit, strictly increasing committer date. The dates are
+ * load-bearing rather than tidy: git's timestamps have one-second
+ * granularity and `staleStateRecords` passes a tie BY DESIGN, so two
+ * commits sharing a second would silently collapse the arrangement.
+ *
+ * Files are staged BY NAME rather than with `add -A`, so a body can
+ * leave one half of the ritual in the working tree and commit the other.
+ */
+function recordHistory(name: string): {
+  root: string;
+  commit: (message: string, writes: Record<string, string>) => void;
+} {
+  const root = mkdtempSync(path.join(tmpdir(), `T-143-s5-gate-${name}-`));
+  RECORD_SCRATCH.push(root);
+  let minute = 0;
+  const git = (...args: string[]): void => {
+    minute += 1;
+    const at = `2026-09-01T00:${String(minute).padStart(2, "0")}:00Z`;
+    execFileSync("git", ["-C", root, ...NO_BACKGROUND_MAINTENANCE, ...args], {
+      stdio: "pipe",
+      env: { ...process.env, GIT_AUTHOR_DATE: at, GIT_COMMITTER_DATE: at },
+    });
+  };
+  execFileSync("git", ["init", "-q", "-b", "main", root], { stdio: "pipe" });
+  git("config", "user.email", "fixture@example.invalid");
+  git("config", "user.name", "T-143-s5 fixture");
+  const commit = (message: string, writes: Record<string, string>): void => {
+    for (const [rel, content] of Object.entries(writes)) {
+      const dest = path.join(root, rel);
+      mkdirSync(path.dirname(dest), { recursive: true });
+      writeFileSync(dest, content);
+    }
+    git("add", "--", ...Object.keys(writes));
+    git("commit", "-qm", message);
+  };
+  mkdirSync(path.join(root, CHECKPOINTS_DIR), { recursive: true });
+  commit("the tree, with a state document and no record yet", { [STATE_DOC]: "# State\n" });
+  return { root, commit };
+}
+
+const RECORD_SCRATCH: string[] = [];
+
+test.afterAll(() => {
+  for (const dir of RECORD_SCRATCH) removeGitFixture(dir, "docs-input-gate recordHistory");
+});
+
+/** The record every arrangement below is built around, and its append. */
+const REC = `${CHECKPOINTS_DIR}/2026-09-01-record.md`;
+const REC_NAME = "2026-09-01-record.md";
+const WROTE = "# Record\n";
+const APPENDED = "# Record\n\nand a re-run battery line, appended four minutes later\n";
+const REGENERATED = "# State, regenerated\n";
+
+test("the record staleness rule reads the CREATING commit — an append passes, a creation without STATE reds", () => {
+  // THE ARRANGEMENT THAT USED TO RED AND MUST NOT: the record and its
+  // regenerated state document in ONE commit, then the record appended
+  // to alone.
+  const amended = recordHistory("amended");
+  amended.commit("Checkpoint: the record and the regenerated state document", {
+    [REC]: WROTE,
+    [STATE_DOC]: REGENERATED,
+  });
+  amended.commit("append a re-run battery line to the record", { [REC]: APPENDED });
+  expect(
+    staleStateRecords(amended.root),
+    "an APPEND to an already-checkpointed record is neither step 1 nor step 2",
+  ).toEqual([]);
+
+  // THE ARRANGEMENT THAT MUST STILL RED, and it is the SAME append with
+  // the one thing that matters removed — whether the CREATING commit
+  // carried the regeneration. This is the slip the gate was promoted
+  // for, and a rule that stops firing on an amendment must still fire on
+  // it. Without this control the body above is satisfied by a derivation
+  // that returns the empty list for every tree.
+  const slipped = recordHistory("slipped");
+  slipped.commit("a record, and the state document not regenerated beside it", { [REC]: WROTE });
+  slipped.commit("append a re-run battery line to the record", { [REC]: APPENDED });
+  expect(
+    staleStateRecords(slipped.root),
+    "a record CREATED without its regeneration is still step 1 without step 2, appended to or not",
+  ).toEqual([REC_NAME]);
+
+  // AND THE TIE STILL PASSES, unchanged by this card: the correct ritual
+  // puts both in one commit, where the two timestamps are EQUAL. A
+  // derivation that moved from `>` to `>=` would red here and nowhere
+  // else in this file.
+  const tie = recordHistory("tie");
+  tie.commit("Checkpoint: the record and the regenerated state document", {
+    [REC]: WROTE,
+    [STATE_DOC]: REGENERATED,
+  });
+  expect(staleStateRecords(tie.root), "record and state document in ONE commit must tie and pass").toEqual([]);
+
+  // THE READING IS THE CREATION, AND THIS IS THE SPELLING IT ASKS GIT
+  // FOR. The three arrangements above are what give this line teeth; it
+  // is here so that a derivation which stopped asking for the creating
+  // commit and started passing amendments some other way — by basename,
+  // by commit count, by a skip list — reds on the WAY as well as on the
+  // answer.
+  const scan = readFileSync(path.join(repoRoot, "tools/e2e/scripts/docs-scan.mjs"), "utf8");
+  expect(RECORD_CREATED_FILTER, "the creation filter is no longer git's own add filter").toBe(
+    "--diff-filter=A",
+  );
+  expect(
+    stripComments(scan).split(RECORD_CREATED_FILTER).length - 1,
+    "the derivation asks git for the creating commit exactly once",
+  ).toBe(1);
+});
+
+/**
+ * A tree whose record is added ONLY IN A MERGE COMMIT — the one
+ * arrangement that leaves `git log --diff-filter=A` with nothing to say
+ * about a file that is nonetheless committed. `git log` does not diff
+ * merges, so the ADD filter drops the merge and finds no creating
+ * commit, while a plain `git log` names it.
+ *
+ * `regenerated` puts the state document in that same merge commit,
+ * which is the control: the fallback's reading then TIES and passes.
+ */
+function mergeAddedRecord(name: string, opts: { regenerated: boolean }): string {
+  const root = mkdtempSync(path.join(tmpdir(), `T-143-s5-merged-${name}-`));
+  RECORD_SCRATCH.push(root);
+  const at = (minute: number): NodeJS.ProcessEnv => ({
+    ...process.env,
+    GIT_AUTHOR_DATE: `2026-09-01T00:0${minute}:00Z`,
+    GIT_COMMITTER_DATE: `2026-09-01T00:0${minute}:00Z`,
+  });
+  const git = (minute: number, ...args: string[]): void => {
+    execFileSync("git", ["-C", root, ...NO_BACKGROUND_MAINTENANCE, ...args], {
+      stdio: "pipe",
+      env: at(minute),
+    });
+  };
+  const write = (rel: string, content: string): void => {
+    const dest = path.join(root, rel);
+    mkdirSync(path.dirname(dest), { recursive: true });
+    writeFileSync(dest, content);
+  };
+  execFileSync("git", ["init", "-q", "-b", "main", root], { stdio: "pipe" });
+  git(1, "config", "user.email", "fixture@example.invalid");
+  git(1, "config", "user.name", "T-143-s5 fixture");
+  mkdirSync(path.join(root, CHECKPOINTS_DIR), { recursive: true });
+  write(STATE_DOC, "# State\n");
+  git(1, "add", "--", STATE_DOC);
+  git(1, "commit", "-qm", "the tree, with a state document and no record yet");
+  git(2, "checkout", "-q", "-b", "side");
+  write("side.txt", "a change that has nothing to do with the records\n");
+  git(2, "add", "--", "side.txt");
+  git(2, "commit", "-qm", "a side commit");
+  git(3, "checkout", "-q", "main");
+  git(3, "merge", "--no-ff", "--no-commit", "-q", "side");
+  write(REC, WROTE);
+  const staged = [REC];
+  if (opts.regenerated) {
+    write(STATE_DOC, REGENERATED);
+    staged.push(STATE_DOC);
+  }
+  git(3, "add", "--", ...staged);
+  git(3, "commit", "-qm", "the merge, and the record written into it");
+  return root;
+}
+
+test("a record git names no CREATING commit for falls back to its latest touch rather than going silent", () => {
+  // THE ONE ARRANGEMENT THAT HIDES A CREATION, AND IT IS BUILT HERE
+  // RATHER THAN ARGUED. A derivation that took `--diff-filter=A`'s
+  // silence for "not stale" would lose such a record entirely — and a
+  // rule that stops firing on an amendment must not start missing the
+  // records it cannot date. The fallback is the OLD reading, which is
+  // the suspicious one.
+  const hidden = mergeAddedRecord("no-creation", { regenerated: false });
+  const created = execFileSync(
+    "git",
+    ["-C", hidden, "log", "-1", RECORD_CREATED_FILTER, "--format=%ct", "--", REC],
+    { encoding: "utf8" },
+  ).trim();
+  expect(
+    created,
+    "git DOES name a creating commit for this fixture, so the fallback below is not the branch " +
+      "being exercised and this body proves nothing",
+  ).toBe("");
+  expect(
+    staleStateRecords(hidden),
+    "a record whose creation git cannot name went SILENT — the gate's one forbidden failure",
+  ).toEqual([REC_NAME]);
+
+  // THE CONTROL, and it is the same merge with the state document
+  // regenerated INSIDE it: the fallback's reading then ties with STATE's
+  // own and passes. Without it the red above is satisfied by a fallback
+  // that reports every undatable record whatever STATE did.
+  const regenerated = mergeAddedRecord("no-creation-regenerated", { regenerated: true });
+  expect(
+    staleStateRecords(regenerated),
+    "the fallback fires unconditionally — it is reporting, not comparing",
+  ).toEqual([]);
+});
+
+test("THE DOCS GATE carries the record finding to its exit — the derivation moved, the wiring did not", () => {
+  // The body above proves the derivation discriminates; this one proves
+  // the gate BITES with it. Same shape as the stale-index body above:
+  // read the gate's own source, find the call, require the block around
+  // it to move the counter that decides the exit — with a positive
+  // control, because "the window moves `found`" is satisfied by a window
+  // picked out of the wrong part of the file.
+  const source = readFileSync(path.join(repoRoot, "tools/e2e/scripts/docs-gate.mjs"), "utf8");
+  const anchor = "staleStateRecords(repoRoot)";
+  expect(
+    source.split(anchor).length - 1,
+    "the gate calls the shared derivation exactly once, so this window is the whole call site",
+  ).toBe(1);
+  const from = source.indexOf(anchor);
+  const window = stripComments(source.slice(from, from + 900));
+  expect(window, "the stripped window still holds the call").toContain(anchor);
+  expect(
+    window,
+    "the gate reads the record staleness and does nothing with it — a check whose finding cannot " +
+      "reach the exit code is a check nobody runs",
+  ).toMatch(/\bfound \+= staleAgainst\.length\b/);
+  expect(
+    stripComments(source.slice(0, from)),
+    "the positive control: this search CAN come back empty, so the match above is a reading",
+  ).not.toContain(anchor);
+});
+
+/**
+ * The retired requirement, by the words it was written in — a later edit
+ * to a checkpoint record re-touching the state document. Held as a
+ * pattern and asked of every governing text that carried it, so the
+ * answer is a reading rather than three remembered greps.
+ */
+const RETIRED_RETOUCH = /re-touch|LATER edit to that record/i;
+/** The three governing texts T-143-s5's second criterion names. */
+const RETOUCH_SITES = [STATE_DOC, "docs/STATE-template.md", "method/docs-protocol.md"];
+
+/** @returns the sites that still carry the retired requirement. */
+function retiredRetouchSites(root: string): string[] {
+  return RETOUCH_SITES.filter((rel) => RETIRED_RETOUCH.test(readFileSync(path.join(root, rel), "utf8")));
+}
+
+test("the governing text says the CREATION rule and no longer carries the retouch requirement it replaced", () => {
+  // T-143-s5's SECOND criterion. A derivation that changed under a
+  // governing text that still said the old thing is the failure this
+  // body exists to make impossible — and the template is the GENERATOR
+  // of the state document, so a regeneration must not put it back.
+  //
+  // THE RULE IS SAID ONCE, in method/docs-protocol.md's law on
+  // regeneration (that file's own law 5: the lesson once). The other two
+  // sites POINT at it and say the operative half in their own words;
+  // neither is a second copy of the law.
+  const protocol = readFileSync(path.join(repoRoot, "method/docs-protocol.md"), "utf8");
+  const laws = protocol.split(/\n(?=\d+\. \*\*)/).filter((l) => /^4\. \*\*/.test(l));
+  expect(laws.length, "method/docs-protocol.md no longer has a law 4 to read").toBe(1);
+  const law = (laws[0] ?? "").replace(/\s+/g, " ");
+  expect(law, "law 4 no longer says WHICH commit obliges the regeneration").toContain(
+    "record's CREATION",
+  );
+  expect(law, "law 4 no longer says the record and the regeneration land in ONE commit").toContain(
+    "IN THE SAME COMMIT",
+  );
+  expect(
+    law,
+    "the CONDUCT half is gone — no gate can tell which appended line changed the state of the " +
+      "world, so only the text can carry it",
+  ).toMatch(/FACT or a HAZARD .* still updates it/);
+
+  // AND THE RETIRED REQUIREMENT IS ABSENT FROM ALL THREE.
+  expect(
+    retiredRetouchSites(repoRoot),
+    "a governing text still requires a later edit to a record to re-touch the state document, " +
+      "which is the rule T-143-s5 retired",
+  ).toEqual([]);
+
+  // THE POSITIVE CONTROL, AND IT IS A PLANT RATHER THAN A PATTERN
+  // SELF-TEST: the three files are copied to a scratch root, the retired
+  // sentence is put back into ONE of them, and the SAME reader is asked
+  // again. Without this, "no site carries it" is satisfied equally by a
+  // clean tree, by a pattern that matches nothing and by a reader that
+  // read no files at all.
+  const planted = mkdtempSync(path.join(tmpdir(), "T-143-s5-retouch-"));
+  try {
+    for (const rel of RETOUCH_SITES) {
+      const dest = path.join(planted, rel);
+      mkdirSync(path.dirname(dest), { recursive: true });
+      writeFileSync(dest, readFileSync(path.join(repoRoot, rel), "utf8"));
+    }
+    expect(retiredRetouchSites(planted), "the scratch copy starts clean, or the plant proves nothing").toEqual([]);
+    const state = path.join(planted, STATE_DOC);
+    writeFileSync(
+      state,
+      `${readFileSync(state, "utf8")}\na LATER edit to that record re-touches this file.\n`,
+    );
+    expect(
+      retiredRetouchSites(planted),
+      "a planted retouch requirement did NOT red — this reader has no teeth",
+    ).toEqual([STATE_DOC]);
+  } finally {
+    rmSync(planted, { recursive: true, force: true });
+  }
 });

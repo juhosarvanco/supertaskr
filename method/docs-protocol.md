@@ -35,10 +35,21 @@ docs/rooms/governing-docs.md, where the measurements live.)
    record (docs/checkpoints/, on the project's committed template) —
    the merge's ranges, gates, suites, board deltas, environment facts
    and what the brief got wrong — and then REGENERATES the state
-   document from the project's template, under a byte budget a gate
-   enforces. The record keeps the INSTANCE; the state document keeps
-   the MECHANISM. No suite, gate or generator may ever DEPEND on the
-   checkpoint records.
+   document from the project's template, IN THE SAME COMMIT, under a
+   byte budget a gate enforces. The record keeps the INSTANCE; the
+   state document keeps the MECHANISM. **What obliges the regeneration
+   is the record's CREATION, never its every later touch.** Records are
+   APPEND-ONLY rather than write-once (law 3), so an amendment to a
+   record already checkpointed with its regeneration owes no second
+   one; a gate that compares the state document against a record's
+   LATEST touch charges a commit whose only content is a clock, and
+   every lane cut between the amendment and that commit inherits a red
+   it did not cause and cannot fix. **But an amendment that changes a
+   FACT or a HAZARD the state document summarises still updates it** —
+   that half is a rule of CONDUCT, kept by the integrator and not by a
+   program, because no gate can tell which appended line changed the
+   state of the world. No suite, gate or generator may ever DEPEND on
+   the checkpoint records.
 5. **The lesson once.** A recurring pattern earns one rule, one
    provenance citation and one worked example in a governing document;
    further instances are stamped in checkpoint records only.

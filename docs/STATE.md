@@ -16,8 +16,8 @@ ATTRIBUTE by NAME.**
 ## The contract this file is under
 
 REPLACED at every checkpoint from docs/STATE-template.md, AFTER the
-record is written, in the SAME commit (ADR-019); a LATER edit to that
-record re-touches this file. STATE keeps the MECHANISM; the INSTANCE is
+record is written, in the SAME commit (ADR-019); an APPEND to that
+record does not (T-143-s5). STATE keeps the MECHANISM; the INSTANCE is
 in the record. A figure appears here only with its derive command.
 **When the byte band warns, content MOVES to the record — a hazard is
 never deleted to fit.** The commit subject opens with `Checkpoint:`.

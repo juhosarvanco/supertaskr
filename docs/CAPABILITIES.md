@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1125 behaviours** — 1123 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1132 behaviours** — 1130 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -555,6 +555,10 @@ Census: **1125 behaviours** — 1123 extracted sentences + 2 named-not-extracted
 - both root adapters say it in the same words, and so do the kit's two
 - the index tells a seat what to do when the pack did not hand it the rule, and names the case
 - the adapter reader keeps the boundary the DISPATCH BRIEF's own reader keeps, stop and all
+- the record staleness rule reads the CREATING commit — an append passes, a creation without STATE reds
+- a record git names no CREATING commit for falls back to its latest touch rather than going silent
+- THE DOCS GATE carries the record finding to its exit — the derivation moved, the wiring did not
+- the governing text says the CREATION rule and no longer carries the retouch requirement it replaced
 
 ## front-door
 
@@ -949,6 +953,9 @@ Census: **1125 behaviours** — 1123 extracted sentences + 2 named-not-extracted
 - a card stamped out of suggested without its four placement fields is FOUND; a suggestion is not
 - a checkpoint record committed after STATE is FOUND, and the same commit as STATE is not
 - the docs gate and the push checks ask ONE implementation, so they cannot disagree about the tie
+- an APPEND to a record checkpointed WITH its STATE regeneration is not a stale finding
+- an amended record passing does not quiet a NEW record that arrived without its STATE regeneration
+- the reading is COMMITTED HISTORY, and an uncommitted STATE does not repair a committed slip
 - the CLI exits FOUND on a defective board and CLEAN on a coherent one
 - a --root that is not a directory is CALLED WRONG, never a clean board
 - an unknown argument is CALLED WRONG rather than silently ignored
