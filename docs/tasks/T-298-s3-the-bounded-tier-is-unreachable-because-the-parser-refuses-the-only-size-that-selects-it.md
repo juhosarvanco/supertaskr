@@ -345,3 +345,123 @@ body and no block: the count above is two corrections against one block, deliber
 - **The ceremony table's XS row was not named by the amendment.** It was parked as an ask and ruled in scope by the seat under criterion 2, and it is the difference between a reachable tier and an outage moved one step down the dispatch. In fence, pinned by a body with a real control.
 - **The advisory shift — 487 of 701 sized cards moving from KNOW to TRY on the size signal.** This is a live behaviour change of a shipped tool caused by a document edit, and it is the sharpest thing in the lane. It is also ruled: the seat kept `tools/e2e/scripts/session-economics.mjs` outside the fence, required the measurement in the notes, and required the card. All three were done, the figures carry their ref, and T-298-s8 states both readings of the signal rather than presuming one. Not the lane's to decide.
 - **The census is stale by 345 bytes at this tip.** `docs/CONVENTIONS.md` puts that regeneration in the INTEGRATOR's commit at the merge, by name, and I confirmed the bullet rather than taking the notes' word for it.
+
+#### Step 7 — the readings at MY OWN tip, d7c5ce8a1d1117b475d03c050790cea5409b8874
+
+Every figure in the verdict above was measured at 900e6626, the commit I was sent. This verdict,
+its one correction, its withdrawal and the card filed under step 6 created a tip nobody had
+tested, so the whole battery and the two currency checks were run there. Each figure below names
+the ref it was measured at, because a count in prose is a claim about a tree and no suite
+compares the two.
+
+**ONE READING WAS TAKEN AND THROWN AWAY, and it is named rather than quietly dropped.** A first
+step-7 battery was started at 8a10f28d. While its end-to-end leg was still running I wrote to
+the tree — restoring `tools/e2e/tests/brief.spec.ts` when I withdrew the correction — and
+`docs/STATE.md` says exactly what that does: a commit or a write during the run UNKEYS the
+token, and every write is to be held until it finishes. So that leg's answer is a reading of a
+tree that changed under it, whatever it said, and the battery below is a fresh one taken with
+the tree final and nothing left to commit but this postscript.
+
+**The battery at d7c5ce8a1d1117b475d03c050790cea5409b8874, by gate-run's own token.** parser exit 0, 416 bodies, GREEN · app exit 0, 1171 bodies, GREEN · rust exit 0, 655 bodies over 18 targets, GREEN · e2e exit 0, 1083 bodies, GREEN. Identical body for body to the readings at 900e6626, which is the answer I wanted: the arm I wrote was withdrawn rather than committed, so no spec changed, and the three card files I did change move no count.
+
+**C3's three suites by PATH rather than by leg total, because the card names them only by
+description and a leg total would let three greens be the wrong three.** The seat's M11 placed
+them, and each was run on its own with my verdict, the correction and the filed card already on
+the board: `lib/parser/test/smoke.test.ts`, which calls `parseProject` on the repository root —
+4 passed; `app/test/architecture-dogfood.test.ts`, whose line 1095 requires the live board's
+issue list to be empty — 10 passed; and `tools/e2e/tests/shell-frame.spec.ts`, whose four bodies
+drive the parse-error count — inside the green end-to-end leg above. So the three suites the card
+meant are the three that are green, and they are green with four more cards on the board than the
+base carried: the lane's T-298-s6, s7 and s8, one of which I corrected, plus my own T-298-s9.
+
+**The currency checks, both STALE at this tip and both the INTEGRATOR's at the merge.**
+`npm run capabilities:check` from tools/e2e exits 1 — committed 100241 bytes against a fresh
+generation of 100586. That is the same 345 bytes at my tip as at the lane's, so my own writes
+moved it by nothing: the census reads test NAMES out of the spec files, and the only body I
+touched I put back. `cargo run -p supertaskr-index -- index --check --root ../..` from
+app/src-tauri exits 1, naming two changed files and both of them the lane's —
+`lib/parser/src/types.ts` and `lib/parser/test/task.test.ts` — with the budget at 1216090 of
+2145959 bytes (56.7%). `docs/CONVENTIONS.md` names the owner of each regeneration in the same
+words for both, and it is the integrator's commit at the merge rather than the lane's or mine.
+
+**The gates my own PROSE could move, which is the half of step 7 that is easy to skip.**
+`npm run typecheck` from tools/e2e exits 0. `npm run lint:docs` from tools/e2e exits 0 and says
+*"every live task card's frontmatter parses, with a legal status"* — so this verdict, the
+correction, the widened `touches:` line and the card I filed are clean as code inputs. Its one
+WARN, `docs/CONVENTIONS.md` at 162655 bytes against a 146878-byte warn line, stands in the
+sealed ground taken before this diff existed and is nobody's here. `node
+tools/method-evals/run.mjs` exits 0 over 11 model-free evals, the run that carries MF-05 — the
+keeper comparing the two ends of the size vocabulary this card moved.
+
+**The card preflight finds exactly ONE thing, and it is the same one.**
+`node tools/e2e/scripts/brief.mjs --task T-298-s3 --preflight` exits 1 on the CENSUS finding at
+the card's line 71 — the seat's widening paragraph, byte-identical to main's at 3b8d8a44 and
+present in the sealed ground. My prose added none, which is what I was checking for; the four
+filed cards preflight with no finding either.
+
+**And the token this run wrote is unkeyed by this very commit.** `docs/STATE.md` names it among
+the three writes that red the tree with no cheap gate watching: a prose commit stales the push
+token. The battery above was keyed to the tip this postscript then moved past, so the integrator
+owes a fresh owed-set run at the merge rather than a push on my token. Said here because the
+figures above are exactly the thing that would make somebody think otherwise.
+
+#### A precision on one line in the verdict above
+
+The verdict says the app's own Rust `ceremony_row` "now finds the new row". That was a reading
+of the rule and not a measurement, so I closed it: the rule in
+`app/src-tauri/src/dispatch/brief.rs` takes every line opening with a pipe that has exactly two
+cells and matches the head exactly or as a comma-qualified prefix — the same rule the arm's
+`ceremonyRows` uses — and applied to this document it answers the XS row for XS, the first S row
+for S, the M and L rows for those, and nothing for XL. No earlier two-cell table in the file
+shadows the ceremony table: its head row is the first one. So the second reader resolves the new
+row correctly today.
+
+What is NOT there is a Rust body naming XS: that suite pins S, M and an absent XL, so a
+Rust-side regression on the new value would stay green while the arm's side reds. I am
+deliberately not filing that — the Rust body that exists pins the RULE rather than the values,
+XS is just another value under it, and a card for it would cost triage more than it buys. It is
+recorded here instead, which is the right weight for it.
+
+#### What "five copies" in the correction counts, and what it deliberately leaves out
+
+Five FILES, six lines: `docs/reference/02-cards.md` twice, and
+`app/src/components/board/badges/SizeBadge.tsx`, `method/interview/decomposition.md`,
+`tools/e2e/scripts/merge.mjs` and `tools/e2e/tests/merge.spec.ts` once each. Two further hits
+for the old spelling exist and are NOT counted, because they are RECORDS rather than live
+vocabulary and this project does not rewrite records: `docs/design/design-handoff.md` and a
+dated research capture of 2026-09-09. The executor filing T-298-s7 will grep and find them, so
+they are named here rather than left to be rediscovered as an omission.
+
+#### One consequence of the correction that the next dispatch needs to know
+
+Widening T-298-s7's fence to the sites its criterion cannot be satisfied without makes that
+card's fence OVERLAP a lane that is live right now: the arm's own ledger reports *"T-295-s9 and
+T-298-s7: OVERLAP — T-295-s9 tools/e2e/scripts/merge.mjs against T-298-s7
+tools/e2e/scripts/merge.mjs, the same entry"*. My own T-298-s9 is fenced on the same two files
+and joins that overlap. All three are `status: suggested` with no worktree, so nothing is blocked
+today and no live fence is violated; but neither can be dispatched until T-295-s9 lands. The
+alternative was to name the stale sites in prose and leave them outside the fence, which is the
+shape this project's preflight calls an UNCOVERED CRITERION PATH — a card that cannot be built as
+written. I would rather hand the triage an ordering constraint than a card whose fence does not
+reach its own criterion.
+
+#### A dispatch fault in my own brief, named rather than absorbed
+
+My phase-2 brief carried no CONTEXT PACK — the role file calls a brief with no pack a dispatch
+fault and says the verifier then reads `docs/CONVENTIONS.md` whole and declares that it did. I
+did not read it whole. I read it by the bullet, on demand, at each point a judgement needed one:
+the CENSUS-CURRENCY and GRAPH REGEN bullets for who owes each regeneration, the guard-class map
+and the fresh-clone build order as the arm's own preflight transcribed them, and the standing
+read `docs/STATE.md` for the named intermittents — which named none that could explain anything I
+measured, since every leg was green. That is the reading the pack would have given me, arrived at
+the long way, and it is a narrower claim than the role file's remedy: I am reporting the frame I
+had rather than the one the rule prescribes.
+
+#### Two frontmatter fields I deliberately did NOT stamp
+
+`verified_by:` is left EMPTY and `status:` is left at `verifying`. The merge verb fills the stamp
+itself — `merge.mjs` replaces an empty `verified_by:` line, an anchor that matches an empty field
+and nothing else — so a verifier who stamped it by hand would defeat the regex that is supposed
+to fill it and the merge would quietly stamp nothing. The lane's own stamp commit says these
+fields are the verifier's; the tool says they are the merge's, and the tool is the one that has
+to find them.
