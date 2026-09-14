@@ -675,3 +675,18 @@ one is backed out. `tools/e2e/tests/merge.spec.ts` has moved, as it must:
 it hashes to
 `1bf578e74d997ac6b5315a34983e0b7a45c6171452fc9a6c6f598c89d784f450` and
 carries 42 bodies, 40 the lane's and 2 mine.
+
+**And one more commit after that postscript**, because filing a finding
+is a write too. `T-295-s13` is filed at
+`6a29e1e8` — a partial shortfall the seat has read and accepted has no
+way through once correction 1 confines the flag, and the friendlier shape
+the docblock already describes is a card rather than a correction because
+leading the plan with the acknowledgement is two sites and a correction is
+one contiguous pair. The gates that one markdown file can move, re-run at
+that ref: `npm run lint:docs` from `tools/e2e` **exit 0**,
+`brief.mjs --preflight --task T-295-s10` **exit 0**,
+`npm run capabilities:check` still **exit 1, STALE** at the same 100770
+against 101583 — a card carries no test name, so the census figure is
+unmoved by it. The four suite legs cannot move for a card either: no code
+path reads `docs/tasks/T-295-s13-*`, and the board reader that does is
+the docs gate above.
