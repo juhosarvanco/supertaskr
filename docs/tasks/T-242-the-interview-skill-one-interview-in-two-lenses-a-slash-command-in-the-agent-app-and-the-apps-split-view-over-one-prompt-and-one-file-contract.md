@@ -4,13 +4,14 @@ title: The interview skill — one interview in two lenses, a slash command in t
 feature: F-03
 milestone: 4
 size: M
+tier: guarded
 priority: 1
-status: planned
+status: building
 suggested_by: "@human (2026-09-03): \"Should we move the interview also to Claude or Codex as a skill or in other format?\" — ruled with ADR-021 (rooms/cockpit-or-mirror.md RE-RULED)"
 blocked_by: []
 touches: [method/skills/, method/interview/plan-interview.md, method/interview/decomposition.md, method/adapters/CLAUDE.md, method/adapters/AGENTS.md, app/src-tauri/src/agent/kit.rs, tools/e2e/scripts/cli.mjs, tools/e2e/scripts/interview-skill.mjs, tools/e2e/package.json, tools/e2e/tests/interview-skill.spec.ts, tools/e2e/tests/interview.spec.ts, docs/CAPABILITIES.md, docs/INDEX.md, docs/architecture/graph.json]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
