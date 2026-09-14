@@ -418,3 +418,262 @@ the lane, as criterion 5 asks.
 
 
 ## Verdicts
+
+### 2026-09-14 — APPROVED WITH ASSIGNED CORRECTIONS — claude-opus-5@subagent
+
+Guarded tier, two-spawn bench. Graded at base `37d89ff739d04543c97d972add1f119ca403746d`,
+tip `9cfca369c3e2c2cf4c0786d01b3a7173773b7dc0`, on the verifier bench worktree detached at
+that tip. The diff was read before the executor's notes and before its report, and the
+attack set was written by a spawn with no tools against the card at its base.
+
+attack set: sha256:27f07b7bbdc145d56f05c4f625420b2273f283483a5f204fb51fb0747084f1f0 (attack-set-T-290.md)
+
+The other two sealed inputs, cited under the same rule:
+
+- ground, taken at the base by the seat's instrument —
+  sha256:e935742e81c85be68ea1c2a3ea8c42b13ffc2f586f1457f3f87b33d4ee9e3839 (ground-T-290.md)
+- the card at the base —
+  sha256:642cf6dea19307f1995b38ffb3f3823b2f7858035dc7f139ff9066ca0cbf57c1
+
+All three verified against the saved files at the start of phase 2.
+
+**The frame I actually had.** Two spawns, as the guarded tier constructs it. Phase 1 returned
+an attack set and sixteen measurement requests; the seat answered all sixteen at the base
+before the diff existed. My brief named no executor-derived specific — no mutant count, no
+suite figure, no path count — so phase 1 was not broken above the line. I read the diff, then
+the specs, then the notes on the card, then the report, in that order.
+
+#### The verdict in one paragraph
+
+This is the strongest re-landing I have graded on this project, and its central claims are
+true under measurement rather than under assertion: the 66 bullets moved BYTE-IDENTICAL at the
+split commit (zero diff), every derived parser answers identically at base and tip, not one
+sentence of the base document was paraphrased or lost, every budget row is exact to the
+integer, and `F` re-derives to 1,733 under addendum 5's own rule. The four legs and the docs
+gate are green at the tip. What it missed is a CLASS rather than a case: three readers of
+docs/CONVENTIONS.md that live outside the lane's fence and outside all four legs — and two of
+them were RED at the tip while every leg was green. That is why this is approved with
+corrections and not approved outright: a leg that cannot see a reader cannot report it, and
+the census that was supposed to see them collapsed two directories into one label.
+
+#### A row per acceptance criterion
+
+| # | criterion | verdict | what decided it |
+|---|---|---|---|
+| 1 | census taken first, committed with its ref, before a byte moves | **MET, with a correction** | `dfa43a26` changes the card and nothing else; `docs/CONVENTIONS.md` at that commit is blob `bddec6c9` — the base's own blob — and `docs/conventions/` holds only `README.md`. So it was taken first, mechanically, not reconstructed. I re-derived every class against the sealed ground: the 14 docs-gate readers, the 5 hooks, the 49 openers, the 19 cited, the byte and section counts and the band reading all agree exactly. Two figures do not — see corrections 1 and 5. |
+| 2 | bullet cut to rule + keeper + card; history moved VERBATIM | **MET** | Of 670 distinct sentences in the base's 66 bullets, 573 are byte-verbatim in the chapters and 85 byte-verbatim in `docs/reference`; the 12 that match neither whole are CUT SEAMS, and for every one of them I found the prefix verbatim at one destination and the suffix verbatim at the other, with no unaccounted middle. Zero paraphrase, zero deletion. All 25 release-note lines are verbatim in `docs/reference/14-versions.md` and none is left duplicated in the index. All 33 `docs/reference/...` pointers resolve to files that exist. |
+| 3 | split under `docs/conventions/`, index carries every opener verbatim, program-read sentences byte-identical, stamp stays | **MET** | At the split commit `a1aaad16` the spliced document's 66 bullets are BYTE-IDENTICAL to the base's 66 — `diff` over the raw extraction is empty. At the tip, T-236's own proof shape (run the readers, diff the OUTPUT) is zero-diff for `parseRangeRule`, `bootGateTrigger`, `graphRegenTrigger`, `parseDocsGateRecipe`, `laneSpellings`, `packageCommands`, `standingGates` and `conventionHeadings` (49 openers, same order, same content). `bulletByOpening` throws for exactly the same 4 openers at base and tip — the pre-existing 70-character truncation the ground recorded, filed as T-290-s4; none newly throws. The stamp line is byte-identical, on exactly one line of `docs/CONVENTIONS.md`, which is what the kit's line-scoped uniqueness pin needs. |
+| 4 | readers re-pointed in the same commit; budgets; INDEXED_DOCS; both pack readers pinned; message strings | **MET** | I recomputed all 12 budget rows from the tip's own `wc -c`: every `landed` equals the file, every `warn` equals `ceil(landed + max(1733, landed × 0.25))` and every `fail` equals `ceil(max(landed × 1.5, warn + 1733))` — 12 of 12 exact, no row off by one. The two files under 4F land with `fail` exactly F above `warn`, as the ruling predicted. STATE, ROADMAP and ARCHITECTURE keep their lines unchanged. `F` = 1733: I re-derived it independently over first-parent deltas of `docs/STATE.md` and got 177 positive of 261 usable changes, mean 1732.65, median 581, max 12039 — the card's figures exactly. F FELL from 2053, so the new rows are tighter, not more generous. `INDEXED_DOCS` is still the ruled four; the chapter lines come from a second derived constant, as the seat's amendment ruled, and `capabilities:check` answers CURRENT for both generated files — so the index was regenerated, not hand-edited. Both pack readers carry real bodies with their own negative halves, and both drill DATA mutants with the positive control run FIRST. |
+| 5 | closing fence census; four legs and docs gate green; band inside; whole result measured; addendum proposed | **MET, with corrections** | Whole battery at the sent tip: parser 454, app 1171, rust 657 over 18 targets, e2e 1164, `gate-run` exit 0. `lint:docs` exit 0, 15 gated budgets hold, 0 frontmatter issues. `docs-headroom/docs/CONVENTIONS.md` reads **20.00% inside** (13,544 against a 16,930 warn line) where the base read −19.93% BREACHED; every chapter reads 20.00% or above. STATE and ROADMAP stay breached and were breached at the base — not this lane's, and filed as T-290-s2. The whole-result sum is stated as an arithmetic identity against the base and I checked its arithmetic: the chapters sum to 157,409, plus the 13,544 index gives the 170,953 the card states, and the 32,342 bytes of `docs/reference` growth is the sum of its own table. `ADR-019` is byte-unchanged in the lane's range — blob `2d5cae13` at base and tip — so the addendum really was proposed and not written. The fence census's counts are corrected below. |
+| 6 | a rule inseparable from its argument is named, and moves whole | **MET, and answered well** | Not the empty set I pre-committed to attacking. The card names the bullets whose argument stayed and why, in three groups, and THE RANGE RULE's eight retained measurements were decided by a PROBE — `parseRangeRule` reads them by anchored regex — rather than by judgement. I confirmed that: `parseRangeRule`'s output is byte-identical base to tip, which it could not be had those measurements been cut. |
+
+#### What I could not fault, said plainly, because a verdict that only lists defects misreports the work
+
+- **The splice is the right design and it is checked in both directions.** `conventionsText` refuses a pointer whose chapter cannot be opened, a pointer whose chapter no longer carries its bullet, a chapter file no pointer names, and leftover bullets the index does not point at. Four refusals, all of them ADDITIONS. I diffed `tools/e2e/scripts/docs-scan.mjs` hunk by hunk: four hunks, and not one relaxes a check. The gate was not widened to pass its own lane.
+- **The bodies can fail, and were shown failing.** Both new Rust bodies and all four new JS bodies plant DATA mutants and run the unmutated positive control FIRST. One of them guards its own vacuity in as many words: *"the index publishes no pointer, so this body would prove nothing"*.
+- **The fixtures are derived, never listed.** `conventionsFiles()` in JS and the whole-directory copy in `app/src-tauri/src/lib.rs` — a chapter added later cannot leave either fixture silently short. That is the shape the same problem takes in the three files I had to correct, and the lane got it right everywhere inside its fence.
+- **Idempotence and cwd-independence.** `capabilities.mjs --check` answers CURRENT from `tools/e2e`, from the repository root and from `/`; the working tree is clean after every run.
+- **The security sweep found no injection point.** No shell interpolation of document content anywhere in the new code; no new dependency; no secret; no endpoint. The JS pointer matcher is doubly hardened (an `[a-z0-9-]+` charset that cannot spell `..`, and `path.basename` at the read). The one absolute home path in `docs/conventions/lanes.md` was in the base document at its line 1963 and moved verbatim, which is what criterion 2 demands. `lint:tokens` and `rename-scan.mjs` both exit 0.
+
+#### The findings
+
+**FINDING 1 — the METHOD EVAL GATE is RED at the tip, and it FIRES at this merge.**
+`node tools/method-evals/run.mjs` exits **0 with 12 of 12 green** at the base (measured in a
+clean clone checked out at `37d89ff7`, because an export without `.git` cannot run MF-06 or
+MF-11 and would have been an unfair comparison). At tip `9cfca369` it exits **1** with two
+failures:
+
+- **MF-01** — `tools/method-evals/lib/fixture-root.mjs`'s `LIVE_COPY_SET` copies
+  `docs/CONVENTIONS.md` and no chapters, so the materialized fixture root carries a table of
+  contents. `conventionsText` then throws this lane's OWN new refusal and the brief assembler
+  exits 3. The refusal is working exactly as designed; the fixture is short.
+- **MF-09** — `tools/method-evals/evals/mf-09-attack-set-digest-refusal.mjs` declares
+  `reads: ["method/**/*.md", "docs/CONVENTIONS.md"]` and looks the attack-set citation grammar
+  up in the index alone. That grammar is at `docs/conventions/standing-gates.md:176`, byte for
+  byte. The eval reports it as *"a grammar nobody documents"* while it sits in the chapter the
+  index points at.
+
+This is not a gate the card's criterion 5 names, which is why criterion 5 still reads MET. It
+is a gate that fires on *"a line matching the citation grammar under docs/tasks/"* — the line
+this very verdict adds — so the integrator meets it at this merge. Corrected below.
+
+**FINDING 2 — the seat pack's shipped host-command check is RED at the tip.**
+`node method/skills/supertaskr-seat/scripts/host-command-check.mjs --repo .` at the base:
+`HOST> commands 24 · resolved 24`, `cwd: resolved 14`, `findings: 0`, exit 0. At the tip:
+`resolved 7`, `cwd: resolved 3`, `findings: 28`, exit 1. Its `DEFAULT_AUTHORITIES` is
+`["docs/CONVENTIONS.md", "docs/STATE.md"]` and it resolves every `HOST>` command against the
+authority its row names — so seventeen commands became findings against a repository whose
+commands had not moved a byte. `SKILL.md` promises in as many words that the pack invents no
+command; at this tip that promise is mechanically false.
+
+**FINDING 3 — the census collapsed two directories into one label, and that is where both
+breakages hid.** The census's bucket table reads ` 68  tools/e2e/`. At the base the tree has
+47 files under `tools/e2e/` and 21 under `tools/method-evals/`; 68 is the sum of both. The
+label is simply wrong about which directory it counted, and `tools/method-evals/` — which
+carries MF-01's fixture and MF-09's read — appears nowhere in the census. The `9 method/`
+bucket is labelled honestly but was never classified either, and it holds finding 2. Criterion
+1 asks for *"every reader of docs/CONVENTIONS.md by path across the tree"*; the grep found
+them and the classification did not.
+
+**FINDING 4 — the card's fence census counts cards no reader of this board sees.** The card
+reports 136 fencing cards and 74 not done, at the base and again at the tip. Derived the way
+every reader of this board derives it — `liveTaskCards`, the FLAT non-recursive walk the
+parser and the docs gate both take — the figures are **134 at any status, 72 not done, 45
+planned**. The two extras are `docs/tasks/rejected/T-092-s2-…` and
+`docs/tasks/rejected/T-132-s2-…`, both `status: rejected`. The planned half was right either
+way. It matters because criterion 1's whole purpose is a census somebody else can re-derive,
+and this one cannot be re-derived to its own numbers by any reader in the tree.
+
+**FINDING 5 (security sweep, parity) — the two implementations of one rule disagree about
+what a pointer is.** The e2e arm matches a pointer with
+`/^ {2}- (docs\/conventions\/[a-z0-9-]+\.md) — (.*)$/` and reads the chapter back through
+`path.basename`. `conventions_pointer` in `app/src-tauri/src/dispatch/brief.rs` required only
+the prefix, a `.md` suffix and no whitespace. So a line spelling
+`  - docs/conventions/../../etc/passwd.md — A RULE` is a NON-pointer on the JS side, where it
+is copied through as ordinary text, and a traversing read on the Rust side. The reachable
+severity is low — the input is a first-party governed document and the effect is a read whose
+bytes must then open with the published opener — but it is precisely the drift the splice's
+own doc comment says must not happen, and the JS side already shows the intended standard.
+
+**FINDING 6 — three dead bindings, three new compiler warnings.** Swapping
+`live.read_text(CONVENTIONS)` for `live_conventions()` left `let live = live_files();` unused
+in three bodies of `app/src-tauri/src/dispatch/brief.rs`. `cargo test --lib --no-run` reports
+`warning: unused variable: 'live'` three times at the tip and **zero** times at the base.
+Non-gating, and removed below.
+
+#### Where I gave a criterion no weight, and said so before I saw the diff
+
+Attack 5.1, pre-committed in the sealed set: *"the health band SHALL read inside"* is decided
+by the lane itself, because the lane writes the budget row the band is checked against. I
+score it **GREEN BY CONSTRUCTION and give it no weight**. The repository already knows this —
+`tools/e2e/scripts/health-bands.config.mjs`'s own `measured.reason` says *"Headroom at a
+compaction landing is 20% by construction (warn = landed x 1.25), so a freshly landed document
+starts at the top of its own band."* The reading that carries information is the BASE one,
+which the sealed ground took before the diff existed: −19.93%, breached, 98 bytes under the
+hard line. That is the number this lane was dispatched against, and it is the number that
+makes the work necessary.
+
+#### One reading the criteria asked for and the card gives as a rule instead of a list
+
+Criterion 5 asks for the non-done fencing cards *"each with the topic file its subject moved
+to"*. The card gives the counts, the observation that every such card now fences an INDEX
+whose rules it cannot reach, a derivation (the index publishes every opener beside its
+chapter), and a filed keeper (T-290-s5) — but not the enumeration. The criterion's own clause
+calls this *"the records action the seat takes after the merge"* and forbids the lane to edit
+another card, so I read it as satisfied by the lane and OWED by the seat, and I name the
+reading rather than leaving it to be inferred. The seat has 71 cards to annotate after this
+merge, not 73.
+
+#### The assigned corrections
+
+Five corrections, four with a body and a mutant block, one a figure correction that carries no
+block and says so. Each is committed on this bench after this verdict, one commit per
+correction. **Three of them land OUTSIDE this lane's fence** (`tools/method-evals/` and
+`method/skills/`), which is unavoidable — the readers they repair are outside it, and that is
+finding 3 restated. **The fence on main must be widened to carry
+`tools/method-evals/` and `method/skills/supertaskr-seat/scripts/` before this verdict is
+merged**, or the landing gate will refuse the merge for bodies outside the fence.
+
+1. **The eval fixture plants the chapters.** `docs/conventions` joins `LIVE_COPY_SET` as a
+   DIRECTORY, beside `docs/architecture` — never a list of chapter names, for the reason that
+   list's own header already gives. RED against the tip's fixture set, GREEN with it.
+2. **The eval corpus is the index AND its chapters.** A new `conventionsPaths()` in
+   `tools/method-evals/lib/corpus.mjs` derives the set from the index's own pointer lines;
+   MF-09 spends it for both its corpus and its bullet search, and its `reads` names the
+   chapters. RED against the index-only corpus, GREEN with the derived one.
+3. **An authority may be an index.** `host-command-check.mjs` gains `authorityText`, which
+   folds in every chapter the authority points at — derived from its pointer lines, held to a
+   charset that cannot spell `..`, and required to sit under the authority's own directory,
+   because the pack ships into projects this repository never sees. RED against the raw read,
+   GREEN with the fold. The check's own `--selftest` still catches all 7 degradations and
+   misses none, so the fix did not soften it.
+4. **The two matchers agree.** `conventions_pointer` in the app's brief holds the chapter stem
+   to the same `[a-z0-9-]+` the e2e arm's regex holds it to. Finding 6's three dead bindings
+   go in the same commit.
+5. **The census figures.** 136/74 becomes 134/72 on the card and on T-290-s5, with the
+   derivation named and the earlier reading kept as a record of what was measured; the
+   ` 68  tools/e2e/` bucket becomes ` 68  tools/` with its two directories spelled. **This
+   correction carries NO mutant block, and that is deliberate: it is a figure in prose, there
+   is no property in the tree for a body to pin, and a shortfall a verdict has not explained
+   reads exactly like a body nobody wrote.**
+
+#### Both readings, for every body I committed
+
+| body | spec | RED against | GREEN against |
+|---|---|---|---|
+| the model-free eval suite's fixture root plants every file this project's conventions are made of | tools/e2e/tests/docs-input-gate.spec.ts | `LIVE_COPY_SET` without the chapter directory — *"the eval fixture copies nothing that carries docs/conventions/commands.md"* | the corrected set; 3 passed |
+| the model-free eval suite reads this project's conventions as the index AND its chapters | tools/e2e/tests/docs-input-gate.spec.ts | `conventionsPaths()` returning the index alone — *"no file the model-free evals read spells the attack-set citation grammar"* | the derived paths; 3 passed |
+| the seat pack's host-command check resolves every command it publishes against this project's conventions | tools/e2e/tests/docs-input-gate.spec.ts | the raw authority read — *"the pack publishes a command this project's conventions no longer name"* | `authorityText`; 24 of 24 resolved |
+| a_chapter_spelling_the_e2e_arm_refuses_is_not_a_pointer_here_either | app/src-tauri/src/dispatch/brief.rs | the tip's matcher, and again under the block below — *"this matcher accepted \"  - docs/conventions/../../etc/passwd.md — A RULE\""* | the charset-held matcher; 1 passed |
+
+Each of the four mutants was read from `git diff` after planting, not from a mutator's report,
+and each was restored from a copy taken before planting.
+
+#### The mutant blocks
+
+```mutant
+correction: the eval fixture plants the chapters
+file: tools/method-evals/lib/fixture-root.mjs
+spec: tools/e2e/tests/docs-input-gate.spec.ts
+body: the model-free eval suite's fixture root plants every file this project's conventions are made of
+message: the eval fixture copies nothing that carries
+--- old
+  "docs/architecture",
+  "docs/conventions",
+--- new
+  "docs/architecture",
+```
+
+```mutant
+correction: the eval corpus is the index and its chapters
+file: tools/method-evals/lib/corpus.mjs
+spec: tools/e2e/tests/docs-input-gate.spec.ts
+body: the model-free eval suite reads this project's conventions as the index AND its chapters
+message: no file the model-free evals read spells the attack-set citation grammar
+--- old
+    if (m !== null && !out.includes(String(m[1]))) out.push(String(m[1]));
+--- new
+    if (m !== null && out.length > 99) out.push(String(m[1]));
+```
+
+```mutant
+correction: an authority may be an index
+file: method/skills/supertaskr-seat/scripts/host-command-check.mjs
+spec: tools/e2e/tests/docs-input-gate.spec.ts
+body: the seat pack's host-command check resolves every command it publishes against this project's conventions
+message: the pack publishes a command this project's conventions no longer name
+--- old
+    corpus.set(rel, collapse(authorityText(repo, rel)));
+--- new
+    corpus.set(rel, collapse(readFileSync(p, "utf8")));
+```
+
+```mutant
+correction: the two pointer matchers agree
+file: app/src-tauri/src/dispatch/brief.rs
+spec: app/src-tauri/src/dispatch/brief.rs
+body: a_chapter_spelling_the_e2e_arm_refuses_is_not_a_pointer_here_either
+message: which the e2e arm's regex refuses
+--- old
+    if stem.is_empty()
+        || !stem
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+    {
+        return None;
+    }
+--- new
+    if stem.is_empty() {
+        return None;
+    }
+```
+
+Correction 5 carries no block, as its entry above says in as many words.
+
+#### The graph, reported and not regenerated
+
+`cargo run -p supertaskr-index -- index --check --root ../..` from `app/src-tauri` exits **1,
+STALE**, at tip `9cfca369` — Rust moved and `docs/architecture/graph.json` is outside this
+lane's fence, so this is stale BY CONSTRUCTION and the merge regenerates it. Budget line at
+that ref: `1230259 of 2145959 bytes (57.3%) - 915700 left`. My own corrections move
+`app/src-tauri/src/dispatch/brief.rs` again, so the regen is owed at the merge and not before.
