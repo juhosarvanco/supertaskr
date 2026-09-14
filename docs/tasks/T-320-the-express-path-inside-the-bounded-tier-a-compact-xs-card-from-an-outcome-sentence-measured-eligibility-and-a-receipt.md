@@ -323,3 +323,272 @@ fixed, and both are green at 12c1d2a8.
   with its figure and its follow-up card.
 
 ## Verdicts
+
+### 2026-09-14 — APPROVED WITH ASSIGNED CORRECTIONS — claude-opus-5@subagent
+
+Phase 2 of the two-spawn bench, guarded tier, on the bench worktree
+detached at the lane's tip 0584d103, base 4f6a940c. The diff and the
+specs were read before the executor's report, which is what the guarded
+mode buys.
+
+**The sealed inputs, cited by digest.** The attack set written at the
+base with no tools and no diff:
+`sha256:72e73718a830efaab1fb760ce6d213ab018ad7448ccf1a3abdc76a23f960ec84`.
+The ground taken at the base, carrying the seat's addendum of eighteen
+measurements M1 to M18:
+`sha256:794e5d27ecf55761a42cabd7f39388650a8fb07c50ff9d2115a83670f1d787c8`.
+The card at 4f6a940c, which is the contract both phases were written
+against:
+`sha256:8000d4fcd536e3ddd31d02ac50ee106c32a3ade00e004bcac885d5ea45d53aba`.
+All three re-hashed on this bench and all three match.
+
+#### The battery at the tip I was sent, 0584d103
+
+`gate-run.mjs parser app rust e2e`, port 25320, every leg in the
+foreground on this bench.
+
+| leg | bodies | verdict |
+|---|---|---|
+| parser | 454 | GREEN |
+| app | 1171 | GREEN |
+| rust | 658 | GREEN |
+| e2e | 1191 | RED on 6 |
+
+The e2e count against the ground's base reading of 1167 is +24 and
+nothing was removed. The six reds are the six the seat attributed, they
+are all in one file, and body 542 names the cause itself: the committed
+docs/INDEX.md is stale. Measured here with `capabilities:check` at
+0584d103 — docs/INDEX.md committed 7736 bytes against a fresh 7747, and
+docs/CAPABILITIES.md committed 110629 against a fresh 113944. Both
+generated files are outside the lane's fence, the fence writer is
+mechanical, and the merge regenerates both from the merged tree. The
+attribution stands; the reds are not this diff's.
+
+- docs-input-gate.spec.ts:766 the hand-run gate's exit codes
+- docs-input-gate.spec.ts:892 the exit matrix
+- docs-input-gate.spec.ts:953 the empty-list trap
+- docs-input-gate.spec.ts:1075 the census's own question
+- docs-input-gate.spec.ts:1581 the advisory scan
+- docs-input-gate.spec.ts:2083 the committed index is CURRENT
+
+Method evals at 0584d103: 13 model-free, all green (12 at the base plus
+MF-13). `--selftest` reds on MF-09 alone — the same one eval the ground
+records failing its own positive control at the base, and not MF-13,
+whose degradation control passes.
+
+#### A row per acceptance criterion, with its evidence
+
+| # | criterion | verdict | the evidence, and what would have broken it |
+|---|---|---|---|
+| 1 | compact XS card from a sentence and a fence, preflighted, admitted per mode | MET | The field set the body asserts is derived from TWO sources and neither is the generator's own list: `method/tasks/TASK-FORMAT.md`'s frontmatter block intersected with the fields two thirds of the live board carries, with the distance from that threshold asserted so no card filed tomorrow moves a field across it. Both standing sections at depth two, the sentence verbatim as the one criterion, fence as `touches:`, `size: XS`, `tier:` left for the stamp. A sentence not already in EARS form is refused naming the method file, and a caller that hands in NO reading is refused too. The four admission bodies drive `standing`, `each` (a second dispatch refused `ADMISSION_APPROVAL_CONSUMED`), `until` (refused `ADMISSION_CARD_NOT_APPROVED` bare, admitted as a derived repair, refused `ADMISSION_RECOVERY_NONE` under recovery none) and the explicit no-grant state — each over a grant written as text into the template and read back through the landed parser reader, not a literal object. My drill: remove one required field from the composer and the body reds BY NAME. |
+| 2 | reuse an active card with a resumable writer | MET | One body plus three controls that each break one arm — a FINISHED writer, no writer, a fence that does not cover — and a second body that separates the board's reading from the record's, so a done card with a stale running record is not reused and its active twin is. `runExpress` stops at step 1, writes nothing, and names the continuation. |
+| 3 | eligibility measured and printed; ineligible refused by name | MET | Five findings printed whether met or not, in the card's own order, each carrying both what it requires and what was measured. Five arms each break ONE requirement and the body asserts that exactly one finding moved. The guard-class arm is run through the conventions' REAL map with an ordinary script as its admitted twin — the refused control has the twin the card's own demonstration needs. My drill is the one that matters here: a DATA MUTANT in docs/conventions/architecture.md, dropping the `gate-*` prefix from the gate-runners class, REDS the body. The refusal follows the document, not a copy. See correction 1 and the finding on what the map does not cover. |
+| 4 | executor only; requested beside observed; the merge refuses a mismatch | MET | The bounded-tier body asserts on the COMMANDS the ritual ran — one worktree add and it is not the detached one, no phase-1 file written — with a non-bounded control that cuts the bench and writes the phase 1, so the assertion is about the tier. Both skips are a ledger row and a note. The receipt's observed half is read from a line-initial `RUN-OBSERVED` in the completion and from nowhere else; a planted completion naming another model produces a mismatch naming both values; a partial completion keeps what arrived and records the rest `unknown`; a sentence MENTIONING the token is not the token. `keeper:receipt` is FLOOR beside the card's preflight and survives `merge.keepers: off`. My drills: removing the keeper's own card filter reds by name, and making `unknown` count as a mismatch reds TWO bodies at both ends — so the false-refusal direction is pinned as well as the true one. |
+| 5 | preserve, withdraw by a dated append, re-triage | MET | The withdrawal appends at the END of `## Implementation notes` — a section the ceremony may already append to, so `cardDrift` still reads mechanical and the card keeps the approval it was admitted under — leaves the line that put the label on standing, stamps the re-triaged tier, and names the branch and the run record as KEPT (or says no record was bound rather than rounding it to none). Four refusals, each a control: no reason, `bounded` as the re-triage target, a label already withdrawn, a card that never had one — plus the clean twin. |
+| 6 | the five measurements from stamped instants, targets stated | MET as to the SHAPE, which is what this lane owed | Every figure is a difference of two instants the record carries, and the row names both. The dispatch's two ride in on the assignment, `observeRun` stamps the candidate at the same instant it records the outcome so the two can never disagree, and the seat's three arrive through `--run collect --instant`, which refuses a half-read pair rather than keeping it. Two bodies drive fixed instants and assert arithmetic — no stopwatch, nothing that can flake — and a third drives the whole round trip through the verbs and reads the figures back off the record. Two rows carry a target and three say the card sets none; a run three times over its target reports THE TARGETS WERE NOT MET and says in as many words that a slow run recorded is not the objective achieved; a record with no instants judges nothing and says so. My drill: fold the runner's conclusion into the total and the body reds by name. The merge-side figures are the seat's by the card's own amendment of 2026-09-14 and I have not graded the lane for figures it could not take. |
+| 7 | the seat coordinates and does not implement | MET | MF-13 holds three clauses of `method/roles/orchestrator.md` — the non-implementer sentence, the one edit a coordinator does make, and the bound on it — and its `check()` runs its own discrimination set, requiring each clause removed alone to be caught by name, so a green over a one-file scope cannot mean only that the file was read. Its `degrade()` is the rewording somebody would actually make rather than a deletion. Both pass here. |
+
+#### What I attacked and what held
+
+The attack set's central demands were met at the sites they name.
+**C1** — the required-field derivation shares no arrangement with the
+generator. **C2** — the composed card's `## Verdicts` heading is the
+merge verb's own spelling. **C3** — the grants are round-tripped through
+the landed reader. **C4 and C5** — the guard-class refusal follows a
+data mutant in the conventions and has an admitted twin. **C6** — each
+of the five requirements refuses alone and the body asserts that only
+one moved. **C8** — the mismatch's operands are the record's own two
+fields and there is no third value to confuse them with. **C10** — the
+eval reds against a role file lacking the sentence, and I saw it.
+**C11** — the spawn count is asserted on the commands that ran, not on
+the tier field. **C12** — the figures are recomputable from the record
+alone, and a body does exactly that.
+
+The SECURITY SWEEP found the outcome sentence's injection surface
+closed. Probed at the tip by composing cards from hostile sentences: a
+sentence carrying `---` and a frontmatter field, and one carrying
+`## Verdicts` and a dated `###` heading, both compose a card with
+exactly three headings and no forged verdict — the one-line rule, the
+`- ` prefix on the criterion and `JSON.stringify` on the title close it
+between them. A sentence carrying a census ordinal scoped to this
+repository's history composes, and then the card's own claim reader
+raises `CENSUS` on it — so the express path's fourth step refuses it and
+unwinds, rather than letting it stop a merge two hours later. The
+authorization block's own files and the merge verb are inside the guard
+class and cannot be express-edited. What is NOT closed is the subject of
+the finding that opens the list below.
+
+#### Findings — none of them a refusal, all of them recorded
+
+1. **THE EXPRESS PATH'S OWN DECISION SURFACE IS NOT GUARD-CLASS, AND
+   NEITHER IS THE MAP IT READS.** Measured at the tip by driving the
+   landed `expressPlan` over three fences: `docs/conventions/architecture.md`
+   (the file holding the map), `tools/e2e/scripts/dispatch-brief.mjs`
+   (the file holding `expressEligibility` itself) and
+   `tools/e2e/scripts/card-preflight.mjs` (the express path's own fourth
+   step) each answer fence MET, keeper MET, guard-class MET and
+   reversible MET, with only the admission refused because this tree is
+   the no-grant state. Under any grant, a one-line express change to the
+   gate that decides eligibility, or to the map that gate reads, takes
+   the short road with no bench and no verifier. The map's coverage is
+   the conventions' business and outside this fence, so criterion 3
+   passes on its own terms — it reads the map rather than copying it,
+   which is the whole of what it was asked for. But the express path is
+   what makes the gap reachable. Filed as T-320-s6.
+2. **THE EXPRESS LABEL AND THE BOUNDED CONTRACT ARE NOT BOUND
+   TOGETHER.** The eligibility's keeper requirement asks whether a spec
+   OWNS each path; `classifyTier` asks whether a keeper PINS it, which
+   the ritual answers by grading the scoped suite, and returns
+   `standard` where it does not. So an express-eligible change whose
+   owning suite is red at the base is cut WITH a bench and a phase one
+   while its card carries the line saying it was dispatched
+   executor-only under the bounded contract; the `verify.tier` switch at
+   `guarded-for-every-card` reaches the same end more directly. Nothing
+   outside the withdrawal reads the label, so no step of the dispatch and
+   no keeper of the merge asks whether a labelled card took the road its
+   label names. Criterion 4 holds as written and is pinned with a
+   control; what is missing is the binding. Filed as T-320-s7. It is
+   T-320-s4's finding seen from the other side.
+3. **THE ORDERING ARTIFACT IS IMPLEMENTED AND UNPINNED.** Criterion 1's
+   ordering clause is real rather than a call sequence: the blob is
+   computed from the composed bytes before any file exists, and step 3
+   re-hashes the card on disk and refuses when the two differ. That
+   re-check is the one artifact that makes the order observable. My
+   drill disarmed it — `if (false && onDisk !== plan.blob)` — and all
+   seventeen T-320 bodies in brief.spec.ts stayed GREEN. The property
+   holds; the guard on it is the kind of line a later edit deletes as
+   dead. Recorded in T-320-s8.
+4. **TWO SEAMS ARE ARGUED RATHER THAN DRIVEN.** No body hands a record
+   the flow actually wrote to `receiptKeeperReport` — the merge-side body
+   uses an object literal cast through `as unknown as`, though both ends
+   assert the same two field names against a real record, so the seam is
+   narrow. And the body that drives the whole express run stubs the
+   hand-over for a stated reason, so the claim that the arm's measured
+   admission and the lane cut's binding one ask about the same bytes is
+   argued in a comment. I read the code and the claim is TRUE —
+   `cardBlobSha` hashes the working-tree file, which the express arm
+   staged and the dispatch stamp has not yet touched. Filed as T-320-s8.
+5. **THE FENCE REQUIREMENT IS VACUOUS ON THE DEFAULT.** With no
+   `--changed`, the changed set IS the fence's expansion, so requirement
+   2's containment half is true by construction and only its unresolved
+   half measures anything. The printed line says so honestly
+   ("N changed path(s) all inside") and the body drives the outside case
+   through `--changed`. Recorded, not filed: at eligibility time the
+   change does not exist, and the arm offers the dial for a seat that
+   knows.
+6. **CRITERION 7 HAS NO ENFORCEMENT SURFACE, AND IT WAS NEVER ASKED FOR
+   ONE.** Authorship of an edit is recorded nowhere the pipeline reads,
+   so no keeper can tell a coordinator's edit from an executor's. MF-13
+   holds the TEXT and says so itself, which is the criterion's own ask.
+   What would give it one is an attributed writer on the run record's
+   reservation, compared at the merge. Recorded against the day somebody
+   wants the rule enforced rather than stated.
+7. **THE WITHDRAWAL'S TRIGGER IS THE SEAT'S.** Nothing detects a failed
+   check or a scope the executor discovered, and nothing re-reads the
+   candidate's diff extent under the express label. Criterion 5 asks for
+   the withdrawal act and pins it thoroughly; the detection half is
+   advisory and is named here rather than left to be discovered.
+8. **A FIELD NEWLY DECLARED REQUIRED DOES NOT PROPAGATE AT ONCE.** The
+   compact card's field set is the method's declaration intersected with
+   what two thirds of the board carries, so a field added to
+   TASK-FORMAT.md today is not required of a compact card until the
+   board catches up. That is a defensible reading — the derivation is a
+   conjunction and the body asserts its threshold is half the board away
+   from any boundary — and it is the price of not sharing an arrangement
+   with the generator. Recorded so the next reader meets it.
+
+#### My drills — six mutants at the sites, every restore proved by sha256
+
+The executor drilled five and reports them all killed. These are mine,
+aimed at the properties the attack set named, and one of them lived.
+
+| # | mutant, at its site | aimed body | answer |
+|---|---|---|---|
+| 1 | `docs/conventions/architecture.md` — the gate-runners class loses its `gate-*` prefix. A DATA MUTANT where the property IS data | brief.spec.ts, the five-requirements refusal | KILLED |
+| 2 | `compactCard` stops writing `priority:` | brief.spec.ts, the required-field body | KILLED, by name: "the compact card carries no `priority:`" |
+| 3 | `runExpress` step 3 stops comparing the card on disk against the blob the admission was measured against — `if (false && onDisk !== plan.blob)` | every T-320 body in brief.spec.ts | **SURVIVED** — all seventeen green. Finding 3 |
+| 4 | `expressMeasurements` ends the request-to-delivery total at the runner's conclusion where one is given | brief.spec.ts, the runner body | KILLED, by name |
+| 5 | `receiptKeeperReport` reads every record in the directory rather than this card's | merge.spec.ts, the receipt keeper | KILLED, by name: "the keeper read a record belonging to another card" |
+| 6 | `launchReceipt` counts an `unknown` observation as a mismatch — the FALSE-REFUSAL direction, which is the failure mode that makes a gate nobody can keep green | run-record.spec.ts and merge.spec.ts | KILLED, TWO bodies at both ends |
+
+Every file was restored with `git checkout --` and the restore proved by
+sha256 against the reading taken before the plant; the tree was clean at
+0584d103 afterwards.
+
+#### The corrections, and why each is one
+
+Three. One is a body with a mutant block, committed on this bench after
+this verdict; two are WORDING CORRECTIONS AND CARRY NO BLOCK, which is
+said here in as many words because a block nobody can drill is worse
+than a block nobody wrote.
+
+**Correction 1 — the reversible finding names readers that do not do the
+reading. A BODY AND A BLOCK.** The finding prints, to the seat, that
+whether the edit turns out to be a rename or a deletion is read by "the
+merge's own keepers and the XS bound". It is not. `xsBoundBump` reads
+the changed LINE COUNT and BUMPS the tier, which is a different
+question, and `merge.mjs` asks at no step whether a path was renamed or
+deleted — I read it for every spelling `git diff` answers that question
+by (`--diff-filter`, `--find-renames`, `--name-status`, `--summary`) and
+the only one it carries is `--diff-filter=U`, which lists unmerged paths
+at a conflict. Reversibility is the one requirement that cannot be
+measured when it is measured, so the disclosure is the ONLY thing
+standing in for a check, and a seat that reads "the merge's keepers read
+that" stops looking. The sentence now says the fence-time reading is the
+whole of the guarantee. The body pins BOTH halves — the sentence, and
+the tree the sentence is a claim about: it reads `merge.mjs` for those
+four spellings and requires none, with the one the verb does carry as
+its positive control, so the day the merge starts reading renames the
+body reds and the sentence has to move with it. Drilled on this bench:
+the false claim planted back reds the body by name, and the restore is
+proved by sha256 — `tools/e2e/scripts/dispatch-brief.mjs` is
+`c4a403ee55e1a00fafc5508d94725f07239e89252afffa4ff766199c0548ad3b`
+before the plant and after the restore.
+
+```mutant
+correction: 1 — the reversible finding's disclosure is true of this tree
+file: tools/e2e/scripts/dispatch-brief.mjs
+spec: tools/e2e/tests/brief.spec.ts
+body: T-320 C3 — THE REVERSIBLE FINDING'S DISCLOSURE IS TRUE OF THIS TREE: nothing re-reads a rename or a deletion after the executor writes, and the sentence says so
+message: the disclosure does not say that nothing re-reads it afterwards
+--- old
+      "moment, and NOTHING RE-READS IT AFTERWARDS: the merge reads the diff for forbidden " +
+--- new
+      "moment; the merge's own keepers and the XS bound read that: the merge reads the diff for forbidden " +
+```
+
+**Correction 2 — `parseInstantDial`'s comment promises a refusal the
+code does not make, and the CODE is right. A WORDING CORRECTION, AND IT
+CARRIES NO BLOCK.** The comment says a name the arm does not recognise
+is refused; the arm checks the shape of the pair and the readability of
+the instant, and accepts any name. It must: the runner's own conclusion
+is stamped as a seventh instant beside the six the measurements are
+differences of, and a closed list would refuse the one figure the card
+asks to be kept BESIDE the total. There is no behaviour to change and
+therefore nothing a mutant could plant; the comment is corrected to the
+rule the code keeps, and it now says why the name is open.
+
+**Correction 3 — `expressMeasurements` describes a parameter by
+something that happens somewhere else. A WORDING CORRECTION, AND IT
+CARRIES NO BLOCK.** `@param {string} [input.runner]` is accepted and
+deliberately turned into no row — which is exactly right, and the body
+above it pins that the total does not move — but the line calls it
+"recorded BESIDE the total", and the recording happens in the record's
+own instants map, which `measurementRunRecs` prints above the rows. The
+parameter stays: removing it would red the typecheck at the body that
+drives it. The line now says what it is for and where the figure lands.
+
+#### What the merge still owes, unchanged from the executor's notes
+
+`npm run capabilities` in the merge commit, from the merged tree, for
+both generated files; the graph regeneration on the standing trigger
+(this diff moves .mjs and .ts outside docs/); and the docs gate's budget
+WARN on the dispatch chapter, which T-320-s1 is the move that settles.
+T-204's re-triage against what this card discharges is owed at the same
+sitting by the card's own re-check.
+
+#### Postscript — the readings at my OWN tip
+
+Left for the commit that follows the corrections, because a figure
+measured at the commit I was sent is stale at the tip my verdict
+creates.
