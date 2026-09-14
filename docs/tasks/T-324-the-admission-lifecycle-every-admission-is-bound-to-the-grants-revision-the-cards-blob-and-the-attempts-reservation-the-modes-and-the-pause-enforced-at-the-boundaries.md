@@ -9,7 +9,7 @@ priority: 2
 status: building
 suggested_by: "the architect seat on 2026-09-14, splitting T-319 under the orchestrator's sizing rule after the Codex orchestrator's pre-dispatch review named the owning files"
 blocked_by: [T-319]
-touches: [method/roles/orchestrator.md, method/runtime/process-schema.yaml, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/scripts/run-record.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/run-record.spec.ts, docs/CONVENTIONS.md]
+touches: [method/roles/orchestrator.md, method/runtime/process-schema.yaml, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/scripts/run-record.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/run-record.spec.ts, docs/CONVENTIONS.md, tools/e2e/tests/cli.spec.ts, docs/reference/15-settings.md]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by:
@@ -34,6 +34,10 @@ Filed from the split of T-319 on 2026-09-14; corrected the same day after the Co
 - WHEN the grant carries optional limits THE arm SHALL read them and SHALL NOT enforce them in this card: their presence is reported by name as advisory and unenforced, their absence imposes no token or time ceiling, and enforcement is deferred to a later card so no control silently does nothing; pinned by a body over a grant with limits present.
 - WHEN a successor coordinator takes the seat (T-238) THE successor SHALL inherit the current grant from the block and continue the order without the previous coordinator's identity, pinned by a body over a fixture runtime directory.
 - WHEN this card lands THE dispatch block's switches SHALL become operational in the process schema (their read sites named there), the arm SHALL read the grant through the parser's reader and through nothing else, the arm's report SHALL separate the refusals it tested from the coordinator's obligations it cannot check (scope interpretation, an unreported integrity problem, a provider's live usage) and from advisory accounting, the orchestrator role file's step 5 SHALL say a dispatch inside the current grant is approved by the grant and every other dispatch still waits for the owner, the existing sentences kept and extended, and the conventions carry the rule once at the loop's section.
+
+## Widening of 2026-09-14, during the lane (the architect seat, on the executor's ask)
+
+The fence gains tools/e2e/tests/cli.spec.ts and docs/reference/15-settings.md, both T-319's until it merged at 54c22d98 and free since: the flip of the dispatch block's rows from declarative to operational that criterion 7 names reds the body T-319's verifier wrote to be moved by this card (every row of the shipped block is declarative) and stales the generated settings chapter, which is regenerated through the settings writer and never by hand. Nothing else widens; the parser library stays outside. The executor's reading of the pause as an owner-written, dated record in the runtime directory beside the holder record, read by the arm through one reader, is accepted for this card because T-319's reader refuses an unknown field and a pause row in the block is the parser's cycle; a suggested card records the row for a later choice.
 
 ## Implementation notes
 
