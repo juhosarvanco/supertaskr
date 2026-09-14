@@ -189,7 +189,12 @@ here without asking what reads it.
   `implementation:` field that is one of three words, because the
   `reads:` field answers a narrower question than a reader of a settings
   screen is asking and `processLedger` there reads as *"nothing"*.
-  `manual` means a person or a seat performs what the row
+  `operational` means the arm reads the row and branches on it, and the
+  label is EARNED: the lane that assigns it shows a body that CHANGES the
+  value and watches the arm answer differently, with every value of the
+  row erased from the answers before they are compared — a read site
+  shows the value is read, and a surface printing the value back shows
+  less than that. `manual` means a person or a seat performs what the row
   names, and the row carries that instruction in a non-empty
   `manualAction:`. `declarative` means the row is a RECORD rather than a
   control: nothing reads its value and no instruction is addressed to a

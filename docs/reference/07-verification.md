@@ -220,20 +220,22 @@ A `ctime` move after a byte-exact restore was seen once and
   MECHANICAL REMEDY: YES — **NARROW THE HAYSTACK** to the line or
   section pinned, with an ANCHOR that is not the needle, and assert the
   ANCHOR's own uniqueness; a bare occurrence count is a number with no
-  keeper. Worked twice:
-
-**SHAPE NINE — a mutation that MOVES a generated row between families
+  keeper. Worked twice: `snapshot_version_matches_the_live_method_stamps`
+  (kit.rs) and
+  `the_only_production_path_to_the_transcript_is_the_bounded_one`
+  (agent/mod.rs).
+  **SHAPE NINE — a mutation that MOVES a generated row between families
   leaves the cardinality invariant, so a COUNT floor is blind to it.**
   RATIFIED here, not minted: `T-080` and `T-083` call it nine and
-  `T-095` carries the shape.
-
-MECHANICAL
+  `T-095` carries the shape. TELL: an argument against FIVE's remedy — a
+  cardinality floor answers DELETION and nothing else. MECHANICAL
   REMEDY: YES, a CONTENT floor DERIVED FROM THE TREE, never a
   hand-written class list.
   **SHAPE TEN — an empty comparison reports AGREEMENT.** The producer
-  fails, both sides come back empty, and `cmp` calls it a match.
-
-Eight's opposite end, deliberately not
+  fails, both sides come back empty, and `cmp` calls it a match. TELL:
+  a comparison nothing proved had anything on either side (`T-083-s3`:
+  a `merge-tree --write-tree` that exited 1, and a loop that word-splits
+  under `bash` and not `zsh`). Eight's opposite end, deliberately not
   folded: a corpus that GAINED a member wants an upper floor, one with
   NO members a lower one. MECHANICAL REMEDY: YES, one line, carried by
   the proof clause above.
@@ -246,12 +248,6 @@ Eight's opposite end, deliberately not
   transport can hold B, B cannot date A.** NO MECHANICAL REMEDY — name
   the witness's emission path in the body so the next reader can check
   it.
-
-### A FIX NAMES ITS CLASS AND ITS SWEEP, OR RECORDS THAT NONE WAS RUN
-
-T-078's fix session fixed three of its own where they
-  stood and twice left an identical sibling a few lines away, one
-  `git grep` from complete.
 
 ### A NEGATIVE ASSERTION NEEDS A POSITIVE CONTROL
 

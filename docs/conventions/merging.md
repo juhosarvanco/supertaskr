@@ -54,8 +54,8 @@ here without asking what reads it.
   own work. At the merge the same spelling COLLAPSES instead:
   `<main-before>` is an ANCESTOR of the merge commit, so
   merge-base(main-before, merge) IS main-before and three dots returns
-  the prescribed set unchanged.
-  `git merge-base --is-ancestor 99791ea 4683566` exits
+  the prescribed set unchanged. WORKED AT T-080, all four figures at
+  their own refs: `git merge-base --is-ancestor 99791ea 4683566` exits
   **0**, and at the merge `99791ea..4683566` and `99791ea...4683566`
   both return **12** paths; before it, against the branch tip instead,
   `99791ea..72bc98a` returns **60** and `99791ea...72bc98a` returns
@@ -112,8 +112,7 @@ here without asking what reads it.
   three dots to **25** and moves neither other row — and it needs its
   own label for exactly the same reason.
   **THE SENTENCE THAT SAID THIS NEVER CHANGES A GATE'S ANSWER IS FALSE,
-  AND WAS FALSE LONG BEFORE ANYONE MEASURED IT.**
-  "It has never
+  AND WAS FALSE LONG BEFORE ANYONE MEASURED IT.** It read: "It has never
   yet changed WHETHER the gate fires — both derivations fired all six
   times." Derived at `ddcc8bb` across those same 31 merges: the
   prescribed range says BOOT GATE is NOT owed **10** times and the naive
@@ -141,8 +140,8 @@ here without asking what reads it.
   --is-ancestor 59558de 98f931e` exits 0).
   AN UNREFED
   DURATION GOES STALE EXACTLY THE WAY AN UNREFED COUNT DOES, and one
-  `git log --format=%ci` settles both.
-  `cb3aa31` lists T-076's flip under GRAPH REGEN,
+  `git log --format=%ci` settles both. THE FOURTH IS ALSO MIS-ATTRIBUTED
+  WHERE IT IS RECORDED: `cb3aa31` lists T-076's flip under GRAPH REGEN,
   but at `79ae34a` GRAPH is 13 against 13 and it is BOOT GATE that goes
   0 against 5 — the numbers were right and the gate was not (T-083-s1).
   **EVERY ERROR MEASURED HERE IS IN THE OVER-FIRING DIRECTION.**
@@ -181,8 +180,13 @@ here without asking what reads it.
   --test self_graph -- --ignored` — and commit docs/architecture/graph.json
   **with the CHECKPOINT**.
   **`*.rs` WAS ADDED 2026-08-25 AND THE GAP IT CLOSES WAS LIVE FOR ONE
-  NIGHT** (`T-123-s5`):
-  THE STANDING LESSON: the suffix list is a signpost that goes
+  NIGHT** (`T-123-s5`): T-010's merge made `Lang::for_extension("rs")`
+  answer `Some`, so Rust joined the walk while this trigger still named
+  only the four TS/JS suffixes — the ONE direction the "wider than the
+  walk" argument below does not protect, since a trigger NARROWER than
+  the walk **misses a real movement** (T-123's rebuild measured a
+  Rust-only diff moving the graph while this trigger matched 0 of 9
+  paths). THE STANDING LESSON: the suffix list is a signpost that goes
   stale the day a language is added, and `index --check` is the
   authority — **ASK THE GATE**, which is why the gap cost nothing.
   **"The merge's diff" is the PAIR OF COMMITS THE RANGE RULE above
@@ -199,7 +203,8 @@ here without asking what reads it.
   PREDICTING**: `cargo run -p supertaskr-index -- index --check --root
   ../..` from app/src-tauri answers "did an indexed file move?" in about
   a second, and it is the same command the CI step runs.
-  `index --check` is a written CI step and the ENFORCING
+  WHAT RETIRED is the obligation to hand-run the byte-comparison
+  afterwards: `index --check` is a written CI step and the ENFORCING
   copy since the repo's first push on 2026-08-29 (T-054-s4 closed at
   that push), and **the INTEGRATOR STILL RUNS IT BY HAND at the
   checkpoint and records the verdict there**. WHAT DID NOT RETIRE is

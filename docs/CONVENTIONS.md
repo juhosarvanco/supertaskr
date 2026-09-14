@@ -18,8 +18,9 @@ this document's own order; `conventionsText` in
 tools/e2e/scripts/docs-scan.mjs splices them back into one document
 before any rule is read out of it, and app/src-tauri/src/dispatch/brief.rs
 does the same in Rust. So a bullet moved between chapters is still found
-by every reader, and a chapter this index does not name is invisible —
-which the docs gate refuses.
+by every reader, and a bullet a chapter carries that this index does not
+point at is a HARD FAILURE at the splice — a rule no reader of this
+project can find is not in the document.
 
 ## Build & test
 

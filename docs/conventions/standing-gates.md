@@ -24,16 +24,17 @@ here without asking what reads it.
   commands bullet under "Build & test" above. IF the check cannot run
   THEN say so LOUDLY in the checkpoint, naming the reason and the exit
   code — a skipped gate is news, never silence. It exists because
-  `cargo run` is the ONE command this pipeline never issues:
-  THE EXECUTOR RUNS IT TOO, on the
+  `cargo run` is the ONE command this pipeline never issues: T-040, a
+  one-line manifest regression that stopped the app launching at all,
+  passed an executor, an adversarial verifier and an integrator, each of
+  whom ran `cargo test`, `cargo build` and three full suites — all
+  perfectly happy with two binaries. THE EXECUTOR RUNS IT TOO, on the
   same trigger, before handing off (T-046 criterion 6): a red the
   executor's own fence forbids fixing is still news, cheaper at build
   time than after a merge — file it as a suggestion and say so in the
   notes. Running it is NOT screen control (@human ruling 2026-08-16):
   the app opens and closes its own window; nothing is clicked, typed
   into, screenshotted, or read off the screen.
-  The history, the measurements and the argument this rule was cut
-  from are in docs/reference/10-gates.md (T-290), verbatim.
 
 - DOCS GATE (T-084 — the third standing gate, and the one the two above
   exclude BY CONSTRUCTION): at any merge whose diff touches a path under
@@ -80,7 +81,14 @@ here without asking what reads it.
   | 1 has a verdict | **1** | **1** | 1 | **123** |
   | 2 called wrong | **2** | **2** | **1**, or **0** on an empty list | **123**, and **123** on an empty list |
   | 3 could not run | **3** | **3** | **1** | **123** |
-  `tools/e2e/scripts/xargs-dialect.mjs` PROBES the dialect
+
+  Under BSD the pipe HIDES a failed range as a clean gate (every utility
+  exit collapses to **1**, and on EMPTY input the utility is never
+  invoked so the pipeline exits **0**); under GNU the IDENTITY of the
+  codes is destroyed instead, 1, 2 and 3 all arriving as 123, because
+  GNU `xargs` RUNS the utility on empty input and maps the gate's own
+  refusal at 2 to 123 — where this table, filled in from BSD, once
+  predicted 0. `tools/e2e/scripts/xargs-dialect.mjs` PROBES the dialect
   at run time, two observables and never `process.platform`, so the
   bodies that execute the piped column read the column for the dialect
   they measured; the `$(…)` column has no `xargs` process in it at all.
@@ -121,7 +129,8 @@ here without asking what reads it.
   readers stay out by the same test — `lib/parser/test/files.test.ts`
   resolves OUTSIDE `<root>/docs`. **A file that does BOTH and cannot be
   linked is REPORTED, never dropped**, and the reporting arm follows
-  IMPORTS as well as local bindings.
+  IMPORTS as well as local bindings. **NO COUNT IS TRANSCRIBED INTO THIS
+  BULLET** — the census it once carried was green and wrong:
   `node tools/e2e/scripts/docs-gate.mjs --census` from the repo root
   prints the site census, the reader set with the arm that found each,
   the root-anchor classification and the residual, and cannot be stale

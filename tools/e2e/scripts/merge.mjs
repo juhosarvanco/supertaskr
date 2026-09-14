@@ -3039,7 +3039,8 @@ export function bumpSteps(input) {
           "method/ and no --bump <from>..<to> was named",
         why:
           "docs/CONVENTIONS.md's method stamp: method/ formats are version-bumped and noted, in " +
-          "three files at once. WHICH number the release takes and what its note says are the " +
+          "three files at once, with the note written under docs/reference/14-versions.md " +
+          "(T-290). WHICH number the release takes and what its note says are the " +
           "seat's ruling, so this step refuses rather than inventing one. Re-run with " +
           "--bump <old>..<new>, or rule that this merge's method text is not a release",
         problem:
@@ -3062,7 +3063,11 @@ export function bumpSteps(input) {
       why:
         "the seat's own bump script, as run at T-264-s3's and T-293's merges: CONVENTIONS' " +
         "`currently v<x>` line, plan-interview.md's `(v<x>;` and kit.rs's " +
-        "METHOD_SNAPSHOT_VERSION, each anchored ONCE and refused where it is not",
+        "METHOD_SNAPSHOT_VERSION, each anchored ONCE and refused where it is not. " +
+        "THE RELEASE NOTE ITSELF GOES TO docs/reference/14-versions.md (T-290): the stamp " +
+        "stays in docs/CONVENTIONS.md because programs read that sentence out of that path " +
+        "by name, and the changelog it used to sit above is a record, which the reference " +
+        "chapter owns",
       run: null,
     },
     {

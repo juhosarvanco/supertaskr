@@ -242,29 +242,10 @@ The AUTHORITY column has
   stale three times, each caught by a lane and none by a gate
   (`T-010-s1`, `T-079-s1`, T-086) — ADR-019's Law 2 in one row.
 
-### BOOT GATE
-
-T-040, a
-  one-line manifest regression that stopped the app launching at all,
-  passed an executor, an adversarial verifier and an integrator, each of
-  whom ran `cargo test`, `cargo build` and three full suites — all
-  perfectly happy with two binaries.
-
 ### DOCS GATE
-
-  Under BSD the pipe HIDES a failed range as a clean gate (every utility
-  exit collapses to **1**, and on EMPTY input the utility is never
-  invoked so the pipeline exits **0**); under GNU the IDENTITY of the
-  codes is destroyed instead, 1, 2 and 3 all arriving as 123, because
-  GNU `xargs` RUNS the utility on empty input and maps the gate's own
-  refusal at 2 to 123 — where this table, filled in from BSD, once
-  predicted 0.
 
 **THAT ASYMMETRY IS THE ARGUMENT**: a spelling whose correctness must
   be re-measured per platform is one nobody will re-measure.
-
-**NO COUNT IS TRANSCRIBED INTO THIS
-  BULLET** — the census it once carried was green and wrong:
 
 The
   card that opened this named one suite; the tree says all four.

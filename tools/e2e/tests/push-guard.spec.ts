@@ -118,7 +118,7 @@ import { holderVerdict, processRow, writeHolder } from "../scripts/checkout-curr
 import { repoRoot } from "../preflight";
 import { fakeHarness, underHarness } from "./fake-harness";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
-import { conventionsBullet, conventionsText } from "../scripts/docs-scan.mjs";
+import { conventionsBullet, conventionsFiles, conventionsText } from "../scripts/docs-scan.mjs";
 // T-305 — THE VERDICT WORD IS ASKED OF THE PROGRAM THAT WRITES IT. This
 // spec holds `UNGRADED_VERDICT`'s pin, and a pin against a literal in
 // this file would be a pin against itself; `judge` is the function the
@@ -5410,6 +5410,15 @@ function seatFixture(name: string, opts: { lane?: boolean; hook?: boolean } = {}
   mkdirSync(path.join(root, "docs", "tasks"), { recursive: true });
   for (const doc of readdirSync(path.join(repoRoot, "docs")).filter((f) => f.endsWith(".md"))) {
     copyFileSync(path.join(repoRoot, "docs", doc), path.join(root, "docs", doc));
+  }
+  // AND THE CHAPTERS THE CONVENTIONS INDEX POINTS AT (T-290). The walk
+  // above is FLAT, so it takes the index and leaves the rules behind, and
+  // every verb that reads a rule then refuses by name. The set is
+  // DERIVED, so a chapter added later travels without an edit here.
+  for (const rel of conventionsFiles(repoRoot)) {
+    const dest = path.join(root, rel);
+    mkdirSync(path.dirname(dest), { recursive: true });
+    copyFileSync(path.join(repoRoot, rel), dest);
   }
   cpSync(path.join(repoRoot, "method"), path.join(root, "method"), { recursive: true });
   mkdirSync(path.join(root, HOOK_DIR_REL_PATH), { recursive: true });

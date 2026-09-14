@@ -106,16 +106,6 @@ here without asking what reads it.
   named before this catalogue existed, and their histories live in the
   cards. Each entry carries its TELL, whether it has a MECHANICAL
   REMEDY, and the card the instance lives on.
-  `snapshot_version_matches_the_live_method_stamps`
-  (kit.rs) and
-  `the_only_production_path_to_the_transcript_is_the_bounded_one`
-  (agent/mod.rs).
-  TELL: an argument against FIVE's remedy — a
-  cardinality floor answers DELETION and nothing else.
-  TELL:
-  a comparison nothing proved had anything on either side (`T-083-s3`:
-  a `merge-tree --write-tree` that exited 1, and a loop that word-splits
-  under `bash` and not `zsh`).
   The catalogue of the eleven shapes a value poison passes, each with
   its TELL, whether it has a mechanical remedy and the card its
   instance lives on, is in docs/reference/07-verification.md (T-290),
@@ -123,15 +113,14 @@ here without asking what reads it.
 
 - A FIX NAMES ITS CLASS AND ITS SWEEP, OR RECORDS THAT NONE WAS RUN
   (T-078-s12). A defect found in one place is a defect of a CLASS until
-  somebody looks:
-  So: NAME the class, run ONE search for it,
+  somebody looks: T-078's fix session fixed three of its own where they
+  stood and twice left an identical sibling a few lines away, one
+  `git grep` from complete. So: NAME the class, run ONE search for it,
   and record the result **even when it is empty** — an unrecorded sweep
   and an unrun one are indistinguishable to the next reader. **And the
   sweep is shown capable of failing before its zero is written down**
   (the POISON DRILL's proof clause), because a search that finds nothing
   is what a finished job looks like.
-  The history, the measurements and the argument this rule was cut
-  from are in docs/reference/07-verification.md (T-290), verbatim.
 
 - A NEGATIVE ASSERTION NEEDS A POSITIVE CONTROL (T-060-s2, written down
   at T-078). A test that asserts something is REFUSED must first prove

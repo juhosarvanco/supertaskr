@@ -221,9 +221,6 @@ A
 Reproduced on a fixture repository: before the merge, `A...B` and
   `$(git merge-base A B)..B` are BYTE-IDENTICAL under `cmp`.
 
-WORKED AT T-080, all four figures at
-  their own refs:
-
 Same left-hand ref throughout, and the whole 48-path swing is
   the right-hand one.
 
@@ -244,8 +241,6 @@ Three
   perform without resolving it by hand — and is wrong on bytes there as
   well.
 
-It read:
-
 THE MECHANISM is a lane
   fenced to ONE tree, cut from a checkpoint whose main then advanced in
   ANOTHER — the branch's own diff misses the trigger, main's advance
@@ -262,9 +257,6 @@ Only FOUR of the twelve were on
 "Weeks" was wrong in the
   other direction too: the repository was two days old.
 
-THE FOURTH IS ALSO MIS-ATTRIBUTED
-  WHERE IT IS RECORDED:
-
 At
   `ddcc8bb` there is NO merge where the naive range says a gate is not
   owed while the prescribed one says it is, and the pre-merge two-dot
@@ -279,19 +271,9 @@ Reproduced against a main two merges later, both
 
 ### GRAPH REGEN
 
-T-010's merge made `Lang::for_extension("rs")`
-  answer `Some`, so Rust joined the walk while this trigger still named
-  only the four TS/JS suffixes — the ONE direction the "wider than the
-  walk" argument below does not protect, since a trigger NARROWER than
-  the walk **misses a real movement** (T-123's rebuild measured a
-  Rust-only diff moving the graph while this trigger matched 0 of 9
-  paths).
-
 A regen that
   changes nothing costs a minute and PROVES it; a regen skipped on a
   guess proves nothing.
-  WHAT RETIRED is the obligation to hand-run the byte-comparison
-  afterwards:
 
 The rule
   read "with the merge" for twenty-nine regens while every integrator

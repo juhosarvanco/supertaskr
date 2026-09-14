@@ -96,13 +96,6 @@ Green here, red there, and the diff
 
 ### THE PROCESS IS SETTINGS, AND EVERY SWITCH IS DECLARED ONCE
 
-`operational` means the arm reads the row and branches on it, and the
-  label is EARNED: the lane that assigns it shows a body that CHANGES the
-  value and watches the arm answer differently, with every value of the
-  row erased from the answers before they are compared — a read site
-  shows the value is read, and a surface printing the value back shows
-  less than that.
-
 The fence hook, the docs gate and the
   landing gate all read `declarative` and are all in force; what they are
   not is settings, because they live in code and in CI configuration that

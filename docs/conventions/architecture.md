@@ -163,8 +163,11 @@ here without asking what reads it.
   docs/architecture/components/C-11-design-tokens.md`). A design-tokens
   change enters a lane as `touches: [app/src/styles]` or
   `[app/src/assets]` — its own bare PATH, in the spelling C-11's body
-  publishes — and it SHIPS by the same REACHES test:
-  **READING AN EMPTY `touch_slugs:` AS "NOT SHIPPED" IS THE TRAP
+  publishes — and it SHIPS by the same REACHES test: `app/src/index.css`
+  (C-05, slug `app-shell`) `@import`s `./styles/tokens.css` and
+  `./styles/fonts.css`, and `fonts.css` `url()`s
+  `../assets/fonts/*.woff2`, so those bytes are compiled into every
+  build. **READING AN EMPTY `touch_slugs:` AS "NOT SHIPPED" IS THE TRAP
   THIS CLAUSE CLOSES**: the ruling removed a fence SPELLING, not a byte
   from the bundle — and it does NOT generalise to every empty line; C-01
   is slugless too, and its `method/**` ships only as far as the clause
@@ -177,8 +180,6 @@ here without asking what reads it.
   `roles/integrator.md` among them. **`non_code:` IS A DIFFERENT AXIS
   AND IS NEVER SUBSTITUTED**: C-11 is `non_code: true`, claims NO slug,
   and ships anyway — neither field is the shipped-ness test.
-  The history, the measurements and the argument this rule was cut
-  from are in docs/reference/04-fences.md (T-290), verbatim.
 
 - THE FOUR WALKS — which one sees this file? (T-078, closing an open
   question every integrator was re-deriving.) This repo walks its own

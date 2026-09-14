@@ -10,6 +10,8 @@ import {
   BYTES_PER_TOKEN,
   CALL_SAMPLES,
   CHECKPOINTS_DIR,
+  CONVENTIONS_DIR,
+  CONVENTIONS_DOC,
   DISPOSITION_RULING,
   DOCS_EXCLUDED_FILES,
   INDEXED_DOCS,
@@ -1962,7 +1964,11 @@ test("THE ADVISORY RESIDUAL, NAMED: no exit assertion on this tree can catch a s
  *  a plant can move a document without touching this checkout. */
 function indexRoot(): string {
   const dir = mkdtempSync(path.join(tmpdir(), "docs-index-"));
-  for (const rel of [...INDEXED_DOCS, INDEX_RULING.file]) {
+  // THE CHAPTERS TRAVEL WITH THE INDEX (T-290): one of the four indexed
+  // documents is now an index over docs/conventions/, and the render
+  // derives a line per chapter from it, so a root carrying the index
+  // alone renders nothing and refuses.
+  for (const rel of [...INDEXED_DOCS, INDEX_RULING.file, ...conventionsChapters(conventionsIndexText())]) {
     const dest = path.join(dir, rel);
     mkdirSync(path.dirname(dest), { recursive: true });
     writeFileSync(dest, readFileSync(path.join(repoRoot, rel), "utf8"));
@@ -2651,8 +2657,12 @@ test("a chapter that stops carrying a bullet the index points at is a hard failu
   const fx = mkdtempSync(path.join(tmpdir(), "t290-splice-"));
   const index = conventionsIndexText();
   const chapters = conventionsChapters(index);
-  mkdirSync(path.join(fx, "docs/conventions"), { recursive: true });
-  writeFileSync(path.join(fx, "docs/CONVENTIONS.md"), index);
+  // THE PATHS ARE DERIVED, NEVER TYPED — this project's own rule, and
+  // here it is also what keeps this FILE free of a docs-shaped literal:
+  // the by-name exclusion body two thousand lines above asserts that
+  // this spec holds no docs site and therefore needs no exclusion.
+  mkdirSync(path.join(fx, CONVENTIONS_DIR), { recursive: true });
+  writeFileSync(path.join(fx, CONVENTIONS_DOC), index);
   for (const rel of chapters) {
     writeFileSync(path.join(fx, rel), readFileSync(path.join(repoRoot, rel), "utf8"));
   }
@@ -2672,7 +2682,7 @@ test("a chapter that stops carrying a bullet the index points at is a hard failu
 });
 
 test("docs/INDEX.md carries one generated line per chapter the index points at", () => {
-  const committed = readFileSync(path.join(repoRoot, "docs/INDEX.md"), "utf8");
+  const committed = readFileSync(path.join(repoRoot, INDEX_DOC), "utf8");
   const chapters = conventionsChapters(conventionsIndexText());
   expect(chapters.length, "no chapter to check").toBeGreaterThan(1);
   for (const rel of chapters) {
@@ -2683,4 +2693,42 @@ test("docs/INDEX.md carries one generated line per chapter the index points at",
   // hand-kept row wearing a generated one's clothes.
   const lines = committed.split("\n").filter((l) => l.startsWith("  - **"));
   expect(lines.length, "the chapter lines are not one per chapter").toBe(chapters.length);
+});
+
+test("the index and its chapters are pinned BOTH WAYS — a pointer with no file, and a chapter with no pointer", () => {
+  // The seat's amendment of 2026-09-14 asks for both directions, and each
+  // is a DATA mutant because the property lives in the pair of files.
+  const index = conventionsIndexText();
+  const chapters = conventionsChapters(index);
+  const plant = (): string => {
+    const fx = mkdtempSync(path.join(tmpdir(), "t290-bothways-"));
+    mkdirSync(path.join(fx, CONVENTIONS_DIR), { recursive: true });
+    writeFileSync(path.join(fx, CONVENTIONS_DOC), index);
+    for (const rel of chapters) {
+      writeFileSync(path.join(fx, rel), readFileSync(path.join(repoRoot, rel), "utf8"));
+    }
+    return fx;
+  };
+
+  // THE POSITIVE CONTROL — planted faithfully, the pair splices.
+  const control = plant();
+  expect(conventionsText(control).length, "the faithful copy did not splice").toBeGreaterThan(1000);
+  rmSync(control, { recursive: true, force: true });
+
+  // ONE: a pointer whose file is gone.
+  const noFile = plant();
+  rmSync(path.join(noFile, String(chapters[0])));
+  expect(() => conventionsText(noFile)).toThrow(/points at .* and no file sits there/);
+  rmSync(noFile, { recursive: true, force: true });
+
+  // TWO: a chapter file the index names nowhere. It carries a rule, so a
+  // reader that ignored it would assemble a document missing that rule
+  // while the tree looked complete.
+  const noPointer = plant();
+  writeFileSync(
+    path.join(noPointer, path.join(CONVENTIONS_DIR, "unnamed.md")),
+    "# A chapter nothing points at\n\nIts lead.\n\n- A RULE NOBODY CAN FIND, and that is the point.\n",
+  );
+  expect(() => conventionsText(noPointer)).toThrow(/points at nowhere/);
+  rmSync(noPointer, { recursive: true, force: true });
 });

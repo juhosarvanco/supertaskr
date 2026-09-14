@@ -2853,6 +2853,22 @@ export function conventionsText(root = repoRoot) {
     out.push(bullet, "");
   }
   const spliced = out.join("\n").replace(/\n{3,}/g, "\n\n");
+  // **AND THE OTHER DIRECTION: A CHAPTER NO POINTER NAMES IS INVISIBLE.**
+  // The refusals below catch a pointer whose chapter lost its bullet and a
+  // pointer whose chapter cannot be opened; neither sees a chapter FILE
+  // that the index never mentions, whose rules would then be in the tree
+  // and in no reader's document. The index claims this is refused, so it
+  // is refused here (T-290, the seat's amendment of 2026-09-14).
+  const named = new Set(conventionsChapters(indexMd).map((f) => path.basename(f)));
+  for (const entry of readdirSync(path.join(root, CONVENTIONS_DIR))) {
+    if (!entry.endsWith(".md") || entry === "README.md" || named.has(entry)) continue;
+    throw new Error(
+      `docs-scan: ${CONVENTIONS_DIR}/${entry} is a chapter ${CONVENTIONS_DOC} points at nowhere. ` +
+        "The index is the only map of this project's rules, so a chapter it does not name is a " +
+        "file whose rules no reader assembles — add its pointer lines, or the file is not a " +
+        "chapter and belongs under another name.",
+    );
+  }
   for (const [file, rest] of queued) {
     if (rest.length === 0) continue;
     throw new Error(
@@ -2955,18 +2971,18 @@ export const DOC_BUDGETS = Object.freeze({
   // growth distribution filled in over another two weeks of merges, and
   // the rows below are the first to be landed against the new one. The
   // four rows above KEEP their lines, as the ruling says.
-  "docs/CONVENTIONS.md": { landed: 13462, warn: 16828, fail: 20193 },
+  "docs/CONVENTIONS.md": { landed: 13544, warn: 16930, fail: 20316 },
   "docs/conventions/app-and-ui.md": { landed: 6331, warn: 8064, fail: 9797 },
-  "docs/conventions/architecture.md": { landed: 14533, warn: 18167, fail: 21800 },
+  "docs/conventions/architecture.md": { landed: 14613, warn: 18267, fail: 21920 },
   "docs/conventions/commands.md": { landed: 18566, warn: 23208, fail: 27849 },
   "docs/conventions/dispatch-and-scratch.md": { landed: 8080, warn: 10100, fail: 12120 },
   "docs/conventions/gates-and-the-push.md": { landed: 10971, warn: 13714, fail: 16457 },
   "docs/conventions/lanes.md": { landed: 21524, warn: 26905, fail: 32286 },
-  "docs/conventions/merging.md": { landed: 22749, warn: 28437, fail: 34124 },
-  "docs/conventions/records-and-rooms.md": { landed: 21654, warn: 27068, fail: 32481 },
+  "docs/conventions/merging.md": { landed: 23347, warn: 29184, fail: 35021 },
+  "docs/conventions/records-and-rooms.md": { landed: 22030, warn: 27538, fail: 33045 },
   "docs/conventions/shell-and-scripts.md": { landed: 5943, warn: 7676, fail: 9409 },
-  "docs/conventions/standing-gates.md": { landed: 14189, warn: 17737, fail: 21284 },
-  "docs/conventions/verification.md": { landed: 11579, warn: 14474, fail: 17369 },
+  "docs/conventions/standing-gates.md": { landed: 14850, warn: 18563, fail: 22275 },
+  "docs/conventions/verification.md": { landed: 11154, warn: 13943, fail: 16731 },
 });
 
 /** Every live task card as a `{path, content}` entry, read off the tree
