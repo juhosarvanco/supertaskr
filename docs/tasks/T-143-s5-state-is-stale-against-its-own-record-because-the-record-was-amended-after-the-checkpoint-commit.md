@@ -129,4 +129,125 @@ The two alternatives the record above leaves open are decided for B: the stalene
 
 ## Implementation notes
 
+**Built 2026-09-14 in the lane cut at base `767a68ff` (the dispatch
+stamp), arm B exactly as the ruling above decided it.** The staleness
+derivation now compares a checkpoint record against the commit that
+CREATED it; an append to an already-checkpointed record is neither step
+and no longer asks for a STATE commit whose only content is a clock.
+
+### What moved
+
+- `tools/e2e/scripts/docs-scan.mjs` — `staleStateRecords` asks git for
+  the record's CREATING commit (`git log -1 --diff-filter=A --format=%ct`)
+  instead of its latest touch, and compares that against
+  `docs/STATE.md`'s last commit with the same `>` that has always let the
+  same-commit TIE pass. The ADD spelling is exported as
+  `RECORD_CREATED_FILTER` so a body can assert the reading rather than
+  infer it. Committed history only, unchanged: a mid-ritual working tree
+  still has nothing to compare and still never reds.
+- THE FALLBACK, and it is the one design decision this card did not
+  inherit. A record whose creating commit git will not name falls back to
+  the LATEST touch — the old reading, which is the suspicious one —
+  because the one failure this gate must not have is going quiet. That
+  branch is not defensive decoration: a record added ONLY IN A MERGE
+  COMMIT has no `--diff-filter=A` answer at all, because `git log` does
+  not diff merges, and the fixture that builds that arrangement is in the
+  suite with its own control. Without the fallback such a record
+  disappears from the gate entirely; the drill below plants exactly that.
+- `tools/e2e/scripts/docs-gate.mjs` — the report only. The comment above
+  the `staleAgainst` loop keeps the ADR-019 promotion history (the ritual
+  slipped twice in its opening two checkpoints) and gains why the reading
+  moved; the printed line now says the record was CREATED without its
+  regeneration and that an append is not this finding.
+- `tools/e2e/scripts/push-checks.mjs` — the report only, same treatment.
+  It re-states no rule, so the two readers still cannot disagree (T-057).
+- `method/docs-protocol.md` rule 4 — the rule, argued ONCE, both halves:
+  what obliges the regeneration is the record's creation and never its
+  every later touch, AND an amendment that changes a fact or a hazard the
+  state document summarises still updates it, which is conduct no gate
+  can keep because no program can tell which appended line changed the
+  state of the world.
+- `docs/STATE-template.md` — the generator of `docs/STATE.md`, so the
+  retired requirement could not be allowed to come back at the next
+  regeneration. Its opening contract paragraph operates the rule and
+  cites rule 4 for the argument; its `## The contract this file is under`
+  slot instructs the regenerated paragraph to carry the creation half.
+- `docs/STATE.md` — the generated file. The sentence that said a later
+  edit to the record re-touches this file now says an append to that
+  record does not. This lane's commit is what changed it, not a
+  checkpoint regeneration, and the wording is deliberately SHORTER than
+  what it replaced: the file was 8462 bytes at `767a68ff` against an
+  ADR-019 warn line of 8465 and is 8458 after, so a fuller sentence would
+  have spent the whole remaining headroom on prose the template can carry
+  instead. The conduct half therefore lives in rule 4 and in the
+  template, which is `method/docs-protocol.md` law 5 applied to its own
+  law 4.
+
+### The reading of criterion 2, said plainly
+
+"The governing text SHALL say the new rule once" is taken as ONE argued
+statement across the three sites, not one copy each: rule 4 argues it,
+the template operates it and cites rule 4, and `docs/STATE.md` carries
+the operative clause in the sentence the criterion names. The retired
+requirement is absent from all three, and a body proves it with a plant.
+
+### Bodies
+
+Seven added, none removed, none reworded.
+`tools/e2e/tests/push-checks.spec.ts` gains the amended record that
+passes with its control (the same append on a record CREATED without its
+regeneration, which reds by name), one tree holding an amended record
+that passes beside a new record that reds, and the committed-history pin
+with both halves of its arrangement removed in turn.
+`tools/e2e/tests/docs-input-gate.spec.ts` gains the derivation's
+three-way discrimination (append passes, creation without regeneration
+reds by name, tie passes) with the ADD spelling asserted, the
+merge-added record that falls back rather than going silent with its
+regenerated control, the gate-wiring body that requires the finding to
+reach `found`, and the governing-text body with its planted retouch
+requirement.
+
+### Figures, each at its own ref
+
+At `767a68ff`, over the 89 records under `docs/checkpoints/` (90 `.md`
+files less `TEMPLATE.md`): 8 records have a creating commit that differs
+from their latest touch, and the stale set is EMPTY under both the old
+reading and the new one. So this change moves no answer on this tree —
+which is why every arrangement is built in a fixture and none is
+asserted off the live checkout.
+
+Cost, measured at the lane tip over the same 89 records, three readings:
+3022 ms, 3031 ms, 3018 ms. The reading is one git process per record and
+that was true before this card too; the creating read is not the more
+expensive of the two — one pass each over the same 89 records gave
+3220 ms for the latest-touch spelling and 2866 ms for the creating one.
+A suggested card carries the batching.
+
+### Drills — six mutants, each killed, each restore proved by sha256
+
+    1  the rule reads the latest touch again      push-checks + docs-input-gate red
+    2  the derivation reports nothing, ever       push-checks (2 bodies) + docs-input-gate red
+    3  the tie now reds (`>` becomes `>=`)        push-checks + docs-input-gate red
+    4  the gate prints and leaves its exit alone  docs-input-gate reds
+    5  the retouch requirement is put back        docs-input-gate reds
+    6  an undatable record goes silent            docs-input-gate reds
+
+Mutants 1, 2, 3 and 6 were applied to `tools/e2e/scripts/docs-scan.mjs`,
+4 to `tools/e2e/scripts/docs-gate.mjs` and 5 to `docs/STATE.md`. Each
+file's sha256 before the mutant and after the restore is recorded in the
+lane's report.
+
+### In-fence follow-through
+
+None. Every change above is a criterion's.
+
+### What this lane does NOT carry, and the merge owes
+
+`docs/CAPABILITIES.md` is outside this fence and seven new `test(` names
+change it. The merge regenerates the census (`npm run capabilities` from
+`tools/e2e/`, which also regenerates `docs/INDEX.md`) and CI's
+`capabilities:check` is what would red otherwise. `docs/INDEX.md` itself
+is unchanged by this diff: its Capabilities line names spec-file slugs,
+not body names, and no spec file was added.
+
 ## Verdicts

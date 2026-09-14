@@ -771,8 +771,16 @@ function main(argv) {
   // ADR-019 §Records, PROMOTED from ritual to gate after the ritual
   // slipped twice in its first two checkpoints (records written, STATE
   // never regenerated — the 2026-08-29 addendum). A checkpoint record
-  // whose last COMMIT is newer than docs/STATE.md's last commit is step
-  // 1 without step 2.
+  // whose CREATING commit is newer than docs/STATE.md's last commit is
+  // step 1 without step 2.
+  //
+  // IT USED TO READ THE RECORD'S LATEST TOUCH, AND AN APPEND IS NEITHER
+  // STEP (T-143-s5, disposition B, ruled 2026-09-14). Records are
+  // append-only rather than write-once, so an amendment to a record that
+  // was checkpointed CORRECTLY — record and regenerated STATE in one
+  // commit — used to move it past STATE and report a slip that had not
+  // happened. The original slip is untouched: a record CREATED without
+  // its STATE regeneration still reds here, by name.
   //
   // THE DERIVATION MOVED TO `docs-scan.mjs` (T-203) AND ONLY THE REPORT
   // IS LEFT HERE. It acquired a second reader — the push guard's cheap
@@ -784,8 +792,9 @@ function main(argv) {
   if (staleAgainst.length > 0) {
     console.error(
       `\ndocs-gate: docs/STATE.md is STALE against ${staleAgainst.length} newer checkpoint ` +
-        "record(s) — the record was committed and STATE was never regenerated " +
-        "(docs-protocol.md rule 4; the integrator's step 2):",
+        "record(s) — the record was CREATED and STATE was never regenerated beside it " +
+        "(docs-protocol.md rule 4; the integrator's step 2). An APPEND to an " +
+        "already-checkpointed record is not this finding (T-143-s5):",
     );
     for (const r of staleAgainst) console.error(`  ${r}`);
     found += staleAgainst.length;

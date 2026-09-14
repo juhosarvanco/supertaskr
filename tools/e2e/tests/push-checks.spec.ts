@@ -211,6 +211,154 @@ test("the docs gate and the push checks ask ONE implementation, so they cannot d
   );
 });
 
+/* ──────── the amendment, and the slip it must still catch (T-143-s5) ──────── */
+
+/**
+ * A history whose commits are made ONE PER CALL with an explicit,
+ * strictly increasing committer date, so an ARRANGEMENT can be built out
+ * of the ORDER of commits rather than out of wall-clock luck. The dates
+ * are load-bearing for the same reason `board` above states: git's
+ * timestamps have one-second granularity and `staleStateRecords` passes a
+ * tie by design, so two commits sharing a second would silently collapse
+ * the arrangement this fixture exists to build.
+ *
+ * `commit` writes its files and commits them; `edit` writes and does NOT
+ * commit, which is what lets a body ask whether the reading is committed
+ * history or the working tree.
+ */
+function history(name: string): {
+  root: string;
+  commit: (message: string, writes: Record<string, string>) => void;
+  edit: (rel: string, content: string) => void;
+} {
+  const root = mkdtempSync(path.join(os.tmpdir(), `T-143-s5-${name}-`));
+  SCRATCH.push(root);
+  let minute = 0;
+  const git = (...args: string[]): void => {
+    minute += 1;
+    const at = `2026-09-01T00:${String(minute).padStart(2, "0")}:00Z`;
+    execFileSync("git", ["-C", root, ...NO_BACKGROUND_MAINTENANCE, ...args], {
+      stdio: "pipe",
+      env: { ...process.env, GIT_AUTHOR_DATE: at, GIT_COMMITTER_DATE: at },
+    });
+  };
+  execFileSync("git", ["init", "-q", "-b", "main", root], { stdio: "pipe" });
+  git("config", "user.email", "fixture@example.invalid");
+  git("config", "user.name", "T-203 fixture");
+  const edit = (rel: string, content: string): void => {
+    const dest = path.join(root, rel);
+    mkdirSync(path.dirname(dest), { recursive: true });
+    writeFileSync(dest, content);
+  };
+  const commit = (message: string, writes: Record<string, string>): void => {
+    // STAGED BY NAME, NEVER `add -A`. A body below leaves a REGENERATED
+    // `docs/STATE.md` in the working tree and then commits the record
+    // alone; `-A` would sweep that edit into the same commit, turning the
+    // slip it is building into the correct ritual and passing over
+    // nothing. Measured: the body went green against an empty list.
+    for (const [rel, content] of Object.entries(writes)) edit(rel, content);
+    git("add", "--", ...Object.keys(writes));
+    git("commit", "-qm", message);
+  };
+  commit("the board", {
+    "docs/STATE.md": "# State\n",
+    "docs/tasks/T-901-a.md": wellFormedCard("T-901"),
+  });
+  return { root, commit, edit };
+}
+
+/** The record every arrangement below is built around, and its append. */
+const RECORD = "docs/checkpoints/2026-09-01-record.md";
+const WRITTEN = "# Record\n";
+const APPENDED = "# Record\n\nand a re-run battery line, appended four minutes later\n";
+
+test("an APPEND to a record checkpointed WITH its STATE regeneration is not a stale finding", () => {
+  // THE MEASURED INSTANCE, REBUILT. `f90edfd` did the ritual correctly —
+  // record and regenerated STATE in ONE commit — and `8e659b1` appended
+  // eight lines to that record alone four minutes later. Read against the
+  // record's LATEST TOUCH that append moved the record past STATE and the
+  // gate reported a ritual slip that had not happened; read against the
+  // CREATING commit it is neither step.
+  const amended = history("amended");
+  amended.commit("Checkpoint: the record and the regenerated STATE, together", {
+    [RECORD]: WRITTEN,
+    "docs/STATE.md": "# State, regenerated\n",
+  });
+  amended.commit("append a re-run battery line to the record", { [RECORD]: APPENDED });
+  expect(
+    staleStateRecords(amended.root),
+    "the record was CREATED with its STATE regeneration; a later append is neither step",
+  ).toEqual([]);
+  expect(staleState(amended.root), "and the push checks report what the derivation found").toEqual([]);
+
+  // THE CONTROL, AND IT IS THE SAME APPEND WITH THE ARRANGEMENT REMOVED.
+  // Identical shape — a record, then a commit touching that record alone —
+  // and the ONE thing that differs is whether the CREATING commit carried
+  // STATE. Without this the body above is satisfied by a derivation that
+  // skips any record with more than one commit, by one that stopped
+  // looking at records altogether, and by one that returns the empty list.
+  const slipped = history("slipped-then-amended");
+  slipped.commit("a record, and STATE not regenerated beside it", { [RECORD]: WRITTEN });
+  slipped.commit("append a re-run battery line to the record", { [RECORD]: APPENDED });
+  expect(
+    staleStateRecords(slipped.root),
+    "a record CREATED without its STATE regeneration is still step 1 without step 2, appended to or not",
+  ).toEqual(["2026-09-01-record.md"]);
+  const found = staleState(slipped.root);
+  expect(found.map((f) => f.kind)).toEqual(["state-stale"]);
+  expect(found[0]?.message, "and it reds BY NAME").toContain("2026-09-01-record.md");
+});
+
+test("an amended record passing does not quiet a NEW record that arrived without its STATE regeneration", () => {
+  // ONE TREE, TWO RECORDS, TWO ANSWERS — which is the safeguard the card
+  // that ruled this change spent its argument on. The derivation could
+  // satisfy the body above by going quiet; here the quiet answer and the
+  // loud one are asked of the SAME checkout, so a derivation that has
+  // stopped firing cannot produce this pair.
+  const mixed = history("mixed");
+  mixed.commit("Checkpoint: the first record and the regenerated STATE, together", {
+    "docs/checkpoints/2026-09-01-first.md": WRITTEN,
+    "docs/STATE.md": "# State, regenerated\n",
+  });
+  mixed.commit("append a re-run battery line to the first record", {
+    "docs/checkpoints/2026-09-01-first.md": APPENDED,
+  });
+  mixed.commit("a second record, and STATE not regenerated beside it", {
+    "docs/checkpoints/2026-09-02-second.md": WRITTEN,
+  });
+  expect(staleStateRecords(mixed.root)).toEqual(["2026-09-02-second.md"]);
+  expect(staleState(mixed.root)[0]?.message).toContain("2026-09-02-second.md");
+});
+
+test("the reading is COMMITTED HISTORY, and an uncommitted STATE does not repair a committed slip", () => {
+  // UNCHANGED BY THIS CARD, AND ASSERTED BECAUSE IT WAS EASY TO CHANGE.
+  // Moving the comparison from the record's latest touch to its creating
+  // commit is a change of WHICH commit is read, never of whether a commit
+  // is what is read at all: a mid-ritual working tree — record written,
+  // STATE regenerated, nothing staged — must still never false-red.
+  const mid = history("mid-ritual");
+  mid.edit(RECORD, WRITTEN);
+  mid.edit("docs/STATE.md", "# State, regenerated\n");
+  expect(
+    staleStateRecords(mid.root),
+    "a mid-ritual working tree has no commits to compare and must never red",
+  ).toEqual([]);
+
+  // THE CONTROL FOR THAT NEGATIVE, in two halves, each removing one half
+  // of the arrangement. Commit the record ALONE and the finding appears —
+  // so the silence above was the absence of a commit, not a derivation
+  // that cannot see this fixture at all.
+  mid.commit("a record, and STATE not regenerated beside it", { [RECORD]: WRITTEN });
+  expect(staleStateRecords(mid.root)).toEqual(["2026-09-01-record.md"]);
+  // And regenerating STATE in the WORKING TREE does not repair it: only a
+  // commit does, which is exactly why this is asked at the push.
+  mid.edit("docs/STATE.md", "# State, regenerated after the fact\n");
+  expect(
+    staleStateRecords(mid.root),
+    "an uncommitted STATE repaired a committed slip — the reading has left committed history",
+  ).toEqual(["2026-09-01-record.md"]);
+});
+
 /* ───────────── the CLI, and its four codes ───────────────────────── */
 
 /** Run the real script the push guard spawns. */

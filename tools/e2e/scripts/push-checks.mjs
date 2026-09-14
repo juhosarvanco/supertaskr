@@ -31,10 +31,12 @@
  *   without the fields is a parser red waiting for whoever next parses
  *   the tree.
  *
- *   RECORDS — `docs/STATE.md` stale against a newer checkpoint record,
- *   twice (`census exit=1`), each time read after the commit had landed.
- *   COMMITTING A RECORD IS WHAT MAKES STATE STALE, so a gate read BEFORE
- *   that commit cannot see it and a gate read at the PUSH can.
+ *   RECORDS — `docs/STATE.md` stale against a newly CREATED checkpoint
+ *   record, twice (`census exit=1`), each time read after the commit had
+ *   landed. COMMITTING A RECORD IS WHAT MAKES STATE STALE, so a gate read
+ *   BEFORE that commit cannot see it and a gate read at the PUSH can. An
+ *   APPEND to a record already checkpointed with its STATE regeneration
+ *   is neither step and is not this finding (T-143-s5).
  *
  * ── WHAT THIS FILE IMPLEMENTS AND WHAT IT ONLY ASKS ──────────────────
  * The record check is `docs-scan.mjs`'s `staleStateRecords` — moved
@@ -180,7 +182,11 @@ export function placementGaps(cards) {
 }
 
 /**
- * Checkpoint records committed after `docs/STATE.md` was.
+ * Checkpoint records CREATED after `docs/STATE.md` was last committed.
+ *
+ * The reading is `staleStateRecords`'s and the reason it is the creating
+ * commit rather than the record's latest touch is stated there (T-143-s5);
+ * this file re-states nothing, so the two cannot disagree (T-057).
  *
  * @param {string} root
  * @returns {Finding[]}
@@ -191,9 +197,10 @@ export function staleState(root) {
     file: "docs/STATE.md",
     message:
       `docs/STATE.md is STALE against the newer checkpoint record docs/checkpoints/${rec} — the ` +
-      "record was committed and STATE was never regenerated (docs-protocol.md rule 4, the " +
+      "record was CREATED and STATE was never regenerated beside it (docs-protocol.md rule 4, the " +
       "integrator's step 2). COMMITTING THE RECORD IS WHAT MAKES STATE STALE, which is why this " +
-      "is asked at the push and not before the commit.",
+      "is asked at the push and not before the commit. An APPEND to an already-checkpointed " +
+      "record is not this finding (T-143-s5).",
   }));
 }
 

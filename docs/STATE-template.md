@@ -2,8 +2,14 @@
 
 This file is the shape docs/STATE.md is REGENERATED into at every
 checkpoint, AFTER the checkpoint record is written to
-docs/checkpoints/. Replace every <angle-bracket> slot; delete nothing
-structural. The contract (docs/rooms/governing-docs.md, ADR-019):
+docs/checkpoints/ and IN THE SAME COMMIT. What obliges the
+regeneration is the record's CREATION: an APPEND to a record already
+checkpointed with one owes no second regeneration, though an amendment
+changing a FACT or a HAZARD this document summarises still owes one —
+a rule of conduct no gate can enforce. The rule is argued once, in
+method/docs-protocol.md rule 4 (T-143-s5); this line operates it.
+Replace every <angle-bracket> slot; delete nothing structural. The
+contract (docs/rooms/governing-docs.md, ADR-019):
 STATE holds what is live, what to run, the standing hazards and
 pointers — the checkpoint's narrative goes to the record, where the
 INSTANCE is stamped and this file keeps only the MECHANISM. A figure
@@ -25,8 +31,10 @@ its enforcing copy.>**
 
 ## The contract this file is under
 
-<One short paragraph: replaced each checkpoint from this template;
-narrative lives in the record; derive at your own ref. Cite ADR-019.>
+<One short paragraph: replaced each checkpoint from this template, in
+the SAME commit as the record whose CREATION obliges it — an APPEND to
+an already-checkpointed record does not; narrative lives in the
+record; derive at your own ref. Cite ADR-019.>
 
 <AND ONE SENTENCE POINTING AT THE INDEX, which is the other half of the
 standing read (ADR-024 decision 2): this file plus docs/INDEX.md is
