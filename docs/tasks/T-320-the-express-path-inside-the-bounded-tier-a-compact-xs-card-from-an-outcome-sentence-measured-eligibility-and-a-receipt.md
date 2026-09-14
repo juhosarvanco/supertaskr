@@ -4,13 +4,14 @@ title: "The express path inside the bounded tier: from an outcome sentence and a
 feature: F-04
 milestone: 4
 size: M
+tier: guarded
 priority: 2
-status: planned
+status: building
 suggested_by: "the architect seat on 2026-09-13, from the Codex orchestrator's lean-delivery plan v2 and its reconciliation review of the same day, filed on the owner's ruling; filing authorizes no development"
 blocked_by: []
 touches: [tools/e2e/scripts/brief.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/card-preflight.mjs, tools/e2e/scripts/run-record.mjs, tools/e2e/scripts/merge.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/card-preflight.spec.ts, tools/e2e/tests/run-record.spec.ts, tools/e2e/tests/merge.spec.ts, tools/method-evals/evals, method/tasks/TASK-FORMAT.md, method/roles/orchestrator.md, docs/CONVENTIONS.md, docs/conventions/architecture.md, docs/conventions/lanes.md, docs/conventions/dispatch-and-scratch.md]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
