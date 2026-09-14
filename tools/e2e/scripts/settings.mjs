@@ -648,7 +648,74 @@ export function renderReference(schema) {
     );
     out.push("");
   }
+  // THE DISPATCH BLOCK, RENDERED FROM ITS DECLARATION AND FROM NOTHING
+  // ELSE (T-319). A schema that carries no such section renders no
+  // section here: a project whose template has no dispatch block to
+  // declare is not a misconfiguration, and a heading over an empty list
+  // would be this page's one hand-written sentence.
+  if (schema.dispatch !== null) out.push(...referenceDispatchBlock(schema.dispatch));
   return `${out.join("\n").trimEnd()}\n`;
+}
+
+/**
+ * THE DISPATCH BLOCK'S CHAPTER SECTION, a function of the declaration
+ * alone (T-319).
+ *
+ * Every sentence below is a field of the schema — the block's own prose,
+ * its rows and their labels — for the same reason the switch rows above
+ * are: a page that restated what a row means would be a second
+ * declaration, stale the day the first one moved. The label counts and
+ * the no-grant sentence are DERIVED, never typed, so a row that stops
+ * being declarative moves this page in the same commit that moves it.
+ *
+ * @param {import("../../../lib/parser/dist/pure.js").DispatchDeclaration} decl
+ * @returns {string[]}
+ */
+export function referenceDispatchBlock(decl) {
+  const rows = [...decl.fields.values()];
+  /** @param {string} want @returns {number} */
+  const labelled = (want) => rows.filter((r) => r.implementation === want).length;
+  const advisory = rows.filter((r) => r.advisory).map((r) => r.id);
+  /** @type {string[]} */
+  const out = [
+    "## The dispatch block",
+    "",
+    `The runtime template's own \`${decl.key}:\` block — ${decl.what}. ` +
+      `${String(rows.length)} field(s), declared in ${PROCESS_SCHEMA} and read as ONE typed ` +
+      `value by \`${decl.reads}\`.`,
+    "",
+    decl.effect,
+    "",
+    `Each row says what makes it true: ${String(labelled("operational"))} OPERATIONAL, ` +
+      `${String(labelled("manual"))} MANUAL, ${String(labelled("declarative"))} DECLARATIVE. ` +
+      (advisory.length === 0
+        ? "No row is advisory."
+        : `${String(advisory.length)} row(s) are ADVISORY — recorded, rendered and validated, and ` +
+          `read by nothing that stops anything: ${advisory.map((id) => `\`${id}\``).join(" · ")}.`),
+    "",
+    `When the block is ABSENT the reader answers the explicit no-grant state: ` +
+      `${rows
+        .filter((r) => r.absent !== "")
+        .map((r) => `\`${r.id}\` is \`${r.absent}\``)
+        .join(", ")}, no grant, revision 0.`,
+    "",
+  ];
+  for (const row of rows) {
+    out.push(`### \`${decl.key}.${row.id}\``);
+    out.push("");
+    out.push(row.what);
+    out.push("");
+    out.push(`- **required** — ${row.required}`);
+    out.push(`- **shape** — ${row.shape}`);
+    if (row.values.length > 0) {
+      out.push(`- **values** — ${row.values.map((v) => `\`${v}\``).join(" · ")}`);
+      out.push(`- **absent** — \`${row.absent}\``);
+    }
+    out.push(`- **advisory** — ${row.advisory ? "yes; nothing in this tree enforces it" : "no"}`);
+    out.push(`- **implementation** — ${row.implementation}`);
+    out.push("");
+  }
+  return out;
 }
 
 /**

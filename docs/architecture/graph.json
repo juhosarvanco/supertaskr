@@ -4950,7 +4950,7 @@
       "id": "f:app/src-tauri/src/agent/kit.rs",
       "path": "app/src-tauri/src/agent/kit.rs",
       "lang": "rust",
-      "hash": "blake3:d4e337872597ecfb9e4521fa9f9d0a589ed5ad38808b55364553c655caf95bc9",
+      "hash": "blake3:0e6b8690e2111e860fea238b92750ae9eeee31bcebe70491b69ad4e55806ab1b",
       "loc": 1175,
       "symbols": [
         {
@@ -26014,17 +26014,177 @@
       "id": "f:lib/parser/src/process-settings.ts",
       "path": "lib/parser/src/process-settings.ts",
       "lang": "ts",
-      "hash": "blake3:3a10aeb986c9a29d62d7ec8a91b991b0df7ee268bf96d0734f8e138daf8a73dc",
-      "loc": 659,
+      "hash": "blake3:a09742a832fa3fa59c62dd63c8c6539a0ae07a0c0f5188cd7c02bd1149f7a4cb",
+      "loc": 1692,
       "symbols": [
+        {
+          "id": "s:lib/parser/src/process-settings.ts#BLOB_SHA",
+          "name": "BLOB_SHA",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            446,
+            446
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#DISPATCH_BLOCK_FIELDS",
+          "name": "DISPATCH_BLOCK_FIELDS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            130,
+            136
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#DISPATCH_DECLARATION",
+          "name": "DISPATCH_DECLARATION",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            127,
+            127
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#DISPATCH_FIELD_ATTRIBUTES",
+          "name": "DISPATCH_FIELD_ATTRIBUTES",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            139,
+            147
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#DISPATCH_MAP_SHAPE",
+          "name": "DISPATCH_MAP_SHAPE",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            186,
+            186
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#DISPATCH_MODE_FIELDS",
+          "name": "DISPATCH_MODE_FIELDS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            189,
+            189
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#DISPATCH_MODE_SHAPE",
+          "name": "DISPATCH_MODE_SHAPE",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            183,
+            183
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#DISPATCH_REQUIREMENTS",
+          "name": "DISPATCH_REQUIREMENTS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            157,
+            162
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#DISPATCH_SHAPES",
+          "name": "DISPATCH_SHAPES",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            169,
+            180
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#DISPATCH_UNTIL_VALUE",
+          "name": "DISPATCH_UNTIL_VALUE",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            197,
+            197
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#DispatchBlock",
+          "name": "DispatchBlock",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            269,
+            286
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#DispatchDeclaration",
+          "name": "DispatchDeclaration",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            219,
+            227
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#DispatchFieldDeclaration",
+          "name": "DispatchFieldDeclaration",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            200,
+            216
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#DispatchGrant",
+          "name": "DispatchGrant",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            230,
+            242
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#DispatchLimits",
+          "name": "DispatchLimits",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            254,
+            258
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#DispatchRevocation",
+          "name": "DispatchRevocation",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            245,
+            248
+          ]
+        },
         {
           "id": "s:lib/parser/src/process-settings.ts#FindingConstructor",
           "name": "FindingConstructor",
           "kind": "type",
           "exported": true,
           "range": [
-            175,
-            175
+            361,
+            361
           ]
         },
         {
@@ -26038,13 +26198,23 @@
           ]
         },
         {
+          "id": "s:lib/parser/src/process-settings.ts#ISO_INSTANT",
+          "name": "ISO_INSTANT",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            443,
+            443
+          ]
+        },
+        {
           "id": "s:lib/parser/src/process-settings.ts#LedgerRow",
           "name": "LedgerRow",
           "kind": "interface",
           "exported": true,
           "range": [
-            160,
-            172
+            346,
+            358
           ]
         },
         {
@@ -26055,6 +26225,16 @@
           "range": [
             107,
             107
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#POSITIVE_INTEGER",
+          "name": "POSITIVE_INTEGER",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            449,
+            449
           ]
         },
         {
@@ -26093,8 +26273,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            178,
-            185
+            364,
+            371
           ]
         },
         {
@@ -26103,8 +26283,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            133,
-            139
+            309,
+            325
           ]
         },
         {
@@ -26113,8 +26293,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            142,
-            147
+            328,
+            333
           ]
         },
         {
@@ -26123,8 +26303,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            150,
-            157
+            336,
+            343
           ]
         },
         {
@@ -26133,8 +26313,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            188,
-            195
+            374,
+            382
           ]
         },
         {
@@ -26143,8 +26323,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            113,
-            130
+            289,
+            306
           ]
         },
         {
@@ -26183,8 +26363,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            652,
-            652
+            1684,
+            1684
           ]
         },
         {
@@ -26193,8 +26373,18 @@
           "kind": "const",
           "exported": true,
           "range": [
-            659,
-            659
+            1691,
+            1691
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#dispatchBlock",
+          "name": "dispatchBlock",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            1692,
+            1692
           ]
         },
         {
@@ -26203,8 +26393,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            245,
-            247
+            432,
+            434
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/process-settings.ts#isInstant",
+          "name": "isInstant",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            452,
+            454
           ]
         },
         {
@@ -26213,8 +26413,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            250,
-            256
+            457,
+            463
           ]
         },
         {
@@ -26223,8 +26423,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            654,
-            654
+            1686,
+            1686
           ]
         },
         {
@@ -26233,8 +26433,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            216,
-            243
+            403,
+            430
           ]
         },
         {
@@ -26243,8 +26443,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            658,
-            658
+            1690,
+            1690
           ]
         },
         {
@@ -26253,8 +26453,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            204,
-            210
+            391,
+            397
           ]
         },
         {
@@ -26263,8 +26463,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            655,
-            655
+            1687,
+            1687
           ]
         },
         {
@@ -26273,8 +26473,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            263,
-            644
+            470,
+            1676
           ]
         },
         {
@@ -26283,8 +26483,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            656,
-            656
+            1688,
+            1688
           ]
         },
         {
@@ -26293,8 +26493,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            657,
-            657
+            1689,
+            1689
           ]
         }
       ]
@@ -26372,8 +26572,8 @@
       "id": "f:lib/parser/src/pure.ts",
       "path": "lib/parser/src/pure.ts",
       "lang": "ts",
-      "hash": "blake3:ffa11fa9f5a53879df54df2db78aef6148c82d9329cabceefdfb9dd12fe17a40",
-      "loc": 134,
+      "hash": "blake3:161635ccff7f0ce12cba52ca2bc5433338571d51e19a2b1726a8fb43ebfa9fbb",
+      "loc": 152,
       "symbols": []
     },
     {
@@ -27405,17 +27605,107 @@
       "id": "f:lib/parser/test/process-settings.test.ts",
       "path": "lib/parser/test/process-settings.test.ts",
       "lang": "ts",
-      "hash": "blake3:88c3457cdd20235f4ca6756043d32cf3d6b05ac0283bb049a6def0c53b3cbeb7",
-      "loc": 602,
+      "hash": "blake3:ebfa0fdc76fa33421e396e51fafed401cee99d3d09ec1b958f355a5a6846c463",
+      "loc": 1505,
       "symbols": [
+        {
+          "id": "s:lib/parser/test/process-settings.test.ts#BLOB_FIVE",
+          "name": "BLOB_FIVE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            286,
+            286
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/process-settings.test.ts#BLOB_FOUR",
+          "name": "BLOB_FOUR",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            285,
+            285
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/process-settings.test.ts#BLOB_ONE",
+          "name": "BLOB_ONE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            282,
+            282
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/process-settings.test.ts#BLOB_THREE",
+          "name": "BLOB_THREE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            284,
+            284
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/process-settings.test.ts#BLOB_TWO",
+          "name": "BLOB_TWO",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            283,
+            283
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/process-settings.test.ts#BLOCK",
+          "name": "BLOCK",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            296,
+            334
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/process-settings.test.ts#DECLARATION",
+          "name": "DECLARATION",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            135,
+            269
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/process-settings.test.ts#DISPATCH_FIXTURE",
+          "name": "DISPATCH_FIXTURE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            272,
+            272
+          ]
+        },
         {
           "id": "s:lib/parser/test/process-settings.test.ts#FIXTURE",
           "name": "FIXTURE",
           "kind": "const",
           "exported": false,
           "range": [
-            42,
-            97
+            53,
+            108
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/process-settings.test.ts#NO_BLOCK",
+          "name": "NO_BLOCK",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            337,
+            337
           ]
         },
         {
@@ -27424,8 +27714,28 @@
           "kind": "const",
           "exported": false,
           "range": [
-            100,
-            107
+            111,
+            118
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/process-settings.test.ts#blockRefusal",
+          "name": "blockRefusal",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            346,
+            350
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/process-settings.test.ts#dispatchSchema",
+          "name": "dispatchSchema",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            340,
+            340
           ]
         },
         {
@@ -27434,8 +27744,18 @@
           "kind": "const",
           "exported": false,
           "range": [
-            109,
-            109
+            120,
+            120
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/process-settings.test.ts#readBlock",
+          "name": "readBlock",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            343,
+            343
           ]
         },
         {
@@ -27444,8 +27764,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            112,
-            119
+            354,
+            361
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/process-settings.test.ts#refusedBy",
+          "name": "refusedBy",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            1116,
+            1119
           ]
         }
       ]
@@ -34953,8 +35283,25 @@
       "to": "f:lib/parser/src/process-settings.ts",
       "kind": "import",
       "symbols": [
+        "DISPATCH_BLOCK_FIELDS",
+        "DISPATCH_DECLARATION",
+        "DISPATCH_FIELD_ATTRIBUTES",
+        "DISPATCH_MAP_SHAPE",
+        "DISPATCH_MODE_FIELDS",
+        "DISPATCH_MODE_SHAPE",
+        "DISPATCH_REQUIREMENTS",
+        "DISPATCH_SHAPES",
+        "DISPATCH_UNTIL_VALUE",
+        "DispatchBlock",
+        "DispatchDeclaration",
+        "DispatchFieldDeclaration",
+        "DispatchGrant",
+        "DispatchLimits",
+        "DispatchRevocation",
         "FindingConstructor",
+        "IMPLEMENTATIONS",
         "LedgerRow",
+        "MANUAL_IMPLEMENTATION",
         "PROCESS_SCHEMA",
         "PROCESS_SECTION",
         "ProcessFinding",
@@ -34968,6 +35315,7 @@
         "SWITCH_FIELDS",
         "SWITCH_TYPES",
         "constraintFindings",
+        "dispatchBlock",
         "parseProcessSchema",
         "processLedger",
         "processSection",
@@ -35491,12 +35839,23 @@
       "to": "f:lib/parser/src/pure.ts",
       "kind": "import",
       "symbols": [
+        "DISPATCH_BLOCK_FIELDS",
+        "DISPATCH_DECLARATION",
+        "DISPATCH_FIELD_ATTRIBUTES",
+        "DISPATCH_MAP_SHAPE",
+        "DISPATCH_MODE_FIELDS",
+        "DISPATCH_MODE_SHAPE",
+        "DISPATCH_REQUIREMENTS",
+        "DISPATCH_SHAPES",
+        "DISPATCH_UNTIL_VALUE",
+        "IMPLEMENTATIONS",
         "PROCESS_SCHEMA",
         "ProcessFinding",
         "RUNTIME_TEMPLATE",
         "SWITCH_FIELDS",
         "SWITCH_TYPES",
         "constraintFindings",
+        "dispatchBlock",
         "parseProcessSchema",
         "processLedger",
         "processSection",
@@ -44871,6 +45230,30 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:lib/parser/src/process-settings.ts#DispatchBlock",
+      "to": "s:lib/parser/src/process-settings.ts#DispatchGrant",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#DispatchBlock",
+      "to": "s:lib/parser/src/process-settings.ts#DispatchLimits",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#DispatchBlock",
+      "to": "s:lib/parser/src/process-settings.ts#DispatchRevocation",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#DispatchDeclaration",
+      "to": "s:lib/parser/src/process-settings.ts#DispatchFieldDeclaration",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:lib/parser/src/process-settings.ts#ProcessReaderOptions",
       "to": "s:lib/parser/src/process-settings.ts#FindingConstructor",
       "kind": "type_ref",
@@ -44878,7 +45261,19 @@
     },
     {
       "from": "s:lib/parser/src/process-settings.ts#ProcessSchema",
+      "to": "s:lib/parser/src/process-settings.ts#DispatchDeclaration",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#ProcessSchema",
       "to": "s:lib/parser/src/process-settings.ts#ProcessSwitch",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#ProcessSettingsReader",
+      "to": "s:lib/parser/src/process-settings.ts#DispatchBlock",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -44925,6 +45320,12 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:lib/parser/src/process-settings.ts#dispatchBlock",
+      "to": "s:lib/parser/src/process-settings.ts#ProcessSettingsReader",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:lib/parser/src/process-settings.ts#parseProcessSchema",
       "to": "s:lib/parser/src/process-settings.ts#ProcessSettingsReader",
       "kind": "type_ref",
@@ -44945,6 +45346,42 @@
     {
       "from": "s:lib/parser/src/process-settings.ts#processSection",
       "to": "s:lib/parser/src/process-settings.ts#ProcessSettingsReader",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#processSettingsReader",
+      "to": "s:lib/parser/src/process-settings.ts#DispatchBlock",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#processSettingsReader",
+      "to": "s:lib/parser/src/process-settings.ts#DispatchDeclaration",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#processSettingsReader",
+      "to": "s:lib/parser/src/process-settings.ts#DispatchFieldDeclaration",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#processSettingsReader",
+      "to": "s:lib/parser/src/process-settings.ts#DispatchGrant",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#processSettingsReader",
+      "to": "s:lib/parser/src/process-settings.ts#DispatchLimits",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#processSettingsReader",
+      "to": "s:lib/parser/src/process-settings.ts#DispatchRevocation",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -44999,6 +45436,12 @@
     {
       "from": "s:lib/parser/src/process-settings.ts#processSettingsReader",
       "to": "s:lib/parser/src/process-settings.ts#indentOf",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/process-settings.ts#processSettingsReader",
+      "to": "s:lib/parser/src/process-settings.ts#isInstant",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -45897,6 +46340,24 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:lib/parser/test/process-settings.test.ts#blockRefusal",
+      "to": "s:lib/parser/test/process-settings.test.ts#readBlock",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/process-settings.test.ts#blockRefusal",
+      "to": "s:lib/parser/test/process-settings.test.ts#refusal",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/process-settings.test.ts#readBlock",
+      "to": "s:lib/parser/test/process-settings.test.ts#dispatchSchema",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:lib/parser/test/task-waves.test.ts#Frontmatter",
       "to": "s:lib/parser/src/types.ts#TaskStatus",
       "kind": "type_ref",
@@ -45936,7 +46397,7 @@
   ],
   "stats": {
     "files": 203,
-    "symbols": 2593,
-    "edges": 2488
+    "symbols": 2626,
+    "edges": 2505
   }
 }

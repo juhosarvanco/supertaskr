@@ -71,6 +71,196 @@ profiles:
   standard: "what ADR-024 ruled: three tiers chosen by the arm, one standing read, the arm merges, and the whole suite on a clock"
   fast: "standard with the whole-suite net nightly only and push batching on — the profile for a project whose CI minutes are the scarce thing"
 
+# ── THE DISPATCH BLOCK OF THE RUNTIME TEMPLATE, DECLARED (T-319) ────
+#
+# The runtime template's `dispatch:` block is where the owner's approval
+# of a piece of work LIVES: which cards were approved, at which revision
+# of their own files, by whom, when, and whether the coordinator may
+# dispatch the repairs that work turns out to need. It is declared HERE,
+# once, for the same reason every switch above is — the template carries
+# the VALUES and this file carries what they mean — and it is read by
+# the parser library's `dispatchBlock` as ONE typed value validated
+# against this declaration, never as a bag of strings each surface
+# interprets for itself.
+#
+# EVERY ROW IS `declarative` TODAY (T-319). The block is readable
+# configuration and nothing else: the arm admits nothing and refuses
+# nothing by it until T-324 makes these rows operational, and the label
+# is what says so to anyone deciding whether editing the block would
+# change a dispatch. It would not.
+#
+# AND THE BLOCK IS ABSENT UNTIL SOMEBODY GRANTS SOMETHING. A reader that
+# meets no `dispatch:` block answers the explicit NO-GRANT state — the
+# `absent:` value of each mode row and no grant at revision 0 — because
+# no grant is ever created by guessing a person, an instant or a past
+# authorization. An existing authorized way of working continues only
+# through a migration grant the seat proposes verbatim and the owner
+# approves (T-307).
+#
+# THE FIELDS OF A ROW, and each answers a question the reader asks:
+#   required  `always` — required whenever the block is present;
+#             `optional` — the container may be left out entirely;
+#             `with-parent` — required when its own container is there;
+#             `with-until` — required when `approval` is `until`, and
+#             refused under every other mode.
+#   shape     what the value IS, as this comment and the generated
+#             reference say it. The set is closed and the reader
+#             refuses a shape it does not know: `mode` (one of `values`),
+#             `text`, `instant` (an ISO instant), `revision` (a positive
+#             integer), `card-id`, `card-ids` (unique ids in order),
+#             `card-blobs` (id -> the 40-hex blob sha of that card file
+#             at approval), `token-ceilings` (provider -> a positive
+#             integer), `map` (a container of its own rows) and `grants`
+#             (earlier grants in order, each shaped like `grant`).
+#             The reader answers each field it knows BY NAME, so a
+#             shape edited here does not today move what the reader
+#             accepts — T-319-s5 is that seam.
+#   values    the whole value set of a `mode` row, empty on every other
+#   absent    what the reader answers for this row when the block is
+#             ABSENT — on a `mode` row, and empty on every other. The
+#             no-grant state is DECLARED here rather than coded, so the
+#             one place that says what "no grant" means is this file.
+#   advisory  `true` where nothing in this tree enforces the field. The
+#             limits are advisory by this card's own criterion: they are
+#             recorded, rendered and validated, and nothing reads them to
+#             stop anything.
+#   implementation  as above — operational, manual or declarative
+#   what      what the row records, in one line
+dispatch_block:
+  key: dispatch
+  what: "the dispatch approval mode, the recovery policy, and the grant that sets them"
+  effect: "a fresh seat in either harness inherits the owner's approval from the template rather than from a checkpoint's prose; a grant, a pause or a revocation is a dated edit to the block that appends the previous grant to its history and RAISES the revision, and which grant is current is decided by that revision and never by a date"
+  reads: dispatchBlock
+  fields:
+    approval:
+      required: always
+      shape: mode
+      values: [each, until, standing]
+      absent: each
+      advisory: false
+      implementation: declarative
+      what: "when work STARTS — approval asked before every dispatch, a grant that runs up to and including a named card, or a standing grant that runs until a dated pause"
+    recovery:
+      required: always
+      shape: mode
+      values: [none, repairs]
+      absent: none
+      advisory: false
+      implementation: declarative
+      what: "whether the coordinator may dispatch a correction round, a re-entry after a rejection or a repair the work discovers — none, or the repairs necessary to the approved work"
+    grant:
+      required: always
+      shape: map
+      values: []
+      absent: ""
+      advisory: false
+      implementation: declarative
+      what: "the approval itself, as the owner gave it; a block that carries no grant is a block that records nothing"
+    grant.given_by:
+      required: with-parent
+      shape: text
+      values: []
+      absent: ""
+      advisory: false
+      implementation: declarative
+      what: "who gave the grant, as the record names them — the reader attributes a grant to this and promises no tamper prevention from an integer"
+    grant.at:
+      required: with-parent
+      shape: instant
+      values: []
+      absent: ""
+      advisory: false
+      implementation: declarative
+      what: "the ISO instant the grant was given, which is a record and never the tie-breaker between two grants"
+    grant.revision:
+      required: with-parent
+      shape: revision
+      values: []
+      absent: ""
+      advisory: false
+      implementation: declarative
+      what: "the revision of this grant, a positive integer strictly above every revision in the history — and the ONE thing that decides which grant is current"
+    grant.order:
+      required: with-parent
+      shape: card-ids
+      values: []
+      absent: ""
+      advisory: false
+      implementation: declarative
+      what: "the approved cards in dispatch order, each id once"
+    grant.until:
+      required: with-until
+      shape: card-id
+      values: []
+      absent: ""
+      advisory: false
+      implementation: declarative
+      what: "the card the grant runs up to and including, which must belong to the order — required under `until` and refused under every other mode"
+    grant.cards:
+      required: with-parent
+      shape: card-blobs
+      values: []
+      absent: ""
+      advisory: false
+      implementation: declarative
+      what: "each approved card at the revision it was approved AT — the 40-hex blob sha of its file — so that a card edited after the yes is a different card, keyed by exactly the ids the order names"
+    revoked:
+      required: optional
+      shape: map
+      values: []
+      absent: ""
+      advisory: false
+      implementation: declarative
+      what: "the dated revocation of the grant, when there is one; a revoked block reads as NO CURRENT GRANT while the grant it revokes stays in the record"
+    revoked.at:
+      required: with-parent
+      shape: instant
+      values: []
+      absent: ""
+      advisory: false
+      implementation: declarative
+      what: "the ISO instant the grant was revoked"
+    revoked.by:
+      required: with-parent
+      shape: text
+      values: []
+      absent: ""
+      advisory: false
+      implementation: declarative
+      what: "who revoked it, as the record names them"
+    limits:
+      required: optional
+      shape: map
+      values: []
+      absent: ""
+      advisory: true
+      implementation: declarative
+      what: "the ceilings the grant was given under, recorded and enforced by NOTHING in this tree — the owner's ruling of 2026-09-13 is that this project's own loop runs without them"
+    limits.tokens:
+      required: with-parent
+      shape: token-ceilings
+      values: []
+      absent: ""
+      advisory: true
+      implementation: declarative
+      what: "a ceiling per provider, each a positive integer — ADVISORY: recorded and rendered, read by nothing that stops anything"
+    limits.expires_at:
+      required: with-parent
+      shape: instant
+      values: []
+      absent: ""
+      advisory: true
+      implementation: declarative
+      what: "the ISO instant the grant expires at — ADVISORY: recorded and rendered, read by nothing that stops anything"
+    history:
+      required: always
+      shape: grants
+      values: []
+      absent: ""
+      advisory: false
+      implementation: declarative
+      what: "every earlier grant in order, each shaped exactly like `grant` and each at a revision strictly below the current one; an empty list is the honest shape of a first grant"
+
 switches:
 
   # ── WHAT EVERY SEAT READS ──────────────────────────────────────────

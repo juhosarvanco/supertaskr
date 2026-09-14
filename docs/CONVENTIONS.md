@@ -680,11 +680,12 @@ and T-236 (2026-09-02, whose pre-compaction text is
 ## Gotchas
 - method/ is the generic, product-agnostic convention — nothing
   supertaskr-specific goes in it; product docs live in docs/. Changes to
-  method/ formats are version-bumped (currently v0.1.27) and noted here.
+  method/ formats are version-bumped (currently v0.1.28) and noted here.
   **A VERSION'S NOTE HERE IS ITS DATE, ITS CARD AND ITS THEME; WHAT
   MOVED IS THE RELEASE'S OWN RECORD** (ADR-019's law applied to this
   changelog at T-162): the per-clause itemisation is RECORD-shaped, and
   the AUTHORITY for what a version says is `method/` itself at that tag.
+  v0.1.28 (T-319, 2026-09-14) — the DISPATCH BLOCK release: the runtime template gains an optional dispatch block — the approval mode (each, until a named card, standing), the recovery policy (none, repairs) and the grant that sets them with its revision, order, endpoint, card blobs, optional advisory limits, revocation and history — declared once in the process schema as its own section of sixteen rows, every row labelled declarative because nothing admits or refuses by it until T-324; the parser library's process-settings module reads the block through the pure entry as one typed value validated against the declaration, a named refusal and never a partial value, with the explicit no-grant state (approval each, recovery none, no grant, revision 0) when the block is absent; the settings reference renders the section from the declaration; this project's own template carries no grant.
   v0.1.27 (T-298-s3, 2026-09-14) — the XS release: the size vocabulary gains XS in the parser's legal set and the task format's frontmatter block, preserving S, M and L, so the bounded tier the tier table selects on XS is reachable end to end from a card that lives in the tree; the ceremony table gains an XS row restating the bounded line (executor only, the keeper scoped, the push owing its range), written lightest-first; the lightest ceremony row and the tier table's bounded size are pinned as one invariant read from both documents rather than a typed letter.
   v0.1.26 (T-299-s6, 2026-09-13) — the LABELS release: every process switch carries an implementation label, `operational`, `manual` or `declarative`, with a manual switch's action beside it; an operational label is proved by a body that changes the value and observes the arm behave differently; the terminal shows the label beside the value and refuses to edit a declarative switch with its file unchanged; the reference carries the labels.
   v0.1.25 (T-311-s5, 2026-09-13) — the READERS release: the task format names the criteria heading's depth in words and a body keeps every card to it; the advisory seat reader and the card preflight hold one heading rule, so both answer the same criteria for the same card; the verifier role file spells the verdict entry's one shape with the date first, and the merge verb's newest-verdict reader finds a dated depth-three entry wherever its date sits, a correction block's heading excluded.
@@ -967,8 +968,42 @@ and T-236 (2026-09-02, whose pre-compaction text is
   CLASSIFICATION IS A FINDING AND NEVER A `declarative`**: the label is
   what a reader trusts when deciding whether editing a row is worth
   anything, and a row filed under it to end an argument is the one way
-  this field can be worse than the absence it replaced. The switch
-  inventory the schema was built
+  this field can be worse than the absence it replaced. **AND SINCE
+  T-319 THE DISPATCH APPROVAL LIVES IN THE TEMPLATE TOO, AS ONE BLOCK.**
+  Where the record
+  lives: `dispatch:` in `method/runtime/supertaskr.yaml`, declared once
+  as the schema's own `dispatch_block:` section beside the switches and
+  read by the parser library's `dispatchBlock` as ONE typed value — so
+  the tracked record the arm reads is the template itself rather than a
+  record class beside it, and a fresh seat in either harness inherits the
+  approval from a file instead of from a checkpoint's prose. The block
+  carries `approval` (each, until a named card, standing), `recovery`
+  (none, or the repairs necessary to the approved work — a policy of its
+  own, valid under every mode), and a `grant` naming who gave it, when,
+  its revision, the approved cards in dispatch order and each card's blob
+  sha at approval; `revoked`, `limits` and `history` are the rest.
+  **HOW A GRANT CHANGES: BY A DATED EDIT AND NEVER BY A REWRITE.** A
+  grant, a pause or a revocation appends the previous grant to `history:`
+  and RAISES the revision, proposed verbatim and approved on the owner's
+  yes as any decision entry is (T-307), and **which grant is current is
+  decided by that revision and never by a date** — two grants at one
+  revision are refused, because a date cannot break that tie. The reader
+  answers a NAMED refusal and never a partial value: an unknown field, a
+  duplicate YAML key, an `until` with no card or a card outside the
+  order, an order and a cards map that disagree, a malformed sha or
+  instant, a non-positive revision, two grants at one revision, a history
+  not wholly below the current. It validates the sequence it is GIVEN and
+  attributes each grant to its recorded `given_by`; it promises no tamper
+  prevention from an integer. **THIS PROJECT CARRIES NO BLOCK**, and the
+  reader says so in as many words — approval each, recovery none, no
+  grant, revision 0 — because no grant is ever created by guessing a
+  person, an instant or a past authorization; an existing authorized way
+  of working reaches the template only through a migration grant the seat
+  proposes verbatim and the owner approves. **AND EVERY ROW IS
+  `declarative` UNTIL T-324**: the block is readable configuration, the
+  arm admits and refuses nothing by it, and the `limits` rows are
+  advisory on top of that — recorded, rendered and validated, read by
+  nothing that stops anything. The switch inventory the schema was built
   from — every row with its old and ruled value, its measured cost and
   its constraint — is in `docs/rooms/loop-cost-and-speed.md`.
 - GUARD-CLASS PATHS, IN THIS PROJECT'S OWN SPELLING (T-296, ADR-024

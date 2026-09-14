@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1094 behaviours** — 1092 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1098 behaviours** — 1096 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -441,6 +441,10 @@ Census: **1094 behaviours** — 1092 extracted sentences + 2 named-not-extracted
 - setting a switch to the profile's OWN value removes the departure rather than writing one
 - each of the four refusals a set owes is ITSELF, and the template is not touched by any of them
 - the committed settings chapter is a GENERATION of the schema, and a schema nobody regenerated for reds
+- THE SHIPPED SCHEMA'S DISPATCH BLOCK DECLARATION reads the same to the hand parser and to a real YAML parser
+- EVERY ROW OF THE SHIPPED DISPATCH BLOCK IS DECLARATIVE, the limits are the advisory ones, and the no-grant words are `each` and `none`
+- THIS PROJECT'S TEMPLATE CARRIES NO GRANT, and the reader says so in as many words
+- THE SETTINGS CHAPTER CARRIES THE DISPATCH BLOCK AS A GENERATION of its declaration, never as prose
 - the listing goes to the PROJECT'S OWN tree for its readings — the measured column is not a rendering of numbers somebody handed in
 - a DEPARTURE is listed at the value the PROJECT resolves to, marked against the profile's own
 - the listing and the generated page carry each switch's LABEL, and a manual switch's ACTION beside it
