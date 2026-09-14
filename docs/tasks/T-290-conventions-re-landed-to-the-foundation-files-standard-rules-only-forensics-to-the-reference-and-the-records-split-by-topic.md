@@ -4,13 +4,14 @@ title: CONVENTIONS re-landed to the foundation-files standard (ADR-023) — ever
 feature: F-01
 milestone: 4
 size: L
+tier: guarded
 priority: 2
-status: planned
+status: building
 suggested_by: "@human (2026-09-09): \"Rule A–D as proposed\" — decision B of docs/rooms/foundation-files-standard.md"
 blocked_by: []
 touches: [docs/CONVENTIONS.md, docs/conventions/, docs/reference/, docs/INDEX.md, docs/CAPABILITIES.md, tools/e2e/scripts/, tools/e2e/tests/, .claude/hooks/, app/src-tauri/src/agent/kit.rs, app/src-tauri/src/dispatch/brief.rs, app/src-tauri/src/lib.rs]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
