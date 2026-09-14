@@ -6,7 +6,7 @@ milestone: 4
 size: M
 tier: guarded
 priority: 2
-status: building
+status: verifying
 suggested_by: "the architect seat on 2026-09-14, splitting T-319 under the orchestrator's sizing rule after the Codex orchestrator's pre-dispatch review named the owning files"
 blocked_by: [T-319]
 touches: [method/roles/orchestrator.md, method/runtime/process-schema.yaml, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/scripts/run-record.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/run-record.spec.ts, docs/CONVENTIONS.md, tools/e2e/tests/cli.spec.ts, docs/reference/15-settings.md, tools/e2e/tests/brief-flush.spec.ts]
