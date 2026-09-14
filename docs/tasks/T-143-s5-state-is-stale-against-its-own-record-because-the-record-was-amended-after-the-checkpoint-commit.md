@@ -251,3 +251,223 @@ is unchanged by this diff: its Capabilities line names spec-file slugs,
 not body names, and no spec file was added.
 
 ## Verdicts
+
+### 2026-09-14 — APPROVED — claude-opus-5@subagent
+
+Phase 2 of the guarded two-spawn bench, on a bench worktree detached at
+the lane tip `1afebfd897cd6dad76d66a0220bc4946d2c3af3a` over the base
+`767a68fff1f4b69bb8e83b0012acb727279e2613`. The diff and both spec files
+were read BEFORE the executor's report, which is a step-5 file and was
+opened last. The sealed inputs, re-hashed on this bench before anything
+else was read, and both matched:
+
+    sha256:6311c74014653760d3b67ef5e7740f7c05ac82fe983ad9bc41db41188aa8e26d  the attack set
+    sha256:cf5be7283a78523067061a39629d69efc8f80da6b0566dc125abce41573ac1c1  the ground at the base
+    sha256:3f24d1f4c4d80adf755c8853c77b744d553cc07686c5d617ee1e7a26254a3e8c  the card at the base
+
+The ground's addendum carries the seat's answers to phase 1's asks M1 to
+M12. Its own note stands and is not worked around: THE WHOLE-SUITE
+PASS/FAIL WAS NOT TAKEN AT THE BASE, so there is no base battery figure
+to delta against and none is inferred here. The base's body COUNT is
+known — 1129 in 41 files — and that is what the tip is read against.
+
+#### The change, from the diff
+
+`staleStateRecords` in `tools/e2e/scripts/docs-scan.mjs` — the one helper
+`docs-gate.mjs` and `push-checks.mjs` both consume — replaces its single
+`git log -1 --format=%ct` per record with the same call carrying
+`--diff-filter=A`, the spelling exported as `RECORD_CREATED_FILTER`, and
+falls back with `??` to the old latest-touch reading when git names no
+creating commit. The comparison operator is untouched, so the
+same-commit tie still passes. Both consumers keep only their report.
+The rule is argued once in `method/docs-protocol.md` rule 4, operated by
+`docs/STATE-template.md` (which cites rule 4 rather than re-arguing it)
+and carried in the generated `docs/STATE.md`'s own contract sentence.
+
+#### The criteria, one row each
+
+| # | criterion | verdict | evidence |
+|---|---|---|---|
+| 1 | the derivation compares against the CREATING commit, in the one shared helper, pinned in both named spec files with the controls poisoned both ways and each run where the arrangement is absent | **MET** | 7 added bodies, all green at the tip; my drills D1 to D5; the CLI table below |
+| 2 | the governing text says the new rule once, the retired retouch requirement stands nowhere, and the conduct half is said and marked unenforced | **MET** | rule 4 read against the code; the tree-wide absence check against the sealed M6 inventory; drill D1 of the executor's own set |
+| 3 | the recurring administrative commit is removed without weakening the new-checkpoint requirement, and a body shows the slip still refused | **MET** | the two historical refs re-measured with the tip's scripts, with the base-script control in the same clone |
+
+**Criterion 1.** The change is AT the site the criterion names. I read
+both reporting loops and neither carries a derivation, so the amnesty was
+not smuggled into a consumer. The two consumers are asserted over the
+SAME arrangements, passing and poisoned: `push-checks.spec.ts` calls
+`staleStateRecords` and `staleState` over one tree in each new body,
+which is more than the pre-existing shared-implementation body did. The
+two spec files build their histories with two INDEPENDENT builders, so no
+single patched builder decides both answers — and drill D5 demonstrates
+that independence rather than asserting it. Poisoned both ways, and a
+fourth way the card does not name: an append on a record CREATED without
+its regeneration still reds BY NAME in both files. That arrangement is
+the blanket-amnesty escape, the one a derivation could take to satisfy
+"an amended record passes" while re-opening the original slip, and the
+executor built it without being asked to.
+
+At CLI level, over real trees rather than fixtures, using the invocation
+the card's own opening section used — `node tools/e2e/scripts/docs-gate.mjs
+app/src/main.tsx` from a repository root, in a clone whose source was
+this bench, so no other checkout was read:
+
+| arrangement | TIP scripts | BASE scripts, same tree — the arming control |
+|---|---|---|
+| an append to a record checkpointed WITH its regeneration | exit **0**, no finding | exit **1**, `STALE against 1 newer checkpoint record(s)`, named |
+| a NEW record committed alone | exit **1**, named, in the new wording | exit **1** |
+
+The control differs in the DERIVATION and not in the fixture, which is
+what makes it a control. One caution for whoever repeats it: my first
+attempt built its commits without explicit dates, all three landed inside
+one second, and the tie swallowed the arrangement — the very reason both
+new fixtures set `GIT_AUTHOR_DATE` and `GIT_COMMITTER_DATE` a minute
+apart and say so in a comment.
+
+**Criterion 2.** Rule 4 argues the rule and marks the conduct half
+unenforced in as many words — "a rule of CONDUCT, kept by the integrator
+and not by a program, because no gate can tell which appended line
+changed the state of the world" — and no body claims to test it, which is
+correct. The template matters more than the other two sites and the diff
+treats it that way: `docs/STATE-template.md` GENERATES `docs/STATE.md`,
+and its contract slot now instructs the regenerated paragraph to carry
+the creation half, so the retired requirement cannot come back at the
+next checkpoint. I ran the tree-wide absence check against the M6
+inventory sealed at the base rather than against a string chosen after
+the diff: every surviving `re-touch` or `retouch` hit is one of a
+DIFFERENT rule about a different page (`docs/VERSIONS.md` and
+`docs/rooms/version-planning.md`, on the version sitting), an append-only
+checkpoint record, this card's own quoted history, or the spec that
+enforces the absence. The old gate sentence survives tree-wide in
+exactly one place: this card's verbatim quotation of what it measured,
+which is a record.
+
+**Criterion 3.** The referent is historical, so I measured it rather than
+accepted it. One clone, the two refs the card names, the scripts swapped
+and nothing else:
+
+| ref | BASE scripts | TIP scripts |
+|---|---|---|
+| `4d3dd8f`, the card's measured red | `STALE against 1 newer checkpoint record(s)`, `2026-08-30-T-162.md` | the state-stale line is **absent** |
+| `a23b1a4`, the second sighting | `STALE against 1 newer checkpoint record(s)`, `2026-08-30-T-135.md` | the state-stale line is **absent** |
+
+Both refs still exit 1 under the tip's scripts for `docs/INDEX.md`, which
+is the ADR-024 anachronism the ground's M2 predicted: that check
+postdates both refs and is not this finding. So both instances the card
+priced stop firing, and the commit whose only content was a clock is not
+owed again. The other half of the criterion — the requirement is not
+weakened — is the CLI table above, a body in each spec file, and drills
+D1 and D4.
+
+#### The kill set — five mutants, mine, each at the site the property lives
+
+| # | the mutant | what redded | passed beside it |
+|---|---|---|---|
+| D1 | the derivation reads the record's LATEST TOUCH again | `docs-input-gate.spec.ts:2358`, `push-checks.spec.ts:275`, `:312` | 4 |
+| D2 | the tie reds — `>` becomes `>=` | those two files' tie arrangements AND the PRE-EXISTING `push-checks.spec.ts:179`, five in all | 2 |
+| D3 | the fallback removed, so an undatable record goes silent | `docs-input-gate.spec.ts:2467` and NOTHING ELSE | 6 |
+| D4 | THE BLANKET AMNESTY — any record with more than one commit waved through | `docs-input-gate.spec.ts:2358`, `push-checks.spec.ts:275` | 5 |
+| D5 | a DATA mutant: the push-checks fixture's working-tree `edit` starts committing, so no uncommitted state is left to observe | three push-checks bodies including `:335` — and the docs-input-gate bodies stayed GREEN, which is the right answer, because that file builds its own history | 4 |
+
+Every run executed bodies, so no red is a red over nothing. Every
+restore is proved: `tools/e2e/scripts/docs-scan.mjs` hashes
+`2491f46a94cab75cad9105cdd03206fa83b27f0335808f4b8794120c8e950638`
+before D1 and after every restore — the same value the executor recorded
+for its own drills, so the drilled tree and the graded tree are one tree —
+and `tools/e2e/tests/push-checks.spec.ts` hashes
+`817516db0ba027506b0521dc96a196c17ac75679ebd126baec0405e5ff3ca187`.
+The worktree was clean after each.
+
+D3's containment is the reading worth keeping: ONE body, and it is the
+one whose fixture builds the arrangement. D4 is the attack set's headline
+and it dies in both files.
+
+#### What I checked that no criterion asks for
+
+- **The fallback is reachable, and it is the suspicious direction.**
+  Reproduced independently on git 2.50.1: a record added ONLY in a merge
+  commit has no add-filtered answer at all, so the branch is real and not
+  decoration, and it falls back to the reading that reds MORE. Fail
+  closed, which is the stronger of the two dispositions phase 1 would
+  have accepted.
+- **A rename does not move the answer.** The add filter names a rename
+  commit as the new path's add, which is also that path's latest touch,
+  so both readings agree. No record in the live tree has been renamed.
+- **A shallow clone is equally blind under BOTH readings.** At depth 1
+  every path's only commit is the graft, so the record ties with the
+  state document and nothing is reported — true at the base too. Not a
+  blindness this card opened.
+- **The cost went DOWN, and the ground is why that is checkable.** M12
+  measured the base derivation at 4.00 / 4.03 / 4.39 s over 89 records and
+  priced a second spawn per record at plus 4.5 to 6 s. There is no second
+  spawn: the fallback is a `??` and fires only where the first call came
+  back empty, which is 0 records here. Measured at this tip while an e2e
+  leg was running: 3327 / 3661 / 3473 ms. The regression the ground
+  priced did not happen.
+- **The card's figures reproduce exactly.** At the base, derived here:
+  89 records, 8 whose creating commit differs from their latest touch,
+  and the stale set EMPTY under both readings. So the change moves no
+  answer on the live tree, which is the executor's stated reason for
+  building every arrangement in a fixture, and it is true.
+- **Security.** `execFileSync` with an argv array and no shell; every
+  record basename is passed after `--`, so a leading dash, a semicolon or
+  a newline in a filename is an argument and not syntax. No record's
+  CONTENT is read, no cache is introduced, no new file is written.
+- **Bookkeeping.** The card's earlier dispositions, its `closed_by:` line
+  and the ruling are untouched; the diff appends only under
+  `## Implementation notes`, which is what the card's own "nothing above
+  is rewritten" requires. The preflight answers exit 0 over 0 findings for
+  this card and for both cards the lane filed.
+
+#### Residuals — named, not approved away
+
+1. **`method/docs-protocol.md` contradicts itself about whether a record
+   may be amended at all.** Law 4 now reads "Records are APPEND-ONLY
+   rather than write-once (law 3)", while law 3's own closing clause says
+   a record "is written once and never edited", and
+   `docs/checkpoints/TEMPLATE.md` repeats that formula. The contradiction
+   PREDATES the diff — the ground's M10 flagged it at the base — but law 4
+   now argues FROM it, so a reader who follows the citation reads the
+   opposite of what cited it. Resolving it is a method ruling and not
+   this card's, whose second criterion reaches three named passages and
+   the retouch requirement. Filed as T-143-s9.
+2. **A merge-added record still owes the clock commit.** For the shape
+   the fallback covers, the governing text's promise is not what the gate
+   does. It errs toward red, it is argued in the helper's own comment and
+   on the card, and it is 0 records on this tree. Left there: a
+   git-traversal caveat does not belong in a method law.
+3. **The lane holds `docs/STATE.md`, at 8458 bytes against a warn line of
+   8465.** Seven bytes of headroom. The template edit is the right
+   mitigation, because a regeneration landing before this merge
+   reproduces the new sentence rather than the retired one — but a
+   checkpoint between now and the merge collides on this file, and the
+   regenerated paragraph has to fit.
+4. **A code-only path list still loses its zero to a whole-tree finding,
+   and the bodies that red name neither.** Unchanged here, and correctly
+   so: this card scopes to WHICH commit is read. The lane filed T-143-s7
+   rather than widening. I measured the property intact — a code-only
+   path list over a tree carrying a genuine slip is exit 1 and names the
+   record.
+
+#### Suites, each with the ref it ran at
+
+The whole battery at the tip I was sent, `1afebfd897cd6dad76d66a0220bc4946d2c3af3a`,
+one run, `gate-run.mjs parser app rust e2e` exit **0**:
+
+    parser  exit 0  454 bodies   1 target   GREEN
+    app     exit 0  1171 bodies  1 target   GREEN
+    rust    exit 0  655 bodies   18 targets GREEN
+    e2e     exit 0  1136 bodies  1 target   GREEN
+
+1136 against the base's 1129 is the 7 added bodies and nothing else. The
+graph answers CURRENT at this tip — 1228940 bytes, 203 files, 2626
+symbols, 2505 edges — as expected, since the indexed set carries neither
+`tools/e2e/` nor `method/` nor `docs/`. The census is STALE at this tip
+BY CONSTRUCTION and is not regenerated on a bench: committed 105999
+bytes against a fresh generation of 106689, which is the 7 new body names
+the merge's own `npm run capabilities` writes, exactly as the lane's
+notes say it owes.
+
+The step-7 readings at my OWN tip — the verdict commit — are in the
+postscript below, because a figure measured at the commit I was sent is
+stale at the tip my verdict creates.
