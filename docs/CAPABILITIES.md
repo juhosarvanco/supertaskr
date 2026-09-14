@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1160 behaviours** — 1158 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1163 behaviours** — 1161 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -583,6 +583,9 @@ Census: **1160 behaviours** — 1158 extracted sentences + 2 named-not-extracted
 - a chapter that stops carrying a bullet the index points at is a hard failure, never a rule that quietly left the document
 - docs/INDEX.md carries one generated line per chapter the index points at
 - the index and its chapters are pinned BOTH WAYS — a pointer with no file, and a chapter with no pointer
+- the model-free eval suite's fixture root plants every file this project's conventions are made of
+- the model-free eval suite reads this project's conventions as the index AND its chapters
+- the seat pack's host-command check resolves every command it publishes against this project's conventions
 
 ## front-door
 
