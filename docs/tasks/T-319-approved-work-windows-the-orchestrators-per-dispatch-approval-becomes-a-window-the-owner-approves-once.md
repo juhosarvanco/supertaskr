@@ -6,7 +6,7 @@ milestone: 4
 size: M
 tier: guarded
 priority: 2
-status: building
+status: verifying
 suggested_by: "the architect seat on 2026-09-13, from the Codex orchestrator's lean-delivery plan v2 and its reconciliation review of the same day, filed on the owner's ruling; filing authorizes no development"
 blocked_by: []
 touches: [method/runtime/process-schema.yaml, method/runtime/supertaskr.yaml, lib/parser/src/process-settings.ts, lib/parser/src/pure.ts, lib/parser/test/process-settings.test.ts, tools/e2e/scripts/settings.mjs, tools/e2e/tests/cli.spec.ts, docs/reference/15-settings.md, docs/CONVENTIONS.md]
