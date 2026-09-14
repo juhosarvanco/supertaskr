@@ -1267,8 +1267,12 @@ export function drillSteps(input) {
       // was reachable only inside `read.blocks.length === 0`. Reading the
       // shortfall per correction makes it reachable WITH blocks present,
       // where returning this one step leaves every committed body
-      // undrilled — the one thing this step exists to stop.
-      if (!nothingRead) {
+      // undrilled — the one thing this step exists to stop. THE GUARD IS
+      // BLOCKS PRESENT, as the refusal below says: a verdict carrying none —
+      // enumerable corrections or not — is the pre-rule shape the flag exists
+      // to acknowledge (the integrator's correction at the merge, 2026-09-14;
+      // cli.spec.ts's acknowledgement body red at the closing check).
+      if (read.blocks.length !== 0) {
         return refuse(
           "--blocks-absent acknowledges a verdict that carries NO mutant block at all, and " +
             `this one carries ${String(read.blocks.length)}: the bodies it DOES carry are ` +

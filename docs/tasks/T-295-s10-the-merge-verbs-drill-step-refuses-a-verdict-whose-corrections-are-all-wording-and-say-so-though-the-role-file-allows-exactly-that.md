@@ -690,3 +690,7 @@ against 101583 — a card carries no test name, so the census figure is
 unmoved by it. The four suite legs cannot move for a card either: no code
 path reads `docs/tasks/T-295-s13-*`, and the board reader that does is
 the docs gate above.
+
+#### Integrator correction of 2026-09-14, at the merge (the architect seat, after the closing check)
+
+Correction 1's guard as committed on the bench read `!nothingRead`, which refused a verdict that carries no block at all when its corrections are enumerable — the pre-rule shape the acknowledgement flag exists to reach — and the standing body in tools/e2e/tests/cli.spec.ts (a verdict written before the rule is acknowledged by naming its own sha) went red at the closing check of the merge f5789df2; the verifier's battery at its own tip ran without the code corrections applied, so the red could not show there. The guard now reads blocks present (`read.blocks.length !== 0`), which is what the correction's own refusal message says and what T-295-s13 describes; pinned on both sides by the standing body and by the verifier's body 1 (102 passed over the two specs at the corrected tree). One token and its comment, named in the commit; every other line of the file is the bench tip's two blocks and the wording correction.
