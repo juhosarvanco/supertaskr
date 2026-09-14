@@ -2690,11 +2690,194 @@ export function staleStateRecords(root = repoRoot) {
   return stale.sort();
 }
 
-/** docs/CONVENTIONS.md, read off the tree. The gate's own doc is a
- *  first-party text file like any other; reading it is what lets the
- *  bullet below be CHECKED against the derivation instead of trusted. */
+/** The index — the document that carries the openers and the pointers. */
+export const CONVENTIONS_DOC = "docs/CONVENTIONS.md";
+/** Where the chapters the index points at live (T-290, ADR-023). */
+export const CONVENTIONS_DIR = "docs/conventions";
+
+/**
+ * One line of the index's pointer list: a chapter file and the OPENER of
+ * the bullet that lives in it, in the document's own order.
+ *
+ * The opener is the bullet's own first line with its `- ` removed, so the
+ * index quotes the document rather than summarising it, and the splice
+ * below CHECKS every pointer against the bullet it names instead of
+ * trusting the pair.
+ */
+export const CONVENTIONS_POINTER = /^ {2}- (docs\/conventions\/[a-z0-9-]+\.md) — (.*)$/;
+
+/** docs/CONVENTIONS.md ALONE, index and pointers, exactly as it sits on
+ *  the tree. This is what the method stamp is read out of and what the
+ *  byte budget measures; a reader after a RULE wants `conventionsText`. */
+export function conventionsIndexText(root = repoRoot) {
+  return readFileSync(path.join(root, CONVENTIONS_DOC), "utf8");
+}
+
+/**
+ * The chapters the index names, in the order it names them, each with
+ * the opener it published for that bullet. Derived from the index — never
+ * a list here — so a chapter added, renamed or emptied is seen on the day
+ * the index says so.
+ *
+ * @param {string} indexMd
+ * @returns {{ file: string, opener: string }[]}
+ */
+export function conventionsPointers(indexMd) {
+  /** @type {{ file: string, opener: string }[]} */
+  const out = [];
+  for (const line of indexMd.split("\n")) {
+    const m = CONVENTIONS_POINTER.exec(line);
+    if (m !== null) out.push({ file: /** @type {string} */ (m[1]), opener: /** @type {string} */ (m[2]) });
+  }
+  return out;
+}
+
+/**
+ * EVERY FILE THIS PROJECT'S CONVENTIONS ARE MADE OF — the index and the
+ * chapters it points at, in the index's own order.
+ *
+ * IT EXISTS FOR THE FIXTURES (T-290). Five of them plant
+ * `docs/CONVENTIONS.md` into a scratch repository so a body reads the
+ * spellings this project publishes rather than a hand-written stand-in;
+ * after the split, planting that path alone plants a TABLE OF CONTENTS
+ * and the splice refuses. A list of chapter names in each fixture would
+ * go stale the day a chapter is added, so the set is DERIVED here and
+ * every fixture spends this one function.
+ *
+ * @param {string} [root]
+ * @returns {string[]}
+ */
+export function conventionsFiles(root = repoRoot) {
+  return [CONVENTIONS_DOC, ...conventionsChapters(conventionsIndexText(root))];
+}
+
+/** The chapter files the index names, deduplicated, in first-named order.
+ *
+ * @param {string} indexMd
+ * @returns {string[]}
+ */
+export function conventionsChapters(indexMd) {
+  /** @type {string[]} */
+  const out = [];
+  for (const p of conventionsPointers(indexMd)) if (!out.includes(p.file)) out.push(p.file);
+  return out;
+}
+
+/**
+ * THIS PROJECT'S RULES AS ONE TEXT — the index with every pointer line
+ * replaced by the bullet it points at, in the index's own order.
+ *
+ * T-290 split docs/CONVENTIONS.md into the chapters under
+ * docs/conventions/ and left the index behind. THIS FUNCTION IS WHY THAT
+ * SPLIT DID NOT BREAK A SINGLE READER: every caller — `conventionsBullet`
+ * below, `laneSpellings`, `bulletByOpening`, the workflow parity census,
+ * the range rule's gate triggers, the CLI's command derivation — asks for
+ * a RULE, and a rule is found wherever it now lives. The document a
+ * reader sees is the document it always saw.
+ *
+ * AND THE SPLICE IS CHECKED, NEVER TRUSTED. The index publishes each
+ * bullet's opener verbatim; the bullet pulled out of the chapter must
+ * OPEN with exactly that line, in the chapter's own order. A pointer
+ * whose chapter no longer carries its bullet is a hard failure here
+ * rather than a rule that silently stopped being in the document — the
+ * same refusal `conventionsBullet` makes, for the same reason: a
+ * derivation that expects nothing is worse than one that is wrong,
+ * because nothing points at it.
+ *
+ * A bullet the index carries IN PLACE — the method stamp's own paragraph,
+ * which stays in this file because programs read that sentence out of
+ * this path by name — is copied through untouched, like every other
+ * non-pointer line.
+ *
+ * @param {string} [root]
+ * @returns {string}
+ */
 export function conventionsText(root = repoRoot) {
-  return readFileSync(path.join(root, "docs/CONVENTIONS.md"), "utf8");
+  // **THE TWO PATHS ARE SPELLED HERE AND NOT BORROWED, AND THE DOCS GATE
+  // IS WHY.** The reader derivation follows ONE call hop, so a function
+  // that reads its documents through a second one is invisible to it —
+  // measured on this very change: routing this read through
+  // `conventionsIndexText` took merge, run-record, lane-fence, gate-run
+  // and workflow-parity out of the gate's reader set in silence, and the
+  // gate's own unlinked-sites report is what said so. A rule that stops
+  // firing is worse than one that is wrong.
+  const indexMd = readFileSync(path.join(root, "docs/CONVENTIONS.md"), "utf8");
+  /** @type {Map<string, string[]>} */
+  const queued = new Map();
+  for (const file of conventionsChapters(indexMd)) {
+    const at = path.join(root, "docs/conventions", path.basename(file));
+    // **A CHAPTER THE INDEX POINTS AT AND NOBODY CAN OPEN IS NAMED**, not
+    // an ENOENT from inside a reader three call hops away. The failure
+    // this refusal is written from is a FIXTURE that planted the index
+    // and not its chapters (T-290): the raw error named a temporary
+    // directory and no reader of it could tell whether the tree or the
+    // fixture was wrong.
+    if (!existsSync(at)) {
+      throw new Error(
+        `docs-scan: ${CONVENTIONS_DOC} points at ${file} and no file sits there. This project's ` +
+          "conventions are an INDEX and its chapters; a tree or a fixture carrying only the index " +
+          `carries a table of contents. Plant every path \`conventionsFiles()\` returns.`,
+      );
+    }
+    const text = readFileSync(at, "utf8");
+    queued.set(
+      file,
+      text
+        .split(/\n(?=- )/)
+        .filter((b) => b.startsWith("- "))
+        .map((b) => b.replace(/\n+$/, "")),
+    );
+  }
+  /** @type {string[]} */
+  const out = [];
+  for (const line of indexMd.split("\n")) {
+    const m = CONVENTIONS_POINTER.exec(line);
+    if (m === null) {
+      out.push(line);
+      continue;
+    }
+    const file = /** @type {string} */ (m[1]);
+    const opener = /** @type {string} */ (m[2]);
+    const rest = queued.get(file) ?? [];
+    const bullet = rest.shift();
+    if (bullet === undefined || bullet.split("\n")[0] !== `- ${opener}`) {
+      throw new Error(
+        `docs-scan: ${CONVENTIONS_DOC} points at ${file} for a bullet opening ` +
+          `${JSON.stringify(opener)} and that chapter's next bullet is ` +
+          `${bullet === undefined ? "nothing at all" : JSON.stringify(bullet.split("\n")[0]?.slice(2))} — ` +
+          "the index publishes every opener VERBATIM and in the chapter's own order, so a " +
+          "pointer that no longer names its bullet is a hard failure here rather than a rule " +
+          "that quietly left the document.",
+      );
+    }
+    out.push(bullet, "");
+  }
+  const spliced = out.join("\n").replace(/\n{3,}/g, "\n\n");
+  // **AND THE OTHER DIRECTION: A CHAPTER NO POINTER NAMES IS INVISIBLE.**
+  // The refusals below catch a pointer whose chapter lost its bullet and a
+  // pointer whose chapter cannot be opened; neither sees a chapter FILE
+  // that the index never mentions, whose rules would then be in the tree
+  // and in no reader's document. The index claims this is refused, so it
+  // is refused here (T-290, the seat's amendment of 2026-09-14).
+  const named = new Set(conventionsChapters(indexMd).map((f) => path.basename(f)));
+  for (const entry of readdirSync(path.join(root, CONVENTIONS_DIR))) {
+    if (!entry.endsWith(".md") || entry === "README.md" || named.has(entry)) continue;
+    throw new Error(
+      `docs-scan: ${CONVENTIONS_DIR}/${entry} is a chapter ${CONVENTIONS_DOC} points at nowhere. ` +
+        "The index is the only map of this project's rules, so a chapter it does not name is a " +
+        "file whose rules no reader assembles — add its pointer lines, or the file is not a " +
+        "chapter and belongs under another name.",
+    );
+  }
+  for (const [file, rest] of queued) {
+    if (rest.length === 0) continue;
+    throw new Error(
+      `docs-scan: ${file} carries ${String(rest.length)} bullet(s) ${CONVENTIONS_DOC} does not ` +
+        `point at, beginning ${JSON.stringify(rest[0]?.split("\n")[0]?.slice(2))} — a rule the ` +
+        "index does not name is a rule no reader of this project can find.",
+    );
+  }
+  return spliced;
 }
 
 /**
@@ -2763,12 +2946,43 @@ export const DOC_BUDGETS = Object.freeze({
   // and 2026-08-29 landings used.
   "docs/ROADMAP.md": { landed: 9801, warn: 12252, fail: 14702 },
   "docs/ARCHITECTURE.md": { landed: 8525, warn: 10657, fail: 12788 },
-  // RE-LANDED 2026-09-02 (T-236, ADR-019 addendum 6). CONVENTIONS only:
-  // `git cat-file -s d01b24f:docs/CONVENTIONS.md` = 117502, warn =
-  // ceil(landed + max(F, landed x 0.25)) with F = 2053 (addendum 5 — the
-  // floor binds only below 4F, so here it is ceil(landed x 1.25)), fail =
-  // ceil(landed x 1.5), the same rounding every landing has used.
-  "docs/CONVENTIONS.md": { landed: 117502, warn: 146878, fail: 176253 },
+  // RE-LANDED 2026-09-14 (T-290, ADR-023 — the addendum to ADR-019 is the
+  // OWNER'S to write and is proposed with these rows). CONVENTIONS is an
+  // INDEX now and its rules are the chapters under docs/conventions/, so
+  // the document that carried one budget carries TWELVE: the index at its
+  // own size, and one row per chapter. Every `landed` is `wc -c` at this
+  // landing commit.
+  //
+  // ONE FORMULA FOR EVERY SIZE, as the owner approved on 2026-09-14:
+  // `warn = ceil(landed + max(F, landed x 0.25))` and
+  // `fail = ceil(max(landed x 1.5, warn + F))`. So a file under 4F lands
+  // with fail exactly F above warn, and warn can never cross fail — the
+  // small-file case addendum 5 left to a reader's judgement.
+  //
+  // `F` = 1733 BYTES, RE-DERIVED AT THIS LANDING by addendum 5's own
+  // rule — the mean of the POSITIVE first-parent deltas of the smallest
+  // governed document — beside the standing 2053 it replaces for these
+  // rows. At this tree docs/STATE.md is still the smallest governed
+  // document (177 positive deltas of 262 changes, mean 1732.65, median
+  // 581, max 12039); the chapters landed here have no history yet and so
+  // cannot be the derivation's subject at the commit that creates them.
+  // The standing value is stated rather than silently replaced because a
+  // figure that moved is news: F fell from 2053 to 1733 as STATE's own
+  // growth distribution filled in over another two weeks of merges, and
+  // the rows below are the first to be landed against the new one. The
+  // four rows above KEEP their lines, as the ruling says.
+  "docs/CONVENTIONS.md": { landed: 13544, warn: 16930, fail: 20316 },
+  "docs/conventions/app-and-ui.md": { landed: 6331, warn: 8064, fail: 9797 },
+  "docs/conventions/architecture.md": { landed: 14613, warn: 18267, fail: 21920 },
+  "docs/conventions/commands.md": { landed: 18566, warn: 23208, fail: 27849 },
+  "docs/conventions/dispatch-and-scratch.md": { landed: 8080, warn: 10100, fail: 12120 },
+  "docs/conventions/gates-and-the-push.md": { landed: 10971, warn: 13714, fail: 16457 },
+  "docs/conventions/lanes.md": { landed: 21524, warn: 26905, fail: 32286 },
+  "docs/conventions/merging.md": { landed: 23347, warn: 29184, fail: 35021 },
+  "docs/conventions/records-and-rooms.md": { landed: 22030, warn: 27538, fail: 33045 },
+  "docs/conventions/shell-and-scripts.md": { landed: 5943, warn: 7676, fail: 9409 },
+  "docs/conventions/standing-gates.md": { landed: 14850, warn: 18563, fail: 22275 },
+  "docs/conventions/verification.md": { landed: 11154, warn: 13943, fail: 16731 },
 });
 
 /** Every live task card as a `{path, content}` entry, read off the tree
@@ -2986,6 +3200,37 @@ export function indexLine(rel, text) {
 }
 
 /**
+ * One CHAPTER's index line.
+ *
+ * The same shape as `indexLine` with one difference that matters: a
+ * chapter has no `## ` sections and every one of them would otherwise
+ * say "it has no sections — read it whole", which tells a reader
+ * nothing. What a chapter has instead is RULES, so the line opens it at
+ * the shouted names of the bullets it holds — read off the chapter, never
+ * listed, so a bullet that moves between chapters moves its name here in
+ * the same commit.
+ *
+ * @param {string} rel
+ * @param {string} text
+ * @returns {string}
+ */
+export function chapterIndexLine(rel, text) {
+  const { heading, contract } = docOpener(text, rel);
+  const said = /[.!?]$/.test(contract) ? contract : `${contract}.`;
+  const names = text
+    .split(/\n(?=- )/)
+    .filter((b) => b.startsWith("- "))
+    .map((b) => {
+      const flat = b.replace(/\s+/g, " ").slice(2);
+      const bolded = /^\*\*([^*]+)\*\*/.exec(flat);
+      const name = (bolded !== null ? bolded[1] : flat.split(/ — | \(|: /)[0]) ?? "";
+      return name.replace(/[,:.\s]+$/, "").trim();
+    })
+    .filter((n) => n !== "");
+  return `- **${heading}** (\`${rel}\`) — ${said} **Open it at:** ${indexWhere(names)}`;
+}
+
+/**
  * The whole of docs/INDEX.md.
  *
  * DETERMINISTIC — no timestamp, the documents in the ruling's own order,
@@ -3028,6 +3273,23 @@ export function renderDocsIndex(root = repoRoot) {
   ];
   for (const rel of INDEXED_DOCS) {
     out.push(indexLine(rel, readFileSync(path.join(root, rel), "utf8")));
+    if (rel !== CONVENTIONS_DOC) continue;
+    // THE CHAPTERS, ONE GENERATED LINE EACH (T-290, ADR-023). The
+    // conventions are an INDEX now, so a reader sent to that document
+    // alone is sent to a table of contents; the chapters are named here,
+    // nested under it, and DERIVED FROM THE INDEX'S OWN POINTERS — a
+    // chapter the index does not point at gets no line, and a line here
+    // for a file nothing points at is impossible by construction.
+    //
+    // THEY ARE NOT IN `INDEXED_DOCS`, DELIBERATELY: that constant is the
+    // four documents ADR-024 decision 2 NAMES, checked against the
+    // decision's own sentence by `ruledIndexedDocs`, and a chapter added
+    // to it would be this project quietly editing a ruling to fit a
+    // refactor. The standing read is still four documents; what the
+    // index gained is the map of where a rule inside one of them lives.
+    for (const chapter of conventionsChapters(conventionsIndexText(root))) {
+      out.push(`  ${chapterIndexLine(chapter, readFileSync(path.join(root, chapter), "utf8"))}`);
+    }
   }
   out.push("");
   return out.join("\n");

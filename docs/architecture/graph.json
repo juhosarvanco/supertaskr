@@ -4950,7 +4950,7 @@
       "id": "f:app/src-tauri/src/agent/kit.rs",
       "path": "app/src-tauri/src/agent/kit.rs",
       "lang": "rust",
-      "hash": "blake3:e35b52afca2cd9e1b420aed1109aeddf65b5aef5f81f9d54d9a622396bf9e03e",
+      "hash": "blake3:24db86b96d6bc6dab5a4ebe214972e9ba7e1450217bdf48e31886159523a9d23",
       "loc": 1175,
       "symbols": [
         {
@@ -7482,8 +7482,8 @@
       "id": "f:app/src-tauri/src/dispatch/brief.rs",
       "path": "app/src-tauri/src/dispatch/brief.rs",
       "lang": "rust",
-      "hash": "blake3:2734388fa11c52ca600aca2c5b3bc05d61ce865135d64c0fb33f902afdc2976a",
-      "loc": 3634,
+      "hash": "blake3:4ae82869175b8e58accd0e63705c320d94c82564fda51ad52bb0e753f7d0eafe",
+      "loc": 3855,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/dispatch/brief.rs#ADAPTER_FILES",
@@ -7541,8 +7541,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            1291,
-            1291
+            1413,
+            1413
           ]
         },
         {
@@ -7563,6 +7563,16 @@
           "range": [
             1149,
             1149
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#CONVENTIONS_CHAPTER_DIR",
+          "name": "CONVENTIONS_CHAPTER_DIR",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            1153,
+            1153
           ]
         },
         {
@@ -7591,8 +7601,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            1418,
-            1421
+            1540,
+            1543
           ]
         },
         {
@@ -7761,8 +7771,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            1721,
-            1721
+            1843,
+            1843
           ]
         },
         {
@@ -7811,8 +7821,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            2025,
-            2048
+            2147,
+            2170
           ]
         },
         {
@@ -7821,8 +7831,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1853,
-            1857
+            1975,
+            1979
           ]
         },
         {
@@ -7831,8 +7841,18 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1762,
-            1784
+            1884,
+            1906
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#chapter_bullets",
+          "name": "chapter_bullets",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1253,
+            1272
           ]
         },
         {
@@ -7841,8 +7861,28 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1503,
-            1505
+            1625,
+            1627
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#conventions_corpus",
+          "name": "conventions_corpus",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1202,
+            1206
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#conventions_pointer",
+          "name": "conventions_pointer",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1169,
+            1182
           ]
         },
         {
@@ -7881,8 +7921,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1454,
-            1464
+            1576,
+            1586
           ]
         },
         {
@@ -7891,8 +7931,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1972,
-            2001
+            2094,
+            2123
           ]
         },
         {
@@ -7901,8 +7941,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1954,
-            1969
+            2076,
+            2091
           ]
         },
         {
@@ -7971,8 +8011,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1508,
-            1520
+            1630,
+            1642
           ]
         },
         {
@@ -7981,8 +8021,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1860,
-            1874
+            1982,
+            1996
           ]
         },
         {
@@ -7991,8 +8031,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1878,
-            1887
+            2000,
+            2009
           ]
         },
         {
@@ -8011,8 +8051,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1467,
-            1474
+            1589,
+            1596
           ]
         },
         {
@@ -8031,8 +8071,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1890,
-            1912
+            2012,
+            2034
           ]
         },
         {
@@ -8041,8 +8081,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            1564,
-            1588
+            1686,
+            1710
           ]
         },
         {
@@ -8091,8 +8131,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1539,
-            1553
+            1661,
+            1675
           ]
         },
         {
@@ -8101,8 +8141,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1801,
-            1819
+            1923,
+            1941
           ]
         },
         {
@@ -8111,8 +8151,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1723,
-            1759
+            1845,
+            1881
           ]
         },
         {
@@ -8121,8 +8161,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1634,
-            1657
+            1756,
+            1779
           ]
         },
         {
@@ -8131,8 +8171,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1293,
-            1414
+            1415,
+            1536
           ]
         },
         {
@@ -8141,8 +8181,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1590,
-            1606
+            1712,
+            1728
           ]
         },
         {
@@ -8151,8 +8191,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1152,
-            1287
+            1274,
+            1409
           ]
         },
         {
@@ -8161,8 +8201,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1659,
-            1717
+            1781,
+            1839
           ]
         },
         {
@@ -8181,8 +8221,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1786,
-            1799
+            1908,
+            1921
           ]
         },
         {
@@ -8201,8 +8241,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1524,
-            1537
+            1646,
+            1659
           ]
         },
         {
@@ -8221,8 +8261,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1915,
-            1935
+            2037,
+            2057
           ]
         },
         {
@@ -8231,8 +8271,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1938,
-            1951
+            2060,
+            2073
           ]
         },
         {
@@ -8241,8 +8281,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1480,
-            1500
+            1602,
+            1622
           ]
         },
         {
@@ -8251,8 +8291,18 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            1428,
-            1451
+            1550,
+            1573
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/brief.rs#splice_conventions",
+          "name": "splice_conventions",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1211,
+            1247
           ]
         },
         {
@@ -8261,8 +8311,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            1613,
-            1632
+            1735,
+            1754
           ]
         },
         {
@@ -8311,8 +8361,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            2055,
-            3634
+            2177,
+            3855
           ]
         },
         {
@@ -8321,8 +8371,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1826,
-            1850
+            1948,
+            1972
           ]
         },
         {
@@ -9435,8 +9485,8 @@
       "id": "f:app/src-tauri/src/lib.rs",
       "path": "app/src-tauri/src/lib.rs",
       "lang": "rust",
-      "hash": "blake3:6ff795821a5038c072175cdaf0ae9d8b21032253790f9bc9b1b61ba8e1cdb95b",
-      "loc": 1375,
+      "hash": "blake3:6cfe13b6b77d7497486358ba61f4b72c16659cc7ef34eb0f5967d8b5473a4eb8",
+      "loc": 1382,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/lib.rs#DispatchBriefOutcome",
@@ -9795,7 +9845,7 @@
           "exported": false,
           "range": [
             930,
-            1375
+            1382
           ]
         }
       ]
@@ -29811,6 +29861,7 @@
         "BTreeMap",
         "Path",
         "PathBuf",
+        "VecDeque",
         "fs"
       ]
     },
@@ -46397,7 +46448,7 @@
   ],
   "stats": {
     "files": 203,
-    "symbols": 2626,
+    "symbols": 2631,
     "edges": 2505
   }
 }

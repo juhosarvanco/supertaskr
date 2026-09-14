@@ -10,6 +10,8 @@ import {
   BYTES_PER_TOKEN,
   CALL_SAMPLES,
   CHECKPOINTS_DIR,
+  CONVENTIONS_DIR,
+  CONVENTIONS_DOC,
   DISPOSITION_RULING,
   DOCS_EXCLUDED_FILES,
   INDEXED_DOCS,
@@ -27,6 +29,9 @@ import {
   adapterNamedDocs,
   callSelftest,
   conventionsBullet,
+  conventionsChapters,
+  conventionsIndexText,
+  conventionsPointers,
   conventionsText,
   docOpener,
   docSections,
@@ -1959,7 +1964,11 @@ test("THE ADVISORY RESIDUAL, NAMED: no exit assertion on this tree can catch a s
  *  a plant can move a document without touching this checkout. */
 function indexRoot(): string {
   const dir = mkdtempSync(path.join(tmpdir(), "docs-index-"));
-  for (const rel of [...INDEXED_DOCS, INDEX_RULING.file]) {
+  // THE CHAPTERS TRAVEL WITH THE INDEX (T-290): one of the four indexed
+  // documents is now an index over docs/conventions/, and the render
+  // derives a line per chapter from it, so a root carrying the index
+  // alone renders nothing and refuses.
+  for (const rel of [...INDEXED_DOCS, INDEX_RULING.file, ...conventionsChapters(conventionsIndexText())]) {
     const dest = path.join(dir, rel);
     mkdirSync(path.dirname(dest), { recursive: true });
     writeFileSync(dest, readFileSync(path.join(repoRoot, rel), "utf8"));
@@ -2599,4 +2608,205 @@ test("the governing text says the CREATION rule and no longer carries the retouc
   } finally {
     rmSync(planted, { recursive: true, force: true });
   }
+});
+
+/* ════════════════════════════════════════════════════════════════════
+ * THE INDEX AND ITS CHAPTERS (T-290, ADR-023)
+ *
+ * docs/CONVENTIONS.md is an index over docs/conventions/, and every
+ * reader of a RULE in this repository reads the two SPLICED. These
+ * bodies are what stops that splice from being a claim: one proves a
+ * rule that moved into a chapter is still found by the opener the packs
+ * address it by, and its CONTROL proves the splice REFUSES rather than
+ * going quiet when a chapter stops carrying a bullet the index
+ * published an opener for.
+ * ════════════════════════════════════════════════════════════════════ */
+
+test("a rule that moved into a chapter is still found by its opener, and the index alone does not carry it", () => {
+  const index = conventionsIndexText();
+  const spliced = conventionsText();
+  const chapters = conventionsChapters(index);
+  expect(chapters.length, "the index points at no chapter").toBeGreaterThan(1);
+
+  // THE SUBJECT: a bullet whose home is a chapter. Derived from the
+  // index's own pointers rather than named here, so this body cannot go
+  // stale against a bullet that moved between chapters.
+  const pointer = conventionsPointers(index).find((p) => p.opener.startsWith("THE LANE PROTOCOL"));
+  expect(pointer, "the index no longer points at a lane protocol bullet").toBeDefined();
+
+  // FOUND in the spliced document, and found WHOLE: the bullet carries
+  // the spellings the dispatch arm reads out of it.
+  const bullet = String(conventionsBullet(spliced, "THE LANE PROTOCOL"));
+  expect(bullet).toContain("integration branch `");
+
+  // AND THE CONTROL, which is what makes the sentence above mean
+  // anything: the INDEX on its own carries the opener and NOT the rule,
+  // so a reader that forgot to splice gets a refusal rather than a
+  // shorter document that looks complete.
+  expect(index, "the index no longer publishes the opener").toContain(pointer?.opener ?? " ");
+  expect(
+    () => conventionsBullet(index, "integration branch `"),
+    "the index alone answered a rule",
+  ).toThrow();
+});
+
+test("a chapter that stops carrying a bullet the index points at is a hard failure, never a rule that quietly left the document", () => {
+  // A DATA MUTANT, because the property lives in the PAIR of files and
+  // not in a branch: the chapter is rewritten with one bullet gone while
+  // the index still publishes its opener.
+  const fx = mkdtempSync(path.join(tmpdir(), "t290-splice-"));
+  const index = conventionsIndexText();
+  const chapters = conventionsChapters(index);
+  // THE PATHS ARE DERIVED, NEVER TYPED — this project's own rule, and
+  // here it is also what keeps this FILE free of a docs-shaped literal:
+  // the by-name exclusion body two thousand lines above asserts that
+  // this spec holds no docs site and therefore needs no exclusion.
+  mkdirSync(path.join(fx, CONVENTIONS_DIR), { recursive: true });
+  writeFileSync(path.join(fx, CONVENTIONS_DOC), index);
+  for (const rel of chapters) {
+    writeFileSync(path.join(fx, rel), readFileSync(path.join(repoRoot, rel), "utf8"));
+  }
+
+  // THE POSITIVE CONTROL FIRST: copied faithfully, the fixture splices.
+  expect(conventionsText(fx).length, "the untouched copy did not splice").toBeGreaterThan(1000);
+
+  // NOW THE MUTATION: drop the LAST bullet of the first chapter.
+  const victim = String(chapters[0]);
+  const text = readFileSync(path.join(fx, victim), "utf8");
+  const at = text.lastIndexOf("\n- ");
+  expect(at, "the chapter carries no bullet to drop").toBeGreaterThan(0);
+  writeFileSync(path.join(fx, victim), text.slice(0, at + 1));
+  expect(() => conventionsText(fx)).toThrow(/pointed at|hard failure/);
+
+  rmSync(fx, { recursive: true, force: true });
+});
+
+test("docs/INDEX.md carries one generated line per chapter the index points at", () => {
+  const committed = readFileSync(path.join(repoRoot, INDEX_DOC), "utf8");
+  const chapters = conventionsChapters(conventionsIndexText());
+  expect(chapters.length, "no chapter to check").toBeGreaterThan(1);
+  for (const rel of chapters) {
+    expect(committed, `docs/INDEX.md carries no line for ${rel}`).toContain(`\`${rel}\``);
+  }
+  // AND NO MORE THAN THAT: the chapter lines are DERIVED from the
+  // index's pointers, so a line for a file nothing points at would be a
+  // hand-kept row wearing a generated one's clothes.
+  const lines = committed.split("\n").filter((l) => l.startsWith("  - **"));
+  expect(lines.length, "the chapter lines are not one per chapter").toBe(chapters.length);
+});
+
+test("the index and its chapters are pinned BOTH WAYS — a pointer with no file, and a chapter with no pointer", () => {
+  // The seat's amendment of 2026-09-14 asks for both directions, and each
+  // is a DATA mutant because the property lives in the pair of files.
+  const index = conventionsIndexText();
+  const chapters = conventionsChapters(index);
+  const plant = (): string => {
+    const fx = mkdtempSync(path.join(tmpdir(), "t290-bothways-"));
+    mkdirSync(path.join(fx, CONVENTIONS_DIR), { recursive: true });
+    writeFileSync(path.join(fx, CONVENTIONS_DOC), index);
+    for (const rel of chapters) {
+      writeFileSync(path.join(fx, rel), readFileSync(path.join(repoRoot, rel), "utf8"));
+    }
+    return fx;
+  };
+
+  // THE POSITIVE CONTROL — planted faithfully, the pair splices.
+  const control = plant();
+  expect(conventionsText(control).length, "the faithful copy did not splice").toBeGreaterThan(1000);
+  rmSync(control, { recursive: true, force: true });
+
+  // ONE: a pointer whose file is gone.
+  const noFile = plant();
+  rmSync(path.join(noFile, String(chapters[0])));
+  expect(() => conventionsText(noFile)).toThrow(/points at .* and no file sits there/);
+  rmSync(noFile, { recursive: true, force: true });
+
+  // TWO: a chapter file the index names nowhere. It carries a rule, so a
+  // reader that ignored it would assemble a document missing that rule
+  // while the tree looked complete.
+  const noPointer = plant();
+  writeFileSync(
+    path.join(noPointer, path.join(CONVENTIONS_DIR, "unnamed.md")),
+    "# A chapter nothing points at\n\nIts lead.\n\n- A RULE NOBODY CAN FIND, and that is the point.\n",
+  );
+  expect(() => conventionsText(noPointer)).toThrow(/points at nowhere/);
+  rmSync(noPointer, { recursive: true, force: true });
+});
+
+/* ════════════════════════════════════════════════════════════════════
+ * THE READERS OUTSIDE THIS PACKAGE (T-290's verifier)
+ *
+ * The splice above re-points every reader under tools/e2e and every row
+ * of the app's own brief. It does NOT reach the two readers that live
+ * outside both — the model-free eval suite and the seat pack's shipped
+ * host-command check — and each of those resolves a RULE out of
+ * docs/CONVENTIONS.md by path. At the lane's tip both were red while
+ * all four legs were green, which is the whole reason these bodies are
+ * here: a leg that cannot see a reader cannot report it.
+ * ════════════════════════════════════════════════════════════════════ */
+
+test("the model-free eval suite's fixture root plants every file this project's conventions are made of", async () => {
+  const { LIVE_COPY_SET } = await import("../../method-evals/lib/fixture-root.mjs");
+  const wanted = [CONVENTIONS_DOC, ...conventionsChapters(conventionsIndexText())];
+  expect(wanted.length, "the index points at no chapter, so this body measures nothing").toBeGreaterThan(1);
+
+  // THE CONTROL IS THE INDEX ITSELF: it is copied today and always was,
+  // so a body that only checked the index would pass against the very
+  // fixture that carries a table of contents and no rules.
+  const covered = (rel: string): boolean =>
+    (LIVE_COPY_SET as readonly string[]).some((e) => e === rel || rel.startsWith(`${e}/`));
+  expect(covered(String(wanted[0])), "the eval fixture copies no conventions at all").toBe(true);
+  for (const rel of wanted.slice(1)) {
+    expect(
+      covered(rel),
+      `the eval fixture copies nothing that carries ${rel}, so its materialized root is an ` +
+        "index with no chapters and the assembler refuses it",
+    ).toBe(true);
+  }
+});
+
+test("the model-free eval suite reads this project's conventions as the index AND its chapters", async () => {
+  const { conventionsPaths } = await import("../../method-evals/lib/corpus.mjs");
+  const { CITATION } = await import("../../method-evals/evals/mf-09-attack-set-digest-refusal.mjs");
+  const spells = (text: string): boolean =>
+    (CITATION as RegExp).test(text.replace(/\s+/g, " ").replace(/<hex>/g, "0".repeat(64)));
+
+  // THE CONTROL: the index alone does NOT spell the grammar — the bullet
+  // that does moved into a chapter. Without this half, a suite that read
+  // the index alone would satisfy the assertion below.
+  expect(
+    spells(conventionsIndexText()),
+    "the index alone spells the citation grammar, so this body cannot separate the two reads",
+  ).toBe(false);
+
+  const paths = (conventionsPaths as () => string[])();
+  expect(paths, "the eval corpus does not name the index").toContain(CONVENTIONS_DOC);
+  expect(
+    paths.map((rel) => readFileSync(path.join(repoRoot, rel), "utf8")).some(spells),
+    "no file the model-free evals read spells the attack-set citation grammar, so the eval " +
+      "that holds that contract reports it as a grammar nobody documents",
+  ).toBe(true);
+});
+
+test("the seat pack's host-command check resolves every command it publishes against this project's conventions", () => {
+  const script = path.join(repoRoot, "method/skills/supertaskr-seat/scripts/host-command-check.mjs");
+  expect(existsSync(script), "the pack's host-command check is not where this body looks").toBe(true);
+
+  // ITS OWN SELFTEST FIRST — the check's positive control, so a check
+  // that had been softened into always answering 0 fails here rather
+  // than passing the run below.
+  execFileSync(process.execPath, [script, "--selftest"], { stdio: "pipe" });
+
+  let out = "";
+  try {
+    out = execFileSync(process.execPath, [script, "--repo", repoRoot], { encoding: "utf8" });
+  } catch (err) {
+    const e = err as { stdout?: string; stderr?: string };
+    expect(
+      `${e.stdout ?? ""}${e.stderr ?? ""}`,
+      "the pack publishes a command this project's conventions no longer name",
+    ).toBe("");
+  }
+  expect(out, "the check compared no commands, and an exit 0 over zero of them is not a pass")
+    .toMatch(/HOST> commands (\d+) · resolved \1\b/);
 });

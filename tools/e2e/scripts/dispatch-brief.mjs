@@ -2600,7 +2600,7 @@ function deriveCommands(ctx) {
       recs.push(
         value(
           `from ${pkg.dir}/: ${cmd}`,
-          tree(ctx, "docs/CONVENTIONS.md Build and test, verbatim"),
+          tree(ctx, "docs/conventions/commands.md Build and test, verbatim"),
         ),
       );
     }
@@ -2751,7 +2751,7 @@ function deriveProhibitions(ctx) {
   const recs = [
     value(
       `the human's app holds port ${port}; the ONE permitted command is ${spelling}`,
-      tree(ctx, "docs/CONVENTIONS.md PORT RULE bullet"),
+      tree(ctx, "docs/conventions/dispatch-and-scratch.md PORT RULE bullet"),
     ),
     // RULE FOUR IS CITED RATHER THAN TRANSCRIBED (T-225-s2, taking
     // `T-215-s4`) — 13,078 bytes at `09526da`, in EVERY `--task` arm and

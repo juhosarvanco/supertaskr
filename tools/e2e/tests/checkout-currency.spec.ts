@@ -45,6 +45,7 @@ import {
 } from "../scripts/checkout-currency.mjs";
 import { INDEX_CRATE_MANIFEST_REL_PATH } from "../../../.claude/hooks/push-guard.mjs";
 import { RUNTIME_DIR_IGNORE } from "../../../.claude/hooks/lane-fence.mjs";
+import { conventionsFiles } from "../scripts/docs-scan.mjs";
 import { repoRoot } from "../preflight";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 
@@ -2175,7 +2176,8 @@ function briefSeatFixture(name: string): string {
   const repo = path.join(root, "repo");
   mkdirSync(repo, { recursive: true });
   execFileSync("git", ["init", "-q", "-b", DEFAULT_INTEGRATION_REF, repo], { stdio: "pipe" });
-  for (const rel of ["docs/CONVENTIONS.md", "docs/ARCHITECTURE.md", "docs/ROADMAP.md"]) {
+  // T-290: the conventions are an index AND its chapters, derived.
+  for (const rel of [...conventionsFiles(repoRoot), "docs/ARCHITECTURE.md", "docs/ROADMAP.md"]) {
     mkdirSync(path.dirname(path.join(repo, rel)), { recursive: true });
     execFileSync("cp", [path.join(repoRoot, rel), path.join(repo, rel)], { stdio: "pipe" });
   }

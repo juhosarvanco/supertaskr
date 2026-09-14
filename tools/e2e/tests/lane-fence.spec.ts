@@ -41,7 +41,7 @@ import {
 import * as laneFenceHook from "../../../.claude/hooks/lane-fence.mjs";
 import { repoRoot } from "../preflight";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
-import { conventionsBullet, conventionsText, liveTaskCards } from "../scripts/docs-scan.mjs";
+import { conventionsBullet, conventionsFiles, conventionsText, liveTaskCards } from "../scripts/docs-scan.mjs";
 import { laneSpellings, normaliseTaskId } from "../scripts/dispatch-brief.mjs";
 import {
   MANIFEST_DIR_IGNORE,
@@ -166,7 +166,11 @@ function makeFixture(touchesLine = FIXTURE_TOUCHES): Fixture {
   mkdirSync(repo, { recursive: true });
   git(repo, ["init", "--initial-branch=main", "--quiet"]);
 
-  for (const rel of ["docs/CONVENTIONS.md", "docs/ROADMAP.md"]) {
+  // T-290: the conventions are an index AND its chapters, and the set is
+  // DERIVED — a list of chapter names here would go stale the day one is
+  // added, and the failure would read as this hook's rather than this
+  // fixture's.
+  for (const rel of [...conventionsFiles(repoRoot), "docs/ROADMAP.md"]) {
     const dest = path.join(repo, rel);
     mkdirSync(path.dirname(dest), { recursive: true });
     copyFileSync(path.join(repoRoot, rel), dest);

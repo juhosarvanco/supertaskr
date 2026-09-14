@@ -45,6 +45,7 @@ import {
 import { DATED_INSTANCES, NEAR_MISS, T203_CASE, TRUE_CLAIM } from "../fixtures/card-claims";
 import { context, render } from "../scripts/dispatch-brief.mjs";
 import { buildLaneFence, writeLaneFence } from "../scripts/lane-fence.mjs";
+import { conventionsFiles } from "../scripts/docs-scan.mjs";
 // THE WRITE-TIME HALF IS THE HOOK'S OWN MODULE AND NOT A STAND-IN (T-287).
 // A reservation is only worth anything if the guard that reads the manifest
 // holds the exact name, so the body below drives `decide` itself — the
@@ -244,7 +245,8 @@ interface Fixture {
  * arrives in the fixture without an edit here.
  */
 function seedGoverningDocs(repo: string): void {
-  for (const rel of ["docs/CONVENTIONS.md", "docs/ROADMAP.md"]) {
+  // T-290: the conventions are an index AND its chapters, derived.
+  for (const rel of [...conventionsFiles(repoRoot), "docs/ROADMAP.md"]) {
     const dest = path.join(repo, rel);
     mkdirSync(path.dirname(dest), { recursive: true });
     copyFileSync(path.join(repoRoot, rel), dest);

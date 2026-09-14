@@ -163,3 +163,99 @@ A figure in prose against the tree (a verdict's count at a moved tip);
 a verifier's blindness; a discipline a seat keeps. Each is named in the
 role files as a discipline, not a gate, and the frame disclosure and
 the provenance marks are how a later reader tells which held.
+
+## From the conventions — the forensics behind the rules (T-290)
+
+The rules themselves live in the chapters under docs/conventions/,
+which docs/CONVENTIONS.md indexes. What follows is the history, the
+measurements and the argument each of those rules was cut from, moved
+here VERBATIM at T-290 under ADR-023 — the records rule forbids a
+rewrite, so not a byte of it is re-worded, re-ordered inside an entry,
+or summarised. Each entry names the bullet it came out of.
+
+### AUDIT GATE POLICY
+
+The
+  baseline, audited 2026-08-16 over 472 locked crates with cargo-audit
+  0.22.2: **0 vulnerabilities / 17 informational warnings**, all
+  transitive under Tauri v2's GTK3/glib stack and nothing ours to
+  re-pin.
+
+### THE BLESSED GATE-RUNNER
+
+Same refusals, and a verdict line naming the
+  SUBSET beside its body count rather than the leg's name alone.
+
+The difference is who
+  chose the paths — a seat, unaudited, against two commit ids the guard
+  re-derives for itself.
+
+### AND SINCE T-280 A PUSH OWES THE SET ITS OWN RANGE OWES, NOT THE
+
+This arm gave the range form the power to mint a plain `GREEN`
+  for a NARROWED end-to-end leg — recording what it graded in the
+  entry's `scope` — so "four suites GREEN at this tree" stopped implying
+  "the battery ran".
+
+That sentence cost a rejection —
+  the fallback shipped reading the verdict word alone, and a bench
+  measured it passing a push whose end-to-end entry had graded 16 of 39
+  spec files. This mechanism can only ever be wrong by owing too MUCH.
+  A docs path NOTHING reads is the one positive
+  empty answer: the reader map is derived from the whole source corpus,
+  so "no code suite reads this document" is a measurement, not a gap —
+  and it is exactly the case the dozen wasted batteries were.
+
+### THE PUSH IS JUDGED BY GIT ITSELF SINCE T-314, AND THE BYPASS THAT
+
+Neither is closeable from inside
+  a hook — a client-side hook is advice the client can decline — so
+  what closes them is the procedure: take the seat, which installs it,
+  and read the seat verbs' own line, which reports a checkout without
+  the hook as UNGUARDED.
+
+### A PUSH NO LONGER CANCELS THE RUNNING CI JOB
+
+Batching still buys something — with T-203's
+  token gate each push owes its own range's owed set — but it buys
+  tokens, not a queue.
+
+### CI
+
+IT IS
+  AN ENVIRONMENT DIFFERENCE, and that is the whole list (T-054 and
+  T-045-s1 closed the two that were only CI spelling a documented
+  command twice; T-256 closed app/'s install).
+
+THE COST is a
+  DELTA of FIVE exposed commands (T-054, T-078, ADR-019 phase 5).
+  AND THE TRUNCATION IS NOT MOSTLY SILENT: the derivation runs in BOTH
+  directions, so a command the SPEC claims and the doc stops exposing
+  reds BY NAME, and **a command the DOC gains that the spec does not yet
+  claim is the case it is LOUDEST about** (the sentence that once said
+  the opposite here is retracted, T-090 absorbing T-084-s2).
+
+### THE FOUR WALKS
+
+The AUTHORITY column has
+  survived every change unmoved while this table's enumerations went
+  stale three times, each caught by a lane and none by a gate
+  (`T-010-s1`, `T-079-s1`, T-086) — ADR-019's Law 2 in one row.
+
+### DOCS GATE
+
+**THAT ASYMMETRY IS THE ARGUMENT**: a spelling whose correctness must
+  be re-measured per platform is one nobody will re-measure.
+
+The
+  card that opened this named one suite; the tree says all four.
+
+### METHOD EVAL GATE
+
+AND THIS GATE CLOSES THE TRIGGER HOLE, NOT THE CARGO ONE (`T-132-s2`'s
+  residual, taken at T-159): a `method/**` diff now matches a trigger,
+  and it still owes `cargo test` that no trigger names — `kit.rs`
+  `include_str!`s a SUBSET of method/ into `supertaskr_lib`, and two cargo
+  bodies read `method/` off disk and assert against it,
+  `every_compiled_entry_matches_its_method_file_byte_for_byte` and
+  `the_snapshot_table_covers_every_method_scaffold_file`.

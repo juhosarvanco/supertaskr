@@ -60,6 +60,56 @@ const DEFAULT_PACK = path.join(HERE, "..");
 const DEFAULT_AUTHORITIES = ["docs/CONVENTIONS.md", "docs/STATE.md"];
 const REFERENCE = path.join("references", "host-commands.md");
 
+/**
+ * One pointer line of an authority that has become an INDEX over a
+ * chapter directory: `  - docs/conventions/x.md — OPENER`.
+ *
+ * **AN AUTHORITY MAY BE AN INDEX, AND THEN ITS CHAPTERS ARE PART OF IT**
+ * (T-290's verifier). That card split docs/CONVENTIONS.md into chapters
+ * under docs/conventions/ and left an index behind; this check resolves
+ * every `HOST>` command against the authority its row NAMES, so reading
+ * the index alone turned 17 of 24 resolved commands into findings against
+ * a repository whose commands had not moved a byte. The chapters are
+ * DERIVED from the index's own pointer lines — a list of chapter names
+ * here would go stale the day a chapter is added, and stale in the
+ * direction that reports a false finding.
+ *
+ * Deliberately narrow: the pointed-at path must sit under the authority's
+ * own directory and carry no traversal, because this reads whatever it is
+ * handed and the pack ships into projects this repository never sees.
+ */
+const AUTHORITY_POINTER = /^ {2}- ((?:[a-z0-9-]+\/)+[a-z0-9-]+\.md) — /;
+
+/**
+ * An authority's whole text: the file itself, plus every chapter it
+ * points at, in the order it names them.
+ *
+ * @param {string} repo  the repository root
+ * @param {string} rel   the authority's root-relative path
+ * @returns {string}
+ */
+function authorityText(repo, rel) {
+  const text = readFileSync(path.join(repo, rel), "utf8");
+  const dir = path.dirname(rel);
+  const parts = [text];
+  const seen = new Set();
+  for (const line of text.split("\n")) {
+    const m = AUTHORITY_POINTER.exec(line);
+    if (m === null) continue;
+    const chapter = String(m[1]);
+    // UNDER THE AUTHORITY'S OWN DIRECTORY AND NOWHERE ELSE. The charset
+    // above admits no `.`, so no `..` segment can reach this line; this
+    // is the second guard, and it is the one that says a chapter of
+    // docs/CONVENTIONS.md lives under docs/.
+    if (!chapter.startsWith(`${dir}/`)) continue;
+    const at = path.join(repo, chapter);
+    if (seen.has(at) || !existsSync(at)) continue;
+    seen.add(at);
+    parts.push(readFileSync(at, "utf8"));
+  }
+  return parts.join("\n");
+}
+
 /** Whitespace collapsed; the one normalization both sides share. */
 const collapse = (s) => s.replace(/\s+/g, " ").trim();
 /** …and, for a cwd phrase only, markup removed. */
@@ -461,7 +511,7 @@ function main(argv) {
       console.error(`host-command-check: CANNOT RUN — the authority ${p} does not exist`);
       return EXIT.CANNOT_RUN;
     }
-    corpus.set(rel, collapse(readFileSync(p, "utf8")));
+    corpus.set(rel, collapse(authorityText(repo, rel)));
   }
 
   const rows = parseRows(readFileSync(refPath, "utf8"));

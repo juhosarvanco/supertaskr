@@ -63,7 +63,7 @@
 //! criterion required either way: **an app command is not a webview
 //! grant.**
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, VecDeque};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -1149,8 +1149,130 @@ fn tail_of_longer_label(bullet: &str, at: usize) -> bool {
 const CONVENTIONS: &str = "docs/CONVENTIONS.md";
 const LANE_PROTOCOL: &str = "method/lane-protocol.md";
 
+/// Where the chapters the index points at live (T-290, ADR-023).
+const CONVENTIONS_CHAPTER_DIR: &str = "docs/conventions/";
+
+/// One pointer line of the index, split into the chapter it names and the
+/// opener it publishes — `None` for every other line in the document.
+///
+/// **THE CHAPTER NAME IS A STEM, AND THE CHARSET IS THE WHOLE GUARD**
+/// (T-290's verifier). The e2e arm's matcher is
+/// `/^ {2}- (docs\/conventions\/[a-z0-9-]+\.md) — (.*)$/` and it reads the
+/// file back through `path.basename`; this one admitted any non-blank
+/// spelling under the prefix, so `docs/conventions/../../x.md` was a
+/// NON-MATCH there — the line copied through as ordinary text — and a
+/// traversing read here. Two implementations of one rule that disagree
+/// about which lines are pointers are the drift this splice exists to
+/// prevent, so the stem is held to the same `[a-z0-9-]+` it is there.
+/// A charset with no `.` in it cannot spell `..`, which is the same
+/// argument the e2e arm's own regex makes.
+fn conventions_pointer(line: &str) -> Option<(&str, &str)> {
+    let rest = line.strip_prefix("  - ")?;
+    let after = rest.strip_prefix(CONVENTIONS_CHAPTER_DIR)?;
+    let (file, opener) = rest.split_once(" — ")?;
+    let stem = after.split_once(" — ")?.0.strip_suffix(".md")?;
+    if stem.is_empty()
+        || !stem
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+    {
+        return None;
+    }
+    Some((file, opener))
+}
+
+/// **THIS PROJECT'S RULES AS ONE TEXT, AND IT IS THE SAME RULE THE E2E
+/// ARM IMPLEMENTS** (T-290). That card split `docs/CONVENTIONS.md` into
+/// the chapters under `docs/conventions/` and left an index behind; every
+/// row below reads a RULE, and a rule is found wherever it now lives. So
+/// the index's pointer lines are replaced by the bullets they point at,
+/// in the index's own order, before any row reads a word of it —
+/// `conventionsText` in tools/e2e/scripts/docs-scan.mjs is the same
+/// splice in JavaScript, so the two implementations of one rule agree
+/// rather than diverge (T-057's class).
+///
+/// **A DOCUMENT WITH NO POINTERS IS RETURNED UNCHANGED**, which is what
+/// makes this safe for a fixture, for a project that has not split its
+/// conventions, and for every planted `Ctx` in the tests below: the
+/// splice is the identity where there is nothing to splice.
+///
+/// A pointer whose chapter cannot be READ, or whose chapter no longer
+/// carries the bullet the index published an opener for, is a missing row
+/// named as such — never a document that quietly lost a rule.
+fn conventions_corpus(ctx: &Ctx<'_>, row: &ContractRow) -> Result<String, MissingRow> {
+    let index = need(ctx, row, CONVENTIONS)?;
+    splice_conventions(index, |rel| ctx.files.read_text(rel).ok())
+        .map_err(|what| empty(row, CONVENTIONS, &what))
+}
+
+/// The splice itself, with the reading left to the caller so the live
+/// tree, a planted `Ctx` and a test all drive ONE implementation. `Err`
+/// carries the phrase the row's refusal wants.
+fn splice_conventions(
+    index: String,
+    mut read: impl FnMut(&str) -> Option<String>,
+) -> Result<String, String> {
+    if !index.lines().any(|l| conventions_pointer(l).is_some()) {
+        return Ok(index);
+    }
+    let mut queued: BTreeMap<String, VecDeque<String>> = BTreeMap::new();
+    let mut out = String::new();
+    for line in index.lines() {
+        let Some((file, opener)) = conventions_pointer(line) else {
+            out.push_str(line);
+            out.push('\n');
+            continue;
+        };
+        if !queued.contains_key(file) {
+            let Some(text) = read(file) else {
+                return Err(format!("the chapter {file}, which this index points at"));
+            };
+            queued.insert(file.to_string(), chapter_bullets(&text));
+        }
+        let next = queued.get_mut(file).and_then(VecDeque::pop_front);
+        let wanted = format!("- {opener}");
+        match next {
+            Some(bullet) if bullet.lines().next() == Some(wanted.as_str()) => {
+                out.push_str(&bullet);
+                out.push('\n');
+            }
+            _ => {
+                return Err(format!(
+                    "the bullet {file} is pointed at for, opening {opener:?}"
+                ));
+            }
+        }
+    }
+    Ok(out)
+}
+
+/// A chapter's bullets, each whole and in the chapter's own order — the
+/// unit `conventions_corpus` splices. Everything before a chapter's first
+/// column-0 `- ` is that chapter's heading and lead, which the index
+/// never points at and no rule is read out of.
+fn chapter_bullets(text: &str) -> VecDeque<String> {
+    let mut out: VecDeque<String> = VecDeque::new();
+    let mut current: Option<String> = None;
+    for line in text.lines() {
+        if line.starts_with("- ") {
+            if let Some(done) = current.take() {
+                out.push_back(done.trim_end().to_string());
+            }
+            current = Some(String::new());
+        }
+        if let Some(buf) = current.as_mut() {
+            buf.push_str(line);
+            buf.push('\n');
+        }
+    }
+    if let Some(done) = current {
+        out.push_back(done.trim_end().to_string());
+    }
+    out
+}
+
 fn row_lane(ctx: &Ctx<'_>, row: &ContractRow) -> Result<RowContent, MissingRow> {
-    let conventions = need(ctx, row, CONVENTIONS)?;
+    let conventions = conventions_corpus(ctx, row)?;
     let protocol = need(ctx, row, LANE_PROTOCOL)?;
     let spellings = match bullet_containing(&conventions, "integration branch `") {
         Some(text) => text,
@@ -1522,7 +1644,7 @@ fn lane_touches(files: &dyn FileSource, task_id: &str) -> Option<Vec<String>> {
 // ---- rows 6 to 10, all out of CONVENTIONS ---------------------------
 
 fn row_setup(ctx: &Ctx<'_>, row: &ContractRow) -> Result<RowContent, MissingRow> {
-    let conventions = need(ctx, row, CONVENTIONS)?;
+    let conventions = conventions_corpus(ctx, row)?;
     let order = bullet_containing(&conventions, "Fresh-clone ORDER")
         .ok_or_else(|| empty(row, CONVENTIONS, "build ORDER bullet"))?;
     let fresh = bullet_containing(&conventions, "A FRESH WORKTREE HAS NOTHING INSTALLED")
@@ -1537,7 +1659,7 @@ fn row_setup(ctx: &Ctx<'_>, row: &ContractRow) -> Result<RowContent, MissingRow>
 }
 
 fn row_commands(ctx: &Ctx<'_>, row: &ContractRow) -> Result<RowContent, MissingRow> {
-    let conventions = need(ctx, row, CONVENTIONS)?;
+    let conventions = conventions_corpus(ctx, row)?;
     let mut lines: Vec<BriefLine> = Vec::new();
     for (dir, command) in package_commands(&conventions) {
         lines.push(BriefLine::tree(
@@ -1588,7 +1710,7 @@ pub fn package_commands(conventions: &str) -> Vec<(String, String)> {
 }
 
 fn row_gates(ctx: &Ctx<'_>, row: &ContractRow) -> Result<RowContent, MissingRow> {
-    let conventions = need(ctx, row, CONVENTIONS)?;
+    let conventions = conventions_corpus(ctx, row)?;
     let gates = standing_gates(&conventions);
     if gates.is_empty() {
         return Err(empty(row, CONVENTIONS, "standing gate bullet"));
@@ -1632,7 +1754,7 @@ pub fn standing_gates(conventions: &str) -> Vec<(String, String)> {
 }
 
 fn row_disciplines(ctx: &Ctx<'_>, row: &ContractRow) -> Result<RowContent, MissingRow> {
-    let conventions = need(ctx, row, CONVENTIONS)?;
+    let conventions = conventions_corpus(ctx, row)?;
     let named = named_bullets(&conventions);
     if named.is_empty() {
         return Err(empty(row, CONVENTIONS, "named discipline bullet"));
@@ -1657,7 +1779,7 @@ fn row_disciplines(ctx: &Ctx<'_>, row: &ContractRow) -> Result<RowContent, Missi
 }
 
 fn row_prohibitions(ctx: &Ctx<'_>, row: &ContractRow) -> Result<RowContent, MissingRow> {
-    let conventions = need(ctx, row, CONVENTIONS)?;
+    let conventions = conventions_corpus(ctx, row)?;
     let protocol = need(ctx, row, LANE_PROTOCOL)?;
     let port = bullet_containing(&conventions, "PORT RULE")
         .ok_or_else(|| empty(row, CONVENTIONS, "PORT RULE bullet"))?;
@@ -2092,6 +2214,19 @@ mod tests {
         DiskFiles::new(&repo_root())
     }
 
+    /// THIS PROJECT'S RULES AS ONE TEXT, off the real tree — the index
+    /// spliced with the chapters it points at (T-290). Every body below
+    /// that used to read `docs/CONVENTIONS.md` whole reads this instead,
+    /// and a body that PLANTS a doctored copy plants this: the result
+    /// carries no pointer line, so the splice is the identity over it and
+    /// the planted text is read exactly as written.
+    fn live_conventions() -> String {
+        let live = live_files();
+        let index = live.read_text(CONVENTIONS).expect("CONVENTIONS");
+        splice_conventions(index, |rel| live.read_text(rel).ok())
+            .expect("every chapter docs/CONVENTIONS.md points at is readable")
+    }
+
     /// The one card every body below assembles for, unless it says
     /// otherwise.
     fn a_card() -> FrontmatterCard {
@@ -2128,6 +2263,102 @@ mod tests {
         match outcome {
             BriefOutcome::Assembled { brief } => brief,
             other => panic!("expected an assembled brief, got {other:?}"),
+        }
+    }
+
+    // ---- the index and its chapters (T-290, ADR-023) -----------------
+
+    /// **THE SPLICE IS THE SAME RULE IN TWO LANGUAGES, SO IT IS PINNED IN
+    /// BOTH SUITES** (T-290). `conventionsText` in
+    /// tools/e2e/scripts/docs-scan.mjs and `splice_conventions` here read
+    /// one document out of an index and its chapters; a body in only one
+    /// of them would let the two drift, which is T-057's class.
+    #[test]
+    fn a_rule_that_moved_into_a_chapter_is_still_found_by_its_opener() {
+        let live = live_files();
+        let index = live.read_text(CONVENTIONS).expect("CONVENTIONS");
+        assert!(
+            index.lines().any(|l| conventions_pointer(l).is_some()),
+            "the index publishes no pointer, so this body would prove nothing"
+        );
+        let spliced = live_conventions();
+        // THE RULE IS IN THE SPLICED DOCUMENT ...
+        let bullet = bullet_containing(&spliced, "integration branch `")
+            .expect("the spliced document carries the lane spelling bullet");
+        assert!(bullet.contains("task/T-NNN-"), "the bullet came back short");
+        // ... AND NOT IN THE INDEX ALONE, which is the half that makes
+        // the first assertion mean something: a reader that forgot to
+        // splice finds nothing rather than a shorter document.
+        assert!(
+            bullet_containing(&index, "integration branch `").is_none(),
+            "the index alone answered a rule, so the splice is unmeasured here"
+        );
+    }
+
+    #[test]
+    fn a_pointer_whose_chapter_lost_its_bullet_is_a_refusal_never_a_silent_omission() {
+        // A DATA MUTANT: the property lives in the PAIR of files, so the
+        // mutation is to the chapter's bytes and not to a branch.
+        let live = live_files();
+        let index = live.read_text(CONVENTIONS).expect("CONVENTIONS");
+        // THE POSITIVE CONTROL — unmutated, it splices.
+        let whole = splice_conventions(index.clone(), |rel| live.read_text(rel).ok());
+        assert!(whole.is_ok(), "the untouched tree did not splice: {whole:?}");
+
+        let victim = index
+            .lines()
+            .find_map(conventions_pointer)
+            .map(|(file, _)| file.to_string())
+            .expect("a pointer to mutate against");
+        let mutated = splice_conventions(index, |rel| {
+            let text = live.read_text(rel).ok()?;
+            if rel != victim {
+                return Some(text);
+            }
+            // Drop the chapter's LAST bullet while the index still
+            // publishes an opener for it.
+            let at = text.rfind("\n- ")?;
+            Some(text[..=at].to_string())
+        });
+        let because = mutated.expect_err("a chapter missing a published bullet was spliced anyway");
+        assert!(
+            because.contains("pointed at"),
+            "the refusal does not name the bullet it could not find: {because}"
+        );
+    }
+
+    /// **THE TWO MATCHERS AGREE ABOUT WHICH LINES ARE POINTERS, AND A
+    /// TRAVERSING SPELLING IS A POINTER TO NEITHER** (T-290's verifier).
+    ///
+    /// The e2e arm matches a chapter with `[a-z0-9-]+\.md` and reads it
+    /// back through `path.basename`; this side once admitted any non-blank
+    /// spelling under the prefix, so one line was a NON-POINTER there and
+    /// a traversing read here. A DATA MUTANT, because the property lives
+    /// in the index's bytes and not in a branch: the line is planted, and
+    /// what is measured is whether this matcher calls it a pointer.
+    #[test]
+    fn a_chapter_spelling_the_e2e_arm_refuses_is_not_a_pointer_here_either() {
+        // THE POSITIVE CONTROL FIRST: the live index's own pointers are
+        // pointers, so a matcher that simply refused everything would not
+        // pass this body.
+        let live = live_files();
+        let index = live.read_text(CONVENTIONS).expect("CONVENTIONS");
+        let real = index.lines().filter(|l| conventions_pointer(l).is_some()).count();
+        assert!(real > 1, "the live index published no pointer to control against");
+
+        // AND THE SPELLINGS THE ARM'S OWN CHARSET REFUSES.
+        for planted in [
+            "  - docs/conventions/../../etc/passwd.md — A RULE",
+            "  - docs/conventions/../lanes.md — A RULE",
+            "  - docs/conventions/Lanes.md — A RULE",
+            "  - docs/conventions/lanes.txt.md — A RULE",
+            "  - docs/conventions/.md — A RULE",
+        ] {
+            assert!(
+                conventions_pointer(planted).is_none(),
+                "this matcher accepted {planted:?}, which the e2e arm's regex refuses — \
+                 the two implementations of one rule disagree about what a pointer is"
+            );
         }
     }
 
@@ -2737,9 +2968,7 @@ mod tests {
         // POSITIONAL reading answers the planted path, and the row still
         // answers the ref.
         let planted_path = "docs/planted-first-backtick.md";
-        let live_text = live
-            .read_text(CONVENTIONS)
-            .expect("the live conventions document");
+        let live_text = live_conventions();
         let opener = "- THE LANE PROTOCOL";
         let at = live_text
             .find(opener)
@@ -2795,10 +3024,7 @@ mod tests {
     /// and a dispatcher reads an empty base rather than an error.
     #[test]
     fn an_integration_branch_the_bullet_does_not_spell_exactly_once_is_a_refusal_never_a_default() {
-        let live = live_files();
-        let live_text = live
-            .read_text(CONVENTIONS)
-            .expect("the live conventions document");
+        let live_text = live_conventions();
         let one = "- integration branch `main`;";
         assert_eq!(
             live_text.matches(one).count(),
@@ -2893,10 +3119,7 @@ mod tests {
         expected_line: &str,
         expected_text: &str,
     ) {
-        let live = live_files();
-        let live_text = live
-            .read_text(CONVENTIONS)
-            .expect("the live conventions document");
+        let live_text = live_conventions();
         let planted = lane_bullet_opening_with(&live_text, decoy);
         let bullet = bullet_containing(&planted, "integration branch `")
             .expect("the planted document still carries one lane bullet");
@@ -3021,10 +3244,7 @@ mod tests {
         // bullet. The control is the needle count: without the lookbehind
         // this read is AMBIGUOUS rather than merely wrong, so the guard is
         // what makes row 4 answerable at all.
-        let live = live_files();
-        let live_text = live
-            .read_text(CONVENTIONS)
-            .expect("the live conventions document");
+        let live_text = live_conventions();
         let bullet = bullet_containing(&live_text, "integration branch `")
             .expect("the live document carries one lane bullet");
         let needles = bullet.matches("branch `").count();
@@ -3057,10 +3277,7 @@ mod tests {
     /// reads an empty base rather than an error.
     #[test]
     fn a_dispatch_bullet_that_names_no_checkpoint_marker_is_a_refusal_never_a_default() {
-        let live = live_files();
-        let live_text = live
-            .read_text(CONVENTIONS)
-            .expect("the live conventions document");
+        let live_text = live_conventions();
         let overlaid = |text: String| OverlayFiles {
             inner: DiskFiles::new(&repo_root()),
             path: CONVENTIONS.to_string(),
@@ -3267,8 +3484,7 @@ mod tests {
 
     #[test]
     fn the_commands_are_transcribed_verbatim_from_the_per_package_bullets() {
-        let live = live_files();
-        let conventions = live.read_text(CONVENTIONS).expect("CONVENTIONS");
+        let conventions = live_conventions();
         let commands = package_commands(&conventions);
         assert!(!commands.is_empty(), "the derivation is not vacuous");
         // Four packages carry command bullets on this tree; the count is
@@ -3297,8 +3513,7 @@ mod tests {
 
     #[test]
     fn the_gates_are_enumerated_from_the_document_and_a_removed_gate_is_not_still_named() {
-        let live = live_files();
-        let conventions = live.read_text(CONVENTIONS).expect("CONVENTIONS");
+        let conventions = live_conventions();
         let gates = standing_gates(&conventions);
         let names: Vec<String> = gates.iter().map(|(n, _)| n.clone()).collect();
         assert!(
@@ -3414,8 +3629,7 @@ mod tests {
         // independent reader of the same row — cuts the same name at the
         // same word, which is what makes this the CONTRACT's defect and
         // not one implementation's.
-        let live = live_files();
-        let conventions = live.read_text(CONVENTIONS).expect("CONVENTIONS");
+        let conventions = live_conventions();
         let names = named_bullets(&conventions);
         let cut = names
             .iter()
@@ -3484,11 +3698,18 @@ mod tests {
             std::fs::create_dir_all(dest.parent().expect("a parent")).expect("dirs");
             std::fs::copy(here.join(rel), &dest).expect("copy a source");
         }
-        for rel in ["docs/architecture/components"] {
+        // AND THE CHAPTERS docs/CONVENTIONS.md POINTS AT (T-290). The
+        // document is an index now, so a fixture that plants the index
+        // alone plants a project whose rules cannot be read. The WHOLE
+        // directory travels rather than a list of chapter names: a list
+        // here could under-plant in silence the day a chapter is added,
+        // and the failure would read as the brief's rather than the
+        // fixture's.
+        for rel in ["docs/architecture/components", "docs/conventions"] {
             let dest = root.join(rel);
             std::fs::create_dir_all(&dest).expect("dirs");
-            for entry in std::fs::read_dir(here.join(rel)).expect("components") {
-                let entry = entry.expect("a component file");
+            for entry in std::fs::read_dir(here.join(rel)).expect("a planted directory") {
+                let entry = entry.expect("a file in it");
                 std::fs::copy(entry.path(), dest.join(entry.file_name())).expect("copy");
             }
         }

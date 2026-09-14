@@ -75,7 +75,7 @@ import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { readCorpus } from "../lib/corpus.mjs";
+import { conventionsPaths, readCorpus } from "../lib/corpus.mjs";
 
 /** The one citation grammar, the same one docs/CONVENTIONS.md spells. */
 export const CITATION = /attack set:\s*sha256:([0-9a-f]{64})\b/i;
@@ -269,7 +269,7 @@ export function attackSetBullet(doc) {
 function textFindings(corpus) {
   /** @type {string[]} */
   const findings = [];
-  const flat = (rel) => (corpus.get(rel) ?? "").replace(/\s+/g, " ");
+  const flat = (/** @type {string} */ rel) => (corpus.get(rel) ?? "").replace(/\s+/g, " ");
   const declared = [...corpus.keys()].some(
     (rel) =>
       rel.startsWith("method/") &&
@@ -288,16 +288,22 @@ function textFindings(corpus) {
   // not one conjunction, because a conjunct whose other half is satisfied
   // somewhere else in the document is a conjunct that cannot fail
   // (`T-205-s7`). Each half now names what is missing.
-  const bullet = attackSetBullet(corpus.get("docs/CONVENTIONS.md") ?? "");
+  // THE INDEX AND ITS CHAPTERS, NEVER THE INDEX ALONE (T-290's verifier):
+  // docs/CONVENTIONS.md points at docs/conventions/, the bullet carrying
+  // this grammar lives in one of those chapters, and a search of the
+  // index by itself finds a POINTER where the rule used to be.
+  const bullet = conventionsPaths()
+    .map((rel) => attackSetBullet(corpus.get(rel) ?? ""))
+    .find((b) => b !== null) ?? null;
   if (bullet === null) {
     findings.push(
-      "no bullet in docs/CONVENTIONS.md spells the line a verdict cites the digest on " +
-        "(`attack set: sha256:<hex> (<file>)`), so the grammar this eval parses is a " +
-        "grammar nobody documents",
+      "no bullet in docs/CONVENTIONS.md or the chapters it points at spells the line a " +
+        "verdict cites the digest on (`attack set: sha256:<hex> (<file>)`), so the " +
+        "grammar this eval parses is a grammar nobody documents",
     );
   } else if (!DIGEST_COMMAND.test(bullet.replace(/\s+/g, " "))) {
     findings.push(
-      "docs/CONVENTIONS.md documents the attack-set citation but spells no " +
+      "this project's conventions document the attack-set citation but spell no " +
         "`shasum -a 256` on THAT bullet, so the digest a verdict cites has no command " +
         "behind it — a `shasum` mention on some other bullet documents some other hash",
     );
@@ -313,10 +319,10 @@ export default {
   contract:
     "method/roles/orchestrator.md 5d + roles/verifier.md + docs/CONVENTIONS.md — the " +
     "attack set is hashed, the verdict cites the digest, and a mismatch is REFUSED",
-  reads: ["method/**/*.md", "docs/CONVENTIONS.md"],
+  reads: ["method/**/*.md", "docs/CONVENTIONS.md", "docs/conventions/*.md"],
 
   async check() {
-    const findings = [...textFindings(readCorpus(["docs/CONVENTIONS.md"]))];
+    const findings = [...textFindings(readCorpus(conventionsPaths()))];
     const wrong = matrix(judge);
     for (const w of wrong) findings.push(`the refusal does not hold — ${w}`);
     if (findings.length > 0) {

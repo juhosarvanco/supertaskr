@@ -72,6 +72,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildCommandFor, conventionCommandsFor } from "./cli.mjs";
+import { conventionsText } from "./docs-scan.mjs";
 // THE PROCESS AS SETTINGS (T-299, ADR-024 decision 6). The schema and
 // its resolution live beside the dispatch arm because the dispatch arm
 // is where the runtime template is already read; the merge reads the
@@ -1536,8 +1537,11 @@ export function setupSteps(projectRoot) {
   /** @type {Step[]} */
   const steps = [];
   for (const dir of ["lib/parser", "app"]) {
+    // THE INDEX AND ITS CHAPTERS AS ONE TEXT (T-290): the fresh-clone
+    // ORDER bullet lives in docs/conventions/commands.md and the index
+    // points at it, so the steps are read out of the spliced document.
     const commands = conventionCommandsFor(
-      existsSync(conventions) ? readFileSync(conventions, "utf8") : "",
+      existsSync(conventions) ? conventionsText(root) : "",
       dir,
     ).filter((c) => /^npm (ci|install)$/.test(c) || c === "npm run build");
     for (const command of commands) {
@@ -1669,7 +1673,7 @@ export function tailPlan(input) {
       id: "graph:regen",
       kind: "regen",
       title: "regenerate the committed graph — indexed source moved",
-      why: "docs/CONVENTIONS.md GRAPH REGEN: ask the gate rather than predicting; a no-op regen PROVES it",
+      why: "docs/conventions/merging.md GRAPH REGEN: ask the gate rather than predicting; a no-op regen PROVES it",
       run: {
         // SUPERTASKR_UPDATE_GOLDEN=1 is what makes this a REGEN rather than a
         // check — docs/CONVENTIONS.md's GRAPH REGEN bullet spells the whole
@@ -1745,7 +1749,7 @@ export function tailPlan(input) {
             action: "docs-gate",
             title: `docs-gate.mjs on ${String(docsPaths.length)} path(s) under docs/`,
             why:
-              "docs/CONVENTIONS.md DOCS GATE: docs/ is a CODE INPUT and neither other trigger " +
+              "docs/conventions/standing-gates.md DOCS GATE: docs/ is a CODE INPUT and neither other trigger " +
               "can see it. A gate that FIRES is NEWS — it names the suites this merge owes at " +
               "the push, and every merge carrying a card fires it — so the run goes on and the " +
               "owed set joins the message. Anything else it says STOPS the run",
@@ -3035,7 +3039,8 @@ export function bumpSteps(input) {
           "method/ and no --bump <from>..<to> was named",
         why:
           "docs/CONVENTIONS.md's method stamp: method/ formats are version-bumped and noted, in " +
-          "three files at once. WHICH number the release takes and what its note says are the " +
+          "three files at once, with the note written under docs/reference/14-versions.md " +
+          "(T-290). WHICH number the release takes and what its note says are the " +
           "seat's ruling, so this step refuses rather than inventing one. Re-run with " +
           "--bump <old>..<new>, or rule that this merge's method text is not a release",
         problem:
@@ -3058,7 +3063,11 @@ export function bumpSteps(input) {
       why:
         "the seat's own bump script, as run at T-264-s3's and T-293's merges: CONVENTIONS' " +
         "`currently v<x>` line, plan-interview.md's `(v<x>;` and kit.rs's " +
-        "METHOD_SNAPSHOT_VERSION, each anchored ONCE and refused where it is not",
+        "METHOD_SNAPSHOT_VERSION, each anchored ONCE and refused where it is not. " +
+        "THE RELEASE NOTE ITSELF GOES TO docs/reference/14-versions.md (T-290): the stamp " +
+        "stays in docs/CONVENTIONS.md because programs read that sentence out of that path " +
+        "by name, and the changelog it used to sit above is a record, which the reference " +
+        "chapter owns",
       run: null,
     },
     {
@@ -3092,7 +3101,7 @@ export function bumpSteps(input) {
       kind: "gate",
       title: "the METHOD EVAL GATE — method/ moved",
       why:
-        "docs/CONVENTIONS.md METHOD EVAL GATE: any merge whose diff touches method/** runs the " +
+        "docs/conventions/standing-gates.md METHOD EVAL GATE: any merge whose diff touches method/** runs the " +
         "model-free evals, and this merge does",
       run: {
         command: process.execPath,

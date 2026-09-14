@@ -117,10 +117,21 @@ const LIVE_ADAPTERS = ["AGENTS.md", "CLAUDE.md"];
  * fixture out of it; a second, typed copy of this list would go stale the
  * day a path is added here, and the eval would then certify a source set
  * nobody copies. One list, two readers.
+ *
+ * **AND `docs/conventions` TRAVELS AS A DIRECTORY** (T-290's verifier).
+ * That card made docs/CONVENTIONS.md an INDEX over the chapters under
+ * docs/conventions/, and every reader of a RULE now reads the two
+ * SPLICED. A fixture root carrying the index alone carries a TABLE OF
+ * CONTENTS: `conventionsText` refuses it by name and MF-01's assembler
+ * exits 3 against it. The DIRECTORY is copied rather than a list of
+ * chapter names, for the reason the paragraph above already gives — a
+ * typed list goes stale the day a chapter is added, and this fixture
+ * would then certify a document nobody can assemble.
  */
 export const LIVE_COPY_SET = Object.freeze([
   "method",
   "docs/architecture",
+  "docs/conventions",
   ...LIVE_DOCS,
   ...LIVE_ADAPTERS,
 ]);
