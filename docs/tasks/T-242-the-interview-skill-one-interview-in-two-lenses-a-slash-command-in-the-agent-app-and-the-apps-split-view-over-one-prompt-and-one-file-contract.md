@@ -261,4 +261,20 @@ pre-correction commit, since the corrections moved both the spec and the
 generated artifact. All fifteen went RED again, each restored and each
 restore proved by sha256.
 
+### The graded reading, at cb21ebff
+
+The owed set was run again at the corrected tip, which is the reading
+this lane hands over: parser GREEN 454 bodies, app GREEN 1171, rust
+GREEN 661 across 18 targets, e2e RED at 1176 passed and 3 failed. The
+three are exactly the push-guard bodies T-242-s4 names, and nothing
+else: every one of the seven the DOCS GATE reported at 80ddb4a7 is
+green. The earlier battery is superseded by this one and is recorded
+above only because it is what found the corrections.
+
+The tarball at this tip, by `npm pack --dry-run` from `tools/e2e/`: 35
+files, 630.7 kB packed, 2.0 MB unpacked, carrying
+`dist/method/skills/supertaskr-interview/SKILL.md` at 28.4 kB. The
+generated entry is 28427 bytes, against the 65536 the app's own
+discoverer accepts.
+
 ## Verdicts
