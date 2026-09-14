@@ -72,6 +72,143 @@ Amendment proposed 2026-09-13 — native interview delivery at the current stage
 The owner ruled the six questions the draft left open: (1) a write into an opened project's .claude/skills/ happens only through the user's explicit install command, with the installer's identical-file no-op, differing-file refusal, `--force` and dry-run kept, and opening a folder installs nothing; (2) one generated SKILL.md, on the condition that it is genuinely self-contained — copying the banks alone is insufficient, the fresh-project demonstration must complete the interview's whole file contract without the checkout or the app, and the whole-pack route (T-241-s6) is the fallback if that stops being small; (3) Claude Code only for this first delivery, Codex described as deferred and unverified rather than the old prompt-file route implied proven, the product goal staying provider-flexible; (4) the tarball carries the generated method text, generated from canonical sources with no second authored copy, packaging approval separate from publishing approval; (5) project-level installation first, user-level to follow without blocking it; (6) the closing line tells the user the plan and task board are saved in the folder and to open the app and choose "Open folder…" to view them, not to start another interview. The criteria above are the consolidated effective contract; the criteria of 2026-09-03 stand verbatim under their own heading; the amendment of 2026-09-13 stands as the scope decision it was. The fence is refreshed from the draft: method/skills/ as the tracked directory token (a new pack directory cannot be fenced by its own file paths), the kit's table, the installer's source, a reservation for the generator beside it, the package manifest for the tarball, a new spec for the bodies, and the generated artefacts the lane moves. Queue: after T-290 (which holds tools/e2e/scripts/ and tools/e2e/tests/ whole); disjoint from T-320 and the T-312 rerun by their fences at 21c0dc9a, so it may run beside either.
 
 ## Implementation notes
-<!-- executor appends before finishing -->
+
+Built by claude-opus-5@subagent in lane T-242, base 5656a054, tip f4958baa
+before this append. Every figure below was measured in that lane at
+f4958baa unless another ref is named.
+
+**The shape.** The entry is ONE generated file,
+`method/skills/supertaskr-interview/SKILL.md`, 27706 bytes at f4958baa,
+written by a new generator `tools/e2e/scripts/interview-skill.mjs`. The
+generator reads the canonical sources and embeds each one as a fenced
+block labelled with the path it lands at: the banks, decomposition, the
+planner's resume and overwrite sections, the docs templates, both
+adapters and the card skeleton. Only the framing prose is authored, and
+it is authored in the generator, so the artifact has no hand-edited
+half. The round trip is checked inside the generator itself — every
+block it emits is read back through the same reader the fresh-project
+body uses, and a block that does not come back byte-identical is a
+refusal rather than a document that looks complete and materializes
+something else.
+
+**The kit root is the runner's.** The seed destinations are derived, not
+typed: the docs tree from the banking map's stage-0 row applied to
+whatever `method/docs-templates/` really holds, the adapters at the
+project root because that row says so, and the interview files plus the
+card skeleton under the kit root read out of `KIT_REL_DIR` in
+`app/src-tauri/src/agent/kit.rs`. A folder interviewed through the skill
+and a folder interviewed in the app therefore hold the same bytes at the
+same paths.
+
+**What does not ride, and why the small-file condition holds.**
+`method/tasks/TASK-FORMAT.md` is 53760 bytes at 5656a054 and
+`method/roles/planner.md` is 7212; the app's own discoverer caps one
+pack file at 65536 bytes (`MAX_SKILL_BYTES` in
+`app/src-tauri/src/agent/skills.rs`), so TASK-FORMAT alone would breach
+it, and planner.md's step 4 points at TASK-FORMAT, which would ship a
+pointer to a file the folder does not have. The generated file sits at
+27706 bytes, roughly 42 per cent of that cap, so the whole-pack fallback
+the card names is not reached and no dated append is owed. A cargo body
+asserts the margin and its failure message names the fallback.
+
+**The installer.** Its SOURCE root is now derived and its DESTINATION
+root is not. A checkout still installs its own tree's skills, byte for
+byte as before; an installed package installs what it was packed with.
+The package stages its copy under `tools/e2e/dist/`, the one directory
+this repository's `.gitignore` already covers at every depth, so the
+staging can never be committed by accident. `prepack` generates it from
+the canonical sources and REFUSES when the committed artifact is stale,
+so a pack of a stale tree cannot ship two different files under one
+name; `postpack` removes the staging.
+
+**The tarball**, measured by `npm pack --dry-run` from `tools/e2e/` at
+f4958baa: 35 files, 630.1 kB packed and 2.0 MB unpacked, carrying
+`dist/method/skills/supertaskr-interview/SKILL.md` at 27.7 kB alongside
+`bin/supertaskr.mjs`, `package.json` and the 32 files of `scripts/`
+(boot-port, brief, capabilities, card-figures, card-preflight,
+checkout-currency, ci-owed, cli, dispatch-brief, dispatch-order,
+docs-gate, docs-scan, gate-run, health-bands-run, health-bands.config,
+health-bands, interview-skill, lane-fence, lane-lock, lint-tokens,
+merge, orphan-drill, push-checks, range-rule, rename-scan, run-record,
+session-economics, settings, tauri-boot-check, token-scan, undo,
+xargs-dialect).
+
+**In-fence follow-through** — changes inside the fence beyond the
+minimum the criteria name, each argued:
+
+- `npm run capabilities` and `npm run capabilities:check` in
+  `tools/e2e/package.json` now chain the skill generation and its
+  currency check after the census. One command, three generated
+  artifacts, for the reason `capabilities.mjs` already gives about the
+  index: a separate command is a separate thing to forget. This is what
+  makes the bump hazard visible on the runner, since CI already runs
+  `capabilities:check` as a step. `npm run skill` and `npm run
+  skill:check` exist as the direct spellings.
+- `runInstall` gained a `carriedRoot` injection point in its io object.
+  Nothing but the suite passes it: a control needs to arrange both a
+  package that carried the entry and one that carried nothing, and a
+  control that cannot arrange the absent case is not a control.
+- The staging step's membership rule is derived rather than listed: a
+  pack is carried when its directory is ONE file, and any other is
+  skipped with its file count printed. `method/skills/supertaskr-seat/`
+  is 5 files at f4958baa, so the tarball carries the interview entry
+  alone. That is the shipped installer's one-file-per-skill shape, and
+  T-241-s6 is the card that already owns making a whole pack travel.
+
+**Gates, each derived from this lane's own diff.** GRAPH REGEN fires
+(`.rs` and `.mjs`/`.ts` outside `docs/`): regenerated, and `index
+--check` answers CURRENT at 1230259 of 2145959 bytes, 203 files, 2631
+symbols, 2505 edges. BOOT GATE fires (`app/src-tauri/**`): exit 0 with
+both startup lines captured, `[supertaskr] project folder:` and
+`[supertaskr] window "main" created`, on port 15242. DOCS GATE fires
+(`docs/CAPABILITIES.md`, `docs/INDEX.md` and the card move, all read by
+code suites): `npm run lint:docs` exit 0 over 246 docs-shaped sites in
+49 files. METHOD EVAL GATE fires (`method/**` moves): exit 0 over 12
+model-free evals. AUDIT GATE and THE BLESSED GATE declare no merge-diff
+trigger, so neither is one of these.
+
+**The census** moved from 1163 to 1175 behaviours across 42 spec files,
+and `docs/INDEX.md` moved with it in the same command.
+
+**The method stamp is NOT moved here.** `method/` text moves in this
+lane, so `--bump` is owed at the merge and is the seat's. Note the
+coupling before running it: the bump rewrites the version parenthetical
+in `method/interview/plan-interview.md`, which the generated artifact
+carries verbatim, so the bump stales it. Run `npm run capabilities`
+from `tools/e2e/` after the bump and stage the regenerated
+`method/skills/supertaskr-interview/SKILL.md` in the same commit, the
+way the graph regen is staged. T-242-s1 is filed to make that a step of
+the verb rather than a sentence here.
+
+**Drills.** Fifteen poison drills, one per body this lane adds, each
+planted at the site its property lives, each run at commit f4958baa,
+each restored with `git restore --source=HEAD --staged --worktree` and
+each restore proved by sha256 against `git show HEAD:<path>`. All
+fifteen went RED. The twelve e2e mutants: the generator's framing
+heading moved without regenerating (currency); a template body
+truncated in the seed plan (block bytes); the banks seed's destination
+renamed (parity); the seed marker dropped from the scaffold prose (the
+prose against its own reader); the app's folder label dropped from the
+closing line; "unverified" dropped from the harness section; the packs
+section pointed at a different directory; the carried-root fallback
+deleted from the source-root derivation; the collision guard disabled;
+a harness directory created by every verb; the staging rule made to
+carry every pack; `dist/` dropped from the manifest's files list. The
+three cargo mutants: 70000 bytes of padding into the generated file (the
+cap); a second file planted beside the pack (one-file); the adapters
+dropped from the seed plan (the scaffold walk).
+
+**Suggested cards filed:** T-242-s1 (a method bump stales the generated
+artifact and the verb's bump step does not regenerate it), T-242-s2 (a
+bare install places the entry in the Codex prompt directory, where this
+delivery is explicitly unverified), T-242-s3 (user-level installation,
+deferred by the ruling that took the project-level slice).
+
+**Noticed and not carded.** The skill's materialization writes no
+`kit.json` beside the seeded kit files, where the app's `materialize`
+writes a stamped manifest; an audit of a skill-driven genesis therefore
+cannot read which method version scaffolded it off the kit root alone,
+though the seeded banks carry their own version parenthetical. Too small
+to card on its own and it belongs with T-241-s6's whole-pack work.
 
 ## Verdicts
