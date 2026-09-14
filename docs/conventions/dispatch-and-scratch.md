@@ -129,8 +129,8 @@ here without asking what reads it.
   shape to copy, and scratch ports must be probed on BOTH stacks.
   The history, the measurements and the argument this rule was cut
   from are in docs/reference/05-dispatch.md (T-290), verbatim.
-- **THE EXPRESS PATH IS A SHORT ROAD THROUGH THE ORDINARY RITUAL, NEVER
-  A SECOND ROAD** (T-320): `brief.mjs --express "<outcome sentence>"
+- **THE EXPRESS PATH IS A SHORT ROAD THROUGH THE ORDINARY RITUAL** and
+  never a second road (T-320): `brief.mjs --express "<outcome sentence>"
   --fence <path[,path...]>` composes a compact XS card, measures its
   ELIGIBILITY, preflights it and hands over to `--dispatch-lane`, which
   admits, stamps, cuts and briefs as it does for every card.

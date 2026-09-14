@@ -11340,6 +11340,27 @@ test("T-320 C1/C3 — THE EXPRESS RUN WRITES THE CARD, PREFLIGHTS IT WITH THE EX
       execFileSync("git", ["-C", fx.root, "log", "--oneline", "-1"], { encoding: "utf8" }),
       "the express run made a commit of its own, which is a second round trip on the integration branch",
     ).toContain("Checkpoint: fixture base");
+
+    // ── AND A REFUSAL AFTER THE WRITE TAKES THE CARD BACK ────────────
+    // A compact card left in docs/tasks by a run that then refused is
+    // dirt the next merge counts as somebody's uncommitted work. The
+    // preflight is stubbed to refuse because the composer's own card
+    // passes it — which is the assertion above — so the only way to reach
+    // this branch is to inject the refusal.
+    execFileSync("git", ["-C", fx.root, "rm", "--quiet", "--force", "--", plan.card.file]);
+    const cleared = inventory(fx.root);
+    const refusing = {
+      ...real,
+      run: (argv: string[], opts: { cwd: string; out?: string }) =>
+        argv.includes("--preflight")
+          ? { status: EXIT.FOUND, stdout: "", stderr: "brief: FOUND 1 thing the assembler could not settle" }
+          : real.run(argv, opts),
+    };
+    const unwound = runExpress(plan, refusing);
+    expect(unwound.stopped?.id, "the injected preflight refusal did not stop the run there").toBe("preflight");
+    expect(unwound.cardFile, "a run that refused at the preflight still reported a card").toBe("");
+    expect(existsSync(path.join(fx.root, plan.card.file)), "the refused run left its compact card in docs/tasks").toBe(false);
+    expect(inventory(fx.root), "the refused run left the tree different from how it found it").toEqual(cleared);
   } finally {
     removeGitFixture(fx.dir, "ritualFixture(express-run)");
   }

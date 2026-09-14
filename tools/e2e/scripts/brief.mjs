@@ -1807,7 +1807,14 @@ async function main(argv) {
             ...written.preserved.map((line) =>
               value(line, liveProv(ctx.at, ctx.host, "the withdrawal's own preservation rule")),
             ),
-            note(`  ${written.line}`),
+            // THE LINE GOES OUT AS A STAMPED VALUE AND FLATTENED. It
+            // carries dates and an attempt id, and this renderer refuses a
+            // NOTE that carries a digit; it is also hard-wrapped for the
+            // card, and a value is one line.
+            value(
+              `the line appended: ${written.line.replace(/\s+/g, " ")}`,
+              liveProv(ctx.at, ctx.host, "the withdrawal, over the card it wrote"),
+            ),
           ]),
         );
       } catch (err) {

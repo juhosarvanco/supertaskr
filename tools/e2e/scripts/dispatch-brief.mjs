@@ -74,7 +74,7 @@
 
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { closeSync, existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from "node:fs";
+import { closeSync, existsSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -10982,6 +10982,25 @@ export function assembleReturnBrief(ctx, opts) {
  */
 export const EXPRESS_LABEL = "express";
 
+/**
+ * THE CONVENTIONS BULLET THIS ARM IS ANSWERABLE TO, by its own opener.
+ *
+ * It is named here for the reason the port and scratch phrases beside it
+ * are: the context pack is DERIVED by searching this directory's sources
+ * for the openers `docs/CONVENTIONS.md` publishes, so a rule no script
+ * cites reaches no seat's pack. A seat whose fence implicates the express
+ * path should meet the rule in its brief rather than have to go looking.
+ *
+ * IT IS THE BULLET'S WHOLE BOLDED OPENER AND THE OPENER IS KEPT SHORT
+ * ENOUGH TO BE ONE, which is a constraint on the DOCUMENT rather than on
+ * this line: the pack captures a bolded opener up to a fixed width and
+ * then requires the bullet to open with exactly what it captured, so an
+ * opener longer than that width is truncated MID-WORD and the pack throws
+ * the moment any script cites it. Bold the rule and leave the rest of the
+ * sentence outside the bold.
+ */
+export const EXPRESS_BULLET_PHRASE = "THE EXPRESS PATH IS A SHORT ROAD THROUGH THE ORDINARY RITUAL";
+
 /** The heading an express card's own record sits under, inside its notes. */
 export const EXPRESS_HEADING = "Express path";
 
@@ -11883,10 +11902,30 @@ export function runExpress(plan, io) {
   let wrote = "";
   const cardAt = path.join(plan.root, plan.card.file);
 
-  /** Undo the one write this run makes, and nothing else. */
+  /**
+   * Undo the one write this run makes, and nothing else.
+   *
+   * **IT TAKES THE FILE BACK EVEN WHEN THE STAGING NEVER HAPPENED.** The
+   * card is written and then staged, so a refusal BETWEEN the two leaves
+   * a file `git rm` cannot see — and a compact card left untracked in the
+   * integration checkout is dirt the next merge counts as somebody's
+   * uncommitted work.
+   */
   const unwind = () => {
     if (wrote === "") return;
-    io.run(["git", "-C", plan.root, "rm", "--quiet", "--force", "--", plan.card.file], { cwd: plan.root });
+    const removed = io.run(["git", "-C", plan.root, "rm", "--quiet", "--force", "--", plan.card.file], {
+      cwd: plan.root,
+    });
+    if (removed.status !== 0 && existsSync(cardAt)) {
+      try {
+        rmSync(cardAt);
+      } catch {
+        findings.push(
+          `the compact card this run wrote at ${plan.card.file} could not be taken back, so it is ` +
+            "still there and it is this run's to remove.",
+        );
+      }
+    }
     wrote = "";
   };
 
@@ -12392,6 +12431,7 @@ export function expressRecs(ctx, plan, result) {
   /** @type {Rec[]} */
   const recs = [
     note("THE EXPRESS PATH — a short road through the existing one, and every step of it named"),
+    value(`the rule this arm is answerable to: the conventions bullet opening "${EXPRESS_BULLET_PHRASE}"`, t),
     value(`outcome sentence, verbatim as the criterion: ${plan.card.criterion}`, l),
     value(`fence: ${plan.fence.join(", ")} — ${String(plan.paths.length)} path(s)`, t),
     value(`compact card: ${plan.card.file} at blob ${plan.blob}`, l),
