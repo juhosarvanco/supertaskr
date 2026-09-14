@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1087 behaviours** — 1085 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1094 behaviours** — 1092 extracted sentences + 2 named-not-extracted (listed at the end) — across 41 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -892,6 +892,13 @@ Census: **1087 behaviours** — 1085 extracted sentences + 2 named-not-extracted
 - a block whose OLD text also occurs elsewhere is REFUSED with both counts, never applied at the site its NEW text names
 - a forbidden-spelling refusal names the file and the class and REDACTS the value, on every class it carries
 - a merge is what an APPROVED verdict authorises, so a REJECTED newest verdict refuses the drill
+- a verdict whose corrections are ALL wording and SAY SO is nothing to drill, and the step's line names each one
+- a block and a stated wording correction is ONE drill and no refusal, and the drill's own line still names the wording one
+- a correction with NEITHER a block nor the statement is refused BY NAME, beside corrections that have one
+- which correction a no-block statement is ABOUT is read from the ordinals it names AND from the stretch it sits in
+- a verdict that assigns NO correction is not read for corrections, however often it writes the word
+- --blocks-absent acknowledges a verdict carrying NO block at all, and never stands in for the blocks one DOES carry
+- the ordinals a no-block statement credits are its OWN clause's, so a sentence naming a correction that HAS a body does not excuse it
 - a dated `### ` entry is found wherever its date sits, and an undated heading is still refused
 - a CORRECTION block's own heading is never read as a verdict entry, however it is dated
 - the heading shape verifier.md publishes IS a heading this reader finds, and the date's place is named there

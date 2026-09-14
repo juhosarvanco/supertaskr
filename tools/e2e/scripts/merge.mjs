@@ -109,6 +109,7 @@ export const CONVENTIONS_PATH = path.join(repoRoot, "docs", "CONVENTIONS.md");
  * @property {MutantBlock} [block] the correction this step re-drills
  * @property {string} [problem] why this step cannot be performed at all
  * @property {string} [warning] news the step prints and does not stop for
+ * @property {readonly string[]} [wording] the corrections this step drills nothing for because the verdict says they carry no block
  */
 
 /**
@@ -867,6 +868,297 @@ export function runMutantDrill(input) {
 export const ACKNOWLEDGE_PREFIX = 7;
 
 /**
+ * ONE CORRECTION A VERDICT ANNOUNCES, as a unit the drill step can ask
+ * its two questions of: is there a block for this one, and did the
+ * verdict say this one needs none.
+ *
+ * `spans` is a LIST because a verdict comes back to a correction it has
+ * already announced — "CORRECTION 2's `--- old` is the CORRECTED text"
+ * is a second paragraph about correction 2, not a third correction — and
+ * folding the repeats into one entry is what keeps the count honest.
+ *
+ * @typedef {object} CorrectionEntry
+ * @property {string} name the announcement's own words, emphasis off
+ * @property {string} key that name folded, so a block's `correction:` field can be matched to it
+ * @property {[number, number][]} spans the line ranges of this correction's stretches of the verdict
+ */
+
+/**
+ * A CORRECTION'S ANNOUNCEMENT LINE, IN THE TWO SHAPES THIS BOARD HAS
+ * ACTUALLY WRITTEN: a heading (`#### CORRECTION 3 — ...`) and a bold
+ * lead (`**Correction 3 — ...**`), either of them possibly a list item.
+ *
+ * THE MARKER IS REQUIRED, and that is the conservative half. A bare
+ * prose line beginning "Correction 3 was applied" is a sentence ABOUT a
+ * correction, and reading it as an announcement would invent a
+ * correction the verdict never assigned — which this step would then
+ * refuse for having no block. Missing an announcement costs a step that
+ * cannot say which corrections it read; inventing one costs a false stop,
+ * and a false stop is what this card is.
+ *
+ * `CORRECTION\b` and not `CORRECTION` alone: the plural heads a SECTION
+ * ("#### Corrections assigned"), never a single correction.
+ */
+const CORRECTION_ANNOUNCEMENT =
+  /^[ \t]*(?:[-*+][ \t]+)?(?:#{1,6}[ \t]*(?:\*\*|__)?|\*\*|__)[ \t]*(CORRECTION\b[^\n]*)$/i;
+
+/**
+ * WHAT A VERDICT SAYS WHEN IT SAYS A CORRECTION CARRIES NO BLOCK.
+ *
+ * `roles/verifier.md` step 5b asks for the statement and does not spell
+ * it, so this is a reader of the spellings the board has written rather
+ * than of one sanctioned form: "it carries no mutant block", "owes no
+ * block", "No block: there is no property to pin", "each pins no
+ * property and owes no block", "NO MUTANT BLOCK IS EMITTED".
+ *
+ * THE ONE SHAPE DELIBERATELY OUTSIDE IT is "no block names a line
+ * number" — a claim ABOUT the blocks a verdict does carry, written at
+ * three merges on this board. The second pattern therefore requires the
+ * phrase to END its clause, which is what separates "No block." from
+ * "No block names ...".
+ */
+const NO_BLOCK_SAID = [
+  /\b(?:carries|carry|carrying|owes|owe|owing|owed|has|have|with|needs|wants|is|are)\s+no\s+(?:mutant\s+)?block\b/i,
+  /(?:^|[.;:,—–-]\s*)no\s+(?:mutant\s+)?block\s*(?:[.;:,]|$)/i,
+  /\bno\s+(?:mutant\s+)?block\s+(?:is|was|will\s+be)\s+(?:written|owed|needed|emitted|assigned)\b/i,
+  /\bno\s+property\s+to\s+pin\b/i,
+  /\bpins?\s+no\s+property\b/i,
+];
+
+/**
+ * Emphasis, code ticks and the line wrapping off — the prose a reader sees.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+function plainProse(text) {
+  return text.replace(/[*_`]+/g, "").replace(/\s+/g, " ").trim();
+}
+
+/**
+ * THE NAME A CORRECTION IS KNOWN BY, FOLDED so the verdict's own
+ * announcement and the block's `correction:` field are one string.
+ *
+ * A verifier writes the same correction two ways within one verdict —
+ * `**Correction 3 — the counter walks past an overlapping site, so a
+ * text matching TWO sites ...**` heads it and `correction: correction 3
+ * — the counter walks past an overlapping site` anchors its block — and
+ * the ordinal is the half that survives both. Where there is no ordinal
+ * the leading phrase is, up to its first dash or sentence punctuation.
+ *
+ * @param {string} name
+ * @returns {string}
+ */
+export function correctionKey(name) {
+  const flat = plainProse(name);
+  const numbered = /^(?:CORRECTIONS?|C)\s*#?\s*(\d+[a-z]?)\b/i.exec(flat);
+  if (numbered !== null) return `correction ${/** @type {string} */ (numbered[1]).toLowerCase()}`;
+  const head = (flat.split(/\s+[—–]+\s+|\s+--\s+|[.:;,]/)[0] ?? flat).trim();
+  const bare = /^(?:CORRECTIONS?|C)?\s*#?\s*(\d+[a-z]?)$/i.exec(head);
+  if (bare !== null) return `correction ${/** @type {string} */ (bare[1]).toLowerCase()}`;
+  return head.toLowerCase();
+}
+
+/**
+ * DO TWO FOLDED NAMES NAME THE SAME CORRECTION — equal, or one a
+ * whole-token prefix of the other, so `correction 1` never meets
+ * `correction 11`.
+ *
+ * @param {string} a
+ * @param {string} b
+ * @returns {boolean}
+ */
+function keysMeet(a, b) {
+  if (a.length === 0 || b.length === 0) return false;
+  if (a === b) return true;
+  const [shorter, longer] = a.length < b.length ? [a, b] : [b, a];
+  if (!longer.startsWith(shorter)) return false;
+  return /[^0-9a-z]/i.test(longer.slice(shorter.length, shorter.length + 1));
+}
+
+/** Which lines of a text sit inside a fenced code block. @param {readonly string[]} lines @returns {boolean[]} */
+function fencedLines(lines) {
+  /** @type {boolean[]} */
+  const inside = new Array(lines.length).fill(false);
+  /** @type {string | null} */
+  let open = null;
+  for (let i = 0; i < lines.length; i += 1) {
+    const fence = FENCE_LINE.exec(lines[i] ?? "");
+    if (fence === null) {
+      inside[i] = open !== null;
+      continue;
+    }
+    const ticks = /** @type {string} */ (fence[2]);
+    const info = /** @type {string} */ (fence[3] ?? "");
+    inside[i] = true;
+    if (open === null) open = ticks;
+    else if (info.length === 0 && ticks.length >= open.length) open = null;
+  }
+  return inside;
+}
+
+/**
+ * EVERY CORRECTION A VERDICT ANNOUNCES, in the order it announces them.
+ *
+ * @param {string} verdictText
+ * @returns {CorrectionEntry[]}
+ */
+export function correctionEntries(verdictText) {
+  const lines = verdictText.split("\n");
+  const fenced = fencedLines(lines);
+  /** @type {{ name: string, key: string, at: number }[]} */
+  const found = [];
+  for (let i = 0; i < lines.length; i += 1) {
+    if (fenced[i] === true) continue;
+    const m = CORRECTION_ANNOUNCEMENT.exec(lines[i] ?? "");
+    if (m === null) continue;
+    const name = plainProse(/** @type {string} */ (m[1]));
+    found.push({ name, key: correctionKey(name), at: i });
+  }
+  /** @type {CorrectionEntry[]} */
+  const entries = [];
+  for (let n = 0; n < found.length; n += 1) {
+    const one = /** @type {{ name: string, key: string, at: number }} */ (found[n]);
+    const next = found[n + 1];
+    /** @type {[number, number]} */
+    const span = [one.at, next === undefined ? lines.length : next.at];
+    const already = entries.find((e) => keysMeet(e.key, one.key));
+    if (already === undefined) entries.push({ name: one.name, key: one.key, spans: [span] });
+    else already.spans.push(span);
+  }
+  return entries;
+}
+
+/**
+ * WHICH CORRECTIONS THE VERDICT STATES CARRY NO BLOCK.
+ *
+ * The statement is prose, so which correction it is ABOUT is read two
+ * ways and in this order. A sentence that NAMES ordinals is about those
+ * corrections wherever it sits — "Corrections 1 and 4 are wording
+ * repairs ... each pins no property and owes no block" stands in a
+ * preamble above every announcement. A sentence that names none is about
+ * the correction whose stretch of the verdict it sits in — "Wording; it
+ * carries no mutant block." sits inside its own announcement's
+ * paragraph, which is the shape that stopped the T-314-s6 merge.
+ *
+ * A sentence and not a paragraph, because a corrections preamble says
+ * both things in one breath: "Corrections 1 and 4 ... owe no block.
+ * Corrections 2 and 3 are bodies committed on this bench."
+ *
+ * @param {string} verdictText
+ * @param {readonly CorrectionEntry[]} entries
+ * @returns {Set<string>}
+ */
+export function statedNoBlock(verdictText, entries) {
+  const lines = verdictText.split("\n");
+  const fenced = fencedLines(lines);
+  /** @type {Set<string>} */
+  const said = new Set();
+  let start = 0;
+  for (let i = 0; i <= lines.length; i += 1) {
+    const blank = i === lines.length || (lines[i] ?? "").trim().length === 0 || fenced[i] === true;
+    if (!blank) continue;
+    if (i > start) {
+      const flat = plainProse(lines.slice(start, i).join(" "));
+      // THE CLAUSE, NEVER THE WHOLE SENTENCE (T-295-s10's verdict,
+      // correction 2). One sentence carries two independent clauses about
+      // two different corrections — "Correction 1 adds the keeper the
+      // amendment's other half never got; correction 2 is a wording repair
+      // and carries no block." is T-300-s7's own corrections preamble,
+      // measured — and a sentence-wide harvest credits correction 1 with a
+      // statement that says the opposite of it, then names a correction the
+      // same plan is DRILLING as wording on the step's own line.
+      for (const sentence of flat.split(/(?<=[.!?])\s+|\s*;\s*/)) {
+        if (!NO_BLOCK_SAID.some((re) => re.test(sentence))) continue;
+        // BOTH, never one or the other. A correction's own paragraph
+        // says "it pins no property and owes no mutant block, and the
+        // block count below is short for that reason and for correction
+        // 1's" — a statement about ITSELF that names another correction's
+        // ordinal in the same breath (T-317's verdict, measured). Taking
+        // the ordinals INSTEAD of the containing entry reads that as a
+        // statement about correction 1 and refuses correction 3.
+        const owner = entries.find((e) => e.spans.some(([from, to]) => start >= from && start < to));
+        if (owner !== undefined) said.add(owner.key);
+        for (const key of namedCorrections(sentence)) said.add(key);
+      }
+    }
+    start = i + 1;
+  }
+  return said;
+}
+
+/**
+ * THE CORRECTIONS ONE SENTENCE NAMES BY ORDINAL — "correction 3",
+ * "Corrections 1 and 4", "corrections 2, 3 and 5".
+ *
+ * @param {string} sentence
+ * @returns {string[]}
+ */
+function namedCorrections(sentence) {
+  /** @type {string[]} */
+  const keys = [];
+  const run = /\bcorrections?\s+(\d+[a-z]?(?:\s*(?:,|and|&)\s*\d+[a-z]?)*)/gi;
+  for (let m = run.exec(sentence); m !== null; m = run.exec(sentence)) {
+    for (const one of /** @type {string} */ (m[1]).split(/[^0-9a-z]+/i)) {
+      if (/^\d+[a-z]?$/i.test(one)) keys.push(`correction ${one.toLowerCase()}`);
+    }
+  }
+  return keys;
+}
+
+/**
+ * PER CORRECTION: a block, a statement that it needs none, or neither —
+ * and only the third is a shortfall (T-295-s10).
+ *
+ * The step this feeds used to read one count against another and treat
+ * EVERY shortfall as a body nobody wrote. `roles/verifier.md` step 5b
+ * prescribes the opposite shape for a wording repair: "A CORRECTION WITH
+ * NO PROPERTY TO PIN SAYS SO IN AS MANY WORDS." At the T-314-s6 merge a
+ * verdict assigned two corrections, both wording, and said of each that
+ * it carries no mutant block — the shape the role file asks for — and the
+ * verb stopped on it.
+ *
+ * A BLOCK IS ATTRIBUTED BY NAME AND THEN BY COUNT, in that order. The
+ * names are prose a verifier wrote twice and they can disagree in their
+ * tails, so a block left over after the name pass covers a correction
+ * left over after it: there IS a committed body, and only its label
+ * missed. The direction of that fallback is deliberate — a correction
+ * with a body and a mismatched label is a naming slip, while a false
+ * stop costs a merge.
+ *
+ * @param {{ entries: readonly CorrectionEntry[], blocks: readonly MutantBlock[], stated: ReadonlySet<string> }} input
+ * @returns {{ wording: CorrectionEntry[], unexplained: CorrectionEntry[] }}
+ */
+export function correctionShortfall(input) {
+  const { entries, blocks, stated } = input;
+  /** @type {Set<number>} */
+  const attributed = new Set();
+  /** @type {Map<string, "block" | "stated">} */
+  const covered = new Map();
+  for (const entry of entries) {
+    const at = blocks.findIndex(
+      (b, n) => !attributed.has(n) && keysMeet(correctionKey(b.correction), entry.key),
+    );
+    if (at !== -1) {
+      attributed.add(at);
+      covered.set(entry.key, "block");
+      continue;
+    }
+    if (stated.has(entry.key)) covered.set(entry.key, "stated");
+  }
+  let spare = blocks.length - attributed.size;
+  for (const entry of entries) {
+    if (covered.has(entry.key) || spare <= 0) continue;
+    spare -= 1;
+    covered.set(entry.key, "block");
+  }
+  return {
+    wording: entries.filter((e) => covered.get(e.key) === "stated"),
+    unexplained: entries.filter((e) => !covered.has(e.key)),
+  };
+}
+
+/**
  * THE DRILL STEPS a merge owes, read off the card's newest verdict.
  *
  * A verdict that assigns NO correction owes no block, and that is a step
@@ -882,7 +1174,21 @@ export const ACKNOWLEDGE_PREFIX = 7;
  * takes the run's OWN verdict sha, the shape `undo.mjs`'s `--force <sha>`
  * already uses on this board: it cannot be typed once and reused, it
  * lands in the run's output, and it downgrades the refusal to NEWS rather
- * than silence. Blocks that ARE present are drilled either way.
+ * than silence. The flag never stands in for a block: a verdict that
+ * carries blocks either has them drilled or is stopped, and the flag
+ * reaches only a verdict that carries none (T-295-s10, correction 3).
+ *
+ * AND THE SHORTFALL IS READ PER CORRECTION, NOT AS ONE COUNT AGAINST
+ * ANOTHER (T-295-s10). `roles/verifier.md` step 5b prescribes a shape for
+ * a correction with no property to pin — it SAYS SO in as many words —
+ * and this step used to refuse it: at the T-314-s6 merge a verdict
+ * assigned two corrections, both wording, said of each that it carries no
+ * mutant block, and the verb stopped, the fourth false stop of the weekend.
+ * So each correction is asked its own two questions, every block is
+ * drilled as before, a stated no-block correction is nothing to drill, and
+ * the refusal is kept for the one shape it was written for: a correction
+ * with NEITHER a block NOR the statement, named in the refusal so a seat
+ * reading it knows which.
  *
  * @param {{ cardText: string | undefined, projectRoot: string, id: string, verdictSha?: string | undefined, blocksAbsent?: string | undefined }} input
  * @returns {Step[]}
@@ -917,49 +1223,108 @@ export function drillSteps(input) {
   const read = readMutantBlocks(verdict.text);
   if ("problem" in read) return refuse(read.problem);
   const heads = correctionHeadings(verdict.text);
-  if (read.blocks.length === 0) {
-    if (assignsCorrections(verdict.text)) {
-      const said =
-        `the newest verdict (${verdict.heading}) assigns corrections and carries NO mutant ` +
+  // THE PER-CORRECTION READING IS THE ASSIGNING VERDICT'S AND NO
+  // OTHER'S, which is the criterion's own WHEN. A verdict that assigns
+  // none still writes the word: `**CORRECTION, and it makes the item
+  // BIGGER rather than smaller — this verdict first said ...**` is a
+  // verifier correcting its OWN prose inside a finding (T-216-s1's
+  // verdict, measured), and enumerating it would invent a correction the
+  // verdict never assigned and then refuse the merge for its missing body.
+  const assigns = assignsCorrections(verdict.text);
+  const entries = assigns ? correctionEntries(verdict.text) : [];
+  const { wording, unexplained } = correctionShortfall({
+    entries,
+    blocks: read.blocks,
+    stated: statedNoBlock(verdict.text, entries),
+  });
+  /** How this step's own line says a correction is wording. @param {readonly CorrectionEntry[] } set */
+  const asWording = (set) =>
+    `WORDING, no block by the verdict's own words: ${set.map((e) => e.name).join(" / ")}`;
+  // THE SHORTFALL, PER CORRECTION AND NOT AS A COUNT (T-295-s10). A
+  // verdict that assigns corrections and names no enumerable one is the
+  // whole-verdict case this step has always refused; a verdict whose
+  // corrections ARE enumerable is refused for the ones that carry
+  // neither a block nor the statement, and for no others.
+  const nothingRead = entries.length === 0 && read.blocks.length === 0 && assigns;
+  if (nothingRead || unexplained.length > 0) {
+    const said = nothingRead
+      ? `the newest verdict (${verdict.heading}) assigns corrections and carries NO mutant ` +
         "block — a correction whose body has to be recovered from a transcript is the thing " +
-        "this step exists to end";
-      const sha = input.verdictSha;
-      const named = input.blocksAbsent;
-      if (named !== undefined && named.length >= ACKNOWLEDGE_PREFIX && sha !== undefined && sha.startsWith(named)) {
-        return [
-          {
-            id: "drill:none",
-            kind: "gate",
-            action: "mutant-drill",
-            warning: `${said}. ACKNOWLEDGED by --blocks-absent ${named}: nothing was re-drilled.`,
-            title: `NO MUTANT BLOCK on ${id}'s newest verdict — acknowledged, not drilled`,
-            why:
-              "T-281: a verdict written before this rule existed carries no block, and the way " +
-              "through NAMES the verdict rather than blanketing the check",
-            run: null,
-          },
-        ];
-      }
-      if (named !== undefined) {
+        "this step exists to end"
+      : `the newest verdict (${verdict.heading}) carries NO mutant block for ` +
+        `${String(unexplained.length)} of its ${String(entries.length)} correction(s) and does ` +
+        `not say they need none — ${unexplained.map((e) => e.name).join(" / ")}. A correction ` +
+        "with no property to pin SAYS SO in as many words (roles/verifier.md 5b) and this step " +
+        "takes that at its word; a shortfall the verdict has NOT explained is a body nobody " +
+        "wrote, which is the thing this step exists to end";
+    const sha = input.verdictSha;
+    const named = input.blocksAbsent;
+    if (named !== undefined && named.length >= ACKNOWLEDGE_PREFIX && sha !== undefined && sha.startsWith(named)) {
+      // THE ACKNOWLEDGEMENT IS THE WHOLE-VERDICT ONE AND CANNOT REACH A
+      // PARTIAL SHORTFALL (T-295-s10's verdict, correction 1). This
+      // function's own docblock says the flag never stands in for a
+      // block, and at the base that held BY CONSTRUCTION: this branch
+      // was reachable only inside `read.blocks.length === 0`. Reading the
+      // shortfall per correction makes it reachable WITH blocks present,
+      // where returning this one step leaves every committed body
+      // undrilled — the one thing this step exists to stop.
+      if (!nothingRead) {
         return refuse(
-          `--blocks-absent named ${named}, which is not this run's verdict ` +
-            `${sha === undefined ? "(none resolved)" : sha.slice(0, 12)}. It is not a blanket ` +
-            "override: it names the specific verdict you have read and accepted",
+          "--blocks-absent acknowledges a verdict that carries NO mutant block at all, and " +
+            `this one carries ${String(read.blocks.length)}: the bodies it DOES carry are ` +
+            "drilled rather than waved past, and a correction that carries none is answered " +
+            `by the verdict saying so in as many words. ${said}`,
         );
       }
+      return [
+        {
+          id: "drill:none",
+          kind: "gate",
+          action: "mutant-drill",
+          warning: `${said}. ACKNOWLEDGED by --blocks-absent ${named}: nothing was re-drilled.`,
+          title: `NO MUTANT BLOCK on ${id}'s newest verdict — acknowledged, not drilled`,
+          why:
+            "T-281: a verdict written before this rule existed carries no block, and the way " +
+            "through NAMES the verdict rather than blanketing the check",
+          run: null,
+        },
+      ];
+    }
+    if (named !== undefined) {
       return refuse(
-        `${said}. If this verdict PREDATES the rule, read it and re-run naming it: ` +
-          `--blocks-absent ${sha === undefined ? "<verdict sha>" : sha.slice(0, 12)}`,
+        `--blocks-absent named ${named}, which is not this run's verdict ` +
+          `${sha === undefined ? "(none resolved)" : sha.slice(0, 12)}. It is not a blanket ` +
+          "override: it names the specific verdict you have read and accepted",
       );
     }
+    return refuse(
+      `${said}. If this verdict PREDATES the rule, read it and re-run naming it: ` +
+        `--blocks-absent ${sha === undefined ? "<verdict sha>" : sha.slice(0, 12)}`,
+    );
+  }
+  if (read.blocks.length === 0) {
+    // NOTHING TO DRILL, AND WHICH OF THE TWO REASONS IT IS. A verdict
+    // assigning none has always said so here; a verdict whose every
+    // correction is wording now says THAT instead, and names them, so a
+    // seat reading one line per step sees why nothing was drilled rather
+    // than reading an absence (T-295-s10 criterion 2).
     return [
       {
         id: "drill:none",
         kind: "gate",
         action: "mutant-drill",
-        title: `the newest verdict (${verdict.heading}) assigns no correction, so nothing is re-drilled`,
+        ...(wording.length > 0 ? { wording: wording.map((e) => e.name) } : {}),
+        title:
+          wording.length === 0
+            ? `the newest verdict (${verdict.heading}) assigns no correction, so nothing is re-drilled`
+            : `the newest verdict (${verdict.heading}) assigns ${String(entries.length)} ` +
+              `correction(s) and no block — ${asWording(wording)} — so nothing is re-drilled`,
         why:
-          "T-281: an APPROVED verdict owes no block, and saying so is not the same as finding none",
+          wording.length === 0
+            ? "T-281: an APPROVED verdict owes no block, and saying so is not the same as finding none"
+            : "roles/verifier.md 5b: a correction with no property to pin says so in as many " +
+              "words, and a shortfall the verdict HAS explained is not a body nobody wrote " +
+              "(T-295-s10)",
         run: null,
       },
     ];
@@ -973,7 +1338,14 @@ export function drillSteps(input) {
       `re-drill ${block.correction} — plant the mutant in ${block.file}, require ` +
       `${JSON.stringify(block.body)} RED ALONE in ${block.spec}` +
       (n === 0
-        ? ` (${String(heads)} correction heading(s), ${String(read.blocks.length)} block(s))`
+        ? ` (${String(heads)} correction heading(s), ${String(read.blocks.length)} block(s)` +
+          // THE COUNT THE STEP ACTUALLY READ, said only where it differs
+          // from the heading count — a verdict that announces its
+          // corrections in BOLD rather than as headings heads none of
+          // them, and a line reporting `0 correction heading(s)` beside
+          // two corrections read is a figure a seat has to re-derive.
+          (entries.length === heads ? "" : `, ${String(entries.length)} correction(s) read`) +
+          (wording.length === 0 ? ")" : `; ${asWording(wording)})`)
         : ""),
     why:
       "T-281 criterion 3: the block is the verifier's, the drill is the integrator's, and the " +
@@ -2779,8 +3151,11 @@ export function usageText() {
     "  verdict is re-drilled on the merged tree — planted, run, restored, proved by sha256 —",
     "  with the run STOPPING on a survivor, on a body that reds more than itself, or on an",
     "  anchor that does not match exactly once. A verdict that assigns corrections and",
-    "  carries no block is REFUSED; --blocks-absent naming that verdict's own sha accepts it",
-    "  as news instead — it is not a blanket, and blocks that are present are drilled anyway.",
+    "  carries no block for a correction that does not SAY it needs none is REFUSED, naming that",
+    "  correction; --blocks-absent naming that verdict's own sha accepts it",
+    "  as news instead — it is not a blanket and never stands in for a block: a verdict",
+    "  that carries blocks either has them drilled or is stopped, and the flag reaches only",
+    "  a verdict that carries none.",
     "  Since T-295 it also widens the card's fence on the integration branch for a",
     "  verdict-named spec outside it (the ONE commit this verb makes, because the landing",
     "  gate reads a merge's fence from its first parent), applies each block's correction",
@@ -3516,7 +3891,16 @@ function runStep(step, io) {
       return EXIT.CLEAN;
     }
     if (step.block === undefined) {
-      io.out("      the newest verdict assigns no correction — nothing to re-drill");
+      // WHICH OF THE TWO REASONS NOTHING WAS DRILLED, at run time and not
+      // only on the plan line (T-295-s10): a verdict assigning no
+      // correction, or one whose corrections are wording and say so.
+      const wording = step.wording ?? [];
+      io.out(
+        wording.length === 0
+          ? "      the newest verdict assigns no correction — nothing to re-drill"
+          : `      ${String(wording.length)} correction(s) carry NO block by the verdict's own ` +
+            `words and are nothing to drill: ${wording.join(" / ")}`,
+      );
       return EXIT.CLEAN;
     }
     const block = step.block;
