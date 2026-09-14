@@ -97,6 +97,9 @@ import {
   cardFileOf,
   classifyRefusal,
   grantState,
+  expressInstants,
+  expressMeasurements,
+  hasExpressInstants,
   liveProv,
   note,
   retryInstant,
@@ -174,6 +177,36 @@ export const ASK_TOKEN = "RUN-ASK";
 export const ACK_TOKEN = "RUN-ACK";
 export const DONE_TOKEN = "RUN-DONE";
 
+/**
+ * THE FOURTH TOKEN, AND IT IS THE RECEIPT'S OBSERVED HALF (T-320).
+ *
+ * **THE OBSERVED FIGURES COME FROM THE COMPLETION AND FROM NOWHERE ELSE.**
+ * A native child's model, token count and seconds arrive in the harness's
+ * own completion notification, which the seat copies in as this
+ * operation's evidence; a process child can write the same line itself.
+ * Either way the values enter the record through THIS grammar, so the one
+ * thing that can never happen is the one that would make the whole
+ * receipt worthless: the requested value being copied into the observed
+ * field. Nothing here reads the assignment.
+ *
+ *     RUN-OBSERVED model=<text> tokens=<integer> seconds=<number>
+ *
+ * The three keys are independent and any subset may appear: a
+ * notification that named the model and not the seconds records the
+ * model and leaves the seconds `unknown`, which is worth more than a
+ * plausible number nobody measured.
+ */
+export const OBSERVED_TOKEN = "RUN-OBSERVED";
+
+/** What an observation that never arrived is recorded as. Never substituted. */
+export const OBSERVED_UNKNOWN = "unknown";
+
+/** What a requested value the project has not configured is recorded as (T-318 is the gap). */
+export const REQUESTED_NOT_CONFIGURED = "not configured";
+
+/** The receipt's three observed keys, in the order the card names them. */
+export const OBSERVED_KEYS = Object.freeze(["model", "tokens", "seconds"]);
+
 /** A question id, as both tokens spell it. */
 const ID_PATTERN = "[A-Za-z0-9][A-Za-z0-9._-]{0,63}";
 
@@ -228,6 +261,15 @@ export class RunRecordFinding extends Error {
  * @property {?string} endedAt
  * @property {?string} outcome
  * @property {?string} usage
+ * @property {Observed} [observed]  what the COMPLETION said, never what was asked for
+ */
+
+/**
+ * @typedef {object} Observed
+ * @property {string} model    the model the completion named, or `unknown`
+ * @property {string} tokens   the token count it named, or `unknown`
+ * @property {string} seconds  the seconds it named, or `unknown`
+ * @property {string} source   where these came from, so a reader can check them
  */
 
 /**
@@ -252,6 +294,7 @@ export class RunRecordFinding extends Error {
  * @property {string} budget
  * @property {OwnedJob[]} [ownedJobs]
  * @property {{ kind: string, parent: string, evidence: string, scope: string }} [admission]
+ * @property {Record<string, string>} [instants]  the instants the DISPATCH already stamped
  */
 
 /**
@@ -273,6 +316,7 @@ export class RunRecordFinding extends Error {
  * @property {OwnedJob[]} ownedJobs
  * @property {{ state: string, at: string, evidence: Evidence[] } | null} outcome
  * @property {string} usage
+ * @property {Record<string, string>} instants  named ISO instants this attempt's life is measured from
  * @property {string[]} refs
  * @property {string} report
  * @property {{ seen: string, at: string }} stamp
@@ -360,6 +404,27 @@ const ASSIGNMENT_FIELDS = Object.freeze([
   "deadline",
   "budget",
 ]);
+
+/**
+ * A MAP OF NAMED ISO INSTANTS, read defensively: a value that is not a
+ * readable instant is DROPPED rather than kept, because a measurement
+ * taken from an unparseable date is a figure with no meaning, and
+ * `unknown` is a better answer than a wrong one.
+ *
+ * @param {unknown} raw
+ * @returns {Record<string, string>}
+ */
+export function readInstants(raw) {
+  /** @type {Record<string, string>} */
+  const out = {};
+  if (raw === null || typeof raw !== "object" || Array.isArray(raw)) return out;
+  for (const [key, value] of Object.entries(/** @type {Record<string, unknown>} */ (raw))) {
+    const v = String(value ?? "").trim();
+    if (v === "" || !Number.isFinite(Date.parse(v))) continue;
+    out[key] = v;
+  }
+  return out;
+}
 
 /**
  * Read and validate an assignment document.
@@ -478,6 +543,13 @@ export function readAssignment(file) {
     budget: String(obj["budget"]).trim(),
     ownedJobs,
     admission,
+    // THE INSTANTS THE DISPATCH ALREADY STAMPED (T-320). Two of the six
+    // an express change is measured by happen BEFORE any child exists —
+    // the outcome sentence's own instant and the lane cut — so they reach
+    // the record the only way they can: carried in the assignment the
+    // dispatch wrote. Anything else here is read and kept; the record is
+    // where they are measured from, and this is the door.
+    instants: readInstants(obj["instants"]),
   };
 }
 
@@ -897,6 +969,11 @@ export function startRun(root, opts) {
     ownedJobs: a.ownedJobs ?? [],
     outcome: null,
     usage: "unknown",
+    // THE INSTANTS, SEEDED FROM THE ASSIGNMENT AND STAMPED FROM HERE ON.
+    // `started` is this arm's own and is written here so that an attempt
+    // whose dispatch stamped nothing still has one instant it can be
+    // measured from.
+    instants: { ...(a.instants ?? {}), started: at },
     refs: [],
     report: "none",
     stamp: { seen: "unknown", at },
@@ -996,6 +1073,16 @@ export function bindRun(root, opts) {
     endedAt: null,
     outcome: null,
     usage: null,
+    // THE RECEIPT'S OBSERVED HALF STARTS UNKNOWN AND IS WRITTEN ONLY BY A
+    // COMPLETION (T-320). It is written out rather than left off so that
+    // a record whose child never reported and a record from before this
+    // card look the same to every reader: unknown, and not substituted.
+    observed: {
+      model: OBSERVED_UNKNOWN,
+      tokens: OBSERVED_UNKNOWN,
+      seconds: OBSERVED_UNKNOWN,
+      source: "no completion has been observed for this execution",
+    },
   };
   transition(
     rec,
@@ -1034,6 +1121,98 @@ export function readTokens(text) {
   );
   const doneMatch = new RegExp(`^[ \\t]*${DONE_TOKEN}[ \\t]+(ok|failed|gone)`, "m").exec(text);
   return { asks, acks, done: doneMatch === null ? null : /** @type {string} */ (doneMatch[1]) };
+}
+
+/**
+ * THE OBSERVED HALF OF THE RECEIPT, READ OFF A COMPLETION.
+ *
+ * **A TOKEN IS LINE-INITIAL, for the reason the other three are**: a
+ * sentence that MENTIONS the token is not the token, and the answer this
+ * arm writes into an ask file tells a child in prose which line to write
+ * back. The LAST line wins where several appear, because a continued
+ * attempt's newer completion is the one that describes the execution that
+ * just ended.
+ *
+ * @param {string} text
+ * @param {string} source  where this text came from, kept on the record
+ * @returns {?Observed} null where no such line is present at all
+ */
+export function readObserved(text, source) {
+  const line = [
+    ...String(text ?? "").matchAll(new RegExp(`^[ \\t]*${OBSERVED_TOKEN}[ \\t]+(.*)$`, "gm")),
+  ].pop();
+  if (line === undefined) return null;
+  const body = String(line[1] ?? "");
+  /** @type {Record<string, string>} */
+  const found = {};
+  for (const m of body.matchAll(/\b(model|tokens|seconds)=("[^"]*"|\S+)/g)) {
+    const key = String(m[1]);
+    const raw = String(m[2]);
+    found[key] = raw.startsWith('"') ? raw.slice(1, -1) : raw;
+  }
+  return {
+    model: found["model"] ?? OBSERVED_UNKNOWN,
+    tokens: found["tokens"] ?? OBSERVED_UNKNOWN,
+    seconds: found["seconds"] ?? OBSERVED_UNKNOWN,
+    source,
+  };
+}
+
+/**
+ * @typedef {object} Receipt
+ * @property {{ model: string, effort: string }} requested
+ * @property {{ model: string, tokens: string, seconds: string, source: string }} observed
+ * @property {string[]} unknown    the observations that never arrived
+ * @property {string[]} mismatch   the requested values the completion contradicted
+ */
+
+/**
+ * THE LAUNCH RECEIPT — the card's FOURTH criterion, and the two halves
+ * are kept apart on purpose.
+ *
+ * **REQUESTED AND OBSERVED ARE SEPARATE FIELDS AND NEITHER FILLS IN FOR
+ * THE OTHER.** The requested half is the ASSIGNMENT's — what the template
+ * asked for when the child was started. The observed half is the
+ * EXECUTION's — what the completion said. A receipt that copied the
+ * requested value into the observed field would be a forgery, and it
+ * would be an invisible one: the two would agree by construction and the
+ * mismatch this receipt exists to expose could never appear. So a missing
+ * observation is `unknown`, and `unknown` is never a mismatch either —
+ * "I was not told" and "I was told something else" are different facts.
+ *
+ * @param {RunRecord} rec
+ * @returns {Receipt}
+ */
+export function launchReceipt(rec) {
+  const requested = {
+    model: rec.assignment.model === "" ? REQUESTED_NOT_CONFIGURED : rec.assignment.model,
+    effort: rec.assignment.effort === "" ? REQUESTED_NOT_CONFIGURED : rec.assignment.effort,
+  };
+  const seen = rec.execution?.observed;
+  const observed = {
+    model: seen?.model ?? OBSERVED_UNKNOWN,
+    tokens: seen?.tokens ?? OBSERVED_UNKNOWN,
+    seconds: seen?.seconds ?? OBSERVED_UNKNOWN,
+    source: seen?.source ?? "no completion has been observed for this attempt",
+  };
+  /** @type {string[]} */
+  const unknown = [];
+  for (const key of OBSERVED_KEYS) {
+    if (/** @type {Record<string, string>} */ (observed)[key] === OBSERVED_UNKNOWN) {
+      unknown.push(`observed ${key} is ${OBSERVED_UNKNOWN} — it was not in the completion, and it is NOT substituted`);
+    }
+  }
+  /** @type {string[]} */
+  const mismatch = [];
+  if (observed.model !== OBSERVED_UNKNOWN && observed.model !== requested.model) {
+    mismatch.push(
+      `the REQUESTED model was ${requested.model} and the completion OBSERVED ` +
+        `${observed.model} — a seat ran on a model the project did not ask for, which makes this ` +
+        "lane's cost, its verification tier and its comparability a property of who dispatched it " +
+        `rather than of the project (read from: ${observed.source})`,
+    );
+  }
+  return { requested, observed, unknown, mismatch };
 }
 
 /**
@@ -1154,6 +1333,28 @@ export function observeRun(root, opts) {
     signals.push("the harness's own output was handed to this observation and is retained");
   }
 
+  // ── THE RECEIPT'S OBSERVED HALF (T-320) ────────────────────────────
+  // **IT IS READ FROM THE EVIDENCE AND FROM THE ASK FILE, AND FROM
+  // NOTHING ELSE.** The assignment is not consulted here and must not be:
+  // a receipt whose observed half is filled in from what was requested
+  // agrees with itself by construction, and the mismatch it exists to
+  // expose could never appear.
+  const observed =
+    readObserved(evidence, "the harness's own completion, handed to --run observe as evidence") ??
+    readObserved(askText, `the ask file at ${String(rec.ask)}, written by the child itself`);
+  if (observed !== null && rec.execution !== null) {
+    rec.execution.observed = observed;
+    signals.push(
+      `the completion's own figures: model ${observed.model}, tokens ${observed.tokens}, ` +
+        `seconds ${observed.seconds} — from ${observed.source}`,
+    );
+  } else if (observed !== null) {
+    signals.push(
+      `a ${OBSERVED_TOKEN} line was present and NO execution is bound to this attempt, so there ` +
+        "is nothing for it to describe and it was not recorded",
+    );
+  }
+
   // THE STAMP — read off the resource's own card, because a scope grant
   // that lands after it requires a FRESH attempt and this is where that
   // fact is learned rather than typed.
@@ -1211,6 +1412,11 @@ export function observeRun(root, opts) {
       evidence: [{ at, kind: "observed", detail: why }],
     };
     if (rec.execution !== null) rec.execution.outcome = to;
+    // THE CANDIDATE'S OWN INSTANT (T-320), stamped where the attempt
+    // REACHED an outcome rather than where somebody noticed it had: it is
+    // the same instant the outcome is recorded at, taken once so the two
+    // can never disagree.
+    rec.instants = { ...(rec.instants ?? {}), candidate: at };
   }
   writeRecord(root, rec);
   return { record: rec, signals };
@@ -1481,7 +1687,7 @@ export async function waitRun(root, opts, clock) {
  * usage and a collected `unknown` is worth more than an absent figure.
  *
  * @param {string} root
- * @param {{ attempt: string, usage?: string, ref?: string, report?: string, at?: string, io?: RunIo }} opts
+ * @param {{ attempt: string, usage?: string, ref?: string, report?: string, instants?: Record<string, string>, at?: string, io?: RunIo }} opts
  * @returns {{ record: RunRecord, collected: { state: string, usage: string, refs: string[], report: string, evidence: Evidence[] } }}
  */
 export function collectRun(root, opts) {
@@ -1497,6 +1703,15 @@ export function collectRun(root, opts) {
     );
   }
   if (opts.usage !== undefined && opts.usage.trim() !== "") rec.usage = opts.usage.trim();
+  // THE INSTANTS THE SEAT HOLDS (T-320). Three of the six an express
+  // change is measured by happen after the child is gone — the owed set's
+  // conclusion, the merge commit and the push — and the seat is the only
+  // one who can stamp them. They come in through the COLLECT verb rather
+  // than through a verb of their own, because collect is already the
+  // operation that closes an attempt's record with what it cost.
+  if (opts.instants !== undefined) {
+    rec.instants = { ...(rec.instants ?? {}), ...readInstants(opts.instants) };
+  }
   if (opts.ref !== undefined && opts.ref.trim() !== "" && !rec.refs.includes(opts.ref.trim())) {
     rec.refs.push(opts.ref.trim());
   }
@@ -1951,6 +2166,7 @@ export function stopRun(root, opts) {
  * @property {string} [usage]
  * @property {string} [ref]
  * @property {string} [report]
+ * @property {Record<string, string>} [instants]
  * @property {number} [ceilingMs]
  * @property {boolean} [replace]
  */
@@ -1966,7 +2182,7 @@ export const VERB_DIALS = Object.freeze({
   observe: ["attempt", "evidence"],
   send: ["attempt", "question", "answer", "evidence"],
   wait: ["attempt", "ceiling", "evidence"],
-  collect: ["attempt", "usage", "ref", "report"],
+  collect: ["attempt", "usage", "ref", "report", "instant"],
   continue: ["attempt", "replace", "evidence"],
   stop: ["attempt", "evidence"],
 });
@@ -2069,9 +2285,55 @@ export function runPlan(opts, replace = false) {
     if (opts["usage"] !== undefined) plan.usage = opts["usage"];
     if (opts["ref"] !== undefined) plan.ref = opts["ref"];
     if (opts["report"] !== undefined) plan.report = opts["report"];
+    if (opts["instant"] !== undefined) plan.instants = parseInstantDial(opts["instant"]);
   }
   if (verb === "continue") plan.replace = replace;
   return plan;
+}
+
+/**
+ * `--instant name=<iso>[,name=<iso>...]`, PARSED AND REFUSED RATHER THAN
+ * DROPPED. A pair this arm cannot read — a missing name, a missing value,
+ * or a value that is not a readable instant — is a measurement the seat
+ * believes it recorded and did not, so the dial refuses by name instead
+ * of keeping the half it understood.
+ *
+ * **THE NAME ITSELF IS NOT CHECKED AGAINST A LIST, AND THAT IS THE
+ * DESIGN.** `EXPRESS_INSTANTS` names the six the five measurements are
+ * differences of, but the record's instants map is open on purpose: the
+ * runner's own conclusion is stamped beside those six as a seventh, and a
+ * closed list here would refuse the one instant the card asks to be kept
+ * BESIDE the total rather than folded into it.
+ *
+ * @param {string} raw
+ * @returns {Record<string, string>}
+ */
+export function parseInstantDial(raw) {
+  /** @type {Record<string, string>} */
+  const out = {};
+  for (const entry of String(raw ?? "").split(",")) {
+    const pair = entry.trim();
+    if (pair === "") continue;
+    const at = pair.indexOf("=");
+    const name = at < 0 ? "" : pair.slice(0, at).trim();
+    const value = at < 0 ? "" : pair.slice(at + 1).trim();
+    if (name === "" || value === "") {
+      throw new RunRecordFinding(
+        "RUN_INSTANT",
+        `run-record: ${JSON.stringify(pair)} is not a \`name=<instant>\` pair. The dial takes ` +
+          "comma-separated pairs, and a half-read one is a measurement nobody recorded.",
+      );
+    }
+    if (!Number.isFinite(Date.parse(value))) {
+      throw new RunRecordFinding(
+        "RUN_INSTANT",
+        `run-record: ${JSON.stringify(value)} is not a readable instant, so \`${name}\` would be ` +
+          "stamped with something no measurement can be taken from.",
+      );
+    }
+    out[name] = value;
+  }
+  return out;
 }
 
 /**
@@ -2143,7 +2405,85 @@ export function runRecs(ctx, verb, rec, extra) {
     // the card's seventh criterion separates: what this arm REFUSED, what
     // it merely recorded, and what nobody in this tree can check.
     ...admissionRunRecs(rec, p),
+    // THE LAUNCH RECEIPT (T-320): requested beside observed, as two
+    // halves that never fill in for each other.
+    ...receiptRunRecs(rec, p),
+    // AND THE FIVE MEASUREMENTS, where this attempt carries instants to
+    // take them from.
+    ...measurementRunRecs(rec, p),
     ...extra.map((line) => value(line, p)),
+  ];
+}
+
+/**
+ * THE RECEIPT'S ROWS — the requested half, the observed half, what was
+ * never observed, and the mismatch where the two disagree.
+ *
+ * @param {RunRecord} rec
+ * @param {ReturnType<typeof liveProv>} p
+ * @returns {ReturnType<typeof value>[]}
+ */
+export function receiptRunRecs(rec, p) {
+  const r = launchReceipt(rec);
+  return [
+    value(`receipt requested: model ${r.requested.model}, effort ${r.requested.effort}`, p),
+    value(
+      `receipt observed: model ${r.observed.model}, tokens ${r.observed.tokens}, seconds ` +
+        `${r.observed.seconds} — ${r.observed.source}`,
+      p,
+    ),
+    ...r.unknown.map((u) => value(`receipt ${u}`, p)),
+    ...r.mismatch.map((m) => value(`receipt MISMATCH: ${m}`, p)),
+    ...(r.mismatch.length === 0
+      ? [
+          value(
+            "receipt: the observed model does not contradict the requested one" +
+              (r.observed.model === OBSERVED_UNKNOWN
+                ? " — and it cannot, because no model was observed; an unknown is never a mismatch"
+                : ""),
+            p,
+          ),
+        ]
+      : []),
+  ];
+}
+
+/**
+ * THE EXPRESS MEASUREMENT BLOCK, PRINTED FROM THE RECORD'S OWN STAMPED
+ * INSTANTS (T-320's sixth criterion).
+ *
+ * It is printed by the RUN report rather than by a verb of its own,
+ * because the collect verb is already where a seat closes an attempt with
+ * what it cost — so the block the notes are transcribed from arrives in
+ * the output of the command that finishes the run.
+ *
+ * AN ATTEMPT WITH NOTHING TO MEASURE PRINTS NOTHING. Five unknown rows on
+ * every ordinary run is noise, and noise is how a block nobody reads is
+ * made.
+ *
+ * @param {RunRecord} rec
+ * @param {ReturnType<typeof liveProv>} p
+ * @returns {ReturnType<typeof value>[]}
+ */
+export function measurementRunRecs(rec, p) {
+  if (!hasExpressInstants(rec)) return [];
+  const m = expressMeasurements(expressInstants(rec));
+  return [
+    value(
+      `measurements: from this record's own stamped instants (${Object.entries(rec.instants ?? {})
+        .map(([k, v]) => `${k} ${v}`)
+        .join(", ")})`,
+      p,
+    ),
+    ...m.rows.map((r) =>
+      value(
+        `measurement ${r.id}: ${r.seconds === null ? "unknown" : `${String(r.seconds)}s`} — ` +
+          `${r.what}; from ${r.from} to ${r.to}; ${r.why}`,
+        p,
+      ),
+    ),
+    ...m.unknown.map((u) => value(`measurement instant ${u}`, p)),
+    value(`measurement verdict: ${m.verdict}`, p),
   ];
 }
 

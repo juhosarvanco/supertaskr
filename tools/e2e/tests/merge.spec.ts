@@ -58,6 +58,7 @@ import {
   gradeCounts,
   isVerdictHeading,
   keeperSteps,
+  receiptKeeperReport,
   mergeDials,
   mergeMessage,
   metersBlocks,
@@ -1551,7 +1552,7 @@ test("the bound, the floor and the readings path this file computes are the ones
   expect(integrator, "and it says WHY it comes before the merge").toContain("FIRST PARENT");
 });
 
-test("the verb never pushes, and the keeper steps it plans are the four the card names", () => {
+test("the verb never pushes, and the keeper steps it plans are the four T-295 names plus the launch receipt T-320 adds", () => {
   // A NEGATIVE ASSERTION WITH ITS POSITIVE CONTROL (docs/CONVENTIONS.md):
   // the same read that finds no push finds the merge and the branch move,
   // so "no push" is a fact about this file and not about the reader.
@@ -1561,10 +1562,15 @@ test("the verb never pushes, and the keeper steps it plans are the four the card
   expect(argvLines.some((l) => /"push"/.test(l)), "and not one of them is a push").toBe(false);
   expect(argvLines.some((l) => /"merge"/.test(l)), "while the merge itself is there").toBe(true);
   const keepers = keeperSteps({ projectRoot: repoRoot, id: "T-000", card: "docs/tasks/T-000.md" });
+  // THE FIFTH IS T-320'S AND IT SITS WITH THE PREFLIGHT AT THE END, which
+  // is where the FLOOR steps are: `merge.keepers` switches the three cheap
+  // readings of the DIFF, and neither the card's own preflight nor the
+  // launch receipt is one of them.
   expect(keepers.map((s) => s.id)).toEqual([
     "keeper:pinned-sentence",
     "keeper:forbidden-spelling",
     "keeper:xs-bound",
+    "keeper:receipt",
     "keeper:preflight",
   ]);
   for (const k of keepers) expect(k.kind, `${k.id} is a gate with an exit`).toBe("gate");
@@ -2439,4 +2445,98 @@ test("assignsCorrections answers the same over one unchanging input, however oft
   );
   expect(assignsCorrections(none), "a verdict heading no correction, read once").toBe(false);
   expect(assignsCorrections(none), "the same verdict read again").toBe(false);
+});
+
+/* ── T-320: the launch receipt, read at the merge ──────────────────── */
+
+/** A run record as the receipt keeper reads one: the assignment's model, the execution's. */
+function receiptRecord(attempt: string, requested: string, observed: string | null, card = "T-320") {
+  return {
+    attempt,
+    assignment: { id: card, model: requested, effort: "not configured" },
+    execution:
+      observed === null
+        ? null
+        : {
+            observed: { model: observed, tokens: "unknown", seconds: "unknown", source: "a planted completion" },
+          },
+  } as unknown as Parameters<typeof receiptKeeperReport>[0]["records"][number];
+}
+
+test("T-320 — THE MERGE REFUSES A LAUNCH RECEIPT WHOSE OBSERVED MODEL CONTRADICTS THE REQUESTED ONE, by name, and an UNKNOWN observation is news rather than a refusal", () => {
+  // THE MERGE IS THE LAST MOMENT ANYTHING RE-READS THE RECORD. After this
+  // commit the lane's cost, its verification tier and its comparability
+  // are whatever the record says, and nothing later asks again — so a seat
+  // that ran on a model the project did not ask for has to stop something
+  // here or it stops nothing ever.
+  //
+  // KILLED BY: a keeper that passes a mismatch, one that refuses an
+  // unobserved receipt, one that reads ANOTHER card's records, and one
+  // whose refusal names neither model.
+  const mismatch = receiptKeeperReport({
+    id: "T-320",
+    records: [receiptRecord("T-320-a1", "claude-opus-5", "a-cheaper-model")],
+  });
+  expect(mismatch.findings.length, "a completion naming another model was let through the merge").toBe(1);
+  expect(mismatch.findings[0], "the refusal does not name the attempt it is about").toContain("T-320-a1");
+  expect(mismatch.findings[0], "the refusal does not name the model that was requested").toContain("claude-opus-5");
+  expect(mismatch.findings[0], "the refusal does not name the model that was observed").toContain("a-cheaper-model");
+
+  // THE CLEAN TWIN: the same keeper, the same shape, a matching model.
+  const agreeing = receiptKeeperReport({
+    id: "T-320",
+    records: [receiptRecord("T-320-a1", "claude-opus-5", "claude-opus-5")],
+  });
+  expect(agreeing.findings, "a matching receipt was refused, so the refusal above is about nothing").toEqual([]);
+  expect(agreeing.unknown, "a fully observed receipt was reported unconfirmed").toEqual([]);
+
+  // AN UNKNOWN IS NEWS AND NOT A REFUSAL — the current launch route hands
+  // the observed figures in by hand, so a record with none is the ordinary
+  // case and a gate that stopped for it is a gate nobody could keep green.
+  const unobserved = receiptKeeperReport({
+    id: "T-320",
+    records: [receiptRecord("T-320-a1", "claude-opus-5", null)],
+  });
+  expect(unobserved.findings, "an unobserved receipt was refused").toEqual([]);
+  expect(unobserved.unknown.length, "an unobserved receipt went by in silence").toBe(1);
+  expect(unobserved.unknown[0], "the news does not say the requested value is unconfirmed rather than contradicted").toContain(
+    "unconfirmed rather than contradicted",
+  );
+
+  // AND ANOTHER CARD'S RECORDS ARE NOT THIS MERGE'S TO REFUSE.
+  const other = receiptKeeperReport({
+    id: "T-320",
+    records: [receiptRecord("T-999-a1", "claude-opus-5", "a-cheaper-model", "T-999")],
+  });
+  expect(other.read, "the keeper read a record belonging to another card").toBe(0);
+  expect(other.findings, "this merge was stopped for another card's mismatch").toEqual([]);
+});
+
+test("T-320 — THE RECEIPT KEEPER IS FLOOR: turning the cheap keepers off leaves it planned", () => {
+  // `merge.keepers` is the switch over T-295's three readings of the DIFF.
+  // A receipt mismatch is not a property of the diff at all — it says the
+  // seat that produced the diff ran on a model the project did not ask
+  // for — so a project that turned the diff checks off never asked for
+  // that to go unread.
+  //
+  // KILLED BY: a plan that drops the receipt step with the cheap ones, and
+  // one that keeps the cheap ones when the switch is off.
+  const off = keeperSteps({
+    projectRoot: repoRoot,
+    id: "T-000",
+    card: "docs/tasks/T-000.md",
+    // THE SETTINGS OBJECT IS THE LIBRARY'S OWN SHAPE, built here rather
+    // than stubbed loosely: `switchValue` reads `values`, and a stub that
+    // guessed at the shape would pass while the real resolution failed.
+    process: { profile: "a fixture", available: [], values: new Map([["merge.keepers", "off"]]), overridden: new Set() },
+  });
+  expect(off.map((s) => s.id), "the floor steps are not the card preflight and the launch receipt").toEqual([
+    "keeper:off",
+    "keeper:receipt",
+    "keeper:preflight",
+  ]);
+  expect(off[0]?.title, "the note does not say which switch turned them off").toContain("merge.keepers");
+  expect(off[0]?.why, "the note does not say the receipt reading is not one of the three").toContain(
+    "which is not one of the three",
+  );
 });

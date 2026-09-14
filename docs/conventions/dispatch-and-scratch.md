@@ -129,3 +129,38 @@ here without asking what reads it.
   shape to copy, and scratch ports must be probed on BOTH stacks.
   The history, the measurements and the argument this rule was cut
   from are in docs/reference/05-dispatch.md (T-290), verbatim.
+- **THE EXPRESS PATH IS A SHORT ROAD THROUGH THE ORDINARY RITUAL** and
+  never a second road (T-320): `brief.mjs --express "<outcome sentence>"
+  --fence <path[,path...]>` composes a compact XS card, measures its
+  ELIGIBILITY, preflights it and hands over to `--dispatch-lane`, which
+  admits, stamps, cuts and briefs as it does for every card.
+  `--express-withdraw <T-NNN> --why <text> --tier standard|guarded` takes
+  the label back off, keeping the branch and the run record.
+  **THE FIVE REQUIREMENTS ARE PRINTED WHETHER THEY HELD OR NOT** — a
+  requirement that PASSED and one nobody asked look alike in a report of
+  refusals — in order: an admission the grant permits; every changed path
+  inside the fence; a keeper or owning spec for every fenced path (the
+  blessed gate-runner's own owning rule over the import graph, WITHOUT
+  running a suite); no guard-class path (the map in
+  docs/conventions/architecture.md); reversible — tracked, present, not
+  generated.
+  **AN OUTCOME SENTENCE ALONE AUTHORIZES NO WORK**: under the explicit
+  no-grant state the express path REFUSES by name — its ONE departure
+  from the ordinary cut, because nobody triaged the compact card.
+  **THE BOUNDED TIER SAVES THE VERIFICATION AND NOTHING ELSE** — no bench
+  and no phase one, both skipped OUT LOUD in the ledger; the admission,
+  the preflight, the keeper, the fence manifest and the port stay.
+  **THE MEASUREMENTS ARE DIFFERENCES OF STAMPED INSTANTS, NEVER A
+  STOPWATCH**: the run writes `requested` and `cut` to
+  `instants-<card id>.json` for the assignment to carry, the record stamps
+  `candidate` at the outcome, and the seat stamps `checked`, `merged` and
+  `pushed` through `--run collect --instant <name>=<iso>[,...]`. The run
+  report prints the five and the verdict; an unstamped instant is
+  `unknown`, never substituted.
+  **THE RECEIPT NAMES REQUESTED BESIDE OBSERVED**: requested model and
+  effort are the assignment's (effort reads `not configured` until a
+  template carries one); observed model, tokens and seconds come from the
+  completion alone, through a line-initial `RUN-OBSERVED model=…
+  tokens=… seconds=…`. The merge refuses a contradicting model by name and
+  an unobserved one is NEWS; copying requested into observed is a forgery
+  the mismatch could then never expose.

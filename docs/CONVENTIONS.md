@@ -54,13 +54,14 @@ project can find is not in the document.
   - docs/conventions/dispatch-and-scratch.md — **THE VERIFIER'S BENCH IS TWO SPAWNS, AND THIS BULLET IS THE
   - docs/conventions/dispatch-and-scratch.md — **THE SEAT PROPOSES BEFORE IT RECORDS, AND THIS BULLET IS THE
   - docs/conventions/dispatch-and-scratch.md — PORT RULE: 1420 belongs to the human's live `tauri dev`. The lane
+  - docs/conventions/dispatch-and-scratch.md — **THE EXPRESS PATH IS A SHORT ROAD THROUGH THE ORDINARY RITUAL** and
   - docs/conventions/commands.md — CI (.github/workflows/ci.yml) is a thin invoker of exactly these
 
 ## Gotchas
 
 - method/ is the generic, product-agnostic convention — nothing
   supertaskr-specific goes in it; product docs live in docs/. Changes to
-  method/ formats are version-bumped (currently v0.1.33) and noted here.
+  method/ formats are version-bumped (currently v0.1.34) and noted here.
   **A VERSION'S NOTE HERE IS ITS DATE, ITS CARD AND ITS THEME; WHAT
   MOVED IS THE RELEASE'S OWN RECORD** (ADR-019's law applied to this
   changelog at T-162): the per-clause itemisation is RECORD-shaped, and

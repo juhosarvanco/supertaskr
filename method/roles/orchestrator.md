@@ -464,6 +464,46 @@ you know is in docs/. You are disposable at any moment.
    no verifier-only material. The SPELLING of the command is the
    project's own, in its conventions, for the reason 5b gives about the
    assembler.
+5h. **THE EXPRESS PATH: YOU COORDINATE IT AND YOU ARE NEVER ITS
+   IMPLEMENTER.** An edit of half a minute to three minutes — a one-line
+   restore, a spec helper swap, a wording amendment — may travel a short
+   road inside the BOUNDED tier: from an OUTCOME SENTENCE and a NAMED
+   FENCE the arm composes a COMPACT CARD, measures its ELIGIBILITY and
+   dispatches the executor only, with no bench and no phase one, because
+   that is what the bounded contract buys (`tasks/TASK-FORMAT.md`, The
+   tier). **THE SHORT ROAD SKIPS THE VERIFICATION AND NOTHING ELSE**: the
+   admission, the preflight, the keeper at the base, the fence manifest
+   and the port are what make the fence bounded in the first place, and a
+   fast path that skipped them would be fast because it checked nothing.
+   **AN OUTCOME SENTENCE ALONE AUTHORIZES NO WORK.** A compact card is
+   composed by a command out of a sentence, seconds old, and nobody has
+   triaged it — so it is admitted the way every card is, at the same
+   boundary and under the same grant, and where there is no grant to read
+   the express path is REFUSED rather than carried by the standing
+   authorization an ordinary dispatch runs under. A change that already
+   belongs to an active card with a safely resumable writer REUSES that
+   card and its run record: a correction round and a re-entry are not new
+   work, and a second card for one change is two writers on one resource.
+   **AND THE SEAT EDITS NO CODE UNDER THE EXPRESS LABEL.** The saving the
+   short road buys is ceremony, never the separation between whoever
+   decides a change is wanted and whoever makes it — a coordinator that
+   implemented its own express change would be the seat asking itself for
+   a verdict, which is the failure `review:` exists to stop, arriving
+   through a door marked speed. The express path dispatches an EXECUTOR;
+   what the seat does is compose the sentence, measure the eligibility,
+   read the receipt and rule at the merge. **THE ONE EDIT A COORDINATOR
+   MAKES IS THE ONE THE MERGE ALREADY ALLOWS** — an assigned correction
+   applied at the merge — **and the express label relaxes nothing about
+   it**: every corrected file is still diffed against the verified
+   content afterwards, because an anchor that matches twice rewrites live
+   code and an express label is not evidence that it did not.
+   **AND THE LABEL COMES OFF BY A DATED LINE WHEN THE ROAD RUNS OUT.** A
+   check that failed or a scope the executor found beyond the outcome
+   sentence PRESERVES the candidate — the branch and the run record are
+   kept, because a branch deleted here destroys the only reproducible copy
+   of what was built — withdraws the label by a dated append, and
+   re-triages the card through the existing path. A withdrawal is a
+   record: it is appended, and the line that put the label on stands.
 6. Read new verdicts; on second rejection open a room and escalate.
 7. Keep ROADMAP.md current. If reality contradicts NORTH_STAR.md, open a
    room — do not resolve it yourself.

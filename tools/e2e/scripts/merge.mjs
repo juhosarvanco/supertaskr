@@ -82,6 +82,14 @@ import { PROCESS_SCHEMA, loadProcess, switchValue } from "./dispatch-brief.mjs";
 
 /** @typedef {import("./dispatch-brief.mjs").ProcessSettings} ProcessSettings */
 import { deriveOwning } from "./gate-run.mjs";
+// T-320 — THE LAUNCH RECEIPT, READ AT THE MERGE. The receipt is the run
+// record's (T-311's document, T-320's two halves) and the merge is where
+// a mismatch between the model the project ASKED FOR and the model the
+// completion OBSERVED has to stop something: after this commit the lane's
+// cost and its comparability are the record, and nothing later re-reads
+// them. `run-record.mjs` imports `dispatch-brief.mjs`, which imports
+// neither of these, so the dependency runs one way.
+import { OBSERVED_UNKNOWN, allRecords, launchReceipt } from "./run-record.mjs";
 import { carriesLegacy, classifyLegacy } from "./rename-scan.mjs";
 import { cardFile, git, repoRoot } from "./undo.mjs";
 
@@ -105,7 +113,7 @@ export const CONVENTIONS_PATH = path.join(repoRoot, "docs", "CONVENTIONS.md");
  * @property {string} why
  * @property {{ command: string, argv: string[], cwd: string, env?: Record<string, string>, assert?: "empty-output", tolerate?: boolean, quiet?: boolean } | null} run
  * @property {"graph-pins" | "stamp-done" | "mutant-drill" | "apply-correction" | "widen-fence" | "resolve-conflicts" | "keeper" | "method-bump" | "half-bump-drill" | "counts" | "message" | "meters" | "docs-gate"} [action] work the runner does AFTER the command
- * @property {"pinned-sentence" | "forbidden-spelling" | "xs-bound"} [keeper] which cheap keeper this step is
+ * @property {"pinned-sentence" | "forbidden-spelling" | "xs-bound" | "receipt"} [keeper] which keeper this step is — the first three are the cheap ones `merge.keepers` switches, the fourth is FLOOR (T-320)
  * @property {{ from: string, to: string }} [bump] the method stamp move this step performs
  * @property {MutantBlock} [block] the correction this step re-drills
  * @property {string} [problem] why this step cannot be performed at all
@@ -1466,6 +1474,23 @@ export function keeperSteps(input) {
       run: null,
     },
     {
+      id: "keeper:receipt",
+      kind: "gate",
+      action: "keeper",
+      keeper: "receipt",
+      title:
+        "no run record of this card carries a launch receipt whose OBSERVED model contradicts the " +
+        "REQUESTED one",
+      why:
+        "T-320 criterion 4. The model a seat runs on is the project's choice, read from the " +
+        "runtime template and stamped onto the card; a lane that actually ran on another model " +
+        "makes its cost, its verification tier and its comparability a property of who dispatched " +
+        "it. The merge is the last moment anything re-reads the record, so the refusal is here — " +
+        "and an UNKNOWN observation is not a mismatch, because \"I was not told\" and \"I was told " +
+        "something else\" are different facts",
+      run: null,
+    },
+    {
       id: "keeper:preflight",
       kind: "gate",
       title: `the card's own preflight — brief.mjs --task ${input.id} --preflight`,
@@ -1499,7 +1524,15 @@ export function keeperSteps(input) {
   // steps fewer would look exactly like a merge whose plan had lost
   // them, and the pinned-sentence keeper exists because a seat reworded
   // a sentence a body asserted word for word and nobody saw it go.
-  const floor = steps.filter((st) => st.id === "keeper:preflight");
+  // **THE RECEIPT KEEPER IS FLOOR, BESIDE THE PREFLIGHT, AND NOT ONE OF
+  // THE THREE CHEAP ONES.** `merge.keepers` is the switch over T-295's
+  // pinned-sentence, forbidden-spelling and diff-size checks — three
+  // readings of the DIFF. A receipt mismatch is not a property of the
+  // diff at all: it says the seat that produced the diff ran on a model
+  // the project did not ask for, which is the launch's own integrity, and
+  // a project that turned the diff checks off never asked for that to go
+  // unread (T-320 criterion 4).
+  const floor = steps.filter((st) => st.id === "keeper:preflight" || st.id === "keeper:receipt");
   return [
     {
       id: "keeper:off",
@@ -1508,8 +1541,9 @@ export function keeperSteps(input) {
       why:
         "T-299: the pinned-sentence, forbidden-spelling and diff-size checks are a SWITCH, and " +
         `this project has it off (${PROCESS_SCHEMA}). The card's own preflight below is FLOOR and ` +
-        "is planned anyway. This step is a note rather than a silence, because a plan that lost " +
-        "three steps and a plan that was set to skip them look the same in a ledger",
+        "is planned anyway, and so is the launch receipt's requested-beside-observed reading, " +
+        "which is not one of the three. This step is a note rather than a silence, because a plan " +
+        "that lost three steps and a plan that was set to skip them look the same in a ledger",
       run: null,
     },
     ...floor,
@@ -4371,6 +4405,44 @@ function applyCorrectionStep(step, io) {
 }
 
 /**
+ * THE LAUNCH RECEIPT KEEPER'S READING (T-320 criterion 4), kept apart
+ * from the step that prints it so the rule is testable with no repository
+ * at all — the shape `pinnedSentenceFindings` and `xsBoundBump` already
+ * take.
+ *
+ * **THE RECORDS OF THIS CARD AND OF NO OTHER.** A merge answers for the
+ * lane it is landing; another card's receipt is that card's merge to
+ * refuse, and a keeper that swept the whole runs directory would stop
+ * this merge for somebody else's mismatch.
+ *
+ * **AND AN UNKNOWN IS NOT A MISMATCH.** "I was not told" and "I was told
+ * something else" are different facts. The current launch route hands the
+ * observed figures in by hand, so a record with none is the ordinary case:
+ * it is NEWS, printed every time, and it refuses nothing.
+ *
+ * @param {{ id: string, records: readonly import("./run-record.mjs").RunRecord[] }} input
+ * @returns {{ read: number, findings: string[], unknown: string[] }}
+ */
+export function receiptKeeperReport(input) {
+  const mine = input.records.filter((rec) => rec.assignment.id === input.id);
+  /** @type {string[]} */
+  const findings = [];
+  /** @type {string[]} */
+  const unknown = [];
+  for (const rec of mine) {
+    const receipt = launchReceipt(rec);
+    for (const m of receipt.mismatch) findings.push(`${rec.attempt}: ${m}`);
+    if (receipt.observed.model === OBSERVED_UNKNOWN) {
+      unknown.push(
+        `${rec.attempt}: no model was observed for it (${receipt.observed.source}), so the ` +
+          `requested ${receipt.requested.model} is unconfirmed rather than contradicted`,
+      );
+    }
+  }
+  return { read: mine.length, findings, unknown };
+}
+
+/**
  * @param {Step} step
  * @param {{ out: (s: string) => void, err: (s: string) => void, projectRoot: string, id: string, card: string, tier?: string | undefined }} io
  * @returns {number}
@@ -4408,6 +4480,21 @@ function keeperStep(step, io) {
     // not stop for it. A way through that nobody can see the exercise of
     // is a way through nobody audits.
     for (const k of report.kept) io.err(`      NEWS — ${k}`);
+    if (report.findings.length === 0) return EXIT.CLEAN;
+    for (const f of report.findings) io.err(`      ${f}`);
+    return EXIT.FOUND;
+  }
+  if (step.keeper === "receipt") {
+    const report = receiptKeeperReport({ id: io.id, records: allRecords(io.projectRoot) });
+    io.out(
+      `      ${String(report.read)} run record(s) for ${io.id}, each read for a requested-beside-` +
+        `observed mismatch`,
+    );
+    // AN UNCONFIRMED RECEIPT IS NEWS, NEVER SILENCE, and never a refusal:
+    // the current launch route hands the observed figures in by hand, so
+    // a record with none is the ordinary case and stopping every merge for
+    // it would be a gate nobody could keep green.
+    for (const u of report.unknown) io.err(`      NEWS — ${u}`);
     if (report.findings.length === 0) return EXIT.CLEAN;
     for (const f of report.findings) io.err(`      ${f}`);
     return EXIT.FOUND;

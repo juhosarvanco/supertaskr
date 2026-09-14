@@ -4,12 +4,18 @@ import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { repoRoot } from "../preflight";
-import { dueRetries } from "../scripts/dispatch-brief.mjs";
+import { dueRetries, expressInstants, expressMeasurements } from "../scripts/dispatch-brief.mjs";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import {
   ACK_TOKEN,
   ASK_TOKEN,
   DONE_TOKEN,
+  OBSERVED_KEYS,
+  OBSERVED_TOKEN,
+  OBSERVED_UNKNOWN,
+  launchReceipt,
+  parseInstantDial,
+  readInstants,
   OPERATIONS,
   RunRecordFinding,
   TERMINAL_STATES,
@@ -2467,5 +2473,291 @@ test("THE REFUSAL PATH NAMES NO MODEL AND NO ACCOUNT — this arm holds no code 
   expect(body, "the refusal path is not in the stop verb any more").toContain("classifyRefusal");
   for (const forbidden of ["assignment.model =", "assignment.harness =", "process.env"]) {
     expect(body, `the refusal path writes ${forbidden}`).not.toContain(forbidden);
+  }
+});
+
+/* ════════════════════════════════════════════════════════════════════
+ * T-320 — THE LAUNCH RECEIPT: REQUESTED BESIDE OBSERVED.
+ * ════════════════════════════════════════════════════════════════════ */
+
+test("T-320 C4 — THE RECEIPT NAMES THE REQUESTED MODEL AND EFFORT BESIDE THE OBSERVED MODEL, TOKENS AND SECONDS, and a missing observation is `unknown` and never substituted", () => {
+  // THE NATIVE PATH, driven by the verbs — which is the path the receipt
+  // exists for: a native child's model, token count and seconds arrive in
+  // the harness's own completion notification, and the seat copies them
+  // into this operation's evidence.
+  //
+  // **THE TWO HALVES NEVER FILL IN FOR EACH OTHER**, and that is the whole
+  // property. A receipt that copied the requested value into the observed
+  // field would agree with itself by construction, and the mismatch it
+  // exists to expose could never appear.
+  //
+  // KILLED BY: a receipt that reads the observed model off the assignment,
+  // one that leaves a missing observation blank instead of `unknown`, one
+  // that reports `unknown` as a mismatch, and one that reads a token
+  // MENTIONED in a sentence as a token.
+  const b = bench("receipt");
+  try {
+    const rec = running(b, { model: "claude-opus-5", effort: "high" });
+    // BOUND AND NEVER OBSERVED: every observed field is `unknown`, said
+    // out loud rather than left absent.
+    const bare = launchReceipt(readRecord(b.root, rec.attempt));
+    expect(bare.requested.model, "the requested model is not the assignment's").toBe("claude-opus-5");
+    expect(bare.requested.effort, "the requested effort is not the assignment's").toBe("high");
+    for (const key of OBSERVED_KEYS) {
+      expect(
+        (bare.observed as Record<string, string>)[key],
+        `an unobserved ${key} is not recorded as ${OBSERVED_UNKNOWN}`,
+      ).toBe(OBSERVED_UNKNOWN);
+    }
+    expect(bare.unknown.length, "the three missing observations were not reported").toBe(OBSERVED_KEYS.length);
+    expect(bare.mismatch, "an UNKNOWN observation was reported as a mismatch, which it is not").toEqual([]);
+
+    // THE COMPLETION ARRIVES, and the observed half is read off IT.
+    const observed = observeRun(b.root, {
+      attempt: rec.attempt,
+      evidence: [
+        "the harness's completion notification for this task",
+        `${OBSERVED_TOKEN} model=claude-opus-5 tokens=262000 seconds=1740`,
+        `${DONE_TOKEN} ok`,
+      ].join("\n"),
+      at: "2026-09-12T00:00:30.000Z",
+      io: io(),
+    }).record;
+    const receipt = launchReceipt(observed);
+    expect(receipt.observed.model, "the observed model was not read off the completion").toBe("claude-opus-5");
+    expect(receipt.observed.tokens, "the observed token count was not read off the completion").toBe("262000");
+    expect(receipt.observed.seconds, "the observed seconds were not read off the completion").toBe("1740");
+    expect(receipt.observed.source, "the receipt does not say where the observation came from").toContain("completion");
+    expect(receipt.unknown, "an observation that arrived was still reported unknown").toEqual([]);
+    expect(receipt.mismatch, "a matching model was reported as a mismatch").toEqual([]);
+    // REQUESTED AND OBSERVED ARE SEPARATE FIELDS ON THE RECORD ITSELF.
+    const onDisk = JSON.parse(readFileSync(recordPath(b.root, rec.attempt), "utf8"));
+    expect(onDisk.assignment.model, "the requested model left the record").toBe("claude-opus-5");
+    expect(onDisk.execution.observed.model, "the observed model is not a field of its own").toBe("claude-opus-5");
+
+    // A PARTIAL COMPLETION: what arrived is recorded and what did not is
+    // `unknown`, rather than the whole observation being thrown away.
+    const partial = bench("receipt-partial");
+    try {
+      const other = running(partial);
+      const seen = observeRun(partial.root, {
+        attempt: other.attempt,
+        evidence: `${OBSERVED_TOKEN} model=claude-opus-5\n${DONE_TOKEN} ok`,
+        at: "2026-09-12T00:00:30.000Z",
+        io: io(),
+      }).record;
+      const r = launchReceipt(seen);
+      expect(r.observed.model, "a partial completion's model was discarded").toBe("claude-opus-5");
+      expect(r.observed.tokens, "a token count nobody reported was invented").toBe(OBSERVED_UNKNOWN);
+      expect(r.observed.seconds, "a duration nobody reported was invented").toBe(OBSERVED_UNKNOWN);
+      expect(r.unknown.length, "the two missing figures were not both reported").toBe(2);
+    } finally {
+      partial.cleanup();
+    }
+
+    // AND A TOKEN MENTIONED IN A SENTENCE IS NOT A TOKEN — the same
+    // line-initial rule the other three tokens are under, and for the same
+    // reason: the arm must not read its own instructions back as a child's
+    // report.
+    const mentioned = bench("receipt-mentioned");
+    try {
+      const other = running(mentioned);
+      const seen = observeRun(mentioned.root, {
+        attempt: other.attempt,
+        evidence: `write a line reading ${OBSERVED_TOKEN} model=some-other-model when you finish`,
+        at: "2026-09-12T00:00:30.000Z",
+        io: io(),
+      }).record;
+      expect(
+        launchReceipt(seen).observed.model,
+        "a sentence MENTIONING the token was read as an observation",
+      ).toBe(OBSERVED_UNKNOWN);
+    } finally {
+      mentioned.cleanup();
+    }
+  } finally {
+    b.cleanup();
+  }
+});
+
+test("T-320 C4 — A COMPLETION WHOSE OBSERVED MODEL DIFFERS FROM THE REQUESTED ONE IS REPORTED AS A MISMATCH, by name", () => {
+  // THE PLANTED COMPLETION — and it is the body that proves the receipt is
+  // not a forgery. A receipt that copied the requested value into the
+  // observed field would pass every assertion in the body above; only a
+  // completion that says something DIFFERENT can tell the two apart.
+  //
+  // KILLED BY: a receipt that fills the observed half from the assignment,
+  // one that reports a mismatch without naming either value, and one that
+  // reads `unknown` as a mismatch.
+  const b = bench("receipt-mismatch");
+  try {
+    const rec = running(b, { model: "claude-opus-5" });
+    const seen = observeRun(b.root, {
+      attempt: rec.attempt,
+      evidence: [
+        "the harness's completion notification for this task",
+        `${OBSERVED_TOKEN} model=a-cheaper-model tokens=12000 seconds=90`,
+        `${DONE_TOKEN} ok`,
+      ].join("\n"),
+      at: "2026-09-12T00:00:30.000Z",
+      io: io(),
+    }).record;
+    const receipt = launchReceipt(seen);
+    expect(receipt.requested.model, "the requested model moved").toBe("claude-opus-5");
+    expect(receipt.observed.model, "the observed model was overwritten by the requested one").toBe("a-cheaper-model");
+    expect(receipt.mismatch.length, "a completion naming another model produced no mismatch").toBe(1);
+    expect(receipt.mismatch[0], "the mismatch does not name the model that was requested").toContain("claude-opus-5");
+    expect(receipt.mismatch[0], "the mismatch does not name the model that was observed").toContain("a-cheaper-model");
+    // AND THE ARM PRINTS IT, so a seat reading the run's own output meets
+    // it rather than having to ask for a receipt.
+    const printed = runRecs(
+      { at: "2026-09-12T00:00:31.000Z", host: "a-host", root: b.root },
+      "observe",
+      seen,
+      [],
+    )
+      .map((r) => String((r as { text?: string }).text ?? ""))
+      .join("\n");
+    expect(printed, "the run report does not carry the receipt's requested half").toContain("receipt requested:");
+    expect(printed, "the run report does not carry the receipt's observed half").toContain("receipt observed:");
+    expect(printed, "the run report does not announce the mismatch").toContain("receipt MISMATCH:");
+  } finally {
+    b.cleanup();
+  }
+});
+
+test("T-320 C6 — THE FIVE MEASUREMENTS COME OFF THE RECORD'S OWN STAMPED INSTANTS: the dispatch's two ride in on the assignment, the candidate is stamped at the outcome, and the seat's three arrive through collect", () => {
+  // THE NATIVE PATH, driven by the verbs. What is under test is that a
+  // demonstration's figures are TRANSCRIBED from a record rather than
+  // recalled: every instant is stamped by whoever holds it, and the
+  // measurement block is derived from the record and printed by the run
+  // report.
+  //
+  // KILLED BY: a record that drops the assignment's instants, one that
+  // stamps the candidate somewhere other than the outcome, a collect verb
+  // that ignores the dial, a dial that silently keeps a half-read pair,
+  // and a report that prints the block for an attempt with nothing to
+  // measure.
+  const b = bench("instants");
+  try {
+    // ── THE DISPATCH'S TWO, CARRIED IN ON THE ASSIGNMENT ─────────────
+    const started = startRun(b.root, {
+      assignment: assignment(b, {
+        instants: { requested: "2026-09-12T00:00:00.000Z", cut: "2026-09-12T00:00:40.000Z" },
+      }),
+      at: "2026-09-12T00:00:45.000Z",
+      io: io(),
+    });
+    expect(started.record.instants.requested, "the outcome sentence's instant did not reach the record").toBe(
+      "2026-09-12T00:00:00.000Z",
+    );
+    expect(started.record.instants.cut, "the lane cut's instant did not reach the record").toBe("2026-09-12T00:00:40.000Z");
+    expect(started.record.instants.started, "the arm's own start instant was not stamped").toBe("2026-09-12T00:00:45.000Z");
+    // AN UNREADABLE INSTANT IS DROPPED RATHER THAN KEPT: a measurement
+    // taken from a date nothing can parse is a figure with no meaning.
+    expect(readInstants({ good: "2026-09-12T00:00:00.000Z", bad: "last tuesday", empty: "" }), "an unreadable instant was kept").toEqual({
+      good: "2026-09-12T00:00:00.000Z",
+    });
+
+    // ── THE CANDIDATE, STAMPED WHERE THE ATTEMPT REACHED ITS OUTCOME ──
+    bindRun(b.root, { attempt: started.record.attempt, harnessId: "task-1", at: "2026-09-12T00:00:46.000Z", io: io() });
+    const done = observeRun(b.root, {
+      attempt: started.record.attempt,
+      evidence: `${DONE_TOKEN} ok`,
+      at: "2026-09-12T00:04:00.000Z",
+      io: io(),
+    }).record;
+    expect(done.state, "the attempt did not reach a terminal state, so no candidate instant is owed").toBe("finished");
+    expect(done.instants.candidate, "the candidate instant was not stamped at the outcome").toBe("2026-09-12T00:04:00.000Z");
+    expect(done.instants.candidate, "the candidate instant and the outcome instant disagree").toBe(done.outcome?.at);
+
+    // ── THE SEAT'S THREE, THROUGH THE COLLECT VERB ───────────────────
+    const collected = collectRun(b.root, {
+      attempt: started.record.attempt,
+      usage: "262K tokens",
+      instants: {
+        checked: "2026-09-12T00:12:00.000Z",
+        merged: "2026-09-12T00:15:00.000Z",
+        pushed: "2026-09-12T00:15:30.000Z",
+      },
+      at: "2026-09-12T00:16:00.000Z",
+      io: io(),
+    }).record;
+    // AND THE MEASUREMENTS ARE DIFFERENCES OF EXACTLY THOSE INSTANTS.
+    const m = expressMeasurements(expressInstants(collected));
+    const rows = new Map(m.rows.map((r) => [r.id, r]));
+    expect(rows.get("overhead")?.seconds, "the overhead is not the difference the record carries").toBe(40);
+    expect(rows.get("executor")?.seconds, "the executor time is not the difference the record carries").toBe(200);
+    expect(rows.get("check")?.seconds, "the check time is not the difference the record carries").toBe(480);
+    expect(rows.get("publication")?.seconds, "the publication time is not the difference the record carries").toBe(30);
+    expect(rows.get("request-to-delivery")?.seconds, "the total is not the difference the record carries").toBe(930);
+    expect(m.unknown, "an instant was reported unknown though the record carries all six").toEqual([]);
+
+    // ── AND THE RUN REPORT PRINTS THE BLOCK, so the notes are copied out
+    //    of a command's output rather than remembered.
+    const printed = runRecs({ at: "2026-09-12T00:16:01.000Z", host: "a-host", root: b.root }, "collect", collected, [])
+      .map((r) => String((r as { text?: string }).text ?? ""))
+      .join("\n");
+    expect(printed, "the run report does not print the measurement block").toContain("measurement overhead:");
+    expect(printed, "the run report does not print the target verdict").toContain("measurement verdict:");
+    expect(printed, "the run report does not name the instants the block was taken from").toContain("stamped instants");
+  } finally {
+    b.cleanup();
+  }
+});
+
+test("T-320 C6 — AN ATTEMPT WITH NOTHING TO MEASURE PRINTS NO MEASUREMENT BLOCK, and a half-read instant dial is refused rather than kept", () => {
+  // THE POSITIVE CONTROL FOR THE BLOCK ABOVE, and the dial's own refusal.
+  // Five unknown rows under every ordinary run is noise, and noise is how
+  // a block nobody reads is made; a dial that kept the half it understood
+  // is a measurement the seat believes it recorded and did not.
+  //
+  // KILLED BY: a report that prints the block unconditionally, and a dial
+  // that drops what it cannot parse.
+  const b = bench("instants-none");
+  try {
+    const rec = running(b);
+    const printed = runRecs({ at: "2026-09-12T00:00:03.000Z", host: "a-host", root: b.root }, "observe", rec, [])
+      .map((r) => String((r as { text?: string }).text ?? ""))
+      .join("\n");
+    expect(printed, "an attempt with no express instants printed a measurement block").not.toContain("measurement verdict:");
+    // AND THE CONTROL: the same report over an attempt that HAS them.
+    // The attempt is taken to a terminal state first, because a collect
+    // answers for a terminal attempt and this body is about the BLOCK
+    // rather than about that rule.
+    observeRun(b.root, {
+      attempt: rec.attempt,
+      evidence: `${DONE_TOKEN} ok`,
+      at: "2026-09-12T00:00:03.500Z",
+      io: io(),
+    });
+    const withOne = collectRun(b.root, {
+      attempt: rec.attempt,
+      instants: { requested: "2026-09-12T00:00:00.000Z" },
+      at: "2026-09-12T00:00:04.000Z",
+      io: io(),
+    }).record;
+    const after = runRecs({ at: "2026-09-12T00:00:05.000Z", host: "a-host", root: b.root }, "collect", withOne, [])
+      .map((r) => String((r as { text?: string }).text ?? ""))
+      .join("\n");
+    expect(after, "the block is not printed even when the record carries an instant").toContain("measurement verdict:");
+
+    // THE DIAL REFUSES WHAT IT CANNOT READ, BY NAME.
+    for (const bad of ["checked", "checked=", "checked=last tuesday", "=2026-09-12T00:00:00.000Z"]) {
+      let code = "";
+      try {
+        parseInstantDial(bad);
+      } catch (err) {
+        if (!(err instanceof RunRecordFinding)) throw err;
+        code = err.code;
+      }
+      expect(code, `${JSON.stringify(bad)} was accepted as an instant pair`).toBe("RUN_INSTANT");
+    }
+    expect(
+      parseInstantDial("checked=2026-09-12T00:12:00.000Z,merged=2026-09-12T00:15:00.000Z"),
+      "the well-formed dial was refused too, so the four refusals above prove nothing",
+    ).toEqual({ checked: "2026-09-12T00:12:00.000Z", merged: "2026-09-12T00:15:00.000Z" });
+  } finally {
+    b.cleanup();
   }
 });

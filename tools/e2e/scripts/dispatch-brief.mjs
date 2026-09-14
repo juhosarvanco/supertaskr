@@ -74,7 +74,7 @@
 
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { closeSync, existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from "node:fs";
+import { closeSync, existsSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -88,6 +88,13 @@ import {
 } from "./docs-scan.mjs";
 import { isRecordablePid, processRow } from "./checkout-currency.mjs";
 import { rawBullet } from "./range-rule.mjs";
+// T-320 — THE OWNING-SPEC DERIVATION, borrowed rather than re-derived.
+// The express path's eligibility asks whether a keeper or an owning spec
+// already covers each fenced path, and `gate-run.mjs` answers exactly
+// that question from the static import graph WITHOUT running a suite. It
+// imports node builtins and `docs-scan.mjs` and nothing from here, so the
+// dependency runs one way; `merge.mjs` already reaches it the same way.
+import { deriveOwning } from "./gate-run.mjs";
 // THE RUNTIME DIRECTORY'S NAME, FROM THE ONE FILE THAT DECLARES IT
 // (T-324). The admission arm reads an owner-written pause record that
 // lives beside T-238's holder record, and a second spelling of that
@@ -7242,6 +7249,7 @@ export function createLaneArgv(ctx, lane) {
  * @property {(argv: string[], opts: { cwd: string, out?: string }) => RunResult} run
  * @property {(file: string) => string} read
  * @property {(file: string, text: string) => void} write
+ * @property {() => string} [now]  the clock, injected so a body can drive an instant (T-320)
  */
 
 /**
@@ -7254,6 +7262,10 @@ export function createLaneArgv(ctx, lane) {
  */
 export function defaultDispatchIo() {
   return {
+    // THE CLOCK IS AN INJECTION POINT LIKE THE OTHER THREE (T-320): the
+    // express arm stamps an instant, and a body that could not drive it
+    // would be a body asserting against the wall clock.
+    now: () => new Date().toISOString(),
     run: (argv, opts) => {
       const [file, ...args] = argv;
       if (file === undefined) return { status: -1, stdout: "", stderr: "an empty argv" };
@@ -7649,6 +7661,32 @@ export function runDispatchLane(plan, io) {
 
     if (step.id === "cut" || step.id === "bench") {
       const lane = step.id === "cut";
+      // ── THE BENCH IS NOT OWED AT THE BOUNDED TIER (T-320) ──────────
+      // **AND THE SKIP IS SAID OUT LOUD, exactly as the phase-one skip
+      // above is.** The bounded contract takes no verifier at all
+      // (method/tasks/TASK-FORMAT.md, The tier), so the bench — a
+      // detached worktree cut for a verifier who is never spawned — is a
+      // directory nobody opens and a second checkout of this tree for
+      // everything that walks it. A bench cut for a bounded card and a
+      // bench nobody cut look identical afterwards, which is why this is
+      // a NOTE and a ledger row rather than a silence.
+      if (!lane && tier === "bounded") {
+        const why =
+          "the bounded tier takes no verifier at all (method/tasks/TASK-FORMAT.md, The tier), so " +
+          "there is nobody for a bench to be cut for";
+        notes.push(
+          `no bench was cut and none is owed — ${why}. Said out loud, because a worktree this arm ` +
+            "skipped on purpose and one it forgot look the same on disk.",
+        );
+        done.push({
+          n: step.n,
+          id: step.id,
+          ran: `cut ${plan.bench}`,
+          exit: EXIT.CLEAN,
+          detail: `not owed — ${why}`,
+        });
+        continue;
+      }
       const argv = lane
         ? plan.createArgv.map((a) => (a === BASE_TOKEN ? base : a))
         : ["git", "-C", plan.root, "worktree", "add", "--detach", plan.bench, base];
@@ -10904,3 +10942,1620 @@ export function assembleReturnBrief(ctx, opts) {
   };
 }
 
+
+/* ────────────────────────────────────────────────────────────────────
+ * ARM FIFTEEN — THE EXPRESS PATH INSIDE THE BOUNDED TIER (T-320).
+ *
+ * **IT IS A SHORT ROAD THROUGH THE EXISTING ONE, NEVER A SECOND ROAD.**
+ * Everything this arm does it does by calling what already exists: the
+ * card is preflighted by `card-preflight.mjs`, admitted by `admit`
+ * (T-324) against the grant `grantState` reads (T-319), classified by
+ * `classifyTier`, cut by `runDispatchLane` and recorded by
+ * `run-record.mjs`. What is NEW here is only the three things the road
+ * did not have: a CARD SHAPE the arm can write from an outcome sentence
+ * and a fence, an ELIGIBILITY MEASUREMENT printed as findings, and the
+ * WITHDRAWAL that puts a change back on the ordinary path.
+ *
+ * **AND THIS ARM ADDS NO SECOND ADMISSION.** It calls `admit` to MEASURE
+ * whether the grant permits the change — a read, writing no record and
+ * therefore consuming no approval, since the ledger every mode counts
+ * against is the run records themselves. The admission that BINDS is the
+ * lane cut's, made by `dispatchLanePlan` exactly as it is for every other
+ * card. A reader who wants to know whether an approval was spent looks at
+ * the run records and at nothing this arm keeps.
+ *
+ * WHAT THE BOUNDED TIER SAVES, AND WHAT IT DOES NOT. The bounded contract
+ * (method/tasks/TASK-FORMAT.md, The tier) buys no verifier, so the flow
+ * runs the executor only: no bench and no phase 1. It does NOT save the
+ * admission, the preflight, the keeper at the base, the fence manifest or
+ * the port — those are what make the fence bounded in the first place,
+ * and a fast path that skipped them would be fast because it checked
+ * nothing.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/**
+ * The label an express-dispatched card carries, and the word a withdrawal
+ * withdraws. It is a LABEL on the card rather than a frontmatter field on
+ * purpose: `method/tasks/TASK-FORMAT.md` owns the field set, a new field
+ * is a change to every reader of a card, and what the express path needs
+ * recorded is one dated line saying this card took the short road.
+ */
+export const EXPRESS_LABEL = "express";
+
+/**
+ * THE CONVENTIONS BULLET THIS ARM IS ANSWERABLE TO, by its own opener.
+ *
+ * It is named here for the reason the port and scratch phrases beside it
+ * are: the context pack is DERIVED by searching this directory's sources
+ * for the openers `docs/CONVENTIONS.md` publishes, so a rule no script
+ * cites reaches no seat's pack. A seat whose fence implicates the express
+ * path should meet the rule in its brief rather than have to go looking.
+ *
+ * IT IS THE BULLET'S WHOLE BOLDED OPENER AND THE OPENER IS KEPT SHORT
+ * ENOUGH TO BE ONE, which is a constraint on the DOCUMENT rather than on
+ * this line: the pack captures a bolded opener up to a fixed width and
+ * then requires the bullet to open with exactly what it captured, so an
+ * opener longer than that width is truncated MID-WORD and the pack throws
+ * the moment any script cites it. Bold the rule and leave the rest of the
+ * sentence outside the bold.
+ */
+export const EXPRESS_BULLET_PHRASE = "THE EXPRESS PATH IS A SHORT ROAD THROUGH THE ORDINARY RITUAL";
+
+/** The heading an express card's own record sits under, inside its notes. */
+export const EXPRESS_HEADING = "Express path";
+
+/** The opener of the dated line that PUTS the label on a card. */
+export const EXPRESS_LABEL_OPENER = "EXPRESS PATH";
+
+/** The opener of the dated line that TAKES it off again. */
+export const EXPRESS_WITHDRAWN_OPENER = "EXPRESS PATH WITHDRAWN";
+
+/**
+ * THE FIVE REQUIREMENTS, IN THE ORDER THE CARD'S THIRD CRITERION NAMES
+ * THEM. The order is the printing order and the refusal order, so two
+ * readers of one eligibility report meet the findings in one sequence.
+ */
+export const EXPRESS_REQUIREMENTS = Object.freeze([
+  "admission",
+  "fence",
+  "keeper",
+  "guard-class",
+  "reversible",
+]);
+
+/**
+ * EVERY REFUSAL CARRIES A CODE, on `run-record.mjs`'s own model and for
+ * its reason: a refusal a caller can only match on a sentence becomes
+ * prose the day the sentence is improved.
+ */
+export const EXPRESS_CODES = Object.freeze({
+  NO_OUTCOME: "EXPRESS_NO_OUTCOME",
+  OUTCOME_SHAPE: "EXPRESS_OUTCOME_SHAPE",
+  OUTCOME_LINES: "EXPRESS_OUTCOME_LINES",
+  NO_FENCE: "EXPRESS_NO_FENCE",
+  NO_EARS: "EXPRESS_NO_EARS",
+  NO_PLACE: "EXPRESS_NO_PLACE",
+  NO_GRANT: "EXPRESS_NO_GRANT",
+  ID_TAKEN: "EXPRESS_ID_TAKEN",
+  INELIGIBLE: "EXPRESS_INELIGIBLE",
+  NO_CARD: "EXPRESS_NO_CARD",
+  NOT_EXPRESS: "EXPRESS_NOT_EXPRESS",
+  NO_REASON: "EXPRESS_NO_REASON",
+});
+
+/** An express act this arm was asked for and will not perform. */
+export class ExpressFinding extends DispatchLaneFinding {
+  /** @param {string} code @param {string} message */
+  constructor(code, message) {
+    super(message);
+    this.name = "ExpressFinding";
+    /** @type {string} */
+    this.code = code;
+  }
+}
+
+/**
+ * The sentence three of this repository's generators write into the head
+ * of every file they generate. It is the ONE marker a reader can use to
+ * tell a generated file from a written one without keeping a list that
+ * goes stale the day a generator is added — and a list is exactly what
+ * the guard-class map's own idiom refuses.
+ */
+export const GENERATED_MARKER = "GENERATED — do not edit by hand";
+
+/** How much of a file's head is read looking for that marker. */
+export const GENERATED_HEAD_BYTES = 4096;
+
+/**
+ * @typedef {object} EligibilityFinding
+ * @property {string} id        one of EXPRESS_REQUIREMENTS
+ * @property {string} requires  what the requirement IS, in one line
+ * @property {boolean} met
+ * @property {string} measured  what was measured and what it answered
+ */
+
+/**
+ * @typedef {object} CompactCard
+ * @property {string} id
+ * @property {string} slug
+ * @property {string} file      repository-relative
+ * @property {string} title
+ * @property {string} criterion the outcome sentence, verbatim
+ * @property {string[]} fence
+ * @property {string} text      the whole card
+ */
+
+/**
+ * THE NEXT FREE CARD ID, derived from the board and never typed.
+ *
+ * A suggestion id (`T-300-s7`) is a card of its own on this board, so the
+ * scan takes the NUMBER out of every live id and answers one past the
+ * highest. An id a seat typed is a collision waiting for the next lane.
+ *
+ * @param {Map<string, Card>} cards
+ * @returns {string}
+ */
+export function nextCardId(cards) {
+  let top = 0;
+  for (const id of cards.keys()) {
+    const m = /^T-(\d+)/.exec(id);
+    if (m === null) continue;
+    const n = Number(m[1]);
+    if (Number.isFinite(n) && n > top) top = n;
+  }
+  return `T-${String(top + 1)}`;
+}
+
+/**
+ * A FILE-NAME SLUG FROM A SENTENCE. Lower case, one hyphen between words,
+ * bounded — because a card's path is a thing people type.
+ *
+ * @param {string} sentence @param {number} [words]
+ * @returns {string}
+ */
+export function outcomeSlug(sentence, words = 12) {
+  return sentence
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter((w) => w !== "")
+    .slice(0, words)
+    .join("-");
+}
+
+/**
+ * WHERE A COMPACT CARD BELONGS ON THE BOARD, DERIVED FROM THE FENCE.
+ *
+ * `feature:` and `milestone:` are required fields and the express path's
+ * two inputs are an outcome sentence and a fence, so they are DERIVED
+ * rather than asked for: the live card whose own fence covers the most of
+ * this one's is the card this change is nearest to, and its feature and
+ * milestone are the ones the board already files that ground under. A
+ * fence no live card shares is a refusal naming the dial that settles it,
+ * because a feature guessed for a card is a story-map column nobody chose.
+ *
+ * @param {object} input
+ * @param {string[]} input.paths  the express fence, expanded
+ * @param {Map<string, Card>} input.cards
+ * @param {Map<string, string[]>} input.slugs
+ * @param {Component[]} input.comps
+ * @returns {{ feature: string, milestone: string, from: string, shared: number, why: string }}
+ */
+export function expressPlacement(input) {
+  /** @type {{ id: string, feature: string, milestone: string, shared: number }[]} */
+  const ranked = [];
+  for (const [id, card] of input.cards) {
+    const entries = fieldList(card.fields, "touches");
+    if (entries.length === 0) continue;
+    const theirs = new Set(fencePaths({ entries }, input.slugs, input.comps));
+    const shared = input.paths.filter((p) => theirs.has(p)).length;
+    if (shared === 0) continue;
+    ranked.push({
+      id,
+      feature: fieldScalar(card.fields, "feature"),
+      milestone: fieldScalar(card.fields, "milestone"),
+      shared,
+    });
+  }
+  // THE TIE IS BROKEN BY THE ID AND NOT BY THE MAP'S ORDER, because a
+  // derivation whose answer depends on which card the walk met first is a
+  // derivation that answers differently on another machine.
+  ranked.sort((a, b) => (b.shared - a.shared) || byCardId(a.id, b.id));
+  const best = ranked[0];
+  if (best === undefined || best.feature === "" || best.milestone === "") {
+    throw new ExpressFinding(
+      EXPRESS_CODES.NO_PLACE,
+      `dispatch-brief: no live card fences any of ${input.paths.join(", ")}` +
+        (best === undefined ? "" : ` with both a feature and a milestone (${best.id} is the nearest)`) +
+        ", so this compact card's `feature:` and `milestone:` cannot be derived from the board. " +
+        "They are REQUIRED fields and this arm will not guess a story-map column: name them with " +
+        "--feature and --milestone, or file the card through the ordinary path.",
+    );
+  }
+  return {
+    feature: best.feature,
+    milestone: best.milestone,
+    from: best.id,
+    shared: best.shared,
+    why:
+      `${best.id} fences ${String(best.shared)} of this change's ${String(input.paths.length)} ` +
+      "path(s), more than any other live card, so the board already files this ground under its " +
+      `feature ${best.feature} and milestone ${best.milestone}`,
+  };
+}
+
+/**
+ * THE COMPACT CARD — every required field of the task format, both
+ * standing sections, the outcome sentence as the criterion and the fence
+ * as the touches.
+ *
+ * **THE OUTCOME SENTENCE IS THE CRITERION, VERBATIM, OR IT IS REFUSED.**
+ * This arm does not paraphrase a sentence into EARS form and it does not
+ * wrap one: a criterion this command composed is a requirement nobody
+ * wrote, and the whole card is bought on that one line. So the sentence
+ * is tested against the EARS patterns the METHOD declares — handed in by
+ * the caller, because the reader of those patterns
+ * (`session-economics.mjs`) imports this module and the dependency may
+ * not run both ways — and a sentence that is not in EARS form is refused
+ * naming the patterns rather than repaired.
+ *
+ * @param {object} input
+ * @param {string} input.id
+ * @param {string} input.outcome      the outcome sentence, which becomes the criterion
+ * @param {string[]} input.fence      the fence, as the card's `touches:`
+ * @param {string} input.feature
+ * @param {string} input.milestone
+ * @param {string} [input.priority]
+ * @param {string} input.suggestedBy
+ * @param {string} input.at           the calendar date the express path created it
+ * @param {(criterion: string) => boolean} input.ears  the METHOD's own EARS reading
+ * @returns {CompactCard}
+ */
+export function compactCard(input) {
+  const outcome = String(input.outcome ?? "").trim();
+  if (outcome === "") {
+    throw new ExpressFinding(
+      EXPRESS_CODES.NO_OUTCOME,
+      "dispatch-brief: the express path takes an OUTCOME SENTENCE and a fence, and this one names " +
+        "no outcome. A card with no criterion is a lane with no contract.",
+    );
+  }
+  if (/[\r\n]/.test(outcome)) {
+    throw new ExpressFinding(
+      EXPRESS_CODES.OUTCOME_LINES,
+      "dispatch-brief: an outcome sentence is ONE line. It becomes the card's `title:` and its " +
+        "single acceptance criterion, and a line break in either is a frontmatter field that ends " +
+        "early and a criterion the readers cut in half.",
+    );
+  }
+  if (typeof input.ears !== "function") {
+    throw new ExpressFinding(
+      EXPRESS_CODES.NO_EARS,
+      "dispatch-brief: this arm was handed no EARS reading, so it cannot tell whether the outcome " +
+        "sentence is a requirement or a wish. The patterns are the METHOD'S " +
+        "(method/interview/decomposition.md) and are read by session-economics.mjs, which imports " +
+        "this module — so the reading is handed IN. A shape check that can be skipped by omitting " +
+        "an argument is no check.",
+    );
+  }
+  if (!input.ears(outcome)) {
+    throw new ExpressFinding(
+      EXPRESS_CODES.OUTCOME_SHAPE,
+      `dispatch-brief: ${JSON.stringify(clipSentence(outcome))} is not in EARS form, so it cannot ` +
+        "be this card's acceptance criterion. The express path writes the sentence you give it " +
+        "VERBATIM — a criterion this arm composed would be a requirement nobody wrote, and the " +
+        "whole card is bought on that one line. The patterns are in " +
+        "method/interview/decomposition.md, at its EARS notation step: an opening keyword and a " +
+        "SHALL. Rewrite the sentence, or file the card through the ordinary path.",
+    );
+  }
+  const fence = (input.fence ?? []).map((f) => String(f).trim()).filter((f) => f !== "");
+  if (fence.length === 0) {
+    throw new ExpressFinding(
+      EXPRESS_CODES.NO_FENCE,
+      "dispatch-brief: the express path takes an outcome sentence and a NAMED FENCE, and this one " +
+        "names no fence. An eligibility measured over no paths is a measurement of nothing, and " +
+        "the bounded tier is bounded by exactly that list.",
+    );
+  }
+  const slug = outcomeSlug(outcome);
+  const text = [
+    "---",
+    `id: ${input.id}`,
+    `title: ${JSON.stringify(outcome)}`,
+    `feature: ${input.feature}`,
+    `milestone: ${input.milestone}`,
+    `priority: ${input.priority ?? "1"}`,
+    "size: XS",
+    "tier:",
+    "status: planned",
+    "blocked_by: []",
+    `touches: [${fence.join(", ")}]`,
+    `suggested_by: ${JSON.stringify(input.suggestedBy)}`,
+    "builder:",
+    "verifier:",
+    "built_by:",
+    "verified_by:",
+    "review: default",
+    "---",
+    "",
+    wrapProse(
+      "A COMPACT CARD, created by the express path from one outcome sentence and the fence " +
+        "above. Its criterion is that sentence verbatim; nothing here is a claim a preflight " +
+        "cannot re-derive.",
+    ),
+    "",
+    "## Acceptance criteria",
+    "",
+    `- ${outcome}`,
+    "",
+    "## Implementation notes",
+    "",
+    // THE EXPRESS LABEL, WRITTEN AT BIRTH AND WITHDRAWN BY A DATED LINE.
+    // It is a LINE in a section the loop's own ceremony may append to
+    // (`MECHANICAL_SECTIONS`) rather than a frontmatter field, so a card
+    // that takes the short road and one that is withdrawn from it are
+    // both readable by every existing reader of a card and neither
+    // changes the field set `method/tasks/TASK-FORMAT.md` owns.
+    wrapProse(
+      `${EXPRESS_LABEL_OPENER} (${input.at}): this card was composed by the express path from ` +
+        "one outcome sentence and the fence above, measured eligible, and dispatched " +
+        "executor-only under the bounded contract. Withdrawing the label is a dated line under " +
+        "this heading.",
+    ),
+    "",
+    "## Verdicts",
+    "",
+  ].join("\n");
+  return {
+    id: input.id,
+    slug,
+    file: `docs/tasks/${input.id}-${slug}.md`,
+    title: outcome,
+    criterion: outcome,
+    fence,
+    text,
+  };
+}
+
+/**
+ * THE PROSE WIDTH EVERY DOCUMENT IN THIS REPOSITORY IS HARD-WRAPPED AT.
+ * A compact card is a card like any other and is read in the same diffs,
+ * so it is wrapped rather than left as three sentences on one line.
+ */
+export const CARD_WRAP = 76;
+
+/**
+ * One paragraph, hard-wrapped. Never breaks a word, so a path or a
+ * command in a sentence survives intact.
+ *
+ * @param {string} text @param {number} [width]
+ * @returns {string}
+ */
+export function wrapProse(text, width = CARD_WRAP) {
+  /** @type {string[]} */
+  const lines = [];
+  let line = "";
+  for (const word of String(text).split(/\s+/).filter((w) => w !== "")) {
+    if (line === "") line = word;
+    else if (line.length + 1 + word.length <= width) line = `${line} ${word}`;
+    else {
+      lines.push(line);
+      line = word;
+    }
+  }
+  if (line !== "") lines.push(line);
+  return lines.join("\n");
+}
+
+/** A sentence cut for a message, so a refusal naming one stays readable. */
+/** @param {string} s @returns {string} */
+function clipSentence(s) {
+  return s.length <= 120 ? s : `${s.slice(0, 117)}...`;
+}
+
+/**
+ * IS THIS CHANGE ALREADY SOMEBODY'S? — the card's SECOND criterion.
+ *
+ * **A CORRECTION ROUND AND A RE-ENTRY ARE NOT NEW WORK AND MUST NOT MINT
+ * A CARD.** An active card whose writer can be safely resumed already
+ * owns its ground: a second card for the same change would put two
+ * writers on one resource, split one piece of work across two run records
+ * and spend a second approval on work the first one already carries. So
+ * the express arm asks the board and the run records BEFORE it writes
+ * anything, and a change whose fence is covered by such a card is
+ * answered with that card and its attempt rather than with a compact one.
+ *
+ * SAFELY RESUMABLE is the run record's own word and not a new one: an
+ * attempt whose state is not terminal is still this card's writer, and
+ * `continueRun` is the operation that resumes it. An attempt that
+ * FINISHED is not resumable — the lane is done and a fresh change to the
+ * same ground is a fresh card.
+ *
+ * @param {object} input
+ * @param {string[]} input.paths                 the express fence, expanded
+ * @param {Map<string, Card>} input.cards
+ * @param {Map<string, string[]>} input.slugs
+ * @param {Component[]} input.comps
+ * @param {readonly string[]} input.active        the statuses that make a card ACTIVE
+ * @param {{ attempt: string, card: string, state: string, terminal: boolean }[]} input.writers
+ * @returns {?{ card: string, attempt: string, state: string, covered: string[], why: string }}
+ */
+export function expressReuse(input) {
+  /** @type {{ card: string, attempt: string, state: string, covered: string[], why: string }[]} */
+  const found = [];
+  for (const [id, card] of input.cards) {
+    if (!input.active.includes(fieldScalar(card.fields, "status"))) continue;
+    const entries = fieldList(card.fields, "touches");
+    if (entries.length === 0) continue;
+    const theirs = new Set(fencePaths({ entries }, input.slugs, input.comps));
+    const covered = input.paths.filter((p) => theirs.has(p));
+    if (covered.length !== input.paths.length) continue;
+    const writer = input.writers.find((w) => w.card === id && !w.terminal);
+    if (writer === undefined) continue;
+    found.push({
+      card: id,
+      attempt: writer.attempt,
+      state: writer.state,
+      covered,
+      why:
+        `${id} is ${fieldScalar(card.fields, "status")}, its fence covers every one of this ` +
+        `change's ${String(input.paths.length)} path(s), and attempt ${writer.attempt} is ` +
+        `${writer.state} — not terminal, so it is this card's writer still and a continuation ` +
+        "resumes it. A compact card here would be a second writer for one resource and a second " +
+        "run record for one piece of work.",
+    });
+  }
+  found.sort((a, b) => byCardId(a.card, b.card));
+  return found[0] ?? null;
+}
+
+/**
+ * IS THIS FILE ONE A GENERATOR WRITES? Read off the file's own head, so a
+ * generator added tomorrow is covered the day it writes its marker and no
+ * list here goes stale.
+ *
+ * @param {string} root @param {string} rel
+ * @returns {boolean}
+ */
+export function isGenerated(root, rel) {
+  const at = path.join(root, rel);
+  if (!existsSync(at)) return false;
+  let head = "";
+  try {
+    head = readFileSync(at, "utf8").slice(0, GENERATED_HEAD_BYTES);
+  } catch {
+    return false;
+  }
+  return head.includes(GENERATED_MARKER);
+}
+
+/**
+ * THE ELIGIBILITY, MEASURED AND PRINTED AS FINDINGS — the card's THIRD
+ * criterion, and every requirement it names in the order it names them.
+ *
+ * **EACH FINDING SAYS WHAT WAS MEASURED, NOT WHETHER THE ARM LIKED IT.**
+ * A report that printed only the refusals would leave a reader unable to
+ * tell a requirement that passed from one nobody asked, which is the same
+ * failure a skipped gate is: a gate nobody ran and a gate that passed
+ * look identical afterwards.
+ *
+ * @param {object} input
+ * @param {string[]} input.fence        the fence as the card declares it
+ * @param {string[]} input.paths        that fence, expanded
+ * @param {string[]} input.unresolved   fence entries expanding to nothing
+ * @param {string[]} input.changed      the paths the change actually touches
+ * @param {(rel: string) => boolean} input.tracked
+ * @param {(rel: string) => boolean} input.present
+ * @param {(rel: string) => boolean} input.generated
+ * @param {Map<string, string[]>} input.guardMap
+ * @param {{ byPath: { path: string, specs: string[] }[], unplaceable: { path: string, why: string }[] }} input.owning
+ * @param {?Admission} input.admission        what `admit` answered, or null
+ * @param {?{ code: string, why: string }} input.refusal  why it refused, where it did
+ * @returns {{ eligible: boolean, findings: EligibilityFinding[], refusals: string[] }}
+ */
+export function expressEligibility(input) {
+  /** @type {EligibilityFinding[]} */
+  const findings = [];
+  /** @param {string} id @param {string} requires @param {boolean} met @param {string} measured */
+  const say = (id, requires, met, measured) => findings.push({ id, requires, met, measured });
+
+  // ── 1. AN ADMISSION THE GRANT PERMITS ─────────────────────────────
+  const admitted = input.admission !== null && input.admission.admitted;
+  say(
+    "admission",
+    "an admission the grant permits (T-319's block, T-324's lifecycle)",
+    admitted,
+    admitted
+      ? `admitted — ${/** @type {Admission} */ (input.admission).why}`
+      : input.refusal === null
+        ? "no admission was measured here at all, which is not the same as one that was permitted"
+        : `REFUSED ${input.refusal.code} — ${input.refusal.why}`,
+  );
+
+  // ── 2. EVERY PATH INSIDE THE FENCE ────────────────────────────────
+  const inside = new Set(input.paths);
+  const outside = input.changed.filter((p) => !inside.has(p));
+  say(
+    "fence",
+    "every path the change touches inside the named fence, and every fence entry resolving",
+    outside.length === 0 && input.unresolved.length === 0,
+    `${String(input.fence.length)} fence entr(ies) expanding to ${String(input.paths.length)} ` +
+      `path(s); ${String(input.changed.length)} changed path(s)` +
+      (outside.length === 0 ? " all inside" : `, OUTSIDE: ${outside.join(", ")}`) +
+      (input.unresolved.length === 0 ? "" : `; UNRESOLVED entr(ies): ${input.unresolved.join(", ")}`),
+  );
+
+  // ── 3. A KEEPER OR AN OWNING SPEC FOR THE PATH ────────────────────
+  // **DERIVED FROM THE IMPORT GRAPH, WITHOUT RUNNING A SUITE.** What this
+  // requirement asks is whether something already PINS the ground, and
+  // `gate-run.mjs`'s owning derivation answers exactly that from static
+  // imports and the docs gate's reader map. Running the suite here would
+  // answer a different question — whether it is green — which is the
+  // dispatch ritual's own first step and is asked there.
+  const unplaceable = input.owning.unplaceable;
+  const owned = input.owning.byPath.length;
+  say(
+    "keeper",
+    "a relevant keeper or owning spec present for every fenced path",
+    unplaceable.length === 0,
+    `${String(owned)} of ${String(input.paths.length)} path(s) are owned by at least one spec` +
+      (unplaceable.length === 0
+        ? `; the owners are ${input.owning.byPath
+            .map((e) => `${e.path} -> ${e.specs.join(", ")}`)
+            .join(" / ")}`
+        : `; UNOWNED: ${unplaceable.map((u) => `${u.path} (${u.why})`).join(", ")}`),
+  );
+
+  // ── 4. NO GUARD-CLASS PATH ────────────────────────────────────────
+  const hits = guardClassHits(input.paths, input.guardMap);
+  say(
+    "guard-class",
+    "no guard-class path (the conventions' own map, T-296) — the builder of a cage is not its inspector",
+    hits.length === 0,
+    `${String(input.paths.length)} path(s) against ${String(input.guardMap.size)} class(es)` +
+      (hits.length === 0
+        ? "; none hit"
+        : `; HIT: ${hits.map((h) => `${h.path} (${h.classes.join(", ")})`).join(", ")}`),
+  );
+
+  // ── 5. REVERSIBLE ─────────────────────────────────────────────────
+  const untracked = input.paths.filter((p) => !input.tracked(p));
+  const absent = input.paths.filter((p) => input.tracked(p) && !input.present(p));
+  const generated = input.paths.filter((p) => input.generated(p));
+  say(
+    "reversible",
+    "a tracked file, no rename, no deletion, no generated file",
+    untracked.length === 0 && absent.length === 0 && generated.length === 0,
+    (untracked.length === 0 ? "every path tracked" : `UNTRACKED: ${untracked.join(", ")}`) +
+      (absent.length === 0 ? "; every path present" : `; ABSENT: ${absent.join(", ")}`) +
+      (generated.length === 0
+        ? "; none carries a generator's marker"
+        : `; GENERATED: ${generated.join(", ")}`) +
+      ". AND WHAT THIS CANNOT SEE, said rather than left to be discovered: whether the edit turns " +
+      "out to be a rename or a deletion is a property of a DIFF that does not exist at this " +
+      "moment, and NOTHING RE-READS IT AFTERWARDS: the merge reads the diff for forbidden " +
+      "spellings and for its LINE COUNT (the XS bound bumps the tier, which is a different " +
+      "question), and it asks at no step whether a path was renamed or deleted. THE FENCE-TIME " +
+      "READING IS THE WHOLE OF THIS GUARANTEE.",
+  );
+
+  const refusals = findings
+    .filter((f) => !f.met)
+    .map((f) => `${f.id}: ${f.requires} — ${f.measured}`);
+  return { eligible: refusals.length === 0, findings, refusals };
+}
+
+/**
+ * THE EFFORT DIAL'S VALUE WHEN NOTHING DECLARES ONE. It is a RECORDED
+ * VALUE and not an empty field: a receipt whose effort row is blank and
+ * one whose effort was never configured look the same, and only one of
+ * them is a gap somebody should close (T-318).
+ */
+export const EFFORT_NOT_CONFIGURED = "not configured";
+
+/** The template block an effort per role would live in, when one exists. */
+export const EFFORT_TEMPLATE_BLOCK = "efforts";
+
+/**
+ * THE EFFORT ONE ROLE IS DISPATCHED AT, read from the runtime template
+ * the same way its model is — and answering `not configured` where the
+ * template carries no such block, which is every tree until T-318 lands
+ * one. It is READ rather than assumed absent, so the day the block
+ * appears this reader answers from it without being edited.
+ *
+ * @param {string} templateYaml
+ * @param {string} role the METHOD role file's name, e.g. `executor`
+ * @returns {string}
+ */
+export function roleEffort(templateYaml, role) {
+  const key = /** @type {Record<string, string>} */ (ROLE_TEMPLATE_KEYS)[role];
+  if (key === undefined) return EFFORT_NOT_CONFIGURED;
+  const lines = templateYaml.split(/\r?\n/);
+  const at = lines.findIndex((l) => new RegExp(`^${EFFORT_TEMPLATE_BLOCK}:\\s*(#.*)?$`).test(l));
+  if (at === -1) return EFFORT_NOT_CONFIGURED;
+  for (const line of lines.slice(at + 1)) {
+    if (line.trim() === "" || line.trimStart().startsWith("#")) continue;
+    if (!/^\s/.test(line)) break;
+    const m = /^\s+([A-Za-z0-9_-]+):\s*(.*)$/.exec(line);
+    if (m === null) continue;
+    if (m[1] !== key) continue;
+    const raw = /** @type {string} */ (m[2]);
+    const cut = raw.startsWith("#") ? "" : (raw.split(" #")[0] ?? "");
+    const value = cut.trim().replace(/^(?:""|'')$/, "");
+    return value === "" ? EFFORT_NOT_CONFIGURED : value;
+  }
+  return EFFORT_NOT_CONFIGURED;
+}
+
+/**
+ * THE BLOB A TEXT WOULD HAVE, computed by git and written nowhere.
+ *
+ * **THIS IS WHAT LETS THE ADMISSION BE MEASURED BEFORE THE CARD EXISTS.**
+ * A grant binds to a card's blob sha, and a compact card's bytes are
+ * fully determined the moment the arm composes them — so the blob can be
+ * computed, printed and compared against the grant's order without a file
+ * being written or an object being stored. An owner who wants to approve
+ * a compact card in advance approves exactly this sha.
+ *
+ * @param {string} root @param {string} text
+ * @returns {string}
+ */
+export function hashObject(root, text) {
+  return execFileSync("git", ["-C", root, "hash-object", "--stdin"], {
+    encoding: "utf8",
+    input: text,
+    maxBuffer: 64 * 1024 * 1024,
+  }).trim();
+}
+
+/**
+ * @typedef {object} ExpressOptions
+ * @property {string} outcome
+ * @property {string[]} fence
+ * @property {(criterion: string) => boolean} ears
+ * @property {string} suggestedBy
+ * @property {string[]} [changed]     the paths the change touches; the fence when omitted
+ * @property {string} [id]
+ * @property {string} [feature]
+ * @property {string} [milestone]
+ * @property {string} [priority]
+ * @property {string} [slug]
+ * @property {string} [scratch]
+ * @property {string} [executor]
+ * @property {string} [verifier]
+ * @property {GrantState} [grant]
+ * @property {AdmissionEntry[]} [ledger]
+ * @property {{ attempt: string, card: string, state: string, terminal: boolean }[]} [writers]
+ * @property {readonly string[]} [active]  the statuses that make a card ACTIVE
+ * @property {string} [derivedFrom]   a parent the recovery policy admits a repair of
+ * @property {string} [failure]       that repair's failure evidence
+ * @property {string} [requestedAt]   the outcome sentence's OWN instant, where the seat knows it
+ */
+
+/** The card statuses that mean a card is still somebody's work. */
+export const ACTIVE_STATUSES = Object.freeze(["planned", "building", "verifying", "rejected", "merging"]);
+
+/**
+ * THE EXPRESS PLAN — derived from the tree and the two inputs, writing
+ * NOTHING and starting no process.
+ *
+ * The order of what it answers is the design: REUSE first, because a
+ * change that already belongs to somebody must not mint a card; then the
+ * card, because the admission binds to its blob and the blob is a
+ * function of its bytes; then the eligibility, which the admission is one
+ * finding of.
+ *
+ * @param {Ctx} ctx
+ * @param {ExpressOptions} opts
+ * @returns {ExpressPlan}
+ */
+export function expressPlan(ctx, opts) {
+  const fence = (opts.fence ?? []).map((f) => String(f).trim()).filter((f) => f !== "");
+  if (fence.length === 0) {
+    throw new ExpressFinding(
+      EXPRESS_CODES.NO_FENCE,
+      "dispatch-brief: the express path takes an outcome sentence and a NAMED FENCE, and this one " +
+        "names no fence. An eligibility measured over no paths is a measurement of nothing.",
+    );
+  }
+  const paths = fencePaths({ entries: fence }, ctx.slugs, ctx.comps);
+  const unresolved = fence.filter((e) => expandFenceEntry(e, ctx.slugs, ctx.comps).paths.length === 0);
+  const active = opts.active ?? ACTIVE_STATUSES;
+  const reuse = expressReuse({
+    paths,
+    cards: ctx.cards,
+    slugs: ctx.slugs,
+    comps: ctx.comps,
+    active,
+    writers: opts.writers ?? [],
+  });
+
+  const placement =
+    opts.feature !== undefined && opts.feature !== "" && opts.milestone !== undefined && opts.milestone !== ""
+      ? {
+          feature: opts.feature,
+          milestone: opts.milestone,
+          from: "",
+          shared: 0,
+          why: "named by the dispatching seat rather than derived from the board",
+        }
+      : expressPlacement({ paths, cards: ctx.cards, slugs: ctx.slugs, comps: ctx.comps });
+
+  const id = opts.id === undefined || opts.id === "" ? nextCardId(ctx.cards) : normaliseTaskId(opts.id);
+  if (ctx.cards.has(id)) {
+    throw new ExpressFinding(
+      EXPRESS_CODES.ID_TAKEN,
+      `dispatch-brief: ${id} is already a live card (${ctx.cards.get(id)?.file ?? ""}). A compact ` +
+        "card written over a live one would be this arm losing somebody's contract.",
+    );
+  }
+  const card = compactCard({
+    id,
+    at: ctx.at.slice(0, 10),
+    outcome: opts.outcome,
+    fence,
+    feature: placement.feature,
+    milestone: placement.milestone,
+    ...(opts.priority === undefined ? {} : { priority: opts.priority }),
+    suggestedBy: opts.suggestedBy,
+    ears: opts.ears,
+  });
+  const blob = hashObject(ctx.root, card.text);
+
+  // ── THE ADMISSION, MEASURED AND NOT MADE ───────────────────────────
+  // **THE EXPRESS PATH REFUSES UNDER THE NO-GRANT STATE, AND THAT IS THE
+  // ONE PLACE IT DEPARTS FROM THE ORDINARY CUT.** For a card a person
+  // filed and triaged, `admit` under no grant answers "made, and NOTHING
+  // was enforced", and the standing authorization the loop runs under is
+  // the seat's. A COMPACT CARD HAS NO SUCH HISTORY: it was composed by
+  // this command out of a sentence, seconds ago, and nobody has triaged
+  // it. The card's first criterion says so in as many words — an outcome
+  // sentence alone authorizes no work — so where there is no grant to
+  // read, the express path declines to create the work and the ordinary
+  // path, with its own dispatch approval, is what files it.
+  const grant = opts.grant ?? grantState(ctx.root);
+  const derivedFrom = (opts.derivedFrom ?? "").trim();
+  /** @type {?Admission} */
+  let admission = null;
+  /** @type {?{ code: string, why: string }} */
+  let refusal = null;
+  if (!grant.enforced) {
+    refusal = {
+      code: EXPRESS_CODES.NO_GRANT,
+      why:
+        `${grant.source}. The express path is the one place a CARD is composed by a command out ` +
+        "of a sentence rather than filed and triaged by a person, so the standing authorization " +
+        "that carries an ordinary cut under no grant does not reach it: an outcome sentence alone " +
+        "authorizes no work. File the card through the ordinary path, or record a grant.",
+    };
+  } else {
+    try {
+      admission = admit(
+        grant,
+        {
+          boundary: "lane-cut",
+          kind: derivedFrom === "" ? "explicit" : "derived",
+          card: id,
+          role: "executor",
+          blob,
+          cardText: card.text,
+          approvedText: (sha) => approvedCardText(ctx.root, sha),
+          resource: null,
+          board: admissionBoard(ctx),
+          ...(derivedFrom === "" ? {} : { parent: derivedFrom, evidence: opts.failure ?? "" }),
+        },
+        opts.ledger ?? [],
+      );
+    } catch (err) {
+      if (!(err instanceof AdmissionFinding)) throw err;
+      refusal = { code: String(err.code), why: err.message };
+    }
+  }
+
+  const tracked = new Set(
+    git(ctx.root, ["ls-files", "-z"])
+      .split("\0")
+      .filter((l) => l !== ""),
+  );
+  const isTracked = (/** @type {string} */ rel) =>
+    tracked.has(rel) || [...tracked].some((f) => f.startsWith(`${rel.replace(/\/+$/, "")}/`));
+  const owning = deriveOwning(paths, ctx.root);
+  const eligibility = expressEligibility({
+    fence,
+    paths,
+    unresolved,
+    changed: opts.changed === undefined || opts.changed.length === 0 ? paths : opts.changed,
+    tracked: isTracked,
+    present: (rel) => existsSync(path.join(ctx.root, rel)),
+    generated: (rel) => isGenerated(ctx.root, rel),
+    guardMap: guardClassMap(ctx.conventions, guardClassIds(taskFormatText(ctx.root))),
+    owning,
+    admission,
+    refusal,
+  });
+
+  const templateText = runtimeTemplateText(ctx.root);
+  const models = roleModels(templateText);
+  const executor = modelChoice("executor", "builder", roleModel(models, "executor"), opts.executor);
+  const sp = dispatchSpellings(ctx.conventions);
+  return {
+    root: ctx.root,
+    id,
+    reuse,
+    card,
+    blob,
+    placement,
+    fence,
+    paths,
+    unresolved,
+    grant,
+    admission,
+    refusal,
+    eligibility,
+    owning,
+    slug: opts.slug === undefined || opts.slug === "" ? card.slug : opts.slug,
+    scratch: opts.scratch === undefined || opts.scratch === "" ? os.tmpdir() : opts.scratch,
+    draftFile: path.resolve(
+      opts.scratch === undefined || opts.scratch === "" ? os.tmpdir() : opts.scratch,
+      laneScratchName(EXPRESS_LABEL, "md", id, sp),
+    ),
+    // THE OUTCOME SENTENCE'S OWN INSTANT, AND IT IS THE SEAT'S TO GIVE.
+    // This command can only know when it was INVOKED, which is a later
+    // instant than the one the first measurement is a difference from —
+    // so the dial is offered, the default is this invocation's own clock,
+    // and which of the two a record carries is SAID rather than left to be
+    // assumed. A figure whose provenance is a guess is worse than one that
+    // names itself.
+    requestedAt: opts.requestedAt === undefined || opts.requestedAt === "" ? ctx.at : opts.requestedAt,
+    requestedFrom:
+      opts.requestedAt === undefined || opts.requestedAt === ""
+        ? "this command's own invocation, which is LATER than the sentence it was given — pass --requested <iso> to measure from the sentence itself"
+        : "the instant the seat gave for the outcome sentence itself",
+    instantsFile: path.resolve(
+      opts.scratch === undefined || opts.scratch === "" ? os.tmpdir() : opts.scratch,
+      laneScratchName("instants", "json", id, sp),
+    ),
+    requested: {
+      model: executor.model,
+      effort: roleEffort(templateText, "executor"),
+      fromTemplate: executor.fromTemplate,
+      overridden: executor.overridden,
+    },
+    ...(opts.executor === undefined ? {} : { executor: opts.executor }),
+    ...(opts.verifier === undefined ? {} : { verifier: opts.verifier }),
+    ...(derivedFrom === "" ? {} : { derivedFrom }),
+    ...(opts.failure === undefined ? {} : { failure: opts.failure }),
+  };
+}
+
+/**
+ * @typedef {object} ExpressPlan
+ * @property {string} root
+ * @property {string} id
+ * @property {?{ card: string, attempt: string, state: string, covered: string[], why: string }} reuse
+ * @property {CompactCard} card
+ * @property {string} blob
+ * @property {{ feature: string, milestone: string, from: string, shared: number, why: string }} placement
+ * @property {string[]} fence
+ * @property {string[]} paths
+ * @property {string[]} unresolved
+ * @property {GrantState} grant
+ * @property {?Admission} admission
+ * @property {?{ code: string, why: string }} refusal
+ * @property {{ eligible: boolean, findings: EligibilityFinding[], refusals: string[] }} eligibility
+ * @property {{ byPath: { path: string, specs: string[] }[], unplaceable: { path: string, why: string }[] }} owning
+ * @property {string} slug
+ * @property {string} scratch
+ * @property {string} draftFile
+ * @property {string} requestedAt
+ * @property {string} requestedFrom
+ * @property {string} instantsFile
+ * @property {{ model: string, effort: string, fromTemplate: string, overridden: boolean }} requested
+ * @property {string} [executor]
+ * @property {string} [verifier]
+ * @property {string} [derivedFrom]
+ * @property {string} [failure]
+ */
+
+/**
+ * THE FOUR STEPS THE EXPRESS RUN PERFORMS BEFORE IT HANDS OVER. The fifth
+ * is the ORDINARY ritual — `--dispatch-lane`, all eleven of its steps,
+ * with the bench and the phase-one pass not owed at the bounded tier —
+ * and it is named here as a step so that a reader of this ledger can see
+ * where the short road rejoins the long one.
+ */
+export const EXPRESS_STEPS = Object.freeze([
+  Object.freeze({ n: 1, id: "reuse", what: "ask whether an active card with a resumable writer already owns this change" }),
+  Object.freeze({ n: 2, id: "eligible", what: "measure the five requirements and refuse an ineligible change by name" }),
+  Object.freeze({ n: 3, id: "card", what: "write the compact card and stage it, so the dispatch stamp commits one commit and not two" }),
+  Object.freeze({ n: 4, id: "preflight", what: "re-derive the compact card's own claims with the existing preflight" }),
+  Object.freeze({ n: 5, id: "dispatch", what: "hand over to the ordinary lane ritual, which admits, stamps, cuts and briefs" }),
+]);
+
+/**
+ * @typedef {object} ExpressResult
+ * @property {number} code
+ * @property {StepResult[]} done
+ * @property {?{ n: number, id: string, ran: string, exit: number, detail: string }} stopped
+ * @property {string[]} findings
+ * @property {string[]} notes
+ * @property {string[]} transcript  the ordinary ritual's own output, carried through verbatim
+ * @property {string} cardFile   the compact card's path, or "" where none was written
+ */
+
+/**
+ * PERFORM THE EXPRESS PATH. Every write is named in the ledger it
+ * returns, and every one of them is undone when a later step refuses.
+ *
+ * @param {ExpressPlan} plan
+ * @param {DispatchIo} io
+ * @returns {ExpressResult}
+ */
+export function runExpress(plan, io) {
+  /** @type {StepResult[]} */
+  const done = [];
+  /** @type {string[]} */
+  const findings = [];
+  /** @type {string[]} */
+  const notes = [];
+  /** @type {string[]} */
+  const transcript = [];
+  let wrote = "";
+  const cardAt = path.join(plan.root, plan.card.file);
+
+  /**
+   * Undo the one write this run makes, and nothing else.
+   *
+   * **IT TAKES THE FILE BACK EVEN WHEN THE STAGING NEVER HAPPENED.** The
+   * card is written and then staged, so a refusal BETWEEN the two leaves
+   * a file `git rm` cannot see — and a compact card left untracked in the
+   * integration checkout is dirt the next merge counts as somebody's
+   * uncommitted work.
+   */
+  const unwind = () => {
+    if (wrote === "") return;
+    const removed = io.run(["git", "-C", plan.root, "rm", "--quiet", "--force", "--", plan.card.file], {
+      cwd: plan.root,
+    });
+    if (removed.status !== 0 && existsSync(cardAt)) {
+      try {
+        rmSync(cardAt);
+      } catch {
+        findings.push(
+          `the compact card this run wrote at ${plan.card.file} could not be taken back, so it is ` +
+            "still there and it is this run's to remove.",
+        );
+      }
+    }
+    wrote = "";
+  };
+
+  /**
+   * @param {{ n: number, id: string, what: string }} step
+   * @param {string} ran @param {number} exit @param {string} detail
+   * @returns {ExpressResult}
+   */
+  const stopAt = (step, ran, exit, detail) => {
+    unwind();
+    findings.push(
+      `the express path stopped at step ${String(step.n)} (${step.id}) — ${step.what}. It ran: ` +
+        `${ran} — and got exit ${String(exit)}. ${detail}`,
+    );
+    return {
+      code: exit === EXIT.CANNOT_RUN ? EXIT.CANNOT_RUN : EXIT.FOUND,
+      done,
+      stopped: { n: step.n, id: step.id, ran, exit, detail },
+      findings,
+      notes,
+      transcript,
+      cardFile: "",
+    };
+  };
+
+  for (const step of EXPRESS_STEPS) {
+    if (step.id === "reuse") {
+      const ran = `read ${String(plan.paths.length)} fenced path(s) against the board and the run records`;
+      if (plan.reuse !== null) {
+        // NOT A REFUSAL AND NOT A FAILURE. The change has a home; this
+        // step found it, and the answer is the card and the attempt that
+        // already carry it. A second card here would be the second
+        // writer, which is the one thing this step exists to prevent.
+        notes.push(
+          `THIS CHANGE IS ALREADY ${plan.reuse.card}'S, and no compact card was created: ` +
+            `${plan.reuse.why} Resume it — \`--run continue --attempt ${plan.reuse.attempt}\` — ` +
+            "and the correction round rides the run record that card already has.",
+        );
+        done.push({ n: step.n, id: step.id, ran, exit: EXIT.CLEAN, detail: plan.reuse.why });
+        return { code: EXIT.CLEAN, done, stopped: null, findings, notes, transcript, cardFile: "" };
+      }
+      done.push({
+        n: step.n,
+        id: step.id,
+        ran,
+        exit: EXIT.CLEAN,
+        detail: "no active card with a resumable writer fences every path of this change",
+      });
+      continue;
+    }
+
+    if (step.id === "eligible") {
+      const ran = `measure ${String(EXPRESS_REQUIREMENTS.length)} requirement(s) over ${String(plan.paths.length)} path(s)`;
+      for (const f of plan.eligibility.findings) {
+        notes.push(`${f.met ? "MET" : "NOT MET"} — ${f.id}: ${f.requires} — ${f.measured}`);
+      }
+      if (!plan.eligibility.eligible) {
+        // THE DRAFT IS KEPT AND THE TREE IS NOT TOUCHED. A refused change
+        // still has an outcome sentence and a fence somebody wrote, so
+        // the compact card is written to the LANE'S OWN SCRATCH file
+        // rather than into docs/tasks: the ordinary path is where an
+        // ineligible change is filed and triaged, and a card dropped
+        // untracked into the integration checkout is dirt the next merge
+        // counts.
+        try {
+          io.write(plan.draftFile, plan.card.text);
+          notes.push(
+            `the compact card this change WOULD have taken is at ${plan.draftFile}, unfiled. ` +
+              "Re-triage it through the existing path — file it, size it and dispatch it as any " +
+              "other card — rather than re-typing the sentence.",
+          );
+        } catch {
+          notes.push("the compact card could not be written to the scratch draft file");
+        }
+        return stopAt(
+          step,
+          ran,
+          EXIT.FOUND,
+          `INELIGIBLE, and the requirement(s) that were not met are named: ` +
+            `${plan.eligibility.refusals.join(" | ")}`,
+        );
+      }
+      done.push({
+        n: step.n,
+        id: step.id,
+        ran,
+        exit: EXIT.CLEAN,
+        detail: `eligible — all ${String(plan.eligibility.findings.length)} requirement(s) met`,
+      });
+      continue;
+    }
+
+    if (step.id === "card") {
+      const ran = `write ${plan.card.file} and stage it`;
+      if (existsSync(cardAt)) {
+        return stopAt(step, ran, EXIT.FOUND, `${plan.card.file} already exists, and this arm overwrites no card.`);
+      }
+      try {
+        io.write(cardAt, plan.card.text);
+      } catch (err) {
+        return stopAt(step, ran, EXIT.CANNOT_RUN, err instanceof Error ? err.message : String(err));
+      }
+      wrote = plan.card.file;
+      // **STAGED, NOT COMMITTED.** The dispatch stamp's own commit takes
+      // this path in its pathspec, so the compact card and its stamp land
+      // in ONE commit — which is the commit the lane is cut from and the
+      // commit the card's own history begins at. Two commits here would
+      // be two round trips on the integration branch for one change.
+      const add = ["git", "-C", plan.root, "add", "--", plan.card.file];
+      const r = io.run(add, { cwd: plan.root });
+      if (r.status !== 0) return stopAt(step, spellCommand(add), r.status, r.stderr.trim());
+      const staged = io.run(["git", "-C", plan.root, "hash-object", "--", plan.card.file], { cwd: plan.root });
+      const onDisk = staged.status === 0 ? staged.stdout.trim() : "";
+      if (onDisk !== plan.blob) {
+        return stopAt(
+          step,
+          spellCommand(add),
+          EXIT.FOUND,
+          `the card on disk hashes to ${onDisk || "nothing readable"} and the admission was ` +
+            `measured against ${plan.blob}. The bytes the grant was asked about and the bytes on ` +
+            "disk are not the same bytes, so the admission answered about a card that is not this one.",
+        );
+      }
+      done.push({ n: step.n, id: step.id, ran: spellCommand(add), exit: EXIT.CLEAN, detail: `${plan.card.file} at ${plan.blob}` });
+      continue;
+    }
+
+    if (step.id === "preflight") {
+      const argv = [process.execPath, BRIEF_CLI, "--task", plan.id, "--preflight", "--root", plan.root];
+      const r = io.run(argv, { cwd: plan.root });
+      if (r.status !== 0) {
+        return stopAt(
+          step,
+          spellCommand(argv),
+          r.status,
+          `the compact card's own claims do not re-derive: ${(r.stderr + r.stdout).trim().slice(0, 1200)}`,
+        );
+      }
+      done.push({ n: step.n, id: step.id, ran: spellCommand(argv), exit: EXIT.CLEAN, detail: `${plan.card.file} re-derives at HEAD` });
+      continue;
+    }
+
+    // ── THE HAND-OVER ────────────────────────────────────────────────
+    const argv = [
+      process.execPath,
+      BRIEF_CLI,
+      "--dispatch-lane",
+      plan.id,
+      "--slug",
+      plan.slug,
+      "--root",
+      plan.root,
+      "--scratch",
+      plan.scratch,
+      ...(plan.executor === undefined ? [] : ["--executor", plan.executor]),
+      ...(plan.verifier === undefined ? [] : ["--verifier", plan.verifier]),
+      ...(plan.derivedFrom === undefined ? [] : ["--derived-from", plan.derivedFrom]),
+      ...(plan.failure === undefined ? [] : ["--failure", plan.failure]),
+    ];
+    const r = io.run(argv, { cwd: plan.root });
+    // THE RITUAL'S OWN OUTPUT IS THE LEDGER A READER NEEDS, so it is
+    // carried through VERBATIM rather than summarised into an exit code —
+    // and verbatim means a TRANSCRIPT and not a set of notes: every line
+    // of it already carries the ritual's own provenance stamp, and
+    // re-stamping one appends a second arrow to a line that had one.
+    for (const line of `${r.stdout}\n${r.stderr}`.split(/\r?\n/)) {
+      if (line.trim() !== "") transcript.push(line);
+    }
+    if (r.status !== 0) {
+      // **WHETHER THE CARD IS UNWOUND DEPENDS ON WHETHER IT WAS
+      // COMMITTED, AND THAT IS ASKED RATHER THAN ASSUMED.** A ritual that
+      // refused before its stamp leaves this arm's staged card behind as
+      // dirt the next merge counts; a ritual that refused AFTER it has
+      // committed the card has made the card's own history, and a card
+      // removed after its dispatch stamp is a card whose lifecycle nobody
+      // can read (`runDispatchLane`'s own rule).
+      const committed = io.run(
+        ["git", "-C", plan.root, "cat-file", "-e", `HEAD:${plan.card.file}`],
+        { cwd: plan.root },
+      );
+      if (committed.status === 0) {
+        wrote = "";
+        notes.push(
+          `the compact card is in HEAD already — the ritual committed it in its dispatch stamp ` +
+            "before it refused — so it is KEPT: a card removed after its own stamp is a card " +
+            "whose lifecycle nobody can read.",
+        );
+      } else {
+        notes.push(
+          "the compact card was never committed, so this run takes its own write back and the " +
+            "tree is as it was found.",
+        );
+      }
+      return stopAt(step, spellCommand(argv), r.status, "the ordinary lane ritual refused; its own ledger is above.");
+    }
+    // ── THE TWO INSTANTS THE MEASUREMENTS START FROM (T-320) ────────
+    // **THEY ARE WRITTEN WHERE THE RUN RECORD CAN PICK THEM UP, because
+    // they happen before any child exists.** The outcome sentence's own
+    // instant and the lane cut are both earlier than the first
+    // `--run start`, so the only way they reach a record is carried in
+    // the ASSIGNMENT the seat writes — and the only way the seat has them
+    // to carry is if this arm wrote them down at the moment it had them.
+    const instants = { requested: plan.requestedAt, cut: io.now?.() ?? new Date().toISOString() };
+    try {
+      io.write(plan.instantsFile, `${JSON.stringify(instants, null, 2)}\n`);
+      notes.push(
+        `the two instants the express measurements start from are at ${plan.instantsFile} — ` +
+          `requested ${instants.requested} (${plan.requestedFrom}), cut ${instants.cut}. Copy them ` +
+          "into the assignment's `instants` block before `--run start`: they happen before any " +
+          "child exists, so the record cannot stamp them itself.",
+      );
+    } catch {
+      notes.push(
+        `the two instants could not be written to ${plan.instantsFile}, so the first two ` +
+          "measurements will be unknown — which is recorded rather than substituted.",
+      );
+    }
+    done.push({ n: step.n, id: step.id, ran: spellCommand(argv), exit: EXIT.CLEAN, detail: `${plan.id} dispatched on the ordinary ritual` });
+  }
+
+  return { code: EXIT.CLEAN, done, stopped: null, findings, notes, transcript, cardFile: plan.card.file };
+}
+
+/**
+ * IS THIS CARD ON THE EXPRESS PATH RIGHT NOW? — the label put on, minus
+ * any withdrawal. Read off the card's own text rather than a field, and
+ * the two openers are checked in that order because a withdrawal LINE
+ * begins with the label's own words: a reader that tested the label first
+ * on a substring would call a withdrawn card labelled for ever.
+ *
+ * @param {string} cardText
+ * @returns {{ labelled: boolean, withdrawn: boolean, lines: string[] }}
+ */
+export function expressLabel(cardText) {
+  const lines = cardText
+    .split(/\r?\n/)
+    .filter((l) => l.trimStart().startsWith(EXPRESS_LABEL_OPENER));
+  const withdrawn = lines.some((l) => l.trimStart().startsWith(EXPRESS_WITHDRAWN_OPENER));
+  const put = lines.some((l) => !l.trimStart().startsWith(EXPRESS_WITHDRAWN_OPENER));
+  return { labelled: put && !withdrawn, withdrawn, lines };
+}
+
+/**
+ * THE WITHDRAWAL — the card's FIFTH criterion.
+ *
+ * **NOTHING IS DELETED AND NOTHING IS UNWOUND.** A check that failed or a
+ * scope the executor discovered is news about the WORK, not about the
+ * candidate: the branch still holds what was built and the run record
+ * still holds what it cost, and both are what the ordinary path picks the
+ * card up with. So this function writes exactly two things — a dated line
+ * that takes the label off, and the `tier:` the card is re-triaged to —
+ * and both are changes the loop's own ceremony is allowed to make to an
+ * approved card (`MECHANICAL_FIELDS`, `MECHANICAL_SECTIONS`), so the
+ * withdrawal does not cost the card the approval it was admitted under.
+ *
+ * @param {object} input
+ * @param {string} input.cardText
+ * @param {string} input.id
+ * @param {string} input.at        the calendar date
+ * @param {string} input.why       what failed, or what scope was discovered
+ * @param {string} input.branch    the branch the candidate is preserved on
+ * @param {string} input.attempt   the run record the candidate has, or "" where none
+ * @param {string} input.tier      the tier it is re-triaged to
+ * @returns {{ text: string, line: string, tier: string, preserved: string[] }}
+ */
+export function expressWithdrawal(input) {
+  const label = expressLabel(input.cardText);
+  if (!label.labelled) {
+    throw new ExpressFinding(
+      EXPRESS_CODES.NOT_EXPRESS,
+      `dispatch-brief: ${input.id} carries no express label to withdraw` +
+        (label.withdrawn ? " — it was withdrawn already, and a record is appended and never rewritten" : "") +
+        `. A withdrawal of a label nobody put on would be this arm writing a history that did not happen.`,
+    );
+  }
+  const why = String(input.why ?? "").trim();
+  if (why === "") {
+    throw new ExpressFinding(
+      EXPRESS_CODES.NO_REASON,
+      "dispatch-brief: a withdrawal names WHAT happened — the check that failed, or the scope the " +
+        "executor found beyond the outcome sentence. A label taken off for no recorded reason is " +
+        "a card whose next reader cannot tell why the fast path did not hold.",
+    );
+  }
+  if (!TIERS.includes(input.tier) || input.tier === "bounded") {
+    throw new ExpressFinding(
+      EXPRESS_CODES.NOT_EXPRESS,
+      `dispatch-brief: ${JSON.stringify(input.tier)} is not a tier this card can be re-triaged ` +
+        `to. The existing path is a STANDARD or a GUARDED lane (the tiers are ${TIERS.join(", ")}), ` +
+        "and re-triaging a withdrawn express card back to bounded would put it on the road it " +
+        "just left.",
+    );
+  }
+  const preserved = [
+    `the branch ${input.branch} is KEPT — it holds the candidate, and a branch deleted here would ` +
+      "destroy the only reproducible copy of what was built",
+    input.attempt === ""
+      ? "no run record was bound to this candidate, which is recorded rather than rounded to none"
+      : `the run record ${input.attempt} is KEPT — it holds what the attempt cost and what it was ` +
+        "admitted under",
+  ];
+  const line = wrapProse(
+    `${EXPRESS_WITHDRAWN_OPENER} (${input.at}): ${why} The candidate is preserved — ` +
+      `${preserved.join("; ")} — and this card is re-triaged through the existing path as a ` +
+      `${input.tier} lane. The express label is off from this line onward; the line that put it ` +
+      "on stands, because a record is appended and never rewritten.",
+  );
+  let text = input.cardText;
+  const heading = /^##\s+Implementation notes\s*$/m.exec(text);
+  if (heading === null) {
+    throw new ExpressFinding(
+      EXPRESS_CODES.NO_CARD,
+      `dispatch-brief: ${input.id} carries no \`## Implementation notes\` heading, and that is the ` +
+        "section the label was put on under. A withdrawal written anywhere else is invisible to " +
+        "every reader of the label.",
+    );
+  }
+  // **APPENDED AT THE END OF THE SECTION, NOT AT ITS HEAD.** A record is
+  // appended and never rewritten, and a line inserted above the line it
+  // supersedes reads to the next person as the older of the two.
+  const from = /** @type {number} */ (heading.index) + heading[0].length;
+  const next = /\n#{2}\s/.exec(text.slice(from));
+  const at = next === null ? text.length : from + /** @type {number} */ (next.index);
+  const tail = text.slice(at).replace(/^\n+/, "");
+  text = `${text.slice(0, at).replace(/\s*$/, "")}\n\n${line}\n${tail === "" ? "" : `\n${tail}`}`;
+  const stamped = stampCard(text, { tier: input.tier }, { insertAfter: { tier: "size" } });
+  return { text: stamped.text, line, tier: input.tier, preserved };
+}
+
+/* ────────────────────────────────────────────────────────────────────
+ * THE DEMONSTRATION'S MEASUREMENTS (T-320's SIXTH criterion).
+ *
+ * **EVERY FIGURE IS A DIFFERENCE BETWEEN TWO STAMPED INSTANTS, AND THE
+ * ROW NAMES BOTH.** That is the whole of why this is a function and not a
+ * stopwatch: a body drives it over FIXED instants and asserts arithmetic,
+ * which cannot flake, while the demonstration drives it over the instants
+ * the records already carry — the card's stamp commit, the run record's
+ * own transitions, the merge commit, the push's run on the runner. An
+ * instant that is not there is `unknown` and is never substituted, and a
+ * row with an unknown end has no duration rather than a guessed one.
+ *
+ * AND A SLOW RUN RECORDED IS NOT THE OBJECTIVE ACHIEVED. The targets are
+ * stated on the rows they belong to and the verdict says met or not met;
+ * two of the five rows carry NO target by the card's own words, and they
+ * say so rather than being scored against one nobody set.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/** The instants the five measurements are differences of, in order. */
+export const EXPRESS_INSTANTS = Object.freeze([
+  "requested",
+  "cut",
+  "candidate",
+  "checked",
+  "merged",
+  "pushed",
+]);
+
+/**
+ * THE TARGETS, AS THE CARD STATES THEM. Seconds, so the arithmetic is in
+ * one unit and the rendering does the dividing.
+ */
+export const EXPRESS_TARGETS = Object.freeze({
+  overhead: Object.freeze({ max: 60, what: "under one minute of dispatch and record overhead" }),
+  executor: Object.freeze({
+    min: 120,
+    max: 300,
+    what: "roughly two to five minutes to a local candidate for an eligible edit",
+  }),
+});
+
+/**
+ * @typedef {object} Measurement
+ * @property {string} id
+ * @property {string} what
+ * @property {string} from      the instant it starts at, as recorded
+ * @property {string} to        the instant it ends at, as recorded
+ * @property {?number} seconds  null where either instant is unknown
+ * @property {string} target    the target as the card states it, or "" where the card sets none
+ * @property {?boolean} met     null where there is no target, or no figure to judge
+ * @property {string} why
+ */
+
+/** @param {string} v @returns {?number} */
+function instantMs(v) {
+  const t = Date.parse(String(v ?? ""));
+  return Number.isFinite(t) ? t : null;
+}
+
+/**
+ * THE FIVE MEASUREMENTS, FROM THE INSTANTS THE RECORDS CARRY.
+ *
+ * @param {object} input
+ * @param {string} input.requested  the outcome sentence's own instant
+ * @param {string} input.cut        the lane cut
+ * @param {string} input.candidate  the candidate
+ * @param {string} input.checked    the owed set's conclusion
+ * @param {string} input.merged     the merge commit
+ * @param {string} input.pushed     the push of the merge
+ * @param {string} [input.runner]   the runner's own conclusion. IT IS ACCEPTED AND
+ *   DELIBERATELY TURNED INTO NO ROW: the card asks for it BESIDE the total, so it must
+ *   end no row and the total still ends at the push. WHERE it is recorded is the record's
+ *   own instants map, which `measurementRunRecs` prints in full above the rows.
+ * @returns {{ rows: Measurement[], unknown: string[], verdict: string }}
+ */
+export function expressMeasurements(input) {
+  /** @type {string[]} */
+  const unknown = [];
+  for (const key of EXPRESS_INSTANTS) {
+    const raw = /** @type {Record<string, string>} */ (input)[key] ?? "";
+    if (instantMs(raw) === null) {
+      unknown.push(`${key}: ${raw === "" ? "unknown — no instant was recorded for it" : `unreadable (${raw})`}`);
+    }
+  }
+  /**
+   * @param {string} id @param {string} what @param {string} fromKey @param {string} toKey
+   * @param {{ min?: number, max?: number, what: string } | null} target
+   * @returns {Measurement}
+   */
+  const row = (id, what, fromKey, toKey, target) => {
+    const from = /** @type {Record<string, string>} */ (input)[fromKey] ?? "";
+    const to = /** @type {Record<string, string>} */ (input)[toKey] ?? "";
+    const a = instantMs(from);
+    const b = instantMs(to);
+    const seconds = a === null || b === null ? null : Math.round((b - a) / 1000);
+    /** @type {?boolean} */
+    let met = null;
+    let why;
+    if (target === null) {
+      why = "the card sets NO target for this row, and it is recorded rather than scored";
+    } else if (seconds === null) {
+      why =
+        `the target is ${target.what}, and this row has no figure to judge it by — ` +
+        `${a === null ? `${fromKey} is unknown` : `${toKey} is unknown`}, and an unknown is never ` +
+        "substituted with a plausible number";
+    } else {
+      const overMax = target.max !== undefined && seconds > target.max;
+      const underMin = target.min !== undefined && seconds < target.min;
+      met = !overMax;
+      why =
+        `the target is ${target.what}; measured ${String(seconds)}s, so it is ` +
+        `${met ? "MET" : "NOT MET"}` +
+        (underMin
+          ? " — and it came in UNDER the range's floor, which is news rather than a better result: a " +
+            "figure faster than the objective's own band means the objective was measured on " +
+            "something smaller than the band was written for"
+          : "");
+    }
+    return {
+      id,
+      what,
+      from: from === "" ? "unknown" : from,
+      to: to === "" ? "unknown" : to,
+      seconds,
+      target: target === null ? "" : target.what,
+      met,
+      why,
+    };
+  };
+  const rows = [
+    row(
+      "overhead",
+      "dispatch and record overhead — from the outcome sentence's instant to the lane cut",
+      "requested",
+      "cut",
+      EXPRESS_TARGETS.overhead,
+    ),
+    row("executor", "executor time — from the lane cut to the candidate", "cut", "candidate", EXPRESS_TARGETS.executor),
+    row("check", "check time — the owed set, from the candidate to its conclusion", "candidate", "checked", null),
+    row("publication", "publication time — from the merge commit to the push", "merged", "pushed", null),
+    row(
+      "request-to-delivery",
+      "the request-to-delivery total — from the outcome sentence's instant to the push of the merge",
+      "requested",
+      "pushed",
+      null,
+    ),
+  ];
+  const judged = rows.filter((r) => r.met !== null);
+  const verdict =
+    judged.length === 0
+      ? "NO TARGET WAS JUDGED — every targeted row is missing one of its instants, and an unknown " +
+        "is never substituted. This run measured the shape and not the objective."
+      : judged.every((r) => r.met === true)
+        ? `THE TARGETS WERE MET on ${String(judged.length)} of the ${String(rows.length)} rows that ` +
+          "carry one; the other rows are recorded and are outside the target by the card's own words."
+        : `THE TARGETS WERE NOT MET: ${judged
+            .filter((r) => r.met !== true)
+            .map((r) => `${r.id} (${String(r.seconds)}s against ${r.target})`)
+            .join(", ")}. A slow run RECORDED is not the objective achieved.`;
+  return { rows, unknown, verdict };
+}
+
+/**
+ * WHAT THE EXPRESS ARM PRINTS. Every line is a live value — the express
+ * path is an act performed at a moment, not a function of a tree — except
+ * the ones that are functions of the tree, which carry its ref.
+ *
+ * @param {Ctx} ctx
+ * @param {ExpressPlan} plan
+ * @param {?ExpressResult} result
+ * @returns {Rec[]}
+ */
+export function expressRecs(ctx, plan, result) {
+  const t = treeProv(ctx.ref, "the express arm, over the board and the fence at this ref");
+  const l = liveProv(ctx.at, ctx.host, "the express arm's own steps, in the order runExpress performs them");
+  /** @type {Rec[]} */
+  const recs = [
+    note("THE EXPRESS PATH — a short road through the existing one, and every step of it named"),
+    value(`the rule this arm is answerable to: the conventions bullet opening "${EXPRESS_BULLET_PHRASE}"`, t),
+    value(`outcome sentence, verbatim as the criterion: ${plan.card.criterion}`, l),
+    value(`fence: ${plan.fence.join(", ")} — ${String(plan.paths.length)} path(s)`, t),
+    value(`compact card: ${plan.card.file} at blob ${plan.blob}`, l),
+    value(
+      `feature ${plan.placement.feature} / milestone ${plan.placement.milestone} — ${plan.placement.why}`,
+      t,
+    ),
+    blank(),
+  ];
+  if (plan.reuse !== null) {
+    recs.push(
+      note("REUSED, AND NO COMPACT CARD WAS CREATED — the card's second criterion"),
+      value(`${plan.reuse.card}, attempt ${plan.reuse.attempt} (${plan.reuse.state})`, l),
+      value(`  ${plan.reuse.why}`, l),
+      blank(),
+    );
+    return recs;
+  }
+  recs.push(note("THE ELIGIBILITY — five requirements, each MEASURED and each printed whether it held"));
+  for (const f of plan.eligibility.findings) {
+    // BOTH LINES ARE STAMPED VALUES AND NEITHER IS A NOTE. This module
+    // refuses a note that carries a digit, and a measurement is nothing
+    // BUT figures — which is the rule working rather than getting in the
+    // way: a count with no ref is the defect the whole command exists to
+    // stop, and an eligibility finding is a count.
+    recs.push(
+      value(`${f.met ? "MET" : "NOT MET"} — ${f.id}: ${f.requires}`, l),
+      value(`    ${f.measured}`, l),
+    );
+  }
+  recs.push(
+    value(
+      plan.eligibility.eligible
+        ? "ELIGIBLE — every requirement met"
+        : `INELIGIBLE — ${plan.eligibility.refusals.length} requirement(s) not met, named above`,
+      l,
+    ),
+    blank(),
+    note("THE LAUNCH RECEIPT'S REQUESTED HALF — what the template asked for, before anything ran"),
+    value(`requested model: ${plan.requested.model}`, t),
+    value(
+      `requested effort: ${plan.requested.effort}` +
+        (plan.requested.effort === EFFORT_NOT_CONFIGURED
+          ? " — and that is a RECORDED VALUE, not an empty field: no template in this tree carries an effort per role yet"
+          : ""),
+      t,
+    ),
+    value(
+      "  the OBSERVED half is the harness's, and it reaches the record through `--run observe` " +
+        "with the completion as its evidence. Requested and observed are separate fields and a " +
+        "missing observation is `unknown`: copying the requested value into the observed field " +
+        "would be a forgery, and the merge verb refuses a mismatch by name.",
+      l,
+    ),
+    blank(),
+  );
+  if (result === null) return recs;
+  recs.push(note("THE LEDGER — every step this run performed, with what it ran and what it answered"));
+  for (const step of result.done) {
+    recs.push(value(`step ${String(step.n)} (${step.id}): exit ${String(step.exit)} — ${step.detail}`, l));
+  }
+  if (result.stopped !== null) {
+    recs.push(
+      value(
+        `STOPPED at step ${String(result.stopped.n)} (${result.stopped.id}) — ${result.stopped.detail}`,
+        l,
+      ),
+    );
+  }
+  recs.push(blank());
+  return recs;
+}
+
+/**
+ * THE MEASUREMENT INPUT, TAKEN OFF A RUN RECORD'S OWN STAMPED INSTANTS.
+ *
+ * **THIS IS WHAT MAKES THE DEMONSTRATION A TRANSCRIPTION RATHER THAN A
+ * RECOLLECTION.** Every figure the sixth criterion asks for is the
+ * difference between two instants some part of the loop already stamped:
+ * the dispatch stamps the outcome sentence's own instant and the lane cut
+ * into the assignment it writes, the run record stamps the candidate at
+ * the attempt's terminal transition, and the seat stamps the owed set's
+ * conclusion, the merge and the push through the collect verb. Nothing
+ * here holds a stopwatch, and a notes section written from this block is
+ * copied out of a record rather than remembered.
+ *
+ * The argument is duck-typed rather than the run record's own type
+ * because this module does not import `run-record.mjs` — the dependency
+ * runs the other way, and a cycle between the two would be a load-order
+ * bug nobody could see from either file.
+ *
+ * @param {{ instants?: Record<string, string> }} record
+ * @returns {{ requested: string, cut: string, candidate: string, checked: string, merged: string, pushed: string, runner?: string }}
+ */
+export function expressInstants(record) {
+  const held = record.instants ?? {};
+  /** @param {string} key */
+  const at = (key) => String(held[key] ?? "");
+  return {
+    requested: at("requested"),
+    cut: at("cut"),
+    candidate: at("candidate"),
+    checked: at("checked"),
+    merged: at("merged"),
+    pushed: at("pushed"),
+    ...(at("runner") === "" ? {} : { runner: at("runner") }),
+  };
+}
+
+/**
+ * IS THERE ANYTHING TO MEASURE ON THIS RECORD? — an attempt carrying only
+ * the `started` instant this arm writes for every child has nothing an
+ * express measurement is about, and printing five unknown rows under it
+ * would be noise on every ordinary run.
+ *
+ * @param {{ instants?: Record<string, string> }} record
+ * @returns {boolean}
+ */
+export function hasExpressInstants(record) {
+  return Object.values(expressInstants(record)).some((v) => v !== "");
+}

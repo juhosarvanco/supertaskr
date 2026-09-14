@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1177 behaviours** — 1175 extracted sentences + 2 named-not-extracted (listed at the end) — across 42 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1202 behaviours** — 1200 extracted sentences + 2 named-not-extracted (listed at the end) — across 42 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -260,6 +260,24 @@ Census: **1177 behaviours** — 1175 extracted sentences + 2 named-not-extracted
 - T-322 VC1 — A QUESTION ENTRY MAY NOT CARRY A LINE BREAK INTO A ROOM, because a line break there forges a heading and the reader stops at it
 - T-322 VC2 — THE RETRY INSTANT IS THE RESET THE PROVIDER STATED, never whatever timestamp the refusal text happens to carry
 - T-322 VC3 — PROGRESS IS THE NEWEST ATTEMPT'S, so one old partial does not licence a repeat of an ineffective remedy for ever
+- T-320 C1 — THE COMPACT CARD CARRIES EVERY REQUIRED FIELD, BOTH STANDING SECTIONS, AND THE OUTCOME SENTENCE VERBATIM AS ITS CRITERION
+- T-320 C1 — AN OUTCOME SENTENCE NOT IN EARS FORM IS REFUSED BY NAME, and the arm composes no criterion of its own
+- T-320 C1 — UNDER A STANDING GRANT THE COMPACT CARD IS ADMITTED, and the admission binds the blob the grant approved
+- T-320 C1 — UNDER `each` THE COMPACT CARD'S APPROVAL IS SPENT ONCE, and a second express dispatch of it is refused by name
+- T-320 C1 — UNDER `until` THE COMPACT CARD IS ADMITTED ONLY AS A DERIVED REPAIR INSIDE THE RECOVERY POLICY, and refused by name otherwise
+- T-320 C1 — WITH NO GRANT THE EXPRESS PATH IS REFUSED BY NAME, because an outcome sentence alone authorizes no work
+- T-320 C2 — A CHANGE THAT ALREADY BELONGS TO AN ACTIVE CARD WITH A RESUMABLE WRITER REUSES THAT CARD AND ITS RUN RECORD, and mints neither a card nor a second writer
+- T-320 C2 — AN ACTIVE STATUS IS WHAT MAKES A CARD SOMEBODY'S WORK, and a done card is not reused however live its record looks
+- T-320 C3 — THE ELIGIBILITY PRINTS ALL FIVE REQUIREMENTS AS MEASURED FINDINGS, whether they held or not
+- T-320 C3 — EACH OF THE FIVE REQUIREMENTS REFUSES BY NAME ON ITS OWN, and the guard-class one is the demonstration's refused control
+- T-320 C3 — REVERSIBLE MEANS TRACKED, PRESENT AND NOT GENERATED, and each of the three is measured on its own
+- T-320 C4 — AT THE BOUNDED TIER THE RITUAL RUNS THE EXECUTOR ONLY: no bench is cut, no phase 1 is rendered, and both skips are said out loud
+- T-320 C4 — THE CONFIGURED MODEL AND THE UNCONFIGURED EFFORT BOTH REACH THE LAUNCH RECEIPT'S REQUESTED HALF, and `not configured` is a recorded value
+- T-320 C1/C3 — THE EXPRESS RUN WRITES THE CARD, PREFLIGHTS IT WITH THE EXISTING PREFLIGHT, and an INELIGIBLE change leaves the tree exactly as it found it
+- T-320 C5 — A WITHDRAWAL PRESERVES THE CANDIDATE, takes the label off by a DATED APPEND, and re-triages the card to a standard or guarded lane
+- T-320 C6 — THE FIVE MEASUREMENTS ARE DIFFERENCES OF STAMPED INSTANTS, each naming both, and the verdict says whether the targets were met
+- T-320 C6 — THE RUNNER'S CONCLUSION IS RECORDED BESIDE THE TOTAL AS A SEPARATE FIGURE, never folded into it
+- T-320 C3 — THE REVERSIBLE FINDING'S DISCLOSURE IS TRUE OF THIS TREE: nothing re-reads a rename or a deletion after the executor writes, and the sentence says so
 
 ## card-figures
 
@@ -352,6 +370,7 @@ Census: **1177 behaviours** — 1175 extracted sentences + 2 named-not-extracted
 - a lane holds no seat: both arms say so, write nothing, and the arming steps are unaffected
 - the two arms are opposite acts and are refused in one invocation
 - a HAND-WRITTEN tier on an undispatched card is a finding, and a card without one is silent about it
+- T-320 — THE COMPACT CARD THE EXPRESS PATH COMPOSES CARRIES NO CLAIM THIS PREFLIGHT RAISES, whatever sentence it is given
 
 ## checkout-currency
 
@@ -953,7 +972,7 @@ Census: **1177 behaviours** — 1175 extracted sentences + 2 named-not-extracted
 - a single git diff against the bench tip answers EMPTY over a wrong STAGED line, which is why the standing comparison reads the index and the working tree separately
 - a same-file end-of-file append is resolved by keeping both sides, and any other conflict stops the verb as a fence finding
 - the bound, the floor and the readings path this file computes are the ones docs/CONVENTIONS.md publishes
-- the verb never pushes, and the keeper steps it plans are the four the card names
+- the verb never pushes, and the keeper steps it plans are the four T-295 names plus the launch receipt T-320 adds
 - the card arm takes ITS OWN card and no other, so a SUGGESTED card of the same lane is a fence finding
 - a block whose OLD text also occurs elsewhere is REFUSED with both counts, never applied at the site its NEW text names
 - a forbidden-spelling refusal names the file and the class and REDACTS the value, on every class it carries
@@ -969,6 +988,8 @@ Census: **1177 behaviours** — 1175 extracted sentences + 2 named-not-extracted
 - a CORRECTION block's own heading is never read as a verdict entry, however it is dated
 - the heading shape verifier.md publishes IS a heading this reader finds, and the date's place is named there
 - assignsCorrections answers the same over one unchanging input, however often it is asked
+- T-320 — THE MERGE REFUSES A LAUNCH RECEIPT WHOSE OBSERVED MODEL CONTRADICTS THE REQUESTED ONE, by name, and an UNKNOWN observation is news rather than a refusal
+- T-320 — THE RECEIPT KEEPER IS FLOOR: turning the cheap keepers off leaves it planned
 
 ## no-plan-card
 
@@ -1204,6 +1225,10 @@ Census: **1177 behaviours** — 1175 extracted sentences + 2 named-not-extracted
 - AN AUTHENTICATION OR CONFIGURATION FAILURE IS NOT A QUOTA REFUSAL — it is recorded, it schedules NO retry, and it parks with a question
 - THE RECORDED INSTANT SURVIVES THE PROCESS — a fresh read of the records separates what is DUE from what is merely scheduled
 - THE REFUSAL PATH NAMES NO MODEL AND NO ACCOUNT — this arm holds no code that could change either
+- T-320 C4 — THE RECEIPT NAMES THE REQUESTED MODEL AND EFFORT BESIDE THE OBSERVED MODEL, TOKENS AND SECONDS, and a missing observation is `unknown` and never substituted
+- T-320 C4 — A COMPLETION WHOSE OBSERVED MODEL DIFFERS FROM THE REQUESTED ONE IS REPORTED AS A MISMATCH, by name
+- T-320 C6 — THE FIVE MEASUREMENTS COME OFF THE RECORD'S OWN STAMPED INSTANTS: the dispatch's two ride in on the assignment, the candidate is stamped at the outcome, and the seat's three arrive through collect
+- T-320 C6 — AN ATTEMPT WITH NOTHING TO MEASURE PRINTS NO MEASUREMENT BLOCK, and a half-read instant dial is refused rather than kept
 
 ## session-economics
 
