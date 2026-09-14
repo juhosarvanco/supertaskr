@@ -1154,13 +1154,28 @@ const CONVENTIONS_CHAPTER_DIR: &str = "docs/conventions/";
 
 /// One pointer line of the index, split into the chapter it names and the
 /// opener it publishes — `None` for every other line in the document.
+///
+/// **THE CHAPTER NAME IS A STEM, AND THE CHARSET IS THE WHOLE GUARD**
+/// (T-290's verifier). The e2e arm's matcher is
+/// `/^ {2}- (docs\/conventions\/[a-z0-9-]+\.md) — (.*)$/` and it reads the
+/// file back through `path.basename`; this one admitted any non-blank
+/// spelling under the prefix, so `docs/conventions/../../x.md` was a
+/// NON-MATCH there — the line copied through as ordinary text — and a
+/// traversing read here. Two implementations of one rule that disagree
+/// about which lines are pointers are the drift this splice exists to
+/// prevent, so the stem is held to the same `[a-z0-9-]+` it is there.
+/// A charset with no `.` in it cannot spell `..`, which is the same
+/// argument the e2e arm's own regex makes.
 fn conventions_pointer(line: &str) -> Option<(&str, &str)> {
     let rest = line.strip_prefix("  - ")?;
-    if !rest.starts_with(CONVENTIONS_CHAPTER_DIR) {
-        return None;
-    }
+    let after = rest.strip_prefix(CONVENTIONS_CHAPTER_DIR)?;
     let (file, opener) = rest.split_once(" — ")?;
-    if !file.ends_with(".md") || file.contains(char::is_whitespace) {
+    let stem = after.split_once(" — ")?.0.strip_suffix(".md")?;
+    if stem.is_empty()
+        || !stem
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+    {
         return None;
     }
     Some((file, opener))
@@ -2312,6 +2327,41 @@ mod tests {
         );
     }
 
+    /// **THE TWO MATCHERS AGREE ABOUT WHICH LINES ARE POINTERS, AND A
+    /// TRAVERSING SPELLING IS A POINTER TO NEITHER** (T-290's verifier).
+    ///
+    /// The e2e arm matches a chapter with `[a-z0-9-]+\.md` and reads it
+    /// back through `path.basename`; this side once admitted any non-blank
+    /// spelling under the prefix, so one line was a NON-POINTER there and
+    /// a traversing read here. A DATA MUTANT, because the property lives
+    /// in the index's bytes and not in a branch: the line is planted, and
+    /// what is measured is whether this matcher calls it a pointer.
+    #[test]
+    fn a_chapter_spelling_the_e2e_arm_refuses_is_not_a_pointer_here_either() {
+        // THE POSITIVE CONTROL FIRST: the live index's own pointers are
+        // pointers, so a matcher that simply refused everything would not
+        // pass this body.
+        let live = live_files();
+        let index = live.read_text(CONVENTIONS).expect("CONVENTIONS");
+        let real = index.lines().filter(|l| conventions_pointer(l).is_some()).count();
+        assert!(real > 1, "the live index published no pointer to control against");
+
+        // AND THE SPELLINGS THE ARM'S OWN CHARSET REFUSES.
+        for planted in [
+            "  - docs/conventions/../../etc/passwd.md — A RULE",
+            "  - docs/conventions/../lanes.md — A RULE",
+            "  - docs/conventions/Lanes.md — A RULE",
+            "  - docs/conventions/lanes.txt.md — A RULE",
+            "  - docs/conventions/.md — A RULE",
+        ] {
+            assert!(
+                conventions_pointer(planted).is_none(),
+                "this matcher accepted {planted:?}, which the e2e arm's regex refuses — \
+                 the two implementations of one rule disagree about what a pointer is"
+            );
+        }
+    }
+
     // ---- the contract is READ, never transcribed ---------------------
 
     #[test]
@@ -2974,7 +3024,6 @@ mod tests {
     /// and a dispatcher reads an empty base rather than an error.
     #[test]
     fn an_integration_branch_the_bullet_does_not_spell_exactly_once_is_a_refusal_never_a_default() {
-        let live = live_files();
         let live_text = live_conventions();
         let one = "- integration branch `main`;";
         assert_eq!(
@@ -3070,7 +3119,6 @@ mod tests {
         expected_line: &str,
         expected_text: &str,
     ) {
-        let live = live_files();
         let live_text = live_conventions();
         let planted = lane_bullet_opening_with(&live_text, decoy);
         let bullet = bullet_containing(&planted, "integration branch `")
@@ -3196,7 +3244,6 @@ mod tests {
         // bullet. The control is the needle count: without the lookbehind
         // this read is AMBIGUOUS rather than merely wrong, so the guard is
         // what makes row 4 answerable at all.
-        let live = live_files();
         let live_text = live_conventions();
         let bullet = bullet_containing(&live_text, "integration branch `")
             .expect("the live document carries one lane bullet");
