@@ -64,53 +64,6 @@ which the docs gate refuses.
   MOVED IS THE RELEASE'S OWN RECORD** (ADR-019's law applied to this
   changelog at T-162): the per-clause itemisation is RECORD-shaped, and
   the AUTHORITY for what a version says is `method/` itself at that tag.
-  v0.1.31 (T-322, 2026-09-14) — the UNATTENDED-OPERATION release: a rejected verdict or a CI red is attributed before anything acts; a repair continues on evidence and parks with a wake condition; the health check is specific to the action; a quota refusal becomes a recorded retry instant (the wait verb gains a wait-until-instant form); a reserved decision becomes a marked question entry the order and the cut read; the return brief (`brief.mjs --since`) derives from the records and the runner's runs; the keep-awake rule lands and the stop list names only the grant's stops.
-  v0.1.30 (T-143-s5, 2026-09-14) — the STALENESS-BY-CREATION release: the docs gate's staleness derivation (staleStateRecords, the one helper the docs gate and the push checks consume) compares a checkpoint record against the commit that CREATED it rather than its latest touch, so an append to an already-checkpointed record no longer demands a STATE commit whose only content is a clock; a record created without its STATE regeneration still reds by name, the same-commit tie still passes, the reading stays committed history, and a record git names no creating commit for falls back to its latest touch; docs-protocol.md rule 4 argues the rule once, both halves — the creation obliges, never every later touch, and an amendment that changes a fact or a hazard the state document summarises still updates it, conduct no program keeps.
-  v0.1.29 (T-324, 2026-09-14) — the ADMISSION release: every admission the arm makes — the lane cut, a child start, a re-entry or continuation, a replacement writer — is bound to the grant's revision, the card's approved blob and the attempt's reservation; an admission is explicit (a card the grant names) or derived (a repair the recovery policy allows, bound to its parent work and the failure evidence); the three approval modes and the two recovery values are enforced at those boundaries, a pause distinguishes new work from the admitted candidate's verification and integration, optional limits are read and reported as advisory and enforced by nothing, a successor coordinator inherits the grant from the block; the dispatch block's switches become operational in the process schema and the orchestrator's step 5 says a dispatch inside the current grant is approved by the grant.
-  v0.1.28 (T-319, 2026-09-14) — the DISPATCH BLOCK release: the runtime template gains an optional dispatch block — the approval mode (each, until a named card, standing), the recovery policy (none, repairs) and the grant that sets them with its revision, order, endpoint, card blobs, optional advisory limits, revocation and history — declared once in the process schema as its own section of sixteen rows, every row labelled declarative because nothing admits or refuses by it until T-324; the parser library's process-settings module reads the block through the pure entry as one typed value validated against the declaration, a named refusal and never a partial value, with the explicit no-grant state (approval each, recovery none, no grant, revision 0) when the block is absent; the settings reference renders the section from the declaration; this project's own template carries no grant.
-  v0.1.27 (T-298-s3, 2026-09-14) — the XS release: the size vocabulary gains XS in the parser's legal set and the task format's frontmatter block, preserving S, M and L, so the bounded tier the tier table selects on XS is reachable end to end from a card that lives in the tree; the ceremony table gains an XS row restating the bounded line (executor only, the keeper scoped, the push owing its range), written lightest-first; the lightest ceremony row and the tier table's bounded size are pinned as one invariant read from both documents rather than a typed letter.
-  v0.1.26 (T-299-s6, 2026-09-13) — the LABELS release: every process switch carries an implementation label, `operational`, `manual` or `declarative`, with a manual switch's action beside it; an operational label is proved by a body that changes the value and observes the arm behave differently; the terminal shows the label beside the value and refuses to edit a declarative switch with its file unchanged; the reference carries the labels.
-  v0.1.25 (T-311-s5, 2026-09-13) — the READERS release: the task format names the criteria heading's depth in words and a body keeps every card to it; the advisory seat reader and the card preflight hold one heading rule, so both answer the same criteria for the same card; the verifier role file spells the verdict entry's one shape with the date first, and the merge verb's newest-verdict reader finds a dated depth-three entry wherever its date sits, a correction block's heading excluded.
-  v0.1.24 (T-311, 2026-09-12) — the RUN RECORD release: every child run, native subagent or foreign process, writer or
-  read-only participant, runs under a file-backed run record and the same seven operations; a writer reserves its resource exclusively before launch, and an uncertain record is reconciled before any replacement.
-  v0.1.23 (T-299, 2026-09-11) — the PROCESS AS SETTINGS release: method/runtime/process-schema.yaml declares every
-  switch once (the loop room's inventory and the floor) under three profiles, and the runtime template's process: section names the profile.
-  v0.1.22 (T-298, 2026-09-11) — the RIGHT-SIZING release: the triage rule stated once (orchestrator 2), the model per
-  role read from the runtime template and printed in the brief (5b), every wait bounded and performed by the arm (5f).
-  v0.1.21 (T-296, 2026-09-10) — the THREE TIERS release: bounded, standard and guarded chosen by the arm from
-  the card against the guard-class list; phase 1 and phase 2 rendered by the arm; the standard verifier's mode stated once.
-  v0.1.20 (T-295, 2026-09-10) — the ARM MERGES release: `brief.mjs --merge <id>` performs the
-  integrator's ritual from the verdict and stops with the merge staged; integrator.md states the widening beside the re-drill.
-  v0.1.19 (T-307, 2026-09-10) — the PROPOSE-BEFORE-RECORDING release: a room or decision
-  entry is shown to the owner verbatim and appended on a yes; entries paraphrase and never quote; an eval holds it.
-  v0.1.18 (T-293, 2026-09-10) — the STANDING READ release: a seat reads STATE and a
-  generated one-line index of the other four governing documents, nothing else standing (ADR-024).
-  v0.1.17 (T-264-s3, 2026-09-10) — the RENAME release: the runtime template is
-  supertaskr.yaml, the kit and the launcher spell the product name, no spelling of the old one survives outside a ruling.
-  v0.1.16 (T-285, 2026-09-09) — the WAKE FIELD release: a parked card's `wake:`
-  condition is machine-read and the dispatch view lists WOKEN cards beside STARTABLE.
-  v0.1.15 (T-283, 2026-09-09) — the IN-FENCE FOLLOW-THROUGH release: an executor
-  performs an XS finding inside its fence and the verifier grades it.
-  v0.1.14 (T-281, 2026-09-09) — the MUTANT BLOCK release: the verifier commits
-  the bodies its corrections assign and the merge re-drills them.
-  v0.1.13 (T-279, 2026-09-09) — the ONE GRADED RUN release: a lane runs its
-  owed suites once, at its final code-and-notes commit; the stamp is exempt.
-  v0.1.12 (T-254, 2026-09-09) — the CONTEXT PACK release: the seats read
-  the brief's pack, not CONVENTIONS whole; itemised on T-254's card.
-  v0.1.11 (T-241, 2026-09-09) — the SEAT release: the architect's hand
-  work ships as a skill pack the kit carries; itemised on T-241's card.
-  v0.1.10 (T-265, 2026-09-08) — the RENAME release: the kit, its
-  adapters and its templates carry the product's ruled name (ADR-022);
-  itemised on T-265's card.
-  v0.1.9 (T-229, 2026-09-02) — the CONTROL release: a positive control
-  is demonstrated failing, not asserted; itemised on T-229's card.
-  v0.1.8 (T-159, 2026-08-30) — the METABOLISM release: one bump owning
-  every method-text change ADR-020 and its reviews earned, plus the
-  parked riders whose resurfacing condition named it; itemised on
-  T-159's card and in docs/checkpoints/2026-08-30-T-159.md.
-  v0.1.7 (ADR-019, 2026-08-27) — method/docs-protocol.md added, the
-  three-tier governing-docs contract; itemised in
-  docs/checkpoints/2026-08-27-adr019-compaction.md.
   **WHAT A BUMP IS OWED FOR — SETTLED HERE, BECAUSE "FORMATS" HAS BEEN
   READ BOTH WAYS AND A LANE CANNOT DECIDE IT FROM INSIDE ITS OWN
   FENCE** (T-145-s2; T-104 ruled the call belongs to triage BEFORE
@@ -175,6 +128,10 @@ which the docs gate refuses.
   bump as the ONE moment it is owed — and the `--bump` block says
   whether the evals ran or were skipped, because the two read the same
   afterwards.
+  Every release's own note — what moved, its card and its date — is in
+  docs/reference/14-versions.md, moved there verbatim at T-290; the
+  AUTHORITY for what a version says is `method/` itself at that tag,
+  and this line is the stamp the bump writes.
 
   - docs/conventions/records-and-rooms.md — [?] marks an unresolved claim (archaeology convention) — resolve or
   - docs/conventions/records-and-rooms.md — THE MERGE INTO MAIN IS @human'S GATE, BY DESIGN AND NOT BY ACCIDENT

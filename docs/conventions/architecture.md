@@ -64,20 +64,13 @@ here without asking what reads it.
   never as a tool's message, because the message is not guaranteed to
   survive the shell: this harness resolves `grep` to a SHELL FUNCTION
   carrying `-I`. IF another cause is found THEN it joins this list.
-  T-093's card carries the measurements, at `bc2d82a`.
   **ONE, THE SCOPE** — the `git grep`-from-a-subdirectory sentence
-  above. Re-running from the ROOT fixes this one, which is what makes
-  the other two worse — they give the SAME answer from anywhere, over a
-  file somebody has just edited.
-  **TWO, A CONTROL BYTE IN THE FILE.** One literal NUL makes a file
-  BINARY to every binary-skipping searcher while it still compiles,
-  renders and passes its suites: the real `/usr/bin/grep` prints
-  `Binary file … matches` at exit 0, while the shell-function `grep`
-  this harness installs answers EXIT 1 WITH NO OUTPUT over the same
-  bytes — the code a genuinely absent string gives. WHAT TO RUN NEXT:
+  above.
+  **TWO, A CONTROL BYTE IN THE FILE.**
+  WHAT TO RUN NEXT:
   `file(1)`, which says `data`, and then `npm run lint:tokens` from
   tools/e2e, which needs no `node_modules` and names the byte and its
-  offset at exit 1. THE GATE IS NOT THE GAP; the advice was.
+  offset at exit 1.
   **THREE, A HARD WRAP ACROSS THE PHRASE.** Every governing document
   here is wrapped at about 70 columns, so a phrase search is a search
   for a line break you did not choose: the head of a wrapped sentence
@@ -108,6 +101,8 @@ here without asking what reads it.
   that is fine, and the honest narrow version — flag a comment quoting a
   figure in the same file as an assertion of a DIFFERENT value — is
   worth a prototype only if a sixth instance turns up.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/09-records.md (T-290), verbatim.
 
 - This project was planned in a long chat session before the folder
   existed; the chat is NOT the record — if it isn't in this folder,
@@ -168,11 +163,8 @@ here without asking what reads it.
   docs/architecture/components/C-11-design-tokens.md`). A design-tokens
   change enters a lane as `touches: [app/src/styles]` or
   `[app/src/assets]` — its own bare PATH, in the spelling C-11's body
-  publishes — and it SHIPS by the same REACHES test: `app/src/index.css`
-  (C-05, slug `app-shell`) `@import`s `./styles/tokens.css` and
-  `./styles/fonts.css`, and `fonts.css` `url()`s
-  `../assets/fonts/*.woff2`, so those bytes are compiled into every
-  build. **READING AN EMPTY `touch_slugs:` AS "NOT SHIPPED" IS THE TRAP
+  publishes — and it SHIPS by the same REACHES test:
+  **READING AN EMPTY `touch_slugs:` AS "NOT SHIPPED" IS THE TRAP
   THIS CLAUSE CLOSES**: the ruling removed a fence SPELLING, not a byte
   from the bundle — and it does NOT generalise to every empty line; C-01
   is slugless too, and its `method/**` ships only as far as the clause
@@ -185,6 +177,8 @@ here without asking what reads it.
   `roles/integrator.md` among them. **`non_code:` IS A DIFFERENT AXIS
   AND IS NEVER SUBSTITUTED**: C-11 is `non_code: true`, claims NO slug,
   and ships anyway — neither field is the shipped-ness test.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/04-fences.md (T-290), verbatim.
 
 - THE FOUR WALKS — which one sees this file? (T-078, closing an open
   question every integrator was re-deriving.) This repo walks its own
@@ -202,10 +196,8 @@ here without asking what reads it.
   WHAT THAT MEANS AT A DIFF: a new `.ts` under tools/ is seen by TOKEN
   and CONTROL and NOT by the graph (tools/ is `.supertaskrignore`d); a new
   `.rs` is seen by CONTROL AND BY THE GRAPH, and it is a CODE INPUT to
-  `cargo test` besides (T-010, `T-010-s1`). The AUTHORITY column has
-  survived every change unmoved while this table's enumerations went
-  stale three times, each caught by a lane and none by a gate
-  (`T-010-s1`, `T-079-s1`, T-086) — ADR-019's Law 2 in one row. A new
+  `cargo test` besides (T-010, `T-010-s1`).
+  A new
   `.md` under docs/ is seen by CONTROL, and by the PARSER only if it is
   a flat task card or component file. THIS FILE is seen by CONTROL only
   — the parser never reads it — **but live readers sit OUTSIDE all four
@@ -229,3 +221,5 @@ here without asking what reads it.
   format bump (T-078-s3). AND THE COUNTS ARE PRINTED, NEVER PINNED:
   `npm run lint:tokens` reports both corpora on every run — DERIVE THE
   COUNT AT YOUR OWN REF (T-078-s4).
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/10-gates.md (T-290), verbatim.

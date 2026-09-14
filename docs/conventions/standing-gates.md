@@ -24,17 +24,16 @@ here without asking what reads it.
   commands bullet under "Build & test" above. IF the check cannot run
   THEN say so LOUDLY in the checkpoint, naming the reason and the exit
   code — a skipped gate is news, never silence. It exists because
-  `cargo run` is the ONE command this pipeline never issues: T-040, a
-  one-line manifest regression that stopped the app launching at all,
-  passed an executor, an adversarial verifier and an integrator, each of
-  whom ran `cargo test`, `cargo build` and three full suites — all
-  perfectly happy with two binaries. THE EXECUTOR RUNS IT TOO, on the
+  `cargo run` is the ONE command this pipeline never issues:
+  THE EXECUTOR RUNS IT TOO, on the
   same trigger, before handing off (T-046 criterion 6): a red the
   executor's own fence forbids fixing is still news, cheaper at build
   time than after a merge — file it as a suggestion and say so in the
   notes. Running it is NOT screen control (@human ruling 2026-08-16):
   the app opens and closes its own window; nothing is clicked, typed
   into, screenshotted, or read off the screen.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/10-gates.md (T-290), verbatim.
 
 - DOCS GATE (T-084 — the third standing gate, and the one the two above
   exclude BY CONSTRUCTION): at any merge whose diff touches a path under
@@ -81,19 +80,10 @@ here without asking what reads it.
   | 1 has a verdict | **1** | **1** | 1 | **123** |
   | 2 called wrong | **2** | **2** | **1**, or **0** on an empty list | **123**, and **123** on an empty list |
   | 3 could not run | **3** | **3** | **1** | **123** |
-
-  Under BSD the pipe HIDES a failed range as a clean gate (every utility
-  exit collapses to **1**, and on EMPTY input the utility is never
-  invoked so the pipeline exits **0**); under GNU the IDENTITY of the
-  codes is destroyed instead, 1, 2 and 3 all arriving as 123, because
-  GNU `xargs` RUNS the utility on empty input and maps the gate's own
-  refusal at 2 to 123 — where this table, filled in from BSD, once
-  predicted 0. `tools/e2e/scripts/xargs-dialect.mjs` PROBES the dialect
+  `tools/e2e/scripts/xargs-dialect.mjs` PROBES the dialect
   at run time, two observables and never `process.platform`, so the
   bodies that execute the piped column read the column for the dialect
   they measured; the `$(…)` column has no `xargs` process in it at all.
-  **THAT ASYMMETRY IS THE ARGUMENT**: a spelling whose correctness must
-  be re-measured per platform is one nobody will re-measure.
   **AN EMPTY PATH LIST IS EXIT 2, NOT EXIT 0** (T-084-s6), and the `$(…)`
   form is what makes that reachable: a FAILED range substitutes to zero
   arguments. THREE MORE SHAPES REACH EXIT 2, each once answered "not
@@ -131,8 +121,7 @@ here without asking what reads it.
   readers stay out by the same test — `lib/parser/test/files.test.ts`
   resolves OUTSIDE `<root>/docs`. **A file that does BOTH and cannot be
   linked is REPORTED, never dropped**, and the reporting arm follows
-  IMPORTS as well as local bindings. **NO COUNT IS TRANSCRIBED INTO THIS
-  BULLET** — the census it once carried was green and wrong:
+  IMPORTS as well as local bindings.
   `node tools/e2e/scripts/docs-gate.mjs --census` from the repo root
   prints the site census, the reader set with the arm that found each,
   the root-anchor classification and the residual, and cannot be stale
@@ -152,8 +141,7 @@ here without asking what reads it.
   (the two dogfood bodies), `npx vitest run from lib/parser/` (its own
   live-tree bodies), `npm test from tools/e2e/` (two specs that walk the
   whole of docs/, graph and all) and `cargo test from app/src-tauri/`
-  (docs/CONVENTIONS.md on every run, plus the component registry). The
-  card that opened this named one suite; the tree says all four.
+  (docs/CONVENTIONS.md on every run, plus the component registry).
   THE TRIGGER IS WIDE AND THE ANSWER IS NARROW, deliberately: EVERY path
   under docs/ reaches a reader (two lane specs walk all of it), so
   narrowing the TRIGGER would be a lie, and what is proportional is the
@@ -170,6 +158,8 @@ here without asking what reads it.
   docs/ because the graph is CODE-derived, so `index --check` is not the
   gate that missed this; the exclusion is asserted in the spec so "we
   decided" cannot be mistaken for "we forgot".
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/10-gates.md (T-290), verbatim.
 
 - METHOD EVAL GATE (T-155, ADR-020 decision 2 — the FOURTH standing gate,
   and the one the three above exclude BY CONSTRUCTION): at any merge whose
@@ -224,14 +214,10 @@ here without asking what reads it.
   that lands this gate is a written ritual with one tripwire. IF the
   suite cannot run THEN say so LOUDLY in the checkpoint, naming the
   reason and the exit code — a skipped gate is news, never silence.
-  AND THIS GATE CLOSES THE TRIGGER HOLE, NOT THE CARGO ONE (`T-132-s2`'s
-  residual, taken at T-159): a `method/**` diff now matches a trigger,
-  and it still owes `cargo test` that no trigger names — `kit.rs`
-  `include_str!`s a SUBSET of method/ into `supertaskr_lib`, and two cargo
-  bodies read `method/` off disk and assert against it,
-  `every_compiled_entry_matches_its_method_file_byte_for_byte` and
-  `the_snapshot_table_covers_every_method_scaffold_file`. **THE
+  **THE
   BOUNDARY RUNS THROUGH `method/`, SO THE DIRECTORY NAME ANSWERS
   NOTHING**: DERIVE which paths from `KIT_FILES` at your own ref and run
   `cargo test` when your diff hits one; widening this gate's trigger to
   fire cargo stays that card's.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/10-gates.md (T-290), verbatim.

@@ -13,13 +13,12 @@ here without asking what reads it.
 - AUDIT GATE POLICY (human ruling 2026-08-16, closing T-020-s2): the
   gate is VULNERABILITIES — they exit non-zero and stop the lane
   (proven: a crafted lock pinning `time 0.1.44` → exit 1,
-  RUSTSEC-2020-0071). Informational warnings stay NON-gating. The
-  baseline, audited 2026-08-16 over 472 locked crates with cargo-audit
-  0.22.2: **0 vulnerabilities / 17 informational warnings**, all
-  transitive under Tauri v2's GTK3/glib stack and nothing ours to
-  re-pin. Warning-count drift is reviewed BY EYE against that baseline,
+  RUSTSEC-2020-0071). Informational warnings stay NON-gating.
+  Warning-count drift is reviewed BY EYE against that baseline,
   not enforced by exit code; `--deny warnings` would red CI permanently
   for no actionable signal.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/10-gates.md (T-290), verbatim.
 
 - THE BLESSED GATE-RUNNER (T-202): `node tools/e2e/scripts/gate-run.mjs
   parser|app|rust|e2e` from the repo root is the ONE spelling for a
@@ -32,8 +31,7 @@ here without asking what reads it.
   spec files that OWN those paths: every spec that reads a changed file,
   over a STATIC IMPORT GRAPH rooted at the specs and NEVER a spec's
   name, plus the docs-walk bodies the DOCS GATE's own reader map names
-  when a docs path moved. Same refusals, and a verdict line naming the
-  SUBSET beside its body count rather than the leg's name alone.
+  when a docs path moved.
   **THE VERIFIER'S ONE RUN AND THE INTEGRATOR'S RUN BEFORE THE PUSH ARE
   THE OWED SET FOR THEIR OWN RANGE** — `--range <base>..<tip>` at the
   bench's tip, `@{upstream}..HEAD` at the push — and NOT this hand-typed
@@ -46,12 +44,13 @@ here without asking what reads it.
   set and its derivation). **THE HAND-TYPED FORM STILL MINTS NOTHING**:
   `--owning`'s subset verdict is worded `SCOPED-GREEN` or `SCOPED-RED`,
   which the push guard REFUSES as a token, so a scoped run POISONS a
-  stale green rather than leaving it standing. The difference is who
-  chose the paths — a seat, unaudited, against two commit ids the guard
-  re-derives for itself. A changed path the derivation CANNOT PLACE is
+  stale green rather than leaving it standing.
+  A changed path the derivation CANNOT PLACE is
   exit 2 naming the path, and the full leg is owed: this form can only
   ever be wrong by running too MUCH. The other three legs are seconds
   each and are still run whole when they are owed at all.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/10-gates.md (T-290), verbatim.
 
 - **AND IT NOW MINTS A TOKEN THAT GATES YOUR PUSH** (T-203). Each run
   also writes that same verdict to a token beside the fence manifest in
@@ -102,24 +101,17 @@ here without asking what reads it.
   token and printed at the refusal. **AND "THE WHOLE BATTERY" MEANS FOUR
   WHOLE LEGS, WHICH IS A CLAIM ON TWO AXES AND NOT ONE.** The SUITE axis
   is which legs ran; the SPEC axis is whether the one scopable leg ran
-  whole. This arm gave the range form the power to mint a plain `GREEN`
-  for a NARROWED end-to-end leg — recording what it graded in the
-  entry's `scope` — so "four suites GREEN at this tree" stopped implying
-  "the battery ran". A token whose end-to-end entry carries a `scope` is
+  whole.
+  A token whose end-to-end entry carries a `scope` is
   therefore refused as **`token-partial`** EVEN WHERE NO RANGE COULD BE
   DERIVED: a scoped GREEN says nothing failed among the spec files it
-  ran, and it never says the leg ran. That sentence cost a rejection —
-  the fallback shipped reading the verdict word alone, and a bench
-  measured it passing a push whose end-to-end entry had graded 16 of 39
-  spec files. This mechanism can only ever be wrong by owing too MUCH.
-  A docs path NOTHING reads is the one positive
-  empty answer: the reader map is derived from the whole source corpus,
-  so "no code suite reads this document" is a measurement, not a gap —
-  and it is exactly the case the dozen wasted batteries were.
+  ran, and it never says the leg ran.
   **CI STILL RUNS THE WHOLE BATTERY AFTER EVERY PUSH**, on a machine
   that is not yours, and `workflow-parity` keeps it on four legs: the
   local rule narrows what a SEAT must measure before pushing, and
   narrows nothing about what the runner then measures.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/10-gates.md (T-290), verbatim.
 
 - **THE PUSH IS JUDGED BY GIT ITSELF SINCE T-314, AND THE BYPASS THAT
   LEAVES IS CLOSED BY PROCEDURE** (ADR-025 decision 3, approved by the
@@ -143,11 +135,8 @@ here without asking what reads it.
   ACCEPTED ON 2026-09-12 AND WHICH IS WRITTEN HERE RATHER THAN
   PRETENDED AWAY**: `git push --no-verify` skips every client-side hook
   by git's own design, and a push from a checkout where the hook was
-  never installed runs nothing at all. Neither is closeable from inside
-  a hook — a client-side hook is advice the client can decline — so
-  what closes them is the procedure: take the seat, which installs it,
-  and read the seat verbs' own line, which reports a checkout without
-  the hook as UNGUARDED. **THE RUNNER'S OWED SET ON THE PUSHED RANGE
+  never installed runs nothing at all.
+  **THE RUNNER'S OWED SET ON THE PUSHED RANGE
   REMAINS THE PUBLIC CHECK**, on a machine that is not yours: the local
   hook narrows the window in which an ungraded tree can reach the
   remote, and replaces nothing about what the runner then measures.
@@ -155,6 +144,8 @@ here without asking what reads it.
   PROPOSALS** (T-310) — they are what would close the bypass at the far
   end, where declining is not the client's to do, and they are not part
   of this one.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/10-gates.md (T-290), verbatim.
 
 - **A PUSH NO LONGER CANCELS THE RUNNING CI JOB (T-294), AND NOBODY
   WAITS ON IT.** ci.yml's concurrency group is the COMMIT, so two pushes
@@ -165,9 +156,9 @@ here without asking what reads it.
   this guard ships none of. The guard now ANNOUNCES a run in flight,
   naming it and its head sha: **two verdicts are live at once and they
   arrive in whatever order they finish**, so read them BY HEAD SHA and
-  never by their order. Batching still buys something — with T-203's
-  token gate each push owes its own range's owed set — but it buys
-  tokens, not a queue.
+  never by their order.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/10-gates.md (T-290), verbatim.
 
 - **AND THEN READ IT.** `gh run list --limit 5` after a batch, and
   `gh run view <id> --log-failed` on anything red (`--attempt 1` when a

@@ -11,19 +11,19 @@ Rust is in app/src-tauri/src/dispatch/brief.rs. Never edit a bullet
 here without asking what reads it.
 
 - **AN EDIT SCRIPT'S SUCCESS IS A GATE, NOT A STEP** (`18d8166`): never
-  chain a commit after a scripted edit — read the diff back FIRST. The
-  rule was earned, recorded ONLY in checkpoint records, and then broken
-  three times by seats able to quote it: the T-146 class, and the reason
-  a MECHANISM belongs in a governing document while a record takes the
-  INSTANCE.
+  chain a commit after a scripted edit — read the diff back FIRST.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/16-the-repository.md (T-290), verbatim.
 
 - **A GATE READ THROUGH A PIPE REPORTS THE PIPE**, so a hard failure
   reads as a clean pass: `false | tail -1` exits 0, and `pipefail` is not
-  on by default. **Redirect to a file, capture `$?`, THEN look.** One
-  seat read exit **254** as green four times. Related and load-bearing:
+  on by default. **Redirect to a file, capture `$?`, THEN look.**
+  Related and load-bearing:
   **there is no root `package.json`** — every script lives in
   `tools/e2e/`, `app/` or `lib/parser/`, so a bare `npm test` at the root
   fails in a way that looks like a suite result.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/16-the-repository.md (T-290), verbatim.
 
 - **PASS THE DOCS GATE SEPARATE LITERAL PATHS.** zsh word-splits an
   unquoted COMMAND SUBSTITUTION but NOT a variable, so handing it a
@@ -32,8 +32,9 @@ here without asking what reads it.
 
 - **A LINE NUMBER IS A FIGURE** — a coordinate in a mutable object that
   fails SILENTLY, still pointing at a real line, just the wrong rule.
-  Two citations were falsified by merges in a single night, both true
-  when written. **Cite a rule by its ORDINAL and its own capitals.**
+  **Cite a rule by its ORDINAL and its own capitals.**
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/09-records.md (T-290), verbatim.
 
 - **AND A DISTANCE TO A MOVING TIP CANNOT BE STATED AT ALL IN A DOCUMENT
   COMMITTED TO THAT TIP'S BRANCH** — with or without a ref, because
@@ -42,14 +43,12 @@ here without asking what reads it.
   commit carrying it. **THREE FORMS SURVIVE: both endpoints pinned to
   fixed shas, the derive command with NO answer beside it, or
   omission.** A past reading bound to a named occasion is HISTORY and
-  cannot go stale; a present-tense value can. **AND HERE IS WHY THE
-  PEOPLE WRITING THIS RULE DOWN KEEP BREAKING IT**: `main` is the
-  natural way to write "and it is still true NOW", and "now" is the one
-  thing a committed document cannot hold — five instances landed on one
-  card in one sitting, twice inside a table built to demonstrate the
-  rule. So when you reach for a moving symbol, you are reaching for a
+  cannot go stale; a present-tense value can.
+  So when you reach for a moving symbol, you are reaching for a
   tense, not a ref: say `currently` in words with NO figure beside it,
   or pin the sha and let the sentence be about that commit forever.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/09-records.md (T-290), verbatim.
 
 - **THIS SHELL'S `grep` IS A SHIM.** It carries `-I` and REJECTS
   `--include`, so a habit-formed invocation fails on a flag that works
@@ -57,13 +56,13 @@ here without asking what reads it.
 
 - **NEVER TYPE A PATH YOU CAN DERIVE.** `find`, `git ls-files`, or the
   `scripts` block of the relevant `package.json` answers "where does this
-  live" in one command. Three paths were INVENTED in a single sitting,
-  one of them inside a VERIFIER'S BRIEF, so an agent spent part of its
-  blind phase correcting its own instructions; each surfaced as an exit
-  1 that was a stack trace rather than a verdict. **And this bullet is
+  live" in one command.
+  **And this bullet is
   itself pinned**: the runner is NAMED once in this file and a body
   requires exactly that, so cite it by description here rather than by
   filename.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/16-the-repository.md (T-290), verbatim.
 
 - **FIT A BYTE-BANDED DOCUMENT IN ONE WRITE, NOT IN A LOOP.** Draft into
   a scratch file, `wc -c` it, cut to the target, THEN write —
@@ -83,13 +82,7 @@ here without asking what reads it.
       GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null \
         GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=user.useConfigOnly \
         GIT_CONFIG_VALUE_0=true npm test
-
-  **THE LAST THREE ARE LOAD-BEARING AND THE FIRST TWO CANNOT DO THEIR
-  WORK** (T-239-s4's class, measured at `0f6b37f`; published by T-256):
-  the two `GIT_CONFIG_*` variables suppress config FILES only, and with
-  no configured identity git AUTO-DETECTS one from `getpwuid` and the
-  hostname, refusing only where it judges the result bogus — which is a
-  property of the HOST. On a hostname carrying a dot git reads a domain
+  On a hostname carrying a dot git reads a domain
   and COMMITS, so the two-variable recipe answers GREEN here and
   reproduces no runner red; a runner's hostname carries none and git
   exits **128**, *"Please tell me who you are"*.
@@ -100,21 +93,16 @@ here without asking what reads it.
   **AND UNSET ANY `GIT_AUTHOR_*`/`GIT_COMMITTER_*` YOU CARRY** —
   measured: they outrank the switch and hand the commit an identity
   anyway.
-  It would have caught both of the CI reds this rule was written from,
-  in seconds, before either push. A suite green here and red there is
-  not flaky; it is measuring the machine. **DO NOT CLOBBER `HOME` TO GET
-  THERE.** The first version of this rule did (`HOME=$(mktemp -d)`) and
-  reddened 54 browser bodies, because Playwright caches its browsers
-  under `~/`: git's config and its auto-detected identity are the whole
-  of what is wanted, and the wrong recipe was caught by running it —
-  this bullet's own point applied to itself, twice now.
+  **DO NOT CLOBBER `HOME` TO GET
+  THERE.**
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/16-the-repository.md (T-290), verbatim.
 
 - **PIN THE DEFAULT BRANCH IN EVERY GIT FIXTURE**: `git init -b main`,
   never bare `git init`. `init.defaultBranch` is MACHINE config — this
   developer's says `main`, the CI runner's says `master` — so an
   unpinned fixture builds a different repository on each, and the
   landing gate then resolves a different ref, judges a different range
-  and reaches a different verdict. Green here, red there, and the diff
-  explains nothing; the asymmetry between the fixtures that pinned it
-  and the three new ones that did not is what made it look like a
-  platform bug.
+  and reaches a different verdict.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/16-the-repository.md (T-290), verbatim.

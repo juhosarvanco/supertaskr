@@ -203,9 +203,8 @@ here without asking what reads it.
     create, a delete or git, which also DISARMS the bit, and that
     residue is the landing gate's half. (2) A path in NO GIT CHECKOUT
     AT ALL is not judged (`not-a-repository`), and since `T-199` that
-    is the WHOLE of it: the scratchpad and `/tmp` stay reachable. It
-    read *outside the WRITING checkout* until `T-199`, which left EVERY
-    lane write UNJUDGED; the root now comes from the TARGET. **THE
+    is the WHOLE of it: the scratchpad and `/tmp` stay reachable.
+  **THE
     RESIDUE**: a sibling lane's tree is judged by THAT LANE'S fence,
     and the hook has no term separating an architect reaching in from
     that lane's OWN executor. (3) A DETACHED checkout is not judged at
@@ -237,6 +236,8 @@ here without asking what reads it.
     a RUNTIME file carrying a self-ignoring `.gitignore` beside it: one
     that reached the integration branch would hand every checkout one
     lane's permanently stale fence.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/05-dispatch.md (T-290), verbatim.
 
 - THE MAIN CHECKOUT IS SHARED WITH A HUMAN RUNNING THE APP, AND THE
   PIPELINE HAS KILLED IT THERE (T-052 — ten instances across
@@ -259,11 +260,8 @@ here without asking what reads it.
   relaunch — anchor with
   `ps -eo pid,lstart,command | awk '$NF=="target/debug/supertaskr"'`.
   **THE FRESH INSTALL IS THE ONE CHANNEL THAT CORRUPTS RATHER THAN
-  INTERRUPTS.** `npm ci` removes `app/node_modules` while the human's
-  vite serves out of it; a running vite SURVIVES the removal, but what
-  the NEXT read needs is destroyed (`node_modules/.vite` deleted and not
-  recreated) and `tauri dev` is more than vite, so nothing licenses
-  running the install beside a live app. The rule stands on the WINDOW,
+  INTERRUPTS.**
+  The rule stands on the WINDOW,
   not on a kill.
   DETECT AND REFUSE, in the T-046 form: read the holder with
   `lsof -nP -iTCP:<port> -sTCP:LISTEN`, and for 1420 that is the ONLY
@@ -295,12 +293,7 @@ here without asking what reads it.
   the repository; an unexplained file found here is RECORDED in the
   checkpoint and LEFT — its provenance is evidence.
   **@HUMAN'S RULING 2026-08-25 — THE SECOND CHECKOUT IS ADOPTED AND THE
-  MECHANISM IS A DETACHED WORKTREE.** The criteria, quoted because they
-  decide which arguments count: *"It doesn't bother me as a user if the
-  app restarts. The only thing I'm concerned about is if something
-  breaks or if development work suffers."* The restart is not a cost;
-  what survives is the fresh-install BREAKAGE channel above and cargo's
-  target-dir THROUGHPUT channel, and the detached checkout closes both.
+  MECHANISM IS A DETACHED WORKTREE.**
   Setup, when the tree is quiet:
 
       git worktree add --detach ../supertaskr-app main
@@ -318,6 +311,8 @@ here without asking what reads it.
   rev-parse HEAD`, `lsof -p <pid>`), never quote them. **AND IT EXCUSES
   NOTHING ABOVE**: every rule in this bullet binds whether or not
   `../supertaskr-app` exists.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/05-dispatch.md (T-290), verbatim.
 
 - DISPATCH FROM THE LAST CHECKPOINT, never from a merge commit
   (T-014-s3, seven-for-seven): cut a task branch from the newest

@@ -610,7 +610,7 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
     rootFlag: false,
     usage: "supertaskr gate parser|app|rust|e2e|--all",
     source:
-      "docs/CONVENTIONS.md THE BLESSED GATE-RUNNER: " +
+      "docs/conventions/gates-and-the-push.md THE BLESSED GATE-RUNNER: " +
       "`node tools/e2e/scripts/gate-run.mjs parser|app|rust|e2e`",
   }),
   Object.freeze({
@@ -620,7 +620,7 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
     rootFlag: false,
     usage: "supertaskr docs-gate <changed path>...",
     source:
-      "docs/CONVENTIONS.md DOCS GATE, its ONE spelling: " +
+      "docs/conventions/standing-gates.md DOCS GATE, its ONE spelling: " +
       "`node tools/e2e/scripts/docs-gate.mjs`",
   }),
   Object.freeze({
@@ -636,7 +636,7 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
     target: { kind: "script", file: "capabilities.mjs", args: [] },
     rootFlag: false,
     usage: "supertaskr capabilities [--check]",
-    source: "docs/CONVENTIONS.md tools/e2e bullet: `npm run capabilities` / `capabilities:check`",
+    source: "docs/conventions/commands.md tools/e2e bullet: `npm run capabilities` / `capabilities:check`",
   }),
   Object.freeze({
     verb: "settings",
@@ -646,7 +646,7 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
     usage:
       "supertaskr settings [set <switch> <value> | reference [--write | --check]]",
     source:
-      "docs/CONVENTIONS.md THE PROCESS IS SETTINGS, AND EVERY SWITCH IS DECLARED ONCE: " +
+      "docs/conventions/records-and-rooms.md THE PROCESS IS SETTINGS, AND EVERY SWITCH IS DECLARED ONCE: " +
       "`method/runtime/process-schema.yaml` is the ONE source (ADR-024 decision 6)",
   }),
   Object.freeze({
@@ -654,7 +654,7 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
     summary: "the method's own health bands, compared rather than eyeballed",
     target: { kind: "script", file: "health-bands-run.mjs", args: [] },
     rootFlag: false,
-    source: "docs/CONVENTIONS.md, the health bands: `npm run health`",
+    source: "docs/conventions/merging.md, the health bands: `npm run health`",
   }),
   Object.freeze({
     verb: "tokens",
@@ -662,21 +662,21 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
     target: { kind: "script", file: "lint-tokens.mjs", args: [] },
     rootFlag: false,
     usage: "supertaskr tokens [--selftest]",
-    source: "docs/CONVENTIONS.md tools/e2e bullet: `npm run lint:tokens`",
+    source: "docs/conventions/commands.md tools/e2e bullet: `npm run lint:tokens`",
   }),
   Object.freeze({
     verb: "boot",
     summary: "spawn the app and assert its two startup lines",
     target: { kind: "script", file: "tauri-boot-check.mjs", args: [] },
     rootFlag: false,
-    source: "docs/CONVENTIONS.md BOOT GATE: `npm run boot:check`",
+    source: "docs/conventions/standing-gates.md BOOT GATE: `npm run boot:check`",
   }),
   Object.freeze({
     verb: "orphan-drill",
     summary: "prove the boot check leaves no orphaned vite listener",
     target: { kind: "script", file: "orphan-drill.mjs", args: [] },
     rootFlag: false,
-    source: "docs/CONVENTIONS.md tools/e2e bullet: `npm run boot:orphan-drill`",
+    source: "docs/conventions/commands.md tools/e2e bullet: `npm run boot:orphan-drill`",
   }),
   Object.freeze({
     verb: "session",
@@ -696,7 +696,7 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
     },
     rootFlag: false,
     source:
-      "docs/CONVENTIONS.md app/src-tauri bullet: " +
+      "docs/conventions/commands.md app/src-tauri bullet: " +
       "`cargo run -p supertaskr-index -- index --check --root ../..`",
   }),
   Object.freeze({
@@ -711,7 +711,7 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
     rootFlag: false,
     usage: "supertaskr arch [cycles | blast <path|slug> | drift]",
     source:
-      "docs/CONVENTIONS.md app/src-tauri bullet: " +
+      "docs/conventions/commands.md app/src-tauri bullet: " +
       "`cargo run -p supertaskr-index -- arch --root ../..` and its family",
   }),
   Object.freeze({
@@ -721,7 +721,7 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
     rootFlag: false,
     usage: "supertaskr evals [--selftest]",
     source:
-      "docs/CONVENTIONS.md METHOD EVAL GATE, its own ONE SPELLING: " +
+      "docs/conventions/standing-gates.md METHOD EVAL GATE, its own ONE SPELLING: " +
       "`node tools/method-evals/run.mjs`",
   }),
   Object.freeze({

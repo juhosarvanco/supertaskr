@@ -24,8 +24,9 @@ here without asking what reads it.
 
 - lib/parser (C-06), run from lib/parser/: `npm ci` ·
   `npx vitest run` (suite) · `npx tsc --noEmit` (types) ·
-  `npm run build` (emits dist/, gitignored). The suite's smoke test
-  parses this repo's live docs/ tree and requires zero issues.
+  `npm run build` (emits dist/, gitignored).
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/16-the-repository.md (T-290), verbatim.
 
 - app/ (C-05), run from app/: `npm ci` (setup) ·
   `npm run build` (typecheck + frontend build — the fast gate) ·
@@ -136,12 +137,8 @@ here without asking what reads it.
   AUTHORITY is the frozen `EXIT` object in
   tools/e2e/scripts/token-scan.mjs, which the wrapper IMPORTS rather
   than re-typing (until T-080 the two answers SHARED code 1 — T-058's
-  and T-080's cards). THE CATCH IS TOTAL AND IS NEVER A RESCUE: exit 3
-  still FAILS the step, and `process.exit` inside the scanner is not
-  interceptable by the wrapper, so a genuine hit cannot be relabelled as
-  a gate that did not run. ONE HOLE REMAINS, NAMED (T-080-s4): a parse
-  error in the gate's own two files means Node never links them, so the
-  wrapper's `try` never runs and the process exits 1, not 3. READ THE
+  and T-080's cards).
+  READ THE
   MESSAGE, NOT THE CODE — the three outcomes look nothing alike.
   THE LANE WRITES INTO TRACKED FILES WHILE IT RUNS, AND ONE OF THEM IS
   UNDER docs/ (T-093): `npm test` plants a control byte into seven
@@ -153,6 +150,8 @@ here without asking what reads it.
   beside a live `npm run tauri dev` writes docs/NORTH_STAR.md twice
   within milliseconds under the human's board. RUN THE LANE IN A
   WORKTREE and it touches nothing the human sees.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/16-the-repository.md (T-290), verbatim.
 
 - `npx supertaskr <verb>` (T-244, C-02) IS A FRONT, NEVER A FIFTH
   PACKAGE. `node tools/e2e/bin/supertaskr.mjs --help` at the repo root
@@ -180,8 +179,9 @@ here without asking what reads it.
   card's merge with `git revert -m 1` after listing every later merge on
   the same fence and refusing while one is unnamed, and `merge <card>`
   walks the integrator's ritual in its order and stops with the merge
-  STAGED. Publishing the package is @human's (T-266); the proof that it
-  installs is a local `npm pack` tarball, run inside the lane.
+  STAGED.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/13-surfaces.md (T-290), verbatim.
 
 - One-time dev-tool setup, outside the repo and never a repo dep:
   `npx playwright install chromium` from tools/e2e/ (browsers cache in
@@ -201,10 +201,7 @@ here without asking what reads it.
   mapping in that spec, and a lane failure if either side drifts:
   `npx playwright install
   --with-deps chromium` in place of the one-time local `npx playwright
-  install chromium` — the Linux system libs a fresh runner lacks. IT IS
-  AN ENVIRONMENT DIFFERENCE, and that is the whole list (T-054 and
-  T-045-s1 closed the two that were only CI spelling a documented
-  command twice; T-256 closed app/'s install).
+  install chromium` — the Linux system libs a fresh runner lacks.
   SINCE T-294 CI IS A JOB GRAPH, NOT ONE JOB, AND WHAT IT RUNS IS THE
   OWED SET OF THE PUSHED RANGE (ADR-024 decision 4). The first job spawns
   the blessed gate-runner's own `--owed-set --range <base>..<tip>` arm on
@@ -281,13 +278,8 @@ here without asking what reads it.
   the list early and every command behind it quietly leaves CI parity;
   this clause NAMES that character without typing it, the section's
   in-parenthetical legends use commas, and the tools/e2e bullet's own
-  `Exit 0 booted` legend sits after its LAST command. THE COST is a
-  DELTA of FIVE exposed commands (T-054, T-078, ADR-019 phase 5).
-  AND THE TRUNCATION IS NOT MOSTLY SILENT: the derivation runs in BOTH
-  directions, so a command the SPEC claims and the doc stops exposing
-  reds BY NAME, and **a command the DOC gains that the spec does not yet
-  claim is the case it is LOUDEST about** (the sentence that once said
-  the opposite here is retracted, T-090 absorbing T-084-s2). **WHAT IS
+  `Exit 0 booted` legend sits after its LAST command.
+  **WHAT IS
   SILENT IS A SHAPE, NEVER A DIRECTION**: a command the derivation
   cannot SEE — an INDENTED bullet and a fenced block, both named by
   `structuralProblems`, and a command in a bullet carrying no
@@ -295,3 +287,5 @@ here without asking what reads it.
   fixture in the spec. **So a NEW command is still the edit to ENUMERATE
   rather than eyeball.** Change a command here, change it there, or the
   lane fails.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/10-gates.md (T-290), verbatim.

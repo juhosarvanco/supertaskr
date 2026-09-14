@@ -2732,6 +2732,25 @@ export function conventionsPointers(indexMd) {
   return out;
 }
 
+/**
+ * EVERY FILE THIS PROJECT'S CONVENTIONS ARE MADE OF — the index and the
+ * chapters it points at, in the index's own order.
+ *
+ * IT EXISTS FOR THE FIXTURES (T-290). Five of them plant
+ * `docs/CONVENTIONS.md` into a scratch repository so a body reads the
+ * spellings this project publishes rather than a hand-written stand-in;
+ * after the split, planting that path alone plants a TABLE OF CONTENTS
+ * and the splice refuses. A list of chapter names in each fixture would
+ * go stale the day a chapter is added, so the set is DERIVED here and
+ * every fixture spends this one function.
+ *
+ * @param {string} [root]
+ * @returns {string[]}
+ */
+export function conventionsFiles(root = repoRoot) {
+  return [CONVENTIONS_DOC, ...conventionsChapters(conventionsIndexText(root))];
+}
+
 /** The chapter files the index names, deduplicated, in first-named order.
  *
  * @param {string} indexMd
@@ -2786,7 +2805,21 @@ export function conventionsText(root = repoRoot) {
   /** @type {Map<string, string[]>} */
   const queued = new Map();
   for (const file of conventionsChapters(indexMd)) {
-    const text = readFileSync(path.join(root, "docs/conventions", path.basename(file)), "utf8");
+    const at = path.join(root, "docs/conventions", path.basename(file));
+    // **A CHAPTER THE INDEX POINTS AT AND NOBODY CAN OPEN IS NAMED**, not
+    // an ENOENT from inside a reader three call hops away. The failure
+    // this refusal is written from is a FIXTURE that planted the index
+    // and not its chapters (T-290): the raw error named a temporary
+    // directory and no reader of it could tell whether the tree or the
+    // fixture was wrong.
+    if (!existsSync(at)) {
+      throw new Error(
+        `docs-scan: ${CONVENTIONS_DOC} points at ${file} and no file sits there. This project's ` +
+          "conventions are an INDEX and its chapters; a tree or a fixture carrying only the index " +
+          `carries a table of contents. Plant every path \`conventionsFiles()\` returns.`,
+      );
+    }
+    const text = readFileSync(at, "utf8");
     queued.set(
       file,
       text
@@ -2897,12 +2930,43 @@ export const DOC_BUDGETS = Object.freeze({
   // and 2026-08-29 landings used.
   "docs/ROADMAP.md": { landed: 9801, warn: 12252, fail: 14702 },
   "docs/ARCHITECTURE.md": { landed: 8525, warn: 10657, fail: 12788 },
-  // RE-LANDED 2026-09-02 (T-236, ADR-019 addendum 6). CONVENTIONS only:
-  // `git cat-file -s d01b24f:docs/CONVENTIONS.md` = 117502, warn =
-  // ceil(landed + max(F, landed x 0.25)) with F = 2053 (addendum 5 — the
-  // floor binds only below 4F, so here it is ceil(landed x 1.25)), fail =
-  // ceil(landed x 1.5), the same rounding every landing has used.
-  "docs/CONVENTIONS.md": { landed: 117502, warn: 146878, fail: 176253 },
+  // RE-LANDED 2026-09-14 (T-290, ADR-023 — the addendum to ADR-019 is the
+  // OWNER'S to write and is proposed with these rows). CONVENTIONS is an
+  // INDEX now and its rules are the chapters under docs/conventions/, so
+  // the document that carried one budget carries TWELVE: the index at its
+  // own size, and one row per chapter. Every `landed` is `wc -c` at this
+  // landing commit.
+  //
+  // ONE FORMULA FOR EVERY SIZE, as the owner approved on 2026-09-14:
+  // `warn = ceil(landed + max(F, landed x 0.25))` and
+  // `fail = ceil(max(landed x 1.5, warn + F))`. So a file under 4F lands
+  // with fail exactly F above warn, and warn can never cross fail — the
+  // small-file case addendum 5 left to a reader's judgement.
+  //
+  // `F` = 1733 BYTES, RE-DERIVED AT THIS LANDING by addendum 5's own
+  // rule — the mean of the POSITIVE first-parent deltas of the smallest
+  // governed document — beside the standing 2053 it replaces for these
+  // rows. At this tree docs/STATE.md is still the smallest governed
+  // document (177 positive deltas of 262 changes, mean 1732.65, median
+  // 581, max 12039); the chapters landed here have no history yet and so
+  // cannot be the derivation's subject at the commit that creates them.
+  // The standing value is stated rather than silently replaced because a
+  // figure that moved is news: F fell from 2053 to 1733 as STATE's own
+  // growth distribution filled in over another two weeks of merges, and
+  // the rows below are the first to be landed against the new one. The
+  // four rows above KEEP their lines, as the ruling says.
+  "docs/CONVENTIONS.md": { landed: 13462, warn: 16828, fail: 20193 },
+  "docs/conventions/app-and-ui.md": { landed: 6331, warn: 8064, fail: 9797 },
+  "docs/conventions/architecture.md": { landed: 14533, warn: 18167, fail: 21800 },
+  "docs/conventions/commands.md": { landed: 18566, warn: 23208, fail: 27849 },
+  "docs/conventions/dispatch-and-scratch.md": { landed: 8080, warn: 10100, fail: 12120 },
+  "docs/conventions/gates-and-the-push.md": { landed: 10971, warn: 13714, fail: 16457 },
+  "docs/conventions/lanes.md": { landed: 21524, warn: 26905, fail: 32286 },
+  "docs/conventions/merging.md": { landed: 22749, warn: 28437, fail: 34124 },
+  "docs/conventions/records-and-rooms.md": { landed: 21654, warn: 27068, fail: 32481 },
+  "docs/conventions/shell-and-scripts.md": { landed: 5943, warn: 7676, fail: 9409 },
+  "docs/conventions/standing-gates.md": { landed: 14189, warn: 17737, fail: 21284 },
+  "docs/conventions/verification.md": { landed: 11579, warn: 14474, fail: 17369 },
 });
 
 /** Every live task card as a `{path, content}` entry, read off the tree
@@ -3120,6 +3184,37 @@ export function indexLine(rel, text) {
 }
 
 /**
+ * One CHAPTER's index line.
+ *
+ * The same shape as `indexLine` with one difference that matters: a
+ * chapter has no `## ` sections and every one of them would otherwise
+ * say "it has no sections — read it whole", which tells a reader
+ * nothing. What a chapter has instead is RULES, so the line opens it at
+ * the shouted names of the bullets it holds — read off the chapter, never
+ * listed, so a bullet that moves between chapters moves its name here in
+ * the same commit.
+ *
+ * @param {string} rel
+ * @param {string} text
+ * @returns {string}
+ */
+export function chapterIndexLine(rel, text) {
+  const { heading, contract } = docOpener(text, rel);
+  const said = /[.!?]$/.test(contract) ? contract : `${contract}.`;
+  const names = text
+    .split(/\n(?=- )/)
+    .filter((b) => b.startsWith("- "))
+    .map((b) => {
+      const flat = b.replace(/\s+/g, " ").slice(2);
+      const bolded = /^\*\*([^*]+)\*\*/.exec(flat);
+      const name = (bolded !== null ? bolded[1] : flat.split(/ — | \(|: /)[0]) ?? "";
+      return name.replace(/[,:.\s]+$/, "").trim();
+    })
+    .filter((n) => n !== "");
+  return `- **${heading}** (\`${rel}\`) — ${said} **Open it at:** ${indexWhere(names)}`;
+}
+
+/**
  * The whole of docs/INDEX.md.
  *
  * DETERMINISTIC — no timestamp, the documents in the ruling's own order,
@@ -3162,6 +3257,23 @@ export function renderDocsIndex(root = repoRoot) {
   ];
   for (const rel of INDEXED_DOCS) {
     out.push(indexLine(rel, readFileSync(path.join(root, rel), "utf8")));
+    if (rel !== CONVENTIONS_DOC) continue;
+    // THE CHAPTERS, ONE GENERATED LINE EACH (T-290, ADR-023). The
+    // conventions are an INDEX now, so a reader sent to that document
+    // alone is sent to a table of contents; the chapters are named here,
+    // nested under it, and DERIVED FROM THE INDEX'S OWN POINTERS — a
+    // chapter the index does not point at gets no line, and a line here
+    // for a file nothing points at is impossible by construction.
+    //
+    // THEY ARE NOT IN `INDEXED_DOCS`, DELIBERATELY: that constant is the
+    // four documents ADR-024 decision 2 NAMES, checked against the
+    // decision's own sentence by `ruledIndexedDocs`, and a chapter added
+    // to it would be this project quietly editing a ruling to fit a
+    // refactor. The standing read is still four documents; what the
+    // index gained is the map of where a rule inside one of them lives.
+    for (const chapter of conventionsChapters(conventionsIndexText(root))) {
+      out.push(`  ${chapterIndexLine(chapter, readFileSync(path.join(root, chapter), "utf8"))}`);
+    }
   }
   out.push("");
   return out.join("\n");

@@ -184,3 +184,74 @@ slug; whether a discipline applies to this card. The assembler emits
 these as the documents state them, with the choice named and left to
 the dispatcher, because a tool that guesses them produces exactly the
 confident wrong sentence the brief command exists to stop.
+
+## From the conventions — the forensics behind the rules (T-290)
+
+The rules themselves live in the chapters under docs/conventions/,
+which docs/CONVENTIONS.md indexes. What follows is the history, the
+measurements and the argument each of those rules was cut from, moved
+here VERBATIM at T-290 under ADR-023 — the records rule forbids a
+rewrite, so not a byte of it is re-worded, re-ordered inside an entry,
+or summarised. Each entry names the bullet it came out of.
+
+### THE DISPATCH RITUAL IS SERIAL
+
+Moved here
+  from docs/STATE.md — a MECHANISM belongs in a governing document
+  (T-146).
+
+### E2E PORT
+
+Third member of this family, beside the SCRATCH RULE and
+  the PORT RULE, one class and one remedy — **a construction beats a
+  check** (lane-protocol rule 4, T-217).
+
+### SCRATCH RULE — NAME EVERY SCRATCH FILE FOR THE LANE THAT OWNS IT
+
+Measured (T-216-s5): an executor and a verifier each
+  wrote `battery.sh`; the executor drove the VERIFIER'S bench at the
+  verifier's ref, and `gate-run`'s solo lock, refusing two legs and
+  naming the holding pid, was the only thing in the tree that recorded a
+  second runner at all. **The collision is symmetric and the fault is
+  the DISPATCHER'S**: whoever hands two seats one directory owns it.
+
+### PORT RULE
+
+In `sh`, `bash` and `zsh` a backtick is COMMAND
+  SUBSTITUTION, so this repository's own house style, a command name in
+  backticks, IS the hazard: copying that spelling into a shell LABEL is
+  the natural motion and the one motion that executes, SILENT when the
+  substitution succeeds (T-082's own executor started a real model turn
+  that way).
+
+On a port holding client-side TIME_WAIT peers,
+  `lsof` returns ZERO ROWS while a plain `bind()` without `SO_REUSEADDR`
+  still fails EADDRINUSE (a real false red, on port 14768); and
+  UNFILTERED `lsof` is equally blind, since TIME_WAIT sockets have no
+  owning process, so dropping `-sTCP:LISTEN` buys nothing.
+
+THE FACT THEY WERE DEMONSTRATING, RECORDED SO NOBODY DEMONSTRATES IT
+  AGAIN: the human's vite listens on **`[::1]:1420` — IPv6 loopback —
+  and nothing listens on IPv4**, so an IPv4-only probe of 1420 comes
+  back FREE while the app is running.
+
+### THE LANE PROTOCOL
+
+It
+    read *outside the WRITING checkout* until `T-199`, which left EVERY
+    lane write UNJUDGED; the root now comes from the TARGET.
+
+### THE MAIN CHECKOUT IS SHARED WITH A HUMAN RUNNING THE APP, AND THE
+
+`npm ci` removes `app/node_modules` while the human's
+  vite serves out of it; a running vite SURVIVES the removal, but what
+  the NEXT read needs is destroyed (`node_modules/.vite` deleted and not
+  recreated) and `tauri dev` is more than vite, so nothing licenses
+  running the install beside a live app.
+
+The criteria, quoted because they
+  decide which arguments count: *"It doesn't bother me as a user if the
+  app restarts. The only thing I'm concerned about is if something
+  breaks or if development work suffers."* The restart is not a cost;
+  what survives is the fresh-install BREAKAGE channel above and cargo's
+  target-dir THROUGHPUT channel, and the detached checkout closes both.

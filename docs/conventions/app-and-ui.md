@@ -100,6 +100,6 @@ here without asking what reads it.
   render (a pulse window whose start moves by a few ms, cosmetic and
   self-healing); and DERIVED FROM PROPS THE RENDER ALREADY HAS — no
   I/O, no subscription, no second source of truth. Miss one and lift the
-  state instead. Relocating such a log into a store is a change of
-  SOURCE, not of mechanism, and it earns its cost when a SECOND CONSUMER
-  appears — not before (T-027).
+  state instead.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/13-surfaces.md (T-290), verbatim.

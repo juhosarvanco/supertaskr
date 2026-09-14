@@ -27,6 +27,9 @@ import {
   adapterNamedDocs,
   callSelftest,
   conventionsBullet,
+  conventionsChapters,
+  conventionsIndexText,
+  conventionsPointers,
   conventionsText,
   docOpener,
   docSections,
@@ -2599,4 +2602,85 @@ test("the governing text says the CREATION rule and no longer carries the retouc
   } finally {
     rmSync(planted, { recursive: true, force: true });
   }
+});
+
+/* ════════════════════════════════════════════════════════════════════
+ * THE INDEX AND ITS CHAPTERS (T-290, ADR-023)
+ *
+ * docs/CONVENTIONS.md is an index over docs/conventions/, and every
+ * reader of a RULE in this repository reads the two SPLICED. These
+ * bodies are what stops that splice from being a claim: one proves a
+ * rule that moved into a chapter is still found by the opener the packs
+ * address it by, and its CONTROL proves the splice REFUSES rather than
+ * going quiet when a chapter stops carrying a bullet the index
+ * published an opener for.
+ * ════════════════════════════════════════════════════════════════════ */
+
+test("a rule that moved into a chapter is still found by its opener, and the index alone does not carry it", () => {
+  const index = conventionsIndexText();
+  const spliced = conventionsText();
+  const chapters = conventionsChapters(index);
+  expect(chapters.length, "the index points at no chapter").toBeGreaterThan(1);
+
+  // THE SUBJECT: a bullet whose home is a chapter. Derived from the
+  // index's own pointers rather than named here, so this body cannot go
+  // stale against a bullet that moved between chapters.
+  const pointer = conventionsPointers(index).find((p) => p.opener.startsWith("THE LANE PROTOCOL"));
+  expect(pointer, "the index no longer points at a lane protocol bullet").toBeDefined();
+
+  // FOUND in the spliced document, and found WHOLE: the bullet carries
+  // the spellings the dispatch arm reads out of it.
+  const bullet = String(conventionsBullet(spliced, "THE LANE PROTOCOL"));
+  expect(bullet).toContain("integration branch `");
+
+  // AND THE CONTROL, which is what makes the sentence above mean
+  // anything: the INDEX on its own carries the opener and NOT the rule,
+  // so a reader that forgot to splice gets a refusal rather than a
+  // shorter document that looks complete.
+  expect(index, "the index no longer publishes the opener").toContain(pointer?.opener ?? " ");
+  expect(
+    () => conventionsBullet(index, "integration branch `"),
+    "the index alone answered a rule",
+  ).toThrow();
+});
+
+test("a chapter that stops carrying a bullet the index points at is a hard failure, never a rule that quietly left the document", () => {
+  // A DATA MUTANT, because the property lives in the PAIR of files and
+  // not in a branch: the chapter is rewritten with one bullet gone while
+  // the index still publishes its opener.
+  const fx = mkdtempSync(path.join(tmpdir(), "t290-splice-"));
+  const index = conventionsIndexText();
+  const chapters = conventionsChapters(index);
+  mkdirSync(path.join(fx, "docs/conventions"), { recursive: true });
+  writeFileSync(path.join(fx, "docs/CONVENTIONS.md"), index);
+  for (const rel of chapters) {
+    writeFileSync(path.join(fx, rel), readFileSync(path.join(repoRoot, rel), "utf8"));
+  }
+
+  // THE POSITIVE CONTROL FIRST: copied faithfully, the fixture splices.
+  expect(conventionsText(fx).length, "the untouched copy did not splice").toBeGreaterThan(1000);
+
+  // NOW THE MUTATION: drop the LAST bullet of the first chapter.
+  const victim = String(chapters[0]);
+  const text = readFileSync(path.join(fx, victim), "utf8");
+  const at = text.lastIndexOf("\n- ");
+  expect(at, "the chapter carries no bullet to drop").toBeGreaterThan(0);
+  writeFileSync(path.join(fx, victim), text.slice(0, at + 1));
+  expect(() => conventionsText(fx)).toThrow(/pointed at|hard failure/);
+
+  rmSync(fx, { recursive: true, force: true });
+});
+
+test("docs/INDEX.md carries one generated line per chapter the index points at", () => {
+  const committed = readFileSync(path.join(repoRoot, "docs/INDEX.md"), "utf8");
+  const chapters = conventionsChapters(conventionsIndexText());
+  expect(chapters.length, "no chapter to check").toBeGreaterThan(1);
+  for (const rel of chapters) {
+    expect(committed, `docs/INDEX.md carries no line for ${rel}`).toContain(`\`${rel}\``);
+  }
+  // AND NO MORE THAN THAT: the chapter lines are DERIVED from the
+  // index's pointers, so a line for a file nothing points at would be a
+  // hand-kept row wearing a generated one's clothes.
+  const lines = committed.split("\n").filter((l) => l.startsWith("  - **"));
+  expect(lines.length, "the chapter lines are not one per chapter").toBe(chapters.length);
 });

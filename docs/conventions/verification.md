@@ -50,8 +50,7 @@ here without asking what reads it.
   round-trip's precision is scoped by the libuv VERSION, not the
   platform (microseconds under v1.51.0; T-153-s5 carries both versions'
   bounds), so print `process.versions.uv` beside any figure that depends
-  on it. A `ctime` move after a byte-exact restore was seen once and
-  never reproduced; prove restoration BY HASH, immune either way.
+  on it.
   RECORD the count and the restoration proof in the notes, the verdict
   or the checkpoint — "133-for-133" is the shape (T-027), "drills run"
   is not.
@@ -107,78 +106,32 @@ here without asking what reads it.
   named before this catalogue existed, and their histories live in the
   cards. Each entry carries its TELL, whether it has a MECHANICAL
   REMEDY, and the card the instance lives on.
-  **SHAPE FIVE — the assertion SET has no cardinality or coverage floor,
-  so deleting an assertion deletes its own failure.** TELL: a printed
-  count that falls with a deletion and stays green (T-058-s2, absorbed
-  by T-080). MECHANICAL REMEDY: YES — a coverage floor per pattern id,
-  or a cardinality pin, the shape `MUST_TOKEN_COVER` uses.
-  **SHAPE SIX — a body that reds under an expected-value poison while
-  killing no mutant another test does not already kill.** TELL: every
-  mutant the body kills is already killed elsewhere (T-057-s1, absorbed
-  by T-072). NO MECHANICAL REMEDY — the drill has to ASK, and the asking
-  is (T-072-s2): **name a mutation of the code under test that this
-  body kills, run the WHOLE suite under it, and require the failing-body
-  count to be ONE**; a count above one names the bodies that already
-  cover you, and if no such mutant exists THAT is the finding.
-  **SHAPE SEVEN — a mutant NO BODY KILLS, because the mutant set was
-  derived from the PINS rather than from the CRITERIA.** The dual of
-  six, and worth more, because this costs the criterion. TELL: "zero
-  survivors" against a mutant set every member of which aims at a pin.
-  NO MECHANICAL REMEDY, but a PROCEDURE: derive the mutants from the
-  acceptance criteria **with the test file closed**, and mutate every
-  clause the pins do not mention — a criterion's PLURAL first. Named by
-  `T-076`; `git grep -il "shape seven" -- docs/` counts the sightings.
-  **SHAPE EIGHT — an assertion that SEARCHES a corpus has no uniqueness
-  floor, so one duplicate anywhere keeps it green with its own subject
-  deleted.** `String::contains`, `toContain` and `.includes()` are
-  satisfied by ANY occurrence. TELL: the assertion pins *that the
-  string exists somewhere* while every reader takes it to pin *the
-  sentence* — plant a second copy FIRST and then rewrite the sentence
-  and it PASSES (T-092). **The likeliest author of that second copy is
-  documentation ABOUT the pin**, which is why the live-readers paragraph
-  above writes `currently v<METHOD_SNAPSHOT_VERSION>` with a placeholder.
-  MECHANICAL REMEDY: YES — **NARROW THE HAYSTACK** to the line or
-  section pinned, with an ANCHOR that is not the needle, and assert the
-  ANCHOR's own uniqueness; a bare occurrence count is a number with no
-  keeper. Worked twice: `snapshot_version_matches_the_live_method_stamps`
+  `snapshot_version_matches_the_live_method_stamps`
   (kit.rs) and
   `the_only_production_path_to_the_transcript_is_the_bounded_one`
   (agent/mod.rs).
-  **SHAPE NINE — a mutation that MOVES a generated row between families
-  leaves the cardinality invariant, so a COUNT floor is blind to it.**
-  RATIFIED here, not minted: `T-080` and `T-083` call it nine and
-  `T-095` carries the shape. TELL: an argument against FIVE's remedy — a
-  cardinality floor answers DELETION and nothing else. MECHANICAL
-  REMEDY: YES, a CONTENT floor DERIVED FROM THE TREE, never a
-  hand-written class list.
-  **SHAPE TEN — an empty comparison reports AGREEMENT.** The producer
-  fails, both sides come back empty, and `cmp` calls it a match. TELL:
+  TELL: an argument against FIVE's remedy — a
+  cardinality floor answers DELETION and nothing else.
+  TELL:
   a comparison nothing proved had anything on either side (`T-083-s3`:
   a `merge-tree --write-tree` that exited 1, and a loop that word-splits
-  under `bash` and not `zsh`). Eight's opposite end, deliberately not
-  folded: a corpus that GAINED a member wants an upper floor, one with
-  NO members a lower one. MECHANICAL REMEDY: YES, one line, carried by
-  the proof clause above.
-  **SHAPE ELEVEN — an order assertion whose WITNESS IS BUFFERED dates
-  nothing** (`T-081-s5`: a text-delta witness COALESCED by
-  `flush_pending` passed under the very batching mutant it was written
-  to detect; the fix was a witness EMITTED rather than buffered). TELL,
-  and it is the rule: **when a test asserts A precedes B, ask whether
-  B's arrival time is a property of B or of the TRANSPORT; if the
-  transport can hold B, B cannot date A.** NO MECHANICAL REMEDY — name
-  the witness's emission path in the body so the next reader can check
-  it.
+  under `bash` and not `zsh`).
+  The catalogue of the eleven shapes a value poison passes, each with
+  its TELL, whether it has a mechanical remedy and the card its
+  instance lives on, is in docs/reference/07-verification.md (T-290),
+  verbatim and still cited by number.
 
 - A FIX NAMES ITS CLASS AND ITS SWEEP, OR RECORDS THAT NONE WAS RUN
   (T-078-s12). A defect found in one place is a defect of a CLASS until
-  somebody looks: T-078's fix session fixed three of its own where they
-  stood and twice left an identical sibling a few lines away, one
-  `git grep` from complete. So: NAME the class, run ONE search for it,
+  somebody looks:
+  So: NAME the class, run ONE search for it,
   and record the result **even when it is empty** — an unrecorded sweep
   and an unrun one are indistinguishable to the next reader. **And the
   sweep is shown capable of failing before its zero is written down**
   (the POISON DRILL's proof clause), because a search that finds nothing
   is what a finished job looks like.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/07-verification.md (T-290), verbatim.
 
 - A NEGATIVE ASSERTION NEEDS A POSITIVE CONTROL (T-060-s2, written down
   at T-078). A test that asserts something is REFUSED must first prove
@@ -200,7 +153,9 @@ here without asking what reads it.
   known non-zero, or one planted instance. WHY SILENT: frontmatter keys
   are snake_case and model properties camelCase, so a MODEL census for
   `blocked_by` and a FRONTMATTER one for `blockedBy` both return zero
-  and read clean. A census about censuses.
+  and read clean.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/07-verification.md (T-290), verbatim.
 
 - LIFTING A SAFETY GUARD TO DISCRIMINATE (T-060-s1, written down at
   T-078). A guard test needs a discriminating half, but the
@@ -225,7 +180,6 @@ here without asking what reads it.
   `isTauriRuntime()`, so the one screen where they live is the one
   screen the lane cannot show. So do not read a green lane as coverage
   of an IPC path: the Rust suite, the boot gate and @human's eye cover
-  those. The two unused arms are a DEV-only attempt counter and
-  rendering the gated pair disabled in browser mode; the recorded
-  sentence was preferred over a second DEV-gated surface, which T-041's
-  single-gate argument disfavours.
+  those.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/07-verification.md (T-290), verbatim.

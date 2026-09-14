@@ -290,13 +290,19 @@ test("each verb sourced from docs/CONVENTIONS.md quotes a command that document 
   const flat = conventions().replace(/\s+/g, " ");
   let checked = 0;
   for (const entry of VERBS) {
-    if (!entry.source.includes("docs/CONVENTIONS.md")) continue;
+    // T-290: a verb's source names the CHAPTER its rule lives in now,
+    // and docs/CONVENTIONS.md is the index over those chapters. BOTH
+    // spellings name this project's conventions, and this body reads the
+    // SPLICED document either way — a filter that knew only the old one
+    // would have left the `checked` floor below to catch a body that had
+    // quietly stopped checking anything.
+    if (!/docs\/CONVENTIONS\.md|docs\/conventions\//.test(entry.source)) continue;
     const quoted = [...entry.source.matchAll(/`([^`]+)`/g)].map((m) => (m[1] ?? "").replace(/\s+/g, " "));
     expect(quoted.length, `${entry.verb}'s source quotes at least one command`).toBeGreaterThan(0);
     for (const command of quoted) {
       expect(
         flat.includes(command),
-        `${entry.verb} cites \`${command}\`, which docs/CONVENTIONS.md must carry`,
+        `${entry.verb} cites \`${command}\`, which this project's conventions must carry`,
       ).toBe(true);
       checked += 1;
     }

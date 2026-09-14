@@ -75,16 +75,13 @@ here without asking what reads it.
   `bounded` before the work existed and the work turned out bigger, and
   nothing about the merged tree is wrong — so the step passes, says the
   card is bumped, and the reading appended to the bands carries
-  `standard` rather than the tier the dispatch stamped. Refusing here
-  would stop a finished lane at its last step over a fact for the NEXT
-  triage. The other three still refuse, and a card of any other size is
+  `standard` rather than the tier the dispatch stamped.
+  The other three still refuse, and a card of any other size is
   still not this keeper's to judge.
   **AND SINCE T-295-s4 THE FORBIDDEN-SPELLING KEEPER CLASSIFIES A
   SYNTHETIC FIXTURE**, on the rename class's own model and bounded by
-  that card's amendment of 2026-09-13. It exists because the keeper
-  stopped four merges in two days, three of them on the one synthetic
-  fixture identity a new spec body added, and each was ruled through by
-  hand — the shape of a keeper on its way to being turned off. THE
+  that card's amendment of 2026-09-13.
+  THE
   RECOGNITION RULE: a matched value is kept only where `FIXTURE_CLASSES`
   in that file names BOTH the value — by an anchored pattern, a literal
   and never a shape — AND the site it may sit at, a `files` token ending
@@ -101,6 +98,8 @@ here without asking what reads it.
   and **every use is announced**, on the step's own output and in the
   spelling an acknowledged drill uses: a kept spelling is news, never
   silence.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/08-landing.md (T-290), verbatim.
 
 - BOUNDED WAITS, IN THIS PROJECT'S OWN SPELLING (T-298, ADR-024's room
   decision G): `method/roles/orchestrator.md` 5f states the rule — every
@@ -190,20 +189,13 @@ here without asking what reads it.
   `implementation:` field that is one of three words, because the
   `reads:` field answers a narrower question than a reader of a settings
   screen is asking and `processLedger` there reads as *"nothing"*.
-  `operational` means the arm reads the row and branches on it, and the
-  label is EARNED: the lane that assigns it shows a body that CHANGES the
-  value and watches the arm answer differently, with every value of the
-  row erased from the answers before they are compared — a read site
-  shows the value is read, and a surface printing the value back shows
-  less than that. `manual` means a person or a seat performs what the row
+  `manual` means a person or a seat performs what the row
   names, and the row carries that instruction in a non-empty
   `manualAction:`. `declarative` means the row is a RECORD rather than a
   control: nothing reads its value and no instruction is addressed to a
   seat by it, so editing it alone changes nothing — **AND IT DOES NOT
-  MEAN THE BEHAVIOUR IS ABSENT.** The fence hook, the docs gate and the
-  landing gate all read `declarative` and are all in force; what they are
-  not is settings, because they live in code and in CI configuration that
-  never consults the schema. The parser refuses a missing or unknown
+  MEAN THE BEHAVIOUR IS ABSENT.**
+  The parser refuses a missing or unknown
   label, an empty action on a manual row and an action on a row that is
   not manual; `supertaskr settings` shows the label beside the value and
   the action beside a manual one, REFUSES a `set` naming a declarative
@@ -281,11 +273,8 @@ here without asking what reads it.
   or `all`) and an optional `why` — beside T-238's holder record, ONE
   reader reads it (`readPause`), a record this reader cannot parse
   REFUSES rather than reading as silence, and the block itself is read
-  through the parser's reader and through nothing else. It lives there
-  rather than in the block because T-319's reader answers each declared
-  field BY NAME and would refuse a whole block carrying a row it does not
-  return — so a `pause:` row today would be a control that silently did
-  nothing. Under `new-work` every new implementation attempt and re-entry
+  through the parser's reader and through nothing else.
+  Under `new-work` every new implementation attempt and re-entry
   is refused while the verification and integration of a candidate
   already admitted may start and finish; under `all` every further phase
   stops at its declared safe boundary — an executor at its stamp, a
@@ -334,3 +323,5 @@ here without asking what reads it.
   WHETHER IT IS HELD, NEVER ASSUME IT**: `pmset -g assertions` names
   every holder, and an idle-sleep assertion nobody holds is a loop that
   will stop at the first idle window rather than at a boundary.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/16-the-repository.md (T-290), verbatim.

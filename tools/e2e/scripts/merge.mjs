@@ -1673,7 +1673,7 @@ export function tailPlan(input) {
       id: "graph:regen",
       kind: "regen",
       title: "regenerate the committed graph — indexed source moved",
-      why: "docs/CONVENTIONS.md GRAPH REGEN: ask the gate rather than predicting; a no-op regen PROVES it",
+      why: "docs/conventions/merging.md GRAPH REGEN: ask the gate rather than predicting; a no-op regen PROVES it",
       run: {
         // SUPERTASKR_UPDATE_GOLDEN=1 is what makes this a REGEN rather than a
         // check — docs/CONVENTIONS.md's GRAPH REGEN bullet spells the whole
@@ -1749,7 +1749,7 @@ export function tailPlan(input) {
             action: "docs-gate",
             title: `docs-gate.mjs on ${String(docsPaths.length)} path(s) under docs/`,
             why:
-              "docs/CONVENTIONS.md DOCS GATE: docs/ is a CODE INPUT and neither other trigger " +
+              "docs/conventions/standing-gates.md DOCS GATE: docs/ is a CODE INPUT and neither other trigger " +
               "can see it. A gate that FIRES is NEWS — it names the suites this merge owes at " +
               "the push, and every merge carrying a card fires it — so the run goes on and the " +
               "owed set joins the message. Anything else it says STOPS the run",
@@ -3096,7 +3096,7 @@ export function bumpSteps(input) {
       kind: "gate",
       title: "the METHOD EVAL GATE — method/ moved",
       why:
-        "docs/CONVENTIONS.md METHOD EVAL GATE: any merge whose diff touches method/** runs the " +
+        "docs/conventions/standing-gates.md METHOD EVAL GATE: any merge whose diff touches method/** runs the " +
         "model-free evals, and this merge does",
       run: {
         command: process.execPath,

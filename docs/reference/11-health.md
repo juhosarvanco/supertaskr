@@ -106,3 +106,18 @@ travel as cards through this same loop, each with its retirement
 condition, so a machine whose incident class has gone quiet for the
 interval its condition names is demoted to a discipline or removed,
 with the removal recorded at the same weight as the arrival.
+
+## From the conventions — the forensics behind the rules (T-290)
+
+The rules themselves live in the chapters under docs/conventions/,
+which docs/CONVENTIONS.md indexes. What follows is the history, the
+measurements and the argument each of those rules was cut from, moved
+here VERBATIM at T-290 under ADR-023 — the records rule forbids a
+rewrite, so not a byte of it is re-worded, re-ordered inside an entry,
+or summarised. Each entry names the bullet it came out of.
+
+### HEALTH BANDS AT THE CHECKPOINT
+
+The addendum that would say
+  this inside ADR-019 is the owner's to write and is filed as a
+  suggestion.

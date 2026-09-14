@@ -229,3 +229,20 @@ record).
   landing.
 - Not a licence for the lane to write its own card's `touches:` line.
   That line is the one line on its own card a lane never writes.
+
+## From the conventions — the forensics behind the rules (T-290)
+
+The rules themselves live in the chapters under docs/conventions/,
+which docs/CONVENTIONS.md indexes. What follows is the history, the
+measurements and the argument each of those rules was cut from, moved
+here VERBATIM at T-290 under ADR-023 — the records rule forbids a
+rewrite, so not a byte of it is re-worded, re-ordered inside an entry,
+or summarised. Each entry names the bullet it came out of.
+
+### THE SHIPPED PARTITION, IN SLUGS
+
+`app/src/index.css`
+  (C-05, slug `app-shell`) `@import`s `./styles/tokens.css` and
+  `./styles/fonts.css`, and `fonts.css` `url()`s
+  `../assets/fonts/*.woff2`, so those bytes are compiled into every
+  build.

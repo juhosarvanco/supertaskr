@@ -16,16 +16,16 @@ here without asking what reads it.
   "disjoint from everything"* — and refused four at once when a seat cut
   all four before arming any. **AND STAMP `status: building` BEFORE YOU
   CUT** (T-226): cards that stamped after the cut met a three-way
-  conflict at the merge that cards stamped before did not. Moved here
-  from docs/STATE.md — a MECHANISM belongs in a governing document
-  (T-146).
+  conflict at the merge that cards stamped before did not.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/05-dispatch.md (T-290), verbatim.
 
 - **E2E PORT — DERIVE IT PER LANE: `SUPERTASKR_E2E_PORT=15000+<card number>`.**
   The default 14520 is MACHINE-WIDE, so every concurrent lane takes the
   same one; `E2E_PORT` binds NOTHING. `lsof` to zero rows before binding,
-  and never 1420. Third member of this family, beside the SCRATCH RULE and
-  the PORT RULE, one class and one remedy — **a construction beats a
-  check** (lane-protocol rule 4, T-217).
+  and never 1420.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/05-dispatch.md (T-290), verbatim.
 
 - **SCRATCH RULE — NAME EVERY SCRATCH FILE FOR THE LANE THAT OWNS IT**
   (`<purpose>-<card id>.<ext>`, e.g. `battery-T-216-s1.sh`). **The
@@ -34,12 +34,9 @@ here without asking what reads it.
   and `method/lane-protocol.md` rule 4 already rules the class — *derive
   from the lane, never default*; the spelling is here because the class
   was ruled and the spelling was not, the same gap the PORT RULE below
-  closes for ports. Measured (T-216-s5): an executor and a verifier each
-  wrote `battery.sh`; the executor drove the VERIFIER'S bench at the
-  verifier's ref, and `gate-run`'s solo lock, refusing two legs and
-  naming the holding pid, was the only thing in the tree that recorded a
-  second runner at all. **The collision is symmetric and the fault is
-  the DISPATCHER'S**: whoever hands two seats one directory owns it.
+  closes for ports.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/05-dispatch.md (T-290), verbatim.
 
 - **THE VERIFIER'S BENCH IS TWO SPAWNS, AND THIS BULLET IS THE
   SPELLING, NEVER THE SHAPE.** `method/roles/orchestrator.md` 5d states
@@ -119,24 +116,16 @@ here without asking what reads it.
   they are about this command and how it gets typed.
   **NEVER PUT A BACKTICK INSIDE A SHELL STRING** — single-quote a
   command name, or omit it; a heredoc quoted as `<<'EOF'` suppresses
-  substitution too. In `sh`, `bash` and `zsh` a backtick is COMMAND
-  SUBSTITUTION, so this repository's own house style, a command name in
-  backticks, IS the hazard: copying that spelling into a shell LABEL is
-  the natural motion and the one motion that executes, SILENT when the
-  substitution succeeds (T-082's own executor started a real model turn
-  that way). Same precedent as the 1420 probe: the rule is on the
+  substitution too.
+  Same precedent as the 1420 probe: the rule is on the
   SYSCALL.
   **`lsof` IS THE AUTHORITY AND A `bind()` PROBE IS THE CONFIRMING HALF,
-  NEVER THE PRIMARY.** On a port holding client-side TIME_WAIT peers,
-  `lsof` returns ZERO ROWS while a plain `bind()` without `SO_REUSEADDR`
-  still fails EADDRINUSE (a real false red, on port 14768); and
-  UNFILTERED `lsof` is equally blind, since TIME_WAIT sockets have no
-  owning process, so dropping `-sTCP:LISTEN` buys nothing. For 1420
+  NEVER THE PRIMARY.**
+  For 1420
   there is no bind half at all — read the port and stop.
-  THE FACT THEY WERE DEMONSTRATING, RECORDED SO NOBODY DEMONSTRATES IT
-  AGAIN: the human's vite listens on **`[::1]:1420` — IPv6 loopback —
-  and nothing listens on IPv4**, so an IPv4-only probe of 1420 comes
-  back FREE while the app is running. **A free IPv4 probe is not
+  **A free IPv4 probe is not
   evidence the app is down.** `tauri-boot-check.mjs` probes `::1` THEN
   `127.0.0.1` and carries a comment naming this hazard; that is the
   shape to copy, and scratch ports must be probed on BOTH stacks.
+  The history, the measurements and the argument this rule was cut
+  from are in docs/reference/05-dispatch.md (T-290), verbatim.

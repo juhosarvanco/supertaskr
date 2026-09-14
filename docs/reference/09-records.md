@@ -140,3 +140,43 @@ provenance marks (a stamp is a claim by the hand that wrote it), and
 the human gates. Writing the list down is the point: a reader can ask
 how each is protected, and a machine that takes over a trusted point is
 a promotion that shortens the list.
+
+## From the conventions — the forensics behind the rules (T-290)
+
+The rules themselves live in the chapters under docs/conventions/,
+which docs/CONVENTIONS.md indexes. What follows is the history, the
+measurements and the argument each of those rules was cut from, moved
+here VERBATIM at T-290 under ADR-023 — the records rule forbids a
+rewrite, so not a byte of it is re-worded, re-ordered inside an entry,
+or summarised. Each entry names the bullet it came out of.
+
+### A LINE NUMBER IS A FIGURE
+
+Two citations were falsified by merges in a single night, both true
+  when written.
+
+### AND A DISTANCE TO A MOVING TIP CANNOT BE STATED AT ALL IN A DOCUMENT
+
+**AND HERE IS WHY THE
+  PEOPLE WRITING THIS RULE DOWN KEEP BREAKING IT**: `main` is the
+  natural way to write "and it is still true NOW", and "now" is the one
+  thing a committed document cannot hold — five instances landed on one
+  card in one sitting, twice inside a table built to demonstrate the
+  rule.
+
+### A CITATION NAMES A SYMBOL, NOT A LINE
+
+T-093's card carries the measurements, at `bc2d82a`.
+
+Re-running from the ROOT fixes this one, which is what makes
+  the other two worse — they give the SAME answer from anywhere, over a
+  file somebody has just edited.
+
+One literal NUL makes a file
+  BINARY to every binary-skipping searcher while it still compiles,
+  renders and passes its suites: the real `/usr/bin/grep` prints
+  `Binary file … matches` at exit 0, while the shell-function `grep`
+  this harness installs answers EXIT 1 WITH NO OUTPUT over the same
+  bytes — the code a genuinely absent string gives.
+
+THE GATE IS NOT THE GAP; the advice was.

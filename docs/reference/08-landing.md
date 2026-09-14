@@ -187,3 +187,112 @@ Written before the first bad merge so it is never improvised:
 A revert is not a disposition; which of the three moves the card gets
 is triage's. Safe undo as a command, `npx supertaskr undo <card>` with a
 dependency check, is v1 (folded into T-244).
+
+## From the conventions — the forensics behind the rules (T-290)
+
+The rules themselves live in the chapters under docs/conventions/,
+which docs/CONVENTIONS.md indexes. What follows is the history, the
+measurements and the argument each of those rules was cut from, moved
+here VERBATIM at T-290 under ADR-023 — the records rule forbids a
+rewrite, so not a byte of it is re-worded, re-ordered inside an entry,
+or summarised. Each entry names the bullet it came out of.
+
+### THE ARM MERGES, AND THE SEAT RULES
+
+Refusing here
+  would stop a finished lane at its last step over a fact for the NEXT
+  triage.
+
+It exists because the keeper
+  stopped four merges in two days, three of them on the one synthetic
+  fixture identity a new spec body added, and each was ruled through by
+  hand — the shape of a keeper on its way to being turned off.
+
+### THE RANGE RULE
+
+This bullet's oldest evidence, still exactly right —
+  and right AT THE MERGE specifically, which is the distinction the rest
+  of this bullet draws.
+
+A
+  docs-only lane reads as having rewritten a Rust crate — the same lie
+  this rule exists to prevent, produced by obeying it.
+
+Reproduced on a fixture repository: before the merge, `A...B` and
+  `$(git merge-base A B)..B` are BYTE-IDENTICAL under `cmp`.
+
+WORKED AT T-080, all four figures at
+  their own refs:
+
+Same left-hand ref throughout, and the whole 48-path swing is
+  the right-hand one.
+
+**THAT SIX IS THE PROXY, MEASURED.** What diverges is less than
+  "different content" and worse than "cosmetic", so state it exactly:
+  one is blob hashes alone (`3b0d974`), three add only `@@` hunk-header
+  line numbers because main inserted lines above the branch's own hunk
+  (`91ab46e`, `827511e`, `64469dd`), one also moves context lines
+  (`f4b38c8`), and only **2** of the 31 differ in a `+`/`-` line at all
+  (`bdada11`, `634c405`). Right files, wrong coordinates: a branch diff
+  is stated against the branch POINT, and the gate reads one stated
+  against MAIN.
+  **AND THREE DOTS' ONE EXTRA PATH WIN IS THE MERGE IT SHOULD HAVE
+  REFUSED.**
+
+Three
+  dots hands back a clean-looking forecast for a merge nobody could
+  perform without resolving it by hand — and is wrong on bytes there as
+  well.
+
+It read:
+
+THE MECHANISM is a lane
+  fenced to ONE tree, cut from a checkpoint whose main then advanced in
+  ANOTHER — the branch's own diff misses the trigger, main's advance
+  carries it, and the naive range hands the branch main's work. Lanes
+  are routinely fenced to one tree now, so this is the ORDINARY case and
+  not an accident.
+
+Only FOUR of the twelve were on
+  record when this correction was written: three named on T-083's card
+  at `99791ea`, a fourth added by T-080's checkpoint `cb3aa31`. The
+  other eight came back from that derivation, and three checkpoints
+  running believed they were recording the first exceptions.
+
+"Weeks" was wrong in the
+  other direction too: the repository was two days old.
+
+THE FOURTH IS ALSO MIS-ATTRIBUTED
+  WHERE IT IS RECORDED:
+
+At
+  `ddcc8bb` there is NO merge where the naive range says a gate is not
+  owed while the prescribed one says it is, and the pre-merge two-dot
+  form only ever adds paths. So a wrong range wastes a boot check or a
+  regen; it has not yet HIDDEN one.
+
+Three forecasts went stale in
+  their ABSOLUTES in one session and none in its DELTA.
+
+Reproduced against a main two merges later, both
+  endpoints moved and the delta did not.
+
+### GRAPH REGEN
+
+T-010's merge made `Lang::for_extension("rs")`
+  answer `Some`, so Rust joined the walk while this trigger still named
+  only the four TS/JS suffixes — the ONE direction the "wider than the
+  walk" argument below does not protect, since a trigger NARROWER than
+  the walk **misses a real movement** (T-123's rebuild measured a
+  Rust-only diff moving the graph while this trigger matched 0 of 9
+  paths).
+
+A regen that
+  changes nothing costs a minute and PROVES it; a regen skipped on a
+  guess proves nothing.
+  WHAT RETIRED is the obligation to hand-run the byte-comparison
+  afterwards:
+
+The rule
+  read "with the merge" for twenty-nine regens while every integrator
+  did the other thing; this is the practice, written down (T-014-s3).

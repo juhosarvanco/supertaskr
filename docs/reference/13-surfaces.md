@@ -94,3 +94,23 @@ boot check takes its own derived port.
 | merge, checkpoint | the seat, holding the integration checkout |
 | watching the board and the map | the mirror app |
 | CI | GitHub Actions |
+
+## From the conventions — the forensics behind the rules (T-290)
+
+The rules themselves live in the chapters under docs/conventions/,
+which docs/CONVENTIONS.md indexes. What follows is the history, the
+measurements and the argument each of those rules was cut from, moved
+here VERBATIM at T-290 under ADR-023 — the records rule forbids a
+rewrite, so not a byte of it is re-worded, re-ordered inside an entry,
+or summarised. Each entry names the bullet it came out of.
+
+### `npx supertaskr <verb>`
+
+Publishing the package is @human's (T-266); the proof that it
+  installs is a local `npm pack` tarball, run inside the lane.
+
+### A RENDER-PHASE REF STAMP is legitimate only under three conditions
+
+Relocating such a log into a store is a change of
+  SOURCE, not of mechanism, and it earns its cost when a SECOND CONSUMER
+  appears — not before (T-027).

@@ -2251,6 +2251,67 @@ mod tests {
         }
     }
 
+    // ---- the index and its chapters (T-290, ADR-023) -----------------
+
+    /// **THE SPLICE IS THE SAME RULE IN TWO LANGUAGES, SO IT IS PINNED IN
+    /// BOTH SUITES** (T-290). `conventionsText` in
+    /// tools/e2e/scripts/docs-scan.mjs and `splice_conventions` here read
+    /// one document out of an index and its chapters; a body in only one
+    /// of them would let the two drift, which is T-057's class.
+    #[test]
+    fn a_rule_that_moved_into_a_chapter_is_still_found_by_its_opener() {
+        let live = live_files();
+        let index = live.read_text(CONVENTIONS).expect("CONVENTIONS");
+        assert!(
+            index.lines().any(|l| conventions_pointer(l).is_some()),
+            "the index publishes no pointer, so this body would prove nothing"
+        );
+        let spliced = live_conventions();
+        // THE RULE IS IN THE SPLICED DOCUMENT ...
+        let bullet = bullet_containing(&spliced, "integration branch `")
+            .expect("the spliced document carries the lane spelling bullet");
+        assert!(bullet.contains("task/T-NNN-"), "the bullet came back short");
+        // ... AND NOT IN THE INDEX ALONE, which is the half that makes
+        // the first assertion mean something: a reader that forgot to
+        // splice finds nothing rather than a shorter document.
+        assert!(
+            bullet_containing(&index, "integration branch `").is_none(),
+            "the index alone answered a rule, so the splice is unmeasured here"
+        );
+    }
+
+    #[test]
+    fn a_pointer_whose_chapter_lost_its_bullet_is_a_refusal_never_a_silent_omission() {
+        // A DATA MUTANT: the property lives in the PAIR of files, so the
+        // mutation is to the chapter's bytes and not to a branch.
+        let live = live_files();
+        let index = live.read_text(CONVENTIONS).expect("CONVENTIONS");
+        // THE POSITIVE CONTROL — unmutated, it splices.
+        let whole = splice_conventions(index.clone(), |rel| live.read_text(rel).ok());
+        assert!(whole.is_ok(), "the untouched tree did not splice: {whole:?}");
+
+        let victim = index
+            .lines()
+            .find_map(conventions_pointer)
+            .map(|(file, _)| file.to_string())
+            .expect("a pointer to mutate against");
+        let mutated = splice_conventions(index, |rel| {
+            let text = live.read_text(rel).ok()?;
+            if rel != victim {
+                return Some(text);
+            }
+            // Drop the chapter's LAST bullet while the index still
+            // publishes an opener for it.
+            let at = text.rfind("\n- ")?;
+            Some(text[..=at].to_string())
+        });
+        let because = mutated.expect_err("a chapter missing a published bullet was spliced anyway");
+        assert!(
+            because.contains("pointed at"),
+            "the refusal does not name the bullet it could not find: {because}"
+        );
+    }
+
     // ---- the contract is READ, never transcribed ---------------------
 
     #[test]
