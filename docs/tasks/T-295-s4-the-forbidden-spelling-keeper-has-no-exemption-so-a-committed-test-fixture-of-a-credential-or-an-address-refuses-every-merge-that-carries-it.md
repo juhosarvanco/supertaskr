@@ -131,6 +131,25 @@ lane tip, 102360 bytes committed against a 102875-byte generation — the
 corrections, because docs/CAPABILITIES.md and docs/INDEX.md are outside
 this card's fence.
 
+THE OWED SET AT THE GRADED TIP, derived by the blessed gate-runner
+over the range from the base to 100725ca and run ONCE (T-279): the
+range moves 7 paths and owes all four legs, the end-to-end leg narrowed
+to the 17 spec files those paths own. Every leg GREEN at ref 100725ca —
+parser exit 0 over 454 bodies, app exit 0 over 1171, rust exit 0 over
+655 across 18 targets, e2e exit 0 over 870 across those 17 specs. The
+scoped `--owning` reading for the two fenced code paths is a subset of
+that e2e scope and was NOT run a second time, which is what T-279 asks.
+
+THE KEEPER OVER THIS LANE'S OWN DIFF, which is the card's own subject
+answered against the card's own merge. The 768 added lines of the range
+carry 3 file-and-class pairs the keeper judges. At the tip: 0 findings
+and 3 announced exceptions — one credential in
+tools/e2e/scripts/merge.mjs under `keeper-fixture-credential`, 2 more in
+tools/e2e/tests/merge.spec.ts under the same class, and 4 addresses
+there under `suite-fixture-identity`. Under the base rule, with the two
+shape constants unchanged across the diff, the same added lines give 3
+findings and stop the merge.
+
 POISON DRILL, 5 mutants, each run against the whole of merge.spec.ts,
 each restored and the restore proved by sha256 against the pre-drill
 digest 8cc97d853261a187f5514df95c355d823d44992998c55ed68d30e0258629ed75.
