@@ -9,7 +9,7 @@ priority: 2
 status: building
 suggested_by: "the architect seat on 2026-09-13, from the Codex orchestrator's lean-delivery plan v2 and its reconciliation review of the same day, filed on the owner's ruling; filing authorizes no development"
 blocked_by: []
-touches: [tools/e2e/scripts/brief.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/card-preflight.mjs, tools/e2e/scripts/run-record.mjs, tools/e2e/scripts/merge.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/card-preflight.spec.ts, tools/e2e/tests/run-record.spec.ts, tools/e2e/tests/merge.spec.ts, tools/method-evals/evals, method/tasks/TASK-FORMAT.md, method/roles/orchestrator.md, docs/CONVENTIONS.md, docs/conventions/architecture.md, docs/conventions/lanes.md, docs/conventions/dispatch-and-scratch.md, docs/INDEX.md, docs/CAPABILITIES.md, tools/e2e/tests/brief-flush.spec.ts]
+touches: [tools/e2e/scripts/brief.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/card-preflight.mjs, tools/e2e/scripts/run-record.mjs, tools/e2e/scripts/merge.mjs, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/card-preflight.spec.ts, tools/e2e/tests/run-record.spec.ts, tools/e2e/tests/merge.spec.ts, tools/method-evals/evals, method/tasks/TASK-FORMAT.md, method/roles/orchestrator.md, docs/CONVENTIONS.md, docs/conventions/architecture.md, docs/conventions/lanes.md, docs/conventions/dispatch-and-scratch.md, tools/e2e/tests/brief-flush.spec.ts]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by:
@@ -68,6 +68,8 @@ Two readings of the criteria, recorded so the verifier grades them and not the l
 ## Widening of 2026-09-14, during the lane (the architect seat, on the executor's ask)
 
 The fence gains three paths. docs/INDEX.md and docs/CAPABILITIES.md, on T-290's precedent: the express bullet adds an opener to the dispatch chapter's index line and the lane adds bodies, so both generated files go stale and the docs gate reds six docs-input-gate bodies on that one cause until `npm run capabilities` runs in the lane; T-242, building beside this lane, fences the same two generated files for the same reason, so the two fences overlap on generated outputs and not on owned text — the second merge conflicts on them and the seat resolves it by regenerating both from the merged tree, which the merge's census step does in any case. tools/e2e/tests/brief-flush.spec.ts, on T-322's and T-324's precedent: its arm-list body reds by name on any of the eleven new flags nothing announces or excuses; the lane announces the one live arm and excuses the dials beside it in that file's own shape; no live lane holds the spec.
+
+**Correction of the widening, the same day (the architect seat).** The two generated files are withdrawn from the fence: lane-protocol rule five is mechanical — the fence writer refuses a lane whose fence is not disjoint from every live lane — and T-242 holds docs/INDEX.md and docs/CAPABILITIES.md beside this lane, so the seat's grant of them was wrong and is withdrawn by this line; tools/e2e/tests/brief-flush.spec.ts stays. For the lane's own graded reading the executor regenerates both generated files in its working tree (`npm run capabilities`) so the docs gate reads a current index, and reverts them before the stamp commit rather than committing files outside its fence; the merge regenerates both from the merged tree, which is where they are owned. The widening section above stands as the record of what was granted and why it could not be written.
 
 ## Implementation notes
 
