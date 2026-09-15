@@ -4,13 +4,14 @@ title: "A change to the runtime template owes the whole battery because the owed
 feature: F-04
 milestone: 4
 size: M
+tier: guarded
 priority: 1
-status: planned
+status: building
 suggested_by: "the architect seat on 2026-09-15, from the closing check of the dispatch grant's landing, on the Codex orchestrator's finding of the same day"
 blocked_by: []
 touches: [tools/e2e/scripts/gate-run.mjs, tools/e2e/tests/gate-run.spec.ts, tools/e2e/tests/cli.spec.ts, tools/e2e/tests/brief.spec.ts, docs/conventions/gates-and-the-push.md]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
