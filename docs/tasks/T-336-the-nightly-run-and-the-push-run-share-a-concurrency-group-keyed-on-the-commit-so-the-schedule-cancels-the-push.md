@@ -4,13 +4,14 @@ title: "The nightly run and the push run share a concurrency group keyed on the 
 feature: F-04
 milestone: 4
 size: XS
+tier: guarded
 priority: 1
-status: planned
+status: building
 suggested_by: "the architect seat on 2026-09-15, from the cancellation of the T-331 landing push's own CI run; observed twice, on 2026-09-14 and 2026-09-15, and read from the runs' own event fields rather than inferred"
 blocked_by: []
 touches: [.github/workflows/ci.yml, tools/e2e/tests/workflow-parity.spec.ts]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
