@@ -191,6 +191,16 @@ was measured at. The three lines that broke their files' own wrap — one of
 118 characters in `gates-and-the-push.md`, two in these notes — are
 rewrapped, changing no words. Criteria 1, 2, 3 and 5 were not reopened.
 
+THE VERDICT'S F5 IS NOT THIS LANE'S AND A CARD IS OWED FOR IT. The
+verifier recorded two properties of the pre-existing admission arm, both
+outside this fence and neither asked for by any criterion: the grant check
+reads `order` into the `cards` map but never the map back into the order,
+so a card present in both widens authority invisibly; and the block binds
+to no approval record, so a revision nobody approved validates against
+itself. Phase 1 reached both independently and blind. The seat has it and
+files it at the merge at priority 1; it is named here only so a reader of
+this card finds it without going back to the verdict.
+
 THREE RED BODIES IN THIS LANE ARE ATTRIBUTED AND ARE NOT THIS DIFF'S.
 `push-guard.spec.ts`'s three `--take-seat` bodies fail in any FENCED lane
 worktree with `EACCES` copying `docs/CONVENTIONS.md`: `seatFixture` copies
