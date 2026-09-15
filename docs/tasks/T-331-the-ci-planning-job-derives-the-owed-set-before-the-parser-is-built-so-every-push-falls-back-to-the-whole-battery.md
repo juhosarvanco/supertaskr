@@ -198,6 +198,51 @@ follow from the commit that records them, which is itself a change under
 `docs/` and therefore the measurement it describes. Both sets name their run
 identifiers and enumerate the specs each selection ran, never a count alone.
 
+### The landing push, measured
+
+2026-09-15, the architect seat. The landing push is `2cad6497..ee5bae19`.
+
+- **Time to push: 1483 s (24 m 43 s).** The landing commit existed at
+  2026-09-15T14:14:01+03:00 and `git push origin main` returned at
+  14:38:44+03:00. By the clock defined above this includes the owed-set run the
+  push owed, which was the whole battery at 22 m 06 s, and the pre-push guard's
+  own judgement.
+- **Time to CI completion: UNAVAILABLE, and the absence is recorded rather than
+  filled.** Run 34964351709 was CANCELLED 13 m 14 s into its end-to-end shard,
+  with eight of its ten jobs already successful, by run 34965588817 on the same
+  commit. The two runs share a concurrency group keyed on the workflow and the
+  commit with in-progress cancellation on, and the displacing run's event is
+  `schedule`. A run on the same commit is not a substitute for this figure: it
+  grades the same tree but answers a different question, so no number is
+  borrowed from it here. T-336 carries the cause.
+- **The selection the runner actually used**, read from the planning job's own
+  log rather than inferred from a conclusion: `suites=app,e2e,parser,rust`,
+  `run-boot=true`, `e2e-whole=true`, `spec-count=42`, `shard-count=4`, over the
+  range this push carried.
+
+**THE REPAIR IS PROVEN ON THE RUNNER BY THE CHANGE IN THE FALLBACK'S REASON.**
+Before, the planning job fell closed saying the static import graph had an edge
+it could not land on a file, naming both specs that reach the parser library's
+built entry. On this push it falls closed saying it cannot place
+`.github/workflows/ci.yml`. The edge this card repaired no longer causes a
+fallback on the runner; what remains is a different unplaceable input, and a
+change to the workflow's own configuration owing the whole battery is the
+conservative answer rather than a defect.
+
+**THE PREPARATION'S COST ON THE RUNNER, WHICH WAS THE OPEN ECONOMIC QUESTION.**
+The planning job took 15 s before the repair and 28 s after it: **13 s added**
+to a job every other job waits on, against the 2222 s end-to-end shard the
+narrowed selection lets a qualifying push skip. The figure is measured from the
+two runs' own job timings and was not estimated in advance.
+
+**THE TREE AT THIS COMMIT IS GREEN**, on run 34965588817 over the same commit:
+every job successful or skipped, 2170 s wall, its end-to-end shard 2133 s.
+
+**THE RECORDS-ONLY PUSH.** The commit carrying this record changes only paths
+under `docs/`, which is the definition stated above, so its own push is that
+measurement. Its two figures and its selection are recorded at the next merge
+rather than by a push made solely to record them.
+
 ## Verdicts
 
 ### 2026-09-15 — APPROVED WITH ASSIGNED CORRECTIONS — claude-opus-5@subagent
