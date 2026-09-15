@@ -4,8 +4,8 @@ title: "A mutant block whose NEW text is a substring of its own OLD can only eve
 feature: F-04
 milestone: 4
 size: S
-priority: 3
-status: suggested
+priority: 1
+status: planned
 suggested_by: "verifier claude-opus-5@subagent @T-295-s9, proposed in that lane's own notes and not filed there; measured at that card's tip"
 blocked_by: []
 touches: [tools/e2e/scripts/merge.mjs, tools/e2e/tests/merge.spec.ts]
@@ -63,5 +63,32 @@ report, with the control that a block whose anchors are disjoint draws
 none.
 
 ## Implementation notes
+
+Re-triaged 2026-09-15 by the architect seat on the owner's ruling of the
+same day, after the Codex orchestrator's review: status planned, the
+priority raised to the top of the queue, tier guarded provisionally (the
+fence carries merge.mjs, which the guard-class map names, and a small
+diagnostic is not thereby eligible for the bounded tier), size kept. The
+aim is narrowed and the advice above is corrected; the contract is
+consolidated from these lines before any dispatch:
+
+- The diagnostic is a NAMED read-time report that reaches the verifier's
+  completion path while the verifier still stands; invoking the same
+  reader only at the merge would reword the late stop and prevent
+  nothing. T-295-s9's write-time refusals stay intact, and the unsafe or
+  ambiguous application stays refused.
+- Warning versus refusal is chosen explicitly when the contract is
+  consolidated. The lean reading is a named diagnostic with a live
+  verifier-facing validation invocation and no new hard failure over the
+  reading of historical verdicts; a requirement that newly produced
+  executable blocks pass validation is scoped to that boundary.
+- "Widen the anchor until the two texts are disjoint" is withdrawn as a
+  promise: a deletion mutant can keep one anchor inside the other
+  whatever context is added. The report requires an unambiguous supported
+  block or answers an explicit unsupported result. Contextual application
+  of overlapping anchors is a separate and larger contract that keeps the
+  wrong-site regression controls.
+- The promotion changes nothing in the delegated order; the card is
+  dispatched only under the corresponding authorization.
 
 ## Verdicts
