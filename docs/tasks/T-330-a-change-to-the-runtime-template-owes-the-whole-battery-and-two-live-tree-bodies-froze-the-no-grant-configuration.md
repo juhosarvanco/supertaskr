@@ -248,8 +248,41 @@ and the four planted configuration defects in `cli.spec.ts` shown refused
 by name. Those are executable and they are the argument. The grep stays as
 what it is, a corroborating reading.
 
-**Criterion 6 is an outstanding post-landing obligation and this card is
-not fully demonstrated until it closes.** Its accurate standing is
+**Criterion 6 CLOSED 2026-09-16 — the measurement below was taken and the
+card is now fully demonstrated.** The paragraph that follows is kept as
+written, because it is what the obligation was and a later reader should
+be able to see that it was carried rather than dropped.
+
+THE MEASUREMENT. The records-only push after this card landed is commit
+`7ff5b70d` (three cards filed, three amended, no code and no generated
+output), run `35034234311`. Read off that run's own record, not estimated:
+
+| interval | endpoints | figure |
+| --- | --- | --- |
+| push to run creation | 2026-09-15T23:07:15Z to 23:07:33Z | 18s |
+| creation to last required job | 23:07:33Z to 23:14:10Z | 6m37s |
+| creation to workflow completion | 23:07:33Z to 23:14:11Z | 6m38s |
+| push start to workflow completion | 23:07:15Z to 23:14:11Z | 6m56s |
+
+The push command itself returned in 20 seconds, the pre-push guard
+included. THE OWED SET THAT PUSH SELECTED, and the runner's own
+derivation of it: `whole=false`, `why=` empty, `suites=app,e2e,parser`,
+`run-rust=false`, `e2e-whole=false`, `spec-count=12`. The integration
+checkout derived the same three suites and the same twelve spec files for
+the same range before the push, and the `native` job was skipped on the
+runner, so no rust leg ran. The local owed set took 6m23s over 2362
+bodies, all green.
+
+THIS PROMISES NOTHING ABOUT ADMINISTRATIVE PUSHES IN GENERAL, which the
+criterion requires said out loud. It is one push of six card files on one
+day. The last required job was `e2e shard 1 of 4` at 6m11s, which started
+twelve seconds after its siblings and finished four minutes after the next
+shard — the same unweighted-split cost T-294-s2 is about, so even this
+figure is mostly one shard's luck rather than a property of the change.
+A different records change owing different specs would land elsewhere.
+
+**Criterion 6 was an outstanding post-landing obligation and this card was
+not fully demonstrated until it closed.** Its accurate standing is
 APPROVED FOR INTEGRATION, WITH THE POST-LANDING MEASUREMENT PENDING, and
 it must not become "all criteria demonstrated" by omission. THE
 RESPONSIBLE SEAT IS THE ARCHITECT SEAT HOLDING THIS BOARD, at the first
