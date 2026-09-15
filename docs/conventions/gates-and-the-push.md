@@ -105,13 +105,13 @@ here without asking what reads it.
   **IT FAILS CLOSED, AND THAT IS THE WHOLE SAFETY ARGUMENT.** A path
   under no package root that no spec reaches and the docs gate cannot
   place, a reader the map cannot put in a package, a settings path this
-  scan finds no reader for, an import edge that will not resolve, no upstream to range against, a runner this checkout
-  does not have, an answer the guard cannot parse — every one of them
-  makes the owed set THE WHOLE BATTERY, with the reason recorded in the
-  token and printed at the refusal. **AND "THE WHOLE BATTERY" MEANS FOUR
-  WHOLE LEGS, WHICH IS A CLAIM ON TWO AXES AND NOT ONE.** The SUITE axis
-  is which legs ran; the SPEC axis is whether the one scopable leg ran
-  whole.
+  scan finds no reader for, an import edge that will not resolve, no
+  upstream to range against, a runner this checkout does not have, an
+  answer the guard cannot parse — every one of them makes the owed set
+  THE WHOLE BATTERY, with the reason recorded in the token and printed
+  at the refusal. **AND "THE WHOLE BATTERY" MEANS FOUR WHOLE LEGS, WHICH
+  IS A CLAIM ON TWO AXES AND NOT ONE.** The SUITE axis is which legs
+  ran; the SPEC axis is whether the one scopable leg ran whole.
   A token whose end-to-end entry carries a `scope` is
   therefore refused as **`token-partial`** EVEN WHERE NO RANGE COULD BE
   DERIVED: a scoped GREEN says nothing failed among the spec files it

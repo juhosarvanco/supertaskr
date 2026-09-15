@@ -4025,9 +4025,50 @@ function attempted(stub: RitualStub, plan: ReturnType<typeof dispatchLanePlan>, 
   }
 }
 
+/**
+ * THE ROOT THE STUB BODIES BELOW PLAN AT, and it is a fixture's rather
+ * than this project's (T-330).
+ *
+ * `stubPlan` planned at the LIVE root, and that quietly made every body
+ * below a body about THIS PROJECT'S CONFIGURATION OF THE DAY. The plan
+ * resolves the lane-cut admission against the dispatch block it finds at
+ * the root it is given, so on the day an owner's grant was recorded here
+ * fifteen bodies refused a card the grant does not name — a refusal about
+ * the board, arriving in bodies written about the ritual's step
+ * sequencing, which had no opinion about the board at all. The fixture's
+ * own template carries no dispatch block (`seedFixtureTemplate`), so no
+ * grant this project ever records can reach them.
+ *
+ * ONE FIXTURE, BUILT ONCE AND SHARED, and the sharing is safe BY
+ * CONSTRUCTION rather than by care: every body below drives the ritual
+ * through `ritualStub`, whose io answers every command, read and write
+ * out of its own arrays and touches no disk at all — so no body can move
+ * the tree another body reads. It is built LAZILY, so a run that selects
+ * none of these bodies pays for none of it, and removed in `afterAll`,
+ * which is what a shared fixture owes in place of the `finally` a
+ * per-body fixture carries.
+ */
+let stubFx: RitualFixture | undefined;
+
+function stubFixture(): RitualFixture {
+  if (stubFx === undefined) stubFx = ritualFixture("stub");
+  return stubFx;
+}
+
+test.afterAll(() => {
+  if (stubFx === undefined) return;
+  removeGitFixture(stubFx.dir, "ritualFixture(stub)");
+  stubFx = undefined;
+});
+
 /** The plan every per-step body drives, over a card this board really holds. */
 function stubPlan(): ReturnType<typeof dispatchLanePlan> {
-  return dispatchLanePlan(context({}), { taskId: "T-133", slug: FIXTURE_SLUG, scratch: os.tmpdir() });
+  const fx = stubFixture();
+  return dispatchLanePlan(context({ root: fx.root }), {
+    taskId: "T-133",
+    slug: FIXTURE_SLUG,
+    scratch: os.tmpdir(),
+  });
 }
 
 for (const step of DISPATCH_STEPS) {

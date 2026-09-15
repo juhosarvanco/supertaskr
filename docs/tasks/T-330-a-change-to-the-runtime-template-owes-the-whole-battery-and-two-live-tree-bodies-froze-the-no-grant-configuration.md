@@ -54,16 +54,20 @@ THE DERIVATION NOW PLACES THE TEMPLATE. `tools/e2e/scripts/gate-run.mjs`
 gained an arm for `method/runtime/`, composed the way the docs arm beside
 it is: a reader map, each reader placed through the package roots, and the
 end-to-end leg narrowed through the same `owningSpecs`. The map is derived
-from the source corpus and not listed — a file that SPELLS the path, as one
-literal or as the segments a `path.join` is given, or that names an
+from the source corpus and not listed — a file that SPELLS the path, as
+one literal or as the segments a `path.join` is given, or that names an
 identifier a speller BINDS to it. That identifier half is load-bearing:
 what the arm and the bodies open is the parser library's
 `RUNTIME_TEMPLATE` constant rather than a path they spell, so a
 literal-only scan finds the library and misses every body that drives it.
-Measured at `801da9a2`: eleven readers — the parser's settings reader, its
-two barrels and its own test; the kit, which embeds the file with
-`include_str!`; the arm; the settings command; the token scan; and the
-three specs that drive them. The whole-battery fallback is kept for
+Measured at `43a330ff` by calling `settingsReaders` on this tree: TWELVE
+readers — the parser's settings reader, its two barrels and its own test;
+the kit, which embeds the file with `include_str!`; the arm; the settings
+command; the token scan; and the FOUR specs that drive them, which are
+`brief`, `cli`, `gate-run` and `run-record`. An earlier reading of this
+line said eleven over three specs and undercounted `run-record.spec.ts`,
+which reaches the template through the same `RUNTIME_TEMPLATE` identifier
+every other body does. The whole-battery fallback is kept for
 everything still unplaceable, and three bodies in `gate-run.spec.ts` hold
 it there: a settings path nobody asked the scan about, one the scan finds
 no reader for, and a reader lying under no package root.
@@ -75,8 +79,9 @@ runtime template — which is exactly the shape of the approved grant:
   WHOLE at 42 spec files. Measured whole at this tip: 1215 bodies, 21.5
   minutes wall, 20.2 minutes of body time, one worker.
 - After: four suites, DERIVED, with the leg narrowed to 22 of 42 spec
-  files. Measured: 1125 bodies, 21.9 minutes wall, 19.6 minutes of body time — 3 failed,
-  1122 passed, and the three are the attributed ones named below.
+  files. Measured: 1125 bodies, 21.9 minutes wall, 19.6 minutes of body
+  time — 3 failed, 1122 passed, and the three are the attributed ones
+  named below.
 
 **AND THE SAVING IS SMALL, WHICH THE CARD SHOULD SAY OUT LOUD RATHER THAN
 BURY.** The narrowed selection is 97% of the leg's body time, because
@@ -96,9 +101,9 @@ the runtime template to cost less than twenty minutes is a card about
 
 A RECORDS-ONLY CHANGE, for comparison, measured the same way: this card
 re-triaged owes three suites with the leg at 12 of 42 spec files, 734
-bodies, 6.4 minutes wall and the same in body time. This card does not move that
-answer — the docs arm already derived it — and the completion time of a
-records-only push belongs to the push that lands it.
+bodies, 6.4 minutes wall and the same in body time. This card does not
+move that answer — the docs arm already derived it — and the completion
+time of a records-only push belongs to the push that lands it.
 
 NO CHECK WAS DROPPED, AND THE NARROWING IS SHOWN TO CATCH A CONFIGURATION
 DEFECT. Nothing was removed from any selection: the narrowing is a
