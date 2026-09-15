@@ -34,6 +34,15 @@ The closing check measured a wider coupling than those two bodies: 35 bodies red
 - Before any check is dropped from the selection, a planted configuration defect (a wrong mode, a stale blob, a card missing from the map) is shown to be caught by the narrowed selection; the current checks stay intact until then.
 - A records-only change (a card filed, a card re-triaged) exercises the parser, the board invariants and the consumers it actually affects, with a measured, short completion target recorded on this card when it lands.
 
+## Acceptance criteria
+
+- WHEN the owed-set derivation meets a change to the runtime template THE derivation SHALL place the template with its consumers (the settings reader, the arm's grant and roles readers, and the bodies that drive them) and SHALL keep the fail-closed whole-battery answer for an input it cannot place.
+- WHEN a body tests a settings combination, the no-grant state among them, THE body SHALL read a controlled fixture template and never this project's live configuration, and a fixture that seeds a dispatch SHALL write its own template rather than copy the live one.
+- WHEN the real template carries a grant THE focused integration check SHALL validate it through the parser's reader (present, mode, recovery, revision, every card of the order with a blob that matches the card at the approval ref, the admission's mechanical drift allowed) and SHALL refuse a planted defect by name (a wrong mode, a blob stale beyond mechanical drift, a card missing from the map).
+- WHEN the repair is verified THE verification SHALL exercise the approved grant on the tree: fixture dispatches stay independent of it and the focused check validates it, and no requirement that an approved card stays byte-identical beyond the admission's mechanical drift is introduced.
+- WHEN a narrowed selection is proposed THE card SHALL report the checks selected and the elapsed time before and after, for the grant change and for a card-only change, and SHALL drop no check before a planted configuration defect is shown caught by the narrowed selection.
+- WHEN a records-only change is pushed after this card lands THE card SHALL record its measured completion time and SHALL promise nothing about administrative pushes in general.
+
 ## Implementation notes
 
 The approved grant (revision 1, the owner's yes at 2026-09-15T07:22:18Z, validated through the parser's reader) is prepared as a commit and a patch in the evidence directory and lands with this card's merge, when the bodies and the fixtures have moved off the live template; until then the tree stays in the no-grant state and the express demonstration waits.
