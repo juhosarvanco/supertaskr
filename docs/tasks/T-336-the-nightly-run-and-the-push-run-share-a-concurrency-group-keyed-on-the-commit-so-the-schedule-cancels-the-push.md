@@ -9,13 +9,27 @@ priority: 1
 status: verifying
 suggested_by: "the architect seat on 2026-09-15, from the cancellation of the T-331 landing push's own CI run; observed twice, on 2026-09-14 and 2026-09-15, and read from the runs' own event fields rather than inferred"
 blocked_by: []
-touches: [.github/workflows/ci.yml, tools/e2e/tests/workflow-parity.spec.ts]
+touches: [.github/workflows/ci.yml, tools/e2e/tests/workflow-parity.spec.ts, .claude/hooks/push-guard.mjs, tools/e2e/tests/push-guard.spec.ts]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
 ---
+
+## Fence widening, 2026-09-15
+
+Widened by the architect seat on the lane's ask, both halves in one act: the two paths added above, and the lane's own fence manifest rewritten to match.
+
+WHY. The lane measured that criteria 1 to 3 sit wholly inside the original fence, and that the last criterion does not: the only thing in this repository that reads a run's conclusion and says anything to a seat is the pre-push guard, which the fence did not carry. Two of that criterion's three halves already hold and are already pinned — a cancelled run is deliberately out of the announced-red set, and it is in the non-verdict set so the newest-verdict search skips it. The half that does not hold is the naming: the guard reports a COUNT of runs that reached no verdict, never the cancelled run's identifier and never the displacing run's, and it prints even that only when the verdict it finally finds is not a success, so a cancellation sitting in front of a green is silent. The guard could not name the displacing run today in any case, because the run-list field set it asks for does not include the event, and after this card's own repair the displacing run is the newer run with the same commit AND the same event.
+
+The seat verified each of those readings against the tree before ruling rather than taking them from the ask.
+
+WHY NOT THE OTHER TWO ANSWERS. Ruling the criterion satisfied by its two holding halves would leave a criterion whose main clause — reported as a displacement naming the displacing run — is performed by nothing in the tree, which is the letter-over-purpose shape this project's whole verification apparatus exists to catch, and the shape that gets copied once it is allowed. Splitting it into a follow-up card is honest but spends a whole further lane on a build the ask scopes as a field added to a list, a derivation beside an existing one, a notice, and its bodies.
+
+THE LIMITS OF THIS WIDENING, WHICH ARE PART OF THE GRANT. It is for the last criterion only. T-333's repair now sits inside this fence, and it is NOT to be performed here: that card is already filed with its own criteria, and performing it as a follow-through would orphan the card and put work in this diff that no criterion of this card asked for. The three lane-local reds it describes are still reported and still not this lane's. Nothing else outside the original fence is opened.
+
+WHAT IT COSTS, RECORDED SO THE NEXT SEAT IS NOT SURPRISED. T-333's fence is now a subset of this card's, so T-333 cannot be dispatched while this lane is live. The widened fence stays disjoint from T-330, which is live beside this lane, and from T-332 and T-335.
 
 ## The finding
 
