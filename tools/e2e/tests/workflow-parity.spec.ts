@@ -22,7 +22,17 @@ import { CI_WORKFLOW_REL_PATH, stepWorkingDirectory } from "../../../.claude/hoo
 // stay quiet. It is also why a change to gate-run.mjs now owes this
 // spec through the owning-spec map: the dependency is real, so it is
 // recorded the way every other one is.
-import { ALL_SUITES, GRADED_SUITES, SCOPED_SUITE } from "../scripts/gate-run.mjs";
+// T-331 adds `PACKAGE_ROOTS` and `specReach`: the `owed` job's own
+// derivation walks the static import graph, so what that walk REACHES
+// is what the job has to have prepared — read from the derivation
+// itself rather than transcribed as a list of build outputs.
+import {
+  ALL_SUITES,
+  GRADED_SUITES,
+  PACKAGE_ROOTS,
+  SCOPED_SUITE,
+  specReach,
+} from "../scripts/gate-run.mjs";
 // ...and the argv the runner's own derivation step sends, so the
 // criterion's spelling is READ from the sender rather than retyped.
 import { owedSetArgv } from "../scripts/ci-owed.mjs";
@@ -1156,6 +1166,232 @@ test("FIXTURE: three one-edit mutants of the owed job — the id dropped, a payl
 
   // THE POSITIVE CONTROL: the round trip alone changes nothing.
   expect(owedJobProblems(clone())).toEqual([]);
+});
+
+// ── THE PREPARATION THE DERIVATION WALKS (T-331) ─────────────────────
+//
+// THE `owed` JOB IS THE ONE JOB THAT READS A TREE WITHOUT BUILDING IT,
+// and until T-331 that was invisible. `gate-run.mjs --owed-set` walks
+// the static import graph out from every spec file; a relative import
+// that lands on no file is `unresolved`, and ONE unresolved edge
+// anywhere makes the whole answer fail closed to the battery. Since
+// T-317 two specs import `lib/parser/dist/pure.js` — a file `npm run
+// build` writes and a fresh checkout does not carry — so every push
+// answered all four suites and all 42 specs, and the 37-minute shard
+// that measured it was measuring the runner's build order.
+//
+// WHAT IS PINNED HERE IS NOT THAT FILE. A body naming
+// `lib/parser/dist/pure.js` would be a second copy of an import
+// statement, true until somebody edits the spec and useless the day a
+// DIFFERENT package's build output is imported — which is the same
+// silence this card is closing, moved one file along. So the generated
+// inputs are DERIVED FROM THE TREE, by the same reading the derivation
+// itself takes, and the job is held to preparing whatever that reading
+// names.
+
+/**
+ * Every file the owed-set derivation's import walk reaches that a FRESH
+ * CHECKOUT would not carry, repo-relative and sorted.
+ *
+ * TRACKEDNESS IS THE TEST, and it is the honest one: a fresh runner
+ * checks out exactly the tracked tree, so "reached by the walk and not
+ * tracked" IS "present on this machine and absent on the runner". It
+ * needs no list of build outputs and no guess about what `npm run
+ * build` writes — asking git is asking the same question the checkout
+ * answers.
+ *
+ * THE WALK IS `specReach`'S OWN, imported rather than re-implemented,
+ * so a change to what the derivation reaches is a change to what this
+ * body requires prepared, on the same day and in one place.
+ */
+export function generatedInputsOfTheDerivation(root: string = repoRoot): string[] {
+  const { reach } = specReach(root);
+  const reached = new Set<string>();
+  for (const files of Object.values(reach)) for (const f of files) reached.add(f);
+  const ls = spawnSync("git", ["-C", root, "ls-files", "-z"], {
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  if (ls.status !== 0) {
+    throw new Error(
+      `git ls-files failed in ${root} (${String(ls.status)}): ${String(ls.stderr ?? "").trim()}. ` +
+        "Without the tracked set this body cannot tell a generated input from a committed " +
+        "one, and a reading that silently answered `none` would pass by knowing nothing.",
+    );
+  }
+  const tracked = new Set(String(ls.stdout ?? "").split("\0").filter((s) => s !== ""));
+  return [...reached].filter((f) => !tracked.has(f)).sort();
+}
+
+/**
+ * The package root each generated input lies under — the LONGEST one,
+ * on `suiteOfPath`'s own rule, because a package inside a package is
+ * built by its own command.
+ *
+ * An input under NO package root is returned under the key `""`, which
+ * `owedPreparationProblems` turns into a refusal rather than into
+ * silence: this reading cannot say what would build it.
+ */
+export function packagesToPrepare(
+  generated: string[],
+  roots: Readonly<Record<string, string>> = PACKAGE_ROOTS,
+): Map<string, string[]> {
+  const out = new Map<string, string[]>();
+  for (const file of generated) {
+    let best = "";
+    for (const dir of Object.values(roots)) {
+      if (file !== dir && !file.startsWith(`${dir}/`)) continue;
+      if (dir.length > best.length) best = dir;
+    }
+    out.set(best, [...(out.get(best) ?? []), file]);
+  }
+  return out;
+}
+
+/** The two commands a package is prepared with, in CONVENTIONS' own order. */
+const PREPARE_INSTALL = "npm ci";
+const PREPARE_BUILD = "npm run build";
+
+/**
+ * Where the `owed` job's PREPARATION has come apart — a SECOND
+ * derivation beside `owedJobProblems`, deliberately, because a function
+ * that reds twice for one edit cannot say which of the two properties
+ * it was pinning (method/roles/verifier.md 2b). That one is about the
+ * job asking the question correctly; this one is about the tree it
+ * asks over.
+ *
+ * Takes the job and the generated set so a fixture can feed it either.
+ */
+export function owedPreparationProblems(
+  job: WorkflowJob | undefined,
+  generated: string[],
+): string[] {
+  if (job === undefined) {
+    return [`.github/workflows/ci.yml has no \`${OWED_JOB}\` job to prepare anything in.`];
+  }
+  const problems: string[] = [];
+  const asksAt = job.steps.findIndex((s) => (s.run ?? "").trim().startsWith(OWED_STEP_RUN));
+  if (asksAt === -1) {
+    // `owedJobProblems` is what says this, and says it better. Here it
+    // only means there is no "before the question" to place steps in.
+    return problems;
+  }
+  for (const [dir, files] of packagesToPrepare(generated)) {
+    const named = `${files.slice(0, 3).join(", ")}${files.length > 3 ? `, +${String(files.length - 3)} more` : ""}`;
+    if (dir === "") {
+      problems.push(
+        `the derivation walks ${String(files.length)} generated file(s) under no package ` +
+          `root at all (${named}). This reading cannot say which command would write ` +
+          "them, so it cannot say whether the job prepares them — place the file under " +
+          "a graded package, or teach this derivation the relationship.",
+      );
+      continue;
+    }
+    for (const cmd of [PREPARE_INSTALL, PREPARE_BUILD]) {
+      const at = job.steps.findIndex(
+        (s) => (s["working-directory"] ?? "") === dir && (s.run ?? "").trim() === cmd,
+      );
+      if (at === -1) {
+        problems.push(
+          `the \`${OWED_JOB}\` job never runs \`${cmd}\` in \`${dir}\`, and its own ` +
+            `derivation walks ${String(files.length)} file(s) that only exist once it ` +
+            `does (${named}). An import that lands on no file is \`unresolved\`, and one ` +
+            "unresolved edge makes the whole answer fail closed to the battery — so " +
+            "without this step every push runs every suite and every spec, correctly " +
+            "and for a reason about this runner rather than about the range.",
+        );
+        continue;
+      }
+      if (at > asksAt) {
+        problems.push(
+          `the \`${OWED_JOB}\` job runs \`${cmd}\` in \`${dir}\` at step ${String(at)}, AFTER ` +
+            `the step that asks at ${String(asksAt)}. The derivation reads the tree as it ` +
+            "stands when it runs; a preparation that lands afterwards prepares the tree " +
+            "for nobody.",
+        );
+      }
+    }
+  }
+  return problems;
+}
+
+test("the planning job prepares the tree its own derivation walks, so the fallback is never the runner's build order", () => {
+  const { jobs } = loadWorkflow();
+  const generated = generatedInputsOfTheDerivation();
+
+  // THE CENSUS BEFORE ITS ZERO. An empty set would make the check below
+  // pass by requiring nothing, and it is a REAL possibility — a spec
+  // that stopped importing a build output would empty it honestly. So
+  // the count is asserted rather than assumed, and the PACKAGES are
+  // named: that set moves only when a genuinely new coupling arrives,
+  // which is exactly the event a person should be made to look at.
+  expect(
+    generated.length,
+    "the owed-set derivation reaches files a fresh checkout does not carry — an empty " +
+      "set here means either the coupling is gone (then retire this keeper on purpose) " +
+      "or the reading broke (then it is pinning nothing)",
+  ).toBeGreaterThan(0);
+  expect(
+    [...packagesToPrepare(generated).keys()].sort(),
+    "every generated input the derivation walks lies under ONE package today. A second " +
+      "entry here is a new build output on the import graph, and the `owed` job owes it " +
+      "the same two steps",
+  ).toEqual(["lib/parser"]);
+
+  expect(
+    owedPreparationProblems(
+      jobs.find((j) => j.id === OWED_JOB),
+      generated,
+    ),
+    "T-331 criterion 1: the planning job has the parser library's built entry present " +
+      "before the derivation walks the import graph",
+  ).toEqual([]);
+});
+
+test("FIXTURE: four one-edit mutants of the planning job's preparation — the build dropped, the install dropped, the build moved after the question, a generated input under no package — each red BY NAME", () => {
+  const { jobs } = loadWorkflow();
+  const owed = jobs.find((j) => j.id === OWED_JOB)!;
+  const generated = generatedInputsOfTheDerivation();
+  expect(owedPreparationProblems(owed, generated), "the real job prepares clean").toEqual([]);
+
+  const clone = (): WorkflowJob => JSON.parse(JSON.stringify(owed)) as WorkflowJob;
+  const indexOf = (job: WorkflowJob, cmd: string): number =>
+    job.steps.findIndex(
+      (s) => (s["working-directory"] ?? "") === "lib/parser" && (s.run ?? "").trim() === cmd,
+    );
+
+  // 1. THE BUILD DELETED — the state this card found CI in.
+  const noBuild = clone();
+  noBuild.steps.splice(indexOf(noBuild, PREPARE_BUILD), 1);
+  expect(owedPreparationProblems(noBuild, generated).join("\n")).toContain(
+    "never runs `npm run build` in `lib/parser`",
+  );
+
+  // 2. THE INSTALL DELETED — `npm run build` is `tsc`, and `tsc` lives
+  //    in the install, so a build without one writes nothing.
+  const noInstall = clone();
+  noInstall.steps.splice(indexOf(noInstall, PREPARE_INSTALL), 1);
+  expect(owedPreparationProblems(noInstall, generated).join("\n")).toContain(
+    "never runs `npm ci` in `lib/parser`",
+  );
+
+  // 3. THE BUILD MOVED AFTER THE QUESTION — present, and useless, which
+  //    is the mutant a presence-only check would pass.
+  const late = clone();
+  const [build] = late.steps.splice(indexOf(late, PREPARE_BUILD), 1);
+  late.steps.push(build!);
+  expect(owedPreparationProblems(late, generated).join("\n")).toContain(
+    "AFTER the step that asks",
+  );
+
+  // 4. A GENERATED INPUT UNDER NO PACKAGE ROOT — the job cannot prepare
+  //    what this reading cannot place, and saying so is the refusal.
+  expect(
+    owedPreparationProblems(clone(), [...generated, "generated/nowhere-T-331.js"]).join("\n"),
+  ).toContain("under no package root at all");
+
+  // THE POSITIVE CONTROL: the round trip alone changes nothing.
+  expect(owedPreparationProblems(clone(), generated)).toEqual([]);
 });
 
 // ── THE SHARDS (T-294 criterion 1) ───────────────────────────────────
@@ -3021,10 +3257,26 @@ test("every workflow step's package is readable by the push guard and is in the 
 
 test("FIXTURE: renaming a step in a copy of ci.yml degrades the guard's lookup BY NAME", () => {
   const raw = readFileSync(path.join(repoRoot, CI_WORKFLOW_REL_PATH), "utf8");
+  // THE VICTIM IS CHOSEN FOR BEING WRITTEN ONCE (T-331), not taken
+  // first and then hoped to be. This fixture renames by a single
+  // `raw.replace`, so a victim whose name several jobs share would
+  // rename ONE site and leave the others — a different experiment from
+  // the one below, and the assertion under it would be reporting the
+  // workflow's shape rather than the guard's behaviour. The first named
+  // step carrying a `working-directory` was unique BY LUCK until the
+  // `owed` job gained the parser preparation; from that commit the
+  // first such step is one of six named `parser install`, and this body
+  // red on its own precondition rather than on anything it pins.
+  const nameSites = (name: string): number => raw.split(`name: ${name}`).length - 1;
   const victim = stepSites([{ rel: CI_WORKFLOW_REL_PATH, raw }]).find(
-    (s) => s.name !== undefined && s.dir !== undefined,
+    (s) => s.name !== undefined && s.dir !== undefined && nameSites(s.name) === 1,
   );
-  expect(victim, "ci.yml has a named step carrying a `working-directory`").toBeDefined();
+  expect(
+    victim,
+    "ci.yml has a named step that carries a `working-directory` and is written once — " +
+      "without one this fixture cannot make a SINGLE-site rename, and it would be " +
+      "measuring two edits",
+  ).toBeDefined();
   const oldName = victim!.name!;
   const dir = victim!.dir!;
 

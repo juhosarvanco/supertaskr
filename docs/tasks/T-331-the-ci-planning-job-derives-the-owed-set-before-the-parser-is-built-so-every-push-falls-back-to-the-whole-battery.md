@@ -35,4 +35,65 @@ The planning job prepares what its derivation walks: the parser installed and bu
 
 ## Implementation notes
 
+2026-09-15, the executor. The repair is the remedy this card names at the
+head of "What would settle it": the planning job now prepares what its
+derivation walks. `.github/workflows/ci.yml`'s `owed` job gained the two
+steps the `checks` job has run since T-317, `npm ci` and `npm run build`
+in `lib/parser`, placed before the step that asks, with the npm cache
+keyed on that package's lockfile; the derivation itself is untouched, so
+the fail-closed answer is the same code path it always was. The other
+remedy the card offers, resolving a generated entry through its build
+relationship, would have meant editing `tools/e2e/scripts/gate-run.mjs`,
+which this lane's fence does not carry.
+
+Measured at the base commit in the lane worktree, which begins with
+nothing installed and nothing built: the walk reports two unresolved
+edges, `tools/e2e/tests/brief.spec.ts` and `tools/e2e/tests/cli.spec.ts`
+each importing `lib/parser/dist/pure.js`. After those two steps and
+nothing else, zero. The two commands took 0.91 s and 0.69 s on this
+machine with a warm npm cache.
+
+The whole job was then run as the runner runs it, through
+`tools/e2e/scripts/ci-owed.mjs` with the event environment of the push
+this card was written from, over a stand-in tree holding exactly the
+generated files the walk reaches and over one withholding them. Without
+them the job writes `suites=app,e2e,parser,rust`, `e2e-whole=true`,
+`spec-count=42`, `shard-count=4` and `run-boot=true`, and its log carries
+the card's own sentence naming both edges. With them it writes
+`suites=app,e2e,parser`, `e2e-whole=false`, `spec-count=12`,
+`run-rust=false` and `run-boot=false` — the answer the integration
+checkout gives for that range, suite for suite and spec for spec. The
+saving is wider than the spec count alone: the rust leg and the boot
+check, with its apt prerequisites and its cargo build, are skipped too.
+
+Two keepers, both derived rather than listed. In
+`tools/e2e/tests/workflow-parity.spec.ts` the generated inputs are read
+off the tree — every file the derivation's own walk reaches that `git
+ls-files` does not carry — and the `owed` job is held to installing and
+building each one's package before it asks; a build output from a second
+package arriving on the import graph reds there rather than quietly
+restoring the battery. In `tools/e2e/tests/gate-run.spec.ts` a body takes
+the integration checkout's answer for the range through `owedForRange`,
+then derives the same range over a tree with those files withheld and
+over one with them restored: the withheld arm fails closed and names both
+edges, and the restored arm matches the checkout exactly. Each keeper
+carries its own mutant fixture and its own positive control.
+
+One body outside this card's subject was red by this change and is
+repaired in place. The rename fixture in
+`tools/e2e/tests/workflow-parity.spec.ts` chose its victim as the earliest
+named step carrying a `working-directory` and then asserted that name was
+written once; that held by luck until the `owed` job gained a step whose
+name five other jobs already share. The fixture now chooses a victim whose
+name is written once, which is what a single-site rename always required.
+The class is a fixture selecting its subject by position and asserting a
+property the position does not guarantee; the sweep over both fenced specs
+found no other site.
+
+The two figures the third criterion asks for are the seat's to take: they
+are properties of a push that has not happened, and this lane records none
+of them rather than inventing one. The merge also owes `npm run
+capabilities`, because this card adds test names and the census is
+generated from them.
+
 ## Verdicts
