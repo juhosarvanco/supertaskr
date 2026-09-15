@@ -4071,6 +4071,39 @@ function stubPlan(): ReturnType<typeof dispatchLanePlan> {
   });
 }
 
+test("NO DISPATCH THIS SUITE PLANS IS JUDGED BY THIS PROJECT'S OWN CONFIGURATION — every planned dispatch names the root it plans at", () => {
+  // THE PROPERTY T-330's REPAIR ESTABLISHED, PINNED SO THAT INSPECTION
+  // DOES NOT HAVE TO CATCH IT TWICE. `dispatchLanePlan` resolves the
+  // lane-cut admission against the dispatch block it finds AT THE ROOT IT
+  // IS GIVEN, so a call handed a context built with no root plans against
+  // whatever this project happens to be configured to on the day it runs.
+  // One such call survived a whole verification here and cost fifteen
+  // bodies the day the owner's grant was recorded — bodies written about
+  // the ritual's step sequencing, refused by the board, which had no
+  // opinion about the board at all. Nothing mechanical would have caught
+  // the sixteenth, and this is that mechanism.
+  //
+  // KILLED BY: a new call that plans at this checkout's own root, a call
+  // handed a context variable that was built without one, and a scan that
+  // finds no call sites at all — which would make the containment vacuous.
+  const src = readFileSync(path.join(repoRoot, "tools/e2e/tests/brief.spec.ts"), "utf8");
+  const sites = [...src.matchAll(/dispatchLanePlan\(\s*([^,)]*)[,)]/g)].map((m) => (m[1] ?? "").trim());
+  expect(sites.length, "no dispatch is planned in this file, so this body is vacuous").toBeGreaterThan(0);
+  const unrooted = sites.filter((arg) => {
+    if (arg === "" || arg.includes("root")) return false;
+    // A NAMED CONTEXT IS RESOLVED RATHER THAN REFUSED: a site may hand
+    // over a variable, and what decides the question is where THAT was
+    // built, not whether the call spelled the root itself.
+    const name = arg.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return !new RegExp(`\\b(?:const|let)\\s+${name}\\s*=\\s*context\\(\\{[^}]*root`).test(src);
+  });
+  expect(
+    unrooted,
+    "a dispatch is planned at this checkout's own root, where this project's own configuration judges it",
+  ).toEqual([]);
+});
+
+
 for (const step of DISPATCH_STEPS) {
   test(`THE RITUAL STOPS AT STEP ${step.n} (${step.id}) and performs no later step`, () => {
     // KILLED BY: a runner that continues past a failed step, one that
