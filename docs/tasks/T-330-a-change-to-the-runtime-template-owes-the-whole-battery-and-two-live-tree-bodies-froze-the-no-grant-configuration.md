@@ -25,7 +25,7 @@ The owed-set derivation fails closed on the runtime template: the path lies unde
 
 Two bodies read the LIVE template and assert the no-grant state as a property of this project: "this project's template carries no grant" in the CLI spec and "this project's own tree is the explicit no-grant state" in the brief spec. Their own comments say they move on the day a migration grant is approved; that day came, and the approved configuration now contradicts them, so an ordinary configuration change reds bodies that froze yesterday's configuration.
 
-The closing check measured a wider coupling than those two bodies: 35 bodies red, almost all of them fixture-driven rituals, because the fixtures seed their scratch roots by copying the LIVE runtime template, so the real grant judged every fixture dispatch and refused each fixture card by name as one the grant does not list. A fixture that inherits the project's configuration tests the project's configuration, not the behaviour it was written for.
+The coupling is wider than those two bodies, because the fixtures seed their scratch roots by copying the LIVE runtime template, so the real grant judged every fixture dispatch and refused each fixture card by name as one the grant does not list. RE-DERIVED at `eca49471` with the approved grant's prepared patch applied to the working tree, the end-to-end leg is 22 failed and 1188 passed over 1210 bodies — 21 in `brief.spec.ts` and one in `cli.spec.ts`. The closing check that first raised this reported 35 and nobody re-derived it; 22 is the figure that carries a ref, and the 35 stands as a reading taken elsewhere under conditions this card cannot restate. A fixture that inherits the project's configuration tests the project's configuration, not the behaviour it was written for.
 
 ## What would settle it
 
@@ -140,6 +140,57 @@ allowed and a rewritten criterion is not; where there is none it reads out
 the explicit no-grant state in as many words. The tree is still that
 no-grant state, which is the point of the card.
 
+THE REJECTION ARC, 2026-09-15: ONE UN-ROOTED DISPATCH WAS THE WHOLE OF
+IT. The independent verifier met criteria 1, 2, 3 and 5 and rejected on 4,
+for a cause this card had already named and the first pass had left
+standing in one place. `stubPlan` in `brief.spec.ts` planned at the LIVE
+root through `context({})`, and `dispatchLanePlan` resolves the lane-cut
+admission against the dispatch block it finds at the root it is given — so
+with the approved grant on the tree, the eleven-body step loop and the
+four bodies beside it refused the lane-cut admission of T-133 as a card
+the grant does not name. Fifteen bodies written about the ritual's step
+sequencing were being judged by the board. Every other dispatch site in
+that file already named a root; this one now does too, a fixture root
+whose template carries no dispatch block, so the independence is the same
+mechanical one the fixtures already had.
+
+THE FIXTURE IS BUILT ONCE AND SHARED, AND THAT IS SAFE BY CONSTRUCTION
+RATHER THAN BY CARE: every one of those bodies drives the ritual through
+`ritualStub`, whose io answers each command, read and write out of its own
+arrays and touches no disk, so no body can move the tree another body
+reads. It is built lazily, so a run selecting none of them pays for none
+of it, and removed in `afterAll` — what a shared fixture owes in place of
+the `finally` a per-body fixture carries, and verified by finding no
+fixture left in the temp directory after a whole leg. A fixture per body
+was the alternative, measured at about 1.3 seconds each: fifteen
+whole-tree copies to answer a question about a pure plan.
+
+THE MEASUREMENT, TAKEN THE WAY THE VERDICT TOOK IT — a throwaway detached
+worktree, the prepared patch (`sha256:1f3da850…`) applied to the working
+tree and never committed, one worker:
+
+- `43a330ff`, the rejected tip, grant applied: `brief.spec.ts` 15 failed,
+  215 passed, exit 1 — the same fifteen the verdict names.
+- `489d06d6`, this repair, grant applied: `brief.spec.ts` 230 passed, 0
+  failed, exit 0. The body count is identical either way, so nothing was
+  dropped to reach it.
+- `489d06d6`, grant applied, THE WHOLE END-TO-END LEG: 1215 passed, exit
+  0, against the baseline `Running 1215 tests using 1 worker` — and the
+  summary carries no `N failed` line at all.
+- `eca49471`, grant applied, the whole leg: 22 failed, 1188 passed, which
+  is the finding's figure re-derived and is where the 22 above comes from.
+
+The tree this card leaves behind is still the explicit no-grant state.
+The grant lands with the merge, by the seat's hand and not this lane's.
+
+THE THREE PROSE FIGURES THE VERDICT CORRECTED. The reader count above is
+re-derived from `settingsReaders` at `43a330ff` and is twelve over four
+specs; the earlier eleven-over-three undercounted `run-record.spec.ts`.
+The finding's coupling figure now carries the ref and the conditions it
+was measured at. The three lines that broke their files' own wrap — one of
+118 characters in `gates-and-the-push.md`, two in these notes — are
+rewrapped, changing no words. Criteria 1, 2, 3 and 5 were not reopened.
+
 THREE RED BODIES IN THIS LANE ARE ATTRIBUTED AND ARE NOT THIS DIFF'S.
 `push-guard.spec.ts`'s three `--take-seat` bodies fail in any FENCED lane
 worktree with `EACCES` copying `docs/CONVENTIONS.md`: `seatFixture` copies
@@ -156,7 +207,8 @@ which is mode-independent and keeps the derived list.
 
 THE BEHAVIOUR CENSUS MOVES WITH THIS DIFF and its regeneration is the
 merge's: `capabilities:check` reads STALE at this tip, 115997 bytes
-committed against a 116595-byte generation. `docs/INDEX.md` is current and
-does not move.
+committed against a 116892-byte generation — the repair pass moved that
+second figure from 116595, which is the only thing about this note the
+rejection arc changed. `docs/INDEX.md` is current and does not move.
 
 ## Verdicts
