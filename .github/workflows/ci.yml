@@ -94,18 +94,50 @@ on:
 # cancel the other, every pushed tree gets its own verdict, and nobody
 # waits.
 #
+# AND THE EVENT IS IN THE KEY BECAUSE THE COMMIT ALONE WAS NOT ENOUGH
+# (T-336). A commit tells one push from the next; it does not tell a
+# push from ANOTHER TRIGGER ARRIVING ON THE SAME COMMIT. The nightly
+# grades whatever the tip is, and the tip is the commit the last push
+# just created — same workflow, same sha, therefore the same group, and
+# whichever run starts later cancels the one already going. Observed
+# twice, both read from the runs' own `event` fields: on 2026-09-14 the
+# push run on 37d89ff7 was cancelled while the schedule run on that
+# same commit succeeded; on 2026-09-15 the push run on ee5bae19 was
+# cancelled thirteen minutes into its end-to-end shard with eight of
+# its ten jobs already successful. AND THE CRON IS WRITTEN FOR THE
+# SMALL HOURS WHILE THE SERVICE DELAYED BOTH RUNS INTO THE WORKING
+# WINDOW, so the nightly arrives while a seat is pushing rather than
+# while nobody is.
+#
+# WHAT THE PREVIOUS COMMENT GOT WRONG, KEPT HERE BECAUSE IT READ TRUE:
+# it argued that two runs over one sha "measure a byte-identical tree,
+# so the cancelled one loses no judgement that the survivor does not
+# reach". The TREE is identical and the QUESTION is not. A push run
+# answers what its own range owes; a schedule run answers the whole
+# battery; and it is the PUSH's verdict that the landing gate reads. A
+# survivor answering a different question discharges nothing — which is
+# why this defect cost a verdict rather than a duplicate.
+#
 # `cancel-in-progress` STAYS TRUE, deliberately, and now means the one
-# thing it should: a SECOND run over the SAME commit — a re-trigger, or
-# an event arriving for a sha a run already covers — supersedes the
-# first. Those two runs measure a byte-identical tree, so the cancelled
-# one loses no judgement that the survivor does not reach. A cancelled
-# run must never read as a judgement, and `.claude/hooks/push-guard.mjs`
-# is what holds that: `cancelled` is in its NON_VERDICT_CONCLUSIONS, so
-# the guard walks PAST a cancellation to the newest run that actually
-# concluded something rather than reporting the cancellation as CI's
-# answer.
+# thing it should: a second run of the SAME EVENT over the SAME commit
+# — a re-run, or a redelivered trigger for a sha that event already
+# covers — supersedes the first. THOSE two runs ask one question of one
+# tree, which is the collapse T-294 wanted and this key keeps.
+#
+# A cancelled run must never read as a judgement, and
+# `.claude/hooks/push-guard.mjs` is what holds that: `cancelled` is in
+# its NON_VERDICT_CONCLUSIONS, so the guard walks PAST a cancellation to
+# the newest run that actually concluded something rather than reporting
+# the cancellation as CI's answer.
+#
+# THE KEY IS KEPT BY A DERIVATION, NEVER BY THIS COMMENT.
+# `tools/e2e/tests/workflow-parity.spec.ts` enumerates the triggers
+# declared in `on:` above, renders this group once per trigger against a
+# single fixed commit, and reds BY NAME on any pair that lands in one
+# cancelling group — so a fifth trigger added without widening the key
+# fails the lane rather than silently restoring this defect.
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.sha }}
+  group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.sha }}
   cancel-in-progress: true
 
 env:

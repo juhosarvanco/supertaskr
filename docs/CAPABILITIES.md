@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1206 behaviours** — 1204 extracted sentences + 2 named-not-extracted (listed at the end) — across 42 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1208 behaviours** — 1206 extracted sentences + 2 named-not-extracted (listed at the end) — across 42 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -1294,6 +1294,8 @@ Census: **1206 behaviours** — 1204 extracted sentences + 2 named-not-extracted
 
 - ci.yml is valid YAML, and its job graph gates every graded suite on an output that exists
 - FIXTURE: four one-edit mutants of the job graph — an output misspelled, a `needs` dropped, a suite left with no switch, an unpinned runner — each red BY NAME
+- the concurrency key tells the declared triggers apart, and still collapses two runs of one trigger on one commit
+- FIXTURE: seven one-edit mutants of the concurrency key — the event dropped, the ref used instead, a trigger added under the old key, the cancellation switched off, a run-unique key, an unmodelled expression, an expression this keeper cannot split — each red BY NAME
 - the owed set is derived ON THE RUNNER, and its answer is what gates every leg
 - FIXTURE: three one-edit mutants of the owed job — the id dropped, a payload spliced into the script, a renamed output — each red BY NAME
 - the planning job prepares the tree its own derivation walks, so the fallback is never the runner's build order

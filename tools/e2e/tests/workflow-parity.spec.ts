@@ -1022,6 +1022,332 @@ test("FIXTURE: four one-edit mutants of the job graph — an output misspelled, 
   expect(jobGraphProblems(clone(), raw)).toEqual([]);
 });
 
+// ── THE CONCURRENCY KEY: WHICH RUNS MAY CANCEL WHICH (T-336) ─────────
+//
+// T-294 put the COMMIT in the group so that a new push would stop
+// cancelling the run measuring an older one, and for pushes it worked.
+// What a commit does not tell apart is ANOTHER TRIGGER ARRIVING ON THE
+// SAME COMMIT: the nightly grades whatever the tip is, and the tip is
+// the commit the last push just created — same workflow, same sha, one
+// group, and whichever run starts later kills the one already going.
+// Observed twice, both read from the runs' own `event` fields: on
+// 2026-09-14 the push run on 37d89ff7 was cancelled while the schedule
+// run on that same commit succeeded, and on 2026-09-15 the push run on
+// ee5bae19 was cancelled thirteen minutes into its end-to-end shard
+// with eight of its ten jobs already successful.
+//
+// WHAT DIED WAS A VERDICT, NOT A DUPLICATE. The two runs measure one
+// tree and they do not answer one question: a push run answers what its
+// own range owes, a schedule run answers the whole battery, and it is
+// the PUSH's verdict the landing gate reads. A cancelled run is also
+// neither green nor red, so the instruction to hold a lane branch until
+// CI is green waits on a verdict that will never arrive.
+//
+// THE KEEPER IS A DERIVATION OVER THE WORKFLOW'S OWN `on:` BLOCK and
+// never a list of trigger names kept here — that is the card's third
+// criterion, and the reason is that a list goes quiet exactly when a
+// trigger is added. It renders the declared group once per declared
+// trigger, holding every context value EQUAL except the event, and reds
+// BY NAME on any pair that renders to one string.
+
+/** The one context member that is GUARANTEED to differ between two triggers. */
+const GROUP_CONTEXT_EVENT = "github.event_name";
+
+/**
+ * The `github.*` context this keeper renders, and why every member of it
+ * is held EQUAL across the triggers rather than varied.
+ *
+ * THE CONSERVATIVE DIRECTION IS EQUALITY, because the question is
+ * whether two triggers COULD land in one cancelling group. A context
+ * value may only tell them apart if it is guaranteed to, and exactly one
+ * is — the event. `github.ref` is the member that looks like it
+ * distinguishes and does not: a push to main and the nightly schedule on
+ * main carry the identical ref, which is why the pre-T-294 ref-keyed
+ * group collided too and why a key that swapped the event for the ref
+ * would be this defect wearing a different spelling. `github.sha` is the
+ * defect's own premise — the two runs are on ONE commit.
+ *
+ * The values are placeholders and their CONTENT is never read: only
+ * whether two renderings come out equal.
+ */
+const GROUP_CONTEXT_HELD_EQUAL: Readonly<Record<string, string>> = Object.freeze({
+  "github.workflow": "ci",
+  "github.sha": "f".repeat(40),
+  "github.ref": "refs/heads/main",
+  "github.ref_name": "main",
+  "github.repository": "supertaskr/supertaskr",
+  "github.repository_owner": "supertaskr",
+});
+
+/**
+ * Context that is unique to a RUN.
+ *
+ * Keying the group on one of these is not this defect fixed — it is the
+ * COLLAPSE retired, silently and in the opposite direction: every run
+ * would hold a group of its own, so nothing supersedes anything and two
+ * runs of one event over one commit both run to the end. That is the
+ * card's second criterion, and it is checked here rather than asserted
+ * against a literal key.
+ */
+const GROUP_CONTEXT_RUN_UNIQUE: readonly string[] = Object.freeze([
+  "github.run_id",
+  "github.run_number",
+  "github.run_attempt",
+]);
+
+/**
+ * Render a `concurrency.group` template as ONE trigger would see it.
+ *
+ * What it cannot model it REPORTS rather than passes over: an expression
+ * nobody modelled is exactly where this defect comes back, and a
+ * renderer that silently left one alone would compare two triggers on a
+ * string that is identical for both and call the collision clean.
+ */
+function renderGroup(
+  template: string,
+  eventName: string,
+): { rendered: string; unmodelled: string[]; runUnique: string[] } {
+  const unmodelled: string[] = [];
+  const runUnique: string[] = [];
+  const rendered = template.replace(/\$\{\{([^{}]*)\}\}/g, (_match, body: string) => {
+    const expr = body.trim();
+    if (expr === GROUP_CONTEXT_EVENT) return eventName;
+    if (GROUP_CONTEXT_RUN_UNIQUE.includes(expr)) {
+      runUnique.push(expr);
+      return `<run-unique ${expr}>`;
+    }
+    const held = GROUP_CONTEXT_HELD_EQUAL[expr];
+    if (held !== undefined) return held;
+    unmodelled.push(expr);
+    return `<unmodelled ${expr}>`;
+  });
+  // AND AN EXPRESSION THIS PATTERN CANNOT EVEN SPLIT IS UNMODELLED TOO.
+  // `${{ format('{0}', github.sha) }}` carries braces of its own, so the
+  // substitution above never fires on it and the raw text would survive
+  // into the comparison — identical for every trigger, which is a
+  // collision this keeper would otherwise report as clean.
+  if (rendered.includes("${{")) unmodelled.push(rendered.slice(rendered.indexOf("${{")));
+  return { rendered, unmodelled, runUnique };
+}
+
+/** The triggers the workflow declares, sorted — `on:` parses as YAML `true` on some readers. */
+function declaredTriggers(doc: Record<string, unknown>): string[] {
+  const on = (doc.on ?? doc[true as unknown as string]) as Record<string, unknown> | undefined;
+  return on === undefined ? [] : Object.keys(on).sort();
+}
+
+/**
+ * WHICH DECLARED TRIGGERS COULD CANCEL EACH OTHER — the whole of T-336's
+ * keeper, derived from the workflow and from nothing else.
+ */
+function concurrencyProblems(doc: Record<string, unknown>): string[] {
+  const problems: string[] = [];
+
+  const triggers = declaredTriggers(doc);
+  if (triggers.length === 0) {
+    problems.push(
+      "the workflow declares no triggers at all — its `on:` block is missing or empty. " +
+        "Read this as THIS DERIVATION FAILING and never as a clean key: with nothing " +
+        "enumerated there is no pair to compare and every check below passes vacuously.",
+    );
+    return problems;
+  }
+
+  const concurrency = doc.concurrency as
+    | { group?: unknown; "cancel-in-progress"?: unknown }
+    | undefined;
+  if (concurrency === undefined || typeof concurrency.group !== "string" || concurrency.group === "") {
+    problems.push(
+      "the workflow declares no concurrency `group:`, so every run holds a group of its " +
+        "own and nothing is ever superseded. That is not this defect fixed — it is the " +
+        "collapse a re-run over one commit needs (T-294 criterion 2) gone instead.",
+    );
+    return problems;
+  }
+  const template = concurrency.group;
+  const cancelling = concurrency["cancel-in-progress"] === true;
+
+  // ── DOES ANYTHING STILL COLLAPSE? (the card's second criterion) ─────
+  if (!cancelling) {
+    problems.push(
+      "`cancel-in-progress` is not `true`, so no run of this workflow ever supersedes " +
+        "another. Two runs of ONE trigger over ONE commit — a re-run, a redelivered " +
+        "event — would both run to the end over a byte-identical tree, which is the " +
+        "behaviour the commit-keyed group was introduced for, undone.",
+    );
+  }
+
+  // The SHAPE of the key is a fact about the template, so it is derived
+  // once rather than once per trigger — otherwise one bad expression
+  // arrives as four identical problems.
+  const shape = renderGroup(template, "<event>");
+  for (const expr of new Set(shape.runUnique)) {
+    problems.push(
+      `the concurrency group interpolates \`${expr}\`, which is unique to a RUN. Every ` +
+        "run would then hold its own group: no trigger could cancel another, and " +
+        "neither could a second run of the SAME trigger over the SAME commit. This " +
+        "spelling looks like a fix and is the collapse retired.",
+    );
+  }
+  for (const expr of new Set(shape.unmodelled)) {
+    problems.push(
+      `the concurrency group interpolates \`${expr}\`, which this keeper cannot render, ` +
+        "so it cannot say whether two triggers land in one group. It is reported rather " +
+        "than assumed harmless. The context it models is " +
+        [GROUP_CONTEXT_EVENT, ...Object.keys(GROUP_CONTEXT_HELD_EQUAL), ...GROUP_CONTEXT_RUN_UNIQUE]
+          .map((k) => `\`${k}\``)
+          .join(", ") +
+        ".",
+    );
+  }
+
+  // ── AND WHICH PAIRS LAND TOGETHER (the card's first criterion) ──────
+  // Only when the group CANCELS: a group that supersedes nothing cannot
+  // kill a push, and the state where nothing cancels is already reported
+  // above as its own problem rather than as every pair over again.
+  if (cancelling) {
+    const rendered = new Map(triggers.map((t) => [t, renderGroup(template, t).rendered]));
+    for (let i = 0; i < triggers.length; i += 1) {
+      for (let j = i + 1; j < triggers.length; j += 1) {
+        const a = triggers[i]!;
+        const b = triggers[j]!;
+        if (rendered.get(a) !== rendered.get(b)) continue;
+        problems.push(
+          `the triggers \`${a}\` and \`${b}\` land in ONE cancelling group on one commit: ` +
+            `both render \`${rendered.get(a) ?? ""}\` from \`${template}\`, and ` +
+            "`cancel-in-progress: true` means whichever starts later kills the other. " +
+            "That is T-336 exactly — the nightly grades the tip, the tip is the commit " +
+            "the last push created, and what dies is the push's own verdict, which is " +
+            "the evidence the landing gate reads. Put the event in the key, or give one " +
+            "of the two triggers a group of its own.",
+        );
+      }
+    }
+  }
+  return problems;
+}
+
+test("the concurrency key tells the declared triggers apart, and still collapses two runs of one trigger on one commit", () => {
+  const { doc } = loadWorkflow();
+
+  expect(
+    concurrencyProblems(doc),
+    "T-336: no two of this workflow's declared triggers may land in one cancelling group",
+  ).toEqual([]);
+
+  // AND THE TWO CRITERIA AS FACTS, not only as an empty array.
+  const concurrency = doc.concurrency as Record<string, unknown>;
+  const template = concurrency["group"] as string;
+  const triggers = declaredTriggers(doc);
+  expect(triggers.length, "there are triggers to tell apart at all").toBeGreaterThan(1);
+
+  // ONE: every declared trigger renders its own key over one commit —
+  // the count is the test, so a pair collapsing into one is a miss.
+  const keys = new Set(triggers.map((t) => renderGroup(template, t).rendered));
+  expect(
+    keys.size,
+    `each of the ${triggers.length} declared triggers (${triggers.join(", ")}) holds its own ` +
+      "group on one commit, so a push and the nightly on that commit both reach a conclusion",
+  ).toBe(triggers.length);
+
+  // TWO: and nothing in the key varies between two runs of ONE trigger
+  // over ONE commit, so `cancel-in-progress` still collapses them.
+  const shape = renderGroup(template, "push");
+  expect(shape.runUnique, "nothing in the key is unique to a run").toEqual([]);
+  expect(shape.unmodelled, "and nothing in it is unreadable to this keeper").toEqual([]);
+  expect(
+    concurrency["cancel-in-progress"],
+    "which is what collapses a re-run over one commit to one run",
+  ).toBe(true);
+});
+
+test("FIXTURE: seven one-edit mutants of the concurrency key — the event dropped, the ref used instead, a trigger added under the old key, the cancellation switched off, a run-unique key, an unmodelled expression, an expression this keeper cannot split — each red BY NAME", () => {
+  const { doc } = loadWorkflow();
+  expect(concurrencyProblems(doc), "the real workflow derives clean").toEqual([]);
+
+  const clone = (): Record<string, unknown> => JSON.parse(JSON.stringify(doc)) as Record<string, unknown>;
+  const withGroup = (group: string): Record<string, unknown> => {
+    const d = clone();
+    (d.concurrency as Record<string, unknown>)["group"] = group;
+    return d;
+  };
+  const triggerCount = declaredTriggers(doc).length;
+  const pairs = (triggerCount * (triggerCount - 1)) / 2;
+
+  // (1) THE PRE-T-336 KEY — the one edit that reverts this card, and the
+  //     defect exactly as it was observed.
+  const reverted = concurrencyProblems(withGroup("ci-${{ github.workflow }}-${{ github.sha }}"));
+  expect(
+    reverted.join("\n"),
+    "the pair that was actually observed is named, both sides of it",
+  ).toContain("the triggers `push` and `schedule` land in ONE cancelling group");
+  expect(
+    reverted.length,
+    `every pair of the ${triggerCount} declared triggers, not only the observed one`,
+  ).toBe(pairs);
+
+  // (2) THE REF INSTEAD OF THE EVENT — the spelling that looks like a
+  //     fix. A push to main and the nightly on main carry one ref.
+  expect(
+    concurrencyProblems(withGroup("ci-${{ github.workflow }}-${{ github.ref }}-${{ github.sha }}")).join("\n"),
+    "the ref does not tell a push from the schedule, and the rendered key shows why",
+  ).toContain("refs/heads/main");
+
+  // (3) A TRIGGER ADDED LATER — the card's third criterion. Under the
+  //     REAL key the addition is clean, which is the point of keying on
+  //     the event; under the reverted key the newcomer is named.
+  const withTrigger = (d: Record<string, unknown>, name: string): Record<string, unknown> => {
+    const on = (d.on ?? d[true as unknown as string]) as Record<string, unknown>;
+    on[name] = null;
+    return d;
+  };
+  expect(
+    concurrencyProblems(withTrigger(clone(), "repository_dispatch")),
+    "a fifth trigger under the real key needs no edit here — the key generalises",
+  ).toEqual([]);
+  expect(
+    concurrencyProblems(
+      withTrigger(withGroup("ci-${{ github.workflow }}-${{ github.sha }}"), "repository_dispatch"),
+    ).join("\n"),
+    "and under the old key the trigger added later is named, rather than restoring this in silence",
+  ).toContain("`repository_dispatch`");
+
+  // (4) THE CANCELLATION SWITCHED OFF — not this defect, the other one.
+  const idle = clone();
+  (idle.concurrency as Record<string, unknown>)["cancel-in-progress"] = false;
+  expect(
+    concurrencyProblems(idle).join("\n"),
+    "the collapse the commit-keyed group exists for is named as retired",
+  ).toContain("`cancel-in-progress` is not `true`");
+
+  // (5) A RUN-UNIQUE KEY — every run its own group, which passes the
+  //     collision check by making the whole mechanism inert.
+  const perRun = concurrencyProblems(
+    withGroup("ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.run_id }}"),
+  ).join("\n");
+  expect(perRun, "the run-unique expression is named").toContain("`github.run_id`");
+  expect(perRun, "and what it costs is said, not left to be inferred").toContain(
+    "the collapse retired",
+  );
+
+  // (6) AN EXPRESSION NOBODY MODELLED — reported, never assumed harmless.
+  expect(
+    concurrencyProblems(withGroup("ci-${{ github.event_name }}-${{ github.actor }}-${{ github.sha }}")).join("\n"),
+    "an unmodelled context member is named, with the set this keeper does model",
+  ).toContain("interpolates `github.actor`, which this keeper cannot render");
+
+  // (7) AND ONE THIS PATTERN CANNOT EVEN SPLIT — the renderer's own hole,
+  //     pinned from inside so it cannot widen unnoticed.
+  expect(
+    concurrencyProblems(withGroup("ci-${{ format('{0}', github.sha) }}")).join("\n"),
+    "a brace-carrying expression survives substitution and is reported as unmodelled",
+  ).toContain("which this keeper cannot render");
+
+  // THE POSITIVE CONTROL: the same clone, unedited, still derives clean —
+  // so each red above is the one edit and never the round trip.
+  expect(concurrencyProblems(clone()), "the round trip alone changes nothing").toEqual([]);
+});
+
 // ── THE OWED SET, ASKED ON THE RUNNER (T-294 criterion 1) ────────────
 
 /** The step that asks, and the program it asks with. */
