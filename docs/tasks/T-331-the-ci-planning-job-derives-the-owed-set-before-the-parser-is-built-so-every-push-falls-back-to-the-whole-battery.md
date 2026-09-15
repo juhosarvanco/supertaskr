@@ -79,21 +79,60 @@ over one with them restored: the withheld arm fails closed and names both
 edges, and the restored arm matches the checkout exactly. Each keeper
 carries its own mutant fixture and its own positive control.
 
-One body outside this card's subject was red by this change and is
-repaired in place. The rename fixture in
-`tools/e2e/tests/workflow-parity.spec.ts` chose its victim as the earliest
-named step carrying a `working-directory` and then asserted that name was
-written once; that held by luck until the `owed` job gained a step whose
-name five other jobs already share. The fixture now chooses a victim whose
-name is written once, which is what a single-site rename always required.
-The class is a fixture selecting its subject by position and asserting a
-property the position does not guarantee; the sweep over both fenced specs
-found no other site.
+### In-fence follow-through
+
+- `tools/e2e/tests/workflow-parity.spec.ts`, the rename fixture's victim
+  selection: 18 lines added, 2 removed, of which 10 of the added lines are
+  the comment that argues the change. The property restored is that the
+  fixture makes a SINGLE-site rename: it chose its victim as the earliest
+  named step carrying a `working-directory` and then asserted that name was
+  written once, which held by luck until this card's own change gave the
+  `owed` job a step whose name five other jobs already share; the body then
+  red on its own precondition rather than on the guard behaviour it pins.
+  It now selects a victim whose name is written once. The class is a
+  fixture selecting its subject by position and asserting a property the
+  position does not guarantee, and the sweep over both fenced specs found
+  no other site.
+
+  DISCLOSED RATHER THAN TRIMMED: added plus removed is 20, which sits
+  exactly on the "about twenty" line step 5 draws, and that rule routes an
+  arguable count out to a card. It is listed here instead because it is not
+  a discretionary follow-through — this card's own change is what red the
+  body, so repairing it is part of the primary change rather than scope
+  taken on beside it. The count is stated so the reader rules rather than
+  guesses, and the comment was not shortened to fit a budget it is not
+  measured against.
+
+### A finding outside this fence, reported and not repaired
+
+The graded end-to-end leg at this lane's tip is RED on three bodies, all in
+`tools/e2e/tests/push-guard.spec.ts` and all one cause, which is not this
+card's: `seatFixture` copies every flat `docs/*.md` into its fixture root
+and then copies each entry of the conventions chapter list, whose first
+entry is `docs/CONVENTIONS.md` — so that one file is copied twice onto one
+destination. `copyFileSync` gives the destination the source's mode, and a
+fenced lane holds an out-of-fence file at 444 while the integration
+checkout holds it at 644. In a lane the first copy therefore creates a
+read-only destination and the second copy meets it. Demonstrated on its
+own, outside the suite: the first copy lands read-only and the second
+raises the same error. Re-run once, the same three fail identically.
+
+It is invisible in the integration checkout, where the mode is 644, and
+invisible to any lane running a scoped leg; this lane runs the whole leg
+because the scoped reading refused this fence. The remedy is one line in
+that fixture, normalising the destination's mode so a fixture the test
+owns is writable whatever the source tree's mode is, and it lies outside
+this lane's fence, so it was not made. The seat ruled on 2026-09-15 that
+the fence stays as it is and that the separate card is the seat's to file
+at the merge, carrying this attribution; no card was filed from this lane.
+
+### What this lane does not record
 
 The two figures the third criterion asks for are the seat's to take: they
-are properties of a push that has not happened, and this lane records none
-of them rather than inventing one. The merge also owes `npm run
-capabilities`, because this card adds test names and the census is
-generated from them.
+are properties of a push that has not happened, and this lane invents
+none of them. The merge owes `npm run capabilities` — this card adds test
+names, the census is generated from them, and `capabilities:check` reads
+STALE at this tip by 586 bytes; `docs/CAPABILITIES.md` is outside this
+fence and was not regenerated here.
 
 ## Verdicts
