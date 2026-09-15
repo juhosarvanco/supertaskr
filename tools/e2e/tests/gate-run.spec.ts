@@ -56,6 +56,9 @@ import {
   runSuite,
   scopeVerdict,
   scopedSuite,
+  SETTINGS_DIR,
+  settingsReaders,
+  settingsReadersIn,
   specFiles,
   specReach,
   stripAnsi,
@@ -2228,6 +2231,198 @@ test("a path the derivation cannot place makes the owed set the WHOLE battery an
   const unasked = deriveOwed({ changed: ["docs/GUIDE.md"], reach });
   expect(unasked.suites).toEqual([...ALL_SUITES]);
   expect(unasked.failClosed ?? "").toContain("never asked");
+});
+
+// ── §THE RUNTIME SETTINGS ARM (T-330) ────────────────────────────────
+//
+// The three arms above place code by its package root, a document by the
+// DOCS GATE's reader map, and a spec by the import graph. This project's
+// CONFIGURATION is none of those: `method/runtime/` lies under no
+// package root, no spec imports a `.yaml`, and the docs gate does not
+// look outside `docs/`. So a two-line records change owed four legs, and
+// the bodies below are about the arm that places it instead — and about
+// the fail-closed answer it must keep for everything it still cannot
+// place, which is the half a placement is most easily bought by losing.
+
+test("a runtime settings path is placed by readers DERIVED from the corpus, and the identifier arm is what reaches the files that never spell the path", () => {
+  // KILLED BY: a hand-listed consumer set, a literal-only scan (which
+  // finds the library that DECLARES the path and misses every file that
+  // opens it through the exported constant), and a segment arm that
+  // cannot see a `path.join`. The corpus is handed in, so this body moves
+  // ONE input at a time and reads the answer move with it.
+  const target = `${SETTINGS_DIR}/probe.yaml`;
+  const corpus: Record<string, string> = {
+    "lib/probe/src/settings.ts": `export const PROBE_TEMPLATE = '${target}';`,
+    "tools/e2e/scripts/arm.mjs":
+      "import { PROBE_TEMPLATE } from '../../../lib/probe/dist/pure.js';\n" +
+      "readFileSync(path.join(root, PROBE_TEMPLATE), 'utf8');\n",
+    "tools/e2e/scripts/joiner.mjs": 'writeFileSync(path.join(root, "method", "runtime", "probe.yaml"), text);\n',
+    "tools/e2e/scripts/stranger.mjs": "export const ANSWER = 41;\n",
+  };
+  const map = settingsReadersIn([target], corpus);
+  expect(map.asked, "the scan does not report what it was asked").toEqual([target]);
+  expect(map.constants[target], "the binding the identifier arm runs on").toEqual(["PROBE_TEMPLATE"]);
+  expect(map.byPath[target], "the three readers are the speller, the joiner and the arm").toEqual([
+    "lib/probe/src/settings.ts",
+    "tools/e2e/scripts/arm.mjs",
+    "tools/e2e/scripts/joiner.mjs",
+  ]);
+
+  // THE DISCRIMINATION, AND IT IS THE IDENTIFIER ARM'S WHOLE CASE: point
+  // the binding at a different file and the arm's own reader is no longer
+  // one, while the joiner — which spells the segments itself — still is.
+  const moved = settingsReadersIn([target], {
+    ...corpus,
+    "lib/probe/src/settings.ts": `export const PROBE_TEMPLATE = '${SETTINGS_DIR}/other.yaml';`,
+  });
+  expect(moved.constants[target], "a binding on another path is still read as this one's").toEqual([]);
+  expect(moved.byPath[target], "the identifier arm kept a reader whose constant moved").toEqual([
+    "tools/e2e/scripts/joiner.mjs",
+  ]);
+
+  // AND THE CONTROL: a file that mentions neither is never a reader, so
+  // the answers above are a discrimination and not a corpus listing.
+  expect(map.byPath[target], "the stranger was counted").not.toContain("tools/e2e/scripts/stranger.mjs");
+});
+
+test("a settings path the scan places nothing for FAILS CLOSED, and so does one nobody asked about, and so does a reader under no package root", () => {
+  // THE HALF A PLACEMENT IS BOUGHT BY LOSING. Each case is the whole
+  // battery with the reason travelling into the token, and the control is
+  // the same path PLACED — without it, "owes four suites" is satisfied by
+  // a derivation that always answers four.
+  const target = `${SETTINGS_DIR}/probe.yaml`;
+  const reach = { "tools/e2e/tests/a.spec.ts": ["tools/e2e/tests/a.spec.ts", "tools/e2e/scripts/reads.mjs"] };
+  const placed = deriveOwed({
+    changed: [target],
+    reach,
+    settingsAsked: [target],
+    settingsReadersByPath: { [target]: ["tools/e2e/scripts/reads.mjs"] },
+  });
+  expect(placed.failClosed, "the control really derives a subset").toBeUndefined();
+  expect(placed.suites, "the control's own suites").toEqual(["e2e"]);
+  expect(placed.e2e, "and the leg narrows to the spec that reaches the reader").toEqual({
+    whole: false,
+    specs: ["tools/e2e/tests/a.spec.ts"],
+  });
+
+  const unasked = deriveOwed({ changed: [target], reach });
+  expect(unasked.suites, "a path nobody asked the scan about was placed anyway").toEqual([...ALL_SUITES]);
+  expect(unasked.failClosed ?? "", "the reason does not say the question was never put").toContain(
+    "never asked",
+  );
+
+  const unread = deriveOwed({
+    changed: [target],
+    reach,
+    settingsAsked: [target],
+    settingsReadersByPath: { [target]: [] },
+  });
+  expect(unread.suites, "a configuration file no reader was found for was placed anyway").toEqual([
+    ...ALL_SUITES,
+  ]);
+  expect(unread.failClosed ?? "", "the reason does not name the path").toContain(target);
+
+  const strayReader = deriveOwed({
+    changed: [target],
+    reach,
+    settingsAsked: [target],
+    settingsReadersByPath: { [target]: [".claude/hooks/somewhere.mjs"] },
+  });
+  expect(strayReader.suites, "a reader under no package root was placed anyway").toEqual([...ALL_SUITES]);
+  expect(strayReader.failClosed ?? "", "the reason does not name the reader").toContain(
+    ".claude/hooks/somewhere.mjs",
+  );
+});
+
+/** THE RUNTIME TEMPLATE, DERIVED: the PATH the parser library binds its
+ *  `RUNTIME_TEMPLATE` constant to, read out of that source rather than
+ *  typed here, so a rename moves these bodies with it. The IDENTIFIER is
+ *  named because the identifier is what these bodies are about; the path
+ *  is the thing a body must never type. */
+function runtimeTemplatePath(): string {
+  const declared = readFileSync(path.join(repoRoot, "lib/parser/src/process-settings.ts"), "utf8");
+  const rel = /export const RUNTIME_TEMPLATE\s*=\s*['"`]([^'"`\n]+)['"`]/.exec(declared)?.[1];
+  if (rel === undefined) {
+    throw new Error("the parser binds no RUNTIME_TEMPLATE, and these bodies are about that constant");
+  }
+  expect(rel.startsWith(`${SETTINGS_DIR}/`), "the template moved out of the settings directory").toBe(true);
+  return rel;
+}
+
+test("the live tree places its own runtime template with the consumers that really read it, and the leg it owes is narrower than the whole leg", () => {
+  // THE INTEGRATION HALF at this checkout's own ref, and the case the
+  // card was written about: recording the owner's approved dispatch grant
+  // is a change to this one file. KILLED BY: a map that answers nothing
+  // for the live file (which fails closed and buys nothing), one that
+  // misses the parser's settings reader or the arm that opens it, and a
+  // narrowing that cannot be narrower than the leg.
+  const template = runtimeTemplatePath();
+  const map = settingsReaders([template]);
+  const readers = map.byPath[template] ?? [];
+  expect(readers.length, "the live scan places no reader at all").toBeGreaterThan(0);
+  expect(readers, "the parser library's settings reader is not among the consumers").toContain(
+    "lib/parser/src/process-settings.ts",
+  );
+  expect(readers, "nor the arm that reads the dispatch block and the roles").toContain(
+    "tools/e2e/scripts/dispatch-brief.mjs",
+  );
+  const owed = deriveOwed({
+    changed: [template],
+    reach: specReach().reach,
+    dependents: packageDependents(),
+    settingsAsked: map.asked,
+    settingsReadersByPath: map.byPath,
+  });
+  expect(owed.failClosed, `${template} must be placeable`).toBeUndefined();
+  expect(owed.e2e.whole, "the end-to-end leg is still owed whole").toBe(false);
+  expect(owed.e2e.specs.length, "and it is narrowed to fewer specs than the leg has").toBeLessThan(
+    specFiles().length,
+  );
+  expect(owed.byPath[0]?.why.join(" | ") ?? "", "the answer does not say WHY it placed it").toContain(
+    "reads this configuration",
+  );
+
+  // THE BEFORE, MEASURED RATHER THAN REMEMBERED: the same path through
+  // the same derivation with the map withheld is the whole battery, which
+  // is what this arm replaced.
+  const before = deriveOwed({
+    changed: [template],
+    reach: specReach().reach,
+    dependents: packageDependents(),
+  });
+  expect(before.suites, "the before-state was not the whole battery").toEqual([...ALL_SUITES]);
+  expect(before.e2e.whole, "nor the whole leg").toBe(true);
+});
+
+test("the narrowed selection for the runtime template still CARRIES every body that reads this project's dispatch block, so no configuration check is dropped by narrowing", () => {
+  // THE CARD'S FIFTH CRITERION, its "drop no check" half, and the reason
+  // this body derives its carriers instead of naming them: a selection
+  // that stopped running the body which validates the real configuration
+  // would be a narrowing that bought its speed by removing the check.
+  // KILLED BY: a narrowing that drops a carrier, and by a carrier set
+  // derived to be empty — which would make the containment vacuous.
+  const template = runtimeTemplatePath();
+  const map = settingsReaders([template]);
+  const owed = deriveOwed({
+    changed: [template],
+    reach: specReach().reach,
+    dependents: packageDependents(),
+    settingsAsked: map.asked,
+    settingsReadersByPath: map.byPath,
+  });
+  const carriers = specFiles().filter((f) => {
+    const text = readFileSync(path.join(repoRoot, f), "utf8");
+    return text.includes("dispatchBlock(") && text.includes("RUNTIME_TEMPLATE");
+  });
+  expect(carriers.length, "no spec reads the dispatch block, so this body is vacuous").toBeGreaterThan(0);
+  for (const carrier of carriers) {
+    expect(owed.e2e.specs, `${carrier} reads the dispatch block and the narrowing dropped it`).toContain(
+      carrier,
+    );
+  }
+  // AND THE NARROWING IS REAL, not a subset that happens to be the leg:
+  // some spec is outside it, or "contains the carriers" is free.
+  expect(owed.e2e.specs.length, "the narrowing selected the whole leg").toBeLessThan(specFiles().length);
 });
 
 test("a file: dependency in a manifest makes one package's change owe another's suite, and the edge is READ rather than asserted", () => {

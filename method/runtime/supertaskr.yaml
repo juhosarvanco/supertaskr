@@ -81,3 +81,43 @@ process:
     # fact about this project rather than a property of the schema, and
     # it is written as an empty block rather than left out so that a
     # reader can see the question was asked.
+
+# THE DISPATCH BLOCK (T-319, operational since T-324): the owner's approval
+# as a datum a fresh seat in either harness inherits, migrated from the
+# standing authorization of 2026-09-12 and the lane order ruled on
+# 2026-09-14. Approval decisions may arrive in the owner's conversation;
+# the seat records the approved grant and its later revisions here. A
+# pause is honored when received and persisted in the runtime pause
+# record (`.supertaskr/pause.json`, read by the arm; T-324-s1), not in
+# this block; a revocation uses this block's `revoked` fields. An
+# unrecorded instruction is not lost at succession.
+#
+# Membership in `order` is what the arm checks under every mode, standing
+# included; standing means no per-card approval is spent and the grant
+# runs until a pause. A derived repair needs a parent in this order and
+# its failure evidence (recovery: repairs). The grant does not make a
+# blocked card eligible, decide a reserved design question, or qualify a
+# launch route; the ruled order, blockers and fences still apply.
+#
+# T-204 IS THE OWNER'S CALL: naming it here approves the dispatch of its
+# pinned contract after its re-measure. If only the re-measure is meant,
+# strike it from `order` and `cards` until the surviving work is decided.
+# T-318 is left out while its design is open.
+dispatch:
+  approval: standing
+  recovery: repairs
+  grant:
+    given_by: "the owner, by yes in chat on 2026-09-15 to the seat's verbatim proposal (the list of planned cards as drafted, T-204 included), recorded by the architect seat at the instant under at, minutes after the yes"
+    at: "2026-09-15T07:22:18Z"
+    revision: 1
+    order: [T-204, T-312, T-313, T-315, T-316, T-205-s5, T-244-s1, T-295-s8]
+    cards:
+      T-204: "96e9edced1edb833525283927c45f7eaf83dbccd"
+      T-312: "d4b0231779dcb20235637afa950442ac8ec0e9b2"
+      T-313: "c8a29e9cba976709f35521082262e8552a303a1e"
+      T-315: "af9fae41265764db2509cc56264704bc8317d5c2"
+      T-316: "c92be7dd83428cab2d318c547bfc52611fac20a4"
+      T-205-s5: "d7cd8fdd9d2c93528f592230eb1011e45df20ccb"
+      T-244-s1: "658872e44202bd03a1cad4f83ac0c522c0072360"
+      T-295-s8: "0f1dc15d9d3a6262c9db596638a1b7679fce94dd"
+  history: []

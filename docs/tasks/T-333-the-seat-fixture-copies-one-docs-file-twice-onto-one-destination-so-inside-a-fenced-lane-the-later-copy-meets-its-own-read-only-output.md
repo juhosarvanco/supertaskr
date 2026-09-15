@@ -36,10 +36,24 @@ A fixture root the test owns is writable by the test whatever the mode of the tr
 
 The wider point is worth stating even though this card does not act on it: a fixture that inherits a fence's write protection is measuring the lane rather than the subject, and any other fixture in this suite that copies from the tree carries the same latent defect. The repair names its class and sweeps for other sites.
 
+## Another spelling, recorded 2026-09-16
+
+The T-330 lane's executor reached this finding independently on 2026-09-15 — the same finding reached independently once more that day — and offered a remedy this card did not carry: `rmSync(dest, { force: true })` immediately before the repeated `copyFileSync`, rather than normalising the destination's mode afterwards.
+
+IT IS A CANDIDATE TECHNIQUE, CARRIED WITH ITS ATTRIBUTION, AND NOT THE BETTER REMEDY. Calling it the better of the two was the seat's overstatement when this section was written on 2026-09-16; it is withdrawn here rather than quietly reworded, because the card recorded a comparison it had not made.
+
+What is true of the executor's spelling: it is mode-independent, so it does not depend on choosing a mode that happens to be right; it keeps the derived chapter list rather than special-casing the file that collides; and it addresses the repeated write onto a destination an earlier write already created rather than the symptom that the destination is read-only.
+
+WHAT IT DOES NOT DO IS REACH THIS CARD'S STATED PROPERTY. `rmSync(dest, { force: true })` can remove a read-only destination while the parent directory is writable, so the second copy stops throwing — but `copyFileSync` carries the SOURCE's mode, and the source inside a fenced lane is the read-only one. The replacement therefore lands read-only again, and a fixture root whose files cannot be written is the defect this card is about. A copy that stops throwing is not yet a writable owned fixture.
+
+The mode-normalising spelling remains the one that reaches the property, because it makes the fixture's own files writable whatever the mode of the tree they came from. Whoever builds this may well want both — the unlink to make the repeated copy legal, the normalisation to make its result writable — and neither is approved here. The criteria below are the test either spelling has to pass.
+
+Neither spelling has been built. The measurements behind the finding are unchanged.
+
 ## Acceptance criteria
 
 - WHEN a fixture root is built by copying from a source tree whose files are read-only THE fixture SHALL produce a root the test can write, and the three named seat bodies SHALL pass inside a fenced lane worktree as they pass in the integration checkout.
-- WHEN the repair lands THE spec SHALL carry a body that builds a fixture root from a read-only source tree and asserts the root is writable, and that body SHALL be shown to fail against the fixture as it stands before the repair.
+- WHEN the repair lands THE spec SHALL carry a body that builds a fixture root from a read-only source tree, and that body SHALL assert BOTH that the repeated chapter copy onto one destination completes AND that the resulting file can afterwards be written, and SHALL assert that the source tree is still read-only at the end; it SHALL be shown to fail against the fixture as it stands before the repair.
 - WHEN the repair is made THE card SHALL name the class (a fixture inheriting the write protection of the tree it copied from) and SHALL record the sweep for other fixtures in this suite that copy from the tree, or record that none was found.
 
 ## Implementation notes

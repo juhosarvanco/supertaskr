@@ -72,7 +72,7 @@ here without asking what reads it.
   hours, two of them colliding on the solo lock — and around half were
   for commits that moved no source under any package: dispatch stamps,
   card promotions, a checkpoint, a guide page. **THE OWED SET IS
-  DERIVED, NEVER LISTED**, by one function with three arms composed:
+  DERIVED, NEVER LISTED**, by one function with four arms composed:
   the PACKAGE ROOTS (each graded suite's own `cwd` in the runner's
   registry, longest prefix wins, plus the `file:` dependency edges read
   off the manifests — so a change under `lib/parser/` owes the app suite
@@ -81,7 +81,17 @@ here without asking what reads it.
   and the DOCS GATE's own reader map, whose readers are FILES and are
   placed through those same package roots — which is how a document read
   by the parser's census owes the parser suite with nobody writing that
-  down. Give the blessed runner `--range <base>..<tip>` and it grades
+  down. **AND SINCE T-330 THE RUNTIME SETTINGS READER MAP**, because
+  `method/runtime/` is CONFIGURATION rather than code or a document and
+  none of the three arms above could place it — so recording the owner's
+  approved dispatch grant, forty lines of settings, owed four whole legs.
+  Its consumers are derived from the source corpus: a file that SPELLS
+  the path, as one literal or as the segments a `path.join` is given, or
+  that names an identifier a speller BINDS to it — the second arm is
+  what finds the arm's own readers at all, since what they open is the
+  parser library's `RUNTIME_TEMPLATE` constant and not a path they
+  spell — and each reader is placed through those same package roots.
+  Give the blessed runner `--range <base>..<tip>` and it grades
   exactly that set and writes the token with the set, the range and the
   INPUTS the derivation read. **THE PUSH GUARD RE-DERIVES THE SAME SET
   FROM THE PUSH'S OWN RANGE** — `@{upstream}..HEAD`, both endpoints
@@ -94,14 +104,14 @@ here without asking what reads it.
   recorded no scope graded the whole leg and covers any subset.
   **IT FAILS CLOSED, AND THAT IS THE WHOLE SAFETY ARGUMENT.** A path
   under no package root that no spec reaches and the docs gate cannot
-  place, a reader the map cannot put in a package, an import edge that
-  will not resolve, no upstream to range against, a runner this checkout
-  does not have, an answer the guard cannot parse — every one of them
-  makes the owed set THE WHOLE BATTERY, with the reason recorded in the
-  token and printed at the refusal. **AND "THE WHOLE BATTERY" MEANS FOUR
-  WHOLE LEGS, WHICH IS A CLAIM ON TWO AXES AND NOT ONE.** The SUITE axis
-  is which legs ran; the SPEC axis is whether the one scopable leg ran
-  whole.
+  place, a reader the map cannot put in a package, a settings path this
+  scan finds no reader for, an import edge that will not resolve, no
+  upstream to range against, a runner this checkout does not have, an
+  answer the guard cannot parse — every one of them makes the owed set
+  THE WHOLE BATTERY, with the reason recorded in the token and printed
+  at the refusal. **AND "THE WHOLE BATTERY" MEANS FOUR WHOLE LEGS, WHICH
+  IS A CLAIM ON TWO AXES AND NOT ONE.** The SUITE axis is which legs
+  ran; the SPEC axis is whether the one scopable leg ran whole.
   A token whose end-to-end entry carries a `scope` is
   therefore refused as **`token-partial`** EVEN WHERE NO RANGE COULD BE
   DERIVED: a scoped GREEN says nothing failed among the spec files it

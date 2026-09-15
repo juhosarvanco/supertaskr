@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1208 behaviours** — 1206 extracted sentences + 2 named-not-extracted (listed at the end) — across 42 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1214 behaviours** — 1212 extracted sentences + 2 named-not-extracted (listed at the end) — across 42 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -90,6 +90,7 @@ Census: **1208 behaviours** — 1206 extracted sentences + 2 named-not-extracted
 - THE SWEEP: no derived row moves when only the dispatching checkout moves, and the movers are named
 - THE ARM LEAVES EXACTLY WHAT THE HAND STEPS LEAVE, file for file, plus the one file no hand can type
 - THE RITUAL FIXTURE CARRIES ITS OWN GIT IDENTITY, so a git that inherits none can still commit in it
+- NO DISPATCH THIS SUITE PLANS IS JUDGED BY THIS PROJECT'S OWN CONFIGURATION — every planned dispatch names the root it plans at
 - THE RITUAL STOPS AT STEP 1 (keeper) and performs no later step
 - THE RITUAL STOPS AT STEP 2 (tier) and performs no later step
 - THE RITUAL STOPS AT STEP 3 (stamp) and performs no later step
@@ -241,7 +242,7 @@ Census: **1208 behaviours** — 1206 extracted sentences + 2 named-not-extracted
 - A SUCCESSOR COORDINATOR INHERITS THE GRANT FROM THE BLOCK and continues the order without the previous coordinator's identity
 - THE ARM READS THE GRANT THROUGH THE PARSER'S READER AND THROUGH NOTHING ELSE
 - THE SCHEMA'S DISPATCH BLOCK NAMES A READ SITE FOR EVERY ROW, AND EVERY OPERATIONAL ROW'S SITE IS A SYMBOL THIS ARM EXPORTS
-- THIS PROJECT'S OWN TREE IS THE EXPLICIT NO-GRANT STATE, the ceremony keeps working, and the arm says NOTHING WAS ENFORCED rather than pretending it was
+- A TREE WITH NO DISPATCH BLOCK IS THE EXPLICIT NO-GRANT STATE, the ceremony keeps working, and the arm says NOTHING WAS ENFORCED rather than pretending it was
 - THE ORCHESTRATOR'S STEP 5 KEEPS ITS TWO SENTENCES AND EXTENDS THEM — a dispatch inside the current grant is approved by the grant, and every other dispatch still waits for the owner
 - THE CONVENTIONS CARRY THE ADMISSION RULE ONCE, AT THE LOOP'S OWN SECTION
 - T-322 C1 — A RED IS ATTRIBUTED BEFORE ANYTHING ACTS ON IT, and the four answers route four different ways
@@ -488,7 +489,8 @@ Census: **1208 behaviours** — 1206 extracted sentences + 2 named-not-extracted
 - the committed settings chapter is a GENERATION of the schema, and a schema nobody regenerated for reds
 - THE SHIPPED SCHEMA'S DISPATCH BLOCK DECLARATION reads the same to the hand parser and to a real YAML parser
 - THE SHIPPED DISPATCH BLOCK'S OPERATIONAL ROWS ARE THE ONES THE ARM BRANCHES ON, the limits are the advisory ones, and the no-grant words are `each` and `none`
-- THIS PROJECT'S TEMPLATE CARRIES NO GRANT, and the reader says so in as many words
+- THE REAL CONFIGURATION IS CHECKED THROUGH THE PARSER'S READER — a grant this project carries is validated card by card, and no grant is read out as the explicit no-grant state
+- A PLANTED CONFIGURATION DEFECT IS REFUSED BY NAME — a mode the schema does not declare, a card missing from the map, a blob this tree does not carry, and a card rewritten past the mechanical drift
 - THE SETTINGS CHAPTER CARRIES THE DISPATCH BLOCK AS A GENERATION of its declaration, never as prose
 - the listing goes to the PROJECT'S OWN tree for its readings — the measured column is not a rendering of numbers somebody handed in
 - a DEPARTURE is listed at the value the PROJECT resolves to, marked against the profile's own
@@ -680,6 +682,10 @@ Census: **1208 behaviours** — 1206 extracted sentences + 2 named-not-extracted
 - adding a doc READ grows the owed set through the DOCS GATE's map, and removing it shrinks the answer back
 - the live reader map places a real task card, and the set it owes is smaller than the battery
 - a path the derivation cannot place makes the owed set the WHOLE battery and the answer says why
+- a runtime settings path is placed by readers DERIVED from the corpus, and the identifier arm is what reaches the files that never spell the path
+- a settings path the scan places nothing for FAILS CLOSED, and so does one nobody asked about, and so does a reader under no package root
+- the live tree places its own runtime template with the consumers that really read it, and the leg it owes is narrower than the whole leg
+- the narrowed selection for the runtime template still CARRIES every body that reads this project's dispatch block, so no configuration check is dropped by narrowing
 - a file: dependency in a manifest makes one package's change owe another's suite, and the edge is READ rather than asserted
 - the range is refused when its left endpoint is not an ancestor of its right, because a two-dot diff between divergent tips lies
 - a DELETED path is IN the range's path set, because a removal is a change and an empty path set owes nothing at all

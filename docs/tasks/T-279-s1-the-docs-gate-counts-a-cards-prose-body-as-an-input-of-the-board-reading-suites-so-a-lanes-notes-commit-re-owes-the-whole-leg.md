@@ -58,6 +58,16 @@ conclude that.
   that still fires every suite the wide trigger fired, so the narrowing
   cannot be a gate that stopped firing.
 
+## Re-triage, 2026-09-16 — with T-330's measurements, as the owner ruled
+
+T-330 has landed and its figures are in. A card-only change — a card filed, or a card re-triaged — selects **three suites and 12 of 42 end-to-end spec files**, measured at the base and reproduced on the runner. The whole leg is 1215 bodies across 42 files; T-330's own narrowing for a configuration change is 1125 bodies across 22, so it drops 90 bodies, and every one of those 90 lies in a spec carrying no reference to the configuration.
+
+WHAT THAT SETTLES FOR THIS CARD. The cost this card exists to remove is real but it is NOT the whole leg: a notes commit already selects twelve specs rather than forty-two, because the docs gate's reader map narrows it. What remains is whether those twelve are the right twelve for a change that touches only a card's prose, and that is a question about which observers a given PART of a card can move — which is this card's actual subject.
+
+The caution from the earlier note stands and is now sharper: records are not uniformly inert, and T-330 demonstrated the shape of an answer — a reader map derived from the corpus rather than a hand-kept list, with a fail-closed answer for any input it cannot place. Whatever is proposed here should be derived the same way and should keep that fallback.
+
+The priority is left where the owner set it; this note supplies the evidence the re-triage was to be made on, not a new ruling about when it runs.
+
 ## Triage note, 2026-09-15
 
 Scheduled for re-triage on the owner's ruling of 2026-09-15, after the Codex orchestrator's faster-delivery review, USING T-330'S MEASUREMENTS: that card reports the checks selected and the elapsed time for a card-only change, which is the evidence this card's narrowing should be judged on rather than an estimate. The re-triage therefore happens at T-330's merge and not before.
