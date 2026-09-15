@@ -57,7 +57,18 @@ A seat that meets a cancelled run needs to know it is not a red. The cancellatio
 - WHEN two runs of this workflow are triggered by different events on the same commit THE concurrency key SHALL place them in different groups, and both SHALL reach a conclusion rather than one cancelling the other.
 - WHEN two runs are triggered by the same event on the same commit THE in-progress cancellation SHALL still collapse them to one, which is the behaviour the commit-keyed group was introduced for.
 - WHEN the workflow declares a trigger THE keeper SHALL derive the trigger set from the workflow itself and SHALL red by name where any two declared triggers could land in one cancelling group, so a trigger added later cannot silently restore this defect.
-- WHEN a run is cancelled by another run THE outcome SHALL be reported as a displacement naming the displacing run, and SHALL NOT be read as a red tree or as a verdict still pending.
+
+## Scope amendment, 2026-09-15 — the reporting criterion split to T-338
+
+Amended by the architect seat on the owner's ruling of 2026-09-15. THE CRITERION IS NOT WITHDRAWN AND NOTHING OF IT IS LOST: its full obligation and its provenance move to T-338, which is filed in the same act. This card's active criteria are now the three above, and its independent verifier judges that revised scope before the merge.
+
+WHAT WAS SPLIT. The criterion required that a run cancelled by another run be reported as a displacement naming the displacing run, and be read as neither a red tree nor a verdict still pending. The lane measured that two of its three halves already hold and are already pinned by bodies in the guard's own spec, and that the naming half does not: the guard reports a count of runs that reached no verdict rather than any identifier, and prints even that only where the verdict it finally reaches is not a success, so a cancellation sitting in front of a green is silent. That is the state this project was actually in when the nightly displaced a push twice in two days.
+
+WHY IT WAS SPLIT, STATED AS WHAT WAS OBSERVED RATHER THAN AS A GENERAL CLAIM. The only thing in this repository that reads a run's conclusion and says anything to a seat is the pre-push guard, which lies under `.claude/`. On 2026-09-15, in the agent harness this session runs inside, two separate attempts by the lane's executor to modify that file were refused with the reason `[Modify Shared Resources]`, and a read-only status command that merely named the path was refused as well, so the match is on the path text. That is one observed harness refusing one path in one session. It is NOT a claim that every harness refuses it, nor that the file is unmodifiable, nor that the project's own fence objected — the seat had granted the fence and the lane-fence hook was satisfied. The executor declined to treat a seat's grant as the owner's consent to modify hook configuration, and declined to look for a way around the refusal. Both were right.
+
+THE SEAT'S GRANT OF THE WIDENING STANDS AND IS NOT WITHDRAWN by this amendment; it is recorded above and was correctly spent on establishing what the criterion needed. What it could not reach was a permission layer no seat owns.
+
+WHAT THE SPLIT DOES NOT DO. It does not lower the bar. T-338 carries the same obligation and owes executable verification of its substance, not a hand edit graded by reading. It does not change hook permissions, which stay as they are. It does not license this card's verifier to grade a criterion that is no longer here.
 
 ## Implementation notes
 
