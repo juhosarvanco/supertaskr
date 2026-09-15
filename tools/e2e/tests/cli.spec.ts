@@ -68,6 +68,7 @@ import {
 import {
   PROCESS_SCHEMA,
   RUNTIME_TEMPLATE,
+  cardDrift,
   loadProcess,
   parseProcessSchema,
   processSection,
@@ -2585,23 +2586,199 @@ test("THE SHIPPED DISPATCH BLOCK'S OPERATIONAL ROWS ARE THE ONES THE ARM BRANCHE
   ).toEqual(["none", "repairs"]);
 });
 
-test("THIS PROJECT'S TEMPLATE CARRIES NO GRANT, and the reader says so in as many words", () => {
-  // THE CARD'S SECOND CRITERION, over the shipped tree. No grant is ever
-  // created by guessing a person, an instant or a past authorization: the
-  // standing authorization this project runs under lives in the seat's
-  // ledger, and it reaches the template only through a migration grant
-  // the owner approves (T-307). KILLED BY: a seat writing one down from
-  // memory, and by a reader that answered `undefined` instead of a state.
-  const schema = parseProcessSchema(readFileSync(path.join(repoRoot, PROCESS_SCHEMA), "utf8"));
+// ── §THE REAL CONFIGURATION, AND THE ONE BODY THAT READS IT (T-330) ──
+//
+// Until this card two bodies asserted the NO-GRANT STATE as a property
+// of this project — one here, one in brief.spec.ts — and their own
+// comments said they would move on the day a migration grant was
+// approved. That day came, and an ordinary configuration change red the
+// bodies that had frozen yesterday's configuration. The settings
+// COMBINATIONS moved to controlled fixture templates, where a
+// combination belongs; what this project is actually configured to is
+// checked HERE, in one place, by a body that reads the real file and
+// validates whatever it finds rather than asserting what it expects.
+
+/** A CONTROLLED TEMPLATE, authored here and never read off this tree, so
+ *  a body about the READER is never also a body about the configuration.
+ *  It carries no dispatch block: one is appended by whichever body wants
+ *  one, which is the only way a base can be appended to twice safely. */
+const CONTROLLED_TEMPLATE = [
+  "# A controlled template (T-330) — not this project's.",
+  "roles:",
+  "  builder: fixture-builder@probe",
+  "",
+  "process:",
+  "  profile: standard",
+  "  switches:",
+  "",
+].join("\n");
+
+/** What a grant is checked AGAINST — injectable, so the drills below are
+ *  pure and this project's own git objects are never written to. */
+interface GrantTreeIo {
+  /** The card file for an id, repo-relative, or null where none exists. */
+  cardFile: (id: string) => string | null;
+  /** The card's blob sha NOW, or null. */
+  currentBlob: (rel: string) => string | null;
+  /** The card's bytes NOW, or null. */
+  currentText: (rel: string) => string | null;
+  /** The card at the blob the grant recorded, or null where this
+   *  repository does not carry those bytes. */
+  approvedText: (sha: string) => string | null;
+}
+
+/** The live tree, read through git itself. */
+function liveGrantIo(root: string): GrantTreeIo {
+  const git = (argv: string[]): string | null => {
+    try {
+      // STDERR IS SWALLOWED, AND ONLY HERE: a miss is an ANSWER to this
+      // reader ("this repository does not carry those bytes"), and git
+      // announces it on stderr as `fatal:` — a line that would read to a
+      // human scanning the run as a suite that broke rather than a check
+      // that discriminated.
+      return execFileSync("git", ["-C", root, ...argv], {
+        encoding: "utf8",
+        maxBuffer: 64 * 1024 * 1024,
+        stdio: ["ignore", "pipe", "ignore"],
+      });
+    } catch {
+      return null;
+    }
+  };
+  return {
+    cardFile: (id) => {
+      const listed = git(["ls-files", `docs/tasks/${id}-*.md`]);
+      const first = (listed ?? "").split("\n").map((l) => l.trim()).filter((l) => l !== "")[0];
+      return first ?? null;
+    },
+    currentBlob: (rel) => git(["hash-object", "--", rel])?.trim() ?? null,
+    currentText: (rel) => {
+      try {
+        return readFileSync(path.join(root, rel), "utf8");
+      } catch {
+        return null;
+      }
+    },
+    approvedText: (sha) => git(["cat-file", "-p", sha]),
+  };
+}
+
+/**
+ * EVERY WAY A CONFIGURED GRANT CAN FAIL TO MATCH THE TREE IT GOVERNS,
+ * named one finding per failure, over the block the PARSER'S OWN READER
+ * returned — never over a second parse of the file.
+ *
+ * THE BINDING IS TO THE CARD AND NOT TO THE BYTES, which is why the blob
+ * arm ends in `cardDrift` rather than in an equality: the loop's own
+ * ceremony stamps `status:` and the seat fields onto an approved card
+ * between the yes and the build, and a check that refused those would be
+ * a requirement the admission itself does not make.
+ */
+function grantFindings(
+  block: ReturnType<typeof parserPure.dispatchBlock>,
+  declared: { approval: readonly string[]; recovery: readonly string[] },
+  io: GrantTreeIo,
+): string[] {
+  const out: string[] = [];
+  if (!block.present) return ["the template carries no dispatch block, so there is no grant to validate"];
+  if (!declared.approval.includes(block.approval)) {
+    out.push(`the approval mode \`${block.approval}\` is not one the schema declares`);
+  }
+  if (!declared.recovery.includes(block.recovery)) {
+    out.push(`the recovery policy \`${block.recovery}\` is not one the schema declares`);
+  }
+  const grant = block.current;
+  if (grant === null) {
+    out.push("the block is present and names no current grant");
+    return out;
+  }
+  if (block.revision < 1) out.push(`a present grant reads at revision ${String(block.revision)}`);
+  if (grant.order.length === 0) out.push("the grant approves no card at all");
+  for (const id of grant.order) {
+    const pinned = grant.cards.get(id);
+    if (pinned === undefined || pinned === "") {
+      out.push(`${id} is in the grant's order and carries no blob in its card map`);
+      continue;
+    }
+    const rel = io.cardFile(id);
+    if (rel === null) {
+      out.push(`${id} is approved and names no card file in this tree`);
+      continue;
+    }
+    const now = io.currentBlob(rel);
+    if (now === pinned) continue;
+    const approved = io.approvedText(pinned);
+    if (approved === null) {
+      out.push(`${id} is pinned to blob ${pinned.slice(0, 12)} and this repository does not carry those bytes`);
+      continue;
+    }
+    const current = io.currentText(rel);
+    if (current === null) {
+      out.push(`${id} names ${rel}, which this tree cannot read`);
+      continue;
+    }
+    const moved = cardDrift(approved, current);
+    if (!moved.mechanical) {
+      out.push(`${id} has moved beyond the admission's mechanical drift: ${moved.substantive.join("; ")}`);
+    }
+  }
+  return out;
+}
+
+/** The two value sets the schema declares for the block's modes. */
+function declaredModes(schemaText: string): { approval: readonly string[]; recovery: readonly string[] } {
+  const decl = parseProcessSchema(schemaText).dispatch;
+  expect(decl, "the shipped schema declares no dispatch block").not.toBeNull();
+  const fields = (decl as NonNullable<typeof decl>).fields;
+  return {
+    approval: fields.get("approval")?.values ?? [],
+    recovery: fields.get("recovery")?.values ?? [],
+  };
+}
+
+test("THE REAL CONFIGURATION IS CHECKED THROUGH THE PARSER'S READER — a grant this project carries is validated card by card, and no grant is read out as the explicit no-grant state", () => {
+  // THE ONE BODY IN THIS LANE THAT READS THIS PROJECT'S OWN RUNTIME
+  // TEMPLATE AND JUDGES WHAT IT FINDS (T-330's third criterion). It
+  // asserts the configuration it READS rather than the configuration
+  // somebody remembers: under a grant every row is validated and every
+  // approved card is matched against the tree; under none the explicit
+  // no-grant state is read out in as many words. Both are real
+  // assertions, and the drills in the body below are what stop the
+  // validating half being vacuous on a day the tree carries no grant.
+  //
+  // KILLED BY: a reader that answers `undefined` instead of a state, a
+  // grant whose order names a card this tree has lost, a blob that has
+  // gone stale beyond the admission's own mechanical drift, and a seat
+  // that wrote a grant down from memory.
+  const schemaText = readFileSync(path.join(repoRoot, PROCESS_SCHEMA), "utf8");
+  const schema = parseProcessSchema(schemaText);
   const template = readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8");
   const block = parserPure.dispatchBlock(template, schema);
-  expect(block.present, `${RUNTIME_TEMPLATE} carries a dispatch block nobody granted`).toBe(false);
-  expect(block.approval, "the no-grant approval mode").toBe("each");
-  expect(block.recovery, "the no-grant recovery policy").toBe("none");
-  expect(block.grant, "a grant was read out of a template that has none").toBeNull();
-  expect(block.current, "a current grant was read out of a template that has none").toBeNull();
-  expect(block.revision, "the no-grant revision").toBe(0);
-  expect(block.history, "a history was read out of a template that has none").toEqual([]);
+
+  if (block.present) {
+    const declared = declaredModes(schemaText);
+    expect(declared.approval, "the schema declares no approval modes").not.toEqual([]);
+    expect(
+      grantFindings(block, declared, liveGrantIo(repoRoot)),
+      `the grant ${RUNTIME_TEMPLATE} carries does not validate against this tree`,
+    ).toEqual([]);
+    expect(block.revision, "a recorded grant reads at revision 0").toBeGreaterThan(0);
+    expect(block.current?.order.length ?? 0, "a recorded grant approves no card").toBeGreaterThan(0);
+    expect(block.current?.givenBy ?? "", "a recorded grant says nobody gave it").not.toBe("");
+    expect(block.current?.at ?? "", "a recorded grant carries no instant").not.toBe("");
+  } else {
+    // THE EXPLICIT NO-GRANT STATE, which is what this project ships
+    // today. No grant is ever created by guessing a person, an instant or
+    // a past authorization: the standing authorization this project runs
+    // under lives in the seat's ledger, and it reaches the template only
+    // through a migration grant the owner approves (T-307).
+    expect(block.approval, "the no-grant approval mode").toBe("each");
+    expect(block.recovery, "the no-grant recovery policy").toBe("none");
+    expect(block.grant, "a grant was read out of a template that has none").toBeNull();
+    expect(block.current, "a current grant was read out of a template that has none").toBeNull();
+    expect(block.revision, "the no-grant revision").toBe(0);
+    expect(block.history, "a history was read out of a template that has none").toEqual([]);
+  }
 
   // AND EVERY READ-ONLY SETTINGS OPERATION KEEPS WORKING EXACTLY AS
   // BEFORE — the same template, the same profile, the same listing.
@@ -2611,18 +2788,159 @@ test("THIS PROJECT'S TEMPLATE CARRIES NO GRANT, and the reader says so in as man
     settingsRows({ ...loaded, readings: new Map(), units: new Map() }).length,
     "the listing lost a row",
   ).toBe(loaded.schema.switches.size);
+});
 
-  // THE POSITIVE CONTROL, AND IT IS WHERE THE ARRANGEMENT IS ABSENT: the
-  // same reader over the same schema reads a real grant when the block is
-  // there, so the state above is this project's template and not a reader
-  // that answers "no grant" to everything.
-  const granted = parserPure.dispatchBlock(`${template}\n${SHIPPED_BLOCK_FIXTURE}`, schema);
+test("A PLANTED CONFIGURATION DEFECT IS REFUSED BY NAME — a mode the schema does not declare, a card missing from the map, a blob this tree does not carry, and a card rewritten past the mechanical drift", () => {
+  // THE CARD'S THIRD CRITERION, ITS REFUSAL HALF, AND THE CONTROL COMES
+  // FIRST: without it, "the check refuses a defect" is satisfied by a
+  // check that refuses everything. Each defect is planted into a
+  // CONTROLLED template over a card this repository really tracks, so the
+  // subject is the check and not the configuration of the day — and this
+  // body is what makes the validating arm above a real instrument on a
+  // tree that carries no grant at all.
+  const schemaText = readFileSync(path.join(repoRoot, PROCESS_SCHEMA), "utf8");
+  const schema = parseProcessSchema(schemaText);
+  const declared = declaredModes(schemaText);
+  const card = execFileSync("git", ["-C", repoRoot, "ls-files", "docs/tasks/T-*.md"], { encoding: "utf8" })
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.endsWith(".md"))
+    .sort()[0];
+  expect(card, "no task card is tracked, and this body is about one").not.toBeUndefined();
+  const rel = card as string;
+  const id = /docs\/tasks\/(T-[0-9]+(?:-s[0-9]+)?)-/.exec(rel)?.[1];
+  expect(id, `${rel} does not spell a card id this body can read`).not.toBeUndefined();
+  const cardId = id as string;
+  const text = readFileSync(path.join(repoRoot, rel), "utf8");
+  const blob = execFileSync("git", ["-C", repoRoot, "hash-object", "--", rel], { encoding: "utf8" }).trim();
+
+  const blockText = (o: { approval: string; order: string[]; cards: Record<string, string> }): string =>
+    [
+      "",
+      "dispatch:",
+      `  approval: ${o.approval}`,
+      "  recovery: repairs",
+      "  grant:",
+      '    given_by: "a fixture owner"',
+      '    at: "2026-01-02T03:04:05Z"',
+      "    revision: 1",
+      `    order: [${o.order.join(", ")}]`,
+      "    cards:",
+      ...o.order.map((c) => `      ${c}: ${o.cards[c] ?? blob}`),
+      "  history: []",
+      "",
+    ].join("\n");
+  const read = (t: string) => parserPure.dispatchBlock(`${CONTROLLED_TEMPLATE}${t}`, schema);
+  const io = liveGrantIo(repoRoot);
+
+  // THE READER'S OWN CONTROL, CARRIED OVER FROM THE BODY THIS ONE
+  // REPLACED: a controlled template that DOES carry a block reads every
+  // row of it, history included, so the no-grant answer above is about a
+  // template with no block rather than about a reader that answers "no
+  // grant" to everything.
+  const granted = parserPure.dispatchBlock(`${CONTROLLED_TEMPLATE}\n${SHIPPED_BLOCK_FIXTURE}`, schema);
   expect(granted.present, "the control: a template WITH a block still read as absent").toBe(true);
   expect(granted.approval, "the control: the mode").toBe("until");
   expect(granted.recovery, "the control: the policy").toBe("repairs");
   expect(granted.revision, "the control: the revision").toBe(2);
   expect(granted.grant?.until, "the control: the card the grant runs up to").toBe("T-902");
   expect(granted.history.map((h) => h.revision), "the control: the history").toEqual([1]);
+
+  // THE CONTROL: a well-formed grant over a real card at its real blob
+  // validates clean.
+  const clean = read(blockText({ approval: "standing", order: [cardId], cards: { [cardId]: blob } }));
+  expect(clean.present, "the control's own block was not read as present").toBe(true);
+  expect(grantFindings(clean, declared, io), "the control: a sound grant was refused").toEqual([]);
+
+  // A MODE THE SCHEMA DOES NOT DECLARE. The parser refuses it at the
+  // read, which is the earliest place it can be refused and the reason
+  // this check never has to decide what an undeclared mode means.
+  let refusedMode: unknown;
+  try {
+    read(blockText({ approval: "sometimes", order: [cardId], cards: { [cardId]: blob } }));
+  } catch (err) {
+    refusedMode = err;
+  }
+  expect(refusedMode, "a mode outside the declared set was read as a grant").not.toBeUndefined();
+  expect(String(refusedMode), "the refusal does not name the value it refused").toContain("sometimes");
+  // AND THE CHECK REFUSES IT TOO where a reader hands one through, which
+  // is what makes the value set checked rather than assumed.
+  expect(
+    grantFindings({ ...clean, approval: "sometimes" } as typeof clean, declared, io),
+    "an undeclared mode passed the check",
+  ).toEqual([`the approval mode \`sometimes\` is not one the schema declares`]);
+
+  // A CARD IN THE ORDER THAT THE MAP DOES NOT CARRY. The parser refuses
+  // this at the read too, and names the id — an order and a card map that
+  // disagree are either an approval with no revision or a revision nobody
+  // approved.
+  let refusedMissing: unknown;
+  try {
+    read(
+      [
+        "",
+        "dispatch:",
+        "  approval: standing",
+        "  recovery: repairs",
+        "  grant:",
+        '    given_by: "a fixture owner"',
+        '    at: "2026-01-02T03:04:05Z"',
+        "    revision: 1",
+        `    order: [${cardId}, T-999]`,
+        "    cards:",
+        `      ${cardId}: ${blob}`,
+        "  history: []",
+        "",
+      ].join("\n"),
+    );
+  } catch (err) {
+    refusedMissing = err;
+  }
+  expect(refusedMissing, "an order naming a card the map does not carry was read as a grant").not.toBeUndefined();
+  expect(String(refusedMissing), "the refusal does not name the card it refused").toContain("T-999");
+  // AND THE CHECK REFUSES IT TOO where a reader hands one through, which
+  // is what keeps the map checked rather than assumed.
+  const handed = clean.current as NonNullable<typeof clean.current>;
+  expect(
+    grantFindings(
+      { ...clean, current: { ...handed, order: [...handed.order, "T-999"] } } as typeof clean,
+      declared,
+      io,
+    ).join(" | "),
+    "a card approved with no blob in the map passed the check",
+  ).toContain("T-999");
+
+  // A BLOB THIS REPOSITORY DOES NOT CARRY — the stale pin in its
+  // strongest form, and the one a byte comparison alone would report as
+  // "a different card" without saying the bytes are gone.
+  const gone = "0".repeat(40);
+  expect(
+    grantFindings(
+      read(blockText({ approval: "standing", order: [cardId], cards: { [cardId]: gone } })),
+      declared,
+      io,
+    ).join(" | "),
+    "a pin to bytes this repository does not hold passed the check",
+  ).toContain("does not carry those bytes");
+
+  // AND THE DRIFT ARM, BOTH WAYS ROUND, over injected texts so that no
+  // object is written into this repository to make the point.
+  const stamped = text.replace(/^status:.*$/m, "status: verifying");
+  const rewritten = text.replace(/^- WHEN /m, "- WHEN something else entirely ");
+  const injected = (approved: string): GrantTreeIo => ({
+    ...io,
+    currentBlob: () => "f".repeat(40),
+    currentText: () => approved,
+    approvedText: () => text,
+  });
+  expect(
+    grantFindings(clean, declared, injected(stamped)),
+    "a card the ceremony merely stamped was refused, which the admission itself allows",
+  ).toEqual([]);
+  expect(
+    grantFindings(clean, declared, injected(rewritten)).join(" | "),
+    "a card rewritten past the mechanical drift passed the check",
+  ).toContain("beyond the admission's mechanical drift");
 });
 
 test("THE SETTINGS CHAPTER CARRIES THE DISPATCH BLOCK AS A GENERATION of its declaration, never as prose", () => {

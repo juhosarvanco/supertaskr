@@ -223,7 +223,7 @@ import {
   trackedDirt,
   writeToken,
 } from "../../../.claude/hooks/gate-token.mjs";
-import { docsGate, docsReaders, stripComments } from "./docs-scan.mjs";
+import { docsGate, docsReaders, sourceCorpus, stripComments } from "./docs-scan.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 /** Repo root: tools/e2e/scripts -> tools/e2e -> tools -> root. */
@@ -1179,9 +1179,14 @@ export function normaliseChanged(raw, root = repoRoot) {
  * @param {Record<string, string[]>} input.reach  from `specReach`
  * @param {Record<string, string[]>} [input.docsReadersByPath]  docs path ->
  *   the repo-relative files the DOCS GATE's reader map says read it
+ * @param {Record<string, string[]>} [input.settingsReadersByPath]  runtime
+ *   settings path -> the repo-relative files that read it (T-330). It
+ *   composes with the import arm the same way the docs map does, and for
+ *   the same reason: the file that opens the runtime template is a
+ *   SCRIPT, and the spec that owns that is the one importing it.
  * @returns {OwningDerivation}
  */
-export function owningSpecs({ changed, reach, docsReadersByPath = {} }) {
+export function owningSpecs({ changed, reach, docsReadersByPath = {}, settingsReadersByPath = {} }) {
   const specs = Object.keys(reach).sort();
   /** @type {Set<string>} */
   const owed = new Set();
@@ -1205,12 +1210,22 @@ export function owningSpecs({ changed, reach, docsReadersByPath = {} }) {
         }
       }
     }
+    for (const reader of settingsReadersByPath[p] ?? []) {
+      for (const s of specs) {
+        if (hits.has(s)) continue;
+        if (s === reader) hits.set(s, `is the body that reads the configuration at ${p}`);
+        else if ((reach[s] ?? []).includes(reader)) {
+          hits.set(s, `imports ${reader}, which reads the configuration at ${p}`);
+        }
+      }
+    }
     if (hits.size === 0) {
       unplaceable.push({
         path: p,
-        why:
-          p.startsWith("docs/")
-            ? "the docs gate's reader map names no spec in this lane for it"
+        why: p.startsWith("docs/")
+          ? "the docs gate's reader map names no spec in this lane for it"
+          : underSettings(p)
+            ? "the runtime settings reader map names no spec in this lane for it"
             : "no spec in this lane reaches it through a static import, and it is not a spec",
       });
       continue;
@@ -1243,7 +1258,17 @@ export function deriveOwning(rawChanged, root = repoRoot) {
     const gate = docsGate(changed, docsReaders(root));
     for (const entry of gate.byPath) docsReadersByPath[entry.path] = entry.readers;
   }
-  return { changed, unresolved, ...owningSpecs({ changed, reach, docsReadersByPath }) };
+  /** @type {Record<string, string[]>} */
+  const settingsReadersByPath = {};
+  const settingsPaths = changed.filter((p) => underSettings(p));
+  if (settingsPaths.length > 0) {
+    Object.assign(settingsReadersByPath, settingsReaders(settingsPaths, root).byPath);
+  }
+  return {
+    changed,
+    unresolved,
+    ...owningSpecs({ changed, reach, docsReadersByPath, settingsReadersByPath }),
+  };
 }
 
 /**
@@ -1295,6 +1320,154 @@ export function scopeVerdict(v, scope) {
   };
 }
 
+// ── THE RUNTIME SETTINGS THIS PROJECT IS CONFIGURED BY (T-330) ───────
+//
+// `method/runtime/` holds the runtime template and the schema beside it:
+// the file that says which model each role is dispatched on, which
+// process profile this project runs, and — since T-319 — whether an
+// owner's dispatch grant is recorded. It is CONFIGURATION: not code, and
+// not a document. It lies under no package root, no spec reaches it
+// through a static import, and the DOCS GATE's reader map does not cover
+// it because it is not under `docs/`. All three arms of the derivation
+// below answer "I cannot place this", so the whole battery is owed for a
+// two-line records change — the conservative answer for an unplaceable
+// input, and NOT a finding that every body reads the file. Measured at
+// T-330: recording the owner's approved dispatch grant, forty lines of
+// configuration, owed four legs.
+//
+// THE CONSUMERS ARE DERIVED FROM THE TREE AND NEVER LISTED. A file reads
+// a runtime settings path when its comment-stripped source SPELLS that
+// path — as one literal, or as the segments a `path.join` is given — or
+// when it names an identifier some speller BINDS to exactly that path.
+// THE SECOND ARM IS NOT AN EXTRA: the path this project's arm actually
+// opens is `RUNTIME_TEMPLATE`, exported by the parser library's settings
+// reader, so a literal-only scan finds the library and misses every one
+// of the arm's own readers and every body that drives them. Both arms
+// are TEXTUAL and deliberately generous — this derivation may be wrong
+// by owing too MUCH and must never be wrong by owing too little, so a
+// file that merely mentions the name counts as a reader.
+//
+// AND A SETTINGS PATH NOTHING READS IS UNPLACEABLE, which is where this
+// arm is deliberately less confident than the docs arm beside it. There,
+// "no code suite reads this document" is a POSITIVE answer over a map
+// derived from the whole source corpus. Here, a configuration file this
+// scan finds no reader for is a file whose consumers the scan did not
+// find: the arms are textual, and a reader that computed its path some
+// third way would look exactly like a file nobody reads. So it falls
+// through to the whole battery, naming the path it could not place.
+
+/** The directory this project's runtime configuration lives in. */
+export const SETTINGS_DIR = "method/runtime";
+
+/**
+ * Is this repo-relative path one of the runtime settings files?
+ * @param {string} rel
+ * @returns {boolean}
+ */
+export function underSettings(rel) {
+  return rel === SETTINGS_DIR || rel.startsWith(`${SETTINGS_DIR}/`);
+}
+
+/**
+ * THE SITE FORM of one settings path: its segments in order, with the
+ * quotes, commas, dots and slashes a source file may put between them,
+ * so that `"method/runtime/x.yaml"` and `path.join(root, "method",
+ * "runtime", "x.yaml")` are ONE pattern rather than two rules that can
+ * disagree. Every segment is escaped — a `.` in a filename is a dot and
+ * not a wildcard.
+ * @param {string} rel
+ * @returns {RegExp}
+ */
+export function settingsSiteRe(rel) {
+  const parts = rel.split("/").map((seg) => seg.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  return new RegExp(parts.join("[\"'`\\s,./]+"));
+}
+
+/** A `const NAME = "literal"` binding, in either dialect this tree writes
+ *  (`export const` in TS/JS, `static NAME: &str` in Rust is matched by the
+ *  same shape once `static` is allowed as the keyword). */
+const SETTINGS_BINDING_RE =
+  /\b(?:pub\s+)?(?:export\s+)?(?:const|let|var|static)\s+([A-Za-z_$][\w$]*)\s*(?::[^=\n]*)?=\s*["'`]([^"'`\n]+)["'`]/g;
+
+/**
+ * @typedef {object} SettingsReaderMap
+ * @property {string[]} asked  every settings path this map was ASKED
+ *   about. A path missing from it was never put to the scan, and an
+ *   empty reader list for it would be an unasked question in an answer's
+ *   costume — the same distinction the DOCS GATE's map draws.
+ * @property {Record<string, string[]>} byPath  settings path -> the
+ *   repo-relative source files that read it, sorted.
+ * @property {Record<string, string[]>} constants  settings path -> the
+ *   identifiers a speller binds to it, sorted. Reported rather than kept
+ *   private so that an answer can be checked against the tree.
+ */
+
+/**
+ * THE RULE, AND IT IS A PURE FUNCTION OF THE CORPUS IT IS GIVEN.
+ *
+ * @param {string[]} paths  the settings paths to place, repo-relative
+ * @param {Record<string, string>} corpus  source file -> its
+ *   comment-stripped text. Comments are stripped because a rule that
+ *   counted a mention in prose would make every file that TALKS about
+ *   the template a reader of it.
+ * @returns {SettingsReaderMap}
+ */
+export function settingsReadersIn(paths, corpus) {
+  const files = Object.keys(corpus).sort();
+  /** @type {Record<string, string[]>} */
+  const byPath = {};
+  /** @type {Record<string, string[]>} */
+  const constants = {};
+  for (const rel of paths) {
+    const site = settingsSiteRe(rel);
+    const spellers = files.filter((f) => site.test(corpus[f] ?? ""));
+    /** @type {Set<string>} */
+    const names = new Set();
+    for (const f of spellers) {
+      for (const m of (corpus[f] ?? "").matchAll(SETTINGS_BINDING_RE)) {
+        if (m[2] === rel && m[1] !== undefined) names.add(m[1]);
+      }
+    }
+    /** @type {Set<string>} */
+    const readers = new Set(spellers);
+    for (const name of names) {
+      const named = new RegExp(`\\b${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`);
+      for (const f of files) if (named.test(corpus[f] ?? "")) readers.add(f);
+    }
+    byPath[rel] = [...readers].sort();
+    constants[rel] = [...names].sort();
+  }
+  return { asked: [...new Set(paths)].sort(), byPath, constants };
+}
+
+/**
+ * The rule as the CLI runs it: the reading taken, then the rule. Kept
+ * separate so the rule stays testable with no tree at all, and so this
+ * function is the ONE place a reading happens.
+ *
+ * THE WALK IS PAID FOR ONLY WHEN A SETTINGS PATH MOVED, which is why
+ * every caller guards it — it reads the whole source corpus, and a lane
+ * changing one script should not pay for it.
+ *
+ * @param {string[]} paths
+ * @param {string} [root]
+ * @returns {SettingsReaderMap}
+ */
+export function settingsReaders(paths, root = repoRoot) {
+  /** @type {Record<string, string>} */
+  const corpus = {};
+  for (const rel of sourceCorpus(root)) {
+    try {
+      corpus[rel] = stripComments(readFileSync(path.join(root, rel), "utf8"));
+    } catch {
+      // A TRACKED FILE THIS WALK CANNOT READ CONTRIBUTES NO EDGE and is
+      // not an error: a path deleted in the working tree is still tracked.
+      corpus[rel] = "";
+    }
+  }
+  return settingsReadersIn(paths, corpus);
+}
+
 // ── THE OWED SET (T-280) ─────────────────────────────────────────────
 //
 // ── WHAT THIS IS, AND HOW IT DIFFERS FROM `--owning` ABOVE ───────────
@@ -1311,7 +1484,7 @@ export function scopeVerdict(v, scope) {
 // from the same range with this same function and requires the token to
 // cover it.
 //
-// ── THREE ARMS, COMPOSED, AND NOT ONE OF THEM IS A LIST ──────────────
+// ── FOUR ARMS, COMPOSED, AND NOT ONE OF THEM IS A LIST ───────────────
 //   THE PACKAGE ROOTS come off the registry's own `cwd` fields
 //     (`PACKAGE_ROOTS`), so adding a graded suite moves this derivation
 //     with it and a hand-kept copy cannot drift from the runner.
@@ -1321,6 +1494,10 @@ export function scopeVerdict(v, scope) {
 //     A docs path's readers are FILES; each file is placed through the
 //     package roots, which is how a document read by the parser's census
 //     owes the parser suite without anybody writing that down.
+//   THE RUNTIME SETTINGS READER MAP is `settingsReaders` below, added by
+//     T-330 for the one input none of the three above can place: this
+//     project's own configuration. Its readers are FILES too, and are
+//     placed through the same package roots.
 //
 // ── AND THE `file:` EDGE, WHICH THE PACKAGE ROOTS ALONE WOULD MISS ───
 // `app/package.json` depends on the parser at `file:../lib/parser`, so a
@@ -1462,6 +1639,12 @@ export function packageDependents(root = repoRoot, roots = PACKAGE_ROOTS) {
  *   about. A docs path missing from this list was never put to the map,
  *   and an empty reader list for it would be an unasked question wearing
  *   an answer's costume.
+ * @param {Record<string, string[]>} [input.settingsReadersByPath]  runtime
+ *   settings path -> the repo-relative files that read it, from
+ *   `settingsReaders` (T-330)
+ * @param {string[]} [input.settingsAsked]  every settings path that scan
+ *   was ASKED about, and the same distinction `docsAsked` draws: an
+ *   unasked question is not an answer.
  * @param {string[]} [input.unresolved]  from `specReach`
  * @returns {OwedDerivation}
  */
@@ -1472,13 +1655,16 @@ export function deriveOwed({
   dependents = {},
   docsReadersByPath = {},
   docsAsked = [],
+  settingsReadersByPath = {},
+  settingsAsked = [],
   unresolved = [],
 }) {
   const asked = new Set(docsAsked);
+  const askedSettings = new Set(settingsAsked);
   // T-271's rule, CALLED. Its `unplaceable` is deliberately not read:
   // this function's placement question is wider than that one's, and the
   // header above states the case where the two answers differ.
-  const owning = owningSpecs({ changed, reach, docsReadersByPath });
+  const owning = owningSpecs({ changed, reach, docsReadersByPath, settingsReadersByPath });
   const specsFor = new Map(owning.byPath.map((e) => [e.path, e.specs]));
   /** @type {Set<string>} */
   const suites = new Set();
@@ -1549,6 +1735,44 @@ export function deriveOwed({
         }
         placed = true;
         owe(rs, `the DOCS GATE says ${r} reads it, and ${r} lies under ${roots[rs]}/`);
+      }
+      if (!mapped) continue;
+    }
+    if (underSettings(p)) {
+      if (!askedSettings.has(p)) {
+        unplaceable.push({
+          path: p,
+          why:
+            "the runtime settings reader map was never asked about it, and an unasked question " +
+            "is not an answer",
+        });
+        continue;
+      }
+      const readers = settingsReadersByPath[p] ?? [];
+      if (readers.length === 0) {
+        unplaceable.push({
+          path: p,
+          why:
+            "no tracked source file in this tree reads it, and a configuration file whose readers " +
+            "this scan did not find is not a configuration file nobody reads",
+        });
+        continue;
+      }
+      let mapped = true;
+      for (const r of readers) {
+        const rs = suiteOfPath(r, roots);
+        if (rs === undefined) {
+          unplaceable.push({
+            path: p,
+            why:
+              `${r} reads this configuration, and that reader lies under no package root — so ` +
+              "this derivation cannot say which suite would run it",
+          });
+          mapped = false;
+          break;
+        }
+        placed = true;
+        owe(rs, `${r} reads this configuration, and ${r} lies under ${roots[rs]}/`);
       }
       if (!mapped) continue;
     }
@@ -1696,12 +1920,24 @@ export function owedForRange(range, root = repoRoot) {
     docsAsked = gate.docsPaths;
     for (const entry of gate.byPath) docsReadersByPath[entry.path] = entry.readers;
   }
+  /** @type {Record<string, string[]>} */
+  const settingsReadersByPath = {};
+  /** @type {string[]} */
+  let settingsAsked = [];
+  const settingsPaths = changed.filter((p) => underSettings(p));
+  if (settingsPaths.length > 0) {
+    const map = settingsReaders(settingsPaths, root);
+    settingsAsked = map.asked;
+    Object.assign(settingsReadersByPath, map.byPath);
+  }
   const derived = deriveOwed({
     changed,
     reach,
     dependents,
     docsReadersByPath,
     docsAsked,
+    settingsReadersByPath,
+    settingsAsked,
     unresolved,
   });
   return {
@@ -1722,6 +1958,8 @@ export function owedForRange(range, root = repoRoot) {
       docsReaderMapConsulted: docsAsked.length > 0,
       docsReaders: readerCount,
       docsReadersByPath,
+      settingsReaderMapConsulted: settingsAsked.length > 0,
+      settingsReadersByPath,
     },
   };
 }

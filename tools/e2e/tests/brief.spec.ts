@@ -3317,6 +3317,68 @@ function configureFixtureIdentity(root: string): void {
   fixtureGit(root, ["config", "user.email", FIXTURE_IDENT.email]);
 }
 
+/**
+ * THE FIXTURE'S OWN RUNTIME TEMPLATE (T-330).
+ *
+ * A ritual fixture is a real checkout of this tree, and until this card
+ * it inherited this project's own runtime template along with it. That
+ * made every fixture dispatch a test of THIS PROJECT'S CONFIGURATION
+ * rather than of the behaviour the body was written for, and the day the
+ * owner's approved dispatch grant was recorded it cost thirty-five
+ * bodies at once: the real grant judged every fixture dispatch and
+ * refused each fixture card BY NAME as one the grant does not list.
+ *
+ * So the fixture writes its own, and this is it. It carries the roles
+ * THE ARM ITSELF DISPATCHES — derived from `ROLE_TEMPLATE_KEYS` rather
+ * than listed, so a role the arm adds arrives here with it — at values
+ * that exist nowhere else in this tree, the process section the arm
+ * needs, and NO dispatch block, which is the no-grant state most of
+ * these bodies are about. A body that wants a grant writes one with
+ * `grantIn`; a body about this project's real configuration reads the
+ * real file and says which it is reading.
+ *
+ * `run-record.spec.ts`'s own grant bench already worked this way — it
+ * builds its tree and writes `roles:` into it — and this is that
+ * practice applied to the fixture that copies a whole checkout.
+ */
+const FIXTURE_PROFILE = "standard";
+
+/** The model the fixture's template names for one role key. */
+function fixtureRoleModel(key: string): string {
+  return `fixture-${key}@probe`;
+}
+
+/** The fixture's template, composed from the arm's own role keys. */
+function fixtureTemplateText(): string {
+  const keys = [...new Set(Object.values(ROLE_TEMPLATE_KEYS))].sort();
+  expect(keys.length, "the arm dispatches no roles, so a fixture template has nothing to name").toBeGreaterThan(0);
+  expect(PROFILE_IDS, "the fixture's profile is not one the schema declares").toContain(FIXTURE_PROFILE);
+  return [
+    "# THE FIXTURE'S OWN RUNTIME TEMPLATE (T-330) — written by the fixture",
+    "# and never copied from this project's, so a fixture dispatch cannot",
+    "# be admitted or refused by this project's own configuration.",
+    "roles:",
+    ...keys.map((k) => `  ${k}: ${fixtureRoleModel(k)}`),
+    "",
+    "process:",
+    `  profile: ${FIXTURE_PROFILE}`,
+    `  available: [${PROFILE_IDS.join(", ")}]`,
+    "  switches:",
+    "",
+  ].join("\n");
+}
+
+/**
+ * Write the fixture's template into a fixture root, DISCARDING whatever
+ * a body left in that file. Every "restore the template" step in this
+ * lane calls this rather than copying the live one back, because the
+ * state a body restores to is the fixture's own no-grant state and never
+ * this project's configuration of the day.
+ */
+function seedFixtureTemplate(root: string): void {
+  writeFileSync(path.join(root, RUNTIME_TEMPLATE), fixtureTemplateText());
+}
+
 function ritualFixture(
   name: string,
   opts: { identity?: boolean; card?: string; at?: string } = {},
@@ -3334,6 +3396,11 @@ function ritualFixture(
     execFileSync("git", ["-C", repoRoot, "archive", "HEAD"], { maxBuffer: 512 * 1024 * 1024 }),
   );
   execFileSync("tar", ["-x", "-f", tar, "-C", root]);
+  // THE FIXTURE'S OWN CONFIGURATION, WRITTEN OVER THE ONE THE ARCHIVE
+  // CARRIED (T-330). It goes in before the first commit so the fixture's
+  // checkpoint carries it, and so no body can read the project's own
+  // template out of a fixture by accident.
+  seedFixtureTemplate(root);
   // `card` PUTS ITS TEXT IN THE CHECKPOINT COMMIT ITSELF (T-300-s7), which
   // is the only way to arrange a dispatch that writes NO stamp commit and
   // therefore cuts where the checkout's HEAD already stands. A card
@@ -7177,14 +7244,14 @@ test("A ROLE THE TEMPLATE NAMES NO MODEL FOR REFUSES THE DISPATCH, before a card
     // THE POSITIVE CONTROL: the same fixture with the default restored
     // plans without complaint, so the refusal above is about the missing
     // model and not about the fixture.
-    writeFileSync(template, readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8"));
+    seedFixtureTemplate(fx.root);
     const plan = dispatchLanePlan(context({ root: fx.root }), {
       taskId: FIXTURE_CARD_ID,
       slug: FIXTURE_SLUG,
       scratch: fx.scratch,
     });
     expect(plan.stamp["builder"], "the control: with the default restored the seat is stamped").toBe(
-      OPUS_5_SEAT,
+      fixtureRoleModel("builder"),
     );
   } finally {
     removeGitFixture(fx.dir, "ritualFixture(nomodel)");
@@ -8043,7 +8110,7 @@ test("A FORBIDDEN COMBINATION REFUSES THE WHOLE ARM, before a row is assembled o
     expect(inventory(fx.root), "the refused run left something behind").toEqual(before);
     // THE POSITIVE CONTROL: with the departure removed the same fixture
     // assembles, so the refusal is about the combination.
-    writeFileSync(template, readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8"));
+    seedFixtureTemplate(fx.root);
     expect(
       context({ root: fx.root, taskId: FIXTURE_CARD_ID }).process?.settings.profile,
       "the control: the shipped section resolves",
@@ -8383,7 +8450,7 @@ test("EVERY `operational` ROW IS PROVED BY CHANGING ITS VALUE AND WATCHING THE A
       const template = path.join(fx.root, RUNTIME_TEMPLATE);
       writeFileSync(
         template,
-        readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8")
+        fixtureTemplateText()
           .replace(/^(\s+)builder:.*$/m, "$1builder: planted-model@probe")
           .replace(/^(  switches:)[ \t]*$/m, `$1\n    dispatch.model_per_role: ${v}`),
       );
@@ -8904,10 +8971,7 @@ test("THE LANE CUT IS AN ADMISSION, AND IT IS DISTINGUISHED FROM THE WRITER RESE
     // BEGINS — the plan is pure, so the refusal costs no stamp commit and
     // no worktree.
     grantIn(fx.root, "");
-    writeFileSync(
-      path.join(fx.root, RUNTIME_TEMPLATE),
-      readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8"),
-    );
+    seedFixtureTemplate(fx.root);
     grantIn(fx.root, dispatchBlockText({
       approval: "each",
       recovery: "none",
@@ -9034,10 +9098,7 @@ test("A REVOKED BLOCK CARRIES NO CURRENT GRANT, and every admission under it is 
     expect(refused?.message, "the refusal does not name who revoked it").toContain("the fixture owner");
     // THE POSITIVE CONTROL, WHERE THE ARRANGEMENT IS ABSENT: the same
     // grant without the revocation admits.
-    writeFileSync(
-      path.join(fx.root, RUNTIME_TEMPLATE),
-      readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8"),
-    );
+    seedFixtureTemplate(fx.root);
     grantIn(fx.root, dispatchBlockText({
       approval: "standing",
       recovery: "repairs",
@@ -9122,10 +9183,7 @@ test("A SUCCESSOR COORDINATOR INHERITS THE GRANT FROM THE BLOCK and continues th
     // THE POSITIVE CONTROL, WHERE THE ARRANGEMENT IS ABSENT: a tree with
     // no block hands a successor nothing, and says so rather than
     // inventing an order from the board.
-    writeFileSync(
-      path.join(fx.root, RUNTIME_TEMPLATE),
-      readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8"),
-    );
+    seedFixtureTemplate(fx.root);
     const none = grantInheritance(grantState(fx.root), []);
     expect(none.inherits, "the control: a successor inherited a grant out of a tree with none").toBe(false);
     expect(none.order, "the control: an order was invented").toEqual([]);
@@ -9146,7 +9204,12 @@ test("THE ARM READS THE GRANT THROUGH THE PARSER'S READER AND THROUGH NOTHING EL
   // the arm, a reading that agrees with the library only by accident, and
   // a symbol that is not the library's at all.
   const schema = parseProcessSchema(readFileSync(path.join(repoRoot, PROCESS_SCHEMA), "utf8"));
-  const template = readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8");
+  // THE BASE IS A CONTROLLED TEMPLATE AND NOT THIS PROJECT'S (T-330).
+  // The claim is that two readers agree about one text; a base that
+  // carries a real block of its own would have this body appending a
+  // second `dispatch:` to it, and the answer would then be about which
+  // block a parser takes rather than about the two readers agreeing.
+  const template = fixtureTemplateText();
   const block = [
     "",
     "dispatch:",
@@ -9245,34 +9308,50 @@ test("THE SCHEMA'S DISPATCH BLOCK NAMES A READ SITE FOR EVERY ROW, AND EVERY OPE
   }
 });
 
-test("THIS PROJECT'S OWN TREE IS THE EXPLICIT NO-GRANT STATE, the ceremony keeps working, and the arm says NOTHING WAS ENFORCED rather than pretending it was", () => {
-  // THE CARD'S FIRST CRITERION READ TOGETHER WITH T-319's NO-GRANT
-  // CLAUSE. This project's template carries no dispatch block and the
-  // standing authorization the seat actually dispatches under lives where
-  // the arm cannot read it, so the honest answer is: admit, and report
-  // that nothing was enforced. An arm that refused here would stop a loop
-  // nobody asked it to stop, and one that claimed to have enforced
-  // something would be the overstatement the three report groups exist
-  // against.
+test("A TREE WITH NO DISPATCH BLOCK IS THE EXPLICIT NO-GRANT STATE, the ceremony keeps working, and the arm says NOTHING WAS ENFORCED rather than pretending it was", () => {
+  // T-324's FIRST CRITERION READ TOGETHER WITH T-319's NO-GRANT CLAUSE.
+  // A template that carries no dispatch block and a standing
+  // authorization living where the arm cannot read it is the arrangement
+  // this project ran under for months, and the honest answer to it is:
+  // admit, and report that nothing was enforced. An arm that refused here
+  // would stop a loop nobody asked it to stop, and one that claimed to
+  // have enforced something would be the overstatement the three report
+  // groups exist against.
+  //
+  // THE TREE IT READS IS A FIXTURE'S, AND THAT IS T-330's REPAIR. This
+  // body used to read THIS PROJECT'S template and assert the no-grant
+  // state as a property of this project — its own comment said it would
+  // move on the day a migration grant was approved, and that day came.
+  // A settings combination is tested over a controlled template; what
+  // this project's own configuration IS belongs to the one focused check
+  // that reads the real file and says so.
   //
   // KILLED BY: an arm that refuses under the no-grant state, one that
   // reports an unenforced admission as an enforced one, and one that
   // invents a grant out of a template that has none.
-  const here = grantState(repoRoot);
-  expect(here.enforced, `${RUNTIME_TEMPLATE} carries a dispatch block nobody granted`).toBe(false);
-  expect(here.revision, "a revision was read out of a tree with no grant").toBe(0);
-  expect(here.source, "the no-grant state is not stated in as many words").toContain("no dispatch block");
-  const open = admit(here, { boundary: "lane-cut", kind: "explicit", card: "T-324", role: "executor" });
-  expect(open.admitted, "the no-grant state refused a dispatch this loop makes every day").toBe(true);
-  expect(open.kind, "an unenforced admission was reported as an enforced one").toBe("unenforced");
-  expect(open.why, "the admission does not say that nothing was enforced").toContain("NONE is enforced");
-
-  // THE POSITIVE CONTROL, AND IT IS WHERE THE ARRANGEMENT IS ABSENT: the
-  // same reader over a tree that DOES carry a block enforces, so the
-  // answer above is about this project's template rather than about a
-  // reader that admits everything.
-  const fx = ritualFixture("no-grant-control");
+  const fx = ritualFixture("no-grant-state");
   try {
+    const here = grantState(fx.root);
+    expect(here.enforced, "a fixture template with no block was read as carrying one").toBe(false);
+    expect(here.revision, "a revision was read out of a tree with no grant").toBe(0);
+    expect(here.source, "the no-grant state is not stated in as many words").toContain("no dispatch block");
+    const open = admit(here, { boundary: "lane-cut", kind: "explicit", card: "T-324", role: "executor" });
+    expect(open.admitted, "the no-grant state refused a dispatch this loop makes every day").toBe(true);
+    expect(open.kind, "an unenforced admission was reported as an enforced one").toBe("unenforced");
+    expect(open.why, "the admission does not say that nothing was enforced").toContain("NONE is enforced");
+
+    // AND THE FIXTURE IS INDEPENDENT OF THIS PROJECT'S CONFIGURATION,
+    // which is the half that makes the answer above a reading of the
+    // fixture rather than of whatever the tree is configured to today.
+    expect(
+      readFileSync(path.join(fx.root, RUNTIME_TEMPLATE), "utf8"),
+      "the fixture inherited this project's own template again",
+    ).toBe(fixtureTemplateText());
+
+    // THE POSITIVE CONTROL, AND IT IS WHERE THE ARRANGEMENT IS ABSENT: the
+    // same reader over the same fixture once it DOES carry a block
+    // enforces, so the answer above is about a template with no block
+    // rather than about a reader that admits everything.
     grantIn(fx.root, dispatchBlockText({
       approval: "each",
       recovery: "none",
@@ -9289,7 +9368,7 @@ test("THIS PROJECT'S OWN TREE IS THE EXPLICIT NO-GRANT STATE, the ceremony keeps
     }
     expect(refused, "the control: a grant that names another card admitted this one").toBeInstanceOf(AdmissionFinding);
   } finally {
-    removeGitFixture(fx.dir, "ritualFixture(no-grant-control)");
+    removeGitFixture(fx.dir, "ritualFixture(no-grant-state)");
   }
 });
 
@@ -10766,10 +10845,7 @@ test("T-320 C1 — UNDER `until` THE COMPACT CARD IS ADMITTED ONLY AS A DERIVED 
     // THE POSITIVE CONTROL FOR THE RECOVERY POLICY: the same repair under
     // recovery `none` is refused, so the admission above is about the
     // policy and not about a plan that says yes to repairs.
-    writeFileSync(
-      path.join(fx.root, RUNTIME_TEMPLATE),
-      readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8"),
-    );
+    seedFixtureTemplate(fx.root);
     grantIn(
       fx.root,
       dispatchBlockText({
