@@ -48,4 +48,110 @@ The closing check measured a wider coupling than those two bodies: 35 bodies red
 
 The approved grant (revision 1, the owner's yes at 2026-09-15T07:22:18Z, validated through the parser's reader) is prepared as a commit and a patch in the evidence directory and lands with this card's merge, when the bodies and the fixtures have moved off the live template; until then the tree stays in the no-grant state and the express demonstration waits.
 
+**Built on 2026-09-15 in the lane cut at `eca49471`, at tip `801da9a2`.**
+
+THE DERIVATION NOW PLACES THE TEMPLATE. `tools/e2e/scripts/gate-run.mjs`
+gained an arm for `method/runtime/`, composed the way the docs arm beside
+it is: a reader map, each reader placed through the package roots, and the
+end-to-end leg narrowed through the same `owningSpecs`. The map is derived
+from the source corpus and not listed — a file that SPELLS the path, as one
+literal or as the segments a `path.join` is given, or that names an
+identifier a speller BINDS to it. That identifier half is load-bearing:
+what the arm and the bodies open is the parser library's
+`RUNTIME_TEMPLATE` constant rather than a path they spell, so a
+literal-only scan finds the library and misses every body that drives it.
+Measured at `801da9a2`: eleven readers — the parser's settings reader, its
+two barrels and its own test; the kit, which embeds the file with
+`include_str!`; the arm; the settings command; the token scan; and the
+three specs that drive them. The whole-battery fallback is kept for
+everything still unplaceable, and three bodies in `gate-run.spec.ts` hold
+it there: a settings path nobody asked the scan about, one the scan finds
+no reader for, and a reader lying under no package root.
+
+THE SELECTION AND THE ELAPSED TIME, BEFORE AND AFTER, for a change to the
+runtime template — which is exactly the shape of the approved grant:
+
+- Before: the whole battery, fail-closed. Four suites, the end-to-end leg
+  WHOLE at 42 spec files. Measured whole at this tip: 1215 bodies, 21.5
+  minutes wall, 20.2 minutes of body time, one worker.
+- After: four suites, DERIVED, with the leg narrowed to 22 of 42 spec
+  files. Measured: 1125 bodies, 21.9 minutes wall, 19.6 minutes of body time — 3 failed,
+  1122 passed, and the three are the attributed ones named below.
+
+**AND THE SAVING IS SMALL, WHICH THE CARD SHOULD SAY OUT LOUD RATHER THAN
+BURY.** The narrowed selection is 97% of the leg's body time, because
+`docs-input-gate.spec.ts` is 11.6 minutes of a 20.2-minute leg by itself
+and it reaches the arm through the import graph, so it is in the narrowed
+set. The suite set does not shrink either, and that is the honest answer
+rather than a disappointment: the kit embeds the template at compile time,
+the parser declares it, and the app depends on the parser through a `file:`
+specifier, so all four legs really are owed. What this card buys is
+therefore NOT speed. It is that the answer is DERIVED, with a per-path
+reason that travels into the token, instead of a blanket fallback that says
+only that the derivation could not place the input — and that the
+fail-closed answer is now kept for inputs that are genuinely unresolved
+rather than spent on this project's own configuration. A card that wants
+the runtime template to cost less than twenty minutes is a card about
+`docs-input-gate.spec.ts`, not about this derivation.
+
+A RECORDS-ONLY CHANGE, for comparison, measured the same way: this card
+re-triaged owes three suites with the leg at 12 of 42 spec files, 734
+bodies, 6.4 minutes wall and the same in body time. This card does not move that
+answer — the docs arm already derived it — and the completion time of a
+records-only push belongs to the push that lands it.
+
+NO CHECK WAS DROPPED, AND THE NARROWING IS SHOWN TO CATCH A CONFIGURATION
+DEFECT. Nothing was removed from any selection: the narrowing is a
+derivation, not a subtraction. A body in `gate-run.spec.ts` derives every
+spec that reads this project's dispatch block and requires the narrowed
+selection to carry all of them, so a narrowing that dropped the body which
+validates the real configuration would red. The planted defects themselves
+are in `cli.spec.ts`: a mode the schema does not declare, a card in the
+order with no blob in the map, a blob this repository does not carry, and a
+card rewritten past the admission's mechanical drift — each refused by
+name, with a sound grant over a real card validating clean as the control.
+
+THE FIXTURES SEED THEIR OWN CONFIGURATION. `ritualFixture` in
+`brief.spec.ts` writes its own runtime template over the one the archive
+carried, before the fixture's checkpoint commit. It names the roles the arm
+itself dispatches, derived from `ROLE_TEMPLATE_KEYS`, at values that exist
+nowhere else in this tree, the process section the arm needs, and no
+dispatch block. Every restore-the-template step in the lane now restores
+the fixture's own, and a body asserts the fixture's template is that text
+and not this project's. Independence from a landed grant follows
+mechanically: the arm reads the template at the root it is given, and no
+fixture root carries this project's file any more. The body that compared
+the arm's reader with the library's builds on a controlled base too, since
+appending a block to a template that already carries one would be a body
+about which block a parser takes.
+
+THE TWO FROZEN BODIES ARE ANSWERED DIFFERENTLY, AS THEY DESERVE. The
+arm-side body in `brief.spec.ts` moves onto a fixture and keeps its
+coverage whole, control included. The parser-side body in `cli.spec.ts`
+becomes the one focused integration check that reads the real template:
+where a grant is present it validates every row and matches every approved
+card against the tree through `cardDrift`, so a mechanical stamp is
+allowed and a rewritten criterion is not; where there is none it reads out
+the explicit no-grant state in as many words. The tree is still that
+no-grant state, which is the point of the card.
+
+THREE RED BODIES IN THIS LANE ARE ATTRIBUTED AND ARE NOT THIS DIFF'S.
+`push-guard.spec.ts`'s three `--take-seat` bodies fail in any FENCED lane
+worktree with `EACCES` copying `docs/CONVENTIONS.md`: `seatFixture` copies
+that file twice — the flat `docs/*.md` walk, then the derived
+`conventionsFiles()` list whose opening entry is that same file — and
+`copyFileSync` carries the source's mode, which the lane fence leaves at
+444. Measured in isolation on this machine: a 444 source gives a 444
+destination and the second copy is `EACCES`, while a 644 source copies
+cleanly. They are green in the integration checkout and on the runner,
+where the mode is 644, and the verifier bench carries no fence. T-333 is
+already filed for this, fenced on that spec; the repair spelling reached
+here independently is `rmSync(dest, { force: true })` before the copy,
+which is mode-independent and keeps the derived list.
+
+THE BEHAVIOUR CENSUS MOVES WITH THIS DIFF and its regeneration is the
+merge's: `capabilities:check` reads STALE at this tip, 115997 bytes
+committed against a 116595-byte generation. `docs/INDEX.md` is current and
+does not move.
+
 ## Verdicts
