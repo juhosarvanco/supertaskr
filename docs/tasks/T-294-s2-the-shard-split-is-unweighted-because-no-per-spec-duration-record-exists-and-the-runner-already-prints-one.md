@@ -6,7 +6,7 @@ milestone: 4
 size: S
 priority: 3
 status: parked
-wake: T-263
+wake: T-332
 suggested_by: "executor claude-opus-5@subagent @T-294, 2026-09-10"
 blocked_by: [T-294]
 touches: [tools/e2e/scripts/ci-owed.mjs, tools/e2e/tests/gate-run.spec.ts]
@@ -64,3 +64,13 @@ the lightest shard by virtue of being unmeasured.
   of the recorded ones and never zero.
 
 Parked 2026-09-13 (the pruning sitting (T-306), the owner's ruling of 2026-09-13): kept with a wake — wake T-263; the shard split is unweighted because no per-spec duration is kept, which is the band T-263 fixes.
+
+## Triage note, 2026-09-15
+
+Rescheduled on the owner's ruling of 2026-09-15, after the Codex orchestrator's faster-delivery review: this card is re-triaged IMMEDIATELY AFTER T-332, and its wake moves from T-263 to T-332 to say so.
+
+The reason for the ordering rather than for waiting on T-263: T-332 changes what the expensive docs-gate bodies cost, so per-spec durations gathered before it would describe tests that no longer exist in that shape. Weights collected now would be stale by the time they were used.
+
+THE T-263 DEPENDENCY IS RECONSIDERED AT THAT RE-TRIAGE AND NOT ASSUMED. The owner's instruction is that this card is not to be left waiting on T-263 unless there is a real dependency. The band recalibration T-263 performs is not obviously a technical prerequisite for weighting a shard split by measured duration, and actual per-spec readings can be gathered from existing run logs. Whoever re-triages this card decides that on the evidence rather than inheriting the wake.
+
+One design caution recorded with it: a shard can never be faster than its longest indivisible spec, so any promised bound stated as a fraction of the mean has to account for that floor rather than promise what no schedule can deliver. Missing or stale weights must schedule a spec conservatively, never omit it.

@@ -58,6 +58,12 @@ conclude that.
   that still fires every suite the wide trigger fired, so the narrowing
   cannot be a gate that stopped firing.
 
+## Triage note, 2026-09-15
+
+Scheduled for re-triage on the owner's ruling of 2026-09-15, after the Codex orchestrator's faster-delivery review, USING T-330'S MEASUREMENTS: that card reports the checks selected and the elapsed time for a card-only change, which is the evidence this card's narrowing should be judged on rather than an estimate. The re-triage therefore happens at T-330's merge and not before.
+
+A caution to carry into it: records are NOT universally inert. Verdict prose moves rejected counts, criteria and fences reach dispatch, an assignment or a grant reaches authority, and directory membership can reach the census. A narrowing that treats any write under the tasks directory as uniform would be wrong in the direction that loses coverage. Whatever part-aware selection is proposed has to show which observers a given part can actually move, and keep the conservative answer for consumers that read arbitrary text.
+
 ## Implementation notes
 
 ## Verdicts
