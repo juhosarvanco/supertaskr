@@ -1310,6 +1310,24 @@ export function owedPreparationProblems(
             "for nobody.",
         );
       }
+      // A STEP'S CONDITION IS A FACT ABOUT THE JOB LIKE ITS COMMAND, and
+      // this reading asked only whether the command was THERE. `if:` is
+      // the one edit that leaves a preparation present, in the right
+      // place, spelled exactly right, and not run — so the check that
+      // ends at presence passes the very state this card was written
+      // from. The disk-guard and free-disk keepers in this file already
+      // read a step's condition for the same reason.
+      const step = job.steps[at]!;
+      if (step.if !== undefined) {
+        problems.push(
+          `the \`${OWED_JOB}\` job runs \`${cmd}\` in \`${dir}\` under ` +
+            `\`if: ${step.if}\`. A PREPARATION THE JOB CAN SKIP IS NOT A ` +
+            "PREPARATION: on the run where that condition is false the derivation " +
+            "walks an unbuilt tree, the import lands on no file, and the answer is " +
+            "the whole battery again — this card's own finding, reached by one word " +
+            "rather than by a missing step.",
+        );
+      }
     }
   }
   return problems;
@@ -1348,7 +1366,7 @@ test("the planning job prepares the tree its own derivation walks, so the fallba
   ).toEqual([]);
 });
 
-test("FIXTURE: four one-edit mutants of the planning job's preparation — the build dropped, the install dropped, the build moved after the question, a generated input under no package — each red BY NAME", () => {
+test("FIXTURE: five one-edit mutants of the planning job's preparation — the build dropped, the install dropped, the build moved after the question, a generated input under no package, the build made conditional — each red BY NAME", () => {
   const { jobs } = loadWorkflow();
   const owed = jobs.find((j) => j.id === OWED_JOB)!;
   const generated = generatedInputsOfTheDerivation();
@@ -1389,6 +1407,18 @@ test("FIXTURE: four one-edit mutants of the planning job's preparation — the b
   expect(
     owedPreparationProblems(clone(), [...generated, "generated/nowhere-T-331.js"]).join("\n"),
   ).toContain("under no package root at all");
+
+  // 5. THE BUILD MADE CONDITIONAL — present, in the right place, spelled
+  //    exactly right, and never run. Measured on the bench at the lane's
+  //    tip: `if: false` on this one step left all 117 bodies of the two
+  //    fenced specs GREEN, while the job it describes walks an unbuilt
+  //    tree and falls back to all four suites and all 42 specs — the
+  //    defect this card exists to remove, restored by one word.
+  const gated = clone();
+  gated.steps[indexOf(gated, PREPARE_BUILD)]!.if = "false";
+  expect(owedPreparationProblems(gated, generated).join("\n")).toContain(
+    "A PREPARATION THE JOB CAN SKIP IS NOT A PREPARATION",
+  );
 
   // THE POSITIVE CONTROL: the round trip alone changes nothing.
   expect(owedPreparationProblems(clone(), generated)).toEqual([]);
