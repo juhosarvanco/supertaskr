@@ -158,9 +158,55 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            lib/parser/package-lock.json
       - name: disk after the node toolchain and its npm cache
         run: |
           df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+      # ── THE PREPARATION THIS JOB'S OWN DERIVATION WALKS (T-331) ──────
+      # THE DERIVATION READS A TREE, AND UNTIL THIS CARD THIS JOB BUILT
+      # NONE OF IT. `gate-run.mjs --owed-set` walks the static import
+      # graph out from every spec file, and since T-317 two of them —
+      # `brief.spec.ts` and `cli.spec.ts` — import the parser's BUILT
+      # entry, `lib/parser/dist/pure.js`, which `npm run build` writes
+      # and a fresh checkout does not carry. An import that lands on no
+      # file is `unresolved`, and ONE unresolved edge anywhere makes the
+      # whole answer fail closed: on the push of 2026-09-15 this job
+      # answered all four suites and all 42 end-to-end specs across four
+      # shards, one of which ran 37 minutes, while the same range in a
+      # built checkout selects three suites and 12 specs.
+      #
+      # THE FALLBACK WAS NOT WRONG — THE INPUT WAS. Failing closed is
+      # this derivation's one permitted direction and it stays exactly
+      # as it is for an input that is GENUINELY unresolved, naming that
+      # input as it does today. What was wrong is that the input was
+      # unresolvable only because of this job's own build order, so
+      # every push paid the whole battery to learn a fact about the
+      # runner rather than about the range.
+      #
+      # THE SAME TWO STEPS THE `checks` JOB ALREADY RUNS, AND NO MORE.
+      # The program closure this job executes — `ci-owed.mjs`,
+      # `gate-run.mjs`, `docs-scan.mjs`, `token-scan.mjs` — imports
+      # nothing outside `node:`, so tools/e2e's own install is not owed
+      # here; `npm ci` is owed only because `npm run build` is `tsc` and
+      # `tsc` lives in it.
+      #
+      # WHICH GENERATED FILES THOSE ARE IS NOT WRITTEN DOWN HERE.
+      # `workflow-parity.spec.ts` derives from the tree every file the
+      # import graph reaches that a fresh checkout would lack, and reds
+      # naming any one this job does not prepare — so a spec that
+      # imports a SECOND package's build output tomorrow reds there
+      # rather than quietly restoring the whole battery here.
+      - name: parser install
+        working-directory: lib/parser
+        run: npm ci
+      - name: disk after the parser install
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+      - name: parser build
+        working-directory: lib/parser
+        run: npm run build
       # THE TWO IDS ARRIVE THROUGH THE ENVIRONMENT AND NEVER THROUGH THE
       # SHELL. `${{ }}` interpolation splices the payload into the script
       # text; an `env:` binding hands it to the process as a value, and

@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
@@ -45,6 +45,7 @@ import {
   importSpecifiers,
   judge,
   lockPath,
+  owedForRange,
   owedSuites,
   owningSpecs,
   packageDependents,
@@ -1591,6 +1592,218 @@ test("every relative import in this lane's own tree resolves, because a dropped 
   expect(
     resolveImport("tools/e2e/tests/x.spec.ts", "../preflight", (rel) => rel === "tools/e2e/preflight.ts"),
   ).toEqual({ kind: "resolved", rel: "tools/e2e/preflight.ts" });
+});
+
+// ── THE FRESH RUNNER'S OWN TREE (T-331) ──────────────────────────────
+//
+// THE BODY ABOVE IS TRUE OF A PREPARED TREE AND WAS READ AS TRUE OF
+// EVERY TREE. `specReach().unresolved` is empty here because this
+// checkout has run `npm run build` in lib/parser; CI's planning job had
+// not, and two specs import `lib/parser/dist/pure.js`, so on the runner
+// the same reading named two unresolved edges and the derivation fell
+// back to all four suites and all 42 specs — correctly, for a reason
+// about the runner rather than about the range.
+//
+// WHAT IS BUILT HERE is the same tree with exactly those generated
+// files WITHHELD, and then with them restored. The two arms are each
+// other's control: the first shows the fail-closed answer still fires
+// and still names its input, and the second shows that restoring the
+// preparation's product — and nothing else — brings the answer back to
+// the one this checkout gives, suite for suite and spec for spec.
+
+/** The range the card was written from: the push of one amended card on
+ *  2026-09-15, whose planning job answered the whole battery while this
+ *  checkout answered three suites and twelve specs. Two commits on
+ *  main, named as hashes because "the last push" is a different pair
+ *  for every reader and a different one an hour later. */
+const T331_RANGE = "e1a0c98d..2cad6497";
+
+/**
+ * A tree identical to this checkout except that the named files are
+ * ABSENT — mirrored directories along their paths, symlinks for
+ * everything else.
+ *
+ * WHY THIS IS THE FRESH RUNNER AND NOT AN APPROXIMATION OF ONE, for
+ * this derivation's purposes: the walk asks `statSync` whether a
+ * repo-relative path is a file and `readFileSync` for its bytes, so two
+ * trees that answer both questions alike ARE the same tree to it. A
+ * fresh checkout differs from this one by exactly the untracked files,
+ * and the caller passes the untracked files the walk actually reaches —
+ * derived from `git ls-files`, never listed.
+ *
+ * A directory left empty by the withholding reads the same as a
+ * directory that was never created: `statSync` on a path inside either
+ * throws, which is the only question asked of it.
+ */
+function treeWithout(withheld: string[], root: string = repoRoot): { dir: string; cleanup: () => void } {
+  const dir = mkdtempSync(path.join(tmpdir(), "t331-fresh-"));
+  // Every directory that has to be REAL, because something under it is
+  // withheld: each withheld file's ancestors, repo-relative.
+  const mirrored = new Set<string>();
+  for (const file of withheld) {
+    const parts = file.split("/");
+    for (let i = 1; i < parts.length; i += 1) mirrored.add(parts.slice(0, i).join("/"));
+  }
+  const withheldSet = new Set(withheld);
+  const walk = (rel: string): void => {
+    const from = rel === "" ? root : path.join(root, rel);
+    for (const entry of readdirSync(from)) {
+      const childRel = rel === "" ? entry : `${rel}/${entry}`;
+      if (withheldSet.has(childRel)) continue;
+      const target = path.join(dir, childRel);
+      if (mirrored.has(childRel)) {
+        mkdirSync(target, { recursive: true });
+        walk(childRel);
+      } else {
+        symlinkSync(path.join(from, entry), target);
+      }
+    }
+  };
+  mkdirSync(path.join(dir, "."), { recursive: true });
+  walk("");
+  return { dir, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
+}
+
+/**
+ * Every file the owed-set walk reaches that `git` does not track — the
+ * generated inputs a fresh checkout would not carry. Derived by the
+ * same reading the derivation itself takes.
+ */
+function generatedInputsReached(root: string = repoRoot): string[] {
+  const { reach } = specReach(root);
+  const reached = new Set<string>();
+  for (const files of Object.values(reach)) for (const f of files) reached.add(f);
+  const tracked = new Set(
+    execFileSync("git", ["-C", root, "ls-files", "-z"], {
+      encoding: "utf8",
+      maxBuffer: 64 * 1024 * 1024,
+    })
+      .split("\0")
+      .filter((s) => s !== ""),
+  );
+  return [...reached].filter((f) => !tracked.has(f)).sort();
+}
+
+test("a fresh runner's tree answers the WHOLE battery for a range this checkout narrows, and the difference is exactly the generated files the walk reaches", () => {
+  // THE INTEGRATION CHECKOUT'S OWN ANSWER, taken through the arm CI
+  // spawns and the push guard re-derives — not a re-composition of it.
+  const live = owedForRange(T331_RANGE, repoRoot);
+  expect("problem" in live, `${T331_RANGE} must be a range this checkout can diff`).toBe(false);
+  const here = live as Exclude<typeof live, { problem: string }>;
+  expect(here.failClosed, "this checkout derives the range rather than falling back").toBeUndefined();
+
+  // NON-VACUOUS BEFORE IT IS PARITY: a range the derivation answers with
+  // the whole battery anyway would make the comparison below true of
+  // nothing. This one is the card's own — three suites of four, and a
+  // proper subset of the leg.
+  expect(here.suites.length, "a proper subset of the battery").toBeLessThan(ALL_SUITES.length);
+  expect(here.e2e.whole, "and the leg is narrowed").toBe(false);
+  expect(here.e2e.specs.length).toBeGreaterThan(0);
+  expect(here.e2e.specs.length, "to fewer specs than the leg has").toBeLessThan(specFiles().length);
+
+  const generated = generatedInputsReached();
+  expect(
+    generated.length,
+    "the walk reaches files a fresh checkout does not carry — an empty set makes both " +
+      "arms below the same arm",
+  ).toBeGreaterThan(0);
+
+  // THE DOCS READER MAP IS TAKEN ONCE, AND THAT IS NOT A SHORTCUT.
+  // `docsReaders` scans `sourceCorpus`, which is `git ls-files` filtered
+  // — the TRACKED corpus. A generated file is by construction not in
+  // it, so withholding one cannot move this map, and a second scan
+  // would be three seconds spent proving that a file git never listed
+  // is still not listed.
+  const readers = docsReaders(repoRoot);
+  const gate = docsGate(here.changed, readers);
+  const docsReadersByPath: Record<string, string[]> = {};
+  for (const entry of gate.byPath) docsReadersByPath[entry.path] = entry.readers;
+  const armAt = (root: string) => {
+    const { reach, unresolved } = specReach(root);
+    return {
+      unresolved,
+      owed: deriveOwed({
+        changed: here.changed,
+        reach,
+        unresolved,
+        dependents: packageDependents(root),
+        docsReadersByPath,
+        docsAsked: gate.docsPaths,
+      }),
+    };
+  };
+
+  const fresh = treeWithout(generated);
+  try {
+    // ARM ONE — THE RUNNER AS IT STOOD. The edges land nowhere, the
+    // answer is the whole battery, and it NAMES the input it could not
+    // resolve rather than reporting a short set or a bare refusal.
+    const before = armAt(fresh.dir);
+    expect(
+      before.unresolved.length,
+      "the withheld files are reached through relative imports, so the walk reports them",
+    ).toBeGreaterThan(0);
+    expect(before.owed.failClosed ?? "", "criterion 2: the fallback still fires").toContain(
+      "the static import graph has an edge it could not land on a file",
+    );
+    for (const edge of before.unresolved) {
+      expect(
+        before.owed.failClosed ?? "",
+        "criterion 2: and it NAMES the input, so a seat can act on the sentence",
+      ).toContain(edge);
+    }
+    expect(before.owed.suites, "the whole battery, which is the safe direction").toEqual([
+      ...ALL_SUITES,
+    ]);
+    expect(before.owed.e2e, "and the leg whole").toEqual({ whole: true, specs: [] });
+
+    // ARM TWO — THE SAME TREE AFTER THE PREPARATION THE PLANNING JOB NOW
+    // RUNS. Restoring the build's product and NOTHING else brings the
+    // answer back to this checkout's, which is what makes arm one
+    // attributable to the withholding and to nothing about the mirror.
+    const prepared = treeWithout([]);
+    try {
+      const after = armAt(prepared.dir);
+      expect(after.unresolved, "every edge lands once the build's product is there").toEqual([]);
+      expect(
+        after.owed.failClosed,
+        "criterion 1: a prepared tree derives the range instead of falling back",
+      ).toBeUndefined();
+      expect(after.owed.suites, "criterion 1: suite for suite").toEqual(here.suites);
+      expect(after.owed.e2e, "criterion 1: and spec for spec").toEqual(here.e2e);
+    } finally {
+      prepared.cleanup();
+    }
+  } finally {
+    fresh.cleanup();
+  }
+});
+
+test("the fail-closed sentence is a DISCRIMINATION: one unresolved edge is enough, and a tree with none derives the range", () => {
+  // THE POSITIVE CONTROL FOR THE NEGATIVE ASSERTION ABOVE, at the pure
+  // rule rather than over a tree — so the two cannot pass together by
+  // sharing one mistake. `deriveOwed` is a pure function of its named
+  // inputs, and `unresolved` is the only input that differs here.
+  const changed = ["tools/e2e/scripts/gate-run.mjs"];
+  const { reach } = specReach();
+
+  const clean = deriveOwed({ changed, reach, unresolved: [], dependents: packageDependents() });
+  expect(clean.failClosed, "no dropped edge, so the set is derived").toBeUndefined();
+  expect(clean.suites.length, "and it is a proper subset").toBeLessThan(ALL_SUITES.length);
+
+  // ONE edge, and the whole answer widens — which is why the planning
+  // job's build order could cost every push the battery.
+  const one = deriveOwed({
+    changed,
+    reach,
+    unresolved: ["tools/e2e/tests/brief.spec.ts -> ../../../lib/parser/dist/pure.js"],
+    dependents: packageDependents(),
+  });
+  expect(one.suites).toEqual([...ALL_SUITES]);
+  expect(one.e2e).toEqual({ whole: true, specs: [] });
+  expect(one.failClosed ?? "", "and the input is named, not merely counted").toContain(
+    "lib/parser/dist/pure.js",
+  );
 });
 
 test("a fixture program written as a STRING is not this file's own import list", () => {

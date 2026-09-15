@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1202 behaviours** — 1200 extracted sentences + 2 named-not-extracted (listed at the end) — across 42 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1206 behaviours** — 1204 extracted sentences + 2 named-not-extracted (listed at the end) — across 42 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -669,6 +669,8 @@ Census: **1202 behaviours** — 1200 extracted sentences + 2 named-not-extracted
 - a docs path is placed by the DOCS GATE's own reader map, composed with the import graph rather than re-derived
 - the live reader map really places this document, and the subset it owes is smaller than the leg
 - every relative import in this lane's own tree resolves, because a dropped edge would make a subset SHORT
+- a fresh runner's tree answers the WHOLE battery for a range this checkout narrows, and the difference is exactly the generated files the walk reaches
+- the fail-closed sentence is a DISCRIMINATION: one unresolved edge is enough, and a tree with none derives the range
 - a fixture program written as a STRING is not this file's own import list
 - the scoped arm's own CLI path prints the subset's verdict, writes it to the token and answers with the subset's own exit code
 - the package roots the owed set is derived through are the registry's own directories, so no second list of them can exist
@@ -1294,6 +1296,8 @@ Census: **1202 behaviours** — 1200 extracted sentences + 2 named-not-extracted
 - FIXTURE: four one-edit mutants of the job graph — an output misspelled, a `needs` dropped, a suite left with no switch, an unpinned runner — each red BY NAME
 - the owed set is derived ON THE RUNNER, and its answer is what gates every leg
 - FIXTURE: three one-edit mutants of the owed job — the id dropped, a payload spliced into the script, a renamed output — each red BY NAME
+- the planning job prepares the tree its own derivation walks, so the fallback is never the runner's build order
+- FIXTURE: five one-edit mutants of the planning job's preparation — the build dropped, the install dropped, the build moved after the question, a generated input under no package, the build made conditional — each red BY NAME
 - the end-to-end leg is sharded by owning spec, and the free-disk floor holds on every shard
 - FIXTURE: three one-edit mutants of the shard job — the matrix hand-written, `fromJSON` dropped, the spec list unread — each red BY NAME
 - a red nightly prints the bisection that names the merge it belongs to
