@@ -243,6 +243,31 @@ under `docs/`, which is the definition stated above, so its own push is that
 measurement. Its two figures and its selection are recorded at the next merge
 rather than by a push made solely to record them.
 
+## The first push the runner derived narrow, 2026-09-16
+
+Recorded after the fact, on the push that landed T-330 (commit 8f18d0c3,
+run 35030867035). The planning job's own output:
+
+    whole=false
+    why=
+    suites=app,e2e,parser,rust
+    e2e-whole=false
+    spec-count=24
+    shard-count=4
+
+THE `why` FIELD IS EMPTY, which is the thing to read: before this card the
+job could not build the parser before it derived, so every push fell back
+and the token carried a fallback reason. Here it carries none. The 24 spec
+files are the same 24 the integration checkout derived locally for the same
+range — spec-for-spec parity between the runner's answer and the seat's.
+The planning job took 19 seconds (22:25:14Z to 22:25:33Z).
+
+THAT 19 SECONDS IS A FOURTH OBSERVATION AND NOT A CONSTANT. The same job
+has been read at 15s, 28s and 17s on earlier runs under different
+conditions. What this card established is the successful preparation and
+the exact narrower selection, not a fixed overhead and not a measured
+end-to-end saving, which would need matched runs nobody has collected.
+
 ## Verdicts
 
 ### 2026-09-15 — APPROVED WITH ASSIGNED CORRECTIONS — claude-opus-5@subagent

@@ -53,6 +53,35 @@ behaviour for an absent record. A spec with no recorded duration takes
 the median rather than zero, so a NEW spec is never sorted to the end of
 the lightest shard by virtue of being unmeasured.
 
+## The split measured on a real run, 2026-09-16
+
+Run 35030867035 (push, commit 8f18d0c3) is the first push whose end-to-end
+leg was NARROWED rather than run whole, so it shows what the unweighted
+split costs when the selection is already correct. Four shards over 24
+spec files, all four green:
+
+| shard | started | completed | elapsed |
+| --- | --- | --- | --- |
+| 3 of 4 | 22:25:35Z | 22:28:48Z | 3m13s |
+| 1 of 4 | 22:25:35Z | 22:32:00Z | 6m25s |
+| 2 of 4 | 22:25:35Z | 22:33:10Z | 7m35s |
+| 4 of 4 | 22:25:35Z | 22:57:34Z | **31m59s** |
+
+The run finished when shard 4 did. Shard 4 carries
+`tests/docs-input-gate.spec.ts`, which the local whole-leg reading of the
+same tree measured at 11.7 minutes of body time out of 21.5; on the runner
+it holds the shard for half an hour while the other three sit idle for
+between twenty-four and twenty-nine minutes each. THE SELECTION WAS RIGHT
+AND THE SPLIT WAS STILL WRONG, which is this card's whole point and is
+now measured rather than argued.
+
+WHAT THIS DOES AND DOES NOT ESTABLISH. It is one run on one tree, and the
+shard assignment is a function of the 24 files that push happened to owe;
+a different change gives a different split and possibly a different worst
+shard. It does not measure what a weighted split WOULD have achieved,
+because no per-spec durations were kept — which is the band this card is
+about. Read it as an existence proof of the cost, not as the saving.
+
 ## Acceptance criteria
 
 - WHEN a weight is recorded for every owed spec THE split SHALL balance
