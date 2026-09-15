@@ -4,13 +4,14 @@ title: "CI's planning job derives the owed set before the parser is built, so th
 feature: F-04
 milestone: 4
 size: S
+tier: guarded
 priority: 1
-status: planned
+status: building
 suggested_by: "the architect seat on 2026-09-15, from the Codex orchestrator's reading of run 34946192300, verified against the job logs and the local derivation"
 blocked_by: []
 touches: [.github/workflows/ci.yml, tools/e2e/scripts/ci-owed.mjs, tools/e2e/tests/workflow-parity.spec.ts, tools/e2e/tests/gate-run.spec.ts]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
