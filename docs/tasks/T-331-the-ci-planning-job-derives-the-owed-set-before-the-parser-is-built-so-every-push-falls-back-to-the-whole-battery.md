@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 size: S
 priority: 1
-status: suggested
+status: planned
 suggested_by: "the architect seat on 2026-09-15, from the Codex orchestrator's reading of run 34946192300, verified against the job logs and the local derivation"
 blocked_by: []
 touches: [.github/workflows/ci.yml, tools/e2e/scripts/ci-owed.mjs, tools/e2e/tests/workflow-parity.spec.ts, tools/e2e/tests/gate-run.spec.ts]

@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 size: S
 priority: 2
-status: suggested
+status: planned
 suggested_by: "the architect seat on 2026-09-15, from the Codex orchestrator's reading of run 34946192300, verified against shard 4's log"
 blocked_by: []
 touches: [tools/e2e/tests/docs-input-gate.spec.ts, tools/e2e/scripts/docs-gate.mjs, tools/e2e/scripts/docs-scan.mjs]
