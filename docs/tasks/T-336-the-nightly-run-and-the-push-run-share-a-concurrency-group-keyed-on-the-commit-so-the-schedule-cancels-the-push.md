@@ -6,7 +6,7 @@ milestone: 4
 size: XS
 tier: guarded
 priority: 1
-status: building
+status: verifying
 suggested_by: "the architect seat on 2026-09-15, from the cancellation of the T-331 landing push's own CI run; observed twice, on 2026-09-14 and 2026-09-15, and read from the runs' own event fields rather than inferred"
 blocked_by: []
 touches: [.github/workflows/ci.yml, tools/e2e/tests/workflow-parity.spec.ts]
@@ -46,5 +46,51 @@ A seat that meets a cancelled run needs to know it is not a red. The cancellatio
 - WHEN a run is cancelled by another run THE outcome SHALL be reported as a displacement naming the displacing run, and SHALL NOT be read as a red tree or as a verdict still pending.
 
 ## Implementation notes
+
+The concurrency group carries the event as well as the commit now, and
+`cancel-in-progress` is unchanged at `true`. Every declared trigger
+therefore holds its own group on one commit, while two runs of one
+trigger over one commit still collapse to one, which is the behaviour
+the commit-keyed group was introduced for.
+
+The keeper does not transcribe the trigger list. It enumerates the
+workflow's own trigger block, renders the declared group once per
+trigger with every context value held equal except the event, and reds
+by name on any pair that renders to one string. Holding the rest equal
+is the conservative direction: a context value may tell two triggers
+apart only where it is guaranteed to, and the repository ref is the
+member that looks like it does and does not, since a push to main and
+the nightly on main carry the identical ref. The same derivation names
+a key made unique per run, which retires the collapse in the other
+direction, and any expression the keeper cannot model, including one
+whose own braces defeat the substitution. Seven one-edit mutants pin
+each red, with the unedited clone as the positive control.
+
+Criterion 4 IS NOT BUILT, and this note is where a reader meets that
+rather than discovering it. The outcome a cancelled run reports is
+produced by the push guard hook, which this lane's fence does not
+carry. Two of its three halves already held at the base commit and are
+already pinned by bodies in that guard's own spec: a cancellation is
+out of the announced-red set, and it is in the non-verdict set, so it
+is skipped on the way to the last real verdict and is read neither as a
+red tree nor as a verdict still pending. The half that does not hold is
+naming the displacing run. The guard reports a count of skipped runs
+and never a name, and prints even that only where the verdict it
+eventually reaches is not a success, so a cancellation sitting in front
+of a green is silent. It could not name the displacing run today in any
+case: the displacing run is the newer run in the same group, which
+after this change means the same head sha and the same event, and the
+event is not among the eight fields the guard asks of the run list. The
+executor wrote the ask file and named three ways to settle it, being a
+widening onto the guard and its spec, a ruling that the two halves
+which hold are enough, or a split onto a follow-up card. No ruling had
+arrived when this lane finished.
+
+The poison drill was four data mutants at the site, each read back with
+a diff before its run and each restored to a matching sha256. Dropping
+the event from the key killed both new bodies and nothing else: the 36
+bodies the parity spec carried at the base commit, including the
+concurrency assertions already there, all stayed green under the exact
+defect this card describes. That is the evidence the keeper was owed.
 
 ## Verdicts
