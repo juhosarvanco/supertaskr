@@ -106,6 +106,22 @@ between hosts, and reconciliation of competing grant histories. The card
 builds neither. Where either would be needed the answer is the clear
 refusal above, so the gap is visible rather than silently filled.
 
+**MOVING THE FILE IS NOT THE SAME AS BREAKING THE COUPLING, and this tree
+has already been bitten by the difference.** An untracked store is still a
+file, and a body that reads it is still coupled to it. That is precisely
+what T-330's rejection was: the reader took a root, and eight call sites
+did not name one, so fixtures that were supposed to be controlled read
+the live configuration anyway. The runtime records this card sits beside
+are read through a root today — the pause reader joins a relative runtime
+path to the root it is given — so the shape is right and the defect, when
+it comes, will be at the call sites rather than in the reader.
+
+SO THE CARD OWES TWO BOUNDARIES AND NOT ONE. That a routine update never
+enters publication, and that no fixture consumes the active grant. The
+second is proved the way T-330 proved it: plant a real grant in the
+designated store and show the fixtures decided by their own
+authorization fixture and not by it.
+
 **The update path keeps four properties.** A revision validates before it
 writes — the approval and its instant recorded, the block through the
 parser's reader, the cards it names resolvable. It checks the revision it
@@ -115,13 +131,18 @@ the shape the parser's reader already validates: a list of earlier
 grants, each read whole, each required to sit below the current revision.
 And it is recoverable — the history is not the only copy.
 
-**The machinery is general, not grant-shaped.** The runtime template also
-carries the role model and effort selections, which are project
-selections in a shipped file for the same reason and will want the same
-treatment once their design is settled. Build the operational-record
-mechanism so a second datum can use it without a second migration and
-without touching the shipped template twice. This card moves only the
-grant.
+**Reuse the primitives, leave an extension point, build no framework.**
+The tree already carries atomic-write, locking and validation helpers;
+this card uses them rather than introducing storage of its own, and
+shapes its interface so a later card can take it up. IT DOES NOT BUILD A
+GENERAL OPERATIONAL-RECORD FRAMEWORK, and neither a settings migration
+nor a metrics migration is a prerequisite. The seat's first draft of this
+card asked for machinery a second datum could use without a second
+migration; that was corrected on review as the kind of generality that
+grows a card. The runtime template does also carry the role model and
+effort selections, which are project selections in a shipped file for the
+same reason — but they wait for their own card and their own design. This
+one moves the grant.
 
 **The shipped template carries no grant, and a body says so about the
 KIT.** The assertion belongs against the kit's embedded content, not
@@ -159,7 +180,8 @@ rather than the template block. Its criteria otherwise stand.
 - WHEN a lane requires an admission THE admission SHALL reach it from the coordinator, and a body SHALL demonstrate that a lane consulting a store of its own is refused rather than served.
 - WHEN cross-host transfer or a competing grant history is met THE answer SHALL be the explicit refusal above, and the card SHALL record both as deferred by the owner's ruling rather than as unhandled.
 - WHEN the kit is generated THE embedded runtime template SHALL carry no dispatch grant, and a body SHALL assert that over the KIT's own embedded content and SHALL be shown to fail against a kit built from a template carrying one.
-- WHEN this card lands THE operational-record mechanism SHALL be usable by a second datum without a second migration, and the card SHALL name what a later card would have to add to move the role model and effort selections through it.
+- WHEN the active grant is present in the designated store THE fixtures SHALL NOT consume it, and a body SHALL plant a real grant there and demonstrate that fixture dispatches are decided by their own authorization fixture; every call site reaching the store SHALL name its root rather than defaulting to the live one, and a body SHALL be shown to fail against a call site that defaults.
+- WHEN this card is built THE work SHALL reuse the atomic-write, locking and validation helpers this tree already carries rather than introduce storage of its own, and SHALL leave an extension point a later card can take up; a general operational-record framework, a settings migration and a metrics migration SHALL NOT be prerequisites, and the card SHALL name what a later card would have to add to move the role model and effort selections through the same path.
 - WHEN this card lands THE runtime template SHALL no longer be the home of the active grant, and a body SHALL demonstrate that a template carrying a grant block is not read as authority.
 
 ## Implementation notes
