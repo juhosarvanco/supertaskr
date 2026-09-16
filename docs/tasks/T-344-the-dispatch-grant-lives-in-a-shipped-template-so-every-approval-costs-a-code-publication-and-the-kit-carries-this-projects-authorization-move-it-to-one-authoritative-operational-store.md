@@ -4,13 +4,14 @@ title: "The dispatch grant lives in the shipped runtime template, so recording a
 feature: F-04
 milestone: 4
 size: M
+tier: guarded
 priority: 1
-status: planned
+status: building
 suggested_by: "the architect seat on 2026-09-16, on the owner's requirement that a routine grant revision trigger no suites, commits, pushes or CI, and on the owner's scoping ruling of the same day; the kit half was found by the seat while checking the cost and corrected in wording after the Codex orchestrator's review"
 blocked_by: []
 touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/brief.mjs, method/runtime/supertaskr.yaml, method/runtime/process-schema.yaml, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/cli.spec.ts, tools/e2e/tests/gate-run.spec.ts, app/src-tauri/src/agent/kit.rs]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
