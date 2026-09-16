@@ -9,7 +9,7 @@ priority: 1
 status: building
 suggested_by: "the architect seat on 2026-09-16, on the owner's requirement that a routine grant revision trigger no suites, commits, pushes or CI, and on the owner's scoping ruling of the same day; the kit half was found by the seat while checking the cost and corrected in wording after the Codex orchestrator's review"
 blocked_by: []
-touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/brief.mjs, method/runtime/supertaskr.yaml, method/runtime/process-schema.yaml, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/cli.spec.ts, tools/e2e/tests/gate-run.spec.ts, app/src-tauri/src/agent/kit.rs]
+touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/brief.mjs, method/runtime/supertaskr.yaml, method/runtime/process-schema.yaml, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/cli.spec.ts, tools/e2e/tests/gate-run.spec.ts, tools/e2e/tests/run-record.spec.ts, tools/e2e/tests/brief-flush.spec.ts, docs/reference/15-settings.md, app/src-tauri/src/agent/kit.rs]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by:
@@ -289,6 +289,66 @@ runs where the store is, and the suite keeps its controlled drills through
 the IO seam that check already has. The same applies to the derivation
 body: do not retarget a publication-owed selection test at a datum that
 can never appear in a range.
+
+THE FENCE WAS WIDENED BY ONE PATH ON 2026-09-17, during the lane, on the
+executor's ask and the seat's grant. `tools/e2e/tests/run-record.spec.ts`
+joins it. THE SEAT'S FENCE HAD MISSED A CONSUMER: `run-record.mjs`'s
+`admissionAt` calls `grantState(root)`, and while that module already names
+its root — which is what the fixture-isolation criterion asks of every call
+site — its bench plants the grant by writing a block into the bench's own
+copy of the runtime template. After this card the template is no longer
+read as authority, so that helper would plant nothing and twelve bodies at
+three admission boundaries would stop measuring the refusals they were
+written for. The executor found it by deriving `grantState`'s call sites
+rather than by trusting the fence; the seat verified all three claims
+against the tree before granting — the call at `run-record.mjs`, the
+helper writing the template in the spec, and the count of twelve.
+
+A SECOND WIDENING FOLLOWED MINUTES LATER, same lane, same mechanism:
+`tools/e2e/tests/brief-flush.spec.ts`. The fence now names ten paths. The
+end-to-end leg's first red was that spec's arm-list guard, which derives
+`brief.mjs`'s own frozen flag literal and requires every flag to be either
+driven by a live arm or argued into the not-an-arm list with a reason. The
+update command adds six flags, so the guard fired on its first run — doing
+exactly what it was built to do, catching a flag nothing announced.
+Verified at the tree before granting: the body, the two lists and the
+regex that reads the literal are all where the executor said.
+
+THE EXECUTOR PUT A DESIGN CALL TO THE SEAT RATHER THAN DECIDING IT, and it
+was right to. Its six entries go in the not-an-arm list rather than making
+the grant's read a driven arm, because this card's eleventh criterion has
+the store REFUSE anywhere that is not the designated integration checkout
+— and that guard runs in a lane worktree and on the verifier's detached
+bench, where the arm would answer a refusal on standard error rather than
+a sized answer. A size guard cannot measure a refusal. Making it a driven
+arm would mean the store answering in exactly the two places the card says
+it must not. The seat's ruling is the not-an-arm list, each entry carrying
+its own reason; the read's CONTENT is graded in the spec the fence already
+carries.
+
+A THIRD WIDENING, and the lane reported it the moment the leg found it
+rather than batching it: `docs/reference/15-settings.md`. The fence names
+eleven paths. The schema's own dispatch-block declaration said the grant's
+home is the runtime template and its read-site table named the block's
+reader — both false after this card — so the executor corrected the
+declaration's `effect:` field, which is RENDERED into a generated
+reference chapter. The chapter is now stale by exactly one line, derived
+rather than described: the executor generated the page to a scratch file
+and diffed it against the committed one, and the rest is byte-identical.
+
+IT BELONGS TO THIS LANE AND NOT TO THE MERGE, which the seat verified:
+`merge.mjs` carries no reference to that page at all, so the integrator
+does not regenerate it the way it regenerates the graph, the census and
+the index. It is a hand-run regeneration committed with the schema change
+that moved it. The executor also named and rejected the alternative of
+reverting its `effect:` edit, correctly — a shipped declaration that says
+the approval lives in the template is worse than a stale page, and the
+schema is in this fence precisely so that sentence can be made true.
+
+THE WIDENINGS MOVED THIS CARD'S BLOB, so the grant was re-pinned to
+revision 3 in the same commit. A fence lives in frontmatter and frontmatter
+is not mechanical drift, so a widening during a lane always owes a
+re-pinning; that is the mechanism working rather than a cost to avoid.
 
 SIZE: the frontmatter says M, which was inherited rather than derived. The
 seat's reading against this fence is L. Whoever verifies should grade

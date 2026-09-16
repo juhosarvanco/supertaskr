@@ -107,12 +107,12 @@ dispatch:
   approval: standing
   recovery: repairs
   grant:
-    given_by: "the owner, by instruction in chat on 2026-09-17, naming T-344, T-335 and T-332 explicitly and ruling the dispatch order; T-344 authorized once its fence was figured out, which this same commit lands, and the eight cards revision 1 already carried are ruled to need no further review before dispatch. Recorded by the architect seat at the instant under at"
-    at: "2026-09-16T22:35:26Z"
-    revision: 2
+    given_by: "the owner's authorization of 2026-09-17 carried forward unchanged — the same eleven cards in the same order, re-pinned because T-344's fence was widened THREE TIMES during its lane, on three executor asks and the seat's grants, which moved that card's blob. NO CARD IS ADDED, REMOVED OR RE-ORDERED and no other pin changes; a fence widening owes a re-pinning because a fence lives in frontmatter and frontmatter is not mechanical drift. Recorded by the architect seat at the instant under at"
+    at: "2026-09-16T23:46:13Z"
+    revision: 3
     order: [T-344, T-335, T-332, T-204, T-312, T-313, T-315, T-316, T-205-s5, T-244-s1, T-295-s8]
     cards:
-      T-344: "954f983d0549427f9d5d0b64b62a609970bfec18"
+      T-344: "c389dfb6a5b2ca399aa08e1362ed3bb612799a8c"
       T-335: "239ed0014f1ede7173de931cadfa807f4cfd01bf"
       T-332: "2b79b2021e4cb3d1b0e075e34126b0b487ade4ce"
       T-204: "96e9edced1edb833525283927c45f7eaf83dbccd"
@@ -124,6 +124,22 @@ dispatch:
       T-244-s1: "658872e44202bd03a1cad4f83ac0c522c0072360"
       T-295-s8: "0f1dc15d9d3a6262c9db596638a1b7679fce94dd"
   history:
+    - given_by: "the owner, by instruction in chat on 2026-09-17, naming T-344, T-335 and T-332 explicitly and ruling the dispatch order; T-344 authorized once its fence was figured out, which this same commit lands, and the eight cards revision 1 already carried are ruled to need no further review before dispatch. Recorded by the architect seat at the instant under at"
+      at: "2026-09-16T22:35:26Z"
+      revision: 2
+      order: [T-344, T-335, T-332, T-204, T-312, T-313, T-315, T-316, T-205-s5, T-244-s1, T-295-s8]
+      cards:
+        T-344: "954f983d0549427f9d5d0b64b62a609970bfec18"
+        T-335: "239ed0014f1ede7173de931cadfa807f4cfd01bf"
+        T-332: "2b79b2021e4cb3d1b0e075e34126b0b487ade4ce"
+        T-204: "96e9edced1edb833525283927c45f7eaf83dbccd"
+        T-312: "d4b0231779dcb20235637afa950442ac8ec0e9b2"
+        T-313: "c8a29e9cba976709f35521082262e8552a303a1e"
+        T-315: "af9fae41265764db2509cc56264704bc8317d5c2"
+        T-316: "c92be7dd83428cab2d318c547bfc52611fac20a4"
+        T-205-s5: "d7cd8fdd9d2c93528f592230eb1011e45df20ccb"
+        T-244-s1: "658872e44202bd03a1cad4f83ac0c522c0072360"
+        T-295-s8: "0f1dc15d9d3a6262c9db596638a1b7679fce94dd"
     - given_by: "the owner, by yes in chat on 2026-09-15 to the seat's verbatim proposal (the list of planned cards as drafted, T-204 included), recorded by the architect seat at the instant under at, minutes after the yes"
       at: "2026-09-15T07:22:18Z"
       revision: 1
