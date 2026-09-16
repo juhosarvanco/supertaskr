@@ -4,13 +4,14 @@ title: "The docs-input-gate spec costs a CI shard half an hour when it is owed, 
 feature: F-04
 milestone: 4
 size: S
+tier: guarded
 priority: 2
-status: planned
+status: building
 suggested_by: "the architect seat on 2026-09-15, from the Codex orchestrator's reading of run 34946192300, verified against shard 4's log"
 blocked_by: []
 touches: [tools/e2e/tests/docs-input-gate.spec.ts, tools/e2e/scripts/docs-gate.mjs, tools/e2e/scripts/docs-scan.mjs]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
