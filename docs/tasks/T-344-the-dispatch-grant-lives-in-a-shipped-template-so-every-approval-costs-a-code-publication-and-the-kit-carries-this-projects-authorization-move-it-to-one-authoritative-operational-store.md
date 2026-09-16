@@ -5,10 +5,10 @@ feature: F-04
 milestone: 4
 size: M
 priority: 1
-status: suggested
+status: planned
 suggested_by: "the architect seat on 2026-09-16, on the owner's requirement that a routine grant revision trigger no suites, commits, pushes or CI, and on the owner's scoping ruling of the same day; the kit half was found by the seat while checking the cost and corrected in wording after the Codex orchestrator's review"
 blocked_by: []
-touches: []
+touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/scripts/brief.mjs, method/runtime/supertaskr.yaml, method/runtime/process-schema.yaml, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/cli.spec.ts, tools/e2e/tests/gate-run.spec.ts, app/src-tauri/src/agent/kit.rs]
 builder:
 verifier:
 built_by:
@@ -237,5 +237,60 @@ rather than the template block. Its criteria otherwise stand.
 - WHEN the publication dependency is removed THE removal SHALL be the datum leaving the publication path, and the update SHALL introduce no generic hook or continuous-integration bypass.
 
 ## Implementation notes
+
+## The fence, and the representation, settled 2026-09-17
+
+THE FENCE IS EIGHT PATHS, derived against the tree at `49fa58ca` and
+reviewed. What each is for:
+
+- the dispatch arm — the store's path constants beside the pause record's, the snapshot reader, the succession reader, and the single admission site that reads the template's block today
+- `brief.mjs` — the CLI entry for the update command
+- the runtime template — the grant leaves it
+- the process schema — its declaration that the template is the approval's home, and its consumer table naming every grant field against the function that reads it
+- `brief.spec.ts` and `cli.spec.ts` — the CLI and arm bodies, and the focused grant check
+- `gate-run.spec.ts` — the dispatch-block-reader derivation, whose subject changes
+- the agent kit — the body asserting the kit's embedded template carries no grant
+
+THE PARSER'S OWN SOURCE IS DELIBERATELY NOT IN THE FENCE. Whether the
+store's validation can be reached without touching the reader is an
+implementation possibility to demonstrate rather than a settled fact. If
+the lane finds it cannot, that is a fence widening through the ask file,
+which is the normal mechanism and cheaper than a dead entry.
+
+THE REPRESENTATION IS THE IMPLEMENTER'S AND IS SETTLED HERE rather than
+escalated: a YAML current snapshot at `.supertaskr/dispatch-grant.yaml`
+carrying the same block shape the existing reader accepts, and a JSONL
+journal at `.supertaskr/dispatch-grant-history.jsonl`, one superseded
+revision per line. They are different objects with different jobs — the
+snapshot is validated on every read and should go through the reader that
+already exists; the journal is appended to and read only for audit or
+recovery, where one line per revision appends in constant time and a torn
+final line is detectable. TWO CONSTRAINTS ON WHATEVER IS BUILT: the
+existing block reader still requires a `history` field, so a compatibility
+representation carries `history: []` and never loads the archive; and the
+store wrapper must reject missing grant content and validate its project,
+location and format metadata, and must NOT inherit the existing reader's
+permissive fallbacks for an absent template or schema. An absent
+operational store is not a permissive state.
+
+THREE THINGS THE FENCE WORK ESTABLISHED, each corrected once already:
+
+- **An atomic-replace helper DOES exist in this repository** — `write_atomic` in the agent kit, temp sibling then rename, used by the session registry. It is Rust. No suitable JavaScript one has been identified, so write a small one; do NOT invoke the Rust helper to satisfy a reuse criterion, and note it establishes atomic publication only, not this card's locking, acknowledgement or retry obligations.
+- **The store's reader and writer must not import the run-record module.** That module imports the dispatch arm, and the arm's own comment at its admission ledger says it imports nothing back because a cycle "would be a load-order bug nobody could see from either file". A direct exclusive-create at the write site is smaller and safer than exporting a one-line wrapper.
+- **Exclusive creation is not atomic publication.** Creating the destination exclusively and then filling it in place still lets a reader see a partial snapshot. Publish a complete snapshot under the same protection that makes the creation exclusive.
+
+AND ONE CONSTRAINT THAT SHAPES THE VERIFICATION. After this lands the
+store is untracked and local, and a runner has none — an ordinary grant
+revision has no publication range at all, which is the point of the card.
+So the focused check's one live-tree call cannot simply be retargeted at
+the store; the live validation belongs to the operational command, which
+runs where the store is, and the suite keeps its controlled drills through
+the IO seam that check already has. The same applies to the derivation
+body: do not retarget a publication-owed selection test at a datum that
+can never appear in a range.
+
+SIZE: the frontmatter says M, which was inherited rather than derived. The
+seat's reading against this fence is L. Whoever verifies should grade
+against what the work actually is.
 
 ## Verdicts
