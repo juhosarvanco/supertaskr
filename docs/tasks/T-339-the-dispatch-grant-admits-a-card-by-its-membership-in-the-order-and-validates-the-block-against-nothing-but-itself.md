@@ -54,6 +54,32 @@ Where the binding cannot be established the answer is an explicit unknown that d
 
 The current checks stay until their replacement is shown to catch what they catch: the drift check earns its place and is not dropped in the course of adding these.
 
+## How this stands with T-344, recorded 2026-09-16
+
+T-344 was filed the same day on the owner's requirement that a routine
+grant revision cost no suites, commits, pushes or CI. It moves the active
+grant out of the shipped runtime template into one authoritative
+operational store at one designated integration checkout. THE TWO CARDS
+SHARE ONE CONTRACT AND MUST NOT BECOME TWO DESIGNS.
+
+T-344 owns WHERE the grant lives and HOW it is updated. THIS CARD OWNS
+WHAT IS CHECKED: the order and the card map read against each other in
+both directions, and the block bound to something outside itself.
+
+That move helps this card without discharging it. The store gains a
+retained revision chain and a designated home, both of which a reader can
+check, and its update path validates before it writes. None of that makes
+the block unforgeable: an agent with write access to the store can still
+write it, which is why this card promises auditability and drift
+detection rather than prevention.
+
+WHAT IT CHANGES HERE: at promotion this card is read against the store
+T-344 builds rather than against the template's dispatch block. The
+criteria below are unchanged by that — they are about what the reader
+must compare and refuse, not about which file it opens. If T-344 has not
+landed when this card is promoted, the two are sequenced rather than
+merged, and this card's reader targets whichever home is then current.
+
 ## Acceptance criteria
 
 - WHEN the grant is read THE reader SHALL compare the order and the card map in both directions, and SHALL refuse by name both a card the map pins that the order does not name and a card the order names that the map does not pin.
