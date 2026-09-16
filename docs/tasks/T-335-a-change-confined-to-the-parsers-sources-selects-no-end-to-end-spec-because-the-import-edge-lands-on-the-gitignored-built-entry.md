@@ -22,7 +22,9 @@ Filed 2026-09-15 by the architect seat at T-331's merge, from the finding its ve
 
 Its fence shares `tools/e2e/scripts/gate-run.mjs` and `tools/e2e/tests/gate-run.spec.ts` with T-330, so the two run in sequence and never beside each other. The seat's intended slot is immediately after T-330. Preflight at promotion; no board preflight has been run against this card, which this project can only do once a card is a dispatch candidate.
 
-Near-term exposure is bounded and was checked rather than assumed: no card in the current queue touches `lib/parser/src`, the parser and app suites still run on such a push, and the whole battery runs nightly on main.
+Near-term exposure is bounded and was checked rather than assumed: the parser and app suites still run on such a push, and the whole battery runs nightly on main.
+
+**THAT PREMISE WAS REFRESHED ON 2026-09-17 AND ONE HALF OF IT NO LONGER HOLDS.** When this card was filed, no card in the queue touched the parser's sources. T-312 does: its fence carries `lib/parser/src/model-session.ts` and its unit test. So the defect is reachable by queued work, and whoever schedules T-312 before this repair lands SHALL cover the affected consumers explicitly under existing verification rather than inferring safety. **Parity between the local derivation and the runner's establishes nothing here**, because both run the same derivation; two copies of one answer agreeing is not evidence the answer is complete.
 
 ## The finding
 
@@ -49,6 +51,20 @@ leaves unrepresented, and it is the coupling that card studied.
 The parser suite and the app suite still run on such a push, and the whole
 battery runs nightly on main, so the exposure is bounded rather than open.
 
+**WHY THE FAIL-CLOSED ANSWER IS WORTH KEEPING, measured 2026-09-16
+off-index at `e4050bd2` over three probe commits that moved no branch,
+index or worktree.** Under the machinery as it stands, a tracked file that
+nothing reads and lies under no package root is UNPLACEABLE and takes the
+whole battery with the end-to-end leg at 42 of 42 spec files; a
+documentation file nothing reads still owes the end-to-end suite, because
+the census, the index and the board-reading bodies walk that directory. So
+THE LEAST EXPENSIVE OF THE MEASURED CASES STILL SELECTED ONE SUITE. Three
+probes do not establish a floor for every tracked path and this note
+claims none — it reports what the measured cases did. It is the context
+for this card's second criterion: the fail-closed answer is not a
+placeholder to be optimised away once the generated-entry relationship is
+readable, it is what an unreadable relationship must still cost.
+
 ## What would settle it
 
 The derivation reads the relationship between a generated entry and the
@@ -74,5 +90,17 @@ the relationship is unreadable.
   unchanged from the answer it gives today.
 
 ## Implementation notes
+
+**A DESIGN NOTE, RECORDED 2026-09-17, AND DELIBERATELY NOT A CRITERION.**
+Before adding a placement path, say here whether the settings consumer map
+T-330 landed for the runtime template can carry the generated-entry
+relationship as well, or why it cannot. The two answer different questions
+— that map discovers runtime-file readers through path and constant
+spellings, while this repair concerns a generated-output-to-source edge in
+the import graph — so forcing one abstraction onto both is not obviously
+right. The new path need not be independent of the existing ones; that is
+a matter for the design rather than a constraint this card imposes. An
+earlier draft proposed this as an acceptance obligation and it was
+withdrawn to a note on review.
 
 ## Verdicts

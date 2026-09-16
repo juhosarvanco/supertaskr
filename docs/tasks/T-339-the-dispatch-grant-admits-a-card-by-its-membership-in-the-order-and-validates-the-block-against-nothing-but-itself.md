@@ -28,13 +28,15 @@ THE FENCE IS EMPTY ON PURPOSE. The admission and the grant reader both live in t
 
 The grant block carries two structures that describe the same set: `order`, a list of the cards the owner approved for dispatch, and `cards`, a map from each of those ids to the blob its card had at the approval ref.
 
-**The admission reads one of them.** It asks whether the card is in the order. The map is consulted to check that a card has not drifted since approval — which is a real and useful check, and it is the only thing the map is read for.
+**CORRECTED 2026-09-17, AND THE ORIGINAL READING IS SET OUT BELOW RATHER THAN DELETED.** This card was filed saying the seat had confirmed each half against the arm. Two of its statements did not survive a second check, and both are corrected in place here.
 
-Two consequences follow, and the seat confirmed each against the arm before filing.
+**The admission reads the order for membership, and the parser reads BOTH structures against each other.** The admission asks whether the card is in the order. The card map is consulted for drift since approval. And the parser's own grant reader — `readGrant` in the parser library's process-settings module — computes the ids the order names that the map does not carry AND the ids the map carries that the order does not name, and refuses when either set is non-empty. Its refusal already gives the reasoning: a card in one and not the other is either an approval with no revision or a revision nobody approved. Its unit suite covers both directions in one body.
 
-**A CARD ADDED TO BOTH HALVES IS ADMITTED, AND NOTHING NOTICES.** Put an id into the order and its current blob into the map, and the admission passes on membership while the drift check passes on a blob that matches because it was taken from the card as it now stands. The entry is internally consistent and the widening is invisible. The check is one-directional: it reads the order into the map and never the map back into the order, and neither direction is compared against anything outside the block.
+One consequence follows, and it is the one that matters.
 
-**AND THE BLOCK ATTESTS ONLY TO ITSELF.** It records `given_by` and `at` — who approved it and when — as prose. The arm references neither: a search for those fields across the dispatch arm returns nothing. So the reader validates that a grant is internally well-formed and says nothing about whether the owner ever gave it. A block edited after approval, or written from whole cloth, passes exactly the check an approved one passes.
+**A CARD ADDED TO BOTH HALVES IS ADMITTED, AND NOTHING NOTICES.** Put an id into the order and its current blob into the map, and the admission passes on membership while the drift check passes on a blob that matches because it was taken from the card as it now stands. The entry is internally consistent and the widening is invisible. THE TWO-WAY CHECK CANNOT REACH IT, because an entry present in both structures disagrees with nothing — the check catches a card in one and not the other, which is a different defect and one this tree already refuses. What no check reaches is an entry that is well-formed and was never approved.
+
+**AND THE BLOCK ATTESTS ONLY TO ITSELF.** It records `given_by` and `at` — who approved it and when — as prose. The arm DOES reference them: the succession reader that tells a fresh seat what grant it inherits renders both into the line the seat reads, and the seat saw that line printed on 2026-09-16 while taking the seat. **The defect is that neither value is independently authenticated — not that nothing references them.** So the reader validates that a grant is internally well-formed and says nothing about whether the owner ever gave it. A block edited after approval, or written from whole cloth, passes exactly the check an approved one passes.
 
 **WHAT THIS IS NOT.** It is not a claim that anyone has done either, and it is not an external-attacker story: writing the template already requires a fence that carries it, which is the seat's to grant. The property that is missing is AUDITABILITY. Nothing in the mechanism can tell an approved grant from a modified one, so an accidental widening — a card added while editing, a revision bumped without a ruling — is indistinguishable from the real thing, by any reader, including the seat that made it.
 
@@ -42,7 +44,7 @@ Two consequences follow, and the seat confirmed each against the arm before fili
 
 ## What would settle it
 
-The two structures are read against each other in both directions, so that a card in the map that the order does not name, and a card in the order the map does not pin, are each refused by name rather than passing on the direction that happens to be checked.
+The two-directional read of the order against the card map ALREADY EXISTS and is kept as a regression control rather than built again. What this card adds sits beyond it: an entry consistent in both structures that was never approved is refused, rather than admitted on internal consistency.
 
 The block is bound to something outside itself. What that something is belongs to preparation rather than to this card: the approval's own record, a reference the owner's ruling carries, or a signature over the block — each has different costs and a different failure when the binding is absent, and choosing among them on evidence is part of the work. What the card requires is that the reader can say WHETHER a block is the one that was approved, and that it refuses rather than assumes when it cannot.
 
@@ -82,13 +84,13 @@ merged, and this card's reader targets whichever home is then current.
 
 ## Acceptance criteria
 
-- WHEN the grant is read THE reader SHALL compare the order and the card map in both directions, and SHALL refuse by name both a card the map pins that the order does not name and a card the order names that the map does not pin.
+- WHEN the grant is read THE existing refusal of an order and a card map that disagree in either direction SHALL still hold, and a body SHALL demonstrate it still does; this card ADDS nothing here and SHALL NOT claim the property as its own.
 - WHEN a card is present in both the order and the map but was not part of the approval THE reader SHALL NOT admit it on internal consistency alone, and SHALL report that it cannot establish the entry's approval.
-- WHEN the block cannot be bound to the approval it claims THE reader SHALL report an explicit unknown, and that unknown SHALL confer no admission.
+- WHEN the record cannot be bound to the approval it claims THE reader SHALL report an explicit unknown, and that unknown SHALL confer no admission; THE card SHALL distinguish three things that are not interchangeable — the project's identity, the authorized store location, and the approval evidence — and SHALL NOT treat a different checkout as automatically a different project.
 - WHEN the binding is established THE reader SHALL say what it was established against, so a later seat can check the claim rather than inherit it.
-- WHEN the binding is implemented THE thing bound against SHALL lie outside the block's own editable extent, and a field added inside the grant SHALL NOT be accepted as the binding; the card's verdict SHALL state which of drift detection and prevention the built mechanism reaches, and SHALL NOT claim prevention against a hand that can write the template.
+- WHEN the binding is implemented THE thing bound against SHALL be a concrete trusted approval reference chosen before dispatch, and a second file inside the editing session's reach SHALL NOT be accepted as that reference merely for being a different file; the card's verdict SHALL state which of drift detection and prevention the built mechanism reaches, and SHALL NOT claim prevention against a hand that can write the store.
 - WHEN this card is built THE existing drift check SHALL still refuse a blob stale beyond the admission's mechanical drift, and a body SHALL demonstrate it still does.
-- WHEN this card is verified THE bodies SHALL plant an added entry in both structures, an entry in one structure only in each direction, and an unbindable block, and each SHALL be demonstrated to red against a reader lacking the property.
+- WHEN this card is verified THE bodies SHALL plant, as the CORE case, a record in the correct project and the designated store whose cards are internally consistent and which carries no matching owner approval, and SHALL plant beside it an entry added to both structures, a record whose binding names a different authorized location, and a record carrying no binding at all; each SHALL be demonstrated to red against a reader lacking the property, and the peripheral cases SHALL NOT be offered in place of the core one.
 
 ## Implementation notes
 
