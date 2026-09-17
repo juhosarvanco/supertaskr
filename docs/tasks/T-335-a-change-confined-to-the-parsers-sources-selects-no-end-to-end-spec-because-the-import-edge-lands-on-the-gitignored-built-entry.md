@@ -311,48 +311,56 @@ The unconditional arm's cost is real but small: ~0.19s base against
    any fenced lane. They are green on an unfenced tree.
 4. Apply the three corrections below, each with its drill.
 
+**ALL THREE CORRECTIONS CARRY A MUTANT BLOCK BELOW AND NONE OF THEM NEEDS
+NONE**, correction 3 included: it is a hardening, but it is a hardening a
+body asserts, so it is drillable and it is drilled. Each block was applied
+from a pristine copy of `tools/e2e/scripts/gate-run.mjs` at `bab0e1a2`,
+run against its own named body, and the file restored byte-identically
+before the next. **Both anchor counts were checked for all three before
+the run and each time the applier refused unless `old` matched EXACTLY
+ONCE and `new` matched NOWHERE** — it printed `old x1 / new x0` for every
+one. Each mutant made its named body, and only its named body, red.
+
 #### Correction 1
 
-    correction: 1
-    file: tools/e2e/tests/gate-run.spec.ts
-    spec: tools/e2e/tests/gate-run.spec.ts
-    body: a range that moves a parser SOURCE alone selects every spec that reaches the parser's built entry, over the live tree and a real range
-    message: A1.8 — the body moved the BUILD ENTRY itself, so it could not tell this implementation from an entry-point-only one. It now moves a parser source no spec imports the emit of, and says so before moving it.
-
-    --- old
-          byPackage[id].push({
-            config: rel,
-            src: path.posix.normalize(path.posix.join(dir, srcDir)).replace(/\/+$/, ""),
-            out: path.posix.normalize(path.posix.join(dir, outDir)).replace(/\/+$/, ""),
-          });
-    --- new
-          const exportsMap = /** @type {Record<string, unknown>} */ (
-            /** @type {Record<string, unknown>} */ (pkg ?? {})["exports"] ?? {}
-          );
-          /** @type {string[]} */
-          const entries = [];
-          for (const target of Object.values(exportsMap)) {
-            const spec =
-              typeof target === "string"
-                ? target
-                : /** @type {Record<string, unknown>} */ (target ?? {})["import"];
-            if (typeof spec === "string") entries.push(spec);
-          }
-          for (const target of entries) {
-            byPackage[id].push({
-              config: rel,
-              src: path.posix
-                .normalize(
-                  path.posix.join(
-                    dir,
-                    srcDir,
-                    target.replace(/^\.\//, "").replace(/^[^/]+\//, "").replace(/\.js$/, ".ts"),
-                  ),
-                )
-                .replace(/\/+$/, ""),
-              out: path.posix.normalize(path.posix.join(dir, outDir)).replace(/\/+$/, ""),
-            });
-          }
+```mutant
+correction: Correction 1
+file: tools/e2e/scripts/gate-run.mjs
+spec: tools/e2e/tests/gate-run.spec.ts
+body: a range that moves a parser SOURCE alone selects every spec that reaches the parser's built entry, over the live tree and a real range
+message: criterion 1: tools/e2e/tests/brief.spec.ts reaches the parser's generated entry, so a parser source selects it
+--- old
+      byPackage[id].push({
+        config: rel,
+        src: path.posix.normalize(path.posix.join(dir, srcDir)).replace(/\/+$/, ""),
+        out: path.posix.normalize(path.posix.join(dir, outDir)).replace(/\/+$/, ""),
+      });
+--- new
+      const entrySources = Object.values(
+        /** @type {Record<string, unknown>} */ (
+          /** @type {Record<string, unknown>} */ (pkg ?? {})["exports"] ?? {}
+        ),
+      )
+        .map((t) =>
+          typeof t === "string" ? t : /** @type {Record<string, unknown>} */ (t ?? {})["import"],
+        )
+        .filter((t) => typeof t === "string");
+      for (const target of entrySources) {
+        byPackage[id].push({
+          config: rel,
+          src: path.posix
+            .normalize(
+              path.posix.join(
+                dir,
+                srcDir,
+                String(target).replace(/^\.\//, "").replace(/^[^/]+\//, "").replace(/\.js$/, ".ts"),
+              ),
+            )
+            .replace(/\/+$/, ""),
+          out: path.posix.normalize(path.posix.join(dir, outDir)).replace(/\/+$/, ""),
+        });
+      }
+```
 
 The mutant is A1.8 written as a plausible implementation: the sources a
 package builds are read as the ones its manifest's `exports` name. In
@@ -370,23 +378,24 @@ generated entry" with an empty received array.
 
 #### Correction 2
 
-    correction: 2
-    file: tools/e2e/tests/gate-run.spec.ts
-    spec: tools/e2e/tests/gate-run.spec.ts
-    body: a generated file no build configuration can place makes the owed set the WHOLE battery and the answer NAMES the file
-    message: A2.3 — unreadability was induced by handing the rule a synthesized builds value, which is a branch production cannot take. It is now induced by three packages on disk that packageBuilds genuinely fails to place, the third being present, parsing, and still not covering the entry.
-
-    --- old
-          if (reading.problem !== undefined) {
-            notes[id].push(reading.problem);
-            continue;
-          }
-    --- new
-          if (reading.problem !== undefined) {
-            notes[id].push(reading.problem);
-            byPackage[id].push({ config: rel, src: `${dir}/src`, out: `${dir}/dist` });
-            continue;
-          }
+```mutant
+correction: Correction 2
+file: tools/e2e/scripts/gate-run.mjs
+spec: tools/e2e/tests/gate-run.spec.ts
+body: a generated file no build configuration can place makes the owed set the WHOLE battery and the answer NAMES the file
+message: absent: no output root read off disk contains the entry
+--- old
+      if (reading.problem !== undefined) {
+        notes[id].push(reading.problem);
+        continue;
+      }
+--- new
+      if (reading.problem !== undefined) {
+        notes[id].push(reading.problem);
+        byPackage[id].push({ config: rel, src: `${dir}/src`, out: `${dir}/dist` });
+        continue;
+      }
+```
 
 The mutant is the silent pass wearing a fail-closed label: a package whose
 project cannot be read gets an INVENTED relationship instead of a reported
@@ -401,27 +410,22 @@ case by hand — still passed. Only the disk-induced section dies.
 
 #### Correction 3
 
-    correction: 3
-    file: tools/e2e/scripts/gate-run.mjs
-    spec: tools/e2e/tests/gate-run.spec.ts
-    body: the emit relationship is READ off the owning package's own build configuration, so a package that moves where it builds to moves this derivation with it
-    message: X6 — the extends chain was followed without containing the resolved path to the repository root, so repository-authored content could direct a CI planning step to open a file outside the tree and carry a fragment of it into the logged fail-closed sentence.
+```mutant
+correction: Correction 3
+file: tools/e2e/scripts/gate-run.mjs
+spec: tools/e2e/tests/gate-run.spec.ts
+body: the emit relationship is READ off the owning package's own build configuration, so a package that moves where it builds to moves this derivation with it
+message: the climbing specifier is refused by name rather than opened
+--- old
+  if (rel === ".." || rel.startsWith("../") || path.posix.isAbsolute(rel)) {
+--- new
+  if (false && (rel === ".." || rel.startsWith("../") || path.posix.isAbsolute(rel))) {
+```
 
-    --- old
-      if (rel === ".." || rel.startsWith("../") || path.posix.isAbsolute(rel)) {
-        return {
-          compilerOptions: {},
-          include: undefined,
-          problem: `${rel} lies outside the repository, so this derivation will not open it`,
-        };
-      }
-    --- new
-
-The mutant is the removal of the guard, which is the state this diff
-arrived in. The `old` block occurs EXACTLY ONCE in `gate-run.mjs`; the
-`new` block is empty, so its count is zero by construction. With the guard
-gone the body dies on "the climbing specifier is refused by name rather
-than opened".
+The mutant disables the guard rather than deleting it, so BOTH anchors are
+real text and the verb can count them: the `old` line occurs EXACTLY ONCE
+in `gate-run.mjs` and the `new` line NOWHERE. With the guard inert the body
+dies on "the climbing specifier is refused by name rather than opened".
 
 The guard refuses BY NAME and returns the same shape an absent file
 already returns, so no caller learns a new case and nothing about the
