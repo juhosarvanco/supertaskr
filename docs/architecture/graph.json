@@ -4950,8 +4950,8 @@
       "id": "f:app/src-tauri/src/agent/kit.rs",
       "path": "app/src-tauri/src/agent/kit.rs",
       "lang": "rust",
-      "hash": "blake3:13f54564830085e8262c27bef34e336cfbb35bcab273f5cc9f5019b15d4116b6",
-      "loc": 1367,
+      "hash": "blake3:898770eed20edfccf8287a69667f24e5e4884b7107407a2814a8d672124b5a97",
+      "loc": 1450,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/agent/kit.rs#COLD_START_GAPS_HEADING",
@@ -5150,7 +5150,7 @@
           "exported": false,
           "range": [
             472,
-            1367
+            1450
           ]
         },
         {

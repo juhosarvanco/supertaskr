@@ -655,7 +655,7 @@ records never rewritten
 
 The runtime template's own `dispatch:` block — the dispatch approval mode, the recovery policy, and the grant that sets them. 16 field(s), declared in method/runtime/process-schema.yaml and read as ONE typed value by `dispatchBlock`.
 
-a fresh seat in either harness inherits the owner's approval from the template rather than from a checkpoint's prose; a grant, a pause or a revocation is a dated edit to the block that appends the previous grant to its history and RAISES the revision, and which grant is current is decided by that revision and never by a date
+a fresh seat in either harness inherits the owner's approval by FINDING the operational store at the designated integration checkout rather than by being told it or reading a checkpoint's prose; a grant, a pause or a revocation is a dated edit to the block that appends the previous grant to its history and RAISES the revision, and which grant is current is decided by that revision and never by a date
 
 Each row says what makes it true: 8 OPERATIONAL, 0 MANUAL, 8 DECLARATIVE. 3 row(s) are ADVISORY — recorded, rendered and validated, and read by nothing that stops anything: `limits` · `limits.tokens` · `limits.expires_at`.
 

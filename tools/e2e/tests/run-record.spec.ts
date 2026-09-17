@@ -1,10 +1,20 @@
 import { spawnSync, spawn } from "node:child_process";
-import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { repoRoot } from "../preflight";
-import { dueRetries, expressInstants, expressMeasurements } from "../scripts/dispatch-brief.mjs";
+import {
+  GRANT_JOURNAL_REL_PATH,
+  GRANT_STORE_REL_PATH,
+  GRANT_SUPERSEDED_REL_PATH,
+  composeGrantSnapshot,
+  dispatchBlock,
+  dueRetries,
+  expressInstants,
+  expressMeasurements,
+  parseProcessSchema,
+} from "../scripts/dispatch-brief.mjs";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import {
   ACK_TOKEN,
@@ -1318,10 +1328,51 @@ function grantBench(stem: string, cards: string[]): GrantBench {
     rewrite: (id, text) => {
       writeFileSync(path.join(b.root, file(id)), text);
     },
+    // T-344: THE GRANT IS PLANTED IN THE BENCH'S OWN OPERATIONAL STORE.
+    //
+    // Until that card this wrote the block into the bench's runtime
+    // TEMPLATE, which is where the active grant used to live. The
+    // template is a shipped code input the Rust kit embeds, so an
+    // approval recorded there cost a full publication and rode into
+    // every project the kit scaffolds; the active grant lives in an
+    // untracked store at the designated integration checkout now, and a
+    // block left in a template is a stray the arm reports and never
+    // obeys. So the bench plants its grant where the reader will look
+    // for it — in the bench's OWN `.supertaskr/`, never this project's,
+    // which is T-330's rule applied to the file that replaced the one
+    // T-330 was written about.
+    //
+    // THE BENCH ROOT IS A FRESH `git init` REPOSITORY ON ITS OWN BRANCH,
+    // which is why it classifies as a checkout that may hold a store:
+    // the location check RULES OUT a linked worktree, a detached head
+    // and a task branch, and what pins a store to ONE checkout is the
+    // location the snapshot itself records and the reader compares.
     grant: (block) => {
+      const store = path.join(b.root, GRANT_STORE_REL_PATH);
+      if (block.trim() === "") {
+        // AN EMPTY BLOCK IS THE NO-GRANT STATE AND THEREFORE CLEARS THE
+        // WHOLE STORE. A snapshot removed while a journal remains is
+        // PRIOR USE, which the reader refuses rather than reading as no
+        // grant — and a bench that wanted the no-grant state would be
+        // measuring the refusal instead.
+        for (const rel of [GRANT_STORE_REL_PATH, GRANT_JOURNAL_REL_PATH, GRANT_SUPERSEDED_REL_PATH]) {
+          rmSync(path.join(b.root, rel), { force: true });
+        }
+        return;
+      }
+      const schema = parseProcessSchema(
+        readFileSync(path.join(b.root, "method", "runtime", "process-schema.yaml"), "utf8"),
+      );
+      const revision = dispatchBlock(block, schema).grant?.revision ?? 0;
+      mkdirSync(path.dirname(store), { recursive: true });
       writeFileSync(
-        path.join(b.root, "method", "runtime", "supertaskr.yaml"),
-        `roles:\n  executor: fixture@subagent\n${block}`,
+        store,
+        composeGrantSnapshot({
+          blockText: block,
+          root: realpathSync(b.root),
+          revision,
+          writtenBy: "the admission bench",
+        }),
       );
     },
     pause: (rec) => {

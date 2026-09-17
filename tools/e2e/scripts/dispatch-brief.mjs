@@ -73,8 +73,20 @@
  */
 
 import { execFileSync, spawnSync } from "node:child_process";
-import { createHash } from "node:crypto";
-import { closeSync, existsSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createHash, randomBytes } from "node:crypto";
+import {
+  closeSync,
+  existsSync,
+  fsyncSync,
+  mkdirSync,
+  openSync,
+  readFileSync,
+  realpathSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+  writeSync,
+} from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -100,7 +112,7 @@ import { deriveOwning } from "./gate-run.mjs";
 // lives beside T-238's holder record, and a second spelling of that
 // directory here would be the duplication every other reader of it
 // avoids by importing this constant.
-import { RUNTIME_DIR } from "../../../.claude/hooks/lane-fence.mjs";
+import { RUNTIME_DIR, RUNTIME_DIR_IGNORE } from "../../../.claude/hooks/lane-fence.mjs";
 
 /* ────────────────────────────────────────────────────────────────────
  * THE PROCESS SETTINGS READER, IMPORTED FROM THE PARSER LIBRARY (T-317).
@@ -8149,13 +8161,15 @@ export class AdmissionFinding extends DispatchLaneFinding {
 
 /**
  * @typedef {object} GrantState
- * @property {boolean} enforced   whether this tree carries a block to enforce
+ * @property {boolean} enforced   whether this checkout carries a grant to enforce
  * @property {import("../../../lib/parser/dist/pure.js").DispatchBlock | null} block
  * @property {?Pause} pause
  * @property {string} approval
  * @property {string} recovery
  * @property {number} revision
- * @property {string} source      where the block was read from, or why there is none
+ * @property {string} source      where the grant was read from, or why there is none
+ * @property {GrantStoreRead} store  the operational store's own answer (T-344)
+ * @property {string} stray       a block left in the runtime template, reported and never obeyed
  */
 
 /**
@@ -8278,66 +8292,1421 @@ export function readPause(root = repoRoot) {
   return { at, by, scope, why: String(rec["why"] ?? "").trim(), file: PAUSE_REL_PATH };
 }
 
+/* ────────────────────────────────────────────────────────────────────
+ * THE OPERATIONAL GRANT STORE (T-344).
+ *
+ * ── WHY THE GRANT LEFT THE TEMPLATE ─────────────────────────────────
+ * `method/runtime/supertaskr.yaml` is a genuine CODE INPUT: the parser's
+ * settings reader declares it, end-to-end bodies read it and the Rust
+ * kit embeds it at compile time. So recording that the owner approved
+ * one more card cost the same publication a code change costs — four
+ * suites and a runner cycle — and the generated kit carried this
+ * project's own authorization into every project it scaffolds. The
+ * datum therefore LEAVES the publication path rather than the path
+ * acquiring a bypass: the store is untracked, local, and belongs to the
+ * ONE checkout that coordinates dispatch.
+ *
+ * ── TWO OBJECTS WITH TWO JOBS, AND THE SPLIT IS THE POINT ───────────
+ * `dispatch-grant.yaml` is the CURRENT authorization, self-contained,
+ * validated on every read through the parser's own `dispatchBlock`.
+ * `dispatch-grant-history.jsonl` is the JOURNAL of SUPERSEDED
+ * revisions, one per line, appended in constant time, and opened ONLY
+ * for an explicit historical query or a recovery. Every routine path —
+ * the loop's start, an admission, a display — opens the snapshot and
+ * nothing else, so accumulated history costs a reader nothing.
+ *
+ * **THE JOURNAL IS NOT AUTHORITATIVE AND CANNOT BE.** It holds the
+ * revisions that were SUPERSEDED; the grant last in force is the one
+ * the snapshot carries, so reconstructing authority from the journal's
+ * last entry would restore the grant BEFORE the one that was current.
+ * A missing snapshot after prior use is therefore a REFUSAL pending an
+ * explicit recovery, never a silent restoration and never "no grant".
+ *
+ * ── AN UNVERIFIABLE GRANT IS CLOSER TO NO GRANT THAN TO AN APPROVED ONE
+ * The pause record beside this one already holds the strongest sentence
+ * in either reader: an unreadable record is never "nothing is paused".
+ * The same rule governs here. Reading the store from a lane worktree, a
+ * detached checkout or any path that is not the designated one is
+ * answered with a refusal that NAMES the location and why it is not the
+ * one — never with a silent no-grant, and never with a guess. A worker
+ * lane holds no grant of its own: what reaches it is the admission the
+ * coordinator already decided, and `dispatchLanePlan` takes that
+ * admission as an input for exactly this reason.
+ *
+ * ── DEFERRED, EXPLICITLY AND NOT BY OMISSION (the owner's ruling) ────
+ * Transfer of authority between hosts, and reconciliation of competing
+ * grant histories. Neither is built. Where either would be needed the
+ * answer is the refusal above, so the gap is VISIBLE rather than
+ * silently filled: the snapshot records the host it was written on and
+ * a reader on another refuses by name.
+ *
+ * ── WHAT IS REUSED, AND WHAT WAS CHECKED BEFORE IT WAS RELIED ON ─────
+ * VALIDATION is the parser library's `dispatchBlock` — the same reader
+ * the template's block went through, reached through nothing else.
+ * ATOMIC PUBLICATION is `writeFileAtomic` below: this repository's only
+ * atomic-replace helper is `write_atomic` in the agent kit and it is
+ * RUST, so a small one is written here rather than shelling into a
+ * binary to satisfy a reuse criterion; that helper establishes atomic
+ * publication only, and none of this card's locking, acknowledgement or
+ * retry obligations. LOCKING is `open(O_EXCL)`, the pattern
+ * `run-record.mjs` establishes in this tree — reached by writing the
+ * one line rather than by importing that module, which imports THIS
+ * file and would close a cycle nobody could see from either end.
+ * `gate-run.mjs`'s `acquireSolo` was READ before it was passed over: it
+ * is a check-then-write, so two writers can both pass its check, which
+ * is the precise race this card's third criterion forbids.
+ *
+ * ── THE EXTENSION POINT, AND WHAT A LATER CARD WOULD ADD ─────────────
+ * `updateGrantStore` is the compare-append-publish path, and its parts —
+ * the relative paths, the format number, the validator and the content
+ * extractor — are held apart as named constants and named functions
+ * rather than inlined into it, which is what a second operational datum
+ * would take up. IT IS NOT PARAMETERISED TODAY AND THIS COMMENT WILL NOT
+ * PRETEND IT IS: a second datum still has to lift those four into a
+ * descriptor the path accepts, and that lift is the successor card's
+ * work rather than machinery this one grew ahead of a second user. This
+ * card builds no general operational-record framework and migrates no
+ * second datum: the role model and effort selections in the template
+ * would need a descriptor of their own, a reader that resolves them at
+ * the designated checkout with a fallback for the projects the kit
+ * scaffolds, and their own card.
+ * ──────────────────────────────────────────────────────────────────── */
+
+/** The CURRENT authorization's own file, beside the pause record. */
+export const GRANT_STORE_REL_PATH = `${RUNTIME_DIR}/dispatch-grant.yaml`;
+
+/** The SUPERSEDED revisions, one JSON object per line. */
+export const GRANT_JOURNAL_REL_PATH = `${RUNTIME_DIR}/dispatch-grant-history.jsonl`;
+
+/** The immediately superseded snapshot, retained whole so the journal is not the only copy. */
+export const GRANT_SUPERSEDED_REL_PATH = `${RUNTIME_DIR}/dispatch-grant.superseded.yaml`;
+
+/** The exclusive lock every writer takes BEFORE it compares anything. */
+export const GRANT_LOCK_REL_PATH = `${RUNTIME_DIR}/dispatch-grant.lock`;
+
 /**
- * THE GRANT, READ THROUGH THE PARSER'S READER AND THROUGH NOTHING ELSE
- * (this card's seventh criterion), with the pause beside it.
+ * THE PRIOR-USE MARKER: this checkout HAS HELD a store, whatever became
+ * of the snapshot.
  *
- * **A TREE WITH NO BLOCK IS THE EXPLICIT NO-GRANT STATE AND THE LOOP
- * KEEPS RUNNING.** This project's own template carries no dispatch block,
- * and the standing authorization it actually runs under lives in the
- * seat's ledger where the arm cannot read it. So the honest answer is
- * `enforced: false` — every admission is made, every one is REPORTED as
- * unenforced, and the refusals below apply wherever a block exists. No
- * grant is ever invented from a person, an instant or a past
- * authorization (T-307), and an arm that refused everything here would
- * stop a loop nobody asked it to stop.
- *
- * @param {string} root
- * @returns {GrantState}
+ * A missing snapshot AFTER PRIOR USE is a LOST authorization and not a
+ * fresh project, and that difference is the whole of this card's eighth
+ * criterion. The journal and the retained superseded snapshot are
+ * evidence of prior use — but a store that was CREATED and never revised
+ * has neither, so a checkout that lost its FIRST grant read as one that
+ * had never held one, and a creation there would mint authority over an
+ * approval somebody had already been given. The marker is written by the
+ * creation itself, so the evidence exists from the first grant rather
+ * than from the second. It is STAT'D and never opened, like the journal
+ * beside it.
  */
-export function grantState(root = repoRoot) {
-  const pause = readPause(root);
-  /** @param {string} source @returns {GrantState} */
-  const unenforced = (source) => ({
-    enforced: false,
-    block: null,
-    pause,
-    approval: "",
-    recovery: "",
-    revision: 0,
-    source,
-  });
-  let schemaText = "";
+export const GRANT_USED_REL_PATH = `${RUNTIME_DIR}/dispatch-grant.used`;
+
+/** The snapshot format this reader knows; a snapshot declaring another is refused. */
+export const GRANT_STORE_FORMAT = 1;
+
+/** The block key the snapshot carries, which is the key the parser's reader answers. */
+export const GRANT_BLOCK_KEY = "dispatch";
+
+/**
+ * EVERY REFUSAL CARRIES A CODE, on the admission arm's own model — a
+ * greppable name for WHY, because a refusal a caller can only match on a
+ * sentence becomes prose the day the sentence is improved.
+ */
+export const GRANT_STORE_CODES = Object.freeze({
+  NO_ROOT: "GRANT_STORE_NO_ROOT",
+  NOT_DESIGNATED: "GRANT_STORE_NOT_DESIGNATED",
+  MISSING_AFTER_USE: "GRANT_STORE_MISSING_AFTER_USE",
+  UNREADABLE: "GRANT_STORE_UNREADABLE",
+  METADATA: "GRANT_STORE_METADATA",
+  FOREIGN_HOST: "GRANT_STORE_FOREIGN_HOST",
+  COMPETING_HISTORY: "GRANT_STORE_COMPETING_HISTORY",
+  LOCKED: "GRANT_STORE_LOCKED",
+  EXISTS: "GRANT_STORE_EXISTS",
+  STALE: "GRANT_STORE_STALE",
+  INVALID: "GRANT_STORE_INVALID",
+  CONFLICT: "GRANT_STORE_CONFLICT",
+});
+
+/** A store operation this arm was asked for and will not perform. */
+export class GrantStoreFinding extends DispatchLaneFinding {
+  /** @param {string} code @param {string} message */
+  constructor(code, message) {
+    super(message);
+    this.name = "GrantStoreFinding";
+    /** @type {string} */
+    this.code = code;
+  }
+}
+
+/**
+ * THE ROOT IS NAMED BY THE CALLER OR THE READ IS REFUSED (T-330's
+ * lesson, this card's sixteenth criterion).
+ *
+ * T-330 was not a bug in a reader: the reader took a root and EIGHT CALL
+ * SITES did not name one, so fixtures that were supposed to be
+ * controlled read the live configuration anyway and thirty-five bodies
+ * were decided by an approval nobody meant to put in front of them. A
+ * default root here would rebuild that defect around a file this card
+ * exists to make authoritative, so there is none — and the refusal says
+ * which defect it is preventing rather than "missing argument".
+ *
+ * @param {unknown} root @param {string} what
+ * @returns {string} the resolved root
+ */
+function namedRoot(root, what) {
+  if (typeof root !== "string" || root.trim() === "") {
+    throw new GrantStoreFinding(
+      GRANT_STORE_CODES.NO_ROOT,
+      `dispatch-brief: ${what} was called without naming a root. Every call site that reaches the ` +
+        "operational grant store names the tree it is reading, because a defaulted root is how a " +
+        "controlled fixture ends up decided by the live authorization (T-330): eight call sites " +
+        "defaulted, and the day an owner's grant was recorded it judged thirty-five bodies that " +
+        "were never about it.",
+    );
+  }
   try {
-    schemaText = readFileSync(path.join(root, PROCESS_SCHEMA), "utf8");
+    return realpathSync(root);
   } catch {
-    return unenforced(`${root} carries no ${PROCESS_SCHEMA}, so there is no declaration to read a grant against`);
+    return path.resolve(root);
   }
-  let templateText = "";
+}
+
+/**
+ * A GIT BLOB SHA, COMPUTED HERE AND NOT SPAWNED FOR.
+ *
+ * The same forty hex characters `git hash-object` gives, by the same
+ * definition — sha1 over `blob <bytes>\0` and the content — so the store
+ * and the grant compare without either side agreeing on a digest of its
+ * own. It is computed in process because this card's FIRST criterion
+ * makes the update path's quietness observable: a routine revision runs
+ * no suite, writes no commit, pushes nothing and starts no CI, and the
+ * fewer processes it starts the less there is to argue about.
+ *
+ * @param {string | Buffer} content
+ * @returns {string}
+ */
+export function blobShaOf(content) {
+  const bytes = Buffer.isBuffer(content) ? content : Buffer.from(String(content), "utf8");
+  return createHash("sha1")
+    .update(Buffer.concat([Buffer.from(`blob ${String(bytes.length)}\0`, "utf8"), bytes]))
+    .digest("hex");
+}
+
+/**
+ * ATOMIC PUBLICATION: a reader meets the whole prior revision or the
+ * whole new one and never a partial record.
+ *
+ * Temp sibling in the SAME directory (so the rename cannot cross a
+ * filesystem and degrade into a copy), the bytes flushed to the device
+ * before the rename, then the rename, then the DIRECTORY flushed so the
+ * new name itself survives a power loss. A directory fsync is EPERM or
+ * EINVAL on some platforms and that is not a failure of the write, so it
+ * is attempted and its refusal ignored — the rename is already ordered
+ * by the file's own flush.
+ *
+ * **EXCLUSIVE CREATION IS NOT ATOMIC PUBLICATION.** Creating the
+ * destination with `wx` and then filling it in place still lets a reader
+ * see a partial snapshot; the complete snapshot is published under the
+ * same rename whether it is a creation or a replacement, and the
+ * exclusivity of a creation is the LOCK's job below rather than the
+ * destination's.
+ *
+ * @param {string} file @param {string} text
+ */
+export function writeFileAtomic(file, text) {
+  const dir = path.dirname(file);
+  mkdirSync(dir, { recursive: true });
+  const tmp = path.join(dir, `.${path.basename(file)}.tmp-${String(process.pid)}-${randomBytes(6).toString("hex")}`);
+  let fd = -1;
   try {
-    templateText = readFileSync(path.join(root, RUNTIME_TEMPLATE), "utf8");
+    fd = openSync(tmp, "wx", 0o600);
+    writeSync(fd, text);
+    fsyncSync(fd);
+    closeSync(fd);
+    fd = -1;
+    renameSync(tmp, file);
+  } finally {
+    if (fd !== -1) {
+      try {
+        closeSync(fd);
+      } catch {
+        /* the throw that brought us here is the one worth reporting */
+      }
+    }
+    rmSync(tmp, { force: true });
+  }
+  let dfd = -1;
+  try {
+    dfd = openSync(dir, "r");
+    fsyncSync(dfd);
   } catch {
-    return unenforced(`${root} carries no ${RUNTIME_TEMPLATE}, so there is no block to read`);
+    /* a directory fsync is not available everywhere; the rename is still ordered */
+  } finally {
+    if (dfd !== -1) {
+      try {
+        closeSync(dfd);
+      } catch {
+        /* nothing left to do about it */
+      }
+    }
   }
-  const schema = parseProcessSchema(schemaText);
-  if (schema.dispatch === null) {
-    return unenforced(`${PROCESS_SCHEMA} declares no dispatch block, so a grant has nothing to be validated against`);
+}
+
+/**
+ * THE WRITER'S LOCK, AND IT GUARDS THE COMPARE AS WELL AS THE WRITE.
+ *
+ * `open(O_EXCL)` and not a check-then-write: the kernel decides which of
+ * two racing writers gets the file, and the loser is told rather than
+ * silently made second. This card's third criterion is explicit that the
+ * expected-revision and expected-content comparisons happen UNDER this
+ * lock — two writers must not both pass an earlier unprotected check and
+ * then overwrite one another, which is exactly what a compare outside
+ * the lock permits.
+ *
+ * A HOLDER THAT IS GONE IS RECLAIMED, because a crashed update must not
+ * wedge the store forever; a holder that is ALIVE is refused and never
+ * waited for, on the gate-runner's own argument that a reading taken
+ * after a wait is a reading of the wait.
+ *
+ * @template T
+ * @param {string} root @param {() => T} fn
+ * @returns {T}
+ */
+export function withGrantStoreLock(root, fn) {
+  const file = path.join(root, GRANT_LOCK_REL_PATH);
+  // THE IGNORE FILE GOES IN BEFORE THE LOCK FILE, because the lock is
+  // itself a file in the runtime directory and a directory nothing
+  // ignores is a directory a wildcard `git add` stages.
+  ensureRuntimeDirIgnored(root);
+  let fd = -1;
+  try {
+    fd = openSync(file, "wx", 0o600);
+  } catch (err) {
+    if (!(err instanceof Error) || /** @type {NodeJS.ErrnoException} */ (err).code !== "EEXIST") throw err;
+    let held = null;
+    try {
+      held = JSON.parse(readFileSync(file, "utf8"));
+    } catch {
+      held = null;
+    }
+    const pid = held === null ? null : Number(held.pid);
+    const alive = pid !== null && Number.isInteger(pid) && pid !== process.pid && isRecordablePid(pid) && pidIsAlive(pid);
+    if (alive) {
+      throw new GrantStoreFinding(
+        GRANT_STORE_CODES.LOCKED,
+        `dispatch-brief: ${GRANT_LOCK_REL_PATH} is held by pid ${String(pid)} since ` +
+          `${String(held?.at ?? "an instant it did not record")}. This lock guards the COMPARE as ` +
+          "well as the write, so a second writer is refused rather than queued: two writers that " +
+          "both passed an unprotected check would overwrite one another and the loser would never " +
+          "learn it had lost.",
+      );
+    }
+    // STALE: the holder is gone, and a crashed update must not wedge the
+    // store. The reclaim is itself EXCLUSIVE — the unlink, then the same
+    // `wx` — so of two processes that both find a dead holder exactly one
+    // takes the lock and the other is TOLD it lost rather than meeting a
+    // raw EEXIST it cannot classify.
+    rmSync(file, { force: true });
+    try {
+      fd = openSync(file, "wx", 0o600);
+    } catch (race) {
+      if (!(race instanceof Error) || /** @type {NodeJS.ErrnoException} */ (race).code !== "EEXIST") throw race;
+      throw new GrantStoreFinding(
+        GRANT_STORE_CODES.LOCKED,
+        `dispatch-brief: ${GRANT_LOCK_REL_PATH} was reclaimed from a dead holder by another writer ` +
+          "in the same instant, and this one lost the race. Nothing was compared and nothing was " +
+          "written; run it again.",
+      );
+    }
   }
-  const block = dispatchBlock(templateText, schema);
-  if (!block.present) {
+  try {
+    writeSync(fd, `${JSON.stringify({ pid: process.pid, at: new Date().toISOString(), host: os.hostname() })}\n`);
+    closeSync(fd);
+    fd = -1;
+    return fn();
+  } finally {
+    if (fd !== -1) {
+      try {
+        closeSync(fd);
+      } catch {
+        /* the finally below still removes the file */
+      }
+    }
+    try {
+      const held = JSON.parse(readFileSync(file, "utf8"));
+      if (Number(held.pid) === process.pid) rmSync(file, { force: true });
+    } catch {
+      rmSync(file, { force: true });
+    }
+  }
+}
+
+/** Is a pid alive? `kill -0` semantics; EPERM means alive-but-not-ours. @param {number} pid @returns {boolean} */
+function pidIsAlive(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (e) {
+    return Boolean(e) && /** @type {NodeJS.ErrnoException} */ (e).code === "EPERM";
+  }
+}
+
+/**
+ * @typedef {object} StoreLocation
+ * @property {boolean} designated whether this checkout may hold the store
+ * @property {string} kind        checkout, linked-worktree, detached-head or task-branch
+ * @property {string} root        the resolved path this answer is about
+ * @property {string} why         one sentence a reader can act on
+ */
+
+/**
+ * WHICH KIND OF CHECKOUT THIS IS, DERIVED FROM GIT ITSELF.
+ *
+ * The three that are NOT the designated integration checkout are named
+ * rather than lumped together, because the remedy differs: a lane
+ * worktree asks its coordinator for the admission, a detached checkout
+ * is a bench and reads nothing, and a task branch in a main worktree is
+ * a checkout somebody moved. A tree that is not a git repository at all
+ * is answered as an ordinary checkout — the store is a local file and a
+ * project need not be versioned to hold one.
+ *
+ * @param {string} root @returns {StoreLocation}
+ */
+export function grantStoreLocation(root) {
+  const at = namedRoot(root, "grantStoreLocation");
+  /** @param {string[]} argv */
+  const ask = (argv) => {
+    const r = spawnSync("git", ["-C", at, ...argv], { encoding: "utf8" });
+    return r.status === 0 ? String(r.stdout ?? "").trim() : null;
+  };
+  const gitDir = ask(["rev-parse", "--absolute-git-dir"]);
+  if (gitDir === null) {
     return {
-      enforced: false,
-      block,
-      pause,
-      approval: block.approval,
-      recovery: block.recovery,
-      revision: 0,
-      source:
-        `${RUNTIME_TEMPLATE} carries no dispatch block: the EXPLICIT no-grant state — approval ` +
-        `${block.approval}, recovery ${block.recovery}, no grant, revision 0 — and the standing ` +
-        "authorization this loop runs under is the seat's, which this arm cannot read",
+      designated: true,
+      kind: "checkout",
+      root: at,
+      why: `${at} is not a git checkout, so no worktree or branch disqualifies it from holding the store`,
     };
   }
+  const common = ask(["rev-parse", "--path-format=absolute", "--git-common-dir"]);
+  if (common !== null && path.resolve(common) !== path.resolve(gitDir)) {
+    return {
+      designated: false,
+      kind: "linked-worktree",
+      root: at,
+      why:
+        `${at} is a LINKED WORKTREE of ${path.dirname(path.resolve(common))} — a lane, not the ` +
+        "designated integration checkout. A lane holds no grant of its own and consults none: what " +
+        "reaches it is the admission the coordinator already decided, and a lane that read a store " +
+        "here would be a second authorization nobody granted.",
+    };
+  }
+  const branch = ask(["symbolic-ref", "--quiet", "--short", "HEAD"]);
+  if (branch === null) {
+    return {
+      designated: false,
+      kind: "detached-head",
+      root: at,
+      why:
+        `${at} is at a DETACHED HEAD — a verifier bench or a checkout parked at a commit, not the ` +
+        "designated integration checkout. A detached checkout is made and thrown away, so a grant " +
+        "read there would be an authorization with no home.",
+    };
+  }
+  if (/^task\//.test(branch)) {
+    return {
+      designated: false,
+      kind: "task-branch",
+      root: at,
+      why:
+        `${at} is on the task branch ${branch} — a lane's branch rather than the integration ` +
+        "branch, so this checkout is not the designated integration checkout even though it is a " +
+        "main worktree.",
+    };
+  }
+  return {
+    designated: true,
+    kind: "checkout",
+    root: at,
+    why: `${at} is a main worktree on ${branch}, which may hold the designated store`,
+  };
+}
+
+/**
+ * THE SNAPSHOT'S OWN `store:` HEADER, READ.
+ *
+ * Deliberately NOT the parser's reader: the parser answers the
+ * `dispatch:` block, whose declaration is the schema's and is not this
+ * card's to widen. The header is the wrapper's own metadata — what
+ * format these bytes are, which project and which checkout they belong
+ * to, which host wrote them and at which revision — and this card's
+ * requirement is that the wrapper VALIDATES it rather than inheriting
+ * the block reader's permissive fallbacks. An absent operational store
+ * is not a permissive state.
+ *
+ * @param {string} text @returns {Record<string, string>}
+ */
+export function grantStoreHeader(text) {
+  /** @type {Record<string, string>} */
+  const out = {};
+  const lines = String(text).split(/\r?\n/);
+  const at = lines.findIndex((l) => /^store:\s*(?:#.*)?$/.test(l));
+  if (at === -1) return out;
+  for (let i = at + 1; i < lines.length; i += 1) {
+    const line = /** @type {string} */ (lines[i]);
+    if (line.trim() === "" || line.trimStart().startsWith("#")) continue;
+    if (!/^\s/.test(line)) break;
+    const m = /^\s{2}([A-Za-z0-9_.-]+):\s*(.*)$/.exec(line);
+    if (m === null) continue;
+    const raw = String(m[2]).trim();
+    const unquoted =
+      raw.length >= 2 && ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'")))
+        ? raw.slice(1, -1)
+        : raw;
+    out[/** @type {string} */ (m[1])] = unquoted;
+  }
+  return out;
+}
+
+/**
+ * THE AUTHORIZATION CONTENT OF A SNAPSHOT — the `dispatch:` block and
+ * nothing above it.
+ *
+ * The content digest this card compares on is taken over THIS, never
+ * over the whole file: the header carries the instant the snapshot was
+ * written, so a retry of the identical intended state would hash
+ * differently and the "already current" answer this card's tenth
+ * criterion requires would be impossible to give.
+ *
+ * @param {string} text @returns {string} the block text, or "" where there is none
+ */
+export function grantBlockText(text) {
+  const lines = String(text).split(/\r?\n/);
+  const at = lines.findIndex((l) => new RegExp(`^${GRANT_BLOCK_KEY}:`).test(l));
+  if (at === -1) return "";
+  const out = [/** @type {string} */ (lines[at])];
+  for (let i = at + 1; i < lines.length; i += 1) {
+    const line = /** @type {string} */ (lines[i]);
+    if (line.trim() !== "" && !/^\s/.test(line)) break;
+    out.push(line);
+  }
+  return `${out.join("\n").replace(/\s+$/, "")}\n`;
+}
+
+/**
+ * THE DIGEST THE COMPARE-AND-SET COMPARES ON, and it is of the CONTENT.
+ *
+ * A REVISION NUMBER ALONE IS NOT EVIDENCE that the state in force is the
+ * one intended — this card's tenth criterion says so in as many words —
+ * so what a retry matches on is these bytes and the revision together.
+ *
+ * @param {string} text @returns {string}
+ */
+export function grantDigest(text) {
+  return createHash("sha256").update(grantBlockText(text), "utf8").digest("hex");
+}
+
+/**
+ * @typedef {object} GrantStoreRead
+ * @property {boolean} present    a snapshot was read
+ * @property {boolean} priorUse   this checkout has held a store before
+ * @property {string} text        the whole snapshot, "" when there is none
+ * @property {string} digest      the content digest, "" when there is none
+ * @property {Record<string, string>} header
+ * @property {import("../../../lib/parser/dist/pure.js").DispatchBlock | null} block
+ * @property {StoreLocation} location
+ * @property {string} source      where this answer came from, in one sentence
+ */
+
+/**
+ * THE CURRENT SNAPSHOT, AND ONLY THE CURRENT SNAPSHOT.
+ *
+ * This function opens `GRANT_STORE_REL_PATH`. It does not open the
+ * journal, it does not print accumulated history and it has no code path
+ * that reaches either — which is what makes this card's sixth criterion
+ * checkable by observation rather than by reading the source: a journal
+ * this process cannot read leaves every routine path working.
+ *
+ * WHAT IT REFUSES, AND WHY EACH REFUSAL IS NOT A "NO GRANT":
+ *  - a location that is not the designated integration checkout;
+ *  - a snapshot missing AFTER PRIOR USE (a journal or a retained
+ *    superseded snapshot is the evidence of that use);
+ *  - a snapshot that does not parse, or whose header is absent, of a
+ *    format this reader does not know, or written for another project,
+ *    another checkout or another host;
+ *  - a header revision and a grant revision that disagree.
+ * A checkout with NO snapshot and NO prior use is the one case that is
+ * an answer rather than a refusal: a project that has never had a store
+ * is a project with no grant, and the loop keeps running.
+ *
+ * @param {string} root @param {{ schemaText?: string }} [opts]
+ * @returns {GrantStoreRead}
+ */
+export function readGrantStore(root, opts = {}) {
+  const location = grantStoreLocation(namedRoot(root, "readGrantStore"));
+  const at = location.root;
+  if (!location.designated) {
+    throw new GrantStoreFinding(
+      GRANT_STORE_CODES.NOT_DESIGNATED,
+      `dispatch-brief: the dispatch grant is NOT READABLE from here — ${location.why} This is a ` +
+        'REFUSAL and not "no grant": an unverifiable grant is closer to no grant than to an ' +
+        "approved one, and a reader that answered silence here would let work proceed on an " +
+        "authorization nobody could show. Ask the coordinator at the designated integration " +
+        "checkout for the admission.",
+    );
+  }
+  const file = path.join(at, GRANT_STORE_REL_PATH);
+  // THE JOURNAL IS STAT'D AND NEVER OPENED, and the distinction is the
+  // whole of this line. Telling a project that has never had a store from
+  // one whose snapshot has been LOST needs one bit — does any evidence of
+  // prior use exist — and `existsSync` answers it without reading a byte
+  // of accumulated history. The body that grades the snapshot-only rule
+  // makes the journal unreadable with `chmod 000`, which stops `open(2)`
+  // and leaves `stat(2)` working, so this line is exactly what that
+  // demonstration permits and an open here would fail it.
+  const usedBefore =
+    existsSync(path.join(at, GRANT_USED_REL_PATH)) ||
+    existsSync(path.join(at, GRANT_JOURNAL_REL_PATH)) ||
+    existsSync(path.join(at, GRANT_SUPERSEDED_REL_PATH));
+  if (!existsSync(file)) {
+    if (usedBefore) {
+      throw new GrantStoreFinding(
+        GRANT_STORE_CODES.MISSING_AFTER_USE,
+        `dispatch-brief: ${GRANT_STORE_REL_PATH} is GONE and this checkout has held a store before ` +
+          `— ${GRANT_JOURNAL_REL_PATH} or ${GRANT_SUPERSEDED_REL_PATH} is still here. That is not a ` +
+          "fresh project and it is not the no-grant state: the current authorization has been lost " +
+          "and this reader refuses pending an EXPLICIT recovery that names the intended grant. The " +
+          "journal holds SUPERSEDED revisions, so restoring its last entry would restore the grant " +
+          "BEFORE the one that was in force.",
+      );
+    }
+    return {
+      present: false,
+      priorUse: false,
+      text: "",
+      digest: "",
+      header: {},
+      block: null,
+      location,
+      source:
+        `${at} carries no ${GRANT_STORE_REL_PATH} and has never held one, so there is no grant — ` +
+        "the explicit no-grant state, and no grant is ever created by guessing a person, an " +
+        "instant or a past authorization",
+    };
+  }
+  let text = "";
+  try {
+    text = readFileSync(file, "utf8");
+  } catch (err) {
+    throw new GrantStoreFinding(
+      GRANT_STORE_CODES.UNREADABLE,
+      `dispatch-brief: ${GRANT_STORE_REL_PATH} could not be read ` +
+        `(${err instanceof Error ? err.message : String(err)}). A store this reader cannot read is ` +
+        'not "no grant" — it is an authorization nobody can verify, and it refuses pending an ' +
+        "explicit recovery.",
+    );
+  }
+  const header = grantStoreHeader(text);
+  /** @param {string} code @param {string} why */
+  const refuse = (code, why) => {
+    throw new GrantStoreFinding(code, `dispatch-brief: ${GRANT_STORE_REL_PATH} ${why}`);
+  };
+  if (Object.keys(header).length === 0) {
+    refuse(
+      GRANT_STORE_CODES.METADATA,
+      "carries no `store:` header. The wrapper validates its own format, project, location and " +
+        "host metadata and does NOT inherit the block reader's permissive fallbacks: a file that " +
+        "does not say what it is, is not an operational store.",
+    );
+  }
+  const format = Number(header["format"] ?? NaN);
+  if (format !== GRANT_STORE_FORMAT) {
+    refuse(
+      GRANT_STORE_CODES.METADATA,
+      `declares format ${String(header["format"] ?? "none")} and this reader knows ` +
+        `${String(GRANT_STORE_FORMAT)}. A record shaped for a different reader is refused rather ` +
+        "than half-read.",
+    );
+  }
+  const project = String(header["project"] ?? "");
+  if (project !== path.basename(at)) {
+    refuse(
+      GRANT_STORE_CODES.METADATA,
+      `names the project ${JSON.stringify(project)} and this checkout is ` +
+        `${JSON.stringify(path.basename(at))}. A grant carries the project it authorizes work in.`,
+    );
+  }
+  const recorded = String(header["location"] ?? "");
+  if (path.resolve(recorded) !== at) {
+    refuse(
+      GRANT_STORE_CODES.METADATA,
+      `was written for the checkout ${JSON.stringify(recorded)} and is being read at ` +
+        `${JSON.stringify(at)}. There is ONE authoritative store at ONE designated integration ` +
+        "checkout, with no second copy and no synchronization between copies, so a store found " +
+        "somewhere else is refused by name rather than adopted.",
+    );
+  }
+  const host = String(header["host"] ?? "");
+  if (host !== "" && host !== os.hostname()) {
+    refuse(
+      GRANT_STORE_CODES.FOREIGN_HOST,
+      `was written on ${JSON.stringify(host)} and is being read on ${JSON.stringify(os.hostname())}. ` +
+        "TRANSFER OF AUTHORITY BETWEEN HOSTS IS DEFERRED by the owner's ruling and is not built, so " +
+        "the answer is this refusal rather than a silent adoption — the gap is visible rather than " +
+        "quietly filled.",
+    );
+  }
+  const schemaText = opts.schemaText ?? readSchemaText(at);
+  if (schemaText === null) {
+    refuse(
+      GRANT_STORE_CODES.UNREADABLE,
+      `cannot be validated: ${at} carries no ${PROCESS_SCHEMA}, and the block is read against its ` +
+        "declaration or not at all.",
+    );
+  }
+  const schema = parseProcessSchema(/** @type {string} */ (schemaText));
+  if (schema.dispatch === null) {
+    refuse(
+      GRANT_STORE_CODES.UNREADABLE,
+      `cannot be validated: ${PROCESS_SCHEMA} declares no dispatch block, so a grant has nothing to ` +
+        "be validated against.",
+    );
+  }
+  /** @type {import("../../../lib/parser/dist/pure.js").DispatchBlock} */
+  let block;
+  try {
+    block = dispatchBlock(text, schema);
+  } catch (err) {
+    throw new GrantStoreFinding(
+      GRANT_STORE_CODES.UNREADABLE,
+      `dispatch-brief: ${GRANT_STORE_REL_PATH} did not validate through the parser library's own ` +
+        `reader: ${err instanceof Error ? err.message : String(err)}. (The reader names the runtime ` +
+        "template in its messages because that is the file its declaration was written for; the " +
+        "bytes it refused are the store's.)",
+    );
+  }
+  if (!block.present) {
+    refuse(
+      GRANT_STORE_CODES.METADATA,
+      "carries a `store:` header and NO `dispatch:` block. An operational store with no grant " +
+        "content is a file somebody emptied, which is a different thing from a project that has " +
+        "never had one — and the second is answered by the store not being there at all.",
+    );
+  }
+  const headerRevision = Number(header["revision"] ?? NaN);
+  if (!Number.isInteger(headerRevision) || headerRevision !== (block.grant?.revision ?? -1)) {
+    refuse(
+      GRANT_STORE_CODES.METADATA,
+      `declares revision ${String(header["revision"] ?? "none")} in its header and ` +
+        `${String(block.grant?.revision ?? "none")} in its grant. The two are written by one act ` +
+        "and a disagreement between them means the file was edited by something that did not " +
+        "understand it.",
+    );
+  }
+  return {
+    present: true,
+    priorUse: usedBefore,
+    text,
+    digest: grantDigest(text),
+    header,
+    block,
+    location,
+    source:
+      `${GRANT_STORE_REL_PATH} at ${at}, the designated integration checkout — read through the ` +
+      "parser library's own dispatchBlock, snapshot only, with the journal unopened",
+  };
+}
+
+/**
+ * The schema text at a root, or null. Held apart so the store reader and
+ * the writer ask the same question of the same file.
+ *
+ * @param {string} root @returns {?string}
+ */
+function readSchemaText(root) {
+  try {
+    return readFileSync(path.join(root, PROCESS_SCHEMA), "utf8");
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * THE TEMPLATE'S BLOCK, IF SOMEBODY LEFT ONE THERE — READ, REPORTED AND
+ * NEVER AUTHORITY (this card's eighteenth criterion).
+ *
+ * The template stopped being the home of the active grant, and a block
+ * still sitting in one is neither obeyed nor silently ignored: it is a
+ * stray, and the arm says so wherever it prints the grant. Refusing on
+ * it would stop a loop for a file that no longer decides anything;
+ * ignoring it silently would leave a reader believing an approval was in
+ * force somewhere.
+ *
+ * @param {string} root @returns {string} the sentence, or "" where the template carries none
+ */
+export function strayTemplateGrant(root) {
+  const at = namedRoot(root, "strayTemplateGrant");
+  let templateText = "";
+  try {
+    templateText = readFileSync(path.join(at, RUNTIME_TEMPLATE), "utf8");
+  } catch {
+    return "";
+  }
+  if (grantBlockText(templateText) === "") return "";
+  return (
+    `${RUNTIME_TEMPLATE} still carries a \`${GRANT_BLOCK_KEY}:\` block and it is NOT read as ` +
+    `authority (T-344): the active grant lives in ${GRANT_STORE_REL_PATH} at the designated ` +
+    "integration checkout, and a block in a shipped template would put this project's own " +
+    "authorization into every kit generated from it. Remove it, or record it into the store."
+  );
+}
+
+/**
+ * @typedef {object} GrantJournalEntry
+ * @property {number} format
+ * @property {number} supersededRevision  the revision these bytes recorded
+ * @property {number} supersededBy        the revision that replaced it
+ * @property {string} supersededAt        the instant the replacement was written
+ * @property {string} digest              the superseded content's digest
+ * @property {string} snapshot            the superseded snapshot, whole
+ */
+
+/**
+ * THE JOURNAL, OPENED — and this is the ONLY function in this file that
+ * opens it.
+ *
+ * It is reached by an explicit historical query or a recovery and by
+ * nothing else: not the loop's start, not an admission, not a display.
+ * That is this card's sixth criterion, and keeping the open in one named
+ * function is what makes it checkable — a journal whose bytes this
+ * process cannot read leaves every other path working.
+ *
+ * A TORN FINAL LINE IS DETECTABLE AND IS REPORTED, NEVER SKIPPED. One
+ * JSON object per line means an interrupted append damages exactly the
+ * last line and the entries before it are whole, so the reader says
+ * which line it could not read rather than quietly returning fewer
+ * revisions than the file holds.
+ *
+ * @param {string} root
+ * @returns {{ entries: GrantJournalEntry[], findings: string[], present: boolean }}
+ */
+export function readGrantJournal(root) {
+  const at = namedRoot(root, "readGrantJournal");
+  const file = path.join(at, GRANT_JOURNAL_REL_PATH);
+  if (!existsSync(file)) return { entries: [], findings: [], present: false };
+  const text = readFileSync(file, "utf8");
+  /** @type {GrantJournalEntry[]} */
+  const entries = [];
+  /** @type {string[]} */
+  const findings = [];
+  const lines = text.split("\n");
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = /** @type {string} */ (lines[i]);
+    if (line.trim() === "") continue;
+    let parsed;
+    try {
+      parsed = JSON.parse(line);
+    } catch (err) {
+      findings.push(
+        `${GRANT_JOURNAL_REL_PATH} line ${String(i + 1)} did not parse ` +
+          `(${err instanceof Error ? err.message : String(err)})` +
+          (i === lines.length - 1 || lines.slice(i + 1).every((l) => l.trim() === "")
+            ? " — it is the LAST line, which is the shape an interrupted append leaves and the " +
+              "one a recovery can discard"
+            : " — and it is NOT the last line, so this journal was damaged by something other " +
+              "than an interrupted append"),
+      );
+      continue;
+    }
+    entries.push(/** @type {GrantJournalEntry} */ (parsed));
+  }
+  // COMPETING HISTORIES ARE NAMED RATHER THAN RECONCILED. Their
+  // reconciliation is DEFERRED by the owner's ruling and is not built,
+  // so two entries claiming to supersede one revision with different
+  // bytes is reported as the refusal it is.
+  /** @type {Map<number, string>} */
+  const bySuperseded = new Map();
+  for (const e of entries) {
+    const rev = Number(e.supersededRevision);
+    const seen = bySuperseded.get(rev);
+    if (seen !== undefined && seen !== String(e.digest)) {
+      findings.push(
+        `${GRANT_JOURNAL_REL_PATH} carries TWO DIFFERENT records of revision ${String(rev)} being ` +
+          "superseded. Reconciliation of competing grant histories is DEFERRED by the owner's " +
+          "ruling and is not built here, so this is named rather than resolved.",
+      );
+    }
+    bySuperseded.set(rev, String(e.digest));
+  }
+  return { entries, findings, present: true };
+}
+
+/** The journal's newest entry, read without walking the whole file. @param {string} root */
+function newestJournalEntry(root) {
+  const file = path.join(root, GRANT_JOURNAL_REL_PATH);
+  if (!existsSync(file)) return null;
+  const lines = readFileSync(file, "utf8").split("\n").filter((l) => l.trim() !== "");
+  const last = lines[lines.length - 1];
+  if (last === undefined) return null;
+  try {
+    return /** @type {GrantJournalEntry} */ (JSON.parse(last));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * THE SNAPSHOT, COMPOSED — the author's own block bytes under a header
+ * this wrapper writes.
+ *
+ * The `dispatch:` block is carried VERBATIM from whatever the caller
+ * handed in rather than re-serialised from a parsed value. A record of
+ * an approval says what the owner said, and a round trip through a
+ * writer would silently normalise the sentence that attributes it.
+ *
+ * @param {{ blockText: string, root: string, revision: number, writtenBy: string, at?: string, host?: string }} o
+ * @returns {string}
+ */
+export function composeGrantSnapshot(o) {
+  const block = grantBlockText(o.blockText);
+  return [
+    `# ${GRANT_STORE_REL_PATH} — THE ACTIVE DISPATCH GRANT (T-344).`,
+    "#",
+    "# WRITTEN BY A COMMAND AND NEVER BY HAND. It is UNTRACKED and local:",
+    "# recording an approval is an operational act, not a code publication,",
+    "# so this file runs no suite, makes no commit, pushes nothing and",
+    "# starts no continuous-integration run. It belongs to THIS checkout —",
+    "# the one designated to coordinate dispatch — and there is no second",
+    "# copy and no synchronization between copies.",
+    "#",
+    "# The `dispatch:` block below is read through the parser library's own",
+    "# `dispatchBlock`, validated against `method/runtime/process-schema.yaml`'s",
+    "# `dispatch_block:` declaration. `history: []` is the compatibility",
+    `# shape that declaration requires: the SUPERSEDED revisions live in`,
+    `# ${GRANT_JOURNAL_REL_PATH}, which this file never loads.`,
+    "store:",
+    `  format: ${String(GRANT_STORE_FORMAT)}`,
+    // QUOTED, AND THE LOCATION IS WHY. It is the field that must round
+    // trip EXACTLY — a checkout path is the pin that keeps one store at
+    // one checkout — and a path may carry a trailing space or a leading
+    // quote that an unquoted scalar would lose or mis-read. The header
+    // reader strips exactly one layer of quoting, the way the schema's
+    // own scalars are read.
+    `  project: ${JSON.stringify(path.basename(o.root))}`,
+    `  location: ${JSON.stringify(o.root)}`,
+    `  host: ${JSON.stringify(o.host ?? os.hostname())}`,
+    `  revision: ${String(o.revision)}`,
+    `  written_at: "${o.at ?? new Date().toISOString()}"`,
+    `  written_by: ${JSON.stringify(o.writtenBy)}`,
+    "",
+    block.replace(/\s+$/, ""),
+    "",
+  ].join("\n");
+}
+
+/**
+ * @typedef {object} GrantTreeIo
+ * @property {(id: string) => ?string} cardFile     the card's repo-relative path, or null
+ * @property {(rel: string) => ?string} currentBlob the card's blob sha NOW, or null
+ * @property {(sha: string) => boolean} hasObject   whether this repository carries those bytes
+ */
+
+/**
+ * THE BOARD, AS THE VALIDATION SEES IT — injectable, so a body can drive
+ * every refusal without this project's own git objects.
+ *
+ * The blob sha is computed IN PROCESS rather than spawned for; git is
+ * asked ONLY when a card has moved since its approval, which is the one
+ * question a file on disk cannot answer.
+ *
+ * @param {string} root @returns {GrantTreeIo}
+ */
+export function defaultGrantTreeIo(root) {
+  const at = namedRoot(root, "defaultGrantTreeIo");
+  return {
+    // THE BOARD IS ASKED THROUGH THE ARM'S OWN CARD INDEX, never built out
+    // of the id. An id is not a path fragment — T-311's verifier said so
+    // in as many words — and a second spelling of where cards live would
+    // be a second board reader to keep in step with the first.
+    cardFile: (id) => {
+      const rel = cardFileOf(at, id);
+      return rel === "" ? null : rel;
+    },
+    currentBlob: (rel) => {
+      try {
+        return blobShaOf(readFileSync(path.join(at, rel)));
+      } catch {
+        return null;
+      }
+    },
+    hasObject: (sha) => {
+      const r = spawnSync("git", ["-C", at, "cat-file", "-e", `${sha}^{blob}`], { encoding: "utf8" });
+      return r.status === 0;
+    },
+  };
+}
+
+/**
+ * EVERY WAY A SNAPSHOT CAN FAIL TO MATCH THE TREE IT GOVERNS, one
+ * finding per failure — run BEFORE anything is written.
+ *
+ * ── WHAT THIS CHECK IS, SAID PLAINLY ────────────────────────────────
+ * It is PROCEDURAL. It checks that the record is COMPLETE and INTERNALLY
+ * CONSISTENT — that an approver and an instant were written down, that
+ * the block satisfies the shipped declaration, and that every card the
+ * order names exists on this board at a version this repository can
+ * still produce. **IT DOES NOT ESTABLISH THAT THE OWNER APPROVED
+ * ANYTHING.** A `given_by` field is a sentence a seat typed; the
+ * presence of that field is evidence that somebody wrote it down and is
+ * not evidence of the approval it describes. Binding the record to
+ * something outside itself is T-339's, and this command must not be read
+ * as having done it.
+ *
+ * @param {string} text the composed snapshot
+ * @param {string} schemaText
+ * @param {GrantTreeIo} io
+ * @returns {string[]}
+ */
+export function validateGrantSnapshot(text, schemaText, io) {
+  /** @type {string[]} */
+  const out = [];
+  const schema = parseProcessSchema(schemaText);
+  if (schema.dispatch === null) {
+    return [`${PROCESS_SCHEMA} declares no dispatch block, so a grant has nothing to be validated against`];
+  }
+  /** @type {import("../../../lib/parser/dist/pure.js").DispatchBlock} */
+  let block;
+  try {
+    block = dispatchBlock(text, schema);
+  } catch (err) {
+    return [`the block was refused by the parser library's own reader: ${err instanceof Error ? err.message : String(err)}`];
+  }
+  if (!block.present) return ["the snapshot carries no `dispatch:` block, so it records no approval at all"];
+  const grant = block.grant;
+  if (grant === null) return ["the block is present and names no grant"];
+  if (grant.givenBy.trim() === "") out.push("the grant records no approval evidence — `given_by` is what it attributes the approval to");
+  if (grant.at.trim() === "") out.push("the grant records no instant");
+  for (const id of grant.order) {
+    const pinned = grant.cards.get(id);
+    if (pinned === undefined || pinned === "") {
+      out.push(`${id} is in the order and carries no blob in the card map`);
+      continue;
+    }
+    const rel = io.cardFile(id);
+    if (rel === null) {
+      out.push(`${id} is approved and names no card file on this board`);
+      continue;
+    }
+    if (io.currentBlob(rel) === pinned) continue;
+    if (!io.hasObject(pinned)) {
+      out.push(
+        `${id} is pinned to blob ${pinned.slice(0, 12)} and this repository does not carry those ` +
+          "bytes, so the approved version of that card cannot be produced",
+      );
+    }
+  }
+  return out;
+}
+
+/**
+ * @typedef {object} GrantWriteResult
+ * @property {string} outcome   written, already-current, or created
+ * @property {number} revision
+ * @property {string} digest
+ * @property {string} why
+ * @property {string[]} steps   what this act actually did, in order
+ */
+
+/**
+ * CREATE THE STORE — an EXPLICIT, AUTHORIZED WRITER OPERATION that
+ * refuses an existing destination.
+ *
+ * **A ROUTINE READ NEVER CREATES OR RESTORES AUTHORITY**, which is why
+ * this is a verb of its own rather than a special case inside the
+ * reader. It serves two jobs and says which it performed: the FIRST
+ * grant of a project that has never had a store, and the EXPLICIT
+ * RECOVERY of one whose snapshot was lost. A recovery IDENTIFIES the
+ * intended authorization — the caller hands in the block it means — and
+ * never infers it from the journal's last entry, because the journal
+ * holds superseded revisions and its last entry is the grant BEFORE the
+ * one that was in force.
+ *
+ * @param {string} root
+ * @param {{ blockText: string, writtenBy: string, at?: string, schemaText?: string, io?: GrantTreeIo }} o
+ * @returns {GrantWriteResult}
+ */
+export function initGrantStore(root, o) {
+  const location = grantStoreLocation(namedRoot(root, "initGrantStore"));
+  const at = location.root;
+  if (!location.designated) {
+    throw new GrantStoreFinding(
+      GRANT_STORE_CODES.NOT_DESIGNATED,
+      `dispatch-brief: the dispatch grant cannot be WRITTEN here — ${location.why}`,
+    );
+  }
+  const schemaText = o.schemaText ?? readSchemaText(at);
+  if (schemaText === null) {
+    throw new GrantStoreFinding(
+      GRANT_STORE_CODES.INVALID,
+      `dispatch-brief: ${at} carries no ${PROCESS_SCHEMA}, and a block is validated against its ` +
+        "declaration or not at all.",
+    );
+  }
+  return withGrantStoreLock(at, () => {
+    const file = path.join(at, GRANT_STORE_REL_PATH);
+    if (existsSync(file)) {
+      throw new GrantStoreFinding(
+        GRANT_STORE_CODES.EXISTS,
+        `dispatch-brief: ${GRANT_STORE_REL_PATH} already exists. Creating a store is how authority ` +
+          "is established, so it refuses an existing destination under the same protection as any " +
+          "other write: replacing a live grant is a REVISION, and a revision names the revision it " +
+          "expects to replace.",
+      );
+    }
+    const block = grantBlockText(o.blockText);
+    if (block === "") {
+      throw new GrantStoreFinding(
+        GRANT_STORE_CODES.INVALID,
+        `dispatch-brief: the text handed to the store carries no \`${GRANT_BLOCK_KEY}:\` block, so ` +
+          "there is no authorization to record.",
+      );
+    }
+    const probe = composeGrantSnapshot({ blockText: block, root: at, revision: 0, writtenBy: o.writtenBy, ...(o.at === undefined ? {} : { at: o.at }) });
+    const findings = validateGrantSnapshot(probe, schemaText, o.io ?? defaultGrantTreeIo(at));
+    if (findings.length > 0) {
+      throw new GrantStoreFinding(
+        GRANT_STORE_CODES.INVALID,
+        `dispatch-brief: the grant was NOT written — it does not validate:\n  - ${findings.join("\n  - ")}`,
+      );
+    }
+    const revision = dispatchBlock(probe, parseProcessSchema(schemaText)).grant?.revision ?? 0;
+    const text = composeGrantSnapshot({ blockText: block, root: at, revision, writtenBy: o.writtenBy, ...(o.at === undefined ? {} : { at: o.at }) });
+    const recovery = existsSync(path.join(at, GRANT_JOURNAL_REL_PATH));
+    writeFileAtomic(file, text);
+    // THE PRIOR-USE MARKER, WRITTEN BY THE CREATION AND AFTER THE
+    // SNAPSHOT. A store created and never revised leaves no journal and
+    // no superseded snapshot, so without this a checkout that lost its
+    // FIRST grant would read as one that had never held a store — the
+    // fresh-project answer the eighth criterion forbids for a snapshot
+    // missing after prior use. It is written after the publication so it
+    // never claims a use that did not happen.
+    writeFileAtomic(path.join(at, GRANT_USED_REL_PATH), grantUsedMarker(at, revision, o.writtenBy));
+    return {
+      outcome: "created",
+      revision,
+      digest: grantDigest(text),
+      why: recovery
+        ? `the store was RECOVERED at revision ${String(revision)} from the authorization the caller ` +
+          "named — never from the journal's last entry, which holds a SUPERSEDED revision"
+        : `the store was created at revision ${String(revision)}; this checkout had never held one`,
+      steps: [
+        `validated ${String(findings.length)} finding(s) before writing`,
+        `published ${GRANT_STORE_REL_PATH} atomically`,
+      ],
+    };
+  });
+}
+
+/**
+ * RECORD A REVISION — validate, compare-and-set under the lock, journal
+ * the superseded revision, then publish the new one atomically.
+ *
+ * ── THE ORDER IS THE RECOVERY, AND IT IS CHOSEN RATHER THAN INHERITED ─
+ * The journal is appended BEFORE the snapshot is replaced, and the
+ * journal holds SUPERSEDED revisions. So the window between the two acts
+ * is unambiguous by construction: a journal entry alone is NEVER evidence
+ * that a new grant became active, because what the entry says is that an
+ * OLD one stopped being active — and until the snapshot is replaced the
+ * old one is still the authority the snapshot names. The latest effective
+ * authority is the snapshot's, at every point, with no interpretation.
+ *
+ * SUCCESS IS REPORTED ONLY AFTER THE INTENDED STATE IS DURABLE: the
+ * snapshot's bytes are flushed to the device and its directory entry
+ * flushed after the rename before this function returns.
+ *
+ * A RETRY APPENDS NO DUPLICATE. The append is idempotent on the exact
+ * (superseded revision, superseded-by, digest) triple the previous
+ * attempt would have written, so a re-run after an interruption
+ * continues the same act rather than starting a second one.
+ *
+ * AND A LOST ACKNOWLEDGEMENT IS NOT A NEW REVISION. If the store is
+ * already at the intended revision, this function compares the CONTENT
+ * and answers `already-current` without mutating; if the revision
+ * matches and the content does not, it refuses as a CONFLICT and mutates
+ * nothing, because a matching revision number alone is not evidence that
+ * the intended state is the one in force.
+ *
+ * @param {string} root
+ * @param {{ blockText: string, writtenBy: string, expectRevision: number, expectDigest?: string, at?: string, schemaText?: string, io?: GrantTreeIo }} o
+ * @returns {GrantWriteResult}
+ */
+export function updateGrantStore(root, o) {
+  const location = grantStoreLocation(namedRoot(root, "updateGrantStore"));
+  const at = location.root;
+  if (!location.designated) {
+    throw new GrantStoreFinding(
+      GRANT_STORE_CODES.NOT_DESIGNATED,
+      `dispatch-brief: the dispatch grant cannot be WRITTEN here — ${location.why}`,
+    );
+  }
+  const schemaText = o.schemaText ?? readSchemaText(at);
+  if (schemaText === null) {
+    throw new GrantStoreFinding(
+      GRANT_STORE_CODES.INVALID,
+      `dispatch-brief: ${at} carries no ${PROCESS_SCHEMA}, and a block is validated against its ` +
+        "declaration or not at all.",
+    );
+  }
+  const block = grantBlockText(o.blockText);
+  if (block === "") {
+    throw new GrantStoreFinding(
+      GRANT_STORE_CODES.INVALID,
+      `dispatch-brief: the text handed to the store carries no \`${GRANT_BLOCK_KEY}:\` block, so ` +
+        "there is no authorization to record.",
+    );
+  }
+  return withGrantStoreLock(at, () => {
+    // ── THE COMPARE IS INSIDE THE LOCK, AND THAT IS THE CRITERION ────
+    // A comparison taken before the lock is a comparison two writers can
+    // both pass; what makes this a compare-AND-set is that the read
+    // below and the rename at the end are inside one exclusive section.
+    const current = readGrantStore(at, { schemaText });
+    if (!current.present) {
+      throw new GrantStoreFinding(
+        GRANT_STORE_CODES.STALE,
+        `dispatch-brief: there is no ${GRANT_STORE_REL_PATH} to revise. Establishing authority is a ` +
+          "creation and a creation is its own authorized operation — a revision replaces a grant it " +
+          "can name.",
+      );
+    }
+    const probe = composeGrantSnapshot({ blockText: block, root: at, revision: 0, writtenBy: o.writtenBy, ...(o.at === undefined ? {} : { at: o.at }) });
+    const intendedRevision = dispatchBlock(probe, parseProcessSchema(schemaText)).grant?.revision ?? 0;
+    const intended = composeGrantSnapshot({ blockText: block, root: at, revision: intendedRevision, writtenBy: o.writtenBy, ...(o.at === undefined ? {} : { at: o.at }) });
+    const intendedDigest = grantDigest(intended);
+
+    // ── THE LOST ACKNOWLEDGEMENT, ANSWERED BEFORE ANYTHING IS COMPARED
+    if (current.block?.grant?.revision === intendedRevision) {
+      if (current.digest === intendedDigest) {
+        return {
+          outcome: "already-current",
+          revision: intendedRevision,
+          digest: current.digest,
+          why:
+            `revision ${String(intendedRevision)} is ALREADY IN FORCE and its content is byte-for-byte ` +
+            "the intended one, so this retry mutated nothing. A caller that missed the success of " +
+            "the first attempt does not mint a second revision for it.",
+          steps: ["compared the intended content against the store", "wrote nothing"],
+        };
+      }
+      throw new GrantStoreFinding(
+        GRANT_STORE_CODES.CONFLICT,
+        `dispatch-brief: the store is at revision ${String(intendedRevision)} and its content is NOT ` +
+          `the intended one (${current.digest.slice(0, 12)} on disk, ${intendedDigest.slice(0, 12)} ` +
+          "intended). A matching revision number alone is not evidence that the intended state is " +
+          "the one in force, so this is reported as a conflict and NOTHING was mutated.",
+      );
+    }
+    const onDisk = current.block?.grant?.revision ?? 0;
+    if (onDisk !== o.expectRevision) {
+      throw new GrantStoreFinding(
+        GRANT_STORE_CODES.STALE,
+        `dispatch-brief: this revision expected to replace revision ${String(o.expectRevision)} and ` +
+          `the store is at ${String(onDisk)}. Nothing was written. Re-read the store and rebuild the ` +
+          "revision on what is actually there.",
+      );
+    }
+    if (o.expectDigest !== undefined && o.expectDigest !== current.digest) {
+      throw new GrantStoreFinding(
+        GRANT_STORE_CODES.STALE,
+        `dispatch-brief: this revision expected the store's content to be ` +
+          `${o.expectDigest.slice(0, 12)} and it is ${current.digest.slice(0, 12)} — the revision ` +
+          "number matched and the BYTES did not, which is the case a revision check alone misses. " +
+          "Nothing was written.",
+      );
+    }
+    if (intendedRevision <= onDisk) {
+      throw new GrantStoreFinding(
+        GRANT_STORE_CODES.INVALID,
+        `dispatch-brief: the new grant reads at revision ${String(intendedRevision)}, which is not ` +
+          `ABOVE the revision in force (${String(onDisk)}). The revision is the one thing that ` +
+          "decides which grant is current.",
+      );
+    }
+    const findings = validateGrantSnapshot(intended, schemaText, o.io ?? defaultGrantTreeIo(at));
+    if (findings.length > 0) {
+      throw new GrantStoreFinding(
+        GRANT_STORE_CODES.INVALID,
+        `dispatch-brief: the revision was NOT written — it does not validate:\n  - ${findings.join("\n  - ")}`,
+      );
+    }
+
+    /** @type {string[]} */
+    const steps = [];
+    // ── STEP ONE: THE SUPERSEDED REVISION INTO THE JOURNAL, ONCE ─────
+    const entry = {
+      format: GRANT_STORE_FORMAT,
+      supersededRevision: onDisk,
+      supersededBy: intendedRevision,
+      supersededAt: o.at ?? new Date().toISOString(),
+      digest: current.digest,
+      snapshot: current.text,
+    };
+    const newest = newestJournalEntry(at);
+    const already =
+      newest !== null &&
+      Number(newest.supersededRevision) === onDisk &&
+      Number(newest.supersededBy) === intendedRevision &&
+      String(newest.digest) === current.digest;
+    if (already) {
+      steps.push(
+        `the journal already records revision ${String(onDisk)} being superseded by ` +
+          `${String(intendedRevision)} — a retry of an interrupted update, and it appended nothing`,
+      );
+    } else {
+      appendJournalEntry(at, entry);
+      steps.push(`appended the superseded revision ${String(onDisk)} to ${GRANT_JOURNAL_REL_PATH}`);
+    }
+    // ── STEP TWO: THE SUPERSEDED SNAPSHOT, RETAINED WHOLE ────────────
+    // So the journal is not the only copy of the revision that was just
+    // replaced, which is the case a recovery needs most and soonest.
+    writeFileAtomic(path.join(at, GRANT_SUPERSEDED_REL_PATH), current.text);
+    steps.push(`retained the superseded snapshot at ${GRANT_SUPERSEDED_REL_PATH}`);
+    // ── STEP THREE: THE NEW SNAPSHOT, PUBLISHED ATOMICALLY ───────────
+    writeFileAtomic(path.join(at, GRANT_STORE_REL_PATH), intended);
+    steps.push(`published revision ${String(intendedRevision)} atomically`);
+    return {
+      outcome: "written",
+      revision: intendedRevision,
+      digest: intendedDigest,
+      why:
+        `revision ${String(onDisk)} was superseded by ${String(intendedRevision)}; the intended state ` +
+        "is durable and this is reported only after it is",
+      steps,
+    };
+  });
+}
+
+/**
+ * THE RUNTIME DIRECTORY'S IGNORE FILE, ENSURED BEFORE ANYTHING IS
+ * WRITTEN INTO IT — and this is not tidiness, it is the card's whole
+ * point.
+ *
+ * The grant left the publication path by becoming an UNTRACKED local
+ * file. A store written into a runtime directory that nothing ignores is
+ * one `git add -A` away from being tracked again, and the datum would be
+ * back on the path this card removed it from — quietly, and in the one
+ * repository where the mistake costs a publication per approval. The
+ * fence writer already ensures this file; the string is imported from
+ * the one place that declares it rather than spelled a second time,
+ * because a constant with two copies is two chances to disagree.
+ *
+ * @param {string} root
+ */
+export function ensureRuntimeDirIgnored(root) {
+  const dir = path.join(root, RUNTIME_DIR);
+  mkdirSync(dir, { recursive: true });
+  const ignore = path.join(dir, ".gitignore");
+  if (!existsSync(ignore)) writeFileSync(ignore, RUNTIME_DIR_IGNORE, "utf8");
+}
+
+/**
+ * THE PRIOR-USE MARKER'S CONTENT — a sentence, because a reader who
+ * finds this file after the snapshot has gone should learn what it means
+ * from the file rather than from this source.
+ *
+ * Nothing PARSES it: the marker is stat'd, never opened, so what it says
+ * is for a person. It records which grant the checkout first held so a
+ * recovery has somewhere to start.
+ *
+ * @param {string} root @param {number} revision @param {string} writtenBy @returns {string}
+ */
+function grantUsedMarker(root, revision, writtenBy) {
+  return (
+    `# ${GRANT_USED_REL_PATH} — THIS CHECKOUT HAS HELD A DISPATCH GRANT.\n` +
+    "#\n" +
+    `# ${path.basename(root)} was given its first grant at revision ${String(revision)}, recorded by\n` +
+    `# ${writtenBy}. This file exists so that a LOST snapshot is answered as a lost\n` +
+    "# authorization rather than as a fresh project: a store that was created and never\n" +
+    `# revised leaves no journal and no superseded snapshot, so without this marker\n` +
+    `# ${GRANT_STORE_REL_PATH} going missing would read as a checkout that never had one,\n` +
+    "# and the next creation would mint authority over an approval already given.\n" +
+    "#\n" +
+    "# It is STAT'D and never opened. Deleting it does not remove an authorization; it\n" +
+    "# removes the evidence that one was ever here.\n"
+  );
+}
+
+/** Append one journal line, flushed to the device before the caller is told. @param {string} root @param {object} entry */
+function appendJournalEntry(root, entry) {
+  const file = path.join(root, GRANT_JOURNAL_REL_PATH);
+  mkdirSync(path.dirname(file), { recursive: true });
+  const fd = openSync(file, "a", 0o600);
+  try {
+    writeSync(fd, `${JSON.stringify(entry)}\n`);
+    fsyncSync(fd);
+  } finally {
+    closeSync(fd);
+  }
+}
+
+/**
+ * THE GRANT, READ FROM THE OPERATIONAL STORE AND THROUGH NOTHING ELSE
+ * (T-344, over T-319's seventh criterion).
+ *
+ * **A CHECKOUT THAT HAS NEVER HELD A STORE IS THE EXPLICIT NO-GRANT
+ * STATE AND THE LOOP KEEPS RUNNING.** That is the state every project
+ * the kit scaffolds begins in, and the honest answer to it is
+ * `enforced: false` — every admission is made, every one is REPORTED as
+ * unenforced. No grant is ever invented from a person, an instant or a
+ * past authorization (T-307), and an arm that refused there would stop a
+ * loop nobody asked it to stop.
+ *
+ * **EVERY OTHER ABSENCE IS A REFUSAL.** A store this reader cannot
+ * verify — the wrong checkout, a lost snapshot after prior use,
+ * unparseable bytes, another host — throws rather than answering
+ * silence. The pause record beside it already holds that rule and this
+ * one is the same argument: the case where guessing costs most is the
+ * case where somebody recorded something and the reader could not read
+ * it.
+ *
+ * @param {string} root
+ * @param {{ schemaText?: string }} [opts]
+ * @returns {GrantState}
+ */
+export function grantState(root, opts = {}) {
+  const at = namedRoot(root, "grantState");
+  const pause = readPause(at);
+  const stray = strayTemplateGrant(at);
+  const store = readGrantStore(at, opts);
+  if (!store.present) {
+    // THE NO-GRANT MODES ARE THE DECLARATION'S OWN `absent:` VALUES, read
+    // out of the schema rather than typed here, so the one place that
+    // says what "no grant" means stays the schema.
+    let approval = "";
+    let recovery = "";
+    const schemaText = opts.schemaText ?? readSchemaText(at);
+    if (schemaText !== null) {
+      try {
+        const empty = dispatchBlock("", parseProcessSchema(schemaText));
+        approval = empty.approval;
+        recovery = empty.recovery;
+      } catch {
+        /* a schema this reader cannot parse leaves the modes unnamed rather than guessed */
+      }
+    }
+    return {
+      enforced: false,
+      block: null,
+      pause,
+      approval,
+      recovery,
+      revision: 0,
+      source: store.source + (stray === "" ? "" : `. AND A STRAY BLOCK WAS FOUND: ${stray}`),
+      store,
+      stray,
+    };
+  }
+  const block = /** @type {import("../../../lib/parser/dist/pure.js").DispatchBlock} */ (store.block);
   return {
     enforced: true,
     block,
@@ -8345,7 +9714,9 @@ export function grantState(root = repoRoot) {
     approval: block.approval,
     recovery: block.recovery,
     revision: block.revision,
-    source: `${RUNTIME_TEMPLATE}'s dispatch block, read through the parser library's dispatchBlock`,
+    source: store.source + (stray === "" ? "" : `. AND A STRAY BLOCK WAS FOUND: ${stray}`),
+    store,
+    stray,
   };
 }
 
@@ -9146,7 +10517,17 @@ export function grantInheritance(state, ledger = []) {
  * @returns {Rec[]}
  */
 export function admissionRecs(ctx, state, admission) {
-  const t = treeProv(ctx.ref, `${RUNTIME_TEMPLATE}'s dispatch block, read through the parser library's reader`);
+  // THE GRANT IS A LIVE FACT SINCE T-344 AND ITS PROVENANCE SAYS SO. It
+  // lives in an untracked store at the designated integration checkout,
+  // so it is not a function of this tree and a `@ <ref>` beside it would
+  // be a provenance nobody could re-derive from that commit — the
+  // figure rule's own live-environment exception, spelled here rather
+  // than inherited from the row it replaced.
+  const t = liveProv(
+    ctx.at,
+    ctx.host,
+    `${GRANT_STORE_REL_PATH}, read through the parser library's reader`,
+  );
   const live = liveProv(ctx.at, ctx.host, `${PAUSE_REL_PATH}, as it is on disk`);
   /** @type {Rec[]} */
   const recs = [

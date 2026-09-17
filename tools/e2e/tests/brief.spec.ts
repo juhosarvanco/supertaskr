@@ -1,11 +1,13 @@
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync, spawn, spawnSync } from "node:child_process";
 import {
+  chmodSync,
   closeSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
   openSync,
   readFileSync,
+  readdirSync,
   realpathSync,
   rmSync,
   statSync,
@@ -27,6 +29,10 @@ import { DECOMPOSITION_FILE, earsKeywords, isEars } from "../scripts/session-eco
 // imports since T-317, read here so a body can compare the arm's reading
 // of the settings with the library's rather than take the move on trust.
 import * as parserPure from "../../../lib/parser/dist/pure.js";
+// THE ARM AS A NAMESPACE, beside its named imports: one body asks which
+// symbols this file EXPORTS rather than which ones a test happened to
+// name, and a named import cannot answer that question (T-344).
+import * as armModule from "../scripts/dispatch-brief.mjs";
 import {
   AdmissionFinding,
   REPAIR_LEDGER_HEADING,
@@ -55,6 +61,22 @@ import {
   dispatchReadSites,
   grantInheritance,
   grantState,
+  GRANT_JOURNAL_REL_PATH,
+  GRANT_STORE_CODES,
+  GRANT_STORE_REL_PATH,
+  GRANT_SUPERSEDED_REL_PATH,
+  GrantStoreFinding,
+  blobShaOf,
+  composeGrantSnapshot,
+  ensureRuntimeDirIgnored,
+  grantDigest,
+  grantStoreLocation,
+  initGrantStore,
+  readGrantJournal,
+  readGrantStore,
+  strayTemplateGrant,
+  updateGrantStore,
+  withGrantStoreLock,
   DISPATCH_STEPS,
   AwaitFinding,
   defaultAwaitIo,
@@ -8978,10 +9000,47 @@ function dispatchBlockText(o: {
   return lines.join("\n");
 }
 
-/** Write a dispatch block into a fixture's runtime template, keeping everything already in it. */
+/**
+ * PLANT A GRANT IN A FIXTURE'S OWN OPERATIONAL STORE (T-344), or clear
+ * it.
+ *
+ * Until T-344 this wrote the block into the fixture's RUNTIME TEMPLATE,
+ * which is where the active grant used to live. It lives in the store
+ * now, so the fixture's grant goes where the fixture's reader will look
+ * for it — the fixture's OWN `.supertaskr/`, never this project's, which
+ * is T-330's rule applied to the file that replaced the one it was
+ * written about.
+ *
+ * An EMPTY block clears the store completely, journal included: a
+ * snapshot removed while a journal remains is PRIOR USE, which is a
+ * refusal rather than the no-grant state, and a body that wanted the
+ * no-grant state would be measuring the wrong one.
+ */
 function grantIn(root: string, block: string): void {
-  const at = path.join(root, RUNTIME_TEMPLATE);
-  writeFileSync(at, `${readFileSync(at, "utf8").replace(/\n*$/, "\n")}${block}`);
+  const store = path.join(root, GRANT_STORE_REL_PATH);
+  if (block.trim() === "") {
+    for (const rel of [GRANT_STORE_REL_PATH, GRANT_JOURNAL_REL_PATH, GRANT_SUPERSEDED_REL_PATH]) {
+      rmSync(path.join(root, rel), { force: true });
+    }
+    return;
+  }
+  const revision = parserPure.dispatchBlock(block, parseProcessSchema(schemaOf(root))).grant?.revision ?? 0;
+  // THE RUNTIME DIRECTORY'S IGNORE FILE GOES IN TOO, through the writer's
+  // own helper rather than a second spelling of the string: a fixture
+  // whose store is untracked-and-unignored is a fixture whose `git
+  // status` is dirty, which is a different arrangement from the one every
+  // body here is written about.
+  ensureRuntimeDirIgnored(root);
+  mkdirSync(path.dirname(store), { recursive: true });
+  writeFileSync(
+    store,
+    composeGrantSnapshot({ blockText: block, root: realpathSync(root), revision, writtenBy: "the fixture" }),
+  );
+}
+
+/** The schema a fixture validates its own grant against — its own copy, never this project's. */
+function schemaOf(root: string): string {
+  return readFileSync(path.join(root, PROCESS_SCHEMA), "utf8");
 }
 
 /** The blob sha of a fixture file, computed the way the grant records it. */
@@ -9254,10 +9313,19 @@ test("A SUCCESSOR COORDINATOR INHERITS THE GRANT FROM THE BLOCK and continues th
     ]);
     expect(done.remaining, "a finished card is still on the successor's remaining order").toEqual(["T-902", "T-903"]);
 
-    // THE POSITIVE CONTROL, WHERE THE ARRANGEMENT IS ABSENT: a tree with
-    // no block hands a successor nothing, and says so rather than
+    // THE POSITIVE CONTROL, WHERE THE ARRANGEMENT IS ABSENT: a checkout
+    // with no grant hands a successor nothing, and says so rather than
     // inventing an order from the board.
+    //
+    // **WHAT IS CLEARED IS THE STORE, AND SINCE T-344 THAT IS NOT THE
+    // SAME ACT AS RESTORING THE TEMPLATE.** This control used to restore
+    // the fixture's template and get the no-grant state with it, because
+    // the grant lived there. It lives in the operational store now, so
+    // restoring the template alone would leave the arrangement standing
+    // and this control would be measuring nothing — which is exactly what
+    // it caught when the grant moved.
     seedFixtureTemplate(fx.root);
+    grantIn(fx.root, "");
     const none = grantInheritance(grantState(fx.root), []);
     expect(none.inherits, "the control: a successor inherited a grant out of a tree with none").toBe(false);
     expect(none.order, "the control: an order was invented").toEqual([]);
@@ -9382,7 +9450,7 @@ test("THE SCHEMA'S DISPATCH BLOCK NAMES A READ SITE FOR EVERY ROW, AND EVERY OPE
   }
 });
 
-test("A TREE WITH NO DISPATCH BLOCK IS THE EXPLICIT NO-GRANT STATE, the ceremony keeps working, and the arm says NOTHING WAS ENFORCED rather than pretending it was", () => {
+test("A CHECKOUT THAT HAS NEVER HELD A STORE IS THE EXPLICIT NO-GRANT STATE, the ceremony keeps working, and the arm says NOTHING WAS ENFORCED rather than pretending it was", () => {
   // T-324's FIRST CRITERION READ TOGETHER WITH T-319's NO-GRANT CLAUSE.
   // A template that carries no dispatch block and a standing
   // authorization living where the arm cannot read it is the arrangement
@@ -9406,9 +9474,11 @@ test("A TREE WITH NO DISPATCH BLOCK IS THE EXPLICIT NO-GRANT STATE, the ceremony
   const fx = ritualFixture("no-grant-state");
   try {
     const here = grantState(fx.root);
-    expect(here.enforced, "a fixture template with no block was read as carrying one").toBe(false);
+    expect(here.enforced, "a fixture with no store was read as carrying a grant").toBe(false);
     expect(here.revision, "a revision was read out of a tree with no grant").toBe(0);
-    expect(here.source, "the no-grant state is not stated in as many words").toContain("no dispatch block");
+    expect(here.source, "the no-grant state is not stated in as many words").toContain("has never held one");
+    expect(here.approval, "the no-grant approval mode is not the declaration's own `absent:` value").toBe("each");
+    expect(here.recovery, "the no-grant recovery policy is not the declaration's own `absent:` value").toBe("none");
     const open = admit(here, { boundary: "lane-cut", kind: "explicit", card: "T-324", role: "executor" });
     expect(open.admitted, "the no-grant state refused a dispatch this loop makes every day").toBe(true);
     expect(open.kind, "an unenforced admission was reported as an enforced one").toBe("unenforced");
@@ -9421,6 +9491,11 @@ test("A TREE WITH NO DISPATCH BLOCK IS THE EXPLICIT NO-GRANT STATE, the ceremony
       readFileSync(path.join(fx.root, RUNTIME_TEMPLATE), "utf8"),
       "the fixture inherited this project's own template again",
     ).toBe(fixtureTemplateText());
+    expect(
+      existsSync(path.join(fx.root, GRANT_STORE_REL_PATH)),
+      "a routine read CREATED a store — authority is established by an explicit writer operation " +
+        "and never by somebody reading",
+    ).toBe(false);
 
     // THE POSITIVE CONTROL, AND IT IS WHERE THE ARRANGEMENT IS ABSENT: the
     // same reader over the same fixture once it DOES carry a block
@@ -11764,4 +11839,947 @@ test("T-320 C3 — THE REVERSIBLE FINDING'S DISCLOSURE IS TRUE OF THIS TREE: not
   // four empty answers above are about merge.mjs and not about a search
   // that matches nothing.
   expect(verb.includes("--diff-filter=U"), "the reader found nothing at all, so its four answers prove nothing").toBe(true);
+});
+
+/* ════════════════════════════════════════════════════════════════════
+ * T-344 — THE OPERATIONAL GRANT STORE.
+ *
+ * The grant LEFT the runtime template, which is a shipped code input
+ * whose every edit owes four suites and a runner cycle, and lives in one
+ * authoritative untracked store at the ONE checkout designated to
+ * coordinate dispatch. The bodies below grade the move itself: what the
+ * update path does NOT do, what it refuses, what it publishes and where
+ * it declines to be read at all.
+ *
+ * **EVERY BODY HERE NAMES ITS ROOT.** That is this card's sixteenth
+ * criterion and T-330's lesson in one line: a reader with a default root
+ * is how a controlled fixture ends up decided by the live authorization.
+ * The control for it is the last body in this section.
+ * ════════════════════════════════════════════════════════════════════ */
+
+/** A block with the shape the shipped declaration reads, at a named revision. */
+function storeBlock(o: { revision: number; order: string[]; blobs: Record<string, string>; givenBy?: string }): string {
+  return [
+    "dispatch:",
+    "  approval: standing",
+    "  recovery: repairs",
+    "  grant:",
+    `    given_by: ${JSON.stringify(o.givenBy ?? "the fixture owner, by yes in chat")}`,
+    '    at: "2026-09-17T00:00:00Z"',
+    `    revision: ${String(o.revision)}`,
+    `    order: [${o.order.join(", ")}]`,
+    "    cards:",
+    ...o.order.map((id) => `      ${id}: ${o.blobs[id] as string}`),
+    "  history: []",
+    "",
+  ].join("\n");
+}
+
+/** A designated-checkout fixture with one approvable card, and the block that approves it. */
+function storeFixture(name: string): { fx: RitualFixture; block: (revision: number) => string } {
+  const fx = ritualFixture(name);
+  const blob = blobOf(fx.root, FIXTURE_CARD_FILE);
+  return {
+    fx,
+    block: (revision: number) => storeBlock({ revision, order: [FIXTURE_CARD_ID], blobs: { [FIXTURE_CARD_ID]: blob } }),
+  };
+}
+
+/** The refusal a thunk answered with, or null where it answered. */
+function storeRefusal(fn: () => unknown): { code: string; message: string } | null {
+  try {
+    fn();
+    return null;
+  } catch (err) {
+    if (err instanceof GrantStoreFinding) return { code: String(err.code), message: err.message };
+    throw err;
+  }
+}
+
+test("THE ACTIVE GRANT LIVES IN THE OPERATIONAL STORE AND A BLOCK LEFT IN THE RUNTIME TEMPLATE IS NOT READ AS AUTHORITY", () => {
+  // THE CARD'S EIGHTEENTH CRITERION. The template is a shipped code input
+  // — the parser declares it, bodies read it and the Rust kit embeds it —
+  // so an approval recorded there cost a full publication and rode into
+  // every project the kit scaffolds. The datum moved; a block still
+  // sitting in a template is a STRAY, reported and never obeyed.
+  //
+  // KILLED BY: a reader that still admits off the template, one that
+  // reads the template as a fallback when the store is absent, and one
+  // that ignores a stray block in silence.
+  const { fx, block } = storeFixture("store-is-the-home");
+  try {
+    const at = path.join(fx.root, RUNTIME_TEMPLATE);
+    writeFileSync(at, `${readFileSync(at, "utf8").replace(/\n*$/, "\n")}\n${block(7)}`);
+    const withStray = grantState(fx.root);
+    expect(withStray.enforced, "a grant block in the runtime template was read as authority").toBe(false);
+    expect(withStray.revision, "a revision was taken off the template").toBe(0);
+    expect(withStray.stray, "a stray block in the template was passed over in silence").toContain(RUNTIME_TEMPLATE);
+    expect(strayTemplateGrant(fx.root), "the stray is not reported by the reader that finds it").toContain(
+      GRANT_STORE_REL_PATH,
+    );
+
+    // THE POSITIVE CONTROL AND IT IS THE SAME BYTES: the identical block
+    // in the STORE does enforce, so the answer above is about WHERE the
+    // block was and not about a reader that enforces nothing.
+    grantIn(fx.root, block(7));
+    const stored = grantState(fx.root);
+    expect(stored.enforced, "the control: the same block in the store did not enforce either").toBe(true);
+    expect(stored.revision, "the store's revision was not read").toBe(7);
+    expect(stored.source, "the source does not name the store it read").toContain(GRANT_STORE_REL_PATH);
+    expect(stored.stray, "the stray stopped being reported once the store answered").toContain(RUNTIME_TEMPLATE);
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(store-is-the-home)");
+  }
+});
+
+test("A ROUTINE GRANT REVISION RUNS NO SUITE, CREATES NO COMMIT, PERFORMS NO PUSH AND STARTS NO CI RUN — observed through the process table rather than asserted", () => {
+  // THE CARD'S FIRST CRITERION, and it is observed rather than claimed:
+  // the command runs with a PATH whose first entry records every
+  // invocation of git, npm, npx, gh, cargo, vitest and playwright. The
+  // absence of a commit, a push, a suite and a runner cycle is then a
+  // reading of what the process actually did.
+  //
+  // KILLED BY: an update that commits the store, one that pushes, one
+  // that shells into a suite, and a shim that records nothing — which is
+  // what the last assertion controls for.
+  const { fx, block } = storeFixture("no-publication");
+  try {
+    initGrantStore(fx.root, { blockText: block(1), writtenBy: "the body" });
+    const head = fixtureGit(fx.root, ["rev-parse", "HEAD"]).trim();
+    const status = fixtureGit(fx.root, ["status", "--porcelain"]);
+
+    const shim = mkdtempSync(path.join(os.tmpdir(), "t344-shim-"));
+    const log = path.join(shim, "spawned.log");
+    const real = execFileSync("/usr/bin/env", ["sh", "-c", "command -v git"], { encoding: "utf8" }).trim();
+    for (const name of ["git", "npm", "npx", "gh", "cargo", "vitest", "playwright"]) {
+      const forwards = name === "git";
+      writeFileSync(
+        path.join(shim, name),
+        `#!/bin/sh\nprintf '%s %s\\n' ${name} "$*" >> ${JSON.stringify(log)}\n` +
+          (forwards ? `exec ${JSON.stringify(real)} "$@"\n` : "exit 97\n"),
+        { mode: 0o755 },
+      );
+    }
+    const file = path.join(fx.scratch, "grant-T-344.yaml");
+    mkdirSync(fx.scratch, { recursive: true });
+    writeFileSync(file, block(2));
+    const run = spawnSync(
+      process.execPath,
+      [
+        path.join(repoRoot, "tools/e2e/scripts/brief.mjs"),
+        "--root",
+        fx.root,
+        "--grant",
+        "set",
+        "--grant-file",
+        file,
+        "--expect-revision",
+        "1",
+        "--by",
+        "the body",
+      ],
+      { encoding: "utf8", env: { ...process.env, PATH: `${shim}${path.delimiter}${process.env["PATH"] ?? ""}` } },
+    );
+    expect(run.status, `the revision was not recorded: ${String(run.stderr)}`).toBe(0);
+    expect(grantState(fx.root).revision, "the act did not actually happen, so its quietness is free").toBe(2);
+
+    const spawned = existsSync(log) ? readFileSync(log, "utf8") : "";
+    // THE SUBCOMMAND IS PARSED, NOT GREPPED FOR. `git rev-parse main^{commit}`
+    // carries the word `commit` and commits nothing, and a body that
+    // matched the word would be refusing a read for spelling.
+    const verbs = spawned
+      .split("\n")
+      .filter((l) => l.startsWith("git "))
+      .map((l) => {
+        const args = l.slice(4).trim().split(/\s+/);
+        for (let i = 0; i < args.length; i += 1) {
+          const a = args[i] as string;
+          if (a === "-C" || a === "-c") {
+            i += 1;
+            continue;
+          }
+          if (a.startsWith("-")) continue;
+          return a;
+        }
+        return "";
+      });
+    expect(verbs.filter((v) => ["commit", "push", "am", "merge", "tag", "notes"].includes(v)), "the update COMMITTED or PUSHED").toEqual([]);
+    // AND EVERY GIT IT DID RUN IS A READ. Naming the whole set rather
+    // than two forbidden verbs is what stops this passing on a write
+    // nobody thought to forbid.
+    expect(
+      [...new Set(verbs)].filter((v) => !["", "rev-parse", "cat-file", "hash-object", "ls-files", "log", "show", "status", "check-ignore", "worktree", "symbolic-ref", "config"].includes(v)),
+      "the update ran a git verb that is not a read",
+    ).toEqual([]);
+    expect(
+      spawned.split("\n").filter((l) => /^(npm|npx|gh|cargo|vitest|playwright)\b/.test(l)),
+      "the update started a suite, a runner cycle or a continuous-integration call",
+    ).toEqual([]);
+    expect(fixtureGit(fx.root, ["rev-parse", "HEAD"]).trim(), "the update moved HEAD").toBe(head);
+    expect(fixtureGit(fx.root, ["status", "--porcelain"]), "the update left the tree dirty").toBe(status);
+    expect(
+      fixtureGit(fx.root, ["check-ignore", "-v", GRANT_STORE_REL_PATH]),
+      "the store is not ignored, so one `git add -A` puts the datum back on the publication path",
+    ).toContain(GRANT_STORE_REL_PATH);
+
+    // THE POSITIVE CONTROL FOR THE SHIM ITSELF. The four absences above
+    // are worth nothing if nothing could have been recorded, so the same
+    // PATH is asked to run something that DOES spawn git.
+    const control = spawnSync(process.execPath, ["-e", "require('node:child_process').execFileSync('git',['--version'])"], {
+      encoding: "utf8",
+      env: { ...process.env, PATH: `${shim}${path.delimiter}${process.env["PATH"] ?? ""}` },
+    });
+    expect(control.status, "the control could not run git through the shim at all").toBe(0);
+    expect(readFileSync(log, "utf8"), "the control: the shim records nothing, so the absences above are free").toContain(
+      "git --version",
+    );
+    rmSync(shim, { recursive: true, force: true });
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(no-publication)");
+  }
+});
+
+test("THE COMPARE IS INSIDE THE LOCK — a second writer is refused rather than made silently second, and a revision that names the wrong predecessor writes nothing", () => {
+  // THE CARD'S THIRD CRITERION, both halves. Mutual exclusion: the
+  // compare and the write are one exclusive section, so two writers
+  // cannot both pass an earlier unprotected check. Compare-and-set: a
+  // revision states the revision it expects to replace, and a mismatch
+  // writes nothing and says what differed.
+  //
+  // KILLED BY: a lock taken after the read, a lock that waits instead of
+  // refusing, a write that ignores the expectation, and a lock nothing
+  // ever contends — which the control at the end rules out.
+  const { fx, block } = storeFixture("locked-compare");
+  try {
+    initGrantStore(fx.root, { blockText: block(1), writtenBy: "the body" });
+    const attempt = (): { status: number | null; stderr: string } => {
+      const file = path.join(fx.dir, "second.yaml");
+      writeFileSync(file, block(2));
+      const r = spawnSync(
+        process.execPath,
+        [
+          "--input-type=module",
+          "-e",
+          `const m = await import(${JSON.stringify(path.join(repoRoot, "tools/e2e/scripts/dispatch-brief.mjs"))});` +
+            `const fs = await import("node:fs");` +
+            `try { m.updateGrantStore(${JSON.stringify(fx.root)}, { blockText: fs.readFileSync(${JSON.stringify(file)}, "utf8"), writtenBy: "the second writer", expectRevision: 1 }); }` +
+            `catch (e) { process.stderr.write(String(e.code) + " " + e.message); process.exit(9); }`,
+        ],
+        { encoding: "utf8" },
+      );
+      return { status: r.status, stderr: String(r.stderr ?? "") };
+    };
+
+    // HELD: the second writer meets the lock and is TOLD, not queued.
+    const refused = withGrantStoreLock(fx.root, attempt);
+    expect(refused.status, "a second writer got through a held lock").toBe(9);
+    expect(refused.stderr, "the refusal does not name the lock it met").toContain(GRANT_STORE_CODES.LOCKED);
+
+    // THE CONTROL: the identical call with the lock free succeeds, so the
+    // refusal above is the lock and not a broken invocation.
+    const allowed = attempt();
+    expect(allowed.status, `the same call was refused with the lock free: ${allowed.stderr}`).toBe(0);
+    expect(grantState(fx.root).revision, "the second writer did not actually write").toBe(2);
+
+    // COMPARE-AND-SET: a third revision still naming revision 1 as its
+    // predecessor writes nothing and says what differed.
+    const stale = storeRefusal(() =>
+      updateGrantStore(fx.root, { blockText: block(3), writtenBy: "a stale writer", expectRevision: 1 }),
+    );
+    expect(stale?.code, "a last-writer-wins overwrite went through").toBe(GRANT_STORE_CODES.STALE);
+    expect(stale?.message, "the refusal does not name the revision actually on disk").toContain("the store is at 2");
+    expect(grantState(fx.root).revision, "the stale write mutated the store").toBe(2);
+
+    // AND THE CONTENT IS COMPARED BESIDE THE REVISION, which is the case
+    // a revision check alone misses.
+    const digest = readGrantStore(fx.root).digest;
+    const wrongBytes = storeRefusal(() =>
+      updateGrantStore(fx.root, {
+        blockText: block(3),
+        writtenBy: "a writer with the wrong bytes",
+        expectRevision: 2,
+        expectDigest: "0".repeat(64),
+      }),
+    );
+    expect(wrongBytes?.code, "a write passed with the expected CONTENT wrong").toBe(GRANT_STORE_CODES.STALE);
+    expect(readGrantStore(fx.root).digest, "the refused write mutated the store anyway").toBe(digest);
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(locked-compare)");
+  }
+});
+
+test("THE WRITE IS ATOMIC — a reader meets the whole prior revision or the whole new one, and the in-place fill this card rejected is what a reader DOES catch half-written", async () => {
+  // THE CARD'S FOURTH CRITERION, and the card's own implementation notes
+  // name the rejected alternative: creating the destination exclusively
+  // and then filling it in place still lets a reader see a partial
+  // snapshot. So the CONTROL is that rejected design rather than a
+  // strawman — the same chunked write at the same pace, into the
+  // destination instead of into a temp sibling renamed over it.
+  //
+  // KILLED BY: a writer that fills the destination in place, and by a
+  // poll too slow to catch anything — which is exactly what the control
+  // rules out, because a poll that cannot catch the in-place fill cannot
+  // claim anything about the atomic one.
+  const dir = realpathSync(mkdtempSync(path.join(os.tmpdir(), "t344-atomic-")));
+  try {
+    const file = path.join(dir, "snapshot.yaml");
+    const OLD = "OLD\nEND\n";
+    const payload = `${"x: one line of a snapshot, long enough that this takes many writes\n".repeat(12000)}END\n`;
+    writeFileSync(path.join(dir, "payload"), payload);
+    // A SYNCHRONOUS PACE IN BOTH WRITERS, so the two runs differ in ONE
+    // thing: where the chunks land. A sleep in only one of them would
+    // make the comparison a comparison of timings.
+    const pace =
+      'const sleep = () => { const b = new Int32Array(new SharedArrayBuffer(4)); Atomics.wait(b, 0, 0, 1); };\n';
+    writeFileSync(
+      path.join(dir, "in-place.cjs"),
+      `const fs = require("node:fs");\n${pace}` +
+        `const text = fs.readFileSync(${JSON.stringify(path.join(dir, "payload"))}, "utf8");\n` +
+        `const fd = fs.openSync(${JSON.stringify(file)}, "w");\n` +
+        `for (let i = 0; i < text.length; i += 40000) { fs.writeSync(fd, text.slice(i, i + 40000)); sleep(); }\n` +
+        `fs.closeSync(fd);\n`,
+    );
+    writeFileSync(
+      path.join(dir, "atomic.mjs"),
+      `import { readFileSync } from "node:fs";\n${pace}` +
+        `const arm = await import(${JSON.stringify(path.join(repoRoot, "tools/e2e/scripts/dispatch-brief.mjs"))});\n` +
+        `const text = readFileSync(${JSON.stringify(path.join(dir, "payload"))}, "utf8");\n` +
+        // THE PACE IS SPENT BEFORE THE PUBLICATION, which is the shape the
+        // writer really has: the bytes take as long to write either way,
+        // and what differs is that nobody can see them until the rename.
+        `for (let i = 0; i < text.length; i += 40000) sleep();\n` +
+        `arm.writeFileAtomic(${JSON.stringify(file)}, text);\n`,
+    );
+
+    /** Every distinct shape a polling reader saw while one writer ran. */
+    const watch = async (script: string): Promise<Set<string>> => {
+      writeFileSync(file, OLD);
+      const seen = new Set<string>();
+      const kid = spawn(process.execPath, [path.join(dir, script)], { stdio: ["ignore", "ignore", "pipe"] });
+      let stderr = "";
+      kid.stderr.on("data", (b) => {
+        stderr += String(b);
+      });
+      const ended = new Promise<number>((resolve) => kid.on("exit", (code) => resolve(code ?? -1)));
+      let running = true;
+      void ended.then(() => {
+        running = false;
+      });
+      while (running) {
+        try {
+          const t = readFileSync(file, "utf8");
+          seen.add(t === OLD ? "old" : t === payload ? "new" : "PARTIAL");
+        } catch {
+          seen.add("MISSING");
+        }
+        await new Promise((r) => setImmediate(r));
+      }
+      expect(await ended, `the writer ${script} failed: ${stderr}`).toBe(0);
+      expect(readFileSync(file, "utf8"), `${script} did not finish the write`).toBe(payload);
+      return seen;
+    };
+
+    const control = await watch("in-place.cjs");
+    expect(
+      [...control],
+      "the control: the rejected in-place fill was never caught half-written, so this poll cannot " +
+        "measure anything and the atomic answer below is free",
+    ).toContain("PARTIAL");
+
+    const atomic = await watch("atomic.mjs");
+    expect([...atomic], "a reader met a PARTIAL snapshot under the atomic write").not.toContain("PARTIAL");
+    expect([...atomic], "a reader met NO file at all under the atomic write").not.toContain("MISSING");
+    expect([...atomic], "the poll never saw the prior revision, so it started too late to claim anything").toContain(
+      "old",
+    );
+    // AND NO TEMP SIBLING SURVIVES: the publication is a rename and the
+    // scratch file it renamed is gone, whichever way the write went.
+    expect(
+      readdirSync(dir).filter((f) => f.startsWith(".snapshot.yaml.tmp-")),
+      "the atomic write left its temp sibling behind",
+    ).toEqual([]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("THE CURRENT SNAPSHOT IS READ WITHOUT THE JOURNAL — the loop's start, an admission and a display all leave accumulated history unopened", () => {
+  // THE CARD'S SIXTH CRITERION, demonstrated by OBSERVATION: the journal
+  // is made unreadable and the three paths keep working. A path that
+  // opened it would meet EACCES, so the green here is a fact about what
+  // was opened rather than a reading of the source.
+  //
+  // KILLED BY: a reader that loads the journal to answer the current
+  // grant, a display that prints accumulated history, and a journal that
+  // is readable after all — which is what the control rules out.
+  const { fx, block } = storeFixture("snapshot-only");
+  try {
+    initGrantStore(fx.root, { blockText: block(1), writtenBy: "the body" });
+    updateGrantStore(fx.root, { blockText: block(2), writtenBy: "the body", expectRevision: 1 });
+    const journal = path.join(fx.root, GRANT_JOURNAL_REL_PATH);
+    expect(existsSync(journal), "no journal was written, so shutting it makes no claim").toBe(true);
+    chmodSync(journal, 0o000);
+    try {
+      // THE CONTROL FIRST: the journal really is shut, so the three
+      // answers below are about what they did not open.
+      let opened: unknown = null;
+      try {
+        readGrantJournal(fx.root);
+      } catch (err) {
+        opened = err;
+      }
+      expect(opened, "the control: the journal was readable, so nothing below is measuring anything").not.toBeNull();
+
+      // ONE: the loop's start — the grant a successor coordinator inherits.
+      const inherited = grantInheritance(grantState(fx.root), []);
+      expect(inherited.revision, "the loop's start could not read the grant without the journal").toBe(2);
+      // TWO: an admission decided.
+      const decided = admit(grantState(fx.root), {
+        boundary: "lane-cut",
+        kind: "explicit",
+        card: FIXTURE_CARD_ID,
+        role: "executor",
+        blob: blobOf(fx.root, FIXTURE_CARD_FILE),
+      });
+      expect(decided.admitted, "an admission could not be decided without the journal").toBe(true);
+      expect(decided.revision, "the admission did not bind to the snapshot's revision").toBe(2);
+      // THREE: the grant displayed.
+      const shown = spawnSync(
+        process.execPath,
+        [path.join(repoRoot, "tools/e2e/scripts/brief.mjs"), "--root", fx.root, "--grant", "show"],
+        { encoding: "utf8" },
+      );
+      expect(shown.status, `the display could not run without the journal: ${String(shown.stderr)}`).toBe(0);
+      expect(String(shown.stdout), "the display did not print the current revision").toContain("revision: 2");
+      expect(String(shown.stdout), "the display printed accumulated history").not.toContain("superseded by");
+    } finally {
+      chmodSync(journal, 0o600);
+    }
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(snapshot-only)");
+  }
+});
+
+test("A SNAPSHOT MISSING AFTER PRIOR USE REFUSES PENDING AN EXPLICIT RECOVERY, and authority is never reconstructed from the journal", () => {
+  // THE CARD'S SEVENTH AND EIGHTH CRITERIA. The journal holds the
+  // revisions that STOPPED being current, so restoring its last entry
+  // would restore the grant BEFORE the one in force — a silent
+  // restoration is therefore wrong even when it looks like a recovery.
+  // And a routine read never creates authority: establishing it is an
+  // explicit writer operation that refuses an existing destination.
+  //
+  // KILLED BY: a reader that answers "no grant" for a lost snapshot, one
+  // that rebuilds it out of the journal, a creation that overwrites a
+  // live store, and a recovery that infers what it is restoring.
+  const { fx, block } = storeFixture("missing-after-use");
+  try {
+    initGrantStore(fx.root, { blockText: block(1), writtenBy: "the body" });
+    updateGrantStore(fx.root, { blockText: block(2), writtenBy: "the body", expectRevision: 1 });
+    rmSync(path.join(fx.root, GRANT_STORE_REL_PATH), { force: true });
+
+    const lost = storeRefusal(() => readGrantStore(fx.root));
+    expect(lost?.code, 'a lost snapshot after prior use was answered as "no grant"').toBe(
+      GRANT_STORE_CODES.MISSING_AFTER_USE,
+    );
+    expect(lost?.message, "the refusal does not say the journal holds SUPERSEDED revisions").toContain("SUPERSEDED");
+    expect(
+      existsSync(path.join(fx.root, GRANT_STORE_REL_PATH)),
+      "the refused read RESTORED the snapshot, which is the one thing a read must never do",
+    ).toBe(false);
+    expect(storeRefusal(() => grantState(fx.root))?.code, "the arm's own reader answered where the store refused").toBe(
+      GRANT_STORE_CODES.MISSING_AFTER_USE,
+    );
+
+    // THE RECOVERY IDENTIFIES WHAT IT RESTORES. It is handed the
+    // authorization it means — revision 2, the one that was in force —
+    // and the journal's last entry (revision 1) is never consulted.
+    const recovered = initGrantStore(fx.root, { blockText: block(2), writtenBy: "the recovering seat" });
+    expect(recovered.outcome, "the recovery did not create a snapshot").toBe("created");
+    expect(recovered.revision, "the recovery restored the SUPERSEDED revision the journal happens to hold").toBe(2);
+    expect(recovered.why, "the recovery does not say it was one").toContain("RECOVERED");
+    expect(grantState(fx.root).revision, "the store did not come back at the revision that was in force").toBe(2);
+
+    // AND A CREATION REFUSES AN EXISTING DESTINATION, under the same
+    // protection as any other write.
+    const again = storeRefusal(() => initGrantStore(fx.root, { blockText: block(3), writtenBy: "a second creator" }));
+    expect(again?.code, "a creation overwrote a live grant").toBe(GRANT_STORE_CODES.EXISTS);
+    expect(grantState(fx.root).revision, "the refused creation mutated the store").toBe(2);
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(missing-after-use)");
+  }
+});
+
+test("A STORE CREATED AND NEVER REVISED IS STILL PRIOR USE — losing the FIRST snapshot refuses, and is not read as a checkout that never held one", () => {
+  // THE CARD'S EIGHTH CRITERION at the state its own wording is sharpest
+  // about and the easiest to leave uncovered: a missing snapshot AFTER
+  // PRIOR USE is not a fresh project. The evidence of prior use is the
+  // journal and the retained superseded snapshot — and a store that was
+  // CREATED and never revised has NEITHER, so this is the one
+  // arrangement where the reader has to be told by something the
+  // CREATION left behind rather than by something a revision did.
+  //
+  // WHY IT IS NOT TIDINESS. The fresh-project answer is the explicit
+  // NO-GRANT state, under which every admission is made and merely
+  // reported unenforced — and the next creation then mints authority
+  // over an approval the owner had already given. That is the forgery
+  // this criterion exists to refuse, reached by losing one file.
+  //
+  // KILLED BY: a reader whose prior-use evidence is only the journal and
+  // the superseded snapshot, and by a creation that leaves no marker.
+  // THE CONTROL IS THE FIRST HALF: a checkout that has genuinely never
+  // held a store must still answer no-grant, or this body would pass
+  // against a reader that refuses everywhere.
+  const { fx, block } = storeFixture("first-grant-lost");
+  try {
+    // THE CONTROL, TAKEN FIRST: a checkout that never held a store
+    // ANSWERS rather than refusing. Without it the refusal below would
+    // be satisfied by a reader that refuses on an empty directory.
+    expect(readGrantStore(fx.root).present, "a checkout that never held a store answered a grant").toBe(false);
+    expect(grantState(fx.root).enforced, "a checkout that never held a store enforced something").toBe(false);
+
+    initGrantStore(fx.root, { blockText: block(1), writtenBy: "the body" });
+    expect(grantState(fx.root).revision, "the first grant was not recorded at all").toBe(1);
+    // NO REVISION IS EVER MADE HERE, and the two assertions below are
+    // what make this body about the uncovered state rather than about
+    // the one the body above already grades.
+    expect(
+      existsSync(path.join(fx.root, GRANT_JOURNAL_REL_PATH)),
+      "a journal exists, so this is not the never-revised state",
+    ).toBe(false);
+    expect(
+      existsSync(path.join(fx.root, GRANT_SUPERSEDED_REL_PATH)),
+      "a superseded snapshot exists, so this is not the never-revised state",
+    ).toBe(false);
+
+    rmSync(path.join(fx.root, GRANT_STORE_REL_PATH), { force: true });
+    expect(
+      storeRefusal(() => readGrantStore(fx.root))?.code,
+      "a checkout that LOST its first grant was read as one that never had one",
+    ).toBe(GRANT_STORE_CODES.MISSING_AFTER_USE);
+    expect(
+      storeRefusal(() => grantState(fx.root))?.code,
+      "the arm's own reader answered where the store refused",
+    ).toBe(GRANT_STORE_CODES.MISSING_AFTER_USE);
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(first-grant-lost)");
+  }
+});
+
+test("AN INTERRUPTION BETWEEN THE JOURNAL APPEND AND THE SNAPSHOT REPLACEMENT IS RECOVERABLE — the authority stays unambiguous, and the retry appends no duplicate", () => {
+  // THE CARD'S NINTH CRITERION. The order is chosen rather than
+  // inherited: the journal records revisions that have been SUPERSEDED,
+  // so an entry sitting there with the snapshot not yet replaced says
+  // nothing about a new grant having become active. The effective
+  // authority is the snapshot's at every point, with no interpretation.
+  //
+  // KILLED BY: a reader that treats a journal entry as the new grant, a
+  // retry that appends a second entry for the same supersession, and a
+  // success reported before the snapshot is durable.
+  const { fx, block } = storeFixture("interrupted-update");
+  try {
+    initGrantStore(fx.root, { blockText: block(1), writtenBy: "the body" });
+    const snapshotBefore = readFileSync(path.join(fx.root, GRANT_STORE_REL_PATH), "utf8");
+    const digestBefore = readGrantStore(fx.root).digest;
+
+    // THE INTERRUPTED STATE, ARRANGED EXACTLY: the journal carries the
+    // entry the update would have written, and the snapshot is untouched.
+    const journal = path.join(fx.root, GRANT_JOURNAL_REL_PATH);
+    mkdirSync(path.dirname(journal), { recursive: true });
+    writeFileSync(
+      journal,
+      `${JSON.stringify({
+        format: 1,
+        supersededRevision: 1,
+        supersededBy: 2,
+        supersededAt: "2026-09-17T00:00:00Z",
+        digest: digestBefore,
+        snapshot: snapshotBefore,
+      })}\n`,
+    );
+    expect(grantState(fx.root).revision, "a journal entry alone was read as the new grant becoming active").toBe(1);
+    expect(readGrantJournal(fx.root).entries.length, "the arranged journal is not one entry").toBe(1);
+
+    // THE RETRY CONTINUES THE SAME ACT rather than starting a second one.
+    const retried = updateGrantStore(fx.root, { blockText: block(2), writtenBy: "the retry", expectRevision: 1 });
+    expect(retried.outcome, "the retry did not complete the interrupted update").toBe("written");
+    expect(retried.steps.join(" | "), "the retry does not say it appended nothing").toContain("appended nothing");
+    expect(readGrantJournal(fx.root).entries.length, "the retry appended a DUPLICATE journal entry").toBe(1);
+    expect(grantState(fx.root).revision, "the intended state is not the one in force after the retry").toBe(2);
+    expect(
+      readGrantJournal(fx.root).findings,
+      "the journal reports a competing history after an ordinary retry",
+    ).toEqual([]);
+
+    // AND THE SUPERSEDED REVISION IS NOT ONLY IN THE JOURNAL: the whole
+    // snapshot it replaced is retained beside it, which is the copy a
+    // recovery reaches for first.
+    expect(
+      readFileSync(path.join(fx.root, GRANT_SUPERSEDED_REL_PATH), "utf8"),
+      "the superseded snapshot was not retained whole",
+    ).toBe(snapshotBefore);
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(interrupted-update)");
+  }
+});
+
+test("A LOST ACKNOWLEDGEMENT MINTS NO SECOND REVISION — the identical intended state reports already-current, and a matching revision with different content is a conflict that mutates nothing", () => {
+  // THE CARD'S TENTH CRITERION, and its sharpest clause: a matching
+  // revision NUMBER alone is not evidence that the intended state is the
+  // one in force. So the retry compares the CONTENT, and answers one of
+  // exactly two things — already-current, or a conflict — and never a
+  // third revision minted because a caller missed a success.
+  //
+  // KILLED BY: a retry that writes again, one that compares only the
+  // revision, and one that reports success for a store holding different
+  // bytes at the same number.
+  const { fx, block } = storeFixture("lost-acknowledgement");
+  try {
+    initGrantStore(fx.root, { blockText: block(1), writtenBy: "the body" });
+    updateGrantStore(fx.root, { blockText: block(2), writtenBy: "the body", expectRevision: 1 });
+    const digest = readGrantStore(fx.root).digest;
+    const journalLines = readGrantJournal(fx.root).entries.length;
+
+    const again = updateGrantStore(fx.root, { blockText: block(2), writtenBy: "the body", expectRevision: 1 });
+    expect(again.outcome, "a retry after a lost acknowledgement mutated the store").toBe("already-current");
+    expect(again.revision, "the retry reported a revision other than the one in force").toBe(2);
+    expect(again.steps.join(" | "), "the retry does not say it wrote nothing").toContain("wrote nothing");
+    expect(readGrantStore(fx.root).digest, "the retry changed the bytes in force").toBe(digest);
+    expect(readGrantJournal(fx.root).entries.length, "the retry appended to the journal").toBe(journalLines);
+
+    // THE CONFLICT: the same revision number carrying DIFFERENT
+    // authorization. A command that accepted this would be treating the
+    // integer as the evidence.
+    const other = storeBlock({
+      revision: 2,
+      order: [FIXTURE_CARD_ID],
+      blobs: { [FIXTURE_CARD_ID]: blobOf(fx.root, FIXTURE_CARD_FILE) },
+      givenBy: "somebody else entirely, on another day",
+    });
+    const conflict = storeRefusal(() =>
+      updateGrantStore(fx.root, { blockText: other, writtenBy: "the body", expectRevision: 1 }),
+    );
+    expect(conflict?.code, "a matching revision number was accepted as evidence of the intended state").toBe(
+      GRANT_STORE_CODES.CONFLICT,
+    );
+    expect(conflict?.message, "the conflict does not name the two contents it compared").toContain(digest.slice(0, 12));
+    expect(readGrantStore(fx.root).digest, "the conflict mutated the store anyway").toBe(digest);
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(lost-acknowledgement)");
+  }
+});
+
+test("THE STORE IS REFUSED ANYWHERE THAT IS NOT THE DESIGNATED INTEGRATION CHECKOUT — from a lane worktree, from a detached checkout, and from another host", () => {
+  // THE CARD'S ELEVENTH AND THIRTEENTH CRITERIA. Each refusal NAMES the
+  // location and why it is not the designated one, and none of them is a
+  // silent "no grant": an unverifiable grant is closer to no grant than
+  // to an approved one, which is the pause record's own rule applied to
+  // the file beside it.
+  //
+  // KILLED BY: a reader that answers the no-grant state in a lane, one
+  // that reads a store found under any path at all, and one that adopts
+  // a record written on another machine — which is DEFERRED by the
+  // owner's ruling rather than unhandled.
+  const { fx, block } = storeFixture("not-designated");
+  try {
+    initGrantStore(fx.root, { blockText: block(1), writtenBy: "the body" });
+    expect(grantState(fx.root).revision, "the designated checkout could not read its own store").toBe(1);
+
+    // A LANE WORKTREE.
+    const lane = path.join(fx.dir, "lane");
+    fixtureGit(fx.root, ["worktree", "add", "-b", "task/T-902-a-lane", lane, "HEAD"]);
+    const inLane = storeRefusal(() => grantState(lane));
+    expect(inLane?.code, "a lane worktree read a grant of its own").toBe(GRANT_STORE_CODES.NOT_DESIGNATED);
+    expect(inLane?.message, "the refusal does not name the location it refused").toContain(lane);
+    expect(inLane?.message, "the refusal does not say a lane takes its admission from the coordinator").toContain(
+      "the admission the coordinator already decided",
+    );
+    expect(grantStoreLocation(lane).kind, "a lane worktree was not classified as one").toBe("linked-worktree");
+
+    // A DETACHED CHECKOUT — the verifier's bench.
+    const bench = path.join(fx.dir, "bench");
+    fixtureGit(fx.root, ["worktree", "add", "--detach", bench, "HEAD"]);
+    const detached = storeRefusal(() => grantState(bench));
+    expect(detached?.code, "a detached checkout read a grant").toBe(GRANT_STORE_CODES.NOT_DESIGNATED);
+    expect(detached?.message, "the refusal does not name the detached checkout").toContain(bench);
+
+    // AND A STORE THAT TRAVELLED: the same bytes under a header naming
+    // another machine. Cross-host transfer of authority is DEFERRED and
+    // is not built, so the gap is visible rather than quietly filled.
+    const file = path.join(fx.root, GRANT_STORE_REL_PATH);
+    writeFileSync(file, readFileSync(file, "utf8").replace(/^  host: .*$/m, "  host: another-machine.invalid"));
+    const foreign = storeRefusal(() => readGrantStore(fx.root));
+    expect(foreign?.code, "a grant written on another host was adopted").toBe(GRANT_STORE_CODES.FOREIGN_HOST);
+    expect(foreign?.message, "the refusal does not record cross-host transfer as DEFERRED").toContain("DEFERRED");
+
+    // AND A STORE FOUND UNDER THE WRONG PATH: there is ONE store at ONE
+    // checkout, with no second copy and no synchronization between them.
+    writeFileSync(file, readFileSync(file, "utf8").replace(/^  host: .*$/m, `  host: ${os.hostname()}`));
+    writeFileSync(file, readFileSync(file, "utf8").replace(/^  location: .*$/m, "  location: /somewhere/else"));
+    const elsewhere = storeRefusal(() => readGrantStore(fx.root));
+    expect(elsewhere?.code, "a store written for another checkout was adopted").toBe(GRANT_STORE_CODES.METADATA);
+    expect(elsewhere?.message, "the refusal does not say there is no second copy").toContain("no second copy");
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(not-designated)");
+  }
+});
+
+test("A LANE IS SERVED BY THE COORDINATOR'S ADMISSION AND NEVER BY A STORE OF ITS OWN", () => {
+  // THE CARD'S TWELFTH CRITERION. The admission is a VALUE the
+  // coordinator decided and handed on; the lane's own attempt to consult
+  // a store is refused rather than served. The two halves are measured
+  // together because either alone is half the promise: an admission that
+  // travels and a store that would also answer locally is two
+  // authorizations.
+  //
+  // KILLED BY: a lane that reads a store, and a plan that cannot take an
+  // admission from its coordinator at all.
+  const { fx, block } = storeFixture("lane-served");
+  try {
+    initGrantStore(fx.root, { blockText: block(1), writtenBy: "the coordinator" });
+    const lane = path.join(fx.dir, "lane");
+    fixtureGit(fx.root, ["worktree", "add", "-b", "task/T-903-a-lane", lane, "HEAD"]);
+
+    // THE LANE CONSULTING A STORE OF ITS OWN IS REFUSED — even with a
+    // snapshot planted under its own runtime directory, which is the
+    // arrangement a lane would reach for if it tried.
+    mkdirSync(path.join(lane, ".supertaskr"), { recursive: true });
+    writeFileSync(
+      path.join(lane, GRANT_STORE_REL_PATH),
+      composeGrantSnapshot({ blockText: block(9), root: lane, revision: 9, writtenBy: "the lane itself" }),
+    );
+    expect(storeRefusal(() => grantState(lane))?.code, "a lane was served by a store it wrote itself").toBe(
+      GRANT_STORE_CODES.NOT_DESIGNATED,
+    );
+
+    // AND THE ADMISSION REACHES IT AS A VALUE: what the coordinator
+    // decided is decided, and the lane neither re-reads nor re-derives it.
+    const decided = admit(grantState(fx.root), {
+      boundary: "lane-cut",
+      kind: "explicit",
+      card: FIXTURE_CARD_ID,
+      role: "executor",
+      blob: blobOf(fx.root, FIXTURE_CARD_FILE),
+    });
+    expect(decided.admitted, "the coordinator could not decide the admission it is supposed to hand on").toBe(true);
+    expect(decided.revision, "the admission carries no revision to travel with").toBe(1);
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(lane-served)");
+  }
+});
+
+test("THE MIGRATION CARRIES THE LEGACY GRANT WITHOUT WIDENING IT, and the template's broader authorization is not silently restored when the store goes", () => {
+  // THE CARD'S FOURTEENTH CRITERION. A migration that widened what it
+  // carried would be a grant nobody gave, and a reader that fell back on
+  // the template when the store was unreadable would restore exactly the
+  // authorization this card removed — quietly, and in the case where
+  // guessing costs most.
+  //
+  // KILLED BY: a migration that edits what it moves, and a reader that
+  // falls back to the template.
+  const { fx, block } = storeFixture("migration");
+  try {
+    // A REVOCATION RIDES THE LEGACY BLOCK, because the criterion names
+    // revocations among the things a migration must preserve and a
+    // revoked grant is the case where losing one costs most: it would
+    // come back as a LIVE grant.
+    const legacy = `${block(4).replace("  history: []", '  revoked:\n    at: "2026-09-16T00:00:00Z"\n    by: "the fixture owner"\n  history: []')}`;
+    const at = path.join(fx.root, RUNTIME_TEMPLATE);
+    writeFileSync(at, `${readFileSync(at, "utf8").replace(/\n*$/, "\n")}\n${legacy}`);
+
+    // AND THE RECORDS THE MIGRATION MUST NOT DISTURB, planted first: the
+    // owner's pause lives in its own runtime record and the admissions
+    // and consumed approvals live in the run records, so "preserved" is
+    // checkable rather than promised.
+    mkdirSync(path.join(fx.root, ".supertaskr", "runs"), { recursive: true });
+    const pause = path.join(fx.root, ".supertaskr", "pause.json");
+    const runs = path.join(fx.root, ".supertaskr", "runs", "T-902-a1.json");
+    writeFileSync(
+      pause,
+      `${JSON.stringify({ version: 1, scope: "new-work", by: "the fixture owner", at: "2026-09-16T00:00:00Z" }, null, 2)}\n`,
+    );
+    writeFileSync(runs, `${JSON.stringify({ attempt: "T-902-a1", state: "done" }, null, 2)}\n`);
+    const pauseBefore = readFileSync(pause, "utf8");
+    const runsBefore = readFileSync(runs, "utf8");
+    const migrated = spawnSync(
+      process.execPath,
+      [
+        path.join(repoRoot, "tools/e2e/scripts/brief.mjs"),
+        "--root",
+        fx.root,
+        "--grant",
+        "migrate",
+        "--by",
+        "the migrating seat",
+      ],
+      { encoding: "utf8" },
+    );
+    expect(migrated.status, `the migration failed: ${String(migrated.stderr)}`).toBe(0);
+
+    const store = readGrantStore(fx.root);
+    const fromTemplate = parserPure.dispatchBlock(readFileSync(at, "utf8"), parseProcessSchema(schemaOf(fx.root)));
+    expect(store.block?.approval, "the migration changed the approval mode").toBe(fromTemplate.approval);
+    expect(store.block?.recovery, "the migration changed the recovery policy").toBe(fromTemplate.recovery);
+    expect(store.block?.grant?.order, "the migration widened or narrowed the approved order").toEqual(
+      fromTemplate.grant?.order,
+    );
+    expect([...(store.block?.grant?.cards ?? [])], "the migration moved a card's approved blob").toEqual([
+      ...(fromTemplate.grant?.cards ?? []),
+    ]);
+    expect(store.block?.grant?.givenBy, "the migration rewrote who gave the grant").toBe(fromTemplate.grant?.givenBy);
+    expect(store.block?.revision, "the migration changed the revision it carried").toBe(fromTemplate.revision);
+    expect(store.block?.revoked?.by, "the migration dropped the revocation, so a revoked grant came back LIVE").toBe(
+      fromTemplate.revoked?.by,
+    );
+    expect(store.block?.current, "a revoked grant migrated into a CURRENT one").toBeNull();
+    expect(readFileSync(pause, "utf8"), "the migration disturbed the owner's pause record").toBe(pauseBefore);
+    expect(readFileSync(runs, "utf8"), "the migration disturbed the run records the admissions live in").toBe(
+      runsBefore,
+    );
+
+    // AND THE TEMPLATE IS NOT A FALLBACK. With the store corrupted and
+    // the legacy block still sitting in the template, the reader refuses
+    // — it does not quietly restore the broader authorization.
+    writeFileSync(path.join(fx.root, GRANT_STORE_REL_PATH), "not a snapshot at all\n");
+    const refused = storeRefusal(() => grantState(fx.root));
+    expect(refused, "an unreadable store fell back on the template's grant").not.toBeNull();
+    expect(refused?.message, "the refusal does not name the store it could not read").toContain(GRANT_STORE_REL_PATH);
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(migration)");
+  }
+});
+
+test("A FIXTURE IS DECIDED BY ITS OWN AUTHORIZATION AND NEVER BY A REAL GRANT IN A DESIGNATED STORE, AND EVERY CALL SITE NAMES ITS ROOT", () => {
+  // THE CARD'S SIXTEENTH CRITERION, and it is T-330's repair carried
+  // forward to the file that replaced the one T-330 was about. A real
+  // grant is planted in a designated store; a fixture dispatch is then
+  // shown to be decided by the fixture's own authorization, by name.
+  //
+  // KILLED BY: a reader with a default root, a fixture that inherits
+  // another checkout's store, and a body that would pass with the
+  // default still in place — which the control at the end rules out.
+  const real = storeFixture("the-designated-one");
+  const fixture = storeFixture("the-fixture");
+  try {
+    // A REAL GRANT, in a designated store, naming a card that exists only
+    // in ITS OWN tree.
+    initGrantStore(real.fx.root, { blockText: real.block(11), writtenBy: "the owner's seat" });
+    expect(grantState(real.fx.root).revision, "the designated store did not take the real grant").toBe(11);
+
+    // THE FIXTURE'S OWN AUTHORIZATION, at a revision nothing else uses.
+    grantIn(fixture.fx.root, fixture.block(3));
+    const decided = grantState(fixture.fx.root);
+    expect(decided.revision, "the fixture was decided by an authorization that is not its own").toBe(3);
+    expect(decided.source, "the fixture read a store outside its own root").toContain(fixture.fx.root);
+    expect(decided.block?.grant?.givenBy, "the fixture's grant was not the fixture's").toContain("the fixture owner");
+
+    // AND THE READER REFUSES WHEN NO ROOT IS NAMED — the control, and the
+    // defect it prevents is named in the refusal rather than left to be
+    // remembered.
+    const defaulted = storeRefusal(() => (grantState as unknown as () => unknown)());
+    expect(defaulted?.code, "the reader accepted a call site that named no root").toBe(GRANT_STORE_CODES.NO_ROOT);
+    expect(defaulted?.message, "the refusal does not say which defect it is preventing").toContain("T-330");
+    for (const reader of [readGrantStore, readGrantJournal, grantStoreLocation, initGrantStore, updateGrantStore]) {
+      expect(
+        storeRefusal(() => (reader as unknown as () => unknown)())?.code,
+        `${reader.name} accepted a call site that named no root`,
+      ).toBe(GRANT_STORE_CODES.NO_ROOT);
+    }
+  } finally {
+    removeGitFixture(real.fx.dir, "ritualFixture(the-designated-one)");
+    removeGitFixture(fixture.fx.dir, "ritualFixture(the-fixture)");
+  }
+});
+
+test("THE ARM'S EXTENSION POINT NAMES A FUNCTION THIS FILE ACTUALLY EXPORTS", () => {
+  // THE CARD'S SEVENTEENTH CRITERION asks for an extension point a later
+  // card can take up. A comment that names one is a claim about this
+  // file, and PROSE IS A CODE INPUT here — the schema's own consumer
+  // table is kept by a body for exactly this reason, because a comment
+  // nobody checks drifts from the code it describes and then misleads
+  // the next reader with the authority of a source file.
+  //
+  // THE SENTENCE NAMED A FUNCTION THAT DID NOT EXIST. It said
+  // `updateOperationalStore` was written against a datum descriptor so a
+  // second operational datum could take up the same path by passing one.
+  // There is no such function, and the real one takes no descriptor, so
+  // a successor card reading that sentence would have gone looking for
+  // machinery that was never built.
+  //
+  // KILLED BY: a name that drifts from the function, and by a reader
+  // that finds nothing to check — which the two controls rule out.
+  const arm = readFileSync(path.join(repoRoot, "tools/e2e/scripts/dispatch-brief.mjs"), "utf8");
+  const lines = arm.split("\n");
+  const heading = lines.findIndex((l) => l.includes("THE EXTENSION POINT, AND WHAT A LATER CARD WOULD ADD"));
+  expect(heading, "the arm carries no extension-point section, so this body is measuring nothing").toBeGreaterThan(-1);
+  const sentence = lines[heading + 1] as string;
+  const named = /`([A-Za-z_$][A-Za-z0-9_$]*)`/.exec(sentence)?.[1] ?? "";
+  // THE FIRST CONTROL: the sentence must NAME something, or an empty
+  // match would satisfy every assertion below by having nothing to fail.
+  expect(named, `the extension-point sentence names no symbol at all: ${sentence}`).not.toBe("");
+  expect(
+    typeof (armModule as unknown as Record<string, unknown>)[named],
+    `the arm's extension-point sentence names a function this file does not export: \`${named}\``,
+  ).toBe("function");
+  // THE SECOND CONTROL: the check discriminates. A name the arm does not
+  // export must fail it, or "is exported" is a predicate that never
+  // returns false and the assertion above is free.
+  expect(
+    typeof (armModule as unknown as Record<string, unknown>)["updateOperationalStore"],
+    "the control: a symbol this arm does not export was read as exported",
+  ).not.toBe("function");
+});
+
+test("THE STORE REUSES THIS TREE'S VALIDATION AND TAKES ITS LOCKING WITHOUT CLOSING A CYCLE — and the blob sha it computes is git's own", () => {
+  // THE CARD'S SEVENTEENTH CRITERION, and the two facts its own notes
+  // establish. The reader/writer must NOT import the run record: that
+  // module imports this arm, and a cycle between them is a load-order bug
+  // nobody could see from either file. And the blob sha the validation
+  // compares on has to be git's, or the store and the grant would be
+  // agreeing on a digest of their own.
+  //
+  // KILLED BY: an import of the run record from the arm, a second parse
+  // of the block beside the parser's reader, and a hash that is not a git
+  // blob sha.
+  const arm = readFileSync(path.join(repoRoot, "tools/e2e/scripts/dispatch-brief.mjs"), "utf8");
+  expect(
+    arm.split("\n").filter((l) => /^import .*run-record\.mjs/.test(l.trim())),
+    "the arm imports the run record, which imports the arm — the load-order cycle its own comment names",
+  ).toEqual([]);
+
+  const dir = realpathSync(mkdtempSync(path.join(os.tmpdir(), "t344-blob-")));
+  try {
+    execFileSync("git", ["-C", dir, "init", "-q", "."]);
+    for (const text of ["", "one line\n", "a card\nwith several\nlines\n", "éè unicode — bytes\n"]) {
+      const file = path.join(dir, "probe");
+      writeFileSync(file, text);
+      expect(
+        blobShaOf(text),
+        "the store's blob sha is not the one git computes, so the grant and the board compare nothing",
+      ).toBe(execFileSync("git", ["-C", dir, "hash-object", "--", "probe"], { encoding: "utf8" }).trim());
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+
+  // AND THE DIGEST THE COMPARE-AND-SET USES IS OF THE AUTHORIZATION, not
+  // of the file: a snapshot rewritten at a different instant carries the
+  // same authorization and must compare equal, or the already-current
+  // answer could never be given.
+  const block = storeBlock({ revision: 1, order: ["T-900"], blobs: { "T-900": "a".repeat(40) } });
+  const first = composeGrantSnapshot({ blockText: block, root: "/tmp/x", revision: 1, writtenBy: "a", at: "2026-01-01T00:00:00Z" });
+  const later = composeGrantSnapshot({ blockText: block, root: "/tmp/x", revision: 1, writtenBy: "b", at: "2026-02-02T00:00:00Z" });
+  expect(first, "the two snapshots are identical, so comparing their digests proves nothing").not.toBe(later);
+  expect(grantDigest(first), "the digest moved with the header rather than with the authorization").toBe(
+    grantDigest(later),
+  );
+  // THE CONTROL: a digest that ignored the block entirely would also pass
+  // the line above, so a DIFFERENT authorization must digest differently.
+  const widened = composeGrantSnapshot({
+    blockText: storeBlock({ revision: 1, order: ["T-900", "T-901"], blobs: { "T-900": "a".repeat(40), "T-901": "b".repeat(40) } }),
+    root: "/tmp/x",
+    revision: 1,
+    writtenBy: "a",
+    at: "2026-01-01T00:00:00Z",
+  });
+  expect(grantDigest(widened), "the control: a widened order digested the same").not.toBe(grantDigest(first));
 });

@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1214 behaviours** — 1212 extracted sentences + 2 named-not-extracted (listed at the end) — across 42 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1229 behaviours** — 1227 extracted sentences + 2 named-not-extracted (listed at the end) — across 42 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -242,7 +242,7 @@ Census: **1214 behaviours** — 1212 extracted sentences + 2 named-not-extracted
 - A SUCCESSOR COORDINATOR INHERITS THE GRANT FROM THE BLOCK and continues the order without the previous coordinator's identity
 - THE ARM READS THE GRANT THROUGH THE PARSER'S READER AND THROUGH NOTHING ELSE
 - THE SCHEMA'S DISPATCH BLOCK NAMES A READ SITE FOR EVERY ROW, AND EVERY OPERATIONAL ROW'S SITE IS A SYMBOL THIS ARM EXPORTS
-- A TREE WITH NO DISPATCH BLOCK IS THE EXPLICIT NO-GRANT STATE, the ceremony keeps working, and the arm says NOTHING WAS ENFORCED rather than pretending it was
+- A CHECKOUT THAT HAS NEVER HELD A STORE IS THE EXPLICIT NO-GRANT STATE, the ceremony keeps working, and the arm says NOTHING WAS ENFORCED rather than pretending it was
 - THE ORCHESTRATOR'S STEP 5 KEEPS ITS TWO SENTENCES AND EXTENDS THEM — a dispatch inside the current grant is approved by the grant, and every other dispatch still waits for the owner
 - THE CONVENTIONS CARRY THE ADMISSION RULE ONCE, AT THE LOOP'S OWN SECTION
 - T-322 C1 — A RED IS ATTRIBUTED BEFORE ANYTHING ACTS ON IT, and the four answers route four different ways
@@ -279,6 +279,21 @@ Census: **1214 behaviours** — 1212 extracted sentences + 2 named-not-extracted
 - T-320 C6 — THE FIVE MEASUREMENTS ARE DIFFERENCES OF STAMPED INSTANTS, each naming both, and the verdict says whether the targets were met
 - T-320 C6 — THE RUNNER'S CONCLUSION IS RECORDED BESIDE THE TOTAL AS A SEPARATE FIGURE, never folded into it
 - T-320 C3 — THE REVERSIBLE FINDING'S DISCLOSURE IS TRUE OF THIS TREE: nothing re-reads a rename or a deletion after the executor writes, and the sentence says so
+- THE ACTIVE GRANT LIVES IN THE OPERATIONAL STORE AND A BLOCK LEFT IN THE RUNTIME TEMPLATE IS NOT READ AS AUTHORITY
+- A ROUTINE GRANT REVISION RUNS NO SUITE, CREATES NO COMMIT, PERFORMS NO PUSH AND STARTS NO CI RUN — observed through the process table rather than asserted
+- THE COMPARE IS INSIDE THE LOCK — a second writer is refused rather than made silently second, and a revision that names the wrong predecessor writes nothing
+- THE WRITE IS ATOMIC — a reader meets the whole prior revision or the whole new one, and the in-place fill this card rejected is what a reader DOES catch half-written
+- THE CURRENT SNAPSHOT IS READ WITHOUT THE JOURNAL — the loop's start, an admission and a display all leave accumulated history unopened
+- A SNAPSHOT MISSING AFTER PRIOR USE REFUSES PENDING AN EXPLICIT RECOVERY, and authority is never reconstructed from the journal
+- A STORE CREATED AND NEVER REVISED IS STILL PRIOR USE — losing the FIRST snapshot refuses, and is not read as a checkout that never held one
+- AN INTERRUPTION BETWEEN THE JOURNAL APPEND AND THE SNAPSHOT REPLACEMENT IS RECOVERABLE — the authority stays unambiguous, and the retry appends no duplicate
+- A LOST ACKNOWLEDGEMENT MINTS NO SECOND REVISION — the identical intended state reports already-current, and a matching revision with different content is a conflict that mutates nothing
+- THE STORE IS REFUSED ANYWHERE THAT IS NOT THE DESIGNATED INTEGRATION CHECKOUT — from a lane worktree, from a detached checkout, and from another host
+- A LANE IS SERVED BY THE COORDINATOR'S ADMISSION AND NEVER BY A STORE OF ITS OWN
+- THE MIGRATION CARRIES THE LEGACY GRANT WITHOUT WIDENING IT, and the template's broader authorization is not silently restored when the store goes
+- A FIXTURE IS DECIDED BY ITS OWN AUTHORIZATION AND NEVER BY A REAL GRANT IN A DESIGNATED STORE, AND EVERY CALL SITE NAMES ITS ROOT
+- THE ARM'S EXTENSION POINT NAMES A FUNCTION THIS FILE ACTUALLY EXPORTS
+- THE STORE REUSES THIS TREE'S VALIDATION AND TAKES ITS LOCKING WITHOUT CLOSING A CYCLE — and the blob sha it computes is git's own
 
 ## card-figures
 
@@ -489,7 +504,7 @@ Census: **1214 behaviours** — 1212 extracted sentences + 2 named-not-extracted
 - the committed settings chapter is a GENERATION of the schema, and a schema nobody regenerated for reds
 - THE SHIPPED SCHEMA'S DISPATCH BLOCK DECLARATION reads the same to the hand parser and to a real YAML parser
 - THE SHIPPED DISPATCH BLOCK'S OPERATIONAL ROWS ARE THE ONES THE ARM BRANCHES ON, the limits are the advisory ones, and the no-grant words are `each` and `none`
-- THE REAL CONFIGURATION IS CHECKED THROUGH THE PARSER'S READER — a grant this project carries is validated card by card, and no grant is read out as the explicit no-grant state
+- THE REAL CONFIGURATION IS CHECKED THROUGH THE PARSER'S READER — this project's SHIPPED TEMPLATE carries no grant at all, and where the live authorization is read from is derived rather than assumed
 - A PLANTED CONFIGURATION DEFECT IS REFUSED BY NAME — a mode the schema does not declare, a card missing from the map, a blob this tree does not carry, and a card rewritten past the mechanical drift
 - THE SETTINGS CHAPTER CARRIES THE DISPATCH BLOCK AS A GENERATION of its declaration, never as prose
 - the listing goes to the PROJECT'S OWN tree for its readings — the measured column is not a rendering of numbers somebody handed in
@@ -685,7 +700,7 @@ Census: **1214 behaviours** — 1212 extracted sentences + 2 named-not-extracted
 - a runtime settings path is placed by readers DERIVED from the corpus, and the identifier arm is what reaches the files that never spell the path
 - a settings path the scan places nothing for FAILS CLOSED, and so does one nobody asked about, and so does a reader under no package root
 - the live tree places its own runtime template with the consumers that really read it, and the leg it owes is narrower than the whole leg
-- the narrowed selection for the runtime template still CARRIES every body that reads this project's dispatch block, so no configuration check is dropped by narrowing
+- the narrowed selection for the runtime template still CARRIES every body that reads the dispatch block, so no configuration check is dropped by narrowing
 - a file: dependency in a manifest makes one package's change owe another's suite, and the edge is READ rather than asserted
 - the range is refused when its left endpoint is not an ancestor of its right, because a two-dot diff between divergent tips lies
 - a DELETED path is IN the range's path set, because a removal is a change and an empty path set owes nothing at all

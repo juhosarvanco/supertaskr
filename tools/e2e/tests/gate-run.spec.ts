@@ -2350,9 +2350,16 @@ function runtimeTemplatePath(): string {
 }
 
 test("the live tree places its own runtime template with the consumers that really read it, and the leg it owes is narrower than the whole leg", () => {
-  // THE INTEGRATION HALF at this checkout's own ref, and the case the
-  // card was written about: recording the owner's approved dispatch grant
-  // is a change to this one file. KILLED BY: a map that answers nothing
+  // THE INTEGRATION HALF at this checkout's own ref. **THE SUBJECT MOVED
+  // AT T-344 AND THE MEASUREMENT DID NOT**: the case this body was
+  // written about was recording the owner's approved dispatch grant, and
+  // that datum has LEFT this file precisely because the cost measured
+  // here — four suites for a routine approval — was the wrong price for
+  // an operational act. What the template still carries is genuine
+  // configuration a code change reads: the model per role and the
+  // process profile. So the narrowing is still owed and still worth
+  // deriving, and an ordinary approval no longer enters this derivation
+  // at all. KILLED BY: a map that answers nothing
   // for the live file (which fails closed and buys nothing), one that
   // misses the parser's settings reader or the arm that opens it, and a
   // narrowing that cannot be narrower than the leg.
@@ -2394,14 +2401,29 @@ test("the live tree places its own runtime template with the consumers that real
   expect(before.e2e.whole, "nor the whole leg").toBe(true);
 });
 
-test("the narrowed selection for the runtime template still CARRIES every body that reads this project's dispatch block, so no configuration check is dropped by narrowing", () => {
+test("the narrowed selection for the runtime template still CARRIES every body that reads the dispatch block, so no configuration check is dropped by narrowing", () => {
   // THE CARD'S FIFTH CRITERION, its "drop no check" half, and the reason
   // this body derives its carriers instead of naming them: a selection
   // that stopped running the body which validates the real configuration
   // would be a narrowing that bought its speed by removing the check.
+  //
+  // **AND SINCE T-344 THE CARRIERS ARE BODIES ABOUT THE READER RATHER
+  // THAN ABOUT A GRANT THIS FILE HOLDS.** The active grant lives in an
+  // untracked operational store now, so it has no publication range at
+  // all and cannot be what a selection over a tracked path selects for —
+  // which is why this body is NOT retargeted at the store. What it still
+  // holds is that a change to the template carries every body that reads
+  // the block's declaration with it.
   // KILLED BY: a narrowing that drops a carrier, and by a carrier set
   // derived to be empty — which would make the containment vacuous.
   const template = runtimeTemplatePath();
+  expect(
+    readFileSync(path.join(repoRoot, template), "utf8")
+      .split("\n")
+      .filter((l) => l === "dispatch:"),
+    "the runtime template carries a dispatch block again — the grant left it at T-344, and a " +
+      "selection over a tracked path is exactly the cost it left to avoid",
+  ).toEqual([]);
   const map = settingsReaders([template]);
   const owed = deriveOwed({
     changed: [template],

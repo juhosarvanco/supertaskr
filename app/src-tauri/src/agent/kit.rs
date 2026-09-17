@@ -34,7 +34,7 @@ use super::skills;
 /// the live stamps in `method/interview/plan-interview.md` and
 /// `docs/CONVENTIONS.md` by [`tests::snapshot_version_matches_the_live_method_stamps`],
 /// so a method bump that forgets this const is red.
-pub const METHOD_SNAPSHOT_VERSION: &str = "0.1.34";
+pub const METHOD_SNAPSHOT_VERSION: &str = "0.1.35";
 
 /// Where the kit is written inside a project (relative, POSIX).
 pub const KIT_REL_DIR: &str = ".supertaskr/genesis/kit";
@@ -1055,6 +1055,89 @@ mod tests {
         // method/ was outside its fence (ADR-022 decision 2).
         assert!(interview.contains("`.supertaskr/`"), "stage 0 must still bank the .gitignore line");
         assert!(interview.contains("docs-templates/"));
+    }
+
+    /// DOES THIS TEMPLATE CARRY A `dispatch:` BLOCK?
+    ///
+    /// A LINE THAT OPENS THE BLOCK, never the word anywhere in the file.
+    /// The shipped template's prose names the block several times while
+    /// explaining where the grant went, so a substring search would red
+    /// on the sentence that describes the fix - and a body that had to
+    /// be loosened every time the prose changed would be loosened until
+    /// it stopped discriminating. The shape is the one the parser
+    /// library's own reader looks for: `dispatch:` at column zero.
+    fn carries_dispatch_block(template: &str) -> bool {
+        template.lines().any(|l| l == "dispatch:" || l.starts_with("dispatch: "))
+    }
+
+    /// THE SHIPPED RUNTIME TEMPLATE CARRIES NO DISPATCH GRANT, AND THIS
+    /// ASSERTION IS MADE OVER THE KIT'S OWN EMBEDDED CONTENT (T-344).
+    ///
+    /// The kit's snapshot table embeds `method/runtime/supertaskr.yaml`
+    /// whole, through `include_str!`, and the only other test on that
+    /// entry asserts the PATH rides the kit rather than anything about
+    /// what the bytes say. So a binary built from a source tree whose
+    /// template carried a `dispatch:` block would compile THIS PROJECT'S
+    /// approval — its mode, its order and card identifiers pinned to
+    /// blobs that exist in no other repository — into every project the
+    /// kit scaffolds. T-344 moved the active grant to an untracked
+    /// operational store at the designated integration checkout, and
+    /// this body is what keeps it out of the kit.
+    ///
+    /// TWO BODIES ONCE ASSERTED THIS ABOUT THE LIVE TREE AND T-330
+    /// RETIRED THEM CORRECTLY — they were asking a good question of the
+    /// wrong artifact. The question belongs HERE, against what the
+    /// binary actually carries.
+    ///
+    /// KILLED BY: a template with a grant block riding the kit, and by a
+    /// detector that cannot see one — which is what the positive control
+    /// below is for. A negative assertion needs a positive control, or
+    /// "there is no grant here" and "this predicate never fires" are the
+    /// same green.
+    #[test]
+    fn the_kits_embedded_runtime_template_carries_no_dispatch_grant() {
+        let shipped = KIT_FILES
+            .iter()
+            .find(|f| f.rel == "runtime/supertaskr.yaml")
+            .expect("the runtime template rides the kit")
+            .content;
+        assert!(
+            !carries_dispatch_block(shipped),
+            "the runtime template compiled into the kit carries a `dispatch:` block. An owner's \
+             approval is an OPERATIONAL datum and belongs in the store at the designated \
+             integration checkout - a grant in a shipped template rides into every project this \
+             kit scaffolds."
+        );
+
+        // THE POSITIVE CONTROL, and it is a kit entry rather than a bare
+        // string: the same detector over the same shape of content, with
+        // a grant block present, MUST fire. Without it the assertion
+        // above passes on a predicate that never returns true.
+        let with_a_grant = format!(
+            "{shipped}\ndispatch:\n  approval: standing\n  recovery: repairs\n  grant:\n    \
+             given_by: \"a control\"\n    at: \"2026-09-17T00:00:00Z\"\n    revision: 1\n    \
+             order: [T-000]\n    cards:\n      T-000: {}\n  history: []\n",
+            "0".repeat(40)
+        );
+        assert!(
+            carries_dispatch_block(&with_a_grant),
+            "the control: a template that DOES carry a grant block was read as carrying none, so \
+             the assertion above is vacuous"
+        );
+
+        // AND THE DETECTOR IS NOT A SUBSTRING SEARCH FOR THE WORD. The
+        // template's own prose says `dispatch:` several times while
+        // explaining where the grant went, and a body that matched those
+        // would red on the sentence that describes the fix.
+        assert!(
+            shipped.contains("dispatch"),
+            "the shipped template stopped mentioning the dispatch block at all, so the \
+             discrimination below is measuring nothing"
+        );
+        assert!(
+            !carries_dispatch_block("# a comment about a dispatch: block\nroles:\n  builder: x\n"),
+            "a comment mentioning the block was read as the block itself"
+        );
     }
 
     /// T-175: THE COLD-START TEST THIS PROMPT AUTOMATES IS STILL THE ONE
