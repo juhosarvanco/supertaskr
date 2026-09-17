@@ -9,7 +9,7 @@ priority: 2
 status: building
 suggested_by: "the architect seat on 2026-09-15, from the Codex orchestrator's reading of run 34946192300, verified against shard 4's log"
 blocked_by: []
-touches: [tools/e2e/tests/docs-input-gate.spec.ts, tools/e2e/scripts/docs-gate.mjs, tools/e2e/scripts/docs-scan.mjs, tools/e2e/scripts/cli.mjs, tools/e2e/tests/push-checks.spec.ts]
+touches: [tools/e2e/tests/docs-input-gate.spec.ts, tools/e2e/scripts/docs-gate.mjs, tools/e2e/scripts/docs-scan.mjs, tools/e2e/scripts/cli.mjs, tools/e2e/tests/push-checks.spec.ts, tools/e2e/tests/cli.spec.ts]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by:
