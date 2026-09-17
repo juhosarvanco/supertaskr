@@ -2976,15 +2976,282 @@ export function runCounts(output) {
 }
 
 /**
+ * THE SCOPE OF A COUNT — the set a count was measured over (T-295-s8).
+ *
+ * `kind` is `whole` where the run narrowed the leg to nothing at all,
+ * `selection` where it narrowed it, and `unknown` where no scope could
+ * be read. `selection` carries the NARROWING TOKENS, normalised, and
+ * `said` the command the scope was read out of, so a printed line can
+ * show the seat what it was derived from rather than assert it.
+ *
+ * @typedef {object} CountScope
+ * @property {"whole" | "selection" | "unknown"} kind
+ * @property {readonly string[]} selection
+ * @property {string} said
+ */
+
+/** The scope of a count nothing could be read for. */
+export const UNKNOWN_SCOPE = /** @type {CountScope} */ (
+  Object.freeze({ kind: "unknown", selection: Object.freeze([]), said: "" })
+);
+
+/**
+ * The words a runner spells BEFORE it is told what to select. They are
+ * skipped only at the FRONT of an argv: a cargo filter is a bare token
+ * like any spec path, and one that happened to spell `test` must still
+ * count as a narrowing.
+ */
+const RUNNER_VERBS = Object.freeze(["npx", "npm", "pnpm", "yarn", "exec", "run", "test", "vitest", "playwright", "cargo"]);
+
+/**
+ * Flags that change HOW a run reports and never WHAT it selects. The
+ * list is SHORT ON PURPOSE and the default is the other way: a flag
+ * this set does not name is read as a narrowing, so an unrecognised
+ * flag makes a run look NARROWER than it is. That direction costs a
+ * comparison; the other direction would grade two different sets
+ * against each other, which is the defect this card exists for.
+ */
+const REPORTING_FLAGS = Object.freeze(["-q", "--quiet", "--silent", "--no-color", "--color", "--verbose", "--json"]);
+
+/** Reporting flags that take a value, so the value is not read as a selection. */
+const REPORTING_FLAGS_WITH_VALUE = Object.freeze(["--reporter", "--output", "--outputDir"]);
+
+/** The names a backticked span must carry before it is read as a command at all. */
+const RUNNER_NAMES = Object.freeze(["gate-run", "npm", "npx", "pnpm", "yarn", "cargo", "playwright", "vitest"]);
+
+/**
+ * A SELECTION TOKEN IN ITS COMPARABLE SPELLING.
+ *
+ * A path-like token is reduced to its last segment, because the two
+ * sides of this comparison spell the same spec from different roots —
+ * the drill's runner says `tests/merge.spec.ts` from the package and a
+ * verdict says `tools/e2e/tests/merge.spec.ts` from the repository —
+ * and a spec basename is unique across this board (the capabilities
+ * census keys on exactly that). Everything else is compared verbatim.
+ *
+ * @param {string} token
+ * @returns {string}
+ */
+export function selectionToken(token) {
+  if (!token.includes("/")) return token;
+  const last = token.split("/").filter((s) => s.length > 0).pop();
+  return last === undefined ? token : last;
+}
+
+/**
+ * THE SELECTION A COMMAND NAMED, off the argv it actually ran.
+ *
+ * This is the "available execution selection" the card's amendment
+ * names, and it is read from the command rather than from the number it
+ * produced: a count is never evidence about its own scope.
+ *
+ * A token that is exactly a LEG name is NOT a narrowing here. The
+ * comparison this feeds is already per leg, so `gate-run.mjs e2e`
+ * selects the leg the row is about and narrows nothing inside it.
+ *
+ * @param {{ command?: string, argv: readonly string[] }} run
+ * @returns {string[]} the narrowing tokens; empty means the run narrowed nothing
+ */
+export function runSelection(run) {
+  /** @type {string[]} */
+  const selection = [];
+  const argv = [...run.argv];
+  let atFront = true;
+  /** The verbs already spent at the front — a REPEAT of one is a selection, not more front. */
+  const spent = new Set();
+  for (let i = 0; i < argv.length; i += 1) {
+    const token = /** @type {string} */ (argv[i]);
+    if (token === "--") {
+      atFront = false;
+      continue;
+    }
+    if (atFront && RUNNER_VERBS.includes(token) && !spent.has(token)) {
+      spent.add(token);
+      continue;
+    }
+    if (token.startsWith("-")) {
+      atFront = false;
+      if (REPORTING_FLAGS.includes(token)) continue;
+      if (REPORTING_FLAGS_WITH_VALUE.includes(token)) {
+        i += 1;
+        continue;
+      }
+      if (REPORTING_FLAGS_WITH_VALUE.some((f) => token.startsWith(`${f}=`))) continue;
+      selection.push(token);
+      const next = argv[i + 1];
+      if (next !== undefined && next !== "--" && !next.startsWith("-")) {
+        if (!LEGS.includes(next)) selection.push(selectionToken(next));
+        i += 1;
+      }
+      continue;
+    }
+    atFront = false;
+    if (LEGS.includes(token)) continue;
+    selection.push(selectionToken(token));
+  }
+  return selection;
+}
+
+/**
+ * THE SCOPE OF ONE RUN, from the command and argv it ran under.
+ *
+ * @param {{ command?: string, argv: readonly string[] }} run
+ * @returns {CountScope}
+ */
+export function scopeOfRun(run) {
+  const selection = runSelection(run);
+  const said = [run.command ?? "", ...run.argv].filter((s) => s.length > 0).join(" ");
+  return { kind: selection.length === 0 ? "whole" : "selection", selection, said };
+}
+
+/**
+ * THE SCOPE OF A NAMED SET OF SPECS — the drill's shape, where the specs
+ * are known directly rather than through an argv.
+ *
+ * @param {readonly string[]} specs
+ * @param {string} said
+ * @returns {CountScope}
+ */
+export function scopeOfSpecs(specs, said) {
+  return { kind: specs.length === 0 ? "whole" : "selection", selection: specs.map(selectionToken), said };
+}
+
+/**
+ * TWO RUNS UNDER ONE LEG ARE ONE SCOPE, and it is the UNION.
+ *
+ * A leg this merge ran twice has a count that is the sum of both runs,
+ * so the set it was measured over is the union of both selections — and
+ * it is `whole` only where every contributing run narrowed nothing.
+ *
+ * @param {CountScope | undefined} was
+ * @param {CountScope} now
+ * @returns {CountScope}
+ */
+export function joinScopes(was, now) {
+  if (was === undefined) return now;
+  if (was.kind === "unknown" || now.kind === "unknown") return UNKNOWN_SCOPE;
+  /** @type {string[]} */
+  const selection = [...was.selection];
+  for (const token of now.selection) if (!selection.includes(token)) selection.push(token);
+  const said = was.said === now.said ? was.said : `${was.said} + ${now.said}`;
+  return { kind: selection.length === 0 ? "whole" : "selection", selection, said };
+}
+
+/**
+ * The paragraph a character offset falls in — the blank-line-bounded
+ * block, which is how a verdict groups a measurement with the sentence
+ * that says what was measured.
+ *
+ * @param {string} text
+ * @param {number} at
+ * @returns {{ text: string, start: number }}
+ */
+function paragraphAt(text, at) {
+  const before = text.lastIndexOf("\n\n", at);
+  const start = before === -1 ? 0 : before + 2;
+  const after = text.indexOf("\n\n", at);
+  const end = after === -1 ? text.length : after;
+  return { text: text.slice(start, end), start };
+}
+
+/**
+ * THE MEASUREMENT CONTEXT A VERDICT STATES, per leg.
+ *
+ * "Stated" is the load-bearing word. The context is the RUNNER
+ * INVOCATION the verdict writes in backticks beside its counts — the
+ * same kind of evidence the merge's own side has, an execution
+ * selection — and the nearest one BEFORE the count, inside the same
+ * paragraph. A verdict that states no command states no scope, and this
+ * returns nothing for that leg rather than guessing one: a leg name and
+ * a number are not evidence about what was measured, which is the whole
+ * finding of T-297's merge.
+ *
+ * @param {string} text
+ * @returns {Record<string, CountScope>}
+ */
+export function claimedScopes(text) {
+  /** @type {Record<string, CountScope>} */
+  const scopes = {};
+  for (const leg of LEGS) {
+    const re = new RegExp(`\\b${leg}\\b[^\\dA-Za-z]{0,4}(\\d{2,6})\\b`, "i");
+    const hit = re.exec(text);
+    if (hit === null) continue;
+    const para = paragraphAt(text, hit.index);
+    const upto = para.text.slice(0, hit.index - para.start);
+    /** @type {string | null} */
+    let found = null;
+    for (const span of upto.matchAll(/`([^`\n]+)`/g)) {
+      const said = /** @type {string} */ (span[1]).trim();
+      const head = said.split(/\s+/)[0] ?? "";
+      if (RUNNER_NAMES.some((n) => head === n || head.startsWith(`${n}.`) || head.endsWith(`/${n}`))) found = said;
+    }
+    if (found === null) continue;
+    const parts = found.split(/\s+/);
+    scopes[leg] = scopeOfRun({ command: parts[0] ?? "", argv: parts.slice(1) });
+  }
+  return scopes;
+}
+
+/**
+ * ARE THESE TWO COUNTS ABOUT THE SAME SET? Three answers, and the third
+ * is the one T-297's merge did not have.
+ *
+ * `different` is a statement about the two SELECTIONS, not a claim that
+ * they cover different bodies — two spellings can resolve to one set —
+ * so the step that prints it prints both selections and grades nothing,
+ * rather than turning a difference into a refusal.
+ *
+ * @param {CountScope | undefined} claim
+ * @param {CountScope | undefined} seen
+ * @returns {"same" | "different" | "unknown"}
+ */
+export function scopeVerdict(claim, seen) {
+  if (claim === undefined || seen === undefined) return "unknown";
+  if (claim.kind === "unknown" || seen.kind === "unknown") return "unknown";
+  const a = [...claim.selection].sort();
+  const b = [...seen.selection].sort();
+  if (a.length !== b.length) return "different";
+  return a.every((t, i) => t === b[i]) ? "same" : "different";
+}
+
+/**
+ * A SCOPE IN ONE CLAUSE, for the step's own line.
+ *
+ * @param {CountScope | undefined} scope
+ * @returns {string}
+ */
+export function scopeLine(scope) {
+  if (scope === undefined || scope.kind === "unknown") return "no stated scope";
+  if (scope.kind === "whole") return `the WHOLE leg, as \`${scope.said}\` runs it`;
+  return `a SELECTION of ${String(scope.selection.length)} (${scope.selection.join(" ")}), from \`${scope.said}\``;
+}
+
+/**
  * GRADE THE COUNTS THIS RUN READ AGAINST THE COUNTS THE VERDICT CLAIMS.
  *
  * THE REFUSAL IS THE POINT. `2d6d354` was a merge script that committed
  * on an exit code while the count underneath it had moved, and main went
  * red for it. A leg the verdict does not claim is NOT judged and says
- * so; a leg this run produced no count for is not judged either. Three
- * answers, never two.
+ * so; a leg this run produced no count for is not judged either.
  *
- * @param {{ claimed: Record<string, number>, observed: Record<string, number> }} input
+ * AND SINCE T-295-s8, A COMPARISON IS OWED SCOPE EVIDENCE BEFORE IT IS
+ * MADE AT ALL. At T-297's merge this step read e2e 35 — the owning spec,
+ * run alone by the re-drill — against the verdict's 714, which was the
+ * owed set's whole e2e leg, and called it THE COUNT MOVED. The two
+ * numbers were never about the same thing, so the refusal was about
+ * nothing. Three states now, from the EXECUTION SELECTION on each side
+ * and never from the numbers: an established SAME scope is compared
+ * exactly as before and still refuses on a count that moved; an
+ * established DIFFERENT scope is reported and graded nothing; and a
+ * scope that could not be read is reported as NOT JUDGED FOR LACK OF
+ * SCOPE EVIDENCE — which is neither a demonstrated difference nor a
+ * pass, and states both figures so the seat can rule.
+ *
+ * NOTHING HERE ERASES ANOTHER REFUSAL. A leg that is not judged leaves
+ * every finding this grade produced for other legs standing, and the
+ * step that calls it refuses on the findings alone.
+ *
+ * @param {{ claimed: Record<string, number>, observed: Record<string, number>, claimedScope?: Record<string, CountScope>, observedScope?: Record<string, CountScope> }} input
  * @returns {{ findings: string[], judged: string[], unjudged: string[] }}
  */
 export function gradeCounts(input) {
@@ -3006,14 +3273,35 @@ export function gradeCounts(input) {
       unjudged.push(`${leg}: the verdict claims ${String(claim)} and this run produced no count`);
       continue;
     }
+    const claimScope = input.claimedScope?.[leg];
+    const seenScope = input.observedScope?.[leg];
+    const scope = scopeVerdict(claimScope, seenScope);
+    if (scope === "different") {
+      unjudged.push(
+        `${leg}: THE SCOPES DIFFER and nothing is graded — the verdict claims ${String(claim)} ` +
+          `over ${scopeLine(claimScope)}, and this merge's own run read ${String(seen)} over ` +
+          `${scopeLine(seenScope)}. Two counts of two different sets cannot be a count that ` +
+          "moved: that comparison is what stopped T-297's merge on 35 against 714",
+      );
+      continue;
+    }
+    if (scope === "unknown") {
+      unjudged.push(
+        `${leg}: NOT JUDGED FOR LACK OF SCOPE EVIDENCE — the verdict claims ${String(claim)} ` +
+          `(${scopeLine(claimScope)}) and this merge's own run read ${String(seen)} ` +
+          `(${scopeLine(seenScope)})${seen === claim ? ", and the two figures agree" : ", and the two figures differ"}. ` +
+          "Neither is graded and neither is a pass; the figures are stated here for the seat to rule",
+      );
+      continue;
+    }
     if (seen === claim) {
-      judged.push(`${leg}: ${String(seen)}, the count the verdict claims`);
+      judged.push(`${leg}: ${String(seen)}, the count the verdict claims, over ${scopeLine(seenScope)}`);
       continue;
     }
     findings.push(
       `${leg}: THE COUNT MOVED — the verdict claims ${String(claim)} and this merge's own run ` +
-        `read ${String(seen)}. A merge that commits on an exit code while the count under it ` +
-        "moved is 2d6d354, which landed main red",
+        `read ${String(seen)}, both over ${scopeLine(seenScope)}. A merge that commits on an ` +
+        "exit code while the count under it moved is 2d6d354, which landed main red",
     );
   }
   return { findings, judged, unjudged };
@@ -3592,6 +3880,8 @@ export function main(argv, io = {}) {
     regenerated: [],
     observed: {},
     claimed: tipVerdict === undefined ? {} : claimedCounts(tipVerdict.text),
+    observedScope: {},
+    claimedScope: tipVerdict === undefined ? {} : claimedScopes(tipVerdict.text),
     widen: [],
     shas: {},
   };
@@ -3698,7 +3988,10 @@ export function main(argv, io = {}) {
   const mergedVerdict = cardText === undefined ? { problem: "the merged card could not be read" } : newestVerdict(cardText);
   if (!("problem" in mergedVerdict)) {
     stepIo.verdict = mergedVerdict;
-    if (Object.keys(state.claimed).length === 0) state.claimed = claimedCounts(mergedVerdict.text);
+    if (Object.keys(state.claimed).length === 0) {
+      state.claimed = claimedCounts(mergedVerdict.text);
+      state.claimedScope = claimedScopes(mergedVerdict.text);
+    }
   }
   const merged = "problem" in mergedVerdict ? { blocks: [] } : readMutantBlocks(mergedVerdict.text);
   for (const step of tailPlan({
@@ -3903,6 +4196,8 @@ function printStep(out, step) {
  * @property {string[]} regenerated which regenerations fired
  * @property {Record<string, number>} observed the counts this run's own suites printed
  * @property {Record<string, number>} claimed  the counts the verdict claims
+ * @property {Record<string, CountScope>} observedScope the set each observed count was measured over
+ * @property {Record<string, CountScope>} claimedScope  the set the verdict states each claim was measured over
  * @property {string[]} widen       the verdict-named specs outside the fence
  * @property {Record<string, string>} shas restore proofs, by path
  */
@@ -4067,7 +4362,14 @@ function runStep(step, io) {
       const leg = legForCwd(step.run.cwd);
       if (counts !== null && leg.length > 0) {
         io.state.observed[leg] = (io.state.observed[leg] ?? 0) + counts.passed;
+        // THE SET THIS COUNT WAS MEASURED OVER, taken from the argv that
+        // measured it (T-295-s8). It is recorded BESIDE the number and
+        // never derived from it, so the grade below can tell a leg from
+        // one spec of it.
+        const scope = scopeOfRun(step.run);
+        io.state.observedScope[leg] = joinScopes(io.state.observedScope[leg], scope);
         io.out(`      counts read: ${leg} ${String(counts.passed)} passed, ${String(counts.failed)} failed`);
+        io.out(`      over ${scopeLine(io.state.observedScope[leg])}`);
       }
     }
     if (graded) {
@@ -4152,6 +4454,13 @@ function runStep(step, io) {
         const leg = legForCwd(e.cwd);
         if (e.counts !== null && leg.length > 0) {
           io.state.observed[leg] = Math.max(io.state.observed[leg] ?? 0, e.counts.passed);
+          // THE DRILL'S SCOPE IS THE SPECS IT RAN, which it already
+          // knows by name — this is T-297's own reading, where 35 was
+          // one spec and the verdict's 714 was a leg (T-295-s8).
+          io.state.observedScope[leg] = joinScopes(
+            io.state.observedScope[leg],
+            scopeOfSpecs(e.specs, `the re-drill's own run of ${e.specs.join(" ")}`),
+          );
         }
       },
       out: io.out,
@@ -4654,17 +4963,27 @@ function halfBumpDrillStep(step, io) {
 }
 
 /**
+ * THE COUNTS STEP ITSELF, exported because criterion 2 of T-295-s8 is
+ * about what the STEP does — it passes, and names the scope difference —
+ * and a grade nothing runs is the shape `2d6d354` already had.
+ *
  * @param {{ out: (s: string) => void, err: (s: string) => void, state: MergeState }} io
  * @returns {number}
  */
-function countsStep(io) {
-  const graded = gradeCounts({ claimed: io.state.claimed, observed: io.state.observed });
+export function countsStep(io) {
+  const graded = gradeCounts({
+    claimed: io.state.claimed,
+    observed: io.state.observed,
+    claimedScope: io.state.claimedScope,
+    observedScope: io.state.observedScope,
+  });
   for (const j of graded.judged) io.out(`      ${j}`);
   for (const u of graded.unjudged) io.out(`      not judged — ${u}`);
   if (graded.judged.length === 0 && graded.findings.length === 0) {
     io.out(
-      "      no leg was judged: this merge ran no suite that printed a count, or the verdict " +
-        "claims none. That is said rather than read as a pass",
+      "      no leg was judged: this merge ran no suite that printed a count, the verdict " +
+        "claims none, or the two were measured over sets this step could not establish as the " +
+        "same. That is said rather than read as a pass",
     );
   }
   if (graded.findings.length === 0) return EXIT.CLEAN;

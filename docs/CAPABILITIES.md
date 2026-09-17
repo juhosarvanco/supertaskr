@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1235 behaviours** — 1233 extracted sentences + 2 named-not-extracted (listed at the end) — across 42 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1239 behaviours** — 1237 extracted sentences + 2 named-not-extracted (listed at the end) — across 42 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -987,6 +987,10 @@ Census: **1235 behaviours** — 1233 extracted sentences + 2 named-not-extracted
 - the personal name this keeper looks for is DERIVED whole, and never split into its own words
 - the XS-bound keeper BUMPS an XS card over the bound to standard and judges no card of any other size
 - the tier a merge records is the one the DISPATCH stamped, unless the seat overrides it
+- T-295-s8 — the scope of a count is read off the EXECUTION SELECTION on each side, never off the count
+- T-295-s8 — a verdict claiming a LEG beside a drill that ran ONE spec: the step PASSES and NAMES the scope difference
+- T-295-s8 — a scope that could NOT be read is not judged for lack of evidence, and is neither a difference nor a pass
+- T-295-s8 — a selection token that SPELLS a runner verb is still a narrowing, so a narrowed run never widens into `whole`
 - the verb refuses to commit on a count that moved, and says which legs it could not judge
 - the merge message is written from the verdict's own sentences and counts, never composed
 - every `## Meters` block reaches the bands' readings, whole, in the stated shape
