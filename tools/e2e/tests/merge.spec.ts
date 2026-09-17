@@ -918,11 +918,13 @@ test("T-295-s8 — a selection token that SPELLS a runner verb is still a narrow
   // AND THE WIDENING IS WHAT WOULD RESURRECT T-297: a narrowed run of 35
   // graded against a verdict's whole-leg claim of 714, and refused.
   const claim = claimedScopes("judged, `npm test`:\ne2e **714** (16 spec files).");
+  const claimed = claim.e2e;
+  if (claimed === undefined) throw new Error("the verdict's side must parse as a scope");
   const narrowed = scopeOfRun({ command: "cargo", argv: ["test", "--", "test"] });
-  expect(claim.e2e?.kind, "the verdict's side really is the whole leg").toBe("whole");
-  expect(scopeVerdict(claim.e2e, narrowed), "which a narrowed run is never the same set as").toBe("different");
+  expect(claimed.kind, "the verdict's side really is the whole leg").toBe("whole");
+  expect(scopeVerdict(claimed, narrowed), "which a narrowed run is never the same set as").toBe("different");
   expect(
-    gradeCounts({ claimed: { e2e: 714 }, observed: { e2e: 35 }, claimedScope: { e2e: claim.e2e }, observedScope: { e2e: narrowed } })
+    gradeCounts({ claimed: { e2e: 714 }, observed: { e2e: 35 }, claimedScope: { e2e: claimed }, observedScope: { e2e: narrowed } })
       .findings,
     "and so nothing is called a count that moved",
   ).toEqual([]);
