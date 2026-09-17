@@ -4,13 +4,14 @@ title: The project's own brief assembler refuses EVERY verifier brief with exit 
 feature: F-06
 milestone: 4
 size: L
+tier: guarded
 priority: 2
-status: planned
+status: building
 suggested_by: executor claude-opus-5@subagent @T-205
 blocked_by: []
 touches: [tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, method/roles/verifier.md, docs/CONVENTIONS.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/shell-and-scripts.md, docs/conventions/verification.md]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review:
