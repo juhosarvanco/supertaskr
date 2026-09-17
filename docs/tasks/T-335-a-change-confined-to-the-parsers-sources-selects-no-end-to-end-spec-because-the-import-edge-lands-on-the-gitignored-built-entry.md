@@ -4,13 +4,14 @@ title: "A change confined to the parser's sources selects no end-to-end spec at 
 feature: F-04
 milestone: 4
 size: S
+tier: guarded
 priority: 1
-status: planned
+status: building
 suggested_by: "the T-331 verifier bench on 2026-09-15, measured through the blessed runner on a range whose only changed path was a parser source; the behaviour is older than T-331 and that card's narrowing is what makes it reachable on the runner"
 blocked_by: []
 touches: [tools/e2e/scripts/gate-run.mjs, tools/e2e/tests/gate-run.spec.ts]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
