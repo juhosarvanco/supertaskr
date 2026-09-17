@@ -525,14 +525,43 @@ test("npx supertaskr runs out of a packed tarball installed into a project that 
 
     // And an installed copy REFUSES the verbs whose scripts resolve their
     // own root, naming the two roots — never a stack trace.
+    //
+    // THE EXAMPLE IS DERIVED, NOT TYPED (T-332). This body drove
+    // `docs-gate` by name, and that verb LEFT the class when it gained
+    // `--root <checkout>`: `rootMismatch` returns null for a verb that
+    // takes one, so the CLI stops refusing it on the root ground and
+    // gets one step further, to a dependency an installed copy has not
+    // got — still exit 3, still naming the project, and no longer this
+    // sentence. The CLASS is what this body is about, so the class is
+    // what it reads, off the registry's own `rootFlag`. A hand-picked
+    // example is the same staleness one card later.
+    //
+    // `target.kind === "script"` is the filter and not a convenience:
+    // `rootMismatch` returns null for `cargo` and `project` targets
+    // before it looks at anything else, so a verb of either kind never
+    // produces this refusal and would make the body red for a reason
+    // that is not its subject.
+    const rootless = VERBS.filter((v) => !v.rootFlag && v.target.kind === "script");
+    // A FLOOR FIRST: an empty class agrees with everything below it, and
+    // the day the last such verb goes this body must SAY so rather than
+    // pass quietly.
+    expect(
+      rootless.length,
+      "the registry still declares verbs whose script resolves its own root",
+    ).toBeGreaterThan(0);
+    const example = rootless[0]!;
+    // NO ARGUMENT IS PASSED, AND THAT IS READ OFF `rootMismatch` RATHER
+    // THAN ASSUMED: it is decided from the entry and the project root
+    // alone, before any argument is looked at, so a verb of this class
+    // refuses whatever it is handed.
     let refusal = "";
     try {
-      execFileSync("npx", ["supertaskr", "docs-gate", "docs/STATE.md"], {
+      execFileSync("npx", ["supertaskr", example.verb], {
         cwd: project,
         encoding: "utf8",
         stdio: "pipe",
       });
-      throw new Error("the installed copy should have refused docs-gate");
+      throw new Error(`the installed copy should have refused ${example.verb}`);
     } catch (err) {
       const e = err as { status?: number; stderr?: string };
       expect(e.status, "a refusal is exit 3, the house's CANNOT RUN").toBe(3);
