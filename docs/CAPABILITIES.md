@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1229 behaviours** — 1227 extracted sentences + 2 named-not-extracted (listed at the end) — across 42 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1231 behaviours** — 1229 extracted sentences + 2 named-not-extracted (listed at the end) — across 42 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -579,6 +579,8 @@ Census: **1229 behaviours** — 1227 extracted sentences + 2 named-not-extracted
 - the answer is PROPORTIONAL — that is what keeps the trigger obeyable
 - a path names the readers that read it, not a generic list
 - the hand-run gate's exit codes hold, and an EMPTY path list is 2 and not 0
+- a --root run says whose tree it judged, first and last, and names what it did not answer
+- the real repository is scanned by the named integration set and by nobody else
 - EVERY SPELLING of one docs path answers the same, or is REFUSED — never `not owed`
 - THE EXIT MATRIX — all four codes survive the invocation the doc prints
 - THE EMPTY-LIST TRAP, re-proved against the new spelling, with a PLANTED POSITIVE

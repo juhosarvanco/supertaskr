@@ -1,5 +1,13 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
@@ -60,6 +68,7 @@ import {
   unaccountedRootAnchors,
   unlinkedFiles,
   unlinkedSites,
+  writeDocsIndex,
 } from "../scripts/docs-scan.mjs";
 // T-248. THE PATTERN SET IS READ FROM THE GATE, NOT RESTATED HERE — the
 // card's ONE file, and T-057's rule applied to a table with controls in
@@ -214,7 +223,11 @@ test("nothing forms a repo-root docs path that the derivation could not link", (
   // know or a genuine non-reader — and the scanner cannot tell. It says
   // so rather than dropping it, because a gate that goes quiet is the
   // failure this whole card is about.
-  expect(unlinkedFiles()).toEqual([]);
+  // `READERS` handed on rather than re-derived (T-332): this file's own
+  // repeated whole-corpus walks are the same repetition the card
+  // measured inside the gate, and the remedy is the same one — dataflow,
+  // not a cache. `unlinkedFiles` walked the corpus twice here.
+  expect(unlinkedFiles(repoRoot, rootAnchoredFiles(repoRoot, READERS))).toEqual([]);
 });
 
 test("the tripwire's ANCHOR arm follows imports, exactly as its site arm always did", () => {
@@ -230,7 +243,7 @@ test("the tripwire's ANCHOR arm follows imports, exactly as its site arm always 
   const source = readFileSync(path.join(repoRoot, rel), "utf8");
   expect(source, "the root really is imported").toContain('import { repoRoot } from "../preflight"');
   expect(source, "and really is not bound locally").not.toMatch(/(?:const|let|var)\s+repoRoot\s*=/);
-  const entry = rootAnchoredFiles().find((f) => f.file === rel);
+  const entry = rootAnchoredFiles(repoRoot, READERS).find((f) => f.file === rel);
   expect(entry, `${rel} is seen to hold the repository root`).toBeDefined();
   expect(entry!.anchors).toContain("repoRoot");
 });
@@ -245,11 +258,11 @@ test("THE ACCOUNT and the tree agree — every root-anchored file is derived, re
   // is what keeps this an account rather than a sample: a new
   // root-anchored file in app/, app/src-tauri or lib/parser reds by name
   // and someone has to look at it.
-  const census = rootAnchoredFiles();
+  const census = rootAnchoredFiles(repoRoot, READERS);
   expect(census.length, "the census is non-trivial").toBeGreaterThan(10);
   expect(new Set(census.map((f) => f.kind))).not.toContain("unlinked");
   expect(suitesOwedForAllOfDocs(READERS)).toEqual(new Set(["tools/e2e"]));
-  expect([...unaccountedRootAnchors()].sort()).toEqual(
+  expect([...unaccountedRootAnchors(repoRoot, READERS, census)].sort()).toEqual(
     ROOT_ANCHOR_LEDGER.map((e) => e.file).sort(),
   );
   for (const entry of ROOT_ANCHOR_LEDGER) {
@@ -474,8 +487,8 @@ test("the package-relative account has no member this scan could not evaluate", 
   // package directory into docs/ holds none. A climbing docs-shaped site
   // whose base `evalBase` cannot read is a reader this gate may be
   // missing, and it says so instead of going quiet.
-  expect(unlinkedSites()).toEqual([]);
   const climbs = packageRelativeSites();
+  expect(unlinkedSites(repoRoot, climbs)).toEqual([]);
   expect(climbs.length, "the class is live on this tree, not hypothetical").toBeGreaterThan(0);
   expect(climbs.every((c) => c.kind === "derived")).toBe(true);
   // Every climbing site that resolved is a reader of exactly that path.
@@ -532,7 +545,7 @@ test("the ledger's universal is gone, and what replaced it is checkable", () => 
   // corrected by rewording alone, so the pin is the TREE: a derived
   // reader that is not root-anchored is a counterexample the census can
   // produce, and it exists.
-  const anchored = new Set(rootAnchoredFiles().map((f) => f.file));
+  const anchored = new Set(rootAnchoredFiles(repoRoot, READERS).map((f) => f.file));
   const unanchoredReaders = READERS.filter((r) => !anchored.has(r.file));
   expect(
     unanchoredReaders.map((r) => r.file),
@@ -763,6 +776,158 @@ test("a path names the readers that read it, not a generic list", () => {
   expect(gate.byPath[0]!.readers).not.toContain("app/test/architecture-dogfood.test.ts");
 });
 
+/* ════════════════════════════════════════════════════════════════════
+ * THE FIXTURE REPOSITORY, AND WHICH BODIES SCAN THE REAL ONE (T-332)
+ * ════════════════════════════════════════════════════════════════════
+ *
+ * WHAT THIS COSTS WHEN IT IS NOT DONE, measured at T-332's base on this
+ * machine: 47 launches of `docs-gate.mjs` in one run of this file, 23 of
+ * which reach the whole-tree derivation at a mean of 31.5s, for 723.9s
+ * of a 780s spec. Every one of those 23 walked 1,691 tracked files and
+ * an 11.35 MB source corpus to answer a question that is not about this
+ * repository: whether `./docs/x` and `docs/x` normalise the same, and
+ * whether a failed range comes back 2 rather than 0. Those are
+ * properties of the GATE, and a dozen-file tree decides them in 50ms.
+ *
+ * WHAT WOULD MAKE THIS A COVERAGE LOSS, said plainly because it is the
+ * failure this change is one edit away from: moving a body to the
+ * fixture because it is SLOW rather than because a fixture can DECIDE
+ * it. The test is not the clock. A body whose subject is what the gate
+ * says about THIS tree — which suites this repository's own docs owe,
+ * whether this repository's live prose scans clean — cannot be decided
+ * anywhere else and stays on the real root, named in
+ * REAL_REPOSITORY_BODIES below and pinned there by a body of its own.
+ *
+ * THE FIXTURE IS A MINIATURE OF THIS REPOSITORY, NOT AN EMPTY TREE, and
+ * every whole-tree check the gate runs is CLEAN in it by construction —
+ * the index is generated into it by the same `writeDocsIndex` the real
+ * one is generated by, the status vocabulary is the real one read out of
+ * the parser, the readers are `docs-scan.mjs`'s own PLANTED_READERS. An
+ * exit of 0 or 1 in the fixture is therefore decided by the DIFF
+ * verdict alone, which is what makes the exit-code bodies below mean
+ * what they say rather than passing on some unrelated finding.
+ *
+ * NO DOCS-FIRST LITERAL IS TYPED HERE FOR THE FIXTURE'S READERS. The
+ * plants come from `docs-scan.mjs` — the one file excluded from its own
+ * scan — for the reason `plantRepo` above states: a spec that spelled a
+ * docs site out in a template literal would BECOME a reader of docs/.
+ */
+
+/** The fixture's one owed path: a card, so the JS plant's `docs/tasks`
+ *  prefix reads it. The same spelling `plantRepo` plants, hoisted so the
+ *  two fixtures cannot drift. */
+const PLANTED_CARD = "docs/tasks/T-000-planted.md";
+
+/** Built once per worker and reused: the build is ~40ms and the point of
+ *  the card is not to pay it twenty times. Removed in `afterAll`. */
+let GATE_FIXTURE: string | null = null;
+
+/**
+ * A miniature repository the real `docs-gate.mjs` can be pointed at.
+ *
+ * `realpathSync` is load-bearing on this platform and was measured, not
+ * guessed: `mkdtempSync` under `/var/folders/…` hands back a path whose
+ * first segment is a symlink, a child's `process.cwd()` reports the
+ * resolved one, and the gate's own PLAIN-RELATIVE refusal — which
+ * compares the two — then fires on every path handed to it.
+ */
+function gateFixture(): string {
+  if (GATE_FIXTURE !== null) return GATE_FIXTURE;
+  const dir = realpathSync(mkdtempSync(path.join(tmpdir(), "t332-docs-gate-")));
+  const write = (rel: string, content: string): void => {
+    const abs = path.join(dir, rel);
+    mkdirSync(path.dirname(abs), { recursive: true });
+    writeFileSync(abs, content, "utf8");
+  };
+  const doc = (rel: string): string =>
+    `# ${rel}\n\nThe contract: a fixture document, small enough that a whole-tree ` +
+    `scan of it is milliseconds.\n\n## A section\n\nbody\n`;
+  for (const rel of INDEXED_DOCS) write(rel, doc(rel));
+  // THE VOCABULARY IS THE REAL ONE, read out of the parser by the same
+  // derivation the gate uses, so a status legal here is legal there.
+  write(
+    TASK_STATUS_SOURCE,
+    `export const TASK_STATUSES = [${STATUSES.map((s) => JSON.stringify(s)).join(", ")}] as const;\n`,
+  );
+  write(PLANTED_CARD, card(`id: T-000\nstatus: ${STATUSES[0]}`));
+  write("app/src-tauri/Cargo.toml", '[package]\nname = "planted"\nversion = "0.0.0"\n');
+  write("docs/research/captures/planted.jsonl", "{}\n");
+  for (const plant of PLANTED_READERS) write(plant.file, plant.source);
+  // The directory the "away from the root" spellings are typed from —
+  // this repository's own tools/e2e, which is where the two neighbouring
+  // commands in the same workflow are run.
+  mkdirSync(path.join(dir, "tools", "e2e"), { recursive: true });
+  // The index, GENERATED into the fixture by the same function that
+  // generates the real one, so the currency check is clean here for the
+  // same reason it is clean there.
+  writeDocsIndex(dir);
+  const git = (...args: string[]): void => {
+    execFileSync("git", [...NO_BACKGROUND_MAINTENANCE, "-C", dir, ...args], {
+      stdio: ["ignore", "ignore", "ignore"],
+    });
+  };
+  git("init", "-q", "-b", "main");
+  git("add", "-A");
+  // ONE COMMIT, because the empty-list trap below drives the documented
+  // invocation through a real shell and a `git diff` against HEAD needs a
+  // HEAD. The identity is the fixture's own: this tree has no user.
+  git("-c", "user.email=fixture", "-c", "user.name=T-332 fixture", "commit", "-qm", "fixture");
+  GATE_FIXTURE = dir;
+  return dir;
+}
+
+test.afterAll(() => {
+  if (GATE_FIXTURE !== null) removeGitFixture(GATE_FIXTURE, "T-332 docs-gate");
+});
+
+/** `--root`, spelled once. */
+const ROOT_FLAG_ARG = "--root";
+
+/** The gate, run against the FIXTURE — the launcher every body uses
+ *  whose subject is the gate rather than this repository. The default
+ *  cwd is the fixture root, because that is where an integrator stands. */
+function runFixtureGate(
+  args: string[],
+  opts: { cwd?: string; env?: NodeJS.ProcessEnv; root?: string } = {},
+): ReturnType<typeof launch> {
+  const root = opts.root ?? gateFixture();
+  return launch([ROOT_FLAG_ARG, root, ...args], opts.cwd ?? root, opts.env);
+}
+
+/** The one `execFileSync` both launchers share, so the two cannot drift
+ *  in how they read an exit code or join the two streams. */
+function launch(
+  args: string[],
+  cwd: string,
+  env?: NodeJS.ProcessEnv,
+): { code: number; out: string; stdout: string } {
+  const script = path.join(repoRoot, "tools", "e2e", "scripts", "docs-gate.mjs");
+  try {
+    const out = execFileSync(process.execPath, [script, ...args], {
+      cwd,
+      env: env ?? process.env,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    return { code: 0, out, stdout: out };
+  } catch (err) {
+    const e = err as { status?: number; stdout?: string; stderr?: string };
+    return {
+      code: e.status ?? -1,
+      out: `${e.stdout ?? ""}${e.stderr ?? ""}`,
+      // THE TWO STREAMS APART AS WELL AS JOINED (T-332). `out` is what
+      // every body here has always read and stays exactly what it was.
+      // `stdout` is for the one question the join cannot answer: what the
+      // LAST thing this gate printed on a channel was. A terminal
+      // interleaves the two in write order; a capture that concatenates
+      // them puts every stderr line after every stdout line, so a body
+      // asking "is this the last line" against `out` is asking about the
+      // capture rather than about the program.
+      stdout: e.stdout ?? "",
+    };
+  }
+}
+
 test("the hand-run gate's exit codes hold, and an EMPTY path list is 2 and not 0", () => {
   // T-084-s6, as a pin, driving the real binary the way an integrator
   // does. A range command that FAILED arrives here as zero paths and was
@@ -781,26 +946,19 @@ test("the hand-run gate's exit codes hold, and an EMPTY path list is 2 and not 0
   // the one this comment described. The doc no longer prints a pipe, the
   // matrix below is why, and the empty-list trap is re-proved against the
   // new spelling three bodies down.
-  const run = (args: string[]): { code: number; out: string } => {
-    try {
-      const out = execFileSync("node", ["tools/e2e/scripts/docs-gate.mjs", ...args], {
-        cwd: repoRoot,
-        encoding: "utf8",
-        stdio: ["ignore", "pipe", "pipe"],
-      });
-      return { code: 0, out };
-    } catch (err) {
-      const e = err as { status?: number; stdout?: string; stderr?: string };
-      return { code: e.status ?? -1, out: `${e.stdout ?? ""}${e.stderr ?? ""}` };
-    }
-  };
+  //
+  // OVER THE FIXTURE SINCE T-332, and the reason is that not one of the
+  // five rows below asks anything about THIS repository: each is a
+  // question about what the gate does with a shape of argument. The
+  // binary is the real one and the exits are its own.
+  const run = runFixtureGate;
   const empty = run([]);
   expect(empty.code, "no paths is CALLED WRONG, never a clean gate").toBe(2);
   expect(empty.out).toContain("NO PATHS GIVEN");
   expect(empty.out).toContain("a range that produced nothing");
   expect(run(["--range", "a..b"]).code, "a range is still refused").toBe(2);
   expect(run(["app/src/main.tsx"]).code, "a code-only diff owes nothing here").toBe(0);
-  expect(run(["docs/ROADMAP.md"]).code, "a docs path with a reader has a verdict").toBe(1);
+  expect(run([PLANTED_CARD]).code, "a docs path with a reader has a verdict").toBe(1);
   const census = run(["--census"]);
   expect(census.code, "--census reports and judges no diff").toBe(0);
   expect(census.out).toContain("docs-gate: census —");
@@ -809,27 +967,236 @@ test("the hand-run gate's exit codes hold, and an EMPTY path list is 2 and not 0
 
 // ── 3b. the path vocabulary and the four codes (T-090) ────────────────
 
-/** The gate, run for real from a chosen directory, with a chosen PATH.
- *  `process.execPath` rather than "node", so the child still starts when
- *  the environment is stripped to produce a GATE COULD NOT RUN. */
+/**
+ * THE GATE OVER THIS REPOSITORY — the expensive launcher, and since
+ * T-332 it is the INTEGRATION one.
+ *
+ * Every call scans 1,691 tracked files and an 11.35 MB source corpus,
+ * measured at 14.0s a launch after that card's dataflow repair and 31.5s
+ * before it. So a body calls this ONLY when its subject is what the gate
+ * says about THIS tree, it is named in REAL_REPOSITORY_BODIES, and a
+ * body of its own reds if that list and the call sites disagree.
+ * Everything else takes `runFixtureGate`.
+ *
+ * `process.execPath` rather than "node", so the child still starts when
+ * the environment is stripped to produce a GATE COULD NOT RUN.
+ */
 function runGate(
   args: string[],
   opts: { cwd?: string; env?: NodeJS.ProcessEnv } = {},
-): { code: number; out: string } {
-  const script = path.join(repoRoot, "tools", "e2e", "scripts", "docs-gate.mjs");
-  try {
-    const out = execFileSync(process.execPath, [script, ...args], {
-      cwd: opts.cwd ?? repoRoot,
-      env: opts.env ?? process.env,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    return { code: 0, out };
-  } catch (err) {
-    const e = err as { status?: number; stdout?: string; stderr?: string };
-    return { code: e.status ?? -1, out: `${e.stdout ?? ""}${e.stderr ?? ""}` };
-  }
+): ReturnType<typeof launch> {
+  return launch(args, opts.cwd ?? repoRoot, opts.env);
 }
+
+/**
+ * THE REPRESENTATIVE REAL-REPOSITORY SET (T-332), and every entry says
+ * what integration risk against THIS repository it covers. A body is in
+ * this list because a fixture CANNOT decide it — never because it looked
+ * expensive, and never because it looked important.
+ *
+ * WHY TWO IS SUFFICIENT, stated so it can be argued with rather than
+ * trusted. Everything else this file pins is a property of the GATE: the
+ * path vocabulary, the four exit codes, what each message names, that
+ * the injection scan runs and cannot move an exit, that a pattern which
+ * throws is absorbed. A property of the gate holds over any tree, which
+ * is why the fixture is a faithful miniature rather than an empty
+ * directory — its index is generated, its vocabulary is the parser's,
+ * its readers are the real derivation's plants, so an exit there is
+ * decided by the same code and the same checks. What is left over —
+ * the two questions that are genuinely ABOUT this repository — is
+ * whether the whole-tree half comes back clean on it, and whether the
+ * diff half names the right suites for its real contents. One body each,
+ * below, and between them they carry all five whole-tree checks, both
+ * modes, and the live prose corpus.
+ */
+const REAL_REPOSITORY_BODIES: { title: string; risk: string }[] = [
+  {
+    title: "THE CENSUS SAYS WHICH QUESTION ITS EXIT ANSWERS, and says it LAST",
+    risk:
+      "THE WHOLE-TREE HALF, OVER THIS TREE, IN THE MODE CI RUNS. `--census` is what " +
+      "`npm run lint:docs` and CI's own step run, and this body requires it to exit 0 " +
+      "here — which is every whole-tree check finding nothing in THIS repository: the " +
+      "root-anchor account against ROOT_ANCHOR_LEDGER, the live board's frontmatter, " +
+      "ADR-019's byte budgets, docs/STATE.md against the newest record, and " +
+      "docs/INDEX.md against the four documents it indexes. Its positive control then " +
+      "asks the DIFF form about a card taken off this board and requires the verdict to " +
+      "name the suite and the body the T-142-s1 incident actually reddened. A fixture " +
+      "cannot decide either half: both are claims about what this repository contains.",
+  },
+  {
+    title:
+      "THE GATE'S PRINTED HITS ARE THE SCAN'S OWN, over this repository's live docs/ corpus",
+    risk:
+      "THE SCAN AGAINST PROSE NOBODY WROTE FOR A TEST. The subject set is whichever of " +
+      "this tree's own files under docs/ carry a hit today — prose other lanes write — " +
+      "and the assertion is that what the binary PRINTS is what the scan produced, hit " +
+      "for hit and nothing besides. A fixture can only ever carry the hits somebody " +
+      "planted in it, so this is the one body that reads the corpus the gate will meet " +
+      "at a real merge, and the one place a real path the scan cannot read — the two " +
+      "`.dc.html` handoffs under docs/design/ whose names carry a space — surfaces.",
+  },
+];
+
+/**
+ * THE GATE AGAINST THE REAL ROOT ON A CALL IT REFUSES BEFORE IT SCANS —
+ * the only real-root launches this file makes outside the integration
+ * set, and the launcher PROVES that rather than promising it: every call
+ * asserts the run was refused AND that it never reached the derivation,
+ * so a refusal that silently started scanning fails here rather than
+ * quietly costing 12 seconds a call.
+ */
+function runRefusedGate(args: string[]): ReturnType<typeof launch> {
+  const run = launch(args, repoRoot);
+  expect(run.code, `${args.join(" ")} must be REFUSED, never answered`).toBe(2);
+  expect(run.out, "a refusal never reaches the derivation").not.toContain("derived docs readers");
+  return run;
+}
+
+test("a --root run says whose tree it judged, first and last, and names what it did not answer", () => {
+  // THE GUARD-INTEGRITY BODY FOR T-332's OWN ADDITION, and it is here
+  // because the addition is the kind this project spends cards on: a
+  // gate that can be pointed at another tree is a gate that can be made
+  // to answer 0 about a tree nobody asked about. What stops that being
+  // silent is not the flag's obscurity — it is that a run under it SAYS
+  // SO, twice, and names the two checks it could not answer.
+  //
+  // TWICE, AND NOT ONCE, IS T-142-s1's OWN MEASUREMENT APPLIED: that
+  // card's disclaimer WAS present, three lines from the end, under two
+  // sentences that read as a clean bill of health, and a seat pushed on
+  // the strength of the sentences. First and last is where a reader is.
+  const fixture = gateFixture();
+  const foreign = runFixtureGate([PLANTED_CARD]);
+  // READ ON ONE CHANNEL, because "first and last" is a question about
+  // write ORDER and the capture has none: `out` is stdout followed by
+  // stderr whatever order the process wrote them in. The banner and the
+  // closing line are both stdout — the channel this gate uses for what a
+  // run IS, where stderr carries what it FOUND — so stdout on its own is
+  // the honest reading, and it is the reading a terminal shows.
+  const lines = foreign.stdout.split("\n").filter((l) => l.trim() !== "");
+  expect(lines.length, "the run printed something to read").toBeGreaterThan(4);
+
+  const first = lines[0]!;
+  const last = lines.at(-1)!;
+  expect(first, "the FIRST line a reader meets names the tree it judged").toContain(fixture);
+  expect(first, "and names the flag that pointed it there").toContain("--root");
+  expect(foreign.stdout, "and says what the run is NOT").toContain(
+    "IS NOT A CLAIM ABOUT THIS REPOSITORY",
+  );
+  expect(last, "the LAST line a reader meets says it again").toContain(fixture);
+  expect(last, "in the words that cannot be read as this repository's answer").toContain(
+    "NOT this repository",
+  );
+
+  // THE TWO CHECKS IT DID NOT ANSWER ARE NAMED, at both ends, because
+  // "some checks were skipped" is not a thing a reader can act on. The
+  // opening is a BLOCK and the closing is one line; what is pinned about
+  // the opening is that it says this BEFORE any derivation is printed,
+  // which is what makes it a frame rather than a footnote.
+  const announced = lines.findIndex((l) => l.includes("TWO CHECKS ARE NOT ANSWERED HERE"));
+  expect(announced, "the head of the run says which checks it did not answer").toBeGreaterThan(-1);
+  expect(announced, "and says it before a line of derivation is printed").toBeLessThan(4);
+  const opening = lines.slice(0, announced + 1).join("\n");
+  for (const [where, text] of [["opening", opening], ["closing", last]] as const) {
+    expect(text, `the ${where} names the root-anchor account`).toContain("ROOT_ANCHOR_LEDGER");
+    expect(text, `the ${where} names the budgets`).toContain("BUDGETS");
+  }
+
+  // THE CONTROL THE NEGATIVE NEEDS, AND IT IS THE LOAD-BEARING HALF: a
+  // banner printed on EVERY run announces nothing. The default
+  // invocation is the one CI and the DOCS GATE bullet both use, and it
+  // must carry neither line. It is taken on a call the gate REFUSES —
+  // which is the same code path the banner sits above, since the banner
+  // prints before any path is normalised, so an unconditional banner
+  // would show here — and costs no scan of this repository.
+  const own = runRefusedGate([]);
+  expect(own.out, "the default invocation announces no foreign root").not.toContain("--root");
+  expect(own.out, "and claims nothing about another tree").not.toContain("NOT this repository");
+
+  // AND THE BANNER IS DERIVED FROM THE ARGUMENT, not a constant that
+  // would say "some other tree" whatever it was handed: a second,
+  // DIFFERENT root has to appear in its own banner.
+  const other = realpathSync(mkdtempSync(path.join(tmpdir(), "t332-other-root-")));
+  try {
+    const elsewhere = runFixtureGate([PLANTED_CARD], { root: other, cwd: other });
+    expect(elsewhere.out, "the banner names the root it was GIVEN").toContain(other);
+    expect(elsewhere.out, "and not the other fixture").not.toContain(fixture);
+  } finally {
+    rmSync(other, { recursive: true, force: true });
+  }
+
+  // CALLED WRONG IS NOT A CLEAN GATE, for this flag as for every other
+  // argument shape: a root that is not a directory, and a flag with no
+  // value at all, are both USAGE and never an answer about any tree.
+  expect(runRefusedGate([ROOT_FLAG_ARG]).out, "a flag with no value says so").toContain(
+    "needs a directory",
+  );
+  expect(
+    runRefusedGate([ROOT_FLAG_ARG, path.join(tmpdir(), "t332-no-such-root")]).out,
+    "and a root that is not a directory says THAT",
+  ).toContain("is not a directory");
+});
+
+test("the real repository is scanned by the named integration set and by nobody else", () => {
+  // CRITERION ONE, AS A KEEPER RATHER THAN AS A PARAGRAPH (T-332). The
+  // card's first criterion is a rule about where a body runs, and a rule
+  // about where a body runs is exactly the kind that decays: the next
+  // lane adds one launcher call to a body that already existed, the spec
+  // is 30 seconds slower, and nobody reads the comment above. So the
+  // call sites are DERIVED from this file's own source and compared with
+  // the list — in BOTH directions, because a list naming a body that
+  // stopped launching is as wrong as a launch nobody listed.
+  const rel = "tools/e2e/tests/docs-input-gate.spec.ts";
+  const source = readFileSync(path.join(repoRoot, rel), "utf8");
+  // A FLOOR FIRST: a body that reads a file and finds nothing agrees
+  // with every list, including an empty one (poison shape TEN).
+  expect(source.length, "this body found its own source").toBeGreaterThan(10_000);
+
+  // The needle is BUILT rather than written, so this body's own text is
+  // not a call site it then has to except itself from.
+  const NEEDLE = `run${"Gate"}(`;
+  const DECL = `function ${NEEDLE}`;
+  const found = new Set<string>();
+  for (let at = source.indexOf(NEEDLE); at !== -1; at = source.indexOf(NEEDLE, at + 1)) {
+    if (at >= DECL.length - NEEDLE.length && source.startsWith(DECL, at - (DECL.length - NEEDLE.length))) {
+      continue;
+    }
+    const opened = source.lastIndexOf("\ntest(", at);
+    expect(opened, `a launcher call at ${at} sits outside every body`).toBeGreaterThan(-1);
+    const line = source.slice(opened + 1, source.indexOf("\n", opened + 1));
+    const title = /^test\("(.*)",\s*(?:async\s*)?\(\)\s*=>\s*\{$/.exec(line);
+    expect(title, `the body opening ${JSON.stringify(line.slice(0, 60))} is not readable`).not.toBeNull();
+    found.add(title![1]!);
+  }
+
+  // AND THE PRIMITIVE IS NOT REACHABLE AROUND THE LAUNCHERS. Without
+  // this, the rule above is a rule about one NAME: a body that called
+  // `launch` directly would scan this repository and never appear in the
+  // scan above. The primitive is declared once and called once by each
+  // of the three launchers, and that is the whole census of it.
+  const PRIMITIVE = `${"laun"}ch(`;
+  expect(
+    source.split(PRIMITIVE).length - 1,
+    "the launch primitive is declared once and called once per launcher, and never directly",
+  ).toBe(4);
+
+  // THE DERIVED SET AND THE LIST AGREE, both ways.
+  const listed = REAL_REPOSITORY_BODIES.map((b) => b.title);
+  expect(listed.length, "the set is not empty — that would agree with everything").toBeGreaterThan(0);
+  expect([...found].sort(), "every body that scans the real repository is named, and only those").toEqual(
+    [...listed].sort(),
+  );
+
+  // AND EVERY NAMED BODY EXISTS, so a rename empties the list loudly
+  // rather than quietly. The label is not the coverage: each entry also
+  // carries the RISK it covers, and an entry with a stub for a reason is
+  // a body nobody justified.
+  for (const body of REAL_REPOSITORY_BODIES) {
+    expect(source, `no body is titled ${JSON.stringify(body.title)}`).toContain(
+      `test("${body.title}"`,
+    );
+    expect(body.risk.length, `${body.title} carries no stated risk`).toBeGreaterThan(200);
+  }
+});
 
 test("EVERY SPELLING of one docs path answers the same, or is REFUSED — never `not owed`", () => {
   // T-101-s3 and T-064-s7, absorbed by T-090 and pinned here. The gate
@@ -841,50 +1208,63 @@ test("EVERY SPELLING of one docs path answers the same, or is REFUSED — never 
   // THE DISTINCTION THIS DEFENDS is the gate's whole reason for having
   // four codes: "I looked and nothing is owed" must never wear the same
   // number as "I could not tell what you asked about".
-  const OWED = "docs/CONVENTIONS.md";
-  const e2e = path.join(repoRoot, "tools", "e2e");
+  //
+  // OVER THE FIXTURE SINCE T-332. A SPELLING is not a fact about a tree:
+  // what each row here asks is whether two ways of naming one file reach
+  // one verdict, and whether four shapes of unreadable argument reach
+  // USAGE. This body launched the gate twenty-two times against this
+  // repository for that — 282.0s of a 780s spec, measured at T-332's
+  // base — and eight of those launches were paying for an 11.35 MB scan
+  // to learn how a string was punctuated. The fixture answers it at 50ms
+  // a launch, and answers it BETTER: the owed path is a file this body
+  // plants, so the verdict cannot come from somebody else's edit.
+  const OWED = PLANTED_CARD;
+  const fixture = gateFixture();
+  const e2e = path.join(fixture, "tools", "e2e");
 
   // ANSWERED — the same verdict as the root-relative spelling, 1.
-  expect(runGate([OWED]).code, "root-relative, the RANGE RULE's own form").toBe(1);
-  expect(runGate([`./${OWED}`]).code, "./ prefixed — T-101-s3").toBe(1);
-  expect(runGate([path.join(repoRoot, OWED)]).code, "absolute — T-101-s3").toBe(1);
+  expect(runFixtureGate([OWED]).code, "root-relative, the RANGE RULE's own form").toBe(1);
+  expect(runFixtureGate([`./${OWED}`]).code, "./ prefixed — T-101-s3").toBe(1);
+  expect(runFixtureGate([path.join(fixture, OWED)]).code, "absolute — T-101-s3").toBe(1);
   expect(
-    runGate([`../../${OWED}`], { cwd: e2e }).code,
+    runFixtureGate([`../../${OWED}`], { cwd: e2e }).code,
     "../../ from tools/e2e, where the two neighbouring commands are run — T-101-s3",
   ).toBe(1);
   // ...and the normalisation SHOWS ITS WORK, because one that answers
   // correctly and silently is one an operator cannot check.
-  expect(runGate([`./${OWED}`]).out).toContain(`./${OWED}  ->  ${OWED}`);
+  expect(runFixtureGate([`./${OWED}`]).out).toContain(`./${OWED}  ->  ${OWED}`);
 
   // REFUSED — called wrong, and never a clean gate.
-  expect(runGate([""]).code, "an empty argument is a list of length ONE — T-064-s7").toBe(2);
-  expect(runGate(["   "]).code, "a blank argument, same shape").toBe(2);
+  expect(runFixtureGate([""]).code, "an empty argument is a list of length ONE — T-064-s7").toBe(2);
+  expect(runFixtureGate(["   "]).code, "a blank argument, same shape").toBe(2);
   expect(
-    runGate([`${OWED}\ndocs/ROADMAP.md`]).code,
+    runFixtureGate([`${OWED}\n${INDEXED_DOCS[0]}`]).code,
     'a QUOTED substitution hands the whole list over as one blob — T-064-s7',
   ).toBe(2);
-  expect(runGate(["/etc/passwd"]).code, "a path outside this repository").toBe(2);
+  expect(runFixtureGate(["/etc/passwd"]).code, "a path outside this repository").toBe(2);
   expect(
-    runGate([OWED], { cwd: e2e }).code,
+    runFixtureGate([OWED], { cwd: e2e }).code,
     "a PLAIN relative path away from the root is ambiguous, and is refused rather than guessed",
   ).toBe(2);
 
   // THE MESSAGES NAME THE MECHANISM, not just the refusal — this gate's
   // whole complaint about silence is that a code without a cause makes
   // the reader guess.
-  expect(runGate([""]).out).toContain("empty or blank");
-  expect(runGate([`${OWED}\ndocs/ROADMAP.md`]).out).toContain("newline-joined blob");
-  expect(runGate([OWED], { cwd: e2e }).out).toContain("PLAIN RELATIVE");
-  expect(runGate([OWED], { cwd: e2e }).out, "both readings are printed").toContain(
-    "tools/e2e/docs/CONVENTIONS.md",
+  expect(runFixtureGate([""]).out).toContain("empty or blank");
+  expect(runFixtureGate([`${OWED}\n${INDEXED_DOCS[0]}`]).out).toContain("newline-joined blob");
+  expect(runFixtureGate([OWED], { cwd: e2e }).out).toContain("PLAIN RELATIVE");
+  expect(runFixtureGate([OWED], { cwd: e2e }).out, "both readings are printed").toContain(
+    `tools/e2e/${OWED}`,
   );
 
   // A COVERAGE FLOOR, not a printed count: both verdicts are exercised
   // and every refusal shape reaches USAGE. Without this, deleting a row
   // above would shrink the drill silently.
-  const answered = [OWED, `./${OWED}`, path.join(repoRoot, OWED)].map((s) => runGate([s]).code);
+  const answered = [OWED, `./${OWED}`, path.join(fixture, OWED)].map(
+    (s) => runFixtureGate([s]).code,
+  );
   expect(new Set(answered), "every answered spelling gives ONE verdict").toEqual(new Set([1]));
-  const refused = ["", "   ", `${OWED}\nx`, "/etc/passwd"].map((s) => runGate([s]).code);
+  const refused = ["", "   ", `${OWED}\nx`, "/etc/passwd"].map((s) => runFixtureGate([s]).code);
   expect(refused.length, "four refusal shapes, each measured").toBe(4);
   expect(new Set(refused)).toEqual(new Set([2]));
 });
@@ -902,21 +1282,26 @@ test("THE EXIT MATRIX — all four codes survive the invocation the doc prints",
   // (1–125 become 123). A matrix over a spelling the doc does not print
   // would pin behaviour nobody should rely on; what is pinned is the
   // spelling that WORKS, and CONVENTIONS carries the comparison.
+  //
+  // OVER THE FIXTURE SINCE T-332: a MATRIX OF EXIT CODES is the card's
+  // own example of a question a controlled tree decides. Each row
+  // produces its code deliberately, and what produces it is the shape of
+  // the call — not anything this repository contains.
   const cases: { code: number; meaning: string; run: () => { code: number; out: string } }[] = [
     {
       code: 0,
       meaning: "ran, nothing owed",
-      run: () => runGate(["app/src/main.tsx"]),
+      run: () => runFixtureGate(["app/src/main.tsx"]),
     },
     {
       code: 1,
       meaning: "ran and FOUND something",
-      run: () => runGate(["docs/ROADMAP.md"]),
+      run: () => runFixtureGate([PLANTED_CARD]),
     },
     {
       code: 2,
       meaning: "called wrong",
-      run: () => runGate([]),
+      run: () => runFixtureGate([]),
     },
     {
       code: 3,
@@ -925,7 +1310,8 @@ test("THE EXIT MATRIX — all four codes survive the invocation the doc prints",
       // shells out to git, so a PATH with no git in it is the cheapest
       // honest way to make this gate unable to answer — it is a claim
       // about the gate, not about the tree, which is what 3 means.
-      run: () => runGate(["docs/ROADMAP.md"], { env: { ...process.env, PATH: "/nonexistent-dir" } }),
+      run: () =>
+        runFixtureGate([PLANTED_CARD], { env: { ...process.env, PATH: "/nonexistent-dir" } }),
     },
   ];
 
@@ -956,10 +1342,19 @@ test("THE EMPTY-LIST TRAP, re-proved against the new spelling, with a PLANTED PO
   // FAILED range exited 0 with the gate never running. This drives the
   // spelling the doc prints NOW, through a real shell, so the command
   // substitution is the real thing rather than a description of one.
+  //
+  // OVER THE FIXTURE SINCE T-332, AND THE SHELL IS STILL A REAL SHELL.
+  // What this body pins is what a command SUBSTITUTION hands the gate —
+  // an empty word list from a failed range, a real list from a range
+  // that worked — and neither is a fact about this repository. The
+  // fixture carries one commit for exactly this: a `git diff` needs a
+  // HEAD, and the empty tree against HEAD names the planted card at
+  // every commit that fixture will ever have.
+  const fixture = gateFixture();
   const sh = (script: string): { code: number; out: string } => {
     try {
       const out = execFileSync("/bin/sh", ["-c", script], {
-        cwd: repoRoot,
+        cwd: fixture,
         encoding: "utf8",
         stdio: ["ignore", "pipe", "pipe"],
       });
@@ -969,7 +1364,8 @@ test("THE EMPTY-LIST TRAP, re-proved against the new spelling, with a PLANTED PO
       return { code: e.status ?? -1, out: `${e.stdout ?? ""}${e.stderr ?? ""}` };
     }
   };
-  const gate = `"${process.execPath}" tools/e2e/scripts/docs-gate.mjs`;
+  const script = path.join(repoRoot, "tools", "e2e", "scripts", "docs-gate.mjs");
+  const gate = `"${process.execPath}" "${script}" ${ROOT_FLAG_ARG} "${fixture}"`;
 
   // THE PLANTED POSITIVE, and the criterion's own words: a range command
   // that FAILS, fed to the documented invocation, must reach the reader
@@ -994,7 +1390,7 @@ test("THE EMPTY-LIST TRAP, re-proved against the new spelling, with a PLANTED PO
   // right to. The EMPTY TREE against HEAD, restricted to one path, names
   // that path at every commit this repository will ever have.
   const emptyTree = "$(git hash-object -t tree /dev/null)";
-  const realRange = sh(`${gate} $(git diff --name-only ${emptyTree} HEAD -- docs/ROADMAP.md)`);
+  const realRange = sh(`${gate} $(git diff --name-only ${emptyTree} HEAD -- ${PLANTED_CARD})`);
   expect(realRange.code, "a range that SUCCEEDS still reaches a verdict").toBe(1);
   expect(realRange.out).toContain("docs-gate: FIRES");
 
@@ -1587,13 +1983,18 @@ test("THE SCAN IS ADVISORY — all four exit codes are unmoved, AND the scan is 
   // The four cases are THE EXIT MATRIX's own, re-run here rather than
   // referenced, because what is being pinned is that adding this scan
   // changed none of them.
+  //
+  // OVER THE FIXTURE SINCE T-332: the four codes are the subject, and
+  // the card names an exit-code matrix as the thing a controlled tree
+  // decides. What is asserted is that the scan's presence moved none of
+  // them — a property of the gate, in any tree.
   const ADVISORY = "injection scan — ADVISORY, THE EXIT IS UNCHANGED";
 
-  const nothingOwed = runGate(["app/src/main.tsx"]);
+  const nothingOwed = runFixtureGate(["app/src/main.tsx"]);
   expect(nothingOwed.code, "0 — ran, nothing owed").toBe(0);
   expect(nothingOwed.out, "and the scan ran and said so").toContain(ADVISORY);
 
-  const hasVerdict = runGate(["docs/ROADMAP.md"]);
+  const hasVerdict = runFixtureGate([PLANTED_CARD]);
   expect(hasVerdict.code, "1 — ran and FOUND something").toBe(1);
   expect(hasVerdict.out, "and the scan ran beside the verdict").toContain(ADVISORY);
 
@@ -1601,13 +2002,13 @@ test("THE SCAN IS ADVISORY — all four exit codes are unmoved, AND the scan is 
   // refusals: 2 is decided before any path is judged, 3 is the gate
   // itself failing. A scan line in either would mean the scan had run
   // where the gate had already declined to answer.
-  const calledWrong = runGate([]);
+  const calledWrong = runFixtureGate([]);
   expect(calledWrong.code, "2 — called wrong").toBe(2);
   expect(calledWrong.out, "the scan does not run on a question the gate refused").not.toContain(
     ADVISORY,
   );
 
-  const couldNotRun = runGate(["docs/ROADMAP.md"], {
+  const couldNotRun = runFixtureGate([PLANTED_CARD], {
     env: { ...process.env, PATH: "/nonexistent-dir" },
   });
   expect(couldNotRun.code, "3 — the gate COULD NOT RUN").toBe(3);
@@ -1634,10 +2035,20 @@ test("a path the scan cannot read SAYS SO on its own line — never a silent pas
   // gate unquoted fragments any tracked path containing a space — both
   // hand the scan a path with no file behind it, and the second is live
   // in this tree (two `.dc.html` handoffs under docs/design/).
-  const missing = "docs/tasks/T-000-a-card-that-does-not-exist.md";
-  expect(existsSync(path.join(repoRoot, missing)), "the fixture really is absent").toBe(false);
+  //
+  // OVER THE FIXTURE SINCE T-332, and the move costs this body nothing:
+  // its subject is a path with NO FILE BEHIND IT, which is by definition
+  // not a fact about any particular tree. The live-tree half of the
+  // reason above — the two `.dc.html` handoffs whose names carry a space
+  // — is covered where it belongs, by the integration body that runs the
+  // scan over this repository's own docs/ corpus.
+  const missing = `${PLANTED_CARD.replace(/[^/]+$/, "")}T-000-a-card-that-does-not-exist.md`;
+  expect(
+    existsSync(path.join(gateFixture(), missing)),
+    "the absent path really is absent",
+  ).toBe(false);
 
-  const run = runGate([missing]);
+  const run = runFixtureGate([missing]);
   expect(run.out, "the failure is named on its own line, with the path").toContain(
     "INJECTION SCAN COULD NOT RUN for " + missing,
   );
@@ -1657,7 +2068,7 @@ test("a path the scan cannot read SAYS SO on its own line — never a silent pas
   // THE POSITIVE CONTROL. "It said COULD NOT RUN" is satisfied by a scan
   // that says so about everything, so the same gate on a path that DOES
   // exist must say nothing of the kind.
-  const present = runGate(["docs/ROADMAP.md"]);
+  const present = runFixtureGate([PLANTED_CARD]);
   expect(present.out, "a readable path produces no cannot-run line").not.toContain(
     "INJECTION SCAN COULD NOT RUN",
   );
@@ -1804,21 +2215,24 @@ test("EVERY hit in one file is printed, not only the first — three hits on thr
   expect(EXPECTED.length, "three hits, so `each` has something to mean").toBe(3);
   expect(new Set(EXPECTED.map((e) => e.pattern.id)).size, "spread over two pattern ids").toBe(2);
 
-  // THE FIXTURE IS A REAL FILE UNDER docs/, because the criterion is
-  // about what the GATE PRINTS and the gate resolves its root from its
-  // own location — there is no root to point it at. It is scratch, named
-  // for this lane (SCRATCH RULE), untracked, and removed in a `finally`
-  // so an assertion failure below still leaves the tree as it found it.
-  const rel = "docs/rooms/zz-each-hit-T-248.md";
-  const abs = path.join(repoRoot, rel);
+  // THE PLANTED FILE IS A REAL FILE UNDER docs/, because the criterion is
+  // about what the GATE PRINTS. It used to be written into THIS
+  // repository's own docs/ — "the gate resolves its root from its own
+  // location, there is no root to point it at", which was true when that
+  // sentence was written and is the exact gap T-332 closed. There is a
+  // root to point it at now, so the plant lands in the FIXTURE: the
+  // criterion is unmoved, and a body that writes into the live tree
+  // under a `finally` stops being a thing this suite does.
+  const rel = `${PLANTED_CARD.replace(/[^/]+$/, "")}zz-each-hit-T-248.md`;
+  const abs = path.join(gateFixture(), rel);
   const lines = Array.from({ length: 15 }, () => "pad");
   for (const { line, pattern } of EXPECTED) lines[line - 1] = pattern.positive;
-  expect(existsSync(abs), "the fixture path is free — this body clobbers nothing").toBe(false);
+  expect(existsSync(abs), "the plant's path is free — this body clobbers nothing").toBe(false);
 
   const run = ((): { code: number; out: string } => {
     writeFileSync(abs, `${lines.join("\n")}\n`, "utf8");
     try {
-      return runGate([rel]);
+      return runFixtureGate([rel]);
     } finally {
       rmSync(abs, { force: true });
     }
@@ -1891,7 +2305,7 @@ test("THE ADVISORY RESIDUAL, NAMED: no exit assertion on this tree can catch a s
     path.join(repoRoot, "tools", "e2e", "scripts", "docs-gate.mjs"),
     "utf8",
   );
-  const anchor = "reportInjectionScan(gate.docsPaths, repoRoot)";
+  const anchor = "reportInjectionScan(gate.docsPaths, root)";
   expect(
     source.split(anchor).length - 1,
     "the gate calls the scan exactly once, so this window is the whole call site",
@@ -2121,7 +2535,7 @@ test("the DOCS GATE is what carries that red — the check is wired into its exi
   // positive control, because "the window moves `found`" is satisfied by
   // a window picked out of the wrong part of the file.
   const source = readFileSync(path.join(repoRoot, "tools/e2e/scripts/docs-gate.mjs"), "utf8");
-  const anchor = "docsIndexStale(repoRoot)";
+  const anchor = "docsIndexStale(root)";
   const from = source.indexOf(anchor);
   expect(from, `docs-gate.mjs no longer calls ${anchor} — the stale index reds nowhere`).toBeGreaterThan(-1);
   const window = stripComments(source.slice(from, from + 900));
@@ -2515,7 +2929,7 @@ test("THE DOCS GATE carries the record finding to its exit — the derivation mo
   // control, because "the window moves `found`" is satisfied by a window
   // picked out of the wrong part of the file.
   const source = readFileSync(path.join(repoRoot, "tools/e2e/scripts/docs-gate.mjs"), "utf8");
-  const anchor = "staleStateRecords(repoRoot)";
+  const anchor = "staleStateRecords(root)";
   expect(
     source.split(anchor).length - 1,
     "the gate calls the shared derivation exactly once, so this window is the whole call site",

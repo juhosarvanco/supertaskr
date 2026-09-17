@@ -1903,9 +1903,23 @@ export function docsReaders(root = repoRoot) {
  *                see. Almost all are honest non-readers (they join the
  *                root with `app/`, `method/`, a fixture). The residual
  *                is the ones that reach docs/ some other way.
+ *
+ * `derivedReaders` IS THE ANSWER THIS FUNCTION WOULD OTHERWISE COMPUTE,
+ * HANDED IN (T-332). It is a PARAMETER and never a cache: the default
+ * computes it exactly as before, so a caller that passes nothing is
+ * unchanged in every input, and a caller that has ALREADY asked
+ * `docsReaders` about the same root passes what it got rather than
+ * paying for a second walk of the same corpus. Measured at T-332's base,
+ * one `docs-gate.mjs` run over a docs path with a reader walked the
+ * scanned corpus FOURTEEN times — five of them `docsReaders` — for 31.5s
+ * of a 31.9s run. Nothing about the derivation moved; what moved is how
+ * many times one process asks for it.
+ *
+ * @param {string} [root]
+ * @param {Reader[]} [derivedReaders]
  */
-export function rootAnchoredFiles(root = repoRoot) {
-  const readers = new Map(docsReaders(root).map((r) => [r.file, r]));
+export function rootAnchoredFiles(root = repoRoot, derivedReaders = docsReaders(root)) {
+  const readers = new Map(derivedReaders.map((r) => [r.file, r]));
   const out = [];
   for (const rel of sourceCorpus(root)) {
     const stripped = stripComments(readFileSync(path.join(root, rel), "utf8"));
@@ -1977,9 +1991,15 @@ function rootAnchors(ctx, root) {
  * to the root, is either a reader written in a shape `evalBase` does not
  * know or a genuine non-reader. The scanner cannot tell, so it says so.
  * Silence is the one outcome this card exists to remove.
+ *
+ * `anchored` is `rootAnchoredFiles`'s answer handed in, on the terms
+ * stated there (T-332): a default that computes it, never a cache.
+ *
+ * @param {string} [root]
+ * @param {ReturnType<typeof rootAnchoredFiles>} [anchored]
  */
-export function unlinkedFiles(root = repoRoot) {
-  return rootAnchoredFiles(root)
+export function unlinkedFiles(root = repoRoot, anchored = rootAnchoredFiles(root)) {
+  return anchored
     .filter((f) => f.kind === "unlinked")
     .map((f) => {
       const stripped = stripComments(readFileSync(path.join(root, f.file), "utf8"));
@@ -2087,9 +2107,16 @@ export function packageRelativeSites(root = repoRoot) {
  * climb off a base `evalBase` cannot read is either a reader in a shape
  * the calculus does not know or a genuine non-reader, and the scanner
  * cannot tell. It says so; silence is the outcome this card removes.
+ *
+ * `climbing` is `packageRelativeSites`'s answer handed in, on the terms
+ * `rootAnchoredFiles` states (T-332): a default that computes it, never
+ * a cache.
+ *
+ * @param {string} [root]
+ * @param {ReturnType<typeof packageRelativeSites>} [climbing]
  */
-export function unlinkedSites(root = repoRoot) {
-  return packageRelativeSites(root).filter((s) => s.kind === "unlinked");
+export function unlinkedSites(root = repoRoot, climbing = packageRelativeSites(root)) {
+  return climbing.filter((s) => s.kind === "unlinked");
 }
 
 /**
@@ -2192,11 +2219,25 @@ export const ROOT_ANCHOR_LEDGER = Object.freeze([
  * ALREADY OWED for every path under docs/ — the residual that could
  * still shorten an answer. Derived; the ledger above is checked against
  * it, never the other way round.
+ *
+ * `derivedReaders` and `anchored` are the two answers this function
+ * would otherwise compute, handed in on the terms `rootAnchoredFiles`
+ * states (T-332): defaults that compute them, never a cache. This one
+ * asked for THREE corpus walks on its own — `docsReaders` here, and
+ * `docsReaders` again inside `rootAnchoredFiles` beside its own walk.
+ *
+ * @param {string} [root]
+ * @param {Reader[]} [derivedReaders]
+ * @param {ReturnType<typeof rootAnchoredFiles>} [anchored]
  */
-export function unaccountedRootAnchors(root = repoRoot) {
-  const readers = docsReaders(root);
+export function unaccountedRootAnchors(
+  root = repoRoot,
+  derivedReaders = docsReaders(root),
+  anchored = rootAnchoredFiles(root, derivedReaders),
+) {
+  const readers = derivedReaders;
   const universal = suitesOwedForAllOfDocs(readers);
-  return rootAnchoredFiles(root)
+  return anchored
     .filter((f) => f.kind !== "derived")
     .filter((f) => !universal.has(suiteFor(f.file)?.dir))
     .map((f) => f.file);
