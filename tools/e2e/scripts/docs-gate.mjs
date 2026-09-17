@@ -175,6 +175,61 @@ const EXIT = Object.freeze({ CLEAN: 0, FOUND: 1, USAGE: 2, CANNOT_RUN: 3 });
 
 const CENSUS_FLAG = "--census";
 
+/**
+ * WHICH CHECKOUT AM I JUDGING (T-332) — the same spelling and the same
+ * default sentence `push-checks.mjs` publishes, because this repository
+ * having two of them is T-057's failure where nobody can see it: *the
+ * checkout to judge; defaults to this script's own repository*.
+ *
+ * IT EXISTS FOR A COST, AND THE COST IS MEASURED. Every body in
+ * `docs-input-gate.spec.ts` that exercises a SPELLING of a docs path or
+ * a COMBINATION of the four exit codes used to launch this gate against
+ * this repository, where one run walks 380 source files and 11.35 MB —
+ * 31.5s at T-332's base, 23 such launches, 723.9s of a 780s spec. None
+ * of those questions is about THIS tree: the path vocabulary and the
+ * exit contract are properties of the gate. They are now asked over a
+ * fixture repository of a dozen files, and the bodies that really are
+ * about this tree are named as the integration set and kept.
+ *
+ * THE HAZARD IS NAMED RATHER THAN LEFT TO A READER. A gate that can be
+ * pointed at another tree is a gate that can be made to answer 0 about a
+ * tree nobody asked about — so a run under this flag SAYS SO twice, once
+ * at the head of its output and once as the last line a reader meets,
+ * names the two checks it cannot answer, and CANNOT be reached by
+ * accident: the default is this repository, `npm run lint:docs` passes
+ * no flag, and CI's step passes no flag.
+ */
+const ROOT_FLAG = "--root";
+
+/** The usage line both refusals print. */
+const USAGE_LINE =
+  `node tools/e2e/scripts/docs-gate.mjs [${CENSUS_FLAG}] [${ROOT_FLAG} <checkout>] <changed path>...`;
+
+/** What this repository's own tables can and cannot say about another
+ *  tree — named in one place so the banner and the closing line cannot
+ *  drift apart (T-057). */
+const FOREIGN_UNANSWERED =
+  "the root-anchor ACCOUNT (ROOT_ANCHOR_LEDGER argues THIS repository's files, one by one) " +
+  "and the governing-document BUDGETS (ADR-019's table names THIS repository's documents)";
+
+/** @param {string} root */
+function foreignRootBanner(root) {
+  return (
+    `docs-gate: ${ROOT_FLAG} ${root}\n` +
+    "  THIS RUN IS ABOUT THAT TREE AND IS NOT A CLAIM ABOUT THIS REPOSITORY. Every\n" +
+    "  line below is derived from the checkout named above.\n" +
+    `  TWO CHECKS ARE NOT ANSWERED HERE: ${FOREIGN_UNANSWERED}.`
+  );
+}
+
+/** @param {string} root */
+function foreignRootClosing(root) {
+  return (
+    `\ndocs-gate: this run judged ${root}, NOT this repository, and did not answer ` +
+    `${FOREIGN_UNANSWERED}. Run it with no ${ROOT_FLAG} for this repository's own answer.`
+  );
+}
+
 /* ═══════════════════════════════════════════════════════════════════
  * THE INJECTION SCAN (T-248) — ADVISORY, AND THE EXIT IS UNCHANGED.
  * ═══════════════════════════════════════════════════════════════════
@@ -519,30 +574,93 @@ export function reportInjectionScan(docsPaths, root, patterns = INJECTION_PATTER
 
 /** @param {string[]} argv */
 function main(argv) {
-  const flags = argv.filter((a) => a.startsWith("-"));
-  const unknown = flags.filter((a) => a !== CENSUS_FLAG);
-  if (unknown.length > 0) {
-    console.error(
-      `docs-gate: unknown flag ${unknown[0]} — usage: node tools/e2e/scripts/docs-gate.mjs <changed path>...\n` +
-        "It takes PATHS, never a git range: the range is the RANGE RULE's answer, not this tool's.\n" +
-        `The one flag is ${CENSUS_FLAG}, which prints the derivation; paths may be given beside it.`,
-    );
-    return EXIT.USAGE;
+  // THE ARGUMENTS ARE WALKED, NOT PARTITIONED (T-332). They used to be
+  // split by `startsWith("-")` into flags and paths, which is exactly
+  // right while every flag is a lone word and wrong the moment one takes
+  // a VALUE: `--root <dir>` puts a directory where a path argument
+  // stands. The walk is `push-checks.mjs`'s own — the sibling gate
+  // runner that already takes `--root <checkout>` and already answers 2
+  // for one that is not a directory — because this repository having two
+  // spellings for "which checkout am I judging" is T-057's failure in a
+  // place a reader cannot see it.
+  let root = repoRoot;
+  let wantsCensus = false;
+  /** @type {string[]} */
+  const given = [];
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = /** @type {string} */ (argv[i]);
+    if (arg === CENSUS_FLAG) {
+      wantsCensus = true;
+      continue;
+    }
+    if (arg === ROOT_FLAG) {
+      const value = argv[i + 1];
+      if (value === undefined || value === "" || value.startsWith("-")) {
+        console.error(
+          `docs-gate: ${ROOT_FLAG} needs a directory — usage: ${USAGE_LINE}`,
+        );
+        return EXIT.USAGE;
+      }
+      root = path.resolve(value);
+      i += 1;
+      continue;
+    }
+    if (arg.startsWith("-")) {
+      console.error(
+        `docs-gate: unknown flag ${arg} — usage: ${USAGE_LINE}\n` +
+          "It takes PATHS, never a git range: the range is the RANGE RULE's answer, not this tool's.\n" +
+          `The flags are ${CENSUS_FLAG}, which prints the derivation, and ${ROOT_FLAG} ` +
+          "<checkout>, which names a tree that is not this one; paths may be given beside either.",
+      );
+      return EXIT.USAGE;
+    }
+    given.push(arg);
   }
-  const wantsCensus = flags.includes(CENSUS_FLAG);
+
+  // CALLED WRONG IS NOT A CLEAN GATE, and a root that is not a directory
+  // is a question this gate could not read — `push-checks.mjs`'s own
+  // sentence, for the same reason: answering 0 would report "nothing
+  // owed" about a tree nobody looked at.
+  if (root !== repoRoot) {
+    let ok = false;
+    try {
+      ok = statSync(root).isDirectory();
+    } catch {
+      ok = false;
+    }
+    if (!ok) {
+      console.error(`docs-gate: ${ROOT_FLAG} ${root} is not a directory`);
+      return EXIT.USAGE;
+    }
+  }
+  const foreign = root !== repoRoot;
+
+  // A RUN ABOUT ANOTHER TREE SAYS SO BEFORE IT SAYS ANYTHING ELSE, AND
+  // AGAIN AT THE END (T-332, obeying T-142-s1's measured lesson). This
+  // gate's whole complaint is about a number that reads as a claim it is
+  // not, and a `--root` run is precisely that hazard: every sentence
+  // below it is true of the tree it was pointed at and none of them is
+  // about this repository. T-142-s1 is why it is printed TWICE rather
+  // than once: the census's disclaimer was present, three lines from the
+  // end, under two sentences that read as a clean bill of health, and a
+  // seat pushed on the strength of the sentences. So it heads the output
+  // AND it is the last thing a reader meets.
+  if (foreign) console.log(foreignRootBanner(root));
 
   // THE PATH LIST IS NORMALISED BEFORE IT IS JUDGED (T-090, absorbing
   // T-064-s7 and T-101-s3). `normalisePaths` owns the vocabulary and the
   // measured evidence; what matters here is that anything it refuses is
   // EXIT 2 and never an answer. The one thing this gate must never do is
   // give "I looked and nothing is owed" to a question it could not read.
-  const { paths, problems, rewritten } = normalisePaths(
-    argv.filter((a) => !a.startsWith("-")),
-    { cwd: process.cwd(), root: repoRoot },
-  );
+  // It took a `root` before this card and takes the same one: the
+  // vocabulary is about the tree being judged, not about this checkout.
+  const { paths, problems, rewritten } = normalisePaths(given, {
+    cwd: process.cwd(),
+    root,
+  });
   if (problems.length > 0) {
     console.error(
-      `docs-gate: ${problems.length} argument(s) are not paths in this repository — ` +
+      `docs-gate: ${problems.length} argument(s) are not paths in ${foreign ? root : "this repository"} — ` +
         "usage: node tools/e2e/scripts/docs-gate.mjs <changed path>...",
     );
     for (const p of problems) console.error(`  ${p}`);
@@ -569,15 +687,30 @@ function main(argv) {
     return EXIT.USAGE;
   }
 
-  const readers = docsReaders();
-  const unlinked = unlinkedFiles();
-  const census = siteCensus();
-  const anchored = rootAnchoredFiles();
-  const unaccounted = unaccountedRootAnchors();
-  const climbing = packageRelativeSites();
-  const climbingUnlinked = unlinkedSites();
-  const statuses = taskStatuses();
-  const issues = taskCardIssues(liveTaskCards(), { statuses, parseYaml });
+  // THE DERIVATIONS, ASKED FOR ONCE EACH (T-332). These nine lines used
+  // to walk the scanned corpus ELEVEN times for the four answers they
+  // need, because four of them recompute what an earlier one already
+  // produced: `docsReaders` alone ran five times per run. MEASURED at
+  // T-332's base — 380 scanned files, 11,354,965 bytes — one run over a
+  // docs path with a reader spent 31.5s of 31.9s inside those walks, and
+  // 14 `git ls-files` calls is how the count was taken.
+  //
+  // IT IS DATAFLOW AND NOT A CACHE, deliberately, and the distinction is
+  // the whole reason the repair is shaped this way: nothing is
+  // remembered between calls, nothing has to be invalidated, and every
+  // value handed on is one this process derived from this tree moments
+  // earlier. A cache on a gate is a claim about a tree nobody re-read —
+  // the exact costume this file's own exit legend exists to strip off —
+  // so the figures above bought a restructuring rather than a memo.
+  const readers = docsReaders(root);
+  const anchored = rootAnchoredFiles(root, readers);
+  const unlinked = unlinkedFiles(root, anchored);
+  const unaccounted = unaccountedRootAnchors(root, readers, anchored);
+  const census = siteCensus(root);
+  const climbing = packageRelativeSites(root);
+  const climbingUnlinked = unlinkedSites(root, climbing);
+  const statuses = taskStatuses(root);
+  const issues = taskCardIssues(liveTaskCards(root), { statuses, parseYaml });
   const gate = docsGate(paths, readers);
 
   // WHAT THE GATE DECIDED YOUR QUESTION WAS, printed whenever it is not
@@ -643,10 +776,17 @@ function main(argv) {
   // separate tripwire below and neither reaches the other (T-085) — so
   // it is news here as well as in the lane, because the lane is not what
   // an integrator runs at a merge.
+  //
+  // IT IS ONE OF THE TWO CHECKS A `--root` RUN CANNOT ANSWER (T-332),
+  // and it is skipped BY NAME rather than answered wrongly: the ledger
+  // is a list of THIS repository's files, argued file by file, so
+  // comparing it against another tree reports every entry missing and
+  // says nothing about either tree. The skip is named in the banner at
+  // the top of the run and in the closing line, never inferred.
   /** @type {string[]} */
   const ledgerFiles = ROOT_ANCHOR_LEDGER.map((e) => e.file).sort();
   const seen = [...unaccounted].sort();
-  if (JSON.stringify(ledgerFiles) !== JSON.stringify(seen)) {
+  if (!foreign && JSON.stringify(ledgerFiles) !== JSON.stringify(seen)) {
     console.error("\ndocs-gate: the root-anchor ACCOUNT and the tree disagree:");
     for (const f of seen) {
       if (!ledgerFiles.includes(f)) console.error(`  + ${f} — holds the root, unargued`);
@@ -717,7 +857,7 @@ function main(argv) {
     // declares advisory. So the failure is caught, named, and the four
     // codes are left exactly where the checks above put them.
     try {
-      reportInjectionScan(gate.docsPaths, repoRoot);
+      reportInjectionScan(gate.docsPaths, root);
     } catch (err) {
       console.log(
         "\ndocs-gate: INJECTION SCAN COULD NOT RUN — " +
@@ -740,12 +880,21 @@ function main(argv) {
   // the frontmatter half above. Loud in both directions once a
   // document's compaction has landed; silent about documents still
   // awaiting theirs.
+  //
+  // THE SECOND CHECK A `--root` RUN CANNOT ANSWER (T-332), skipped by
+  // name for the reason the root-anchor account is: the table is a list
+  // of THIS repository's documents at THIS repository's landed sizes,
+  // and a tree that does not carry them would `statSync`-throw its way
+  // to exit 3 — "the gate could not run" — over a question that was
+  // never about that tree. Behaviour against the real root is unmoved,
+  // the throw included: a governed document that VANISHES from this
+  // repository is still exit 3 here, and that is the right answer.
   const gated = /** @type {[string, { landed: number, warn: number, fail: number }][]} */ (
-    Object.entries(DOC_BUDGETS).filter(([, b]) => b !== null)
+    foreign ? [] : Object.entries(DOC_BUDGETS).filter(([, b]) => b !== null)
   );
   let breaches = 0;
   for (const [rel, b] of gated) {
-    const size = statSync(path.join(repoRoot, rel)).size;
+    const size = statSync(path.join(root, rel)).size;
     if (size > b.fail) {
       console.error(
         `\ndocs-gate: ${rel} is OVER BUDGET — ${size} bytes against its ${b.fail}-byte fail line ` +
@@ -788,7 +937,7 @@ function main(argv) {
   // one night, AFTER the commit that broke it — and a rule written twice
   // is two chances to disagree (T-057). The mid-ritual and tie behaviour
   // is stated at `staleStateRecords` and is unchanged for every input.
-  const staleAgainst = staleStateRecords(repoRoot);
+  const staleAgainst = staleStateRecords(root);
   if (staleAgainst.length > 0) {
     console.error(
       `\ndocs-gate: docs/STATE.md is STALE against ${staleAgainst.length} newer checkpoint ` +
@@ -815,7 +964,7 @@ function main(argv) {
   // readers — this gate and `capabilities.mjs --check`, which is the
   // command that regenerates it — and a rule written twice is two
   // chances to disagree (T-057).
-  const indexStale = docsIndexStale(repoRoot);
+  const indexStale = docsIndexStale(root);
   if (indexStale !== null) {
     console.error(
       `\ndocs-gate: ${INDEX_DOC} is STALE against the documents it indexes — ` +
@@ -856,6 +1005,12 @@ function main(argv) {
         "  paths — the DOCS GATE bullet in docs/CONVENTIONS.md prints the one spelling.",
     );
   }
+
+  // AND THE LAST THING A `--root` READER MEETS IS WHOSE TREE IT WAS
+  // (T-332). The banner at the top frames the run; this line is where a
+  // reader stops, which is the whole of T-142-s1's lesson applied to a
+  // second way of reading a number as a claim it is not.
+  if (foreign) console.log(foreignRootClosing(root));
 
   return found > 0 ? EXIT.FOUND : EXIT.CLEAN;
 }
