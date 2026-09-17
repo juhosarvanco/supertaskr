@@ -8357,10 +8357,14 @@ export function readPause(root = repoRoot) {
  * is the precise race this card's third criterion forbids.
  *
  * ── THE EXTENSION POINT, AND WHAT A LATER CARD WOULD ADD ─────────────
- * `updateOperationalStore` is written against a DATUM DESCRIPTOR —
- * relative paths, a format number, a validator and a content extractor
- * — so a second operational datum takes up the same compare-append-
- * publish path by passing a descriptor rather than by copying it. This
+ * `updateGrantStore` is the compare-append-publish path, and its parts —
+ * the relative paths, the format number, the validator and the content
+ * extractor — are held apart as named constants and named functions
+ * rather than inlined into it, which is what a second operational datum
+ * would take up. IT IS NOT PARAMETERISED TODAY AND THIS COMMENT WILL NOT
+ * PRETEND IT IS: a second datum still has to lift those four into a
+ * descriptor the path accepts, and that lift is the successor card's
+ * work rather than machinery this one grew ahead of a second user. This
  * card builds no general operational-record framework and migrates no
  * second datum: the role model and effort selections in the template
  * would need a descriptor of their own, a reader that resolves them at
@@ -8379,6 +8383,23 @@ export const GRANT_SUPERSEDED_REL_PATH = `${RUNTIME_DIR}/dispatch-grant.supersed
 
 /** The exclusive lock every writer takes BEFORE it compares anything. */
 export const GRANT_LOCK_REL_PATH = `${RUNTIME_DIR}/dispatch-grant.lock`;
+
+/**
+ * THE PRIOR-USE MARKER: this checkout HAS HELD a store, whatever became
+ * of the snapshot.
+ *
+ * A missing snapshot AFTER PRIOR USE is a LOST authorization and not a
+ * fresh project, and that difference is the whole of this card's eighth
+ * criterion. The journal and the retained superseded snapshot are
+ * evidence of prior use — but a store that was CREATED and never revised
+ * has neither, so a checkout that lost its FIRST grant read as one that
+ * had never held one, and a creation there would mint authority over an
+ * approval somebody had already been given. The marker is written by the
+ * creation itself, so the evidence exists from the first grant rather
+ * than from the second. It is STAT'D and never opened, like the journal
+ * beside it.
+ */
+export const GRANT_USED_REL_PATH = `${RUNTIME_DIR}/dispatch-grant.used`;
 
 /** The snapshot format this reader knows; a snapshot declaring another is refused. */
 export const GRANT_STORE_FORMAT = 1;
@@ -8844,7 +8865,9 @@ export function readGrantStore(root, opts = {}) {
   // and leaves `stat(2)` working, so this line is exactly what that
   // demonstration permits and an open here would fail it.
   const usedBefore =
-    existsSync(path.join(at, GRANT_JOURNAL_REL_PATH)) || existsSync(path.join(at, GRANT_SUPERSEDED_REL_PATH));
+    existsSync(path.join(at, GRANT_USED_REL_PATH)) ||
+    existsSync(path.join(at, GRANT_JOURNAL_REL_PATH)) ||
+    existsSync(path.join(at, GRANT_SUPERSEDED_REL_PATH));
   if (!existsSync(file)) {
     if (usedBefore) {
       throw new GrantStoreFinding(
@@ -9360,6 +9383,14 @@ export function initGrantStore(root, o) {
     const text = composeGrantSnapshot({ blockText: block, root: at, revision, writtenBy: o.writtenBy, ...(o.at === undefined ? {} : { at: o.at }) });
     const recovery = existsSync(path.join(at, GRANT_JOURNAL_REL_PATH));
     writeFileAtomic(file, text);
+    // THE PRIOR-USE MARKER, WRITTEN BY THE CREATION AND AFTER THE
+    // SNAPSHOT. A store created and never revised leaves no journal and
+    // no superseded snapshot, so without this a checkout that lost its
+    // FIRST grant would read as one that had never held a store — the
+    // fresh-project answer the eighth criterion forbids for a snapshot
+    // missing after prior use. It is written after the publication so it
+    // never claims a use that did not happen.
+    writeFileAtomic(path.join(at, GRANT_USED_REL_PATH), grantUsedMarker(at, revision, o.writtenBy));
     return {
       outcome: "created",
       revision,
@@ -9576,6 +9607,33 @@ export function ensureRuntimeDirIgnored(root) {
   mkdirSync(dir, { recursive: true });
   const ignore = path.join(dir, ".gitignore");
   if (!existsSync(ignore)) writeFileSync(ignore, RUNTIME_DIR_IGNORE, "utf8");
+}
+
+/**
+ * THE PRIOR-USE MARKER'S CONTENT — a sentence, because a reader who
+ * finds this file after the snapshot has gone should learn what it means
+ * from the file rather than from this source.
+ *
+ * Nothing PARSES it: the marker is stat'd, never opened, so what it says
+ * is for a person. It records which grant the checkout first held so a
+ * recovery has somewhere to start.
+ *
+ * @param {string} root @param {number} revision @param {string} writtenBy @returns {string}
+ */
+function grantUsedMarker(root, revision, writtenBy) {
+  return (
+    `# ${GRANT_USED_REL_PATH} — THIS CHECKOUT HAS HELD A DISPATCH GRANT.\n` +
+    "#\n" +
+    `# ${path.basename(root)} was given its first grant at revision ${String(revision)}, recorded by\n` +
+    `# ${writtenBy}. This file exists so that a LOST snapshot is answered as a lost\n` +
+    "# authorization rather than as a fresh project: a store that was created and never\n" +
+    `# revised leaves no journal and no superseded snapshot, so without this marker\n` +
+    `# ${GRANT_STORE_REL_PATH} going missing would read as a checkout that never had one,\n` +
+    "# and the next creation would mint authority over an approval already given.\n" +
+    "#\n" +
+    "# It is STAT'D and never opened. Deleting it does not remove an authorization; it\n" +
+    "# removes the evidence that one was ever here.\n"
+  );
 }
 
 /** Append one journal line, flushed to the device before the caller is told. @param {string} root @param {object} entry */

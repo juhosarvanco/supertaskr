@@ -29,6 +29,10 @@ import { DECOMPOSITION_FILE, earsKeywords, isEars } from "../scripts/session-eco
 // imports since T-317, read here so a body can compare the arm's reading
 // of the settings with the library's rather than take the move on trust.
 import * as parserPure from "../../../lib/parser/dist/pure.js";
+// THE ARM AS A NAMESPACE, beside its named imports: one body asks which
+// symbols this file EXPORTS rather than which ones a test happened to
+// name, and a named import cannot answer that question (T-344).
+import * as armModule from "../scripts/dispatch-brief.mjs";
 import {
   AdmissionFinding,
   REPAIR_LEDGER_HEADING,
@@ -12305,6 +12309,62 @@ test("A SNAPSHOT MISSING AFTER PRIOR USE REFUSES PENDING AN EXPLICIT RECOVERY, a
   }
 });
 
+test("A STORE CREATED AND NEVER REVISED IS STILL PRIOR USE — losing the FIRST snapshot refuses, and is not read as a checkout that never held one", () => {
+  // THE CARD'S EIGHTH CRITERION at the state its own wording is sharpest
+  // about and the easiest to leave uncovered: a missing snapshot AFTER
+  // PRIOR USE is not a fresh project. The evidence of prior use is the
+  // journal and the retained superseded snapshot — and a store that was
+  // CREATED and never revised has NEITHER, so this is the one
+  // arrangement where the reader has to be told by something the
+  // CREATION left behind rather than by something a revision did.
+  //
+  // WHY IT IS NOT TIDINESS. The fresh-project answer is the explicit
+  // NO-GRANT state, under which every admission is made and merely
+  // reported unenforced — and the next creation then mints authority
+  // over an approval the owner had already given. That is the forgery
+  // this criterion exists to refuse, reached by losing one file.
+  //
+  // KILLED BY: a reader whose prior-use evidence is only the journal and
+  // the superseded snapshot, and by a creation that leaves no marker.
+  // THE CONTROL IS THE FIRST HALF: a checkout that has genuinely never
+  // held a store must still answer no-grant, or this body would pass
+  // against a reader that refuses everywhere.
+  const { fx, block } = storeFixture("first-grant-lost");
+  try {
+    // THE CONTROL, TAKEN FIRST: a checkout that never held a store
+    // ANSWERS rather than refusing. Without it the refusal below would
+    // be satisfied by a reader that refuses on an empty directory.
+    expect(readGrantStore(fx.root).present, "a checkout that never held a store answered a grant").toBe(false);
+    expect(grantState(fx.root).enforced, "a checkout that never held a store enforced something").toBe(false);
+
+    initGrantStore(fx.root, { blockText: block(1), writtenBy: "the body" });
+    expect(grantState(fx.root).revision, "the first grant was not recorded at all").toBe(1);
+    // NO REVISION IS EVER MADE HERE, and the two assertions below are
+    // what make this body about the uncovered state rather than about
+    // the one the body above already grades.
+    expect(
+      existsSync(path.join(fx.root, GRANT_JOURNAL_REL_PATH)),
+      "a journal exists, so this is not the never-revised state",
+    ).toBe(false);
+    expect(
+      existsSync(path.join(fx.root, GRANT_SUPERSEDED_REL_PATH)),
+      "a superseded snapshot exists, so this is not the never-revised state",
+    ).toBe(false);
+
+    rmSync(path.join(fx.root, GRANT_STORE_REL_PATH), { force: true });
+    expect(
+      storeRefusal(() => readGrantStore(fx.root))?.code,
+      "a checkout that LOST its first grant was read as one that never had one",
+    ).toBe(GRANT_STORE_CODES.MISSING_AFTER_USE);
+    expect(
+      storeRefusal(() => grantState(fx.root))?.code,
+      "the arm's own reader answered where the store refused",
+    ).toBe(GRANT_STORE_CODES.MISSING_AFTER_USE);
+  } finally {
+    removeGitFixture(fx.dir, "ritualFixture(first-grant-lost)");
+  }
+});
+
 test("AN INTERRUPTION BETWEEN THE JOURNAL APPEND AND THE SNAPSHOT REPLACEMENT IS RECOVERABLE — the authority stays unambiguous, and the retry appends no duplicate", () => {
   // THE CARD'S NINTH CRITERION. The order is chosen rather than
   // inherited: the journal records revisions that have been SUPERSEDED,
@@ -12628,6 +12688,45 @@ test("A FIXTURE IS DECIDED BY ITS OWN AUTHORIZATION AND NEVER BY A REAL GRANT IN
     removeGitFixture(real.fx.dir, "ritualFixture(the-designated-one)");
     removeGitFixture(fixture.fx.dir, "ritualFixture(the-fixture)");
   }
+});
+
+test("THE ARM'S EXTENSION POINT NAMES A FUNCTION THIS FILE ACTUALLY EXPORTS", () => {
+  // THE CARD'S SEVENTEENTH CRITERION asks for an extension point a later
+  // card can take up. A comment that names one is a claim about this
+  // file, and PROSE IS A CODE INPUT here — the schema's own consumer
+  // table is kept by a body for exactly this reason, because a comment
+  // nobody checks drifts from the code it describes and then misleads
+  // the next reader with the authority of a source file.
+  //
+  // THE SENTENCE NAMED A FUNCTION THAT DID NOT EXIST. It said
+  // `updateOperationalStore` was written against a datum descriptor so a
+  // second operational datum could take up the same path by passing one.
+  // There is no such function, and the real one takes no descriptor, so
+  // a successor card reading that sentence would have gone looking for
+  // machinery that was never built.
+  //
+  // KILLED BY: a name that drifts from the function, and by a reader
+  // that finds nothing to check — which the two controls rule out.
+  const arm = readFileSync(path.join(repoRoot, "tools/e2e/scripts/dispatch-brief.mjs"), "utf8");
+  const lines = arm.split("\n");
+  const heading = lines.findIndex((l) => l.includes("THE EXTENSION POINT, AND WHAT A LATER CARD WOULD ADD"));
+  expect(heading, "the arm carries no extension-point section, so this body is measuring nothing").toBeGreaterThan(-1);
+  const sentence = lines[heading + 1] as string;
+  const named = /`([A-Za-z_$][A-Za-z0-9_$]*)`/.exec(sentence)?.[1] ?? "";
+  // THE FIRST CONTROL: the sentence must NAME something, or an empty
+  // match would satisfy every assertion below by having nothing to fail.
+  expect(named, `the extension-point sentence names no symbol at all: ${sentence}`).not.toBe("");
+  expect(
+    typeof (armModule as unknown as Record<string, unknown>)[named],
+    `the arm's extension-point sentence names a function this file does not export: \`${named}\``,
+  ).toBe("function");
+  // THE SECOND CONTROL: the check discriminates. A name the arm does not
+  // export must fail it, or "is exported" is a predicate that never
+  // returns false and the assertion above is free.
+  expect(
+    typeof (armModule as unknown as Record<string, unknown>)["updateOperationalStore"],
+    "the control: a symbol this arm does not export was read as exported",
+  ).not.toBe("function");
 });
 
 test("THE STORE REUSES THIS TREE'S VALIDATION AND TAKES ITS LOCKING WITHOUT CLOSING A CYCLE — and the blob sha it computes is git's own", () => {
