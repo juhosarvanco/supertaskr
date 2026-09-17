@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1239 behaviours** — 1237 extracted sentences + 2 named-not-extracted (listed at the end) — across 42 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1249 behaviours** — 1247 extracted sentences + 2 named-not-extracted (listed at the end) — across 42 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -51,9 +51,18 @@ Census: **1239 behaviours** — 1237 extracted sentences + 2 named-not-extracted
 - the ROW SET is read from the role file, and the coverage runs both ways
 - the row set FOLLOWS the document — it is not pinned here
 - a contract table this command cannot read THROWS, never yields an empty contract
+- A ROLE FILE THAT CARRIES NO TABLE IS NOT A CONTRACT OF ITS OWN — the row set comes from the one place it lives
+- the contract FILE is found in the tree, and two of them is a SECOND ROW SET that refuses
+- the SUBSTITUTED rows are the ones the contract itself names, and they follow that sentence
 - ROW 3 APPLIES the role file's reading step, and still shows what the adapter itself named
 - the subtraction and the addition FOLLOW the role file — no clause leaves the adapter's list unchanged
 - a `do NOT read` sentence that names no document subtracts nothing
+- ROW 11 quotes the SEAT'S OWN exit write, and the step it sits in is read rather than counted
+- ROW 2's confirmation instruction is WHOLE-FILE, and its absence is answered from the ROW
+- ROW 13's rules come from the CONTRACT, because they govern the WHOLE brief
+- THE VERIFIER'S BRIEF ASSEMBLES — exit 0, thirteen rows, and a pack derived from the card's fence
+- THE PACK'S VERIFIER HALF is exactly what methodNamed reads off verifier.md, both directions
+- THE FRAME IS SAID IN THE ARTIFACT — never silently the single-message fallback
 - THE LANE LIST FILTERS ON THE BRANCH, NEVER THE PATH
 - the branch filter is DERIVED from the spelling CONVENTIONS publishes
 - the lane spellings refuse a near-miss rather than answering with it
@@ -153,6 +162,7 @@ Census: **1239 behaviours** — 1237 extracted sentences + 2 named-not-extracted
 - A KEEPER RUN THAT PUBLISHED `verdict=REFUSED` GRADED NOTHING, and a dispatch does not call that a red baseline
 - THE PHASE 1 BRIEF IS RENDERED FROM THE CARD AT THE BASE AND CARRIES NOTHING FROM THE LANE
 - the bench takes the ground at the base, seals three inputs by sha256, and renders phase 2 from the seal
+- THE BENCH WRITES THE VERIFIER'S PACK AND PHASE 2 NAMES IT — produced, readable, and a function of the fence
 - the tier line is CREATED where a card has none, and no other field may be created by a stamp
 - THE BENCH ARM TAKES THE GROUND, SEALS THREE INPUTS AND RENDERS PHASE 2, against a real dispatch
 - the arm renders phase 1 from the card AS THE COMMIT CARRIES IT, never off the working tree

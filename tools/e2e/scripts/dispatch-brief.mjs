@@ -451,6 +451,130 @@ export function contractRows(md) {
 }
 
 /**
+ * Does this role file carry the contract table at all? The same locator
+ * `contractRows` parses with, asked as a QUESTION instead of as a parse —
+ * so a role file carrying none is discovered rather than thrown over.
+ *
+ * @param {string} md
+ * @returns {boolean}
+ */
+export function carriesContractTable(md) {
+  return md.split(/\r?\n/).some((line) => {
+    const cells = tableCells(line);
+    return (
+      cells !== undefined &&
+      cells.length === CONTRACT_COLUMNS.length &&
+      cells.every((c, k) => c === CONTRACT_COLUMNS[k])
+    );
+  });
+}
+
+/**
+ * The sentence in the contract that names which rows a NON-authoring
+ * role's brief substitutes. A locator, like `CONTRACT_COLUMNS` and
+ * `DISPATCHER_PHRASE`: the row NUMBERS are read out of that sentence at
+ * the caller's ref and never written down here, because a second copy of
+ * them is a second contract — the defect this module exists to stop.
+ */
+export const ROLE_SPECIFIC_PHRASE = "substituting the role-specific rows";
+
+/**
+ * The rows the contract itself calls role-specific — the ones read
+ * against the BRIEF'S OWN role file rather than against the file the
+ * table lives in.
+ *
+ * Throws on absence rather than returning an empty set: a substitution
+ * that quietly becomes empty assembles every role's brief as the
+ * authoring role's, with every row individually faithful to its source.
+ *
+ * @param {string} contractMd
+ * @returns {number[]}
+ */
+export function roleSpecificRows(contractMd) {
+  // FLATTENED BEFORE IT IS SEARCHED — the sentence wraps in the file as
+  // written, so a raw `indexOf` looks for a line break nobody chose and
+  // the substitution silently becomes empty. The same trap `deriveReport`
+  // records for the dispatcher phrase, met a second time here.
+  const flat = contractMd.replace(/\s+/g, " ");
+  const at = flat.indexOf(ROLE_SPECIFIC_PHRASE);
+  if (at < 0) {
+    throw new Error(
+      `dispatch-brief: the contract carries no ${JSON.stringify(ROLE_SPECIFIC_PHRASE)} sentence, ` +
+        "so which rows a verifier's or integrator's brief reads against ITS OWN role file cannot " +
+        "be derived. This module will not carry a second copy of that list.",
+    );
+  }
+  const paren = /\(([^)]*)\)/.exec(flat.slice(at));
+  const nums =
+    paren === null
+      ? []
+      : [...(/** @type {string} */ (paren[1])).matchAll(/\b(\d+)\b/g)].map((m) => Number(m[1]));
+  if (nums.length === 0) {
+    throw new Error(
+      `dispatch-brief: the contract's ${JSON.stringify(ROLE_SPECIFIC_PHRASE)} sentence names no ` +
+        "row numbers. An empty substitution set assembles every role's brief as the authoring " +
+        "role's, with every row individually faithful to its source.",
+    );
+  }
+  return [...new Set(nums)].sort((a, b) => a - b);
+}
+
+/**
+ * @typedef {object} ContractSource
+ * @property {string} rel  the role file the row set was READ from
+ * @property {string} md   that file's text
+ * @property {boolean} own true where the brief's OWN role file carries it
+ */
+
+/**
+ * WHERE THE ROW SET LIVES, DERIVED (T-205-s5).
+ *
+ * `method/roles/executor.md` is the only role file in this method that
+ * carries the contract table, and its own text says why: a verifier's or
+ * integrator's brief *follows the same thirteen-row contract*. Reading
+ * the table out of whichever role file the seat happened to hold
+ * therefore refused EVERY verifier brief at exit 3 — a refusal that was
+ * not a defect in any role file but in the assumption that each one
+ * carries a contract of its own.
+ *
+ * So the lookup is a FALLBACK CHAIN, and neither half is a role NAME: a
+ * role file that carries the table is its own contract, and one that
+ * carries none is answered by the one place the contract does live,
+ * found by scanning this method's role files for it. Two of them
+ * carrying one is a SECOND ROW SET and throws by name — the same failure
+ * `contractRows` already refuses inside a single file.
+ *
+ * @param {Ctx} ctx
+ * @returns {ContractSource}
+ */
+export function contractSource(ctx) {
+  const ownRel = `method/roles/${ctx.role}.md`;
+  if (carriesContractTable(ctx.roleMd)) return { rel: ownRel, md: ctx.roleMd, own: true };
+  /** @type {ContractSource[]} */
+  const found = [];
+  for (const rel of trackedFiles(ctx.root)) {
+    if (!rel.startsWith("method/roles/") || !rel.endsWith(".md") || rel === ownRel) continue;
+    const md = readDoc(rel, ctx.root);
+    if (carriesContractTable(md)) found.push({ rel, md, own: false });
+  }
+  if (found.length === 1) return /** @type {ContractSource} */ (found[0]);
+  if (found.length === 0) {
+    throw new Error(
+      `dispatch-brief: ${ownRel} carries no contract table and no other role file under ` +
+        "method/roles/ carries one either, so this brief has no row set to read. A role file " +
+        "with no table is NOT a contract of its own, and this module will not invent thirteen " +
+        "rows for it.",
+    );
+  }
+  throw new Error(
+    `dispatch-brief: ${found.length} role files carry a contract table (${found
+      .map((f) => f.rel)
+      .join(", ")}) and ${ownRel} carries none, so which contract this brief follows would be a ` +
+      "guess. Two tables are two row sets, which is the defect the row set is READ for.",
+  );
+}
+
+/**
  * One numbered step of a role file, collapsed. Throws if the step is
  * absent — every quotation in this module is a transcription, and a
  * transcription that silently becomes empty is a paraphrase.
@@ -473,6 +597,54 @@ export function numberedStep(md, n) {
     held.push(line);
   }
   return held.join(" ").replace(/\s+/g, " ").trim();
+}
+
+/**
+ * The bolded run a role file opens its exit-write instruction with. A
+ * LOCATOR, in the same class as `CONTRACT_COLUMNS` and
+ * `DISPATCHER_PHRASE`: which step it lands in is read at the caller's
+ * ref, and no step NUMBER for any role is written down in this module.
+ */
+export const EXIT_STAMP_MARKER = "**Stamp";
+
+/**
+ * THE ROLE FILE'S OWN EXIT WRITE — row 11's third source, derived
+ * (T-205-s5).
+ *
+ * Row 11 carries *"the status to stamp on exit"*, and the contract calls
+ * row 11 role-specific: it is read against the BRIEF'S OWN role file.
+ * This read was a CONSTANT — step 6 — which is the executor's stamp step
+ * and the verifier's *findings* step, so a verifier brief assembled with
+ * it would have quoted the wrong obligation under the right heading with
+ * nothing in the artifact to show the difference. The step is found
+ * instead by the marker the instruction itself opens with.
+ *
+ * Returns `undefined` where the role file marks no exit write: an
+ * absence is a fact this row PRINTS, never a reason to refuse a brief.
+ * More than one is ambiguous and refuses, for the reason every other
+ * locator in this module refuses two.
+ *
+ * @param {string} md
+ * @returns {{ label: string, text: string } | undefined}
+ */
+export function exitStampStep(md) {
+  /** @type {{ label: string, text: string }[]} */
+  const found = [];
+  for (const line of md.split(/\r?\n/)) {
+    const m = /^(\d+[a-z]?)\. /.exec(line);
+    if (m === null) continue;
+    const label = /** @type {string} */ (m[1]);
+    const text = numberedStep(md, label);
+    if (text.includes(EXIT_STAMP_MARKER)) found.push({ label, text });
+  }
+  if (found.length > 1) {
+    throw new Error(
+      `dispatch-brief: ${found.length} numbered steps open an instruction with ` +
+        `${JSON.stringify(EXIT_STAMP_MARKER)} (${found.map((f) => f.label).join(", ")}) — row 11 ` +
+        "quotes ONE exit write, and a locator matching twice names no step.",
+    );
+  }
+  return found[0];
 }
 
 /* ────────────────────────────────────────────────────────────────────
@@ -2003,8 +2175,8 @@ function roleModelRecs(ctx) {
   }
 }
 
-/** @param {Ctx} ctx @returns {Rec[]} */
-function deriveTask(ctx) {
+/** @param {Ctx} ctx @param {ContractRow} row @returns {Rec[]} */
+function deriveTask(ctx, row) {
   const card = ctx.card;
   if (card === undefined) {
     return [
@@ -2015,13 +2187,29 @@ function deriveTask(ctx) {
       ),
     ];
   }
-  const confirm = /Confirm your understanding[^.]*\./.exec(numberedStep(ctx.roleMd, 1));
-  if (confirm === null) {
-    throw new Error(
-      `dispatch-brief: method/roles/${ctx.role}.md step 1 no longer carries a "Confirm your ` +
-        'understanding" sentence — this row transcribes it rather than restating it.',
-    );
-  }
+  // THE INSTRUCTION IS SEARCHED WHOLE-FILE, AND ITS ABSENCE IS ANSWERED
+  // FROM THE ROW (T-205-s5). Bounded to step 1 this read one role file and
+  // refused every other: executor.md carries the sentence at step 1 and
+  // verifier.md carries none at all, because its first act on the card is
+  // the attack set. Row 2 is not one of the role-specific rows, so the
+  // instruction still stands for every seat — and where the seat's own
+  // file does not spell it, the row's own column does, which is a
+  // TRANSCRIPTION of the contract rather than a sentence this tool wrote.
+  // The same generalisation `readSubtractions` records one screen below,
+  // for the same reason: a scan bounded to a numbered step reads one role
+  // file and misses the other.
+  const confirm = /Confirm your understanding[^.]*\./.exec(ctx.roleMd.replace(/\s+/g, " "));
+  const instruction =
+    confirm === null
+      ? value(
+          `read it IN FULL — and this seat's role file spells no confirmation sentence of its ` +
+            `own, so the instruction is the row's: ${row.carries}`,
+          tree(ctx, `${contractSource(ctx).rel} contract row ${row.n}`),
+        )
+      : value(
+          `read it IN FULL, then: ${/** @type {string} */ (confirm[0])}`,
+          tree(ctx, `method/roles/${ctx.role}.md, its confirmation sentence`),
+        );
   return [
     value(`task: ${card.id}`, tree(ctx, `${card.file} frontmatter field id`)),
     value(`card: ${card.file}`, tree(ctx, "git ls-files, flat docs/tasks/T-*.md")),
@@ -2031,10 +2219,7 @@ function deriveTask(ctx) {
         `feature ${fieldScalar(card.fields, "feature")} / milestone ${fieldScalar(card.fields, "milestone")}`,
       tree(ctx, `${card.file} frontmatter`),
     ),
-    value(
-      `read it IN FULL, then: ${/** @type {string} */ (confirm[0])}`,
-      tree(ctx, `method/roles/${ctx.role}.md step 1`),
-    ),
+    instruction,
   ];
 }
 
@@ -2212,6 +2397,123 @@ function deriveReadFirst(ctx) {
   return recs;
 }
 
+/**
+ * The sentence a role file uses to say that its pass is a two-spawn
+ * construction rather than one message. A LOCATOR, and the role NAME is
+ * not in it: any role file that says this gets the frame below, and one
+ * that does not gets none — which is what keeps this from being a role
+ * check wearing a phrase's clothes.
+ */
+export const BENCH_PASS_PHRASE = "THE PASS IS TWO SPAWNS";
+
+/**
+ * THE CONSTRUCTION THIS SEAT ACTUALLY WORKS IN, where its role file says
+ * that construction is two spawns (T-205-s5, criterion 4).
+ *
+ * Row 4 is one of the rows the contract calls ROLE-SPECIFIC. An
+ * executor's is a task branch and a worktree; a verifier's is a DETACHED
+ * bench and a pair of spawns, and `roles/orchestrator.md` 5d owns the
+ * shape of that pair — the role file points there rather than carrying a
+ * second copy (T-057), so this transcribes the pointer AND the step it
+ * points at.
+ *
+ * **AND IT SAYS WHICH FRAME THE READER ACTUALLY HAS.** The role file
+ * requires the seat to report the frame it held rather than the one it
+ * was promised, and this command emits ONE artifact — so a verifier
+ * brief that did not say so would BE the single-message fallback while
+ * looking like the pair. That is the line the role file calls
+ * indistinguishable to a later reader, and it is printed rather than
+ * left to be noticed.
+ *
+ * @param {Ctx} ctx
+ * @param {{ path: string, via: string, reason: string }} repo the repository's own main worktree
+ * @returns {Rec[]}
+ */
+function derivePassFrame(ctx, repo) {
+  const flat = ctx.roleMd.replace(/\s+/g, " ");
+  const found = flat.indexOf(BENCH_PASS_PHRASE);
+  if (found < 0) return [];
+  // FROM THE BOLD OPENER WHERE THERE IS ONE, so the transcription does not
+  // start inside a `**` run and leave the closing pair dangling in the
+  // brief — the phrase is a LOCATOR and the sentence is what is quoted.
+  const at = flat.slice(0, found).endsWith("**") ? found - 2 : found;
+  const roleFile = `method/roles/${ctx.role}.md`;
+  // THE POINTER, TRANSCRIBED UP TO AND INCLUDING THE STEP IT NAMES —
+  // never a summary of it, and never further than the sentence that
+  // carries the address.
+  const pointer = /^(.*?roles\/([a-z][a-z-]*)\.md (\d+[a-z]?)[^.]*\.)/.exec(flat.slice(at));
+  if (pointer === null) {
+    ctx.findings.push(
+      `${roleFile} says ${JSON.stringify(BENCH_PASS_PHRASE)} and names no role file and step for ` +
+        "the shape of them, so the construction this seat works in cannot be transcribed from " +
+        "the file that owns it.",
+    );
+    return [];
+  }
+  const ownerRel = `method/roles/${/** @type {string} */ (pointer[2])}.md`;
+  const step = /** @type {string} */ (pointer[3]);
+  const benchPattern = dispatchSpellings(ctx.conventions).benchPattern;
+  const spelled = ctx.taskId === "" ? benchPattern : benchPattern.replace("T-NNN", ctx.taskId);
+  /** @type {Rec[]} */
+  const recs = [
+    value(`the pass this seat works in: ${/** @type {string} */ (pointer[1])}`, tree(ctx, `${roleFile}, its ${JSON.stringify(BENCH_PASS_PHRASE)} sentence`)),
+  ];
+  try {
+    const ownerMd = readDoc(ownerRel, ctx.root);
+    const construction = numberedStep(ownerMd, step);
+    // CITED RATHER THAN TRANSCRIBED WHERE IT IS LONG (T-225-s2's rule,
+    // spent here). The step that owns the bench is a screen of prose and
+    // a function of a DOCUMENT rather than of the card, so transcribing
+    // it grows this answer every time that step is corrected — and this
+    // arm already renders within two kilobytes of one pipe buffer.
+    recs.push(
+      Buffer.byteLength(construction, "utf8") <= PACK_TRANSCRIPTION_LIMIT
+        ? value(`and the construction it points at: ${construction}`, tree(ctx, `${ownerRel} step ${step}`))
+        : citedRule(ctx, {
+            label: "and the construction it points at",
+            source: `${ownerRel} step ${step}`,
+            file: ownerRel,
+            raw: ownerMd,
+            flat: construction,
+          }),
+    );
+  } catch (err) {
+    ctx.findings.push(
+      `${roleFile} points at ${ownerRel} step ${step} for the shape of the pass and that step ` +
+        `cannot be read (${err instanceof Error ? err.message : String(err)}), so the brief names ` +
+        "a construction nobody can open.",
+    );
+  }
+  recs.push(
+    repo.path === ""
+      ? value(
+          `bench worktree: NOT DERIVED — ${repo.reason} The published spelling is ${spelled}; ` +
+            "resolve it yourself against the repository root.",
+          live(ctx, repo.via),
+        )
+      : value(
+          `bench worktree (absolute, detached at the lane's tip): ${path.resolve(repo.path, spelled)}`,
+          live(
+            ctx,
+            `docs/CONVENTIONS.md lane bullet bench spelling ${JSON.stringify(spelled)}, ` +
+              `resolved against the repository's main worktree from ${repo.via}`,
+          ),
+        ),
+    // THE FRAME, SAID RATHER THAN IMPLIED. A `note` may carry no digit at
+    // all, and this sentence has to name the step that mandates the pair,
+    // so it is a value with the provenance that produced it: this run.
+    value(
+      `THE FRAME YOU ACTUALLY HAVE: this artifact is ONE message, so on its own it is the ` +
+        `single-message fallback and never the pair ${ownerRel} ${step} mandates. The pair is two ` +
+        `FILES rendered separately — the tool-less phase 1 at dispatch and phase 2 from the ` +
+        `sealed inputs at the bench. If nothing handed you those two, say so in your verdict ` +
+        `rather than reporting the frame you were promised.`,
+      live(ctx, "this command's own rendered answer — ONE artifact, where the pair is two files"),
+    ),
+  );
+  return recs;
+}
+
 /** @param {Ctx} ctx @returns {Rec[]} */
 function deriveLane(ctx) {
   const s = ctx.spellings;
@@ -2385,6 +2687,12 @@ function deriveLane(ctx) {
     value(`lane-protocol rule two: ${rule2}`, tree(ctx, "method/lane-protocol.md rule two")),
     value(`lane-protocol rule three: ${rule3}`, tree(ctx, "method/lane-protocol.md rule three")),
     value(`base rule: ${dispatchBullet}`, tree(ctx, "docs/CONVENTIONS.md dispatch bullet")),
+    // ROW 4 IS ROLE-SPECIFIC, AND A SEAT WHOSE ROLE FILE NAMES A BENCH
+    // WORKS IN ONE (T-205-s5). A verifier cuts no task branch: its
+    // construction is the detached bench and the two spawns, and a brief
+    // that printed only the lane's three spellings would have handed it
+    // the executor's worktree under the right heading.
+    ...derivePassFrame(ctx, repo),
     // THE LANE BULLET IS CITED RATHER THAN TRANSCRIBED (T-225-s2, taking
     // `T-215-s4`). It was 10,155 bytes of an 82,476-byte `--full` answer
     // at `09526da`, against a 65,536-byte line — and it is the document's
@@ -2867,8 +3175,18 @@ function deriveDeliverable(ctx) {
       `the ceremony table has no row for size ${size}, so this card's ceremony cannot be derived.`,
     );
   }
+  const exit = exitStampStep(ctx.roleMd);
   recs.push(
-    value(`status to stamp: ${numberedStep(ctx.roleMd, 6)}`, tree(ctx, `method/roles/${ctx.role}.md step 6`)),
+    exit === undefined
+      ? value(
+          `status to stamp: method/roles/${ctx.role}.md marks NO exit write of its own, so this ` +
+            "seat stamps nothing on the card and the two rules below are the whole of this row",
+          tree(ctx, `method/roles/${ctx.role}.md, searched for its exit-write instruction`),
+        )
+      : value(
+          `status to stamp: ${exit.text}`,
+          tree(ctx, `method/roles/${ctx.role}.md step ${exit.label}`),
+        ),
     value(
       `who merges and who removes the worktree: ${numberedStep(laneProtocolText(ctx.root), 6)}`,
       tree(ctx, "method/lane-protocol.md rule six"),
@@ -2939,18 +3257,26 @@ export function sectionBullet(sectionText, phrase) {
   return /** @type {string} */ (found[0]);
 }
 
-/** @param {Ctx} ctx @param {ContractRow} row @returns {Rec[]} */
+/**
+ * ROW 13, AND ITS RULES COME FROM THE CONTRACT RATHER THAN FROM THE SEAT'S
+ * OWN ROLE FILE (T-205-s5). The row's source column is *"this row"*, and
+ * the section it points at is headed *"Rules that govern the WHOLE
+ * brief"* — a rule about every brief lives once, beside the table it
+ * governs. Read against the seat's file instead, this row refused every
+ * verifier brief for a section a verifier's role file was never meant to
+ * carry.
+ *
+ * @param {Ctx} ctx @param {ContractRow} row @returns {Rec[]}
+ */
 function deriveCorrection(ctx, row) {
-  const rules = section(ctx.roleMd, "### Rules that govern the whole brief");
+  const contract = contractSource(ctx);
+  const rules = section(contract.md, "### Rules that govern the whole brief");
   const evidence = sectionBullet(rules, "A brief is evidence, never authority");
   const figures = sectionBullet(rules, "Every figure carries the ref it was measured at");
   return [
-    value(
-      `the clause, from the row itself: ${row.carries}`,
-      tree(ctx, `method/roles/${ctx.role}.md contract row ${row.n}`),
-    ),
-    value(`and the rule behind it: ${evidence}`, tree(ctx, `method/roles/${ctx.role}.md rules section`)),
-    value(`and the figure rule this tool obeys: ${figures}`, tree(ctx, `method/roles/${ctx.role}.md rules section`)),
+    value(`the clause, from the row itself: ${row.carries}`, tree(ctx, `${contract.rel} contract row ${row.n}`)),
+    value(`and the rule behind it: ${evidence}`, tree(ctx, `${contract.rel} rules section`)),
+    value(`and the figure rule this tool obeys: ${figures}`, tree(ctx, `${contract.rel} rules section`)),
   ];
 }
 
@@ -3460,26 +3786,52 @@ function hostName() {
  * @returns {{ recs: Rec[], findings: string[], rows: ContractRow[] }}
  */
 export function assembleBrief(ctx) {
-  const rows = contractRows(ctx.roleMd);
+  // THE ROW SET COMES FROM WHERE IT LIVES, WHICH IS NOT ALWAYS THIS
+  // SEAT'S OWN ROLE FILE (T-205-s5) — and the seat is TOLD which, because
+  // a brief whose contract came from another file and does not say so is
+  // a brief nobody can re-derive.
+  const contract = contractSource(ctx);
+  const rows = contractRows(contract.md);
+  const substituted = contract.own ? [] : roleSpecificRows(contract.md);
+  const ownRel = `method/roles/${ctx.role}.md`;
   /** @type {Rec[]} */
   const recs = [
     note("THE DISPATCH BRIEF, DERIVED — every row from the source its own row names"),
     value(`repository: ${ctx.root}`, tree(ctx, "the checkout this command ran in")),
     value(`HEAD in full: ${ctx.ref}`, tree(ctx, "git rev-parse HEAD")),
-    value(`contract: method/roles/${ctx.role}.md, its normative table`, tree(ctx, "the row set is READ, never transcribed")),
-    blank(),
+    value(`contract: ${contract.rel}, its normative table`, tree(ctx, "the row set is READ, never transcribed")),
   ];
-  for (const row of rows) {
-    recs.push(value(`ROW ${row.n} — ${row.label}`, tree(ctx, `method/roles/${ctx.role}.md contract row ${row.n}`)));
+  if (!contract.own) {
     recs.push(
-      value(`  assembled from: ${row.source}`, tree(ctx, `method/roles/${ctx.role}.md row ${row.n}, column three`)),
+      value(
+        `this seat's role file carries no table of its own, so the row set is the contract's and ` +
+          `row(s) ${substituted.join(", ")} — the ones ${contract.rel} itself calls ` +
+          `role-specific — are read against ${ownRel}`,
+        tree(ctx, `${contract.rel}, its ${JSON.stringify(ROLE_SPECIFIC_PHRASE)} sentence`),
+      ),
     );
+  }
+  recs.push(blank());
+  for (const row of rows) {
+    recs.push(value(`ROW ${row.n} — ${row.label}`, tree(ctx, `${contract.rel} contract row ${row.n}`)));
+    recs.push(
+      value(`  assembled from: ${row.source}`, tree(ctx, `${contract.rel} row ${row.n}, column three`)),
+    );
+    if (substituted.includes(row.n)) {
+      recs.push(
+        value(
+          `  role-specific: this row is read against ${ownRel}, and every "this role file" in the ` +
+            "source above means that file",
+          tree(ctx, `${contract.rel}, its ${JSON.stringify(ROLE_SPECIFIC_PHRASE)} sentence`),
+        ),
+      );
+    }
     const deriver = DERIVERS.get(row.key);
     if (deriver === undefined) {
       recs.push(
         value(
           `  NOT DERIVED — assemble this row by hand from the source above`,
-          tree(ctx, `method/roles/${ctx.role}.md row ${row.n}`),
+          tree(ctx, `${contract.rel} row ${row.n}`),
         ),
       );
       ctx.findings.push(
@@ -5551,6 +5903,8 @@ export function sealDocument(input) {
  * @property {string} attackSetFile
  * @property {string} groundFile
  * @property {string} stampsFile
+ * @property {string} packFile the verifier seat's context pack, beside the seal
+ * @property {string} packRef  the commit that pack was derived at
  * @property {string} suites   the command this pass owes
  */
 
@@ -5585,6 +5939,18 @@ export function renderPhase2(input) {
     "",
     "Cite those digests in your verdict. A verdict whose cited hash does not match the saved file",
     "is refused and the pass is re-run.",
+    "",
+    "## Your context pack — beside the seal, and not under it",
+    "",
+    `- the pack for this card's fence, derived at ${input.packRef}: ${input.packFile}`,
+    "",
+    "It is derived from this card's fence by the same reader map an executor's pack uses, and it",
+    "stands where reading docs/CONVENTIONS.md end to end used to stand — the whole document is the",
+    "architect's read, never this seat's. It is NOT hashed and it is not meant to be: the seal",
+    "covers what phase 1 pre-committed to, and a reading aid that any checkout can regenerate is",
+    "not a pre-commitment. **A brief carrying no pack at all is a dispatch fault your role file",
+    "names** — this one carries it, so a refusal the pack did not warn you about is a PACK GAP your",
+    "verdict names rather than a licence to open the whole document.",
     "",
     "## The mode",
     "",
@@ -5623,6 +5989,9 @@ export function renderPhase2(input) {
  * @property {string} stampsFile
  * @property {string} phase2File
  * @property {string} attackSetFile
+ * @property {string} packFile  where the VERIFIER seat's context pack is written
+ * @property {string} packText  that pack, rendered — read here, written by `runBench`
+ * @property {string} packRef   the commit the pack was derived at
  * @property {string[]} preflightArgv
  * @property {string} suites
  */
@@ -5663,6 +6032,23 @@ export function benchPlan(ctx, opts) {
     );
   }
   const runner = blessedRunner(ctx.conventions);
+  // THE VERIFIER'S OWN PACK, DERIVED HERE AND WRITTEN BY `runBench`
+  // (T-205-s5, absorbing T-296-s10). The bench hands the seat ground
+  // rules and paths; the CONTEXT PACK that carries the rules a fence
+  // implicates was the dispatch brief's, rendered for the EXECUTOR role
+  // and unreachable for this one — so every phase-2 verifier since the
+  // tiers read the conventions by the index fallback and said so in its
+  // verdict. It is derived for the VERIFIER seat whatever role the arm
+  // itself was invoked as, and for the card this bench is sealing rather
+  // than for whatever `--task` the caller also passed.
+  const packCtx = {
+    ...ctx,
+    role: "verifier",
+    roleMd: roleText("verifier", ctx.root),
+    taskId,
+    card,
+    findings: [],
+  };
   return {
     root: ctx.root,
     taskId,
@@ -5675,6 +6061,9 @@ export function benchPlan(ctx, opts) {
     stampsFile: path.resolve(scratch, laneScratchName("stamps", "txt", taskId, sp)),
     phase2File: path.resolve(scratch, laneScratchName("phase2", "txt", taskId, sp)),
     attackSetFile: path.resolve(scratch, laneScratchName("attack-set", "md", taskId, sp)),
+    packFile: path.resolve(scratch, laneScratchName("pack", "md", taskId, sp)),
+    packText: render(packRecs(packCtx)),
+    packRef: ctx.ref,
     preflightArgv: [process.execPath, BRIEF_CLI, "--task", taskId, "--preflight", "--root", ctx.root],
     suites:
       tier === "guarded"
@@ -5851,6 +6240,29 @@ export function runBench(plan, io) {
     detail: `${String(inputs.length)} input(s) sealed by sha256`,
   });
 
+  // ── THE PACK ──────────────────────────────────────────────────────
+  // AFTER THE SEAL AND BEFORE THE BRIEF, because the brief NAMES it: a
+  // phase 2 brief written first would name a path nothing had produced,
+  // which is the same order rule the ground and the seal already obey.
+  try {
+    io.write(plan.packFile, plan.packText);
+  } catch (err) {
+    findings.push(
+      `the verifier's context pack could not be written to ${plan.packFile} — ` +
+        `${err instanceof Error ? err.message : String(err)}. A phase 2 brief that named it ` +
+        "anyway would send the seat to a file nobody wrote, which is worse than the dispatch " +
+        "fault of carrying no pack at all.",
+    );
+    return { code: EXIT.CANNOT_RUN, done, findings, notes, base, tip };
+  }
+  done.push({
+    n: 3,
+    id: "pack",
+    ran: `write ${plan.packFile}`,
+    exit: EXIT.CLEAN,
+    detail: `${plan.packFile} — the verifier seat's pack for this fence, derived at ${plan.packRef}`,
+  });
+
   // ── THE BRIEF ─────────────────────────────────────────────────────
   const phase2 = renderPhase2({
     taskId: plan.taskId,
@@ -5863,6 +6275,8 @@ export function runBench(plan, io) {
     attackSetFile: plan.attackSetFile,
     groundFile: plan.groundFile,
     stampsFile: plan.stampsFile,
+    packFile: plan.packFile,
+    packRef: plan.packRef,
     suites: plan.suites,
   });
   try {
@@ -5876,7 +6290,7 @@ export function runBench(plan, io) {
   }
   notes.push(`${PHASE2_SPAWN_NOTE} ${plan.phase2File}`);
   done.push({
-    n: 3,
+    n: 4,
     id: "brief",
     ran: `write ${plan.phase2File}`,
     exit: EXIT.CLEAN,
@@ -5907,6 +6321,11 @@ export function benchRecs(ctx, plan, result) {
     value(`attack set: ${plan.attackSetFile}`, machine),
     value(`ground: ${plan.groundFile}`, machine),
     value(`stamps: ${plan.stampsFile}`, machine),
+    value(`context pack (beside the seal, and not under it): ${plan.packFile}`, machine),
+    value(
+      `the pack was derived at: ${plan.packRef}`,
+      treeProv(plan.packRef, "the verifier seat's own pack for this card's fence"),
+    ),
     value(`phase 2 brief: ${plan.phase2File}`, machine),
     value(`the suites this pass owes: ${plan.suites}`, treeProv(ctx.ref, "the tier, against docs/CONVENTIONS.md's blessed gate-runner bullet")),
   ];

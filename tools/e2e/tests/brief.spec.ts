@@ -132,11 +132,19 @@ import {
   ceremonyRows,
   classKin,
   classStem,
+  carriesContractTable,
   citedConventionBullets,
   citedOpening,
   components,
   context,
   contractRows,
+  contractSource,
+  exitStampStep,
+  roleSpecificRows,
+  ROLE_SPECIFIC_PHRASE,
+  BENCH_PASS_PHRASE,
+  benchPlan,
+  runBench,
   conventionHeadings,
   createLaneArgv,
   dispatchLanePlan,
@@ -376,6 +384,154 @@ test("a contract table this command cannot read THROWS, never yields an empty co
   const renumbered = md.replace(`| ${second?.n} | **${second?.label}**`, `| 9 | **${second?.label}**`);
   expect(renumbered).not.toBe(md);
   expect(() => contractRows(renumbered)).toThrow(/numbered consecutively/);
+});
+
+/**
+ * T-205-s5 — THE ROW SET COMES FROM THE ONE PLACE IT LIVES, AND A ROLE
+ * FILE CARRYING NO TABLE IS NOT A CONTRACT OF ITS OWN.
+ *
+ * `--role verifier` exited 3 on every card this method ever dispatched:
+ * the reader took the table out of whichever role file the seat held, and
+ * `executor.md` is the only one that carries it — which its own text says
+ * in as many words. So every verifier brief on this project was written
+ * by hand, against a contract nothing derived, which is precisely the
+ * condition the table exists to close.
+ *
+ * ── HOW THESE BODIES SPLIT ───────────────────────────────────────────
+ * The first is the lookup and its two refusals; the second is the
+ * anti-constant control, driven against a TREE where the table lives in
+ * another role file entirely; the third is the substitution set, read out
+ * of the contract's own sentence and followed when that sentence moves.
+ */
+
+test("A ROLE FILE THAT CARRIES NO TABLE IS NOT A CONTRACT OF ITS OWN — the row set comes from the one place it lives", () => {
+  // KILLED BY: reading the table out of the seat's own role file (which is
+  // the defect), by naming `executor.md` in the module, or by answering a
+  // role file that carries none with an empty contract instead of the
+  // shared one.
+  const executorMd = roleText("executor");
+  const verifierMd = roleText("verifier");
+  // THE TWO SIDES OF THE DISCRIMINATION, MEASURED RATHER THAN ASSUMED.
+  // "verifier.md carries no table" is the whole premise, and a reader that
+  // answered false for every file would satisfy it.
+  expect(carriesContractTable(executorMd), "the contract file carries no table, so nothing below has a subject").toBe(true);
+  expect(carriesContractTable(verifierMd), "verifier.md carries a table now, and these bodies are about the case where it does not").toBe(false);
+
+  const asVerifier = context({ taskId: "T-205-s5", role: "verifier" });
+  const source = contractSource(asVerifier);
+  expect(source.own, "a role file with no table was read as its own contract").toBe(false);
+  expect(source.rel, "the row set did not come from the file that carries it").toBe("method/roles/executor.md");
+  expect(
+    contractRows(source.md).map((r) => r.key),
+    "the borrowed row set is not the contract's own row set",
+  ).toEqual(contractRows(executorMd).map((r) => r.key));
+
+  // AND THE AUTHORING ROLE STILL READS ITS OWN, which is the arm that was
+  // already working and must not have moved.
+  const asExecutor = contractSource(context({ taskId: "T-205-s5", role: "executor" }));
+  expect(asExecutor.own, "the file that carries the table stopped being its own contract").toBe(true);
+  expect(asExecutor.rel).toBe("method/roles/executor.md");
+});
+
+test("the contract FILE is found in the tree, and two of them is a SECOND ROW SET that refuses", () => {
+  // KILLED BY: a constant `method/roles/executor.md` anywhere in the
+  // module. This body builds a tree where the table lives in a role file
+  // with a different NAME, and asks for a seat whose own file has none —
+  // a hardcoded contract path answers `executor.md` and reds here.
+  const live = context({ taskId: "T-205-s5", role: "verifier" });
+  const dir = realpathSync(mkdtempSync(path.join(os.tmpdir(), "t205s5-contract-")));
+  try {
+    const root = path.join(dir, "method-only");
+    mkdirSync(path.join(root, "method", "roles"), { recursive: true });
+    const g = (...args: string[]) =>
+      execFileSync("git", ["-C", root, ...NO_BACKGROUND_MAINTENANCE, ...args], { encoding: "utf8" });
+    execFileSync("git", [...NO_BACKGROUND_MAINTENANCE, "init", "-b", "main", "--quiet", root], {
+      encoding: "utf8",
+    });
+    g("config", "user.email", "fixture@example.invalid");
+    g("config", "user.name", "fixture");
+    // THE TABLE, MOVED — not retyped: the fixture carries the document's
+    // own table so the locator is measured against the real shape.
+    const table = roleText("executor")
+      .split("\n")
+      .filter((l) => l.trim().startsWith("|"))
+      .join("\n");
+    const noTable = "# Role: executor\n\nYou build exactly one task, then you end.\n";
+    writeFileSync(path.join(root, "method", "roles", "executor.md"), noTable);
+    writeFileSync(
+      path.join(root, "method", "roles", "planner.md"),
+      `# Role: planner\n\nA role file that happens to carry the contract.\n\n${table}\n`,
+    );
+    g("add", "-A");
+    g("commit", "--quiet", "-m", "Checkpoint: the table lives somewhere else");
+
+    const moved = contractSource({ ...live, root, role: "executor", roleMd: noTable, findings: [] });
+    expect(
+      moved.rel,
+      "the contract file is a constant in the module rather than a read of the tree — this fixture " +
+        "keeps the table under another role file's name and the lookup answered the old one",
+    ).toBe("method/roles/planner.md");
+    expect(moved.own, "a file that carries no table was reported as carrying its own").toBe(false);
+
+    // TWO TABLES ARE TWO ROW SETS. One side only: a second role file gains
+    // one, and the seat's own file still has none.
+    writeFileSync(
+      path.join(root, "method", "roles", "integrator.md"),
+      `# Role: integrator\n\nA second table.\n\n${table}\n`,
+    );
+    g("add", "-A");
+    g("commit", "--quiet", "-m", "a second row set");
+    expect(() =>
+      contractSource({ ...live, root, role: "executor", roleMd: noTable, findings: [] }),
+    ).toThrow(/two row sets/i);
+
+    // AND NONE AT ALL REFUSES BY NAME rather than inventing thirteen rows.
+    rmSync(path.join(root, "method", "roles", "planner.md"));
+    rmSync(path.join(root, "method", "roles", "integrator.md"));
+    g("add", "-A");
+    g("commit", "--quiet", "-m", "no contract anywhere");
+    expect(() =>
+      contractSource({ ...live, root, role: "executor", roleMd: noTable, findings: [] }),
+    ).toThrow(/NOT a contract of its own/);
+  } finally {
+    removeGitFixture(dir, "contractSourceFixture");
+  }
+});
+
+test("the SUBSTITUTED rows are the ones the contract itself names, and they follow that sentence", () => {
+  // KILLED BY: a list `[4, 11, 12]` written into the module, or by a
+  // substitution that quietly becomes empty — which assembles every role's
+  // brief as the executor's with every row faithful to its source.
+  const md = roleText("executor");
+  const rows = roleSpecificRows(md);
+  expect(rows.length, "the substitution set came back empty").toBeGreaterThan(0);
+  expect(md.replace(/\s+/g, " "), "the contract no longer carries the sentence this reads").toContain(
+    ROLE_SPECIFIC_PHRASE,
+  );
+
+  // ONE SIDE ONLY — the DOCUMENT moves, in memory, and the answer follows.
+  const flat = md.replace(/\s+/g, " ");
+  const at = flat.indexOf(ROLE_SPECIFIC_PHRASE);
+  const paren = /\(([^)]*)\)/.exec(flat.slice(at)) as RegExpExecArray;
+  // The sentence WRAPS in the file as written, so the edit is made on the
+  // flattened text — which is the same text the reader itself searches,
+  // and the wrap is the trap this reader was built around.
+  const dropped = flat.replace(paren[0], "(4 the lane, 12 the report it makes)");
+  expect(dropped, "the parenthetical this body rewrites is not in the text as read").not.toBe(flat);
+  expect(
+    roleSpecificRows(dropped),
+    "the substitution set is pinned in the module rather than read off the contract",
+  ).toEqual([4, 12]);
+
+  // AND AN ABSENT SENTENCE REFUSES. A role-specific set that came back
+  // empty would be invisible: every row would render, each against the
+  // wrong file, and each one individually faithful to its source.
+  expect(() => roleSpecificRows(flat.split(ROLE_SPECIFIC_PHRASE).join("substituting the rows"))).toThrow(
+    /carries no .* sentence/,
+  );
+  expect(() => roleSpecificRows(flat.replace(paren[0], "(the lane, the ceremony, the report)"))).toThrow(
+    /names no row numbers/,
+  );
 });
 
 /**
@@ -629,6 +785,278 @@ test("a `do NOT read` sentence that names no document subtracts nothing", () => 
     "no `do NOT read` sentence here names a non-document, so this body proves nothing",
   ).toBe(true);
   expect(readAdditions(verifier), "verifier.md states no addition and one was invented").toEqual([]);
+});
+
+/**
+ * T-205-s5 — THE THREE ROWS THE CONTRACT CALLS ROLE-SPECIFIC, AND ROW 2,
+ * WHOSE ROLE-FILE HALF WAS BOUND TO A STEP NUMBER.
+ *
+ * Every one of these read the seat's own role file through a CONSTANT —
+ * step 1 for the confirmation sentence, step 6 for the exit stamp, a
+ * heading for the rules that govern every brief. Against `executor.md`
+ * each constant is correct, and that is the whole trouble: two of them
+ * throw against `verifier.md` and the third quietly quotes the wrong
+ * obligation under the right heading.
+ */
+
+test("ROW 11 quotes the SEAT'S OWN exit write, and the step it sits in is read rather than counted", () => {
+  // KILLED BY: `numberedStep(roleMd, 6)` — which is the executor's stamp
+  // step and the verifier's FINDINGS step, so a verifier brief assembled
+  // with it renders a plausible line that is about something else.
+  const executorMd = roleText("executor");
+  const verifierMd = roleText("verifier");
+  const forExecutor = exitStampStep(executorMd);
+  const forVerifier = exitStampStep(verifierMd);
+  expect(forExecutor, "executor.md marks no exit write, so this reader has no subject").toBeDefined();
+  expect(forVerifier, "verifier.md marks no exit write, so row 11 has nothing of its own to quote").toBeDefined();
+  expect(
+    forExecutor?.label === forVerifier?.label,
+    "the two role files mark their exit write at the SAME step label, so this body cannot tell a " +
+      "read from a constant — pick a different discriminator before trusting it",
+  ).toBe(false);
+  expect(forExecutor?.text, "the executor's exit write is not the status stamp").toContain("status: verifying");
+  expect(forVerifier?.text, "the verifier's exit write is not its verdict entry").toContain("Verdict, appended to the task file");
+  expect(
+    forVerifier?.text,
+    "the verifier's row 11 quotes the executor's stamp — the constant this card removed, wearing " +
+      "a derivation's clothes",
+  ).not.toContain("status: verifying");
+
+  // ONE SIDE ONLY — the DOCUMENT moves and the answer follows. The marker
+  // is CARRIED to another step, and the label has to move with it; a
+  // reader that counted to a number is green before this line and red on
+  // it.
+  const marker = `${EXIT_STAMP_MARKER_PROBE} nothing at all.**`;
+  const sentence = String(verifierMd.split("\n").find((l) => l.includes(EXIT_STAMP_MARKER_PROBE)));
+  const elsewhere = verifierMd
+    .replace(sentence, "   The sentence that marked the exit write, removed.")
+    .replace(/^3\. /m, `3. ${marker} `);
+  expect(elsewhere, "the fixture did not land").not.toBe(verifierMd);
+  expect(
+    exitStampStep(elsewhere)?.label,
+    "the exit step is a number this module counts to rather than a marker it finds",
+  ).toBe("3");
+
+  // AND TWO MARKED STEPS REFUSE. A locator matching twice names no step,
+  // and quietly taking the first would be a constant again.
+  const twice = verifierMd.replace(/^3\. /m, `3. ${marker} `);
+  expect(twice, "the second fixture did not land").not.toBe(verifierMd);
+  expect(() => exitStampStep(twice), "an ambiguous locator did not refuse").toThrow(
+    /a locator matching twice names no step/,
+  );
+
+  // AND A ROLE FILE THAT MARKS NONE IS AN ABSENCE THIS ROW PRINTS, never
+  // a refused brief: the defect this card exists for was a row that threw.
+  expect(exitStampStep(roleText("planner")), "a role file with no exit write did not answer undefined").toBeUndefined();
+  const rendered = render(assembleBrief(context({ taskId: "T-205-s5", role: "verifier" })).recs);
+  expect(rendered, "row 11 did not quote the verifier's own exit write").toContain("status to stamp: 5. Verdict");
+  expect(rendered, "and it quoted the executor's").not.toContain("status to stamp: 6. Commit with the task id");
+});
+
+/** The exit-write marker, retyped here ON PURPOSE so a body drives the module's own constant. */
+const EXIT_STAMP_MARKER_PROBE = "**Stamp";
+
+test("ROW 2's confirmation instruction is WHOLE-FILE, and its absence is answered from the ROW", () => {
+  // KILLED BY: a scan bounded to step 1 (which throws on verifier.md and
+  // refuses the whole brief), or by this tool writing the instruction
+  // itself — a brief is a transcription, so an absent sentence is answered
+  // by quoting the contract row, never by composing one.
+  const executorBrief = render(assembleBrief(context({ taskId: "T-205-s5", role: "executor" })).recs);
+  expect(
+    executorBrief,
+    "the role file that DOES spell the sentence stopped being quoted, so nothing below discriminates",
+  ).toContain("read it IN FULL, then: Confirm your understanding");
+
+  const verifierBrief = render(assembleBrief(context({ taskId: "T-205-s5", role: "verifier" })).recs);
+  expect(
+    roleText("verifier"),
+    "verifier.md now spells a confirmation sentence, and this body's subject is the case where it " +
+      "does not",
+  ).not.toContain("Confirm your understanding");
+  expect(verifierBrief, "row 2 dropped the instruction entirely for a role file that does not spell it").toContain(
+    "read it IN FULL — and this seat's role file spells no confirmation sentence of its own",
+  );
+  const row = contractRows(roleText("executor")).find((r) => r.n === 2);
+  expect(row, "the contract has no row 2").toBeDefined();
+  expect(
+    verifierBrief,
+    "the fallback is a sentence this tool wrote rather than the contract row it transcribes",
+  ).toContain(String(row?.carries));
+
+  // AND THE SEARCH IS WHOLE-FILE, not step one. One side only: the
+  // executor's own sentence is CARRIED to another step, and it must still
+  // be the quoted instruction — the same generalisation `readSubtractions`
+  // records, whose subtraction lives at step 1 in one role file and step 0
+  // in the other.
+  const executorCtx = context({ taskId: "T-205-s5", role: "executor" });
+  const confirmLine = String(
+    executorCtx.roleMd.split("\n").find((l) => l.includes("Confirm your understanding")),
+  );
+  const carried = executorCtx.roleMd
+    .replace(confirmLine, "   The sentence that stood here, carried elsewhere.")
+    .replace(/^4\. /m, `4. ${confirmLine.trim()} `);
+  expect(carried, "the fixture did not land").not.toBe(executorCtx.roleMd);
+  expect(
+    render(assembleBrief({ ...executorCtx, roleMd: carried, findings: [] }).recs),
+    "the instruction is searched inside a STEP NUMBER rather than in the role file, so a sentence " +
+      "the file still carries reads as absent",
+  ).toContain("read it IN FULL, then: Confirm your understanding");
+});
+
+test("ROW 13's rules come from the CONTRACT, because they govern the WHOLE brief", () => {
+  // KILLED BY: reading `### Rules that govern the whole brief` out of the
+  // seat's own role file — which throws for every role but one, and is the
+  // second of the three refusals that made `--role verifier` exit 3.
+  const verifierMd = roleText("verifier");
+  expect(
+    verifierMd,
+    "verifier.md now carries the rules section, so this body cannot tell a contract read from a " +
+      "role-file read",
+  ).not.toContain("### Rules that govern the whole brief");
+  const rendered = render(assembleBrief(context({ taskId: "T-205-s5", role: "verifier" })).recs);
+  expect(rendered, "row 13 lost the rule it exists to carry").toContain("A brief is evidence, never authority");
+  expect(rendered, "and the figure rule the whole tool obeys").toContain(
+    "Every figure carries the ref it was measured at",
+  );
+  expect(rendered, "and the provenance names a file that does not carry the section").toContain(
+    "method/roles/executor.md rules section",
+  );
+  // AND NOT ONE LINE OF IT IS ATTRIBUTED TO THE SEAT'S OWN FILE. Row 13
+  // emits TWO rule lines, so a `toContain` over the render is satisfied by
+  // either — and a mutant that mis-attributes only the first survived
+  // exactly that way when this body was drilled.
+  expect(
+    rendered.split("\n").filter((l) => l.includes("method/roles/verifier.md rules section")),
+    "a rule that governs the WHOLE brief is attributed to a role file that does not carry the " +
+      "section it was read from",
+  ).toEqual([]);
+  expect(
+    rendered.split("\n").filter((l) => l.includes("method/roles/executor.md rules section")).length,
+    "row 13 no longer emits both rule lines, so the check above has lost its subject",
+  ).toBe(2);
+});
+
+test("THE VERIFIER'S BRIEF ASSEMBLES — exit 0, thirteen rows, and a pack derived from the card's fence", () => {
+  // THE CARD'S FIRST CRITERION, END TO END AND THROUGH THE REAL COMMAND.
+  // KILLED BY: any of the four refusals this card removed, since each one
+  // reaches the CLI as exit 3 with nothing written.
+  const run = spawnSync(process.execPath, [CLI, "--task", "T-205-s5", "--role", "verifier"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  expect(
+    run.status,
+    `brief.mjs --role verifier exited ${String(run.status)}: ${run.stderr.split("\n").slice(0, 3).join(" ")}`,
+  ).toBe(0);
+  const out = run.stdout;
+  // POSITIVE CONTROL FOR THE EXIT: the executor arm, which was already
+  // working, must still be 0 — otherwise "0" here says nothing about the
+  // role and everything about the day.
+  const control = spawnSync(process.execPath, [CLI, "--task", "T-205-s5", "--role", "executor"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  expect(control.status, "the executor arm reds too, so the verifier's exit is not about the role").toBe(0);
+
+  for (const row of contractRows(roleText("executor"))) {
+    expect(out, `the verifier brief carries no ROW ${row.n}`).toContain(`ROW ${row.n} — ${row.label}`);
+  }
+  expect(out, "the brief does not say which file its row set came from").toContain(
+    "contract: method/roles/executor.md, its normative table",
+  );
+  expect(out, "and it does not say which rows were read against this seat's own file").toContain(
+    "are read against method/roles/verifier.md",
+  );
+  expect(out, "the verifier's render carries no context pack").toContain("THE CONTEXT PACK");
+  expect(out, "the pack is not derived from the card's fence").toContain("pack: docs/CONVENTIONS.md is");
+  expect(unstampedLines(out), "the verifier brief emitted a figure with no ref").toEqual([]);
+});
+
+test("THE PACK'S VERIFIER HALF is exactly what methodNamed reads off verifier.md, both directions", () => {
+  // T-254-s4's mutant, as a body. The producer filter
+  //   .filter((m) => m.rel !== "method/roles/executor.md")
+  // is a NO-OP for an executor seat — executor.md is self-excluded from
+  // its own pack — and silently drops the one method file a verifier most
+  // needs. All five of T-254's bodies passed against it, because every one
+  // of them built its context with the default role.
+  const ctx = context({ taskId: "T-205-s5", role: "verifier" });
+  const named = methodNamed(roleText("verifier"), "method/roles/verifier.md");
+  const rendered = render(packRecs(ctx));
+  const lines = rendered
+    .split("\n")
+    .filter((l) => l.startsWith("pack method file: "))
+    .map((l) => String(l.split("pack method file: ")[1]).split(" (")[0]);
+  // BOTH DIRECTIONS, the shape the executor arm already has: a subset
+  // check passes for a pack that drops a file, and a superset check passes
+  // for one that invents one.
+  expect(lines, "the verifier's pack is not the set its own role file names").toEqual(named.map((m) => m.rel));
+  expect(lines.length, "one direction only — a dropped file would survive").toBe(named.length);
+
+  // AND THE MUTANT'S OWN TARGET, NAMED. This is the line that separates a
+  // verifier's pack from an executor's, so a filter correct for one role
+  // and wrong for the other reds HERE rather than incidentally.
+  expect(
+    lines,
+    "roles/executor.md is not in the verifier's pack — which is the file a verifier most needs, " +
+      "and the exact line T-254's surviving mutant removed",
+  ).toContain("method/roles/executor.md");
+  const executorPack = render(packRecs(context({ taskId: "T-205-s5", role: "executor" })))
+    .split("\n")
+    .filter((l) => l.startsWith("pack method file: "))
+    .map((l) => String(l.split("pack method file: ")[1]).split(" (")[0]);
+  expect(
+    executorPack,
+    "an executor's pack names its own role file, so the two roles do not differ and this body " +
+      "cannot tell them apart",
+  ).not.toContain("method/roles/executor.md");
+  expect(
+    lines,
+    "the two roles' packs are identical, so nothing here exercises the per-role half",
+  ).not.toEqual(executorPack);
+});
+
+test("THE FRAME IS SAID IN THE ARTIFACT — never silently the single-message fallback", () => {
+  // THE CARD'S FOURTH CRITERION. The role file requires the seat to report
+  // the frame it HAD rather than the one it was promised, and this command
+  // emits ONE message — so a verifier brief that did not say so would BE
+  // the fallback while looking like the pair.
+  const verifierBrief = render(assembleBrief(context({ taskId: "T-205-s5", role: "verifier" })).recs);
+  expect(verifierBrief, "the brief does not say which frame the reader has").toContain(
+    "THE FRAME YOU ACTUALLY HAVE",
+  );
+  expect(verifierBrief, "and it does not name the step that mandates the pair").toContain(
+    "method/roles/orchestrator.md 5d",
+  );
+  expect(verifierBrief, "row 4 hands the verifier no bench to work in").toContain("bench worktree");
+  expect(verifierBrief, "and it does not transcribe the construction's owner").toContain(
+    "and the construction it points at",
+  );
+
+  // IT IS DERIVED FROM THE ROLE FILE'S SENTENCE, NOT FROM THE ROLE NAME.
+  // One side only: the executor's text gains the sentence and the frame
+  // appears under a role that has no bench at all. A `role === "verifier"`
+  // branch is green on the arm above and reds here.
+  const executorCtx = context({ taskId: "T-205-s5", role: "executor" });
+  const plain = render(assembleBrief({ ...executorCtx, findings: [] }).recs);
+  expect(plain, "the executor's brief carries the frame, so the arm below proves nothing").not.toContain(
+    "THE FRAME YOU ACTUALLY HAVE",
+  );
+  expect(roleText("verifier").replace(/\s+/g, " "), "verifier.md no longer carries the locator").toContain(
+    BENCH_PASS_PHRASE,
+  );
+  const planted = executorCtx.roleMd.replace(
+    /^1\. /m,
+    `1. **${BENCH_PASS_PHRASE}, AND THE SHAPE OF THEM IS NOT DESCRIBED HERE.** roles/orchestrator.md 5d states it once, and this file points there. `,
+  );
+  expect(planted, "the fixture did not land").not.toBe(executorCtx.roleMd);
+  const withFrame = render(assembleBrief({ ...executorCtx, roleMd: planted, findings: [] }).recs);
+  expect(
+    withFrame,
+    "the frame follows the ROLE NAME rather than the role file's own sentence — which is the " +
+      "hardcoded-per-role shape this card's second criterion forbids",
+  ).toContain("THE FRAME YOU ACTUALLY HAVE");
 });
 
 test("THE LANE LIST FILTERS ON THE BRANCH, NEVER THE PATH", () => {
@@ -7074,6 +7502,8 @@ test("the bench takes the ground at the base, seals three inputs by sha256, and 
     attackSetFile: "/s/attack-set-T-999.md",
     groundFile: "/s/ground-T-999.md",
     stampsFile: "/s/stamps-T-999.txt",
+    packFile: "/s/pack-T-999.md",
+    packRef: "0123456789abcdef",
     suites: "the owed set of the range",
   });
   expect(phase2, "phase 2 is a FRESH spawn and the brief says so").toContain("FRESH spawn");
@@ -7091,9 +7521,105 @@ test("the bench takes the ground at the base, seals three inputs by sha256, and 
     attackSetFile: "/s/attack-set-T-999.md",
     groundFile: "/s/ground-T-999.md",
     stampsFile: "/s/stamps-T-999.txt",
+    packFile: "/s/pack-T-999.md",
+    packRef: "0123456789abcdef",
     suites: "the whole battery",
   });
   expect(guardedBrief, "and the guarded tier gets the whole role file and the addendum").toContain("GUARDED");
+});
+
+test("THE BENCH WRITES THE VERIFIER'S PACK AND PHASE 2 NAMES IT — produced, readable, and a function of the fence", () => {
+  // T-296-s10, as an integration body. The bench handed the seat ground
+  // rules and paths; the CONTEXT PACK that carries the rules a fence
+  // implicates was the dispatch brief's, rendered for the EXECUTOR role
+  // and unreachable for this one — so every phase-2 verifier since the
+  // tiers opened the conventions by the index fallback and said so in its
+  // verdict. KILLED BY: a phase 2 brief that names a plausible path
+  // nothing writes, by a pack rendered for whatever role the ARM was
+  // invoked as, and by a pack that is the same document whatever the
+  // card's fence says.
+  const ctx = context({ taskId: "T-205-s5", role: "executor" });
+  const scratch = realpathSync(mkdtempSync(path.join(os.tmpdir(), "t205s5-bench-")));
+  try {
+    const plan = benchPlan(ctx, { taskId: "T-205-s5", scratch });
+    expect(
+      path.basename(plan.packFile),
+      "the pack's name is not derived from this project's own scratch spelling",
+    ).toBe(laneScratchName("pack", "md", "T-205-s5", dispatchSpellings(conventions())));
+    // THE PACK IS THE VERIFIER SEAT'S whatever role the arm holds — this
+    // context is an EXECUTOR's, and an executor's own pack never names
+    // roles/executor.md at all.
+    expect(
+      plan.packText,
+      "the bench rendered the pack for the arm's own role rather than for the seat it is briefing",
+    ).toContain("named by method/roles/verifier.md");
+
+    // A STUBBED `run` AND A REAL `write`: the reads are git questions this
+    // body has no bench worktree to answer, and the WRITES are the subject
+    // — "actually produced and readable" is not a claim a captured buffer
+    // can support.
+    const tip = "a".repeat(40);
+    const base = "b".repeat(40);
+    const io = {
+      ...defaultDispatchIo(),
+      run: (argv: string[]) => {
+        if (argv.includes("merge-base")) return { status: 0, stdout: `${base}\n`, stderr: "" };
+        if (argv.includes("rev-parse") && argv.includes("HEAD")) return { status: 0, stdout: `${tip}\n`, stderr: "" };
+        if (argv.includes("rev-parse")) return { status: 0, stdout: `${"c".repeat(40)}\n`, stderr: "" };
+        if (argv.includes("cat-file")) return { status: 0, stdout: "120\n", stderr: "" };
+        if (argv.includes("show")) return { status: 0, stdout: "the card, at the base\n", stderr: "" };
+        return { status: 0, stdout: "", stderr: "" };
+      },
+    };
+    writeFileSync(plan.attackSetFile, "the attack set, pre-committed\n");
+    const result = runBench(plan, io);
+    expect(result.findings, `the bench did not finish: ${result.findings.join(" | ")}`).toEqual([]);
+    expect(result.code, "the bench ritual reported a non-clean exit").toBe(EXIT.CLEAN);
+    expect(
+      result.done.map((d) => d.id),
+      "the pack is not one of the bench's own steps, so nothing reports whether it was written",
+    ).toContain("pack");
+
+    // PRODUCED AND READABLE, AT THE PATH THE RENDER NAMES — read off disk,
+    // not off the plan.
+    expect(existsSync(plan.packFile), `the bench named ${plan.packFile} and wrote nothing there`).toBe(true);
+    const onDisk = readFileSync(plan.packFile, "utf8");
+    expect(onDisk, "the file the brief names is not the pack").toContain("THE CONTEXT PACK");
+    expect(onDisk, "and it is not the pack this plan derived").toBe(plan.packText);
+
+    const phase2 = readFileSync(plan.phase2File, "utf8");
+    expect(phase2, "phase 2 does not name the pack's path beside the sealed inputs").toContain(plan.packFile);
+    expect(phase2, "and it does not name the ref the pack was derived at").toContain(plan.packRef);
+    expect(phase2, "the seal's own three inputs are gone").toContain(plan.stampsFile);
+    expect(
+      phase2,
+      "phase 2 does not say the pack is outside the seal, so a verdict would be asked to cite a " +
+        "digest for a file nothing hashed",
+    ).toContain("not under it");
+
+    // AND A FENCE WHOSE RULE REACHES THE PACK CHANGES IT — never a
+    // plausible path alone. A fence naming a component SLUG reaches the
+    // component registry, which is the pack's own fence-derived half.
+    const other = ctx.cards.get("T-001");
+    expect(other, "the card this arm drives is not on the board").toBeDefined();
+    expect(
+      fieldList(other!.fields, "touches"),
+      "the second card's fence names no slug, so this arm cannot show the fence reaching the pack",
+    ).toContain("app-shell");
+    const slugged = benchPlan(ctx, { taskId: "T-001", scratch, tier: "standard" });
+    expect(
+      plan.packText,
+      "this card's fence already reaches a component, so a difference below would prove nothing",
+    ).not.toContain("pack component:");
+    expect(
+      slugged.packText,
+      "a fence naming a component slug did not reach the verifier's pack — the pack is the same " +
+        "document whatever the fence says, which is a plausible path and not a derivation",
+    ).toContain("pack component:");
+    expect(slugged.packText, "the two fences produced the same pack").not.toBe(plan.packText);
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
 });
 
 test("the tier line is CREATED where a card has none, and no other field may be created by a stamp", () => {

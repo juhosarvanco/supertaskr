@@ -157,6 +157,15 @@ to catch.
 5. Verdict, appended to the task file — dated, with your model@session:
    APPROVED, or REJECTED with concrete, reproducible failures (commands,
    inputs, expected vs actual). Vague objections are not verdicts.
+   **Stamp NO frontmatter field on the card.** `built_by`, `verified_by`
+   and `review` are stamped on done by the seat that closes it
+   (`roles/integrator.md`), and a second writer for a field the merge
+   already owns is the two-writer conflict the dispatch stamp order
+   exists to prevent. **Your exit write is this entry** — and, where you
+   assign corrections, 5b's committed bodies. Nothing else of yours
+   reaches the card, and a brief that hands you an executor's stamp
+   instruction under this row's heading has read the wrong role file
+   (`roles/executor.md`, the rules governing the whole brief).
 5a. **THE ENTRY'S HEADING IS A DEPTH-THREE HEADING THAT OPENS WITH THE
    DATE**, so that the verdict a later reader looks for is the verdict
    you wrote:
@@ -252,6 +261,46 @@ to catch.
    are WRITES: appending a verdict and filing findings are commits, and
    they create a tip nobody has tested. **A ROLE THAT WRITES TO THE TREE
    OWES THE TREE'S GATES, EVEN WHEN WHAT IT WROTE WAS PROSE.**
+
+## The report
+
+Report to the role that dispatched you and to whoever integrates. **This
+section is row 12 of the dispatch brief, read against THIS file** — the
+contract table lives once, in `roles/executor.md`, and the rows it calls
+role-specific are read against the brief's own role file rather than
+against the one the table sits in. Every verifier brief this method
+assembled before T-205-s5 was refused outright for want of this section,
+and was written by hand instead against a contract nothing derived.
+
+Each item below is a POINTER to the step that owns it, never a second
+statement of it (T-057):
+
+- **The verdict, in the task file** — APPROVED or REJECTED, under the
+  heading shape step 5a publishes, with reproducible failures. Step 5 is
+  the obligation; this line is the report's index of it.
+- **A row per acceptance criterion with its evidence** — the command,
+  body or reading that decided each one. Owned by `The standard mode,
+  stated once` below, which states it for every tier rather than for its
+  own.
+- **The digests you were sealed against** — the attack set's and the
+  ground's, cited as step 0 requires. A verdict whose citation does not
+  match the saved file is refused, so this is what turns the blindness
+  into a claim somebody else can check.
+- **The frame you actually had** — two spawns, or one message with a
+  marker in it. Step 0 says to report the frame you HAD rather than the
+  one you were promised, and a brief that cannot separate the two is
+  required to say so; this is where you say which it was.
+- **Every correction as a committed body with its mutant block** — step
+  5b's layout, and the block count beside the correction count, so a
+  shortfall is visible rather than indistinguishable from a body nobody
+  wrote.
+- **Every figure with its ref** — the section at the end of this file is
+  the argument; this line is the obligation. A count printed without the
+  commit it was measured at is wrong as soon as anybody writes again.
+- **Every pack gap and every dispatch fault** — a refusal the pack did
+  not warn you about, a brief carrying no pack at all, a brief naming no
+  tier. Step 0 and the tier section prescribe what you do about each;
+  this is where the next dispatcher learns it happened.
 
 ## The standard mode, stated once
 
