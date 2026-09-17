@@ -194,4 +194,72 @@ The bench verb renders phase 2 from the sealed inputs and the card at the base, 
 
 ## Implementation notes
 
+Built 2026-09-17 by claude-opus-5@subagent in the lane, cut at
+03c6a2dc975ea540baf79a55a775fff246f89991.
+
+**THE REFUSAL WAS FOUR REFUSALS, NOT ONE.** Driving every deriver
+against a verifier context at the base showed the contract table was
+only the loudest: rows 2, 12 and 13 each threw for a reason of their
+own, and row 11 did not throw at all — it quoted `verifier.md` step 6,
+which is that file's FINDINGS step, under the heading "status to
+stamp". A repair that had only widened the table read would have
+turned one exit 3 into three, and the fourth would have shipped as a
+plausible line about the wrong obligation.
+
+**WHERE THE ROW SET NOW COMES FROM.** `contractSource` is a fallback
+chain and neither half is a role name: a role file that carries the
+table is its own contract, and one that carries none is answered by
+the one place the contract does live, found by scanning this method's
+role files for it. Two of them carrying one refuses by name — two
+tables are two row sets. `roleSpecificRows` reads 4, 11 and 12 out of
+the contract's own "substituting the role-specific rows" sentence
+rather than from a list in the module, and the assembled brief PRINTS
+which rows those are and which file they were read against, so a
+reader can re-derive the substitution instead of trusting it.
+
+**WHAT EACH ROW NEEDED.** Row 13's rules section governs the WHOLE
+brief and lives beside the table, so it is read from the contract, not
+from the seat's file. Row 2's confirmation instruction is searched
+whole-file — the generalisation `readSubtractions` already records one
+screen below — and where a role file spells none, the row transcribes
+the contract row's own words rather than composing a sentence. Row 11
+finds the exit-write step by the marker the instruction opens with,
+and prints the absence plainly where a role file marks none. Row 4
+gains the bench and the two-spawn pointer wherever the role file says
+its pass is two spawns, and SAYS that this artifact is one message.
+
+**WHAT `verifier.md` GAINED, AND WHY IT IS NOT SCOPE CREEP.** The
+contract makes every row REQUIRED and calls rows 11 and 12
+role-specific, so a role file that answers neither cannot be briefed
+at all. Two additions, both pure insertions with nothing reworded: a
+`## The report` section, which is the file row 12's source column
+names, written as pointers to the steps that own each item rather than
+as second statements of them; and one sentence inside step 5 saying
+the verifier stamps NO frontmatter field, which is what
+`roles/integrator.md` already says and is this seat's exit write. The
+file's reading restrictions are untouched, step 5a is untouched, and
+the diff removes nothing.
+
+**THE BENCH HALF.** `benchPlan` renders the VERIFIER seat's pack
+whatever role the arm itself holds, `runBench` writes it between the
+seal and the brief — a brief written first would name a path nothing
+had produced — and phase 2 names it beside the sealed inputs under its
+own heading, saying plainly that it is not under the seal.
+
+**FOR THE VERIFIER.** The card's third criterion says `verifier.md`
+has ONE subtraction; at this ref it has TWO, `docs/CONVENTIONS.md` and
+`docs/ROADMAP.md`, and the property `brief.spec.ts` pins is "exactly
+the documents its own `do NOT read` sentences name", which is what row
+3 applies. Neither is in the adapter's list, so the applied set is
+unchanged either way. The card's fifth criterion is conditional on
+`verifier.md` carrying a thirteen-row contract table; it does not, by
+the first two criteria's own design, and the assembler would refuse
+two such tables by name.
+
+### In-fence follow-through
+
+None. Every remedy noticed while building either fell under a
+criterion or reached a path outside the manifest, and the one that
+did the latter is filed as `T-205-s21`.
+
 ## Verdicts
