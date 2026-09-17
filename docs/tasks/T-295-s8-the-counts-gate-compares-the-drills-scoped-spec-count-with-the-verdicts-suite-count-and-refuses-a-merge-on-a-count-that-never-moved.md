@@ -293,7 +293,7 @@ correction: a selection token that spells a runner verb is still a narrowing
 file: tools/e2e/scripts/merge.mjs
 spec: tools/e2e/tests/merge.spec.ts
 body: T-295-s8 — a selection token that SPELLS a runner verb is still a narrowing, so a narrowed run never widens into `whole`
-message: a narrowed run widened into the WHOLE leg — the one direction that manufactures a false same scope, and T-297's defect through the new gate
+message: a cargo filter that happens to spell `test` is a narrowing, not a verb
 --- old
   let atFront = true;
   /** The verbs already spent at the front — a REPEAT of one is a selection, not more front. */
