@@ -134,3 +134,54 @@ in this batch carried a `## Meters` block. Each record says so in its own
 first line. T-297 is blocked on this capture, so an honest assembly seemed
 better than four merges of silence — but it is not the thing the block
 was meant to be.
+
+---
+
+## AMENDED after a senior review of the session report, same day
+
+Two correctness gaps in T-344's own writer, both raised by the review and
+both then read in the source by the seat rather than taken on the review's
+word. Neither is evidence that the live grant was corrupted; the store has
+had exactly one writer.
+
+**THE LOCK CAN BE TAKEN WHILE ITS OWNER IS ALIVE — two windows.**
+`withGrantStoreLock` exclusively creates the lock file and writes its
+OWNER METADATA ONLY AFTER the catch block returns. So between the create
+and that write the file exists and is EMPTY: a competitor meets EEXIST,
+`JSON.parse("")` throws, `held` becomes null, no pid can be read, `alive`
+is false, and it takes the stale path — `rmSync(file, { force: true })` —
+and creates its own lock while the first owner walks into the critical
+section. **An unreadable lock is not proof of a dead owner.**
+
+The second window is the stale reclaim itself, and the code's own comment
+asserts the opposite: *"The reclaim is itself EXCLUSIVE — the unlink, then
+the same `wx`."* It is not. Two processes that both find a dead holder
+each call `rmSync` unconditionally, so the second unlinks the FIRST's
+newly created lock before creating its own. The `rmSync` is not tied to
+the inode the process inspected.
+
+**THE EXPECTED-CONTENT COMPARISON IS OPTIONAL, AND THE CRITERION IS NOT.**
+T-344's third criterion reads: *"WHEN a revision is recorded THE command
+SHALL compare BOTH the expected prior revision AND the expected prior
+content against the store, under the same concurrency protection."*
+`updateGrantStore` declares `expectDigest?: string` and skips the compare
+when it is absent, and `--grant set` refuses without `--expect-revision`
+while asking nothing about the digest. **Revision 5 was recorded by this
+seat with no digest at all** — which is how the gap was demonstrated
+rather than argued. A caller can prepare against revision N, meet a
+different authorization still labelled N, and overwrite it.
+
+That criterion was graded MET by the verifier and is not met as written.
+
+**AND THE CURRENT-ONLY SHAPE IS NOT ENFORCED.** This record said earlier
+that the migration's inline history "self-resolved" at the first ordinary
+revision. That is true of what happened and false about the mechanism:
+`composeGrantSnapshot` embeds whatever valid block it is handed and
+requires no empty inline history. Revision 5 is compact because the SEAT
+supplied `history: []`, not because the writer enforces the separation. A
+later `set` could reintroduce it, and the migration test starts from an
+empty history so it cannot see this.
+
+**Standing consequence until repaired:** serialize every grant revision
+through ONE coordinator, pass the digest by hand, and supply
+`history: []` explicitly. `docs/STATE.md` carries the mechanism.
