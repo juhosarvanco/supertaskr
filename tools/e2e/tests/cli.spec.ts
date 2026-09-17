@@ -569,6 +569,47 @@ test("npx supertaskr runs out of a packed tarball installed into a project that 
     }
     expect(refusal).toContain("REFUSED");
     expect(refusal).toContain(project);
+
+    // AND THE VERB THAT *LEFT* THAT CLASS STILL RUNS NOTHING HERE
+    // (T-332's verifier). `docs-gate` gained `--root <checkout>` and its
+    // registry entry flipped to `rootFlag: true`, so `rootMismatch` stops
+    // refusing it on the root ground: from an installed copy the CLI now
+    // hands it THE USER'S PROJECT instead of declining. What keeps that
+    // safe is a SECOND refusal — `requirementsFor` will not run a script
+    // whose bare imports have no `node_modules` beside them — and until
+    // this assertion that second refusal was claimed in a comment and
+    // pinned by nothing. A verb that can be pointed at another tree and
+    // is no longer refused for the root reason must be refused for a
+    // reason something READS, or the day its dependency is vendored it
+    // starts answering about a stranger's repository with no body red.
+    //
+    // THE SUBJECT IS DERIVED, NOT TYPED, for the same reason the class
+    // above is: what is asserted is that EVERY verb the registry moved
+    // into the `--root` class is still refused from here, so the day a
+    // second verb joins it inherits the pin instead of needing one.
+    const rooted = VERBS.filter((v) => v.rootFlag && v.target.kind === "script");
+    // A FLOOR FIRST: an empty class agrees with everything below it.
+    expect(
+      rooted.length,
+      "the registry declares verbs whose script takes --root <checkout>",
+    ).toBeGreaterThan(0);
+    for (const entry of rooted) {
+      let cannot = "";
+      try {
+        execFileSync("npx", ["supertaskr", entry.verb], {
+          cwd: project,
+          encoding: "utf8",
+          stdio: "pipe",
+        });
+        throw new Error(`the installed copy RAN ${entry.verb} against a project that is not this repository`);
+      } catch (err) {
+        const e = err as { status?: number; stderr?: string };
+        expect(e.status, `${entry.verb} from an installed copy is exit 3, never an answer`).toBe(3);
+        cannot = String(e.stderr ?? "");
+      }
+      expect(cannot, `${entry.verb} says it CANNOT RUN`).toContain("CANNOT RUN");
+      expect(cannot, `${entry.verb} ran nothing at all`).toContain("Nothing was run.");
+    }
   } finally {
     removeGitFixture(project, FIXTURE);
     removeGitFixture(packDir, FIXTURE);
