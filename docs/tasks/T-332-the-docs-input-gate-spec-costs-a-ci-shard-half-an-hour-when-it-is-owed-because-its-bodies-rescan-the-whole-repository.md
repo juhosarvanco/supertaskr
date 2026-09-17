@@ -175,24 +175,41 @@ cheapest.
 
 ### The result, at this lane's tip
 
-- 74 bodies, exit 0, 90s wall — against 780s and 72 bodies at the base.
-  8.7x, and 690s off one run of this file.
-- 47 launches still, but THREE reach the real repository (mean 12.6s,
-  37.7s in all) and 44 go to the fixture (mean 82ms, 3.60s in all).
-- The three remaining real launches are the two integration bodies. The
-  refusal launcher makes three more real-root launches that never reach
-  a scan, and it asserts that about itself on every call.
-- Per body after: THE CENSUS 2 / 25.1s · THE PRINTED HITS 1 / 12.6s ·
-  EVERY SPELLING 21 / 1.6s · THE EXIT MATRIX 7 / 0.50s · the hand-run
-  exit codes 5 / 0.47s · THE EMPTY-LIST TRAP 4 / 0.34s · THE SCAN IS
-  ADVISORY 4 / 0.33s · a path the scan cannot read 2 / 0.23s · EVERY hit
-  in one file 1 / 0.12s.
+BOTH READINGS UNDER THEIR CONDITIONS, because a wall time with no
+conditions is a number and not a measurement. Command
+`npx playwright test tests/docs-input-gate.spec.ts` from tools/e2e/,
+`SUPERTASKR_E2E_PORT=15332`, ONE worker (the config's own setting), node
+v22.22.0, host Mac.lan. BEFORE at `97c17541`, the lane's base. AFTER at
+`c6dcfcda`, this lane's tip.
+
+- BEFORE: 72 bodies, exit 0, 780s wall, 768.9s of body time.
+- AFTER: 74 bodies, exit 0, 81s wall by the shell's clock and 1.3m as
+  Playwright rounds it, 69.4s of body time.
+- 9.6x on the wall clock, 11.1x on body time, and 699s off one run.
+- THE SUM AND THE CLOCK RECONCILE, which at one worker they must: 69.4s
+  of bodies inside 81s of wall leaves 11.6s, and that is the dev server
+  Playwright starts for every run of this file plus the module-scope
+  derivations this spec runs at import. The gap is the same shape before
+  (768.9s inside 780s, 11.1s) — it did not move, because nothing this
+  card changed is in it.
+- 52 launches now. FOUR carry no `--root`: the three integration ones, at
+  12.6s, 12.4s and 12.2s, and one argument refusal at 0.1s that never
+  reaches a scan and asserts as much about itself. The other 48 carry
+  `--root` and cost 3.72s in all, 78ms each.
+- Per body after: THE CENSUS 2 / 25.0s · THE PRINTED HITS 1 / 12.2s ·
+  EVERY SPELLING 21 / 1.5s · THE EXIT MATRIX 7 / 0.48s · the hand-run
+  exit codes 5 / 0.43s · THE SCAN IS ADVISORY 4 / 0.33s · THE EMPTY-LIST
+  TRAP 4 / 0.32s · the --root announcement 5 / 0.33s · a path the scan
+  cannot read 2 / 0.23s · EVERY hit in one file 1 / 0.12s.
+- The four bodies that hold the rest of the time launch NOTHING: they are
+  this spec's own in-process derivations over the real tree, 25.9s
+  between them, down from 40.1s at the base by the follow-through below.
 
 THE RUNNER READING IS NOT THIS ONE AND IS NOT TAKEN HERE. Both figures
 above are Mac.lan, same machine, same method, so they are comparable
 with each other and not with the 31m59s shard duration this card was
 filed from. A lane cannot run CI, so the runner figure is owed at the
-first CI run after this merges, and the integrator can read it as this
+CI run this merge produces, and the integrator can read it as this
 spec's own duration inside the shard that carries it.
 
 ### In-fence follow-through
