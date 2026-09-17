@@ -44,6 +44,8 @@ import {
   classifyConflict,
   assignsCorrections,
   claimedCounts,
+  claimedScopes,
+  countsStep,
   correctionEntries,
   correctionFor,
   correctionHeadings,
@@ -73,6 +75,12 @@ import {
   resolveAppendConflict,
   runCounts,
   runMutantDrill,
+  runSelection,
+  scopeLine,
+  scopeOfRun,
+  scopeOfSpecs,
+  scopeVerdict,
+  selectionToken,
   specRunners,
   tailPlan,
   verdictOpener,
@@ -746,9 +754,157 @@ test("the tier a merge records is the one the DISPATCH stamped, unless the seat 
 
 // ── the counts ───────────────────────────────────────────────────────
 
+/** The whole-leg scope both sides of a same-scope comparison stand on. */
+const WHOLE_E2E = scopeOfRun({ command: "npm", argv: ["test"] });
+
+/** A merge state carrying nothing but the counts and scopes a body plants. */
+function countsState(plant: {
+  claimed: Record<string, number>;
+  observed: Record<string, number>;
+  claimedScope?: Record<string, ReturnType<typeof scopeOfRun>>;
+  observedScope?: Record<string, ReturnType<typeof scopeOfRun>>;
+}): Parameters<typeof countsStep>[0]["state"] {
+  return {
+    fixed: [],
+    corrections: [],
+    regenerated: [],
+    widen: [],
+    shas: {},
+    claimed: plant.claimed,
+    observed: plant.observed,
+    claimedScope: plant.claimedScope ?? {},
+    observedScope: plant.observedScope ?? {},
+  };
+}
+
+test("T-295-s8 — the scope of a count is read off the EXECUTION SELECTION on each side, never off the count", () => {
+  // KILLED BY: a step that took two numbers under one leg name to be two
+  // measurements of one thing. At T-297's merge that was e2e 35 — the
+  // owning spec, run alone by the re-drill — against a verdict's 714,
+  // the owed set's whole e2e leg.
+  //
+  // THE OBSERVED SIDE is the argv a run actually ran under.
+  expect(runSelection({ command: "npx", argv: ["vitest", "run"] }), "a run that narrows nothing").toEqual([]);
+  expect(scopeOfRun({ command: "npm", argv: ["test"] }).kind, "and that is the WHOLE leg").toBe("whole");
+  expect(
+    runSelection({ command: "npx", argv: ["vitest", "run", "test/architecture-dogfood.test.ts"] }),
+    "a named spec is a narrowing",
+  ).toEqual(["architecture-dogfood.test.ts"]);
+  expect(
+    runSelection({ command: "cargo", argv: ["test", "-q", "--lib", "--", "agent::kit::tests"] }),
+    "a cargo target and its filter both narrow; -q reports and does not",
+  ).toEqual(["--lib", "agent::kit::tests"]);
+  expect(
+    runSelection({ command: "gate-run.mjs", argv: ["e2e"] }),
+    "and the leg's own name narrows NOTHING inside that leg — the comparison is already per leg",
+  ).toEqual([]);
+  // THE TWO SIDES SPELL A SPEC FROM DIFFERENT ROOTS, so the token they
+  // are compared on is the one segment that is unique across the board.
+  expect(selectionToken("tools/e2e/tests/merge.spec.ts")).toBe("merge.spec.ts");
+  expect(selectionToken("tests/merge.spec.ts"), "the drill's runner spells it from the package").toBe("merge.spec.ts");
+  expect(selectionToken("--range"), "and a token that is not a path is compared verbatim").toBe("--range");
+  expect(scopeOfSpecs(["tools/e2e/tests/merge.spec.ts"], "the re-drill").selection).toEqual(["merge.spec.ts"]);
+  // THE CLAIMED SIDE is the runner invocation the verdict STATES beside
+  // its counts — the same kind of evidence, and never the number itself.
+  const stated = claimedScopes(
+    "**THE OWED SET, at my tip judged**, `gate-run.mjs --range c745a6af..3294c349`:\n" +
+      "parser **389** / app **1171** / rust **655** / e2e **714** (16 spec files), every leg\n" +
+      "`verdict=GREEN exit=0`, gate exit **0**.",
+  );
+  expect(stated.e2e?.said, "off the command, not off 714").toBe("gate-run.mjs --range c745a6af..3294c349");
+  expect(stated.e2e?.selection).toEqual(["--range", "c745a6af..3294c349"]);
+  expect(
+    claimedScopes("parser 389 / app 1171 / rust 655 exit 0 and e2e 852 with one body red").e2e,
+    "a verdict that states no command states no scope, and this INVENTS none",
+  ).toBeUndefined();
+  expect(
+    claimedScopes("the whole suite was run and e2e 852 passed").e2e,
+    "and prose saying `the whole suite` is not an execution selection",
+  ).toBeUndefined();
+});
+
+test("T-295-s8 — a verdict claiming a LEG beside a drill that ran ONE spec: the step PASSES and NAMES the scope difference", () => {
+  // KILLED BY: T-297's merge, which stopped on `THE COUNT MOVED` with
+  // e2e 35 against 714. The card's second criterion is this arrangement.
+  const verdict =
+    "**THE OWED SET, at my tip judged**, `gate-run.mjs --range c745a6af..3294c349`:\n" +
+    "parser **389** / app **1171** / rust **655** / e2e **714** (16 spec files).";
+  const claimedScope = claimedScopes(verdict);
+  const drill = scopeOfSpecs(["tools/e2e/tests/health-bands.spec.ts"], "the re-drill's own run");
+  expect(scopeVerdict(claimedScope.e2e, drill), "two different selections").toBe("different");
+  const said: string[] = [];
+  const errs: string[] = [];
+  const code = countsStep({
+    out: (s) => said.push(s),
+    err: (s) => errs.push(s),
+    state: countsState({
+      claimed: claimedCounts(verdict),
+      observed: { e2e: 35 },
+      claimedScope,
+      observedScope: { e2e: drill },
+    }),
+  });
+  expect(code, "the step PASSES — there is nothing here to grade").toBe(EXIT.CLEAN);
+  expect(errs.join("\n"), "and it refuses nothing").toBe("");
+  const text = said.join("\n");
+  expect(text, "the difference is NAMED").toContain("THE SCOPES DIFFER");
+  expect(text, "with the claim's own scope").toContain("gate-run.mjs --range c745a6af..3294c349");
+  expect(text, "and the run's").toContain("health-bands.spec.ts");
+  expect(text, "both figures, so the seat can read them").toContain("714");
+  expect(text).toContain("35");
+  expect(text, "and NEVER as a count that moved").not.toContain("THE COUNT MOVED");
+  // EQUAL COUNTS OVER DIFFERENT SELECTED SETS ARE STILL NOT A PASS. The
+  // numbers agreeing is not evidence that the sets did, and a step that
+  // read agreement as a judgement would be inferring scope from the
+  // count — the move this card forbids.
+  const equal = gradeCounts({
+    claimed: { e2e: 35 },
+    observed: { e2e: 35 },
+    claimedScope: { e2e: scopeOfRun({ command: "npx", argv: ["playwright", "test", "tests/brief.spec.ts"] }) },
+    observedScope: { e2e: drill },
+  });
+  expect(equal.judged, "nothing is judged").toEqual([]);
+  expect(equal.findings, "and nothing is found").toEqual([]);
+  expect(equal.unjudged[0], "the sets are reported instead").toContain("THE SCOPES DIFFER");
+});
+
+test("T-295-s8 — a scope that could NOT be read is not judged for lack of evidence, and is neither a difference nor a pass", () => {
+  // KILLED BY: reading silence as agreement in either direction —
+  // grading two counts nothing established as comparable, or announcing
+  // a scope DIFFERENCE nothing established either.
+  const claimed = claimedCounts("parser 389 / app 1171 / rust 655 exit 0 and e2e 852 with one body red");
+  const noEvidence = gradeCounts({
+    claimed,
+    observed: { e2e: 851 },
+    claimedScope: {},
+    observedScope: { e2e: WHOLE_E2E },
+  });
+  expect(noEvidence.findings, "no comparison is graded").toEqual([]);
+  expect(noEvidence.judged, "and none is passed").toEqual([]);
+  const row = noEvidence.unjudged.find((u) => u.startsWith("e2e:")) ?? "";
+  expect(row, "the reason is the missing evidence, named").toContain("NOT JUDGED FOR LACK OF SCOPE EVIDENCE");
+  expect(row, "never a difference that was not demonstrated").not.toContain("THE SCOPES DIFFER");
+  expect(row, "both figures are stated for the seat to rule").toContain("852");
+  expect(row).toContain("851");
+  expect(scopeLine(undefined), "and a scope with nothing behind it says so").toBe("no stated scope");
+  // THE SAME SILENCE ON THE OTHER SIDE, and with the figures AGREEING —
+  // which is the arrangement most easily mistaken for a pass.
+  const agreeing = gradeCounts({
+    claimed,
+    observed: { e2e: 852 },
+    claimedScope: { e2e: WHOLE_E2E },
+    observedScope: {},
+  });
+  expect(agreeing.judged, "agreement without scope evidence is still not a judgement").toEqual([]);
+  expect(agreeing.unjudged.find((u) => u.startsWith("e2e:")) ?? "").toContain("NOT JUDGED FOR LACK OF SCOPE EVIDENCE");
+  expect(scopeVerdict(WHOLE_E2E, undefined), "one side missing is unknown, never different").toBe("unknown");
+});
+
 test("the verb refuses to commit on a count that moved, and says which legs it could not judge", () => {
   // 2d6d354: a merge script that committed on an exit code while the
-  // count under it had moved landed main red.
+  // count under it had moved landed main red. THE TEETH SURVIVE T-295-s8:
+  // where the scopes ARE established the same, the comparison stands as
+  // it was, and a leg nobody could judge erases none of it.
   const claimed = claimedCounts("parser 389 / app 1171 / rust 655 exit 0 and e2e 852 with one body red");
   expect(claimed, "the counts come off the verdict's own sentence").toEqual({
     parser: 389,
@@ -756,14 +912,42 @@ test("the verb refuses to commit on a count that moved, and says which legs it c
     rust: 655,
     e2e: 852,
   });
-  const moved = gradeCounts({ claimed, observed: { e2e: 851 } });
+  const sameScope = { e2e: WHOLE_E2E };
+  expect(scopeVerdict(WHOLE_E2E, WHOLE_E2E), "both sides ran the leg whole").toBe("same");
+  const moved = gradeCounts({
+    claimed,
+    observed: { e2e: 851 },
+    claimedScope: sameScope,
+    observedScope: sameScope,
+  });
   expect(moved.findings, "a count that moved is one finding").toHaveLength(1);
   expect(moved.findings[0]).toContain("THE COUNT MOVED");
   expect(moved.findings[0], "and it names both figures").toContain("852");
   expect(moved.findings[0]).toContain("851");
   expect(moved.unjudged.length, "and the legs with no reading are SAID, never read as a pass").toBe(3);
+  // AND A LEG NOBODY COULD JUDGE ERASES NO REFUSAL. Three legs here are
+  // unjudged beside the one that moved, and the step still refuses.
+  const errs: string[] = [];
+  const code = countsStep({
+    out: () => {},
+    err: (s) => errs.push(s),
+    state: countsState({
+      claimed,
+      observed: { e2e: 851 },
+      claimedScope: sameScope,
+      observedScope: sameScope,
+    }),
+  });
+  expect(code, "the step REFUSES").toBe(EXIT.FOUND);
+  expect(errs.join("\n")).toContain("THE COUNT MOVED");
+  expect(errs.join("\n"), "and says the merge is not committed").toContain("NOT committed");
   // THE POSITIVE CONTROL: the same grader over a count that held.
-  const held = gradeCounts({ claimed, observed: { e2e: 852 } });
+  const held = gradeCounts({
+    claimed,
+    observed: { e2e: 852 },
+    claimedScope: sameScope,
+    observedScope: sameScope,
+  });
   expect(held.findings, "a count that held is no finding").toEqual([]);
   expect(held.judged[0]).toContain("852");
   // And the reading itself comes off a runner's own line, in either dialect.
