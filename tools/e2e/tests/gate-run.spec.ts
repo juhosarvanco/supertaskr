@@ -36,6 +36,7 @@ import {
   generatedEntries,
   generatedSources,
   packageBuilds,
+  resolveTsconfig,
   SCOPED_SUITE,
   TREE_FLAG,
   VERDICT_TOKEN,
@@ -2560,12 +2561,43 @@ test("a range that moves a parser SOURCE alone selects every spec that reaches t
   expect(importers).toContain("tools/e2e/tests/brief.spec.ts");
   expect(importers).toContain("tools/e2e/tests/cli.spec.ts");
 
-  const { range } = probeRange({ "lib/parser/src/pure.ts": "export const T335_PROBE = 1;\n" });
+  // T-335 correction 1. THE MOVED SOURCE IS NOT THE BUILD ENTRY, and the
+  // body says so before it moves it. An implementation that read the
+  // relationship as "the ONE source the build names as its entry" would
+  // satisfy every assertion below against `src/pure.ts` — the file the
+  // importers' own entry is named after — and fail for every other
+  // source in the package. The coupling this criterion claims is the
+  // package's, so the probe has to move a source NO spec imports, whose
+  // emitted counterpart is reached only because the entry pulls it in.
+  const probeSource = "lib/parser/src/fence.ts";
+  const entryBasenames = new Set(
+    Object.values(specReach(repoRoot).reach)
+      .flat()
+      .filter((f) => f.startsWith("lib/parser/dist/"))
+      .map((f) => path.basename(f).replace(/\.js$/, "")),
+  );
+  expect(
+    entryBasenames.has(path.basename(probeSource).replace(/\.ts$/, "")),
+    "NON-ENTRY: the probe's own emitted file is reached, so the coupling is not vacuous",
+  ).toBe(true);
+  const probeEmit = path.basename(probeSource).replace(/\.ts$/, ".js");
+  const importedByName = specFiles()
+    .map((s) => readFileSync(path.join(repoRoot, s), "utf8"))
+    .join("\n")
+    .split("\n")
+    .filter((l) => /^\s*import\b/.test(l) && l.includes(`/dist/${probeEmit}`));
+  expect(
+    importedByName,
+    "and NOT ONE spec imports this source's emit by name — it is reached only because the " +
+      "entry that IS imported pulls it in, so only a real source-root relationship selects it",
+  ).toEqual([]);
+
+  const { range } = probeRange({ [probeSource]: "export const T335_PROBE = 1;\n" });
   const moved = rangeChanged(range, repoRoot);
   expect(
     "paths" in moved ? moved.paths : [],
     "the range really moves one parser source and nothing else",
-  ).toEqual(["lib/parser/src/pure.ts"]);
+  ).toEqual([probeSource]);
 
   const owed = owedForRange(range, repoRoot);
   expect("problem" in owed, "the range is one this checkout can diff").toBe(false);
@@ -2589,7 +2621,7 @@ test("a range that moves a parser SOURCE alone selects every spec that reaches t
 
   // THE SELECTION SAYS WHERE IT CAME FROM, and the sentence names the
   // CONFIGURATION rather than a rewritten path.
-  const owning = deriveOwning(["lib/parser/src/pure.ts"], repoRoot);
+  const owning = deriveOwning([probeSource], repoRoot);
   const via = owning.byPath.flatMap((e) => e.via).join("\n");
   expect(via).toContain("lib/parser/tsconfig.build.json builds lib/parser/dist/ from lib/parser/src/");
 });
@@ -2622,6 +2654,73 @@ test("a generated file no build configuration can place makes the owed set the W
   const readable = generatedEntries({ changed, reached, tracked, builds: real });
   expect(readable.unplaceable, "the control places every generated file in the graph").toEqual([]);
   expect((readable.byPath["lib/parser/src/pure.ts"] ?? []).length).toBeGreaterThan(0);
+
+  // T-335 correction 2. THE UNREADABILITY IS INDUCED BY DATA ON DISK,
+  // not by handing the rule a `builds` value with the parser emptied. A
+  // branch only a synthesized input can reach is a branch production
+  // cannot take, and this criterion's whole worth is that the fall-back
+  // fires on a REAL inability. So the three shapes below are each a
+  // package on disk that `packageBuilds` genuinely fails to read, and the
+  // `builds` the rule is given is whatever THAT reading returned. The
+  // third shape is the one an implementation misses: a configuration that
+  // is present, parses, declares an output root — and does not contain
+  // the entry being placed.
+  const onDisk = mkdtempSync(path.join(tmpdir(), "t335-unreadable-"));
+  try {
+    mkdirSync(path.join(onDisk, "lib", "parser"), { recursive: true });
+    writeFileSync(
+      path.join(onDisk, "lib/parser/package.json"),
+      JSON.stringify({ scripts: { build: "tsc -p tsconfig.build.json" } }),
+    );
+    const project = path.join(onDisk, "lib/parser/tsconfig.build.json");
+    const shapes: [string, () => void, string][] = [
+      ["absent", () => rmSync(project, { force: true }), "could not be read"],
+      ["malformed", () => writeFileSync(project, '{ "compilerOptions": { "outDir": '), "not readable as JSON"],
+      [
+        "present but not covering this entry",
+        () => writeFileSync(project, JSON.stringify({ compilerOptions: { rootDir: "src", outDir: "elsewhere" } })),
+        "no output root that contains it",
+      ],
+    ];
+    for (const [shape, arrange, expected] of shapes) {
+      arrange();
+      const read = packageBuilds(onDisk);
+      // NOT "nothing was read": the third shape READS perfectly well and
+      // still cannot place this entry, which is exactly why it is the
+      // shape implementations miss. What must hold for all three is that
+      // no declared output root CONTAINS the entry the two specs import.
+      expect(
+        (read.byPackage["parser"] ?? []).filter((b) => "lib/parser/dist/pure.js".startsWith(`${b.out}/`)),
+        `${shape}: no output root read off disk contains the entry`,
+      ).toEqual([]);
+      const cannot = generatedEntries({
+        changed,
+        reached,
+        tracked,
+        builds: read.byPackage,
+        notes: read.notes,
+      });
+      expect(
+        cannot.unplaceable.map((u) => u.path),
+        `${shape}: the entry the two specs import is named, from a reading that really failed`,
+      ).toContain("lib/parser/dist/pure.js");
+      expect(
+        cannot.unplaceable.find((u) => u.path === "lib/parser/dist/pure.js")?.why ?? "",
+        `${shape}: and the sentence says WHY, discriminating this cause from the other two`,
+      ).toContain(expected);
+      expect(cannot.byPath, `${shape}: no changed source stands behind anything`).toEqual({});
+      const closed = deriveOwed({
+        changed,
+        reach,
+        dependents: packageDependents(),
+        generatedUnplaceable: cannot.unplaceable,
+      });
+      expect(closed.suites, `${shape}: the whole battery`).toEqual([...ALL_SUITES]);
+      expect(closed.e2e, `${shape}: and the leg whole`).toEqual({ whole: true, specs: [] });
+    }
+  } finally {
+    rmSync(onDisk, { recursive: true, force: true });
+  }
 
   // THE ARM — the SAME inputs with the parser's relationship gone.
   const blind = generatedEntries({
@@ -2757,6 +2856,36 @@ test("the emit relationship is READ off the owning package's own build configura
       "tsconfig.json",
       "tsconfig.test.json",
     ]);
+
+    // T-335 correction 3. AND THE READING IS CONTAINED TO THE TREE. Every
+    // spelling that reaches the project reader is REPOSITORY CONTENT — a
+    // `-p` flag in a manifest, an `extends` specifier — and a range may
+    // come off a branch nobody has reviewed, so an `extends` that climbs
+    // out of the root would have this PLANNING step open a file outside
+    // it and carry the parse failure into the sentence it logs. A real
+    // file is planted outside the root and left unread: the proof is that
+    // its own contents, which declare a perfectly good emit, never appear
+    // in the answer.
+    const outside = path.join(path.dirname(bare), "t335-escaped.json");
+    try {
+      writeFileSync(outside, JSON.stringify({ compilerOptions: { rootDir: "in", outDir: "out" } }));
+      manifest("tsc -p tsconfig.build.json");
+      project("tsconfig.build.json", { extends: "../../../t335-escaped.json", compilerOptions: {} });
+      // REFUSED BY NAME at the reader, which is where the containment has
+      // to live: the specifier never becomes a path that gets opened.
+      expect(
+        resolveTsconfig(bare, "lib/parser", "../../../t335-escaped.json").problem ?? "",
+        "the climbing specifier is refused by name rather than opened",
+      ).toContain("lies outside the repository");
+      const escaped = packageBuilds(bare);
+      expect(
+        escaped.byPackage["parser"],
+        "so the outside file's perfectly good rootDir/outDir reach the answer NOWHERE",
+      ).toEqual([]);
+      expect(existsSync(outside), "and the planted file really was there to be read").toBe(true);
+    } finally {
+      rmSync(outside, { force: true });
+    }
   } finally {
     rmSync(bare, { recursive: true, force: true });
   }

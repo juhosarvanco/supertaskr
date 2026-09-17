@@ -1791,6 +1791,22 @@ export function buildConfigsIn(script) {
 export function resolveTsconfig(root, dir, file, seen = new Set()) {
   const withJson = file.endsWith(".json") ? file : `${file}.json`;
   const rel = path.posix.normalize(path.posix.join(dir, withJson));
+  // T-335 correction 3. CONTAINED TO THE REPOSITORY, because every
+  // spelling that reaches here — a `-p` flag in a manifest's build
+  // script, an `extends` specifier — is REPOSITORY CONTENT, and a range
+  // may come from a branch nobody has reviewed. Without this an
+  // `extends` of "../../../../../etc/…" makes a CI PLANNING step open a
+  // file outside the tree, and the parse error carries a fragment of it
+  // into the fail-closed sentence this derivation prints into the log.
+  // Refused BY NAME rather than read, which is the same shape of answer
+  // an absent file already gets, so nothing downstream learns a new case.
+  if (rel === ".." || rel.startsWith("../") || path.posix.isAbsolute(rel)) {
+    return {
+      compilerOptions: {},
+      include: undefined,
+      problem: `${rel} lies outside the repository, so this derivation will not open it`,
+    };
+  }
   if (seen.has(rel)) {
     return { compilerOptions: {}, include: undefined, problem: `${rel} extends itself` };
   }

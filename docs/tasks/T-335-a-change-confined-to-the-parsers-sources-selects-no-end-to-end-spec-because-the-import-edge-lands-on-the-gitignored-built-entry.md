@@ -310,3 +310,129 @@ The unconditional arm's cost is real but small: ~0.19s base against
 3. The three `push-guard.spec.ts` reds are T-333's and will reappear in
    any fenced lane. They are green on an unfenced tree.
 4. Apply the three corrections below, each with its drill.
+
+#### Correction 1
+
+    correction: 1
+    file: tools/e2e/tests/gate-run.spec.ts
+    spec: tools/e2e/tests/gate-run.spec.ts
+    body: a range that moves a parser SOURCE alone selects every spec that reaches the parser's built entry, over the live tree and a real range
+    message: A1.8 — the body moved the BUILD ENTRY itself, so it could not tell this implementation from an entry-point-only one. It now moves a parser source no spec imports the emit of, and says so before moving it.
+
+    --- old
+          byPackage[id].push({
+            config: rel,
+            src: path.posix.normalize(path.posix.join(dir, srcDir)).replace(/\/+$/, ""),
+            out: path.posix.normalize(path.posix.join(dir, outDir)).replace(/\/+$/, ""),
+          });
+    --- new
+          const exportsMap = /** @type {Record<string, unknown>} */ (
+            /** @type {Record<string, unknown>} */ (pkg ?? {})["exports"] ?? {}
+          );
+          /** @type {string[]} */
+          const entries = [];
+          for (const target of Object.values(exportsMap)) {
+            const spec =
+              typeof target === "string"
+                ? target
+                : /** @type {Record<string, unknown>} */ (target ?? {})["import"];
+            if (typeof spec === "string") entries.push(spec);
+          }
+          for (const target of entries) {
+            byPackage[id].push({
+              config: rel,
+              src: path.posix
+                .normalize(
+                  path.posix.join(
+                    dir,
+                    srcDir,
+                    target.replace(/^\.\//, "").replace(/^[^/]+\//, "").replace(/\.js$/, ".ts"),
+                  ),
+                )
+                .replace(/\/+$/, ""),
+              out: path.posix.normalize(path.posix.join(dir, outDir)).replace(/\/+$/, ""),
+            });
+          }
+
+The mutant is A1.8 written as a plausible implementation: the sources a
+package builds are read as the ones its manifest's `exports` name. In
+`gate-run.mjs` the `old` block occurs EXACTLY ONCE and the `new` block
+occurs NOWHERE; both counts were checked by the applier before it wrote.
+
+**AND THIS IS WHERE THE CORRECTION EARNS ITS PLACE.** Under the mutant the
+declared source roots become `lib/parser/src/index.ts` and
+`lib/parser/src/pure.ts`. A range moving `lib/parser/src/pure.ts` — the
+path the body moved BEFORE this correction — still selects both
+importers, so the body as it stood would have passed. A range moving
+`lib/parser/src/fence.ts`, which is what it moves now, selects NEITHER,
+and the body dies on "criterion 1: …/brief.spec.ts reaches the parser's
+generated entry" with an empty received array.
+
+#### Correction 2
+
+    correction: 2
+    file: tools/e2e/tests/gate-run.spec.ts
+    spec: tools/e2e/tests/gate-run.spec.ts
+    body: a generated file no build configuration can place makes the owed set the WHOLE battery and the answer NAMES the file
+    message: A2.3 — unreadability was induced by handing the rule a synthesized builds value, which is a branch production cannot take. It is now induced by three packages on disk that packageBuilds genuinely fails to place, the third being present, parsing, and still not covering the entry.
+
+    --- old
+          if (reading.problem !== undefined) {
+            notes[id].push(reading.problem);
+            continue;
+          }
+    --- new
+          if (reading.problem !== undefined) {
+            notes[id].push(reading.problem);
+            byPackage[id].push({ config: rel, src: `${dir}/src`, out: `${dir}/dist` });
+            continue;
+          }
+
+The mutant is the silent pass wearing a fail-closed label: a package whose
+project cannot be read gets an INVENTED relationship instead of a reported
+inability, so the arm never fires. The `old` block occurs EXACTLY ONCE in
+`gate-run.mjs` and the `new` block NOWHERE; both counts were checked
+before the write.
+
+Its power is the correction's: under the mutant a package whose project is
+absent on disk yields a confident `src` and `out`, while the real tree's
+own reading is untouched, so the body as it stood — which built its blind
+case by hand — still passed. Only the disk-induced section dies.
+
+#### Correction 3
+
+    correction: 3
+    file: tools/e2e/scripts/gate-run.mjs
+    spec: tools/e2e/tests/gate-run.spec.ts
+    body: the emit relationship is READ off the owning package's own build configuration, so a package that moves where it builds to moves this derivation with it
+    message: X6 — the extends chain was followed without containing the resolved path to the repository root, so repository-authored content could direct a CI planning step to open a file outside the tree and carry a fragment of it into the logged fail-closed sentence.
+
+    --- old
+      if (rel === ".." || rel.startsWith("../") || path.posix.isAbsolute(rel)) {
+        return {
+          compilerOptions: {},
+          include: undefined,
+          problem: `${rel} lies outside the repository, so this derivation will not open it`,
+        };
+      }
+    --- new
+
+The mutant is the removal of the guard, which is the state this diff
+arrived in. The `old` block occurs EXACTLY ONCE in `gate-run.mjs`; the
+`new` block is empty, so its count is zero by construction. With the guard
+gone the body dies on "the climbing specifier is refused by name rather
+than opened".
+
+The guard refuses BY NAME and returns the same shape an absent file
+already returns, so no caller learns a new case and nothing about the
+fail-closed contract changes. Note for the record that a `problem` raised
+inside an `extends` chain does not propagate to the outer reading — the
+outer file simply declares no `outDir` and fails closed correctly, which
+is why this is a hardening rather than a defect in the answer.
+
+#### The corrected tree, measured
+
+`gate-run.spec.ts` whole after all three corrections: **89 passed, 0
+failed**, exit 0. `typecheck` exit 0. Each mutant was applied from a
+pristine copy, drilled, and the file restored byte-identically before the
+next.
