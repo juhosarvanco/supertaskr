@@ -239,3 +239,347 @@ spec's own duration inside the shard that carries it.
   The launch-primitive count is the half that closes that.
 
 ## Verdicts
+
+### 2026-09-17 — APPROVED WITH ASSIGNED CORRECTIONS — claude-opus-5@subagent
+
+Verifier, phase 2, a fresh spawn on the detached bench
+`../supertaskr-V-T-332` at the lane tip `6563743b`, grading the diff
+`97c17541..6563743b`. Bench port 25332. A second clean worktree
+`../supertaskr-B-T-332` was stood up detached at the base `97c17541`
+with `git status --porcelain` empty, because phase one's M1, M2, M3, M4,
+M7 and M8 are worthless once the diff exists and the dispatcher recorded
+them as outstanding. I took them there rather than grading a row
+ungradable.
+
+PHASE ONE'S PRE-COMMITMENT, CITED AS REQUIRED, AND RE-HASHED BEFORE I
+RELIED ON IT: the attack set `attack-set-T-332.md`, sha256
+`17b267c906aa00f62101fb008ca7955b6a560800ec38f4ddf1bc79eae1570c0f` —
+fifteen attacks on criterion 1, twelve on criterion 2, six on criterion
+3, three cross-criterion, and ten measurement requests. The grounds
+taken at the base before the diff existed, `ground-T-332.md`, sha256
+`ac6ff452bfca8d2fbedb411254e63fc903aa9468a726f0d262ac87f9e0130886`.
+Both matched the values my brief pre-committed.
+
+CONDITIONS FOR EVERY FIGURE BELOW, because a wall time with no
+conditions is a number and not a measurement: host Mac.lan, node
+v22.22.0, ten cores, ONE worker (the config's own setting), the list
+reporter, `npx playwright test tests/docs-input-gate.spec.ts` from
+tools/e2e/. The base reading ran at port 26332 in the base worktree and
+the tip reading at 25332 on the bench, back to back in one detached job
+so the two share their machine and their moment.
+
+#### Criterion 1 — the spellings and the exit combinations over a fixture, the real tree only by a named integration set
+
+**PASS.** Attacked with all fifteen of phase one's shapes; the four that
+could have carried it are answered by measurement rather than by the
+card's prose.
+
+*A1.6 — "the fixture is a copy of the real tree."* I rebuilt the
+fixture outside the spec, from the same `docs-scan.mjs` exports
+`gateFixture` uses, and measured it: **14 files, 3,435 bytes**, against
+the grounds' 1,691 tracked files and 11.35 MB. It is written file by
+file from constants — no `cp -r`, no clone, no symlink into the live
+docs/ — so its size is not a function of the repository.
+
+*A1.7 — "fixtures live inside the tree the real gate scans."* Does not
+arise. The fixture is made under `tmpdir()` and removed in `afterAll`,
+so the project's own gate never meets it. `realpathSync` wraps
+`mkdtempSync`, which is the deliberate canonicalisation the grounds' M6
+said every fixture root in this lane owed.
+
+*A1.1 and A1.9 — "the fixture is degenerate, so every body takes one
+early exit," and "the scan is stubbed."* Refuted by drill, not by
+reading. Over my replica the gate answers 1 for the planted card, 0 for
+a code path, 2 for no paths and for a refused range, 0 for `--census`,
+and 2 for a plain-relative path typed from `tools/e2e` — six distinct
+outcomes, so the derivation really runs there. Then the mechanism was
+removed: neutering the PLAIN-RELATIVE branch in `normalisePaths` reds
+`EVERY SPELLING…` (1 failed / 73 passed, exit 1), and the file is
+restored byte-identical. And the data mutant phase one asked for: a
+stale index planted in the fixture, and an illegal `status:` planted in
+its card, each move the code-only row from 0 to 1 — so the fixture's
+whole-tree checks are LIVE in it, "clean by construction" is a property
+rather than a vacuity, and the exit-0 row is the standing control that
+would catch any whole-tree finding. The card asked me to attack exactly
+this; it holds.
+
+*A1.2 — "assertions narrowed to the exit integer."* The opposite
+happened: 17 `expect(` lines removed against 43 added, net +26, and the
+message assertions moved with their bodies. A right-code-wrong-reason
+mutant — "PLAIN RELATIVE" reworded to "AMBIGUOUS", exit untouched — reds
+`EVERY SPELLING…` (1 failed / 73 passed).
+
+*A1.8 — "the gate is no longer a process."* It is. `launch` runs
+`process.execPath` on the real script. Mutating ONLY the CLI boundary,
+`process.exit(code)` remapped so USAGE arrives as CLEAN, reds **six**
+bodies — the hand-run exit codes, the `--root` announcement, EVERY
+SPELLING, THE EXIT MATRIX, THE EMPTY-LIST TRAP and THE SCAN IS ADVISORY.
+Every fixture exit-code body goes through a real process boundary.
+
+*A1.3 — "speed from bodies that no longer run."* 72 bodies at the base,
+74 at the tip, and the tip spec carries no `test.skip`, `test.only`,
+`test.fixme`, `describe.skip`, `.slow(` or `test.fail` anywhere.
+
+*A1.13 and A1.15 — "named as such is prose," and "the set is empty."*
+The boundary is mechanical. The keeper derives the launcher's call sites
+from the spec's own source and compares them with
+`REAL_REPOSITORY_BODIES` both ways, floors the list non-empty, and
+counts the launch primitive so nobody can reach around the launchers. I
+drilled the reach-around — a direct `launch([...], repoRoot)` planted
+inside an unlisted body — and the keeper reds (1 failed / 73 passed).
+That is the half the card flagged as load-bearing, and it is the half
+that works.
+
+*A1.10 — "root injection becomes a production bypass."* The sharpest
+attack available, and the gate fails closed. `--root` at an empty
+directory is exit 3; `--root` at an empty git repository carrying a
+docs/ file is exit 3 (it cannot read the status vocabulary). There is no
+arrangement I found in which a foreign root buys a quiet 0. The banner
+prints on both. `npm run lint:docs` passes no flag, and CI's step passes
+no flag.
+
+#### Criterion 2 — launches per body and the spec's wall time, before and after, and the caching choice made on those figures
+
+**PASS,** and the figures are the card's own to within noise. I did not
+take the lane's word for any of them: an external shim, installed from
+OUTSIDE the spec through `NODE_OPTIONS`, logged every node process's
+argv and patched `execFileSync` to record every `git ls-files`. Phase
+one's A2.4 demanded the shim be verified before it is trusted, so it was
+run standalone first and recorded a non-zero count.
+
+*A2.1 and A2.11 — "before and after are not the same quantity," taken
+"on a dirty tree."* The before-reading is the spec's own wall time at
+`97c17541` on a clean checkout, which is the reading the card admits it
+could not take from CI.
+
+- **BASE `97c17541`: 760.72s wall, 72 bodies, 0 failed, exit 0**, 752.2s
+  of body time.
+- **TIP `6563743b`: 81.35s wall, 74 bodies, 0 failed, exit 0**, 71.3s of
+  body time.
+- **9.35x on the wall clock.** The card claims 780s to 81s and 9.6x.
+
+*A2.9 — "n = 1."* Two further tip repetitions under the same conditions:
+78.16s and 85.29s, so **min 78.16 / median 81.35 / max 85.29**. The base
+is n = 1 at 760.72s; the delta is an order of magnitude outside that
+band either way.
+
+*A2.3 — "wall time that excludes the expensive part."* It does not. At
+one worker the sum and the clock reconcile: 752.2s of bodies inside
+760.72s leaves 8.5s before, 71.3s inside 81.35s leaves 10.05s after. The
+gap did not move, which is the card's own claim and is what rules out a
+rewrite that relocated the cost into setup.
+
+*A2.5 — "launches are the wrong quantity."* Three numbers, not one:
+
+- BASE: **46 launches**, of which **23 walked the corpus 14 times each**
+  and 19 were refused before any walk; **352 corpus walks** in the run.
+- TIP: **51 launches**, of which **47 carry `--root` and 4 do not**, and
+  only **3 walked the corpus — 7 times each**; **149 corpus walks** in
+  the run.
+
+So launches rose and WORK fell: tree-reaching launches **23 to 3**, and
+walks per real-root launch **14 to 7**. Both are the card's exact
+figures, arrived at independently. A real-root launch measured three
+times each way: base 28.13 / 28.35 / 28.94s, tip 12.25 / 12.37 / 12.16s;
+the census form 30.66s against 13.08s. A fixture launch is 0.12s.
+
+*A2.6, A2.7 and A2.8 — "the cache's address is unstated," "a production
+cache that can serve a stale verdict," "the decision is a sentence."*
+There is no cache to address. The diff adds no module-level mutable
+state; the two memos in `docs-scan.mjs` are present at the base and are
+not this lane's; the four new parameters default to computing exactly
+what they replaced, and `rootAnchoredFiles` does not mutate the reader
+objects it is handed, so a value passed on and a value recomputed cannot
+diverge. The strongest evidence is behavioural, and it was taken against
+a CLEAN base checkout rather than a stash: **the real-root answer is
+byte-identical at both refs in both modes** — the diff form's stdout
+sha256 `40ab0284…` across three repetitions each way, its stderr
+`35543a1f…`, the census form's stdout `5850ef51…`. Phase one's A2.7
+drill has no target: there is no key, nothing to invalidate, and no
+artefact that could survive into a restored cache directory.
+
+*X.1 and A2.10 — "the after figure is small because coverage left."*
+Read against criterion 1's inventory, it is not: bodies up, assertions
+up, no skips, and the removal is proved live by five mutants.
+
+#### Criterion 3 — what risk each kept body covers, and why the set is sufficient
+
+**PASS, with a named decay.**
+
+*A3.4 — "a kept body that does not actually reach the real tree."*
+Refuted by the shim. Exactly **3** launches carry no `--root` and reach
+the derivation, at 7 walks each, and they sit in the two named bodies:
+`THE CENSUS…` at 25.09s for its two launches and `THE GATE'S PRINTED
+HITS…` at 13.02s for its one. Their duration is two orders of magnitude
+away from a fixture body's, which is the tell phase one asked for, in
+the right direction.
+
+*A3.1 and A3.5 — "the risk restates the body," "label laundering."*
+Neither. Both risks name a property of THIS tree that a fixture cannot
+carry — the whole-tree half coming back clean in the mode CI runs, and
+the injection scan over prose nobody wrote for a test. And the set is
+two of nine, with real-root launches down from 23 to 3, so the labels
+did not do the work.
+
+*The half that proves the kept body earns its cost:* I made the new
+dataflow hand-off WRONG — `rootAnchoredFiles(root, [])` in place of the
+readers — and `THE CENSUS…` reds (1 failed / 73 passed). A "structural"
+removal that changed an answer would be caught by the integration set,
+which is what makes that set load-bearing rather than decorative.
+
+*A3.2, A3.3 and A3.6 — the decay, recorded because it is real.* The
+sufficiency argument is by exclusion and it is a good one, but it names
+**no deliberately-uncovered risk**, and phase one's A3.6 is right that a
+real enumeration always has a tail. The specific omission the grounds
+predicted is SCALE: at 1,152 files under docs/ against a 14-file
+fixture, nothing here would notice a derivation going quadratic — both
+kept bodies meet the tree at real size, so the substance is covered, but
+neither asserts anything about cost, so a regression of exactly the kind
+this card was filed about would return silently. And the justification
+is inert prose: the keeper pins the LIST and the presence of a risk
+paragraph, never the risks' currency. This does not fail the criterion,
+which asks for the risk and the sufficiency argument and gets both. It
+is the card's known decay and it is said plainly here rather than left
+for the next reader.
+
+#### The four reds the brief expected, checked rather than accepted
+
+**push-guard.spec.ts — NOT REPRODUCED, and the attribution is right.**
+Run whole on this bench: **123 passed, 0 failed, exit 0**. The cause is
+the mode the fence imposes, and I measured it rather than inferring it:
+`docs/CONVENTIONS.md` is mode 444 in the lane worktree
+`../supertaskr-T-332` and mode 644 both here and on main, so
+`copyFileSync` carries a read-only source only inside a fenced lane. The
+three reds are T-333's and they do not travel to the merge.
+
+**cli.spec.ts — THE RED IS REAL AND THE BRIEF'S MECHANISM IS WRONG.**
+The brief says it is lane-local because the lane predates T-344 and so
+runs the pre-T-344 body against the pre-T-344 TRACKED template. If that
+were the mechanism the BASE would red too, and it does not: at
+`97c17541` this spec is **65 passed, 0 failed, exit 0**. At the tip it is
+**1 failed, 64 passed**, and the finding is `T-332 has moved beyond the
+admission's mechanical drift: frontmatter 'touches': changed`. The
+actual cause is THIS LANE'S OWN FOUR FENCE WIDENINGS: the card's
+`touches` went from three paths to six, and the grant block still living
+inside the pre-T-344 tracked template pins the base's three-path card.
+On main that block is gone — T-344, `be9726f1` — and the operational
+store is at revision 5, pinning T-332 at blob
+`f34c59a656938936ab227dabedf063ac836c48e1`, which is exactly main's
+current card blob and carries the six-path `touches`. So the red does
+not survive the merge; but it is not "not this diff's", and it must be
+re-run rather than assumed.
+
+#### One correction, and it is the one place the house rule was broken
+
+**CORRECTION 1 — THE VERB THAT LEFT THE REFUSAL CLASS IS PINNED BY A
+COMMENT.** The registry entry for `docs-gate` flips `rootFlag: false` to
+`true`, which is a shipped behaviour change the card's "What was built"
+never mentions and its "For the verifier" contradicts by calling `--root`
+"the one behaviour genuinely added". Before this diff, `rootMismatch`
+REFUSED `docs-gate` from an installed copy; now it returns null and the
+CLI hands the script the USER'S project. What keeps that safe is a
+second refusal — `requirementsFor` will not run a script whose bare
+imports have no `node_modules` beside them — and the lane's own comment
+in `cli.spec.ts` asserts precisely this ("still exit 3, still naming the
+project"). I verified the claim is TRUE: packed, installed into a
+scratch project and run, `npx supertaskr docs-gate docs/x.md` is exit 3,
+"CANNOT RUN", "Nothing was run." But the body that used to pin
+`docs-gate`'s refusal was rewritten to drive a DIFFERENT verb, so the
+claim is now carried by prose alone — a grep for a sentence answering a
+different question than "does this behaviour exist". The fix asserts it,
+derived off the registry so a second verb joining the class inherits the
+pin. Readings: with the fix, `cli.spec.ts` whole is **1 failed, 64
+passed** — the one red being the grant drift above and nothing else —
+and the corrected body alone is **1 passed**, exit 0; `tsc --noEmit`
+exit 0. With the mutant planted the body reds, `1 failed`, exit 1,
+`Error: docs-gate from an installed copy is exit 3, never an answer /
+Expected: 3 / Received: 1` — and it names `docs-gate` itself, because
+every other verb in the class is still refused by the package-escapes
+arm. Both anchors were counted before the mutant was planted: the old
+matched exactly once and the new matched none, and `cli.mjs` was
+restored to sha256
+`b33e70d248964968e276fb934206be89ddfdbf911ddfa0ce162a7d9499152301`,
+byte-identical.
+
+```mutant
+correction: the verb that left the refusal class is pinned by something that reads
+file: tools/e2e/scripts/cli.mjs
+spec: tools/e2e/tests/cli.spec.ts
+body: npx supertaskr runs out of a packed tarball installed into a project that is not this repository
+message: docs-gate from an installed copy is exit 3, never an answer
+--- old
+    if (bare.length > 0 && !existsSync(path.join(pkgRoot, "node_modules"))) {
+--- new
+    if (false && bare.length > 0 && !existsSync(path.join(pkgRoot, "node_modules"))) {
+```
+
+#### Findings that changed no row
+
+- **The closing line is not printed on the exit-3 path.** The card says a
+  `--root` run announces itself at the head AND as the last line a reader
+  meets. When the derivation throws, `main` never returns and
+  `foreignRootClosing` never runs — I saw this on both bypass attacks.
+  The reader still ends on a disclaimer ("This run is not a claim about
+  the tree"), so nothing is misread, and the body that pins "first and
+  last" drives a run that completes. Nothing reds if a later edit makes
+  that path end reassuringly.
+- **The generated census is stale at the lane tip.** `npm run
+  capabilities:check` from tools/e2e is exit 1: "capabilities: STALE —
+  committed 117410 bytes, a fresh generation is 117582 bytes".
+  `docs/CAPABILITIES.md` is outside this card's fence, so the lane could
+  not have committed it. It is the integrator's regeneration.
+- **The owed-derivation for this spec did not move (phase one's X.3).**
+  With a synthetic docs-only commit on top of each ref,
+  `gate-run.mjs --owed-set` selects the SAME four spec files at the base
+  and at the tip, and `docs-input-gate.spec.ts` is in neither. The lane
+  did not touch selection or scoping to make this spec less often owed.
+  Both worktrees were reset back to their refs, clean.
+- **The fixture's size is fixed by construction, not asserted.** Phase
+  one's A1.6 wanted a bound in a body. There is none; the fixture is
+  written from `INDEXED_DOCS` and `PLANTED_READERS`, so it grows only
+  when those lists do. Bounded, but not pinned.
+
+#### What I re-ran, because appending a verdict is a write
+
+My two commits change the card and `tools/e2e/tests/cli.spec.ts`, so
+`gate-run.mjs --owed-set` over their range derives three suites and
+twelve e2e spec files. All three legs were run on this bench.
+
+- **e2e**, the twelve owed specs at port 25332: **1 failed, 736 passed**,
+  exit 1, 7.2m. The one red is the grant-drift body described above —
+  `cli.spec.ts` "THE REAL CONFIGURATION IS CHECKED THROUGH THE PARSER'S
+  READER" — which reds on this bench because the tree predates T-344 and
+  the card's fence has since widened. It is green at the base, it is the
+  same red the lane reported, and it is not mine. `push-guard.spec.ts`
+  was inside this leg and passed.
+- **app**, `npm test` from app/: **51 files, 1171 tests passed**, exit 0.
+- **parser**, `npm test` from lib/parser/: **17 files, 454 tests
+  passed**, exit 0.
+
+#### What the integrator owes at the merge
+
+1. **Regenerate the behaviour census.** `npm run capabilities:check`
+   from tools/e2e is exit 1 at the lane tip — committed 117,410 bytes
+   against a fresh 117,582. `docs/CAPABILITIES.md` is outside this card's
+   fence, so this is the merge's write, and it is the last write before
+   the merge commit.
+2. **Re-run `cli.spec.ts` at the merged tree, and do not assume.** The
+   grant-drift red is expected to clear because main carries no grant
+   block in the shipped template and its operational store is at
+   revision 5, pinned to the six-path card. Confirm it, since the merge
+   also stamps `status: done` and appends this verdict, and the drift
+   rule is what decides whether those count as mechanical.
+3. **Take the runner figure the card defers.** Both of the card's wall
+   times and both of mine are one machine; the shard reading is owed at
+   the CI run this merge produces, read as this spec's own duration
+   inside the shard that carries it.
+4. **Apply correction 1** to `tools/e2e/tests/cli.spec.ts` — it is
+   committed on this bench directly after this verdict. **IT COSTS
+   SOMETHING AND THIS CARD IS ABOUT COST, so the figure is here rather
+   than discovered later:** `cli.spec.ts` whole goes from 11.2s to 17.7s,
+   because the installed-copy body now drives thirteen more `npx
+   supertaskr` calls — one per verb in the `--root` class, derived rather
+   than typed. The alternative was to name `docs-gate` alone, which is
+   the staleness the lane's own rewrite of that body was removing. 6.5s
+   against a spec whose own repair returned 699s is the right side of
+   that trade, but it is a trade and it is recorded.
