@@ -124,3 +124,189 @@ place the docs and settings maps compose, so the new path is not
 independent of the existing ones — what it is not is the same map.
 
 ## Verdicts
+
+### 2026-09-17 — APPROVED WITH ASSIGNED CORRECTIONS — claude-opus-5@subagent
+
+Graded on a detached bench at `4e05c413`, node v22.22.0, over the diff
+`f54e409feb85583ade9a2cc9500b507e1f152eb2..4e05c413`. Phase one's attack
+set and my grounds were hash-checked against the copies under the
+evidence directory before either was relied on; both matched.
+
+**EVERY FIGURE BELOW CARRIES ITS ARRANGEMENT**, because on this card the
+arrangement decides the answer. ARRANGEMENT A is a fresh worktree with
+`lib/parser/dist` ABSENT. ARRANGEMENT B is the same tree after
+`npm run build` in `lib/parser/`, so the built entry is present. My bench
+carries no fence: `docs/CONVENTIONS.md` is 644 here and zero tracked
+files are read-only.
+
+#### The before and the after, both taken here rather than inherited
+
+Real range `31d8212c^..31d8212c`, whose only changed path is
+`lib/parser/src/fence.ts` — a parser source that is NOT the imported
+build entry. Same tree, same arrangement B, the only difference being
+which `gate-run.mjs` is in place:
+
+| script | suites | leg | spec files |
+|---|---|---|---|
+| base `f54e409f` | `app, parser` | narrowed | **0** |
+| tip `4e05c413` | `app, e2e, parser` | narrowed | **2** — `brief.spec.ts`, `cli.spec.ts` |
+
+The census is 42, so 2 is a proper subset and phase one's pre-committed
+REJECT on a leg-granular answer does not fire. In ARRANGEMENT A the same
+range answers the whole battery under BOTH scripts, through the
+pre-existing unresolved-edge sentence — a clean checkout was already
+safe, and the hole was only ever reachable on a built tree.
+
+#### AC1 — PROVEN
+
+A1.1 and A1.10 disproved twice over. The comment-stripped T-335 region of
+`gate-run.mjs` contains zero occurrences of `dist`, `src`, `parser`,
+`.ts` or `.js` as literals — every such spelling in the diff is in prose.
+And the generality control M6 said had to be built: I moved the parser's
+declared roots on disk (`src` to `sources`, `dist` to `build`), changed
+only `tsconfig.build.json` and the two import specifiers, rebuilt, and
+`packageBuilds` followed the declaration to
+`{src: lib/parser/sources, out: lib/parser/build}` while `deriveOwning`
+still selected exactly the two importers, naming the configuration in its
+`via` sentence. A1.2 disproved by planting a third, previously unknown
+direct importer: selected automatically. A1.7 disproved twice — one
+direct import reaches SIXTEEN files under the output root, and a planted
+spec reaching the entry only through a helper was selected. A1.6
+disproved: the diff changes zero manifests and the end-to-end package
+still declares no dependencies. A1.11 satisfied by the table above.
+
+**A1.8 is the one row the implementation passes and the BODY does not.**
+The coupling is directory-granular, so a non-entry source behaves
+identically — I measured that with `fence.ts`. But the body moves
+`lib/parser/src/pure.ts` and only that, which is the build entry itself,
+so it cannot tell this implementation from an entry-point-only one.
+Correction 1.
+
+#### AC2 — PROVEN, and the fail-closed branch is real
+
+A2.2 was phase one's sharpest demand: a mutant making the unreadable case
+answer something OTHER than the whole battery, with the body dying on it.
+It exists and it does. Making the `generatedUnplaceable` branch in
+`deriveOwed` unreachable kills the criterion-2 body ALONE — the other
+three survive.
+
+A2.6's three unreadability shapes all fire from DATA ON DISK through the
+real CLI, in arrangement B, over the range above. Absent config,
+malformed config, and — the shape phase one said implementations miss —
+a valid config whose declared output root does not contain the entry.
+Each answers the whole battery, and each NAMES `lib/parser/dist/pure.js`
+with a different and correct reason: "could not be read", "is not
+readable as JSON", "declares no output root that contains it". A2.4 is
+not satisfied by any string; the sentence discriminates the cause.
+
+A2.5 answered on the mechanism: `whole: true` produces the UNFILTERED
+leg argv, identical to the registry's own, against a filtered argv when
+the leg is narrowed. X7 satisfied — the body asserts the emitted set, and
+uses the exit only on the `--owning` arm, where the exit does
+discriminate.
+
+**A2.3 stands as a body defect.** The criterion-2 body induces
+unreadability by handing `generatedEntries` a synthesized `builds` input
+with the parser's entry emptied. That is the stub shape phase one asked
+me to refuse. The code is right — I proved all three disk shapes myself —
+but the body leans on an injected value for the arm it exists to pin.
+Correction 2.
+
+#### AC3 — PROVEN, on a stronger reading than the body's own
+
+I ran the base script and the tip script over SEVEN real ranges in
+arrangement B and compared the COMPLETE owed set — suites, leg, `byPath`,
+`unplaceable` and the fail-closed sentence, not the spec count alone.
+Six are byte-identical: a lone app source (`app` only), a lone end-to-end
+spec (exactly one spec file), `README.md` (whole battery, fail-closed),
+two task cards (12 spec files each) and an eighteen-path range spanning
+Rust and docs. The seventh is the parser source, which moves, and is the
+one this arm exists to move. A3.3 is answered — the controls are narrow
+and discriminating — and A3.4 with them, because the comparison was the
+complete set.
+
+A3.1 is a provenance note rather than a failure: the body's own
+comparison is the same function with and without its new inputs, which
+faithfully reproduces the base because the base had no such parameters,
+but it is not a base-ref reading. Mine is, and it agrees. No golden
+exists to regenerate, so A3.2 is moot.
+
+#### Cross-cutting
+
+**X6 is CLEARED.** The T-335 region executes nothing: zero dynamic
+`import()`, `require()`, `eval`, `new Function`, `execSync` or
+`spawnSync`. It opens exactly three inputs — a graded package's own
+`package.json`, the TypeScript project that manifest's build script
+names, and the tracked corpus from `git ls-files` through a pre-existing
+helper that passes an argv array. All three are TRACKED, which is the
+discriminator my grounds redirected this row to, and none lies under an
+output root. The rejection of the source-map shortcut is real and was
+available: `tsconfig.build.json` turns on `sourceMap` and
+`declarationMap`, so the `sources` arrays exist on a built tree and were
+declined anyway.
+
+One finding against that clearance, and it is Correction 3:
+`resolveTsconfig` follows an `extends` chain without containing the
+resolved path to the repository root, so repository-authored content can
+direct a read outside it. Read-only and JSON-only, but a crafted specifier
+can surface a fragment of an out-of-tree file in the fail-closed sentence
+this derivation prints into CI logs.
+
+**X2 answered in the NEGATIVE, which the lane did not claim.** I built the
+mutant phase one asked for: removing the source-root containment test in
+`generatedEntries`, so the relationship is consulted for every changed
+path. It kills the criterion-3 body ALONE and leaves criterion 1 green.
+The two kill sets are therefore not contained, and criterion 3 is not a
+restatement.
+
+X1's DATA mutant is owed and passes. Altering the real declaration —
+`rootDir` from its own value to a directory that does not exist — kills
+all four bodies. The report argued a data mutant was not owed separately;
+it is, and the property survives it.
+
+X3: the fence holds exactly. The diff is three paths — the two in
+`touches:` and this card. X4: the design note was written and I do not
+grade it, honouring phase one's pre-commitment. X5: one behavioural
+change maps to no criterion — four new diagnostic fields on
+`owedForRange`'s `explain`, one of which (`generatedEntriesReached`) is
+read nowhere at all. They are absent from `--owed-set` stdout, so nothing
+observable at the CLI turns on them; noted, not charged.
+
+#### The three expected reds, tested rather than accepted
+
+I ran `push-guard.spec.ts` whole on this unfenced bench: **123 passed, 0
+failed**, read off the failed count and not the last line, including all
+three bodies named in the hand-off. That is the control the attribution
+needed. Green at 644 and red at 444 confirms T-333's mechanism — the
+second `copyFileSync` onto a destination the first left read-only — and
+confirms these reds are the lane fence's, not this diff's.
+
+#### What I measured, with exits
+
+Arrangement B unless stated. `gate-run.spec.ts` whole: **89 passed, 0
+failed**, exit 0, all four new bodies among them. `push-guard.spec.ts`
+whole: 123 passed, 0 failed, exit 0. `typecheck` 0, `lint:docs` 0,
+`lint:tokens` 0. `capabilities:check` **exit 1 — STALE by 531 bytes**,
+119521 committed against 120052 fresh, exactly the figure the lane
+reported. Seven base-versus-tip range comparisons, all exit 0. Six
+mutants, each restored to a clean tree.
+
+GRAPH REGEN verified on the mechanism rather than an exit code, as the
+hand-off asked: `docs/architecture/graph.json` contains zero occurrences
+of `tools/e2e`, none of the six new exported symbols, and — the control
+that makes it scope rather than staleness — none of three PRE-EXISTING
+exported symbols from the same file either. The regeneration produces
+nothing for this diff.
+
+The unconditional arm's cost is real but small: ~0.19s base against
+~0.20-0.26s tip over three runs each on one range.
+
+#### What the integrator owes at the merge
+
+1. Regenerate `docs/CAPABILITIES.md` and `docs/INDEX.md` in the merge
+   commit — `capabilities:check` is red by 531 bytes and both files are
+   outside this lane's fence.
+2. Nothing for the graph: verified inert above.
+3. The three `push-guard.spec.ts` reds are T-333's and will reappear in
+   any fenced lane. They are green on an unfenced tree.
+4. Apply the three corrections below, each with its drill.
