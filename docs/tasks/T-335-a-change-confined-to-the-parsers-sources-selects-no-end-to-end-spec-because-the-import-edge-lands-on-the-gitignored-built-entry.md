@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 size: S
 priority: 1
-status: suggested
+status: planned
 suggested_by: "the T-331 verifier bench on 2026-09-15, measured through the blessed runner on a range whose only changed path was a parser source; the behaviour is older than T-331 and that card's narrowing is what makes it reachable on the runner"
 blocked_by: []
 touches: [tools/e2e/scripts/gate-run.mjs, tools/e2e/tests/gate-run.spec.ts]
