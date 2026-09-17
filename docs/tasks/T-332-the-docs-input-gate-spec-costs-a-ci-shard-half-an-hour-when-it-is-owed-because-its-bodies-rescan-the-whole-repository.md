@@ -9,7 +9,7 @@ priority: 2
 status: building
 suggested_by: "the architect seat on 2026-09-15, from the Codex orchestrator's reading of run 34946192300, verified against shard 4's log"
 blocked_by: []
-touches: [tools/e2e/tests/docs-input-gate.spec.ts, tools/e2e/scripts/docs-gate.mjs, tools/e2e/scripts/docs-scan.mjs]
+touches: [tools/e2e/tests/docs-input-gate.spec.ts, tools/e2e/scripts/docs-gate.mjs, tools/e2e/scripts/docs-scan.mjs, tools/e2e/scripts/cli.mjs, tools/e2e/tests/push-checks.spec.ts]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by:
@@ -34,5 +34,39 @@ The spellings and the exit combinations exercised over small controlled fixture 
 - WHEN a body is kept in the representative real-repository set THE card SHALL record what integration risk against the CURRENT repository that body covers and why the chosen representative set is sufficient, so the set is justified by its coverage rather than by its label.
 
 ## Implementation notes
+
+## The fence widened by two paths, 2026-09-17, during the lane
+
+Both are caused by this card's own repair and both were verified against
+the tree before the seat granted them.
+
+`tools/e2e/scripts/cli.mjs` — the repair gives `docs-gate.mjs` a `--root`
+flag, and the CLI registry's `docs-gate` entry still declares `rootFlag:
+false`. A body checks the registry's claim against the target script's own
+flags IN BOTH DIRECTIONS, so the declaration is now false and the body is
+right to red. The truthful value is `true`, and the registry carries no
+spelling for "the target takes the flag and this verb does not pass it".
+
+THE BEHAVIOURAL CONSEQUENCE IS NAMED RATHER THAN BURIED, because it
+reaches past this card's subject: `supertaskr docs-gate` will hand the
+resolved project root to the script. Inside this repository that root IS
+the script's own repository, so the run is unchanged — the lane measured
+that equality path deliberately. From an INSTALLED copy the verb starts
+working on the project instead of answering about the tooling's own
+checkout, which is the limitation `cli.mjs`'s own comment already names.
+That is a fix rather than a regression, and it is declared here so a
+verifier grades it as surface this card knowingly moved.
+
+`tools/e2e/tests/push-checks.spec.ts` — one anchor string. A body pins the
+shared derivation's CALL SITE by its literal text so the docs gate and the
+push checks cannot disagree about the tie. The call is unmoved and still
+the shared derivation; only its argument changes, because the gate now
+judges the root it was given. Three anchors of the same shape inside this
+card's own spec were re-pointed in the lane; this is the fourth and it sat
+outside the fence.
+
+WHAT WAS REFUSED: `tools/e2e/tests/push-guard.spec.ts`. Its three reds are
+T-333, already filed, and are not this card's to repair — see the finding
+recorded against that card.
 
 ## Verdicts
