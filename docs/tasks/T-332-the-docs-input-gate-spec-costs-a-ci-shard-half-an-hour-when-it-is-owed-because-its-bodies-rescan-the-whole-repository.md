@@ -9,7 +9,7 @@ priority: 2
 status: building
 suggested_by: "the architect seat on 2026-09-15, from the Codex orchestrator's reading of run 34946192300, verified against shard 4's log"
 blocked_by: []
-touches: [tools/e2e/tests/docs-input-gate.spec.ts, tools/e2e/scripts/docs-gate.mjs, tools/e2e/scripts/docs-scan.mjs, tools/e2e/scripts/cli.mjs, tools/e2e/tests/push-checks.spec.ts]
+touches: [tools/e2e/tests/docs-input-gate.spec.ts, tools/e2e/scripts/docs-gate.mjs, tools/e2e/scripts/docs-scan.mjs, tools/e2e/scripts/cli.mjs, tools/e2e/tests/push-checks.spec.ts, tools/e2e/tests/cli.spec.ts]
 builder: claude-opus-5@subagent
 verifier: claude-opus-5@subagent
 built_by:
@@ -34,6 +34,34 @@ The spellings and the exit combinations exercised over small controlled fixture 
 - WHEN a body is kept in the representative real-repository set THE card SHALL record what integration risk against the CURRENT repository that body covers and why the chosen representative set is sufficient, so the set is justified by its coverage rather than by its label.
 
 ## Implementation notes
+
+**THE FENCE TOOK A SIXTH PATH ON 2026-09-17, AND IT IS THIS CARD'S OWN
+SHADOW.** `tools/e2e/tests/cli.spec.ts` was granted for one body and one
+reason. `cli.spec.ts`'s installed-copy body — "npx supertaskr runs out of
+a packed tarball installed into a project that is not this repository" —
+drove `docs-gate` BY NAME as its example of a verb whose script resolves
+its own root. This card gives `docs-gate` a `--root <checkout>` flag, so
+that verb LEFT the class: the CLI stops refusing it on the root ground and
+gets one step further, to a dependency an installed copy has not got. Exit
+3 and the project's path are unchanged; only the sentence moved, and the
+sentence the body checked for was about the limitation this card removes.
+
+**THE HARD-CODED VERB IS THE DEFECT, NOT THE EXPECTATION.** The body picks
+one verb by name to stand for a CLASS the registry defines, and the class
+is still populated: of the ten verbs declaring `rootFlag: false`, seven
+carry a `target` of kind `script` — `gate`, `capabilities`, `health`,
+`tokens`, `boot`, `orphan-drill`, `session`. So the example is derived
+from the registry rather than typed, with a floor asserting that set is
+non-empty, because an empty class would agree with everything. The
+expectation is NOT widened to accept either refusal shape: that would
+weaken a body whose whole point is that an installed copy refuses with a
+sentence rather than a stack trace.
+
+The lane raised this as an ask, wrote the repair as text without touching
+the file, and parked; the seat granted the path only after T-344's lane
+closed, because that card's fence held `cli.spec.ts` and two live lanes
+may not hold one path.
+
 
 ## The fence widened by two paths, 2026-09-17, during the lane
 
