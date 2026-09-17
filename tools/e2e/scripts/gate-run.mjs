@@ -223,7 +223,7 @@ import {
   trackedDirt,
   writeToken,
 } from "../../../.claude/hooks/gate-token.mjs";
-import { docsGate, docsReaders, sourceCorpus, stripComments } from "./docs-scan.mjs";
+import { docsGate, docsReaders, sourceCorpus, stripComments, trackedFiles } from "./docs-scan.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 /** Repo root: tools/e2e/scripts -> tools/e2e -> tools -> root. */
@@ -1184,9 +1184,27 @@ export function normaliseChanged(raw, root = repoRoot) {
  *   composes with the import arm the same way the docs map does, and for
  *   the same reason: the file that opens the runtime template is a
  *   SCRIPT, and the spec that owns that is the one importing it.
+ * @param {Record<string, string[]>} [input.generatedByPath]  changed source
+ *   path -> the GENERATED files a spec may reach on its behalf, from
+ *   `generatedEntries` (T-335). This arm does not compose through a
+ *   reader the way the two above do, and the asymmetry is the point: the
+ *   spec's edge already lands on the generated file, so what was missing
+ *   was never a reader but the fact that a changed SOURCE stands behind
+ *   that file. Nothing here rewrites a path — the standing-behind is the
+ *   owning package's own build configuration, read once by the caller.
+ * @param {Record<string, string>} [input.generatedVia]  generated file ->
+ *   the sentence naming the configuration that produces it, so a
+ *   selection can say which declaration it came from.
  * @returns {OwningDerivation}
  */
-export function owningSpecs({ changed, reach, docsReadersByPath = {}, settingsReadersByPath = {} }) {
+export function owningSpecs({
+  changed,
+  reach,
+  docsReadersByPath = {},
+  settingsReadersByPath = {},
+  generatedByPath = {},
+  generatedVia = {},
+}) {
   const specs = Object.keys(reach).sort();
   /** @type {Set<string>} */
   const owed = new Set();
@@ -1219,6 +1237,16 @@ export function owningSpecs({ changed, reach, docsReadersByPath = {}, settingsRe
         }
       }
     }
+    for (const generated of generatedByPath[p] ?? []) {
+      for (const s of specs) {
+        if (hits.has(s)) continue;
+        if (!(reach[s] ?? []).includes(generated)) continue;
+        hits.set(
+          s,
+          `imports ${generated}, and ${generatedVia[generated] ?? "its owning package builds that from this path's source root"}`,
+        );
+      }
+    }
     if (hits.size === 0) {
       unplaceable.push({
         path: p,
@@ -1247,7 +1275,7 @@ export function owningSpecs({ changed, reach, docsReadersByPath = {}, settingsRe
  *
  * @param {string[]} rawChanged
  * @param {string} [root]
- * @returns {OwningDerivation & { changed: string[], unresolved: string[] }}
+ * @returns {OwningDerivation & { changed: string[], unresolved: string[], generatedUnplaceable: { path: string, why: string }[] }}
  */
 export function deriveOwning(rawChanged, root = repoRoot) {
   const changed = rawChanged.map((p) => normaliseChanged(p, root));
@@ -1264,10 +1292,21 @@ export function deriveOwning(rawChanged, root = repoRoot) {
   if (settingsPaths.length > 0) {
     Object.assign(settingsReadersByPath, settingsReaders(settingsPaths, root).byPath);
   }
+  const generated = generatedSources(changed, reach, root);
   return {
     changed,
     unresolved,
-    ...owningSpecs({ changed, reach, docsReadersByPath, settingsReadersByPath }),
+    // T-335: reported rather than refused HERE, because this function is
+    // the rule's reader and `mainOwning` is the arm that owes a refusal.
+    generatedUnplaceable: generated.unplaceable,
+    ...owningSpecs({
+      changed,
+      reach,
+      docsReadersByPath,
+      settingsReadersByPath,
+      generatedByPath: generated.byPath,
+      generatedVia: generated.via,
+    }),
   };
 }
 
@@ -1484,7 +1523,7 @@ export function settingsReaders(paths, root = repoRoot) {
 // from the same range with this same function and requires the token to
 // cover it.
 //
-// ── FOUR ARMS, COMPOSED, AND NOT ONE OF THEM IS A LIST ───────────────
+// ── FIVE ARMS, COMPOSED, AND NOT ONE OF THEM IS A LIST ───────────────
 //   THE PACKAGE ROOTS come off the registry's own `cwd` fields
 //     (`PACKAGE_ROOTS`), so adding a graded suite moves this derivation
 //     with it and a hand-kept copy cannot drift from the runner.
@@ -1498,6 +1537,13 @@ export function settingsReaders(paths, root = repoRoot) {
 //     T-330 for the one input none of the three above can place: this
 //     project's own configuration. Its readers are FILES too, and are
 //     placed through the same package roots.
+//   THE GENERATED-ENTRY RELATIONSHIP is `generatedSources` below, added
+//     by T-335 for the edge the import arm reaches and no changed path
+//     can ever be: a spec imports a package's BUILT entry, and git does
+//     not track it. It is read off the owning package's own build
+//     configuration, so it is a DECLARATION rather than a rewritten
+//     path, and a generated file no configuration places is named and
+//     fails closed.
 //
 // ── AND THE `file:` EDGE, WHICH THE PACKAGE ROOTS ALONE WOULD MISS ───
 // `app/package.json` depends on the parser at `file:../lib/parser`, so a
@@ -1613,6 +1659,432 @@ export function packageDependents(root = repoRoot, roots = PACKAGE_ROOTS) {
   return Object.fromEntries(Object.entries(out).map(([id, s]) => [id, [...s].sort()]));
 }
 
+// ── THE GENERATED ENTRY AND ITS OWNING SOURCES (T-335) ────────────────
+//
+// ── THE DEAD EDGE THIS ARM EXISTS FOR ────────────────────────────────
+// Two specs import `lib/parser/dist/pure.js`, an edge T-317 added, and
+// `lib/parser/.gitignore` excludes `dist/`. The walk above REACHES that
+// file and every generated file it imports, so the graph is not missing
+// the edge — it is missing the only thing that could ever use it. A
+// range's changed paths come from `git diff --name-only`, and git does
+// not name a file it does not track, so no changed path can ever BE one
+// of those generated files. The edge could contribute a selection
+// exactly never: measured at `f54e409f` with the parser built, a range
+// whose only changed path was `lib/parser/src/pure.ts` owed `app` and
+// `parser` with the end-to-end leg narrowed to ZERO spec files, and
+// neither importer was among them. Until T-331 narrowed the leg the
+// whole battery ran anyway and this cost nothing.
+//
+// ── WHAT IS READ, AND WHY IT IS NOT A REWRITTEN PATH ─────────────────
+// The relationship between `lib/parser/dist/pure.js` and the sources
+// that produce it is DECLARED, by the package that owns both: its own
+// manifest's `build` script names a TypeScript project, and that project
+// names `rootDir` and `outDir`. So this arm reads the owning package's
+// build configuration — the `extends` chain included, because this
+// repository writes the emit options in a second file that inherits the
+// first — and spells neither `dist` nor `src` itself. A package that
+// moves where it builds to moves this derivation with it on the day it
+// lands, and a package that builds some other way contributes no
+// relationship rather than a wrong one.
+//
+// ── THE COUPLING IS THE PACKAGE'S, NOT ONE FILE'S ────────────────────
+// `rootDir` -> `outDir` is a DIRECTORY relationship and this arm keeps
+// it one: any source under the root couples to every generated file
+// under the output root that the import graph reaches. Mapping
+// `dist/pure.js` back to `src/pure.ts` alone would be more precise and
+// would be wrong in the one direction this derivation may not be wrong
+// in — `src/index.ts` is an entry nothing in this lane imports, a
+// re-export moves an emit its own filename does not name, and a
+// per-file map would answer "no spec" for a source change that really
+// can move a spec's subject.
+//
+// ── AND WHERE THE RELATIONSHIP CANNOT BE READ ────────────────────────
+// A generated file in the graph that no package's build configuration
+// places is reported BY NAME and the caller turns it into the whole
+// battery — the same shape, and the same reason, as an import edge that
+// lands nowhere. That is not a placeholder waiting to be optimised
+// away: an unreadable relationship means this derivation cannot say
+// which sources move that file, and the only honest answer to "which
+// suites does this range owe" is then all of them.
+//
+// ── WHY THE T-330 SETTINGS CONSUMER MAP DOES NOT CARRY THIS ──────────
+// `settingsReadersIn` above answers "which files READ this path", over a
+// textual corpus, by path spellings and the identifiers bound to them.
+// This arm answers "which sources PRODUCE this path", and the answer is
+// not textual at all: no source under `lib/parser/src/` mentions
+// `lib/parser/dist/pure.js`, and the file that does mention it is the
+// spec doing the importing — the consumer, not the producer. Pointed at
+// a generated entry the settings scan would return its IMPORTERS, which
+// this derivation already has from the import graph, and never the
+// sources. The two are different relations over the same tree, so they
+// are two arms rather than one abstraction.
+
+/** The manifest script whose command declares how a package is built. */
+export const BUILD_SCRIPT = "build";
+
+/**
+ * Every TypeScript project a build script runs, in the order it runs
+ * them. A bare `tsc` contributes `tsconfig.json`, which is the file it
+ * would read; `-p`/`--project` names another.
+ *
+ * THE SPLIT IS ON THE SHELL'S OWN SEPARATORS because this repository
+ * writes `tsc && tsc -p tsconfig.test.json && vite build`, and a scanner
+ * that read that as one command would hand the second project's flags to
+ * the first. A segment with no `tsc` in it contributes nothing — a
+ * bundler's output is not a relationship this function can read, and
+ * saying so is what makes the fail-closed arm below fire honestly.
+ *
+ * @param {unknown} script
+ * @returns {string[]}
+ */
+export function buildConfigsIn(script) {
+  /** @type {string[]} */
+  const out = [];
+  for (const part of String(script ?? "").split(/&&|\|\||;/)) {
+    const words = part.trim().split(/\s+/).filter((w) => w !== "");
+    const at = words.findIndex((w) => w === "tsc" || w.endsWith("/tsc"));
+    if (at < 0) continue;
+    let file = "tsconfig.json";
+    const rest = words.slice(at + 1);
+    for (let i = 0; i < rest.length; i += 1) {
+      const w = rest[i] ?? "";
+      if ((w === "-p" || w === "--project") && rest[i + 1] !== undefined) {
+        file = /** @type {string} */ (rest[i + 1]);
+        break;
+      }
+      const inline = /^--project=(.+)$/.exec(w);
+      if (inline?.[1] !== undefined) {
+        file = inline[1];
+        break;
+      }
+    }
+    if (!out.includes(file)) out.push(file);
+  }
+  return out;
+}
+
+/**
+ * @typedef {object} TsconfigReading
+ * @property {Record<string, unknown>} compilerOptions  merged along the
+ *   `extends` chain, nearest file winning.
+ * @property {unknown} include  the nearest `include` found, likewise.
+ * @property {string | undefined} [problem]  why nothing could be read.
+ */
+
+/**
+ * One TypeScript project, with its `extends` chain closed.
+ *
+ * TOLERANT OF THE DIALECT tsconfig IS ACTUALLY WRITTEN IN: comments and
+ * a trailing comma are legal there and fatal to `JSON.parse`, and a
+ * derivation that refused this repository's own configuration would fail
+ * closed for a reason about punctuation. A BARE `extends` SPECIFIER
+ * (a package, not a relative path) is left unfollowed and is not an
+ * error on its own — what matters is whether an emit relationship comes
+ * out at the end, and the caller says so if none does.
+ *
+ * @param {string} root
+ * @param {string} dir   the directory `file` is spelled relative to, repo-relative
+ * @param {string} file
+ * @param {Set<string>} [seen]
+ * @returns {TsconfigReading}
+ */
+export function resolveTsconfig(root, dir, file, seen = new Set()) {
+  const withJson = file.endsWith(".json") ? file : `${file}.json`;
+  const rel = path.posix.normalize(path.posix.join(dir, withJson));
+  // T-335 correction 3. CONTAINED TO THE REPOSITORY, because every
+  // spelling that reaches here — a `-p` flag in a manifest's build
+  // script, an `extends` specifier — is REPOSITORY CONTENT, and a range
+  // may come from a branch nobody has reviewed. Without this an
+  // `extends` of "../../../../../etc/…" makes a CI PLANNING step open a
+  // file outside the tree, and the parse error carries a fragment of it
+  // into the fail-closed sentence this derivation prints into the log.
+  // Refused BY NAME rather than read, which is the same shape of answer
+  // an absent file already gets, so nothing downstream learns a new case.
+  if (rel === ".." || rel.startsWith("../") || path.posix.isAbsolute(rel)) {
+    return {
+      compilerOptions: {},
+      include: undefined,
+      problem: `${rel} lies outside the repository, so this derivation will not open it`,
+    };
+  }
+  if (seen.has(rel)) {
+    return { compilerOptions: {}, include: undefined, problem: `${rel} extends itself` };
+  }
+  seen.add(rel);
+  let raw = "";
+  try {
+    raw = readFileSync(path.join(root, rel), "utf8");
+  } catch {
+    return { compilerOptions: {}, include: undefined, problem: `${rel} could not be read` };
+  }
+  /** @type {unknown} */
+  let doc;
+  try {
+    doc = JSON.parse(stripComments(raw).replace(/,(\s*[}\]])/g, "$1"));
+  } catch (err) {
+    return {
+      compilerOptions: {},
+      include: undefined,
+      problem: `${rel} is not readable as JSON (${err instanceof Error ? err.message : String(err)})`,
+    };
+  }
+  const obj = /** @type {Record<string, unknown>} */ (doc ?? {});
+  /** @type {TsconfigReading} */
+  let inherited = { compilerOptions: {}, include: undefined };
+  const ext = obj["extends"];
+  if (typeof ext === "string" && ext.startsWith(".")) {
+    inherited = resolveTsconfig(root, path.posix.dirname(rel), ext, seen);
+  }
+  const own = /** @type {Record<string, unknown>} */ (obj["compilerOptions"] ?? {});
+  return {
+    compilerOptions: { ...inherited.compilerOptions, ...own },
+    include: obj["include"] ?? inherited.include,
+  };
+}
+
+/**
+ * The ONE directory an `include` names, when it names one directory.
+ * `["src"]` is this repository's shape and stands in for an unwritten
+ * `rootDir`, which `tsc` would infer the same way. Anything with a glob,
+ * an extension or a second entry is not a source root and is refused
+ * rather than guessed at.
+ * @param {unknown} include
+ * @returns {string | undefined}
+ */
+export function soleIncludeDir(include) {
+  if (!Array.isArray(include) || include.length !== 1) return undefined;
+  const only = include[0];
+  if (typeof only !== "string" || only === "") return undefined;
+  if (/[*?[\]]/.test(only) || /\.[A-Za-z]+$/.test(only)) return undefined;
+  return only;
+}
+
+/**
+ * @typedef {object} PackageBuild
+ * @property {string} config  the TypeScript project, repo-relative
+ * @property {string} src     its source root, repo-relative, no trailing slash
+ * @property {string} out     its output root, repo-relative, no trailing slash
+ */
+
+/**
+ * suite -> every emit relationship its package's own build declares,
+ * read off the manifests and the projects they name.
+ *
+ * A PACKAGE THAT DECLARES NONE IS NOT AN ERROR HERE and the reason is
+ * recorded rather than thrown: `tools/e2e` has no build at all, and
+ * `app`'s two projects are `noEmit` because a bundler writes its output.
+ * Neither is a problem until something in the import graph turns out to
+ * be generated by one of them, and that is the question the rule below
+ * asks — so this function REPORTS what it could not read and refuses
+ * nothing.
+ *
+ * @param {string} [root]
+ * @param {Readonly<Record<string, string>>} [roots]
+ * @returns {{ byPackage: Record<string, PackageBuild[]>, notes: Record<string, string[]> }}
+ */
+export function packageBuilds(root = repoRoot, roots = PACKAGE_ROOTS) {
+  /** @type {Record<string, PackageBuild[]>} */
+  const byPackage = {};
+  /** @type {Record<string, string[]>} */
+  const notes = {};
+  for (const [id, dir] of Object.entries(roots)) {
+    byPackage[id] = [];
+    notes[id] = [];
+    /** @type {unknown} */
+    let pkg;
+    try {
+      pkg = JSON.parse(readFileSync(path.join(root, dir, "package.json"), "utf8"));
+    } catch {
+      notes[id].push(`${dir}/package.json could not be read as a manifest`);
+      continue;
+    }
+    const scripts = /** @type {Record<string, unknown>} */ (
+      /** @type {Record<string, unknown>} */ (pkg ?? {})["scripts"] ?? {}
+    );
+    const script = scripts[BUILD_SCRIPT];
+    if (typeof script !== "string") {
+      notes[id].push(`${dir}/package.json declares no ${BUILD_SCRIPT} script`);
+      continue;
+    }
+    const configs = buildConfigsIn(script);
+    if (configs.length === 0) {
+      notes[id].push(
+        `the ${BUILD_SCRIPT} script of ${dir} runs no TypeScript project, so this derivation ` +
+          "cannot read where it emits",
+      );
+      continue;
+    }
+    for (const file of configs) {
+      const reading = resolveTsconfig(root, dir, file);
+      const rel = path.posix.normalize(path.posix.join(dir, file.endsWith(".json") ? file : `${file}.json`));
+      if (reading.problem !== undefined) {
+        notes[id].push(reading.problem);
+        continue;
+      }
+      const co = reading.compilerOptions;
+      const outDir = typeof co["outDir"] === "string" ? co["outDir"] : undefined;
+      if (outDir === undefined) {
+        notes[id].push(`${rel} declares no outDir, so it emits nothing this arm can place`);
+        continue;
+      }
+      const srcDir = typeof co["rootDir"] === "string" ? co["rootDir"] : soleIncludeDir(reading.include);
+      if (srcDir === undefined) {
+        notes[id].push(`${rel} declares neither a rootDir nor a single include directory`);
+        continue;
+      }
+      byPackage[id].push({
+        config: rel,
+        src: path.posix.normalize(path.posix.join(dir, srcDir)).replace(/\/+$/, ""),
+        out: path.posix.normalize(path.posix.join(dir, outDir)).replace(/\/+$/, ""),
+      });
+    }
+  }
+  return { byPackage, notes };
+}
+
+/**
+ * @typedef {object} GeneratedPlacement
+ * @property {Record<string, string[]>} byPath  changed path -> the generated
+ *   files a spec may reach on its behalf, sorted.
+ * @property {Record<string, string>} via  generated file -> the sentence
+ *   naming the configuration that produces it and the sources it is
+ *   produced from, so a selection can say where it came from.
+ * @property {Record<string, string[]>} byPackage  suite -> the generated
+ *   files the import graph reaches under that package's output roots.
+ * @property {{ path: string, why: string }[]} unplaceable  every generated
+ *   file in the graph no build configuration maps back onto sources.
+ */
+
+/**
+ * THE RULE, AND IT IS A PURE FUNCTION OF ITS NAMED INPUTS.
+ *
+ * A file in the import graph is GENERATED when git does not track it:
+ * that is the property that makes the edge dead, and it is the same
+ * reading `treeWithout`'s fixture in this lane's spec derives a fresh
+ * runner from. A generated file is PLACED when some package's build
+ * configuration says it lies under that package's output root; the
+ * sources it couples to are that configuration's source root.
+ *
+ * @param {object} input
+ * @param {string[]} input.changed   repo-relative paths the range moved
+ * @param {string[]} input.reached   every file the spec walk reaches
+ * @param {Set<string> | undefined} input.tracked  every path git tracks,
+ *   or `undefined` when that reading itself failed
+ * @param {Record<string, PackageBuild[]>} input.builds  from `packageBuilds`
+ * @param {Record<string, string[]>} [input.notes]  from `packageBuilds`
+ * @param {Readonly<Record<string, string>>} [input.roots]  the package roots a
+ *   generated file nothing places is reported against
+ * @returns {GeneratedPlacement}
+ */
+export function generatedEntries({ changed, reached, tracked, builds, notes = {}, roots = PACKAGE_ROOTS }) {
+  /** @type {Record<string, string[]>} */
+  const byPackage = {};
+  /** @type {Record<string, string>} */
+  const via = {};
+  /** @type {{ path: string, why: string }[]} */
+  const unplaceable = [];
+  for (const id of Object.keys(builds)) byPackage[id] = [];
+  if (tracked === undefined) {
+    return {
+      byPath: {},
+      via,
+      byPackage,
+      unplaceable: [
+        {
+          path: ".",
+          why:
+            "git would not list the tracked corpus, so this derivation cannot tell which files " +
+            "in the import graph are generated and therefore unreachable by any changed path",
+        },
+      ],
+    };
+  }
+  for (const file of reached) {
+    /** @type {{ id: string, build: PackageBuild } | undefined} */
+    let placed;
+    for (const [id, entries] of Object.entries(builds)) {
+      for (const build of entries) {
+        if (file !== build.out && !file.startsWith(`${build.out}/`)) continue;
+        if (placed === undefined || build.out.length > placed.build.out.length) placed = { id, build };
+      }
+    }
+    if (placed !== undefined) {
+      /** @type {string[]} */ (byPackage[placed.id]).push(file);
+      via[file] =
+        `${placed.build.config} builds ${placed.build.out}/ from ${placed.build.src}/`;
+      continue;
+    }
+    if (tracked.has(file)) continue;
+    const ownerId = suiteOfPath(file, roots);
+    const reason =
+      ownerId === undefined
+        ? "it lies under no graded package root, so there is no manifest here to read a build from"
+        : (notes[ownerId] ?? []).join("; ") ||
+          `${ownerId}'s build declares no output root that contains it`;
+    unplaceable.push({
+      path: file,
+      why:
+        "git does not track it, so no changed path can ever be it, and no package's build " +
+        `configuration says which sources produce it — ${reason}`,
+    });
+  }
+  /** @type {Record<string, string[]>} */
+  const byPath = {};
+  for (const p of changed) {
+    /** @type {Set<string>} */
+    const hits = new Set();
+    for (const [id, entries] of Object.entries(builds)) {
+      for (const build of entries) {
+        if (p !== build.src && !p.startsWith(`${build.src}/`)) continue;
+        for (const g of byPackage[id] ?? []) hits.add(g);
+      }
+    }
+    if (hits.size > 0) byPath[p] = [...hits].sort();
+  }
+  return {
+    byPath,
+    via,
+    byPackage: Object.fromEntries(Object.entries(byPackage).map(([id, f]) => [id, f.sort()])),
+    unplaceable,
+  };
+}
+
+/**
+ * The rule as the CLI runs it: the readings taken, then the rule. Kept
+ * separate so the rule stays testable with no tree at all, and so this
+ * function is the ONE place a reading happens.
+ *
+ * THIS ONE IS PAID FOR ON EVERY DERIVATION, unlike the docs and settings
+ * scans beside it, and deliberately: its fail-closed arm is a fact about
+ * the GRAPH rather than about the range, exactly as `unresolved` is, so
+ * a range that moved nothing near a package's sources must still answer
+ * for a generated file nothing can place. It costs one `git ls-files`
+ * and a manifest and project read per graded package — no corpus walk.
+ *
+ * @param {string[]} changed
+ * @param {Record<string, string[]>} reach  from `specReach`
+ * @param {string} [root]
+ * @param {Readonly<Record<string, string>>} [roots]
+ * @returns {GeneratedPlacement & { builds: Record<string, PackageBuild[]> }}
+ */
+export function generatedSources(changed, reach, root = repoRoot, roots = PACKAGE_ROOTS) {
+  /** @type {Set<string>} */
+  const reached = new Set();
+  for (const files of Object.values(reach)) for (const f of files) reached.add(f);
+  /** @type {Set<string> | undefined} */
+  let tracked;
+  try {
+    tracked = new Set(trackedFiles(root));
+  } catch {
+    tracked = undefined;
+  }
+  const { byPackage: builds, notes } = packageBuilds(root, roots);
+  return {
+    ...generatedEntries({ changed, reached: [...reached].sort(), tracked, builds, notes, roots }),
+    builds,
+  };
+}
+
 /**
  * @typedef {object} OwedDerivation
  * @property {string[]} suites   the graded suites this range owes, sorted.
@@ -1621,6 +2093,10 @@ export function packageDependents(root = repoRoot, roots = PACKAGE_ROOTS) {
  *   graph cannot narrow, otherwise exactly the spec files owed.
  * @property {{ path: string, suites: string[], specs: string[], why: string[] }[]} byPath
  * @property {{ path: string, why: string }[]} unplaceable
+ * @property {{ path: string, why: string }[]} generatedUnplaceable  every
+ *   GENERATED file in the import graph that no package's build
+ *   configuration maps back onto sources (T-335). It is a fact about the
+ *   graph rather than about the range, exactly as `unresolved` is.
  * @property {string | undefined} failClosed  the sentence that says WHY
  *   the whole battery is owed, or `undefined` when the set is derived.
  */
@@ -1645,6 +2121,13 @@ export function packageDependents(root = repoRoot, roots = PACKAGE_ROOTS) {
  * @param {string[]} [input.settingsAsked]  every settings path that scan
  *   was ASKED about, and the same distinction `docsAsked` draws: an
  *   unasked question is not an answer.
+ * @param {Record<string, string[]>} [input.generatedByPath]  changed source
+ *   path -> the generated files a spec may reach on its behalf, from
+ *   `generatedEntries` (T-335)
+ * @param {Record<string, string>} [input.generatedVia]  generated file ->
+ *   the configuration sentence that produces it
+ * @param {{ path: string, why: string }[]} [input.generatedUnplaceable]  the
+ *   generated files in the graph that no build configuration places
  * @param {string[]} [input.unresolved]  from `specReach`
  * @returns {OwedDerivation}
  */
@@ -1657,6 +2140,9 @@ export function deriveOwed({
   docsAsked = [],
   settingsReadersByPath = {},
   settingsAsked = [],
+  generatedByPath = {},
+  generatedVia = {},
+  generatedUnplaceable = [],
   unresolved = [],
 }) {
   const asked = new Set(docsAsked);
@@ -1664,7 +2150,14 @@ export function deriveOwed({
   // T-271's rule, CALLED. Its `unplaceable` is deliberately not read:
   // this function's placement question is wider than that one's, and the
   // header above states the case where the two answers differ.
-  const owning = owningSpecs({ changed, reach, docsReadersByPath, settingsReadersByPath });
+  const owning = owningSpecs({
+    changed,
+    reach,
+    docsReadersByPath,
+    settingsReadersByPath,
+    generatedByPath,
+    generatedVia,
+  });
   const specsFor = new Map(owning.byPath.map((e) => [e.path, e.specs]));
   /** @type {Set<string>} */
   const suites = new Set();
@@ -1800,6 +2293,19 @@ export function deriveOwed({
     failClosed =
       "the static import graph has an edge it could not land on a file, so any spec subset would " +
       `be SHORT: ${unresolved.join("; ")}`;
+  } else if (generatedUnplaceable.length > 0) {
+    // T-335. THE SAME SHAPE AS THE EDGE ABOVE, AND FOR THE SAME REASON.
+    // A generated file in the graph that no build configuration maps
+    // back onto sources is an edge that lands on a file nothing can ever
+    // change, so every spec reaching it is unreachable from any source
+    // change and any subset would be SHORT — in a way the walk cannot
+    // report, because the edge resolved perfectly well.
+    failClosed =
+      "the static import graph reaches a GENERATED file this derivation cannot map back to the " +
+      "sources that build it, and no changed path can ever be that file, so a change under " +
+      `those sources would select no spec: ${generatedUnplaceable
+        .map((u) => `${u.path} (${u.why})`)
+        .join("; ")}`;
   } else if (unplaceable.length > 0) {
     failClosed = `the derivation cannot place ${unplaceable
       .map((u) => `${u.path} (${u.why})`)
@@ -1811,6 +2317,7 @@ export function deriveOwed({
       e2e: { whole: true, specs: [] },
       byPath,
       unplaceable,
+      generatedUnplaceable,
       failClosed,
     };
   }
@@ -1819,6 +2326,7 @@ export function deriveOwed({
     e2e: { whole, specs: whole ? [] : [...specs].sort() },
     byPath,
     unplaceable,
+    generatedUnplaceable,
     failClosed,
   };
 }
@@ -1930,6 +2438,11 @@ export function owedForRange(range, root = repoRoot) {
     settingsAsked = map.asked;
     Object.assign(settingsReadersByPath, map.byPath);
   }
+  // T-335. UNCONDITIONAL, unlike the two scans above: its fail-closed arm
+  // is a fact about the graph rather than about the range, so a range
+  // that moved nothing near a package's sources must still answer for a
+  // generated file in the graph that nothing can place.
+  const generated = generatedSources(changed, reach, root);
   const derived = deriveOwed({
     changed,
     reach,
@@ -1938,6 +2451,9 @@ export function owedForRange(range, root = repoRoot) {
     docsAsked,
     settingsReadersByPath,
     settingsAsked,
+    generatedByPath: generated.byPath,
+    generatedVia: generated.via,
+    generatedUnplaceable: generated.unplaceable,
     unresolved,
   });
   return {
@@ -1960,6 +2476,10 @@ export function owedForRange(range, root = repoRoot) {
       docsReadersByPath,
       settingsReaderMapConsulted: settingsAsked.length > 0,
       settingsReadersByPath,
+      packageBuilds: generated.builds,
+      generatedEntriesReached: generated.byPackage,
+      generatedByPath: generated.byPath,
+      generatedUnplaceable: generated.unplaceable,
     },
   };
 }
@@ -2139,6 +2659,13 @@ function mainOwning(argv) {
     return refuse(
       "the static import graph has an edge it could not land on a file, so the subset would be " +
         `SHORT: ${derived.unresolved.join("; ")}`,
+    );
+  }
+  if (derived.generatedUnplaceable.length > 0) {
+    return refuse(
+      "the static import graph reaches a GENERATED file this derivation cannot map back to the " +
+        "sources that build it, so a source change would select no spec and the subset would be " +
+        `SHORT: ${derived.generatedUnplaceable.map((u) => `${u.path} (${u.why})`).join("; ")}`,
     );
   }
   if (derived.unplaceable.length > 0) {

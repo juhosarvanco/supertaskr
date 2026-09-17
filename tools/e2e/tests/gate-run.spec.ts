@@ -32,6 +32,11 @@ import {
   PACKAGE_ROOTS,
   RANGE_FLAG,
   REQUIRED_VERDICT_FIELDS,
+  buildConfigsIn,
+  generatedEntries,
+  generatedSources,
+  packageBuilds,
+  resolveTsconfig,
   SCOPED_SUITE,
   TREE_FLAG,
   VERDICT_TOKEN,
@@ -2483,6 +2488,454 @@ test("a file: dependency in a manifest makes one package's change owe another's 
   }
 });
 
+
+// ── THE GENERATED ENTRY AND ITS OWNING SOURCES (T-335) ────────────────
+//
+// The edge these bodies are about is the one the section above already
+// reaches and cannot use: two specs import `lib/parser/dist/pure.js`,
+// `lib/parser/.gitignore` excludes `dist/`, and a range's changed paths
+// come from git — so no changed path can ever BE that file and the edge
+// contributed a selection exactly never. What is added is the
+// relationship between that generated file and the sources that build
+// it, READ off the owning package's build configuration.
+
+/** Every spec whose reach lands on a file under the parser's own output
+ *  root — DERIVED, because typing the two filenames would make a body
+ *  that still passed on the day the import was deleted. */
+function parserDistImporters(root: string = repoRoot): string[] {
+  const { reach } = specReach(root);
+  const builds = packageBuilds(root).byPackage["parser"] ?? [];
+  const outs = builds.map((b) => `${b.out}/`);
+  return Object.keys(reach)
+    .filter((s) => (reach[s] ?? []).some((f) => outs.some((o) => f.startsWith(o))))
+    .sort();
+}
+
+/**
+ * A real two-commit range over THIS repository whose diff is exactly the
+ * named paths, built with a temporary index and `commit-tree` so that no
+ * branch, no ref, no index and no working file moves. The objects are
+ * unreferenced and collectable; `git status` is untouched.
+ */
+function probeRange(edits: Record<string, string>, root: string = repoRoot): { range: string; base: string; tip: string } {
+  const git = (args: string[], env?: Record<string, string>): string =>
+    execFileSync("git", ["-C", root, ...NO_BACKGROUND_MAINTENANCE, ...args], {
+      encoding: "utf8",
+      stdio: "pipe",
+      env: { ...process.env, ...(env ?? {}) },
+    }).trim();
+  const base = git(["rev-parse", "HEAD"]);
+  const index = path.join(mkdtempSync(path.join(tmpdir(), "t335-idx-")), "index");
+  try {
+    git(["read-tree", base], { GIT_INDEX_FILE: index });
+    for (const [rel, body] of Object.entries(edits)) {
+      const blob = execFileSync("git", ["-C", root, "hash-object", "-w", "--stdin"], {
+        encoding: "utf8",
+        input: body,
+      }).trim();
+      git(["update-index", "--cacheinfo", `100644,${blob},${rel}`], { GIT_INDEX_FILE: index });
+    }
+    const tree = git(["write-tree"], { GIT_INDEX_FILE: index });
+    const tip = git(["commit-tree", tree, "-p", base, "-m", "T-335 probe: a parser source, alone"]);
+    return { range: `${base}..${tip}`, base, tip };
+  } finally {
+    rmSync(path.dirname(index), { recursive: true, force: true });
+  }
+}
+
+test("a range that moves a parser SOURCE alone selects every spec that reaches the parser's built entry, over the live tree and a real range", () => {
+  // CRITERION 1, and the arrangement is the card's own: a real range
+  // whose only changed path is a file under `lib/parser/src/`. Before
+  // this arm the same range owed `app` and `parser` with the end-to-end
+  // leg narrowed to ZERO spec files — the import edge landed on a file
+  // git does not track, so nothing could ever select through it.
+  const importers = parserDistImporters();
+  expect(
+    importers.length,
+    "NON-VACUOUS FIRST: a tree where nothing imports the parser's build output would make " +
+      "every assertion below true of an empty set",
+  ).toBeGreaterThan(1);
+  // The two the card names, required BY NAME as well as by the derived
+  // set — a graph that quietly lost one of the edges would otherwise
+  // shrink the set and pass.
+  expect(importers).toContain("tools/e2e/tests/brief.spec.ts");
+  expect(importers).toContain("tools/e2e/tests/cli.spec.ts");
+
+  // T-335 correction 1. THE MOVED SOURCE IS NOT THE BUILD ENTRY, and the
+  // body says so before it moves it. An implementation that read the
+  // relationship as "the ONE source the build names as its entry" would
+  // satisfy every assertion below against `src/pure.ts` — the file the
+  // importers' own entry is named after — and fail for every other
+  // source in the package. The coupling this criterion claims is the
+  // package's, so the probe has to move a source NO spec imports, whose
+  // emitted counterpart is reached only because the entry pulls it in.
+  const probeSource = "lib/parser/src/fence.ts";
+  const entryBasenames = new Set(
+    Object.values(specReach(repoRoot).reach)
+      .flat()
+      .filter((f) => f.startsWith("lib/parser/dist/"))
+      .map((f) => path.basename(f).replace(/\.js$/, "")),
+  );
+  expect(
+    entryBasenames.has(path.basename(probeSource).replace(/\.ts$/, "")),
+    "NON-ENTRY: the probe's own emitted file is reached, so the coupling is not vacuous",
+  ).toBe(true);
+  const probeEmit = path.basename(probeSource).replace(/\.ts$/, ".js");
+  const importedByName = specFiles()
+    .map((s) => readFileSync(path.join(repoRoot, s), "utf8"))
+    .join("\n")
+    .split("\n")
+    .filter((l) => /^\s*import\b/.test(l) && l.includes(`/dist/${probeEmit}`));
+  expect(
+    importedByName,
+    "and NOT ONE spec imports this source's emit by name — it is reached only because the " +
+      "entry that IS imported pulls it in, so only a real source-root relationship selects it",
+  ).toEqual([]);
+
+  const { range } = probeRange({ [probeSource]: "export const T335_PROBE = 1;\n" });
+  const moved = rangeChanged(range, repoRoot);
+  expect(
+    "paths" in moved ? moved.paths : [],
+    "the range really moves one parser source and nothing else",
+  ).toEqual([probeSource]);
+
+  const owed = owedForRange(range, repoRoot);
+  expect("problem" in owed, "the range is one this checkout can diff").toBe(false);
+  const here = owed as Exclude<typeof owed, { problem: string }>;
+  expect(here.failClosed, "a prepared tree derives this range rather than falling back").toBeUndefined();
+  expect(here.e2e.whole, "and the leg is NARROWED, so the subset below is a real subset").toBe(false);
+  for (const spec of importers) {
+    expect(
+      here.e2e.specs,
+      `criterion 1: ${spec} reaches the parser's generated entry, so a parser source selects it`,
+    ).toContain(spec);
+  }
+  // AND IT IS STILL A SUBSET: a repair that owed the whole leg would
+  // satisfy the line above and destroy the narrowing T-331 landed.
+  expect(here.e2e.specs.length, "a proper subset of the leg").toBeLessThan(specFiles().length);
+  expect(here.suites, "the package root and the file: edge still answer too").toEqual([
+    "app",
+    "e2e",
+    "parser",
+  ]);
+
+  // THE SELECTION SAYS WHERE IT CAME FROM, and the sentence names the
+  // CONFIGURATION rather than a rewritten path.
+  const owning = deriveOwning([probeSource], repoRoot);
+  const via = owning.byPath.flatMap((e) => e.via).join("\n");
+  expect(via).toContain("lib/parser/tsconfig.build.json builds lib/parser/dist/ from lib/parser/src/");
+});
+
+test("a generated file no build configuration can place makes the owed set the WHOLE battery and the answer NAMES the file", () => {
+  // CRITERION 2, as a DISCRIMINATION rather than an assertion: the same
+  // reached set, the same tracked corpus, the same range — and the ONE
+  // input that differs is whether the parser's emit relationship could
+  // be read. The fail-closed answer is what an unreadable relationship
+  // must cost, not a placeholder waiting to be optimised away.
+  const { reach } = specReach();
+  const reached = [...new Set(Object.values(reach).flat())].sort();
+  const tracked = new Set(
+    execFileSync("git", ["-C", repoRoot, "ls-files", "-z"], {
+      encoding: "utf8",
+      maxBuffer: 64 * 1024 * 1024,
+    })
+      .split("\0")
+      .filter((s) => s !== ""),
+  );
+  const changed = ["lib/parser/src/pure.ts"];
+  const real = packageBuilds().byPackage;
+  expect(
+    real["parser"]?.length,
+    "NON-VACUOUS: this checkout really does declare the relationship, so removing it is a change",
+  ).toBe(1);
+
+  // THE CONTROL — the relationship readable. Nothing is unplaceable and
+  // the changed source stands behind the generated files.
+  const readable = generatedEntries({ changed, reached, tracked, builds: real });
+  expect(readable.unplaceable, "the control places every generated file in the graph").toEqual([]);
+  expect((readable.byPath["lib/parser/src/pure.ts"] ?? []).length).toBeGreaterThan(0);
+
+  // T-335 correction 2. THE UNREADABILITY IS INDUCED BY DATA ON DISK,
+  // not by handing the rule a `builds` value with the parser emptied. A
+  // branch only a synthesized input can reach is a branch production
+  // cannot take, and this criterion's whole worth is that the fall-back
+  // fires on a REAL inability. So the three shapes below are each a
+  // package on disk that `packageBuilds` genuinely fails to read, and the
+  // `builds` the rule is given is whatever THAT reading returned. The
+  // third shape is the one an implementation misses: a configuration that
+  // is present, parses, declares an output root — and does not contain
+  // the entry being placed.
+  const onDisk = mkdtempSync(path.join(tmpdir(), "t335-unreadable-"));
+  try {
+    mkdirSync(path.join(onDisk, "lib", "parser"), { recursive: true });
+    writeFileSync(
+      path.join(onDisk, "lib/parser/package.json"),
+      JSON.stringify({ scripts: { build: "tsc -p tsconfig.build.json" } }),
+    );
+    const project = path.join(onDisk, "lib/parser/tsconfig.build.json");
+    const shapes: [string, () => void, string][] = [
+      ["absent", () => rmSync(project, { force: true }), "could not be read"],
+      ["malformed", () => writeFileSync(project, '{ "compilerOptions": { "outDir": '), "not readable as JSON"],
+      [
+        "present but not covering this entry",
+        () => writeFileSync(project, JSON.stringify({ compilerOptions: { rootDir: "src", outDir: "elsewhere" } })),
+        "no output root that contains it",
+      ],
+    ];
+    for (const [shape, arrange, expected] of shapes) {
+      arrange();
+      const read = packageBuilds(onDisk);
+      // NOT "nothing was read": the third shape READS perfectly well and
+      // still cannot place this entry, which is exactly why it is the
+      // shape implementations miss. What must hold for all three is that
+      // no declared output root CONTAINS the entry the two specs import.
+      expect(
+        (read.byPackage["parser"] ?? []).filter((b) => "lib/parser/dist/pure.js".startsWith(`${b.out}/`)),
+        `${shape}: no output root read off disk contains the entry`,
+      ).toEqual([]);
+      const cannot = generatedEntries({
+        changed,
+        reached,
+        tracked,
+        builds: read.byPackage,
+        notes: read.notes,
+      });
+      expect(
+        cannot.unplaceable.map((u) => u.path),
+        `${shape}: the entry the two specs import is named, from a reading that really failed`,
+      ).toContain("lib/parser/dist/pure.js");
+      expect(
+        cannot.unplaceable.find((u) => u.path === "lib/parser/dist/pure.js")?.why ?? "",
+        `${shape}: and the sentence says WHY, discriminating this cause from the other two`,
+      ).toContain(expected);
+      expect(cannot.byPath, `${shape}: no changed source stands behind anything`).toEqual({});
+      const closed = deriveOwed({
+        changed,
+        reach,
+        dependents: packageDependents(),
+        generatedUnplaceable: cannot.unplaceable,
+      });
+      expect(closed.suites, `${shape}: the whole battery`).toEqual([...ALL_SUITES]);
+      expect(closed.e2e, `${shape}: and the leg whole`).toEqual({ whole: true, specs: [] });
+    }
+  } finally {
+    rmSync(onDisk, { recursive: true, force: true });
+  }
+
+  // THE ARM — the SAME inputs with the parser's relationship gone.
+  const blind = generatedEntries({
+    changed,
+    reached,
+    tracked,
+    builds: { ...real, parser: [] },
+    notes: { parser: ["lib/parser/tsconfig.build.json could not be read"] },
+  });
+  expect(
+    blind.unplaceable.length,
+    "every generated file in the graph is now one this derivation cannot map back",
+  ).toBeGreaterThan(0);
+  expect(blind.unplaceable.map((u) => u.path)).toContain("lib/parser/dist/pure.js");
+  expect(blind.byPath, "and no changed source stands behind anything").toEqual({});
+
+  const owed = deriveOwed({
+    changed,
+    reach,
+    dependents: packageDependents(),
+    generatedUnplaceable: blind.unplaceable,
+  });
+  expect(owed.suites, "criterion 2: the whole battery, which is the safe direction").toEqual([
+    ...ALL_SUITES,
+  ]);
+  expect(owed.e2e, "and the leg whole").toEqual({ whole: true, specs: [] });
+  expect(
+    owed.failClosed ?? "",
+    "criterion 2: and it NAMES the input it could not place, so a seat can act on the sentence",
+  ).toContain("lib/parser/dist/pure.js");
+  expect(owed.failClosed ?? "").toContain("lib/parser/tsconfig.build.json could not be read");
+
+  // THE OTHER HALF OF THE DISCRIMINATION: the readable relationship over
+  // the same range derives the set instead of falling back.
+  const derived = deriveOwed({
+    changed,
+    reach,
+    dependents: packageDependents(),
+    generatedByPath: readable.byPath,
+    generatedVia: readable.via,
+    generatedUnplaceable: readable.unplaceable,
+  });
+  expect(derived.failClosed, "the control derives rather than falls back").toBeUndefined();
+  expect(derived.e2e.whole).toBe(false);
+
+  // AND THE SCOPED ARM REFUSES ON THE SAME GROUND, because a subset
+  // chosen while a source-to-entry relationship is unreadable is SHORT.
+  const refusal = spawnSync(
+    process.execPath,
+    [path.join(repoRoot, "tools/e2e/scripts/gate-run.mjs"), SCOPED_SUITE, "--owning", "lib/parser/src/pure.ts"],
+    { cwd: repoRoot, encoding: "utf8", env: { ...process.env, PATH: "/nonexistent" } },
+  );
+  expect(
+    `${refusal.stderr ?? ""}`,
+    "with git unreachable the scoped arm cannot tell a generated file from a tracked one, so it " +
+      "refuses on THIS arm rather than grading a subset that would be short",
+  ).toContain("GENERATED file this derivation cannot map back to the");
+  expect(`${refusal.stderr ?? ""}`).toContain("THE FULL e2e LEG IS OWED");
+  expect(refusal.status).toBe(EXIT.USAGE);
+});
+
+test("the emit relationship is READ off the owning package's own build configuration, so a package that moves where it builds to moves this derivation with it", () => {
+  // "RATHER THAN BY REWRITING A PATH" — the half of the repair a body
+  // must hold, because a hardcoded `dist` -> `src` swap would pass every
+  // assertion about this checkout and be a second place the truth lives.
+  const live = packageBuilds().byPackage["parser"] ?? [];
+  expect(live).toEqual([
+    { config: "lib/parser/tsconfig.build.json", src: "lib/parser/src", out: "lib/parser/dist" },
+  ]);
+
+  const bare = mkdtempSync(path.join(tmpdir(), "t335-builds-"));
+  try {
+    mkdirSync(path.join(bare, "lib", "parser"), { recursive: true });
+    const manifest = (build: string) =>
+      writeFileSync(path.join(bare, "lib/parser/package.json"), JSON.stringify({ scripts: { build } }));
+    const project = (file: string, body: unknown) =>
+      writeFileSync(path.join(bare, "lib/parser", file), JSON.stringify(body));
+
+    // A PACKAGE THAT BUILDS SOMEWHERE ELSE, and the derivation follows.
+    manifest("tsc -p tsconfig.build.json");
+    project("tsconfig.build.json", { compilerOptions: { rootDir: "lib", outDir: "build" } });
+    expect(packageBuilds(bare).byPackage["parser"]).toEqual([
+      { config: "lib/parser/tsconfig.build.json", src: "lib/parser/lib", out: "lib/parser/build" },
+    ]);
+
+    // AND IT IS A DECLARATION, NOT A RECOVERY FROM A BUILT ARTIFACT.
+    // This fixture has been BUILT EXACTLY NEVER: no output directory
+    // exists on disk, no emitted module, and none of the source-map
+    // sidecars `lib/parser/tsconfig.build.json` turns on — whose
+    // `sources` array would have been a per-file-exact mapping and the
+    // obvious shortcut. The relationship still reads, because what is
+    // opened is what the build WILL do rather than what some earlier
+    // build DID: an output-derived answer is only ever as current as the
+    // last build, stale the moment a source moves and absent on a tree
+    // nobody has built — which is the very tree this card's own
+    // fail-closed arm already has to cover.
+    expect(existsSync(path.join(bare, "lib/parser/build")), "nothing here was ever built").toBe(
+      false,
+    );
+    expect(existsSync(path.join(bare, "lib/parser/dist")), "and no output tree of any name").toBe(
+      false,
+    );
+    expect(
+      readdirSync(path.join(bare, "lib/parser")).sort(),
+      "the ONLY files this reading has to open are the manifest and the project it names",
+    ).toEqual(["package.json", "tsconfig.build.json"]);
+
+    // THE `extends` CHAIN IS FOLLOWED, because this repository writes the
+    // emit options in a file that inherits the rest.
+    project("tsconfig.base.json", { compilerOptions: { outDir: "out" } });
+    project("tsconfig.build.json", { extends: "./tsconfig.base.json", compilerOptions: { rootDir: "sources" } });
+    expect(packageBuilds(bare).byPackage["parser"]).toEqual([
+      { config: "lib/parser/tsconfig.build.json", src: "lib/parser/sources", out: "lib/parser/out" },
+    ]);
+
+    // A SINGLE `include` DIRECTORY STANDS IN FOR AN UNWRITTEN rootDir,
+    // which is what `tsc` itself would infer.
+    project("tsconfig.build.json", { compilerOptions: { outDir: "dist" }, include: ["src"] });
+    expect(packageBuilds(bare).byPackage["parser"]).toEqual([
+      { config: "lib/parser/tsconfig.build.json", src: "lib/parser/src", out: "lib/parser/dist" },
+    ]);
+
+    // AND A PACKAGE THAT DECLARES NO EMIT CONTRIBUTES NO RELATIONSHIP —
+    // reported, never invented, which is what makes the fail-closed arm
+    // above fire on a real inability.
+    project("tsconfig.build.json", { compilerOptions: { noEmit: true } });
+    const none = packageBuilds(bare);
+    expect(none.byPackage["parser"]).toEqual([]);
+    expect(none.notes["parser"]?.join("; ")).toContain("declares no outDir");
+    manifest("vite build");
+    expect(packageBuilds(bare).notes["parser"]?.join("; ")).toContain("runs no TypeScript project");
+    expect(buildConfigsIn("tsc && tsc -p tsconfig.test.json && vite build")).toEqual([
+      "tsconfig.json",
+      "tsconfig.test.json",
+    ]);
+
+    // T-335 correction 3. AND THE READING IS CONTAINED TO THE TREE. Every
+    // spelling that reaches the project reader is REPOSITORY CONTENT — a
+    // `-p` flag in a manifest, an `extends` specifier — and a range may
+    // come off a branch nobody has reviewed, so an `extends` that climbs
+    // out of the root would have this PLANNING step open a file outside
+    // it and carry the parse failure into the sentence it logs. A real
+    // file is planted outside the root and left unread: the proof is that
+    // its own contents, which declare a perfectly good emit, never appear
+    // in the answer.
+    const outside = path.join(path.dirname(bare), "t335-escaped.json");
+    try {
+      writeFileSync(outside, JSON.stringify({ compilerOptions: { rootDir: "in", outDir: "out" } }));
+      manifest("tsc -p tsconfig.build.json");
+      project("tsconfig.build.json", { extends: "../../../t335-escaped.json", compilerOptions: {} });
+      // REFUSED BY NAME at the reader, which is where the containment has
+      // to live: the specifier never becomes a path that gets opened.
+      expect(
+        resolveTsconfig(bare, "lib/parser", "../../../t335-escaped.json").problem ?? "",
+        "the climbing specifier is refused by name rather than opened",
+      ).toContain("lies outside the repository");
+      const escaped = packageBuilds(bare);
+      expect(
+        escaped.byPackage["parser"],
+        "so the outside file's perfectly good rootDir/outDir reach the answer NOWHERE",
+      ).toEqual([]);
+      expect(existsSync(outside), "and the planted file really was there to be read").toBe(true);
+    } finally {
+      rmSync(outside, { force: true });
+    }
+  } finally {
+    rmSync(bare, { recursive: true, force: true });
+  }
+});
+
+test("a range that moves no source of a built package answers exactly what it answered before the relationship was readable", () => {
+  // CRITERION 3. The comparison is the SAME function with and without
+  // its new inputs, over the live graph — so a difference anywhere is
+  // this arm's doing and nothing else's.
+  const { reach, unresolved } = specReach();
+  const dependents = packageDependents();
+  const answer = (changed: string[], withArm: boolean) => {
+    const gen = generatedSources(changed, reach, repoRoot);
+    const derived = deriveOwed({
+      changed,
+      reach,
+      dependents,
+      unresolved,
+      ...(withArm
+        ? { generatedByPath: gen.byPath, generatedVia: gen.via, generatedUnplaceable: gen.unplaceable }
+        : {}),
+    });
+    return JSON.stringify({ suites: derived.suites, e2e: derived.e2e, failClosed: derived.failClosed });
+  };
+
+  // NOT ONE OF THESE LIES UNDER A BUILT PACKAGE'S SOURCE ROOT, and they
+  // span every arm the derivation has: a spec's own subject, an app
+  // source, a Rust source, and a document the docs gate places.
+  for (const changed of [
+    ["tools/e2e/scripts/gate-run.mjs"],
+    ["tools/e2e/tests/gate-run.spec.ts"],
+    ["app/src/main.tsx"],
+    ["app/src-tauri/src/main.rs"],
+    ["docs/CONVENTIONS.md"],
+  ]) {
+    expect(answer(changed, true), `criterion 3: ${changed.join(", ")} is unmoved by this arm`).toBe(
+      answer(changed, false),
+    );
+  }
+
+  // THE POSITIVE CONTROL THE NEGATIVE ASSERTION ABOVE NEEDS: a path that
+  // DOES lie under a built package's sources answers differently, so the
+  // comparison is a discrimination and not a comparison of two nothings.
+  const source = ["lib/parser/src/pure.ts"];
+  expect(
+    answer(source, true),
+    "a parser source is exactly what this arm was added to move",
+  ).not.toBe(answer(source, false));
+});
+
 test("the range is refused when its left endpoint is not an ancestor of its right, because a two-dot diff between divergent tips lies", () => {
   // THE RANGE RULE, HELD RATHER THAN QUOTED. `git diff A..B` is `git diff
   // A B`, so between two divergent tips the OTHER side's work comes back
@@ -2702,6 +3155,7 @@ test("the owed set becomes runnable suites in the registry's own order, with the
     e2e: { whole: false, specs: ["tools/e2e/tests/a.spec.ts"] },
     byPath: [],
     unplaceable: [],
+    generatedUnplaceable: [],
     failClosed: undefined,
   });
   expect(narrowed.map((s) => s.id)).toEqual(["parser", "e2e"]);
@@ -2715,6 +3169,7 @@ test("the owed set becomes runnable suites in the registry's own order, with the
     e2e: { whole: true, specs: [] },
     byPath: [],
     unplaceable: [],
+    generatedUnplaceable: [],
     failClosed: undefined,
   });
   expect(wholeLeg[0]?.argv).toEqual([...GRADED_SUITES.e2e.argv]);

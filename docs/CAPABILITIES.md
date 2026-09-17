@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1231 behaviours** — 1229 extracted sentences + 2 named-not-extracted (listed at the end) — across 42 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1235 behaviours** — 1233 extracted sentences + 2 named-not-extracted (listed at the end) — across 42 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -704,6 +704,10 @@ Census: **1231 behaviours** — 1229 extracted sentences + 2 named-not-extracted
 - the live tree places its own runtime template with the consumers that really read it, and the leg it owes is narrower than the whole leg
 - the narrowed selection for the runtime template still CARRIES every body that reads the dispatch block, so no configuration check is dropped by narrowing
 - a file: dependency in a manifest makes one package's change owe another's suite, and the edge is READ rather than asserted
+- a range that moves a parser SOURCE alone selects every spec that reaches the parser's built entry, over the live tree and a real range
+- a generated file no build configuration can place makes the owed set the WHOLE battery and the answer NAMES the file
+- the emit relationship is READ off the owning package's own build configuration, so a package that moves where it builds to moves this derivation with it
+- a range that moves no source of a built package answers exactly what it answered before the relationship was readable
 - the range is refused when its left endpoint is not an ancestor of its right, because a two-dot diff between divergent tips lies
 - a DELETED path is IN the range's path set, because a removal is a change and an empty path set owes nothing at all
 - the ASK arm answers the owed set as JSON without running anything, and answers a JSON problem when it cannot
