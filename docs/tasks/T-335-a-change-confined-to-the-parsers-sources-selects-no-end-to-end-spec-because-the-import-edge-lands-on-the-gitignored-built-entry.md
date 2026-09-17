@@ -104,4 +104,23 @@ a matter for the design rather than a constraint this card imposes. An
 earlier draft proposed this as an acceptance obligation and it was
 withdrawn to a note on review.
 
+**THE ANSWER, RECORDED 2026-09-17 BY THE EXECUTOR BEFORE ANY PLACEMENT
+PATH WAS ADDED: THE SETTINGS CONSUMER MAP CANNOT CARRY THIS, AND THE
+REASON IS WHAT EACH MAP IS A MAP OF.** That map answers "which tracked
+source files READ this path", over a comment-stripped corpus, by the
+path's own spelling and by the identifiers a source binds to it. The
+relationship this card needs is "which sources PRODUCE this path", and it
+is not textual at all: nothing under the parser's own source root
+mentions the built browser entry, and the tracked files that do mention
+it are the two specs doing the importing. Pointed at a generated entry
+the settings scan would return its IMPORTERS — which the import graph
+already supplies — and never its producers, so the map would answer a
+question this derivation had already answered while leaving the one it
+could not answer untouched. The repair therefore adds an arm that reads
+the owning package's own build configuration: the manifest's build script
+names a TypeScript project, and that project declares where it emits to
+and what it emits from. That arm composes with the import arm in the same
+place the docs and settings maps compose, so the new path is not
+independent of the existing ones — what it is not is the same map.
+
 ## Verdicts
