@@ -2707,6 +2707,28 @@ test("the emit relationship is READ off the owning package's own build configura
       { config: "lib/parser/tsconfig.build.json", src: "lib/parser/lib", out: "lib/parser/build" },
     ]);
 
+    // AND IT IS A DECLARATION, NOT A RECOVERY FROM A BUILT ARTIFACT.
+    // This fixture has been BUILT EXACTLY NEVER: no output directory
+    // exists on disk, no emitted module, and none of the source-map
+    // sidecars `lib/parser/tsconfig.build.json` turns on — whose
+    // `sources` array would have been a per-file-exact mapping and the
+    // obvious shortcut. The relationship still reads, because what is
+    // opened is what the build WILL do rather than what some earlier
+    // build DID: an output-derived answer is only ever as current as the
+    // last build, stale the moment a source moves and absent on a tree
+    // nobody has built — which is the very tree this card's own
+    // fail-closed arm already has to cover.
+    expect(existsSync(path.join(bare, "lib/parser/build")), "nothing here was ever built").toBe(
+      false,
+    );
+    expect(existsSync(path.join(bare, "lib/parser/dist")), "and no output tree of any name").toBe(
+      false,
+    );
+    expect(
+      readdirSync(path.join(bare, "lib/parser")).sort(),
+      "the ONLY files this reading has to open are the manifest and the project it names",
+    ).toEqual(["package.json", "tsconfig.build.json"]);
+
     // THE `extends` CHAIN IS FOLLOWED, because this repository writes the
     // emit options in a file that inherits the rest.
     project("tsconfig.base.json", { compilerOptions: { outDir: "out" } });
