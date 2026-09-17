@@ -4,13 +4,14 @@ title: "The counts gate compares the drill's scoped spec count with the verdict'
 feature: F-04
 milestone: 4
 size: S
+tier: guarded
 priority: 2
-status: planned
+status: building
 suggested_by: "the seat (2026-09-11): the second merge through the verb stopped at `counts` with e2e 35 versus 714; the 35 was health-bands.spec.ts run alone by the re-drill, the 714 the verifier's owed range at the tip — two different measurements of two different things"
 blocked_by: []
 touches: [tools/e2e/scripts/merge.mjs, tools/e2e/tests/merge.spec.ts]
-builder:
-verifier:
+builder: claude-opus-5@subagent
+verifier: claude-opus-5@subagent
 built_by:
 verified_by:
 review: independent
