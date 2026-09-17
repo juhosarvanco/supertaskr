@@ -2536,7 +2536,18 @@ function probeRange(edits: Record<string, string>, root: string = repoRoot): { r
       git(["update-index", "--cacheinfo", `100644,${blob},${rel}`], { GIT_INDEX_FILE: index });
     }
     const tree = git(["write-tree"], { GIT_INDEX_FILE: index });
-    const tip = git(["commit-tree", tree, "-p", base, "-m", "T-335 probe: a parser source, alone"]);
+    // THE IDENTITY IS PASSED, NEVER INHERITED (T-239-s4). The runner has no
+    // git identity and no login, so `commit-tree` there fails outright while
+    // it succeeds on any developer machine that has one — which is exactly
+    // how this body went green locally and RED on shard 1. The address-shaped
+    // fields carry no `@`, because an address in a tracked file is an address
+    // published and the forbidden-spelling keeper refuses one.
+    const tip = git(["commit-tree", tree, "-p", base, "-m", "T-335 probe: a parser source, alone"], {
+      GIT_AUTHOR_NAME: "T-335 probe",
+      GIT_AUTHOR_EMAIL: "probe",
+      GIT_COMMITTER_NAME: "T-335 probe",
+      GIT_COMMITTER_EMAIL: "probe",
+    });
     return { range: `${base}..${tip}`, base, tip };
   } finally {
     rmSync(path.dirname(index), { recursive: true, force: true });
