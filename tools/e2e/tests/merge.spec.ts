@@ -900,6 +900,46 @@ test("T-295-s8 — a scope that could NOT be read is not judged for lack of evid
   expect(scopeVerdict(WHOLE_E2E, undefined), "one side missing is unknown, never different").toBe("unknown");
 });
 
+test("T-295-s8 — a selection token that SPELLS a runner verb is still a narrowing, so a narrowed run never widens into `whole`", () => {
+  // KILLED BY: `atFront` surviving the `--` separator, which let
+  // `cargo test -- test` read as the WHOLE leg. This file's own note
+  // says the reader fails CLOSED toward `selection` and "never widens a
+  // run into `whole`"; widening is the ONE direction that manufactures a
+  // false same scope, and a false same scope is T-297 again.
+  expect(
+    runSelection({ command: "cargo", argv: ["test", "--", "test"] }),
+    "a cargo filter that happens to spell `test` is a narrowing, not a verb",
+  ).toEqual(["test"]);
+  expect(scopeOfRun({ command: "cargo", argv: ["test", "--", "test"] }).kind, "so it is NOT the whole leg").toBe("selection");
+  expect(
+    scopeOfRun({ command: "npx", argv: ["playwright", "test", "test"] }).kind,
+    "and neither is a spec filter that spells one",
+  ).toBe("selection");
+  // AND THE WIDENING IS WHAT WOULD RESURRECT T-297: a narrowed run of 35
+  // graded against a verdict's whole-leg claim of 714, and refused.
+  const claim = claimedScopes("judged, `npm test`:\ne2e **714** (16 spec files).");
+  const narrowed = scopeOfRun({ command: "cargo", argv: ["test", "--", "test"] });
+  expect(claim.e2e?.kind, "the verdict's side really is the whole leg").toBe("whole");
+  expect(scopeVerdict(claim.e2e, narrowed), "which a narrowed run is never the same set as").toBe("different");
+  expect(
+    gradeCounts({ claimed: { e2e: 714 }, observed: { e2e: 35 }, claimedScope: { e2e: claim.e2e }, observedScope: { e2e: narrowed } })
+      .findings,
+    "and so nothing is called a count that moved",
+  ).toEqual([]);
+  // THE CONTROLS — the shapes that ARE whole stay whole, and the plan's
+  // own cargo step is untouched.
+  expect(scopeOfRun({ command: "npm", argv: ["test"] }).kind).toBe("whole");
+  expect(scopeOfRun({ command: "npx", argv: ["vitest", "run"] }).kind).toBe("whole");
+  expect(
+    scopeOfRun({ command: "npm", argv: ["test", "--", "--reporter=json"] }).kind,
+    "a reporting flag after `--` still selects nothing",
+  ).toBe("whole");
+  expect(
+    runSelection({ command: "cargo", argv: ["test", "-q", "--lib", "--", "agent::kit::tests"] }),
+    "and the plan's own bump:pin step reads exactly as it did",
+  ).toEqual(["--lib", "agent::kit::tests"]);
+});
+
 test("the verb refuses to commit on a count that moved, and says which legs it could not judge", () => {
   // 2d6d354: a merge script that committed on an exit code while the
   // count under it had moved landed main red. THE TEETH SURVIVE T-295-s8:

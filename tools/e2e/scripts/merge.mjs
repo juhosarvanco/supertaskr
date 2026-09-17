@@ -3057,10 +3057,18 @@ export function runSelection(run) {
   const selection = [];
   const argv = [...run.argv];
   let atFront = true;
+  /** The verbs already spent at the front — a REPEAT of one is a selection, not more front. */
+  const spent = new Set();
   for (let i = 0; i < argv.length; i += 1) {
     const token = /** @type {string} */ (argv[i]);
-    if (token === "--") continue;
-    if (atFront && RUNNER_VERBS.includes(token)) continue;
+    if (token === "--") {
+      atFront = false;
+      continue;
+    }
+    if (atFront && RUNNER_VERBS.includes(token) && !spent.has(token)) {
+      spent.add(token);
+      continue;
+    }
     if (token.startsWith("-")) {
       atFront = false;
       if (REPORTING_FLAGS.includes(token)) continue;
