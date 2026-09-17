@@ -68,7 +68,10 @@ import {
 import {
   PROCESS_SCHEMA,
   RUNTIME_TEMPLATE,
+  GrantStoreFinding,
   cardDrift,
+  grantState,
+  grantStoreLocation,
   loadProcess,
   parseProcessSchema,
   processSection,
@@ -2736,7 +2739,7 @@ function declaredModes(schemaText: string): { approval: readonly string[]; recov
   };
 }
 
-test("THE REAL CONFIGURATION IS CHECKED THROUGH THE PARSER'S READER — a grant this project carries is validated card by card, and no grant is read out as the explicit no-grant state", () => {
+test("THE REAL CONFIGURATION IS CHECKED THROUGH THE PARSER'S READER — this project's SHIPPED TEMPLATE carries no grant at all, and where the live authorization is read from is derived rather than assumed", () => {
   // THE ONE BODY IN THIS LANE THAT READS THIS PROJECT'S OWN RUNTIME
   // TEMPLATE AND JUDGES WHAT IT FINDS (T-330's third criterion). It
   // asserts the configuration it READS rather than the configuration
@@ -2755,29 +2758,49 @@ test("THE REAL CONFIGURATION IS CHECKED THROUGH THE PARSER'S READER — a grant 
   const template = readFileSync(path.join(repoRoot, RUNTIME_TEMPLATE), "utf8");
   const block = parserPure.dispatchBlock(template, schema);
 
-  if (block.present) {
-    const declared = declaredModes(schemaText);
-    expect(declared.approval, "the schema declares no approval modes").not.toEqual([]);
-    expect(
-      grantFindings(block, declared, liveGrantIo(repoRoot)),
-      `the grant ${RUNTIME_TEMPLATE} carries does not validate against this tree`,
-    ).toEqual([]);
-    expect(block.revision, "a recorded grant reads at revision 0").toBeGreaterThan(0);
-    expect(block.current?.order.length ?? 0, "a recorded grant approves no card").toBeGreaterThan(0);
-    expect(block.current?.givenBy ?? "", "a recorded grant says nobody gave it").not.toBe("");
-    expect(block.current?.at ?? "", "a recorded grant carries no instant").not.toBe("");
+  // THE SHIPPED TEMPLATE CARRIES NO GRANT, AND SINCE T-344 THAT IS A
+  // REQUIREMENT RATHER THAN A STATE THIS BODY REPORTS. The template is a
+  // code input the Rust kit embeds at compile time, so a grant here costs
+  // a publication per approval and rides into every project the kit
+  // scaffolds. The active grant lives in the operational store at the
+  // designated integration checkout instead; a block found here would be
+  // a STRAY, which the arm reports and never obeys.
+  expect(block.approval, "the no-grant approval mode").toBe("each");
+  expect(block.recovery, "the no-grant recovery policy").toBe("none");
+  expect(block.grant, `a grant was read out of ${RUNTIME_TEMPLATE}, which is no longer its home`).toBeNull();
+  expect(block.current, "a current grant was read out of the shipped template").toBeNull();
+  expect(block.revision, "the no-grant revision").toBe(0);
+  expect(block.history, "a history was read out of the shipped template").toEqual([]);
+  expect(block.present, `${RUNTIME_TEMPLATE} carries a dispatch block again — the grant left it at T-344`).toBe(false);
+
+  // AND WHERE THE LIVE AUTHORIZATION IS READ FROM IS DERIVED, never
+  // assumed. This suite runs in three kinds of checkout — the integration
+  // one, a lane worktree and the verifier's detached bench — and only the
+  // first may hold the store. So the body asks which this is and grades
+  // the answer it is entitled to: a refusal NAMING the location, or a
+  // state. What it must never meet is a silent "no grant" somewhere the
+  // grant could not have been verified.
+  const where = grantStoreLocation(repoRoot);
+  if (where.designated) {
+    const state = grantState(repoRoot);
+    expect(state.source, "the designated checkout does not say where it read the grant from").not.toBe("");
+    if (state.enforced) {
+      expect(state.revision, "a recorded grant reads at revision 0").toBeGreaterThan(0);
+      expect(state.block?.current?.order.length ?? 0, "a recorded grant approves no card").toBeGreaterThan(0);
+      expect(state.block?.current?.givenBy ?? "", "a recorded grant says nobody gave it").not.toBe("");
+      expect(state.block?.current?.at ?? "", "a recorded grant carries no instant").not.toBe("");
+    }
   } else {
-    // THE EXPLICIT NO-GRANT STATE, which is what this project ships
-    // today. No grant is ever created by guessing a person, an instant or
-    // a past authorization: the standing authorization this project runs
-    // under lives in the seat's ledger, and it reaches the template only
-    // through a migration grant the owner approves (T-307).
-    expect(block.approval, "the no-grant approval mode").toBe("each");
-    expect(block.recovery, "the no-grant recovery policy").toBe("none");
-    expect(block.grant, "a grant was read out of a template that has none").toBeNull();
-    expect(block.current, "a current grant was read out of a template that has none").toBeNull();
-    expect(block.revision, "the no-grant revision").toBe(0);
-    expect(block.history, "a history was read out of a template that has none").toEqual([]);
+    let refused: unknown;
+    try {
+      grantState(repoRoot);
+    } catch (err) {
+      refused = err;
+    }
+    expect(refused, `${where.kind} answered a grant instead of refusing`).toBeInstanceOf(GrantStoreFinding);
+    expect(String((refused as Error).message), "the refusal does not name the location it refused").toContain(
+      where.root,
+    );
   }
 
   // AND EVERY READ-ONLY SETTINGS OPERATION KEEPS WORKING EXACTLY AS

@@ -694,6 +694,30 @@ const LIVE_ARMS: ReadonlyArray<{ label: string; args: string[] }> = [
  */
 const NOT_AN_ARM: ReadonlyArray<{ flag: string; why: string }> = [
   {
+    flag: "--grant",
+    why: "THE OPERATIONAL GRANT STORE'S VERB (T-344), and the one flag on this command that CANNOT be sized from here by the card's own design. The store is read only at the DESIGNATED INTEGRATION CHECKOUT: from a lane worktree or the verifier's detached bench — the two places this suite actually runs — every spelling of it answers a refusal on stderr naming the location, which is the eleventh criterion working rather than a failure. So there is no sized answer for this file to take, and its content is graded in `brief.spec.ts`, which drives the verbs over fixtures that ARE designated checkouts.",
+  },
+  {
+    flag: "--grant-file",
+    why: "a REQUIRED companion of `--grant init|set`: the file carrying the `dispatch:` block to record. It names a path, so its size is a function of the file it is handed rather than of this repository — the argument `--audit` is excused on below — and the verb it belongs to cannot be driven from here at all.",
+  },
+  {
+    flag: "--grant-from",
+    why: "a MODIFIER of `--grant migrate`: the git ref whose runtime template still carries the legacy block, for the case where the commit that emptied the template has already landed. It substitutes one source of the same block for another and moves no row of the answer, and the verb it modifies refuses outside the designated checkout.",
+  },
+  {
+    flag: "--expect-revision",
+    why: "a REQUIRED companion of `--grant set`: the revision this one replaces, which is what makes the write a compare-and-set rather than a last-writer-wins overwrite. Alone it is a usage error, and the verb it belongs to has no invocation this file can size.",
+  },
+  {
+    flag: "--expect-digest",
+    why: "a MODIFIER of `--grant set`: the store's expected CONTENT beside its expected revision, which is the case a revision check alone misses. It adds one comparison and one possible refusal, both on stderr, and the verb it modifies cannot be driven from a lane.",
+  },
+  {
+    flag: "--by",
+    why: "a REQUIRED companion of the grant store's three writers: who is RECORDING the revision, which is a different fact from who gave the approval the block itself attributes. Alone it is a usage error, and every verb it belongs to WRITES at the designated integration checkout — the argument `--dispatch-lane` is excused on.",
+  },
+  {
     flag: "--express-withdraw",
     why: "THE EXPRESS PATH'S OTHER WRITER (T-320), and it has no dry form that reaches a size: it takes the express label off a card by a dated append and re-triages the card's tier, both writes into docs/tasks on the integration branch, so a guard that measured it would edit somebody's card every time this suite ran. That is `--dispatch-lane`'s own argument at the smallest end of the loop. `brief.spec.ts` drives the withdrawal against a card it composes itself, where the preservation of the branch and the run record can actually be asserted.",
   },

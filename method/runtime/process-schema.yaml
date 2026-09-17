@@ -71,17 +71,37 @@ profiles:
   standard: "what ADR-024 ruled: three tiers chosen by the arm, one standing read, the arm merges, and the whole suite on a clock"
   fast: "standard with the whole-suite net nightly only and push batching on — the profile for a project whose CI minutes are the scarce thing"
 
-# ── THE DISPATCH BLOCK OF THE RUNTIME TEMPLATE, DECLARED (T-319) ────
+# ── THE DISPATCH BLOCK, DECLARED (T-319) — AND ITS HOME IS THE
+# ── OPERATIONAL STORE, NOT THE RUNTIME TEMPLATE (T-344) ─────────────
 #
-# The runtime template's `dispatch:` block is where the owner's approval
-# of a piece of work LIVES: which cards were approved, at which revision
-# of their own files, by whom, when, and whether the coordinator may
-# dispatch the repairs that work turns out to need. It is declared HERE,
-# once, for the same reason every switch above is — the template carries
-# the VALUES and this file carries what they mean — and it is read by
-# the parser library's `dispatchBlock` as ONE typed value validated
-# against this declaration, never as a bag of strings each surface
-# interprets for itself.
+# The `dispatch:` block is where the owner's approval of a piece of work
+# LIVES: which cards were approved, at which revision of their own files,
+# by whom, when, and whether the coordinator may dispatch the repairs
+# that work turns out to need. It is declared HERE, once, for the same
+# reason every switch above is — the record carries the VALUES and this
+# file carries what they mean — and it is read by the parser library's
+# `dispatchBlock` as ONE typed value validated against this declaration,
+# never as a bag of strings each surface interprets for itself.
+#
+# WHERE THE BLOCK LIVES MOVED AT T-344 AND THE DECLARATION DID NOT. Until
+# then the ACTIVE grant sat in `method/runtime/supertaskr.yaml`, which is
+# a shipped code input: the parser declares it, end-to-end bodies read it
+# and the agent kit embeds it at compile time, so every revision of an
+# approval cost a full code publication and the generated kit carried
+# this project's own authorization. The active grant now lives in ONE
+# authoritative operational store at the ONE checkout designated to
+# coordinate dispatch — an untracked `.supertaskr/dispatch-grant.yaml`
+# holding exactly this block shape, with the SUPERSEDED revisions in
+# `.supertaskr/dispatch-grant-history.jsonl` — written by a command that
+# validates, compares the revision AND the content it expects, writes
+# atomically and retains history. A block left in the runtime template is
+# reported as a STRAY and is not read as authority.
+#
+# THE `history` ROW IS A COMPATIBILITY SHAPE IN THE STORE. This
+# declaration makes it `required: always`, so the snapshot carries
+# `history: []` and the archive it never loads lives in the journal
+# beside it — which is what lets the current authorization be read
+# without reading accumulated history at all.
 #
 # THE BLOCK BECAME OPERATIONAL AT T-324, AND THE LABELS BELOW SAY WHICH
 # ROWS. Under T-319 every row was `declarative`: the block was readable
@@ -101,7 +121,7 @@ profiles:
 #
 #   approval        admit             the three-mode branch
 #   recovery        admit             the two-value branch
-#   grant           grantState        the block's one current approval
+#   grant           readGrantStore    the store's one current approval
 #   grant.given_by  grantInheritance  attributed, never branched on
 #   grant.at        grantInheritance  recorded, never branched on
 #   grant.revision  admit             every admission binds to it
@@ -114,20 +134,29 @@ profiles:
 #   limits          advisoryLimits    ADVISORY: read, reported, enforced by nothing
 #   limits.tokens   advisoryLimits    ADVISORY
 #   limits.expires_at advisoryLimits  ADVISORY — an expiry that has passed refuses nothing
-#   history         grantState        validated by the reader; no arm branches on it
+#   history         readGrantJournal  the SUPERSEDED revisions, which live in the journal and are
+#                                     opened ONLY by an explicit historical query or a recovery;
+#                                     the snapshot carries `history: []` and no arm branches on it
 #
 # **KEPT BY A BODY, NOT BY A MEMORY** (the guard-class map's own idiom):
 # tools/e2e/tests/brief.spec.ts derives this table from these comment
 # lines, requires every symbol named to be exported by the arm, and reds
 # when an `operational` row has no read site named for it.
 #
-# AND THE BLOCK IS ABSENT UNTIL SOMEBODY GRANTS SOMETHING. A reader that
-# meets no `dispatch:` block answers the explicit NO-GRANT state — the
+# AND THE BLOCK IS ABSENT UNTIL SOMEBODY GRANTS SOMETHING. A checkout
+# that has NEVER HELD A STORE answers the explicit NO-GRANT state — the
 # `absent:` value of each mode row and no grant at revision 0 — because
 # no grant is ever created by guessing a person, an instant or a past
 # authorization. An existing authorized way of working continues only
 # through a migration grant the seat proposes verbatim and the owner
 # approves (T-307).
+#
+# EVERY OTHER ABSENCE IS A REFUSAL AND NOT A NO-GRANT (T-344). A store
+# read from a lane worktree, a detached checkout, another path or another
+# host is refused BY NAME; so is a snapshot that has gone missing after
+# prior use, which is a lost authorization rather than a fresh project.
+# The journal is never promoted to authority, because it holds the
+# revisions that STOPPED being current.
 #
 # THE FIELDS OF A ROW, and each answers a question the reader asks:
 #   required  `always` — required whenever the block is present;
@@ -161,7 +190,7 @@ profiles:
 dispatch_block:
   key: dispatch
   what: "the dispatch approval mode, the recovery policy, and the grant that sets them"
-  effect: "a fresh seat in either harness inherits the owner's approval from the template rather than from a checkpoint's prose; a grant, a pause or a revocation is a dated edit to the block that appends the previous grant to its history and RAISES the revision, and which grant is current is decided by that revision and never by a date"
+  effect: "a fresh seat in either harness inherits the owner's approval by FINDING the operational store at the designated integration checkout rather than by being told it or reading a checkpoint's prose; a grant, a pause or a revocation is a dated edit to the block that appends the previous grant to its history and RAISES the revision, and which grant is current is decided by that revision and never by a date"
   reads: dispatchBlock
   fields:
     approval:

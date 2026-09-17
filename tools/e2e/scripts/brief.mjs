@@ -150,7 +150,8 @@
  *      repository at all. Every throw out of the derivation lands here,
  *      and every one of them names the sentence it could not find.
  */
-import { readFileSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {
@@ -165,6 +166,19 @@ import {
   AwaitFinding,
   DispatchLaneFinding,
   EXIT,
+  GRANT_JOURNAL_REL_PATH,
+  GRANT_STORE_REL_PATH,
+  GRANT_SUPERSEDED_REL_PATH,
+  GrantStoreFinding,
+  composeGrantSnapshot,
+  grantBlockText,
+  grantDigest,
+  grantStoreLocation,
+  initGrantStore,
+  readGrantJournal,
+  readGrantStore,
+  strayTemplateGrant,
+  updateGrantStore,
   assembleBrief,
   UnattendedFinding,
   assembleReturnBrief,
@@ -314,6 +328,12 @@ const FLAGS = Object.freeze([
   "--scratch",
   "--dry-run",
   "--full",
+  "--grant",
+  "--grant-file",
+  "--grant-from",
+  "--expect-revision",
+  "--expect-digest",
+  "--by",
   "--help",
 ]);
 
@@ -361,6 +381,54 @@ function say(text) {
 }
 
 /**
+ * THE GRANT STORE'S VERBS (T-344), declared once so the arm and its
+ * refusal name the same set.
+ */
+const GRANT_VERBS = Object.freeze(["show", "history", "init", "migrate", "set"]);
+
+/**
+ * WHAT A STORE WRITE ACTUALLY DID, reported step by step rather than as
+ * a word.
+ *
+ * The steps are what the act PERFORMED, in order, because the three
+ * outcomes this arm can answer — written, created, already-current — are
+ * distinguished by what they did to the disk and a caller that read only
+ * the word could not tell a retry that mutated nothing from a write that
+ * did. **AND THE FOUR THINGS THIS ARM DID NOT DO ARE PRINTED TOO**: the
+ * card's first criterion is about their absence, and an absence nobody
+ * states is an absence nobody checks.
+ *
+ * @param {import("./dispatch-brief.mjs").GrantWriteResult} result
+ * @param {string} cameFrom
+ * @param {ReturnType<typeof liveProv>} live
+ * @returns {ReturnType<typeof value>[]}
+ */
+function grantWriteRecs(result, cameFrom, live) {
+  return [
+    note("THE GRANT STORE, WRITTEN — an operational act and not a publication."),
+    value(`outcome: ${result.outcome} · revision ${String(result.revision)}`, live),
+    value(`content digest: ${result.digest.slice(0, 16)}`, live),
+    value(`the block came from: ${cameFrom}`, live),
+    value(result.why, live),
+    ...result.steps.map((step) => value(`  did: ${step}`, live)),
+    value(
+      "did NOT: run a test suite · create a commit · perform a push · start a continuous-" +
+        "integration run. The datum left the publication path; no hook was added and no CI " +
+        "bypass was introduced, because a generic bypass verifies nothing about whether the " +
+        "change qualifies for it.",
+      live,
+    ),
+    value(
+      "the check performed on the approval is PROCEDURAL: the record is complete, the block " +
+        "satisfies the shipped declaration, and every card the order names exists on this board " +
+        "at a version this repository can still produce. It does NOT establish that the owner " +
+        "approved anything — `given_by` is a sentence somebody wrote down.",
+      live,
+    ),
+  ];
+}
+
+/**
  * THE GRANT A SUCCESSOR COORDINATOR INHERITS FROM THE BLOCK (T-324's
  * sixth criterion, over T-238's seat).
  *
@@ -373,12 +441,32 @@ function say(text) {
  * @returns {ReturnType<typeof value>[]}
  */
 export function succession(ctx) {
-  const state = grantState(ctx.root);
-  const inherited = grantInheritance(state, admissionLedger(allRecords(ctx.root), TERMINAL_STATES));
   const p = treeProv(
     ctx.ref,
-    "the runtime template's dispatch block, read through the parser library's own reader",
+    "the operational grant store at the designated integration checkout, read through the parser " +
+      "library's own reader",
   );
+  /** @type {ReturnType<typeof grantState>} */
+  let state;
+  try {
+    state = grantState(ctx.root);
+  } catch (err) {
+    // A REFUSAL IS AN ANSWER HERE AND IT IS PRINTED (T-344). This arm
+    // DISPLAYS what a successor inherits, and a seat can be taken in a
+    // checkout that may not hold the store at all — so the honest row is
+    // the refusal itself, never a silent "nothing to inherit", which is
+    // the one answer the store's own reader exists to refuse.
+    if (!(err instanceof GrantStoreFinding)) throw err;
+    return [
+      value(`the grant this seat inherits: NONE CAN BE READ — ${err.message}`, p),
+      value(
+        "that is a refusal and not an empty grant: a seat that treated it as one would start work " +
+          "on an authorization nobody could show",
+        p,
+      ),
+    ];
+  }
+  const inherited = grantInheritance(state, admissionLedger(allRecords(ctx.root), TERMINAL_STATES));
   return [
     value(`the grant this seat inherits: ${inherited.why}`, p),
     value(
@@ -466,7 +554,10 @@ async function main(argv) {
           "[--session <id>] [--pid <n>] [--question <id>] [--answer <text|@file>] " +
           "[--evidence <text|@file>] [--ceiling <seconds>] [--usage <text>] [--ref <sha>] " +
           "[--report <path>] [--instant <name>=<iso>[,...]] [--replace]] " +
-          "[--full] [--root <path>]",
+          "[--grant show|history] "
+          + "[--grant init|migrate [--grant-file <path>] [--grant-from <ref>] --by <text|@file>] "
+          + "[--grant set --grant-file <path> --expect-revision <n> [--expect-digest <hex>] --by <text|@file>] "
+          + "[--full] [--root <path>]",
       );
       return EXIT.CLEAN;
     }
@@ -544,6 +635,17 @@ async function main(argv) {
    */
   const sinceRaw = opts["since"] ?? "";
   const wantsSince = sinceRaw !== "";
+  /**
+   * ARM SIXTEEN'S VERBS (T-344) — THE OPERATIONAL GRANT STORE. `show`
+   * reads the CURRENT snapshot and opens no history; `history` is the
+   * explicit historical query that does; `init` creates a store or
+   * recovers a lost one; `migrate` creates it out of a runtime template's
+   * legacy block; `set` records a revision over one it names. The three
+   * writers WRITE in the integration checkout and the two readers refuse
+   * anywhere else, so the whole arm is held apart from every other.
+   */
+  const grantVerb = opts["grant"] ?? "";
+  const wantsGrant = grantVerb !== "";
   /**
    * ARM THIRTEEN'S VERB (T-311). The run arm is held apart from every
    * other arm for the reason the wait is: it WRITES a run record, and one
@@ -636,6 +738,15 @@ async function main(argv) {
     );
     return EXIT.USAGE;
   }
+  const grantDialNames = ["grant-file", "grant-from", "expect-revision", "expect-digest", "by"];
+  const strayGrantDials = grantDialNames.filter((d) => opts[d] !== undefined);
+  if (!wantsGrant && strayGrantDials.length > 0) {
+    console.error(
+      `brief: ${strayGrantDials.map((d) => `--${d}`).join(", ")} only mean something to ` +
+        "--grant <verb>, and nothing else on this command reads them.",
+    );
+    return EXIT.USAGE;
+  }
   const withdrawDialNames = ["why", "branch"];
   const strayWithdrawDials = withdrawDialNames.filter((d) => opts[d] !== undefined);
   if (!wantsWithdraw && strayWithdrawDials.length > 0) {
@@ -685,6 +796,242 @@ async function main(argv) {
         "something it did not.",
     );
     return EXIT.USAGE;
+  }
+  /* ──────────────────────────────────────────────────────────────────
+   * ARM SIXTEEN (`--grant`, T-344) — THE OPERATIONAL GRANT STORE.
+   *
+   * It is the one arm whose whole point is what it does NOT do. Recording
+   * that the owner approved one more card used to be an edit to
+   * `method/runtime/supertaskr.yaml`, a tracked code input that four
+   * suites and a runner cycle are owed for; the datum has LEFT that path,
+   * so this arm runs no suite, creates no commit, performs no push and
+   * starts no continuous-integration run. It introduces no hook and no CI
+   * bypass to achieve that — a generic bypass verifies nothing about
+   * whether a change qualifies for it, which is the property this card
+   * exists to build.
+   *
+   * It is held apart from every other arm for the reason the writers are:
+   * an invocation that both recorded an approval and dispatched under it
+   * would decide by argument order which act this seat performed.
+   * ────────────────────────────────────────────────────────────────── */
+  if (wantsGrant) {
+    const others = [
+      ...(taskId === "" ? [] : ["--task"]),
+      ...(wantsState ? ["--state"] : []),
+      ...(wantsDispatch ? ["--dispatch"] : []),
+      ...(cardId === "" ? [] : ["--card"]),
+      ...(auditPath === "" ? [] : ["--audit"]),
+      ...(wantsPreflight ? ["--preflight"] : []),
+      ...(fenceWorktree === "" ? [] : ["--write-fence"]),
+      ...(wantsTakeSeat ? ["--take-seat"] : []),
+      ...(wantsReleaseSeat ? ["--release-seat"] : []),
+      ...(wantsDispatchLane ? ["--dispatch-lane"] : []),
+      ...(wantsMerge ? ["--merge"] : []),
+      ...(wantsBench ? ["--bench"] : []),
+      ...(wantsRun ? ["--run"] : []),
+      ...(wantsSince ? ["--since"] : []),
+      ...(wantsExpress ? ["--express"] : []),
+      ...(wantsWithdraw ? ["--express-withdraw"] : []),
+    ];
+    if (others.length > 0) {
+      console.error(
+        `brief: --grant cannot share an invocation with ${others.join(", ")}. Recording an owner's ` +
+          "approval and acting under it are two acts, and an invocation that did both would decide " +
+          "by argument order which one this seat was performing.",
+      );
+      return EXIT.USAGE;
+    }
+    if (!GRANT_VERBS.includes(grantVerb)) {
+      console.error(
+        `brief: ${JSON.stringify(grantVerb)} is not a grant verb. The verbs are ` +
+          `${GRANT_VERBS.join(", ")} — \`show\` reads the CURRENT snapshot and opens no history, ` +
+          "`history` is the explicit historical query that does open it, `init` creates a store or " +
+          "recovers a lost one, `migrate` creates it from a runtime template's block, and `set` " +
+          "records a revision over one it names.",
+      );
+      return EXIT.USAGE;
+    }
+    const ctx = context({ ...(opts["root"] === undefined ? {} : { root: opts["root"] }) });
+    const live = liveProv(ctx.at, ctx.host, `${GRANT_STORE_REL_PATH}, as it is on disk`);
+    /** @param {string} raw @returns {string} */
+    const bodyOf = (raw) => (raw.startsWith("@") ? readFileSync(raw.slice(1), "utf8") : raw);
+    try {
+      if (grantVerb === "show") {
+        // THE CURRENT SNAPSHOT ONLY. This path has no code that reaches
+        // the journal, which is what makes the criterion observable: a
+        // journal whose bytes this process cannot read leaves it whole.
+        const store = readGrantStore(ctx.root);
+        const stray = strayTemplateGrant(ctx.root);
+        const grant = store.block?.current ?? null;
+        say(
+          render([
+            note("THE DISPATCH GRANT — the CURRENT snapshot, read through the parser library's own"),
+            note("reader. The journal of superseded revisions is NOT opened here; ask --grant history"),
+            note("for that. Recording a revision runs no suite, commits nothing, pushes nothing and"),
+            note("starts no CI run, because this datum is no longer on the publication path."),
+            value(`location: ${store.location.why}`, live),
+            value(`source: ${store.source}`, live),
+            ...(store.present
+              ? [
+                  value(`approval: ${store.block?.approval} · recovery: ${store.block?.recovery}`, live),
+                  value(
+                    `revision: ${String(store.block?.grant?.revision ?? 0)}` +
+                      (grant === null
+                        ? " — and NO CURRENT GRANT, because the block is revoked: the revoked grant " +
+                          "stays in the record and stops being current, which is a different thing " +
+                          "from never having been given"
+                        : "") +
+                      ` · content ${store.digest.slice(0, 16)}`,
+                    live,
+                  ),
+                  value(
+                    grant === null
+                      ? "there is no CURRENT grant — the block is revoked, and the revoked grant stays in the record"
+                      : `given_by: ${grant.givenBy}`,
+                    live,
+                  ),
+                  ...(grant === null
+                    ? []
+                    : [
+                        value(`at: ${grant.at}`, live),
+                        value(`order: ${grant.order.join(", ")}`, live),
+                      ]),
+                  value(
+                    "PROVENANCE IS RECORDED, NOT ESTABLISHED: `given_by` is what this record " +
+                      "attributes the approval to, and the presence of that field is evidence that " +
+                      "somebody wrote it down — never evidence that the owner approved it. Binding " +
+                      "the record to something outside itself is T-339's.",
+                    live,
+                  ),
+                ]
+              : [value("there is no grant: this checkout has never held a store", live)]),
+            ...(stray === "" ? [] : [value(`STRAY: ${stray}`, live)]),
+          ]),
+        );
+        flush();
+        return EXIT.CLEAN;
+      }
+      if (grantVerb === "history") {
+        // THE EXPLICIT HISTORICAL QUERY — the one verb that opens the
+        // journal, and it says so in its own first line.
+        const journal = readGrantJournal(ctx.root);
+        say(
+          render([
+            note("THE SUPERSEDED REVISIONS — this is the explicit historical query, and it is the"),
+            note("ONE path that opens the journal. The journal is NOT authoritative: it holds the"),
+            note("revisions that STOPPED being current, so restoring its last entry would restore"),
+            note("the grant BEFORE the one that was in force."),
+            value(
+              journal.present
+                ? `${GRANT_JOURNAL_REL_PATH} carries ${String(journal.entries.length)} superseded revision(s)`
+                : `${GRANT_JOURNAL_REL_PATH} is not there: no revision has ever been superseded here`,
+              live,
+            ),
+            ...journal.entries.map((e) =>
+              value(
+                `revision ${String(e.supersededRevision)} superseded by ${String(e.supersededBy)} at ` +
+                  `${String(e.supersededAt)} · content ${String(e.digest).slice(0, 16)}`,
+                live,
+              ),
+            ),
+            ...journal.findings.map((f) => value(`FINDING: ${f}`, live)),
+            ...(existsSync(path.join(ctx.root, GRANT_SUPERSEDED_REL_PATH))
+              ? [
+                  value(
+                    `and the immediately superseded snapshot is retained WHOLE at ` +
+                      `${GRANT_SUPERSEDED_REL_PATH}, so the journal is not the only copy of it`,
+                    live,
+                  ),
+                ]
+              : []),
+          ]),
+        );
+        flush();
+        return journal.findings.length === 0 ? EXIT.CLEAN : EXIT.FOUND;
+      }
+      // ── THE THREE WRITERS ────────────────────────────────────────────
+      if ((opts["by"] ?? "") === "") {
+        console.error(
+          "brief: --grant " +
+            grantVerb +
+            " needs --by <text|@file> — who is RECORDING this, which is a different fact from who " +
+            "gave the approval. The grant's own `given_by` says whose approval it is; this says " +
+            "whose hand wrote it down, and a store that could not say would be a record with no author.",
+        );
+        return EXIT.USAGE;
+      }
+      const writtenBy = bodyOf(String(opts["by"])).trim();
+      /** THE BLOCK TO RECORD, from a named file or from a template at a named ref. */
+      let blockText = "";
+      let cameFrom = "";
+      if (opts["grant-file"] !== undefined) {
+        blockText = readFileSync(String(opts["grant-file"]), "utf8");
+        cameFrom = String(opts["grant-file"]);
+      } else if (grantVerb === "migrate") {
+        // THE LEGACY GRANT, CARRIED WITHOUT BEING WIDENED. The block is
+        // taken VERBATIM out of the runtime template — from the working
+        // tree, or from the ref named at `--grant-from`, which is how a
+        // migration is still runnable after the commit that emptied the
+        // template has landed.
+        const ref = String(opts["grant-from"] ?? "");
+        const templateRel = "method/runtime/supertaskr.yaml";
+        if (ref === "") {
+          blockText = readFileSync(path.join(ctx.root, templateRel), "utf8");
+          cameFrom = `${templateRel} in the working tree`;
+        } else {
+          blockText = execFileSync("git", ["-C", ctx.root, "show", `${ref}:${templateRel}`], {
+            encoding: "utf8",
+            maxBuffer: 64 * 1024 * 1024,
+          });
+          cameFrom = `${templateRel} at ${ref}`;
+        }
+        if (grantBlockText(blockText) === "") {
+          console.error(
+            `brief: ${cameFrom} carries no \`dispatch:\` block, so there is no legacy grant to ` +
+              "migrate. Name the ref that still carries it with --grant-from <ref>, or hand the " +
+              "block in with --grant-file <path>.",
+          );
+          return EXIT.USAGE;
+        }
+      } else {
+        console.error(
+          `brief: --grant ${grantVerb} needs --grant-file <path> — a file carrying the \`dispatch:\` ` +
+            "block to record. A recovery IDENTIFIES the authorization it means; it is never inferred " +
+            "from the journal's last entry, which holds a SUPERSEDED revision.",
+        );
+        return EXIT.USAGE;
+      }
+      if (grantVerb === "set") {
+        const expect = Number(opts["expect-revision"] ?? NaN);
+        if (!Number.isInteger(expect) || expect < 0) {
+          console.error(
+            "brief: --grant set needs --expect-revision <n> — the revision this one replaces. A " +
+              "write that did not name what it expected to find would be a last-writer-wins " +
+              "overwrite of an approval somebody else recorded.",
+          );
+          return EXIT.USAGE;
+        }
+        const result = updateGrantStore(ctx.root, {
+          blockText,
+          writtenBy,
+          expectRevision: expect,
+          ...(opts["expect-digest"] === undefined ? {} : { expectDigest: String(opts["expect-digest"]) }),
+        });
+        say(render(grantWriteRecs(result, cameFrom, live)));
+        flush();
+        return EXIT.CLEAN;
+      }
+      const result = initGrantStore(ctx.root, { blockText, writtenBy });
+      say(render(grantWriteRecs(result, cameFrom, live)));
+      flush();
+      return EXIT.CLEAN;
+    } catch (err) {
+      if (err instanceof GrantStoreFinding) {
+        console.error(`brief: [${err.code}] ${err.message}`);
+        return EXIT.FOUND;
+      }
+      throw err;
+    }
   }
   if (wantsRun) {
     const others = [
@@ -849,7 +1196,7 @@ async function main(argv) {
       // (T-324), by exactly the path a run-record refusal takes: the
       // admission comes BEFORE the reservation, so a refusal here has
       // written nothing and left no lock behind.
-      if (err instanceof RunRecordFinding || err instanceof AdmissionFinding) {
+      if (err instanceof RunRecordFinding || err instanceof AdmissionFinding || err instanceof GrantStoreFinding) {
         console.error(`brief: [${err.code}] ${err.message}`);
         return EXIT.FOUND;
       }
@@ -966,7 +1313,17 @@ async function main(argv) {
     // the health check below reads them: a red that has been attributed
     // PERMITS its designated repair, and one that has not holds every
     // action — so the two answers have to come from one derivation.
-    const recovery = grantState(ctx.root).recovery;
+    // THE RECOVERY POLICY, OR THE CONSERVATIVE ANSWER WHERE THE STORE
+    // CANNOT BE READ FROM HERE (T-344). `none` is the declaration's own
+    // no-grant value and the safe one: it permits no derived repair,
+    // which is the right answer when the authorization could not be
+    // verified at all.
+    let recovery = "none";
+    try {
+      recovery = grantState(ctx.root).recovery;
+    } catch (err) {
+      if (!(err instanceof GrantStoreFinding)) throw err;
+    }
     const attributions = reds.map((m) => {
       const log = io.log(ctx.root, m.run);
       const card = /^Merge\s+(T-\d+(?:-s\d+)?)\b/.exec(m.subject);

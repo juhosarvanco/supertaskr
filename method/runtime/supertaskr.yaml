@@ -29,32 +29,36 @@ ceremony:
   M: [executor, verifier, integrator]
   L: [plan, executor, verifier, integrator]
 
-# THE DISPATCH BLOCK — WHERE AN OWNER'S APPROVAL LIVES, AND THIS PROJECT
-# HAS NONE (T-319). A `dispatch:` block here records the approval mode
-# (each, until a named card, standing), the recovery policy (none, or the
-# repairs necessary to the approved work) and the GRANT that set them:
-# who gave it, when, at which revision, the cards in dispatch order, and
-# each card's blob sha at approval. Its whole shape is declared once in
-# the schema beside this file, under `dispatch_block:`, and read there as
-# one typed value by the parser library.
+# THE DISPATCH BLOCK DOES NOT LIVE HERE, AND THAT IS THE RECORD RATHER
+# THAN AN OVERSIGHT (T-344). An owner's approval of a piece of work — the
+# approval mode, the recovery policy and the GRANT that set them: who gave
+# it, when, at which revision, the cards in dispatch order and each card's
+# blob sha at approval — is an OPERATIONAL datum, and this file is a
+# shipped code input. The parser's settings reader declares it, end-to-end
+# bodies read it and the agent kit embeds it at compile time, so a grant
+# written here costs a full code publication every time it is revised, and
+# rides into every project the kit scaffolds carrying somebody else's
+# authorization.
 #
-# THERE IS NO BLOCK HERE, AND THAT IS THE RECORD RATHER THAN AN OVERSIGHT.
-# A reader that finds none answers the explicit NO-GRANT state — approval
-# each, recovery none, no grant, revision 0 — because no grant is ever
-# created by guessing a person, an instant or a past authorization. The
-# standing authorization this project has been running under lives in the
-# seat's ledger and in chat; it becomes a block here only through a
-# migration grant the seat proposes verbatim and the owner approves
-# (T-307), and never by a seat writing one down from memory. This is
-# written as a comment rather than as an empty block for the same reason
-# the empty `switches:` block below is written out at all: so that a
-# reader can see the question was asked. An EMPTY `dispatch:` block is
-# refused, because a block somebody emptied and a record nobody wrote are
-# different things.
+# SO THE ACTIVE GRANT LIVES IN ONE AUTHORITATIVE OPERATIONAL STORE at the
+# ONE checkout designated to coordinate dispatch: an untracked
+# `.supertaskr/dispatch-grant.yaml` holding the current authorization in
+# exactly the block shape declared beside this file, with the superseded
+# revisions in `.supertaskr/dispatch-grant-history.jsonl`. It is written
+# by a command that validates, compares the revision AND the content it
+# expects, writes atomically and retains history — and that runs no suite,
+# makes no commit, pushes nothing and starts no CI run. Its whole shape is
+# declared once in the schema beside this file, under `dispatch_block:`,
+# and read there as one typed value by the parser library.
 #
-# AND IT CONTROLS NOTHING YET. Every row of the declaration is
-# `declarative`: the block is readable configuration, and the arm admits
-# and refuses nothing by it until T-324.
+# A `dispatch:` BLOCK LEFT IN THIS FILE IS NOT READ AS AUTHORITY. The arm
+# reports it as a stray and obeys the store; it neither refuses on it nor
+# ignores it in silence.
+#
+# A CHECKOUT THAT HAS NEVER HELD A STORE IS THE EXPLICIT NO-GRANT STATE —
+# approval each, recovery none, no grant, revision 0 — because no grant is
+# ever created by guessing a person, an instant or a past authorization.
+# An unverifiable store is a different thing again, and refuses.
 
 # THE PROCESS IS SETTINGS (ADR-024 decision 6). Every step of the loop is
 # a SWITCH, and every switch is DECLARED ONCE — in the schema beside this
@@ -81,59 +85,3 @@ process:
     # fact about this project rather than a property of the schema, and
     # it is written as an empty block rather than left out so that a
     # reader can see the question was asked.
-
-# THE DISPATCH BLOCK (T-319, operational since T-324): the owner's approval
-# as a datum a fresh seat in either harness inherits, migrated from the
-# standing authorization of 2026-09-12 and the lane order ruled on
-# 2026-09-14. Approval decisions may arrive in the owner's conversation;
-# the seat records the approved grant and its later revisions here. A
-# pause is honored when received and persisted in the runtime pause
-# record (`.supertaskr/pause.json`, read by the arm; T-324-s1), not in
-# this block; a revocation uses this block's `revoked` fields. An
-# unrecorded instruction is not lost at succession.
-#
-# Membership in `order` is what the arm checks under every mode, standing
-# included; standing means no per-card approval is spent and the grant
-# runs until a pause. A derived repair needs a parent in this order and
-# its failure evidence (recovery: repairs). The grant does not make a
-# blocked card eligible, decide a reserved design question, or qualify a
-# launch route; the ruled order, blockers and fences still apply.
-#
-# T-204 IS THE OWNER'S CALL: naming it here approves the dispatch of its
-# pinned contract after its re-measure. If only the re-measure is meant,
-# strike it from `order` and `cards` until the surviving work is decided.
-# T-318 is left out while its design is open.
-dispatch:
-  approval: standing
-  recovery: repairs
-  grant:
-    given_by: "the owner, by instruction in chat on 2026-09-17, naming T-344, T-335 and T-332 explicitly and ruling the dispatch order; T-344 authorized once its fence was figured out, which this same commit lands, and the eight cards revision 1 already carried are ruled to need no further review before dispatch. Recorded by the architect seat at the instant under at"
-    at: "2026-09-16T22:35:26Z"
-    revision: 2
-    order: [T-344, T-335, T-332, T-204, T-312, T-313, T-315, T-316, T-205-s5, T-244-s1, T-295-s8]
-    cards:
-      T-344: "954f983d0549427f9d5d0b64b62a609970bfec18"
-      T-335: "239ed0014f1ede7173de931cadfa807f4cfd01bf"
-      T-332: "2b79b2021e4cb3d1b0e075e34126b0b487ade4ce"
-      T-204: "96e9edced1edb833525283927c45f7eaf83dbccd"
-      T-312: "d4b0231779dcb20235637afa950442ac8ec0e9b2"
-      T-313: "c8a29e9cba976709f35521082262e8552a303a1e"
-      T-315: "af9fae41265764db2509cc56264704bc8317d5c2"
-      T-316: "c92be7dd83428cab2d318c547bfc52611fac20a4"
-      T-205-s5: "d7cd8fdd9d2c93528f592230eb1011e45df20ccb"
-      T-244-s1: "658872e44202bd03a1cad4f83ac0c522c0072360"
-      T-295-s8: "0f1dc15d9d3a6262c9db596638a1b7679fce94dd"
-  history:
-    - given_by: "the owner, by yes in chat on 2026-09-15 to the seat's verbatim proposal (the list of planned cards as drafted, T-204 included), recorded by the architect seat at the instant under at, minutes after the yes"
-      at: "2026-09-15T07:22:18Z"
-      revision: 1
-      order: [T-204, T-312, T-313, T-315, T-316, T-205-s5, T-244-s1, T-295-s8]
-      cards:
-        T-204: "96e9edced1edb833525283927c45f7eaf83dbccd"
-        T-312: "d4b0231779dcb20235637afa950442ac8ec0e9b2"
-        T-313: "c8a29e9cba976709f35521082262e8552a303a1e"
-        T-315: "af9fae41265764db2509cc56264704bc8317d5c2"
-        T-316: "c92be7dd83428cab2d318c547bfc52611fac20a4"
-        T-205-s5: "d7cd8fdd9d2c93528f592230eb1011e45df20ccb"
-        T-244-s1: "658872e44202bd03a1cad4f83ac0c522c0072360"
-        T-295-s8: "0f1dc15d9d3a6262c9db596638a1b7679fce94dd"

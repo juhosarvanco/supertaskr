@@ -294,4 +294,77 @@ SIZE: the frontmatter says M, which was inherited rather than derived. The
 seat's reading against this fence is L. Whoever verifies should grade
 against what the work actually is.
 
+## What this command checks, and what it does not, recorded at the build
+
+THE CHECK THE UPDATE COMMAND PERFORMS ON AN APPROVAL IS PROCEDURAL, and
+naming it is the point of this section. Before it writes anything the
+command requires that the record is COMPLETE and INTERNALLY CONSISTENT:
+an approver and an instant are written down; the block is accepted by the
+parser library's own reader against the shipped declaration; and every
+card the order names exists on the board at a version this repository can
+still produce, with the blob compared against git's own hash of the file
+and the object database asked for the approved bytes where the card has
+moved. The write is then compared against the revision AND the content it
+expects, under the lock that guards the write itself.
+
+NONE OF THAT ESTABLISHES THAT THE OWNER APPROVED ANYTHING. The record
+carries who approved and when; the presence of a provenance field is
+evidence that somebody wrote a sentence down, and it is not evidence of
+the approval that sentence describes. An agent with write access to the
+store can write one. Binding the record to something outside itself is
+T-339's, and this command must not be read as having done it. The arm
+prints that sentence beside every grant it displays and beside every
+revision it writes, so a reader who never opens this card still meets it.
+
+## What a later card would have to add to move the role and effort selections
+
+The runtime template still carries the model per role and the effort
+selections, which are this project's choices sitting in a shipped file
+for exactly the reason the grant was. Moving them travels the same path
+and is NOT discharged here. What a later card would have to add, named so
+the extension point is a claim rather than a hope:
+
+- a datum descriptor of their own beside the grant's — the relative paths
+  of a snapshot and a journal, a format number, a validator and a content
+  extractor, which is the shape the update path already takes rather than
+  a framework it would have to grow;
+- a RESOLUTION RULE the grant does not need, because a selection must
+  answer in every checkout while a grant must refuse outside one: the
+  shipped template becomes the DEFAULT a project starts from and the
+  store becomes the override, so a lane and a scaffolded project still
+  resolve a model while an unverifiable grant still refuses;
+- a reader at every consuming surface that names its root, since the arm,
+  the CLI, the settings screen and the skill all render these today and
+  each is a call site the store's own criterion covers;
+- and a migration that carries the shipped values without widening them,
+  proved the way this one is: the values in the store compared field by
+  field against the template's.
+
+A general operational-record framework is still not a prerequisite, and
+neither is a settings migration nor a metrics migration.
+
+## The store as built, for whoever reads this next
+
+The current authorization is a self-contained YAML snapshot at
+`.supertaskr/dispatch-grant.yaml` carrying a `store:` header the wrapper
+validates — format, project, location and host — above the `dispatch:`
+block the parser's own reader validates. The superseded revisions live in
+`.supertaskr/dispatch-grant-history.jsonl`, one per line; the
+immediately superseded snapshot is also retained whole beside it, so the
+journal is not the only copy of the revision most likely to be wanted.
+The lock is an exclusive create, taken before the compare and released
+after the publish; the publish is a temp sibling, flushed, renamed, with
+the directory flushed after it. The runtime directory's ignore file is
+ensured before anything is written into it, because a store nothing
+ignores is one wildcard `git add` away from being back on the publication
+path the card removed it from.
+
+THE LOCATION CHECK RULES OUT RATHER THAN RULES IN, and that is worth
+saying plainly. It refuses a linked worktree, a detached head and a task
+branch; what pins a store to ONE checkout is the location the snapshot
+itself records, compared against the checkout reading it on every read.
+So a fresh repository with no store is a checkout that MAY hold one,
+which is the honest answer for every project this kit scaffolds, and a
+store that travelled is refused by name.
+
 ## Verdicts
