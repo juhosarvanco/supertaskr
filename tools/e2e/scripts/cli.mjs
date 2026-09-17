@@ -662,7 +662,15 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
     verb: "docs-gate",
     summary: "which suites a set of changed docs/ paths owes",
     target: { kind: "script", file: "docs-gate.mjs", args: [] },
-    rootFlag: false,
+    // TRUE SINCE T-332, and the registry had no third spelling: the
+    // target carries `--root <checkout>` now, and this field is what a
+    // body checks that claim against in both directions. Inside this
+    // repository the resolved project root IS the script's own
+    // repository, so the run is not a foreign one and nothing about it
+    // moves; from an INSTALLED copy the verb starts answering about the
+    // user's project instead of about the tooling's own checkout, which
+    // is the limitation the paragraph above this registry names.
+    rootFlag: true,
     usage: "supertaskr docs-gate <changed path>...",
     source:
       "docs/conventions/standing-gates.md DOCS GATE, its ONE spelling: " +

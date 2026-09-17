@@ -207,7 +207,7 @@ test("the docs gate and the push checks ask ONE implementation, so they cannot d
   expect(staleState(late).length).toBe(staleStateRecords(late).length);
   const gate = readFileSync(path.join(repoRoot, "tools/e2e/scripts/docs-gate.mjs"), "utf8");
   expect(gate, "docs-gate must call the shared derivation, not carry its own").toContain(
-    "staleStateRecords(repoRoot)",
+    "staleStateRecords(root)",
   );
 });
 
