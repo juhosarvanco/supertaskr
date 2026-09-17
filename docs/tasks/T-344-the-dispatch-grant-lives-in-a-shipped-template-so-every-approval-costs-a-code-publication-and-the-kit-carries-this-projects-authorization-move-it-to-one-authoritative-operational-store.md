@@ -368,3 +368,204 @@ which is the honest answer for every project this kit scaffolds, and a
 store that travelled is refused by name.
 
 ## Verdicts
+
+### 2026-09-17 — APPROVED WITH ASSIGNED CORRECTIONS — claude-opus-5@subagent
+
+Verifier, phase 2, a fresh spawn on the detached bench
+`../supertaskr-V-T-344` at the lane tip `ee11d037`, graded against the
+diff `cb60d6d3..ee11d037`. Bench port 25344.
+
+PHASE ONE'S PRE-COMMITMENT, CITED AS REQUIRED:
+`attack-set-T-344.md`, sha256
+`0ffb983de0a00e1e4811f1312dfa822c581ef0a633937dc5c9dd71b979044015`.
+Nineteen criteria, one attack section each, plus a frame disclosure and
+seventeen measurement requests. The grounds taken at the base before the
+diff existed: `ground-T-344.md`, sha256
+`85240a676b9c681c139e276ff654ee59a689fc3da0f776dc2403efa983fead2b`.
+
+**THE PRE-COMMITMENT IS PARTLY CONTAMINATED AND ITS OWN FRAME SAYS SO.**
+Phase one held file, shell and git tools and used none, which is a kept
+discipline rather than a structural blindness; and the project's memory
+index and several commit subjects reached it unrequested. It marked the
+attacks those touched CONTAMINATED — A1.5, A2.2, A5.3, A10.5, A11.3,
+A13.3, A14.4, A15.4. Those are graded below as disclosed guidance, not
+as blind prediction, and each row that rests on one says so.
+
+**WHAT DECIDED THE HARD ROWS WAS MEASUREMENT AT THIS BENCH, NOT THE
+REPORT.** Phase one left seventeen requests; the grounds answered six.
+Rather than grade the rest ungradable I took the readings myself, and
+every figure below carries the ref or the arrangement it was taken at.
+
+#### The three reds, checked rather than accepted
+
+The leg at the lane tip reports 1231 collected, 3 failed, 1228 passed,
+with `push-guard.spec.ts` at 5474, 5502 and 5534 failing `EACCES` on a
+double copy of the conventions document. **THE ATTRIBUTION HOLDS AND I
+DID NOT TAKE IT ON TRUST.** At this bench, `docs/CONVENTIONS.md` is mode
+644 where the fenced lane has it 444, and the whole spec file runs
+**123 passed, 0 failed, exit 0, 1.8m** here at `ee11d037` — the three
+named bodies among them. The defect is lane-only and already filed as
+T-333. It is not this diff's and nothing in this diff reaches it.
+
+#### The rows — nineteen criteria, nineteen readings
+
+| # | criterion | verdict | what decided it |
+|---|---|---|---|
+| 1 | no suite, no commit, no push, no CI, by observation | MET | `brief.spec.ts` "A ROUTINE GRANT REVISION RUNS NO SUITE…" run at this bench, green. It drives the real command in a real git fixture behind a PATH shim, PARSES each git subcommand rather than grepping, requires every verb used to be in a named read-only set, and asserts HEAD unmoved and `git status --porcelain` byte-identical. Phase one's A1.1/A1.3 (observation-by-mock, the absence being the absence of git) are defeated by the shim's own positive control; A1.2/A1.5 by the porcelain equality, which phase one itself called the cheapest decisive observable in the set. |
+| 2 | validate before writing; the card names the procedural check | MET | I drove it: four `initGrantStore` calls at a fixture — empty `given_by`, empty `at`, a card not on the board, a blob this repository cannot produce — each refused `GRANT_STORE_INVALID` with **the store absent from disk afterward in all four**. Validation is the parser library's own `dispatchBlock` (each refusal carries that reader's own message), which defeats A2.2's lookalike; the board is the arm's own card index at the named root with the blob compared against git's own hash, which defeats A2.3. A2.4 is answered in as many words by the card's new section and by the sentence the arm prints beside every grant. FINDING below on A2.5 and on the absent body. |
+| 3 | expected revision AND content, under the write's own lock | MET | `updateGrantStore` reads inside `withGrantStoreLock`, so A3.1's check-then-lock is defeated by construction. The body spawns a real second OS process against a held lock and gets `GRANT_STORE_LOCKED`, then the identical call with the lock free succeeds — the control A3.4 demanded. The content compare is caller-supplied against bytes on disk, not a self-stored digest (A3.2), and revision and content are separate refusals with separate messages (A3.3, A3.6). |
+| 4 | the write is atomic | MET | The body polls from one process while a writer runs in another, and its CONTROL is the design the card's own notes reject — exclusive creation then an in-place fill, at the same chunk size and the same synchronous pace — asserted to yield `PARTIAL`. That is the only arming A4.4 allowed. `writeFileAtomic` puts its temp sibling in the destination's own directory and fsyncs the file and then the parent directory, which defeats A4.2 by construction rather than by the host accident the grounds recorded at M5, and answers A4.1's crash reader. |
+| 5 | self-contained snapshot, superseded revisions in a separate journal | MET | A5.1's arrangement is run: the snapshot is read with the journal `chmod 000`. A5.2's decorative-fields attack I armed myself — a grant carrying `limits.tokens` and `limits.expires_at` writes and reads back from the snapshot, and a revocation round-trips end to end with `current` reading null. A5.3, which phase one marked CONTAMINATED, is defeated: after init+update the journal holds exactly the one superseded revision, and the already-current retry grows it by nothing. |
+| 6 | three read paths open the snapshot only | MET | The journal is made unopenable and all three real entry points keep working, with the control taken FIRST (`readGrantJournal` must throw on it). I closed A6.4 — a module-load side effect — by observing a WHOLE process from spawn to exit: a fresh node process read the grant at revision 2 with the journal shut, exit 0. The reader STATs the journal for one bit and never opens it; the executor disclosed that rather than leaving it to be found, and `chmod 000` is exactly the arrangement that permits it. |
+| 7 | a missing or unreadable snapshot refuses, pending explicit recovery | MET | A7.1 demanded a data-mutant table and I built one: zero length and truncated refuse `METADATA`; wrong types, permission denied and a DIRECTORY at the path refuse `UNREADABLE`, each naming its reason. C7 and C8 are demonstrated as ONE arc in one body — lose it, recover it by naming the intended revision, decide — which is what phase one's cross-cutting note required. A7.4 is defeated: nothing memoizes, and the refused read restores nothing. FINDING below on the seventh shape. |
+| 8 | creating a snapshot is an explicit authorized write | **CORRECTION 1** | A8.1's TOCTOU is defeated — I ran four concurrent creations and exactly one won, three were told `GRANT_STORE_EXISTS`. **A8.2, which phase one called its sharpest attack on this criterion, LANDS.** A store created and never revised leaves no journal and no retained superseded snapshot, so losing its snapshot read as a checkout that had never held one — the fresh-project answer this criterion forbids. Measured, corrected and pinned below. |
+| 9 | interruption between the journal append and the snapshot replacement | MET | The order is journal-then-snapshot and the journal holds SUPERSEDED revisions, so A9.4's contradiction dissolves rather than being fallen to: an entry says an old grant stopped being current, and until the rename the old one is still what the snapshot names. The body asserts exactly that, then retries with the REAL command and gets no duplicate. The dedupe is on the (superseded revision, superseded-by, digest) triple, never the number alone (A9.2). One commit point is named and demonstrated (A9.5). |
+| 10 | a durable update whose acknowledgement was lost | MET | The digest is taken over the BLOCK and not the file, so a snapshot rewritten at a different instant compares equal — with a control that a WIDENED order digests differently, which is what stops A10.2's normalizing comparison. Identical payload answers `already-current` and mutates nothing; the same revision number carrying different authorization answers `GRANT_STORE_CONFLICT`. A10.5 is largely defeated because the digest covers `given_by`, so another provenance is a conflict rather than a false already-current. |
+| 11 | refused outside the designated integration checkout, naming the location | MET | **A11.3 IS THE ROW THE GROUNDS WERE TAKEN FOR, AND THE BUILD DOES NOT FALL TO IT.** The location classifier only RULES OUT; what pins one store to one checkout is the `location:` the snapshot itself records, compared against the resolved root on every read — so a full clone of this repository sitting elsewhere on the same machine — the case phase one named as the one most likely to occur — is refused by name, with "no second copy" in the message. A11.1 does not apply: designation is derived from git, with no environment variable anywhere. A11.2 I drove on this case-insensitive filesystem: reading through an upper-cased path REFUSES rather than adopting, which is the safe direction. FINDING below on A11.6. |
+| 12 | the admission reaches the lane from the coordinator | MET | Both arrangements A12.1 demanded are covered: a lane with a store planted in its own runtime directory and a lane with none, each refused `NOT_DESIGNATED` naming the location rather than answering "no grant". The lane is a real `git worktree add` on a task branch, which defeats A12.4. The coordinator decides the admission as a value carrying the revision it binds to. FINDING below on A12.2 and A12.3. |
+| 13 | cross-host transfer and competing histories refused and recorded as deferred | MET | A13.2 asked whether the snapshot carries the identity of the checkout it was written for, and said its absence would make both this criterion and the eleventh softer than they read: it carries BOTH host and location, and both refusals are driven by a body. **A13.1 I armed myself** — two journal entries superseding one revision with different bytes produce exactly one finding naming the reconciliation as DEFERRED, and the historical query exits non-zero on it. A13.3 (CONTAMINATED) holds: the deferral sits in the card's canonical section, not under a heading of its own. FINDING below: no committed body arms that detector. |
+| 14 | the migration carries the exact grant without widening | MET | A14.1's widening-by-default cannot occur: the block is carried VERBATIM rather than copied field by field, and the body still compares approval, recovery, order, card map, `given_by`, revision and the REVOCATION against the template's own reading. A14.4 — the `grant ?? templateGrant` fallback phase one called the exactly forbidden silent restoration — is refused in BOTH arrangements it asked for: snapshot corrupted with the legacy block still present refuses, and a template block with a store present reads as a stray. A14.3's plant is run: the pause record and a run record are byte-identical after. |
+| 15 | the kit's embedded template carries no grant | MET | A15.1 and A15.2 are defeated: the assertion runs over the compile-time include's own content, through a line-shape detector rather than a substring search, with a third assertion that a comment naming the block is not read as the block. **A15.3 ASKED WHETHER A SECOND BUILD WAS PERFORMED. IT WAS NOT, SO I PERFORMED IT**: with a real grant block appended to the shipped template, `cargo test --offline --lib kit` at this bench reports `FAILED. 20 passed; 1 failed`, panicking at the body's own message about a grant riding into every project the kit scaffolds. The template was restored and the tree is clean. Baseline before the mutant: 21 passed, 0 failed, 28s. |
+| 16 | fixtures do not consume the active grant; every call site names its root | MET | A16.2's "root-naming proved by grep" does not apply: there is no default root left to grep for. `grantState`, `readGrantStore`, `readGrantJournal`, `grantStoreLocation`, `initGrantStore` and `updateGrantStore` all REFUSE `GRANT_STORE_NO_ROOT` when called with none, and the refusal names the defect it prevents. That eliminates A16.3's mutant class by construction and defeats A16.4's geography worry structurally rather than by where the suite happens to run — which is a better answer than the decisive run phase one asked about at M14. A16.1's tension is resolved out loud in the bench fixture's own comment rather than silently. |
+| 17 | reuse the helpers, leave an extension point, build no framework | **CORRECTION 2** | Reuse is real and was checked before it was relied on: validation is the parser's own reader and nothing else, locking is `open(O_EXCL)` written rather than imported to avoid a load-order cycle a body asserts is absent, and the report records reading `acquireSolo` and rejecting it as a check-then-write. A17.3 is defeated — the card's new section is specific rather than an echo. **But A17.2 lands on the prose**: the arm's own header names `updateOperationalStore` as the extension point and says it is written against a datum descriptor. No such function exists and the real one takes no descriptor. Corrected and pinned below. |
+| 18 | the template is no longer the home of the active grant | MET | A18.1 asked what was chosen and required a body to assert the chosen one: REPORT was chosen, and the body asserts the stray. A18.2's arming is exactly right — a fixture whose template carries the block and whose store is EMPTY still answers unenforced at revision 0, and the control puts the IDENTICAL bytes in the store and shows them enforce, so the answer is about WHERE the block was. A18.3 and A18.4 are met in the open: the declaration stays and both the schema and the arm say plainly that the occupant moved and the coupling did not. |
+| 19 | the datum leaves the publication path, no generic hook or CI bypass | MET | A19.3 is settled by name: no workflow, no hook and `gate-run.mjs` is not in the diff at all, so no new path-specific exclusion entered the derivation. A19.2's observable is driven and green. A19.1 is settled by the grounds rather than by argument — a tracked file at this path is UNPLACEABLE and takes the whole battery, and the runtime directory's ignore rule is a bare `*` — and the writer ENSURES that ignore file before writing. A19.4 is answered honestly: the selection body was NOT retargeted, and says so in its own words. |
+
+#### Findings that changed no row
+
+- **A2.5 stands unaddressed and the criterion does not require it.** The
+  instant is required present and ISO-shaped; it is compared to nothing —
+  not to now, not to the prior revision's instant. An instant in the
+  future or before its predecessor's is accepted.
+- **NOTHING IN THE COMMITTED SUITE PINS THE SECOND CRITERION.**
+  `validateGrantSnapshot` is called by no body and `GRANT_STORE_INVALID`
+  appears in no spec. It is the largest untested surface in the diff. The
+  criterion asks for a body nowhere in its own wording, so this is routed
+  rather than corrected — but a regression there would pass every gate.
+- **Three refusal codes are exercised by no body**: `INVALID`,
+  `UNREADABLE` and `COMPETING_HISTORY`. I drove all three by hand and all
+  three behave as written.
+- **A seventh unreadable shape answers instead of refusing.** A dangling
+  symlink at the store's path is followed by `existsSync` and reads as
+  absent. Correction 1 closes it for any checkout with prior use —
+  measured after the fix, a dangling symlink there refuses
+  `MISSING_AFTER_USE` — and what remains is a checkout that never held a
+  store, where absent is the honest answer. A leading byte-order mark is
+  accepted, which is benign.
+- **A11.6, and it is the criterion's wording rather than the builder's
+  choice.** The build refuses on a detached HEAD, because the criterion
+  asks for that demonstration in as many words. The grounds settle that
+  detachment is a property of HEAD and not of location, so a detached
+  HEAD IN the designated checkout is still the designated checkout and
+  would be refused. The card's notes say plainly which three cases are
+  ruled out, so nothing is hidden. Routed to the seat as a contract
+  question, not graded against this lane.
+- **A12.2 and A12.3 are unarmed.** No body drives a brief whose admission
+  says refused while its inputs would compute admitted, and the
+  admission travels as unauthenticated data without an integrity property
+  being named or its absence recorded as deferred.
+- **No body kills the real command at the real seam (A9.1).** The
+  interrupted state is constructed — but it is reachable, byte-for-byte
+  what the real append writes, and the RECOVERY driven is the ordinary
+  command rather than a routine that exists only for the test.
+- **No body drives the stale-lock reclaim**, which A3.5 named as
+  unspecified. It is now specified in the code and in its message.
+- **Phase one's M12 went unanswered** — no scan of every embedded kit
+  entry for card identifiers and blob hashes. The fifteenth criterion is
+  narrowly about the runtime template, so it decides nothing here.
+- **The size line.** The executor says the work is L against the
+  frontmatter's M and the card's own fence section agrees. Having read
+  the whole diff I agree: a reader, a writer, a lock, an atomic publish,
+  a journal, a location classifier, a five-verb CLI arm and fifteen
+  bodies is not an M.
+- **Nothing in the diff is unasked for.** Every one of the twelve paths
+  is traceable to a criterion or to one of the three granted fence
+  widenings. The one thing no criterion asked for is the retained
+  superseded snapshot, and the card's own notes settle it.
+
+#### The corrections
+
+Both are committed on this bench after this verdict, and both were run
+BOTH ways at `ee11d037` plus the verdict commit.
+
+**CORRECTION 1 — A CREATED STORE IS PRIOR USE.** `initGrantStore` left
+no evidence that survives the snapshot, so a checkout whose FIRST grant
+was lost read as one that had never held a store: the explicit no-grant
+state, under which every admission is made and merely reported
+unenforced, and the next creation mints authority over an approval the
+owner had already given. The fix writes a prior-use marker beside the
+snapshot, after the publication so it never claims a use that did not
+happen, and the reader stats it with the journal and the retained
+superseded snapshot. Readings: with the fix, the thirteen store bodies
+and then the remaining five run **13 passed** and **5 passed**, exit 0;
+with the mutant planted, the new body reds — `1 failed, 1 passed`, exit
+1, `Expected: "GRANT_STORE_MISSING_AFTER_USE" / Received: undefined`.
+
+```mutant
+correction: a created store is prior use
+file: tools/e2e/scripts/dispatch-brief.mjs
+spec: tools/e2e/tests/brief.spec.ts
+body: A STORE CREATED AND NEVER REVISED IS STILL PRIOR USE — losing the FIRST snapshot refuses, and is not read as a checkout that never held one
+message: a checkout that LOST its first grant was read as one that never had one
+--- old
+  const usedBefore =
+    existsSync(path.join(at, GRANT_USED_REL_PATH)) ||
+    existsSync(path.join(at, GRANT_JOURNAL_REL_PATH)) ||
+    existsSync(path.join(at, GRANT_SUPERSEDED_REL_PATH));
+--- new
+  const usedBefore =
+    existsSync(path.join(at, GRANT_JOURNAL_REL_PATH)) || existsSync(path.join(at, GRANT_SUPERSEDED_REL_PATH));
+```
+
+**CORRECTION 2 — THE EXTENSION POINT NAMED A FUNCTION THAT IS NOT
+THERE.** The arm's own header said `updateOperationalStore` is written
+against a datum descriptor so a second datum takes up the same path by
+passing one. The function does not exist; the real one is
+`updateGrantStore` and it takes no descriptor — a second datum would
+copy the path rather than parameterise it. Prose is a code input in this
+repository, and a false mechanism claim in a fenced source file is a
+defect rather than a typo. The comment now names the real function and
+describes the extension point as the shape it actually has. Readings:
+with the fix, **2 passed**, exit 0, 1.6s; with the mutant planted, the
+body reds — `1 failed`, exit 1, with the message `the arm's
+extension-point sentence names a function this file does not export:
+\`updateOperationalStore\``. Both anchors were checked for uniqueness
+before the mutant was planted: the old matched once, the new matched
+none.
+
+```mutant
+correction: the extension point names the function it actually has
+file: tools/e2e/scripts/dispatch-brief.mjs
+spec: tools/e2e/tests/brief.spec.ts
+body: THE ARM'S EXTENSION POINT NAMES A FUNCTION THIS FILE ACTUALLY EXPORTS
+message: the arm's extension-point sentence names a function this file does not export
+--- old
+ * `updateGrantStore` is the compare-append-publish path, and its parts —
+--- new
+ * `updateOperationalStore` is written against a DATUM DESCRIPTOR —
+```
+
+#### What I re-ran, because appending a verdict is a write
+
+Appending a verdict is a write and prose is a code input here, so my own
+commits owe their range's set. Measured at this bench on the working tree
+that became the two commits below, with the tree otherwise identical to
+`ee11d037`:
+
+- `npm run typecheck` from tools/e2e — exit 0.
+- `npm run lint:tokens` from tools/e2e — clean, TOKEN 190 files, CONTROL
+  1673 tracked text files, exit 0.
+- the store's bodies and their neighbours through Playwright at port
+  25344 — the figures are in the corrections above.
+- the remaining owed set for the range, run last and reported with its
+  exit in the verifier's return.
+
+THE READINGS THAT DECIDED ROWS, WITH THEIR ARRANGEMENTS:
+`push-guard.spec.ts` whole at this bench, **123 passed, 0 failed, exit
+0, 1.8m**, with `docs/CONVENTIONS.md` at mode 644 here against 444 in
+the fenced lane. The kit crate at this bench, **21 passed / 0 failed /
+28s** clean, and **20 passed / 1 failed** with a grant block appended to
+the shipped template, panicking at the body's own message — the template
+was restored and the diff against it is empty. The refusal tables for
+the second, seventh and thirteenth criteria were driven against
+throwaway git fixtures built from this bench's own method files.
