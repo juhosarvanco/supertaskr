@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 size: S
 priority: 2
-status: suggested
+status: planned
 suggested_by: "the architect seat on 2026-09-16, from a CI red on run 35035313344 whose failing body passed on the two pushes either side of it and on the same tree locally"
 blocked_by: []
 touches: [tools/e2e/tests/push-guard.spec.ts]
@@ -43,11 +43,11 @@ and the same commit, changing nothing, and passed. Same body, same fixture,
 same runner image; the only thing that differed is where the two
 invocations fell against the clock.
 
-THE RATE IS THE GAP DIVIDED BY A MINUTE, which is why it has gone unnoticed:
-the two hook runs are a few hundred milliseconds apart, so it fires on the
-order of one push in a hundred and looks like an unexplained one-off each
-time. It also grows no less likely with age — the fixed `startedAt` recedes,
-but the boundary arrives just as often.
+The chance of crossing a minute boundary depends on the interval between
+the invocations and their timing relative to that boundary. This card has
+not established a measured incidence rate. The fixed `startedAt` receding
+with age does not remove the changing elapsed-minute field; no frequency
+estimate is needed for the deterministic control in the criteria below.
 
 ## What would settle it
 
@@ -81,6 +81,22 @@ no other site was found.
 - WHEN this card is built THE repair SHALL NOT add an environment-read clock override to the hook, and a body SHALL demonstrate that the retired variable's name is still bound nowhere the hook reads.
 - WHEN this card is built A body SHALL demonstrate the failure as it stands: two renderings differing only in the elapsed minute SHALL be shown to fail the present assertion and to pass the repaired one.
 - WHEN the repair lands THE card SHALL name the class — a byte comparison across two invocations over output carrying a run-time reading — and SHALL record the sweep for other sites in this suite, or record that none was found.
+
+## Pre-dispatch review and promotion — 2026-09-19
+
+Promoted to planned under the owner's delegation to review, update and dispatch at most ten cards. The Codex coordinator's source read at `90ec2300133d697e3db9e574d72197b74794deb7` confirmed the wired-hook invocations, byte-for-byte stderr comparison, separate status comparison and retired-variable source check. The canonical acceptance criteria, fence, size and priority are unchanged; the arm derives the tier. The review did not repeat the historical CI run or establish a measured failure rate.
+
+The real wired-hook comparison must use the repaired comparison, and a difference in stable content must still fail it. The elapsed field's presence and shape remain asserted as the criteria require; no production clock override is introduced.
+
+### Historical wording superseded by this review
+
+The incidence paragraph previously read:
+
+> THE RATE IS THE GAP DIVIDED BY A MINUTE, which is why it has gone unnoticed:
+> the two hook runs are a few hundred milliseconds apart, so it fires on the
+> order of one push in a hundred and looks like an unexplained one-off each
+> time. It also grows no less likely with age — the fixed `startedAt` recedes,
+> but the boundary arrives just as often.
 
 ## Implementation notes
 

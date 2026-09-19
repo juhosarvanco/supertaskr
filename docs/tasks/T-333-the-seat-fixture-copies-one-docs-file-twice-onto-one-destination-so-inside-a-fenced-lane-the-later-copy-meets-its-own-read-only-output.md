@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 size: XS
 priority: 2
-status: suggested
+status: planned
 suggested_by: "the T-331 lane's executor on 2026-09-15, found because that lane's fence carries a workflow path the derivation cannot place, so its scoped reading refused and it ran the full end-to-end leg; the architect seat confirmed the modes across the lane, the bench and the integration checkout before ruling the widening down"
 blocked_by: []
 touches: [tools/e2e/tests/push-guard.spec.ts]
@@ -26,13 +26,13 @@ Filed 2026-09-15 by the architect seat at T-331's merge. The T-331 lane raised i
 
 Three bodies then die inside the fixture rather than inside the subject they were written to measure: the one asserting that taking the seat installs the guard and announces it and that both seat verbs report a checkout without the hook as unguarded, the one asserting that taking the seat records no seat when the guard cannot be installed and leaves the configuration and the index alone, and the one asserting that a seat acquisition failing for a reason of its own configures nothing. All three report the same permission error at the same helper, and a re-run reproduces them exactly.
 
-The defect has been invisible for two separate reasons at once. It cannot appear in the integration checkout, where the mode is 644. And it cannot appear in a lane that runs a scoped end-to-end reading, because the scoped selection does not carry this spec. A lane sees it only when it runs the full leg, and a lane runs the full leg only when its scoped reading was refused — which is what happened to the lane that found it, whose fence carries a workflow path the derivation cannot place.
+The original failure was observed during T-331's full end-to-end run. It can also be exposed by a scoped run that includes this spec and executes from a source checkout whose copied files are read-only. A writable integration or detached bench copy alone does not exercise that condition. The earlier statement that only a full leg can expose it was too broad; its original wording is retained below as history.
 
 Measured on 2026-09-15 by the architect seat, at the T-331 lane tip: the conventions index is mode 444 in the lane, 644 in the integration checkout, and 644 in the verifier's detached bench, which carries no fence at all. So the failure is lane-local; it does not reach a verification bench, an integration checkout, or the runner, and it invalidated no landing.
 
 ## What would settle it
 
-A fixture root the test owns is writable by the test whatever the mode of the tree it was copied from. The remedy the finding lane sketched is to normalise the destination's mode after the chapter copies, so that a fixture inherits its own contract rather than the write protection of whichever checkout it happened to be built in. A body pins it: a fixture root built from a source tree whose files are read-only is still a writable root, which is the property, and which fails before the repair.
+A fixture root the test owns is writable by the test whatever the mode of the tree it was copied from. The finding lane sketched mode normalisation after the chapter copies. That alone cannot prevent a permission error during the repeated copy that precedes it. The remedy must make the repeated write complete and leave the owned fixture writable, while leaving its source unchanged; the builder chooses the copying strategy against the criteria below. A body pins it: a fixture root built from a source tree whose files are read-only is still a writable root, which is the property, and which fails before the repair.
 
 The wider point is worth stating even though this card does not act on it: a fixture that inherits a fence's write protection is measuring the lane rather than the subject, and any other fixture in this suite that copies from the tree carries the same latent defect. The repair names its class and sweeps for other sites.
 
@@ -55,6 +55,22 @@ Neither spelling has been built. The measurements behind the finding are unchang
 - WHEN a fixture root is built by copying from a source tree whose files are read-only THE fixture SHALL produce a root the test can write, and the three named seat bodies SHALL pass inside a fenced lane worktree as they pass in the integration checkout.
 - WHEN the repair lands THE spec SHALL carry a body that builds a fixture root from a read-only source tree, and that body SHALL assert BOTH that the repeated chapter copy onto one destination completes AND that the resulting file can afterwards be written, and SHALL assert that the source tree is still read-only at the end; it SHALL be shown to fail against the fixture as it stands before the repair.
 - WHEN the repair is made THE card SHALL name the class (a fixture inheriting the write protection of the tree it copied from) and SHALL record the sweep for other fixtures in this suite that copy from the tree, or record that none was found.
+
+## Pre-dispatch review and promotion — 2026-09-19
+
+Promoted to planned under the owner's delegation to review, update and dispatch at most ten cards. The Codex coordinator's read at `90ec2300133d697e3db9e574d72197b74794deb7` found the repeated copy and absent destination-mode normalisation in the spec. The canonical acceptance criteria, fence, size and priority are unchanged; the arm derives the tier. The review did not run a new lane or claim a fresh execution demonstration.
+
+The current finding corrects the scope of the historical exposure claim and the incomplete post-copy recipe. Both successful copying and a writable result remain required, and the source stays read-only. Unlinking before a copy alone still does not establish the writable-result property.
+
+### Historical wording superseded by this review
+
+The exposure paragraph previously read:
+
+> The defect has been invisible for two separate reasons at once. It cannot appear in the integration checkout, where the mode is 644. And it cannot appear in a lane that runs a scoped end-to-end reading, because the scoped selection does not carry this spec. A lane sees it only when it runs the full leg, and a lane runs the full leg only when its scoped reading was refused — which is what happened to the lane that found it, whose fence carries a workflow path the derivation cannot place.
+
+The candidate recipe previously read:
+
+> The remedy the finding lane sketched is to normalise the destination's mode after the chapter copies, so that a fixture inherits its own contract rather than the write protection of whichever checkout it happened to be built in.
 
 ## Implementation notes
 
