@@ -4,13 +4,14 @@ title: "The seat fixture in the push-guard spec copies one docs file twice onto 
 feature: F-04
 milestone: 4
 size: XS
+tier: bounded
 priority: 2
-status: planned
+status: building
 suggested_by: "the T-331 lane's executor on 2026-09-15, found because that lane's fence carries a workflow path the derivation cannot place, so its scoped reading refused and it ran the full end-to-end leg; the architect seat confirmed the modes across the lane, the bench and the integration checkout before ruling the widening down"
 blocked_by: []
 touches: [tools/e2e/tests/push-guard.spec.ts]
-builder:
-verifier:
+builder: gpt-5.6-sol@fresh
+verifier: gpt-5.6-sol@fresh
 built_by:
 verified_by:
 review: independent
