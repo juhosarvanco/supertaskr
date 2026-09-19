@@ -23,7 +23,7 @@ The arm is Node scripts and runs under any shell; the seat verbs recognise a Cod
 ## Acceptance criteria
 
 - WHEN a Codex session takes the seat THE seat verbs SHALL recognise it, the hook SHALL be installed, the seat SHALL run `--dispatch --full`, `--dispatch-lane`, `--bench` and `--merge` unchanged, every child it starts SHALL have a run record, and the seat's own launch boundary (network, credentials, filesystem) SHALL be written in its first record of the sitting.
-- WHEN the Codex seat starts a child THE default path SHALL be the Codex CLI adapter under T-312's configuration demonstrated for that role, including a separately confined bench for a Codex verifier writer. A natively spawned child SHALL be eligible to write only if this card demonstrates that launch to the same role-specific boundary with the same commands and outputs. A native read-only participant SHALL be eligible only if its actual launch satisfies that assignment's required write restrictions, read access and independence profile; inability to qualify it as a writer SHALL NOT qualify it as read-only or tool-less. An unmet capability SHALL be refused by name, with no silent substitution. Bodies SHALL cover refusal of an unqualified native writer and refusal of a nominally read-only participant whose required boundary is not established.
+- WHEN the Codex seat starts a child THE default path SHALL be the Codex CLI adapter under T-312's configuration demonstrated for that role, including a separate verifier repository under the same explicitly demonstrated protection profile. Under the owner-selected hook profile, that separation is a layout safeguard, not OS filesystem or Git-ref isolation; hook health and limitations remain those demonstrated by T-312. A natively spawned child SHALL be eligible to write only if this card demonstrates that launch to the same role-specific boundary with the same commands and outputs. A native read-only participant SHALL be eligible only if its actual launch satisfies that assignment's required write restrictions, read access and independence profile; inability to qualify it as a writer SHALL NOT qualify it as read-only or tool-less. An unmet capability SHALL be refused by name, with no silent substitution. Bodies SHALL cover refusal of an unqualified native writer and refusal of a nominally read-only participant whose required boundary is not established.
 - WHEN the acceptance sitting runs THE card it lands SHALL be chosen by the owner and named in this card's notes before dispatch, with its own authorization, and the sitting SHALL exercise every instrument that card owes (its owed suites, its regenerations, a method bump if it touches method text); a card whose instruments do not cover a method change SHALL not be taken as proof for method changes.
 - WHEN the sitting ends THE seat SHALL release the seat with the verb and leave a handoff in the packet form, no Claude session SHALL have written to the repository during the sitting, and the records SHALL name the models and usage actually reported.
 - WHEN this card lands THE adapters' AGENTS.md and the seat skill SHALL say how a Codex session holds the seat, and the method version SHALL bump with its release note and evaluation block.
@@ -34,3 +34,13 @@ The arm is Node scripts and runs under any shell; the seat verbs recognise a Cod
 <!-- executor appends before finishing -->
 
 ## Verdicts
+
+## Hook-profile clarification — 2026-09-19 (proposed)
+
+The owner selected the demonstrated hook-based route for the Codex-only
+takeover. This criterion clarification prevents the earlier phrase
+separately confined bench from silently reintroducing OS isolation. All
+role qualification, independent verification, actual delivery, native-spawn
+restrictions and existing dependencies remain. A separately qualified
+sandboxed profile is not forbidden, but is not a prerequisite for this
+acceptance sitting. Cross-harness acceptance remains deferred.
