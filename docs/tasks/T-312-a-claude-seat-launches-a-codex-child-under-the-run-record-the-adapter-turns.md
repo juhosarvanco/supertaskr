@@ -4,8 +4,9 @@ title: "A Codex worker runs under the shared run record — local coordination, 
 feature: F-04
 milestone: 4
 size: L
+tier: guarded
 priority: 1
-status: planned
+status: building
 wake: 2026-09-14
 suggested_by: "ADR-025 decisions 2 and 5, approved by the owner on 2026-09-12; card 3 of its plan; the owner's ruling of 2026-09-12 that a Codex child's fence is the sandbox plus the path checks, accepted on this demonstration and not before"
 blocked_by: [T-311]
