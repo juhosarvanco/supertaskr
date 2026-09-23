@@ -93,3 +93,9 @@ existing effort reader is reused. A matching ADR-025 clarification is
 prepared alongside this draft, and is a records action rather than an
 executor-authored owner ruling. Bootstrap launch and collection steps are
 recorded separately; the product adapter is not claimed built.
+
+## Recovery waiver and re-entry — 2026-09-23
+
+The owner approved one final fresh repair and verification pass after the second-rejection escalation in `docs/rooms/t312-second-rejection.md`. The 2026-09-13 rejection concerned the superseded sandbox/confinement route. The 2026-09-19 rejection at candidate `a4a276b77b29cb79852885ad8c12d192ecffcd12` concerns the replacement hook route and identifies distinct, newly found defects whose remedies remain inside this card's fence: a qualification-only resume turn before assigned delivery plus final-turn receipt validation, expected-old protection for both canonical collection-ref moves, removal of confinement claims from the hook profile, and the candidate-caused identifier keeper failure.
+
+The criteria above are unchanged; this block narrows the final pass to closing their demonstrated failures. A fresh executor receives the preserved candidate and rejected verdict. A new phase-one spawn writes a re-entry attack set naming this verdict, and the fresh phase-two verifier judges the repair against both the original and re-entry seals. The role-specific real demonstrations and guarded whole-suite obligations remain. A third rejection is terminal: park and re-plan this card, never start a fourth pass.
