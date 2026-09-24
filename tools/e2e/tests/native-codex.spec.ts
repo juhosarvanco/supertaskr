@@ -19,7 +19,6 @@ import {
   NATIVE_IDENTITY_PROBE,
   NativeCodexFinding,
   activeNativeHolds,
-  bindNativeIdentity,
   collectNativeWorkspace,
   explicitResourceProblem,
   handleNativeEvent,
@@ -71,16 +70,11 @@ function bench(stem: string): NativeBench {
   git(lane, ["init", "-q"]);
   git(lane, ["config", "user.email", "fixture@example.invalid"]);
   git(lane, ["config", "user.name", "fixture"]);
-  mkdirSync(path.join(lane, "docs", "tasks"), { recursive: true });
   writeFileSync(path.join(lane, ".gitignore"), ".supertaskr/\nignored/\ngenerated.txt\n");
   writeFileSync(path.join(lane, "allowed.txt"), "allowed\n");
   writeFileSync(path.join(lane, "outside.txt"), "outside\n");
   writeFileSync(path.join(lane, "generated.txt"), "tracked generated\n");
-  writeFileSync(
-    path.join(lane, "docs", "tasks", `${WORK}-fixture.md`),
-    `---\nid: ${WORK}\nstatus: building\n---\n`,
-  );
-  git(lane, ["add", ".gitignore", "allowed.txt", "outside.txt", "docs/tasks"]);
+  git(lane, ["add", ".gitignore", "allowed.txt", "outside.txt"]);
   git(lane, ["add", "-f", "generated.txt"]);
   git(lane, ["commit", "-qm", "base"]);
   const base = git(lane, ["rev-parse", "HEAD"]);
@@ -160,7 +154,10 @@ function commandFor(b: NativeBench, body = "true"): string {
   return `cd -- ${nativeShellQuote(b.lane)} && ${body}`;
 }
 
-function startNative(b: NativeBench, over: { agentId?: string; sessionId?: string; taskName?: string } = {}): RunRecord {
+function startNative(
+  b: NativeBench,
+  over: { agentId?: string; sessionId?: string; taskName?: string; proveMismatch?: boolean } = {},
+): RunRecord {
   const agentId = over.agentId ?? "agent-1";
   const sessionId = over.sessionId ?? "parent-session";
   const taskName = over.taskName ?? "/root/native";
@@ -200,12 +197,19 @@ function startNative(b: NativeBench, over: { agentId?: string; sessionId?: strin
     }),
     { at: "2026-09-24T12:00:03.000Z" },
   );
+  if (over.proveMismatch === true) {
+    expect(() =>
+      bindRun(b.root, {
+        attempt,
+        harnessId: `${agentId}-impostor`,
+        at: "2026-09-24T12:00:03.500Z",
+        io: io(),
+      }),
+    ).toThrow(NativeCodexFinding);
+  }
   return bindRun(b.root, {
     attempt,
     harnessId: agentId,
-    taskName,
-    reportedThreadId: agentId,
-    startTurnId: "turn-1",
     at: "2026-09-24T12:00:04.000Z",
     io: io(),
   });
@@ -241,7 +245,7 @@ test("exact callback plus completed identity probe bind one attempt, and parent 
   // accepting a bind without the exact callback/probe identity tuple.
   const b = bench("exact-routing");
   try {
-    const bound = startNative(b);
+    const bound = startNative(b, { proveMismatch: true });
     expect(bound.native?.binding.agentId).toBe("agent-1");
     expect(bound.native?.binding.correlationMethod).toContain("callback agent_id");
 
@@ -553,6 +557,34 @@ test("checker failure, missing completion and unreadable hold authority remain r
       `${JSON.stringify(corrupted)}\n`,
     );
     expect(() => readNativeRecord(missing.root, b.attempt)).toThrow(NativeCodexFinding);
+    const emergency = path.join(
+      missing.root,
+      ".supertaskr",
+      "runs",
+      WORK,
+      `${b.attempt}.json.native-hold`,
+    );
+    expect(existsSync(emergency), "the unreadable authority refusal was not made durable").toBe(true);
+    expect(() => handleNativeEvent(missing.root, event("PreToolUse"))).toThrow(NativeCodexFinding);
+
+    corrupted.native.holds = [];
+    writeFileSync(
+      path.join(missing.root, ".supertaskr", "runs", WORK, `${b.attempt}.json`),
+      `${JSON.stringify(corrupted)}\n`,
+    );
+    const recovered = readNativeRecord(missing.root, b.attempt);
+    expect(activeNativeHolds(recovered).map((hold: any) => hold.code)).toContain("unreadable-authority");
+    expect(existsSync(emergency), "the sidecar was not absorbed into the attempt record").toBe(false);
+    expect(
+      handleNativeEvent(
+        missing.root,
+        event("PreToolUse", {
+          tool_name: "Bash",
+          tool_use_id: "after-repair",
+          tool_input: { command: commandFor(missing) },
+        }),
+      ).disposition,
+    ).toBe("held-before-tool");
   } finally {
     checker.cleanup();
     missing.cleanup();

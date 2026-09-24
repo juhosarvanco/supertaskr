@@ -167,8 +167,12 @@ here without asking what reads it.
   canonical task name all agree:
 
       node tools/e2e/scripts/brief.mjs --run bind --attempt <id> \
-        --session <agent_id> --task-name <canonical task name> \
-        --reported-thread-id <CODEX_THREAD_ID> --start-turn-id <turn_id>
+        --session <agent_id>
+
+  The bind is the coordinator's explicit act. It succeeds only when that
+  id matches the admitted launch's recorded SubagentStart turn and its one
+  completed `CODEX_THREAD_ID` probe; those facts are read from the record
+  rather than retyped as redundant command-line claims.
 
   PreToolUse persists an inflight operation only after exact native routing,
   explicit resource naming and a cumulative clean check. PostToolUse must
@@ -176,7 +180,10 @@ here without asking what reads it.
   completion and repeats the cumulative check. A Post without its Pre, a
   checker error, unsupported mandatory event, unreadable authority or a
   path outside the fence persists a hold; no callback success is a terminal
-  run state. SubagentStop and Interrupt are observations only.
+  run state. If the attempt document itself is unreadable, a one-shot
+  sidecar beside that exact attempt preserves `unknown`; a repaired record
+  must absorb it into its hold list before another event may proceed.
+  SubagentStop and Interrupt are observations only.
 
   Before native collect or continue, the arm requires `--ref <full commit>`
   and independently checks that exact HEAD plus staged, unstaged, untracked

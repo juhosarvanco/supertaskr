@@ -5,10 +5,12 @@
  * locating the seat's run records and for nothing else: the record bound to
  * the callback's `agent_id` names the one resource the child may write.
  *
- * Native state is part of the T-311 run record. There is no registry beside
- * it: the launch intent, callback, identity probe, binding, inflight tools,
- * receipts and holds all survive in the same attempt document that owns the
- * reservation. The hook is a transport adapter over the functions here.
+ * Native state is part of the T-311 run record: the launch intent, callback,
+ * identity probe, binding, inflight tools, receipts and holds all survive in
+ * the same attempt document that owns the reservation. If that document is
+ * unreadable, a one-shot attempt sidecar preserves the unknown until the
+ * repaired document can absorb it. The hook is a transport adapter over the
+ * functions here.
  */
 
 import { spawnSync } from "node:child_process";
@@ -26,6 +28,7 @@ import {
   realpathSync,
   renameSync,
   statSync,
+  unlinkSync,
   writeFileSync,
 } from "node:fs";
 import path from "node:path";
@@ -510,6 +513,11 @@ export function nativeRecordPath(root, attempt) {
   return path.join(root, ".supertaskr", "runs", workOf(attempt), `${attempt}.json`);
 }
 
+/** @param {string} root @param {string} attempt */
+function nativeEmergencyHoldPath(root, attempt) {
+  return `${nativeRecordPath(root, attempt)}.native-hold`;
+}
+
 /** @param {string} file @param {unknown} value */
 function atomicJson(file, value) {
   mkdirSync(path.dirname(file), { recursive: true });
@@ -524,14 +532,79 @@ function atomicJson(file, value) {
   renameSync(temp, file);
 }
 
+/**
+ * If the attempt document cannot be parsed or validated, it cannot carry
+ * its own hold. Preserve the unknown in a one-shot sidecar beside that exact
+ * attempt. A later readable authority absorbs the sidecar into `native.holds`
+ * before any event may proceed; T-311 reconciliation remains the only route
+ * that may clear it.
+ *
+ * @param {string} root @param {string} attempt @param {unknown} error @param {string} at
+ */
+function persistUnreadableAuthority(root, attempt, error, at) {
+  const file = nativeEmergencyHoldPath(root, attempt);
+  if (existsSync(file)) return;
+  mkdirSync(path.dirname(file), { recursive: true });
+  const fd = openSync(file, "wx", 0o600);
+  try {
+    const problem = error instanceof Error ? error.message : String(error);
+    writeFileSync(
+      fd,
+      `${JSON.stringify(
+        {
+          version: 1,
+          attempt,
+          key: `unreadable-authority:${attempt}`,
+          code: "unreadable-authority",
+          recordedAt: at,
+          outcome: "unknown",
+          problem,
+        },
+        null,
+        2,
+      )}\n`,
+      "utf8",
+    );
+    fsyncSync(fd);
+  } finally {
+    closeSync(fd);
+  }
+}
+
+/** @param {string} root @param {string} attempt @param {Record<string, any>} rec */
+function absorbUnreadableAuthority(root, attempt, rec) {
+  const file = nativeEmergencyHoldPath(root, attempt);
+  if (!existsSync(file)) return rec;
+  let hold;
+  try {
+    hold = JSON.parse(readFileSync(file, "utf8"));
+  } catch (error) {
+    throw new NativeCodexFinding(
+      "NATIVE_HOLD_UNREADABLE",
+      `native-codex: persisted unreadable-authority hold for ${attempt} is itself unreadable: ${String(error)}.`,
+    );
+  }
+  if (!isObject(hold) || hold.attempt !== attempt || hold.code !== "unreadable-authority") {
+    throw new NativeCodexFinding(
+      "NATIVE_HOLD_UNREADABLE",
+      `native-codex: persisted unreadable-authority hold for ${attempt} has an invalid shape.`,
+    );
+  }
+  addNativeHold(rec, hold);
+  writeNativeRecord(root, rec);
+  unlinkSync(file);
+  return rec;
+}
+
 /** @param {string} root @param {string} attempt */
 export function readNativeRecord(root, attempt) {
   const file = nativeRecordPath(root, attempt);
   try {
     const rec = JSON.parse(readFileSync(file, "utf8"));
     nativeState(rec);
-    return rec;
+    return absorbUnreadableAuthority(root, attempt, rec);
   } catch (error) {
+    persistUnreadableAuthority(root, attempt, error, new Date().toISOString());
     if (error instanceof NativeCodexFinding) throw error;
     throw new NativeCodexFinding(
       "NATIVE_AUTHORITY_UNREADABLE",
@@ -545,8 +618,8 @@ export function writeNativeRecord(root, rec) {
   atomicJson(nativeRecordPath(root, rec.attempt), rec);
 }
 
-/** @param {string} root */
-export function allNativeRecords(root) {
+/** @param {string} root @param {{ at?: string }} [opts] */
+export function allNativeRecords(root, opts = {}) {
   const runs = path.join(root, ".supertaskr", "runs");
   if (!existsSync(runs)) return [];
   const records = [];
@@ -555,12 +628,26 @@ export function allNativeRecords(root) {
     if (work === "reservations" || !statSync(dir).isDirectory()) continue;
     for (const name of readdirSync(dir).sort()) {
       if (!name.endsWith(".json")) continue;
+      const attempt = name.slice(0, -".json".length);
       try {
         const rec = JSON.parse(readFileSync(path.join(dir, name), "utf8"));
-        if (isObject(rec.native) && rec.native.version === NATIVE_CODEX_VERSION) records.push(rec);
-      } catch {
-        // An unreadable record remains a persistent refusal when addressed
-        // by attempt. It cannot safely be attributed to an arbitrary event.
+        if (isObject(rec.native) && rec.native.version === NATIVE_CODEX_VERSION) {
+          nativeState(rec);
+          records.push(absorbUnreadableAuthority(root, attempt, rec));
+        } else if (existsSync(nativeEmergencyHoldPath(root, attempt))) {
+          throw new NativeCodexFinding(
+            "NATIVE_AUTHORITY_UNREADABLE",
+            `native-codex: ${attempt} has a persisted native authority hold but no readable native state.`,
+          );
+        }
+      } catch (error) {
+        persistUnreadableAuthority(root, attempt, error, opts.at ?? new Date().toISOString());
+        throw error instanceof NativeCodexFinding
+          ? error
+          : new NativeCodexFinding(
+              "NATIVE_AUTHORITY_UNREADABLE",
+              `native-codex: attempt authority at ${path.join(dir, name)} is unreadable: ${String(error)}.`,
+            );
       }
     }
   }
@@ -694,7 +781,7 @@ function findingHold(rec, at, phase, check) {
  */
 export function handleNativeEvent(root, event, opts = {}) {
   const at = opts.at ?? new Date().toISOString();
-  const records = allNativeRecords(root);
+  const records = allNativeRecords(root, { at });
   const eventName = string(event.hook_event_name);
   const agentId = string(event.agent_id);
   const sessionId = string(event.session_id);
@@ -1053,39 +1140,27 @@ export function handleNativeEvent(root, event, opts = {}) {
  *
  * @param {string} root
  * @param {Record<string, any>} rec
- * @param {{ harnessId: string, taskName?: string, reportedThreadId?: string, startTurnId?: string, at: string }} opts
+ * @param {{ harnessId: string, at: string }} opts
  */
 export function bindNativeIdentity(root, rec, opts) {
   if (rec.assignment?.native === null || rec.assignment?.native === undefined) return rec;
   const native = nativeState(rec);
   const agentId = string(opts.harnessId);
   if (native.binding !== null) {
-    if (
-      native.binding.agentId === agentId &&
-      native.binding.canonicalTaskName === opts.taskName &&
-      native.binding.childReportedThreadId === opts.reportedThreadId &&
-      native.binding.startTurnId === opts.startTurnId
-    ) {
-      return rec;
-    }
+    if (native.binding.agentId === agentId) return rec;
     throw new NativeCodexFinding("NATIVE_ALREADY_BOUND", "native-codex: attempt is already bound to another identity tuple.");
   }
-  if (
-    agentId === null ||
-    opts.taskName !== native.launch.taskName ||
-    opts.reportedThreadId !== agentId ||
-    opts.startTurnId !== native.start?.turnId ||
-    native.start?.agentId !== agentId
-  ) {
+  if (agentId === null || native.start?.agentId !== agentId) {
     throw new NativeCodexFinding(
       "NATIVE_BIND_MISMATCH",
-      "native-codex: binding must match the pending canonical task, callback agent_id, reported CODEX_THREAD_ID and start turn.",
+      "native-codex: the coordinator's explicit bind must name the pending SubagentStart callback agent_id.",
     );
   }
+  const startTurnId = string(native.start.turnId);
   const probes = native.probes.filter(
     (/** @type {any} */ probe) =>
       probe.agentId === agentId &&
-      probe.turnId === opts.startTurnId &&
+      probe.turnId === startTurnId &&
       probe.postAt !== null &&
       probe.reportedThreadId === agentId,
   );
@@ -1105,12 +1180,12 @@ export function bindNativeIdentity(root, rec, opts) {
   }
   native.binding = {
     agentId,
-    canonicalTaskName: opts.taskName,
-    childReportedThreadId: opts.reportedThreadId,
-    startTurnId: opts.startTurnId,
+    canonicalTaskName: native.launch.taskName,
+    childReportedThreadId: agentId,
+    startTurnId,
     identityProbeToolUseId: /** @type {any} */ (probes[0]).toolUseId,
     boundAt: opts.at,
-    correlationMethod: "recorded launch intent + callback agent_id + exact completed identity probe + explicit canonical task name",
+    correlationMethod: "explicit coordinator bind + recorded launch intent + callback agent_id + exact completed identity probe",
   };
   for (const hold of native.holds) {
     if (hold.code === "registration-pending" && hold.agentId === agentId && (hold.clearedAt === null || hold.clearedAt === undefined)) {

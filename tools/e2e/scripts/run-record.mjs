@@ -1036,7 +1036,7 @@ export function startRun(root, opts) {
  * that is the state criterion two interrupts at.
  *
  * @param {string} root
- * @param {{ attempt: string, harnessId: string, pid?: number, taskName?: string, reportedThreadId?: string, startTurnId?: string, at?: string, io?: RunIo }} opts
+ * @param {{ attempt: string, harnessId: string, pid?: number, at?: string, io?: RunIo }} opts
  * @returns {RunRecord}
  */
 export function bindRun(root, opts) {
@@ -1080,9 +1080,6 @@ export function bindRun(root, opts) {
   }
   bindNativeIdentity(root, rec, {
     harnessId: id,
-    ...(opts.taskName === undefined ? {} : { taskName: opts.taskName }),
-    ...(opts.reportedThreadId === undefined ? {} : { reportedThreadId: opts.reportedThreadId }),
-    ...(opts.startTurnId === undefined ? {} : { startTurnId: opts.startTurnId }),
     at,
   });
   rec.execution = {
@@ -2240,9 +2237,6 @@ export function stopRun(root, opts) {
  * @property {string} attempt
  * @property {string} [assignment]
  * @property {string} [harnessId]
- * @property {string} [taskName]
- * @property {string} [reportedThreadId]
- * @property {string} [startTurnId]
  * @property {number} [pid]
  * @property {string} [question]
  * @property {string} [answer]
@@ -2262,7 +2256,7 @@ export function stopRun(root, opts) {
  */
 export const VERB_DIALS = Object.freeze({
   start: ["assignment"],
-  bind: ["attempt", "session", "pid", "task-name", "reported-thread-id", "start-turn-id"],
+  bind: ["attempt", "session", "pid"],
   observe: ["attempt", "evidence"],
   send: ["attempt", "question", "answer", "evidence"],
   wait: ["attempt", "ceiling", "evidence"],
@@ -2337,9 +2331,6 @@ export function runPlan(opts, replace = false) {
       );
     }
     plan.harnessId = session;
-    if (opts["task-name"] !== undefined) plan.taskName = opts["task-name"].trim();
-    if (opts["reported-thread-id"] !== undefined) plan.reportedThreadId = opts["reported-thread-id"].trim();
-    if (opts["start-turn-id"] !== undefined) plan.startTurnId = opts["start-turn-id"].trim();
     if (opts["pid"] !== undefined) {
       const pid = Number(opts["pid"]);
       if (!Number.isInteger(pid)) {

@@ -298,9 +298,6 @@ const FLAGS = Object.freeze([
   "--assignment",
   "--attempt",
   "--session",
-  "--task-name",
-  "--reported-thread-id",
-  "--start-turn-id",
   "--pid",
   "--question",
   "--answer",
@@ -555,8 +552,7 @@ async function main(argv) {
           "[--since <instant>] " +
           "[--run start --assignment <path>] " +
           "[--run bind|observe|send|wait|collect|continue|stop --attempt <id> " +
-          "[--session <id>] [--task-name <name>] [--reported-thread-id <id>] " +
-          "[--start-turn-id <id>] [--pid <n>] [--question <id>] [--answer <text|@file>] " +
+          "[--session <id>] [--pid <n>] [--question <id>] [--answer <text|@file>] " +
           "[--evidence <text|@file>] [--ceiling <seconds>] [--usage <text>] [--ref <sha>] " +
           "[--report <path>] [--instant <name>=<iso>[,...]] [--replace]] " +
           "[--grant show|history] "
@@ -1105,9 +1101,8 @@ async function main(argv) {
               ]
             : [
                 "next: spawn the admitted native task; after its exact identity probe, bind with --run bind " +
-                  `--attempt ${started.record.attempt} --session <agent_id> --task-name ` +
-                  `${started.record.native.launch.taskName} --reported-thread-id <CODEX_THREAD_ID> ` +
-                  "--start-turn-id <SubagentStart turn_id>",
+                  `--attempt ${started.record.attempt} --session <agent_id>; the recorded launch, ` +
+                  "SubagentStart turn and completed probe must agree",
                 `native Bash prefix: cd -- ${nativeShellQuote(/** @type {string} */ (started.record.resource))} && <command>`,
               ]),
         ];
@@ -1116,9 +1111,6 @@ async function main(argv) {
           attempt: plan.attempt,
           harnessId: /** @type {string} */ (plan.harnessId),
           ...(plan.pid === undefined ? {} : { pid: plan.pid }),
-          ...(plan.taskName === undefined ? {} : { taskName: plan.taskName }),
-          ...(plan.reportedThreadId === undefined ? {} : { reportedThreadId: plan.reportedThreadId }),
-          ...(plan.startTurnId === undefined ? {} : { startTurnId: plan.startTurnId }),
           at,
         });
       } else if (plan.verb === "observe") {
