@@ -393,6 +393,45 @@ test("two disjoint native identities route simultaneous callbacks to their own r
   }
 });
 
+test("a duplicate native identity claimed while another attempt is pending holds both attempts", () => {
+  const left = bench("duplicate-bound-left");
+  const right = bench("duplicate-pending-right");
+  try {
+    const sharedRoot = left.root;
+    right.root = sharedRoot;
+    const bound = startNative(left, {
+      agentId: "agent-left",
+      sessionId: "parent-session",
+      taskName: "/root/left",
+    });
+    const pending = startRun(sharedRoot, {
+      assignment: assignment(right, "parent-session", "/root/right"),
+      at: "2026-09-24T12:00:05.000Z",
+      io: io(),
+    }).record;
+
+    const conflict = handleNativeEvent(
+      sharedRoot,
+      event("SubagentStart", {
+        agent_id: "agent-left",
+        session_id: "parent-session",
+        turn_id: "turn-conflict",
+      }),
+      { at: "2026-09-24T12:00:06.000Z" },
+    );
+    expect(conflict.disposition).toBe("start-held");
+    expect(activeNativeHolds(readNativeRecord(sharedRoot, bound.attempt)).map((hold: any) => hold.code)).toContain(
+      "duplicate-agent-attribution",
+    );
+    expect(activeNativeHolds(readNativeRecord(sharedRoot, pending.attempt)).map((hold: any) => hold.code)).toContain(
+      "duplicate-agent-attribution",
+    );
+  } finally {
+    left.cleanup();
+    right.cleanup();
+  }
+});
+
 test("shared cwd cannot select a resource and Bash must visibly name the assigned root in its guaranteed command payload", () => {
   // KILLED BY: trusting event.cwd, an undocumented tool_input.workdir, or
   // accepting an absolute path that is not the assigned command prefix.
