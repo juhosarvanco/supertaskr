@@ -71,3 +71,110 @@ The real Luna-low desktop control remains pending for the coordinator, as requir
 
 ## Verdicts
 <!-- Fresh independent verifier appends; no predecessor verdict is altered. -->
+
+### 2026-09-24 — REJECTED — gpt-6@01a0d44e-fa36-7aa0-9529-5bf3d8d85d1f
+
+This was the guaranteed two-spawn frame: a separate tool-less phase one
+produced the frozen attack set, and this fresh phase two first received the
+sealed set plus candidate `3b5deae5334777a26781d54f382e13d47da03590`.
+The attack set is
+`sha256:56b5840add858d591fa508d22ed9e23289ea8c83d411645d33193ca189a68a64`;
+the base ground is
+`sha256:7dee402c500d15dc5c59931598f75657323928492d623d782831aa693c42c6d2`;
+and the base card is
+`sha256:e6aff1cff2f0a8369df32cef2f0507f20c249de0c08a233ab028c24d91399bca`.
+All three re-hashed to those saved values before review.
+
+The candidate does not reserve the canonical resource atomically. T-311's
+`reservationPath` hashes `path.resolve(resource)`, then native admission later
+canonicalizes the resource with `realpathSync`. A real worktree and a symlink
+to it therefore take different reservation files. The correction body
+`canonical native resource aliases share one atomic T-311 reservation` starts
+one attempt through the real path and a second through the alias. Expected:
+the second start throws `RESOURCE_RESERVED` and both spellings read the first
+attempt's reservation. Actual at the candidate: the second start succeeds and
+the refusal is `undefined`. The isolated body exits 1, and the whole corrected
+native spec reports 13 passed and this body alone failed. Temporarily making
+`reservationPath` key on `realpathSync(resource)` makes the body pass; the
+product file was then restored to candidate hash
+`sha256:b14253923f01a7b36881d78a6584b8fe1417977ae50a7081878c69ee5b2c482b`.
+This reproduces attack A6 and violates admission/binding's atomic canonical
+writer reservation.
+
+The required yielded-completion body was also a name-only control. The
+candidate body carrying “yielded” creates an inflight event but never starts a
+yielding operation and never introduces a late violation. The correction body
+`a yielded Bash operation is checked at actual PostToolUse and its late violation persists a hold`
+starts a real shell command, observes its early output while the process is
+still running, lets it create `late.tmp` after the yield, and only then sends
+the actual Post callback. It passes against the candidate. Removing the
+PostToolUse workspace scan makes that body fail with expected `post-held`,
+received `post-clean`; the source was restored to candidate hash
+`sha256:00acbcb8dde4b5bb2d0475a7498390cb0fece384f9300b678f74738b5af16cf6`.
+The missing body is an acceptance failure under the card's explicit
+model-free evidence list and attack A14/A22 even though the implementation
+survives the added control.
+
+| Acceptance criterion | Evidence and verdict |
+|---|---|
+| Admission and binding | **Not met.** The exact callback/probe bind, unbound child and literal-path collision bodies pass, but the canonical alias correction above admits two native writers to one resource. |
+| Shared cwd and resource authority | **Met in the reviewed mechanism.** `shared cwd cannot select a resource…` and `apply_patch checks every absolute source and move destination…` pass; `collectNativeWorkspace` reads the admitted record resource and canonical fence rather than callback cwd. The disclosed repository-only boundary is present. |
+| Automatic completion checks | **Met in the reviewed mechanism, with the evidence correction below.** The candidate's original shell/ignored/tracked/raw-layer and checker-failure bodies pass. The added real yielded-late body passes and its Post-scan mutant dies. |
+| Hold and stop semantics | **Met by the focused model-free evidence inspected.** Stop/interrupt remain observations, live owned jobs retain the reservation, collect/continue re-scan the exact reported ref, and unreadable authority persists a sidecar hold. This row cannot cure criterion 1's double admission. |
+| Bodies and live proof | **Not met.** The yielded body did not exercise its named property until the correction below. The required real Luna-low desktop product-hook control is still pending; temporary bootstrap callbacks are expressly not that proof. |
+
+Focused readings at candidate `3b5deae5334777a26781d54f382e13d47da03590`:
+
+- Original native spec: exit 0, 12 passed.
+- Alias correction alone: exit 1, expected `RunRecordFinding`, received no
+  refusal; with the temporary canonical key: exit 0, 1 passed.
+- Yielded-late correction: exit 0, 1 passed; with the Post scan removed:
+  exit 1, expected `post-held`, received `post-clean`.
+- Native spec with both correction bodies and candidate product: exit 1,
+  13 passed and the alias correction alone failed.
+- `npm run typecheck`: exit 0. `npm run lint:tokens`: exit 0 over 193 TOKEN
+  files and 1683 CONTROL files. The T-315 run-record body plus the brief arm
+  body: exit 0, 2 passed.
+- `npm run lint:docs`: exit 1 solely because the coordinator intentionally
+  restored generated `docs/INDEX.md` after preserving its generated patch;
+  regenerated `docs/CAPABILITIES.md` remains in the bench. This is the known
+  pending integration generation obligation, not a green docs claim.
+- The four-leg range battery was not spent after the canonical-resource
+  rejection, per the coordinator's instruction. The real Luna-low control
+  remains open and no approval may be inferred from these model-free checks.
+
+Corrections: **2**. Committed correction bodies: **2**, in the following
+commit after this verdict. Mutant blocks: **2**.
+
+```mutant
+correction: canonicalize native resource aliases before T-311 reservation lookup
+file: tools/e2e/scripts/run-record.mjs
+spec: tools/e2e/tests/native-codex.spec.ts
+body: canonical native resource aliases share one atomic T-311 reservation
+message: Expected constructor: RunRecordFinding
+--- old
+  const resolved = realpathSync(resource);
+--- new
+  const resolved = path.resolve(resource);
+```
+
+```mutant
+correction: exercise actual yielded completion with a late filesystem violation
+file: tools/e2e/scripts/native-codex.mjs
+spec: tools/e2e/tests/native-codex.spec.ts
+body: a yielded Bash operation is checked at actual PostToolUse and its late violation persists a hold
+message: Expected: "post-held"
+--- old
+  let check = null;
+  try {
+    check = collectNativeWorkspace(rec, {});
+    if (!check.clean) findingHold(rec, at, "post", check);
+--- new
+  let check = null;
+  try {
+    check = { clean: true, findings: [] };
+```
+
+No pack gap or dispatch fault was encountered. The generated INDEX hold was a
+temporary bootstrap enforcement result, preserved and reconciled by the
+coordinator; it is not product-hook evidence.
