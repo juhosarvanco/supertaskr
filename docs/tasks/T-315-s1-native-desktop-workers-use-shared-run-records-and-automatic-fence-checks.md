@@ -328,3 +328,107 @@ No pack gap or dispatch fault was encountered. The bootstrap runtime-ignore
 hold was preserved as failed evidence and reconciled only after the native
 turn and every registered job ended; it is not product-hook evidence and did
 not alter this verdict.
+
+### 2026-09-24 — REJECTED — gpt-5.6-sol@01a0d4eb-8d76-7330-b924-ef0a4c41c73d
+
+This was the guaranteed two-spawn frame. The separate phase-one task received
+the base card without the implementation and produced the frozen attack set;
+its no-tools restriction was procedural, as the preserved launch addendum
+discloses. This fresh phase two reviewed candidate
+`92e39d1611900565104f142b842825047b27d073` against base
+`3ec4b8ee9dcbaaa9778372e3562d4360d82fd853`. The requested seat was
+gpt-5.6-sol at xhigh; provider-observed model identity was unavailable.
+
+The sealed attack set is
+`sha256:56b5840add858d591fa508d22ed9e23289ea8c83d411645d33193ca189a68a64`,
+the sealed ground is
+`sha256:d8f4aa21919f8d019ba85d7f548e614942b0f6733de87698158eb048fdb5e3ca`,
+and the base card is
+`sha256:e6aff1cff2f0a8369df32cef2f0507f20c249de0c08a233ab028c24d91399bca`.
+All three re-hashed to those saved values before review.
+
+Conflicting native start attribution does not hold every affected attempt.
+With `agent-left` already bound to one resource and exactly one second attempt
+pending in the same admitted session, a new `SubagentStart` claiming
+`agent-left` enters the duplicate-attribution branch. `handleNativeEvent`
+chooses only the records returned by `routedRecords` when that set is non-empty,
+so it persists `duplicate-agent-attribution` on the already-bound attempt and
+leaves the pending attempt with no hold. The correction body
+`a duplicate native identity claimed while another attempt is pending holds both attempts`
+expected both records to retain that hold. Actual at the candidate: the bound
+record carried it and the pending record's active-hold array was empty. The
+isolated body exited 1 with `Received array: []`. Temporarily defining the
+affected set as the union of the already-routed and pending records made the
+same body pass 1/1. Product and test bytes were then restored to candidate
+sha256 values `8943d3f396490d84a9cbc9b965f1d22d585af080817bed566e31d4d670000ab1`
+and `bfd70d625acf9347435018bdd14907a8657b3e32611725b0733641c581398f4e`.
+This reproduces attack A3 and violates the admission criterion's requirement
+that duplicate or conflicting attribution persist a hold and remove native
+writer eligibility.
+
+The required real Luna-low desktop product-hook control is also absent. The
+sealed ground's seat addendum contains no callback, lifecycle or loading
+measurements, and the coordinator addendum expressly says the live proof is
+pending. Bootstrap registration and model-free handler calls do not prove that
+the candidate hook is loaded and trusted by the product, receives real allowed
+and refused path events, retains a hold into a later native operation, or sees
+an actual yielded completion. The card says only that real control permits a
+fresh Sol extra-high verifier to accept the mechanism, so this pass cannot
+approve landing.
+
+| Acceptance criterion | Evidence and verdict |
+|---|---|
+| Admission and binding | **Not met.** Exact callback/probe binding, parent-event separation, unbound-child refusal, canonical reservation collision and two disjoint identities pass model-free controls. The new conflicting-start control shows the pending attempt remains hold-free when an already-bound identity is claimed again. |
+| Shared cwd and resource authority | **Met in the model-free mechanism.** The shared-cwd, explicit Bash root, apply-patch source/destination, canonical resource and repository-boundary bodies pass. The record resource and canonical fence drive inspection. |
+| Automatic completion checks | **Met in the model-free mechanism.** The shell-created, ignored, tracked-output, raw mode/type/rename, checker-error, unreadable-authority and actual yielded-late bodies pass. Mutants removing the post-completion scan and ignored-admission refusal both died at their intended assertions. Real product delivery remains unproved under criterion five. |
+| Hold and stop semantics | **Met by the focused model-free controls inspected.** Unknown-worker holds survive reconciliation, live owned jobs retain the reservation, interrupt/stop callbacks claim no cessation, and collect/continue independently recheck the exact reported ref. This row does not repair the different conflicting-start attribution failure above. |
+| Bodies and live proof | **Not met.** The candidate omitted the conflicting-start body until the correction below, and the mandatory real Luna-low desktop control remains pending. |
+
+Readings at candidate `92e39d1611900565104f142b842825047b27d073`:
+
+- The native bridge spec passed 16/16. Four targeted product mutants each
+  landed at the intended source site and killed the alias-reservation,
+  admission-time ignored-residue, unknown-identity hold and actual
+  PostToolUse scan bodies. After every mutant, product hashes and an empty
+  file diff proved restoration.
+- The added conflicting-attribution body was red 0/1 against candidate
+  product and green 1/1 against the temporary union fix, after which both
+  files were restored.
+- The required range run selected the whole battery because
+  `.codex/hooks.json` is outside the package map. Parser passed 454/454; app
+  passed 1171/1171; Rust was GREEN over 662 counted bodies and 18 targets.
+  End to end passed 1269/1270. Its sole red was
+  `THE VERIFIER'S BRIEF ASSEMBLES`, which named the live T-315-s1/T-205-s5
+  collision over `tools/e2e/tests/brief.spec.ts`; this is the coordinator's
+  named live collision, not a native product-body failure. The range battery
+  was run once, as instructed.
+- No dependency file changed. The security sweep found no credential
+  material, new endpoint, direct model/API path or shell interpolation in the
+  product bridge; Git is invoked with a fixed executable and argv array.
+- All verifier-started Playwright and gate-run processes ended, and port 25315
+  had no listener at the final process check.
+
+Corrections: **1 source correction**. Committed correction bodies: **1**, in
+the commit after this verdict. Mutant blocks: **1**. The missing Luna control
+is a product evidence obligation rather than a model-free source correction,
+so it has no mutant block; it must be performed through the actual desktop
+hook before another fresh verifier may approve.
+
+```mutant
+correction: persist conflicting SubagentStart attribution on both the already-bound and pending attempts
+file: tools/e2e/scripts/native-codex.mjs
+spec: tools/e2e/tests/native-codex.spec.ts
+body: a duplicate native identity claimed while another attempt is pending holds both attempts
+message: Received array: []
+--- old
+      const affected =
+        already.length > 0
+          ? [...new Set([...already, ...pending])]
+          : records.filter((rec) => rec.native.launch.sessionId === sessionId);
+--- new
+      const affected = already.length > 0 ? already : records.filter((rec) => rec.native.launch.sessionId === sessionId);
+```
+
+No pack gap was encountered. The ground addendum's missing requested callback,
+T-311 oracle and product-loading measurements are recorded here as an evidence
+gap; they were not inferred from the candidate or the external bootstrap.
