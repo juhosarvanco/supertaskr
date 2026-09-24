@@ -329,6 +329,14 @@ export function prepareNativeRecord(rec, opts) {
   }
   const ignoredOutputs = rec.assignment.native.ignoredOutputs.map(nativeDomain);
   const ignoredBaseline = nativeIgnoredSnapshot(resource, ignoredOutputs);
+  const fenceRel = path.relative(resource, manifest).replaceAll("\\", "/");
+  const unexpectedIgnoredAtAdmission = ignoredBaseline.filter((entry) => entry.path !== fenceRel);
+  if (unexpectedIgnoredAtAdmission.length > 0) {
+    throw new NativeCodexFinding(
+      "NATIVE_ADMISSION_DIRTY",
+      `native-codex: assigned resource has ignored residue outside named policy: ${JSON.stringify(unexpectedIgnoredAtAdmission)}`,
+    );
+  }
   const admitted = collectNativeWorkspace(
     {
       ...rec,
@@ -675,6 +683,17 @@ export function activeNativeHolds(rec) {
 /** @param {Record<string, any>} rec @param {string} at @param {string} why */
 function clearReconciledHolds(rec, at, why) {
   for (const hold of activeNativeHolds(rec)) {
+    if (
+      [
+        "unknown-worker",
+        "duplicate-agent-attribution",
+        "ambiguous-agent-attribution",
+        "missing-agent-unrecognized-turn",
+        "session-mismatch",
+      ].includes(hold.code)
+    ) {
+      continue;
+    }
     hold.clearedAt = at;
     hold.clearedBy = why;
   }

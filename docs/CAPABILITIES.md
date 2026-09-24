@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1264 behaviours** — 1262 extracted sentences + 2 named-not-extracted (listed at the end) — across 43 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1266 behaviours** — 1264 extracted sentences + 2 named-not-extracted (listed at the end) — across 43 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -1049,6 +1049,8 @@ Census: **1264 behaviours** — 1262 extracted sentences + 2 named-not-extracted
 - tracked generated output is never hidden by ignored-output policy and raw layers retain mode/type and both rename endpoints
 - checker failure, missing completion and unreadable hold authority remain refusals
 - yielded native completion releases only after an independent clean check, while interrupt with a live owned job proves no cessation
+- native admission refuses pre-existing ignored residue that no coordinator policy names
+- completion of the bound worker does not reconcile a hold created by an unknown second identity
 - native collect and continue independently require the exact reported commit after lifecycle reconciliation
 
 ## no-plan-card
