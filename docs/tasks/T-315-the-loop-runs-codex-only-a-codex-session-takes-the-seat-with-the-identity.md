@@ -1,55 +1,27 @@
 ---
 id: T-315
-title: "The loop runs Codex-only — a Codex session takes the seat with the identity T-303-s1 landed and the push check T-314 installed, dispatches through the arm, runs its children through the Codex CLI adapter T-312 demonstrated (natively spawned children only if their launch is demonstrated to the same boundary), benches and merges through the verbs, and lands one owner-chosen card with every instrument that card owes and no Claude session in the loop"
+title: "Record the completed native Codex-only delivery after its implementation and workflow cards land"
 feature: F-04
 milestone: 4
 size: M
-priority: 2
-status: planned
-suggested_by: "ADR-025 decisions 4 and 8, approved by the owner on 2026-09-12; card 5 of its plan; the owner's goal that the loop runs with Codex only; the Codex orchestrator's review of 2026-09-12: a CLI demonstration does not qualify a native spawn"
-blocked_by: [T-303-s1, T-311, T-312, T-314]
-touches: [method/adapters/AGENTS.md, method/skills/supertaskr-seat/SKILL.md, tools/e2e/scripts/brief.mjs, tools/e2e/scripts/adapter-codex.mjs, tools/e2e/tests/adapter-codex.spec.ts, docs/CONVENTIONS.md, docs/conventions/commands.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/gates-and-the-push.md, docs/conventions/merging.md, docs/conventions/records-and-rooms.md, docs/conventions/shell-and-scripts.md, docs/conventions/verification.md]
-builder:
-verifier:
-built_by:
-verified_by:
-review: independent
+priority: 1
+status: parked
+wake: T-315-s2
+blocked_by: [T-303-s1, T-311, T-314, T-315-s1, T-315-s2]
+touches: []
 ---
-
-### What was measured
-
-The arm is Node scripts and runs under any shell; the seat verbs recognise a Codex session once T-303-s1 lands; the push check runs from a git hook once T-314 lands; a Codex child launched by `codex exec` under a named configuration is fenced by T-312's demonstration. A Codex seat's natively spawned children are a different launch mechanism whose permissions, working directory and isolation T-312 says nothing about. The whole loop with no Claude session anywhere has never been run, and the seat's own launch boundary has not been stated for a Codex seat.
 
 ## Acceptance criteria
 
-- WHEN a Codex session takes the seat THE seat verbs SHALL recognise it, the hook SHALL be installed, the seat SHALL run `--dispatch --full`, `--dispatch-lane`, `--bench` and `--merge` unchanged, every child it starts SHALL have a run record, and the seat's own launch boundary (network, credentials, filesystem) SHALL be written in its first record of the sitting.
-- WHEN the Codex seat starts a child THE default path SHALL be the Codex CLI adapter under T-312's demonstrated local-coordinated profile for that role, with separate writer resources and a fresh verifier repository. The adapter SHALL preserve canonical fence reservations, automatic post-operation checks and hold reconciliation, exact candidate collection and authoritative final fence checks. Layout separation is a safeguard against accidental interference, not OS read, write or Git-ref isolation; per-turn hook receipts and hook-qualification model sessions are not eligibility requirements of this profile. A native launch SHALL NOT inherit eligibility from the CLI route: writing or read-only participation requires demonstration of the actual assignment's lifecycle, scope and independence requirements, with unestablished capabilities refused by name. Bodies SHALL distinguish an eligible CLI assignment from an unqualified native writer or a participant whose required independence cannot be established. Optional isolated profiles SHALL remain explicitly named and separately qualified, with no silent fallback.
-- WHEN the acceptance sitting runs THE card it lands SHALL be chosen by the owner and named in this card's notes before dispatch, with its own authorization, and the sitting SHALL exercise every instrument that card owes (its owed suites, its regenerations, a method bump if it touches method text); a card whose instruments do not cover a method change SHALL not be taken as proof for method changes.
-- WHEN the sitting ends THE seat SHALL release the seat with the verb and leave a handoff in the packet form, no Claude session SHALL have written to the repository during the sitting, and the records SHALL name the models and usage actually reported.
-- WHEN this card lands THE adapters' AGENTS.md and the seat skill SHALL say how a Codex session holds the seat, and the method version SHALL bump with its release note and evaluation block.
-
-**Fence re-pointed 2026-09-14 (the architect seat, after T-290's merge).** docs/CONVENTIONS.md is now the index over the chapters under docs/conventions/; this fence gains the chapter(s) this card's work needs, mapped by the paths its fence reserves and the words its title uses: docs/conventions/commands.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/gates-and-the-push.md, docs/conventions/merging.md, docs/conventions/records-and-rooms.md, docs/conventions/shell-and-scripts.md, docs/conventions/verification.md. The index stays fenced for its pointer line.
+- WHEN T-315-s1 and T-315-s2 have landed THE coordinator SHALL record their canonical reservations, native participant identities, frozen bases and candidates, fresh independent verifier evidence, and required checks. The CLI adapter's evidence SHALL NOT qualify native execution.
+- WHEN the native delivery is published THE acceptance record SHALL name T-315-s2's actual integrated and pushed commit and the CI conclusion for that exact commit, the method release, reported model and usage or unknown, and the required regeneration evidence. A pre-merge verdict SHALL NOT claim a future push or CI result.
+- WHEN the sitting closes THE coordinator SHALL record reconciled native attempts and owned jobs, seat release and the durable handoff, distinguishing every demonstrated capability from its limitation. Missing evidence SHALL leave this parent incomplete. This record's own later commit SHALL NOT be substituted for the delivery commit whose CI it cites.
 
 ## Implementation notes
-<!-- executor appends before finishing -->
+
+Native-first reconciliation of 2026-09-24, under the owner's authorization to finalize contracts and deliver the native route. T-315-s1 implements lifecycle integration and automatic scope checks. T-315-s2 delivers the native role and workflow instructions through that mechanism, including the method release. This parent is an acceptance-only record, not another implementation lane. Its wake triggers evidence review, never automatic dispatch.
+
+The previous contract is preserved at cfc18176bb4a4bda27f1d389ffd9cc117a6d5f4e and in the native-first evidence packet. Its seat, lifecycle, verification, complete delivery, method and handoff obligations move to the named children and these criteria; no completed delivery is asserted here. T-312 remains parked with its candidates and verdicts intact. Cross-harness acceptance in T-316 remains deferred.
 
 ## Verdicts
-
-## Hook-profile clarification — 2026-09-19 (proposed)
-
-The owner selected the demonstrated hook-based route for the Codex-only
-takeover. This criterion clarification prevents the earlier phrase
-separately confined bench from silently reintroducing OS isolation. All
-role qualification, independent verification, actual delivery, native-spawn
-restrictions and existing dependencies remain. A separately qualified
-sandboxed profile is not forbidden, but is not a prerequisite for this
-acceptance sitting. Cross-harness acceptance remains deferred.
-
-
-## Coordination-profile reconciliation — proposed 2026-09-23
-
-The canonical child-launch criterion above replaces mandatory hook-health equivalence with the revised T-312 local-coordinated contract. Earlier hook-profile wording remains history. The actual delivery demonstration, owner-selected demonstration card, lifecycle, grants, independent verification, required checks, handoff and dependencies are retained. This records draft preparation only and does not dispatch T-315 or claim a completed Codex-only loop.
-
-### Superseded child-launch criterion
-
-- WHEN the Codex seat starts a child THE default path SHALL be the Codex CLI adapter under T-312's configuration demonstrated for that role, including a separate verifier repository under the same explicitly demonstrated protection profile. Under the owner-selected hook profile, that separation is a layout safeguard, not OS filesystem or Git-ref isolation; hook health and limitations remain those demonstrated by T-312. A natively spawned child SHALL be eligible to write only if this card demonstrates that launch to the same role-specific boundary with the same commands and outputs. A native read-only participant SHALL be eligible only if its actual launch satisfies that assignment's required write restrictions, read access and independence profile; inability to qualify it as a writer SHALL NOT qualify it as read-only or tool-less. An unmet capability SHALL be refused by name, with no silent substitution. Bodies SHALL cover refusal of an unqualified native writer and refusal of a nominally read-only participant whose required boundary is not established.
+<!-- Acceptance evidence is appended only after the actual delivery. -->
