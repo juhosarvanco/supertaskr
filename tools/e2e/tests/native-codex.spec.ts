@@ -728,6 +728,54 @@ test("yielded native completion releases only after an independent clean check, 
   }
 });
 
+test("native admission refuses pre-existing ignored residue that no coordinator policy names", () => {
+  // A frozen ignored baseline is evidence of what existed at admission;
+  // it is not a second, unnamed output policy.
+  const b = bench("ignored-at-admission");
+  try {
+    mkdirSync(path.join(b.lane, "ignored"), { recursive: true });
+    writeFileSync(path.join(b.lane, "ignored", "unexpected.log"), "present before admission\n");
+    expect(() => startRun(b.root, { assignment: assignment(b), at: AT, io: io() })).toThrow(NativeCodexFinding);
+  } finally {
+    b.cleanup();
+  }
+});
+
+test("completion of the bound worker does not reconcile a hold created by an unknown second identity", () => {
+  // The lifecycle evidence below answers only for agent-1. It says
+  // nothing about whether agent-impostor or its jobs have stopped.
+  const b = bench("unknown-identity-hold");
+  try {
+    const bound = startNative(b);
+    const unknown = handleNativeEvent(
+      b.root,
+      event("PreToolUse", {
+        agent_id: "agent-impostor",
+        tool_name: "Bash",
+        tool_use_id: "impostor-op",
+        tool_input: { command: commandFor(b) },
+      }),
+    );
+    expect(unknown.disposition).toBe("unknown-held");
+    expect(activeNativeHolds(readNativeRecord(b.root, bound.attempt)).map((hold: any) => hold.code)).toContain(
+      "unknown-worker",
+    );
+
+    observeRun(b.root, {
+      attempt: bound.attempt,
+      evidence: "RUN-DONE ok",
+      at: "2026-09-24T12:01:00.000Z",
+      io: io(),
+    });
+    expect(readReservation(b.root, b.lane)?.attempt).toBe(bound.attempt);
+    expect(activeNativeHolds(readNativeRecord(b.root, bound.attempt)).map((hold: any) => hold.code)).toContain(
+      "unknown-worker",
+    );
+  } finally {
+    b.cleanup();
+  }
+});
+
 test("native collect and continue independently require the exact reported commit after lifecycle reconciliation", () => {
   // KILLED BY: trusting the clean Post callback, defaulting the reported
   // ref from HEAD, or allowing collect/continue to skip their fresh scan.
