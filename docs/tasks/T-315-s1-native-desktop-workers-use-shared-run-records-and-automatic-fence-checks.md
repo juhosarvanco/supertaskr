@@ -193,3 +193,126 @@ message: Expected: "post-held"
 No pack gap or dispatch fault was encountered. The generated INDEX hold was a
 temporary bootstrap enforcement result, preserved and reconciled by the
 coordinator; it is not product-hook evidence.
+
+### 2026-09-24 — REJECTED — gpt-5.6-sol@01a0d47f-8a6e-7493-90c2-62c692ac622a
+
+This was the guaranteed two-spawn frame. A separate fresh phase one received
+the frozen base card without the implementation and returned the attack set;
+its no-tools restriction was procedural, as the preserved launch addendum
+discloses. This fresh phase two reviewed candidate
+`4cb63205ac18398715fbd37c99e1064f318923ef` against base
+`3ec4b8ee9dcbaaa9778372e3562d4360d82fd853`. The configured seat was
+gpt-5.6-sol at xhigh; no provider-reported model identity was available.
+
+The sealed attack set is
+`sha256:56b5840add858d591fa508d22ed9e23289ea8c83d411645d33193ca189a68a64`,
+the sealed ground is
+`sha256:d8f4aa21919f8d019ba85d7f548e614942b0f6733de87698158eb048fdb5e3ca`,
+and the base card is
+`sha256:e6aff1cff2f0a8369df32cef2f0507f20c249de0c08a233ab028c24d91399bca`.
+All three re-hashed to those saved values before this verdict.
+
+The candidate silently turns every ignored file present at admission into an
+unnamed allowance. `prepareNativeRecord` records
+`nativeIgnoredSnapshot(resource, ignoredOutputs)` as `ignoredBaseline`, then
+the admission check compares the same snapshot to itself and never rejects a
+non-empty `ignoredOutsidePolicy`. The correction body creates
+`ignored/unexpected.log` before start while the coordinator policy names only
+`ignored/allowed`. Expected: start refuses with `NativeCodexFinding`. Actual at
+the candidate: start succeeds. This violates the requirement that ignored
+outputs are allowed only by a coordinator-owned named policy; a frozen
+baseline records residue but does not authorize it. A temporary admission
+check that exempts only the canonical fence manifest and refuses every other
+baseline entry made the body pass. The product file was restored to candidate
+sha256 `00acbcb8dde4b5bb2d0475a7498390cb0fece384f9300b678f74738b5af16cf6`.
+
+The final gate also clears attribution holds using evidence about the wrong
+identity. An event from `agent-impostor` correctly creates an `unknown-worker`
+hold on the bound attempt, but `clearReconciledHolds` clears every active hold
+when `agent-1` later reports `RUN-DONE ok` and its registered jobs are gone.
+Expected: the unknown-worker hold and writer reservation remain because no
+evidence established cessation for the unknown identity. Actual: the hold is
+cleared and `readReservation` returns no reservation. This violates “unknown
+remains unknown” and makes a conflicting second identity eligible to disappear
+through reconciliation of the known worker. A temporary change that excluded
+identity-attribution holds from generic lifecycle clearing made the body pass;
+the same candidate product hash was then restored.
+
+| Acceptance criterion | Evidence and verdict |
+|---|---|
+| Admission and binding | **Not met.** The corrected canonical-alias body passes at candidate `4cb63205ac18398715fbd37c99e1064f318923ef`, but the new unknown-identity body shows conflicting attribution is cleared by completion evidence belonging only to the bound identity. |
+| Shared cwd and resource authority | **Met in the model-free mechanism.** The shared-cwd, explicit Bash root, apply-patch endpoint and canonical reservation bodies pass; the record resource and canonical fence, rather than callback cwd, drive inspection. |
+| Automatic completion checks | **Not met.** Post-completion coverage bodies pass, including the real yielded shell process, but a pre-existing unexpected ignored file is admitted as an unnamed baseline allowance. |
+| Hold and stop semantics | **Not met.** Interrupt and live-job controls pass, but generic final reconciliation clears `unknown-worker` and releases the reservation without reconciling that identity or its possible jobs. |
+| Bodies and live proof | **Not met.** Two required edge properties were unpinned until the correction bodies below, and the real Luna-low desktop product-hook control remains pending and inactive. |
+
+The guarded range invocation at candidate
+`4cb63205ac18398715fbd37c99e1064f318923ef` selected the whole battery.
+Parser passed 454/454, app passed 1171/1171, and the Rust log reported 658
+passed, zero failed and three intentionally ignored across its groups. End to
+end passed 1267/1268; its sole failure was `THE VERIFIER'S BRIEF ASSEMBLES`,
+which named the live T-315-s1/T-205-s5 collision over
+`tools/e2e/tests/brief.spec.ts`. The preserved output establishes that this
+was board state rather than a product-body failure. The focused native spec
+passed 14/14 before the corrections were introduced. The two correction
+bodies then failed against candidate source and passed with the temporary
+source changes described by the mutant blocks. No dependency was added, and
+the security sweep found no credential material or new external input path
+beyond the reviewed callback and assignment parsers.
+
+Corrections: **2**. Committed correction bodies: **2**, in the commit after
+this verdict. Mutant blocks: **2**.
+
+```mutant
+correction: refuse ignored residue present at admission unless a coordinator-owned named policy allows it
+file: tools/e2e/scripts/native-codex.mjs
+spec: tools/e2e/tests/native-codex.spec.ts
+body: native admission refuses pre-existing ignored residue that no coordinator policy names
+message: Expected constructor: NativeCodexFinding
+--- old
+  const ignoredOutputs = rec.assignment.native.ignoredOutputs.map(nativeDomain);
+  const ignoredBaseline = nativeIgnoredSnapshot(resource, ignoredOutputs);
+  const fenceRel = path.relative(resource, manifest).replaceAll("\\", "/");
+  const unexpectedIgnoredAtAdmission = ignoredBaseline.filter((entry) => entry.path !== fenceRel);
+  if (unexpectedIgnoredAtAdmission.length > 0) {
+    throw new NativeCodexFinding(
+      "NATIVE_ADMISSION_DIRTY",
+      `native-codex: assigned resource has ignored residue outside named policy: ${JSON.stringify(unexpectedIgnoredAtAdmission)}`,
+    );
+  }
+--- new
+  const ignoredOutputs = rec.assignment.native.ignoredOutputs.map(nativeDomain);
+  const ignoredBaseline = nativeIgnoredSnapshot(resource, ignoredOutputs);
+```
+
+```mutant
+correction: keep identity-attribution holds until that unknown or conflicting identity is explicitly reconciled
+file: tools/e2e/scripts/native-codex.mjs
+spec: tools/e2e/tests/native-codex.spec.ts
+body: completion of the bound worker does not reconcile a hold created by an unknown second identity
+message: Received: undefined
+--- old
+function clearReconciledHolds(rec, at, why) {
+  for (const hold of activeNativeHolds(rec)) {
+    if (
+      [
+        "unknown-worker",
+        "duplicate-agent-attribution",
+        "ambiguous-agent-attribution",
+        "missing-agent-unrecognized-turn",
+        "session-mismatch",
+      ].includes(hold.code)
+    ) {
+      continue;
+    }
+    hold.clearedAt = at;
+--- new
+function clearReconciledHolds(rec, at, why) {
+  for (const hold of activeNativeHolds(rec)) {
+    hold.clearedAt = at;
+```
+
+No pack gap or dispatch fault was encountered. The bootstrap runtime-ignore
+hold was preserved as failed evidence and reconciled only after the native
+turn and every registered job ended; it is not product-hook evidence and did
+not alter this verdict.
