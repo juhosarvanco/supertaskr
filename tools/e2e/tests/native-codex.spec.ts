@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import {
   existsSync,
   mkdirSync,
@@ -321,6 +321,37 @@ test("T-311 refuses a conflicting native writer reservation before spawn", () =>
   }
 });
 
+test("canonical native resource aliases share one atomic T-311 reservation", () => {
+  // KILLED BY: keying reservations on a lexical path before native
+  // admission canonicalizes the assigned Git root.
+  const b = bench("writer-alias-collision");
+  const alias = path.join(b.dir, "lane-alias");
+  symlinkSync(b.lane, alias, "dir");
+  try {
+    const first = startRun(b.root, { assignment: assignment(b), at: AT, io: io() });
+    let refused: unknown;
+    try {
+      startRun(b.root, {
+        assignment: {
+          ...assignment(b, "other-parent", "/root/other"),
+          resource: alias,
+          cwd: alias,
+        },
+        at: "2026-09-24T12:00:01.000Z",
+        io: io(),
+      });
+    } catch (error) {
+      refused = error;
+    }
+    expect(refused).toBeInstanceOf(RunRecordFinding);
+    expect((refused as RunRecordFinding).code).toBe("RESOURCE_RESERVED");
+    expect(readReservation(b.root, b.lane)?.attempt).toBe(first.record.attempt);
+    expect(readReservation(b.root, alias)?.attempt).toBe(first.record.attempt);
+  } finally {
+    b.cleanup();
+  }
+});
+
 test("two disjoint native identities route simultaneous callbacks to their own records", () => {
   // KILLED BY: a singleton current-worker slot or routing by shared cwd.
   const left = bench("disjoint-left");
@@ -474,6 +505,59 @@ test("actual PostToolUse finds shell-created untracked and unexpected ignored pa
   } finally {
     untracked.cleanup();
     ignored.cleanup();
+  }
+});
+
+test("a yielded Bash operation is checked at actual PostToolUse and its late violation persists a hold", async () => {
+  // KILLED BY: treating early output as completion or omitting the
+  // cumulative workspace scan from the actual PostToolUse callback.
+  const b = bench("yielded-late-write");
+  try {
+    const rec = startNative(b);
+    const toolUseId = "yielded-late-write";
+    const command = commandFor(b, "printf yielded; sleep 0.2; printf late > late.tmp");
+    expect(
+      handleNativeEvent(
+        b.root,
+        event("PreToolUse", {
+          tool_name: "Bash",
+          tool_use_id: toolUseId,
+          tool_input: { command },
+        }),
+      ).disposition,
+    ).toBe("pre-admitted");
+
+    const child = spawn("/bin/zsh", ["-c", command], { stdio: ["ignore", "pipe", "pipe"] });
+    let completed = false;
+    const completion = new Promise<number | null>((resolve, reject) => {
+      child.once("error", reject);
+      child.once("close", (code) => {
+        completed = true;
+        resolve(code);
+      });
+    });
+    const yielded = await new Promise<string>((resolve) => {
+      child.stdout.once("data", (chunk) => resolve(String(chunk)));
+    });
+    expect(yielded).toContain("yielded");
+    expect(completed, "early output was incorrectly treated as process completion").toBe(false);
+    expect(await completion).toBe(0);
+
+    const post = handleNativeEvent(
+      b.root,
+      event("PostToolUse", {
+        tool_name: "Bash",
+        tool_use_id: toolUseId,
+        tool_input: { command },
+        tool_response: { output: yielded },
+      }),
+    );
+    expect(post.disposition).toBe("post-held");
+    expect(
+      activeNativeHolds(readNativeRecord(b.root, rec.attempt)).flatMap((hold: any) => hold.findings ?? []),
+    ).toContainEqual(expect.objectContaining({ code: "untracked-out-of-fence", path: "late.tmp" }));
+  } finally {
+    b.cleanup();
   }
 });
 
