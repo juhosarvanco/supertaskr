@@ -4,12 +4,13 @@ title: "Native desktop workers use shared run records and automatic fence checks
 feature: F-04
 milestone: 4
 size: L
+tier: guarded
 priority: 1
-status: planned
+status: building
 blocked_by: [T-303-s1, T-311, T-314]
 touches: [.codex/hooks.json, tools/e2e/scripts/native-codex-hook.mjs, tools/e2e/scripts/native-codex.mjs, tools/e2e/tests/native-codex.spec.ts, tools/e2e/scripts/run-record.mjs, tools/e2e/tests/run-record.spec.ts, tools/e2e/scripts/brief.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md, docs/conventions/lanes.md, docs/conventions/records-and-rooms.md]
-builder:
-verifier:
+builder: gpt-5.6-sol@fresh
+verifier: gpt-5.6-sol@fresh
 built_by:
 verified_by:
 review: independent
