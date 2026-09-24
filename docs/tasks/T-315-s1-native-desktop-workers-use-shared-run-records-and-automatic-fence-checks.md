@@ -8,7 +8,7 @@ tier: guarded
 priority: 1
 status: verifying
 blocked_by: [T-303-s1, T-311, T-314]
-touches: [.codex/hooks.json, tools/e2e/scripts/native-codex-hook.mjs, tools/e2e/scripts/native-codex.mjs, tools/e2e/tests/native-codex.spec.ts, tools/e2e/scripts/run-record.mjs, tools/e2e/tests/run-record.spec.ts, tools/e2e/scripts/brief.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md, docs/conventions/lanes.md, docs/conventions/records-and-rooms.md]
+touches: [.codex/hooks.json, tools/e2e/scripts/native-codex-hook.mjs, tools/e2e/scripts/native-codex.mjs, tools/e2e/tests/native-codex.spec.ts, tools/e2e/scripts/run-record.mjs, tools/e2e/tests/run-record.spec.ts, tools/e2e/scripts/brief.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md, docs/conventions/lanes.md, docs/conventions/records-and-rooms.md, docs/CAPABILITIES.md]
 builder: gpt-5.6-sol@fresh
 verifier: gpt-5.6-sol@fresh
 built_by:
@@ -68,6 +68,7 @@ The first full `e2e` graded reading at source commit `20b4bc0679eca26e08333023d8
 ### Pending independent evidence
 
 The real Luna-low desktop control remains pending for the coordinator, as required by the acceptance criterion. The generated capabilities/index census also remains pending: the protected `npm run capabilities` attempt returned exit 3 with `EACCES` for `docs/CAPABILITIES.md`, which is outside this executor's exact fence. The coordinator retained that refusal and will perform the normal generated-artifact fence expansion and fresh generation/verification step. No protected-file retry or bypass was made here.
+Coordinator fence expansion (2026-09-24): docs/CAPABILITIES.md is the generated census of the in-scope test bodies. The executor requested it after the physical fence refused regeneration. Its attempt was reconciled before this first-parent expansion; fresh verification regenerates and checks it. Acceptance criteria and product scope are unchanged.
 
 ## Verdicts
 <!-- Fresh independent verifier appends; no predecessor verdict is altered. -->
