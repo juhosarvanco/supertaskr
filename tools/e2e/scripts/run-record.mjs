@@ -80,6 +80,7 @@ import {
   openSync,
   readFileSync,
   readdirSync,
+  realpathSync,
   rmSync,
   statSync,
   writeFileSync,
@@ -386,7 +387,13 @@ export function recordPath(root, attempt) {
  * @param {string} root @param {string} resource @returns {string}
  */
 export function reservationPath(root, resource) {
-  const resolved = path.resolve(resource);
+  const lexical = path.resolve(resource);
+  let resolved = lexical;
+  try {
+    resolved = realpathSync(lexical);
+  } catch (err) {
+    if (/** @type {NodeJS.ErrnoException} */ (err).code !== "ENOENT") throw err;
+  }
   const digest = createHash("sha256").update(resolved).digest("hex").slice(0, 12);
   return path.join(root, RESERVATIONS_REL_PATH, `${path.basename(resolved)}-${digest}.json`);
 }
