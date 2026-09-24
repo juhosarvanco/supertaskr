@@ -96,6 +96,39 @@ The normal `npm run capabilities` command updated `docs/CAPABILITIES.md` to 123,
 
 The range derivation for `0259aecbe1f5f1e6fe1e19abac26e03e5f5b734f..23c5335f46d9273c59c2879ce427f8e538f84134` owed only the end-to-end package over 17 owning specs. Its graded run executed 983 bodies: 982 passed and the sole failure was `THE VERIFIER'S BRIEF ASSEMBLES`, naming the live T-315-s1/T-205-s5 collision over `tools/e2e/tests/brief.spec.ts`. The mandated one-time exact rerun reproduced the same board-state collision. All 16 native bodies passed in the graded run, so no whole-battery repetition followed. The real Luna-low desktop product-hook demonstration remains coordinator-owned and pending.
 
+### 2026-09-24 scoped correction evidence: conflicting native starts
+
+This correction started from `d1fcc9242d83b591213d11171c42386924e25980`,
+which already carried the verifier's committed conflicting-start regression.
+Against that base, the isolated body exited 1 because the already-bound attempt
+received `duplicate-agent-attribution` while the pending attempt's active-hold
+array was empty. The source fix defines the affected attempts as the union of
+the already-routed and pending records. At source commit
+`285293a5434d7f512c5b399314953113646ff356`, the same regression plus the normal
+exact-binding and two-disjoint-identity positive controls passed 3/3. The final
+source sha256 is `04ea267758308425bc8966dca536431c3f78e1b1bb9510f01d2d0c5a0ecb8587`;
+the committed regression spec sha256 is
+`46ed08f28d184fa692b8fd9244e430717ec863cb3b716ad31c0ae993edf47e89`.
+
+The full focused native and run-record sweep passed 61/61: 17 native bridge
+bodies and 44 shared run-record bodies. `npm run typecheck`, `npm run
+lint:tokens`, `npm run capabilities:check`, `npm run lint:docs`, `git diff
+--check` and the graph currency check all exited 0. Direct capability generation
+updated the approved `docs/CAPABILITIES.md` census to 1,267 behaviours across 43
+spec files and confirmed `docs/INDEX.md` was already byte-current; it did not
+write the out-of-fence interview skill. The class sweep found two native
+affected-set selections: this SubagentStart branch and the generic unknown
+worker branch, which already holds every record in the admitted session.
+
+The exact correction range owed only the end-to-end package over 17 owning
+specs. Its one graded run executed 984 bodies: 983 passed and the sole failure
+was `THE VERIFIER'S BRIEF ASSEMBLES`, naming the known live T-315-s1/T-205-s5
+collision over `tools/e2e/tests/brief.spec.ts`. The mandated one exact rerun
+reproduced that same board-state collision. All 17 native bodies and all 44
+run-record bodies passed inside the graded run, so no whole-battery repetition
+followed. The real Luna-low desktop product-hook demonstration remains
+coordinator-owned and pending.
+
 ## Verdicts
 <!-- Fresh independent verifier appends; no predecessor verdict is altered. -->
 
