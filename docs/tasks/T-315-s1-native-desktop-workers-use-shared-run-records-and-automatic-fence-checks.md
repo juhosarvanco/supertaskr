@@ -6,7 +6,7 @@ milestone: 4
 size: L
 tier: guarded
 priority: 1
-status: building
+status: verifying
 blocked_by: [T-303-s1, T-311, T-314]
 touches: [.codex/hooks.json, tools/e2e/scripts/native-codex-hook.mjs, tools/e2e/scripts/native-codex.mjs, tools/e2e/tests/native-codex.spec.ts, tools/e2e/scripts/run-record.mjs, tools/e2e/tests/run-record.spec.ts, tools/e2e/scripts/brief.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md, docs/conventions/lanes.md, docs/conventions/records-and-rooms.md]
 builder: gpt-5.6-sol@fresh
