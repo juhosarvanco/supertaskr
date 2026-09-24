@@ -872,7 +872,10 @@ export function handleNativeEvent(root, event, opts = {}) {
       (rec) => rec.native.launch.sessionId === sessionId && rec.native.start === null && rec.state === "reserved",
     );
     if (already.length > 0 || pending.length !== 1 || string(event.turn_id) === null) {
-      const affected = already.length > 0 ? already : records.filter((rec) => rec.native.launch.sessionId === sessionId);
+      const affected =
+        already.length > 0
+          ? [...new Set([...already, ...pending])]
+          : records.filter((rec) => rec.native.launch.sessionId === sessionId);
       for (const rec of affected) {
         addNativeHold(rec, {
           key: `start-attribution:${agentId}:${String(event.turn_id)}`,
