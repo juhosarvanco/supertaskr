@@ -8,7 +8,7 @@ tier: guarded
 priority: 1
 status: building
 blocked_by: [T-303-s1, T-311, T-314]
-touches: [.codex/hooks.json, tools/e2e/scripts/native-codex-hook.mjs, tools/e2e/scripts/native-codex.mjs, tools/e2e/tests/native-codex.spec.ts, tools/e2e/scripts/run-record.mjs, tools/e2e/tests/run-record.spec.ts, tools/e2e/scripts/brief.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md, docs/conventions/lanes.md, docs/conventions/records-and-rooms.md]
+touches: [.codex/hooks.json, tools/e2e/scripts/native-codex-hook.mjs, tools/e2e/scripts/native-codex.mjs, tools/e2e/tests/native-codex.spec.ts, tools/e2e/scripts/run-record.mjs, tools/e2e/tests/run-record.spec.ts, tools/e2e/scripts/brief.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md, docs/conventions/lanes.md, docs/conventions/records-and-rooms.md, docs/CAPABILITIES.md]
 builder: gpt-5.6-sol@fresh
 verifier: gpt-5.6-sol@fresh
 built_by:
@@ -35,6 +35,8 @@ No checkout-currency change is presumed necessary: native capability evidence be
 Live native loading and direct agent_id attribution were observed after the desktop restart on 2026-09-24. That resolves the earlier unknown event-source premise; it does not establish holds, background-job reconciliation, concurrent routing or complete native delivery. Model-free controls should cover those mechanisms without repeated model qualification sessions. The real callback control is deliberately small; mandatory per-turn receipts are not reintroduced.
 
 T-329 remains the separate seat-owned-job proposal. This work integrates the existing attempt-owned T-311 lifecycle only.
+
+Coordinator fence expansion (2026-09-24): docs/CAPABILITIES.md is the generated census of the in-scope test bodies. The executor requested it after the physical fence refused regeneration. Its attempt was reconciled before this first-parent expansion; fresh verification regenerates and checks it. Acceptance criteria and product scope are unchanged.
 
 ## Verdicts
 <!-- Fresh independent verifier appends; no predecessor verdict is altered. -->
