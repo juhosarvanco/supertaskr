@@ -8,7 +8,7 @@ tier: guarded
 priority: 1
 status: building
 blocked_by: [T-303-s1, T-311, T-314]
-touches: [.codex/hooks.json, tools/e2e/scripts/native-codex-hook.mjs, tools/e2e/scripts/native-codex.mjs, tools/e2e/tests/native-codex.spec.ts, tools/e2e/scripts/run-record.mjs, tools/e2e/tests/run-record.spec.ts, tools/e2e/scripts/brief.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md, docs/conventions/lanes.md, docs/conventions/records-and-rooms.md, docs/CAPABILITIES.md]
+touches: [.codex/hooks.json, tools/e2e/scripts/native-codex-hook.mjs, tools/e2e/scripts/native-codex.mjs, tools/e2e/tests/native-codex.spec.ts, tools/e2e/scripts/run-record.mjs, tools/e2e/tests/run-record.spec.ts, tools/e2e/scripts/brief.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md, docs/conventions/lanes.md, docs/conventions/records-and-rooms.md, docs/CAPABILITIES.md, docs/INDEX.md]
 builder: gpt-5.6-sol@fresh
 verifier: gpt-5.6-sol@fresh
 built_by:
@@ -37,6 +37,8 @@ Live native loading and direct agent_id attribution were observed after the desk
 T-329 remains the separate seat-owned-job proposal. This work integrates the existing attempt-owned T-311 lifecycle only.
 
 Coordinator fence expansion (2026-09-24): docs/CAPABILITIES.md is the generated census of the in-scope test bodies. The executor requested it after the physical fence refused regeneration. Its attempt was reconciled before this first-parent expansion; fresh verification regenerates and checks it. Acceptance criteria and product scope are unchanged.
+
+Coordinator generated-index expansion (2026-09-24): the census generator also updates docs/INDEX.md when the new native spec adds a capability section. Its changed count was preserved after the verifier monitor held the write. The verifier attempt and owned jobs are reconciled; this derived INDEX path joins the same generated-artifact fence. Criteria are unchanged.
 
 ## Verdicts
 <!-- Fresh independent verifier appends; no predecessor verdict is altered. -->
