@@ -154,6 +154,40 @@ here without asking what reads it.
   the honest third value — the execution is not there any more and what
   the assignment did is `unknown`.
 
+  **THE NATIVE DESKTOP BRIDGE USES THAT RUN RECORD AS ITS ONLY AUTHORITY**
+  (T-315-s1): an assignment whose harness is `codex-desktop-native` also
+  carries `native.taskName`, `native.sessionId`,
+  `native.coordinatorTurnId` and an explicit `native.ignoredOutputs` array.
+  Start admits the approved card, full base commit, canonical fence, model
+  and effort, then takes T-311's exclusive writer reservation before native
+  spawn. User-prompt callbacks extend the exact coordinator session/turn
+  continuity. A `SubagentStart` callback records the pending `agent_id`; the
+  child may then run exactly `/usr/bin/printenv CODEX_THREAD_ID`, and bind
+  closes only when the callback id, completed probe value, start turn and
+  canonical task name all agree:
+
+      node tools/e2e/scripts/brief.mjs --run bind --attempt <id> \
+        --session <agent_id> --task-name <canonical task name> \
+        --reported-thread-id <CODEX_THREAD_ID> --start-turn-id <turn_id>
+
+  PreToolUse persists an inflight operation only after exact native routing,
+  explicit resource naming and a cumulative clean check. PostToolUse must
+  match that agent, turn, tool and tool-use id, then records the actual
+  completion and repeats the cumulative check. A Post without its Pre, a
+  checker error, unsupported mandatory event, unreadable authority or a
+  path outside the fence persists a hold; no callback success is a terminal
+  run state. SubagentStop and Interrupt are observations only.
+
+  Before native collect or continue, the arm requires `--ref <full commit>`
+  and independently checks that exact HEAD plus staged, unstaged, untracked
+  and governed ignored residue. T-311 must separately establish that the
+  native execution ended and every registered owned job is gone. An
+  operation whose Post callback never arrived remains an
+  `actualPostCallback: false`, `outcome: unknown` receipt; only that T-311
+  reconciliation may clear its hold. Until these facts agree, collect,
+  continue and writer-reservation release refuse while preserving the
+  candidate.
+
 - THE PROCESS IS SETTINGS, AND EVERY SWITCH IS DECLARED ONCE (T-299,
   ADR-024 decision 6): `method/runtime/process-schema.yaml` is the ONE
   source. It declares each step of the loop as a SWITCH with what it

@@ -9422,6 +9422,24 @@ test("ARM THIRTEEN performs ONE run operation against the root it is handed, and
       "a rendered record line carries no provenance stamp",
     ).toEqual([]);
 
+    // THE NATIVE ADAPTER'S ERROR ALSO USES THE WORLD-REFUSAL CHANNEL.
+    // A native harness without its explicit launch intent must not fall
+    // through to a generic crash or silently become an ordinary child.
+    const nativeAssignment = path.join(scratch, "assign-native-incomplete.json");
+    writeFileSync(
+      nativeAssignment,
+      JSON.stringify({
+        ...JSON.parse(readFileSync(assignment, "utf8")),
+        id: "T-901",
+        harness: "codex-desktop-native",
+      }),
+    );
+    const incompleteNative = run(["--run", "start", "--assignment", nativeAssignment, "--root", root]);
+    expect(incompleteNative.status, "the incomplete native launch did not answer FOUND").toBe(EXIT.FOUND);
+    expect(incompleteNative.stderr, "the native assignment refusal lost its stable code").toContain(
+      "[NATIVE_ASSIGNMENT_MISSING]",
+    );
+
     // A WORLD REFUSAL ANSWERS 1 AND NAMES ITS CODE; a usage refusal
     // answers 2. Keeping those apart is the house exit contract.
     const early = run(["--run", "collect", "--attempt", "T-900-a1", "--root", root]);

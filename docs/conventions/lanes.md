@@ -236,6 +236,35 @@ here without asking what reads it.
     a RUNTIME file carrying a self-ignoring `.gitignore` beside it: one
     that reached the integration branch would hand every checkout one
     lane's permanently stale fence.
+  - **A NATIVE DESKTOP WORKER USES THE SAME LANE FENCE THROUGH ITS RUN
+    RECORD** (T-315-s1). The coordinator writes the native launch intent
+    into the T-311 assignment and takes the writer reservation before it
+    starts the task. `.codex/hooks.json` is the portable project hook; it
+    resolves its script from the project Git root and carries no local
+    machine path. `SubagentStart`, the exact read-only identity probe and
+    the coordinator's explicit bind join the callback `agent_id` to one
+    attempt. The parent session, the shared cwd, a task label and transcript
+    text are context, never worker identity. A missing or conflicting
+    identity leaves an attempt hold.
+
+    The run record's absolute worktree selects the resource and its
+    canonical `.supertaskr/lane-fence.json`. A native Bash/unified-exec
+    command begins `cd -- '<absolute assigned root>' &&`; an apply-patch
+    request names every source and move destination as an absolute path
+    inside that root. This visible command convention is deliberate: the
+    supported hook payload guarantees `tool_input.command`, not a separate
+    working-directory field. The shared session cwd is therefore never
+    accepted as resource authority.
+
+    Synchronous Pre/Post hooks inspect the frozen base through committed,
+    staged and unstaged raw Git layers plus untracked and ignored residue.
+    Raw entries retain modes, types and both rename endpoints. Tracked
+    paths never disappear behind output policy; only coordinator-named
+    ignored domains are excluded from the ignored baseline. Findings and
+    checker failures preserve the candidate and persist a hold. This is a
+    repository safeguard: it does not detect every arbitrary shell write
+    outside the assigned repository and is not OS filesystem or read
+    isolation.
   The history, the measurements and the argument this rule was cut
   from are in docs/reference/05-dispatch.md (T-290), verbatim.
 

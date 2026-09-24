@@ -106,6 +106,13 @@ import {
   runAwait,
   value,
 } from "./dispatch-brief.mjs";
+import {
+  NativeCodexFinding,
+  bindNativeIdentity,
+  nativeFinalGate,
+  prepareNativeRecord,
+  readNativeAssignment,
+} from "./native-codex.mjs";
 
 /** The record format this reader knows. A document declaring another is refused, never guessed at. */
 export const RECORD_VERSION = 1;
@@ -295,6 +302,7 @@ export class RunRecordFinding extends Error {
  * @property {OwnedJob[]} [ownedJobs]
  * @property {{ kind: string, parent: string, evidence: string, scope: string }} [admission]
  * @property {Record<string, string>} [instants]  the instants the DISPATCH already stamped
+ * @property {?{ taskName: string, sessionId: string, coordinatorTurnId: string, ignoredOutputs: string[] }} [native]
  */
 
 /**
@@ -325,6 +333,7 @@ export class RunRecordFinding extends Error {
  * @property {?import("./dispatch-brief.mjs").Admission} admission
  * @property {?import("./dispatch-brief.mjs").Refusal & { at: string }} refusal  the provider refusal this attempt met, classified (T-322)
  * @property {?{ at: string, attempts: number, source: string, why: string }} retry  the next retry instant, on a QUOTA refusal only (T-322)
+ * @property {Record<string, any>} [native] native callback, binding, inspection and hold authority (T-315-s1)
  */
 
 /* ────────────────────────────────────────────────────────────────────
@@ -483,6 +492,8 @@ export function readAssignment(file) {
         "consultation, and the resource a child may write is a separate field.",
     );
   }
+  const harness = String(obj["harness"]).trim();
+  const native = readNativeAssignment(obj["native"], harness, file);
   /** @type {OwnedJob[]} */
   const ownedJobs = [];
   const raw = obj["ownedJobs"];
@@ -533,7 +544,7 @@ export function readAssignment(file) {
     id,
     role: String(obj["role"]).trim(),
     resource: String(obj["resource"]).trim(),
-    harness: String(obj["harness"]).trim(),
+    harness,
     model: String(obj["model"]).trim(),
     effort: String(obj["effort"]).trim(),
     base: String(obj["base"]).trim(),
@@ -550,6 +561,7 @@ export function readAssignment(file) {
     // dispatch wrote. Anything else here is read and kept; the record is
     // where they are measured from, and this is the door.
     instants: readInstants(obj["instants"]),
+    ...(native === null ? {} : { native }),
   };
 }
 
@@ -1001,6 +1013,7 @@ export function startRun(root, opts) {
       : "a read-only participant: a record and NO reservation, which is what lets a phase one run beside its executor",
   );
   try {
+    prepareNativeRecord(rec, { at });
     const file = writeRecord(root, rec);
     return { record: rec, file, reservation };
   } catch (err) {
@@ -1023,7 +1036,7 @@ export function startRun(root, opts) {
  * that is the state criterion two interrupts at.
  *
  * @param {string} root
- * @param {{ attempt: string, harnessId: string, pid?: number, at?: string, io?: RunIo }} opts
+ * @param {{ attempt: string, harnessId: string, pid?: number, taskName?: string, reportedThreadId?: string, startTurnId?: string, at?: string, io?: RunIo }} opts
  * @returns {RunRecord}
  */
 export function bindRun(root, opts) {
@@ -1065,6 +1078,13 @@ export function bindRun(root, opts) {
         "whole number of at least 1, because 0 is the process group and -1 is every process.",
     );
   }
+  bindNativeIdentity(root, rec, {
+    harnessId: id,
+    ...(opts.taskName === undefined ? {} : { taskName: opts.taskName }),
+    ...(opts.reportedThreadId === undefined ? {} : { reportedThreadId: opts.reportedThreadId }),
+    ...(opts.startTurnId === undefined ? {} : { startTurnId: opts.startTurnId }),
+    at,
+  });
   rec.execution = {
     harnessId: id,
     pid: pid ?? null,
@@ -1403,7 +1423,18 @@ export function observeRun(root, opts) {
   }
   transition(rec, at, "observe", to, why);
   if (TERMINAL_STATES.includes(to) && rec.writer && rec.resource !== null) {
-    releaseIfOurs(root, rec, at);
+    const final = nativeFinalGate(rec, {
+      phase: "release",
+      at,
+      lifecycleReconciled: completion && executionEnded,
+      aliveJobs: jobs,
+    });
+    if (final.eligible) releaseIfOurs(root, rec, at);
+    else {
+      signals.push(
+        `native final gate retained the writer reservation: ${final.holds.map((/** @type {any} */ hold) => hold.code).join(", ") || "lifecycle not reconciled"}`,
+      );
+    }
   }
   if (TERMINAL_STATES.includes(to) && rec.outcome === null) {
     rec.outcome = {
@@ -1702,6 +1733,26 @@ export function collectRun(root, opts) {
         "would publish a partial answer as a final one.",
     );
   }
+  const aliveJobs = ownedJobsAlive(rec, io);
+  const final = nativeFinalGate(rec, {
+    phase: "collect",
+    ...(opts.ref === undefined ? {} : { expectedRef: opts.ref.trim() }),
+    at,
+    lifecycleReconciled: rec.execution === null || rec.execution.endedAt !== null,
+    aliveJobs,
+  });
+  if (!final.eligible) {
+    writeRecord(root, rec);
+    throw new NativeCodexFinding(
+      "NATIVE_COLLECT_HELD",
+      `native-codex: collect refused by the independent final gate: ${JSON.stringify({
+        inflight: final.inflight,
+        holds: final.holds,
+        ownedJobs: final.ownedJobs,
+      })}`,
+    );
+  }
+  if (rec.writer && rec.resource !== null) releaseIfOurs(root, rec, at);
   if (opts.usage !== undefined && opts.usage.trim() !== "") rec.usage = opts.usage.trim();
   // THE INSTANTS THE SEAT HOLDS (T-320). Three of the six an express
   // change is measured by happen after the child is gone — the owed set's
@@ -1899,7 +1950,7 @@ export function reconcile(rec, io, evidence) {
  * continuation knows what the child has not confirmed reading.
  *
  * @param {string} root
- * @param {{ attempt: string, replace?: boolean, evidence?: string, at?: string, io?: RunIo, host?: string }} opts
+ * @param {{ attempt: string, replace?: boolean, evidence?: string, ref?: string, at?: string, io?: RunIo, host?: string }} opts
  * @returns {{ record: RunRecord, reconciliation: Reconciliation, redelivered: string[], replaced: ?string }}
  */
 export function continueRun(root, opts) {
@@ -1913,6 +1964,30 @@ export function continueRun(root, opts) {
       `run-record: attempt ${rec.attempt} may still be executing — ${reconciliation.why}. A ` +
         "continuation while the prior execution might exist is two writers for one resource, " +
         "which is the race this record exists to close. Reconcile it, then continue.",
+    );
+  }
+  const final = nativeFinalGate(rec, {
+    phase: "continue",
+    ...(opts.ref === undefined ? {} : { expectedRef: opts.ref.trim() }),
+    at,
+    lifecycleReconciled: true,
+    aliveJobs: ownedJobsAlive(rec, io),
+  });
+  if (!final.eligible) {
+    writeRecord(root, rec);
+    throw new NativeCodexFinding(
+      "NATIVE_CONTINUE_HELD",
+      `native-codex: continue refused by the independent final gate: ${JSON.stringify({
+        inflight: final.inflight,
+        holds: final.holds,
+        ownedJobs: final.ownedJobs,
+      })}`,
+    );
+  }
+  if (opts.replace === true && rec.native !== undefined) {
+    throw new NativeCodexFinding(
+      "NATIVE_REPLACEMENT_REQUIRES_START",
+      "native-codex: a replacement needs a fresh native launch intent and therefore a fresh start record; continue resumes only the exactly bound native task.",
     );
   }
   refuseGrantAfterStamp(rec, "a continuation");
@@ -2144,7 +2219,13 @@ export function stopRun(root, opts) {
         "model or an account, and this arm holds no code path that could.",
     };
   }
-  releaseIfOurs(root, rec, at);
+  const final = nativeFinalGate(rec, {
+    phase: "release",
+    at,
+    lifecycleReconciled: true,
+    aliveJobs: ownedJobsAlive(rec, io),
+  });
+  if (final.eligible) releaseIfOurs(root, rec, at);
   writeRecord(root, rec);
   return { record: rec, reconciliation, refusal, retry: rec.retry };
 }
@@ -2159,6 +2240,9 @@ export function stopRun(root, opts) {
  * @property {string} attempt
  * @property {string} [assignment]
  * @property {string} [harnessId]
+ * @property {string} [taskName]
+ * @property {string} [reportedThreadId]
+ * @property {string} [startTurnId]
  * @property {number} [pid]
  * @property {string} [question]
  * @property {string} [answer]
@@ -2178,12 +2262,12 @@ export function stopRun(root, opts) {
  */
 export const VERB_DIALS = Object.freeze({
   start: ["assignment"],
-  bind: ["attempt", "session", "pid"],
+  bind: ["attempt", "session", "pid", "task-name", "reported-thread-id", "start-turn-id"],
   observe: ["attempt", "evidence"],
   send: ["attempt", "question", "answer", "evidence"],
   wait: ["attempt", "ceiling", "evidence"],
   collect: ["attempt", "usage", "ref", "report", "instant"],
-  continue: ["attempt", "replace", "evidence"],
+  continue: ["attempt", "replace", "evidence", "ref"],
   stop: ["attempt", "evidence"],
 });
 
@@ -2253,6 +2337,9 @@ export function runPlan(opts, replace = false) {
       );
     }
     plan.harnessId = session;
+    if (opts["task-name"] !== undefined) plan.taskName = opts["task-name"].trim();
+    if (opts["reported-thread-id"] !== undefined) plan.reportedThreadId = opts["reported-thread-id"].trim();
+    if (opts["start-turn-id"] !== undefined) plan.startTurnId = opts["start-turn-id"].trim();
     if (opts["pid"] !== undefined) {
       const pid = Number(opts["pid"]);
       if (!Number.isInteger(pid)) {
@@ -2269,6 +2356,7 @@ export function runPlan(opts, replace = false) {
   if (verb === "observe" || verb === "stop" || verb === "continue") {
     if (opts["evidence"] !== undefined) plan.evidence = textOrFile(opts["evidence"]);
   }
+  if (verb === "continue" && opts["ref"] !== undefined) plan.ref = opts["ref"].trim();
   if (verb === "wait") {
     const ceiling = Number((opts["ceiling"] ?? "").trim());
     if (!Number.isFinite(ceiling) || ceiling <= 0) {
@@ -2401,6 +2489,16 @@ export function runRecs(ctx, verb, rec, extra) {
     value(`questions: ${q === "" ? "none recorded" : q}`, p),
     value(`usage: ${rec.usage}`, p),
     value(`record: ${recordPath(ctx.root, rec.attempt)}`, p),
+    ...(rec.native === undefined
+      ? []
+      : [
+          value(
+            `native identity: ${rec.native.binding?.agentId ?? "pending exact callback/probe binding"}; ` +
+              `holds: ${String(rec.native.holds.filter((/** @type {any} */ hold) => hold.clearedAt === null).length)}`,
+            p,
+          ),
+          value(`native boundary: ${rec.native.disclosure}`, p),
+        ]),
     // THE ADMISSION THIS ATTEMPT RUNS UNDER (T-324), in the three groups
     // the card's seventh criterion separates: what this arm REFUSED, what
     // it merely recorded, and what nobody in this tree can check.

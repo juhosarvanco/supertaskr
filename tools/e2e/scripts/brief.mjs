@@ -262,6 +262,7 @@ import {
   textOrFile,
   waitRun,
 } from "./run-record.mjs";
+import { NativeCodexFinding, nativeShellQuote } from "./native-codex.mjs";
 import { findCheckoutRoot } from "../../../.claude/hooks/lane-fence.mjs";
 // T-314 — THE ARM INSTALLS THE GUARD GIT ITSELF RUNS. Reached the way the
 // line above reaches its neighbour: the installer imports node builtins and
@@ -297,6 +298,9 @@ const FLAGS = Object.freeze([
   "--assignment",
   "--attempt",
   "--session",
+  "--task-name",
+  "--reported-thread-id",
+  "--start-turn-id",
   "--pid",
   "--question",
   "--answer",
@@ -551,7 +555,8 @@ async function main(argv) {
           "[--since <instant>] " +
           "[--run start --assignment <path>] " +
           "[--run bind|observe|send|wait|collect|continue|stop --attempt <id> " +
-          "[--session <id>] [--pid <n>] [--question <id>] [--answer <text|@file>] " +
+          "[--session <id>] [--task-name <name>] [--reported-thread-id <id>] " +
+          "[--start-turn-id <id>] [--pid <n>] [--question <id>] [--answer <text|@file>] " +
           "[--evidence <text|@file>] [--ceiling <seconds>] [--usage <text>] [--ref <sha>] " +
           "[--report <path>] [--instant <name>=<iso>[,...]] [--replace]] " +
           "[--grant show|history] "
@@ -1064,7 +1069,7 @@ async function main(argv) {
     try {
       plan = runPlan(opts, replace);
     } catch (err) {
-      if (err instanceof RunRecordFinding) {
+      if (err instanceof RunRecordFinding || err instanceof NativeCodexFinding) {
         console.error(`brief: ${err.message}`);
         return EXIT.USAGE;
       }
@@ -1093,14 +1098,27 @@ async function main(argv) {
           started.reservation === null
             ? "reservation: none — a read-only participant runs beside the writer it serves"
             : `reservation: ${started.reservation.resource} taken atomically at ${started.reservation.takenAt}`,
-          "next: spawn the child, then bind it with --run bind --attempt " +
-            `${started.record.attempt} --session <the harness's id>`,
+          ...(started.record.native === undefined
+            ? [
+                "next: spawn the child, then bind it with --run bind --attempt " +
+                  `${started.record.attempt} --session <the harness's id>`,
+              ]
+            : [
+                "next: spawn the admitted native task; after its exact identity probe, bind with --run bind " +
+                  `--attempt ${started.record.attempt} --session <agent_id> --task-name ` +
+                  `${started.record.native.launch.taskName} --reported-thread-id <CODEX_THREAD_ID> ` +
+                  "--start-turn-id <SubagentStart turn_id>",
+                `native Bash prefix: cd -- ${nativeShellQuote(/** @type {string} */ (started.record.resource))} && <command>`,
+              ]),
         ];
       } else if (plan.verb === "bind") {
         record = bindRun(runRoot, {
           attempt: plan.attempt,
           harnessId: /** @type {string} */ (plan.harnessId),
           ...(plan.pid === undefined ? {} : { pid: plan.pid }),
+          ...(plan.taskName === undefined ? {} : { taskName: plan.taskName }),
+          ...(plan.reportedThreadId === undefined ? {} : { reportedThreadId: plan.reportedThreadId }),
+          ...(plan.startTurnId === undefined ? {} : { startTurnId: plan.startTurnId }),
           at,
         });
       } else if (plan.verb === "observe") {
@@ -1165,6 +1183,7 @@ async function main(argv) {
           attempt: plan.attempt,
           ...(plan.replace === true ? { replace: true } : {}),
           ...(plan.evidence === undefined ? {} : { evidence: plan.evidence }),
+          ...(plan.ref === undefined ? {} : { ref: plan.ref }),
           at,
           host,
         });
@@ -1196,7 +1215,12 @@ async function main(argv) {
       // (T-324), by exactly the path a run-record refusal takes: the
       // admission comes BEFORE the reservation, so a refusal here has
       // written nothing and left no lock behind.
-      if (err instanceof RunRecordFinding || err instanceof AdmissionFinding || err instanceof GrantStoreFinding) {
+      if (
+        err instanceof RunRecordFinding ||
+        err instanceof NativeCodexFinding ||
+        err instanceof AdmissionFinding ||
+        err instanceof GrantStoreFinding
+      ) {
         console.error(`brief: [${err.code}] ${err.message}`);
         return EXIT.FOUND;
       }

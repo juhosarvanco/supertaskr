@@ -26,6 +26,14 @@ review: independent
 
 ## Implementation notes
 
+### Criteria echo
+
+- [x] Admit the approved card, base, fence, model and effort before native spawn; reserve one writer atomically, bind the returned native identity, and refuse ambiguous or conflicting writer attribution without using cwd, parent session, task labels or transcripts as identity.
+- [x] Treat the run record's absolute worktree as resource authority, require explicit writer working directories, route supported worker operations to the admitted resource, retain collision checks, and disclose that this repository safeguard is not an operating-system sandbox.
+- [x] After actual Bash/unified-exec and apply-patch completion, synchronously inspect the complete admitted-base-to-workspace state, including committed, staged, unstaged, untracked, governed ignored, mode/type changes and both rename endpoints; persist a hold on any incomplete, unreadable or unsupported result.
+- [x] Preserve out-of-fence candidates under an attempt-scoped hold, refuse later supported operations and collect/continue until T-311 reconciliation proves native and owned-job state, and make collection independently recheck the exact reported candidate rather than trusting callback success.
+- [x] Add model-free bodies for every listed routing, writer, cwd, patch, shell, ignored/generated, failure, hold, yielded-completion and interrupt-with-live-job case; leave the real Luna-low desktop control explicitly pending for the coordinator and fresh Sol extra-high verifier.
+
 Prepared against cfc18176bb4a4bda27f1d389ffd9cc117a6d5f4e from the native contract review. The reviewed contract is filed under the owner-approved native-first scope; dispatch still requires its pinned grant and actual monitored launch. Size is provisional from the monitor, lifecycle integration and its one guarded verification cycle. Re-estimate after the actual implementation map is settled.
 
 The native hook entry is tools/e2e/scripts/native-codex-hook.mjs, under an existing tracked parent. The local configuration is .codex/hooks.json. Its parent is tracked by the neutral .codex/README.md bootstrap at 88cd61603789; structural preflight uses the resulting tree before dispatch. Do not commit the current machine-specific diagnostic configuration. Ship only the portable product definition after review.
@@ -35,6 +43,29 @@ No checkout-currency change is presumed necessary: native capability evidence be
 Live native loading and direct agent_id attribution were observed after the desktop restart on 2026-09-24. That resolves the earlier unknown event-source premise; it does not establish holds, background-job reconciliation, concurrent routing or complete native delivery. Model-free controls should cover those mechanisms without repeated model qualification sessions. The real callback control is deliberately small; mandatory per-turn receipts are not reintroduced.
 
 T-329 remains the separate seat-owned-job proposal. This work integrates the existing attempt-owned T-311 lifecycle only.
+
+### Built mechanism
+
+The portable project hook now routes synchronous native desktop events through one T-311 attempt record. Native launch admission validates the exact Git root, approved base, canonical lane fence and ignored-output policy before the existing exclusive writer reservation is taken. Binding requires the SubagentStart callback identity and the child's exact `CODEX_THREAD_ID` probe to agree with the admitted canonical task and coordinator turn. A no-identity callback is accepted as a parent event only when its session and turn have been positively recorded as coordinator continuity; missing or invalid worker attribution persists a hold.
+
+The assigned worktree is the resource authority. Bash admission uses the documented `tool_input.command` payload and requires the command to begin with an explicit absolute `cd` to that worktree; it does not rely on an undocumented hook `workdir`. Apply-patch admission checks every absolute source and move destination. PreToolUse persists an inflight operation only after a clean cumulative check. Its exact PostToolUse counterpart reruns the check after actual completion and stores the real callback receipt.
+
+The cumulative check covers committed, staged and unstaged raw diffs, untracked paths and changes in ignored residue outside the coordinator-owned named policy. It records additions, deletions, modes/types and both rename endpoints. Tracked paths never inherit an ignored-output exception. Checker failures and unreadable authority persist holds. A missing PostToolUse stays inflight until T-311 reconciles native cessation and every owned job; release then records an explicit `actualPostCallback: false`, `outcome: unknown` receipt before an independent clean check. SubagentStop and Interrupt remain observations and do not claim cessation or stopped jobs.
+
+Collect and continue require the exact reported 40-character commit, completed lifecycle reconciliation, no active hold, no incomplete operation, no owned job and a fresh independent cumulative check. Native replacement through `continue --replace` is refused; a new native identity needs a fresh start. The run report discloses that this is a repository safeguard rather than operating-system write or read isolation.
+
+### Model-free evidence
+
+- `native-codex.spec.ts`: 12/12 passed. These bodies cover the portable hook, exact binding and parent continuity, unbound children, writer collision, two disjoint identities, explicit shared-cwd resource selection, every apply-patch endpoint, shell-created and ignored violations, tracked generated files, raw mode/type and rename data, checker failures, unreadable holds, yielded completion with a missing callback, interrupt with a live job, and exact-ref collect/continue.
+- `run-record.spec.ts`: 44/44 passed, including the native binding tuple and continuation-ref parser body.
+- `brief.spec.ts --grep "ARM THIRTEEN"`: 1/1 passed, including stable refusal of an incomplete native assignment.
+- `npm run typecheck`: passed. `npm run lint:tokens`: clean. `git diff --check`: clean.
+
+Each protected behavior was also run once with a narrow deliberate mutant and returned exit 1 for the intended assertion before the source was restored: hook coverage without Interrupt; relaxed impostor routing; an overbroad unbound probe; non-exclusive reservation creation; routing to every bound identity; trust in an undocumented hook workdir; checking only one patch endpoint; skipped untracked paths; hidden tracked paths; swallowed checker errors; a missing callback labelled successful; an optional final reported ref; a parser that discarded the continuation ref; and an incomplete native assignment admitted as non-native. After restoration, the core hashes were `e1544d0be9733458ccc1546dbaf81175167de2e1dcf50b39b23d0abb32fa676c` for `.codex/hooks.json`, `77d587b5584ce812c9f19b1fa6f2bde6056188044ee43046ea5cb2c039f06c54` for `native-codex.mjs`, `f34778db45090698485aeddd6d8e8f4f253f1ba4b520860a4b6a8af4c02bb36e` for `run-record.mjs`, and `1d5374d6dae9c14ab56718efa1e9aa5a995c64e1607f1e11566230d272ad13d3` for `brief.mjs`.
+
+### Pending independent evidence
+
+The real Luna-low desktop control remains pending for the coordinator, as required by the acceptance criterion. The generated capabilities/index census also remains pending: the protected `npm run capabilities` attempt returned exit 3 with `EACCES` for `docs/CAPABILITIES.md`, which is outside this executor's exact fence. The coordinator retained that refusal and will perform the normal generated-artifact fence expansion and fresh generation/verification step. No protected-file retry or bypass was made here.
 
 ## Verdicts
 <!-- Fresh independent verifier appends; no predecessor verdict is altered. -->
