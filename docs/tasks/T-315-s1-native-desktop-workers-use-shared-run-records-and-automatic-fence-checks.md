@@ -546,3 +546,42 @@ is recorded as a ground-evidence gap rather than silently backfilled. The
 later live control is independently hashed post-candidate evidence and cannot
 retroactively become sealed ground, but it directly decides the card's live
 proof criterion.
+
+## 2026-09-25 CI shell portability repair
+
+### Repair criteria echo
+
+- [x] Replace the yielded-operation body's hardcoded zsh executable with a
+  shell route available on the Linux CI runner and macOS development hosts;
+  the command body must remain free of shell-specific syntax.
+- [x] Preserve proof that early stdout arrives before process completion, the
+  process exits successfully, the late write occurs, and the actual
+  PostToolUse scan persists the out-of-fence hold.
+- [x] Retain process error propagation and fixture cleanup, change no product
+  hook or manifest, run the focused yielded body and full native bridge spec,
+  and commit the repair evidence on this card.
+
+CI run `36108412263`, shard 3, failed only this body at line 550 because
+`/bin/zsh` does not exist on the Linux runner (`spawn ENOENT`); the other 279
+shard bodies and every other job were green. The body now launches `/bin/sh`,
+which is available on both target host families. Its command uses only the
+project-required explicit `cd`, `printf`, `sleep`, ordinary output redirection
+and `&&`; it has no zsh-specific expansion, option or control syntax. The
+existing child `error` rejection, `close`-based completion, explicit zero-exit
+assertion and fixture `finally` cleanup remain unchanged.
+
+The isolated yielded-operation body passed 1/1 and the full native bridge spec
+passed 17/17 with the portable route. The assertions still observe stdout
+while `completed` is false, await exit 0, then deliver the actual PostToolUse
+callback and require both `post-held` and the `late.tmp`
+`untracked-out-of-fence` finding. No test was skipped or weakened, and no
+product hook, manifest or dependency file changed.
+
+### Separate native monitor finding
+
+During context reads, four read-only shell operations were submitted
+concurrently. Their callbacks raced: one completion left a persistent hold and
+three completion callbacks could not find exact persisted pre-command
+records. The coordinator preserved the independently reconciled incident in
+`ci-portability-repair/CONCURRENT-CALLBACK-FINDING.md`. All subsequent repair
+operations were serialized. This patch does not change the native monitor.

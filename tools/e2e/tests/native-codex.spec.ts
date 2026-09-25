@@ -566,7 +566,7 @@ test("a yielded Bash operation is checked at actual PostToolUse and its late vio
       ).disposition,
     ).toBe("pre-admitted");
 
-    const child = spawn("/bin/zsh", ["-c", command], { stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn("/bin/sh", ["-c", command], { stdio: ["ignore", "pipe", "pipe"] });
     let completed = false;
     const completion = new Promise<number | null>((resolve, reject) => {
       child.once("error", reject);
