@@ -567,7 +567,7 @@ proof criterion.
 - [x] Preserve unknown-attribution and unreadable-authority evidence through
   later collection, with no stale snapshot, dropped completion, cleared hold
   or abandoned temporary file reported as success.
-- [ ] Add deterministic separate-process barrier controls for the lost-update
+- [x] Add deterministic separate-process barrier controls for the lost-update
   interleaving and competing lifecycle writers, then run focused native and
   run-record regressions plus the range-derived gates before handoff.
 
@@ -614,7 +614,17 @@ failed at its missing owner document. Restoring the exact implementation made
 the same body pass. The complete native bridge passed 21/21, the shared
 run-record suite passed 44/44, typecheck, capability/index currency, token
 lint and the whole-tree docs census were green. No spawned fixture remained.
-The final range-derived verdict remains the last executor step before handoff.
+The graded range from `2cb2902237841070a6865b2a500117114454f3cd` to
+implementation commit `77f104d4ea0782750cfdb1c62af979dec86f574b`
+derived parser, app and 18 end-to-end specs. Parser passed 454/454. The first
+app leg passed 1,157/1,171; all 14 failures named the absent `app/dist/assets`
+setup prerequisite. After the documented app build, the graded app leg passed
+1,171/1,171. End to end passed 1,001/1,002, including all 21 native and all 44
+run-record bodies. Its only failure is the previously documented live board
+collision: verifier brief assembly finds T-315-s1 and T-205-s5 both fencing
+`tools/e2e/tests/brief.spec.ts`. That unrelated scope collision is preserved as
+the actual range verdict; no repair-owned body failed and this executor did
+not alter either integration state or T-205-s5 authority to manufacture green.
 
 Dispatch format correction: the external repair brief supplied the precise
 role, fence and acceptance draft but no labeled `CONTEXT PACK`. Following the
