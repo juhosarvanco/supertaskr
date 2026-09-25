@@ -465,3 +465,84 @@ message: Received array: []
 No pack gap was encountered. The ground addendum's missing requested callback,
 T-311 oracle and product-loading measurements are recorded here as an evidence
 gap; they were not inferred from the candidate or the external bootstrap.
+
+### 2026-09-25 — APPROVED — gpt-5.6-sol@01a0d710-6e7c-70e3-9323-e3bc7c9adc79
+
+This was the guaranteed two-spawn frame. A separate fresh phase one received
+the base card without the implementation and produced the frozen attack set;
+this fresh phase two opened the candidate diff before the executor notes and
+reviewed candidate `bbf858fa8362ec4bdd160c0ed9fd388d12563a1d` against base
+`3ec4b8ee9dcbaaa9778372e3562d4360d82fd853`. The requested verifier was
+gpt-5.6-sol at xhigh. Provider-observed model identity was unavailable and is
+not inferred from that request.
+
+The sealed attack set is
+`sha256:56b5840add858d591fa508d22ed9e23289ea8c83d411645d33193ca189a68a64`,
+the sealed ground is
+`sha256:d8f4aa21919f8d019ba85d7f548e614942b0f6733de87698158eb048fdb5e3ca`,
+and the base card is
+`sha256:e6aff1cff2f0a8369df32cef2f0507f20c249de0c08a233ab028c24d91399bca`.
+All three re-hashed to those saved values before review.
+
+The corrected bridge closes the previously rejected cases. Native reservation
+keys canonicalize existing resources before the exclusive T-311 create;
+admission rejects ignored residue outside the named policy; lifecycle
+reconciliation cannot clear attribution holds belonging to an unknown or
+conflicting identity; and duplicate start attribution holds both the already
+bound and pending attempts. The committed correction bodies remain
+load-bearing in the full end-to-end run. The cumulative checker independently
+reads committed, staged and unstaged raw layers plus untracked and ignored
+residue, retains modes/types and both rename endpoints, freezes the admitted
+fence, and persists checker or authority failures rather than calling them
+clean. No dependency was added. The security sweep found no credential
+material, dynamic shell execution, model/API path or unsafe new endpoint; Git
+is invoked through a fixed executable and argv array, and assignment path
+domains reject absolute paths and traversal.
+
+The separate post-candidate desktop control is accepted as live evidence, not
+as sealed base ground. Its six-file inventory re-hashed byte-for-byte; the
+inventory itself is
+`sha256:8f37e6c907b346426e5771eb88820f9abd6b24d05c42a124eedff58332b0abcf`.
+The control ran source commit
+`285293a5434d7f512c5b399314953113646ff356`; its bridge, hook, run-record and
+brief source hashes are byte-identical to the same files at the reviewed tip,
+which adds only evidence notes after that source commit. The first record
+shows the actual `UserPromptSubmit` extending coordinator-turn continuity,
+then a real `SubagentStart`, completed identity probe and explicit bind. The
+second record, native identity
+`01a0d705-513f-78a3-a33a-1118996a8508`, records a clean actual PostToolUse for
+the allowed `docs/tasks/native-control-proof.txt`, followed by a yielded Bash
+operation whose actual PostToolUse found preserved
+`outside-control.txt` as `untracked-out-of-fence`. The next allowed append was
+denied by the persistent hold. T-311 then recorded the task ended with no
+owned job, while the independent final collect gate remained ineligible with
+no inflight operation and the out-of-fence holds active. The live assignment
+requested gpt-5.6-luna at low; its provider-observed model is `unknown` and is
+not substituted.
+
+| Acceptance criterion | Evidence and verdict |
+|---|---|
+| Admission and binding | **Met.** `startRun`, `prepareNativeRecord`, `bindNativeIdentity` and `handleNativeEvent` implement pre-spawn admission, canonical exclusive reservation, exact callback/probe binding and identity-only routing. The exact-routing, unbound-child, conflicting-writer, canonical-alias, disjoint-identity and conflicting-start bodies all passed at `bbf858fa8362ec4bdd160c0ed9fd388d12563a1d`; the live records independently show real start/probe/bind tuples. |
+| Shared cwd and resource authority | **Met.** The shared-cwd and apply-patch endpoint bodies passed. The live first control was refused when it supplied only a workdir; the second succeeded only with the explicit assigned-root prefix. Record resource and frozen fence, not callback cwd, drive the checks, and the run report carries the repository-only boundary. |
+| Automatic completion checks | **Met.** The shell-created, ignored-residue, tracked-output, raw mode/type/rename, checker-error, unreadable-authority and actual yielded-late bodies passed. The live yielded operation returned early output, completed later, and its actual product PostToolUse persisted the out-of-fence finding. No model turn or product suite participates in the path decision. |
+| Hold and stop semantics | **Met.** Model-free stop/interrupt, unknown-identity, live-owned-job and exact-ref collect/continue controls passed. The live violation remained on disk, denied a later supported operation, survived native task cessation and no-owned-job reconciliation, retained the reservation, and made the independent collect gate refuse; neither hook refusal nor stop callback was treated as cessation. |
+| Bodies and live proof | **Met.** All 17 native bridge bodies and all 44 shared run-record bodies passed inside the one graded end-to-end leg. The hashed real desktop control establishes loading/trust, native attribution, an allowed path, a refused path, a persistent hold and actual yielded completion against byte-identical corrected source. Requested Luna-low and observed-model-unknown are reported separately. |
+
+The required one graded range invocation at
+`bbf858fa8362ec4bdd160c0ed9fd388d12563a1d` derived 13 changed paths and failed
+closed to the whole battery because `.codex/hooks.json` is outside the package
+map. Parser passed 454/454; app passed 1,171/1,171; Rust was green over 662
+counted bodies and 18 targets. End to end ran 1,271 bodies: 1,270 passed and
+one failed. The sole failure was `THE VERIFIER'S BRIEF ASSEMBLES`, whose
+message names the known live T-315-s1/T-205-s5 collision over
+`tools/e2e/tests/brief.spec.ts`. It is attributed board state, not a native
+product-body failure; the coordinator required one run, so no duplicate rerun
+was made.
+
+Corrections: **0**. Committed correction bodies: **0**. Mutant blocks: **0**.
+All prior rejected verdicts remain unchanged. No pack gap occurred. The guarded
+ground addendum did not contain phase one's requested hand measurements; that
+is recorded as a ground-evidence gap rather than silently backfilled. The
+later live control is independently hashed post-candidate evidence and cannot
+retroactively become sealed ground, but it directly decides the card's live
+proof criterion.
