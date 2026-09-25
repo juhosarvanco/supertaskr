@@ -1,0 +1,79 @@
+{
+  "description": "Portable native worker routing and cumulative fence checks backed by T-311 run records.",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/tools/e2e/scripts/native-codex-hook.mjs\"",
+            "timeout": 30,
+            "statusMessage": "Recording coordinator turn identity"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/tools/e2e/scripts/native-codex-hook.mjs\"",
+            "timeout": 30,
+            "statusMessage": "Registering native worker identity"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "^(Bash|apply_patch)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/tools/e2e/scripts/native-codex-hook.mjs\"",
+            "timeout": 30,
+            "statusMessage": "Checking native worker authority"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "^(Bash|apply_patch)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/tools/e2e/scripts/native-codex-hook.mjs\"",
+            "timeout": 30,
+            "statusMessage": "Checking completed native operation"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/tools/e2e/scripts/native-codex-hook.mjs\"",
+            "timeout": 30,
+            "statusMessage": "Recording native stop observation"
+          }
+        ]
+      }
+    ],
+    "Interrupt": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/tools/e2e/scripts/native-codex-hook.mjs\"",
+            "timeout": 3,
+            "statusMessage": "Recording native interruption"
+          }
+        ]
+      }
+    ]
+  }
+}

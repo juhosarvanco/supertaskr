@@ -2812,3 +2812,26 @@ test("T-320 C6 — AN ATTEMPT WITH NOTHING TO MEASURE PRINTS NO MEASUREMENT BLOC
     b.cleanup();
   }
 });
+
+test("T-315-s1 — explicit native bind identity and the exact continuation ref survive the shared run-plan parser", () => {
+  // KILLED BY: dropping the callback identity from the explicit bind, or
+  // accepting --ref syntactically while discarding it before the independent gate.
+  expect(
+    runPlan({
+      run: "bind",
+      attempt: "T-315-s1-a1",
+      session: "agent-315",
+    }),
+  ).toEqual(
+    expect.objectContaining({
+      harnessId: "agent-315",
+    }),
+  );
+  expect(
+    runPlan({
+      run: "continue",
+      attempt: "T-315-s1-a1",
+      ref: "0123456789abcdef0123456789abcdef01234567",
+    }),
+  ).toEqual(expect.objectContaining({ ref: "0123456789abcdef0123456789abcdef01234567" }));
+});

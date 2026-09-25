@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1249 behaviours** — 1247 extracted sentences + 2 named-not-extracted (listed at the end) — across 42 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1267 behaviours** — 1265 extracted sentences + 2 named-not-extracted (listed at the end) — across 43 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -1034,6 +1034,26 @@ Census: **1249 behaviours** — 1247 extracted sentences + 2 named-not-extracted
 - T-320 — THE MERGE REFUSES A LAUNCH RECEIPT WHOSE OBSERVED MODEL CONTRADICTS THE REQUESTED ONE, by name, and an UNKNOWN observation is news rather than a refusal
 - T-320 — THE RECEIPT KEEPER IS FLOOR: turning the cheap keepers off leaves it planned
 
+## native-codex
+
+- the project hook is portable and synchronously covers the native identity, tool, stop and interrupt events
+- exact callback plus completed identity probe bind one attempt, and parent session/cwd/task labels cannot route a worker event
+- an unbound child may perform only the exact identity probe and every other supported operation persists a registration hold
+- T-311 refuses a conflicting native writer reservation before spawn
+- canonical native resource aliases share one atomic T-311 reservation
+- two disjoint native identities route simultaneous callbacks to their own records
+- a duplicate native identity claimed while another attempt is pending holds both attempts
+- shared cwd cannot select a resource and Bash must visibly name the assigned root in its guaranteed command payload
+- apply_patch checks every absolute source and move destination against the assigned resource
+- actual PostToolUse finds shell-created untracked and unexpected ignored paths while named ignored output stays governed
+- a yielded Bash operation is checked at actual PostToolUse and its late violation persists a hold
+- tracked generated output is never hidden by ignored-output policy and raw layers retain mode/type and both rename endpoints
+- checker failure, missing completion and unreadable hold authority remain refusals
+- yielded native completion releases only after an independent clean check, while interrupt with a live owned job proves no cessation
+- native admission refuses pre-existing ignored residue that no coordinator policy names
+- completion of the bound worker does not reconcile a hold created by an unknown second identity
+- native collect and continue independently require the exact reported commit after lifecycle reconciliation
+
 ## no-plan-card
 
 - phase noDocs renders the card, and every mark is the probe's own answer
@@ -1272,6 +1292,7 @@ Census: **1249 behaviours** — 1247 extracted sentences + 2 named-not-extracted
 - T-320 C4 — A COMPLETION WHOSE OBSERVED MODEL DIFFERS FROM THE REQUESTED ONE IS REPORTED AS A MISMATCH, by name
 - T-320 C6 — THE FIVE MEASUREMENTS COME OFF THE RECORD'S OWN STAMPED INSTANTS: the dispatch's two ride in on the assignment, the candidate is stamped at the outcome, and the seat's three arrive through collect
 - T-320 C6 — AN ATTEMPT WITH NOTHING TO MEASURE PRINTS NO MEASUREMENT BLOCK, and a half-read instant dial is refused rather than kept
+- T-315-s1 — explicit native bind identity and the exact continuation ref survive the shared run-plan parser
 
 ## session-economics
 
