@@ -694,3 +694,68 @@ publication range.
 No pack gap was encountered. The repair-specific single-task frame and the
 outstanding publication gates are disclosed rather than presented as a fresh
 guarded pass.
+
+### 2026-09-25 — APPROVED — gpt-5.6-sol@01a0d7ef-52b0-7790-9d62-d3dd39698194
+
+This was one fresh native verifier task bound as attempt `T-315-s1-a12` and
+scoped to the corrected post-publication CI repair. It was not a new two-spawn
+qualification of the guarded card. The original qualification attack set and
+ground were historical inputs only: their re-derived hashes are respectively
+`sha256:56b5840add858d591fa508d22ed9e23289ea8c83d411645d33193ca189a68a64`
+and
+`sha256:d8f4aa21919f8d019ba85d7f548e614942b0f6733de87698158eb048fdb5e3ca`.
+The repair-base card at `989b776b5f4b6eaf8c35620659be263ded982d96`
+re-hashed to
+`sha256:dbfbea972abb045fa808554e454891e4cbd3ec1a240282dadc78e3212d7ac13d`.
+The configured verifier was gpt-5.6-sol at xhigh; provider-observed model
+identity was unavailable and is not inferred from that configuration.
+
+This review examined candidate
+`5ca0088a84bdc25294ea6724809bf5f36728695a` against repair base
+`989b776b5f4b6eaf8c35620659be263ded982d96`. The range changes only the task
+card and `tools/e2e/tests/native-codex.spec.ts`. The detached verifier manifest
+contains every path in the card fence, no extra scoped path, and the separate
+verifier allowance for `docs/tasks`; its purpose explicitly says that it is
+coordinator-prepared frozen verifier authority for a detached bench, not an
+executor lane. No product hook, project hook manifest, dependency or runtime
+source changes in this repair.
+
+The corrected helper races first stdout against both process completion and
+spawn error. The normal branch therefore proves that `yielded` arrives while
+`completed` is still false, then requires exit zero before the actual
+PostToolUse event. That callback must persist `post-held` with the late
+`late.tmp` path as `untracked-out-of-fence`. The separate missing-executable
+branch requires `ENOENT`, always executes its fixture cleanup, and asserts the
+fixture directory is absent afterwards. The spawned command uses `/bin/sh`
+and only portable `cd`, quoting, `printf`, `sleep`, sequencing and output
+redirection syntax.
+
+The focused body passed 1/1 at the candidate, and the complete native bridge
+spec passed 17/17 at the same ref. A temporary negative drill then restored
+the old stdout-only wait. The focused body failed 0/1 with
+`spawn /definitely-missing-native-test-shell ENOENT` and left both
+`t315-yielded-late-write-iXvmmN` and
+`t315-yielded-spawn-error-rZDBdq`, proving that the new error/completion race
+and cleanup assertion are load-bearing. After the exact mutant was removed,
+the focused body passed 1/1, the two deliberate residue directories were
+removed, and no `t315-yielded-*` fixture remained. The restored spec hash was
+`sha256:938d248bf2f66c51ffe45338d692700ddf4875b2224c0e95e1df58369ea737d9`,
+byte-identical at correction commit
+`626656b67a753ebbb8fc58fd543796c49146b607` and the reviewed candidate.
+
+| Repair criterion | Evidence and verdict |
+|---|---|
+| Portable shell route | **Met.** Direct diff inspection shows the executable changed from `/bin/zsh` to `/bin/sh`; the command language is portable across the stated Linux and macOS target family, and the focused `/bin/sh` run passed 1/1. |
+| Preserve early output, completion, late write and cumulative hold assertions | **Met.** The focused body passed 1/1 and the full native spec passed 17/17 at the candidate. The body observes early output before completion, requires exit zero, sends PostToolUse only afterwards and requires the late out-of-fence hold. |
+| Retain error propagation and cleanup; keep scope to the spec/card | **Met.** The missing-executable control rejects with `ENOENT` and its `finally` cleanup leaves no fixture. Reverting to the stdout-only wait made the same body red and left both fixtures. The exact range contains only the admitted spec and task card. |
+
+The security and scope sweep found no credential, dependency, external
+endpoint, dynamic product execution or runtime behavior change. The preserved
+concurrent callback finding belongs to the native monitor and was neither
+repaired nor attributed to this test-only diff. Publication app, parser and
+scoped end-to-end gates remain coordinator-owned as the recheck brief states;
+this approval does not claim them or a fresh full-card requalification.
+
+Corrections: **0**. Committed correction bodies: **0**. Mutant blocks: **0**.
+The temporary drill changed no committed bytes. No pack gap or dispatch fault
+was encountered.
