@@ -547,7 +547,9 @@ later live control is independently hashed post-candidate evidence and cannot
 retroactively become sealed ground, but it directly decides the card's live
 proof criterion.
 
-## 2026-09-25 CI shell portability repair
+## Repair ledger
+
+2026-09-25 CI shell portability repair
 
 ### Repair criteria echo
 
