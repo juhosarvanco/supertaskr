@@ -681,6 +681,16 @@ message: spawn /definitely-missing-native-test-shell ENOENT
   });
 ```
 
+The required correction body is commit
+`626656b67a753ebbb8fc58fd543796c49146b607`. At that ref the focused body
+passed 1/1, the complete native bridge spec passed 17/17, typecheck passed,
+the capability/index and interview-skill currency checks passed, token lint
+was clean and the whole-tree docs census reported zero findings. No yielded
+fixture remained and port 25315 had no listener. These readings grade the
+committed handoff body; they do not change the REJECTED verdict on candidate
+`3f3b76679b90590022b6b831a7fb22f0528a8dfd` or satisfy the outstanding
+publication range.
+
 No pack gap was encountered. The repair-specific single-task frame and the
 outstanding publication gates are disclosed rather than presented as a fresh
 guarded pass.
