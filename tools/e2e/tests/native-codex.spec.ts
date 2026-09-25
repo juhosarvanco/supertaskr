@@ -154,6 +154,22 @@ function commandFor(b: NativeBench, body = "true"): string {
   return `cd -- ${nativeShellQuote(b.lane)} && ${body}`;
 }
 
+function firstOutputBeforeCompletion(
+  child: ReturnType<typeof spawn>,
+  completion: Promise<number | null>,
+): Promise<string> {
+  if (!child.stdout) throw new Error("yielded process stdout is not piped");
+  return Promise.race([
+    new Promise<string>((resolve, reject) => {
+      child.once("error", reject);
+      child.stdout?.once("data", (chunk) => resolve(String(chunk)));
+    }),
+    completion.then((code) => {
+      throw new Error(`yielded process exited before stdout (code ${String(code)})`);
+    }),
+  ]);
+}
+
 function startNative(
   b: NativeBench,
   over: { agentId?: string; sessionId?: string; taskName?: string; proveMismatch?: boolean } = {},
@@ -566,7 +582,7 @@ test("a yielded Bash operation is checked at actual PostToolUse and its late vio
       ).disposition,
     ).toBe("pre-admitted");
 
-    const child = spawn("/bin/zsh", ["-c", command], { stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn("/bin/sh", ["-c", command], { stdio: ["ignore", "pipe", "pipe"] });
     let completed = false;
     const completion = new Promise<number | null>((resolve, reject) => {
       child.once("error", reject);
@@ -575,9 +591,7 @@ test("a yielded Bash operation is checked at actual PostToolUse and its late vio
         resolve(code);
       });
     });
-    const yielded = await new Promise<string>((resolve) => {
-      child.stdout.once("data", (chunk) => resolve(String(chunk)));
-    });
+    const yielded = await firstOutputBeforeCompletion(child, completion);
     expect(yielded).toContain("yielded");
     expect(completed, "early output was incorrectly treated as process completion").toBe(false);
     expect(await completion).toBe(0);
@@ -595,6 +609,21 @@ test("a yielded Bash operation is checked at actual PostToolUse and its late vio
     expect(
       activeNativeHolds(readNativeRecord(b.root, rec.attempt)).flatMap((hold: any) => hold.findings ?? []),
     ).toContainEqual(expect.objectContaining({ code: "untracked-out-of-fence", path: "late.tmp" }));
+
+    const failed = bench("yielded-spawn-error");
+    try {
+      const missing = spawn("/definitely-missing-native-test-shell", ["-c", "true"], {
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+      const failedCompletion = new Promise<number | null>((resolve, reject) => {
+        missing.once("error", reject);
+        missing.once("close", resolve);
+      });
+      await expect(firstOutputBeforeCompletion(missing, failedCompletion)).rejects.toThrow("ENOENT");
+    } finally {
+      failed.cleanup();
+    }
+    expect(existsSync(failed.dir), "spawn-error fixture cleanup did not run").toBe(false);
   } finally {
     b.cleanup();
   }

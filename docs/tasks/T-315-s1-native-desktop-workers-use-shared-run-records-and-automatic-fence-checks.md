@@ -546,3 +546,216 @@ is recorded as a ground-evidence gap rather than silently backfilled. The
 later live control is independently hashed post-candidate evidence and cannot
 retroactively become sealed ground, but it directly decides the card's live
 proof criterion.
+
+## 2026-09-25 CI shell portability repair
+
+### Repair criteria echo
+
+- [x] Replace the yielded-operation body's hardcoded zsh executable with a
+  shell route available on the Linux CI runner and macOS development hosts;
+  the command body must remain free of shell-specific syntax.
+- [x] Preserve proof that early stdout arrives before process completion, the
+  process exits successfully, the late write occurs, and the actual
+  PostToolUse scan persists the out-of-fence hold.
+- [x] Retain process error propagation and fixture cleanup, change no product
+  hook or manifest, run the focused yielded body and full native bridge spec,
+  and commit the repair evidence on this card.
+
+CI run `36108412263`, shard 3, failed only this body at line 550 because
+`/bin/zsh` does not exist on the Linux runner (`spawn ENOENT`); the other 279
+shard bodies and every other job were green. The body now launches `/bin/sh`,
+which is available on both target host families. Its command uses only the
+project-required explicit `cd`, `printf`, `sleep`, ordinary output redirection
+and `&&`; it has no zsh-specific expansion, option or control syntax. The
+existing child `error` rejection, `close`-based completion, explicit zero-exit
+assertion and fixture `finally` cleanup remain unchanged.
+
+The isolated yielded-operation body passed 1/1 and the full native bridge spec
+passed 17/17 with the portable route. The assertions still observe stdout
+while `completed` is false, await exit 0, then deliver the actual PostToolUse
+callback and require both `post-held` and the `late.tmp`
+`untracked-out-of-fence` finding. No test was skipped or weakened, and no
+product hook, manifest or dependency file changed.
+
+### Separate native monitor finding
+
+During context reads, four read-only shell operations were submitted
+concurrently. Their callbacks raced: one completion left a persistent hold and
+three completion callbacks could not find exact persisted pre-command
+records. The coordinator preserved the independently reconciled incident in
+`ci-portability-repair/CONCURRENT-CALLBACK-FINDING.md`. All subsequent repair
+operations were serialized. This patch does not change the native monitor.
+
+### 2026-09-25 — REJECTED — gpt-6@01a0d7db-a871-7862-852f-be88efec885f
+
+This was one fresh native verifier task scoped to the post-publication CI
+repair, not a fresh two-spawn requalification of the guarded card. The repair
+brief disclosed the Linux CI failure and the exact repair range. The original
+qualification's separately saved attack set and ground were supplied only as
+historical sealed inputs; they are not relabelled as repair-specific phase one.
+This review examined candidate
+`3f3b76679b90590022b6b831a7fb22f0528a8dfd` against repair base
+`989b776b5f4b6eaf8c35620659be263ded982d96`.
+
+The original sealed attack set is
+`sha256:56b5840add858d591fa508d22ed9e23289ea8c83d411645d33193ca189a68a64`,
+the original sealed ground is
+`sha256:d8f4aa21919f8d019ba85d7f548e614942b0f6733de87698158eb048fdb5e3ca`,
+and the repair-base card is
+`sha256:dbfbea972abb045fa808554e454891e4cbd3ec1a240282dadc78e3212d7ac13d`.
+The two sealed files were re-hashed and the repair-base card was read before
+the repair diff was opened; the card's displayed digest was derived later in
+this review.
+
+The shell replacement itself is portable in the stated target family. The
+focused body passed 1/1 and the complete native bridge spec passed 17/17 at
+the candidate. The same command language (`cd --`, `printf`, `sleep`, output
+redirection and `&&`) also exited 0 under `/bin/dash`, independently of the
+body's `/bin/sh` run. The body still observes early stdout while `completed`
+is false, waits for exit 0, delivers PostToolUse only afterwards, and requires
+the persistent `late.tmp` out-of-fence finding. A targeted executable-path
+mutant produced the intended `spawn ... ENOENT` red, and the candidate spec
+was restored to
+`sha256:dd7e9ca559450269646604babb77354e1a65ecf5ea8b496e73bc65ba79437377`.
+
+The candidate does not, however, retain cleanup on the error path it claims.
+When the changed spawn route was replaced temporarily with the guaranteed
+missing `/definitely-missing-native-test-shell`, the child `error` rejected
+the `completion` promise while the test was still awaiting a different
+stdout-only promise. Playwright reported `spawn ... ENOENT`, but the outer
+`finally` never ran and left
+`t315-yielded-late-write-Mgcme6` under the host temporary directory. Expected:
+the currently awaited operation rejects on the child error and the fixture is
+removed. Actual: the rejection is observed out of band and the fixture
+survives. The residue was recorded, then removed by its exact path after the
+evidence was captured.
+
+A temporary correction made first output race process completion/error and
+added a missing-executable cleanup arm to the existing yielded body. The body
+then passed 1/1 and left no yielded fixture. Replacing only that race with the
+candidate's stdout-only wait made the same body red with `ENOENT` and left
+both its normal and spawn-error fixtures; restoration returned it to 1/1 with
+no residue. This is a failure of the repair's explicit process-error and
+fixture-cleanup criterion, even though the normal `/bin/sh` path is green.
+
+| Repair criterion | Evidence and verdict |
+|---|---|
+| Portable shell route | **Met.** The only executable change is `/bin/zsh` to `/bin/sh`; the exact command passed through `/bin/sh` in the focused run and through `/bin/dash` in the independent grammar control. |
+| Preserve early output, completion, late write and cumulative hold assertions | **Met.** Focused 1/1 and native bridge 17/17 at the candidate; direct reading confirms early output precedes `completed`, exit 0 precedes PostToolUse, and `late.tmp` must appear in the persisted hold. |
+| Retain error propagation and cleanup; keep scope to the spec/card | **Not met.** The two changed paths are admitted by the frozen card and detached verifier manifest; no product hook, manifest or dependency changed. The missing-executable drill demonstrates that the stdout-only await bypasses the body's `finally`, leaving its fixture behind. |
+
+The exact repair range derives `app`, `parser` and a scoped 13-spec end-to-end
+leg, with no unplaceable or generated-unplaceable paths. Those publication
+range gates were not run in this repair review and remain coordinator-owned
+obligations after correction; this verdict is not a full guarded
+requalification. The security sweep found no dependency, credential, external
+endpoint or product execution change. The separately recorded concurrent
+callback race was outside this repair and was neither investigated nor
+attributed to this diff. One initial verifier command also used the bench root
+instead of the package directory, creating a preserved out-of-fence Playwright
+result; the coordinator archived and reconciled that verifier error, and it is
+not counted as repair evidence.
+
+Corrections: **1**. Committed correction bodies: **1**, in the commit after
+this verdict. Mutant blocks: **1**.
+
+```mutant
+correction: settle the early-output wait on process completion or spawn error so fixture cleanup runs
+file: tools/e2e/tests/native-codex.spec.ts
+spec: tools/e2e/tests/native-codex.spec.ts
+body: a yielded Bash operation is checked at actual PostToolUse and its late violation persists a hold
+message: spawn /definitely-missing-native-test-shell ENOENT
+--- old
+  return Promise.race([
+    new Promise<string>((resolve, reject) => {
+      child.once("error", reject);
+      child.stdout?.once("data", (chunk) => resolve(String(chunk)));
+    }),
+    completion.then((code) => {
+      throw new Error(`yielded process exited before stdout (code ${String(code)})`);
+    }),
+  ]);
+--- new
+  return new Promise<string>((resolve) => {
+    child.stdout?.once("data", (chunk) => resolve(String(chunk)));
+  });
+```
+
+The required correction body is commit
+`626656b67a753ebbb8fc58fd543796c49146b607`. At that ref the focused body
+passed 1/1, the complete native bridge spec passed 17/17, typecheck passed,
+the capability/index and interview-skill currency checks passed, token lint
+was clean and the whole-tree docs census reported zero findings. No yielded
+fixture remained and port 25315 had no listener. These readings grade the
+committed handoff body; they do not change the REJECTED verdict on candidate
+`3f3b76679b90590022b6b831a7fb22f0528a8dfd` or satisfy the outstanding
+publication range.
+
+No pack gap was encountered. The repair-specific single-task frame and the
+outstanding publication gates are disclosed rather than presented as a fresh
+guarded pass.
+
+### 2026-09-25 — APPROVED — gpt-5.6-sol@01a0d7ef-52b0-7790-9d62-d3dd39698194
+
+This was one fresh native verifier task bound as attempt `T-315-s1-a12` and
+scoped to the corrected post-publication CI repair. It was not a new two-spawn
+qualification of the guarded card. The original qualification attack set and
+ground were historical inputs only: their re-derived hashes are respectively
+`sha256:56b5840add858d591fa508d22ed9e23289ea8c83d411645d33193ca189a68a64`
+and
+`sha256:d8f4aa21919f8d019ba85d7f548e614942b0f6733de87698158eb048fdb5e3ca`.
+The repair-base card at `989b776b5f4b6eaf8c35620659be263ded982d96`
+re-hashed to
+`sha256:dbfbea972abb045fa808554e454891e4cbd3ec1a240282dadc78e3212d7ac13d`.
+The configured verifier was gpt-5.6-sol at xhigh; provider-observed model
+identity was unavailable and is not inferred from that configuration.
+
+This review examined candidate
+`5ca0088a84bdc25294ea6724809bf5f36728695a` against repair base
+`989b776b5f4b6eaf8c35620659be263ded982d96`. The range changes only the task
+card and `tools/e2e/tests/native-codex.spec.ts`. The detached verifier manifest
+contains every path in the card fence, no extra scoped path, and the separate
+verifier allowance for `docs/tasks`; its purpose explicitly says that it is
+coordinator-prepared frozen verifier authority for a detached bench, not an
+executor lane. No product hook, project hook manifest, dependency or runtime
+source changes in this repair.
+
+The corrected helper races first stdout against both process completion and
+spawn error. The normal branch therefore proves that `yielded` arrives while
+`completed` is still false, then requires exit zero before the actual
+PostToolUse event. That callback must persist `post-held` with the late
+`late.tmp` path as `untracked-out-of-fence`. The separate missing-executable
+branch requires `ENOENT`, always executes its fixture cleanup, and asserts the
+fixture directory is absent afterwards. The spawned command uses `/bin/sh`
+and only portable `cd`, quoting, `printf`, `sleep`, sequencing and output
+redirection syntax.
+
+The focused body passed 1/1 at the candidate, and the complete native bridge
+spec passed 17/17 at the same ref. A temporary negative drill then restored
+the old stdout-only wait. The focused body failed 0/1 with
+`spawn /definitely-missing-native-test-shell ENOENT` and left both
+`t315-yielded-late-write-iXvmmN` and
+`t315-yielded-spawn-error-rZDBdq`, proving that the new error/completion race
+and cleanup assertion are load-bearing. After the exact mutant was removed,
+the focused body passed 1/1, the two deliberate residue directories were
+removed, and no `t315-yielded-*` fixture remained. The restored spec hash was
+`sha256:938d248bf2f66c51ffe45338d692700ddf4875b2224c0e95e1df58369ea737d9`,
+byte-identical at correction commit
+`626656b67a753ebbb8fc58fd543796c49146b607` and the reviewed candidate.
+
+| Repair criterion | Evidence and verdict |
+|---|---|
+| Portable shell route | **Met.** Direct diff inspection shows the executable changed from `/bin/zsh` to `/bin/sh`; the command language is portable across the stated Linux and macOS target family, and the focused `/bin/sh` run passed 1/1. |
+| Preserve early output, completion, late write and cumulative hold assertions | **Met.** The focused body passed 1/1 and the full native spec passed 17/17 at the candidate. The body observes early output before completion, requires exit zero, sends PostToolUse only afterwards and requires the late out-of-fence hold. |
+| Retain error propagation and cleanup; keep scope to the spec/card | **Met.** The missing-executable control rejects with `ENOENT` and its `finally` cleanup leaves no fixture. Reverting to the stdout-only wait made the same body red and left both fixtures. The exact range contains only the admitted spec and task card. |
+
+The security and scope sweep found no credential, dependency, external
+endpoint, dynamic product execution or runtime behavior change. The preserved
+concurrent callback finding belongs to the native monitor and was neither
+repaired nor attributed to this test-only diff. Publication app, parser and
+scoped end-to-end gates remain coordinator-owned as the recheck brief states;
+this approval does not claim them or a fresh full-card requalification.
+
+Corrections: **0**. Committed correction bodies: **0**. Mutant blocks: **0**.
+The temporary drill changed no committed bytes. No pack gap or dispatch fault
+was encountered.
