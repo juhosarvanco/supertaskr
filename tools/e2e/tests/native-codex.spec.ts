@@ -4,6 +4,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   realpathSync,
   rmSync,
   symlinkSync,
@@ -17,6 +18,7 @@ import { repoRoot } from "../preflight";
 import {
   NATIVE_CODEX_HARNESS,
   NATIVE_IDENTITY_PROBE,
+  NATIVE_TRANSACTION_WAIT_MS,
   NativeCodexFinding,
   activeNativeHolds,
   collectNativeWorkspace,
@@ -25,6 +27,7 @@ import {
   nativeShellQuote,
   prepareNativeRecord,
   readNativeRecord,
+  withNativeTransaction,
   writeNativeRecord,
 } from "../scripts/native-codex.mjs";
 import {
@@ -170,6 +173,245 @@ function firstOutputBeforeCompletion(
   ]);
 }
 
+const nativeModuleUrl = new URL("../scripts/native-codex.mjs", import.meta.url).href;
+const callbackProcessSource = String.raw`
+import { existsSync, writeFileSync } from "node:fs";
+const [moduleUrl, mode, root, eventText, at, ready, release, contended, waitText] = process.argv.slice(1);
+const { handleNativeEvent } = await import(moduleUrl);
+const event = JSON.parse(eventText);
+const waitMs = Number(waitText);
+let result;
+try {
+  if (mode === "holder") {
+    result = handleNativeEvent(root, event, { at, waitMs, onAcquired: () => {
+      writeFileSync(ready, "ready\n");
+      while (!existsSync(release)) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
+    }});
+  } else {
+    result = handleNativeEvent(root, event, {
+      at,
+      waitMs,
+      onContention: () => writeFileSync(contended, "contended\n"),
+    });
+  }
+} catch (error) {
+  result = { threw: true, name: error?.name, code: error?.code, message: error?.message };
+}
+process.stdout.write(JSON.stringify(result));
+`;
+const recoveryProcessSource = String.raw`
+import { existsSync, writeFileSync } from "node:fs";
+const [moduleUrl, root, eventText, at, barriersText, waitText] = process.argv.slice(1);
+const { handleNativeEvent } = await import(moduleUrl);
+const event = JSON.parse(eventText);
+const barriers = JSON.parse(barriersText);
+const pause = (ready, release) => {
+  if (ready) writeFileSync(ready, "ready\n");
+  if (release) {
+    while (!existsSync(release)) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
+  }
+};
+let result;
+try {
+  result = handleNativeEvent(root, event, {
+    at,
+    waitMs: Number(waitText),
+    onDeadOwnerObserved: () => pause(barriers.deadReady, barriers.deadRelease),
+    onRecoveryClaimed: () => pause(barriers.recoveryReady, barriers.recoveryRelease),
+    onRecoveryChecked: () => pause(barriers.checkedReady, barriers.checkedRelease),
+    onAcquired: () => pause(barriers.acquiredReady, barriers.acquiredRelease),
+  });
+} catch (error) {
+  result = { threw: true, name: error?.name, code: error?.code, message: error?.message };
+}
+process.stdout.write(JSON.stringify(result));
+`;
+const coordinatorProcessSource = String.raw`
+import { writeFileSync } from "node:fs";
+const [nativeUrl, runUrl, root, attempt, at, contended] = process.argv.slice(1);
+const { observeRun } = await import(runUrl);
+let result;
+try {
+  void nativeUrl;
+  const record = observeRun(root, {
+    attempt,
+    evidence: "RUN-DONE ok",
+    at,
+    transaction: { waitMs: 5000, onContention: () => writeFileSync(contended, "contended\n") },
+  }).record;
+  result = { state: record.state, receipts: record.native.receipts, holds: record.native.holds };
+} catch (error) {
+  result = { threw: true, name: error?.name, code: error?.code, message: error?.message };
+}
+process.stdout.write(JSON.stringify(result));
+`;
+
+function completedChild(child: ReturnType<typeof spawn>): Promise<Record<string, any>> {
+  return new Promise((resolve, reject) => {
+    let stdout = "";
+    let stderr = "";
+    child.stdout?.on("data", (chunk) => {
+      stdout += String(chunk);
+    });
+    child.stderr?.on("data", (chunk) => {
+      stderr += String(chunk);
+    });
+    child.once("error", reject);
+    child.once("close", (code) => {
+      if (code !== 0) {
+        reject(new Error(`callback child exited ${String(code)}: ${stderr}`));
+        return;
+      }
+      try {
+        resolve(JSON.parse(stdout));
+      } catch (error) {
+        reject(new Error(`callback child returned unreadable JSON: ${stdout}\n${stderr}\n${String(error)}`));
+      }
+    });
+  });
+}
+
+async function waitForPath(file: string): Promise<void> {
+  const deadline = Date.now() + 5_000;
+  while (!existsSync(file)) {
+    if (Date.now() >= deadline) throw new Error(`timed out waiting for callback barrier ${file}`);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+}
+
+async function waitForPathOrChild(
+  file: string,
+  childDone: Promise<Record<string, any>>,
+): Promise<{ barrier: true } | { barrier: false; result: Record<string, any> }> {
+  let childResult: Record<string, any> | undefined;
+  let childError: unknown;
+  let childSettled = false;
+  void childDone.then(
+    (result) => {
+      childResult = result;
+      childSettled = true;
+    },
+    (error) => {
+      childError = error;
+      childSettled = true;
+    },
+  );
+  const deadline = Date.now() + 5_000;
+  while (!existsSync(file)) {
+    if (childSettled) {
+      if (childError !== undefined) throw childError;
+      return { barrier: false, result: childResult as Record<string, any> };
+    }
+    if (Date.now() >= deadline) throw new Error(`timed out waiting for callback barrier ${file}`);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  return { barrier: true };
+}
+
+function callbackChild(
+  mode: "holder" | "contender",
+  root: string,
+  nativeEvent: Record<string, unknown>,
+  at: string,
+  ready: string,
+  release: string,
+  contended: string,
+  waitMs = 5_000,
+): ReturnType<typeof spawn> {
+  return spawn(
+    process.execPath,
+    [
+      "--input-type=module",
+      "-e",
+      callbackProcessSource,
+      nativeModuleUrl,
+      mode,
+      root,
+      JSON.stringify(nativeEvent),
+      at,
+      ready,
+      release,
+      contended,
+      String(waitMs),
+    ],
+    { stdio: ["ignore", "pipe", "pipe"] },
+  );
+}
+
+function recoveryChild(
+  root: string,
+  nativeEvent: Record<string, unknown>,
+  at: string,
+  barriers: Record<string, string>,
+  waitMs = 5_000,
+): ReturnType<typeof spawn> {
+  return spawn(
+    process.execPath,
+    [
+      "--input-type=module",
+      "-e",
+      recoveryProcessSource,
+      nativeModuleUrl,
+      root,
+      JSON.stringify(nativeEvent),
+      at,
+      JSON.stringify(barriers),
+      String(waitMs),
+    ],
+    { stdio: ["ignore", "pipe", "pipe"] },
+  );
+}
+
+function coordinatorChild(root: string, attempt: string, at: string, contended: string): ReturnType<typeof spawn> {
+  return spawn(
+    process.execPath,
+    [
+      "--input-type=module",
+      "-e",
+      coordinatorProcessSource,
+      nativeModuleUrl,
+      new URL("../scripts/run-record.mjs", import.meta.url).href,
+      root,
+      attempt,
+      at,
+      contended,
+    ],
+    { stdio: ["ignore", "pipe", "pipe"] },
+  );
+}
+
+async function concurrentCallbacks(
+  b: NativeBench,
+  stem: string,
+  first: Record<string, unknown>,
+  second: Record<string, unknown>,
+): Promise<[Record<string, any>, Record<string, any>]> {
+  const ready = path.join(b.dir, `${stem}-ready`);
+  const release = path.join(b.dir, `${stem}-release`);
+  const contended = path.join(b.dir, `${stem}-contended`);
+  const holder = callbackChild("holder", b.root, first, AT, ready, release, contended);
+  const holderDone = completedChild(holder);
+  const holderState = await waitForPathOrChild(ready, holderDone);
+  if (!holderState.barrier) {
+    throw new Error(`callback handler completed before acquiring its transaction: ${JSON.stringify(holderState.result)}`);
+  }
+  const contender = callbackChild(
+    "contender",
+    b.root,
+    second,
+    "2026-09-24T12:00:00.001Z",
+    ready,
+    release,
+    contended,
+  );
+  const contenderDone = completedChild(contender);
+  await waitForPath(contended);
+  writeFileSync(release, "release\n");
+  const firstResult = await holderDone;
+  const secondResult = await contenderDone;
+  return [firstResult, secondResult];
+}
+
 function startNative(
   b: NativeBench,
   over: { agentId?: string; sessionId?: string; taskName?: string; proveMismatch?: boolean } = {},
@@ -241,6 +483,7 @@ test("the project hook is portable and synchronously covers the native identity,
   expect(Object.keys(config.hooks).sort()).toEqual(
     ["Interrupt", "PostToolUse", "PreToolUse", "SubagentStart", "SubagentStop", "UserPromptSubmit"].sort(),
   );
+  expect(NATIVE_TRANSACTION_WAIT_MS).toBeLessThan(config.hooks.Interrupt[0].hooks[0].timeout * 1_000);
   for (const eventName of Object.keys(config.hooks)) {
     for (const group of config.hooks[eventName]) {
       for (const hook of group.hooks) expect(hook.async).not.toBe(true);
@@ -406,6 +649,376 @@ test("two disjoint native identities route simultaneous callbacks to their own r
   } finally {
     left.cleanup();
     right.cleanup();
+  }
+});
+
+test("separate callback processes serialize the full read-modify-write transaction and retain both completions plus a late hold", async () => {
+  // KILLED BY: locking only atomic rename or publishing either callback's
+  // stale pre-transaction snapshot after the other callback completes.
+  const b = bench("callback-transaction");
+  try {
+    const bound = startNative(b);
+    const firstPre = event("PreToolUse", {
+      tool_name: "Bash",
+      tool_use_id: "parallel-a",
+      tool_input: { command: commandFor(b) },
+    });
+    const secondPre = event("PreToolUse", {
+      tool_name: "Bash",
+      tool_use_id: "parallel-b",
+      tool_input: { command: commandFor(b) },
+    });
+    const [preA, preB] = await concurrentCallbacks(b, "pre", firstPre, secondPre);
+    expect([preA.disposition, preB.disposition]).toEqual(["pre-admitted", "pre-admitted"]);
+    expect(readNativeRecord(b.root, bound.attempt).native.inflight.map((entry: any) => entry.toolUseId).sort()).toEqual([
+      "parallel-a",
+      "parallel-b",
+    ]);
+
+    writeFileSync(path.join(b.lane, "late.tmp"), "late\n");
+    const firstPost = event("PostToolUse", {
+      tool_name: "Bash",
+      tool_use_id: "parallel-a",
+      tool_input: { command: commandFor(b) },
+      tool_response: { output: "a" },
+    });
+    const secondPost = event("PostToolUse", {
+      tool_name: "Bash",
+      tool_use_id: "parallel-b",
+      tool_input: { command: commandFor(b) },
+      tool_response: { output: "b" },
+    });
+    const [postA, postB] = await concurrentCallbacks(b, "post", firstPost, secondPost);
+    expect([postA.disposition, postB.disposition]).toEqual(["post-held", "post-held"]);
+    const final = readNativeRecord(b.root, bound.attempt);
+    expect(final.native.inflight).toEqual([]);
+    expect(final.native.receipts.map((receipt: any) => receipt.pre.toolUseId).sort()).toEqual([
+      "parallel-a",
+      "parallel-b",
+    ]);
+    expect(activeNativeHolds(final)).toContainEqual(
+      expect.objectContaining({
+        code: "cumulative-check-failed",
+        findings: expect.arrayContaining([expect.objectContaining({ path: "late.tmp" })]),
+      }),
+    );
+  } finally {
+    b.cleanup();
+  }
+});
+
+test("a competing coordinator observation cannot publish a stale lifecycle record over a callback completion", async () => {
+  // KILLED BY: serializing event writers while leaving coordinator
+  // observe/reconcile outside the same transaction protocol.
+  const b = bench("callback-versus-observe");
+  try {
+    const bound = startNative(b);
+    const pre = handleNativeEvent(
+      b.root,
+      event("PreToolUse", {
+        tool_name: "Bash",
+        tool_use_id: "callback-before-observe",
+        tool_input: { command: commandFor(b) },
+      }),
+    );
+    expect(pre.disposition).toBe("pre-admitted");
+    writeFileSync(path.join(b.lane, "late.tmp"), "late\n");
+
+    const ready = path.join(b.dir, "observe-ready");
+    const release = path.join(b.dir, "observe-release");
+    const ignored = path.join(b.dir, "observe-holder-contended");
+    const callback = callbackChild(
+      "holder",
+      b.root,
+      event("PostToolUse", {
+        tool_name: "Bash",
+        tool_use_id: "callback-before-observe",
+        tool_input: { command: commandFor(b) },
+        tool_response: { output: "done" },
+      }),
+      AT,
+      ready,
+      release,
+      ignored,
+    );
+    const callbackDone = completedChild(callback);
+    const callbackState = await waitForPathOrChild(ready, callbackDone);
+    if (!callbackState.barrier) {
+      throw new Error(`callback handler completed before acquiring its transaction: ${JSON.stringify(callbackState.result)}`);
+    }
+    const coordinatorContended = path.join(b.dir, "observe-contended");
+    const coordinator = coordinatorChild(
+      b.root,
+      bound.attempt,
+      "2026-09-24T12:00:01.000Z",
+      coordinatorContended,
+    );
+    const coordinatorDone = completedChild(coordinator);
+    const coordinatorState = await waitForPathOrChild(coordinatorContended, coordinatorDone);
+    writeFileSync(release, "release\n");
+    expect((await callbackDone).disposition).toBe("post-held");
+    expect(coordinatorState.barrier, "coordinator observe completed without entering transaction contention").toBe(true);
+    const observed = coordinatorState.barrier ? await coordinatorDone : coordinatorState.result;
+    expect(observed.state).toBe("finished");
+
+    const final = readNativeRecord(b.root, bound.attempt);
+    expect(final.state).toBe("finished");
+    expect(final.native.inflight).toEqual([]);
+    expect(final.native.receipts).toContainEqual(
+      expect.objectContaining({ pre: expect.objectContaining({ toolUseId: "callback-before-observe" }) }),
+    );
+    expect(activeNativeHolds(final)).toContainEqual(
+      expect.objectContaining({
+        code: "cumulative-check-failed",
+        findings: expect.arrayContaining([expect.objectContaining({ path: "late.tmp" })]),
+      }),
+    );
+    expect(readReservation(b.root, b.lane)?.attempt).toBe(bound.attempt);
+  } finally {
+    b.cleanup();
+  }
+});
+
+test("transaction contention is bounded and durable, and exception cleanup releases ownership", async () => {
+  // KILLED BY: last-writer-wins contention evidence, time-based lock theft,
+  // clearing an unknown transaction refusal at collection, or leaking a lock
+  // when a transaction body throws.
+  const b = bench("transaction-lifecycle");
+  try {
+    const bound = startNative(b);
+    const ready = path.join(b.dir, "contention-ready");
+    const release = path.join(b.dir, "contention-release");
+    const holderContended = path.join(b.dir, "holder-contended");
+    const holder = callbackChild(
+      "holder",
+      b.root,
+      event("SubagentStop"),
+      AT,
+      ready,
+      release,
+      holderContended,
+      5_000,
+    );
+    const holderDone = completedChild(holder);
+    await waitForPath(ready);
+
+    const contenderOnePath = path.join(b.dir, "contender-one");
+    const contenderTwoPath = path.join(b.dir, "contender-two");
+    const refusedEvent = event("PreToolUse", {
+      tool_name: "Bash",
+      tool_use_id: "refused-by-lock",
+      tool_input: { command: commandFor(b) },
+    });
+    const contenderOne = callbackChild(
+      "contender",
+      b.root,
+      refusedEvent,
+      "2026-09-24T12:00:00.010Z",
+      ready,
+      release,
+      contenderOnePath,
+      80,
+    );
+    const contenderOneDone = completedChild(contenderOne);
+    await waitForPath(contenderOnePath);
+    const contenderTwo = callbackChild(
+      "contender",
+      b.root,
+      refusedEvent,
+      "2026-09-24T12:00:00.020Z",
+      ready,
+      release,
+      contenderTwoPath,
+      80,
+    );
+    const contenderTwoDone = completedChild(contenderTwo);
+    await waitForPath(contenderTwoPath);
+    const refusalOne = await contenderOneDone;
+    const refusalTwo = await contenderTwoDone;
+    const refusalDir = path.join(
+      b.root,
+      ".supertaskr",
+      "runs",
+      "reservations",
+      "native-transaction-refusals",
+    );
+    const refusalNamesBeforeRelease = readdirSync(refusalDir).filter((name) => name.endsWith(".json"));
+    const recordFile = path.join(b.root, ".supertaskr", "runs", WORK, `${bound.attempt}.json`);
+    const readableRecord = readFileSync(recordFile, "utf8");
+    writeFileSync(recordFile, "{ interrupted absorption\n");
+    writeFileSync(release, "release\n");
+    const holderResult = await holderDone;
+    expect([refusalOne.code, refusalTwo.code]).toEqual(["NATIVE_TRANSACTION_BUSY", "NATIVE_TRANSACTION_BUSY"]);
+    expect(holderResult.threw).toBe(true);
+    expect(refusalNamesBeforeRelease).toHaveLength(2);
+    expect(readdirSync(refusalDir).filter((name) => name.endsWith(".json")).sort()).toEqual(
+      refusalNamesBeforeRelease.sort(),
+    );
+
+    writeFileSync(recordFile, readableRecord);
+    expect(
+      handleNativeEvent(b.root, {
+        ...refusedEvent,
+        tool_use_id: "after-contention",
+      }).disposition,
+    ).toBe("held-before-tool");
+    expect(readdirSync(refusalDir).filter((name) => name.endsWith(".json"))).toEqual([]);
+    expect(activeNativeHolds(readNativeRecord(b.root, bound.attempt)).filter((hold: any) => hold.code === "native-transaction-refusal")).toHaveLength(2);
+
+    const terminal = observeRun(b.root, {
+      attempt: bound.attempt,
+      evidence: "RUN-DONE ok",
+      at: "2026-09-24T12:00:01.000Z",
+      io: io(),
+    }).record;
+    expect(terminal.state).toBe("finished");
+    expect(readReservation(b.root, b.lane)?.attempt).toBe(bound.attempt);
+    expect(() =>
+      collectRun(b.root, {
+        attempt: bound.attempt,
+        ref: b.base,
+        at: "2026-09-24T12:00:02.000Z",
+        io: io(),
+      }),
+    ).toThrow(NativeCodexFinding);
+
+    expect(
+      withNativeTransaction(b.root, { operation: "fixture-nested-outer", waitMs: 100 }, () =>
+        withNativeTransaction(b.root, { operation: "fixture-nested-inner", waitMs: 100 }, () => "nested"),
+      ),
+    ).toBe("nested");
+    expect(() =>
+      withNativeTransaction(b.root, { operation: "fixture-throws", waitMs: 100 }, () => {
+        throw new Error("fixture transaction failure");
+      }),
+    ).toThrow("fixture transaction failure");
+    expect(withNativeTransaction(b.root, { operation: "fixture-after-throw", waitMs: 100 }, () => "released")).toBe(
+      "released",
+    );
+
+  } finally {
+    b.cleanup();
+  }
+});
+
+test("two dead-owner reclaimers cannot remove a successor lock after observing stale ownership", async () => {
+  // KILLED BY: revalidating the dead PID without excluding a successor,
+  // or renaming/removing the lock pathname from a stale owner snapshot.
+  const b = bench("transaction-recovery-race");
+  const emergencyReleases: string[] = [];
+  const children: ReturnType<typeof spawn>[] = [];
+  try {
+    const bound = startNative(b);
+    const dead = spawn(process.execPath, ["-e", ""]);
+    const deadPid = dead.pid;
+    await new Promise<void>((resolve, reject) => {
+      dead.once("error", reject);
+      dead.once("close", () => resolve());
+    });
+    if (deadPid === undefined) throw new Error("dead-owner fixture had no pid");
+
+    const reservationDir = path.join(b.root, ".supertaskr", "runs", "reservations");
+    const lock = path.join(reservationDir, ".native-transaction.lock");
+    const recovery = `${lock}.recovery`;
+    mkdirSync(lock);
+    writeFileSync(
+      path.join(lock, "owner.json"),
+      `${JSON.stringify({
+        version: 1,
+        pid: deadPid,
+        token: "dead-owner-token",
+        operation: "dead-owner-fixture",
+        acquiredAt: AT,
+      })}\n`,
+    );
+    const abandonedTemp = path.join(
+      b.root,
+      ".supertaskr",
+      "runs",
+      WORK,
+      `${bound.attempt}.json.${deadPid}.1.1.tmp`,
+    );
+    writeFileSync(abandonedTemp, "incomplete\n");
+
+    const staleObserved = path.join(b.dir, "stale-observed");
+    const releaseStale = path.join(b.dir, "release-stale");
+    const staleRecoveryClaimed = path.join(b.dir, "stale-recovery-claimed");
+    const staleRecoveryChecked = path.join(b.dir, "stale-recovery-checked");
+    const staleAcquired = path.join(b.dir, "stale-acquired");
+    const releaseStaleOwner = path.join(b.dir, "release-stale-owner");
+    emergencyReleases.push(releaseStale, releaseStaleOwner);
+    const stale = recoveryChild(
+      b.root,
+      event("PreToolUse", {
+        tool_name: "Bash",
+        tool_use_id: "stale-reclaimer",
+        tool_input: { command: commandFor(b) },
+      }),
+      "2026-09-24T12:00:05.000Z",
+      {
+        deadReady: staleObserved,
+        deadRelease: releaseStale,
+        recoveryReady: staleRecoveryClaimed,
+        checkedReady: staleRecoveryChecked,
+        acquiredReady: staleAcquired,
+        acquiredRelease: releaseStaleOwner,
+      },
+    );
+    children.push(stale);
+    const staleDone = completedChild(stale);
+    await waitForPath(staleObserved);
+
+    const successorRecoveryClaimed = path.join(b.dir, "successor-recovery-claimed");
+    const successorAcquired = path.join(b.dir, "successor-acquired");
+    const releaseSuccessor = path.join(b.dir, "release-successor");
+    emergencyReleases.push(releaseSuccessor);
+    const successor = recoveryChild(
+      b.root,
+      event("PreToolUse", {
+        tool_name: "Bash",
+        tool_use_id: "successor-reclaimer",
+        tool_input: { command: commandFor(b) },
+      }),
+      "2026-09-24T12:00:05.001Z",
+      {
+        recoveryReady: successorRecoveryClaimed,
+        acquiredReady: successorAcquired,
+        acquiredRelease: releaseSuccessor,
+      },
+    );
+    children.push(successor);
+    const successorDone = completedChild(successor);
+    await waitForPath(successorRecoveryClaimed);
+    await waitForPath(successorAcquired);
+    expect(existsSync(abandonedTemp)).toBe(false);
+
+    writeFileSync(releaseStale, "release\n");
+    await waitForPath(staleRecoveryClaimed);
+    await waitForPath(staleRecoveryChecked);
+    const successorOwner = JSON.parse(readFileSync(path.join(lock, "owner.json"), "utf8"));
+    expect(successorOwner.pid).toBe(successor.pid);
+    expect(existsSync(staleAcquired), "stale reclaimer acquired while the successor was live").toBe(false);
+    expect(existsSync(recovery), "stale recovery gate remained after reconciliation").toBe(false);
+
+    writeFileSync(releaseSuccessor, "release\n");
+    expect((await successorDone).disposition).toBe("pre-admitted");
+    await waitForPath(staleAcquired);
+    writeFileSync(releaseStaleOwner, "release\n");
+    expect((await staleDone).disposition).toBe("pre-admitted");
+
+    const final = readNativeRecord(b.root, bound.attempt);
+    expect(final.native.inflight.map((entry: any) => entry.toolUseId).sort()).toEqual([
+      "stale-reclaimer",
+      "successor-reclaimer",
+    ]);
+    expect(existsSync(lock)).toBe(false);
+    expect(existsSync(recovery)).toBe(false);
+  } finally {
+    for (const release of emergencyReleases) writeFileSync(release, "emergency release\n");
+    for (const child of children) {
+      if (child.exitCode === null) child.kill("SIGTERM");
+    }
+    b.cleanup();
   }
 });
 
@@ -716,8 +1329,9 @@ test("checker failure, missing completion and unreadable hold authority remain r
       WORK,
       `${b.attempt}.json.native-hold`,
     );
-    expect(existsSync(emergency), "the unreadable authority refusal was not made durable").toBe(true);
+    expect(existsSync(emergency), "read-only inspection wrote a sidecar").toBe(false);
     expect(() => handleNativeEvent(missing.root, event("PreToolUse"))).toThrow(NativeCodexFinding);
+    expect(existsSync(emergency), "the unreadable authority refusal was not made durable").toBe(true);
 
     corrupted.native.holds = [];
     writeFileSync(
@@ -726,7 +1340,7 @@ test("checker failure, missing completion and unreadable hold authority remain r
     );
     const recovered = readNativeRecord(missing.root, b.attempt);
     expect(activeNativeHolds(recovered).map((hold: any) => hold.code)).toContain("unreadable-authority");
-    expect(existsSync(emergency), "the sidecar was not absorbed into the attempt record").toBe(false);
+    expect(existsSync(emergency), "read-only inspection consumed the fail-closed sidecar").toBe(true);
     expect(
       handleNativeEvent(
         missing.root,
@@ -737,6 +1351,10 @@ test("checker failure, missing completion and unreadable hold authority remain r
         }),
       ).disposition,
     ).toBe("held-before-tool");
+    expect(existsSync(emergency), "the locked writer did not absorb the sidecar").toBe(false);
+    expect(activeNativeHolds(readNativeRecord(missing.root, b.attempt)).map((hold: any) => hold.code)).toContain(
+      "unreadable-authority",
+    );
   } finally {
     checker.cleanup();
     missing.cleanup();

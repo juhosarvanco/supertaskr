@@ -109,10 +109,12 @@ import {
 } from "./dispatch-brief.mjs";
 import {
   NativeCodexFinding,
+  atomicJson,
   bindNativeIdentity,
   nativeFinalGate,
   prepareNativeRecord,
   readNativeAssignment,
+  withNativeTransaction,
 } from "./native-codex.mjs";
 
 /** The record format this reader knows. A document declaring another is refused, never guessed at. */
@@ -661,8 +663,7 @@ export function permissionBoundary(cwd) {
 export function writeRecord(root, rec) {
   armRuntimeDir(root);
   const file = recordPath(root, rec.attempt);
-  mkdirSync(path.dirname(file), { recursive: true });
-  writeFileSync(file, `${JSON.stringify(rec, null, 2)}\n`, "utf8");
+  atomicJson(file, rec);
   return file;
 }
 
@@ -923,6 +924,7 @@ function transition(rec, at, op, to, why) {
  * @returns {{ record: RunRecord, file: string, reservation: ?Reservation }}
  */
 export function startRun(root, opts) {
+  return withNativeTransaction(root, { operation: "run-start", ...(opts.at === undefined ? {} : { at: opts.at }) }, () => {
   const io = opts.io ?? defaultRunIo();
   const at = opts.at ?? io.now();
   const a = opts.assignment;
@@ -1027,6 +1029,7 @@ export function startRun(root, opts) {
     if (writer) releaseReservation(root, { resource: a.resource, attempt });
     throw err;
   }
+  });
 }
 
 /* ────────────────────────────────────────────────────────────────────
@@ -1047,6 +1050,7 @@ export function startRun(root, opts) {
  * @returns {RunRecord}
  */
 export function bindRun(root, opts) {
+  return withNativeTransaction(root, { operation: "run-bind", ...(opts.at === undefined ? {} : { at: opts.at }) }, () => {
   const io = opts.io ?? defaultRunIo();
   const at = opts.at ?? io.now();
   const rec = readRecord(root, opts.attempt);
@@ -1117,6 +1121,7 @@ export function bindRun(root, opts) {
   );
   writeRecord(root, rec);
   return rec;
+  });
 }
 
 /* ────────────────────────────────────────────────────────────────────
@@ -1250,10 +1255,17 @@ export function launchReceipt(rec) {
  * a started attempt stays `started` rather than being promoted.
  *
  * @param {string} root
- * @param {{ attempt: string, evidence?: string, at?: string, io?: RunIo }} opts
+ * @param {{ attempt: string, evidence?: string, at?: string, io?: RunIo, transaction?: { waitMs?: number, onAcquired?: () => void, onContention?: () => void } }} opts
  * @returns {{ record: RunRecord, signals: string[] }}
  */
 export function observeRun(root, opts) {
+  return withNativeTransaction(root, {
+    operation: "run-observe",
+    ...(opts.at === undefined ? {} : { at: opts.at }),
+    ...(opts.transaction?.waitMs === undefined ? {} : { waitMs: opts.transaction.waitMs }),
+    ...(opts.transaction?.onAcquired === undefined ? {} : { onAcquired: opts.transaction.onAcquired }),
+    ...(opts.transaction?.onContention === undefined ? {} : { onContention: opts.transaction.onContention }),
+  }, () => {
   const io = opts.io ?? defaultRunIo();
   const at = opts.at ?? io.now();
   const rec = readRecord(root, opts.attempt);
@@ -1455,6 +1467,7 @@ export function observeRun(root, opts) {
   }
   writeRecord(root, rec);
   return { record: rec, signals };
+  });
 }
 
 /**
@@ -1544,6 +1557,7 @@ export function answerBlock(attempt, questionId, at, text) {
  * @returns {{ record: RunRecord, wrote: boolean, delivered: boolean }}
  */
 export function sendAnswer(root, opts) {
+  return withNativeTransaction(root, { operation: "run-send", ...(opts.at === undefined ? {} : { at: opts.at }) }, () => {
   const io = opts.io ?? defaultRunIo();
   const at = opts.at ?? io.now();
   const rec = readRecord(root, opts.attempt);
@@ -1626,6 +1640,7 @@ export function sendAnswer(root, opts) {
   );
   writeRecord(root, rec);
   return { record: rec, wrote, delivered };
+  });
 }
 
 /**
@@ -1726,6 +1741,7 @@ export async function waitRun(root, opts, clock) {
  * @returns {{ record: RunRecord, collected: { state: string, usage: string, refs: string[], report: string, evidence: Evidence[] } }}
  */
 export function collectRun(root, opts) {
+  return withNativeTransaction(root, { operation: "run-collect", ...(opts.at === undefined ? {} : { at: opts.at }) }, () => {
   const io = opts.io ?? defaultRunIo();
   const at = opts.at ?? io.now();
   const rec = readRecord(root, opts.attempt);
@@ -1799,6 +1815,7 @@ export function collectRun(root, opts) {
   });
   writeRecord(root, rec);
   return { record: rec, collected };
+  });
 }
 
 /* ────────────────────────────────────────────────────────────────────
@@ -1958,6 +1975,7 @@ export function reconcile(rec, io, evidence) {
  * @returns {{ record: RunRecord, reconciliation: Reconciliation, redelivered: string[], replaced: ?string }}
  */
 export function continueRun(root, opts) {
+  return withNativeTransaction(root, { operation: "run-continue", ...(opts.at === undefined ? {} : { at: opts.at }) }, () => {
   const io = opts.io ?? defaultRunIo();
   const at = opts.at ?? io.now();
   const rec = readRecord(root, opts.attempt);
@@ -2114,6 +2132,7 @@ export function continueRun(root, opts) {
   );
   writeRecord(root, rec);
   return { record: rec, reconciliation, redelivered, replaced: null };
+  });
 }
 
 /* ────────────────────────────────────────────────────────────────────
@@ -2140,6 +2159,7 @@ export function continueRun(root, opts) {
  * @returns {{ record: RunRecord, reconciliation: Reconciliation, refusal: import("./dispatch-brief.mjs").Refusal, retry: RunRecord["retry"] }}
  */
 export function stopRun(root, opts) {
+  return withNativeTransaction(root, { operation: "run-stop", ...(opts.at === undefined ? {} : { at: opts.at }) }, () => {
   const io = opts.io ?? defaultRunIo();
   const at = opts.at ?? io.now();
   const rec = readRecord(root, opts.attempt);
@@ -2232,6 +2252,7 @@ export function stopRun(root, opts) {
   if (final.eligible) releaseIfOurs(root, rec, at);
   writeRecord(root, rec);
   return { record: rec, reconciliation, refusal, retry: rec.retry };
+  });
 }
 
 /* ────────────────────────────────────────────────────────────────────

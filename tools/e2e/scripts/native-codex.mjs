@@ -27,6 +27,7 @@ import {
   readlinkSync,
   realpathSync,
   renameSync,
+  rmSync,
   statSync,
   unlinkSync,
   writeFileSync,
@@ -37,6 +38,11 @@ export const NATIVE_CODEX_VERSION = 1;
 export const NATIVE_CODEX_HARNESS = "codex-desktop-native";
 export const NATIVE_IDENTITY_PROBE = "/usr/bin/printenv CODEX_THREAD_ID";
 export const NATIVE_SUPPORTED_TOOLS = Object.freeze(["Bash", "apply_patch"]);
+export const NATIVE_TRANSACTION_WAIT_MS = 1_500;
+
+const NATIVE_TRANSACTION_POLL_MS = 10;
+const nativeTransactions = new Map();
+let nativeTransactionSerial = 0;
 
 export class NativeCodexFinding extends Error {
   /** @param {string} code @param {string} message */
@@ -527,17 +533,390 @@ function nativeEmergencyHoldPath(root, attempt) {
 }
 
 /** @param {string} file @param {unknown} value */
-function atomicJson(file, value) {
+export function atomicJson(file, value) {
   mkdirSync(path.dirname(file), { recursive: true });
-  const temp = `${file}.${process.pid}.${Date.now()}.tmp`;
+  const temp = `${file}.${process.pid}.${Date.now()}.${nativeTransactionSerial++}.tmp`;
   const fd = openSync(temp, "wx", 0o600);
+  let closed = false;
   try {
     writeFileSync(fd, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+    fsyncSync(fd);
+    closeSync(fd);
+    closed = true;
+    renameSync(temp, file);
+  } finally {
+    if (!closed) closeSync(fd);
+    if (existsSync(temp)) unlinkSync(temp);
+  }
+}
+
+/** @param {string} root */
+function nativeTransactionDir(root) {
+  return path.join(root, ".supertaskr", "runs", "reservations");
+}
+
+/** @param {string} root */
+function nativeTransactionLockPath(root) {
+  return path.join(nativeTransactionDir(root), ".native-transaction.lock");
+}
+
+/** @param {string} root */
+function nativeTransactionRecoveryPath(root) {
+  return `${nativeTransactionLockPath(root)}.recovery`;
+}
+
+/** @param {string} root */
+function nativeTransactionRefusalDir(root) {
+  return path.join(nativeTransactionDir(root), "native-transaction-refusals");
+}
+
+/** @param {number} pid */
+function nativeTransactionOwnerAlive(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return /** @type {NodeJS.ErrnoException} */ (error).code !== "ESRCH";
+  }
+}
+
+/** @param {string} lock @returns {?{ pid: number, token: string, operation: string, acquiredAt: string }} */
+function readNativeTransactionOwner(lock) {
+  try {
+    const owner = JSON.parse(readFileSync(path.join(lock, "owner.json"), "utf8"));
+    const pid = owner?.pid;
+    const token = string(owner?.token);
+    const operation = string(owner?.operation);
+    const acquiredAt = string(owner?.acquiredAt);
+    if (
+      !isObject(owner) ||
+      typeof pid !== "number" ||
+      !Number.isInteger(pid) ||
+      pid < 1 ||
+      token === null ||
+      operation === null ||
+      acquiredAt === null
+    ) {
+      return null;
+    }
+    return { pid, token, operation, acquiredAt };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * A refused transaction cannot safely edit the attempt document whose live
+ * owner it failed to acquire. Preserve a separate, uniquely-created sidecar;
+ * the next successful transaction absorbs it into every native attempt before
+ * performing its own read.
+ *
+ * @param {string} root
+ * @param {Record<string, any>} refusal
+ */
+function persistNativeTransactionRefusal(root, refusal) {
+  const dir = nativeTransactionRefusalDir(root);
+  mkdirSync(dir, { recursive: true });
+  const file = path.join(
+    dir,
+    `${process.pid}-${process.hrtime.bigint()}-${nativeTransactionSerial++}.json`,
+  );
+  const fd = openSync(file, "wx", 0o600);
+  try {
+    writeFileSync(fd, `${JSON.stringify(refusal, null, 2)}\n`, "utf8");
     fsyncSync(fd);
   } finally {
     closeSync(fd);
   }
-  renameSync(temp, file);
+  return file;
+}
+
+/** @param {string} root */
+function nativeRecordFiles(root) {
+  const runs = path.join(root, ".supertaskr", "runs");
+  if (!existsSync(runs)) return [];
+  const files = [];
+  for (const work of readdirSync(runs)) {
+    const dir = path.join(runs, work);
+    if (work === "reservations" || !statSync(dir).isDirectory()) continue;
+    for (const name of readdirSync(dir).sort()) {
+      if (name.endsWith(".json")) files.push(path.join(dir, name));
+    }
+  }
+  return files;
+}
+
+/** @param {string} root @param {number} pid */
+function removeAbandonedNativeTemps(root, pid) {
+  const runs = path.join(root, ".supertaskr", "runs");
+  if (!existsSync(runs)) return;
+  const marker = `.json.${pid}.`;
+  for (const work of readdirSync(runs)) {
+    if (work === "reservations") continue;
+    const dir = path.join(runs, work);
+    if (!statSync(dir).isDirectory()) continue;
+    for (const name of readdirSync(dir)) {
+      if (name.includes(marker) && name.endsWith(".tmp")) unlinkSync(path.join(dir, name));
+    }
+  }
+}
+
+/**
+ * Absorb fail-closed sidecars only while the project transaction is held.
+ * A read-only status sweep therefore remains a read, while the next writer
+ * cannot pass a refusal or repaired authority without carrying its evidence.
+ *
+ * @param {string} root
+ */
+function absorbNativeTransactionSidecars(root) {
+  const recordFiles = nativeRecordFiles(root);
+  const refusalDir = nativeTransactionRefusalDir(root);
+  if (existsSync(refusalDir)) {
+    for (const name of readdirSync(refusalDir).sort()) {
+      if (!name.endsWith(".json")) continue;
+      const refusalFile = path.join(refusalDir, name);
+      let refusal;
+      try {
+        refusal = JSON.parse(readFileSync(refusalFile, "utf8"));
+      } catch (error) {
+        throw new NativeCodexFinding(
+          "NATIVE_TRANSACTION_REFUSAL_UNREADABLE",
+          `native-codex: transaction refusal sidecar ${refusalFile} is unreadable: ${String(error)}.`,
+        );
+      }
+      let absorbed = false;
+      for (const file of recordFiles) {
+        const rec = JSON.parse(readFileSync(file, "utf8"));
+        if (!isObject(rec.native) || rec.native.version !== NATIVE_CODEX_VERSION) continue;
+        nativeState(rec);
+        addNativeHold(rec, {
+          key: `native-transaction-refusal:${string(refusal.id) ?? name}`,
+          code: "native-transaction-refusal",
+          refusal,
+          recordedAt: string(refusal.recordedAt) ?? new Date().toISOString(),
+          outcome: "unknown",
+        });
+        atomicJson(file, rec);
+        absorbed = true;
+      }
+      if (absorbed) unlinkSync(refusalFile);
+    }
+  }
+
+  for (const file of recordFiles) {
+    const attempt = path.basename(file, ".json");
+    const sidecar = `${file}.native-hold`;
+    if (!existsSync(sidecar)) continue;
+    let rec;
+    try {
+      rec = JSON.parse(readFileSync(file, "utf8"));
+      nativeState(rec);
+    } catch {
+      continue;
+    }
+    const hold = readUnreadableAuthority(root, attempt);
+    if (hold !== null) {
+      addNativeHold(rec, hold);
+      atomicJson(file, rec);
+      unlinkSync(sidecar);
+    }
+  }
+}
+
+/**
+ * Serialize one complete native authority transaction across processes. The
+ * directory create is the atomic acquisition. Dead-owner recovery first
+ * takes an exclusive sibling gate. New owners check that gate before and
+ * after publishing their identity and back out when it appears; the recovery
+ * claimant re-reads the exact PID/token while holding the gate before it may
+ * remove the lock. Missing, malformed, changed or permission-hidden ownership
+ * remains uncertain and is refused after a bounded wait.
+ *
+ * @template T
+ * @param {string} root
+ * @param {{ operation: string, at?: string, waitMs?: number, onAcquired?: () => void, onContention?: () => void, onDeadOwnerObserved?: () => void, onRecoveryClaimed?: () => void, onRecoveryChecked?: () => void }} opts
+ * @param {() => T} body
+ * @returns {T}
+ */
+export function withNativeTransaction(root, opts, body) {
+  const lock = nativeTransactionLockPath(root);
+  const recovery = nativeTransactionRecoveryPath(root);
+  const nested = nativeTransactions.get(lock);
+  if (nested !== undefined) {
+    nested.depth += 1;
+    try {
+      return body();
+    } finally {
+      nested.depth -= 1;
+    }
+  }
+
+  mkdirSync(path.dirname(lock), { recursive: true });
+  const waitMs = opts.waitMs ?? NATIVE_TRANSACTION_WAIT_MS;
+  const started = Date.now();
+  const deadline = started + waitMs;
+  const token = nativeSha256(`${process.pid}:${started}:${nativeTransactionSerial++}:${opts.operation}`);
+  /** @type {?{ pid: number, token: string, operation: string, acquiredAt: string }} */
+  let lastOwner = null;
+  let contentionReported = false;
+  const markContention = () => {
+    if (!contentionReported) {
+      opts.onContention?.();
+      contentionReported = true;
+    }
+  };
+  const waitOrRefuse = () => {
+    if (Date.now() < deadline) {
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, NATIVE_TRANSACTION_POLL_MS);
+      return;
+    }
+    const recordedAt = opts.at ?? new Date().toISOString();
+    const refusal = {
+      version: 1,
+      id: nativeSha256(`${token}:${recordedAt}`),
+      code: "native-transaction-refusal",
+      operation: opts.operation,
+      recordedAt,
+      outcome: "unknown",
+      owner: lastOwner,
+      reason: existsSync(recovery)
+        ? "transaction recovery ownership is unresolved"
+        : lastOwner === null
+          ? "lock ownership is unreadable"
+          : "recorded owner may still be live",
+    };
+    const sidecar = persistNativeTransactionRefusal(root, refusal);
+    throw new NativeCodexFinding(
+      "NATIVE_TRANSACTION_BUSY",
+      `native-codex: NATIVE_TRANSACTION_BUSY refused ${opts.operation} after ${waitMs}ms; ` +
+        `fail-closed evidence persisted at ${sidecar}.`,
+    );
+  };
+  for (;;) {
+    if (existsSync(recovery)) {
+      markContention();
+      lastOwner = readNativeTransactionOwner(lock);
+      waitOrRefuse();
+      continue;
+    }
+    try {
+      mkdirSync(lock);
+      try {
+        if (existsSync(recovery)) {
+          rmSync(lock, { recursive: true });
+          markContention();
+          waitOrRefuse();
+          continue;
+        }
+        atomicJson(path.join(lock, "owner.json"), {
+          version: 1,
+          pid: process.pid,
+          token,
+          operation: opts.operation,
+          acquiredAt: opts.at ?? new Date().toISOString(),
+        });
+        if (existsSync(recovery)) {
+          const owner = readNativeTransactionOwner(lock);
+          if (owner?.token === token && owner.pid === process.pid) {
+            rmSync(lock, { recursive: true });
+          }
+          markContention();
+          waitOrRefuse();
+          continue;
+        }
+      } catch (error) {
+        const owner = readNativeTransactionOwner(lock);
+        if (owner === null || (owner.token === token && owner.pid === process.pid)) {
+          rmSync(lock, { recursive: true, force: true });
+        }
+        throw error;
+      }
+      break;
+    } catch (error) {
+      if (/** @type {NodeJS.ErrnoException} */ (error).code !== "EEXIST") throw error;
+      markContention();
+      lastOwner = readNativeTransactionOwner(lock);
+      if (lastOwner !== null && !nativeTransactionOwnerAlive(lastOwner.pid)) {
+        opts.onDeadOwnerObserved?.();
+        let recoveryClaimed = false;
+        try {
+          mkdirSync(recovery);
+          recoveryClaimed = true;
+        } catch (recoveryError) {
+          if (/** @type {NodeJS.ErrnoException} */ (recoveryError).code !== "EEXIST") {
+            throw recoveryError;
+          }
+        }
+        if (recoveryClaimed) {
+          let recovered = false;
+          try {
+            atomicJson(path.join(recovery, "owner.json"), {
+              version: 1,
+              pid: process.pid,
+              token,
+              operation: `recover:${opts.operation}`,
+              acquiredAt: opts.at ?? new Date().toISOString(),
+            });
+            opts.onRecoveryClaimed?.();
+            const confirmed = readNativeTransactionOwner(lock);
+            if (
+              confirmed !== null &&
+              confirmed.pid === lastOwner.pid &&
+              confirmed.token === lastOwner.token &&
+              !nativeTransactionOwnerAlive(confirmed.pid)
+            ) {
+              rmSync(lock, { recursive: true });
+              removeAbandonedNativeTemps(root, confirmed.pid);
+              recovered = true;
+            } else {
+              lastOwner = confirmed;
+            }
+            opts.onRecoveryChecked?.();
+          } finally {
+            rmSync(recovery, { recursive: true, force: true });
+          }
+          if (recovered) continue;
+        }
+      }
+      waitOrRefuse();
+    }
+  }
+
+  nativeTransactions.set(lock, { depth: 1, token });
+  let value;
+  let bodyError = null;
+  try {
+    opts.onAcquired?.();
+    absorbNativeTransactionSidecars(root);
+    value = body();
+    if (value !== null && typeof value === "object" && typeof /** @type {any} */ (value).then === "function") {
+      throw new NativeCodexFinding(
+        "NATIVE_TRANSACTION_ASYNC",
+        "native-codex: a native transaction body must complete synchronously before ownership is released.",
+      );
+    }
+  } catch (error) {
+    bodyError = error;
+  }
+
+  let releaseError = null;
+  try {
+    const owner = readNativeTransactionOwner(lock);
+    if (owner === null || owner.token !== token || owner.pid !== process.pid) {
+      throw new NativeCodexFinding(
+        "NATIVE_TRANSACTION_RELEASE_UNCERTAIN",
+        "native-codex: transaction ownership changed or became unreadable before release; the lock remains fail-closed.",
+      );
+    }
+    rmSync(lock, { recursive: true });
+  } catch (error) {
+    releaseError = error;
+  } finally {
+    nativeTransactions.delete(lock);
+  }
+  if (bodyError !== null) throw bodyError;
+  if (releaseError !== null) throw releaseError;
+  return /** @type {T} */ (value);
 }
 
 /**
@@ -579,10 +958,10 @@ function persistUnreadableAuthority(root, attempt, error, at) {
   }
 }
 
-/** @param {string} root @param {string} attempt @param {Record<string, any>} rec */
-function absorbUnreadableAuthority(root, attempt, rec) {
+/** @param {string} root @param {string} attempt */
+function readUnreadableAuthority(root, attempt) {
   const file = nativeEmergencyHoldPath(root, attempt);
-  if (!existsSync(file)) return rec;
+  if (!existsSync(file)) return null;
   let hold;
   try {
     hold = JSON.parse(readFileSync(file, "utf8"));
@@ -598,21 +977,27 @@ function absorbUnreadableAuthority(root, attempt, rec) {
       `native-codex: persisted unreadable-authority hold for ${attempt} has an invalid shape.`,
     );
   }
-  addNativeHold(rec, hold);
-  writeNativeRecord(root, rec);
-  unlinkSync(file);
+  return hold;
+}
+
+/** @param {string} root @param {string} attempt @param {Record<string, any>} rec */
+function includeUnreadableAuthority(root, attempt, rec) {
+  const hold = readUnreadableAuthority(root, attempt);
+  if (hold !== null) addNativeHold(rec, hold);
   return rec;
 }
 
-/** @param {string} root @param {string} attempt */
-export function readNativeRecord(root, attempt) {
+/** @param {string} root @param {string} attempt @param {{ persistFailure?: boolean, at?: string }} [opts] */
+export function readNativeRecord(root, attempt, opts = {}) {
   const file = nativeRecordPath(root, attempt);
   try {
     const rec = JSON.parse(readFileSync(file, "utf8"));
     nativeState(rec);
-    return absorbUnreadableAuthority(root, attempt, rec);
+    return includeUnreadableAuthority(root, attempt, rec);
   } catch (error) {
-    persistUnreadableAuthority(root, attempt, error, new Date().toISOString());
+    if (opts.persistFailure === true) {
+      persistUnreadableAuthority(root, attempt, error, opts.at ?? new Date().toISOString());
+    }
     if (error instanceof NativeCodexFinding) throw error;
     throw new NativeCodexFinding(
       "NATIVE_AUTHORITY_UNREADABLE",
@@ -626,7 +1011,7 @@ export function writeNativeRecord(root, rec) {
   atomicJson(nativeRecordPath(root, rec.attempt), rec);
 }
 
-/** @param {string} root @param {{ at?: string }} [opts] */
+/** @param {string} root @param {{ at?: string, persistFailures?: boolean }} [opts] */
 export function allNativeRecords(root, opts = {}) {
   const runs = path.join(root, ".supertaskr", "runs");
   if (!existsSync(runs)) return [];
@@ -641,7 +1026,7 @@ export function allNativeRecords(root, opts = {}) {
         const rec = JSON.parse(readFileSync(path.join(dir, name), "utf8"));
         if (isObject(rec.native) && rec.native.version === NATIVE_CODEX_VERSION) {
           nativeState(rec);
-          records.push(absorbUnreadableAuthority(root, attempt, rec));
+          records.push(includeUnreadableAuthority(root, attempt, rec));
         } else if (existsSync(nativeEmergencyHoldPath(root, attempt))) {
           throw new NativeCodexFinding(
             "NATIVE_AUTHORITY_UNREADABLE",
@@ -649,7 +1034,9 @@ export function allNativeRecords(root, opts = {}) {
           );
         }
       } catch (error) {
-        persistUnreadableAuthority(root, attempt, error, opts.at ?? new Date().toISOString());
+        if (opts.persistFailures === true) {
+          persistUnreadableAuthority(root, attempt, error, opts.at ?? new Date().toISOString());
+        }
         throw error instanceof NativeCodexFinding
           ? error
           : new NativeCodexFinding(
@@ -690,6 +1077,8 @@ function clearReconciledHolds(rec, at, why) {
         "ambiguous-agent-attribution",
         "missing-agent-unrecognized-turn",
         "session-mismatch",
+        "unreadable-authority",
+        "native-transaction-refusal",
       ].includes(hold.code)
     ) {
       continue;
@@ -798,9 +1187,9 @@ function findingHold(rec, at, phase, check) {
  * @param {Record<string, any>} event
  * @param {{ at?: string }} [opts]
  */
-export function handleNativeEvent(root, event, opts = {}) {
+function handleNativeEventUnlocked(root, event, opts = {}) {
   const at = opts.at ?? new Date().toISOString();
-  const records = allNativeRecords(root, { at });
+  const records = allNativeRecords(root, { at, persistFailures: true });
   const eventName = string(event.hook_event_name);
   const agentId = string(event.agent_id);
   const sessionId = string(event.session_id);
@@ -1157,6 +1546,31 @@ export function handleNativeEvent(root, event, opts = {}) {
 }
 
 /**
+ * One callback is one authority transaction: routing, validation, cumulative
+ * inspection and publication all happen under the same project lock.
+ *
+ * @param {string} root
+ * @param {Record<string, any>} event
+ * @param {{ at?: string, waitMs?: number, onAcquired?: () => void, onContention?: () => void, onDeadOwnerObserved?: () => void, onRecoveryClaimed?: () => void, onRecoveryChecked?: () => void }} [opts]
+ */
+export function handleNativeEvent(root, event, opts = {}) {
+  return withNativeTransaction(
+    root,
+    {
+      operation: `native-event:${string(event.hook_event_name) ?? "unknown"}`,
+      ...(opts.at === undefined ? {} : { at: opts.at }),
+      ...(opts.waitMs === undefined ? {} : { waitMs: opts.waitMs }),
+      ...(opts.onAcquired === undefined ? {} : { onAcquired: opts.onAcquired }),
+      ...(opts.onContention === undefined ? {} : { onContention: opts.onContention }),
+      ...(opts.onDeadOwnerObserved === undefined ? {} : { onDeadOwnerObserved: opts.onDeadOwnerObserved }),
+      ...(opts.onRecoveryClaimed === undefined ? {} : { onRecoveryClaimed: opts.onRecoveryClaimed }),
+      ...(opts.onRecoveryChecked === undefined ? {} : { onRecoveryChecked: opts.onRecoveryChecked }),
+    },
+    () => handleNativeEventUnlocked(root, event, opts),
+  );
+}
+
+/**
  * Close the native half of T-311 bind from the recorded callback and actual
  * completed identity probe. The ordinary `bindRun` writes the execution.
  *
@@ -1192,7 +1606,7 @@ export function bindNativeIdentity(root, rec, opts) {
       `native-codex: exact binding needs one completed identity probe; found ${probes.length}.`,
     );
   }
-  for (const other of allNativeRecords(root)) {
+  for (const other of allNativeRecords(root, { at: opts.at, persistFailures: true })) {
     if (other.attempt !== rec.attempt && other.native.binding?.agentId === agentId) {
       throw new NativeCodexFinding(
         "NATIVE_AGENT_TAKEN",

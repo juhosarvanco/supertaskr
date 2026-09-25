@@ -549,6 +549,79 @@ proof criterion.
 
 ## Repair ledger
 
+2026-09-25 native callback transaction repair
+
+### Repair criteria echo
+
+- [x] Serialize each native event's authority selection, validation and
+  mutation so concurrent callback processes retain every accepted operation,
+  completion, finding and hold; a clean completion must not overwrite an
+  unrelated hold.
+- [x] Put coordinator bind, observe/reconcile, answer, collect, continue and
+  stop record mutations under the same project-wide authority protocol while
+  keeping status-only inspection read-only.
+- [x] Bound lock acquisition within native hook budgets, persist a named
+  fail-closed refusal on contention, recover an abandoned owner only when the
+  recorded process is provably absent, and release ownership on exceptions and
+  nested calls.
+- [x] Preserve unknown-attribution and unreadable-authority evidence through
+  later collection, with no stale snapshot, dropped completion, cleared hold
+  or abandoned temporary file reported as success.
+- [ ] Add deterministic separate-process barrier controls for the lost-update
+  interleaving and competing lifecycle writers, then run focused native and
+  run-record regressions plus the range-derived gates before handoff.
+
+The repair serializes one complete authority transaction per native callback:
+selection, validation, cumulative inspection, mutation and atomic publication
+share the project reservation lock. The coordinator's start, bind,
+observe/reconcile, answer, collect, continue and stop operations use the same
+lock. Status reads remain read-only, including when an unreadable-authority
+sidecar exists. Nested calls are re-entrant only inside their owning process;
+the shared directory remains the cross-process exclusion primitive.
+
+Contention waits at most 1.5 seconds for acquisition and then writes a named,
+uniquely-created refusal sidecar. A later successful transaction absorbs that
+evidence into every readable native attempt before its own operation and
+unlinks the sidecar only after all writes succeed. The controlled absorption
+failure left both concurrent sidecars present; after the damaged record was
+restored, the next locked writer absorbed both and collection still refused
+their sticky unknown outcome. The 1.5-second value bounds acquisition rather
+than the full hook. The Interrupt hook budget is 3 seconds, while five ordinary
+full workspace scans on this dirty repair tree measured 479.2–518.5 ms; the
+observed acquisition ceiling plus the slowest measured scan is about 2.02
+seconds, leaving startup and publication margin without claiming a hard
+full-hook duration bound. Other native hooks retain their 30-second budget.
+
+Dead-owner recovery is fenced by a separate exclusive recovery directory.
+Every new owner checks that gate before and after publishing its token and
+backs out if recovery appeared. A claimant may remove the lock only after it
+re-reads the same PID and token while holding the recovery gate and again
+proves the PID absent. The two-reclaimer control holds one process after its
+dead-owner observation, lets the other reclaim and hold the successor lock,
+then releases the stale claimant: it preserves the successor, waits for its
+release and retains both tool identities. The dead owner's temporary record
+file is removed only inside the reconciled recovery section. A crashed or
+unreadable recovery owner therefore remains a named fail-closed refusal rather
+than permitting pathname reuse to break mutual exclusion.
+
+The four deterministic concurrency bodies passed 4/4 after three matching
+controls were made red: bypassing the native-event transaction failed before
+the holder barrier, bypassing the coordinator observe transaction failed its
+contention barrier, and replacing unique refusal names with a constant made
+the second reporter fail `EEXIST`. The stale-recovery mutant that removed the
+current pathname from the old PID snapshot deleted the live successor and
+failed at its missing owner document. Restoring the exact implementation made
+the same body pass. The complete native bridge passed 21/21, the shared
+run-record suite passed 44/44, typecheck, capability/index currency, token
+lint and the whole-tree docs census were green. No spawned fixture remained.
+The final range-derived verdict remains the last executor step before handoff.
+
+Dispatch format correction: the external repair brief supplied the precise
+role, fence and acceptance draft but no labeled `CONTEXT PACK`. Following the
+executor correction clause, this run used the standing read and the full
+`docs/CONVENTIONS.md` fallback rather than guessing an omitted section. No
+additional source path or scope grant was needed.
+
 2026-09-25 CI shell portability repair
 
 ### Repair criteria echo
