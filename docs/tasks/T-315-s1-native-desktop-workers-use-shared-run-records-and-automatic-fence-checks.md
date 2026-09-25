@@ -585,3 +585,102 @@ three completion callbacks could not find exact persisted pre-command
 records. The coordinator preserved the independently reconciled incident in
 `ci-portability-repair/CONCURRENT-CALLBACK-FINDING.md`. All subsequent repair
 operations were serialized. This patch does not change the native monitor.
+
+### 2026-09-25 — REJECTED — gpt-6@01a0d7db-a871-7862-852f-be88efec885f
+
+This was one fresh native verifier task scoped to the post-publication CI
+repair, not a fresh two-spawn requalification of the guarded card. The repair
+brief disclosed the Linux CI failure and the exact repair range. The original
+qualification's separately saved attack set and ground were supplied only as
+historical sealed inputs; they are not relabelled as repair-specific phase one.
+This review examined candidate
+`3f3b76679b90590022b6b831a7fb22f0528a8dfd` against repair base
+`989b776b5f4b6eaf8c35620659be263ded982d96`.
+
+The original sealed attack set is
+`sha256:56b5840add858d591fa508d22ed9e23289ea8c83d411645d33193ca189a68a64`,
+the original sealed ground is
+`sha256:d8f4aa21919f8d019ba85d7f548e614942b0f6733de87698158eb048fdb5e3ca`,
+and the repair-base card is
+`sha256:dbfbea972abb045fa808554e454891e4cbd3ec1a240282dadc78e3212d7ac13d`.
+The two sealed files were re-hashed and the repair-base card was read before
+the repair diff was opened; the card's displayed digest was derived later in
+this review.
+
+The shell replacement itself is portable in the stated target family. The
+focused body passed 1/1 and the complete native bridge spec passed 17/17 at
+the candidate. The same command language (`cd --`, `printf`, `sleep`, output
+redirection and `&&`) also exited 0 under `/bin/dash`, independently of the
+body's `/bin/sh` run. The body still observes early stdout while `completed`
+is false, waits for exit 0, delivers PostToolUse only afterwards, and requires
+the persistent `late.tmp` out-of-fence finding. A targeted executable-path
+mutant produced the intended `spawn ... ENOENT` red, and the candidate spec
+was restored to
+`sha256:dd7e9ca559450269646604babb77354e1a65ecf5ea8b496e73bc65ba79437377`.
+
+The candidate does not, however, retain cleanup on the error path it claims.
+When the changed spawn route was replaced temporarily with the guaranteed
+missing `/definitely-missing-native-test-shell`, the child `error` rejected
+the `completion` promise while the test was still awaiting a different
+stdout-only promise. Playwright reported `spawn ... ENOENT`, but the outer
+`finally` never ran and left
+`t315-yielded-late-write-Mgcme6` under the host temporary directory. Expected:
+the currently awaited operation rejects on the child error and the fixture is
+removed. Actual: the rejection is observed out of band and the fixture
+survives. The residue was recorded, then removed by its exact path after the
+evidence was captured.
+
+A temporary correction made first output race process completion/error and
+added a missing-executable cleanup arm to the existing yielded body. The body
+then passed 1/1 and left no yielded fixture. Replacing only that race with the
+candidate's stdout-only wait made the same body red with `ENOENT` and left
+both its normal and spawn-error fixtures; restoration returned it to 1/1 with
+no residue. This is a failure of the repair's explicit process-error and
+fixture-cleanup criterion, even though the normal `/bin/sh` path is green.
+
+| Repair criterion | Evidence and verdict |
+|---|---|
+| Portable shell route | **Met.** The only executable change is `/bin/zsh` to `/bin/sh`; the exact command passed through `/bin/sh` in the focused run and through `/bin/dash` in the independent grammar control. |
+| Preserve early output, completion, late write and cumulative hold assertions | **Met.** Focused 1/1 and native bridge 17/17 at the candidate; direct reading confirms early output precedes `completed`, exit 0 precedes PostToolUse, and `late.tmp` must appear in the persisted hold. |
+| Retain error propagation and cleanup; keep scope to the spec/card | **Not met.** The two changed paths are admitted by the frozen card and detached verifier manifest; no product hook, manifest or dependency changed. The missing-executable drill demonstrates that the stdout-only await bypasses the body's `finally`, leaving its fixture behind. |
+
+The exact repair range derives `app`, `parser` and a scoped 13-spec end-to-end
+leg, with no unplaceable or generated-unplaceable paths. Those publication
+range gates were not run in this repair review and remain coordinator-owned
+obligations after correction; this verdict is not a full guarded
+requalification. The security sweep found no dependency, credential, external
+endpoint or product execution change. The separately recorded concurrent
+callback race was outside this repair and was neither investigated nor
+attributed to this diff. One initial verifier command also used the bench root
+instead of the package directory, creating a preserved out-of-fence Playwright
+result; the coordinator archived and reconciled that verifier error, and it is
+not counted as repair evidence.
+
+Corrections: **1**. Committed correction bodies: **1**, in the commit after
+this verdict. Mutant blocks: **1**.
+
+```mutant
+correction: settle the early-output wait on process completion or spawn error so fixture cleanup runs
+file: tools/e2e/tests/native-codex.spec.ts
+spec: tools/e2e/tests/native-codex.spec.ts
+body: a yielded Bash operation is checked at actual PostToolUse and its late violation persists a hold
+message: spawn /definitely-missing-native-test-shell ENOENT
+--- old
+  return Promise.race([
+    new Promise<string>((resolve, reject) => {
+      child.once("error", reject);
+      child.stdout?.once("data", (chunk) => resolve(String(chunk)));
+    }),
+    completion.then((code) => {
+      throw new Error(`yielded process exited before stdout (code ${String(code)})`);
+    }),
+  ]);
+--- new
+  return new Promise<string>((resolve) => {
+    child.stdout?.once("data", (chunk) => resolve(String(chunk)));
+  });
+```
+
+No pack gap was encountered. The repair-specific single-task frame and the
+outstanding publication gates are disclosed rather than presented as a fresh
+guarded pass.
