@@ -254,6 +254,7 @@ import {
   continueRun,
   observeRun,
   prepareNativeBenchRun,
+  nativeBenchAssignmentInputs,
   readAssignment,
   runPlan,
   runRecs,
@@ -306,7 +307,6 @@ const FLAGS = Object.freeze([
   "--usage",
   "--ref",
   "--report",
-  "--bench-resource",
   "--instant",
   "--replace",
   "--bump",
@@ -1164,10 +1164,14 @@ async function main(argv) {
         satisfied = waited.satisfied;
         extra = [waited.ceiling ? `CEILING REACHED — ${waited.why}` : `satisfied — ${waited.why}`];
       } else if (plan.verb === "collect") {
+        const bench = plan.assignment === undefined ? undefined : nativeBenchAssignmentInputs(runRoot, {
+          attempt: plan.attempt, assignment: readAssignment(plan.assignment),
+          ...(plan.ref === undefined ? {} : { ref: plan.ref }),
+        });
         const got = collectRun(runRoot, {
           attempt: plan.attempt,
           ...(plan.usage === undefined ? {} : { usage: plan.usage }),
-          ...(plan.ref === undefined ? {} : { ref: plan.ref }),
+          ...(bench === undefined ? (plan.ref === undefined ? {} : { ref: plan.ref }) : { ref: bench.candidate }),
           ...(plan.report === undefined ? {} : { report: plan.report }),
           ...(plan.instants === undefined ? {} : { instants: plan.instants }),
           at,
@@ -1179,9 +1183,9 @@ async function main(argv) {
           `report: ${got.collected.report}`,
           `evidence entries retained: ${String(got.collected.evidence.length)}`,
         ];
-        if (plan.benchResource !== undefined) {
-          const prepared = prepareNativeBenchRun(runRoot, { attempt: plan.attempt, resource: plan.benchResource,
-            candidate: /** @type {string} */ (plan.ref), at });
+        if (bench !== undefined) {
+          const prepared = prepareNativeBenchRun(runRoot, { attempt: plan.attempt, resource: bench.resource,
+            candidate: bench.candidate, at });
           record = prepared.record;
           extra.push(`prepared detached-verifier: task ${prepared.manifest.taskId}; resource ${prepared.manifest.worktree}; candidate ${prepared.manifest.ref}; executor ${plan.attempt}; digest ${prepared.manifest.preparation.digest}`);
         }

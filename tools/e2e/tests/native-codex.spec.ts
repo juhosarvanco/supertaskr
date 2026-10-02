@@ -1822,10 +1822,32 @@ test("the shared native arm visibly launches packet-only and prepared detached p
     expect(packet).not.toContain("native Bash prefix");
     // Consume the collection extension through the public command, not a hand-built manifest.
     finishExecutor(c);
-    const prepared = arm(c.root, ["--run", "collect", "--attempt", c.executor.attempt, "--ref", c.candidate, "--bench-resource", c.verifier]);
-    expect(prepared).toContain(`prepared detached-verifier: task ${WORK}; resource ${c.verifier}; candidate ${c.candidate}`);
     const detachedFile = path.join(c.scratch, "assignment-detached-T-915.json");
-    writeFileSync(detachedFile, JSON.stringify(verifierAssignment(c)));
+    const incoming = verifierAssignment(c);
+    const beforeInvalid = JSON.stringify(readNativeRecord(c.root, c.executor.attempt));
+    const invalid = [
+      { ...incoming, id: "T-916" },
+      { ...incoming, role: "executor" },
+      { ...incoming, native: { ...incoming.native!, profile: "writer-resource", executorAttempt: undefined } },
+      { ...incoming, native: { ...incoming.native!, executorAttempt: "T-915-a99" } },
+      { ...incoming, resource: "none", cwd: "none" },
+      { ...incoming, cwd: c.lane },
+      { ...incoming, base: c.base },
+      { ...incoming, native: { ...incoming.native!, ignoredOutputs: ["outside/"] } },
+    ];
+    for (const wrong of invalid) {
+      writeFileSync(detachedFile, JSON.stringify(wrong));
+      const refused = spawnSync(process.execPath, [briefScript, "--root", c.root, "--run", "collect", "--attempt", c.executor.attempt,
+        "--ref", c.candidate, "--assignment", detachedFile], { cwd: repoRoot, encoding: "utf8" });
+      expect(refused.status, refused.stderr).toBe(1);
+      expect(refused.stderr).toContain("incoming detached-verifier assignment differs");
+      expect(JSON.stringify(readNativeRecord(c.root, c.executor.attempt))).toBe(beforeInvalid);
+      expect(existsSync(path.join(c.verifier, ".supertaskr", "lane-fence.json"))).toBe(false);
+    }
+    writeFileSync(detachedFile, JSON.stringify(incoming));
+    // No separately typed candidate/resource: both are derived from the validated incoming assignment.
+    const prepared = arm(c.root, ["--run", "collect", "--attempt", c.executor.attempt, "--assignment", detachedFile]);
+    expect(prepared).toContain(`prepared detached-verifier: task ${WORK}; resource ${c.verifier}; candidate ${c.candidate}`);
     const detached = arm(c.root, ["--run", "start", "--assignment", detachedFile]);
     expect(detached).toContain("native profile: detached-verifier");
     expect(detached).toContain(`candidate: ${c.candidate}`);

@@ -108,6 +108,7 @@ import {
   value,
 } from "./dispatch-brief.mjs";
 import {
+  NATIVE_CODEX_HARNESS,
   NativeCodexFinding,
   atomicJson,
   bindNativeIdentity,
@@ -1832,6 +1833,29 @@ export function collectRun(root, opts) {
   });
 }
 
+/** Validate the incoming verifier document before the collection arm writes anything.
+ * The assignment names the bench; authority still comes only from the executor record.
+ * @param {string} root
+ * @param {{ attempt: string, assignment: Assignment, ref?: string }} opts
+ * @returns {{ resource: string, candidate: string }}
+ */
+export function nativeBenchAssignmentInputs(root, opts) {
+  const source = readRecord(root, opts.attempt);
+  const a = opts.assignment;
+  if (source.native === undefined || source.writer !== true || source.assignment.role !== "executor" ||
+      a.kind !== source.assignment.kind || a.id !== source.assignment.id || a.role !== "verifier" ||
+      a.harness !== NATIVE_CODEX_HARNESS || a.native?.profile !== "detached-verifier" ||
+      a.native.executorAttempt !== source.attempt || !path.isAbsolute(a.resource) ||
+      !path.isAbsolute(a.cwd) || a.cwd !== a.resource || !/^[0-9a-f]{40}$/.test(a.base) ||
+      (opts.ref !== undefined && opts.ref.trim() !== a.base) ||
+      JSON.stringify([...a.native.ignoredOutputs].sort()) !==
+        JSON.stringify([...(source.native.ignoredOutputs ?? source.assignment.native?.ignoredOutputs ?? [])].sort())) {
+    throw new NativeCodexFinding("NATIVE_PREPARATION_ASSIGNMENT",
+      "native-codex: incoming detached-verifier assignment differs in work, profile, source attempt, resource/cwd, candidate or ignored-output policy.");
+  }
+  return { resource: a.resource, candidate: a.base };
+}
+
 /** Extend the existing collection arm with a frozen detached-bench preparation.
  * This issues no task-branch authority and uses no candidate card expansion.
  * @param {string} root
@@ -2328,7 +2352,6 @@ export function stopRun(root, opts) {
  * @property {string} [ref]
  * @property {string} [report]
  * @property {Record<string, string>} [instants]
- * @property {string} [benchResource]
  * @property {number} [ceilingMs]
  * @property {boolean} [replace]
  */
@@ -2344,7 +2367,7 @@ export const VERB_DIALS = Object.freeze({
   observe: ["attempt", "evidence"],
   send: ["attempt", "question", "answer", "evidence"],
   wait: ["attempt", "ceiling", "evidence"],
-  collect: ["attempt", "usage", "ref", "report", "instant", "bench-resource"],
+  collect: ["attempt", "usage", "ref", "report", "instant", "assignment"],
   continue: ["attempt", "replace", "evidence", "ref"],
   stop: ["attempt", "evidence"],
 });
@@ -2449,12 +2472,7 @@ export function runPlan(opts, replace = false) {
     if (opts["ref"] !== undefined) plan.ref = opts["ref"];
     if (opts["report"] !== undefined) plan.report = opts["report"];
     if (opts["instant"] !== undefined) plan.instants = parseInstantDial(opts["instant"]);
-    if (opts["bench-resource"] !== undefined) {
-      if (!path.isAbsolute(opts["bench-resource"]) || !/^[0-9a-f]{40}$/.test(opts["ref"] ?? "")) {
-        throw new RunRecordFinding("RUN_BENCH_PREPARATION", "run-record: --bench-resource requires an absolute detached bench and --ref <full candidate commit>.");
-      }
-      plan.benchResource = opts["bench-resource"];
-    }
+    if (opts["assignment"] !== undefined) plan.assignment = opts["assignment"];
   }
   if (verb === "continue") plan.replace = replace;
   return plan;
