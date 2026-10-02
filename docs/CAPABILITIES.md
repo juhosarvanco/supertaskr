@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1271 behaviours** — 1269 extracted sentences + 2 named-not-extracted (listed at the end) — across 43 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1279 behaviours** — 1277 extracted sentences + 2 named-not-extracted (listed at the end) — across 43 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -1057,6 +1057,14 @@ Census: **1271 behaviours** — 1269 extracted sentences + 2 named-not-extracted
 - native admission refuses pre-existing ignored residue that no coordinator policy names
 - completion of the bound worker does not reconcile a hold created by an unknown second identity
 - native collect and continue independently require the exact reported commit after lifecycle reconciliation
+- packet-only native admission and collection preserve output questions and answer acknowledgements without scanning incidental cwd or reserving a writer
+- packet-only registration uses exact separate-process probe output and refuses delivered Bash and apply_patch after binding
+- packet-only stop and re-entry require independent cessation, reject live owned jobs and retain unresolved attribution
+- detached bench preparation requires collected executor cessation and binds the original card and scope despite candidate card edits
+- detached native admission consumes coordinator preparation and refuses wrong task, ref, scope, resource and worker-edited authority
+- detached final collection independently retains original candidate scope and refuses dirty workspace or changed preparation
+- the shared native arm visibly launches packet-only and prepared detached profiles and discloses the existing writer-resource bootstrap
+- published writer admissions reconstruct detached preparation only from matching frozen fence bytes and the original-base card
 
 ## no-plan-card
 

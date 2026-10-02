@@ -111,11 +111,14 @@ import {
   NativeCodexFinding,
   atomicJson,
   bindNativeIdentity,
+  deriveNativeBenchAuthority,
+  inspectNativeBench,
   nativeFinalGate,
   prepareNativeRecord,
   readNativeAssignment,
   withNativeTransaction,
 } from "./native-codex.mjs";
+import { buildDetachedBenchFence } from "./lane-fence.mjs";
 
 /** The record format this reader knows. A document declaring another is refused, never guessed at. */
 export const RECORD_VERSION = 1;
@@ -305,7 +308,7 @@ export class RunRecordFinding extends Error {
  * @property {OwnedJob[]} [ownedJobs]
  * @property {{ kind: string, parent: string, evidence: string, scope: string }} [admission]
  * @property {Record<string, string>} [instants]  the instants the DISPATCH already stamped
- * @property {?{ taskName: string, sessionId: string, coordinatorTurnId: string, ignoredOutputs: string[] }} [native]
+ * @property {?{ taskName: string, sessionId: string, coordinatorTurnId: string, ignoredOutputs: string[], profile?: string, executorAttempt?: string }} [native]
  */
 
 /**
@@ -982,8 +985,10 @@ export function startRun(root, opts) {
     resource: writer ? path.resolve(a.resource) : null,
     reservation: { file: reservationFile, takenAt: writer ? at : null, releasedAt: null },
     brief: { path: a.brief, digest: sha256(briefText) },
-    permission: permissionBoundary(a.cwd),
-    ask: path.join(path.dirname(a.brief), `ask-${a.id}.md`),
+    permission: a.native != null && !writer
+      ? { kind: "supplied-packet-only", manifest: null, digest: sha256(briefText), paths: 0 }
+      : permissionBoundary(a.cwd),
+    ask: a.native != null && !writer ? null : path.join(path.dirname(a.brief), `ask-${a.id}.md`),
     execution: null,
     history: [],
     questions: [],
@@ -1022,7 +1027,7 @@ export function startRun(root, opts) {
       : "a read-only participant: a record and NO reservation, which is what lets a phase one run beside its executor",
   );
   try {
-    prepareNativeRecord(rec, { at });
+    prepareNativeRecord(rec, { at, root });
     const file = writeRecord(root, rec);
     return { record: rec, file, reservation };
   } catch (err) {
@@ -1367,6 +1372,7 @@ export function observeRun(root, opts) {
   }
   if (evidence !== "") {
     signals.push("the harness's own output was handed to this observation and is retained");
+    if (rec.native?.profile === "packet-only") rec.native.outputs.push({ at, evidence });
   }
 
   // ── THE RECEIPT'S OBSERVED HALF (T-320) ────────────────────────────
@@ -1438,14 +1444,14 @@ export function observeRun(root, opts) {
     why = `already ${rec.state}: a terminal record is read, never re-derived into another outcome`;
   }
   transition(rec, at, "observe", to, why);
-  if (TERMINAL_STATES.includes(to) && rec.writer && rec.resource !== null) {
+  if (TERMINAL_STATES.includes(to) && (rec.native !== undefined || (rec.writer && rec.resource !== null))) {
     const final = nativeFinalGate(rec, {
       phase: "release",
       at,
       lifecycleReconciled: completion && executionEnded,
       aliveJobs: jobs,
     });
-    if (final.eligible) releaseIfOurs(root, rec, at);
+    if (final.eligible && rec.writer) releaseIfOurs(root, rec, at);
     else {
       signals.push(
         `native final gate retained the writer reservation: ${final.holds.map((/** @type {any} */ hold) => hold.code).join(", ") || "lifecycle not reconciled"}`,
@@ -1586,7 +1592,8 @@ export function sendAnswer(root, opts) {
   let wrote = false;
   let delivered = false;
   if (opts.answer !== undefined) {
-    if (rec.ask === null) {
+    const packetOnly = rec.native?.profile === "packet-only";
+    if (rec.ask === null && !packetOnly) {
       throw new RunRecordFinding(
         "SEND_NO_CHANNEL",
         `run-record: attempt ${rec.attempt} has no ask file, so there is nowhere to write an ` +
@@ -1594,8 +1601,10 @@ export function sendAnswer(root, opts) {
       );
     }
     const block = answerBlock(rec.attempt, id, at, opts.answer);
-    mkdirSync(path.dirname(rec.ask), { recursive: true });
-    appendFileSync(rec.ask, block, "utf8");
+    if (!packetOnly && rec.ask !== null) {
+      mkdirSync(path.dirname(rec.ask), { recursive: true });
+      appendFileSync(rec.ask, block, "utf8");
+    }
     q.answer = {
       state: "written",
       writtenAt: at,
@@ -1604,7 +1613,7 @@ export function sendAnswer(root, opts) {
       text: opts.answer,
       redeliveries: 0,
       evidence: [
-        { at, kind: "written", detail: `${String(block.length)} bytes appended to ${rec.ask}` },
+        { at, kind: "written", detail: packetOnly ? "answer persisted in the shared run record for native delivery" : `${String(block.length)} bytes appended to ${rec.ask}` },
       ],
     };
     wrote = true;
@@ -1660,6 +1669,7 @@ export function sendAnswer(root, opts) {
  * @param {RunRecord} rec @param {string} what
  */
 function refuseGrantAfterStamp(rec, what) {
+  if (rec.native?.profile === "packet-only") return;
   const now = permissionBoundary(rec.assignment.cwd);
   if (now.digest === rec.permission.digest) return;
   if (rec.stamp.seen === "building") return;
@@ -1745,6 +1755,9 @@ export function collectRun(root, opts) {
   const io = opts.io ?? defaultRunIo();
   const at = opts.at ?? io.now();
   const rec = readRecord(root, opts.attempt);
+  if (rec.native?.profile === "packet-only" && opts.ref !== undefined) {
+    throw new NativeCodexFinding("NATIVE_NONWRITER_REF", "native-codex: packet-only collection reports no repository commit.");
+  }
   if (!TERMINAL_STATES.includes(rec.state)) {
     throw new RunRecordFinding(
       "COLLECT_NOT_TERMINAL",
@@ -1772,6 +1785,7 @@ export function collectRun(root, opts) {
       })}`,
     );
   }
+  if (rec.native !== undefined) rec.native.collection = { ...final, ref: opts.ref?.trim() ?? null };
   if (rec.writer && rec.resource !== null) releaseIfOurs(root, rec, at);
   if (opts.usage !== undefined && opts.usage.trim() !== "") rec.usage = opts.usage.trim();
   // THE INSTANTS THE SEAT HOLDS (T-320). Three of the six an express
@@ -1815,6 +1829,42 @@ export function collectRun(root, opts) {
   });
   writeRecord(root, rec);
   return { record: rec, collected };
+  });
+}
+
+/** Extend the existing collection arm with a frozen detached-bench preparation.
+ * This issues no task-branch authority and uses no candidate card expansion.
+ * @param {string} root
+ * @param {{ attempt: string, resource: string, candidate: string, at?: string, io?: RunIo }} opts
+ */
+export function prepareNativeBenchRun(root, opts) {
+  return withNativeTransaction(root, { operation: "run-collect-prepare-bench" }, () => {
+    const io = opts.io ?? defaultRunIo();
+    const at = opts.at ?? io.now();
+    const rec = readRecord(root, opts.attempt);
+    const native = rec.native;
+    if (native === undefined) throw new NativeCodexFinding("NATIVE_PREPARATION_SOURCE", "native-codex: a bench requires a native executor source record.");
+    const authority = deriveNativeBenchAuthority(rec, { resource: opts.resource, candidate: opts.candidate, at });
+    const final = nativeFinalGate(rec, { phase: "collect", expectedRef: opts.candidate, at,
+      lifecycleReconciled: rec.execution?.endedAt != null, aliveJobs: ownedJobsAlive(rec, io) });
+    if (!final.eligible || final.check?.untracked.length !== 0 ||
+        final.check?.tracked.some((/** @type {any} */ entry) => ["staged", "unstaged"].includes(entry.layer))) {
+      writeRecord(root, rec);
+      throw new NativeCodexFinding("NATIVE_PREPARATION_UNCOLLECTED", "native-codex: executor candidate or owned-job cessation failed the independent preparation check.");
+    }
+    const benchCheck = inspectNativeBench(authority);
+    const manifest = buildDetachedBenchFence(authority, { root, at });
+    if ((native.preparations ?? []).some((/** @type {any} */ entry) => entry.authority.resource === authority.resource && entry.consumedBy !== null)) {
+      throw new NativeCodexFinding("NATIVE_PREPARATION_CONSUMED", "native-codex: this bench resource already has a consumed preparation.");
+    }
+    const entries = (native.preparations ?? []).filter((/** @type {any} */ entry) => entry.authority.resource !== authority.resource);
+    native.preparations = [...entries, { ...manifest.preparation,
+      manifestDigest: sha256(`${JSON.stringify(manifest, null, 2)}\n`).slice("sha256:".length),
+      consumedBy: null, benchCheck }];
+    const manifestFile = path.join(authority.resource, ".supertaskr", "lane-fence.json");
+    atomicJson(manifestFile, manifest);
+    writeRecord(root, rec);
+    return { record: rec, manifest, written: { manifestFile } };
   });
 }
 
@@ -2064,6 +2114,11 @@ export function continueRun(root, opts) {
   for (const q of rec.questions) {
     if (q.answer === null) continue;
     if (q.answer.state !== "delivered") continue;
+    if (rec.native?.profile === "packet-only") {
+      q.answer.evidence.push({ at, kind: "native re-delivery required", detail: "the coordinator must deliver this persisted answer through native messaging; re-entry alone is no receipt" });
+      redelivered.push(q.id);
+      continue;
+    }
     if (rec.ask !== null) {
       appendFileSync(rec.ask, answerBlock(rec.attempt, q.id, at, q.answer.text), "utf8");
     }
@@ -2273,6 +2328,7 @@ export function stopRun(root, opts) {
  * @property {string} [ref]
  * @property {string} [report]
  * @property {Record<string, string>} [instants]
+ * @property {string} [benchResource]
  * @property {number} [ceilingMs]
  * @property {boolean} [replace]
  */
@@ -2288,7 +2344,7 @@ export const VERB_DIALS = Object.freeze({
   observe: ["attempt", "evidence"],
   send: ["attempt", "question", "answer", "evidence"],
   wait: ["attempt", "ceiling", "evidence"],
-  collect: ["attempt", "usage", "ref", "report", "instant"],
+  collect: ["attempt", "usage", "ref", "report", "instant", "bench-resource"],
   continue: ["attempt", "replace", "evidence", "ref"],
   stop: ["attempt", "evidence"],
 });
@@ -2393,6 +2449,12 @@ export function runPlan(opts, replace = false) {
     if (opts["ref"] !== undefined) plan.ref = opts["ref"];
     if (opts["report"] !== undefined) plan.report = opts["report"];
     if (opts["instant"] !== undefined) plan.instants = parseInstantDial(opts["instant"]);
+    if (opts["bench-resource"] !== undefined) {
+      if (!path.isAbsolute(opts["bench-resource"]) || !/^[0-9a-f]{40}$/.test(opts["ref"] ?? "")) {
+        throw new RunRecordFinding("RUN_BENCH_PREPARATION", "run-record: --bench-resource requires an absolute detached bench and --ref <full candidate commit>.");
+      }
+      plan.benchResource = opts["bench-resource"];
+    }
   }
   if (verb === "continue") plan.replace = replace;
   return plan;
@@ -2517,6 +2579,8 @@ export function runRecs(ctx, verb, rec, extra) {
             p,
           ),
           value(`native boundary: ${rec.native.disclosure}`, p),
+          value(`native profile: ${rec.native.profile ?? "writer-resource"}; task: ${rec.assignment.id}; resource: ${rec.resource ?? "none"}; candidate: ${rec.native.preparation?.authority.candidate ?? "none"}`, p),
+          value(`native coverage: callbacks ${(rec.native.coverage?.callbacks ?? []).join(", ")}; tools ${(rec.native.coverage?.tools ?? []).join(", ")}`, p),
         ]),
     // THE ADMISSION THIS ATTEMPT RUNS UNDER (T-324), in the three groups
     // the card's seventh criterion separates: what this arm REFUSED, what

@@ -34,5 +34,13 @@ At product f63b58d5, shared native run start with resource none refuses NATIVE_W
 
 Size M is the bounded native preparation cycle over one fence, with nonwriter and detached writer as its two profiles. Complete method delivery stays in T-315-s2 and starts only after this prerequisite is available. Requested workers and controls are GPT-6.1 Sol extra-high under the owner's current instruction; observed identity stays unknown when unavailable. No hook definition or trust edit is authorized. Real controls use the exact candidate source actually loaded by the existing project hook and follow source review; the existing writer-resource bootstrap is disclosed, never passed off as the nonwriter profile.
 
+### Executor criteria echo
+
+- [ ] Admit supplied-packet phase one with resource none, frozen launch facts and exact callback/probe binding, without a writer reservation.
+- [ ] Carry the nonwriter through durable questions, answers, observe, stop, collection and re-entry; refuse delivered shell/patch use after registration and retain uncertain/live/attribution holds.
+- [ ] Prepare a clean detached bench at the independently collected executor candidate using the frozen executor attempt, original base/card/scope and canonical resource.
+- [ ] Consume and revalidate preparation at writer admission and collection, retaining candidate binding and independent descendant/range/workspace checks; print each profile's actual boundary.
+- [ ] Prove both profiles and preserved writer checks with discriminating source and separate-process controls; leave reviewed staging, actual desktop qualification, push and named CI to the coordinator before closure.
+
 ## Verdicts
 <!-- Fresh independent verifier appends. -->
