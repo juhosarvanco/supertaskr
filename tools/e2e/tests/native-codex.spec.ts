@@ -1880,3 +1880,26 @@ test("published writer admissions reconstruct detached preparation only from mat
     expect(readNativeRecord(b.root, source.attempt).native.frozenCard.digest).toBe(prepared.manifest.preparation.authority.card.digest);
   } finally { b.cleanup(); }
 });
+
+
+test("native record and public launch disclose every callback registered by the unchanged portable hook for both profiles", () => {
+  const registered=Object.keys(JSON.parse(readFileSync(path.join(repoRoot,".codex","hooks.json"),"utf8")).hooks).sort();
+  expect(registered.length).toBeGreaterThan(0);
+  expect(registered).toContain("Interrupt");
+  for(const profile of ["writer-resource","packet-only"]){
+    const b=bench("registered-coverage-"+profile);
+    try{
+      const assigned=profile==="packet-only"?packetAssignment(b):assignment(b);
+      const file=path.join(b.scratch,"assignment-coverage-T-915.json");writeFileSync(file,JSON.stringify(assigned));
+      const launch=spawnSync(process.execPath,[path.join(repoRoot,"tools/e2e/scripts/brief.mjs"),"--root",b.root,"--run","start","--assignment",file],{cwd:repoRoot,encoding:"utf8"});
+      expect(launch.status,launch.stderr).toBe(0);
+      const record=readNativeRecord(b.root,WORK+"-a1");
+      expect([...record.native.coverage.callbacks].sort()).toEqual(registered);
+      const printed=/native coverage: callbacks ([^;]+); tools /.exec(launch.stdout);
+      expect(printed).not.toBeNull();
+      expect(printed![1].split(", ").sort()).toEqual(registered);
+      expect(record.writer).toBe(profile==="writer-resource");
+      expect(record.reservation.file!==null).toBe(profile==="writer-resource");
+    }finally{b.cleanup();}
+  }
+});
