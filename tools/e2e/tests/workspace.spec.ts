@@ -2,14 +2,12 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 import { expect, test } from "@playwright/test";
-import { repoRoot } from "../preflight";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import { measureProductIdentity, resolveResource, resolveWorkspace, validateAssociation,
   WORKSPACE_ASSOCIATION_REL_PATH, WORKSPACE_BINDING_REL_PATH } from "../scripts/workspace.mjs";
 
-const SUBJECT = pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/workspace.mjs")).href;
+const SUBJECT = new URL("../scripts/workspace.mjs", import.meta.url).href;
 const ENV = { ...process.env, GIT_AUTHOR_NAME: "Workspace fixture", GIT_AUTHOR_EMAIL: "fixture@example.invalid",
   GIT_COMMITTER_NAME: "Workspace fixture", GIT_COMMITTER_EMAIL: "fixture@example.invalid" };
 function git(root: string, args: string[]): string {
