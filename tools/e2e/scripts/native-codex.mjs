@@ -38,7 +38,7 @@ export const NATIVE_CODEX_VERSION = 1;
 export const NATIVE_CODEX_HARNESS = "codex-desktop-native";
 export const NATIVE_IDENTITY_PROBE = "/usr/bin/printenv CODEX_THREAD_ID";
 export const NATIVE_SUPPORTED_TOOLS = Object.freeze(["Bash", "apply_patch"]);
-export const NATIVE_COVERED_CALLBACKS = Object.freeze(["SubagentStart", "PreToolUse", "PostToolUse", "SubagentStop", "UserPromptSubmit"]);
+export const NATIVE_COVERED_CALLBACKS = Object.freeze(["SubagentStart", "PreToolUse", "PostToolUse", "SubagentStop", "UserPromptSubmit", "Interrupt"]);
 export const NATIVE_TRANSACTION_WAIT_MS = 1_500;
 
 const NATIVE_TRANSACTION_POLL_MS = 10;

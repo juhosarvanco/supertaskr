@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1279 behaviours** — 1277 extracted sentences + 2 named-not-extracted (listed at the end) — across 43 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1280 behaviours** — 1278 extracted sentences + 2 named-not-extracted (listed at the end) — across 43 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -1065,6 +1065,7 @@ Census: **1279 behaviours** — 1277 extracted sentences + 2 named-not-extracted
 - detached final collection independently retains original candidate scope and refuses dirty workspace or changed preparation
 - the shared native arm visibly launches packet-only and prepared detached profiles and discloses the existing writer-resource bootstrap
 - published writer admissions reconstruct detached preparation only from matching frozen fence bytes and the original-base card
+- native record and public launch disclose every callback registered by the unchanged portable hook for both profiles
 
 ## no-plan-card
 

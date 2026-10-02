@@ -75,6 +75,14 @@ The public capabilities wrapper regenerated the fenced census/index, then refuse
 
 The first graded reading at `4662b3de7da00c1c0503172f5014cbf5627809ac` passed parser (454 bodies) and app (1,171 bodies). End-to-end executed 1,283 bodies: 1,278 passed and 5 failed. One failure exposed an unannounced new modifier in the CLI flag inventory. The coordinator directed the existing assignment dial above, retaining the frozen authority and original inventory assertions; its public positive/refusal controls and the original inventory body passed together (2 bodies). The live T-315-s3 worktree also collided with the T-205-s5 verifier-brief fixture on dispatch-brief.mjs, and three unchanged seat fixtures failed their duplicate copy of readonly CONVENTIONS.md. A disposable copy control reproduced first-copy success, second-copy EACCES, and successful second copy after making only its own destination writable; protected source mode remained 0444. Those four environmental failures remain RED and require integration checks after lane teardown or accepted merge. No grant, hook, trust, source-permission or unfenced test change was made. The durable interface answer is acknowledged; no lane ask remains unresolved. The corrected source at `b82aae37b96716f887c027095bf3a81958115828` passed all 73 native/run-record controls. Affected controls were re-drilled at that source: a 10-body positive baseline passed, then each of three mutants (registration instruction omitted, incoming assignment ignored, incoming executor-attempt check omitted) produced 1 targeted red and 9 green; both preserved writer controls stayed green. All source was restored by commit bytes and SHA256 before the declared fixture dependency links were explicitly removed, the clean fixture checked, and the worktree removed after test-port cessation. Proofs remain in `interface-drill-results-T-315-s3.json` and `interface-cleanup-T-315-s3.json`. This later clean-state check does not turn the first cleanup assertion into a pass.
 
+### 2026-10-02 — Native coverage correction criteria echo
+
+- Preserve the existing packet-only admission, exact identity binding and nonwriter resource/reservation behavior.
+- Correct the saved callback coverage to include the unchanged hook's registered Interrupt event; retain the existing lifecycle, job and procedural boundary rules.
+- Preserve frozen detached preparation and ordinary writer authority without changing their source.
+- Correct public launch coverage through the same declaration for both profiles; retain the existing launch, collection and trust contract.
+- Demonstrate the assigned coverage body's red baseline, green correction, exact inverse and hash restoration; run affected controls and the correction range's owed set. Desktop qualification, accepted verification, integration, push, named CI and closure remain pending.
+
 ## Verdicts
 <!-- Fresh independent verifier appends. -->
 
