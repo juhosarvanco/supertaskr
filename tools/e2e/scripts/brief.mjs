@@ -253,6 +253,8 @@ import {
   collectRun,
   continueRun,
   observeRun,
+  prepareNativeBenchRun,
+  nativeBenchAssignmentInputs,
   readAssignment,
   runPlan,
   runRecs,
@@ -1103,7 +1105,14 @@ async function main(argv) {
                 "next: spawn the admitted native task; after its exact identity probe, bind with --run bind " +
                   `--attempt ${started.record.attempt} --session <agent_id>; the recorded launch, ` +
                   "SubagentStart turn and completed probe must agree",
-                `native Bash prefix: cd -- ${nativeShellQuote(/** @type {string} */ (started.record.resource))} && <command>`,
+                ...(started.record.writer ? [
+                  `native Bash prefix: cd -- ${nativeShellQuote(/** @type {string} */ (started.record.resource))} && <command>`,
+                  `native package cwd: cd -- ${nativeShellQuote(/** @type {string} */ (started.record.resource))} && cd <package> && <package command>`,
+                  "bootstrap: the existing writer-resource route uses an admitted repository writer and reservation",
+                ] : [
+                  "native registration exception: FIRST tool exactly /usr/bin/printenv CODEX_THREAD_ID; report the complete identity and wait for explicit binding",
+                  "after registration: supplied packet and native output only; delivered Bash/apply_patch refuse; questions and acknowledgements are persisted by the coordinator",
+                ]),
               ]),
         ];
       } else if (plan.verb === "bind") {
@@ -1155,10 +1164,14 @@ async function main(argv) {
         satisfied = waited.satisfied;
         extra = [waited.ceiling ? `CEILING REACHED — ${waited.why}` : `satisfied — ${waited.why}`];
       } else if (plan.verb === "collect") {
+        const bench = plan.assignment === undefined ? undefined : nativeBenchAssignmentInputs(runRoot, {
+          attempt: plan.attempt, assignment: readAssignment(plan.assignment),
+          ...(plan.ref === undefined ? {} : { ref: plan.ref }),
+        });
         const got = collectRun(runRoot, {
           attempt: plan.attempt,
           ...(plan.usage === undefined ? {} : { usage: plan.usage }),
-          ...(plan.ref === undefined ? {} : { ref: plan.ref }),
+          ...(bench === undefined ? (plan.ref === undefined ? {} : { ref: plan.ref }) : { ref: bench.candidate }),
           ...(plan.report === undefined ? {} : { report: plan.report }),
           ...(plan.instants === undefined ? {} : { instants: plan.instants }),
           at,
@@ -1170,6 +1183,12 @@ async function main(argv) {
           `report: ${got.collected.report}`,
           `evidence entries retained: ${String(got.collected.evidence.length)}`,
         ];
+        if (bench !== undefined) {
+          const prepared = prepareNativeBenchRun(runRoot, { attempt: plan.attempt, resource: bench.resource,
+            candidate: bench.candidate, at });
+          record = prepared.record;
+          extra.push(`prepared detached-verifier: task ${prepared.manifest.taskId}; resource ${prepared.manifest.worktree}; candidate ${prepared.manifest.ref}; executor ${plan.attempt}; digest ${prepared.manifest.preparation.digest}`);
+        }
       } else if (plan.verb === "continue") {
         const carried = continueRun(runRoot, {
           attempt: plan.attempt,
@@ -1183,7 +1202,7 @@ async function main(argv) {
         extra = [
           `reconciliation: ${carried.reconciliation.verdict} — ${carried.reconciliation.why}`,
           ...carried.reconciliation.sources.map((s) => `source: ${s}`),
-          `re-delivered: ${carried.redelivered.join(", ") || "nothing was left unacknowledged"}`,
+          `${carried.record.native?.profile === "packet-only" ? "native answers awaiting coordinator re-delivery" : "re-delivered"}: ${carried.redelivered.join(", ") || "nothing was left unacknowledged"}`,
           ...(carried.replaced === null ? [] : [`replaces: ${carried.replaced}`]),
         ];
       } else {

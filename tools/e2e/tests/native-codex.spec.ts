@@ -22,9 +22,13 @@ import {
   NativeCodexFinding,
   activeNativeHolds,
   collectNativeWorkspace,
+  deriveNativeBenchAuthority,
   explicitResourceProblem,
   handleNativeEvent,
+  inspectNativeBench,
   nativeShellQuote,
+  nativeSha256,
+  nativeIgnoredSnapshot,
   prepareNativeRecord,
   readNativeRecord,
   withNativeTransaction,
@@ -36,11 +40,15 @@ import {
   collectRun,
   continueRun,
   observeRun,
+  prepareNativeBenchRun,
   readReservation,
+  sendAnswer,
   startRun,
+  stopRun,
 } from "../scripts/run-record.mjs";
 import type { Assignment, RunIo, RunRecord } from "../scripts/run-record.mjs";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
+import { buildDetachedBenchFence } from "../scripts/lane-fence.mjs";
 
 const WORK = "T-915";
 const AT = "2026-09-24T12:00:00.000Z";
@@ -414,13 +422,13 @@ async function concurrentCallbacks(
 
 function startNative(
   b: NativeBench,
-  over: { agentId?: string; sessionId?: string; taskName?: string; proveMismatch?: boolean } = {},
+  over: { agentId?: string; sessionId?: string; taskName?: string; proveMismatch?: boolean; assigned?: Assignment } = {},
 ): RunRecord {
   const agentId = over.agentId ?? "agent-1";
   const sessionId = over.sessionId ?? "parent-session";
   const taskName = over.taskName ?? "/root/native";
   const started = startRun(b.root, {
-    assignment: assignment(b, sessionId, taskName),
+    assignment: over.assigned ?? assignment(b, sessionId, taskName),
     at: AT,
     io: io(),
   });
@@ -1510,5 +1518,388 @@ test("native collect and continue independently require the exact reported commi
     ).toEqual(expect.arrayContaining([expect.objectContaining({ clearedAt: expect.any(String) })]));
   } finally {
     b.cleanup();
+  }
+});
+
+function packetAssignment(b: NativeBench): Assignment {
+  return { ...assignment(b), resource: "none", cwd: "/incidental/cwd/does-not-exist",
+    native: { ...assignment(b).native!, profile: "packet-only", ignoredOutputs: [] } };
+}
+
+function callbackInProcess(root: string, body: Record<string, unknown>): any {
+  const child = spawnSync(process.execPath, ["--input-type=module", "-e",
+    "const {handleNativeEvent}=await import(process.argv[1]); process.stdout.write(JSON.stringify(handleNativeEvent(process.argv[2], JSON.parse(process.argv[3]))));",
+    nativeModuleUrl, root, JSON.stringify(body)], { encoding: "utf8" });
+  expect(child.status, child.stderr).toBe(0);
+  return JSON.parse(child.stdout);
+}
+
+function exactRegistration(b: NativeBench, attempt: string, output = "agent-1\n", duplicate = false): void {
+  expect(callbackInProcess(b.root, event("SubagentStart")).disposition).toBe("start-recorded");
+  const probe = { tool_name: "Bash", tool_use_id: "probe-1", tool_input: { command: NATIVE_IDENTITY_PROBE } };
+  expect(callbackInProcess(b.root, event("PreToolUse", probe)).disposition).toBe("identity-probe-pre");
+  callbackInProcess(b.root, event("PostToolUse", { ...probe, tool_response: { output } }));
+  if (duplicate) callbackInProcess(b.root, event("PreToolUse", probe));
+  expect(readNativeRecord(b.root, attempt).native.probes).toHaveLength(1);
+}
+
+function candidateBench(stem: string): NativeBench & { executor: RunRecord; candidate: string; verifier: string; card: string } {
+  const b = bench(stem);
+  const card = `docs/tasks/${WORK}-fixture.md`;
+  mkdirSync(path.dirname(path.join(b.lane, card)), { recursive: true });
+  writeFileSync(path.join(b.lane, card), `---\nid: ${WORK}\nstatus: building\ntouches: [allowed.txt]\n---\noriginal criteria\n`);
+  git(b.lane, ["add", card]);
+  git(b.lane, ["commit", "-qm", "freeze admitted card"]);
+  b.base = git(b.lane, ["rev-parse", "HEAD"]);
+  const manifestFile = path.join(b.lane, ".supertaskr", "lane-fence.json");
+  const manifest = JSON.parse(readFileSync(manifestFile, "utf8"));
+  writeFileSync(manifestFile, JSON.stringify({ ...manifest, ref: b.base, card, touchesLine: "touches: [allowed.txt]" }));
+  const executor = startNative(b);
+  writeFileSync(path.join(b.lane, "allowed.txt"), "candidate\n");
+  // Today's edited card would grant outside.txt. Preparation must carry the original expansion.
+  writeFileSync(path.join(b.lane, card), `---\nid: ${WORK}\nstatus: verifying\ntouches: [allowed.txt, outside.txt]\n---\noriginal criteria\n`);
+  git(b.lane, ["add", "allowed.txt", card]);
+  git(b.lane, ["commit", "-qm", "candidate"]);
+  const candidate = git(b.lane, ["rev-parse", "HEAD"]);
+  const verifier = path.join(b.dir, "verifier");
+  git(b.lane, ["worktree", "add", "--quiet", "--detach", verifier, candidate]);
+  return { ...b, executor, candidate, verifier, card };
+}
+
+function finishExecutor(b: ReturnType<typeof candidateBench>): void {
+  observeRun(b.root, { attempt: b.executor.attempt, evidence: "RUN-DONE ok", io: io(), at: AT });
+  collectRun(b.root, { attempt: b.executor.attempt, ref: b.candidate, io: io(), at: AT });
+}
+
+function verifierAssignment(b: ReturnType<typeof candidateBench>): Assignment {
+  return { ...assignment(b), role: "verifier", resource: b.verifier, cwd: b.verifier, base: b.candidate,
+    native: { ...assignment(b).native!, taskName: "/root/verifier", profile: "detached-verifier", executorAttempt: b.executor.attempt } };
+}
+
+function preparedBench(stem: string): ReturnType<typeof candidateBench> {
+  const b = candidateBench(stem);
+  finishExecutor(b);
+  prepareNativeBenchRun(b.root, { attempt: b.executor.attempt, resource: b.verifier, candidate: b.candidate, io: io(), at: AT });
+  return b;
+}
+
+test("packet-only native admission and collection preserve output questions and answer acknowledgements without scanning incidental cwd or reserving a writer", () => {
+  // KILLED BY: incidental permission/final workspace scans, a writer reservation, invented HEAD, or losing native question evidence.
+  const b = bench("packet-lifecycle");
+  try {
+    const rec = startNative(b, { assigned: packetAssignment(b) });
+    expect(rec.writer).toBe(false);
+    expect(rec.resource).toBeNull();
+    expect(rec.reservation.file).toBeNull();
+    expect(rec.ask).toBeNull();
+    expect(rec.permission.kind).toBe("supplied-packet-only");
+    expect(rec.brief.digest).toBe(`sha256:${nativeSha256(readFileSync(rec.brief.path))}`);
+    expect(readReservation(b.root, b.lane)).toBeNull();
+    const noGit = io({ git: () => { throw new Error("nonwriter repository scan"); } });
+    const asked = observeRun(b.root, { attempt: rec.attempt, evidence: "RUN-ASK evidence-1\nNeed a supplied fact", io: noGit, at: AT });
+    expect(asked.record.native!.outputs[0].evidence).toContain("Need a supplied fact");
+    const sent = sendAnswer(b.root, { attempt: rec.attempt, question: "evidence-1", answer: "frozen fact", delivered: "native message receipt", io: noGit, at: AT });
+    expect(sent.record.questions[0]?.answer?.state).toBe("delivered");
+    expect(existsSync(path.join(b.scratch, `ask-${WORK}.md`))).toBe(false);
+    observeRun(b.root, { attempt: rec.attempt, evidence: "RUN-DONE ok", io: noGit, at: AT });
+    expect(() => collectRun(b.root, { attempt: rec.attempt, io: noGit, at: AT })).toThrow("collect refused by the independent final gate");
+    observeRun(b.root, { attempt: rec.attempt, evidence: "RUN-ACK evidence-1", io: noGit, at: AT });
+    const got = collectRun(b.root, { attempt: rec.attempt, report: "native attack set returned", io: noGit, at: AT });
+    expect(got.collected.refs).toEqual([]);
+    expect(got.record.native!.collection.check.head).toBeNull();
+    expect(got.record.questions[0]?.answer?.state).toBe("acknowledged");
+    expect(() => collectRun(b.root, { attempt: rec.attempt, ref: b.base, io: noGit })).toThrow("reports no repository commit");
+  } finally { b.cleanup(); }
+});
+
+test("packet-only registration uses exact separate-process probe output and refuses delivered Bash and apply_patch after binding", () => {
+  // KILLED BY: accepting only the first word of malformed identity, clearing a duplicate probe, or routing a packet-only tool as a writer.
+  for (const flaw of ["valid", "malformed", "duplicate", "missing"]) {
+    const b = bench(`packet-registration-${flaw}`);
+    try {
+      const rec = startRun(b.root, { assignment: packetAssignment(b), at: AT, io: io() }).record;
+      if (flaw === "missing") callbackInProcess(b.root, event("SubagentStart"));
+      else exactRegistration(b, rec.attempt, flaw === "malformed" ? "agent-1 extra-data\n" : "agent-1\n", flaw === "duplicate");
+      if (flaw !== "valid") {
+        expect(() => bindRun(b.root, { attempt: rec.attempt, harnessId: "agent-1", io: io(), at: AT })).toThrow("exact binding needs one completed identity probe");
+        continue;
+      }
+      expect(bindRun(b.root, { attempt: rec.attempt, harnessId: "agent-1", io: io(), at: AT }).state).toBe("started");
+      for (const tool of ["Bash", "apply_patch"]) {
+        const toolEvent = { tool_name: tool, tool_use_id: tool, tool_input: tool === "Bash" ? { command: commandFor(b) } : { patch: `*** Begin Patch\n*** Update File: ${b.lane}/allowed.txt\n@@\n-allowed\n+bad\n*** End Patch` } };
+        const denied = callbackInProcess(b.root, event("PreToolUse", toolEvent));
+        expect(denied.disposition).toBe("packet-tool-refused");
+        expect(denied.output.hookSpecificOutput.permissionDecision).toBe("deny");
+        expect(callbackInProcess(b.root, event("PostToolUse", toolEvent)).output.decision).toBe("block");
+      }
+      observeRun(b.root, { attempt: rec.attempt, evidence: "RUN-DONE ok", io: io(), at: AT });
+      expect(() => collectRun(b.root, { attempt: rec.attempt, io: io(), at: AT })).toThrow("collect refused by the independent final gate");
+      expect(activeNativeHolds(readNativeRecord(b.root, rec.attempt)).some((hold: any) => hold.code === "packet-tool-refused")).toBe(true);
+    } finally { b.cleanup(); }
+  }
+});
+
+test("packet-only stop and re-entry require independent cessation, reject live owned jobs and retain unresolved attribution", () => {
+  // KILLED BY: promoting a stop callback, ignoring an owned job, clearing an unknown identity, or scanning cwd on re-entry.
+  const b = bench("packet-stop");
+  try {
+    const rec = startNative(b, { assigned: { ...packetAssignment(b), ownedJobs: [{ kind: "port", id: "15915" }] } });
+    handleNativeEvent(b.root, event("SubagentStop"), { at: AT });
+    expect(() => stopRun(b.root, { attempt: rec.attempt, io: io(), at: AT })).toThrow("not established as terminated");
+    const liveIo = io({ listening: () => true });
+    expect(() => stopRun(b.root, { attempt: rec.attempt, evidence: "RUN-DONE gone", io: liveIo, at: AT })).toThrow("not established as terminated");
+    observeRun(b.root, { attempt: rec.attempt, evidence: "RUN-ASK resumed-fact", io: io(), at: AT });
+    sendAnswer(b.root, { attempt: rec.attempt, question: "resumed-fact", answer: "durable answer", delivered: "initial native delivery", io: io(), at: AT });
+    expect(stopRun(b.root, { attempt: rec.attempt, evidence: "RUN-DONE gone", io: io(), at: AT }).record.state).toBe("stopped");
+    expect(() => continueRun(b.root, { attempt: rec.attempt, replace: true, io: io(), at: AT })).toThrow("fresh native launch intent");
+    const resumed = continueRun(b.root, { attempt: rec.attempt, io: io(), at: AT });
+    expect(resumed.record.state).toBe("reserved");
+    expect(resumed.redelivered).toEqual(["resumed-fact"]);
+    expect(resumed.record.questions[0]?.answer?.redeliveries).toBe(0);
+    expect(resumed.record.questions[0]?.answer?.evidence.some((entry) => entry.kind === "native re-delivery required")).toBe(true);
+    bindRun(b.root, { attempt: rec.attempt, harnessId: "agent-1", io: io(), at: AT });
+    observeRun(b.root, { attempt: rec.attempt, evidence: "RUN-ACK resumed-fact", io: io(), at: AT });
+    observeRun(b.root, { attempt: rec.attempt, evidence: "RUN-DONE ok", io: io(), at: AT });
+    expect(collectRun(b.root, { attempt: rec.attempt, io: io(), at: AT }).collected.refs).toEqual([]);
+    callbackInProcess(b.root, event("PreToolUse", { agent_id: "unattributed", tool_name: "Bash", tool_use_id: "alien", tool_input: { command: "true" } }));
+    expect(() => collectRun(b.root, { attempt: rec.attempt, io: io(), at: AT })).toThrow("collect refused by the independent final gate");
+    expect(activeNativeHolds(readNativeRecord(b.root, rec.attempt)).some((hold: any) => hold.code === "unknown-worker")).toBe(true);
+  } finally { b.cleanup(); }
+});
+
+test("detached bench preparation requires collected executor cessation and binds the original card and scope despite candidate card edits", () => {
+  // KILLED BY: skipping independent collection/owned-job checks, deriving today's edited card, or dropping original-base-to-candidate authority.
+  const b = candidateBench("bench-preparation");
+  try {
+    const prep = () => prepareNativeBenchRun(b.root, { attempt: b.executor.attempt, resource: b.verifier, candidate: b.candidate, io: io(), at: AT });
+    expect(() => prep()).toThrow("independently collected");
+    finishExecutor(b);
+    const source = readNativeRecord(b.root, b.executor.attempt);
+    source.ownedJobs = [{ kind: "port", id: "25915" }];
+    writeNativeRecord(b.root, source);
+    expect(() => prepareNativeBenchRun(b.root, { attempt: b.executor.attempt, resource: b.verifier, candidate: b.candidate, io: io({ listening: () => true }), at: AT })).toThrow("owned-job cessation failed");
+    source.ownedJobs = [];
+    writeNativeRecord(b.root, source);
+    writeFileSync(path.join(b.verifier, "allowed.txt"), "dirty\n");
+    expect(() => prep()).toThrow("bench is dirty");
+    git(b.verifier, ["restore", "allowed.txt"]);
+    git(b.verifier, ["checkout", "-qb", "wrong-bench"]);
+    expect(() => prep()).toThrow("requires a detached bench");
+    git(b.verifier, ["checkout", "--quiet", "--detach", b.candidate]);
+    expect(() => prepareNativeBenchRun(b.root, { attempt: b.executor.attempt, resource: b.verifier, candidate: b.base, io: io(), at: AT })).toThrow("independently collected");
+    const prepared = prep();
+    expect(prepared.manifest.branch).toBeNull();
+    expect(prepared.manifest.preparation.authority.originalBase).toBe(b.base);
+    expect(prepared.manifest.preparation.authority.candidate).toBe(b.candidate);
+    expect(prepared.manifest.paths).toEqual(["allowed.txt"]);
+    expect(prepared.manifest.preparation.authority.card.text).toContain("touches: [allowed.txt]");
+    expect(prepared.manifest.preparation.authority.card.digest).toBe(nativeSha256(git(b.verifier, ["show", `${b.base}:${b.card}`]) + "\n"));
+  } finally { b.cleanup(); }
+});
+
+test("detached native admission consumes coordinator preparation and refuses wrong task, ref, scope, resource and worker-edited authority", () => {
+  // KILLED BY: trusting a local manifest's rewritten digest or skipping frozen authority at admission.
+  const b = preparedBench("bench-admission");
+  try {
+    const a = verifierAssignment(b);
+    const file = path.join(b.verifier, ".supertaskr", "lane-fence.json");
+    const original = readFileSync(file, "utf8");
+    const start = (assigned: Assignment = a) => startRun(b.root, { assignment: assigned, io: io(), at: AT });
+    expect(() => start({ ...a, id: "T-916" })).toThrow("fence task/ref does not match");
+    const wrongResource = path.join(b.dir, "wrong-resource");
+    git(b.lane, ["worktree", "add", "--quiet", "--detach", wrongResource, b.candidate]);
+    mkdirSync(path.join(wrongResource, ".supertaskr"));
+    writeFileSync(path.join(wrongResource, ".supertaskr", "lane-fence.json"), JSON.stringify({ ...JSON.parse(original), worktree: wrongResource }));
+    expect(() => start({ ...a, resource: wrongResource, cwd: wrongResource })).toThrow("differs from the frozen preparation");
+    git(b.verifier, ["checkout", "--quiet", "--detach", b.base]);
+    expect(() => start()).toThrow("is not admitted base");
+    git(b.verifier, ["checkout", "--quiet", "--detach", b.candidate]);
+    const changed = JSON.parse(original);
+    changed.paths.push("outside.txt");
+    changed.preparation.authority.paths.push("outside.txt");
+    changed.preparation.digest = nativeSha256(JSON.stringify(changed.preparation.authority));
+    writeFileSync(file, JSON.stringify(changed));
+    expect(() => start()).toThrow("coordinator preparation");
+    writeFileSync(file, original);
+    const accepted = startNative(b, { agentId: "verifier-1", assigned: a });
+    expect(accepted.native!.profile).toBe("detached-verifier");
+    const source = readNativeRecord(b.root, b.executor.attempt);
+    expect(source.native.preparations[0].consumedBy).toBe(accepted.attempt);
+    expect(accepted.native!.preparation.authority.executorAttempt).toBe(b.executor.attempt);
+    const payload = { agent_id: "verifier-1", tool_name: "Bash", tool_use_id: "bench-tool", tool_input: { command: `cd -- ${nativeShellQuote(b.verifier)} && true` } };
+    expect(callbackInProcess(b.root, event("PreToolUse", payload)).disposition).toBe("pre-admitted");
+    expect(callbackInProcess(b.root, event("PostToolUse", payload)).disposition).toBe("post-clean");
+    writeFileSync(path.join(b.verifier, "allowed.txt"), "verified descendant\n");
+    git(b.verifier, ["add", "allowed.txt"]);
+    git(b.verifier, ["commit", "-qm", "verifier descendant"]);
+    const tip = git(b.verifier, ["rev-parse", "HEAD"]);
+    observeRun(b.root, { attempt: accepted.attempt, evidence: "RUN-DONE ok", io: io(), at: AT });
+    expect(() => collectRun(b.root, { attempt: accepted.attempt, ref: b.candidate, io: io(), at: AT })).toThrow("collect refused by the independent final gate");
+    const collected = collectRun(b.root, { attempt: accepted.attempt, ref: tip, io: io(), at: AT });
+    expect(collected.record.native!.collection.check.tracked.some((entry: any) => entry.layer === "original-committed")).toBe(true);
+    expect(collected.record.native!.preparation.authority.candidate).toBe(b.candidate);
+    expect(readReservation(b.root, b.verifier)).toBeNull();
+  } finally { b.cleanup(); }
+});
+
+test("detached final collection independently retains original candidate scope and refuses dirty workspace or changed preparation", () => {
+  // KILLED BY: checking only candidate-to-verifier range, accepting in-scope residue, or trusting the worker's altered manifest at collection.
+  const b = preparedBench("bench-final");
+  try {
+    const accepted = startNative(b, { agentId: "verifier-1", assigned: verifierAssignment(b) });
+    observeRun(b.root, { attempt: accepted.attempt, evidence: "RUN-DONE ok", io: io(), at: AT });
+    expect(collectRun(b.root, { attempt: accepted.attempt, ref: b.candidate, io: io(), at: AT }).record.native!.collection.eligible).toBe(true);
+    writeFileSync(path.join(b.verifier, "allowed.txt"), "uncommitted verifier residue\n");
+    expect(() => collectRun(b.root, { attempt: accepted.attempt, ref: b.candidate, io: io(), at: AT })).toThrow("collect refused by the independent final gate");
+    git(b.verifier, ["restore", "allowed.txt"]);
+    const file = path.join(b.verifier, ".supertaskr", "lane-fence.json");
+    const original = readFileSync(file, "utf8");
+    const changed = JSON.parse(original);
+    changed.preparation.authority.originalBase = b.candidate;
+    changed.preparation.digest = nativeSha256(JSON.stringify(changed.preparation.authority));
+    writeFileSync(file, JSON.stringify(changed));
+    expect(() => collectRun(b.root, { attempt: accepted.attempt, ref: b.candidate, io: io(), at: AT })).toThrow("collect refused by the independent final gate");
+    writeFileSync(file, original);
+    expect(collectRun(b.root, { attempt: accepted.attempt, ref: b.candidate, io: io(), at: AT }).record.native!.collection.eligible).toBe(true);
+    // Independent inverse: forge a collected source claim for an out-of-scope candidate;
+    // the preparation's own original-base range scan must still reject it.
+    const badBench = path.join(b.dir, "out-of-scope-bench");
+    writeFileSync(path.join(b.lane, "outside.txt"), "outside candidate\n");
+    git(b.lane, ["add", "outside.txt"]); git(b.lane, ["commit", "-qm", "outside candidate"]);
+    const badTip = git(b.lane, ["rev-parse", "HEAD"]);
+    git(b.lane, ["worktree", "add", "--quiet", "--detach", badBench, badTip]);
+    const source = readNativeRecord(b.root, b.executor.attempt);
+    source.native.collection.ref = badTip;
+    source.native.collection.check.head = badTip;
+    // Exercise the independent bench scanner with otherwise valid frozen source authority.
+    const authority = deriveNativeBenchAuthority(source, { resource: badBench, candidate: badTip, at: AT });
+    expect(() => inspectNativeBench(authority)).toThrow("original-base-to-candidate changes exceed");
+    // Isolate collection from preparation by manufacturing a trusted claim only
+    // inside this disposable inverse fixture. Candidate-to-HEAD has no changes;
+    // the original range is the sole reason the independent workspace check reds.
+    const forgedManifest = buildDetachedBenchFence(authority, { root: b.root, at: AT });
+    const forgedText = `${JSON.stringify(forgedManifest, null, 2)}\n`;
+    const forgedFile = path.join(badBench, ".supertaskr", "lane-fence.json");
+    mkdirSync(path.dirname(forgedFile));
+    writeFileSync(forgedFile, forgedText);
+    source.native.preparations.push({ ...forgedManifest.preparation, manifestDigest: nativeSha256(forgedText), consumedBy: accepted.attempt });
+    writeNativeRecord(b.root, source);
+    const inverse = readNativeRecord(b.root, accepted.attempt);
+    inverse.resource = badBench;
+    inverse.assignment = { ...inverse.assignment, resource: badBench, cwd: badBench, base: badTip };
+    inverse.native.preparation = forgedManifest.preparation;
+    inverse.native.fence = { manifest: forgedFile, digest: nativeSha256(forgedText), taskId: WORK,
+      ref: badTip, paths: [...forgedManifest.paths, ...forgedManifest.alwaysWritable], text: forgedText, snapshot: forgedManifest };
+    inverse.native.ignoredBaseline = nativeIgnoredSnapshot(badBench, inverse.native.ignoredOutputs);
+    const checked = collectNativeWorkspace(inverse, { expectedRef: badTip, final: true });
+    expect(checked.clean).toBe(false);
+    expect(checked.findings).toEqual([expect.objectContaining({ code: "tracked-out-of-fence", path: "outside.txt", layer: "original-committed" })]);
+    expect(checked.tracked.filter((entry: any) => entry.layer === "committed")).toEqual([]);
+  } finally { b.cleanup(); }
+});
+
+test("the shared native arm visibly launches packet-only and prepared detached profiles and discloses the existing writer-resource bootstrap", () => {
+  // KILLED BY: dropping the collect preparation dial, hiding a profile's boundary, or printing a writer prefix for resource none.
+  const b = bench("native-launch-output");
+  const c = candidateBench("native-preparation-arm");
+  const briefScript = path.join(repoRoot, "tools/e2e/scripts/brief.mjs");
+  const arm = (root: string, args: string[]) => {
+    const child = spawnSync(process.execPath, [briefScript, "--root", root, ...args], { cwd: repoRoot, encoding: "utf8" });
+    expect(child.status, child.stderr).toBe(0);
+    return child.stdout;
+  };
+  try {
+    const packetFile = path.join(b.scratch, "assignment-packet-T-915.json");
+    writeFileSync(packetFile, JSON.stringify(packetAssignment(b)));
+    const packet = arm(b.root, ["--run", "start", "--assignment", packetFile]);
+    expect(packet).toContain("native profile: packet-only");
+    expect(packet).toContain("resource: none");
+    expect(packet).toContain("FIRST tool exactly /usr/bin/printenv CODEX_THREAD_ID");
+    expect(packet).toContain("delivered Bash/apply_patch refuse");
+    expect(packet).toContain("SubagentStart, PreToolUse, PostToolUse, SubagentStop, UserPromptSubmit");
+    expect(packet).toContain("gpt-5.6-sol");
+    expect(packet).toContain("xhigh");
+    expect(packet).not.toContain("native Bash prefix");
+    // Consume the collection extension through the public command, not a hand-built manifest.
+    finishExecutor(c);
+    const detachedFile = path.join(c.scratch, "assignment-detached-T-915.json");
+    const incoming = verifierAssignment(c);
+    const beforeInvalid = JSON.stringify(readNativeRecord(c.root, c.executor.attempt));
+    const invalid = [
+      { ...incoming, id: "T-916" },
+      { ...incoming, role: "executor" },
+      { ...incoming, native: { ...incoming.native!, profile: "writer-resource", executorAttempt: undefined } },
+      { ...incoming, native: { ...incoming.native!, executorAttempt: "T-915-a99" } },
+      { ...incoming, resource: "none", cwd: "none" },
+      { ...incoming, cwd: c.lane },
+      { ...incoming, base: c.base },
+      { ...incoming, native: { ...incoming.native!, ignoredOutputs: ["outside/"] } },
+    ];
+    for (const wrong of invalid) {
+      writeFileSync(detachedFile, JSON.stringify(wrong));
+      const refused = spawnSync(process.execPath, [briefScript, "--root", c.root, "--run", "collect", "--attempt", c.executor.attempt,
+        "--ref", c.candidate, "--assignment", detachedFile], { cwd: repoRoot, encoding: "utf8" });
+      expect(refused.status, refused.stderr).toBe(1);
+      expect(refused.stderr).toContain("incoming detached-verifier assignment differs");
+      expect(JSON.stringify(readNativeRecord(c.root, c.executor.attempt))).toBe(beforeInvalid);
+      expect(existsSync(path.join(c.verifier, ".supertaskr", "lane-fence.json"))).toBe(false);
+    }
+    writeFileSync(detachedFile, JSON.stringify(incoming));
+    // No separately typed candidate/resource: both are derived from the validated incoming assignment.
+    const prepared = arm(c.root, ["--run", "collect", "--attempt", c.executor.attempt, "--assignment", detachedFile]);
+    expect(prepared).toContain(`prepared detached-verifier: task ${WORK}; resource ${c.verifier}; candidate ${c.candidate}`);
+    const detached = arm(c.root, ["--run", "start", "--assignment", detachedFile]);
+    expect(detached).toContain("native profile: detached-verifier");
+    expect(detached).toContain(`candidate: ${c.candidate}`);
+    expect(detached).toContain(`native Bash prefix: cd -- ${nativeShellQuote(c.verifier)} &&`);
+    expect(detached).toContain("&& cd <package> && <package command>");
+    expect(detached).toContain("existing writer-resource route uses an admitted repository writer and reservation");
+    expect(detached).toContain("no arbitrary-tool enforcement, OS filesystem or read isolation");
+  } finally { b.cleanup(); c.cleanup(); }
+});
+
+test("published writer admissions reconstruct detached preparation only from matching frozen fence bytes and the original-base card", () => {
+  // KILLED BY: ignoring the published admission digest or reconstructing authority from the candidate's edited card.
+  const b = candidateBench("published-admission-preparation");
+  try {
+    finishExecutor(b);
+    const source = readNativeRecord(b.root, b.executor.attempt);
+    delete source.native.frozenCard;
+    delete source.native.fence.text;
+    delete source.native.fence.snapshot;
+    delete source.native.profile;
+    writeNativeRecord(b.root, source);
+    const fenceFile = path.join(b.lane, ".supertaskr", "lane-fence.json");
+    const original = readFileSync(fenceFile, "utf8");
+    writeFileSync(fenceFile, `${original}\n`);
+    expect(() => prepareNativeBenchRun(b.root, { attempt: source.attempt, resource: b.verifier, candidate: b.candidate, io: io(), at: AT })).toThrow("published executor fence no longer matches");
+    writeFileSync(fenceFile, original);
+    const prepared = prepareNativeBenchRun(b.root, { attempt: source.attempt, resource: b.verifier, candidate: b.candidate, io: io(), at: AT });
+    expect(prepared.manifest.paths).toEqual(["allowed.txt"]);
+    expect(prepared.manifest.preparation.authority.card.text).toContain("touches: [allowed.txt]");
+    expect(readNativeRecord(b.root, source.attempt).native.frozenCard.digest).toBe(prepared.manifest.preparation.authority.card.digest);
+  } finally { b.cleanup(); }
+});
+
+
+test("native record and public launch disclose every callback registered by the unchanged portable hook for both profiles", () => {
+  const registered=Object.keys(JSON.parse(readFileSync(path.join(repoRoot,".codex","hooks.json"),"utf8")).hooks).sort();
+  expect(registered.length).toBeGreaterThan(0);
+  expect(registered).toContain("Interrupt");
+  for(const profile of ["writer-resource","packet-only"]){
+    const b=bench("registered-coverage-"+profile);
+    try{
+      const assigned=profile==="packet-only"?packetAssignment(b):assignment(b);
+      const file=path.join(b.scratch,"assignment-coverage-T-915.json");writeFileSync(file,JSON.stringify(assigned));
+      const launch=spawnSync(process.execPath,[path.join(repoRoot,"tools/e2e/scripts/brief.mjs"),"--root",b.root,"--run","start","--assignment",file],{cwd:repoRoot,encoding:"utf8"});
+      expect(launch.status,launch.stderr).toBe(0);
+      const record=readNativeRecord(b.root,WORK+"-a1");
+      expect([...record.native.coverage.callbacks].sort()).toEqual(registered);
+      const printed=/native coverage: callbacks ([^;]+); tools /.exec(launch.stdout);
+      expect(printed).not.toBeNull();
+      expect(printed![1]!.split(", ").sort()).toEqual(registered);
+      expect(record.writer).toBe(profile==="writer-resource");
+      expect(record.reservation.file!==null).toBe(profile==="writer-resource");
+    }finally{b.cleanup();}
   }
 });

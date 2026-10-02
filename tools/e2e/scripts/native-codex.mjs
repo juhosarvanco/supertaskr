@@ -38,6 +38,7 @@ export const NATIVE_CODEX_VERSION = 1;
 export const NATIVE_CODEX_HARNESS = "codex-desktop-native";
 export const NATIVE_IDENTITY_PROBE = "/usr/bin/printenv CODEX_THREAD_ID";
 export const NATIVE_SUPPORTED_TOOLS = Object.freeze(["Bash", "apply_patch"]);
+export const NATIVE_COVERED_CALLBACKS = Object.freeze(["SubagentStart", "PreToolUse", "PostToolUse", "SubagentStop", "UserPromptSubmit", "Interrupt"]);
 export const NATIVE_TRANSACTION_WAIT_MS = 1_500;
 
 const NATIVE_TRANSACTION_POLL_MS = 10;
@@ -142,7 +143,7 @@ export function nativeShellQuote(value) {
  * @param {unknown} raw
  * @param {string} harness
  * @param {string} source
- * @returns {?{ taskName: string, sessionId: string, coordinatorTurnId: string, ignoredOutputs: string[] }}
+ * @returns {?{ taskName: string, sessionId: string, coordinatorTurnId: string, ignoredOutputs: string[], profile?: string, executorAttempt?: string }}
  */
 export function readNativeAssignment(raw, harness, source) {
   if (harness !== NATIVE_CODEX_HARNESS) {
@@ -173,7 +174,15 @@ export function readNativeAssignment(raw, harness, source) {
   if (new Set(ignoredOutputs).size !== ignoredOutputs.length) {
     throw new NativeCodexFinding("NATIVE_ASSIGNMENT_DUPLICATE_OUTPUT", `native-codex: ${source} repeats an ignored-output domain.`);
   }
-  return { taskName, sessionId, coordinatorTurnId, ignoredOutputs };
+  const profile = raw.profile === undefined ? undefined : string(raw.profile);
+  if (profile !== undefined && !["packet-only", "writer-resource", "detached-verifier"].includes(profile ?? "")) {
+    throw new NativeCodexFinding("NATIVE_PROFILE", `native-codex: ${source} has an unknown native profile.`);
+  }
+  const executorAttempt = raw.executorAttempt === undefined ? undefined : string(raw.executorAttempt);
+  if ((profile === "detached-verifier") !== (executorAttempt !== undefined && executorAttempt !== null)) {
+    throw new NativeCodexFinding("NATIVE_PREPARATION_ASSIGNMENT", "native-codex: only detached-verifier names its frozen executorAttempt, which is required.");
+  }
+  return { taskName, sessionId, coordinatorTurnId, ignoredOutputs, ...(profile === undefined ? {} : { profile: /** @type {string} */ (profile) }), ...(executorAttempt == null ? {} : { executorAttempt }) };
 }
 
 /** @param {string} mode */
@@ -259,7 +268,7 @@ function signatureMap(entries) {
 
 /** @param {string} root @param {string} manifest */
 function readFence(root, manifest) {
-  if (!path.isAbsolute(manifest) || !existsSync(manifest)) {
+  if (typeof manifest !== "string" || !path.isAbsolute(manifest) || !existsSync(manifest)) {
     throw new NativeCodexFinding("NATIVE_FENCE_UNREADABLE", `native-codex: the admitted fence manifest is absent: ${manifest}`);
   }
   let parsed;
@@ -286,6 +295,43 @@ function readFence(root, manifest) {
     taskId: string(parsed.taskId),
     ref: string(parsed.ref),
     paths,
+    text,
+    snapshot: parsed,
+  };
+}
+
+/** Freeze the card from the admitted commit, never the executor's later edit.
+ * @param {string} resource @param {Record<string, any>} rec @param {any} fence
+ */
+function frozenNativeCard(resource, rec, fence) {
+  let card = string(fence.snapshot.card);
+  if (card === null) {
+    const dir = path.join(resource, "docs", "tasks");
+    if (!existsSync(dir)) return null;
+    const matches = readdirSync(dir).filter((name) => name.endsWith(".md") &&
+      /^id:\s*(\S+)\s*$/m.exec(readFileSync(path.join(dir, name), "utf8"))?.[1] === rec.assignment.id);
+    if (matches.length !== 1) return null;
+    card = `docs/tasks/${matches[0]}`;
+  }
+  card = nativeDomain(card);
+  const result = git(resource, ["show", `${rec.assignment.base}:${card}`], { allowFailure: true });
+  if (result.status !== 0) return null;
+  const text = result.stdout.toString("utf8");
+  if (/^id:\s*(\S+)\s*$/m.exec(text)?.[1] !== rec.assignment.id) return null;
+  return { path: card, digest: nativeSha256(text), text };
+}
+
+/** @param {Record<string, any>} rec @param {string} at */
+function initialNativeState(rec, at) {
+  return {
+    version: NATIVE_CODEX_VERSION,
+    profile: rec.assignment.native.profile ?? (rec.writer ? "writer-resource" : "packet-only"),
+    launch: { taskName: rec.assignment.native.taskName, sessionId: rec.assignment.native.sessionId,
+      coordinatorTurnIds: [rec.assignment.native.coordinatorTurnId] },
+    preparedAt: at, start: null, probes: [], binding: null, inflight: [], receipts: [], holds: [],
+    stopObservations: [], interruptObservations: [], outputs: [],
+    coverage: { callbacks: [...NATIVE_COVERED_CALLBACKS], tools: [...NATIVE_SUPPORTED_TOOLS] },
+    disclosure: "registered callbacks and Bash/apply_patch only; procedural supplied-packet restriction for packet-only participants; repository safeguard for writers; no arbitrary-tool enforcement, OS filesystem or read isolation",
   };
 }
 
@@ -294,10 +340,21 @@ function readFence(root, manifest) {
  * called before the record is first written and therefore before spawn.
  *
  * @param {Record<string, any>} rec
- * @param {{ at: string }} opts
+ * @param {{ at: string, root?: string }} opts
  */
 export function prepareNativeRecord(rec, opts) {
   if (rec.assignment?.native === null || rec.assignment?.native === undefined) return rec;
+  const initial = initialNativeState(rec, opts.at);
+  if (!["packet-only", "writer-resource", "detached-verifier"].includes(initial.profile)) {
+    throw new NativeCodexFinding("NATIVE_PROFILE", "native-codex: the native profile is unreadable.");
+  }
+  if (initial.profile === "packet-only") {
+    if (rec.writer || rec.resource !== null || rec.assignment.resource !== "none" || rec.assignment.native.ignoredOutputs.length !== 0) {
+      throw new NativeCodexFinding("NATIVE_NONWRITER_RESOURCE", "native-codex: packet-only requires resource none and no ignored-output policy or writer reservation.");
+    }
+    rec.native = { ...initial, fence: null, ignoredOutputs: [], ignoredBaseline: [] };
+    return rec;
+  }
   if (rec.writer !== true || rec.resource === null) {
     throw new NativeCodexFinding("NATIVE_WRITER_REQUIRED", "native-codex: a tool-using native attempt must own a writer resource.");
   }
@@ -333,6 +390,13 @@ export function prepareNativeRecord(rec, opts) {
       "native-codex: fence task/ref does not match the admitted card and base.",
     );
   }
+  let preparation = null;
+  if (initial.profile === "detached-verifier") {
+    if (opts.root === undefined) throw new NativeCodexFinding("NATIVE_PREPARATION_SOURCE", "native-codex: detached admission requires the coordinator run root.");
+    preparation = validateNativeBenchPreparation(opts.root, rec, fence);
+  } else if (fence.snapshot.preparation !== undefined) {
+    throw new NativeCodexFinding("NATIVE_PREPARATION_PROFILE", "native-codex: a prepared detached bench requires the detached-verifier profile.");
+  }
   const ignoredOutputs = rec.assignment.native.ignoredOutputs.map(nativeDomain);
   const ignoredBaseline = nativeIgnoredSnapshot(resource, ignoredOutputs);
   const fenceRel = path.relative(resource, manifest).replaceAll("\\", "/");
@@ -347,13 +411,9 @@ export function prepareNativeRecord(rec, opts) {
     {
       ...rec,
       native: {
-        version: NATIVE_CODEX_VERSION,
-        launch: {
-          taskName: rec.assignment.native.taskName,
-          sessionId: rec.assignment.native.sessionId,
-          coordinatorTurnIds: [rec.assignment.native.coordinatorTurnId],
-        },
-        preparedAt: opts.at,
+        ...initial,
+        authorityRoot: opts.root,
+        preparation,
         fence,
         ignoredOutputs,
         ignoredBaseline,
@@ -365,26 +425,22 @@ export function prepareNativeRecord(rec, opts) {
         holds: [],
         stopObservations: [],
         interruptObservations: [],
-        disclosure:
-          "repository safeguard only: it does not detect every arbitrary shell write outside the assigned repository and is not OS filesystem or read isolation",
+        disclosure: initial.disclosure,
       },
     },
     {},
   );
-  if (!admitted.clean || admitted.tracked.length > 0 || admitted.untracked.length > 0) {
+  if (!admitted.clean || admitted.tracked.some((entry) => entry.layer !== "original-committed") || admitted.untracked.length > 0) {
     throw new NativeCodexFinding(
       "NATIVE_ADMISSION_DIRTY",
       `native-codex: assigned resource is not the clean admitted base: ${JSON.stringify(admitted.findings)}`,
     );
   }
   rec.native = {
-    version: NATIVE_CODEX_VERSION,
-    launch: {
-      taskName: rec.assignment.native.taskName,
-      sessionId: rec.assignment.native.sessionId,
-      coordinatorTurnIds: [rec.assignment.native.coordinatorTurnId],
-    },
-    preparedAt: opts.at,
+    ...initial,
+    authorityRoot: opts.root,
+    preparation,
+    frozenCard: frozenNativeCard(resource, rec, fence),
     fence,
     ignoredOutputs,
     ignoredBaseline,
@@ -396,9 +452,17 @@ export function prepareNativeRecord(rec, opts) {
     holds: [],
     stopObservations: [],
     interruptObservations: [],
-    disclosure:
-      "repository safeguard only: it does not detect every arbitrary shell write outside the assigned repository and is not OS filesystem or read isolation",
+    disclosure: initial.disclosure,
   };
+  if (preparation !== null) {
+    const source = readNativeRecord(/** @type {string} */ (opts.root), preparation.authority.executorAttempt);
+    const entry = source.native.preparations.find((/** @type {any} */ item) => item.digest === preparation.digest);
+    if (entry.consumedBy !== null && entry.consumedBy !== rec.attempt) {
+      throw new NativeCodexFinding("NATIVE_PREPARATION_CONSUMED", "native-codex: this bench preparation already belongs to another attempt.");
+    }
+    entry.consumedBy = rec.attempt;
+    writeNativeRecord(/** @type {string} */ (opts.root), source);
+  }
   return rec;
 }
 
@@ -426,7 +490,137 @@ function nativeState(rec) {
       `native-codex: attempt ${String(rec.attempt)} coordinator turn authority is unreadable; collection and continuation refuse.`,
     );
   }
+  if (native.profile === "packet-only" && !Array.isArray(native.outputs)) {
+    throw new NativeCodexFinding("NATIVE_HOLD_UNREADABLE", "native-codex: packet-only persisted native output is unreadable.");
+  }
   return native;
+}
+
+/** @param {Record<string, any>} source @param {{ resource: string, candidate: string, at: string }} opts */
+export function deriveNativeBenchAuthority(source, opts) {
+  const native = nativeState(source);
+  const collection = native.collection;
+  if (source.writer !== true || native.profile === "detached-verifier" || source.assignment.role !== "executor" ||
+      source.state !== "finished" || source.execution?.endedAt == null || native.binding == null ||
+      !isObject(collection) || collection.eligible !== true || collection.actualIndependentCheck !== true ||
+      collection.ref !== opts.candidate || /** @type {any} */ (collection.check)?.head !== opts.candidate ||
+      /** @type {any} */ (collection.check)?.clean !== true || !Array.isArray(collection.holds) || collection.holds.length !== 0 ||
+      !Array.isArray(collection.ownedJobs) || collection.ownedJobs.length !== 0 || activeNativeHolds(source).length !== 0) {
+    throw new NativeCodexFinding("NATIVE_PREPARATION_UNCOLLECTED", "native-codex: preparation needs an independently collected, exactly bound executor candidate with established cessation and no holds.");
+  }
+  // Published writer-resource admissions retained the manifest digest and paths.
+  // Recover their full frozen bytes only when the original digest still agrees;
+  // the card is read from the original commit, never today's card or expansion.
+  if (native.fence?.text === undefined && native.frozenCard === undefined) {
+    const frozen = readFence(exactGitRoot(source.resource), native.fence?.manifest);
+    if (frozen.digest !== native.fence?.digest || JSON.stringify(frozen.paths) !== JSON.stringify(native.fence?.paths) ||
+        frozen.taskId !== source.assignment.id || frozen.ref !== source.assignment.base) {
+      throw new NativeCodexFinding("NATIVE_PREPARATION_SOURCE", "native-codex: published executor fence no longer matches its frozen admission.");
+    }
+    native.fence = frozen;
+    native.frozenCard = frozenNativeCard(source.resource, source, frozen);
+  }
+  const card = native.frozenCard;
+  const fence = native.fence;
+  const snapshot = /** @type {any} */ (fence?.snapshot);
+  let decodedFence = null;
+  try { decodedFence = JSON.parse(fence?.text ?? "null"); } catch { /* named source refusal below */ }
+  if (!isObject(card) || typeof card.text !== "string" || card.digest !== nativeSha256(card.text) ||
+      !isObject(fence) || typeof fence.text !== "string" || fence.digest !== nativeSha256(fence.text) ||
+      !Array.isArray(snapshot?.paths) || !Array.isArray(snapshot?.alwaysWritable) ||
+      JSON.stringify(decodedFence) !== JSON.stringify(snapshot) ||
+      JSON.stringify([...snapshot.paths, ...snapshot.alwaysWritable].map(nativeDomain)) !== JSON.stringify(fence.paths) ||
+      source.assignmentDigest !== `sha256:${nativeSha256(JSON.stringify(source.assignment))}`) {
+    throw new NativeCodexFinding("NATIVE_PREPARATION_SOURCE", "native-codex: frozen executor card, assignment or expanded fence authority is unreadable or mismatched.");
+  }
+  if (!/^[0-9a-f]{40}$/.test(opts.candidate) || !/^[0-9a-f]{40}$/.test(source.assignment.base)) {
+    throw new NativeCodexFinding("NATIVE_PREPARATION_REF", "native-codex: preparation needs full original-base and candidate commits.");
+  }
+  const resource = exactGitRoot(opts.resource);
+  return {
+    version: 1, profile: "detached-verifier", preparedAt: opts.at,
+    executorAttempt: source.attempt, taskId: source.assignment.id,
+    originalBase: source.assignment.base, candidate: opts.candidate, resource,
+    assignmentDigest: source.assignmentDigest, briefDigest: source.brief.digest,
+    admission: source.admission, card, originalFenceDigest: fence.digest,
+    paths: [...snapshot.paths], alwaysWritable: [...snapshot.alwaysWritable],
+    touchesLine: snapshot.touchesLine ?? /^touches:.*$/m.exec(card.text)?.[0] ?? null,
+    excluded: [...(snapshot.excluded ?? [])], tokens: [...(snapshot.tokens ?? [])],
+    ignoredOutputs: [...native.ignoredOutputs],
+  };
+}
+
+/** Independent preparation check in the bench's own repository.
+ * @param {any} authority
+ */
+export function inspectNativeBench(authority) {
+  const root = exactGitRoot(authority.resource);
+  if (git(root, ["symbolic-ref", "--quiet", "HEAD"], { allowFailure: true }).status !== 1) {
+    throw new NativeCodexFinding("NATIVE_PREPARATION_DETACHED", "native-codex: preparation requires a detached bench.");
+  }
+  if (git(root, ["rev-parse", "HEAD"]).stdout.toString("utf8").trim() !== authority.candidate ||
+      git(root, ["merge-base", "--is-ancestor", authority.originalBase, authority.candidate], { allowFailure: true }).status !== 0) {
+    throw new NativeCodexFinding("NATIVE_PREPARATION_REF", "native-codex: detached bench HEAD or original-base ancestry differs from the candidate.");
+  }
+  const original = git(root, ["show", `${authority.originalBase}:${authority.card.path}`]).stdout.toString("utf8");
+  if (nativeSha256(original) !== authority.card.digest) {
+    throw new NativeCodexFinding("NATIVE_PREPARATION_CARD", "native-codex: bench does not carry the frozen original-base card.");
+  }
+  const range = parseNativeRawDiff(git(root, ["diff", "--raw", "-z", "--find-renames", "--no-abbrev", authority.originalBase, authority.candidate, "--"]).stdout);
+  const domains = [...authority.paths, ...authority.alwaysWritable].map(nativeDomain);
+  if (range.some((entry) => entry.paths.some((rel) => !nativePathAllowed(rel, domains)))) {
+    throw new NativeCodexFinding("NATIVE_PREPARATION_RANGE", "native-codex: original-base-to-candidate changes exceed the frozen expanded scope.");
+  }
+  if (git(root, ["diff", "--raw", "--"]).stdout.length !== 0 ||
+      git(root, ["diff", "--raw", "--cached", "HEAD", "--"]).stdout.length !== 0 ||
+      git(root, ["ls-files", "--others", "--exclude-standard", "-z", "--"]).stdout.length !== 0 ||
+      nativeIgnoredSnapshot(root, authority.ignoredOutputs).some((entry) => entry.path !== ".supertaskr/lane-fence.json")) {
+    throw new NativeCodexFinding("NATIVE_PREPARATION_DIRTY", "native-codex: bench is dirty under the declared ignored-output policy.");
+  }
+  return { clean: true, candidate: authority.candidate, originalBase: authority.originalBase, range, actualIndependentCheck: true };
+}
+
+/** Read the coordinator's preparation independently of the worker's copy.
+ * @param {string} root @param {Record<string, any>} rec @param {any} fence
+ */
+function validateNativeBenchPreparation(root, rec, fence) {
+  const prepared = fence.snapshot.preparation;
+  if (!isObject(prepared) || !isObject(prepared.authority) ||
+      prepared.digest !== nativeSha256(JSON.stringify(prepared.authority))) {
+    throw new NativeCodexFinding("NATIVE_PREPARATION_UNREADABLE", "native-codex: detached bench preparation is absent, unreadable or changed.");
+  }
+  const authority = /** @type {any} */ (prepared.authority);
+  if (!Array.isArray(authority.paths) || !Array.isArray(authority.alwaysWritable) || !Array.isArray(authority.ignoredOutputs) || !isObject(authority.card)) {
+    throw new NativeCodexFinding("NATIVE_PREPARATION_UNREADABLE", "native-codex: prepared expanded scope, ignored-output policy or original card is unreadable.");
+  }
+  if (rec.assignment.role !== "verifier" || authority.profile !== "detached-verifier" || authority.taskId !== rec.assignment.id ||
+      authority.resource !== rec.resource || authority.candidate !== rec.assignment.base ||
+      authority.executorAttempt !== rec.assignment.native.executorAttempt || fence.ref !== authority.candidate ||
+      JSON.stringify([...authority.paths, ...authority.alwaysWritable]) !== JSON.stringify(fence.paths) ||
+      JSON.stringify(rec.assignment.native.ignoredOutputs) !== JSON.stringify(authority.ignoredOutputs) ||
+      fence.snapshot.branch !== null || fence.snapshot.profile !== "detached-verifier") {
+    throw new NativeCodexFinding("NATIVE_PREPARATION_MISMATCH", "native-codex: task, resource, candidate, profile or expanded scope differs from the frozen preparation.");
+  }
+  const source = readNativeRecord(root, authority.executorAttempt);
+  const entries = Array.isArray(source.native.preparations)
+    ? source.native.preparations.filter((/** @type {any} */ entry) => isObject(entry) && entry.digest === prepared.digest) : null;
+  if (!Array.isArray(entries) || entries.length !== 1 || entries[0].manifestDigest !== fence.digest || JSON.stringify(entries[0].authority) !== JSON.stringify(authority) ||
+      (entries[0].consumedBy !== null && entries[0].consumedBy !== rec.attempt)) {
+    throw new NativeCodexFinding("NATIVE_PREPARATION_SOURCE", "native-codex: bench authority does not match exactly one coordinator preparation for this attempt.");
+  }
+  const derived = deriveNativeBenchAuthority(source, { resource: rec.resource, candidate: rec.assignment.base, at: authority.preparedAt });
+  if (JSON.stringify(derived) !== JSON.stringify(authority)) {
+    throw new NativeCodexFinding("NATIVE_PREPARATION_SOURCE", "native-codex: frozen executor admission differs from the issued preparation.");
+  }
+  const branch = git(rec.resource, ["symbolic-ref", "--quiet", "HEAD"], { allowFailure: true });
+  if (branch.status !== 1) {
+    throw new NativeCodexFinding("NATIVE_PREPARATION_DETACHED", "native-codex: a verifier bench must have a detached HEAD, never a task branch.");
+  }
+  const original = git(rec.resource, ["show", `${authority.originalBase}:${authority.card.path}`]).stdout.toString("utf8");
+  if (nativeSha256(original) !== authority.card.digest) {
+    throw new NativeCodexFinding("NATIVE_PREPARATION_CARD", "native-codex: original-base card differs from the frozen executor card.");
+  }
+  return /** @type {any} */ (prepared);
 }
 
 /**
@@ -435,15 +629,29 @@ function nativeState(rec) {
  * out-of-fence change.
  *
  * @param {Record<string, any>} rec
- * @param {{ expectedRef?: string }} opts
+ * @param {{ expectedRef?: string, final?: boolean }} opts
  */
 export function collectNativeWorkspace(rec, opts = {}) {
   const native = nativeState(rec);
+  if (native.profile === "packet-only") {
+    if (rec.writer || rec.resource !== null || rec.assignment.resource !== "none" || rec.permission.kind !== "supplied-packet-only" ||
+        rec.reservation.file !== null || rec.reservation.takenAt !== null || rec.permission.digest !== rec.brief.digest) {
+      throw new NativeCodexFinding("NATIVE_NONWRITER_AUTHORITY", "native-codex: packet-only authority has changed.");
+    }
+    if (opts.expectedRef !== undefined) throw new NativeCodexFinding("NATIVE_NONWRITER_REF", "native-codex: a packet-only participant reports no repository commit.");
+    return { clean: true, profile: "packet-only", base: null, head: null, tracked: [], untracked: [], ignoredOutsidePolicy: [], ignoredOutputs: [], findings: [] };
+  }
   const root = exactGitRoot(rec.resource);
   const currentFence = readFence(root, native.fence.manifest);
   const findings = [];
   if (currentFence.digest !== native.fence.digest || JSON.stringify(currentFence.paths) !== JSON.stringify(native.fence.paths)) {
     findings.push({ code: "fence-authority-changed", manifest: native.fence.manifest });
+  }
+  if (native.profile === "detached-verifier") {
+    const prepared = validateNativeBenchPreparation(native.authorityRoot, rec, currentFence);
+    if (JSON.stringify(prepared) !== JSON.stringify(native.preparation)) {
+      findings.push({ code: "preparation-authority-changed" });
+    }
   }
   const head = git(root, ["rev-parse", "HEAD"]).stdout.toString("utf8").trim();
   const expectedRef = opts.expectedRef;
@@ -454,6 +662,10 @@ export function collectNativeWorkspace(rec, opts = {}) {
   const ancestor = git(root, ["merge-base", "--is-ancestor", rec.assignment.base, head], { allowFailure: true });
   if (ancestor.status !== 0) findings.push({ code: "base-not-ancestor", base: rec.assignment.base, head });
   const layers = [
+    ...(native.profile !== "detached-verifier" ? [] : [{
+      layer: "original-committed",
+      entries: parseNativeRawDiff(git(root, ["diff", "--raw", "-z", "--find-renames", "--no-abbrev", native.preparation.authority.originalBase, native.preparation.authority.candidate, "--"]).stdout),
+    }]),
     {
       layer: "committed",
       entries: parseNativeRawDiff(
@@ -484,6 +696,15 @@ export function collectNativeWorkspace(rec, opts = {}) {
   const untracked = nulPaths(git(root, ["ls-files", "--others", "--exclude-standard", "-z", "--"]).stdout).map(
     (rel) => ({ kind: "untracked", path: rel, type: nativeFileSignature(root, rel).type }),
   );
+  if (native.profile === "detached-verifier") {
+    const authority = native.preparation.authority;
+    if (git(root, ["merge-base", "--is-ancestor", authority.originalBase, authority.candidate], { allowFailure: true }).status !== 0) {
+      findings.push({ code: "original-base-not-ancestor", base: authority.originalBase, candidate: authority.candidate });
+    }
+    if (opts.final === true && (untracked.length !== 0 || layers.some((layer) => ["staged", "unstaged"].includes(layer.layer) && layer.entries.length !== 0))) {
+      findings.push({ code: "prepared-workspace-dirty" });
+    }
+  }
   for (const entry of untracked) {
     if (!nativePathAllowed(entry.path, native.fence.paths)) {
       findings.push({ code: "untracked-out-of-fence", path: entry.path, type: entry.type });
@@ -1079,6 +1300,8 @@ function clearReconciledHolds(rec, at, why) {
         "session-mismatch",
         "unreadable-authority",
         "native-transaction-refusal",
+        "packet-tool-refused",
+        "duplicate-probe",
       ].includes(hold.code)
     ) {
       continue;
@@ -1399,7 +1622,7 @@ function handleNativeEventUnlocked(root, event, opts = {}) {
           entry.agentId === agentId && entry.turnId === turnId && entry.toolUseId === toolUseId && entry.postAt === null,
       );
       if (probe !== undefined) {
-        const reported = responseText(event.tool_response).trim().split(/\s+/)[0] ?? "";
+        const reported = responseText(event.tool_response).trim();
         probe.postAt = at;
         probe.reportedThreadId = reported;
         writeNativeRecord(root, rec);
@@ -1426,6 +1649,18 @@ function handleNativeEventUnlocked(root, event, opts = {}) {
               },
             },
       disposition: "unbound-held",
+    };
+  }
+
+  if (native.profile === "packet-only") {
+    addNativeHold(rec, { key: `packet-tool:${String(toolUseId)}:${eventName}`, code: "packet-tool-refused", event: eventMeta(event), recordedAt: at });
+    writeNativeRecord(root, rec);
+    const reason = "NATIVE PACKET-ONLY: the identity registration exception has ended; delivered Bash/apply_patch are refused. Work from the supplied packet and return native output.";
+    return {
+      output: eventName === "PreToolUse"
+        ? { hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: reason } }
+        : { decision: "block", reason },
+      disposition: "packet-tool-refused",
     };
   }
 
@@ -1600,7 +1835,7 @@ export function bindNativeIdentity(root, rec, opts) {
       probe.postAt !== null &&
       probe.reportedThreadId === agentId,
   );
-  if (probes.length !== 1) {
+  if (probes.length !== 1 || native.probes.length !== 1 || activeNativeHolds(rec).some((/** @type {any} */ hold) => hold.code === "duplicate-probe")) {
     throw new NativeCodexFinding(
       "NATIVE_BIND_PROBE",
       `native-codex: exact binding needs one completed identity probe; found ${probes.length}.`,
@@ -1644,8 +1879,9 @@ export function nativeFinalGate(rec, opts) {
     return { eligible: true, phase: opts.phase, check: null, inflight: [], holds: [], ownedJobs: opts.aliveJobs };
   }
   const native = nativeState(rec);
+  const packetOnly = native.profile === "packet-only";
   let check = null;
-  const reportedRefRequired = opts.phase === "collect" || opts.phase === "continue";
+  const reportedRefRequired = !packetOnly && (opts.phase === "collect" || opts.phase === "continue");
   const reportedRefPresent = opts.expectedRef !== undefined && opts.expectedRef !== "";
   if (reportedRefRequired && !reportedRefPresent) {
     addNativeHold(rec, {
@@ -1658,12 +1894,17 @@ export function nativeFinalGate(rec, opts) {
   try {
     check = collectNativeWorkspace(
       rec,
-      reportedRefPresent ? { expectedRef: /** @type {string} */ (opts.expectedRef) } : {},
+      { ...(reportedRefPresent ? { expectedRef: /** @type {string} */ (opts.expectedRef) } : {}), final: opts.phase === "collect" },
     );
     if (!check.clean) findingHold(rec, opts.at, `final-${opts.phase}`, check);
   } catch (error) {
     checkerHold(rec, opts.at, `final-${opts.phase}`, error);
   }
+  const bound = native.binding !== null && rec.execution?.harnessId === native.binding.agentId;
+  const questionsSettled = !packetOnly || opts.phase !== "collect" ||
+    (rec.questions ?? []).every((/** @type {any} */ q) => q.answer?.state === "acknowledged");
+  if (!bound) addNativeHold(rec, { key: "final-binding", code: "final-binding-required", recordedAt: opts.at });
+  if (!questionsSettled) addNativeHold(rec, { key: "final-questions", code: "unresolved-question", recordedAt: opts.at });
   const missingCompletions = [...native.inflight];
   if (missingCompletions.length > 0) {
     addNativeHold(rec, {
@@ -1704,6 +1945,7 @@ export function nativeFinalGate(rec, opts) {
     native.inflight.length === 0 &&
     opts.lifecycleReconciled &&
     opts.aliveJobs.length === 0 &&
+    bound && questionsSettled &&
     (!reportedRefRequired || reportedRefPresent)
   ) {
     clearReconciledHolds(rec, opts.at, `T-311 lifecycle and owned-job reconciliation at native ${opts.phase}`);
@@ -1715,6 +1957,7 @@ export function nativeFinalGate(rec, opts) {
     holds.length === 0 &&
     opts.lifecycleReconciled &&
     opts.aliveJobs.length === 0 &&
+    bound && questionsSettled &&
     (!reportedRefRequired || reportedRefPresent);
   return {
     eligible,

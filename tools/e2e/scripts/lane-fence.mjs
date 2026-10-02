@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { createHash } from "node:crypto";
 import {
   LANE_BRANCH_RE,
   MANIFEST_REL_PATH,
@@ -244,6 +245,22 @@ export async function buildLaneFence(taskId, worktree, options = {}) {
         paths: [...t.paths],
       }),
     ),
+  };
+}
+
+/** A detached native bench consumes frozen executor authority; it never expands
+ * the candidate's edited card or poses as an ordinary task branch.
+ * The run arm independently validates the authority and bench before writing.
+ * @param {any} authority @param {{ root: string, at: string }} options
+ */
+export function buildDetachedBenchFence(authority, options) {
+  return {
+    version: MANIFEST_VERSION, profile: "detached-verifier", branch: null,
+    writtenAt: options.at, writtenFrom: options.root, ref: authority.candidate,
+    taskId: authority.taskId, worktree: authority.resource, card: authority.card.path,
+    touchesLine: authority.touchesLine, paths: [...authority.paths],
+    alwaysWritable: [...authority.alwaysWritable], excluded: [...authority.excluded], tokens: [...authority.tokens],
+    preparation: { authority, digest: createHash("sha256").update(JSON.stringify(authority)).digest("hex") },
   };
 }
 
