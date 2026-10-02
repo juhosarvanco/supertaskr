@@ -6,7 +6,7 @@ milestone: 4
 size: M
 tier: guarded
 priority: 1
-status: building
+status: verifying
 blocked_by: [T-315-s1]
 touches: [tools/e2e/scripts/native-codex.mjs, tools/e2e/scripts/run-record.mjs, tools/e2e/scripts/lane-fence.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/native-codex.spec.ts, tools/e2e/tests/run-record.spec.ts, tools/e2e/tests/lane-fence.spec.ts, tools/e2e/tests/brief.spec.ts, docs/CAPABILITIES.md, docs/INDEX.md]
 builder: gpt-6.1-sol@fresh
