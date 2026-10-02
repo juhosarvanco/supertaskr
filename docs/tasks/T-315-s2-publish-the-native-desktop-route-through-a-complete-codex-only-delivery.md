@@ -30,6 +30,16 @@ Publish the native desktop route through this card’s complete delivery, using 
 
 ## Implementation notes
 
+### Executor criteria echo — before implementation, 2026-10-02
+
+- [ ] Publish the eligible native seat requirements, with real callback and identity evidence owned by the coordinator.
+- [ ] Keep this delivery native first, record every participant, reserve each writer before spawn, and retain the owner's explicit model policy.
+- [ ] Describe and use the accepted packet-only phase one and frozen detached-verifier phase two preparation routes.
+- [ ] Preserve durable questions, exact binding and monitoring, and disclose shared cwd and procedural reading limits.
+- [ ] Render only the frozen task contract to reviewers, retain raw integrity authority, and leave independent full-range collection to the coordinator.
+- [ ] Deliver a tested candidate for the guarded bench, generated outputs and protected method integration; report push and CI only after observation.
+- [ ] End with exact candidate and job cessation evidence for coordinator reconciliation and eventual seat release.
+
 Reviewed native-first delivery contract under the owner-approved scope. The verifier judges the frozen candidate and its locally owed evidence before integration. Push and CI outcomes are reported after they happen, never marked observed at pre-merge verification. T-315 remains incomplete until the actual publication evidence is recorded; this task does not claim its future CI as pre-merge evidence. The owner has authorized the native-first work and required safeguards. Final contract bytes must be reviewed and pinned through the grant writer before dispatch. T-312's external adapter is not the native route's prerequisite; its rejected and incomplete candidates remain preserved without acceptance.
 
 Use these route and method changes for the complete delivery; no unrelated card is added as a demonstration. The old filed contract and historical criteria are retained in repository history and in the preserved evidence packet when the canonical criteria are replaced. T-316's cross-harness purpose remains deferred.

@@ -40,8 +40,8 @@ here without asking what reads it.
 
 - **THE VERIFIER'S BENCH IS TWO SPAWNS, AND THIS BULLET IS THE
   SPELLING, NEVER THE SHAPE.** `method/roles/orchestrator.md` 5d states
-  the shape once — phase 1 as its own spawn with no file, git or shell
-  tools, what is pasted into it, what it may return — and this bullet
+  the shape once — each phase's own spawn, its driver's disclosed reading
+  boundary, what is pasted into it, what it may return — and this bullet
   carries only what 5b leaves to a project: the names and the commands.
   Phase 1's return is SAVED, under the SCRATCH RULE above, as
   `attack-set-<card id>.md`; a defaulted name is the collision that rule
@@ -69,6 +69,12 @@ here without asking what reads it.
   (rule 4). Do it by hand at the merge — the landing card as the
   argument, `--scratch` on the dispatching session's scratchpad, exit
   read unpiped — until `T-205-s6` gives sealed sets a home in the tree.
+  For native desktop delivery the run-record bullet in
+  docs/conventions/records-and-rooms.md names the supported packet-only
+  and frozen detached-verifier preparation command. The normal phase
+  renderings display the frozen specification and criteria; the seal
+  retains the unchanged raw card digest. Private notes, reasoning,
+  reports and prior verdicts are never part of the reviewer display.
 
 - **THE SEAT PROPOSES BEFORE IT RECORDS, AND THIS BULLET IS THE
   POINTER, NEVER THE RULE** (T-307, 2026-09-10). An entry for a room or a

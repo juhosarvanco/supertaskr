@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1280 behaviours** — 1278 extracted sentences + 2 named-not-extracted (listed at the end) — across 43 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1282 behaviours** — 1280 extracted sentences + 2 named-not-extracted (listed at the end) — across 43 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -161,6 +161,8 @@ Census: **1280 behaviours** — 1278 extracted sentences + 2 named-not-extracted
 - A FENCE NAMING A DIRECTORY NAMES THE GUARDS INSIDE IT, and a leading ./ is not a different path
 - A KEEPER RUN THAT PUBLISHED `verdict=REFUSED` GRADED NOTHING, and a dispatch does not call that a red baseline
 - THE PHASE 1 BRIEF IS RENDERED FROM THE CARD AT THE BASE AND CARRIES NOTHING FROM THE LANE
+- T-315-s2 reviewer packets omit private card sections while raw sealing retains their bytes
+- T-315-s2 phase briefs disclose native profiles, identity binding and absolute writer forms
 - the bench takes the ground at the base, seals three inputs by sha256, and renders phase 2 from the seal
 - THE BENCH WRITES THE VERIFIER'S PACK AND PHASE 2 NAMES IT — produced, readable, and a function of the fence
 - the tier line is CREATED where a card has none, and no other field may be created by a stamp

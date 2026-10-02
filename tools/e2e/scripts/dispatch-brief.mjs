@@ -89,6 +89,7 @@ import {
 } from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { nativeShellQuote } from "./native-codex.mjs";
 import { fileURLToPath } from "node:url";
 import {
   INDEXED_DOCS,
@@ -5649,7 +5650,47 @@ export function classifyTier(input) {
  */
 export const PHASE1_SPAWN_NOTE =
   "AN ARM CANNOT SPAWN A SEAT. Spawn phase 1 tool-less — no file, git or shell tools — with the " +
-  "contents of this file as its WHOLE prompt, and save what it returns:";
+  "contents of this file as its WHOLE prompt where the driver can remove tools. For native " +
+  "Codex use the packet-only profile and disclose its procedural reading restriction. Save what it returns:";
+
+/**
+ * A review display is not the raw card authority. The task format puts
+ * the specification before its sections and the criteria in their own
+ * section; notes, reports and verdicts are not contract inputs even when
+ * they already existed at the base. Keep raw bytes for the seal unchanged.
+ * Markdown fences are tracked so a heading quoted by a criterion remains
+ * criterion data rather than changing which section is displayed.
+ * @param {string} cardText
+ * @returns {string}
+ */
+export function reviewerContract(cardText) {
+  const out = [];
+  let contract = true;
+  let privateSection = false;
+  /** @type {string | null} */
+  let fence = null;
+  for (const line of cardText.split(/\r?\n/)) {
+    const delimiter = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line);
+    const mark = delimiter?.[1] ?? "";
+    if (fence !== null) {
+      if (contract) out.push(line);
+      if (delimiter && mark[0] === fence[0] && mark.length >= fence.length && (delimiter[2] ?? "").trim() === "") fence = null;
+      continue;
+    }
+    if (delimiter) {
+      fence = mark;
+      if (contract) out.push(line);
+      continue;
+    }
+    const heading = /^ {0,3}##\s+(.+?)\s*#*\s*$/.exec(line);
+    if (heading) {
+      if (/^(?:Implementation notes|Verdicts|(?:Executor |Build |Post-build )?(?:notes|reasoning|reports?))\b/i.test(heading[1] ?? "")) privateSection = true;
+      if (privateSection) contract = heading[1] === "Acceptance criteria";
+    }
+    if (contract) out.push(line);
+  }
+  return out.join("\n").trimEnd();
+}
 
 /**
  * @typedef {object} Phase1Input
@@ -5657,7 +5698,7 @@ export const PHASE1_SPAWN_NOTE =
  * @property {string} tier
  * @property {string} base       the ref the card was read at
  * @property {string} card       the card's repository-relative path
- * @property {string} cardText   the card AS IT STOOD AT THE BASE, verbatim
+ * @property {string} cardText   raw card AS IT STOOD AT THE BASE; display filters private sections
  * @property {string} verifierMd this method's verifier role file
  * @property {string} attackSetFile where the seat saves the return
  */
@@ -5666,11 +5707,10 @@ export const PHASE1_SPAWN_NOTE =
  * RENDER PHASE 1 — from the card at the base and the tier, and from
  * NOTHING ELSE.
  *
- * **THE PARAMETER LIST IS THE GUARANTEE.** This function is handed no
- * root, no diff, no notes, no branch and no commit later than the base,
- * so there is nothing in scope for it to leak even by accident. Every
- * other blindness rule in this method is a seat declining to look; this
- * one is a function that cannot.
+ * The parameter list carries no root, diff, branch or later commit.
+ * The raw base card can carry old private notes, so reviewerContract
+ * separately filters its display. Neither property removes native tools:
+ * the renderer discloses that driver's procedural packet restriction.
  *
  * @param {Phase1Input} input
  * @returns {string}
@@ -5679,9 +5719,12 @@ export function renderPhase1(input) {
   return [
     "# VERIFIER, PHASE 1 — the attack set, written before the work exists",
     "",
-    `You are the verifier's phase 1 for ${input.taskId}, tier ${input.tier}. You hold NO file,`,
-    "git or shell tools, and that is the point: what you cannot see is the guarantee this pass",
-    "buys. You return ONE artifact and nothing else.",
+    `You are the verifier's phase 1 for ${input.taskId}, tier ${input.tier}. A tool-less driver`,
+    "grants NO file, git or shell tools. Native Codex uses the packet-only nonwriter profile:",
+    "read only this supplied packet, make no repository call, and claim no tool removal or read",
+    "isolation. The native restriction is procedural. You return ONE artifact and nothing else.",
+    "Before other native tools, run exactly /usr/bin/printenv CODEX_THREAD_ID, report its value",
+    "and canonical task name to the coordinator, and wait for the coordinator's explicit bind.",
     "",
     "## What you return",
     "",
@@ -5695,14 +5738,14 @@ export function renderPhase1(input) {
     "take one. The dispatcher takes them AT THE BASE REF, where no lane branch exists to shape",
     "the answer. Anything else you cannot reach is a REFUSAL naming what you need and why.",
     "",
-    "## The card, at the base and verbatim",
+    "## The task contract, at the base",
     "",
     `Read at ${input.base}, from ${input.card}. This is the card as it stood when the lane was`,
-    "cut: it carries no implementation notes, no diff and no figure measured after that commit,",
-    "because none of those existed yet.",
+    "cut. This display keeps its specification and acceptance criteria and omits notes, reports",
+    "and verdicts. The raw card remains the integrity input; do not display its private sections.",
     "",
     "```markdown",
-    input.cardText.replace(/\r?\n$/, ""),
+    reviewerContract(input.cardText),
     "```",
     "",
     "## Your role file, at the same ref",
@@ -5899,7 +5942,7 @@ export function sealDocument(input) {
  * @property {string} tip
  * @property {string} bench    the detached worktree phase 2 judges in
  * @property {string} card
- * @property {string} cardText the card AT THE BASE — the contract, not the notes
+ * @property {string} cardText raw card AT THE BASE; only its contract is displayed
  * @property {string} attackSetFile
  * @property {string} groundFile
  * @property {string} stampsFile
@@ -5920,8 +5963,16 @@ export function renderPhase2(input) {
   return [
     `# VERIFIER, PHASE 2 — ${input.taskId}, tier ${input.tier}`,
     "",
-    `You are a FRESH spawn. Phase 1 wrote the attack set at ${input.attackSetFile} without tools`,
-    "and without the diff; you hold tools and you read the diff. You are not a continuation of it,",
+    `You are a FRESH spawn. Phase 1 wrote the attack set at ${input.attackSetFile} without the`,
+    "diff, under its driver's disclosed reading boundary; you hold tools and read the diff.",
+    "For native Codex use the prepared detached-verifier profile, exact callback/probe binding,",
+    "and first run exactly /usr/bin/printenv CODEX_THREAD_ID. Report its value and canonical task",
+    "name and wait for the coordinator's explicit bind before any repository tool.",
+    `Then begin every shell command with: cd -- ${nativeShellQuote(input.bench)} &&`,
+    "Every apply-patch source and move destination is absolute inside that assigned bench.",
+    "Validate raw preparation authority without displaying its card notes, reasoning or reports.",
+    "This is a repository safeguard with a procedural read restriction, not filesystem isolation.",
+    "You are not a continuation of phase 1,",
     "and you cannot return to its frame — which is why it was a separate spawn.",
     "",
     "## Your bench and your range",
@@ -5964,13 +6015,14 @@ export function renderPhase2(input) {
     "evidence in the verdict. A correction you assign is a body you commit on this bench after the",
     "verdict, with a mutant block per correction in the layout your role file publishes.",
     "",
-    "## The card, at the base and verbatim",
+    "## The task contract, at the base",
     "",
     `Read at ${input.base}, from ${input.card}. This is the contract both phases were written`,
-    "against, and it is the copy the seal covers.",
+    "against. Notes, reports and verdicts are omitted from this display; the seal still covers",
+    "the unchanged raw card bytes, whose integrity is checked without displaying private fields.",
     "",
     "```markdown",
-    input.cardText.replace(/\r?\n$/, ""),
+    reviewerContract(input.cardText),
     "```",
     "",
   ].join("\n");

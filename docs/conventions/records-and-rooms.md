@@ -195,6 +195,49 @@ here without asking what reads it.
   continue and writer-reservation release refuse while preserving the
   candidate.
 
+  **THE SUPPORTED NATIVE PROFILES ARE EXPLICIT** (T-315-s3, T-315-s2).
+  `native.profile: packet-only` admits a supplied-packet nonwriter with
+  resource `none`, no repository ref, empty ignored-output policy and no
+  reservation. Its `RUN-ASK`, actual answer delivery and `RUN-ACK` are
+  persisted through native output in this same record; it does not write
+  an ask file or call repository tools. A writer uses `writer-resource`;
+  phase two uses `detached-verifier` and names `native.executorAttempt`.
+  Prepare that bench through the public run arm in the seat's checkout:
+
+      node tools/e2e/scripts/brief.mjs --run collect --attempt <executor id> \
+        --ref <full candidate commit> --assignment <detached-verifier assignment>
+
+  The assignment names the detached resource/cwd and candidate; frozen
+  card/fence/admission authority comes from the collected executor record.
+  The arm independently checks original base through candidate before
+  preparing the bench, and refuses an uncollected, held, dirty or
+  mismatched source. Start the prepared verifier through `--run start`
+  and bind its exact callback/probe identity through `--run bind`, as
+  above. The printed record names profile, task, resource, candidate,
+  callback/tool coverage and limits. Raw authority keeps card bytes and
+  digests; reviewer displays contain only the frozen task specification
+  and criteria. Validate raw integrity without printing private notes,
+  reasoning, reports or verdicts.
+
+  Keep the automatic native monitor active during every attempt. Missing
+  attribution or monitoring is a hold. Neither a hook refusal nor an
+  interrupt request establishes cessation: the execution and registered
+  owned jobs must actually end before collection/release. A native
+  interrupt action whose harness emits no Interrupt callback has only
+  the separately observed interruption and job evidence; never invent
+  a callback. Final collection checks original base through the reported
+  candidate and accepted verifier tip, including residue, modes/types
+  and both rename endpoints; checking only verifier changes is insufficient.
+  Writer asks retain the existing durable ask-file states and native
+  messaging is delivery only. A scope approval still owes collision
+  checking and fresh executor admission. The bridge qualifies registered
+  callbacks and Bash/apply-patch repository checks, with shared cwd and
+  procedural reading restrictions; it qualifies no general parallel
+  writers, arbitrary tools, filesystem/read isolation or parent-loss
+  recovery. Record implementation, verification, merge, push and the named
+  exact-tip CI conclusion separately, and release only after all attempts
+  and jobs are reconciled.
+
 - THE PROCESS IS SETTINGS, AND EVERY SWITCH IS DECLARED ONCE (T-299,
   ADR-024 decision 6): `method/runtime/process-schema.yaml` is the ONE
   source. It declares each step of the loop as a SWITCH with what it

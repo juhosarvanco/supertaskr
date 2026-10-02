@@ -937,41 +937,63 @@ test("ROW 13's rules come from the CONTRACT, because they govern the WHOLE brief
 });
 
 test("THE VERIFIER'S BRIEF ASSEMBLES — exit 0, thirteen rows, and a pack derived from the card's fence", () => {
-  // THE CARD'S FIRST CRITERION, END TO END AND THROUGH THE REAL COMMAND.
-  // KILLED BY: any of the four refusals this card removed, since each one
-  // reaches the CLI as exit 3 with nothing written.
-  const run = spawnSync(process.execPath, [CLI, "--task", "T-205-s5", "--role", "verifier"], {
-    cwd: repoRoot,
-    encoding: "utf8",
-    maxBuffer: 64 * 1024 * 1024,
+  // A live lane legitimately reserves method files this historical card
+  // names. Use the existing repository producer, then arm an actual
+  // overlapping lane as a refusal control in that same fixture.
+  const fx = ritualFixture("brief-role", {
+    card: FIXTURE_CARD.replace("touches: [README.md]", "touches: [method/roles/verifier.md]"),
   });
-  expect(
-    run.status,
-    `brief.mjs --role verifier exited ${String(run.status)}: ${run.stderr.split("\n").slice(0, 3).join(" ")}`,
-  ).toBe(0);
-  const out = run.stdout;
-  // POSITIVE CONTROL FOR THE EXIT: the executor arm, which was already
-  // working, must still be 0 — otherwise "0" here says nothing about the
-  // role and everything about the day.
-  const control = spawnSync(process.execPath, [CLI, "--task", "T-205-s5", "--role", "executor"], {
-    cwd: repoRoot,
-    encoding: "utf8",
-    maxBuffer: 64 * 1024 * 1024,
-  });
-  expect(control.status, "the executor arm reds too, so the verifier's exit is not about the role").toBe(0);
+  try {
+    // THE CARD'S FIRST CRITERION, END TO END AND THROUGH THE REAL COMMAND.
+    // KILLED BY: any of the four refusals this card removed, since each one
+    // reaches the CLI as exit 3 with nothing written.
+    const run = spawnSync(process.execPath, [CLI, "--task", "T-205-s5", "--role", "verifier", "--root", fx.root], {
+      cwd: fx.root,
+      encoding: "utf8",
+      maxBuffer: 64 * 1024 * 1024,
+    });
+    expect(
+      run.status,
+      `brief.mjs --role verifier exited ${String(run.status)}: ${run.stderr.split("\n").slice(0, 3).join(" ")}`,
+    ).toBe(0);
+    const out = run.stdout;
+    // POSITIVE CONTROL FOR THE EXIT: the executor arm, which was already
+    // working, must still be 0 — otherwise "0" here says nothing about the
+    // role and everything about the day.
+    const control = spawnSync(process.execPath, [CLI, "--task", "T-205-s5", "--role", "executor", "--root", fx.root], {
+      cwd: fx.root,
+      encoding: "utf8",
+      maxBuffer: 64 * 1024 * 1024,
+    });
+    expect(control.status, "the executor arm reds too, so the verifier's exit is not about the role").toBe(0);
 
-  for (const row of contractRows(roleText("executor"))) {
-    expect(out, `the verifier brief carries no ROW ${row.n}`).toContain(`ROW ${row.n} — ${row.label}`);
+    for (const row of contractRows(roleText("executor"))) {
+      expect(out, `the verifier brief carries no ROW ${row.n}`).toContain(`ROW ${row.n} — ${row.label}`);
+    }
+    expect(out, "the brief does not say which file its row set came from").toContain(
+      "contract: method/roles/executor.md, its normative table",
+    );
+    expect(out, "and it does not say which rows were read against this seat's own file").toContain(
+      "are read against method/roles/verifier.md",
+    );
+    expect(out, "the verifier's render carries no context pack").toContain("THE CONTEXT PACK");
+    expect(out, "the pack is not derived from the card's fence").toContain("pack: docs/CONVENTIONS.md is");
+    expect(unstampedLines(out), "the verifier brief emitted a figure with no ref").toEqual([]);
+
+    const lane = path.join(fx.dir, "collision-T-315-s2");
+    fixtureGit(fx.root, ["worktree", "add", "--quiet", "-b", `task/${FIXTURE_CARD_ID}-collision`, lane, "HEAD"]);
+    const armed = spawnSync(process.execPath, [CLI, "--task", FIXTURE_CARD_ID, "--write-fence", lane, "--root", fx.root], {
+      cwd: fx.root, encoding: "utf8", maxBuffer: 64 * 1024 * 1024,
+    });
+    expect(armed.status, `collision fixture did not arm: ${armed.stderr}`).toBe(0);
+    const refused = spawnSync(process.execPath, [CLI, "--task", "T-205-s5", "--role", "verifier", "--root", fx.root], {
+      cwd: fx.root, encoding: "utf8", maxBuffer: 64 * 1024 * 1024,
+    });
+    expect(refused.status, "an armed overlapping lane must still refuse assembly").toBe(EXIT.FOUND);
+    expect(refused.stdout + refused.stderr).toContain("fences are not disjoint");
+  } finally {
+    removeGitFixture(fx.dir, fx.root);
   }
-  expect(out, "the brief does not say which file its row set came from").toContain(
-    "contract: method/roles/executor.md, its normative table",
-  );
-  expect(out, "and it does not say which rows were read against this seat's own file").toContain(
-    "are read against method/roles/verifier.md",
-  );
-  expect(out, "the verifier's render carries no context pack").toContain("THE CONTEXT PACK");
-  expect(out, "the pack is not derived from the card's fence").toContain("pack: docs/CONVENTIONS.md is");
-  expect(unstampedLines(out), "the verifier brief emitted a figure with no ref").toEqual([]);
 });
 
 test("THE PACK'S VERIFIER HALF is exactly what methodNamed reads off verifier.md, both directions", () => {
@@ -7409,20 +7431,20 @@ test("THE PHASE 1 BRIEF IS RENDERED FROM THE CARD AT THE BASE AND CARRIES NOTHIN
   expect(rendered, "and the role file it is judged by").toContain("# Role: verifier");
   expect(rendered.includes(LANE_ONLY), "the rendered brief carries the lane's own notes").toBe(false);
 
-  // THE CONTROL, AND IT IS THE HALF THAT MATTERS: the same renderer,
-  // handed the TIP's card, would carry the lane — so the blindness is a
-  // property of WHAT IS PASSED, and the caller that passes it is the one
-  // reading `git show <base>:<card>` at the stamp commit.
-  const leaked = renderPhase1({
+  // The display must also omit notes already present in its raw input.
+  // A contract-bearing control still passes: the filter cannot merely
+  // discard everything after frontmatter to achieve a private-text zero.
+  const displayed = renderPhase1({
     taskId: "T-999",
     tier: "standard",
     base: "0123456789abcdef",
     card: "docs/tasks/T-999-a-card.md",
-    cardText: atTip,
+    cardText: atTip.replace("THE thing SHALL happen.", "THE thing SHALL happen. CONTRACT-CONTROL"),
     verifierMd: "# Role: verifier",
     attackSetFile: "/scratch/attack-set-T-999.md",
   });
-  expect(leaked.includes(LANE_ONLY), "the control did not leak, so the assertion above proves nothing").toBe(true);
+  expect(displayed).not.toContain(LANE_ONLY);
+  expect(displayed).toContain("CONTRACT-CONTROL");
 
   // AND IT SAYS WHAT IT IS: tool-less, one artifact, the floor, and the
   // sentence that stops a dispatcher waiting for a session an arm cannot
@@ -7430,6 +7452,60 @@ test("THE PHASE 1 BRIEF IS RENDERED FROM THE CARD AT THE BASE AND CARRIES NOTHIN
   expect(rendered).toContain("NO file");
   expect(rendered).toContain("at least one attack");
   expect(PHASE1_SPAWN_NOTE).toContain("AN ARM CANNOT SPAWN A SEAT");
+});
+
+test("T-315-s2 reviewer packets omit private card sections while raw sealing retains their bytes", () => {
+  // Mutate the display filter at its return site to show this body red.
+  // Matched sentinels in contract text distinguish removal of private
+  // sections from broad deletion of their vocabulary or the whole card.
+  const raw = [
+    "---", "id: T-999", "touches: [README.md]", "---", "",
+    "## Specification", "SPEC-CONTROL: an implementation report is the subject of this task.",
+    "## Acceptance criteria", "- THE report SHALL preserve CONTRACT-CONTROL.",
+    "```markdown", "## Implementation notes", "QUOTED-CONTRACT-CONTROL", "```",
+    "## Implementation notes", "PRIVATE-NOTES", "### Reasoning", "PRIVATE-REASONING",
+    "## Executor report", "PRIVATE-REPORT", "## Verdicts", "PRIVATE-VERDICT", "",
+  ].join("\n");
+  const digest = sha256(raw);
+  const shared = { taskId: "T-999", tier: "guarded", base: "a".repeat(40), card: "docs/tasks/T-999.md",
+    cardText: raw, attackSetFile: "/scratch/attack-set-T-999.md" };
+  const packets = [
+    renderPhase1({ ...shared, verifierMd: "# Role: verifier" }),
+    renderPhase2({ ...shared, tip: "b".repeat(40), bench: "/bench/T-999", groundFile: "/scratch/ground-T-999.md",
+      stampsFile: "/scratch/sealed-T-999.md", packFile: "/scratch/pack-T-999.md", packRef: shared.base, suites: "owed set" }),
+  ];
+  for (const packet of packets) {
+    for (const kept of ["id: T-999", "touches: [README.md]", "SPEC-CONTROL", "CONTRACT-CONTROL", "QUOTED-CONTRACT-CONTROL"])
+      expect(packet, `missing contract control ${kept}`).toContain(kept);
+    for (const hidden of ["PRIVATE-NOTES", "PRIVATE-REASONING", "PRIVATE-REPORT", "PRIVATE-VERDICT"])
+      expect(packet, `leaked ${hidden}`).not.toContain(hidden);
+  }
+  expect(sha256(raw)).toBe(digest);
+  expect(sealDocument({ ...shared, tip: "b".repeat(40), inputs: [{ what: "card at base", file: shared.card, digest }] }))
+    .toContain(`sha256:${digest}`);
+  expect(digest, "raw authority was silently replaced by the reviewer display").not.toBe(sha256(packets[0] ?? ""));
+});
+
+test("T-315-s2 phase briefs disclose native profiles, identity binding and absolute writer forms", () => {
+  const common = { taskId: "T-999", tier: "guarded", base: "a".repeat(40), card: "docs/tasks/T-999.md",
+    cardText: "## Acceptance criteria\n- THE system SHALL work.\n", attackSetFile: "/scratch/attack-set-T-999.md" };
+  const phase1 = renderPhase1({ ...common, verifierMd: "# Role: verifier" });
+  expect(phase1).toContain("packet-only nonwriter profile");
+  expect(phase1).toContain("restriction is procedural");
+  expect(phase1).toContain("claim no tool removal or read");
+  const phase2 = renderPhase2({ ...common, tip: "b".repeat(40), bench: "/bench/native T-999's",
+    groundFile: "/scratch/ground-T-999.md", stampsFile: "/scratch/sealed-T-999.md",
+    packFile: "/scratch/pack-T-999.md", packRef: common.base, suites: "owed set" });
+  expect(phase2).toContain("prepared detached-verifier profile");
+  expect(phase2).toContain("cd -- '/bench/native T-999'\"'\"'s' &&");
+  expect(phase2).toContain("move destination is absolute");
+  expect(phase2).toContain("without displaying its card notes, reasoning or reports");
+  expect(phase2).toContain("not filesystem isolation");
+  for (const packet of [phase1, phase2]) {
+    expect(packet).toContain("exactly /usr/bin/printenv CODEX_THREAD_ID");
+    expect(packet).toContain("canonical task");
+    expect(packet).toContain("coordinator's explicit bind");
+  }
 });
 
 test("the bench takes the ground at the base, seals three inputs by sha256, and renders phase 2 from the seal", () => {

@@ -475,6 +475,49 @@ dispatching session's own memory — and a seat that loses its session
 reconstructs what it started by reading worktrees. That reconstruction
 has been performed, and this section is what replaces it.
 
+**THE NATIVE DESKTOP ROUTE USES THIS RECORD, NOT A SECOND LIFECYCLE.**
+The coordinator establishes an eligible seat from its identity, installed
+Git push guard and a current real callback from the trusted project
+hook. It derives the full dispatch view before launch and records the
+launch boundary, requested model/effort and observed usage or `unknown`.
+Every native participant has a record; each writer has its canonical
+resource reservation before spawn. A task label, shared cwd or CLI
+eligibility probe is not native identity. The participant's first tool
+is the exact identity probe the project names; it reports that value and
+its canonical task name, then waits for explicit coordinator binding
+against the real start callback before other tools.
+
+The supported profiles separate a `packet-only` nonwriter, with no
+repository resource or ref, from the executor's `writer-resource` and
+the fresh phase-two `detached-verifier`. The coordinator prepares that
+detached bench only from an independently collected executor candidate,
+its frozen original card and expanded fence, never a worker-written
+manifest or a fresh expansion of the candidate card. The original base
+through candidate and accepted verifier tip each owe independent full
+range checks, including dirty/untracked state, governed ignored output,
+modes, types and both rename endpoints. Candidate-to-verifier changes
+alone cannot qualify collection.
+
+Writer questions use the durable ask file. Packet-only questions arrive
+through actual native output and delivery, and the coordinator persists
+their written, delivered and acknowledged states in the same record;
+they require no participant-written file or repository call. Scope asks
+stay parked while in-fence work continues. Approval, collision checking
+and a fresh executor admission govern a changed fence; a reply alone
+does not widen one.
+
+The landed monitor stays active throughout. Missing attribution,
+unsupported mandatory callbacks, missing completions or monitoring hold
+the attempt. Interrupt and stop callbacks are observations; the run
+remains non-terminal until actual native execution and all owned jobs
+are reconciled. Each shell writer explicitly enters its assigned
+absolute resource, and each patch names absolute in-resource targets.
+Shared cwd is context only. Registered callbacks and supported
+Bash/apply-patch coverage are repository safeguards; packet-only reading
+is procedural. These establish neither arbitrary-tool coverage nor OS
+filesystem/read isolation, parallel writers or transparent parent-loss
+recovery. Report only capabilities actually demonstrated.
+
 **THE RECORD SEPARATES TWO THINGS THE LOOP KEPT CONFLATED.** The WORK
 SERVED — a card, a consultation — is not the RESOURCE A CHILD MAY WRITE
 — a lane worktree, a clone, a verifier's bench. Every child has a
