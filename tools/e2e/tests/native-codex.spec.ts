@@ -1897,7 +1897,7 @@ test("native record and public launch disclose every callback registered by the 
       expect([...record.native.coverage.callbacks].sort()).toEqual(registered);
       const printed=/native coverage: callbacks ([^;]+); tools /.exec(launch.stdout);
       expect(printed).not.toBeNull();
-      expect(printed![1].split(", ").sort()).toEqual(registered);
+      expect(printed![1]!.split(", ").sort()).toEqual(registered);
       expect(record.writer).toBe(profile==="writer-resource");
       expect(record.reservation.file!==null).toBe(profile==="writer-resource");
     }finally{b.cleanup();}
