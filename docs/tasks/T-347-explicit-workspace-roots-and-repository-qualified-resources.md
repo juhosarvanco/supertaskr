@@ -84,9 +84,27 @@ The coordinator's frozen `coordinator-drills-b8e7d6fb-v1/results-T-347.json` is 
 
 Restoration hashes at the original snapshot, also measured on the recovered bytes: workspace.mjs `1e9234c2bc0d9d420155ea88b04c446f39fa11d46dc021667af2f03f0b6e39c2`; brief.mjs `51edc8a4e197be042e45ca209982fc18d0a97aacc9722e1c5f3e1e7f75ef2473`; workspace.spec.ts `58411b8d941d7873858e30bef8ab559730092ed19d7ef4fb0582dcd0930bffcf`; brief.spec.ts `b0f966691eb05232f59aaa489e129cceb24e497f78e2b9a74bc2898d8b1d3b18`. No assertion and producer were changed together. Fresh recipes for the changed inventory/margin bodies use a committed snapshot and coordinator-owned detached scratch through this actor's durable ask.
 
+### Fresh changed-body self-drill block
+
+The coordinator mechanically executed this executor's frozen recipes at `61fce2bd3c737ee8e6333d2393f768897a77456e` in its owned detached scratch. The public `reentry/coordinator-drills-61fce2bd-v2/results-T-347.json`, actual mutation patches and failure logs were read; every M10–M14 run selected one body and exited 1 at its intended assertion. The restored combined control passed two bodies at exit 0. Both durable questions are acknowledged. The first M10 selection used a leading regex anchor that did not match Playwright's full titles and selected zero tests; its v1 no-body log remains preserved and is excluded from kills. The corrected v2 recipes change only those selections. No active-lane mutation occurred, the scratch was removed cleanly and all coordinator drill jobs ended.
+
+| Mutant | Changed body and one-sided planted property | Fresh coordinator result |
+| --- | --- | --- |
+| M10 | Inventory DATA mutant removes the product-only live-arm entry; declared flags still include the modifier. | Exit 1; one failed body naming unannounced --product-only. |
+| M11 | Margin body: resolver runtime location uses mutant-runtime while selected roots remain valid. | Exit 1; one failed body at JSON runtimeRoot expectation. |
+| M12 | Margin body: CLI resolves development regardless of the product-only modifier. | Exit 1; one failed body at product-only mode/association expectation; development control holds. |
+| M13 | Margin body: standalone inspection prints valid complete JSON then returns the usage exit. | Exit 1; one failed body at inspection exit expectation. |
+| M14 | Margin body: producer emits equal-length file/pipe provenance values. | Exit 1; one failed body at complete JSON equality; byte counts, roots, modes and exits hold. |
+
+Each mutation's restored working bytes match its snapshot bytes by SHA256 and empty per-path diff. M10 restores brief-flush.spec.ts to `a96e94799c67d6a0857b26185f273ade80f370593a5ae07b93b8452a9d80e5fb`; M11 restores workspace.mjs to `1e9234c2bc0d9d420155ea88b04c446f39fa11d46dc021667af2f03f0b6e39c2`; M12–M14 restore brief.mjs to `51edc8a4e197be042e45ca209982fc18d0a97aacc9722e1c5f3e1e7f75ef2473`. These five kills cover the two changed bodies; the unchanged nine new bodies retain their attributed M1–M9 proof above. Syntax/import failures and zero-body runs count as no kill.
+
 ### Correction clause and grading boundary
 
 The brief's `tasks/TASK-FORMAT.md` pointer resolves to the tracked `method/tasks/TASK-FORMAT.md` ceremony table. Its runtime role default differs from this native assignment; requested settings do not prove observed identity. The normal binding and five-path local manifest were read and agree with this fresh card. The only code repair beyond the recovered bytes is the admitted CLI inventory compatibility obligation.
+
+At committed preparation snapshot `61fce2bd3c737ee8e6333d2393f768897a77456e`, the range from fresh admission contains six paths: the five admitted source/spec paths and this card. Read-only owed-set derivation exits 0 and requires parser, app and whole e2e. The docs gate exits 1 meaning FIRES, with zero live-frontmatter issues; its fixture-root reader advisory names workspace.spec.ts. Graph `index --check` exits 0 CURRENT: 203 files, 2631 symbols and 2505 edges. Boot and method-eval triggers match zero paths; Rust suite is not owed. The same path set will remain through the notes and status-only commits; the final grade derives its own exact range again.
+
+Fresh setup ran parser install/build, app install/build and e2e install, all exit 0. E2e typecheck exits 0. The retained focused compatibility iteration exits 0 with two passed bodies. A preliminary log redirect named a directory not yet created and refused before tests; the first successful focused iteration's log was removed by Playwright's default output cleanup, so the retained iteration uses a distinct output subdirectory. An initial docs-gate invocation used ambiguous plain-relative paths from package cwd and refused at usage exit 2; the corrected explicit `./` and `../../` spellings produced the FIRES reading above. None of these exploratory checks is claimed as the final grade.
 
 New body names require capabilities census regeneration at the bench/merge, outside this lane's source fence. The TypeScript paths trigger the normal graph obligation there; the lane leaves generated files and pins to their owning seat. This executor grades its final code-and-notes commit over the fresh admission range, with actual exits and body counts in the report, then makes a last commit changing only this card's status to verifying. That status-only commit uses the role's sole no-rerun exemption.
 
