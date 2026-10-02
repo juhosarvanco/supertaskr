@@ -78,8 +78,11 @@ ADR-014/015).
 
 - Everything coordinates through files; no component holds project
   state the files don't. Killing anything is safe by construction.
-- CLI ↔ agents: spawn/resume the user's own agent CLIs with role
-  prompts from method/roles/; never call model APIs directly.
+- CLI ↔ agents: role prompts come from method/roles/; no direct model
+  API calls. Native Codex coordination uses shared run records and the
+  registered callback boundary; T-315-s3 supplies packet-only phase one
+  and frozen detached preparation, while T-315-s2 owns full delivery.
+  CLI adapters remain a separate route; cross-harness work is deferred.
 - App ↔ project: read-only first; writes are single-field frontmatter
   edits or thread appends, nothing else (pure-lens rule).
 - Genesis (ADR-017): the spawned planner session is the WRITER; the

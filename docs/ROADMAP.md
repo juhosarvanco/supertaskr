@@ -78,7 +78,9 @@ opens with the card id that still holds its story.
   LANDED (the board hands you the brief); D3 and D5 RULED 2026-08-30;
   and on 2026-09-03 the seat's chair was ruled for v1 — the architect
   sits in the user's agent app, the app assembles briefs and spawns
-  nothing (ADR-021). Next: T-241 (the seat skill), T-244 (`npx supertaskr`).
+  nothing (ADR-021). T-315-s3 qualifies packet-only phase one and frozen detached preparation;
+  T-315-s2 still owns complete native delivery. Next: T-241 (the seat
+  skill), T-244 (`npx supertaskr`).
 - F-05: Rooms, sessions & daemon — @mention routing, resolutions,
   registry pane
   Not started. The in-app orchestrator conversation and any in-app
