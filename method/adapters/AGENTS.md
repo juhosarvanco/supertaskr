@@ -1,4 +1,4 @@
-<!-- Thin adapter for Codex CLI, Cursor, Gemini CLI etc. — copy to repo root. Facts and routing only; behavioral
+<!-- Thin adapter for Codex desktop, Codex CLI, Cursor, Gemini CLI etc. — copy to repo root. Facts and routing only; behavioral
      instructions live in the role prompt you are dispatched with. -->
 
 # <project name>

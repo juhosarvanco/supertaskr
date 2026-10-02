@@ -232,7 +232,7 @@ you know is in docs/. You are disposable at any moment.
    pass, and argued the correction from 5c's own reasoning.**
 5d. **THE BENCH IS TWO SPAWNS, AND THIS STEP IS THE ONE PLACE THAT SAYS
    SO.** 5c buys the blindness with the CLOCK; this step buys it with the
-   TOOL GRANT. Every other file points here rather than restating it
+   INPUT BOUNDARY. Every other file points here rather than restating it
    (T-057: a rule with two statements is two chances to disagree).
    **A BLIND LINE INSIDE ONE MESSAGE IS NOT A BLIND LINE.** An agent
    receives its whole prompt at once, so a marker separating the generic
@@ -245,24 +245,40 @@ you know is in docs/. You are disposable at any moment.
    four from the line and two self-inflicted, and the verifiers found
    all six. **No wording prevents the second pair, because the wording
    is not the leak** — which is why this is a construction and not a
-   promise.
-   - **PHASE 1 IS ITS OWN SPAWN, AND IT HAS NO FILE, GIT OR SHELL
-     TOOLS.** Its contract arrives PASTED INLINE and it returns one
-     artifact: the attack set. It cannot read the diff, the notes, the
-     log or the worktree, because it has no way to. **PHASE 2 IS A
+   promise. A driver's actual capabilities decide which boundary it can
+   establish; the brief and verdict name that boundary rather than
+   assuming tool removal from a role prompt.
+   - **PHASE 1 IS ITS OWN SPAWN.** Where the driver can grant no file,
+     git or shell tools, use that tool-less grant. **Native Codex uses
+     the supported `packet-only` nonwriter profile**, supplied inline,
+     with resource `none`, no repository ref and no writer reservation.
+     Its reading restriction is procedural: it reads only the supplied
+     packet and makes no repository call. The harness has not removed
+     its tools and this route claims no OS/read isolation. Both drivers
+     return the attack set or the bounded asks/refusal below.
+     **PHASE 2 IS A
      SECOND SPAWN**, receiving that artifact and the lane — and **a
      CONTINUATION of phase 1's session is not a second spawn**, any more
      than a marker inside one message was a line: what phase 1 could not
      see is the guarantee, and a session that keeps going keeps
-     everything it was later shown. Blindness stops being a promise a
-     seat keeps and becomes a property of the spawn, which is the whole
-     of what this step buys.
+     everything it was later shown. The fresh session prevents inherited
+     executor conversation; its remaining reading limit is disclosed.
+     For native Codex prepare the supported `detached-verifier` bench
+     from the independently collected executor candidate and frozen
+     authority under lane-protocol.md's run-record contract. Do not
+     substitute a task-branch bootstrap writer for either profile.
    - **TWO BOUNDS, AND THEY ANSWER DIFFERENT HALVES OF THE DESIGN
      QUESTION.** *Too little and the attack set is uninformed; too much
      and the paste is itself a channel.* **THE BASE REF BOUNDS WHAT CAN
      LEAK**: nothing that existed when the lane was cut is downstream of
-     the executor, so VOLUME cannot contaminate — while a seat's SUMMARY
-     can at any length, which is the same reason 5c forbids one for an
+     the executor's current work, but an old card may already carry notes
+     or verdicts. **DISPLAY THE TASK CONTRACT ONLY**: the frozen
+     specification and acceptance criteria, omitting implementation
+     notes, reasoning, reports and prior verdicts in both phase packets.
+     Retain the unchanged raw card bytes and digests as integrity
+     authority; validate them without displaying private fields to the
+     reviewer. A seat's SUMMARY can contaminate at any length, which is
+     the same reason 5c forbids one for an
      amendment. **THE CARD'S CRITERIA BOUND WHAT IS WORTH SENDING**: the
      card as it stood at the cut, this method's verifier file, and the
      base text of what those criteria are judged against. A fence naming
@@ -273,12 +289,13 @@ you know is in docs/. You are disposable at any moment.
      ref. **NEVER the diff, the notes, the executor's report, the commit
      log, or any figure measured after the lane was cut** — those are
      the leak this step exists to close, and pasting one hands it over
-     through the only channel a tool-less spawn still has.
+     through the supplied-packet channel.
    - **PHASE 1 CANNOT MEASURE, SO IT ASKS — AND ASKING IS THE ONLY
      OTHER THING IT MAY RETURN.** A card asserting anything about a
      platform, a tool or an exit code owes a ground truth
      (roles/verifier.md step 0), and a spawn with no shell cannot take
-     one. So phase 1 returns the LIST of measurements it wants and the
+     one; native packet-only likewise makes no repository measurement.
+     So phase 1 returns the LIST of measurements it wants and the
      dispatcher takes them AT THE BASE REF, where no lane branch exists
      to shape the answer. Anything else phase 1 finds it cannot reach is
      a REFUSAL, naming what it needs and why, returned to the

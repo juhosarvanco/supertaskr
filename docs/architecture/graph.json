@@ -4950,7 +4950,7 @@
       "id": "f:app/src-tauri/src/agent/kit.rs",
       "path": "app/src-tauri/src/agent/kit.rs",
       "lang": "rust",
-      "hash": "blake3:f5c882ad4b33edb118d11903fff49abc5a0e9d70561af6ef57d3c8b85e04cef8",
+      "hash": "blake3:52e56ad499d228687e52303fcc0094c5e9d0bde5f7114301ee80911d5bed9150",
       "loc": 1450,
       "symbols": [
         {

@@ -115,7 +115,7 @@ second path this skill exists to not have (see THE REFUSALS below).
 the branch name is what a reader of the branch list sees for the life of
 the repository.
 
-## 5. The two spawns — and the blindness is a CONSTRUCTION
+## 5. The two spawns — under the driver's disclosed boundary
 
 The verifier's bench is TWO spawns, and `roles/orchestrator.md` 5d is
 the one place that STATES the shape. **Go and read it there before you
@@ -146,6 +146,38 @@ the copy that drifts is always the one somebody pasted nearer to hand.
 - **WHERE YOUR HARNESS CANNOT SPAWN TWICE, SAY SO — in the brief and in
   the verdict.** A disclosed weaker thing is the honest fallback; a
   reader who is not told cannot tell a guarantee from a habit.
+
+**FOR CODEX DESKTOP, USE THE SUPPORTED NATIVE PROFILES** under 5d and
+`lane-protocol.md`'s run-record contract. Establish the seat's real
+identity, installed Git push guard and current trusted hook callback;
+record the launch boundary. Register every attempt before native spawn
+and take every writer's canonical reservation first. Bind the real
+SubagentStart callback to the child's completed exact identity probe and
+canonical task name before repository tools. Record requested model and
+effort beside observed usage or `unknown`; an explicit owner setting
+takes precedence over a template default and is disclosed.
+
+Use `packet-only` for phase one. It owns no repository resource/ref and
+returns through actual native output; persist its question delivery and
+acknowledgement in the shared record. The reading limit is procedural,
+not tool removal. Display only the frozen specification and criteria in
+review packets. Keep raw card bytes/digests for integrity and validate
+them without displaying notes, reasoning, reports or prior verdicts.
+After independently collecting the executor and reconciling its jobs,
+prepare `detached-verifier` from its frozen authority and exact candidate
+through the supported run arm, then spawn a fresh non-inheriting phase
+two. Hand it the prepared metadata, sealed inputs and printed absolute
+working-directory forms; a worker-written manifest has no authority.
+
+Keep the native monitor active; missing attribution or monitoring holds
+the attempt. Writer questions use the durable ask file and native
+messaging only as delivery. A changed grant requires collision checking
+and fresh executor admission. Collect only after independent original
+base through candidate/accepted-tip checks and actual execution and job
+cessation. Retain the bench until final notification and collection.
+Describe callback/Bash/apply-patch coverage, shared cwd and procedural
+reads honestly; claim no parallel writers, arbitrary-tool coverage,
+filesystem/read isolation or parent-loss recovery.
 
 **AND THE EXECUTOR'S BRIEF IS ASSEMBLED, NEVER WRITTEN.** The arm wrote
 it to the lane's scratch file in step 7. Hand over that file. A brief

@@ -139,7 +139,7 @@ compared to what, measured how?" An interview is not a form.
 7. **First slice** — The smallest thing that could ship and teach
    something. Ruthless: milestone 1 should feel too small.
 
-## Output — incremental banking (v0.1.36; supersedes the one-pass rule)
+## Output — incremental banking (v0.1.37; supersedes the one-pass rule)
 
 Artifacts are written AS the interview runs, never in one pass at the
 end. Each stage banks into its artifacts the moment its answer is
@@ -511,7 +511,7 @@ Decided in: <room link, /plan interview, or human directive>
 Verbatim from `method/adapters/AGENTS.md`.
 
 ````supertaskr-seed AGENTS.md
-<!-- Thin adapter for Codex CLI, Cursor, Gemini CLI etc. — copy to repo root. Facts and routing only; behavioral
+<!-- Thin adapter for Codex desktop, Codex CLI, Cursor, Gemini CLI etc. — copy to repo root. Facts and routing only; behavioral
      instructions live in the role prompt you are dispatched with. -->
 
 # <project name>

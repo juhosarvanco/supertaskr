@@ -265,6 +265,16 @@ here without asking what reads it.
     repository safeguard: it does not detect every arbitrary shell write
     outside the assigned repository and is not OS filesystem or read
     isolation.
+    The supported profile/preparation spellings and cessation rules are
+    THE RUN RECORD in docs/conventions/records-and-rooms.md. Use its
+    packet-only nonwriter for phase one and its frozen detached-verifier
+    for phase two; the executor remains writer-resource. Every writer
+    command explicitly enters the absolute resource before a package
+    directory, and every patch/move endpoint is absolute inside it.
+    Collection independently checks the executor's original base through
+    candidate and accepted verifier tip; a candidate-only verifier diff
+    cannot replace that range. A changed scope grant requires fresh
+    executor admission. Missing attribution or monitoring holds the run.
   The history, the measurements and the argument this rule was cut
   from are in docs/reference/05-dispatch.md (T-290), verbatim.
 

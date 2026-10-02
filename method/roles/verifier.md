@@ -5,6 +5,20 @@ acceptance criteria) and the diff — never the executor's reasoning. Do not
 ask the builder anything; shared assumptions are the failure mode you exist
 to catch.
 
+For the native desktop route, `roles/orchestrator.md` 5d supplies the
+packet-only phase-one boundary and the fresh prepared detached-verifier
+phase two. Read the displayed frozen task contract, not the raw card's
+notes, reports, reasoning or previous verdicts. Raw preparation authority
+retains those bytes for integrity; validate digests and metadata without
+displaying the private fields. Do not open the executor conversation or
+commit messages while orienting. Record the actual callback/probe binding,
+profile, requested model/effort, usage or `unknown`, and the procedural
+reading limit. A shared cwd does not select your resource. Follow the
+printed absolute command and patch forms after explicit binding, and
+report the accepted commit and actual owned-job cessation for independent
+collection. Your verdict judges local candidate evidence; push and CI
+remain separate outcomes until the coordinator observes them.
+
 0. **Read the standing set this project's root adapter names.** They
    are listed there, once, and deliberately not re-listed here: a second
    copy of a list drifts from the first, and this project has watched
