@@ -150,5 +150,77 @@ or coordinator transcript were opened. No native receipt, manifest,
 grant, trust definition or scope authority was edited. Actual integration,
 push/CI, final independent verification and seat release are pending.
 
+### Fresh native completion executor — 2026-10-02
+
+Attempt T-315-s2-a5, canonical task name
+`/root/native_s2_completion_gpt61`, native identity
+`01a0fdc4-b6ba-7391-9d60-b57868d23d7c`. The exact bare identity probe
+was the first tool; the coordinator explicitly bound the actual native
+callback/probe before repository access. Requested model/effort is
+GPT-6.1 Sol extra-high; observed model/usage remains `unknown`. No model
+switch or additional worker was used by this completion executor.
+
+Original implementation base remains
+`a42b9377cc4cac8ca31c78ca177797ffcda6ec80`; the separately admitted
+completion base is `8e5e8d71645bd9de579a4feb169cccf55536b184`.
+The two preserved implementation commits were cherry-picked in order:
+`1fdf24634ab0eed3e616f4c3376b4b16641ca6f8` became `b5b043f7`, and
+`b5698836da046b2459c98f5965a50c0fc9934ac5` became `ab4fb9ba`.
+Both applied without conflict. The newly approved touches line and all
+acceptance criteria remain unchanged and match the armed manifest.
+
+Source review retained the implemented native profiles, durable question
+states, cessation requirements, honest callback/tool/read limits and
+independent original-range collection requirements. The reviewer display
+filter preserves specification and acceptance criteria, including fenced
+heading data, and omits private notes, reasoning, reports and verdicts.
+Raw card bytes and seal digests remain the integrity authority. The
+assembly fixture continues to demonstrate successful role assembly and
+refusal of an actual armed collision; collision protection was not changed.
+No executable source or new test body was added during this completion.
+The four recorded self-drills above remain the source candidate's drills;
+they were not represented as new observations or repeated for re-entry.
+
+The declared package setup/build order completed: parser install/build,
+app install/build, then the e2e install. The normal e2e capabilities alias
+successfully regenerated CAPABILITIES, INDEX and the now-armed interview
+skill. Only the interview skill changed further: its adapter seed now
+contains the already implemented native desktop route. Read-only census
+and skill currency, e2e typecheck, docs census and token lint checks passed
+on that generated working tree. The docs census answered its whole-tree
+half only, not an owed-suite verdict. Installation audit summaries and the
+frontend bundle-size warning were retained; no dependency fix was attempted.
+
+| Criterion | Completion executor accounting before the final graded run |
+|---|---|
+| Eligible native seat | This attempt's probe and explicit binding are observed. Route requirements are published; seat eligibility and trusted coordinator callback evidence remain coordinator-owned. |
+| Native-first dispatch | This is the fresh native implementation completion under the assigned model policy. Other participant records and fresh independent verification remain coordinator-owned. |
+| Supported preparation | Packet-only and frozen detached-verifier instructions are retained. Prerequisite publication and the actual reviewer preparation/spawns are coordinator evidence, not local claims. |
+| Lifecycle and scope | The armed card/manifest pair was read and preserved. No wider scope was taken; durable ask routing remains available. Monitoring, authority and independent collection are coordinator-owned. |
+| Candidate and verification | Contract-only reviewer displays, raw authority integrity and the collision control remain implemented. Independent original-base checks, seals and accepted verifier-tip checks remain pending. |
+| Complete delivery | All named generated outputs are now current. The required full guarded local battery follows this source/notes commit. The coordinator owns the guarded method bump, integration/checkpoint, protected push and named exact-tip CI conclusion. |
+| Close and handoff | The final executor report will identify the exact candidate, local readings, clean state and actual owned-job cessation. Seat release remains pending coordinator reconciliation. |
+
+Standing triggers are derived from the original implementation range,
+with the generated skill and this notes section included in its final
+tree: docs readers and method evaluations are owed; the code-suffix graph
+trigger fires for the e2e source/spec, which lie outside the graph walk.
+Boot is not triggered because no app source, Rust source or app manifest
+changed. The docs trigger query was supplied the five changed docs paths
+separately and its FIRES result names parser, app and e2e readers.
+The guarded card still owes all four whole graded legs. The coordinator
+must re-derive standing gates against its own integration range.
+
+Correction clause: the assembled brief's `tasks/TASK-FORMAT.md` root
+spelling does not exist; its context pack names the actual
+`method/tasks/TASK-FORMAT.md`, whose ceremony table was read. The early
+guessed `lane.json` read and ignore-respecting manifest inventory also
+returned 1 before the explicit ignored-file inventory located the
+canonical `lane-fence.json`. These were reading corrections, not edits to
+the role, manifest or authority. No private reviewer material, other
+worker transcript, native receipt, grant, hook or trust definition was
+opened or edited. Final verification, integration, push, CI and release
+are separate pending endpoints, to be recorded only when observed.
+
 ## Verdicts
 <!-- Fresh independent verifier appends; no predecessor verdict is altered. -->
