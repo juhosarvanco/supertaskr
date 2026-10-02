@@ -6,7 +6,7 @@ milestone: 4
 size: M
 tier: guarded
 priority: 1
-status: building
+status: verifying
 blocked_by: [T-303-s1, T-311, T-314, T-315-s1, T-315-s3]
 touches: [method/adapters/AGENTS.md, method/skills/supertaskr-seat/SKILL.md, method/lane-protocol.md, method/roles/orchestrator.md, method/roles/verifier.md, tools/e2e/scripts/dispatch-brief.mjs, tools/e2e/tests/brief.spec.ts, docs/CONVENTIONS.md, docs/conventions/commands.md, docs/conventions/dispatch-and-scratch.md, docs/conventions/gates-and-the-push.md, docs/conventions/lanes.md, docs/conventions/merging.md, docs/conventions/records-and-rooms.md, docs/conventions/shell-and-scripts.md, docs/conventions/verification.md, method/interview/plan-interview.md, app/src-tauri/src/agent/kit.rs, docs/reference/14-versions.md, docs/CAPABILITIES.md, docs/INDEX.md, method/skills/supertaskr-interview/SKILL.md]
 builder: gpt-6.1-sol@fresh
