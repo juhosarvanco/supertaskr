@@ -2506,7 +2506,8 @@ function derivePassFrame(ctx, repo) {
     value(
       `THE FRAME YOU ACTUALLY HAVE: this artifact is ONE message, so on its own it is the ` +
         `single-message fallback and never the pair ${ownerRel} ${step} mandates. The pair is two ` +
-        `FILES rendered separately — the tool-less phase 1 at dispatch and phase 2 from the ` +
+        `FILES rendered separately — phase 1 under its driver's disclosed reading boundary at ` +
+        `dispatch and phase 2 from the ` +
         `sealed inputs at the bench. If nothing handed you those two, say so in your verdict ` +
         `rather than reporting the frame you were promised.`,
       live(ctx, "this command's own rendered answer — ONE artifact, where the pair is two files"),
@@ -7115,7 +7116,7 @@ export const DISPATCH_STEPS = Object.freeze([
   Object.freeze({
     n: 11,
     id: "phase1",
-    what: "render the tool-less phase 1 brief from the card at the base and print the line the seat pastes",
+    what: "render phase 1 from the frozen contract under the driver's disclosed reading boundary and print the line the seat pastes",
   }),
 ]);
 

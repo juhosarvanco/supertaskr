@@ -466,7 +466,7 @@ this file is a project's actual name.
 ## The run record — the contract every child runs under
 
 **EVERY CHILD A SEAT STARTS HAS ONE RECORD, AND THE RECORD IS A FILE.**
-The executor in a lane, the tool-less first phase beside it, a
+The executor in a lane, the independent first phase beside it, a
 consultation participant, a foreign process driven through an adapter:
 one record per ATTEMPT, written before the child is launched and read by
 whoever has to recover the run. Without it a child's assignment lives in
