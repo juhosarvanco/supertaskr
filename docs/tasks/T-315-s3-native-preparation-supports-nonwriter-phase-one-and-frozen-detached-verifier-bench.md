@@ -36,11 +36,42 @@ Size M is the bounded native preparation cycle over one fence, with nonwriter an
 
 ### Executor criteria echo
 
-- [ ] Admit supplied-packet phase one with resource none, frozen launch facts and exact callback/probe binding, without a writer reservation.
-- [ ] Carry the nonwriter through durable questions, answers, observe, stop, collection and re-entry; refuse delivered shell/patch use after registration and retain uncertain/live/attribution holds.
-- [ ] Prepare a clean detached bench at the independently collected executor candidate using the frozen executor attempt, original base/card/scope and canonical resource.
-- [ ] Consume and revalidate preparation at writer admission and collection, retaining candidate binding and independent descendant/range/workspace checks; print each profile's actual boundary.
+- [x] Admit supplied-packet phase one with resource none, frozen launch facts and exact callback/probe binding, without a writer reservation.
+- [x] Carry the nonwriter through durable questions, answers, observe, stop, collection and re-entry; refuse delivered shell/patch use after registration and retain uncertain/live/attribution holds.
+- [x] Prepare a clean detached bench at the independently collected executor candidate using the frozen executor attempt, original base/card/scope and canonical resource.
+- [x] Consume and revalidate preparation at writer admission and collection, retaining candidate binding and independent descendant/range/workspace checks; print each profile's actual boundary.
 - [ ] Prove both profiles and preserved writer checks with discriminating source and separate-process controls; leave reviewed staging, actual desktop qualification, push and named CI to the coordinator before closure.
+
+### Executor implementation
+
+Source implementation and self-drills are frozen at `86ea689cad5cb7c7f2dec8aa86110af9662af4a5`. Native resource-none admission carries a supplied-packet-only permission, no ask path and no writer reservation. Questions, answer delivery and acknowledgements remain in the shared record through native output; re-entry records a required native re-delivery without claiming a delivery receipt. The exact completed identity probe is still required, including refusal of duplicate or malformed output. Registered shell and patch callbacks refuse after packet registration. Stop callbacks establish no cessation, and the independent final gate retains uncertain execution, live jobs and attribution holds.
+
+The existing collection arm supports `--run collect --attempt <executor> --ref <candidate> --bench-resource <absolute detached bench>`. It independently checks the executor candidate and owned jobs, freezes the original admission, original-base card digest and expanded manifest scope, verifies the clean detached bench, and persists its authority and full manifest digest in the executor record. Detached-verifier admission consumes that coordinator preparation. Callback and final checks re-read it, preserve the candidate, require an exact reported descendant tip, and separately inspect original-base-to-candidate plus candidate-to-verifier changes and workspace layers. Candidate card edits never re-expand admitted scope. Published writer admissions recover their original manifest bytes only under their previously frozen digest and read their card from the original base.
+
+Launch output identifies profile, task, resource or none, candidate, requested model/effort and the exact registered callback/tool coverage. It supplies the writer resource prefix and package-directory form or the packet registration exception and subsequent restriction. The existing writer-resource bootstrap is disclosed. Coverage remains the registered callbacks and Bash/apply_patch; packet restriction is procedural, with no arbitrary-tool or filesystem/read isolation claim.
+
+### Self-drill block
+
+At the named source commit above, the baseline selected 10 controls: the 8 new bodies and 2 preserved writer identity/final-collection controls. All 10 passed before mutation. Each mutant below ran that same set; every intended body reded and both preserved writer controls stayed green. All observed failures remained among the new profile controls. Every source restoration matched both the committed SHA256 and the per-path commit diff. The source-mutated disposable fixture was removed after its commands completed and its test port ceased listening; its known dependency links were fixture outputs, not source changes. Detailed mutations, kill sets and proof logs are retained as `self-drill-results-T-315-s3.json` and the per-mutant logs in the lane scratch.
+
+| Mutant / property | Observed reading at the named source commit | Restored source SHA256 |
+|---|---|---|
+| 1 — packet-permission | exit 1; 2 red, 8 green | `84cd975e12363bffb518ef8ef864e637901733e9695b55aa0477b7afc843993a` |
+| 2 — packet-denial | exit 1; 1 red, 9 green | `4fd002ffe0f9dd4adb038d7857b15da3466cac7ec83b814bc4af33ab407098a4` |
+| 3 — owned-port | exit 1; 2 red, 8 green | `84cd975e12363bffb518ef8ef864e637901733e9695b55aa0477b7afc843993a` |
+| 4 — frozen-scope | exit 1; 4 red, 6 green | `4fd002ffe0f9dd4adb038d7857b15da3466cac7ec83b814bc4af33ab407098a4` |
+| 5 — consumed-authority | exit 1; 1 red, 9 green | `4fd002ffe0f9dd4adb038d7857b15da3466cac7ec83b814bc4af33ab407098a4` |
+| 6 — original-final-range | exit 1; 2 red, 8 green | `4fd002ffe0f9dd4adb038d7857b15da3466cac7ec83b814bc4af33ab407098a4` |
+| 7 — launch-exception | exit 1; 1 red, 9 green | `1485698d5a971d99605b38f4cf97bdaff516eed8c24e9f3d208a06b3e4c158dd` |
+| 8 — published-fence-digest | exit 1; 1 red, 9 green | `4fd002ffe0f9dd4adb038d7857b15da3466cac7ec83b814bc4af33ab407098a4` |
+
+The inverse controls explicitly distinguish malformed identity from exact registration, live jobs from established cessation, changed preparation from its valid original, and the original candidate range from a clean candidate-to-verifier range. Callback registration, denial and detached completion controls cross separate processes. Existing writer reservation, resource-prefix, callback transaction, ignored-output and exact-final-ref checks remain in the native suite.
+
+### Qualification and corrections
+
+The focused source controls and self-drills qualify the implementation mechanism. Independently reviewed staging, actual desktop controls on the candidate source loaded by the existing hook, accepted bench verification, publication and named CI remain the coordinator's pending work. This delivery does not qualify T-315-s2's complete method delivery or cross-harness work. Requested executor model/effort is GPT-6.1 Sol extra-high; observed model and usage remain unknown.
+
+The public capabilities wrapper regenerated the fenced census/index, then refused its out-of-fence interview-skill write with EACCES. The coordinator clarified the existing standalone census generator and read-only skill check in the durable ask file; those completed without a skill change or fence expansion. The declared scratch drill fixture was explicitly authorized and its answer acknowledged. There is no unresolved lane ask. Graded lane readings follow this notes commit and are retained in the execution report, rather than being claimed here before they run.
 
 ## Verdicts
 <!-- Fresh independent verifier appends. -->
