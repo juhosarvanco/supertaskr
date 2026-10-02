@@ -233,3 +233,11 @@ Exit 0. This graph check is repeated after this final append, before
 the separate Checkpoint commit. The exact committed checkpoint then
 owes its whole battery; protected push and named CI remain separate
 endpoint claims, captured externally.
+
+## Publication closure — 2026-10-03
+
+Checkpoint commit `78dbff8c92590921a15ad8ffd5e062cb8fc50277` was pushed through the installed guard. Its exact push run 37064836496 concluded success at 2026-10-02T21:17:23Z; all required jobs passed. The final local full battery ran 833.7667 seconds and passed parser 454, app 1171, Rust 662 and e2e 1287 bodies. The clean owned verifier worktree was removed, and the normal seat release succeeded at 2026-10-02T21:19:47.173Z. Push duration was not instrumented and is unknown.
+
+A later preparation audit was spawned before native registration and interrupted before its first file read. Its unknown-worker events added holds to terminal records from this parent session. The raw records and actual interruption evidence are preserved; no holds were manually cleared, and this is not a retroactive claim that the completed workers changed product code. Correctly registered independent contract review completed without holds. This post-collection fanout needs repair separately from the verified delivery.
+
+The owner granted the next reviewed repository-separation preparation batch: T-347 explicit workspace roots, then T-348 committed record snapshots. Drafts and independent contract review were retained outside the repository. No physical records migration, remote creation, visibility change or cross-harness demonstration is authorized by this preparation batch.
