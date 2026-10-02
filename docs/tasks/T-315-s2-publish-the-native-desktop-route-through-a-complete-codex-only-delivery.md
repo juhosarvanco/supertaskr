@@ -222,5 +222,79 @@ worker transcript, native receipt, grant, hook or trust definition was
 opened or edited. Final verification, integration, push, CI and release
 are separate pending endpoints, to be recorded only when observed.
 
+#### Full guarded reading and paired-adapter finding
+
+The source/notes candidate
+`379c827f5150b588e61c38b25f3d59841207c417` was graded once through
+`SUPERTASKR_E2E_PORT=15315 node tools/e2e/scripts/gate-run.mjs --all`
+from the reserved resource. The runner exited 1: parser GREEN, exit 0,
+454 bodies; app GREEN, exit 0, 1171 bodies; Rust GREEN, exit 0, 662
+bodies across 18 targets; e2e RED, exit 1, 1286 bodies. Its token records
+that ref and clean tree `c6149fa4a3d85d9c52fb7b633404e5d95e86ea8b`.
+The model-free method gate at the same ref passed, exit 0, 13 evals.
+The graph currency check passed against the restored/generated source.
+
+The in-resource Playwright last-run record names one failed test, whose
+trace identifies the docs-input-gate body `both root adapters say it in
+the same words, and so do the kit's two`. The root adapter comparison
+passed; the kit body comparison failed because the preserved change's
+nine-line native route paragraph appears only in `method/adapters/AGENTS.md`.
+The paired body in `method/adapters/CLAUDE.md` has no such paragraph.
+The keeper and its expected parity were not altered. That second adapter
+is outside this executor's armed fence, so its edit is parked and
+`RUN-ASK completion-adapter-parity-a5` records the coordinator question
+through the assigned durable protocol file. The question also identifies
+the narrower alternative of removing the paragraph from AGENTS and its
+generated seed, retaining the other native route publications. Neither
+alternative was taken before the actual publication ruling was read.
+
+At `379c827f5150b588e61c38b25f3d59841207c417`, the local original-base
+comparison found 13 changed paths, all within the armed paths plus the
+task card, with ordinary file modifications and unchanged 100644 modes.
+The admission-base criteria are unchanged and the touches line matches
+the manifest. This local comparison does not replace independent collection.
+
+The full runner session ended. A cessation read at 2026-10-02T18:32:22Z
+on Juhos-MacBook-Pro.local found none of the observed runner, browser
+launcher, test worker, Vite or esbuild PIDs, and port 15315 had no listener.
+Tracked/untracked status was clean before appending this accounting;
+separately reported ignored residue is package installs/build output,
+Rust generated/build output, e2e test results and standard lane metadata.
+No wider adapter edit, fresh drill, repeated full battery, status stamp,
+authority edit or out-of-fence log read occurred at that reading. The local
+implementation obligation was retained red at the paired-adapter finding;
+the card remained building. A first attempt to append this section had
+unmatched patch context and made no change; this corrected patch appends
+only the observed failure accounting.
+
+#### In-fence follow-through
+
+The coordinator's first durable answer contained only an external file
+path and was unusable as a decision. It was neither opened nor acknowledged.
+The normal arm subsequently appended the actual decision text in the
+assigned ask file; that text was read and `RUN-ACK
+completion-adapter-parity-a5` was written before any correction.
+
+The approved correction removes the duplicate native-route paragraph
+from the thin AGENTS adapter and its generated interview seed: nine lines
+removed from each path, 18 added-plus-removed lines across the correction.
+The honest desktop mention in the adapter's opening comment remains.
+The detailed native instructions remain in the changed seat skill, lane
+protocol, orchestrator/verifier roles and convention chapters. The twin
+CLAUDE adapter and the parity keeper are untouched; no fence, authority,
+permission, criterion or new card was changed. This restores the already
+governing paired-adapter body contract inside the existing armed fence.
+
+After correction, the normal capabilities alias completed, exit 0, and
+its read-only currency alias completed, exit 0. The unchanged discriminating
+docs-input-gate parity body passed, exit 0, one body, on the corrected
+working tree before this source/notes commit. Its owned server ceased and
+15315 again had no listener. No new body was added, so no additional
+self-drill is claimed. The original failed whole-run ref and readings
+remain above; the corrected source/notes candidate owes its own full
+guarded battery, with all writes held until it ends. Its exact ref, actual
+counts and final cessation belong in the executor's final report, followed
+only by a status-only stamp if those local obligations pass.
+
 ## Verdicts
 <!-- Fresh independent verifier appends; no predecessor verdict is altered. -->

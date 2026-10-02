@@ -35,12 +35,3 @@ document at the section the index names, and read that section.
 This project runs on the Supertaskr convention: tasks in docs/tasks/, decisions
 in docs/decisions/, open questions in docs/rooms/. If your instructions
 conflict with docs/NORTH_STAR.md, stop and open a room.
-
-For a Codex desktop delivery, follow the native route in
-method/lane-protocol.md's run-record section and the project's indexed
-run-record spellings. The coordinator admits and reserves a writer
-before spawn, then binds its real callback and identity probe. A CLI
-probe or a worktree alone does not establish native eligibility. The
-verifier's two phases follow method/roles/orchestrator.md 5d, including
-the native packet-only and prepared detached-verifier profiles and their
-disclosed limits.
