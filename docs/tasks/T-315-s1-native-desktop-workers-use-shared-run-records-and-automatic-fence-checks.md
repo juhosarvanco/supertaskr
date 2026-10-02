@@ -547,6 +547,126 @@ later live control is independently hashed post-candidate evidence and cannot
 retroactively become sealed ground, but it directly decides the card's live
 proof criterion.
 
+
+### 2026-10-02 — APPROVED — gpt-6.1-sol@01a0fbe2-4f40-7d01-9382-21b506b533ce — scoped callback transaction candidate
+
+This approves the reviewed code candidate for coordinator staging and its
+subsequent deployed-hook control. It does not establish final native
+qualification or permit publication. The actual integration hook still loads
+the older integration source; the new real desktop control is **pending**.
+The coordinator sequencing note in ask-verifier-T-315-s1.md preserves that
+remaining obligation, including actual callback identities, exact source and
+an independent final full-range scan before final acceptance.
+
+Attempt T-315-s1-a15 was a fresh native scoped repair verifier, explicitly
+bound after the completed identity probe. The configured assignment was
+GPT-6.1 Sol at xhigh; provider-observed model identity is unavailable and is
+not inferred from the request. This was not a fresh two-spawn qualification:
+the original attack set and ground are historical sealed inputs. The initial
+repair-base card read included historical implementation notes before the
+candidate diff, and the supplied brief named recovery specifics. No blind
+repair-specific phase one or executor conversation is claimed. The brief did
+not print a tier; the canonical card is guarded, and the range-derived
+verifier gates were run rather than selecting a cheaper tier.
+
+Reviewed repair base: `2cb2902237841070a6865b2a500117114454f3cd`.
+Reviewed candidate: `81eb07db02499675db126bd9ae8a0642c0ebab5c`.
+The five-file range and the detached verifier authority agree; no manifest,
+hook definition, other checkout, merge or push was changed.
+
+attack set: sha256:56b5840add858d591fa508d22ed9e23289ea8c83d411645d33193ca189a68a64 (attack-set-T-315-s1.md)
+
+ground: sha256:d8f4aa21919f8d019ba85d7f548e614942b0f6733de87698158eb048fdb5e3ca (ground-T-315-s1.md)
+
+The entire five-input verifier-inputs-gpt61.sha256 inventory re-hashed before
+review. The independent controls are preserved as verifier-controls-T-315-s1.ts,
+sha256:6d45539205d6d35126e5ada24ac4e1e0d579a615461b47d098d0e92fcd92e6d2,
+in the coordinator's repair evidence packet. They were temporarily appended
+to the candidate spec for the bench run and then removed by the saved-byte
+snapshot; they are reproducible proof, not new shipped correction bodies.
+
+The project lock covers authority selection, validation, cumulative checking
+and publication, not merely atomic rename. Public start, bind, observe,
+answer, collect, continue and stop enter that same transaction; wait delegates
+its mutations to observe. A call-site sweep found no separate coordinator
+writer bypassing those public paths. Status inspection includes an unreadable
+sidecar only in memory: the independent control asserted unchanged record
+bytes and nanosecond mtime and retained sidecar bytes. Old native version-one
+records remain readable; the transaction metadata adds no required record
+field.
+
+Primary-lock recovery revalidates the exact PID and token inside an exclusive
+recovery gate. Cooperating acquirers check the gate before and after identity
+publication. The deterministic two-reclaimer control preserves a live
+successor after the stale claimant resumes. Independent controls also refused
+a missing owner and a live PID, recovered a genuinely exited primary owner,
+and killed a claimant after recovery-gate acquisition: that abandoned gate
+remained a named fail-closed refusal. It is not automatically recoverable.
+A live reused PID remains uncertain rather than being treated as dead.
+
+Four independent controls passed 4/4 against candidate source. Candidate
+adapter subprocesses, supplied with fixture event envelopes, retained three
+exact pre/post receipts and an earlier violation hold after a later completion
+check was independently clean. Forced actual adapter Interrupt contention
+returned durable NATIVE_TRANSACTION_BUSY in 1,563 ms on the restored run,
+inside the deployed 3,000 ms budget. The 1,500 ms bound is lock acquisition,
+not a hard full-hook bound; checker Git calls have no individual timeout.
+Separate atomic-replacement error and synchronous-nesting controls confirmed
+temporary-file cleanup and usable ownership after an exception. None of these
+supplied envelopes substitutes for a deployed native callback.
+
+Seven independent source inverse drills returned red at their intended
+properties: non-exclusive lock creation missed the callback contention
+barrier; removing observe's transaction missed coordinator contention;
+a constant refusal filename changed the second reporter to EEXIST; removing
+owner revalidation replaced the live successor's PID; clearing holds on a
+clean completion made the adapter return no block; a status-side write changed
+the record bytes; and a 3,200 ms acquisition ceiling failed both the literal
+hook-budget assertion and the actual adapter timeout control. Every landing
+was read from git diff. After restoration, the four independent bodies passed
+4/4 again and source hashes matched the reviewed candidate:
+
+- native-codex.mjs: sha256:cd55491f80276d0055401f12b1a0246300c07cf63bd78a33565c781262f296b2
+- run-record.mjs: sha256:0fe2512bf7bcbeff93880807ef0ec604eb43f054119eb5c07e5b2e8e30f7080e
+- native-codex.spec.ts: sha256:181de3c32bef88286789e825a23b2f410c8dbcefd795e17c57ac4f6a1f95e026
+
+| Criterion | Evidence and scoped judgement |
+|---|---|
+| Original admission and binding | Existing exact binding, unbound-child, duplicate identity, canonical alias and reservation bodies passed at the candidate; public admission/bind now share the callback transaction. No new live attribution is claimed. |
+| Original resource authority | Shared-cwd and every patch-endpoint body passed; resource and frozen fence remain record authority. Repository-only isolation limitations remain unchanged. |
+| Original automatic completion checks | All candidate native bodies passed, including raw layers, ignored/tracked paths, checker failure and yielded completion. Independent candidate adapter controls retained exact receipts and the earlier hold across a later clean check. |
+| Original hold and stop semantics | Candidate live-owned-job, identity-hold, exact-ref collect/continue and sticky contention controls passed. A refusal remains unknown through lifecycle reconciliation and collection. |
+| Original bodies and live proof | Model-free coverage is green; the new deployed-hook desktop control is pending. This scoped code verdict does not re-establish the full card's live-proof claim. |
+| Repair serialized event transactions | Separate-process Pre/Pre and Post/Post barrier body retained both identities, both completions and the late violation hold. Non-exclusive acquisition was discriminated. |
+| Repair coordinator authority protocol | Observe-versus-callback barrier and its inverse mutant discriminated the shared protocol; source sweep covers start/bind/answer/collect/continue/stop and wait delegation. Independent status control preserved disk bytes and clock. |
+| Repair bounded contention and owner recovery | Unique fail-closed reporters, exception/nested controls, real-dead primary owner, uncertain/live PID and two-reclaimer successor proof passed. The abandoned recovery gate refused conservatively; actual adapter contention took 1,563 ms. |
+| Repair concurrent failure evidence | Two contention reporters survived damaged-authority absorption and later collection; the constant-name inverse failed. Existing unknown-attribution and unreadable-authority bodies passed inside the candidate range. |
+| Repair serial route and real native demonstration | Candidate adapter serial positive controls passed. Deployed source, real native envelopes/identities, concurrent read-only operations and the final unauthorized-residue control remain coordinator-owned and unobserved. Publication remains held. |
+
+The one graded candidate-range invocation at
+`81eb07db02499675db126bd9ae8a0642c0ebab5c` derived parser, app and 18
+end-to-end specs. Parser passed 454/454 and app passed 1,171/1,171.
+End to end passed 1,001/1,002, including all 21 native and all 44 run-record
+bodies. Its sole failure was THE VERIFIER'S BRIEF ASSEMBLES, explicitly
+naming the known T-315-s1/T-205-s5 collision over
+`tools/e2e/tests/brief.spec.ts`. This is the preserved board-state red,
+not a repair-owned assertion failure. Live authority was not changed.
+This verdict's prose-write gates are checked after its commit; their actual
+readings belong to the handoff rather than being marked observed in advance.
+
+The security/interface sweep found no new dependency, credential, endpoint,
+dynamic shell execution or broadened filesystem authority. New disk paths are
+fixed metadata paths under the coordinator root, and child processes used by
+the independent controls terminate in isolated fixtures. One process census
+mistakenly matched its own shell and terminated that shell; the source was
+immediately restored by hash, and a corrected executable-based census found
+no surviving fixture child. That verifier command error is not product evidence.
+
+Corrections: **0**. Committed correction bodies: **0**. Mutant blocks: **0**.
+The supplied context pack's named chapters were read; no additional pack gap
+occurred. The missing printed tier and non-blind scoped repair frame are
+disclosed above. No deployed event or future gate result is marked observed.
+
 ## Repair ledger
 
 2026-09-25 native callback transaction repair
