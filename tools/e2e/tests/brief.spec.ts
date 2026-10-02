@@ -7508,6 +7508,21 @@ test("T-315-s2 phase briefs disclose native profiles, identity binding and absol
   }
 });
 
+test("T-315-s2 ordinary verifier briefs disclose the driver boundary without promising tool removal", () => {
+  const out = render(assembleBrief(context({ taskId: "T-205-s5", role: "verifier" })).recs);
+  const frame = out.split("\n").find((line) => line.includes("THE FRAME YOU ACTUALLY HAVE"));
+  expect(frame, "the normal brief must actually render its frame").toBeDefined();
+  expect(frame, "the ordinary verifier brief still promises a tool-less native phase one")
+    .toContain("driver's disclosed reading boundary");
+  expect(frame).not.toContain("the tool-less phase 1 at dispatch");
+  const phase = DISPATCH_STEPS.find((step) => step.id === "phase1");
+  expect(phase, "the normal dispatch must still render phase one").toBeDefined();
+  expect(phase?.what).toContain("driver's disclosed reading boundary");
+  const protocol = readDoc("method/lane-protocol.md");
+  expect(protocol).toContain("the independent first phase beside it");
+  expect(protocol).not.toContain("the tool-less first phase beside it");
+});
+
 test("the bench takes the ground at the base, seals three inputs by sha256, and renders phase 2 from the seal", () => {
   // KILLED BY: a ground with counts and no body names; a seal over two
   // inputs called three; a phase 2 brief that names no digest; and a
