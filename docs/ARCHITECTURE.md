@@ -81,7 +81,10 @@ ADR-014/015).
 - CLI ↔ agents: role prompts come from method/roles/; no direct model
   API calls. Native Codex coordination uses shared run records and the
   registered callback boundary; T-315-s3 supplies packet-only phase one
-  and frozen detached preparation, while T-315-s2 owns full delivery.
+  and frozen detached preparation, and T-315-s2 qualifies native delivery
+  with independent verification, collected jobs and protected publication.
+  Bash/apply_patch are the measured boundary; reads remain procedural
+  and competing writers remain unqualified.
   CLI adapters remain a separate route; cross-harness work is deferred.
 - App ↔ project: read-only first; writes are single-field frontmatter
   edits or thread appends, nothing else (pure-lens rule).

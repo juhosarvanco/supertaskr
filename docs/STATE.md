@@ -1,23 +1,21 @@
 # State
 
 Updated: 2026-10-02 by the Codex integrator; checkpoint record:
-docs/checkpoints/2026-10-02-T-315-s3-native-preparation.md.
-Callback transactions and packet-only/frozen detached preparation are
-accepted locally. T-315-s2's full native delivery remains outstanding.
-**READ THE CURRENT PUSH AND CI BEFORE DISPATCH**, from delivery evidence.
-**THE GRANT LEFT THE TEMPLATE (T-344)**: it is
-`.supertaskr/dispatch-grant.yaml` in THIS checkout alone — a block in
-`method/runtime/supertaskr.yaml` is a STRAY. `--grant show` reads it;
-a revision runs no suite, commit, push or CI.
-**LANES ARE LIVE ONLY IF DERIVED (derive: LANES).** **CI IS A SEPARATE CLAIM FROM A LOCAL BATTERY AND
-MUST BE READ**: `gh run list` before believing the tree — **read the named run for the current pushed tip; an older green does not prove it.**
-**PUBLICATION AND NATIVE LIMITS ARE SEPARATE.** `npm run health` exits **3**
-while bands await keepers (T-156-s1, T-262); it is not clean.
-Triage/live-suggestions BREACHES remain T-306. **`--merge` MAY STOP FALSELY (T-295-s7/s8/s4): rule through and diff
-corrected files against the bench tip.** **AN EXIT MAY MEAN THE GATE NEVER RAN**:
-`docs-gate.mjs`'s `CANNOT_RUN: 3` sits in a catch inside `main()`.
-**READ THE OUTPUT, NOT THE CODE.** **Re-run a suspect ONCE, then
-ATTRIBUTE by NAME.**
+docs/checkpoints/2026-10-02-T-315-s2-native-delivery.md.
+T-315-s2's native delivery is integrated locally; publication and exact-tip
+CI are separate endpoints in the delivery evidence. **READ THE NAMED CI
+FOR THE CURRENT PUSH**; an older green or a local battery proves neither.
+**THE GRANT LEFT THE TEMPLATE (T-344)**: current authority is only
+`.supertaskr/dispatch-grant.yaml` in this checkout; a template block is a
+STRAY. `--grant show` reads it; revisions owe no suite, commit, push or CI.
+**DERIVE LIVE LANES. PUBLICATION AND NATIVE LIMITS ARE SEPARATE.**
+`npm run health` exits **3** while bands await keepers (T-156-s1, T-262);
+T-306 retains backlog BREACHES. MF-09 selftest is RED; model-in-loop
+is unrun (no runner). Normal evals prove neither of those readings.
+**`--merge` MAY STOP FALSELY (T-295-s7/s8/s4)**: rule through and diff
+corrections against the bench. **READ OUTPUT, NOT JUST EXIT**:
+docs-gate's CANNOT_RUN 3 means no grade. Re-run a suspect ONCE, then
+attribute by name.
 
 ## The contract this file is under
 
@@ -38,8 +36,9 @@ delete hazards to fit. Commit subject: `Checkpoint:`.
   --dispatch --full` BEFORE THE STAMP.**
 - **THE MERGE IS THE ARM** (T-295, ADR-024 decision 3): `brief.mjs
   --merge <id> [--bump <old>..<new>] [--meters <report>] [--tier <t>]`
-  performs the ritual and STOPS staged — the seat rules, commits, runs
-  `gate-run.mjs --owed-set --range`, then the bare push. The readings
+  STOPS staged; the seat rules and commits. `gate-run.mjs --owed-set
+  --range` DERIVES JSON ONLY; `--range` grades. A final unchanged-head
+  `--all` green token covers an owed subset; validate coverage, then push bare. The readings
   land in docs/checkpoints/meters.jsonl. **BUILD
   lib/parser FROM main BEFORE THE VERB, FROM THE MERGED TREE AT ITS
   STOP** (T-317). **THE WAIT IS THE ARM** (T-298): `brief.mjs
@@ -59,7 +58,7 @@ delete hazards to fit. Commit subject: `Checkpoint:`.
   spawn, never by the seat's hand (T-295). **A ROOM OR DECISION ENTRY IS PROPOSED VERBATIM AND
   APPENDED ON THE OWNER'S YES; it paraphrases and dates, never quotes**
   (orchestrator.md 8b).
-- THE HUMAN'S APP holds **1420** (the boot gate ABORTS while it does);
+- THE HUMAN'S APP uses **1420**; derive its OS holder before boot or installs;
   `../supertaskr-app` is detached ON PURPOSE.
 - BOARD CENSUS: `brief.mjs --state`; the parser's field is `blockedBy`.
 - **E2E PORT AND SCRATCH FILENAMES ARE CONVENTIONS' RULES** (T-217):
@@ -73,26 +72,20 @@ delete hazards to fit. Commit subject: `Checkpoint:`.
 
 ## Next up — hooks only; statuses are the board's
 
-<KEEP THIS HEADING NAMED "Next up": brief.spec.ts pins it.>
-
-1. **DERIVE IT** — `brief.mjs --dispatch --full`.
-2. **NATIVE DELIVERY NEXT**: review and pin T-315-s2's current contract,
-   then build its method publication through the supported native profiles.
-   T-312 stays parked/preserved; cross-harness demonstrations stay deferred.
-   A worktree is not a running executor: derive run records and native state.
-   Resolve cards by `id:`, never filename glob. T-301 needs its owner design.
-3. **WITH THE OWNER**: the three check-evidence-reuse cards; the T-301
-   design sitting; INDEXED_DOCS and the topic files; T-266 wakes
-   2026-10-01.
-4. **A LANE RUNS ITS SUITES ONCE** (T-279), scoped with `--owning`
-   (T-271); the push, the bench and CI owe the set their own range owes
-   (`--range <base>..<tip>`; the guard re-derives it; T-280, T-294).
-5. **ASK THE DOCS GATE WHAT A CHANGE OWES** — `docs-gate.mjs <paths>`;
-   a token for a file under a tracked directory is a NEW-FILE
-   RESERVATION (T-287); a directory with nothing under it stays DEAD.
-6. **The owner holds; no card is cut from these** — the ROADMAP heading
-   and ARCHITECTURE front-door labels, section fences (G), charter
-   entry 32, T-173, the domains and the license (at the first cut).
+1. **OWNER GRANT**: finish T-315-s2, refresh repository separation,
+   independently review its first cards outside the repo, then execute the batch.
+   T-312 stays parked; cross-harness demonstrations stay deferred.
+   Code/review: GPT-6.1 Sol extra-high; workflow demos: GPT-5.6 Luna.
+   Requested settings never substitute for observed identity.
+2. **DERIVE IT** — `brief.mjs --dispatch --full`, actual run records and
+   native state; a worktree is not a running executor. Resolve by `id:`.
+3. **WITH THE OWNER**: T-301's design sitting; check-evidence reuse;
+   INDEXED_DOCS/topic files; T-266's wake; ROADMAP/ARCHITECTURE labels,
+   section fences (G), charter entry 32, T-173, domains and license.
+4. **A LANE RUNS SUITES ONCE** (T-279), scoped with `--owning` (T-271).
+   Push, bench and CI derive their own `--range <base>..<tip>` (T-280/294).
+   Ask `docs-gate.mjs <paths>` what docs owe. A new-file reservation needs
+   a tracked parent; an empty directory is DEAD (T-287).
 
 ## Standing hazards — the section that saves the hour
 
@@ -155,10 +148,19 @@ delete hazards to fit. Commit subject: `Checkpoint:`.
   the whole four suites run at every checkpoint and nightly
   (ADR-024 decision 4).
 
+- **NATIVE PREPARATION/ASKS**: fresh verifiers use separate ask files;
+  acknowledge every normal-arm question before terminal collection.
+  `--answer` and `--evidence` take TEXT or `@file`; a bare path is literal.
+  A detached runtime may lack its declared self-ignore; initialize only the
+  published RUNTIME_DIR_IGNORE before admission, never edit frozen authority.
+- **MF-09 SELFTEST**: its command-arm degradation searches the conventions
+  index rather than the spliced chapter. Normal method evals and the
+  positive-control selftest are separate readings; preserve the baseline RED.
+
 ## The records
 
 - docs/checkpoints/ — append-only; the newest is the 2026-10-02
-  T-315-s3 native-preparation record. meters.jsonl is the bands' readings;
+  T-315-s2 native-delivery record. meters.jsonl is the bands' readings;
   inspect each entry's source before treating it as a seat measurement.
 - docs/decisions/025 — one session contract, either harness (T-311..T-316).
 - docs/rooms/governing-docs.md + ADR-019 — this file's contract.
