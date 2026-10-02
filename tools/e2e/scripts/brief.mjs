@@ -274,6 +274,7 @@ import { hookStatus, installHook } from "../../../.claude/hooks/hook-install.mjs
 import { main as mergeMain, mergeDials } from "./merge.mjs";
 import { LaneLockFinding, applyLaneLock } from "./lane-lock.mjs";
 import { DECOMPOSITION_FILE, earsKeywords, isEars, seatRecs } from "./session-economics.mjs";
+import { resolveWorkspace, workspaceBindingPresent, WorkspaceFinding } from "./workspace.mjs";
 
 const FLAGS = Object.freeze([
   "--task",
@@ -338,6 +339,8 @@ const FLAGS = Object.freeze([
   "--expect-digest",
   "--by",
   "--help",
+  "--workspace",
+  "--product-only",
 ]);
 
 /**
@@ -510,6 +513,30 @@ function flush() {
 
 /** @param {string[]} argv @returns {Promise<number>} */
 async function main(argv) {
+  // Standalone inspection precedes every context and early-return arm. It
+  // opens no board and calls no runtime initializer or orchestration writer.
+  if (argv.includes("--workspace") || argv.includes("--product-only")) {
+    let selectedRoot;
+    let productOnly = false;
+    let inspected = false;
+    for (let i = 0; i < argv.length; i += 1) {
+      const next = argv[i + 1];
+      if (argv[i] === "--workspace" && !inspected) inspected = true;
+      else if (argv[i] === "--product-only" && !productOnly) productOnly = true;
+      else if (argv[i] === "--root" && selectedRoot === undefined && next && !next.startsWith("-")) { selectedRoot = next; i += 1; }
+      else {
+        console.error("brief: --workspace is standalone; only --root <product checkout> and --product-only may accompany it.");
+        return EXIT.USAGE;
+      }
+    }
+    if (!inspected) {
+      console.error("brief: --product-only requires --workspace.");
+      return EXIT.USAGE;
+    }
+    const workspace = resolveWorkspace({ productRoot: selectedRoot ?? findCheckoutRoot(process.cwd()) ?? process.cwd(), mode: productOnly ? "product-only" : "development" });
+    process.stdout.write(`${JSON.stringify(workspace, null, 2)}\n`);
+    return EXIT.CLEAN;
+  }
   /** @type {Record<string, string>} */
   const opts = {};
   let wantsState = false;
@@ -562,6 +589,7 @@ async function main(argv) {
           + "[--grant set --grant-file <path> --expect-revision <n> [--expect-digest <hex>] --by <text|@file>] "
           + "[--full] [--root <path>]",
       );
+      console.log("workspace inspection: --workspace [--product-only] [--root <product checkout>] (standalone, read-only)");
       return EXIT.CLEAN;
     }
     if (a === "--state") {
@@ -607,6 +635,20 @@ async function main(argv) {
     }
     opts[a.slice(2)] = v;
     i += 1;
+  }
+  // This guards the CLI boundary only. Directly imported orchestration APIs
+  // retain their existing contract; split orchestration is future work.
+  try {
+    const selectedRoot = opts["root"] ?? findCheckoutRoot(process.cwd()) ?? process.cwd();
+    if (workspaceBindingPresent(selectedRoot)) {
+      resolveWorkspace({ productRoot: selectedRoot });
+      console.error("brief: workspace-split-unsupported: development orchestration is not activated for split roots; use --workspace [--product-only] --root <product checkout>.");
+      return EXIT.CANNOT_RUN;
+    }
+  } catch (err) {
+    if (!(err instanceof WorkspaceFinding)) throw err;
+    console.error(`brief: workspace-unavailable: ${err.message}; use --workspace [--product-only] --root <product checkout> to inspect the binding.`);
+    return EXIT.CANNOT_RUN;
   }
   const taskId = opts["task"] ?? "";
   const cardId = opts["card"] ?? "";

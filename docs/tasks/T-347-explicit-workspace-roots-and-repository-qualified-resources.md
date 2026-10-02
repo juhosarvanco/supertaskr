@@ -35,6 +35,59 @@ Prepared against product commit 78dbff8c92590921a15ad8ffd5e062cb8fc50277. The cu
 
 ## Implementation notes
 
+### Fresh recovery criteria echo — before implementation
+
+- Return named product, records and runtime roots, layout, provenance and limitations; module import launches no command or write.
+- Default only an absent binding to colocated roots; configured split bindings name both repository top levels and project association, with a machine-neutral portable association.
+- Validate project, object format and exact complete reachable root-commit sets; expose source-neutral validation of captured association data and measured identity, with named refusals and no hostname dependence.
+- Product-only resolution never opens records and marks their association unverified; development resolution validates configured records or refuses without stale-copy fallback.
+- Key resources by role, relative path and source rule; explicit legacy mappings decide ownership, reject ambiguity and report colocated physical overlap honestly.
+- Reject absolute, traversal, control/runtime and escaping symlink paths, including new destinations; allow safe new files and grant no ownership.
+- Inspect workspace before context as a standalone read-only CLI mode; refuse mixed modes, invalid bindings and split development arms before side effects; preserve colocated behavior and account for workspace flags in the existing inventory.
+- Cover valid layouts, association failures, role-equal paths, legacy ambiguity, stale records and path controls; document final schemas and deferred split orchestration, consumers, paired reservations and landing authority.
+
 The local read contract is proposed as the ignored runtime workspace binding, with a portable workspace association at the records root. The executor may settle JSON field spellings inside this contract and document them; no remote, record store or public migration is created. Use only existing Node/Git dependencies. The workspace inspection command is a small mode on the existing arm, not a second CLI. Follow the normal ask path for any necessary scope expansion. The distinct product base and records snapshot implementation belongs to T-348; no cross-repository commit distance is computed here.
+
+### Implemented contract and fresh recovery
+
+The local binding is `.supertaskr/workspace.json` at the selected product checkout. Its exact JSON fields are `version: 1`, `projectId`, `productRoot` and `recordsRoot`; both locations are absolute paths. A configured binding declares split layout, names the selected product repository top level and a distinct records repository top level. Only an absent binding selects colocated operation. Malformed, unreadable, dangling, unsupported or unresolved bindings produce named refusals.
+
+The portable records file is `workspace-association.json`, with exact fields `version: 1`, `projectId` and `product`; `product` has exactly `objectFormat` and `rootCommits`. Supported formats are `sha1` and `sha256`. Roots are non-empty sets of full object ids, normalized for case, order and duplicates before exact equality. Extra machine-location, hostname, hardware or credential fields refuse. Identity measurement disables replacement objects, lazy fetching, optional locks and commit-graph acceleration, and refuses shallow, grafted or incomplete history. Association detects accidental mismatches; it establishes no authentication or owner authorization.
+
+`measureProductIdentity` reads product identity without records. `validateAssociation` accepts captured parsed association data, separately measured product identity, binding project id and a provenance label, and performs no I/O. Product-only resolution never stats, canonicalizes or opens private records, reports their association unverified and refuses records resources. Development resolution validates the configured records root and portable association without falling back to stale product-side records.
+
+`resolveResource` retains repository role, relative path, source token and explicit-role or caller-supplied legacy mapping in its key. Ownership is never inferred from destination existence. Colocated roles keep distinct keys while reporting physical overlap. Lexical control/traversal checks plus canonicalization of the nearest existing ancestor reject existing symlink escapes and new destinations below escaping symlinks, while safe new files and internal symlinks resolve. Resource resolution grants no write ownership, changes no fence and encodes no delivery route. Runtime stays at the product checkout's existing runtime location and cannot be a Git repository, Git-control location or writable fence root.
+
+The command is `brief.mjs --workspace [--product-only] [--root <product checkout>]`. It prints standalone JSON before ordinary context loading and rejects other arms or modifiers. The configured-binding CLI guard refuses split development orchestration before ordinary context or effects, names the inspection route, and keeps absent-binding colocated behavior. This claim covers the CLI boundary, not directly imported orchestration APIs. Split orchestration, component expansion consumers, paired reservations and landing authority are not activated.
+
+The existing live-arm inventory now drives both workspace inspection modes. Its declared-flag derivation, unexplained-flag refusal, reverse inventory checks and planted unknown-flag control remain intact. The margin body measures non-empty output through file and pipe readers for both modes; their standalone JSON receives exit, parsed-root/mode/association and complete-answer equality assertions. Every ordinary prose arm retains the provenance-line assertion.
+
+The four recovered implementation files are byte-for-byte equal to collected candidate `08ea3fe0e09d1dde57c1b2f9278904d6292d1cfb` and original drill snapshot `b8e7d6fb5f4508d3a2b9b65c4de8d5e58c7b4706`. This is recovery input from failed T-347-a2, not approved delivery. The fresh admission is `767e092ca862aa93ada86a9a6c919e1647859eea`; the reviewed v4 acceptance criteria and five-path fence remain intact. Failed original grading and the unsupported nested-fixture episode remain preserved in external evidence. No nested checkout or active-lane mutant was created in this recovery.
+
+The actual native actor is `01a0feb2-bdcb-7a51-82a1-67cda8be515e`, executor task `migration347_reentry_executor_gpt61`; requested model/effort is gpt-6.1-sol/xhigh. Observed model and usage are unknown. `built_by` stays blank during building and verifying; completion provenance is integrator-owned.
+
+### Attributed unchanged self-drill proof
+
+The coordinator's frozen `coordinator-drills-b8e7d6fb-v1/results-T-347.json` is the original attempt's proof: baseline nine passes, M1–M9 each exit 1 with exactly one intended failed body, SHA256 restoration and nine restored passes. Fresh comparison of all four recovered source/spec files against that snapshot permits reuse of this unchanged-body proof. These are attributed coordinator measurements and are not this executor's fresh final grade.
+
+| Mutant | Body and one-sided planted property | Original observed result |
+| --- | --- | --- |
+| M1 | Import-only body: add an import-time command at the producer; the live command trap fires. | Exit 1; one failed body. |
+| M2 | Colocated/runtime body: disable bare-runtime rejection; the empty-runtime control holds and the expected bare-runtime refusal fails. | Exit 1; one failed body. |
+| M3 | Exact-root association body: disable root-set equality; the union control holds and the expected subset mismatch fails. | Exit 1; one failed body. |
+| M4 | Association refusal body: disable exact schema keys; a hostname-bearing association is accepted and its refusal fails. | Exit 1; one failed body. |
+| M5 | Product-only body: remove the early product-only branch; instrumented private-records access fires. | Exit 1; one failed body. |
+| M6 | Complete-history body: disable shallow-history refusal; complete-history control holds and shallow-history refusal fails. | Exit 1; one failed body. |
+| M7 | Resource/path body: remove physical confinement at the producer; safe internal-symlink control holds and escaping-path refusal fails. | Exit 1; one failed body. |
+| M8 | CLI arms body: disable the configured-binding guard; fixture dispatch reaches context and loses the expected split refusal. | Exit 1; one failed body. |
+| M9 | CLI failure body: data mutant changes malformed-binding fixture bytes to the accepted valid binding; negative inspection exits 0. | Exit 1; one failed body. |
+
+Restoration hashes at the original snapshot, also measured on the recovered bytes: workspace.mjs `1e9234c2bc0d9d420155ea88b04c446f39fa11d46dc021667af2f03f0b6e39c2`; brief.mjs `51edc8a4e197be042e45ca209982fc18d0a97aacc9722e1c5f3e1e7f75ef2473`; workspace.spec.ts `58411b8d941d7873858e30bef8ab559730092ed19d7ef4fb0582dcd0930bffcf`; brief.spec.ts `b0f966691eb05232f59aaa489e129cceb24e497f78e2b9a74bc2898d8b1d3b18`. No assertion and producer were changed together. Fresh recipes for the changed inventory/margin bodies use a committed snapshot and coordinator-owned detached scratch through this actor's durable ask.
+
+### Correction clause and grading boundary
+
+The brief's `tasks/TASK-FORMAT.md` pointer resolves to the tracked `method/tasks/TASK-FORMAT.md` ceremony table. Its runtime role default differs from this native assignment; requested settings do not prove observed identity. The normal binding and five-path local manifest were read and agree with this fresh card. The only code repair beyond the recovered bytes is the admitted CLI inventory compatibility obligation.
+
+New body names require capabilities census regeneration at the bench/merge, outside this lane's source fence. The TypeScript paths trigger the normal graph obligation there; the lane leaves generated files and pins to their owning seat. This executor grades its final code-and-notes commit over the fresh admission range, with actual exits and body counts in the report, then makes a last commit changing only this card's status to verifying. That status-only commit uses the role's sole no-rerun exemption.
 
 ## Verdicts
