@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1267 behaviours** — 1265 extracted sentences + 2 named-not-extracted (listed at the end) — across 43 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1271 behaviours** — 1269 extracted sentences + 2 named-not-extracted (listed at the end) — across 43 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -1042,6 +1042,10 @@ Census: **1267 behaviours** — 1265 extracted sentences + 2 named-not-extracted
 - T-311 refuses a conflicting native writer reservation before spawn
 - canonical native resource aliases share one atomic T-311 reservation
 - two disjoint native identities route simultaneous callbacks to their own records
+- separate callback processes serialize the full read-modify-write transaction and retain both completions plus a late hold
+- a competing coordinator observation cannot publish a stale lifecycle record over a callback completion
+- transaction contention is bounded and durable, and exception cleanup releases ownership
+- two dead-owner reclaimers cannot remove a successor lock after observing stale ownership
 - a duplicate native identity claimed while another attempt is pending holds both attempts
 - shared cwd cannot select a resource and Bash must visibly name the assigned root in its guaranteed command payload
 - apply_patch checks every absolute source and move destination against the assigned resource
