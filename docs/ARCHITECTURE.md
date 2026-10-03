@@ -86,6 +86,11 @@ ADR-014/015).
   Bash/apply_patch are the measured boundary; reads remain procedural
   and competing writers remain unqualified.
   CLI adapters remain a separate route; cross-harness work is deferred.
+- Workspace inspection: workspace.mjs resolves product, records and runtime
+  locations, validates association against product lineage and confines
+  qualified resources physically. Product-only inspection opens no private
+  records; configured split orchestration refuses before legacy context.
+  This read-only foundation grants neither writes nor parallel reservations.
 - App ↔ project: read-only first; writes are single-field frontmatter
   edits or thread appends, nothing else (pure-lens rule).
 - Genesis (ADR-017): the spawned planner session is the WRITER; the
