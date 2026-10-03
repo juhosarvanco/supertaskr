@@ -180,3 +180,82 @@ message: records inventory must announce both list and selected-task views
 Five new verifier test bodies are committed, plus one extended existing CLI body. Three assigned corrections; three mutant blocks. At `2026-10-03`, snapshot `60783bcdedf74ff2c20b86cb1607c443ac65e7a7`, unchanged pin SHA256s are `886063c8e24945c6d309a1d753bc233755f56974da1a5cf255907f997cb03122` (`tools/e2e/tests/records.spec.ts`), `d718f81ee18275ee5ba60b8c6116dd485e3fe7280178fb35769d7b8d81aaa107` (`tools/e2e/tests/brief.spec.ts`), and `7ca11c44225f72270e206ffea052fc4eafbb49707b05cec7d6f20f1e2d01ed5b` (`tools/e2e/tests/brief-flush.spec.ts`). Candidate source remains `02891b593a402229953da94a03402fc6d9d59e23631ba5b4afc236fe0bc602e0` (`records.mjs`) and `ec68f34f42991e50220f855210af49ec72450d6ed1515e0b53be49df2b9a2a95` (`brief.mjs`).
 
 **Other checks and boundaries.** At that measured snapshot: e2e TypeScript typecheck and index freshness check exit 0; all 13 model-free method evals exit 0. Documentation gate fires with owed app/e2e/parser suites, exit 1, while card shape/status and budget checks hold; it is not a malformed-card finding. Capabilities freshness exits 1 because new pin bodies change generated census content; its chained interview-skill check was not reached. Regenerating the committed capabilities census is a named integration obligation outside this frozen verifier fence. No generated file was rewritten here. Logs: `verification-v1/verifier-typecheck-T-348.log`, `verification-v1/verifier-index-check-T-348.log`, `verification-v1/verifier-method-evals-T-348.log`, `verification-v1/verifier-docs-gate-T-348.log`, `verification-v1/verifier-capabilities-check-T-348.log`. Source review checked fixed argument-array Git reads, exact object selection, immutable data exposure, association validation and early CLI routing; VC1/VC2/VC3 are the observed defects, with no additional exploitable path established. Direct-import enforcement, actual split orchestration, complete arbitrary-heading sanitization and publication safety are outside this measured claim. No source fix, fake usage, skipped failure, merge, push, grant or seat operation was performed. Terminal report records actual completion grade and owned-job cessation before RUN-DONE.
+
+
+### 2026-10-03 — APPROVED — unknown@01a1003a-5223-7b70-a4f6-134c2c1158e9 — repaired candidate
+
+APPROVED against the unchanged seven-criterion contract at repaired candidate `a20b87054ed244dc96384beb8c8670c3684bd3f7`, original admitted base `9af695339caf2e9968daabc4a69a5762fd022eeb`, standard tier. This is local code and fixture verification. The original rejected verdict is retained unchanged; actual split delivery, physical migration, publication and CI are not claimed.
+
+The blessed original range grade at that exact candidate is GREEN: parser 454 bodies/exit 0, app 1171 bodies/exit 0, whole e2e 1313 bodies/exit 0; aggregate exit 0. The derived six-path range owes parser/app and whole e2e because brief.mjs and the card moved. HEAD and tracked tree were clean; token entries name tree `146d04351083d349c66368365e6e910546ce6751` and dirty=false. Logs and token are saved under verification-v2/verifier-original-*-T-348-a5. Known T-333 fixture-copy EACCES did not recur in this run; earlier baseline RED readings remain earlier RED readings.
+
+Requested settings were `gpt-6.1-sol@xhigh`; observed model, effort, tokens and provider seconds are unknown. This fresh native phase-two session is `01a1003a-5223-7b70-a4f6-134c2c1158e9`, canonical task `/root/migration348_repaired_verifier_gpt61`, normally bound T-348-a5 in the prepared detached-verifier resource after the exact identity probe. Phase one was a separate packet-only spawn. The prior rejected verdict and frozen pins were deliberately shared repair evidence. Code diff preceded candidate notes. Reading-limit disclosure: a metadata check displayed lane-fence.json's frozen base-card generic pre-implementation notes; this sitting is not wholly unexposed. No executor conversation, external report or private source directory was opened. Subsequent authority checks displayed filtered metadata. The normal answer confirmed collected source and proof-job cessation; those external observations remain attributed to the coordinator. Actual line-initial `RUN-ACK proof-T-348-repaired-v1` is in verification-v2/ask-T-348.md.
+
+attack set: sha256:6b697a340669047935ed9266e50ec63275f0143e2772249b5d1f0bfb66ffb103 (attack-set-T-348.md)
+ground: sha256:d6fce3b0bf0b9fa603465e520a865be721540e7faa682a50f6ed886b62084700 (verification-v2/ground-T-348.md)
+card at original base: sha256:6dc2ba69b85f90aa7cfb3fccbac2d8a90afd0e99e67aa18563a55a26dd8509e8
+
+All sealed digests were independently recomputed. Preserved prior rejected entry SHA256 is `a653bbf8b4b04c4f183cc149924d81766487ab1bccd663bfcb5c4380b155bf01`. The five actual repaired inputs at the candidate are:
+
+| File | SHA256 |
+|---|---|
+| tools/e2e/scripts/records.mjs | 2617e580a21cfa3a897a79965b819326b4984487aa805307ddbdce00bf192aad |
+| tools/e2e/scripts/brief.mjs | ec68f34f42991e50220f855210af49ec72450d6ed1515e0b53be49df2b9a2a95 |
+| tools/e2e/tests/records.spec.ts | 886063c8e24945c6d309a1d753bc233755f56974da1a5cf255907f997cb03122 |
+| tools/e2e/tests/brief.spec.ts | d718f81ee18275ee5ba60b8c6116dd485e3fe7280178fb35769d7b8d81aaa107 |
+| tools/e2e/tests/brief-flush.spec.ts | 7ca11c44225f72270e206ffea052fc4eafbb49707b05cec7d6f20f1e2d01ed5b |
+
+Proof applies by exact composition, not a mistaken direct hash comparison: read frozen `60783bcdedf74ff2c20b86cb1607c443ac65e7a7`, independently apply the two exact repaired-records replacements in memory, and compare all five resulting files byte-for-byte with this candidate. The summary's records.mjs hash `02891b593a402229953da94a03402fc6d9d59e23631ba5b4afc236fe0bc602e0` names original/restored inputs; the repaired hash above is different. Other four files match directly. Proof packet hashes: worker-recipes-v1.json `7e61c344a8ecef046ea7c40081a54f5c9b94de48a5d3971a27d3359fc12bc052`; results-v2-reviewed.json `34fcfe21a3229721fbb14fbc259dd8a2876bcf1fc54262ddc331287bb1834f4c`; proof-summary-v1.json `749a6424123499a4ab9c8de375fff884d56bb37a1954cd957d6c84b87a46e463`.
+
+Independently inspected saved Git diff landings and all printed trial counts against reviewed JSON. The 23 coordinator-run trials comprise six baseline/repair controls, fifteen intended mutation kills and two aiming survivors. Original full records: eight passed, two failed, exit one; minimally repaired records: ten passed, exit zero. Each VC1/VC2 original control failed one actual body, and each repaired control passed one. VC1's actual diagnostic was ENOENT after trimming the legal whitespace root, rather than the originally predicted records-root-nested label. Seventeen source/data trials with exact repairs produced fifteen one-body failures/exit one and two one-body passes/exit zero. List omission survives exhaustive flag accounting but dies in VC3; an unrelated accepted unknown flag survives VC3 but dies in exhaustive flag accounting. Neither demonstrated kill set contains the other. This is selected named-body proof, not full owning-set isolation; no redundant mutation run or active-bench source mutant was made.
+
+| Criterion | Judgment and deciding evidence at the candidate |
+|---|---|
+| 1 | PASS. Committed-selection/immutable-capture, missing/malformed/duplicate/id-mismatch, Git-mode and VC1 records bodies cover stale product and working copies, missing working association, exact records revision, regular card/association blobs and legal root whitespace. Source uses T-347 product-only discovery and reads association/card objects from one exact tree. Saved duplicate/path/revision/mode mutations fail causally. |
+| 2 | PASS. Receipt and association bodies establish card path/blob/object format, same-commit association path/blob/values and independently measured selected product lineage. Immutable capture and CRLF bodies verify defensive byte copies and frozen nested receipt/card values. VC2 checks all six named historical-section placements through API and CLI, later active criteria and unchanged raw bytes. Raw-content CLI, nested-value and retained-buffer mutations fail. Snapshot authority is explicitly data only. |
+| 3 | PASS. Independent same-name refs resolve differently; records-only advancement preserves product base. Selected foreign lineage and product-only/records-only object refusals distinguish histories. The product-base substitution mutation fails at the intended site; no cross-repository distance is computed. |
+| 4 | PASS. Both committed CLI bodies use copied source without parser/app builds or legacy modules, require explicit paired product base, distinguish valid empty boards and unavailable revisions, and compare HEAD/index/cards/runtime including a token sentinel. Process/write controls admit real Git reads and deliberately reject build/push/write controls. The existing exhaustive flag body, VC3 and pipe/file margin body retain both views and all modifiers. Their complementary data-mutation proof is preserved. |
+| 5 | PASS. Extended process/write-control body drives default/task/role/state/card/audit/preflight/fence/bench/merge/dispatch/express/grant/seat/run route families, naming unsupported route and read-only views before legacy loading or effects. Existing T-347/colocated bodies remain in the grade. Source restricts the enforcement claim to the CLI and activates no project split binding. |
+| 6 | PASS. Captured snapshots stay fixed after working cards, branch, local project binding and association advance; explicit later snapshots carry different provenance. Raw CRLF/subordinate-id and malformed/unsafe-selector bodies exercise retained bytes and actionable refusals; missing and duplicate states never return a fallback empty board. |
+| 7 | PASS. records.spec.ts and brief.spec.ts prove the required fixture behaviors; all three supplied pin specs match their frozen hashes. Delivered APIs/schema and repair notes name readCommittedBoard, captureTaskSnapshot, activeTaskContract and both --records forms and expressly confine results to local fixtures. Actual split execution/delivery is deferred. |
+
+Security and adjacent-feature review found no additional defect: fixed argument-array Git reads disable replace objects, optional locks and lazy fetch; selectors and revisions cannot become shell commands; regular-mode and UTF-8 checks precede card consumption; YAML/frontmatter and association schemas refuse malformed values; new APIs expose detached data and no write authority. No endpoint, credential or dependency was added. The early dynamic loading change is covered by source-only fixtures and the original range's whole e2e grade.
+
+No new correction or pin is assigned in this pass. The three earlier assigned corrections and three unchanged worker-authored mutant blocks are carried below so the newest verdict remains mechanically actionable. Each old anchor matches the repaired candidate exactly once. Their original RED/GREEN readings remain attributed to the frozen proof; integration still owes actual merged-tree drills with named-spec scope, diagnostics and SHA256 restoration. Those future drills have not run in this review.
+
+```mutant
+correction: VC1 preserve legal records-root trailing whitespace
+file: tools/e2e/scripts/records.mjs
+spec: tools/e2e/tests/records.spec.ts
+body: T-348 VC1 — committed records preserve legal trailing whitespace in the selected root
+message: ENOENT
+--- old
+  const top = git(recordsRoot, ["rev-parse", "--show-toplevel"], "records-repository-unavailable").toString("utf8").replace(/\n$/, "");
+--- new
+  const top = git(recordsRoot, ["rev-parse", "--show-toplevel"], "records-repository-unavailable").toString("utf8").trim();
+```
+
+```mutant
+correction: VC2 omit historical sections from the active contract projection
+file: tools/e2e/scripts/records.mjs
+spec: tools/e2e/tests/records.spec.ts
+body: T-348 VC2 — active contract and selected CLI omit historical sections while retaining committed bytes and criteria
+message: ARCHIVED-GRANT-HISTORY-CONTROL-T348
+--- old
+  return snapshot.content.split(/(?=^## )/m).filter((section) => !/^## (?:Implementation notes|Verdicts|History|Reports|Archived grant history)[ \t]*(?:\r?\n|$)/.test(section)).join("").trimEnd();
+--- new
+  return (snapshot.content.split(/^## (?:Implementation notes|Verdicts)\s*$/m)[0] ?? "").trimEnd();
+```
+
+```mutant
+correction: VC3 retain exhaustive flag accounting and independently guard supported records views
+file: tools/e2e/tests/brief-flush.spec.ts
+spec: tools/e2e/tests/brief-flush.spec.ts
+body: T-348 VC3 — records inventory distinguishes list and selected-task views despite their shared flags
+message: records inventory must announce both list and selected-task views
+--- old
+  { label: "--records list", args: ["--records", "list", "--records-revision", "HEAD"], format: "records-json" },
+--- new
+  { label: "--records list", args: ["--records", "T-999", "--records-revision", "HEAD", "--product-base", "HEAD"], format: "records-json" },
+```
+
+At candidate `a20b87054ed244dc96384beb8c8670c3684bd3f7`: typecheck exits zero; index --check is CURRENT, exit zero; all thirteen model-free evals pass, exit zero. The independent MF-09 selftest baseline is not reclassified by normal evals. Docs gate exits one because the card fires parser/app/e2e duties; all live card frontmatter and governing budgets hold. Capability freshness exits one: committed 126711 bytes versus freshly derived 128139 bytes, and the chained interview-skill check is not reached. Capability/census regeneration and graph regeneration/checking at integration are mechanical follow-up outside this source fence; no generated files were rewritten. Boot is not owed by this range. The card-only verdict commit owes a separate completion range and its actual counts/exits are reported in the external terminal record, without relabeling the implementation grade. No frontmatter, source or test was changed by this verifier.
