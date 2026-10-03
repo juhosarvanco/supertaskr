@@ -5,7 +5,8 @@ feature: F-03
 milestone: 4
 priority: 1
 size: M
-status: planned
+tier: standard
+status: building
 blocked_by: [T-347]
 touches: [tools/e2e/scripts/records.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/tests/records.spec.ts, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/brief-flush.spec.ts]
 builder: gpt-6.1-sol@xhigh
