@@ -283,3 +283,23 @@ test("T-347 VC3 — workspace resources refuse separately named Git controls wit
     }
   } finally { removeGitFixture(fx.dir, "workspace physical Git resources T-347"); }
 });
+
+
+test("T-347 VC4 — workspace repository roots preserve legal trailing whitespace", () => {
+  const dir = realTemp();
+  const safe = path.join(dir, "ordinary-product");
+  const fx = { dir, product: path.join(dir, "product "), records: path.join(dir, "records ") };
+  try {
+    repository(safe); repository(fx.product); repository(fx.records);
+    expect(resolveWorkspace({ productRoot: safe }).productRoot).toBe(safe);
+    const actualTop = execFileSync("git", ["-C", fx.product, "rev-parse", "--show-toplevel"], {
+      encoding: "utf8", env: ENV, stdio: ["ignore", "pipe", "pipe"],
+    });
+    expect(actualTop).toBe(`${fx.product}\n`);
+    expect(resolveWorkspace({ productRoot: fx.product }).productRoot).toBe(fx.product);
+    bind(fx);
+    const workspace = resolveWorkspace({ productRoot: fx.product });
+    expect(workspace).toMatchObject({ productRoot: fx.product, recordsRoot: fx.records, layout: "split", association: { status: "verified" } });
+    expect(resolveResource(workspace, { role: "records", path: "safe/new.txt" }).physicalPath).toBe(path.join(fx.records, "safe/new.txt"));
+  } finally { removeGitFixture(dir, "workspace trailing whitespace T-347"); }
+});
