@@ -21,6 +21,7 @@ import { parse as parseYaml } from "yaml";
 import { repoRoot } from "../preflight";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import { measureProductIdentity, WORKSPACE_ASSOCIATION_REL_PATH, WORKSPACE_BINDING_REL_PATH } from "../scripts/workspace.mjs";
+import { TOKEN_REL_PATH } from "../../../.claude/hooks/gate-token.mjs";
 import { conventionsText, liveTaskCards, taskStatuses, trackedFiles } from "../scripts/docs-scan.mjs";
 // THE EARS PATTERNS ARE THE METHOD'S AND THEIR READER IS session-economics's
 // (T-320): `dispatch-brief.mjs` cannot import it — that module imports THIS
@@ -364,7 +365,7 @@ test("records CLI views read committed split records before legacy loading with 
 test("records CLI process and write controls admit real reads and split guards refuse all unsupported routes before effects", () => {
   const fx = committedRecordsCliFixture();
   try {
-    writeFileSync(path.join(fx.product, ".supertaskr/gate-token.json"), "VERDICT TOKEN SENTINEL");
+    writeFileSync(path.join(fx.product, TOKEN_REL_PATH), "VERDICT TOKEN SENTINEL");
     const before = fx.state();
     const controlled = (args: string[]) => spawnSync(process.execPath, ["--input-type=module", "-e", `
       import fs from 'node:fs'; import cp from 'node:child_process'; import {syncBuiltinESMExports} from 'node:module';
@@ -375,20 +376,26 @@ test("records CLI process and write controls admit real reads and split guards r
       const open=fs.openSync;fs.openSync=(file,flags,...rest)=>flags==='r'?open(file,flags,...rest):trap('openSync')(file,flags,...rest);
       for(const name of ['spawn','spawnSync','exec','execSync','execFile','fork']) cp[name]=()=>{forbidden++;throw Error('PROCESS CONTROL '+name)};
       cp.execFileSync=(file,argv,opts)=>{
-        if(file!=='git'||!argv.some(a=>['rev-parse','rev-list','ls-tree','cat-file'].includes(a))) {forbidden++;throw Error('PROCESS CONTROL '+file+' '+argv.join(' '))}
+        let at=0;
+        while(at<argv.length) {
+          if(argv[at]==='--no-replace-objects') at++;
+          else if(['-C','-c'].includes(argv[at])) at+=2;
+          else break;
+        }
+        if(file!=='git'||!['rev-parse','rev-list','ls-tree','cat-file'].includes(argv[at])) {forbidden++;throw Error('PROCESS CONTROL '+file+' '+argv.join(' '))}
         reads++;return real(file,argv,opts);
       };
       syncBuiltinESMExports(); process.argv=${JSON.stringify([process.execPath, fx.cli, "--root", fx.product, ...args])};
       await import(${JSON.stringify(new URL(`file://${fx.cli}`).href)});
       if(writes||forbidden) throw Error('forbidden effects');
       if(!reads) throw Error('positive real read missing');
-      for(const control of [()=>cp.execFileSync('npm',['test']),()=>fs.writeFileSync('never-written','x')]) {
+      for(const control of [()=>cp.execFileSync('npm',['test']),()=>cp.execFileSync('git',['push','origin','rev-parse']),()=>fs.writeFileSync('never-written','x')]) {
         try {control();throw Error('control did not fire')} catch(err){if(!String(err).includes('CONTROL')) throw err}
       }
       console.error('controls: real reads='+reads+' forbidden process='+forbidden+' write='+writes);
     `], { encoding: "utf8", env: FIXTURE_GIT_ENV });
     const read = controlled(["--records", "T-999", "--records-revision", "main", "--product-base", "main"]);
-    expect(read.status, read.stderr).toBe(0); expect(read.stderr).toMatch(/controls: real reads=\d+ forbidden process=1 write=1/);
+    expect(read.status, read.stderr).toBe(0); expect(read.stderr).toMatch(/controls: real reads=\d+ forbidden process=2 write=1/);
     expect(JSON.parse(read.stdout).contract).toContain("COMMITTED RECORDS");
     const arms = [["--dispatch"], ["--dispatch-lane", "T-999", "--slug", "fixture"], ["--task", "T-999"], ["--card", "T-999"], ["--state"],
       ["--task", "T-999", "--preflight"], ["--task", "T-999", "--write-fence", path.join(fx.dir, "lane")], ["--bench", "T-999"], ["--merge", "T-999"],
