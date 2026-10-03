@@ -80,7 +80,7 @@ function git(root, args, label) {
     return execFileSync("git", ["--no-replace-objects", "-C", root, ...args], {
       encoding: "utf8", stdio: ["ignore", "pipe", "pipe"],
       env: { ...process.env, GIT_NO_LAZY_FETCH: "1", GIT_OPTIONAL_LOCKS: "0" },
-    }).trim();
+    }).replace(/\n$/, "");
   } catch (err) { refuse(label, `${root}: ${errorText(err)}`); }
 }
 /** @param {string} candidate @param {string} role */
