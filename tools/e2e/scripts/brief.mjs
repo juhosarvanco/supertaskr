@@ -154,127 +154,9 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import {
-  FINDING_VERDICTS,
-  auditCard,
-  cardReport,
-  derivedTexts,
-} from "./card-figures.mjs";
-import { preflight } from "./card-preflight.mjs";
-import {
-  AdmissionFinding,
-  AwaitFinding,
-  DispatchLaneFinding,
-  EXIT,
-  GRANT_JOURNAL_REL_PATH,
-  GRANT_STORE_REL_PATH,
-  GRANT_SUPERSEDED_REL_PATH,
-  GrantStoreFinding,
-  composeGrantSnapshot,
-  grantBlockText,
-  grantDigest,
-  grantStoreLocation,
-  initGrantStore,
-  readGrantJournal,
-  readGrantStore,
-  strayTemplateGrant,
-  updateGrantStore,
-  assembleBrief,
-  UnattendedFinding,
-  assembleReturnBrief,
-  attribute,
-  awaitPlan,
-  awaitRecs,
-  admissionLedger,
-  blank,
-  normaliseTaskId,
-  readDoc,
-  defaultRunnerIo,
-  dueRetries,
-  firstParentLine,
-  mergeEvidence,
-  metersRecords,
-  questionHolds,
-  readQuestions,
-  repairLedger,
-  returnBriefRecs,
-  roomFiles,
-  sharedHealth,
-  context,
-  defaultAwaitIo,
-  defaultDispatchIo,
-  benchPlan,
-  benchRecs,
-  dispatchLanePlan,
-  dispatchLaneRecs,
-  dispatchLedgerRecs,
-  dispatchPlanRecs,
-  grantInheritance,
-  grantState,
-  liveProv,
-  mainWorktree,
-  note,
-  render,
-  runAwait,
-  runBench,
-  runDispatchLane,
-  stateReport,
-  treeProv,
-  value,
-  withMargin,
-  triageClusterRecs,
-  wakeRecs,
-  EXPRESS_CODES,
-  ExpressFinding,
-  expressPlan,
-  expressRecs,
-  expressWithdrawal,
-  runExpress,
-} from "./dispatch-brief.mjs";
-import {
-  HOLDER_CODES,
-  HOLDER_REL_PATH,
-  STALE_CLONE_LIMIT,
-  holderVerdict,
-  judge as judgeCheckout,
-  removeHolder,
-  sessionCheckout,
-  sessionIdentity,
-  sweep as sweepCheckouts,
-  writeHolder,
-} from "./checkout-currency.mjs";
-import { dispatchContext, dispatchReport, listedCards } from "./dispatch-order.mjs";
-import { LaneFenceFinding, buildLaneFence, writeLaneFence } from "./lane-fence.mjs";
-import {
-  RunRecordFinding,
-  TERMINAL_STATES,
-  allRecords,
-  bindRun,
-  collectRun,
-  continueRun,
-  observeRun,
-  prepareNativeBenchRun,
-  nativeBenchAssignmentInputs,
-  readAssignment,
-  runPlan,
-  runRecs,
-  sendAnswer,
-  startRun,
-  stopRun,
-  textOrFile,
-  waitRun,
-} from "./run-record.mjs";
-import { NativeCodexFinding, nativeShellQuote } from "./native-codex.mjs";
-import { findCheckoutRoot } from "../../../.claude/hooks/lane-fence.mjs";
-// T-314 — THE ARM INSTALLS THE GUARD GIT ITSELF RUNS. Reached the way the
-// line above reaches its neighbour: the installer imports node builtins and
-// the hooks beside it and nothing else, so it loads in a lane worktree
-// ninety seconds old exactly as `lane-fence.mjs` does.
-import { hookStatus, installHook } from "../../../.claude/hooks/hook-install.mjs";
-import { main as mergeMain, mergeDials } from "./merge.mjs";
-import { LaneLockFinding, applyLaneLock } from "./lane-lock.mjs";
-import { DECOMPOSITION_FILE, earsKeywords, isEars, seatRecs } from "./session-economics.mjs";
+import { readCommittedBoard, captureTaskSnapshot, activeTaskContract } from "./records.mjs";
 import { resolveWorkspace, workspaceBindingPresent, WorkspaceFinding } from "./workspace.mjs";
+import { findCheckoutRoot } from "../../../.claude/hooks/lane-fence.mjs";
 
 const FLAGS = Object.freeze([
   "--task",
@@ -339,9 +221,206 @@ const FLAGS = Object.freeze([
   "--expect-digest",
   "--by",
   "--help",
+  "--records",
+  "--records-revision",
+  "--product-base",
   "--workspace",
   "--product-only",
 ]);
+
+// Early views and the split CLI guard run before loading any legacy module.
+// The legacy arm imports generated parser output; committed reads do not.
+/** @type {string[]} */
+const EARLY_OUT = [];
+const EARLY_RESULT = earlyView(process.argv.slice(2));
+/** @template T @param {() => Promise<T>} load @returns {Promise<T>} */
+async function legacyModule(load) {
+  return EARLY_RESULT === undefined ? load() : /** @type {T} */ ({});
+}
+/** @param {string[]} argv @returns {number|undefined} */
+function earlyView(argv) {
+  try {
+    if (argv.includes("--workspace") || argv.includes("--product-only") || argv.includes("--records") ||
+        argv.includes("--records-revision") || argv.includes("--product-base")) {
+      const workspaceView = argv.includes("--workspace") || argv.includes("--product-only");
+      /** @type {Record<string, string>} */
+      const opts = {};
+      let productOnly = false;
+      let inspected = false;
+      for (let i = 0; i < argv.length; i += 1) {
+        const flag = /** @type {string} */ (argv[i]);
+        if (workspaceView && flag === "--workspace" && !inspected) { inspected = true; continue; }
+        if (workspaceView && flag === "--product-only" && !productOnly) { productOnly = true; continue; }
+        const allowed = workspaceView ? ["--root"] : ["--root", "--records", "--records-revision", "--product-base"];
+        const next = argv[i + 1];
+        if (!allowed.includes(flag) || Object.hasOwn(opts, flag) || !next || next.startsWith("-")) {
+          console.error(`brief: ${workspaceView ? "--workspace" : "--records"} is standalone; use its view and revision modifiers with --root.`);
+          return 2;
+        }
+        opts[flag] = next; i += 1;
+      }
+      const productRoot = opts["--root"] ?? findCheckoutRoot(process.cwd()) ?? process.cwd();
+      if (workspaceView) {
+        if (!inspected) { console.error("brief: --product-only requires --workspace."); return 2; }
+        EARLY_OUT.push(`${JSON.stringify(resolveWorkspace({ productRoot, mode: productOnly ? "product-only" : "development" }), null, 2)}\n`);
+        return 0;
+      }
+      const selector = opts["--records"];
+      const recordsRevision = opts["--records-revision"];
+      if (!selector || !recordsRevision || (selector !== "list" && !opts["--product-base"])) {
+        console.error("brief: use --records list|<T-NNN> --records-revision <revision>; a selected task requires --product-base <revision>.");
+        return 2;
+      }
+      const productRevision = opts["--product-base"];
+      if (selector === "list") {
+        const board = readCommittedBoard({ productRoot, recordsRevision, ...(productRevision === undefined ? {} : { productRevision }) });
+        const tasks = board.tasks.map((task) => ({ id: task.id, title: task.fields.title, status: task.fields.status, cardPath: task.relativePath, cardBlobId: task.blobId }));
+        EARLY_OUT.push(`${JSON.stringify({ receipt: board.receipt, tasks }, null, 2)}\n`);
+      } else {
+        const snapshot = captureTaskSnapshot({ productRoot, recordsRevision, productRevision: /** @type {string} */ (productRevision), taskId: selector });
+        EARLY_OUT.push(`${JSON.stringify({ receipt: snapshot.receipt, contract: activeTaskContract(snapshot) }, null, 2)}\n`);
+      }
+      return 0;
+    }
+    // Preserve T-347 validation and refusals on the CLI boundary only.
+    // No directly imported orchestration API is claimed to enforce this.
+    if (!argv.includes("--help")) {
+      const rootAt = argv.indexOf("--root");
+      const selectedRoot = (rootAt < 0 ? undefined : argv[rootAt + 1]) ?? findCheckoutRoot(process.cwd()) ?? process.cwd();
+      if (workspaceBindingPresent(selectedRoot)) {
+        resolveWorkspace({ productRoot: selectedRoot });
+        const route = argv.find((a) => a.startsWith("--") && a !== "--root") ?? "legacy context";
+        console.error(`brief: workspace-split-unsupported: route ${route} has not been adapted to split roots; use --workspace [--product-only] or --records list|<T-NNN> --records-revision <revision> [--product-base <revision>].`);
+        return 3;
+      }
+    }
+  } catch (err) {
+    console.error(`brief: workspace-unavailable: ${err instanceof Error ? err.message : String(err)}; use --workspace [--product-only] or --records to inspect selected records.`);
+    return 3;
+  }
+  return undefined;
+}
+
+const {
+  FINDING_VERDICTS,
+  auditCard,
+  cardReport,
+  derivedTexts,
+} = await legacyModule(() => import("./card-figures.mjs"));
+const { preflight } = await legacyModule(() => import("./card-preflight.mjs"));
+const {
+  AdmissionFinding,
+  AwaitFinding,
+  DispatchLaneFinding,
+  GRANT_JOURNAL_REL_PATH,
+  GRANT_STORE_REL_PATH,
+  GRANT_SUPERSEDED_REL_PATH,
+  GrantStoreFinding,
+  composeGrantSnapshot,
+  grantBlockText,
+  grantDigest,
+  grantStoreLocation,
+  initGrantStore,
+  readGrantJournal,
+  readGrantStore,
+  strayTemplateGrant,
+  updateGrantStore,
+  assembleBrief,
+  UnattendedFinding,
+  assembleReturnBrief,
+  attribute,
+  awaitPlan,
+  awaitRecs,
+  admissionLedger,
+  blank,
+  normaliseTaskId,
+  readDoc,
+  defaultRunnerIo,
+  dueRetries,
+  firstParentLine,
+  mergeEvidence,
+  metersRecords,
+  questionHolds,
+  readQuestions,
+  repairLedger,
+  returnBriefRecs,
+  roomFiles,
+  sharedHealth,
+  context,
+  defaultAwaitIo,
+  defaultDispatchIo,
+  benchPlan,
+  benchRecs,
+  dispatchLanePlan,
+  dispatchLaneRecs,
+  dispatchLedgerRecs,
+  dispatchPlanRecs,
+  grantInheritance,
+  grantState,
+  liveProv,
+  mainWorktree,
+  note,
+  render,
+  runAwait,
+  runBench,
+  runDispatchLane,
+  stateReport,
+  treeProv,
+  value,
+  withMargin,
+  triageClusterRecs,
+  wakeRecs,
+  EXPRESS_CODES,
+  ExpressFinding,
+  expressPlan,
+  expressRecs,
+  expressWithdrawal,
+  runExpress,
+  EXIT = Object.freeze({ CLEAN: 0, FOUND: 1, USAGE: 2, CANNOT_RUN: 3 }),
+} = await legacyModule(() => import("./dispatch-brief.mjs"));
+const {
+  HOLDER_CODES,
+  HOLDER_REL_PATH,
+  STALE_CLONE_LIMIT,
+  holderVerdict,
+  judge: judgeCheckout,
+  removeHolder,
+  sessionCheckout,
+  sessionIdentity,
+  sweep: sweepCheckouts,
+  writeHolder,
+} = await legacyModule(() => import("./checkout-currency.mjs"));
+const { dispatchContext, dispatchReport, listedCards } = await legacyModule(() => import("./dispatch-order.mjs"));
+const { LaneFenceFinding, buildLaneFence, writeLaneFence } = await legacyModule(() => import("./lane-fence.mjs"));
+const {
+  RunRecordFinding,
+  TERMINAL_STATES,
+  allRecords,
+  bindRun,
+  collectRun,
+  continueRun,
+  observeRun,
+  prepareNativeBenchRun,
+  nativeBenchAssignmentInputs,
+  readAssignment,
+  runPlan,
+  runRecs,
+  sendAnswer,
+  startRun,
+  stopRun,
+  textOrFile,
+  waitRun,
+} = await legacyModule(() => import("./run-record.mjs"));
+const { NativeCodexFinding, nativeShellQuote } = await legacyModule(() => import("./native-codex.mjs"));
+// T-314 — THE ARM INSTALLS THE GUARD GIT ITSELF RUNS. Reached the way the
+// line above reaches its neighbour: the installer imports node builtins and
+// the hooks beside it and nothing else, so it loads in a lane worktree
+// ninety seconds old exactly as `lane-fence.mjs` does.
+const { hookStatus, installHook } = await legacyModule(() => import("../../../.claude/hooks/hook-install.mjs"));
+const { main: mergeMain, mergeDials } = await legacyModule(() => import("./merge.mjs"));
+const { LaneLockFinding, applyLaneLock } = await legacyModule(() => import("./lane-lock.mjs"));
+const { DECOMPOSITION_FILE, earsKeywords, isEars, seatRecs } = await legacyModule(() => import("./session-economics.mjs"));
+
 
 /**
  * A COMMA-SEPARATED LIST FLAG, SPLIT. Every flag here takes ONE value, so
@@ -513,29 +592,10 @@ function flush() {
 
 /** @param {string[]} argv @returns {Promise<number>} */
 async function main(argv) {
-  // Standalone inspection precedes every context and early-return arm. It
-  // opens no board and calls no runtime initializer or orchestration writer.
-  if (argv.includes("--workspace") || argv.includes("--product-only")) {
-    let selectedRoot;
-    let productOnly = false;
-    let inspected = false;
-    for (let i = 0; i < argv.length; i += 1) {
-      const next = argv[i + 1];
-      if (argv[i] === "--workspace" && !inspected) inspected = true;
-      else if (argv[i] === "--product-only" && !productOnly) productOnly = true;
-      else if (argv[i] === "--root" && selectedRoot === undefined && next && !next.startsWith("-")) { selectedRoot = next; i += 1; }
-      else {
-        console.error("brief: --workspace is standalone; only --root <product checkout> and --product-only may accompany it.");
-        return EXIT.USAGE;
-      }
-    }
-    if (!inspected) {
-      console.error("brief: --product-only requires --workspace.");
-      return EXIT.USAGE;
-    }
-    const workspace = resolveWorkspace({ productRoot: selectedRoot ?? findCheckoutRoot(process.cwd()) ?? process.cwd(), mode: productOnly ? "product-only" : "development" });
-    process.stdout.write(`${JSON.stringify(workspace, null, 2)}\n`);
-    return EXIT.CLEAN;
+  if (EARLY_RESULT !== undefined) {
+    // Write after the stdout error handler is installed, retaining natural drain.
+    for (const output of EARLY_OUT) process.stdout.write(output);
+    return EARLY_RESULT;
   }
   /** @type {Record<string, string>} */
   const opts = {};
@@ -565,6 +625,7 @@ async function main(argv) {
     if (a === "--help") {
       console.log(
         "usage: node tools/e2e/scripts/brief.mjs --task <T-NNN> [--role <role>] [--state] " +
+          "[--records list|<T-NNN> --records-revision <revision> [--product-base <revision>]] " +
           "[--dispatch] [--card <T-NNN>] [--audit <path>] [--preflight] " +
           "[--write-fence <worktree>] [--take-seat [--allow-shared-git-config]] [--release-seat] " +
           "[--dispatch-lane <T-NNN> --slug <slug> [--executor <seat>] [--verifier <seat>] " +
@@ -635,20 +696,6 @@ async function main(argv) {
     }
     opts[a.slice(2)] = v;
     i += 1;
-  }
-  // This guards the CLI boundary only. Directly imported orchestration APIs
-  // retain their existing contract; split orchestration is future work.
-  try {
-    const selectedRoot = opts["root"] ?? findCheckoutRoot(process.cwd()) ?? process.cwd();
-    if (workspaceBindingPresent(selectedRoot)) {
-      resolveWorkspace({ productRoot: selectedRoot });
-      console.error("brief: workspace-split-unsupported: development orchestration is not activated for split roots; use --workspace [--product-only] --root <product checkout>.");
-      return EXIT.CANNOT_RUN;
-    }
-  } catch (err) {
-    if (!(err instanceof WorkspaceFinding)) throw err;
-    console.error(`brief: workspace-unavailable: ${err.message}; use --workspace [--product-only] --root <product checkout> to inspect the binding.`);
-    return EXIT.CANNOT_RUN;
   }
   const taskId = opts["task"] ?? "";
   const cardId = opts["card"] ?? "";

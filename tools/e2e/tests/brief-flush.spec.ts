@@ -1,10 +1,12 @@
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import {
   closeSync,
+  mkdirSync,
   mkdtempSync,
   openSync,
   readFileSync,
   readdirSync,
+  realpathSync,
   rmSync,
   statSync,
   writeFileSync,
@@ -14,6 +16,7 @@ import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { repoRoot } from "../preflight";
 import { EXIT, unstampedLines } from "../scripts/dispatch-brief.mjs";
+import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 
 /**
  * THE BRIEF REACHES A PIPE WHOLE (T-197) — no browser.
@@ -619,7 +622,7 @@ test("the whole derivation reaches a SLOW reader too, and the loss is the READER
  * derived below is measured against a writer of that same single-write
  * shape, and it is still ONE READER'S answer rather than the boundary.
  */
-const LIVE_ARMS: ReadonlyArray<{ label: string; args: string[]; format?: "workspace-json" }> = [
+const LIVE_ARMS: ReadonlyArray<{ label: string; args: string[]; format?: "workspace-json"|"records-json" }> = [
   { label: "--dispatch", args: ["--dispatch"] },
   // THE TWO ARMS THIS LIST DID NOT CARRY, AND BOTH ARE PAST THE LINE
   // (T-225-s2, taking `T-225-s7` and this card's own CORROBORATION).
@@ -640,6 +643,10 @@ const LIVE_ARMS: ReadonlyArray<{ label: string; args: string[]; format?: "worksp
   // changes the association claim, so it is more than a sizing dial.
   { label: "--workspace", args: ["--workspace"], format: "workspace-json" },
   { label: "--workspace --product-only", args: ["--workspace", "--product-only"], format: "workspace-json" },
+  // Real committed fixture views exercise every supported records flag. They
+  // remain in the same inventory and pipe/file comparisons as all live arms.
+  { label: "--records list", args: ["--records", "list", "--records-revision", "HEAD"], format: "records-json" },
+  { label: "--records T-999", args: ["--records", "T-999", "--records-revision", "HEAD", "--product-base", "HEAD"], format: "records-json" },
   // THE EXPRESS PATH'S DRY RUN (T-320). It is the one express invocation
   // this guard may drive: `--express` WRITES — a compact card into
   // docs/tasks, staged for the dispatch stamp's own commit — and
@@ -1009,7 +1016,26 @@ test("THE MARGIN GUARD: every live arm against a loss point DERIVED in this run,
   // 14 passed to 1 failed. The approach was silent; only the arrival was
   // loud, and it arrived three layers from its cause.
   const sc = scratch("margin");
+  const recordsRoot = path.join(sc.dir, "records-fixture-T-348");
+  // A colocated fixture with a genuine committed association lets both view
+  // arms succeed without activating a split binding in the running project.
+  const fixtureGit = (args: string[], input?: string) => execFileSync("git", ["-C", recordsRoot, ...NO_BACKGROUND_MAINTENANCE, ...args], {
+    encoding: "utf8", stdio: ["pipe", "pipe", "pipe"], ...(input === undefined ? {} : { input }), env: { ...process.env,
+      GIT_AUTHOR_NAME: "Margin fixture", GIT_AUTHOR_EMAIL: "fixture@example.invalid",
+      GIT_COMMITTER_NAME: "Margin fixture", GIT_COMMITTER_EMAIL: "fixture@example.invalid" },
+  }).trim();
   try {
+    mkdirSync(recordsRoot, { recursive: true });
+    fixtureGit(["init", "-q", "--initial-branch=main"]);
+    // Populate the committed tree directly. These are fixture bytes, and no
+    // filesystem read or write here opens the running project's docs tree.
+    const cardBlob = fixtureGit(["hash-object", "-w", "--stdin"], "---\nid: T-999\ntitle: Committed margin fixture\nstatus: planned\n---\nActive contract\n");
+    fixtureGit(["update-index", "--add", "--cacheinfo", `100644,${cardBlob},docs/tasks/T-999-margin.md`]);
+    fixtureGit(["commit", "-qm", "fixture root"]);
+    const associationBlob = fixtureGit(["hash-object", "-w", "--stdin"], JSON.stringify({ version: 1, projectId: "margin-fixture",
+      product: { objectFormat: fixtureGit(["rev-parse", "--show-object-format"]), rootCommits: [fixtureGit(["rev-parse", "HEAD"])] } }));
+    fixtureGit(["update-index", "--add", "--cacheinfo", `100644,${associationBlob},workspace-association.json`]);
+    fixtureGit(["commit", "-qm", "committed association"]);
     /**
      * THE THRESHOLD IS DERIVED, AND IT NAMES ITS READER. There is no
      * single line to pin: `| cat` loses at 65,536 while `spawnSync`
@@ -1043,7 +1069,7 @@ test("THE MARGIN GUARD: every live arm against a loss point DERIVED in this run,
     let past = 0;
     const measured = new Map<string, number>();
     for (const arm of LIVE_ARMS) {
-      const argv = [CLI, ...arm.args];
+      const argv = [CLI, ...arm.args, ...(arm.format === "records-json" ? ["--root", recordsRoot] : [])];
       const whole = readViaFile(argv, sc.dir);
       measured.set(arm.label, whole.bytes);
       // AN ARM THAT PRODUCED NOTHING PASSES EVERY COMPARISON BELOW, ON
@@ -1127,6 +1153,14 @@ test("THE MARGIN GUARD: every live arm against a loss point DERIVED in this run,
           association: { status: productOnly ? "unverified" : "unconfigured" },
         });
         expect(JSON.parse(whole.text), `${arm.label}: JSON changed through the pipe`).toEqual(answer);
+      } else if (arm.format === "records-json") {
+        expect(whole.status, `${arm.label}: file records view failed`).toBe(0);
+        expect(viaSpawn.status, `${arm.label}: pipe records view failed`).toBe(0);
+        const answer = JSON.parse(viaSpawn.text);
+        expect(answer.receipt).toMatchObject({ repositoryRole: "records", recordsRoot: realpathSync(recordsRoot), recordsCommit: fixtureGit(["rev-parse", "HEAD"]) });
+        expect(JSON.parse(whole.text), `${arm.label}: committed JSON changed through the pipe`).toEqual(answer);
+        if (arm.args[1] === "list") expect(answer.tasks).toHaveLength(1);
+        else expect(answer.contract).toContain("Active contract");
       } else {
         expect(
           unstampedLines(viaSpawn.text.trimEnd()),
@@ -1176,6 +1210,7 @@ test("THE MARGIN GUARD: every live arm against a loss point DERIVED in this run,
         "for. Announce that twin.",
     ).toBe(true);
   } finally {
+    if (recordsRoot) removeGitFixture(recordsRoot, "records margin T-348");
     sc.cleanup();
   }
 });

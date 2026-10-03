@@ -34,6 +34,42 @@ Prepared against product commit 78dbff8c92590921a15ad8ffd5e062cb8fc50277, with T
 
 ## Implementation notes
 
+### Criteria echo before implementation
+
+- [x] Resolve records locally through T-347, then read regular card and association blobs from one exact records commit; refuse missing and ambiguous inputs by name.
+- [x] Return detached, immutable provenance, association values and card bytes, and display only the selected active contract with a concise receipt.
+- [x] Resolve and label the product base independently, including identically named refs in independent histories.
+- [x] Add early committed list and selected-card views with explicit paired product base, prove reads without writes or forbidden processes, and preserve the complete flag inventory.
+- [x] Refuse every unsupported split CLI orchestration route before legacy context or effects, while preserving colocated behavior.
+- [x] Keep captured snapshots fixed after subsequent repository/configuration changes and refuse malformed cards or unsafe paths actionably.
+- [x] Cover split selection, independent refs, immutability, identity refusals, product-only inspection and guarded routes in the admitted spec files; describe fixture limits honestly.
+
 Keep the reader independent of generated parser builds: reuse existing source-only card parsing helpers or equivalent established pure helpers, with no import-time I/O. Read committed Git bytes; uncommitted drafting views and assisted record saves come in the records fast-path contract. Task IDs do not authorize anything here. Root/resource reservations, frozen-admission authority lookup, native assignment changes, app/watchers and physical cutover are explicitly later migration slices. No private remote is created, no user files are moved and no product CI exemption is introduced.
+
+### Delivered APIs and schema
+
+`readCommittedBoard({productRoot, recordsRevision, productRevision?})` reads the selected committed board, validates its committed portable association against the captured local binding and complete measured product lineage, and returns a frozen receipt and task array. Lists use product HEAD when no product revision is supplied. An absent local binding selects colocated roots; a committed portable association is still mandatory, and supplies the project identifier in that unconfigured case.
+
+`captureTaskSnapshot({productRoot, recordsRevision, productRevision, taskId? , cardPath?})` requires an explicit product revision and exactly one selector. Its receipt carries project id, records role/root/commit/object format, card path/blob, association path/blob/detached values/validation, local binding provenance, and independently labelled product root/base/object format. Task content remains the exact decoded UTF-8 card text; `bytes` getters return copies of privately retained Git bytes. Receipt, fields, arrays and association values are recursively detached and frozen. Invalid UTF-8, malformed YAML/frontmatter, missing non-empty title/status, unsafe selectors, missing inputs, duplicate ids, id/path mismatches and non-regular Git entries are named refusals. The reader imports source-only frontmatter/path helpers and performs no import-time I/O.
+
+`activeTaskContract(snapshot)` omits Implementation notes and Verdicts. CLI views are `--records list --records-revision <revision>` and `--records <T-NNN> --records-revision <revision> --product-base <revision>`, with optional `--root <product checkout>`. They return JSON receipts plus task summaries or the selected active contract. View flags are standalone. Early reads and the retained split guard execute before loading legacy modules or constructing context; output is buffered until the existing stdout handler is installed. Unsupported split routes name the requested route and available views. Imported orchestration APIs retain their earlier contracts; no enforcement on those APIs is claimed.
+
+### Criteria evidence and limits
+
+Criteria one, two, three and six are covered by committed-tree selection against conflicting product and uncommitted records copies, removal of the working association, same-name independent main refs, records-only advancement, selected-lineage mismatch, defensive buffer copies and frozen nested values, missing/malformed/duplicate/mismatched inputs, regular-mode checks on association/cards/board parents, and an explicit empty committed board with populated-board control. Criteria four and five are covered by copied source-only CLI fixtures containing neither parser/app builds nor legacy modules, live process/write traps with actual Git reads and deliberately failing controls, HEAD/index/card/runtime comparisons including a verdict-token sentinel, and every named unsupported orchestration family. Criterion seven is these bodies and this API/fixture description. Existing T-347 standalone/product-only and colocated behavior bodies remain effective. The unchanged flag-inventory body still compares every accepted flag, its live arm or reason, and an uncovered-flag control; records list/task views are exercised in the existing pipe/file margin body using a committed fixture.
+
+These are local fixtures, including independent repositories. No split binding was activated for this project, no private remote was contacted or created, and no actual split dispatch, delivery, reservation, native preparation, records movement or landing is claimed.
+
+### Development readings and corrections
+
+Requested implementation settings: GPT-6.1 Sol xhigh. Observed model/effort/usage remain unknown. Native identity was read before repository access and normally bound to this attempt. All dependency setup and builds ran only in this lane. Parser setup/build and app setup/build exited zero; their existing dependency audit warnings were preserved. Tools setup and typecheck completed, with initial type errors corrected before the subsequent zero reading.
+
+The first focused development run executed ten bodies: nine passed and one failed because the test helper returned a newline on a ref. The corrected run executed twelve: eleven passed and one failed on the canonical temporary-directory expectation in the margin fixture. Correcting that expectation yielded one margin body passed. The fixture then moved to direct committed Git-object setup to remove the docs census's false link from fixture writes; the corrected census and typecheck exited zero, and the margin body passed again. The final records-focused development reading executed nine bodies, all passed, exit zero. Original logs and corrected iterations remain outside the repository with the lane's evidence. These are iteration readings, not the final graded range.
+
+A docs-gate probe from the package with root-relative arguments exited two (called wrong); the corrected root invocation derived the card's parser/app/e2e obligations and reported the fixture census issue. The isolated corrected fixture census subsequently exited zero. Failed nonexistent-file probes and one patch anchor mismatch changed nothing. No broader fence was required and no in-fence follow-through was added beyond the card's criteria. The generated brief's template model differs from the card's explicitly authorized builder setting; the card and operating supplement govern this attempt.
+
+### Self-drill and final handoff
+
+Exact authored recipes and committed source/spec restoration hashes are retained in the external durable ask. The coordinator runs them only in owned detached scratch. Drill results, final graded ref/counts/exits, and standing-gate derivations will be appended before the final verifying-only stamp.
 
 ## Verdicts
