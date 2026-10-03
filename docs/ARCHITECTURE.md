@@ -90,7 +90,9 @@ ADR-014/015).
   locations, validates association against product lineage and confines
   qualified resources physically. Product-only inspection opens no private
   records; configured split orchestration refuses before legacy context.
-  This read-only foundation grants neither writes nor parallel reservations.
+  records.mjs reads an exact committed association/card with a separate
+  product base; receipts are immutable data, never dispatch approval.
+  Read-only foundations grant neither writes nor parallel reservations.
 - App ↔ project: read-only first; writes are single-field frontmatter
   edits or thread appends, nothing else (pure-lens rule).
 - Genesis (ADR-017): the spawned planner session is the WRITER; the
