@@ -6,13 +6,13 @@ milestone: 4
 priority: 1
 size: M
 tier: standard
-status: building
+status: done
 blocked_by: [T-347]
 touches: [tools/e2e/scripts/records.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/tests/records.spec.ts, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/brief-flush.spec.ts]
 builder: gpt-6.1-sol@xhigh
 verifier: gpt-6.1-sol@xhigh
-built_by:
-verified_by:
+built_by: gpt-6.1-sol@xhigh
+verified_by: gpt-6.1-sol@xhigh
 review: independent
 ---
 
@@ -34,6 +34,228 @@ Prepared against product commit 78dbff8c92590921a15ad8ffd5e062cb8fc50277, with T
 
 ## Implementation notes
 
+### Criteria echo before implementation
+
+- [x] Resolve records locally through T-347, then read regular card and association blobs from one exact records commit; refuse missing and ambiguous inputs by name.
+- [x] Return detached, immutable provenance, association values and card bytes, and display only the selected active contract with a concise receipt.
+- [x] Resolve and label the product base independently, including identically named refs in independent histories.
+- [x] Add early committed list and selected-card views with explicit paired product base, prove reads without writes or forbidden processes, and preserve the complete flag inventory.
+- [x] Refuse every unsupported split CLI orchestration route before legacy context or effects, while preserving colocated behavior.
+- [x] Keep captured snapshots fixed after subsequent repository/configuration changes and refuse malformed cards or unsafe paths actionably.
+- [x] Cover split selection, independent refs, immutability, identity refusals, product-only inspection and guarded routes in the admitted spec files; describe fixture limits honestly.
+
 Keep the reader independent of generated parser builds: reuse existing source-only card parsing helpers or equivalent established pure helpers, with no import-time I/O. Read committed Git bytes; uncommitted drafting views and assisted record saves come in the records fast-path contract. Task IDs do not authorize anything here. Root/resource reservations, frozen-admission authority lookup, native assignment changes, app/watchers and physical cutover are explicitly later migration slices. No private remote is created, no user files are moved and no product CI exemption is introduced.
 
+### Delivered APIs and schema
+
+`readCommittedBoard({productRoot, recordsRevision, productRevision?})` reads the selected committed board, validates its committed portable association against the captured local binding and complete measured product lineage, and returns a frozen receipt and task array. Lists use product HEAD when no product revision is supplied. An absent local binding selects colocated roots; a committed portable association is still mandatory, and supplies the project identifier in that unconfigured case.
+
+`captureTaskSnapshot({productRoot, recordsRevision, productRevision, taskId? , cardPath?})` requires an explicit product revision and exactly one selector. Its receipt carries project id, records role/root/commit/object format, card path/blob, association path/blob/detached values/validation, local binding provenance, and independently labelled product root/base/object format. Task content remains the exact decoded UTF-8 card text; `bytes` getters return copies of privately retained Git bytes. Receipt, fields, arrays and association values are recursively detached and frozen. Invalid UTF-8, malformed YAML/frontmatter, missing non-empty title/status, unsafe selectors, missing inputs, duplicate ids, id/path mismatches and non-regular Git entries are named refusals. The reader imports source-only frontmatter/path helpers and performs no import-time I/O.
+
+`activeTaskContract(snapshot)` omits Implementation notes and Verdicts. CLI views are `--records list --records-revision <revision>` and `--records <T-NNN> --records-revision <revision> --product-base <revision>`, with optional `--root <product checkout>`. They return JSON receipts plus task summaries or the selected active contract. View flags are standalone. Early reads and the retained split guard execute before loading legacy modules or constructing context; output is buffered until the existing stdout handler is installed. Unsupported split routes name the requested route and available views. Imported orchestration APIs retain their earlier contracts; no enforcement on those APIs is claimed.
+
+### Criteria evidence and limits
+
+Criteria one, two, three and six are covered by committed-tree selection against conflicting product and uncommitted records copies, removal of the working association, same-name independent main refs, records-only advancement, selected-lineage mismatch, defensive buffer copies and frozen nested values, missing/malformed/duplicate/mismatched inputs, regular-mode checks on association/cards/board parents, and an explicit empty committed board with populated-board control. Criteria four and five are covered by copied source-only CLI fixtures containing neither parser/app builds nor legacy modules, live process/write traps with actual Git reads and deliberately failing controls, HEAD/index/card/runtime comparisons including a verdict-token sentinel, and every named unsupported orchestration family. Criterion seven is these bodies and this API/fixture description. Existing T-347 standalone/product-only and colocated behavior bodies remain effective. The unchanged flag-inventory body still compares every accepted flag, its live arm or reason, and an uncovered-flag control; records list/task views are exercised in the existing pipe/file margin body using a committed fixture.
+
+These are local fixtures, including independent repositories. No split binding was activated for this project, no private remote was contacted or created, and no actual split dispatch, delivery, reservation, native preparation, records movement or landing is claimed.
+
+### Development readings and corrections
+
+Requested implementation settings: GPT-6.1 Sol xhigh. Observed model/effort/usage remain unknown. Native identity was read before repository access and normally bound to this attempt. All dependency setup and builds ran only in this lane. Parser setup/build and app setup/build exited zero; their existing dependency audit warnings were preserved. Tools setup and typecheck completed, with initial type errors corrected before the subsequent zero reading.
+
+The first focused development run executed ten bodies: nine passed and one failed because the test helper returned a newline on a ref. The corrected run executed twelve: eleven passed and one failed on the canonical temporary-directory expectation in the margin fixture. Correcting that expectation yielded one margin body passed. The fixture then moved to direct committed Git-object setup to remove the docs census's false link from fixture writes; the corrected census and typecheck exited zero, and the margin body passed again. The final records-focused development reading executed nine bodies, all passed, exit zero. Original logs and corrected iterations remain outside the repository with the lane's evidence. These are iteration readings, not the final graded range.
+
+A docs-gate probe from the package with root-relative arguments exited two (called wrong); the corrected root invocation derived the card's parser/app/e2e obligations and reported the fixture census issue. The isolated corrected fixture census subsequently exited zero. Failed nonexistent-file probes and one patch anchor mismatch changed nothing. No broader fence was required and no in-fence follow-through was added beyond the card's criteria. The generated brief's template model differs from the card's explicitly authorized builder setting; the card and operating supplement govern this attempt.
+
+### Self-drill and final handoff
+
+Exact authored recipes and committed source/spec restoration hashes are retained in the external durable ask. The coordinator runs them only in owned detached scratch. At source/spec snapshot `7dcc6ccc774d16a2e2dacb339fee7e48f273a932`, the coordinator mechanically ran the ten exact authored recipes: baseline ten passed, exit zero; each mutant exactly one intended running body failed, exit one; restored control ten passed, exit zero. Each mutation was one-sided, including the fixture/receipt/inventory data mutations, and the actual failure class was reviewed by the coordinator. This is selected-body kill scope only. The source/spec SHA256 restorations recorded for P01–P05/P07/P09 are `02891b593a402229953da94a03402fc6d9d59e23631ba5b4afc236fe0bc602e0` (records.mjs), P06 `6f57c676a26cc86393341365323e0107949c4f29d10ef552bd0bac1a98824468` (records.spec.ts), P08 `ec68f34f42991e50220f855210af49ec72450d6ed1515e0b53be49df2b9a2a95` (brief.mjs), and P10 `25dde5efc40608cf09031810f35c991c893a3b4839f1f97d30b2164155278c08` (brief-flush.spec.ts); these values were reconciled directly against the original result JSON before committing. Empty per-path diff accompanied every hash, and final scratch status was empty. No source mutation entered the active lane.
+
+After the normal-arm answer confirmed all coordinator scratch jobs ceased, the CLI control body was corrected to use the exported TOKEN_REL_PATH and inspect the actual Git subcommand after global options. It now also proves that a simulated Git push carrying a read-verb string is rejected before executing. The corrected control development body passed once, exit zero, before the import switched from the equivalent literal to the exported path constant. The changed spec requires renewed proof; original readings remain identified by their original snapshot. Final graded ref/counts/exits and standing-gate derivations will be reported after the final content commit, followed by the isolated verifying-only stamp.
+
+### Renewed proof and standing gates
+
+At renewed source/spec snapshot `be16580b2f1b540ad95d77ba612fc3005a0a9426`, the coordinator mechanically ran the exact renewed P07/P08 recipes: baseline two passed, exit zero; each mutant one intended body failed, exit one; restored two passed, exit zero. Source SHA256 restoration for the renewed P07/P08 mutations is the same records.mjs/brief.mjs value recorded above, with empty per-path diff and final scratch status. The compared full-file hashes for records.mjs, brief.mjs, records.spec.ts and brief-flush.spec.ts are identical across original and renewed snapshots; brief.spec.ts differs as disclosed, so both bodies in its renewed request were actually re-drilled. The P07 body itself is byte-identical across those snapshots, with SHA256 `fefcba7bbbb60642bdcedb18cc11182f82ea183171c6231c4bdcc136fc2a442e`. Original proof remains attributed to its original snapshot. Both normal-arm original answers and the renewed answer were read and RUN-ACKed. Coordinator-owned scratch jobs ceased before each source continuation.
+
+The original admitted base is `9af695339caf2e9968daabc4a69a5762fd022eeb`. The six-path range derivation at the original source snapshot owes parser, app and the whole e2e suite; final content retains those same six paths, and the blessed runner re-derives the actual range. The docs gate fires for this card as an input of those three suites. Graph checking is CURRENT, exit zero, at both committed source snapshots; the graph trigger from the spec changes is retained for integration. Boot is not owed (no app source, Tauri source or manifest moved); method eval is not owed (no method path or attack-set citation grammar added). Capability census regeneration from the new bodies belongs to integration, where its generated paths are writable. Typecheck and token lint are zero. These standing-gate decisions are derived for the final six-path tree and must be re-derived by integration at its own tree.
+
+The grader will run once at the final content commit over the actual original admitted range. Its exact ref, body counts/exits and any baseline failures will be retained in the external executor report, without appending another content change after that grade. The last lane commit will then change only this card's status to verifying and will deliberately re-run no suite, as the executor role's status-only exemption requires. The normal-arm renewed answer explicitly corrected the earlier sequencing wording to this order. built_by and verified_by remain blank for integration.
+
+### Authorized repair continuation before implementation
+
+- [x] VC1: preserve the selected records root’s legal trailing whitespace by removing only Git’s terminating newline.
+- [x] VC2: remove the named historical sections from the active contract wherever placed, while retaining later active criteria and unchanged snapshot bytes.
+- [x] VC3: copy the complementary records-view inventory body and the other verifier specs exactly from the frozen pin; retain the exhaustive flag body.
+
+This repair continuation resumes the same normally bound T-348-a3 source resource only after the actual rejected verifier was collected. The original admitted card, base and five-file source fence remain unchanged. The full rejected verdict below is retained byte-for-byte from 6e8872566e2b4a758f964a5b543a763cca435768; this executor adds repair notes, not a replacement review. The two literal source repairs were judged against the card’s committed-selection and ordinary-display criteria. The three spec files will be copied from 60783bcdedf74ff2c20b86cb1607c443ac65e7a7 without changing assertions. VC3 requires the complementary body, not another source behavior change.
+
+### Repair implementation and proof applicability
+
+The records-root top-level probe now removes only the terminating newline from Git output. It preserves legal trailing whitespace and accepts the exact root T-347 selected. The candidate VC1 pin actually failed ENOENT at realpathSync after trim; the predicted records-root-nested label was not its diagnostic. The active-contract projection now filters complete second-level sections named Implementation notes, Verdicts, History, Reports and Archived grant history, retaining later active sections and leaving immutable raw snapshot bytes intact. Six historical-section placements before or after criteria are covered by the frozen VC2 body. Arbitrary other historical headings are not claimed as sanitized.
+
+The three verifier specs are exact copies from 60783bcdedf74ff2c20b86cb1607c443ac65e7a7, also byte-identical at rejected verifier final 6e8872566e2b4a758f964a5b543a763cca435768. Their SHA256 values are 886063c8e24945c6d309a1d753bc233755f56974da1a5cf255907f997cb03122 (records.spec.ts), d718f81ee18275ee5ba60b8c6116dd485e3fe7280178fb35769d7b8d81aaa107 (brief.spec.ts), and 7ca11c44225f72270e206ffea052fc4eafbb49707b05cec7d6f20f1e2d01ed5b (brief-flush.spec.ts). brief.mjs is unchanged. The repaired records.mjs SHA256 is 2617e580a21cfa3a897a79965b819326b4984487aa805307ddbdce00bf192aad and Git blob is 8f74abdd6242ffb679ace303c745ec7d051240f9, matching the supplied two-line repaired proof diff. All five source/spec inputs were reconstructed in memory from the proof snapshot plus its exact repairs and compared byte-for-byte against the source resource. No assertions, mutant anchors or unmutated proof inputs were changed beyond that proved composition, so no additional mutation loop is required.
+
+The supplied reviewed proof at that immutable snapshot contains 23 trials. Original full records: eight passed, two failed, exit one (VC1 ENOENT and VC2 historical marker). Exact minimally repaired full records: ten passed, exit zero. Separate VC1 and VC2 candidate controls each failed one intended running body, exit one, and repaired controls each passed one body, exit zero. The remaining 17 source/data trials ran with these exact two repairs: 15 intended kills, each one failed body/exit one, and two deliberately aiming survivors, each one passed/exit zero. The exhaustive flag body survives list omission while VC3 kills it; the new view body survives an unrelated accepted unknown flag while the exhaustive body kills it. Both guards remain in the copied spec. All 23 counts, exits, valid-body flags, reviewed diagnostics and restored SHA256s were read directly; clean tracked proof state and job cessation are coordinator-delivered facts. Original full-file restoration hashes certify the coordinator’s return to its original candidate inputs after each trial; they are not mislabeled as repaired records-source hashes. These selected-body proofs are reused only for their exact proved inputs, not as a new candidate range grade.
+
+On the repair workspace composed from rejected source tip 47a2a945bd48ffcf4715b242dca8d7ac40f98470 plus the copied pins and two literal fixes, e2e typecheck, both source syntax checks and graph index --check exit zero. Graph remains CURRENT. The root docs-gate invocation over the six admitted-base changed paths exits one because it fires parser, app and end-to-end duties; zero frontmatter issues and zero unlinked root sites, with existing governing-document budget warnings retained. Boot is not owed because no app source, Tauri source or manifest moved. The preserved verdict’s attack citation newly fires the method gate on this source range; the actual model-free command runs 13 evals, exit zero. Capability/graph generation remains integration’s obligation outside this source fence. The notes are complete before the repaired content commit; the blessed runner will grade the original admitted base 9af695339caf2e9968daabc4a69a5762fd022eeb through that committed repaired candidate once. Its true ref/counts/exits will be reported externally, with known T-333 baseline failures preserved if they recur. A subsequent commit will change only status to verifying and deliberately re-run no suite under the executor-role exemption.
+
+Original source grading at da475bc9a8f5a2f0b5c718c6e4859a6ba31c365c, the rejected verifier’s separately recorded grades, and this new repaired grade remain separate readings. No original proof or verdict is rewritten as a repaired pass. Requested implementation settings remain GPT-6.1 Sol xhigh; observed model, effort and usage remain unknown. Only the exact admitted source resource and published repair artifacts were used. No old bench, private attack/ground packet, main, raw authority, grant, physical storage or other card was changed. No real split delivery or physical cutover is claimed.
+
 ## Verdicts
+
+
+### 2026-10-03 — REJECTED — unknown@01a0ffe3-9992-77a2-b912-a638caac756d
+
+Independent native phase-two review of original range `9af695339caf2e9968daabc4a69a5762fd022eeb..47a2a945bd48ffcf4715b242dca8d7ac40f98470`, standard tier. Requested model/effort `gpt-6.1-sol@xhigh`; observed model, effort, tokens and provider seconds are unknown. This is a candidate-code review, not a workflow demonstration, split delivery, direct-import enforcement, publication or CI verdict.
+
+REJECTED for VC1, VC2 and VC3 below. The original owed suites are GREEN; independent adverse probes and data mutations expose boundaries those suites do not cover. The three verifier spec files remain byte-identical to proof snapshot `60783bcdedf74ff2c20b86cb1607c443ac65e7a7`; candidate implementation remains unchanged.
+
+attack set: sha256:6b697a340669047935ed9266e50ec63275f0143e2772249b5d1f0bfb66ffb103 (attack-set-T-348.md)
+ground: sha256:d6fce3b0bf0b9fa603465e520a865be721540e7faa682a50f6ed886b62084700 (verification-v1/ground-T-348.md)
+card at original base: sha256:6dc2ba69b85f90aa7cfb3fccbac2d8a90afd0e99e67aa18563a55a26dd8509e8
+
+All three digests were independently recomputed and match the saved seal. Phase one was a separate packet-only spawn; phase two is this fresh native spawn, identity `01a0ffe3-9992-77a2-b912-a638caac756d`, canonical name `/root/migration348_phase2_gpt61`, prepared `detached-verifier` profile and T-348-a4 normal binding. The procedural packet restriction is not read or filesystem isolation. While waiting for a prefix admission recovery, a live-agent inventory incidentally displayed the executor's final summary. A later broad title search incidentally displayed public implementation-note snippets; neither exposure was used as proof. The external executor report and conversation were not opened or followed. This pass is not described as unexposed. The failed first turn read or wrote no repository content and owned no jobs. Normal continue/exact rebind restored admission; subsequent shell calls carried the exact assigned prefix. The collected source stayed finished throughout preparation and proof collection. Private card fields were not displayed; deliberate notes API-name/disclosure checks emitted booleans only.
+
+**Original-range grade.** `SUPERTASKR_E2E_PORT=25348 node tools/e2e/scripts/gate-run.mjs --range 9af695339caf2e9968daabc4a69a5762fd022eeb..47a2a945bd48ffcf4715b242dca8d7ac40f98470` exited 0 at the sealed candidate: parser 454, app 1,171, whole e2e 1,308, each GREEN/exit 0. HEAD and clean tracked status were checked before and after; all suite jobs ceased. The first wrong-port invocation was intentionally stopped with exit 143 and produced no completed range verdict; it is preparation evidence, not a green reading. The disclosed source-side T-333 fixture-copy baseline did not reproduce here; no failure was skipped or substituted. Actual original grade: `verification-v1/verifier-original-range-T-348.log`, with the runner's per-suite output pointers.
+
+**Completion-range grade.** The candidate-to-final-verifier range has separate evidence in `verification-v1/verifier-completion-range-T-348.log` and `verification-v1/verifier-final-report-T-348.json`. That report binds the actual final ref, suite counts/exits, unchanged-tree checks and job cessation. The original grade above does not substitute for this reading; new candidate-failing pins remain committed unchanged.
+
+| Frozen criterion | Decision and evidence |
+|---|---|
+| 1 — selected committed records and regular objects | FAIL VC1: T-347 resolves a legal trailing-space records root, but `readCommittedBoard` trims it. Original snapshot/missing-input/object-mode bodies pass with committed card/association, conflicting product copy, exact records revision, duplicate/id mismatch and named symlink/gitlink refusals. |
+| 2 — immutable receipt, association and ordinary display | FAIL VC2: receipt/snapshot bytes remain committed and immutable, but active API and actual selected CLI expose historical grants. Own instrumented candidate capture made 17 Git reads including two blob reads, opened no working association, retained independent identities and fresh byte views, and froze all 10 traversed receipt/field objects. Caller mutation did not alter the capture. |
+| 3 — independently resolved product base | PASS within tested boundary: same-named refs resolve independently; records-only advancement retains the chosen product base; selected foreign-lineage validation refuses. New normalized-root, shallow-clone and missing-parent controls pass in both the original-record baseline and the repaired full-record run. No cross-repository distance is used by the source. |
+| 4 — read-only CLI, empty/refusal distinction and inventory | FAIL VC3: original flag accounting survives omission of the list view because selected-task view covers the same flags. VC2 also violates selected-contract display. Existing source-only CLI and process/write/state controls pass with real committed reads, explicit selected product base, usage/ref refusals and valid-empty-board positive control. New view guard complements the existing exhaustive flag guard. |
+| 5 — unsupported split CLI routes | Original controlled-route body and colocated whole suite pass. Guard precedes legacy dynamic loading and names the unsupported route and available views. The verifier extends the same body to 30 route cases, including default/role, audit/preflight, all five supplied grant verbs and all eight supplied run operations. Its deliberate return-success source mutation fails on expected exit 3 versus actual 0. The final completion grade records its unmutated result. No split orchestration/direct-import enforcement claim. |
+| 6 — fixed captures and actionable errors | Original capture/ref/binding/association mutation and malformed/unsafe-selector bodies pass. New CRLF-byte, subordinate-ID, blob/tree/noncommit, product-only-OID and retained-capture controls pass in the original-record baseline. Source substitution of HEAD for the exact records revision fails the retained-commit assertion. VC1 additionally exposes an unwrapped ENOENT at the trimmed nonexistent root. |
+| 7 — test foundation and truthful notes scope | Foundation exercises conflicting copies, independent refs, immutable captures, duplicate/id mismatches, product-only inspection and refusal before effects, but misses VC1/VC2/VC3. Boolean notes checks confirm three API names, CLI selectors/modifiers and fixture disclosure. Fixture success does not establish actual project split delivery. |
+
+**VC1 — preserve the selected records root's legal trailing whitespace.** At `2026-10-03T04:08:35.747Z`, own candidate `resolveWorkspace({productRoot, mode:"product-only"})` selected the legal `records ` directory in `coordinator-ground-v2/records-path-result-v1.json`, but `readCommittedBoard` threw `records-root-nested`, naming an existing whitespace-stripped sibling. T-347 development resolution verified the same legal directory and association at `04:08:47.604Z`. The root was disclosed ground, not an active project split binding. Independently authored VC1 pin instead has no trimmed sibling: its actual candidate failure is ENOENT at `realpathSync`, not the predicted `records-root-nested`. The pin passes with the one-line terminator-only correction below. Expected: successful committed read with the exact selected top-level root in the receipt. Actual pin title follows.
+
+```mutant
+correction: VC1 preserve legal records-root trailing whitespace
+file: tools/e2e/scripts/records.mjs
+spec: tools/e2e/tests/records.spec.ts
+body: T-348 VC1 — committed records preserve legal trailing whitespace in the selected root
+message: ENOENT
+--- old
+  const top = git(recordsRoot, ["rev-parse", "--show-toplevel"], "records-repository-unavailable").toString("utf8").replace(/\n$/, "");
+--- new
+  const top = git(recordsRoot, ["rev-parse", "--show-toplevel"], "records-repository-unavailable").toString("utf8").trim();
+```
+
+**VC2 — exclude historical sections from the active display contract.** Own direct capture and actual selected CLI at `2026-10-03T04:14:22.624Z` retained records commit `57740c811ef517d244f01f4ede439e90995fc5e9` and independent product base `fc536aa5bd3aaaa6d5fe5298ce103008ed6624d6`; both displayed `ARCHIVED-GRANT-HISTORY-CONTROL-T348` under `## History` alongside canonical criteria. CLI exit 0, stderr empty. The valid disclosed fixture places History before standing notes; reproduction altered neither source nor fixture. Evidence: `coordinator-ground-v3/history-view-result-v3.json` and `verification-v1/verifier-own-probes-T-348.json`. The pin fails against the candidate; the proof correction below passes six placements of History/Reports/Archived grant history before or after criteria while retaining exact committed bytes and receipt. Replacing the repaired CLI projection with raw `snapshot.content` separately fails the actual CLI assertion. The tested correction covers these named headings; arbitrary history naming is not established.
+
+```mutant
+correction: VC2 omit historical sections from the active contract projection
+file: tools/e2e/scripts/records.mjs
+spec: tools/e2e/tests/records.spec.ts
+body: T-348 VC2 — active contract and selected CLI omit historical sections while retaining committed bytes and criteria
+message: ARCHIVED-GRANT-HISTORY-CONTROL-T348
+--- old
+  return snapshot.content.split(/(?=^## )/m).filter((section) => !/^## (?:Implementation notes|Verdicts|History|Reports|Archived grant history)[ \t]*(?:\r?\n|$)/.test(section)).join("").trimEnd();
+--- new
+  return (snapshot.content.split(/^## (?:Implementation notes|Verdicts)\s*$/m)[0] ?? "").trimEnd();
+```
+
+**VC3 — account for both supported records views independently of shared flags.** A one-sided LIVE_ARMS data mutation replaces the list invocation with another selected-task invocation, retaining all accepted records flags and even the misleading list label. The original exhaustive-flag body actually stays GREEN (one passed, exit 0). The new view pin fails in its intended body with the message below (one failed, exit 1). Omitting `--records-revision` kills both guards. Adding a new accepted unknown flag kills the old guard while the new view pin stays GREEN; adding wildcard exemption data does not excuse that flag. These two aiming survivors are retained. Neither tested kill set contains the other. Keep both guards; no assertion was changed in the inventory data trials.
+
+```mutant
+correction: VC3 retain exhaustive flag accounting and independently guard supported records views
+file: tools/e2e/tests/brief-flush.spec.ts
+spec: tools/e2e/tests/brief-flush.spec.ts
+body: T-348 VC3 — records inventory distinguishes list and selected-task views despite their shared flags
+message: records inventory must announce both list and selected-task views
+--- old
+  { label: "--records list", args: ["--records", "list", "--records-revision", "HEAD"], format: "records-json" },
+--- new
+  { label: "--records list", args: ["--records", "T-999", "--records-revision", "HEAD", "--product-base", "HEAD"], format: "records-json" },
+```
+
+**Blind attacks and controls.** A01/A03/A08: conflicting working/product copies, same-name independent refs and retained capture/source advancement; own FS trap proved no working-association read, and deliberately running T-347 development discovery fired that trap. A02/A09/A10: missing inputs, noncommit/product-only objects, duplicate/path-id mismatches, subordinate control, malformed cards and unsafe selectors. A04/A05: symlink/gitlink named refusals plus missing-at-selected-commit and project/role/schema/format/root association mismatches. A06: selected foreign lineage, normalized duplicate uppercase roots, real shallow clone and removed parent object with restoration positive control. A07: raw CRLF bytes, caller mutation, fresh byte views, frozen nested receipt/card fields. A11: VC2 rejects active history leakage while preserving criteria/raw bytes; actual CLI raw-content source mutation dies. A12: valid empty committed list and missing-task refusal contrasted with unavailable discovery. A13/A14: real-read and deliberately forbidden-process/write controls, unchanged HEAD/index/tree, early split guards; expanded route body is graded separately at completion. A15: source-only copied-module CLI without generated parser files; own source-module import traps remain silent after preloading the YAML dependency, while deliberate process/FS calls fire. The first unprimed trap stopped in Node's CJS loader realpath operation, an instrumentation error rather than a product import defect. Approval-like card data remains data; read-only views confer no approval or write authority. Evidence: `verification-v1/verifier-own-probes-T-348.json`, `verification-v1/verifier-source-import-T-348.json`, original suite logs and exact detached trial artifacts. The five inventory-addendum attacks are covered by omission/modifier/wildcard data trials, legacy route guard and full inventory runs. No real project split association was created.
+
+**Proof and pin accounting.** The verifier authored 23 immutable recipes in `verification-v1/ask-T-348-verifier.md` at snapshot `60783bcdedf74ff2c20b86cb1607c443ac65e7a7`; coordinator executed them mechanically in its detached resource, then delivered the normal answer in published `verification-v1/ask-T-348.md`. Actual `RUN-ACK proof-T-348-verifier-v1` was written there and observed. Source remained collected. Actual diff patches, intended-body diagnostics, counts/exits and restoration hashes were independently read: `coordinator-verifier-proof-v1/results-v2-reviewed.json` and adjacent per-ID logs/diffs. Six control/repair runs establish original full records 8 passed/2 failed, minimal two-repair full records 10 passed, and VC1/VC2 individually RED then GREEN. Seventeen deliberate source/data mutation runs yield 15 kills and two honest GREEN aiming survivors, all exactly one selected running body. No zero-body, syntax/import, timeout or interrupted result counts as a kill. This is selected-body evidence, not an exhaustive mutation claim. All five files were restored with clean scratch status and no remaining jobs.
+
+Five new verifier test bodies are committed, plus one extended existing CLI body. Three assigned corrections; three mutant blocks. At `2026-10-03`, snapshot `60783bcdedf74ff2c20b86cb1607c443ac65e7a7`, unchanged pin SHA256s are `886063c8e24945c6d309a1d753bc233755f56974da1a5cf255907f997cb03122` (`tools/e2e/tests/records.spec.ts`), `d718f81ee18275ee5ba60b8c6116dd485e3fe7280178fb35769d7b8d81aaa107` (`tools/e2e/tests/brief.spec.ts`), and `7ca11c44225f72270e206ffea052fc4eafbb49707b05cec7d6f20f1e2d01ed5b` (`tools/e2e/tests/brief-flush.spec.ts`). Candidate source remains `02891b593a402229953da94a03402fc6d9d59e23631ba5b4afc236fe0bc602e0` (`records.mjs`) and `ec68f34f42991e50220f855210af49ec72450d6ed1515e0b53be49df2b9a2a95` (`brief.mjs`).
+
+**Other checks and boundaries.** At that measured snapshot: e2e TypeScript typecheck and index freshness check exit 0; all 13 model-free method evals exit 0. Documentation gate fires with owed app/e2e/parser suites, exit 1, while card shape/status and budget checks hold; it is not a malformed-card finding. Capabilities freshness exits 1 because new pin bodies change generated census content; its chained interview-skill check was not reached. Regenerating the committed capabilities census is a named integration obligation outside this frozen verifier fence. No generated file was rewritten here. Logs: `verification-v1/verifier-typecheck-T-348.log`, `verification-v1/verifier-index-check-T-348.log`, `verification-v1/verifier-method-evals-T-348.log`, `verification-v1/verifier-docs-gate-T-348.log`, `verification-v1/verifier-capabilities-check-T-348.log`. Source review checked fixed argument-array Git reads, exact object selection, immutable data exposure, association validation and early CLI routing; VC1/VC2/VC3 are the observed defects, with no additional exploitable path established. Direct-import enforcement, actual split orchestration, complete arbitrary-heading sanitization and publication safety are outside this measured claim. No source fix, fake usage, skipped failure, merge, push, grant or seat operation was performed. Terminal report records actual completion grade and owned-job cessation before RUN-DONE.
+
+
+### 2026-10-03 — APPROVED — unknown@01a1003a-5223-7b70-a4f6-134c2c1158e9 — repaired candidate
+
+APPROVED against the unchanged seven-criterion contract at repaired candidate `a20b87054ed244dc96384beb8c8670c3684bd3f7`, original admitted base `9af695339caf2e9968daabc4a69a5762fd022eeb`, standard tier. This is local code and fixture verification. The original rejected verdict is retained unchanged; actual split delivery, physical migration, publication and CI are not claimed.
+
+The blessed original range grade at that exact candidate is GREEN: parser 454 bodies/exit 0, app 1171 bodies/exit 0, whole e2e 1313 bodies/exit 0; aggregate exit 0. The derived six-path range owes parser/app and whole e2e because brief.mjs and the card moved. HEAD and tracked tree were clean; token entries name tree `146d04351083d349c66368365e6e910546ce6751` and dirty=false. Logs and token are saved under verification-v2/verifier-original-*-T-348-a5. Known T-333 fixture-copy EACCES did not recur in this run; earlier baseline RED readings remain earlier RED readings.
+
+Requested settings were `gpt-6.1-sol@xhigh`; observed model, effort, tokens and provider seconds are unknown. This fresh native phase-two session is `01a1003a-5223-7b70-a4f6-134c2c1158e9`, canonical task `/root/migration348_repaired_verifier_gpt61`, normally bound T-348-a5 in the prepared detached-verifier resource after the exact identity probe. Phase one was a separate packet-only spawn. The prior rejected verdict and frozen pins were deliberately shared repair evidence. Code diff preceded candidate notes. Reading-limit disclosure: a metadata check displayed lane-fence.json's frozen base-card generic pre-implementation notes; this sitting is not wholly unexposed. No executor conversation, external report or private source directory was opened. Subsequent authority checks displayed filtered metadata. The normal answer confirmed collected source and proof-job cessation; those external observations remain attributed to the coordinator. Actual line-initial `RUN-ACK proof-T-348-repaired-v1` is in verification-v2/ask-T-348.md.
+
+attack set: sha256:6b697a340669047935ed9266e50ec63275f0143e2772249b5d1f0bfb66ffb103 (attack-set-T-348.md)
+ground: sha256:d6fce3b0bf0b9fa603465e520a865be721540e7faa682a50f6ed886b62084700 (verification-v2/ground-T-348.md)
+card at original base: sha256:6dc2ba69b85f90aa7cfb3fccbac2d8a90afd0e99e67aa18563a55a26dd8509e8
+
+All sealed digests were independently recomputed. Preserved prior rejected entry SHA256 is `a653bbf8b4b04c4f183cc149924d81766487ab1bccd663bfcb5c4380b155bf01`. The five actual repaired inputs at the candidate are:
+
+| File | SHA256 |
+|---|---|
+| tools/e2e/scripts/records.mjs | 2617e580a21cfa3a897a79965b819326b4984487aa805307ddbdce00bf192aad |
+| tools/e2e/scripts/brief.mjs | ec68f34f42991e50220f855210af49ec72450d6ed1515e0b53be49df2b9a2a95 |
+| tools/e2e/tests/records.spec.ts | 886063c8e24945c6d309a1d753bc233755f56974da1a5cf255907f997cb03122 |
+| tools/e2e/tests/brief.spec.ts | d718f81ee18275ee5ba60b8c6116dd485e3fe7280178fb35769d7b8d81aaa107 |
+| tools/e2e/tests/brief-flush.spec.ts | 7ca11c44225f72270e206ffea052fc4eafbb49707b05cec7d6f20f1e2d01ed5b |
+
+Proof applies by exact composition, not a mistaken direct hash comparison: read frozen `60783bcdedf74ff2c20b86cb1607c443ac65e7a7`, independently apply the two exact repaired-records replacements in memory, and compare all five resulting files byte-for-byte with this candidate. The summary's records.mjs hash `02891b593a402229953da94a03402fc6d9d59e23631ba5b4afc236fe0bc602e0` names original/restored inputs; the repaired hash above is different. Other four files match directly. Proof packet hashes: worker-recipes-v1.json `7e61c344a8ecef046ea7c40081a54f5c9b94de48a5d3971a27d3359fc12bc052`; results-v2-reviewed.json `34fcfe21a3229721fbb14fbc259dd8a2876bcf1fc54262ddc331287bb1834f4c`; proof-summary-v1.json `749a6424123499a4ab9c8de375fff884d56bb37a1954cd957d6c84b87a46e463`.
+
+Independently inspected saved Git diff landings and all printed trial counts against reviewed JSON. The 23 coordinator-run trials comprise six baseline/repair controls, fifteen intended mutation kills and two aiming survivors. Original full records: eight passed, two failed, exit one; minimally repaired records: ten passed, exit zero. Each VC1/VC2 original control failed one actual body, and each repaired control passed one. VC1's actual diagnostic was ENOENT after trimming the legal whitespace root, rather than the originally predicted records-root-nested label. Seventeen source/data trials with exact repairs produced fifteen one-body failures/exit one and two one-body passes/exit zero. List omission survives exhaustive flag accounting but dies in VC3; an unrelated accepted unknown flag survives VC3 but dies in exhaustive flag accounting. Neither demonstrated kill set contains the other. This is selected named-body proof, not full owning-set isolation; no redundant mutation run or active-bench source mutant was made.
+
+| Criterion | Judgment and deciding evidence at the candidate |
+|---|---|
+| 1 | PASS. Committed-selection/immutable-capture, missing/malformed/duplicate/id-mismatch, Git-mode and VC1 records bodies cover stale product and working copies, missing working association, exact records revision, regular card/association blobs and legal root whitespace. Source uses T-347 product-only discovery and reads association/card objects from one exact tree. Saved duplicate/path/revision/mode mutations fail causally. |
+| 2 | PASS. Receipt and association bodies establish card path/blob/object format, same-commit association path/blob/values and independently measured selected product lineage. Immutable capture and CRLF bodies verify defensive byte copies and frozen nested receipt/card values. VC2 checks all six named historical-section placements through API and CLI, later active criteria and unchanged raw bytes. Raw-content CLI, nested-value and retained-buffer mutations fail. Snapshot authority is explicitly data only. |
+| 3 | PASS. Independent same-name refs resolve differently; records-only advancement preserves product base. Selected foreign lineage and product-only/records-only object refusals distinguish histories. The product-base substitution mutation fails at the intended site; no cross-repository distance is computed. |
+| 4 | PASS. Both committed CLI bodies use copied source without parser/app builds or legacy modules, require explicit paired product base, distinguish valid empty boards and unavailable revisions, and compare HEAD/index/cards/runtime including a token sentinel. Process/write controls admit real Git reads and deliberately reject build/push/write controls. The existing exhaustive flag body, VC3 and pipe/file margin body retain both views and all modifiers. Their complementary data-mutation proof is preserved. |
+| 5 | PASS. Extended process/write-control body drives default/task/role/state/card/audit/preflight/fence/bench/merge/dispatch/express/grant/seat/run route families, naming unsupported route and read-only views before legacy loading or effects. Existing T-347/colocated bodies remain in the grade. Source restricts the enforcement claim to the CLI and activates no project split binding. |
+| 6 | PASS. Captured snapshots stay fixed after working cards, branch, local project binding and association advance; explicit later snapshots carry different provenance. Raw CRLF/subordinate-id and malformed/unsafe-selector bodies exercise retained bytes and actionable refusals; missing and duplicate states never return a fallback empty board. |
+| 7 | PASS. records.spec.ts and brief.spec.ts prove the required fixture behaviors; all three supplied pin specs match their frozen hashes. Delivered APIs/schema and repair notes name readCommittedBoard, captureTaskSnapshot, activeTaskContract and both --records forms and expressly confine results to local fixtures. Actual split execution/delivery is deferred. |
+
+Security and adjacent-feature review found no additional defect: fixed argument-array Git reads disable replace objects, optional locks and lazy fetch; selectors and revisions cannot become shell commands; regular-mode and UTF-8 checks precede card consumption; YAML/frontmatter and association schemas refuse malformed values; new APIs expose detached data and no write authority. No endpoint, credential or dependency was added. The early dynamic loading change is covered by source-only fixtures and the original range's whole e2e grade.
+
+No new correction or pin is assigned in this pass. The three earlier assigned corrections and three unchanged worker-authored mutant blocks are carried below so the newest verdict remains mechanically actionable. Each old anchor matches the repaired candidate exactly once. Their original RED/GREEN readings remain attributed to the frozen proof; integration still owes actual merged-tree drills with named-spec scope, diagnostics and SHA256 restoration. Those future drills have not run in this review.
+
+```mutant
+correction: VC1 preserve legal records-root trailing whitespace
+file: tools/e2e/scripts/records.mjs
+spec: tools/e2e/tests/records.spec.ts
+body: T-348 VC1 — committed records preserve legal trailing whitespace in the selected root
+message: ENOENT
+--- old
+  const top = git(recordsRoot, ["rev-parse", "--show-toplevel"], "records-repository-unavailable").toString("utf8").replace(/\n$/, "");
+--- new
+  const top = git(recordsRoot, ["rev-parse", "--show-toplevel"], "records-repository-unavailable").toString("utf8").trim();
+```
+
+```mutant
+correction: VC2 omit historical sections from the active contract projection
+file: tools/e2e/scripts/records.mjs
+spec: tools/e2e/tests/records.spec.ts
+body: T-348 VC2 — active contract and selected CLI omit historical sections while retaining committed bytes and criteria
+message: ARCHIVED-GRANT-HISTORY-CONTROL-T348
+--- old
+  return snapshot.content.split(/(?=^## )/m).filter((section) => !/^## (?:Implementation notes|Verdicts|History|Reports|Archived grant history)[ \t]*(?:\r?\n|$)/.test(section)).join("").trimEnd();
+--- new
+  return (snapshot.content.split(/^## (?:Implementation notes|Verdicts)\s*$/m)[0] ?? "").trimEnd();
+```
+
+```mutant
+correction: VC3 retain exhaustive flag accounting and independently guard supported records views
+file: tools/e2e/tests/brief-flush.spec.ts
+spec: tools/e2e/tests/brief-flush.spec.ts
+body: T-348 VC3 — records inventory distinguishes list and selected-task views despite their shared flags
+message: records inventory must announce both list and selected-task views
+--- old
+  { label: "--records list", args: ["--records", "list", "--records-revision", "HEAD"], format: "records-json" },
+--- new
+  { label: "--records list", args: ["--records", "T-999", "--records-revision", "HEAD", "--product-base", "HEAD"], format: "records-json" },
+```
+
+At candidate `a20b87054ed244dc96384beb8c8670c3684bd3f7`: typecheck exits zero; index --check is CURRENT, exit zero; all thirteen model-free evals pass, exit zero. The independent MF-09 selftest baseline is not reclassified by normal evals. Docs gate exits one because the card fires parser/app/e2e duties; all live card frontmatter and governing budgets hold. Capability freshness exits one: committed 126711 bytes versus freshly derived 128139 bytes, and the chained interview-skill check is not reached. Capability/census regeneration and graph regeneration/checking at integration are mechanical follow-up outside this source fence; no generated files were rewritten. Boot is not owed by this range. The card-only verdict commit owes a separate completion range and its actual counts/exits are reported in the external terminal record, without relabeling the implementation grade. No frontmatter, source or test was changed by this verifier.

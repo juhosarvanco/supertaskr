@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1296 behaviours** — 1294 extracted sentences + 2 named-not-extracted (listed at the end) — across 44 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1309 behaviours** — 1307 extracted sentences + 2 named-not-extracted (listed at the end) — across 45 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -42,12 +42,15 @@ Census: **1296 behaviours** — 1294 extracted sentences + 2 named-not-extracted
 - the whole derivation reaches BOTH readers — one SYNTHESISED oversize invocation, byte for byte
 - the whole derivation reaches a SLOW reader too, and the loss is the READER'S — never the write shape
 - THE ARM LIST IS COMPARED TO THE COMMAND'S OWN FLAGS, so a flag nothing announces reds by name
+- T-348 VC3 — records inventory distinguishes list and selected-task views despite their shared flags
 - THE MARGIN GUARD: every live arm against a loss point DERIVED in this run, for a NAMED reader
 - the reader that STOPS after one read gets a silent PREFIX, and the writer's own exit behind it is a RACE this body measures and does not assert
 - THE SWEEP: brief.mjs no longer tears down its own stdout, and the siblings that still do are the argued set
 
 ## brief
 
+- records CLI views read committed split records before legacy loading with concise provenance and explicit paired product base
+- records CLI process and write controls admit real reads and split guards refuse all unsupported routes before effects
 - workspace CLI inspection is standalone and every split development arm refuses before context or side effects
 - workspace CLI configured failures never default to stale records while product-only inspection avoids private records
 - the ROW SET is read from the role file, and the coverage runs both ways
@@ -1261,6 +1264,19 @@ Census: **1296 behaviours** — 1294 extracted sentences + 2 named-not-extracted
 - RANGE RULE — the expectation side is READ from the document, never pinned
 - RANGE RULE — the flip lists are checked BY GATE, and a merged set would miss the relabel
 - RANGE RULE — the DOCS GATE's printed spelling still carries no `xargs`
+
+## records
+
+- records import performs no command or write and its process/write controls fire
+- records snapshots select one committed records tree and independent same-name product refs with immutable captures
+- records missing inputs malformed cards duplicate ids mismatched paths and unsafe selectors refuse by name
+- records association is required at the same commit and validates the captured binding and actual selected product lineage
+- records reject committed symlink and gitlink card association and board entries by name
+- records empty committed boards are explicit and product-only inspection never requires private records
+- T-348 VC1 — committed records preserve legal trailing whitespace in the selected root
+- T-348 VC2 — active contract and selected CLI omit historical sections while retaining committed bytes and criteria
+- T-348 attacks — exact CRLF bytes subordinate ids noncommit refs and retained captures remain distinct
+- T-348 attacks — committed association schemas normalized roots shallow and missing parent histories refuse distinctly
 
 ## resume-fallback
 

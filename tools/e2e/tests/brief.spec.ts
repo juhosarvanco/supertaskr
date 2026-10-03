@@ -21,6 +21,7 @@ import { parse as parseYaml } from "yaml";
 import { repoRoot } from "../preflight";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import { measureProductIdentity, WORKSPACE_ASSOCIATION_REL_PATH, WORKSPACE_BINDING_REL_PATH } from "../scripts/workspace.mjs";
+import { TOKEN_REL_PATH } from "../../../.claude/hooks/gate-token.mjs";
 import { conventionsText, liveTaskCards, taskStatuses, trackedFiles } from "../scripts/docs-scan.mjs";
 // THE EARS PATTERNS ARE THE METHOD'S AND THEIR READER IS session-economics's
 // (T-320): `dispatch-brief.mjs` cannot import it — that module imports THIS
@@ -302,6 +303,121 @@ function workspaceCliFixture() {
     readdirSync(path.join(product, ".supertaskr")).sort().map((name) => `${name}:${readFileSync(path.join(product, ".supertaskr", name), "utf8")}`).join("\n"));
   return { dir, product, records, binding, run, snapshot };
 }
+
+/** Copied source intentionally has no parser/app builds or legacy modules. */
+function committedRecordsCliFixture() {
+  const fx = workspaceCliFixture();
+  const cardPath = "docs/tasks/T-999-conflicting.md";
+  const text = (title: string) => `---\nid: T-999\ntitle: ${title}\nstatus: planned\n---\n\nActive contract ${title}\n\n## Acceptance criteria\n\n- WHEN read THE view SHALL carry provenance.\n\n## Implementation notes\n\nPRIVATE ARCHIVED GRANTS\n\n## Verdicts\n`;
+  for (const root of [fx.product, fx.records]) {
+    writeFileSync(path.join(root, cardPath), text(root === fx.product ? "STALE PRODUCT COPY" : "COMMITTED RECORDS"));
+    fixtureGit(root, ["add", "docs/tasks"]);
+    if (root === fx.records) fixtureGit(root, ["add", WORKSPACE_ASSOCIATION_REL_PATH]);
+    fixtureGit(root, ["commit", "-qm", "committed records CLI fixture"]);
+  }
+  const codeRoot = path.join(fx.dir, "source-only");
+  for (const rel of ["tools/e2e/scripts/brief.mjs", "tools/e2e/scripts/records.mjs", "tools/e2e/scripts/workspace.mjs",
+    "tools/e2e/scripts/docs-scan.mjs", "tools/e2e/scripts/token-scan.mjs", ".claude/hooks/lane-fence.mjs"]) {
+    const target = path.join(codeRoot, rel); mkdirSync(path.dirname(target), { recursive: true });
+    writeFileSync(target, readFileSync(path.join(repoRoot, rel)));
+  }
+  symlinkSync(path.join(repoRoot, "tools/e2e/node_modules"), path.join(codeRoot, "tools/e2e/node_modules"));
+  const cli = path.join(codeRoot, "tools/e2e/scripts/brief.mjs");
+  const run = (args: string[]) => spawnSync(process.execPath, [cli, "--root", fx.product, ...args], { encoding: "utf8", env: FIXTURE_GIT_ENV });
+  const state = () => [fx.product, fx.records].map((root) => ({
+    head: fixtureGit(root, ["rev-parse", "HEAD"]), index: readFileSync(path.join(root, ".git/index")).toString("hex"),
+    status: fixtureGit(root, ["status", "--porcelain", "--untracked-files=all"]), card: readFileSync(path.join(root, cardPath), "utf8"),
+    runtime: root === fx.product ? readdirSync(path.join(root, ".supertaskr")).sort().map((name) => [name, readFileSync(path.join(root, ".supertaskr", name), "utf8")]) : [],
+  }));
+  return { ...fx, cli, cardPath, text, run, state };
+}
+
+test("records CLI views read committed split records before legacy loading with concise provenance and explicit paired product base", () => {
+  const fx = committedRecordsCliFixture();
+  try {
+    const recordsCommit = fixtureGit(fx.records, ["rev-parse", "main"]).trim();
+    const productBase = fixtureGit(fx.product, ["rev-parse", "main"]).trim();
+    writeFileSync(path.join(fx.records, fx.cardPath), fx.text("UNCOMMITTED"));
+    rmSync(path.join(fx.records, WORKSPACE_ASSOCIATION_REL_PATH));
+    const before = fx.state();
+    const listed = fx.run(["--records", "list", "--records-revision", "main"]);
+    expect(listed.status, listed.stderr).toBe(0);
+    expect(JSON.parse(listed.stdout)).toMatchObject({ receipt: { recordsCommit, repositoryRole: "records" }, tasks: [{ id: "T-999", title: "COMMITTED RECORDS" }] });
+    const selected = fx.run(["--records", "T-999", "--records-revision", "main", "--product-base", "main"]);
+    expect(selected.status, selected.stderr).toBe(0);
+    expect(JSON.parse(selected.stdout).receipt).toMatchObject({ recordsCommit, productBase, cardPath: fx.cardPath });
+    expect(JSON.parse(selected.stdout).contract).toContain("Active contract COMMITTED RECORDS");
+    expect(selected.stdout).not.toContain("PRIVATE ARCHIVED GRANTS"); expect(selected.stdout).not.toContain("STALE PRODUCT COPY");
+    for (const args of [["--records", "T-999", "--records-revision", "main"], ["--records", "list"], ["--records", "list", "--records-revision", "main", "--state"], ["--records-revision", "main"]]) {
+      expect(fx.run(args).status, args.join(" ")).toBe(2);
+    }
+    const bad = fx.run(["--records", "list", "--records-revision", "missing"]);
+    expect(bad.status).toBe(3); expect(bad.stderr).toContain("records-commit-unavailable"); expect(bad.stdout).toBe("");
+    expect(fx.state()).toEqual(before);
+    // Empty is a successful reading of a real commit, not a refusal fallback.
+    writeFileSync(path.join(fx.records, WORKSPACE_ASSOCIATION_REL_PATH), fixtureGit(fx.records, ["show", `${recordsCommit}:${WORKSPACE_ASSOCIATION_REL_PATH}`]));
+    rmSync(path.join(fx.records, fx.cardPath)); fixtureGit(fx.records, ["add", "."]); fixtureGit(fx.records, ["commit", "-qm", "empty committed board"]);
+    const empty = fx.run(["--records", "list", "--records-revision", "main"]);
+    expect(empty.status, empty.stderr).toBe(0); expect(JSON.parse(empty.stdout).tasks).toEqual([]);
+  } finally { removeGitFixture(fx.dir, "records CLI views T-348"); }
+});
+
+test("records CLI process and write controls admit real reads and split guards refuse all unsupported routes before effects", () => {
+  const fx = committedRecordsCliFixture();
+  try {
+    writeFileSync(path.join(fx.product, TOKEN_REL_PATH), "VERDICT TOKEN SENTINEL");
+    const before = fx.state();
+    const controlled = (args: string[]) => spawnSync(process.execPath, ["--input-type=module", "-e", `
+      import fs from 'node:fs'; import cp from 'node:child_process'; import {syncBuiltinESMExports} from 'node:module';
+      const real=cp.execFileSync;let reads=0;let writes=0;let forbidden=0;
+      const trap=(name)=>(...args)=>{writes++;throw Error('WRITE CONTROL '+name)};
+      for(const name of ['writeFileSync','appendFileSync','mkdirSync','renameSync','unlinkSync','rmSync','chmodSync','truncateSync','copyFileSync','cpSync','createWriteStream','writeFile','appendFile','mkdir','rename','unlink','rm','chmod','truncate','copyFile','cp']) fs[name]=trap(name);
+      for(const name of ['writeFile','appendFile','mkdir','rename','unlink','rm','chmod','truncate','copyFile','cp']) fs.promises[name]=trap(name);
+      const open=fs.openSync;fs.openSync=(file,flags,...rest)=>flags==='r'?open(file,flags,...rest):trap('openSync')(file,flags,...rest);
+      for(const name of ['spawn','spawnSync','exec','execSync','execFile','fork']) cp[name]=()=>{forbidden++;throw Error('PROCESS CONTROL '+name)};
+      cp.execFileSync=(file,argv,opts)=>{
+        let at=0;
+        while(at<argv.length) {
+          if(argv[at]==='--no-replace-objects') at++;
+          else if(['-C','-c'].includes(argv[at])) at+=2;
+          else break;
+        }
+        if(file!=='git'||!['rev-parse','rev-list','ls-tree','cat-file'].includes(argv[at])) {forbidden++;throw Error('PROCESS CONTROL '+file+' '+argv.join(' '))}
+        reads++;return real(file,argv,opts);
+      };
+      syncBuiltinESMExports(); process.argv=${JSON.stringify([process.execPath, fx.cli, "--root", fx.product, ...args])};
+      await import(${JSON.stringify(new URL(`file://${fx.cli}`).href)});
+      if(writes||forbidden) throw Error('forbidden effects');
+      if(!reads) throw Error('positive real read missing');
+      for(const control of [()=>cp.execFileSync('npm',['test']),()=>cp.execFileSync('git',['push','origin','rev-parse']),()=>fs.writeFileSync('never-written','x')]) {
+        try {control();throw Error('control did not fire')} catch(err){if(!String(err).includes('CONTROL')) throw err}
+      }
+      console.error('controls: real reads='+reads+' forbidden process='+forbidden+' write='+writes);
+    `], { encoding: "utf8", env: FIXTURE_GIT_ENV });
+    const read = controlled(["--records", "T-999", "--records-revision", "main", "--product-base", "main"]);
+    expect(read.status, read.stderr).toBe(0); expect(read.stderr).toMatch(/controls: real reads=\d+ forbidden process=2 write=1/);
+    expect(JSON.parse(read.stdout).contract).toContain("COMMITTED RECORDS");
+    const listed = controlled(["--records", "list", "--records-revision", "main"]);
+    expect(listed.status, listed.stderr).toBe(0); expect(JSON.parse(listed.stdout).tasks).toHaveLength(1);
+    const missing = controlled(["--records", "T-888", "--records-revision", "main", "--product-base", "main"]);
+    expect(missing.status, missing.stderr).toBe(3); expect(missing.stderr).toContain("records-task-missing");
+    expect(missing.stderr).toContain("controls:");
+    const arms = [[], ["--role", "verifier"], ["--dispatch"], ["--dispatch-lane", "T-999", "--slug", "fixture"], ["--task", "T-999"], ["--card", "T-999"], ["--state"],
+      ["--audit", "docs/tasks/T-999-conflicting.md"], ["--preflight"],
+      ["--task", "T-999", "--preflight"], ["--task", "T-999", "--write-fence", path.join(fx.dir, "lane")], ["--bench", "T-999"], ["--merge", "T-999"],
+      ["--express", "outcome", "--fence", "docs/tasks"], ["--express-withdraw", "T-999"], ["--grant", "show"], ["--grant", "set"],
+      ["--grant", "history"], ["--grant", "init"], ["--grant", "migrate"],
+      ["--take-seat"], ["--release-seat"], ["--run", "start", "--assignment", "missing"],
+      ...["bind", "observe", "send", "wait", "collect", "continue", "stop"].map((operation) => ["--run", operation, "--attempt", "T-999-a1"])];
+    for (const arm of arms) {
+      const result = controlled(arm);
+      expect(result.status, `${arm.join(" ")}: ${result.stderr}`).toBe(3);
+      expect(result.stderr).toContain(`route ${arm[0] ?? "legacy context"}`); expect(result.stderr).toContain("workspace-split-unsupported");
+      expect(result.stderr).toContain("--records"); expect(result.stderr).toContain("controls:"); expect(result.stdout).toBe("");
+    }
+    expect(fx.state()).toEqual(before); expect(existsSync(path.join(fx.dir, "lane"))).toBe(false);
+  } finally { removeGitFixture(fx.dir, "records CLI controls T-348"); }
+});
 
 test("workspace CLI inspection is standalone and every split development arm refuses before context or side effects", () => {
   const fx = workspaceCliFixture();
