@@ -6,7 +6,7 @@ milestone: 4
 priority: 1
 size: M
 tier: standard
-status: building
+status: verifying
 blocked_by: [T-347]
 touches: [tools/e2e/scripts/records.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/tests/records.spec.ts, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/brief-flush.spec.ts]
 builder: gpt-6.1-sol@xhigh
