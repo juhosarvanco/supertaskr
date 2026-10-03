@@ -1006,6 +1006,22 @@ test("THE ARM LIST IS COMPARED TO THE COMMAND'S OWN FLAGS, so a flag nothing ann
   );
 });
 
+test("T-348 VC3 — records inventory distinguishes list and selected-task views despite their shared flags", () => {
+  const records = LIVE_ARMS.filter((arm) => arm.args.includes("--records"));
+  const selectors = records.map((arm) => arm.args[arm.args.indexOf("--records") + 1] === "list" ? "list" : "task").sort();
+  expect(selectors, "records inventory must announce both list and selected-task views").toEqual(["list", "task"]);
+  for (const arm of records) {
+    const revisionAt = arm.args.indexOf("--records-revision");
+    expect(revisionAt, `${arm.label}: explicit records revision is missing`).toBeGreaterThanOrEqual(0);
+    expect(arm.args[revisionAt + 1]).toBeTruthy();
+    if (arm.args[arm.args.indexOf("--records") + 1] !== "list") {
+      const baseAt = arm.args.indexOf("--product-base");
+      expect(baseAt, `${arm.label}: explicit paired product base is missing`).toBeGreaterThanOrEqual(0);
+      expect(arm.args[baseAt + 1]).toBeTruthy();
+    }
+  }
+});
+
 test("THE MARGIN GUARD: every live arm against a loss point DERIVED in this run, for a NAMED reader", () => {
   // KILLED BY: restoring `process.exit(code)` — every arm whose live size
   // is past the derived loss point stops matching its file destination.

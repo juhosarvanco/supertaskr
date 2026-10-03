@@ -20,9 +20,9 @@ function cardText(title = "Committed records task", id = "T-999"): string {
 function commit(root: string, note: string): string {
   git(root, ["add", "."]); git(root, ["commit", "--allow-empty", "-qm", note]); return git(root, ["rev-parse", "HEAD"]);
 }
-function fixture(empty = false) {
+function fixture(empty = false, recordsLeaf = "records") {
   const dir = realpathSync(mkdtempSync(path.join(os.tmpdir(), "records-T-348-")));
-  const product = path.join(dir, "product"); const records = path.join(dir, "records");
+  const product = path.join(dir, "product"); const records = path.join(dir, recordsLeaf);
   for (const root of [product, records]) {
     mkdirSync(path.join(root, "docs/tasks"), { recursive: true });
     git(root, ["init", "-q", "--initial-branch=main"]);
@@ -166,4 +166,113 @@ test("records empty committed boards are explicit and product-only inspection ne
     expect(() => readCommittedBoard(fx.options)).toThrow(/records-repository-unavailable/);
     expect(readFileSync(path.join(fx.product, WORKSPACE_BINDING_REL_PATH), "utf8")).toBe(JSON.stringify(fx.binding));
   } finally { removeGitFixture(fx.dir, "records empty board T-348"); }
+});
+
+test("T-348 VC1 — committed records preserve legal trailing whitespace in the selected root", () => {
+  for (const recordsLeaf of ["records", "records "]) {
+    const fx = fixture(false, recordsLeaf);
+    try {
+      const discovery = resolveWorkspace({ productRoot: fx.product });
+      expect(discovery.recordsRoot).toBe(fx.records);
+      expect(discovery.association.status).toBe("verified");
+      const snapshot = captureTaskSnapshot(fx.options);
+      expect(snapshot.receipt.recordsRoot).toBe(fx.records);
+      expect(snapshot.receipt.recordsCommit).toBe(fx.recordsCommit);
+      expect(snapshot.receipt.productBase).toBe(fx.productBase);
+      expect(snapshot.content).toBe(cardText());
+    } finally { removeGitFixture(fx.dir, "records root whitespace T-348"); }
+  }
+});
+
+test("T-348 VC2 — active contract and selected CLI omit historical sections while retaining committed bytes and criteria", () => {
+  const fx = fixture();
+  const marker = "ARCHIVED-GRANT-HISTORY-CONTROL-T348";
+  try {
+    for (const heading of ["History", "Reports", "Archived grant history"]) {
+      for (const beforeCriteria of [false, true]) {
+        const insertion = beforeCriteria ? "## Acceptance criteria" : "## Implementation notes";
+        const text = cardText().replace(insertion, `## ${heading}\n\n${marker}\n\n${insertion}`);
+        writeFileSync(path.join(fx.records, CARD), text);
+        const recordsCommit = commit(fx.records, "historical section fixture");
+        const snapshot = captureTaskSnapshot(fx.options);
+        expect(snapshot.bytes.equals(Buffer.from(text))).toBe(true);
+        expect(snapshot.receipt.recordsCommit).toBe(recordsCommit);
+        expect(activeTaskContract(snapshot)).toContain("## Acceptance criteria");
+        expect(activeTaskContract(snapshot)).toContain("WHEN read THE snapshot SHALL stay fixed.");
+        expect(activeTaskContract(snapshot), marker).not.toContain(marker);
+        const cli = spawnSync(process.execPath, [new URL("../scripts/brief.mjs", import.meta.url).pathname,
+          "--root", fx.product, "--records", "T-999", "--records-revision", "main", "--product-base", "main"], { encoding: "utf8", env: ENV });
+        expect(cli.status, cli.stderr).toBe(0);
+        const answer = JSON.parse(cli.stdout);
+        expect(answer.receipt.recordsCommit).toBe(recordsCommit);
+        expect(answer.contract).toContain("## Acceptance criteria");
+        expect(answer.contract, marker).not.toContain(marker);
+        expect(snapshot.bytes.equals(Buffer.from(text))).toBe(true);
+      }
+    }
+  } finally { removeGitFixture(fx.dir, "records active history T-348"); }
+});
+
+test("T-348 attacks — exact CRLF bytes subordinate ids noncommit refs and retained captures remain distinct", () => {
+  const fx = fixture();
+  try {
+    const subordinatePath = "docs/tasks/T-999-s1-subordinate.md";
+    const raw = Buffer.from(cardText("Subordinate committed task", "T-999-s1").replace(/\n/g, "\r\n") + " \t\r\n");
+    writeFileSync(path.join(fx.records, subordinatePath), raw);
+    const capturedCommit = commit(fx.records, "subordinate CRLF capture");
+    const options = { ...fx.options, recordsRevision: capturedCommit, taskId: "T-999-s1" };
+    const original = captureTaskSnapshot(options);
+    expect(original.receipt.cardPath).toBe(subordinatePath);
+    expect(original.bytes.equals(raw)).toBe(true);
+    expect(original.task.bytes.equals(raw)).toBe(true);
+    const exposed = original.bytes; exposed.fill(0);
+    expect(original.bytes.equals(raw)).toBe(true);
+    expect(() => { (original.task as any).content = "changed"; }).toThrow();
+    expect(() => { (original.receipt.localBinding as any).projectId = "changed"; }).toThrow();
+    expect(() => { (readCommittedBoard(options).tasks as any[]).pop(); }).toThrow();
+    writeFileSync(path.join(fx.records, subordinatePath), cardText("Later task", "T-999-s1"));
+    const laterCommit = commit(fx.records, "later subordinate records");
+    expect(captureTaskSnapshot(options).receipt.recordsCommit).toBe(capturedCommit);
+    expect(captureTaskSnapshot(options).bytes.equals(raw)).toBe(true);
+    const later = captureTaskSnapshot({ ...options, recordsRevision: laterCommit });
+    expect(later.receipt.recordsCommit).toBe(laterCommit);
+    expect(later.content).toContain("Later task");
+    expect(later.receipt.productBase).toBe(original.receipt.productBase);
+    expect(() => captureTaskSnapshot({ ...options, recordsRevision: original.receipt.cardBlobId })).toThrow(/records-commit-unavailable/);
+    expect(() => captureTaskSnapshot({ ...options, recordsRevision: `${capturedCommit}^{tree}` })).toThrow(/records-commit-unavailable/);
+    expect(() => captureTaskSnapshot({ ...options, recordsRevision: fx.productBase })).toThrow(/records-commit-unavailable/);
+    expect(() => captureTaskSnapshot({ ...options, productRevision: capturedCommit })).toThrow(/product-commit-unavailable/);
+    expect(() => captureTaskSnapshot({ ...options, cardPath: subordinatePath })).toThrow(/records-task-selector-invalid/);
+    expect(captureTaskSnapshot({ productRoot: fx.product, recordsRevision: capturedCommit, productRevision: "main", cardPath: subordinatePath }).bytes.equals(raw)).toBe(true);
+  } finally { removeGitFixture(fx.dir, "records raw boundaries T-348"); }
+});
+
+test("T-348 attacks — committed association schemas normalized roots shallow and missing parent histories refuse distinctly", () => {
+  const fx = fixture();
+  try {
+    const normalized = { ...fx.association, product: { ...fx.association.product,
+      rootCommits: [...fx.association.product.rootCommits, ...fx.association.product.rootCommits.map((root: string) => root.toUpperCase())] } };
+    writeFileSync(path.join(fx.records, WORKSPACE_ASSOCIATION_REL_PATH), JSON.stringify(normalized)); commit(fx.records, "normalized association roots");
+    expect(captureTaskSnapshot(fx.options).receipt.association.validation.status).toBe("verified");
+    for (const association of [{ ...fx.association, role: "product" }, { ...fx.association, version: 2 },
+      { ...fx.association, product: { objectFormat: "sha256", rootCommits: ["a".repeat(64)] } }]) {
+      writeFileSync(path.join(fx.records, WORKSPACE_ASSOCIATION_REL_PATH), JSON.stringify(association)); commit(fx.records, "association schema boundary");
+      expect(() => captureTaskSnapshot(fx.options)).toThrow(/association-(?:schema|version-unsupported|object-format-mismatch)/);
+    }
+    writeFileSync(path.join(fx.records, WORKSPACE_ASSOCIATION_REL_PATH), JSON.stringify(fx.association)); commit(fx.records, "restore association");
+    writeFileSync(path.join(fx.product, "product-advance"), "new product commit");
+    const laterProduct = commit(fx.product, "product history advance");
+    const shallowRoot = path.join(fx.dir, "shallow-product");
+    execFileSync("git", ["-c", "maintenance.auto=false", "clone", "--quiet", "--depth=1", `file://${fx.product}`, shallowRoot], { env: ENV });
+    mkdirSync(path.join(shallowRoot, ".supertaskr"), { recursive: true });
+    writeFileSync(path.join(shallowRoot, WORKSPACE_BINDING_REL_PATH), JSON.stringify({ ...fx.binding, productRoot: shallowRoot }));
+    expect(() => captureTaskSnapshot({ ...fx.options, productRoot: shallowRoot })).toThrow(/product-history-shallow/);
+    expect(captureTaskSnapshot(fx.options).receipt.productBase).toBe(laterProduct);
+    const parentObject = path.join(fx.product, ".git/objects", fx.productBase.slice(0, 2), fx.productBase.slice(2));
+    const retained = readFileSync(parentObject);
+    rmSync(parentObject);
+    try { expect(() => captureTaskSnapshot(fx.options)).toThrow(/product-history-incomplete/); }
+    finally { writeFileSync(parentObject, retained); }
+    expect(captureTaskSnapshot(fx.options).receipt.productBase).toBe(laterProduct);
+  } finally { removeGitFixture(fx.dir, "records association history edges T-348"); }
 });

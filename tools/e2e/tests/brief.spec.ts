@@ -397,14 +397,22 @@ test("records CLI process and write controls admit real reads and split guards r
     const read = controlled(["--records", "T-999", "--records-revision", "main", "--product-base", "main"]);
     expect(read.status, read.stderr).toBe(0); expect(read.stderr).toMatch(/controls: real reads=\d+ forbidden process=2 write=1/);
     expect(JSON.parse(read.stdout).contract).toContain("COMMITTED RECORDS");
-    const arms = [["--dispatch"], ["--dispatch-lane", "T-999", "--slug", "fixture"], ["--task", "T-999"], ["--card", "T-999"], ["--state"],
+    const listed = controlled(["--records", "list", "--records-revision", "main"]);
+    expect(listed.status, listed.stderr).toBe(0); expect(JSON.parse(listed.stdout).tasks).toHaveLength(1);
+    const missing = controlled(["--records", "T-888", "--records-revision", "main", "--product-base", "main"]);
+    expect(missing.status, missing.stderr).toBe(3); expect(missing.stderr).toContain("records-task-missing");
+    expect(missing.stderr).toContain("controls:");
+    const arms = [[], ["--role", "verifier"], ["--dispatch"], ["--dispatch-lane", "T-999", "--slug", "fixture"], ["--task", "T-999"], ["--card", "T-999"], ["--state"],
+      ["--audit", "docs/tasks/T-999-conflicting.md"], ["--preflight"],
       ["--task", "T-999", "--preflight"], ["--task", "T-999", "--write-fence", path.join(fx.dir, "lane")], ["--bench", "T-999"], ["--merge", "T-999"],
       ["--express", "outcome", "--fence", "docs/tasks"], ["--express-withdraw", "T-999"], ["--grant", "show"], ["--grant", "set"],
-      ["--take-seat"], ["--release-seat"], ["--run", "start", "--assignment", "missing"]];
+      ["--grant", "history"], ["--grant", "init"], ["--grant", "migrate"],
+      ["--take-seat"], ["--release-seat"], ["--run", "start", "--assignment", "missing"],
+      ...["bind", "observe", "send", "wait", "collect", "continue", "stop"].map((operation) => ["--run", operation, "--attempt", "T-999-a1"])];
     for (const arm of arms) {
       const result = controlled(arm);
       expect(result.status, `${arm.join(" ")}: ${result.stderr}`).toBe(3);
-      expect(result.stderr).toContain(`route ${arm[0]}`); expect(result.stderr).toContain("workspace-split-unsupported");
+      expect(result.stderr).toContain(`route ${arm[0] ?? "legacy context"}`); expect(result.stderr).toContain("workspace-split-unsupported");
       expect(result.stderr).toContain("--records"); expect(result.stderr).toContain("controls:"); expect(result.stdout).toBe("");
     }
     expect(fx.state()).toEqual(before); expect(existsSync(path.join(fx.dir, "lane"))).toBe(false);

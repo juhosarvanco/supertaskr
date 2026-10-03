@@ -109,7 +109,7 @@ export function readCommittedBoard(options) {
   let recordsRoot;
   try { recordsRoot = realpathSync(workspace.recordsRoot); }
   catch (err) { refuse("records-repository-unavailable", `${workspace.recordsRoot}: ${message(err)}`); }
-  const top = git(recordsRoot, ["rev-parse", "--show-toplevel"], "records-repository-unavailable").toString("utf8").trim();
+  const top = git(recordsRoot, ["rev-parse", "--show-toplevel"], "records-repository-unavailable").toString("utf8").replace(/\n$/, "");
   if (realpathSync(top) !== recordsRoot) refuse("records-root-nested", `${recordsRoot} is not repository top level ${top}`);
   if (workspace.layout === "split" && recordsRoot === workspace.productRoot) refuse("records-layout-mismatch", "split binding resolves to the product repository");
   const recordsCommit = exactCommit(recordsRoot, recordsRevision);
@@ -168,5 +168,5 @@ export function captureTaskSnapshot(options) {
  * @param {{content: string}} snapshot
  */
 export function activeTaskContract(snapshot) {
-  return (snapshot.content.split(/^## (?:Implementation notes|Verdicts)\s*$/m)[0] ?? "").trimEnd();
+  return snapshot.content.split(/(?=^## )/m).filter((section) => !/^## (?:Implementation notes|Verdicts|History|Reports|Archived grant history)[ \t]*(?:\r?\n|$)/.test(section)).join("").trimEnd();
 }
