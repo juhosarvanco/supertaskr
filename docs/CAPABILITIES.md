@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1283 behaviours** — 1281 extracted sentences + 2 named-not-extracted (listed at the end) — across 43 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1296 behaviours** — 1294 extracted sentences + 2 named-not-extracted (listed at the end) — across 44 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -48,6 +48,8 @@ Census: **1283 behaviours** — 1281 extracted sentences + 2 named-not-extracted
 
 ## brief
 
+- workspace CLI inspection is standalone and every split development arm refuses before context or side effects
+- workspace CLI configured failures never default to stale records while product-only inspection avoids private records
 - the ROW SET is read from the role file, and the coverage runs both ways
 - the row set FOLLOWS the document — it is not pinned here
 - a contract table this command cannot read THROWS, never yields an empty contract
@@ -1420,6 +1422,20 @@ Census: **1283 behaviours** — 1281 extracted sentences + 2 named-not-extracted
 - FIXTURE: a redundant `contents: read` and an empty block are not widenings
 - FIXTURE: an exception row argues a grant — and a stale row is itself a failure
 - FIXTURE: an empty enumeration is a failure, never a green run
+
+## workspace
+
+- workspace import performs no command or write, with live instrumentation controls
+- workspace absent binding preserves colocated roots and overlapping safe new resource locations
+- workspace split association compares exact normalized complete root sets at the selected product commit
+- workspace association and binding refusals are named and never use a stale colocated records copy
+- workspace product-only mode never opens private records and hostname changes do not affect resolution
+- workspace shallow and incomplete product history cannot masquerade as a root-commit set
+- workspace resource keys use explicit roles and sources while path controls reject existing and new escapes
+- T-347 VC1 — workspace runtime aliases of actual Git metadata refuse by physical identity
+- T-347 VC2 — workspace resources refuse physical runtime storage through direct and symlink aliases
+- T-347 VC3 — workspace resources refuse separately named Git controls with safe-file positive controls
+- T-347 VC4 — workspace repository roots preserve legal trailing whitespace
 
 ## Not extracted — named rather than dropped
 

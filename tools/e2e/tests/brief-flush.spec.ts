@@ -619,7 +619,7 @@ test("the whole derivation reaches a SLOW reader too, and the loss is the READER
  * derived below is measured against a writer of that same single-write
  * shape, and it is still ONE READER'S answer rather than the boundary.
  */
-const LIVE_ARMS: ReadonlyArray<{ label: string; args: string[] }> = [
+const LIVE_ARMS: ReadonlyArray<{ label: string; args: string[]; format?: "workspace-json" }> = [
   { label: "--dispatch", args: ["--dispatch"] },
   // THE TWO ARMS THIS LIST DID NOT CARRY, AND BOTH ARE PAST THE LINE
   // (T-225-s2, taking `T-225-s7` and this card's own CORROBORATION).
@@ -635,6 +635,11 @@ const LIVE_ARMS: ReadonlyArray<{ label: string; args: string[] }> = [
   { label: "--task T-133 --preflight", args: ["--task", "T-133", "--preflight"] },
   { label: "--state", args: ["--state"] },
   { label: "--card T-133", args: ["--card", "T-133"] },
+  // Workspace inspection is a standalone read arm whose answer is JSON,
+  // including its association provenance. Drive both modes: product-only
+  // changes the association claim, so it is more than a sizing dial.
+  { label: "--workspace", args: ["--workspace"], format: "workspace-json" },
+  { label: "--workspace --product-only", args: ["--workspace", "--product-only"], format: "workspace-json" },
   // THE EXPRESS PATH'S DRY RUN (T-320). It is the one express invocation
   // this guard may drive: `--express` WRITES — a compact card into
   // docs/tasks, staged for the dispatch stamp's own commit — and
@@ -1110,10 +1115,24 @@ test("THE MARGIN GUARD: every live arm against a loss point DERIVED in this run,
           "around it, which is what a truncation looks like and is not what a moving board " +
           "looks like",
       ).toContain(viaSpawn.bytes);
-      expect(
-        unstampedLines(viaSpawn.text.trimEnd()),
-        `${arm.label}: a line arrived without its stamp, which is what a cut mid-line looks like`,
-      ).toEqual([]);
+      if (arm.format === "workspace-json") {
+        expect(whole.status, `${arm.label}: file inspection failed`).toBe(0);
+        expect(viaSpawn.status, `${arm.label}: pipe inspection failed`).toBe(0);
+        const answer = JSON.parse(viaSpawn.text);
+        const productOnly = arm.args.includes("--product-only");
+        expect(answer).toMatchObject({
+          productRoot: repoRoot, recordsRoot: repoRoot,
+          runtimeRoot: path.join(repoRoot, ".supertaskr"), layout: "colocated",
+          mode: productOnly ? "product-only" : "development",
+          association: { status: productOnly ? "unverified" : "unconfigured" },
+        });
+        expect(JSON.parse(whole.text), `${arm.label}: JSON changed through the pipe`).toEqual(answer);
+      } else {
+        expect(
+          unstampedLines(viaSpawn.text.trimEnd()),
+          `${arm.label}: a line arrived without its stamp, which is what a cut mid-line looks like`,
+        ).toEqual([]);
+      }
     }
 
     /**

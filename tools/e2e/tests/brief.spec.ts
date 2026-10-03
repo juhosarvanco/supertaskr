@@ -11,6 +11,7 @@ import {
   realpathSync,
   rmSync,
   statSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import os from "node:os";
@@ -19,6 +20,7 @@ import { expect, test } from "@playwright/test";
 import { parse as parseYaml } from "yaml";
 import { repoRoot } from "../preflight";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
+import { measureProductIdentity, WORKSPACE_ASSOCIATION_REL_PATH, WORKSPACE_BINDING_REL_PATH } from "../scripts/workspace.mjs";
 import { conventionsText, liveTaskCards, taskStatuses, trackedFiles } from "../scripts/docs-scan.mjs";
 // THE EARS PATTERNS ARE THE METHOD'S AND THEIR READER IS session-economics's
 // (T-320): `dispatch-brief.mjs` cannot import it — that module imports THIS
@@ -276,6 +278,104 @@ import { STANDING_BANDS } from "../scripts/health-bands.config.mjs";
  */
 
 const CLI = path.join(repoRoot, "tools", "e2e", "scripts", "brief.mjs");
+
+/** Minimal repositories deliberately omit the ordinary context documents. */
+function workspaceCliFixture() {
+  const dir = realpathSync(mkdtempSync(path.join(os.tmpdir(), "brief-workspace-T-347-")));
+  const product = path.join(dir, "product");
+  const records = path.join(dir, "records");
+  for (const root of [product, records]) {
+    mkdirSync(path.join(root, "docs/tasks"), { recursive: true });
+    fixtureGit(root, ["init", "--quiet", "--initial-branch=main"]);
+    writeFileSync(path.join(root, "docs/tasks/T-999-conflicting.md"), root === product ? "STALE PRODUCT RECORDS" : "CURRENT PRIVATE RECORDS");
+    fixtureGit(root, ["add", "."]);
+    fixtureGit(root, ["commit", "--quiet", "-m", "workspace fixture"]);
+  }
+  mkdirSync(path.join(product, ".supertaskr"));
+  const binding = { version: 1, projectId: "cli-fixture", productRoot: product, recordsRoot: records };
+  const identity = measureProductIdentity(product);
+  const association = { version: 1, projectId: binding.projectId, product: { objectFormat: identity.objectFormat, rootCommits: identity.rootCommits } };
+  writeFileSync(path.join(product, WORKSPACE_BINDING_REL_PATH), JSON.stringify(binding));
+  writeFileSync(path.join(records, WORKSPACE_ASSOCIATION_REL_PATH), JSON.stringify(association));
+  const run = (args: string[]) => spawnSync(process.execPath, [CLI, "--root", product, ...args], { encoding: "utf8", env: FIXTURE_GIT_ENV });
+  const snapshot = () => [product, records].map((root) => fixtureGit(root, ["status", "--porcelain", "--untracked-files=all"]) + "\n" +
+    readdirSync(path.join(product, ".supertaskr")).sort().map((name) => `${name}:${readFileSync(path.join(product, ".supertaskr", name), "utf8")}`).join("\n"));
+  return { dir, product, records, binding, run, snapshot };
+}
+
+test("workspace CLI inspection is standalone and every split development arm refuses before context or side effects", () => {
+  const fx = workspaceCliFixture();
+  try {
+    const before = fx.snapshot();
+    const inspection = fx.run(["--workspace"]);
+    expect(inspection.status, inspection.stderr).toBe(0);
+    expect(JSON.parse(inspection.stdout)).toMatchObject({ productRoot: fx.product, recordsRoot: fx.records, runtimeRoot: path.join(fx.product, ".supertaskr"), layout: "split", association: { status: "verified" } });
+    expect(JSON.parse(inspection.stdout).limitations.join(" ")).toContain("not activated");
+    const arms = [
+      ["--dispatch"], ["--dispatch-lane", "T-999", "--slug", "fixture"],
+      ["--task", "T-999"], ["--card", "T-999"], ["--state"], ["--task", "T-999", "--preflight"],
+      ["--task", "T-999", "--write-fence", path.join(fx.dir, "lane")],
+      ["--bench", "T-999"], ["--merge", "T-999"], ["--express", "fixture outcome", "--fence", "docs/tasks"],
+      ["--express-withdraw", "T-999"], ["--grant", "show"], ["--grant", "init", "--by", "fixture"],
+      ["--take-seat"], ["--release-seat"], ["--run", "start", "--assignment", "missing"],
+      ["--await", "missing", "--ceiling", "1"], ["--since", "2026-10-01T00:00:00Z"],
+    ];
+    for (const arm of arms) {
+      const result = fx.run(arm);
+      expect(result.status, `${arm.join(" ")}: ${result.stderr}`).toBe(3);
+      expect(result.stderr).toContain("workspace-split-unsupported");
+      expect(result.stderr).toContain("--workspace");
+      expect(result.stdout).toBe("");
+    }
+    for (const flags of [["--state"], ["--run", "start"], ["--help"], ["--grant", "show"], ["--full"]]) {
+      const result = fx.run(["--workspace", ...flags]);
+      expect(result.status).toBe(2);
+      expect(result.stderr).toContain("standalone");
+    }
+    expect(fx.snapshot()).toEqual(before);
+    expect(existsSync(path.join(fx.dir, "lane"))).toBe(false);
+  } finally { removeGitFixture(fx.dir, "workspace CLI arms T-347"); }
+});
+
+test("workspace CLI configured failures never default to stale records while product-only inspection avoids private records", () => {
+  const fx = workspaceCliFixture();
+  try {
+    const bindingPath = path.join(fx.product, WORKSPACE_BINDING_REL_PATH);
+    const valid = fx.run(["--workspace"]);
+    expect(valid.status, valid.stderr).toBe(0);
+    writeFileSync(bindingPath, "{");
+    for (const flags of [["--workspace"], ["--state"], ["--run", "stop", "--attempt", "none"], ["--grant", "show"]]) {
+      const result = fx.run(flags);
+      expect(result.status).toBe(3); expect(result.stderr).toContain("binding-malformed");
+      expect(result.stdout).toBe("");
+    }
+    rmSync(bindingPath); symlinkSync(path.join(fx.dir, "absent-binding"), bindingPath);
+    const unreadable = fx.run(["--run", "stop", "--attempt", "none"]);
+    expect(unreadable.status).toBe(3); expect(unreadable.stderr).toContain("binding-unreadable");
+    rmSync(bindingPath); writeFileSync(bindingPath, JSON.stringify(fx.binding));
+    const associationPath = path.join(fx.records, WORKSPACE_ASSOCIATION_REL_PATH);
+    const validAssociation = readFileSync(associationPath, "utf8");
+    writeFileSync(associationPath, JSON.stringify({ ...JSON.parse(validAssociation), projectId: "wrong-project" }));
+    const mismatch = fx.run(["--state"]);
+    expect(mismatch.status).toBe(3); expect(mismatch.stderr).toContain("association-project-mismatch");
+    rmSync(fx.records, { recursive: true });
+    const missing = fx.run(["--workspace"]);
+    expect(missing.status).toBe(3); expect(missing.stderr).toContain("records-root-unreadable");
+    const productOnly = fx.run(["--workspace", "--product-only"]);
+    expect(productOnly.status, productOnly.stderr).toBe(0);
+    expect(JSON.parse(productOnly.stdout).association.status).toBe("unverified");
+    rmSync(bindingPath);
+    const colocated = fx.run(["--workspace"]);
+    expect(colocated.status, colocated.stderr).toBe(0);
+    expect(JSON.parse(colocated.stdout)).toMatchObject({ layout: "colocated", recordsRoot: fx.product });
+    expect(fx.run(["--run", "unknown"]).stderr).not.toContain("workspace-unavailable");
+    expect(readdirSync(path.join(fx.product, ".supertaskr"))).toEqual([]);
+    rmSync(path.join(fx.product, ".git"), { recursive: true });
+    const legacy = fx.run(["--run", "unknown"]);
+    expect(legacy.status, legacy.stderr).toBe(2);
+    expect(legacy.stderr).not.toContain("workspace-unavailable");
+  } finally { removeGitFixture(fx.dir, "workspace CLI failures T-347"); }
+});
 
 /**
  * A worktree listing in git's own porcelain shape, built here rather than
