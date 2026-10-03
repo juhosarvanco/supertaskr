@@ -236,3 +236,50 @@ test("workspace resource keys use explicit roles and sources while path controls
     expect(() => resolveResource(workspace, { role: "product", path: "control/new.txt" })).toThrow(/resource-control-path/);
   } finally { removeGitFixture(fx.dir, "workspace resources T-347"); }
 });
+
+test("T-347 VC1 — workspace runtime aliases of actual Git metadata refuse by physical identity", () => {
+  const fx = fixture();
+  try {
+    const control = path.join(fx.product, "git-control-storage");
+    git(fx.product, ["init", "-q", "--separate-git-dir", control]);
+    expect(git(fx.product, ["rev-parse", "--absolute-git-dir"])).toBe(control);
+    expect(resolveWorkspace({ productRoot: fx.product }).runtimeRoot).toBe(path.join(fx.product, ".supertaskr"));
+    symlinkSync(control, path.join(fx.product, ".supertaskr"));
+    expect(() => resolveWorkspace({ productRoot: fx.product })).toThrow(/runtime-(control-path|repository)/);
+  } finally { removeGitFixture(fx.dir, "workspace Git runtime alias T-347"); }
+});
+
+test("T-347 VC2 — workspace resources refuse physical runtime storage through direct and symlink aliases", () => {
+  const fx = fixture();
+  try {
+    const storage = path.join(fx.product, "runtime-storage");
+    mkdirSync(storage);
+    writeFileSync(path.join(storage, "existing.json"), "{}");
+    symlinkSync(storage, path.join(fx.product, ".supertaskr"));
+    symlinkSync(storage, path.join(fx.product, "runtime-alias"));
+    const workspace = resolveWorkspace({ productRoot: fx.product });
+    expect(resolveResource(workspace, { role: "product", path: "safe/new.txt" }).physicalPath).toBe(path.join(fx.product, "safe/new.txt"));
+    for (const role of ["product", "records"]) {
+      for (const token of ["runtime-storage/existing.json", "runtime-storage/new/record.json", "runtime-alias/existing.json", "runtime-alias/new/record.json"]) {
+        expect(() => resolveResource(workspace, { role, path: token }), `${role}:${token}`).toThrow(/resource-control-path/);
+      }
+    }
+  } finally { removeGitFixture(fx.dir, "workspace physical runtime resources T-347"); }
+});
+
+test("T-347 VC3 — workspace resources refuse separately named Git controls with safe-file positive controls", () => {
+  const fx = fixture();
+  try {
+    const control = path.join(fx.product, "git-control-storage");
+    git(fx.product, ["init", "-q", "--separate-git-dir", control]);
+    expect(git(fx.product, ["rev-parse", "--absolute-git-dir"])).toBe(control);
+    symlinkSync(control, path.join(fx.product, "git-alias"));
+    const workspace = resolveWorkspace({ productRoot: fx.product });
+    expect(resolveResource(workspace, { role: "product", path: "safe/new.txt" }).physicalPath).toBe(path.join(fx.product, "safe/new.txt"));
+    for (const role of ["product", "records"]) {
+      for (const token of ["git-control-storage/config", "git-control-storage/new/record.json", "git-alias/config", "git-alias/new/record.json"]) {
+        expect(() => resolveResource(workspace, { role, path: token }), `${role}:${token}`).toThrow(/resource-control-path/);
+      }
+    }
+  } finally { removeGitFixture(fx.dir, "workspace physical Git resources T-347"); }
+});

@@ -107,6 +107,13 @@ function runtimeLocation(productRoot) {
     catch (err) { refuse("runtime-unreadable", errorText(err)); }
     if (!within(productRoot, physical)) refuse("runtime-escape", `${runtimeRoot} escapes the selected product checkout`);
     if (!lstatSync(physical).isDirectory()) refuse("runtime-location-invalid", "runtimeRoot must be a directory location");
+    const gitControlRoots = [
+      git(productRoot, ["rev-parse", "--absolute-git-dir"], "runtime-repository-unavailable"),
+      path.resolve(productRoot, git(productRoot, ["rev-parse", "--git-common-dir"], "runtime-repository-unavailable")),
+    ].map((control) => realpathSync(control));
+    if (gitControlRoots.some((control) => within(control, physical))) {
+      refuse("runtime-control-path", "runtimeRoot cannot be inside actual Git control data");
+    }
     if (path.relative(productRoot, physical).split(path.sep).some((part) => part.toLowerCase() === ".git")) {
       refuse("runtime-control-path", "runtimeRoot cannot be inside Git control data");
     }
@@ -268,6 +275,14 @@ export function resolveResource(workspace, resource, { legacyTokenMap = {} } = {
   const physicalPath = path.resolve(physicalAncestor, path.relative(ancestor, absolutePath));
   if (!within(root, physicalPath)) refuse("resource-symlink-escape", relativePath);
   safeRelative(path.relative(root, physicalPath).split(path.sep).join("/"));
+  const gitControlRoots = [
+    git(root, ["rev-parse", "--absolute-git-dir"], "resource-root-unavailable"),
+    path.resolve(root, git(root, ["rev-parse", "--git-common-dir"], "resource-root-unavailable")),
+  ].map((control) => realpathSync(control));
+  if (gitControlRoots.some((control) => within(control, physicalPath))) refuse("resource-control-path", relativePath);
+  if (statIfPresent(workspace.runtimeRoot, "runtime") !== null && within(realpathSync(workspace.runtimeRoot), physicalPath)) {
+    refuse("resource-control-path", relativePath);
+  }
   return { key: JSON.stringify([role, relativePath, source, resolutionRule]), role, relativePath, source, resolutionRule,
     root, absolutePath, physicalPath, colocatedOverlap: workspace.layout === "colocated",
     authority: "location only; no write ownership or disjoint reservation claim" };
