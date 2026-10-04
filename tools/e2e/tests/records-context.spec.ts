@@ -157,6 +157,26 @@ test("planning request files preserve duplicate member conflicts escaped identit
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
+test("T-350 VC1 — request UTF-8 refusal is independent of JSON syntax and request shape", () => {
+  const dir = mkdtempSync(path.join(os.tmpdir(), "planning-request-encoding-T-350-"));
+  const file = path.join(dir, "context-inputs-T-350.json");
+  try {
+    const valid = JSON.stringify({ version: 1, legacyTokenMap: {}, inputs: [
+      { role: "records", path: "docs/POLICY.md", selector: { kind: "whole" } },
+    ] });
+    writeFileSync(file, valid);
+    expect(readContextRequest(file).inputs[0]?.path).toBe("docs/POLICY.md");
+    const malformed = Buffer.from(valid);
+    const offset = malformed.indexOf("POLICY");
+    expect(offset).toBeGreaterThan(0);
+    malformed[offset] = 0xff;
+    const lossilyDecoded = JSON.parse(new TextDecoder("utf-8").decode(malformed));
+    expect(normalizeContextRequest(lossilyDecoded).inputs[0]?.path).toBe("docs/�OLICY.md");
+    writeFileSync(file, malformed);
+    expect(() => readContextRequest(file)).toThrow(/planning-request-unreadable.*encoding utf-8/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
 test("planning captures the complete committed component set and expands mixed roles with exact ownership through the public parser", async () => {
   const fx = fixture();
   try {
