@@ -1046,7 +1046,7 @@ test("THE MARGIN GUARD: every live arm against a loss point DERIVED in this run,
     fixtureGit(["init", "-q", "--initial-branch=main"]);
     // Populate the committed tree directly. These are fixture bytes, and no
     // filesystem read or write here opens the running project's docs tree.
-    const cardBlob = fixtureGit(["hash-object", "-w", "--stdin"], "---\nid: T-999\ntitle: Committed margin fixture\nfeature: F-03\nmilestone: 4\npriority: 1\nsize: M\nstatus: planned\ntouches: [product::safe/file]\n---\nActive contract\n");
+    const cardBlob = fixtureGit(["hash-object", "-w", "--stdin"], "---\nid: T-999\ntitle: Committed margin fixture\nfeature: F-03\nmilestone: 4\npriority: 1\nsize: M\nstatus: planned\ntouches: [\"product::safe/file\"]\n---\nActive contract\n");
     fixtureGit(["update-index", "--add", "--cacheinfo", `100644,${cardBlob},docs/tasks/T-999-margin.md`]);
     fixtureGit(["commit", "-qm", "fixture root"]);
     const associationBlob = fixtureGit(["hash-object", "-w", "--stdin"], JSON.stringify({ version: 1, projectId: "margin-fixture",

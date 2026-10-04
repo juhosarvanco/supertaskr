@@ -360,7 +360,7 @@ test("planning CLI validates standalone modifiers and selection data before pars
     cpSync(path.join(repoRoot, "lib/parser/dist"), path.join(fx.codeRoot, "lib/parser/dist"), { recursive: true });
     symlinkSync(path.join(repoRoot, "lib/parser/node_modules"), path.join(fx.codeRoot, "lib/parser/node_modules"));
     writeFileSync(selections, JSON.stringify({ version: 1, legacyTokenMap: {}, inputs: [] }));
-    writeFileSync(path.join(fx.records, fx.cardPath), "---\nid: T-999\ntitle: Planning CLI contract\nfeature: F-03\nmilestone: 4\npriority: 1\nsize: M\nstatus: planned\ntouches: [product::safe/file]\n---\nActive contract\n\n## Implementation notes\nPRIVATE CLI NOTES\n");
+    writeFileSync(path.join(fx.records, fx.cardPath), "---\nid: T-999\ntitle: Planning CLI contract\nfeature: F-03\nmilestone: 4\npriority: 1\nsize: M\nstatus: planned\ntouches: [\"product::safe/file\"]\n---\nActive contract\n\n## Implementation notes\nPRIVATE CLI NOTES\n");
     fixtureGit(fx.records, ["add", "."]); fixtureGit(fx.records, ["commit", "-qm", "planning contract"]);
     const ready = fx.state(); const output = fx.run(args);
     expect(output.status, output.stderr).toBe(0);
@@ -405,7 +405,7 @@ test("records CLI process and write controls admit real reads and split guards r
   try {
     cpSync(path.join(repoRoot, "lib/parser/dist"), path.join(fx.codeRoot, "lib/parser/dist"), { recursive: true });
     symlinkSync(path.join(repoRoot, "lib/parser/node_modules"), path.join(fx.codeRoot, "lib/parser/node_modules"));
-    writeFileSync(path.join(fx.records, fx.cardPath), fx.text("COMMITTED RECORDS").replace("status: planned\n", "status: planned\nfeature: F-03\nmilestone: 4\npriority: 1\nsize: M\ntouches: [product::safe/file]\n"));
+    writeFileSync(path.join(fx.records, fx.cardPath), fx.text("COMMITTED RECORDS").replace("status: planned\n", "status: planned\nfeature: F-03\nmilestone: 4\npriority: 1\nsize: M\ntouches: [\"product::safe/file\"]\n"));
     for (const root of [fx.product, fx.records]) {
       writeFileSync(path.join(root, "docs/POLICY.md"), root === fx.product ? "PRODUCT CLI POLICY" : "RECORDS CLI POLICY");
       fixtureGit(root, ["add", "docs"]); fixtureGit(root, ["commit", "-qm", "planning inputs"]);

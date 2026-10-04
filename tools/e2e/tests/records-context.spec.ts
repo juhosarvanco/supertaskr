@@ -39,8 +39,8 @@ function fixture(recordsLeaf = "records") {
     put(root, CARD, card(root === product ? "STALE PRODUCT CONTRACT" : undefined));
     put(root, "docs/POLICY.md", `# Policy\n\n## Fence\n${root === product ? "PRODUCT BASE POLICY" : "RECORDS COMMIT POLICY"}\n\n### Child\nKept child.\n\n## Other\nUNSELECTED POLICY\n`);
     put(root, "method/roles/executor.md", root === product ? "PRODUCT METHOD CONTEXT\n" : "WRONG RECORDS METHOD\n");
-    put(root, COMPONENT, root === product ? "STALE PRODUCT REGISTRY" : "---\nid: C-01\nname: Mixed\npaths: [product::src/**, records::rules/**]\ntouch_slugs: [mixed]\ndepends_on: [C-02]\n---\nPRIVATE COMPONENT BODY\n");
-    put(root, SUPPORT, "---\nid: C-02\nname: Support\npaths: [product::other/**]\ntouch_slugs: [unused]\n---\nUNRELATED COMPONENT BODY\n");
+    put(root, COMPONENT, root === product ? "STALE PRODUCT REGISTRY" : "---\nid: C-01\nname: Mixed\npaths: [\"product::src/**\", \"records::rules/**\"]\ntouch_slugs: [mixed]\ndepends_on: [C-02]\n---\nPRIVATE COMPONENT BODY\n");
+    put(root, SUPPORT, "---\nid: C-02\nname: Support\npaths: [\"product::other/**\"]\ntouch_slugs: [unused]\n---\nUNRELATED COMPONENT BODY\n");
     commit(root, "independent fixture root");
   }
   mkdirSync(path.join(product, ".supertaskr"));
