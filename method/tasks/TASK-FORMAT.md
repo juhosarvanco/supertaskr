@@ -187,6 +187,54 @@ and the reasoning is worth keeping: *every* out-of-fence edit is made
 because some criterion seemed to want it, so an exception for criteria
 nullifies the fence entirely.
 
+## Repository-qualified planning fences
+
+`touches:` and component `paths:` remain string arrays. A qualified path
+is `product::path` or `records::path`, where `path` is a repository-relative
+file or directory domain. A qualification designates a path, never a
+component slug. Bare component slugs expand through the supplied frozen
+registry's own slug fields and paths; a mixed component retains every
+path's role, source string and component identity. There is one registry
+expansion and one normalized containment rule, not a second component table.
+
+In a split workspace, every unqualified expanded path needs an explicit
+ownership mapping for its EXACT TRIMMED SOURCE STRING, before path
+normalization. Resolve the bare slug first, then map each component path;
+mapping the slug itself does not map its paths. Missing or multiple owners
+refuse the expansion. A qualified token fixes its role and cannot be
+remapped. An unqualified path mapped to records may share its spelling
+with a qualified product path without a mapping conflict. Directory names,
+card residence, branches and file existence never infer ownership.
+Colocated legacy paths retain normalization, slug expansion, own-card
+exclusion and overlap behavior without requiring that map.
+
+Every qualified expansion and comparison requires caller-measured
+canonical filesystem roots AND canonical Git common-directory identities
+for both roles. Role, association and commit ids cannot replace them.
+Colocated roots must agree on their Git identity. Distinct roots sharing
+a Git common directory, nested roots, missing facts and comparison facts
+that differ from the captured expansion facts are unsupported and unusable.
+The pure model validates supplied facts; it does not measure the filesystem
+or resolve symlinks. Independent supported roots separate same-spelled
+domains; colocated role aliases collide by normalized path containment.
+
+Unknown namespaces, malformed qualifiers, absolute paths, root escape,
+control characters, Git/runtime control paths and unresolved slugs refuse
+the expansion with named issues. Qualified paths reject traversal segments;
+ordinary colocated legacy paths keep their existing lexical normalization.
+The protocol's task-directory refusal and own-card exclusion apply only
+after physical facts are valid, to the ACTUAL RECORDS ROOT. Exclusions are
+keyed by that canonical root and normalized domain, so the same-spelled
+product file in an independent repository is still a product domain.
+Any unusable input makes comparison unusable, even with overlap witnesses.
+
+These are PLANNING DOMAINS, not write authority or live reservations.
+A directory domain is describable here without being a writable reservation.
+The legacy one-repository expander refuses qualifications, including in
+component paths. Split writers, dispatch reservations, physical bindings
+and landing qualification need their own contract before they may consume
+this grammar as authority.
+
 ## Session syntax
 
 `codex` = default session policy (fresh) · `codex@fresh` = explicit fresh ·

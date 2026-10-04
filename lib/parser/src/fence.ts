@@ -354,14 +354,24 @@ export function normalizeFenceToken(raw: string): string {
  * `__proto__` must not resolve against inherited state.
  */
 export function slugPathIndex(components: readonly ComponentRecord[]): Map<string, SlugExpansion> {
-  const map = new Map<string, SlugExpansion>();
+  return new Map(
+    [...componentFenceIndex(components)].map(([slug, { components, paths }]) => [
+      slug, { components, paths },
+    ]),
+  );
+}
+
+/** One registry join for both models; retain pre-normalization path origins. */
+function componentFenceIndex(components: readonly ComponentRecord[]) {
+  const map = new Map<string, SlugExpansion & { origins: { component: string; source: string }[] }>();
   for (const component of components) {
     for (const slug of component.touchSlugs) {
       const key = slug.trim();
       if (key === '') continue;
-      const held = map.get(key) ?? { components: [], paths: [] };
+      const held = map.get(key) ?? { components: [], paths: [], origins: [] };
       if (!held.components.includes(component.id)) held.components.push(component.id);
       for (const path of component.paths) {
+        held.origins.push({ component: component.id, source: path.trim() });
         const normalized = normalizeFenceToken(path);
         if (normalized !== '' && !held.paths.includes(normalized)) held.paths.push(normalized);
       }
@@ -447,7 +457,7 @@ export function expandFence(
   components: readonly ComponentRecord[],
   options: ExpandFenceOptions = {},
 ): Fence {
-  const slugs = slugPathIndex(components);
+  const slugs = componentFenceIndex(components);
   const known = new Set<string>();
   for (const path of options.knownPaths ?? []) {
     const normalized = normalizeFenceToken(path);
@@ -500,6 +510,14 @@ export function expandFence(
     // it obviously means rather than an unresolved word one character
     // away from one. Normalisation is the identity on a bare slug.
     const slug = slugs.get(normalized);
+
+    // Legacy write consumers cannot treat a qualified path as a filesystem name.
+    if (raw.includes('::') || slug?.origins.some(({ source }) => source.includes('::'))) {
+      unusable.push(raw);
+      tokens.push({ raw, normalized, kind: 'rejected', components: [], paths: [] });
+      invalid(`entry ${JSON.stringify(raw)} contains a repository-qualified path; the legacy one-repository fence cannot resolve qualifications, including component paths. Use the pure qualified planning model, never this expansion as split write authority`);
+      continue;
+    }
 
     if (slug !== undefined) {
       // A SLUG IS A TOKEN TOO, AND ITS DOMAIN IS THE SET IT EXPANDS TO
@@ -738,4 +756,285 @@ export function compareFences(a: Fence, b: Fence): FenceComparison {
   const verdict: FenceVerdict =
     witnesses.length > 0 ? 'overlapping' : unusable.length > 0 ? 'unusable' : 'disjoint';
   return { verdict, witnesses, unusable };
+}
+
+/** Repository roles are labels; neither one proves a physical identity. */
+export type FenceRepositoryRole = 'product' | 'records';
+
+/** Measured by the caller (canonical filesystem paths, not association/commit ids). */
+export interface FenceRepositoryIdentity {
+  readonly filesystemRoot: string;
+  readonly gitCommonDirectory: string;
+}
+export type FenceRepositories = Readonly<Record<FenceRepositoryRole, FenceRepositoryIdentity>>;
+/** Keys are exact trimmed source strings, before normalization and after slug expansion. */
+export type FenceLegacyOwnership = ReadonlyMap<string, readonly FenceRepositoryRole[]>;
+export type QualifiedFenceRule = 'qualified' | 'legacy-map' | 'colocated-legacy';
+
+/** A resolved path and its origin; describes a planning domain, never a reservation. */
+export interface QualifiedFencePath extends FenceRepositoryIdentity {
+  readonly raw: string;
+  readonly source: string;
+  readonly role: FenceRepositoryRole;
+  readonly domain: string;
+  readonly component?: string;
+  readonly rule: QualifiedFenceRule;
+}
+export interface QualifiedFenceToken {
+  readonly raw: string;
+  readonly kind: FenceTokenKind;
+  readonly paths: readonly QualifiedFencePath[];
+}
+export type QualifiedFenceIssueCode =
+  | 'missing-identity' | 'noncanonical-identity' | 'inconsistent-identity'
+  | 'shared-common-directory' | 'nested-roots' | 'comparison-identity-mismatch'
+  | 'empty-fence' | 'unknown-qualifier' | 'malformed-qualifier' | 'unsafe-domain'
+  | 'unresolved-slug' | 'missing-ownership' | 'ambiguous-ownership'
+  | 'qualified-remap' | 'unfenceable-domain';
+export interface QualifiedFenceIssue {
+  readonly code: QualifiedFenceIssueCode;
+  readonly message: string;
+  readonly token?: string;
+  readonly component?: string;
+}
+export interface QualifiedFenceExclusion {
+  readonly filesystemRoot: string;
+  readonly domain: string;
+}
+export interface QualifiedFence {
+  readonly id?: string;
+  /** Snapshot of supplied facts, recursively frozen; no filesystem measurement is performed. */
+  readonly repositories: FenceRepositories;
+  readonly tokens: readonly QualifiedFenceToken[];
+  /** Resolved origins, including distinct roles and component paths sharing one domain. */
+  readonly paths: readonly QualifiedFencePath[];
+  readonly excluded: readonly QualifiedFenceExclusion[];
+  readonly issues: readonly QualifiedFenceIssue[];
+  readonly usable: boolean;
+}
+export interface ExpandQualifiedFenceOptions {
+  readonly repositories: FenceRepositories;
+  readonly legacyOwnership?: FenceLegacyOwnership;
+  readonly knownPaths?: Iterable<string>;
+  /** Repository-relative records card path; '' disables exclusion. */
+  readonly ownFile?: string;
+}
+export interface QualifiedFenceWitness {
+  readonly left: QualifiedFencePath;
+  readonly right: QualifiedFencePath;
+  readonly domain: string;
+}
+export interface QualifiedFenceComparison {
+  readonly verdict: FenceVerdict;
+  readonly witnesses: readonly QualifiedFenceWitness[];
+  readonly issues: readonly QualifiedFenceIssue[];
+}
+
+const FENCE_ROLES: readonly FenceRepositoryRole[] = ['product', 'records'];
+const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f-\u009f]/;
+
+/** Lexical validation of claimed canonical measurements, never realpath or Git I/O. */
+function canonicalAbsolute(path: unknown): path is string {
+  if (typeof path !== 'string' || CONTROL_CHARACTERS.test(path) || path.trim() !== path) return false;
+  if (!/^(?:\/|[A-Za-z]:\/)/.test(path) || path.includes('\\')) return false;
+  const tail = path.replace(/^(?:\/|[A-Za-z]:\/)/, '');
+  return tail === '' || !tail.split('/').some((segment) => segment === '' || segment === '.' || segment === '..');
+}
+
+function identityIssues(repositories: FenceRepositories): QualifiedFenceIssue[] {
+  const issues: QualifiedFenceIssue[] = [];
+  for (const role of FENCE_ROLES) {
+    const identity = repositories?.[role];
+    if (!identity?.filesystemRoot || !identity?.gitCommonDirectory) {
+      issues.push({ code: 'missing-identity', message: `${role} needs a measured canonical filesystem root and Git common directory` });
+    } else if (!canonicalAbsolute(identity.filesystemRoot) || !canonicalAbsolute(identity.gitCommonDirectory)) {
+      issues.push({ code: 'noncanonical-identity', message: `${role} identity paths must be canonical absolute filesystem paths` });
+    }
+  }
+  if (issues.length !== 0) return issues;
+  const { product, records } = repositories;
+  if (product.filesystemRoot === records.filesystemRoot) {
+    if (product.gitCommonDirectory !== records.gitCommonDirectory) {
+      issues.push({ code: 'inconsistent-identity', message: 'Colocated roots disagree about their Git common directory' });
+    }
+  } else {
+    if (product.gitCommonDirectory === records.gitCommonDirectory) {
+      issues.push({ code: 'shared-common-directory', message: 'Distinct roots sharing a Git common directory are unsupported' });
+    }
+    // Root '/' (or a drive root) already owns its separator.
+    const rootDomain = (root: string) => root.endsWith('/') ? root.slice(0, -1) : root;
+    if (sharedDomain(rootDomain(product.filesystemRoot), rootDomain(records.filesystemRoot)) !== undefined) {
+      issues.push({ code: 'nested-roots', message: 'Nested canonical filesystem roots are unsupported' });
+    }
+  }
+  return issues;
+}
+
+/** Validate before copying so missing facts remain a refusal, rather than a thrown exception. */
+function captureRepositories(repositories: FenceRepositories): FenceRepositories {
+  return Object.freeze(Object.fromEntries(FENCE_ROLES.map((role) => [role, Object.freeze({
+    filesystemRoot: repositories?.[role]?.filesystemRoot ?? '',
+    gitCommonDirectory: repositories?.[role]?.gitCommonDirectory ?? '',
+  })])) as Record<FenceRepositoryRole, FenceRepositoryIdentity>);
+}
+
+function qualifiedDomain(source: string, colocatedLegacy = false): string | undefined {
+  const slash = (colocatedLegacy ? normalizeFenceToken(source) : source).replace(/\\/g, '/');
+  if (CONTROL_CHARACTERS.test(source) || /^(?:\/|[A-Za-z]:)/.test(slash) || source.includes(':')) return undefined;
+  if (slash.split('/').some((segment) => segment === '..' || segment === '.git' || segment === '.supertaskr')) return undefined;
+  const domain = normalizeFenceToken(source);
+  return domain === '' || DOT_DOMAIN.test(domain) || GLOB_CHARS.test(domain) ? undefined : domain;
+}
+
+/**
+ * T-349: qualified pure planning expansion. Both roles' measured physical facts
+ * are required, even for one participating role. This function cannot measure,
+ * reserve or enforce anything. Components use the same registry join as legacy
+ * expansion; strings remain strings in task and component records.
+ */
+export function expandQualifiedFence(
+  task: Pick<TaskRecord, 'touches'> & Partial<Pick<TaskRecord, 'id' | 'file'>>,
+  components: readonly ComponentRecord[],
+  options: ExpandQualifiedFenceOptions,
+): QualifiedFence {
+  const repositories = captureRepositories(options.repositories);
+  const issues = identityIssues(repositories);
+  const identitiesValid = issues.length === 0;
+  const colocated = identitiesValid && repositories.product.filesystemRoot === repositories.records.filesystemRoot;
+  const index = componentFenceIndex(components);
+  const known = new Set([...options.knownPaths ?? []].map(normalizeFenceToken));
+  const tokens: QualifiedFenceToken[] = [];
+  const paths: QualifiedFencePath[] = [];
+  const excluded: QualifiedFenceExclusion[] = [];
+  const problem = (code: QualifiedFenceIssueCode, message: string, token: string, component?: string) => {
+    issues.push({ code, message, token, ...(component !== undefined ? { component } : {}) });
+  };
+  const ownSource = options.ownFile ?? task.file ?? '';
+  const ownDomain = ownSource === '' ? undefined : qualifiedDomain(ownSource.trim());
+  if (ownSource !== '' && ownDomain === undefined) {
+    problem('unsafe-domain', 'Own card must name a safe records-relative file domain', ownSource);
+  }
+  if (task.touches.length === 0) issues.push({ code: 'empty-fence', message: 'No fence was declared' });
+
+  const resolve = (raw: string, source: string, component?: string): QualifiedFencePath | undefined => {
+    let role: FenceRepositoryRole;
+    let rule: QualifiedFenceRule;
+    let pathSource = source;
+    if (source.includes(':')) {
+      const match = /^([^:]+)::([^:]+)$/.exec(source);
+      if (match === null) {
+        problem('malformed-qualifier', `Malformed qualified path ${JSON.stringify(source)}`, raw, component);
+        return undefined;
+      }
+      if (match[1] !== 'product' && match[1] !== 'records') {
+        problem('unknown-qualifier', `Unknown repository qualifier ${JSON.stringify(match[1])}`, raw, component);
+        return undefined;
+      }
+      if (options.legacyOwnership?.has(source)) {
+        problem('qualified-remap', `Qualified path ${JSON.stringify(source)} cannot be remapped`, raw, component);
+        return undefined;
+      }
+      role = match[1];
+      rule = 'qualified';
+      pathSource = match[2]!;
+    } else {
+      const normalized = normalizeFenceToken(source);
+      if (component === undefined && !normalized.includes('/') && !normalized.includes('.') && !/[/*]$/.test(source) && !known.has(normalized)) {
+        problem('unresolved-slug', `Token ${JSON.stringify(source)} is neither a registry slug nor a declared legacy path`, raw);
+        return undefined;
+      }
+      const owners = options.legacyOwnership?.get(source);
+      if (owners !== undefined) {
+        const owner = owners[0];
+        if (owners.length !== 1 || owner === undefined || !FENCE_ROLES.includes(owner)) {
+          problem('ambiguous-ownership', `Legacy path ${JSON.stringify(source)} needs exactly one valid owner`, raw, component);
+          return undefined;
+        }
+        role = owner;
+        rule = 'legacy-map';
+      } else if (colocated) {
+        role = 'product';
+        rule = 'colocated-legacy';
+      } else {
+        problem('missing-ownership', `Legacy path ${JSON.stringify(source)} needs an explicit exact ownership mapping`, raw, component);
+        return undefined;
+      }
+    }
+    const domain = qualifiedDomain(pathSource, colocated && rule !== 'qualified');
+    if (domain === undefined) {
+      problem('unsafe-domain', `Unsafe repository-relative domain ${JSON.stringify(pathSource)}`, raw, component);
+      return undefined;
+    }
+    const identity = repositories[role];
+    // Apply protocol rules only after the supplied physical facts are valid.
+    if (identitiesValid && identity.filesystemRoot === repositories.records.filesystemRoot) {
+      if (unfenceableWithin(domain) !== undefined) {
+        problem('unfenceable-domain', `Domain ${JSON.stringify(domain)} contains the records task directory`, raw, component);
+        return undefined;
+      }
+      if (ownDomain !== undefined && sharedDomain(domain, ownDomain) === ownDomain) {
+        if (!excluded.some((entry) => entry.filesystemRoot === identity.filesystemRoot && entry.domain === ownDomain)) {
+          excluded.push({ filesystemRoot: identity.filesystemRoot, domain: ownDomain });
+        }
+      }
+    }
+    return Object.freeze({ raw, source, role, domain, rule, ...identity, ...(component !== undefined ? { component } : {}) });
+  };
+
+  for (const entry of task.touches) {
+    const raw = entry.trim();
+    // A qualification always designates a path, never a role-qualified slug.
+    const slug = raw.includes(':') ? undefined : index.get(normalizeFenceToken(raw));
+    const before = issues.length;
+    const origins = slug === undefined ? [{ source: raw, component: undefined }] : slug.origins;
+    if (origins.length === 0) problem('unresolved-slug', `Component slug ${JSON.stringify(raw)} declares no paths`, raw);
+    const resolved = origins.flatMap(({ source, component }) => {
+      const path = resolve(raw, source, component);
+      return path === undefined ? [] : [path];
+    });
+    paths.push(...resolved.filter((path) => !excluded.some((exclusion) => exclusion.filesystemRoot === path.filesystemRoot && exclusion.domain === path.domain)));
+    tokens.push(Object.freeze({ raw, kind: issues.length > before ? 'rejected' : slug === undefined ? 'path' : 'slug', paths: Object.freeze(resolved) }));
+  }
+  return Object.freeze({
+    ...(task.id !== undefined ? { id: task.id } : {}), repositories,
+    tokens: Object.freeze(tokens), paths: Object.freeze(paths),
+    excluded: Object.freeze(excluded.map((entry) => Object.freeze(entry))),
+    issues: Object.freeze(issues.map((issue) => Object.freeze(issue))), usable: issues.length === 0,
+  });
+}
+
+/** Compare supplied and captured physical facts; any unusable input dominates witnesses. */
+export function compareQualifiedFences(
+  a: QualifiedFence,
+  b: QualifiedFence,
+  repositories: FenceRepositories,
+): QualifiedFenceComparison {
+  const issues = [...a.issues, ...b.issues, ...identityIssues(repositories)];
+  let identitiesValid = identityIssues(repositories).length === 0;
+  for (const fence of [a, b]) {
+    for (const role of FENCE_ROLES) {
+      const supplied = repositories?.[role];
+      const captured = fence.repositories[role];
+      if (supplied?.filesystemRoot !== captured.filesystemRoot || supplied?.gitCommonDirectory !== captured.gitCommonDirectory) {
+        identitiesValid = false;
+        issues.push({ code: 'comparison-identity-mismatch', message: `${role} comparison facts disagree with captured expansion facts` });
+      }
+    }
+  }
+  const witnesses: QualifiedFenceWitness[] = [];
+  if (identitiesValid) {
+    const excluded = [...a.excluded, ...b.excluded];
+    for (const left of a.paths) {
+      for (const right of b.paths) {
+        if (left.filesystemRoot !== right.filesystemRoot) continue;
+        const domain = sharedDomain(left.domain, right.domain);
+        if (domain === undefined || excluded.some((entry) => entry.filesystemRoot === left.filesystemRoot && entry.domain === domain)) continue;
+        witnesses.push({ left, right, domain });
+      }
+    }
+  }
+  return {
+    verdict: !a.usable || !b.usable || issues.length !== 0 ? 'unusable' : witnesses.length > 0 ? 'overlapping' : 'disjoint',
+    witnesses, issues,
+  };
 }

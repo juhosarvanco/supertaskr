@@ -4950,7 +4950,7 @@
       "id": "f:app/src-tauri/src/agent/kit.rs",
       "path": "app/src-tauri/src/agent/kit.rs",
       "lang": "rust",
-      "hash": "blake3:52e56ad499d228687e52303fcc0094c5e9d0bde5f7114301ee80911d5bed9150",
+      "hash": "blake3:5c65b1c30739e9f78823fb698368b225c794fdffba85d11a8bba779b8c832a5b",
       "loc": 1450,
       "symbols": [
         {
@@ -25283,9 +25283,19 @@
       "id": "f:lib/parser/src/fence.ts",
       "path": "lib/parser/src/fence.ts",
       "lang": "ts",
-      "hash": "blake3:e33a1e9e14b2ff3f7758ac40f7d16046810ccce6eaa524f8d4a26ee16fa902d5",
-      "loc": 741,
+      "hash": "blake3:602258f9de7d405af0931f5e9397300ae7af34c8b2743461a8bbe8e4abe318af",
+      "loc": 1040,
       "symbols": [
+        {
+          "id": "s:lib/parser/src/fence.ts#CONTROL_CHARACTERS",
+          "name": "CONTROL_CHARACTERS",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            834,
+            834
+          ]
+        },
         {
           "id": "s:lib/parser/src/fence.ts#DOT_DOMAIN",
           "name": "DOT_DOMAIN",
@@ -25307,6 +25317,26 @@
           ]
         },
         {
+          "id": "s:lib/parser/src/fence.ts#ExpandQualifiedFenceOptions",
+          "name": "ExpandQualifiedFenceOptions",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            815,
+            821
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#FENCE_ROLES",
+          "name": "FENCE_ROLES",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            833,
+            833
+          ]
+        },
+        {
           "id": "s:lib/parser/src/fence.ts#Fence",
           "name": "Fence",
           "kind": "interface",
@@ -25324,6 +25354,46 @@
           "range": [
             175,
             181
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#FenceLegacyOwnership",
+          "name": "FenceLegacyOwnership",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            771,
+            771
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#FenceRepositories",
+          "name": "FenceRepositories",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            769,
+            769
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#FenceRepositoryIdentity",
+          "name": "FenceRepositoryIdentity",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            765,
+            768
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#FenceRepositoryRole",
+          "name": "FenceRepositoryRole",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            762,
+            762
           ]
         },
         {
@@ -25377,6 +25447,96 @@
           ]
         },
         {
+          "id": "s:lib/parser/src/fence.ts#QualifiedFence",
+          "name": "QualifiedFence",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            804,
+            814
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#QualifiedFenceComparison",
+          "name": "QualifiedFenceComparison",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            827,
+            831
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#QualifiedFenceExclusion",
+          "name": "QualifiedFenceExclusion",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            800,
+            803
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#QualifiedFenceIssue",
+          "name": "QualifiedFenceIssue",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            794,
+            799
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#QualifiedFenceIssueCode",
+          "name": "QualifiedFenceIssueCode",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            788,
+            793
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#QualifiedFencePath",
+          "name": "QualifiedFencePath",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            775,
+            782
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#QualifiedFenceRule",
+          "name": "QualifiedFenceRule",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            772,
+            772
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#QualifiedFenceToken",
+          "name": "QualifiedFenceToken",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            783,
+            787
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#QualifiedFenceWitness",
+          "name": "QualifiedFenceWitness",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            822,
+            826
+          ]
+        },
+        {
           "id": "s:lib/parser/src/fence.ts#SlugExpansion",
           "name": "SlugExpansion",
           "kind": "interface",
@@ -25397,13 +25557,53 @@
           ]
         },
         {
+          "id": "s:lib/parser/src/fence.ts#canonicalAbsolute",
+          "name": "canonicalAbsolute",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            837,
+            842
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#captureRepositories",
+          "name": "captureRepositories",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            874,
+            879
+          ]
+        },
+        {
           "id": "s:lib/parser/src/fence.ts#compareFences",
           "name": "compareFences",
           "kind": "function",
           "exported": true,
           "range": [
-            694,
-            741
+            712,
+            759
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#compareQualifiedFences",
+          "name": "compareQualifiedFences",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            1007,
+            1040
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#componentFenceIndex",
+          "name": "componentFenceIndex",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            365,
+            383
           ]
         },
         {
@@ -25412,8 +25612,28 @@
           "kind": "function",
           "exported": true,
           "range": [
-            445,
-            668
+            455,
+            686
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#expandQualifiedFence",
+          "name": "expandQualifiedFence",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            895,
+            1004
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#identityIssues",
+          "name": "identityIssues",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            844,
+            871
           ]
         },
         {
@@ -25427,13 +25647,23 @@
           ]
         },
         {
+          "id": "s:lib/parser/src/fence.ts#qualifiedDomain",
+          "name": "qualifiedDomain",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            881,
+            887
+          ]
+        },
+        {
           "id": "s:lib/parser/src/fence.ts#sharedDomain",
           "name": "sharedDomain",
           "kind": "function",
           "exported": false,
           "range": [
-            386,
-            393
+            396,
+            403
           ]
         },
         {
@@ -25443,7 +25673,7 @@
           "exported": true,
           "range": [
             356,
-            373
+            362
           ]
         },
         {
@@ -25452,8 +25682,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            416,
-            421
+            426,
+            431
           ]
         }
       ]
@@ -26622,8 +26852,8 @@
       "id": "f:lib/parser/src/pure.ts",
       "path": "lib/parser/src/pure.ts",
       "lang": "ts",
-      "hash": "blake3:161635ccff7f0ce12cba52ca2bc5433338571d51e19a2b1726a8fb43ebfa9fbb",
-      "loc": 152,
+      "hash": "blake3:0a4b34535750100ef314b1dc462fb29827576ec3c7eb402c9427ba27106b41b0",
+      "loc": 168,
       "symbols": []
     },
     {
@@ -27403,8 +27633,8 @@
       "id": "f:lib/parser/test/fence.test.ts",
       "path": "lib/parser/test/fence.test.ts",
       "lang": "ts",
-      "hash": "blake3:4da2341b357184335ce3704f7981ae45ba4a4a499460da985edabb995c8fa692",
-      "loc": 1372,
+      "hash": "blake3:8992cadce69cf76a6fa907b5d0b3e5a5e12e2ae97c281804b4b8c46905fb52fb",
+      "loc": 1604,
       "symbols": [
         {
           "id": "s:lib/parser/test/fence.test.ts#beforeInteriorDots",
@@ -27412,8 +27642,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            1014,
-            1020
+            1246,
+            1252
           ]
         },
         {
@@ -27422,8 +27652,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            28,
-            28
+            32,
+            32
           ]
         },
         {
@@ -27432,8 +27662,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            32,
-            36
+            36,
+            40
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/fence.test.ts#colocatedRoots",
+          "name": "colocatedRoots",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            123,
+            126
           ]
         },
         {
@@ -27442,8 +27682,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            42,
-            46
+            46,
+            50
           ]
         },
         {
@@ -27452,8 +27692,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            27,
-            27
+            31,
+            31
           ]
         },
         {
@@ -27462,8 +27702,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            65,
-            79
+            69,
+            83
           ]
         },
         {
@@ -27472,8 +27712,38 @@
           "kind": "function",
           "exported": false,
           "range": [
-            38,
-            40
+            42,
+            44
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/fence.test.ts#independentRoots",
+          "name": "independentRoots",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            119,
+            122
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/fence.test.ts#issueCodes",
+          "name": "issueCodes",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            130,
+            130
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/fence.test.ts#ownership",
+          "name": "ownership",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            129,
+            129
           ]
         },
         {
@@ -27482,8 +27752,18 @@
           "kind": "const",
           "exported": false,
           "range": [
-            26,
-            26
+            30,
+            30
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/fence.test.ts#qualified",
+          "name": "qualified",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            127,
+            128
           ]
         },
         {
@@ -27492,8 +27772,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            25,
-            25
+            29,
+            29
           ]
         },
         {
@@ -27502,8 +27782,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            88,
-            99
+            92,
+            103
           ]
         },
         {
@@ -27512,8 +27792,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            102,
-            113
+            106,
+            117
           ]
         },
         {
@@ -27522,8 +27802,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            59,
-            62
+            63,
+            66
           ]
         }
       ]
@@ -35262,16 +35542,32 @@
       "kind": "import",
       "symbols": [
         "ExpandFenceOptions",
+        "ExpandQualifiedFenceOptions",
         "Fence",
         "FenceComparison",
+        "FenceLegacyOwnership",
+        "FenceRepositories",
+        "FenceRepositoryIdentity",
+        "FenceRepositoryRole",
         "FenceToken",
         "FenceTokenKind",
         "FenceVerdict",
         "FenceWitness",
+        "QualifiedFence",
+        "QualifiedFenceComparison",
+        "QualifiedFenceExclusion",
+        "QualifiedFenceIssue",
+        "QualifiedFenceIssueCode",
+        "QualifiedFencePath",
+        "QualifiedFenceRule",
+        "QualifiedFenceToken",
+        "QualifiedFenceWitness",
         "SlugExpansion",
         "UNFENCEABLE_PATHS",
         "compareFences",
+        "compareQualifiedFences",
         "expandFence",
+        "expandQualifiedFence",
         "normalizeFenceToken",
         "slugPathIndex"
       ],
@@ -35682,7 +35978,9 @@
         "Fence",
         "UNFENCEABLE_PATHS",
         "compareFences",
+        "compareQualifiedFences",
         "expandFence",
+        "expandQualifiedFence",
         "normalizeFenceToken",
         "slugPathIndex"
       ]
@@ -35693,6 +35991,16 @@
       "kind": "import",
       "symbols": [
         "parseProject"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/fence.test.ts",
+      "to": "f:lib/parser/src/pure.ts",
+      "kind": "import",
+      "symbols": [
+        "*",
+        "FenceRepositories",
+        "FenceRepositoryRole"
       ]
     },
     {
@@ -35709,6 +36017,7 @@
       "to": "p:node:fs",
       "kind": "import",
       "symbols": [
+        "readFileSync",
         "readdirSync"
       ]
     },
@@ -44597,6 +44906,24 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:lib/parser/src/fence.ts#ExpandQualifiedFenceOptions",
+      "to": "s:lib/parser/src/fence.ts#FenceLegacyOwnership",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#ExpandQualifiedFenceOptions",
+      "to": "s:lib/parser/src/fence.ts#FenceRepositories",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#FENCE_ROLES",
+      "to": "s:lib/parser/src/fence.ts#FenceRepositoryRole",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:lib/parser/src/fence.ts#Fence",
       "to": "s:lib/parser/src/fence.ts#FenceToken",
       "kind": "type_ref",
@@ -44621,8 +44948,134 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:lib/parser/src/fence.ts#FenceLegacyOwnership",
+      "to": "s:lib/parser/src/fence.ts#FenceRepositoryRole",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#FenceRepositories",
+      "to": "s:lib/parser/src/fence.ts#FenceRepositoryIdentity",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#FenceRepositories",
+      "to": "s:lib/parser/src/fence.ts#FenceRepositoryRole",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:lib/parser/src/fence.ts#FenceToken",
       "to": "s:lib/parser/src/fence.ts#FenceTokenKind",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#QualifiedFence",
+      "to": "s:lib/parser/src/fence.ts#FenceRepositories",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#QualifiedFence",
+      "to": "s:lib/parser/src/fence.ts#QualifiedFenceExclusion",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#QualifiedFence",
+      "to": "s:lib/parser/src/fence.ts#QualifiedFenceIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#QualifiedFence",
+      "to": "s:lib/parser/src/fence.ts#QualifiedFencePath",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#QualifiedFence",
+      "to": "s:lib/parser/src/fence.ts#QualifiedFenceToken",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#QualifiedFenceComparison",
+      "to": "s:lib/parser/src/fence.ts#FenceVerdict",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#QualifiedFenceComparison",
+      "to": "s:lib/parser/src/fence.ts#QualifiedFenceIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#QualifiedFenceComparison",
+      "to": "s:lib/parser/src/fence.ts#QualifiedFenceWitness",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#QualifiedFenceIssue",
+      "to": "s:lib/parser/src/fence.ts#QualifiedFenceIssueCode",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#QualifiedFencePath",
+      "to": "s:lib/parser/src/fence.ts#FenceRepositoryIdentity",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#QualifiedFencePath",
+      "to": "s:lib/parser/src/fence.ts#FenceRepositoryRole",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#QualifiedFencePath",
+      "to": "s:lib/parser/src/fence.ts#QualifiedFenceRule",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#QualifiedFenceToken",
+      "to": "s:lib/parser/src/fence.ts#FenceTokenKind",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#QualifiedFenceToken",
+      "to": "s:lib/parser/src/fence.ts#QualifiedFencePath",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#QualifiedFenceWitness",
+      "to": "s:lib/parser/src/fence.ts#QualifiedFencePath",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#captureRepositories",
+      "to": "s:lib/parser/src/fence.ts#FenceRepositories",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#captureRepositories",
+      "to": "s:lib/parser/src/fence.ts#FenceRepositoryIdentity",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#captureRepositories",
+      "to": "s:lib/parser/src/fence.ts#FenceRepositoryRole",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -44657,6 +45110,60 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:lib/parser/src/fence.ts#compareQualifiedFences",
+      "to": "s:lib/parser/src/fence.ts#FenceRepositories",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#compareQualifiedFences",
+      "to": "s:lib/parser/src/fence.ts#QualifiedFence",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#compareQualifiedFences",
+      "to": "s:lib/parser/src/fence.ts#QualifiedFenceComparison",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#compareQualifiedFences",
+      "to": "s:lib/parser/src/fence.ts#QualifiedFenceWitness",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#compareQualifiedFences",
+      "to": "s:lib/parser/src/fence.ts#identityIssues",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#compareQualifiedFences",
+      "to": "s:lib/parser/src/fence.ts#sharedDomain",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#componentFenceIndex",
+      "to": "s:lib/parser/src/fence.ts#SlugExpansion",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#componentFenceIndex",
+      "to": "s:lib/parser/src/fence.ts#normalizeFenceToken",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#componentFenceIndex",
+      "to": "s:lib/parser/src/types.ts#ComponentRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:lib/parser/src/fence.ts#expandFence",
       "to": "s:lib/parser/src/fence.ts#ExpandFenceOptions",
       "kind": "type_ref",
@@ -44676,13 +45183,13 @@
     },
     {
       "from": "s:lib/parser/src/fence.ts#expandFence",
-      "to": "s:lib/parser/src/fence.ts#normalizeFenceToken",
+      "to": "s:lib/parser/src/fence.ts#componentFenceIndex",
       "kind": "call",
       "confidence": "resolved"
     },
     {
       "from": "s:lib/parser/src/fence.ts#expandFence",
-      "to": "s:lib/parser/src/fence.ts#slugPathIndex",
+      "to": "s:lib/parser/src/fence.ts#normalizeFenceToken",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -44711,6 +45218,138 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:lib/parser/src/fence.ts#expandQualifiedFence",
+      "to": "s:lib/parser/src/fence.ts#ExpandQualifiedFenceOptions",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#expandQualifiedFence",
+      "to": "s:lib/parser/src/fence.ts#FenceRepositoryRole",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#expandQualifiedFence",
+      "to": "s:lib/parser/src/fence.ts#QualifiedFence",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#expandQualifiedFence",
+      "to": "s:lib/parser/src/fence.ts#QualifiedFenceExclusion",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#expandQualifiedFence",
+      "to": "s:lib/parser/src/fence.ts#QualifiedFenceIssueCode",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#expandQualifiedFence",
+      "to": "s:lib/parser/src/fence.ts#QualifiedFencePath",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#expandQualifiedFence",
+      "to": "s:lib/parser/src/fence.ts#QualifiedFenceRule",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#expandQualifiedFence",
+      "to": "s:lib/parser/src/fence.ts#QualifiedFenceToken",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#expandQualifiedFence",
+      "to": "s:lib/parser/src/fence.ts#captureRepositories",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#expandQualifiedFence",
+      "to": "s:lib/parser/src/fence.ts#componentFenceIndex",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#expandQualifiedFence",
+      "to": "s:lib/parser/src/fence.ts#identityIssues",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#expandQualifiedFence",
+      "to": "s:lib/parser/src/fence.ts#normalizeFenceToken",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#expandQualifiedFence",
+      "to": "s:lib/parser/src/fence.ts#qualifiedDomain",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#expandQualifiedFence",
+      "to": "s:lib/parser/src/fence.ts#sharedDomain",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#expandQualifiedFence",
+      "to": "s:lib/parser/src/fence.ts#unfenceableWithin",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#expandQualifiedFence",
+      "to": "s:lib/parser/src/types.ts#ComponentRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#expandQualifiedFence",
+      "to": "s:lib/parser/src/types.ts#TaskRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#identityIssues",
+      "to": "s:lib/parser/src/fence.ts#FenceRepositories",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#identityIssues",
+      "to": "s:lib/parser/src/fence.ts#QualifiedFenceIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#identityIssues",
+      "to": "s:lib/parser/src/fence.ts#canonicalAbsolute",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#identityIssues",
+      "to": "s:lib/parser/src/fence.ts#sharedDomain",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#qualifiedDomain",
+      "to": "s:lib/parser/src/fence.ts#normalizeFenceToken",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:lib/parser/src/fence.ts#slugPathIndex",
       "to": "s:lib/parser/src/fence.ts#SlugExpansion",
       "kind": "type_ref",
@@ -44718,7 +45357,7 @@
     },
     {
       "from": "s:lib/parser/src/fence.ts#slugPathIndex",
-      "to": "s:lib/parser/src/fence.ts#normalizeFenceToken",
+      "to": "s:lib/parser/src/fence.ts#componentFenceIndex",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -46331,6 +46970,18 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:lib/parser/test/fence.test.ts#qualified",
+      "to": "s:lib/parser/src/fence.ts#expandQualifiedFence",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/fence.test.ts#qualified",
+      "to": "s:lib/parser/test/fence.test.ts#synthetic",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:lib/parser/test/fence.test.ts#slugGranularity",
       "to": "s:lib/parser/src/types.ts#ComponentRecord",
       "kind": "type_ref",
@@ -46448,7 +47099,7 @@
   ],
   "stats": {
     "files": 203,
-    "symbols": 2631,
-    "edges": 2505
+    "symbols": 2659,
+    "edges": 2563
   }
 }
