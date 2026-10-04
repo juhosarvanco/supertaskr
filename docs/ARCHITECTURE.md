@@ -94,7 +94,9 @@ ADR-014/015).
   product base; receipts are immutable data, never dispatch approval.
   The parser models qualified fences with supplied physical-root facts;
   callers measure those facts, and unusable inputs never imply disjointness.
-  Read-only foundations grant neither writes nor parallel reservations.
+  records-context.mjs captures selected committed inputs, complete registry
+  and per-input provenance using the public pure parser. It is read-only
+  planning, not complete rule coverage, admission or a writer reservation.
 - App ↔ project: read-only first; writes are single-field frontmatter
   edits or thread appends, nothing else (pure-lens rule).
 - Genesis (ADR-017): the spawned planner session is the WRITER; the
