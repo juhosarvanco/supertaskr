@@ -6,7 +6,7 @@ milestone: 4
 priority: 1
 size: M
 tier: guarded
-status: building
+status: verifying
 suggested_by: codex/gpt-6.1-sol @architect
 blocked_by: [T-347, T-348]
 touches: [lib/parser/src/fence.ts, lib/parser/src/pure.ts, lib/parser/test/fence.test.ts, method/tasks/TASK-FORMAT.md, method/interview/plan-interview.md, app/src-tauri/src/agent/kit.rs, docs/CONVENTIONS.md]
