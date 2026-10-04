@@ -353,6 +353,9 @@ test("planning CLI validates standalone modifiers and selection data before pars
     for (const bad of [["--context-inputs", selections], ["--records-context", "list", ...args.slice(2)], args.slice(0, -2)]) expect(fx.run(bad).status).toBe(2);
     writeFileSync(selections, JSON.stringify({ version: 1, legacyTokenMap: {}, inputs: [], unknown: true }));
     const malformed = fx.run(args); expect(malformed.status).toBe(2); expect(malformed.stderr).toContain("planning-request-invalid");
+    writeFileSync(selections, '{"version":1,"legacyTokenMap":{"safe/file":"product","safe/file":"records"},"inputs":[]}');
+    const conflicting = fx.run(args); expect(conflicting.status).toBe(2); expect(conflicting.stderr).toContain("planning-request-duplicate-member");
+    expect(conflicting.stderr).not.toContain("planning-parser-unavailable");
     expect(fx.run(["--records", "list", "--records-revision", "main"]).status).toBe(0);
     expect(fx.run(["--records", "T-999", "--records-revision", "main", "--product-base", "main"]).status).toBe(0);
     expect(fx.state()).toEqual(before);

@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync
 import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
-import { capturePlanningContext, normalizeContextRequest } from "../scripts/records-context.mjs";
+import { capturePlanningContext, normalizeContextRequest, readContextRequest } from "../scripts/records-context.mjs";
 import { measureProductIdentity, WORKSPACE_ASSOCIATION_REL_PATH, WORKSPACE_BINDING_REL_PATH } from "../scripts/workspace.mjs";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 
@@ -131,6 +131,30 @@ test("planning request contract refuses unknown fields paths selectors duplicate
     expect(() => normalizeContextRequest(request), JSON.stringify(request)).toThrow(/planning-/);
     await expect(capturePlanningContext({ productRoot: "unavailable", recordsRevision: "main", productRevision: "main", taskId: "T-999", request })).rejects.toThrow(/planning-/);
   }
+});
+
+test("planning request files preserve duplicate member conflicts escaped identities and strict UTF-8 refusals", () => {
+  const dir = mkdtempSync(path.join(os.tmpdir(), "planning-request-T-350-"));
+  const file = path.join(dir, "context-inputs-T-350.json");
+  try {
+    writeFileSync(file, JSON.stringify(request()));
+    expect(readContextRequest(file).inputs).toHaveLength(3);
+    for (const text of [
+      '{"version":1,"legacyTokenMap":{"legacy/file":"product","legacy/file":"records"},"inputs":[]}',
+      String.raw`{"version":1,"legacyTokenMap":{"legacy/file":"product","legacy\u002ffile":"records"},"inputs":[]}`,
+      '{"version":1,"version":1,"legacyTokenMap":{},"inputs":[]}',
+      '{"version":1,"legacyTokenMap":{},"inputs":[{"role":"product","role":"records","path":"docs/POLICY.md","selector":{"kind":"whole"}}]}',
+    ]) {
+      writeFileSync(file, text); expect(() => readContextRequest(file)).toThrow(/planning-request-duplicate-member/);
+    }
+    for (const content of ["{", Buffer.from([0xff])]) {
+      writeFileSync(file, content); expect(() => readContextRequest(file)).toThrow(/planning-request-unreadable/);
+    }
+    writeFileSync(file, '{"version":1,"legacyTokenMap":{"__proto__":"product","constructor":"records"},"inputs":[]}');
+    const normalized = readContextRequest(file);
+    expect(Object.getPrototypeOf(normalized.legacyTokenMap)).toBeNull();
+    expect(Object.keys(normalized.legacyTokenMap)).toEqual(["__proto__", "constructor"]);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
 test("planning captures the complete committed component set and expands mixed roles with exact ownership through the public parser", async () => {

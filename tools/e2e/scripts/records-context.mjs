@@ -74,9 +74,48 @@ export function normalizeContextRequest(request) {
  */
 export function readContextRequest(file) {
   let request;
-  try { request = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(readFileSync(file))); }
-  catch (err) { refuse("planning-request-unreadable", `${file}: ${err instanceof Error ? err.message : String(err)}`); }
+  try {
+    const text = new TextDecoder("utf-8", { fatal: true }).decode(readFileSync(file));
+    request = JSON.parse(text);
+    // Native JSON parsing validates syntax but erases repeated members. Inspect
+    // member identities before that loss can conceal conflicting ownership.
+    rejectRepeatedMembers(text);
+  } catch (err) {
+    if (err instanceof RecordReaderFinding) throw err;
+    refuse("planning-request-unreadable", `${file}: ${err instanceof Error ? err.message : String(err)}`);
+  }
   return normalizeContextRequest(request);
+}
+
+/** Structural member scan of already syntax-validated JSON; no input semantics
+ * or YAML/component validation lives here. Escaped member names compare decoded.
+ * @param {string} text
+ */
+function rejectRepeatedMembers(text) {
+  const tokens = text.match(/"(?:\\[\s\S]|[^"\\])*"|[{}\[\],:]|[^\s{}\[\],:]+/g) ?? [];
+  let at = 0;
+  function visit() {
+    const token = tokens[at++];
+    if (token === "{") {
+      const names = new Set();
+      while (tokens[at] !== "}") {
+        const name = JSON.parse(/** @type {string} */ (tokens[at++]));
+        if (names.has(name)) refuse("planning-request-duplicate-member", String(name));
+        names.add(name); at += 1; visit();
+        if (tokens[at] !== ",") break;
+        at += 1;
+      }
+      at += 1;
+    } else if (token === "[") {
+      while (tokens[at] !== "]") {
+        visit();
+        if (tokens[at] !== ",") break;
+        at += 1;
+      }
+      at += 1;
+    }
+  }
+  visit();
 }
 
 /** Structural ATX headings, with original byte-independent string offsets.
