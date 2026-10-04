@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1309 behaviours** — 1307 extracted sentences + 2 named-not-extracted (listed at the end) — across 45 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1320 behaviours** — 1318 extracted sentences + 2 named-not-extracted (listed at the end) — across 46 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -49,6 +49,7 @@ Census: **1309 behaviours** — 1307 extracted sentences + 2 named-not-extracted
 
 ## brief
 
+- planning CLI validates standalone modifiers and selection data before parser loading while old records views remain source-only
 - records CLI views read committed split records before legacy loading with concise provenance and explicit paired product base
 - records CLI process and write controls admit real reads and split guards refuse all unsupported routes before effects
 - workspace CLI inspection is standalone and every split development arm refuses before context or side effects
@@ -1265,8 +1266,21 @@ Census: **1309 behaviours** — 1307 extracted sentences + 2 named-not-extracted
 - RANGE RULE — the flip lists are checked BY GATE, and a merged set would miss the relabel
 - RANGE RULE — the DOCS GATE's printed spelling still carries no `xargs`
 
+## records-context
+
+- planning capture freezes independent same-named refs dirty inputs receipts active projection and caller byte views
+- planning section selection ignores fenced and indented headings and refuses missing or ambiguous exact matches
+- planning request contract refuses unknown fields paths selectors duplicate selections and conflicting ownership before capture
+- planning request files preserve duplicate member conflicts escaped identities and strict UTF-8 refusals
+- T-350 VC1 — request UTF-8 refusal is independent of JSON syntax and request shape
+- planning captures the complete committed component set and expands mixed roles with exact ownership through the public parser
+- planning committed context inputs and registry require present regular UTF-8 blobs at their selected role commit
+- planning measures actual linked-worktree and nested-repository identities and refuses unsupported physical topology
+- planning import has no effects and capture admits actual Git reads while process and write controls remain discriminating
+
 ## records
 
+- shared committed capture measures canonical identities and reads independent frozen role blobs with detached bytes
 - records import performs no command or write and its process/write controls fire
 - records snapshots select one committed records tree and independent same-name product refs with immutable captures
 - records missing inputs malformed cards duplicate ids mismatched paths and unsafe selectors refuse by name
