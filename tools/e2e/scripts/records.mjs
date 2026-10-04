@@ -98,12 +98,12 @@ function card(root, entry) {
     get bytes() { return Buffer.from(retained); } });
 }
 
-/** Read all tracked task cards and the portable association from one tree.
- * Discovery uses T-347 product-only mode: no working association is opened.
- * List views measure product HEAD unless a separately labelled base is supplied.
+/** Shared committed-byte capture. Resolves each repository's revision once;
+ * all later reads use the frozen tree and blob ids, never a working file.
+ * Buffers stay private and every exposed byte view is a detached copy.
  * @param {{productRoot?: string, recordsRevision: string, productRevision?: string}} options
  */
-export function readCommittedBoard(options) {
+export function captureCommittedInputs(options) {
   const { productRoot, recordsRevision, productRevision } = { ...options };
   const workspace = resolveWorkspace({ ...(productRoot === undefined ? {} : { productRoot }), mode: "product-only" });
   let recordsRoot;
@@ -145,19 +145,53 @@ export function readCommittedBoard(options) {
     productRoot: workspace.productRoot, productBase: productIdentity.selectedCommit, productObjectFormat: productIdentity.objectFormat,
     localBinding: workspace.association, association: { relativePath: WORKSPACE_ASSOCIATION_REL_PATH, blobId: associationEntry.oid, values: association, validation },
     authority: "snapshot data only; no dispatch approval or write permission" });
-  return Object.freeze({ receipt, tasks: Object.freeze(tasks) });
+  const productRootCanonical = workspace.productRoot;
+  const roots = { product: productRootCanonical, records: recordsRoot };
+  const commits = { product: /** @type {string} */ (productIdentity.selectedCommit), records: recordsCommit };
+  const trees = { product: entries(productRootCanonical, commits.product), records: tree };
+  /** @param {string} root */
+  function physicalFacts(root) {
+    let common;
+    try { common = realpathSync(path.resolve(root, git(root, ["rev-parse", "--git-common-dir"], "records-physical-facts-unavailable").toString("utf8").replace(/\n$/, ""))); }
+    catch (err) { refuse("records-physical-facts-unavailable", `${root}: ${message(err)}`); }
+    return { filesystemRoot: root, gitCommonDirectory: common };
+  }
+  const repositories = immutable({ product: physicalFacts(roots.product), records: physicalFacts(roots.records) });
+  /** @param {"product"|"records"} role @param {string} relativePath */
+  function read(role, relativePath) {
+    if (role !== "product" && role !== "records") refuse("records-input-role-invalid", String(role));
+    const entry = trees[role].find((e) => e.relativePath === relativePath);
+    if (!entry) refuse("records-input-missing", `${role}:${relativePath} at ${commits[role]}`);
+    const retained = blob(roots[role], entry);
+    return Object.freeze({ role, repository: roots[role], commit: commits[role], path: relativePath,
+      blobId: entry.oid, mode: entry.mode, content: utf8(retained, `${role}:${relativePath}`),
+      get bytes() { return Buffer.from(retained); } });
+  }
+  return Object.freeze({ receipt: immutable({ ...receipt, repositories }), tasks: Object.freeze(tasks),
+    repositories, read,
+    /** @param {"product"|"records"} role */
+    paths(role) { return Object.freeze(trees[role].map((e) => e.relativePath)); } });
+}
+
+/** Read all tracked cards and the committed association without parser build.
+ * @param {{productRoot?: string, recordsRevision: string, productRevision?: string}} options
+ */
+export function readCommittedBoard(options) {
+  const capture = captureCommittedInputs(options);
+  return Object.freeze({ receipt: capture.receipt, tasks: capture.tasks });
 }
 
 /** Paired snapshot: an explicit product revision is mandatory.
  * @param {{productRoot?: string, recordsRevision: string, productRevision: string, taskId?: string, cardPath?: string}} options
+ * @param {ReturnType<typeof captureCommittedInputs>|undefined} [capture]
  */
-export function captureTaskSnapshot(options) {
+export function captureTaskSnapshot(options, capture = undefined) {
   const captured = { ...options };
   if (typeof captured.productRevision !== "string" || !captured.productRevision) refuse("records-product-base-required", "paired snapshots require an explicit product starting revision");
   if ((captured.taskId === undefined) === (captured.cardPath === undefined)) refuse("records-task-selector-invalid", "select exactly one taskId or cardPath");
   if (captured.taskId !== undefined && !/^T-\d+(?:-s\d+)?$/.test(captured.taskId)) refuse("records-task-id-invalid", String(captured.taskId));
   if (captured.cardPath !== undefined) safeCardPath(captured.cardPath);
-  const board = readCommittedBoard(captured);
+  const board = capture ?? readCommittedBoard(captured);
   const selected = board.tasks.find((t) => captured.cardPath === undefined ? t.id === captured.taskId : t.relativePath === captured.cardPath);
   if (!selected) refuse("records-task-missing", `${captured.taskId ?? captured.cardPath} at ${board.receipt.recordsCommit}`);
   return Object.freeze({ receipt: immutable({ ...board.receipt, cardPath: selected.relativePath, cardBlobId: selected.blobId }),

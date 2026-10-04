@@ -222,6 +222,8 @@ const FLAGS = Object.freeze([
   "--by",
   "--help",
   "--records",
+  "--records-context",
+  "--context-inputs",
   "--records-revision",
   "--product-base",
   "--workspace",
@@ -232,14 +234,41 @@ const FLAGS = Object.freeze([
 // The legacy arm imports generated parser output; committed reads do not.
 /** @type {string[]} */
 const EARLY_OUT = [];
-const EARLY_RESULT = earlyView(process.argv.slice(2));
+const EARLY_RESULT = await earlyView(process.argv.slice(2));
 /** @template T @param {() => Promise<T>} load @returns {Promise<T>} */
 async function legacyModule(load) {
   return EARLY_RESULT === undefined ? load() : /** @type {T} */ ({});
 }
-/** @param {string[]} argv @returns {number|undefined} */
-function earlyView(argv) {
+/** @param {string[]} argv @returns {Promise<number|undefined>} */
+async function earlyView(argv) {
   try {
+    if (argv.includes("--records-context") || argv.includes("--context-inputs")) {
+      /** @type {Record<string, string>} */
+      const opts = {};
+      for (let i = 0; i < argv.length; i += 2) {
+        const flag = /** @type {string} */ (argv[i]);
+        const next = argv[i + 1];
+        if (!["--records-context", "--records-revision", "--product-base", "--context-inputs", "--root"].includes(flag) ||
+            Object.hasOwn(opts, flag) || !next || next.startsWith("-")) {
+          console.error("brief: planning-view-usage: --records-context is standalone; name each revision and context-inputs modifier exactly once.");
+          return 2;
+        }
+        opts[flag] = next;
+      }
+      if (!/^T-\d+(?:-s\d+)?$/.test(opts["--records-context"] ?? "") ||
+          !opts["--records-revision"] || !opts["--product-base"] || !opts["--context-inputs"]) {
+        console.error("brief: planning-view-usage: use --records-context <T-NNN> --records-revision <revision> --product-base <revision> --context-inputs <JSON-file> [--root <product-checkout>].");
+        return 2;
+      }
+      const { capturePlanningContext, readContextRequest } = await import("./records-context.mjs");
+      let request;
+      try { request = readContextRequest(opts["--context-inputs"]); }
+      catch (err) { console.error(`brief: ${err instanceof Error ? err.message : String(err)}`); return 2; }
+      const packet = await capturePlanningContext({ productRoot: opts["--root"] ?? findCheckoutRoot(process.cwd()) ?? process.cwd(),
+        taskId: /** @type {string} */ (opts["--records-context"]), recordsRevision: /** @type {string} */ (opts["--records-revision"]), productRevision: /** @type {string} */ (opts["--product-base"]), request });
+      EARLY_OUT.push(`${JSON.stringify(packet, null, 2)}\n`);
+      return 0;
+    }
     if (argv.includes("--workspace") || argv.includes("--product-only") || argv.includes("--records") ||
         argv.includes("--records-revision") || argv.includes("--product-base")) {
       const workspaceView = argv.includes("--workspace") || argv.includes("--product-only");
@@ -626,6 +655,7 @@ async function main(argv) {
       console.log(
         "usage: node tools/e2e/scripts/brief.mjs --task <T-NNN> [--role <role>] [--state] " +
           "[--records list|<T-NNN> --records-revision <revision> [--product-base <revision>]] " +
+          "[--records-context <T-NNN> --records-revision <revision> --product-base <revision> --context-inputs <JSON-file>] " +
           "[--dispatch] [--card <T-NNN>] [--audit <path>] [--preflight] " +
           "[--write-fence <worktree>] [--take-seat [--allow-shared-git-config]] [--release-seat] " +
           "[--dispatch-lane <T-NNN> --slug <slug> [--executor <seat>] [--verifier <seat>] " +

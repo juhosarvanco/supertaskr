@@ -2,6 +2,7 @@ import { execFileSync, spawn, spawnSync } from "node:child_process";
 import {
   chmodSync,
   closeSync,
+  cpSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -317,6 +318,7 @@ function committedRecordsCliFixture() {
   }
   const codeRoot = path.join(fx.dir, "source-only");
   for (const rel of ["tools/e2e/scripts/brief.mjs", "tools/e2e/scripts/records.mjs", "tools/e2e/scripts/workspace.mjs",
+    "tools/e2e/scripts/records-context.mjs",
     "tools/e2e/scripts/docs-scan.mjs", "tools/e2e/scripts/token-scan.mjs", ".claude/hooks/lane-fence.mjs"]) {
     const target = path.join(codeRoot, rel); mkdirSync(path.dirname(target), { recursive: true });
     writeFileSync(target, readFileSync(path.join(repoRoot, rel)));
@@ -329,8 +331,44 @@ function committedRecordsCliFixture() {
     status: fixtureGit(root, ["status", "--porcelain", "--untracked-files=all"]), card: readFileSync(path.join(root, cardPath), "utf8"),
     runtime: root === fx.product ? readdirSync(path.join(root, ".supertaskr")).sort().map((name) => [name, readFileSync(path.join(root, ".supertaskr", name), "utf8")]) : [],
   }));
-  return { ...fx, cli, cardPath, text, run, state };
+  return { ...fx, codeRoot, cli, cardPath, text, run, state };
 }
+
+test("planning CLI validates standalone modifiers and selection data before parser loading while old records views remain source-only", () => {
+  const fx = committedRecordsCliFixture();
+  try {
+    const selections = path.join(fx.dir, "context-inputs-T-350.json");
+    writeFileSync(selections, JSON.stringify({ version: 1, legacyTokenMap: {}, inputs: [] }));
+    const args = ["--records-context", "T-999", "--records-revision", "main", "--product-base", "main", "--context-inputs", selections];
+    const before = fx.state();
+    const missing = fx.run(args);
+    expect(missing.status, missing.stderr).toBe(3); expect(missing.stderr).toContain("planning-parser-unavailable");
+    expect(missing.stdout).toBe("");
+    for (const extra of [["--state"], ["--take-seat"], ["--run", "start"], ["--records", "list"], ["--workspace"], ["--help"], ["--product-base", "main"], ["--context-inputs"], ["--unknown"]]) {
+      for (const bundle of [[...args, ...extra], [...extra, ...args]]) {
+        const result = fx.run(bundle); expect(result.status, bundle.join(" ")).toBe(2);
+        expect(result.stderr).toContain("planning-view-usage"); expect(result.stderr).not.toContain("planning-parser-unavailable");
+      }
+    }
+    for (const bad of [["--context-inputs", selections], ["--records-context", "list", ...args.slice(2)], args.slice(0, -2)]) expect(fx.run(bad).status).toBe(2);
+    writeFileSync(selections, JSON.stringify({ version: 1, legacyTokenMap: {}, inputs: [], unknown: true }));
+    const malformed = fx.run(args); expect(malformed.status).toBe(2); expect(malformed.stderr).toContain("planning-request-invalid");
+    expect(fx.run(["--records", "list", "--records-revision", "main"]).status).toBe(0);
+    expect(fx.run(["--records", "T-999", "--records-revision", "main", "--product-base", "main"]).status).toBe(0);
+    expect(fx.state()).toEqual(before);
+    // Copy only the declared parser prerequisite, keeping legacy context modules absent.
+    cpSync(path.join(repoRoot, "lib/parser/dist"), path.join(fx.codeRoot, "lib/parser/dist"), { recursive: true });
+    symlinkSync(path.join(repoRoot, "lib/parser/node_modules"), path.join(fx.codeRoot, "lib/parser/node_modules"));
+    writeFileSync(selections, JSON.stringify({ version: 1, legacyTokenMap: {}, inputs: [] }));
+    writeFileSync(path.join(fx.records, fx.cardPath), "---\nid: T-999\ntitle: Planning CLI contract\nfeature: F-03\nmilestone: 4\npriority: 1\nsize: M\nstatus: planned\ntouches: [product::safe/file]\n---\nActive contract\n\n## Implementation notes\nPRIVATE CLI NOTES\n");
+    fixtureGit(fx.records, ["add", "."]); fixtureGit(fx.records, ["commit", "-qm", "planning contract"]);
+    const ready = fx.state(); const output = fx.run(args);
+    expect(output.status, output.stderr).toBe(0);
+    expect(JSON.parse(output.stdout)).toMatchObject({ view: "Selected planning context", contract: { fields: { title: "Planning CLI contract" } }, context: [] });
+    expect(output.stdout).not.toContain("PRIVATE CLI NOTES"); expect(output.stdout).toContain("not proof of complete execution-rule coverage");
+    expect(fx.state()).toEqual(ready); expect(readFileSync(selections, "utf8")).toBe(JSON.stringify({ version: 1, legacyTokenMap: {}, inputs: [] }));
+  } finally { removeGitFixture(fx.dir, "planning CLI source-only T-350"); }
+});
 
 test("records CLI views read committed split records before legacy loading with concise provenance and explicit paired product base", () => {
   const fx = committedRecordsCliFixture();
@@ -365,6 +403,18 @@ test("records CLI views read committed split records before legacy loading with 
 test("records CLI process and write controls admit real reads and split guards refuse all unsupported routes before effects", () => {
   const fx = committedRecordsCliFixture();
   try {
+    cpSync(path.join(repoRoot, "lib/parser/dist"), path.join(fx.codeRoot, "lib/parser/dist"), { recursive: true });
+    symlinkSync(path.join(repoRoot, "lib/parser/node_modules"), path.join(fx.codeRoot, "lib/parser/node_modules"));
+    writeFileSync(path.join(fx.records, fx.cardPath), fx.text("COMMITTED RECORDS").replace("status: planned\n", "status: planned\nfeature: F-03\nmilestone: 4\npriority: 1\nsize: M\ntouches: [product::safe/file]\n"));
+    for (const root of [fx.product, fx.records]) {
+      writeFileSync(path.join(root, "docs/POLICY.md"), root === fx.product ? "PRODUCT CLI POLICY" : "RECORDS CLI POLICY");
+      fixtureGit(root, ["add", "docs"]); fixtureGit(root, ["commit", "-qm", "planning inputs"]);
+    }
+    const contextInputs = path.join(fx.dir, "controls-inputs-T-350.json");
+    writeFileSync(contextInputs, JSON.stringify({ version: 1, legacyTokenMap: {}, inputs: [
+      { role: "product", path: "docs/POLICY.md", selector: { kind: "whole" } },
+      { role: "records", path: "docs/POLICY.md", selector: { kind: "whole" } },
+    ] }));
     writeFileSync(path.join(fx.product, TOKEN_REL_PATH), "VERDICT TOKEN SENTINEL");
     const before = fx.state();
     const controlled = (args: string[]) => spawnSync(process.execPath, ["--input-type=module", "-e", `
@@ -399,6 +449,10 @@ test("records CLI process and write controls admit real reads and split guards r
     expect(JSON.parse(read.stdout).contract).toContain("COMMITTED RECORDS");
     const listed = controlled(["--records", "list", "--records-revision", "main"]);
     expect(listed.status, listed.stderr).toBe(0); expect(JSON.parse(listed.stdout).tasks).toHaveLength(1);
+    const planning = controlled(["--records-context", "T-999", "--records-revision", "main", "--product-base", "main", "--context-inputs", contextInputs]);
+    expect(planning.status, planning.stderr).toBe(0);
+    expect(JSON.parse(planning.stdout).context.map((input: any) => input.text)).toEqual(["PRODUCT CLI POLICY", "RECORDS CLI POLICY"]);
+    expect(planning.stderr).toMatch(/controls: real reads=\d+ forbidden process=2 write=1/);
     const missing = controlled(["--records", "T-888", "--records-revision", "main", "--product-base", "main"]);
     expect(missing.status, missing.stderr).toBe(3); expect(missing.stderr).toContain("records-task-missing");
     expect(missing.stderr).toContain("controls:");

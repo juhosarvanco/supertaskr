@@ -622,7 +622,7 @@ test("the whole derivation reaches a SLOW reader too, and the loss is the READER
  * derived below is measured against a writer of that same single-write
  * shape, and it is still ONE READER'S answer rather than the boundary.
  */
-const LIVE_ARMS: ReadonlyArray<{ label: string; args: string[]; format?: "workspace-json"|"records-json" }> = [
+const LIVE_ARMS: ReadonlyArray<{ label: string; args: string[]; format?: "workspace-json"|"records-json"|"planning-json" }> = [
   { label: "--dispatch", args: ["--dispatch"] },
   // THE TWO ARMS THIS LIST DID NOT CARRY, AND BOTH ARE PAST THE LINE
   // (T-225-s2, taking `T-225-s7` and this card's own CORROBORATION).
@@ -647,6 +647,7 @@ const LIVE_ARMS: ReadonlyArray<{ label: string; args: string[]; format?: "worksp
   // remain in the same inventory and pipe/file comparisons as all live arms.
   { label: "--records list", args: ["--records", "list", "--records-revision", "HEAD"], format: "records-json" },
   { label: "--records T-999", args: ["--records", "T-999", "--records-revision", "HEAD", "--product-base", "HEAD"], format: "records-json" },
+  { label: "--records-context T-999", args: ["--records-context", "T-999", "--records-revision", "HEAD", "--product-base", "HEAD", "--context-inputs", "context-inputs-T-350.json"], format: "planning-json" },
   // THE EXPRESS PATH'S DRY RUN (T-320). It is the one express invocation
   // this guard may drive: `--express` WRITES — a compact card into
   // docs/tasks, staged for the dispatch stamp's own commit — and
@@ -1045,13 +1046,15 @@ test("THE MARGIN GUARD: every live arm against a loss point DERIVED in this run,
     fixtureGit(["init", "-q", "--initial-branch=main"]);
     // Populate the committed tree directly. These are fixture bytes, and no
     // filesystem read or write here opens the running project's docs tree.
-    const cardBlob = fixtureGit(["hash-object", "-w", "--stdin"], "---\nid: T-999\ntitle: Committed margin fixture\nstatus: planned\n---\nActive contract\n");
+    const cardBlob = fixtureGit(["hash-object", "-w", "--stdin"], "---\nid: T-999\ntitle: Committed margin fixture\nfeature: F-03\nmilestone: 4\npriority: 1\nsize: M\nstatus: planned\ntouches: [product::safe/file]\n---\nActive contract\n");
     fixtureGit(["update-index", "--add", "--cacheinfo", `100644,${cardBlob},docs/tasks/T-999-margin.md`]);
     fixtureGit(["commit", "-qm", "fixture root"]);
     const associationBlob = fixtureGit(["hash-object", "-w", "--stdin"], JSON.stringify({ version: 1, projectId: "margin-fixture",
       product: { objectFormat: fixtureGit(["rev-parse", "--show-object-format"]), rootCommits: [fixtureGit(["rev-parse", "HEAD"])] } }));
     fixtureGit(["update-index", "--add", "--cacheinfo", `100644,${associationBlob},workspace-association.json`]);
     fixtureGit(["commit", "-qm", "committed association"]);
+    const contextInputs = path.join(sc.dir, "context-inputs-T-350.json");
+    writeFileSync(contextInputs, JSON.stringify({ version: 1, legacyTokenMap: {}, inputs: [] }));
     /**
      * THE THRESHOLD IS DERIVED, AND IT NAMES ITS READER. There is no
      * single line to pin: `| cat` loses at 65,536 while `spawnSync`
@@ -1085,7 +1088,8 @@ test("THE MARGIN GUARD: every live arm against a loss point DERIVED in this run,
     let past = 0;
     const measured = new Map<string, number>();
     for (const arm of LIVE_ARMS) {
-      const argv = [CLI, ...arm.args, ...(arm.format === "records-json" ? ["--root", recordsRoot] : [])];
+      const argv = [CLI, ...arm.args.map((arg) => arg === "context-inputs-T-350.json" ? contextInputs : arg),
+        ...(["records-json", "planning-json"].includes(arm.format ?? "") ? ["--root", recordsRoot] : [])];
       const whole = readViaFile(argv, sc.dir);
       measured.set(arm.label, whole.bytes);
       // AN ARM THAT PRODUCED NOTHING PASSES EVERY COMPARISON BELOW, ON
@@ -1169,13 +1173,16 @@ test("THE MARGIN GUARD: every live arm against a loss point DERIVED in this run,
           association: { status: productOnly ? "unverified" : "unconfigured" },
         });
         expect(JSON.parse(whole.text), `${arm.label}: JSON changed through the pipe`).toEqual(answer);
-      } else if (arm.format === "records-json") {
+      } else if (arm.format === "records-json" || arm.format === "planning-json") {
         expect(whole.status, `${arm.label}: file records view failed`).toBe(0);
         expect(viaSpawn.status, `${arm.label}: pipe records view failed`).toBe(0);
         const answer = JSON.parse(viaSpawn.text);
         expect(answer.receipt).toMatchObject({ repositoryRole: "records", recordsRoot: realpathSync(recordsRoot), recordsCommit: fixtureGit(["rev-parse", "HEAD"]) });
         expect(JSON.parse(whole.text), `${arm.label}: committed JSON changed through the pipe`).toEqual(answer);
-        if (arm.args[1] === "list") expect(answer.tasks).toHaveLength(1);
+        if (arm.format === "planning-json") {
+          expect(answer.view).toBe("Selected planning context"); expect(answer.contract.text).toContain("Active contract");
+          expect(answer.receipt.selection).toEqual({ version: 1, legacyTokenMap: {}, inputs: [] });
+        } else if (arm.args[1] === "list") expect(answer.tasks).toHaveLength(1);
         else expect(answer.contract).toContain("Active contract");
       } else {
         expect(

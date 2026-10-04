@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
-import { activeTaskContract, captureTaskSnapshot, readCommittedBoard } from "../scripts/records.mjs";
+import { activeTaskContract, captureCommittedInputs, captureTaskSnapshot, readCommittedBoard } from "../scripts/records.mjs";
 import { measureProductIdentity, resolveWorkspace, WORKSPACE_ASSOCIATION_REL_PATH, WORKSPACE_BINDING_REL_PATH } from "../scripts/workspace.mjs";
 
 const SUBJECT = new URL("../scripts/records.mjs", import.meta.url).href;
@@ -40,6 +40,25 @@ function fixture(empty = false, recordsLeaf = "records") {
   const options = { productRoot: product, recordsRevision: "main", productRevision: "main", taskId: "T-999" };
   return { dir, product, records, binding, association, recordsCommit, productBase, options };
 }
+
+test("shared committed capture measures canonical identities and reads independent frozen role blobs with detached bytes", () => {
+  const fx = fixture();
+  try {
+    const capture = captureCommittedInputs(fx.options);
+    expect(capture.repositories).toEqual({ product: { filesystemRoot: fx.product, gitCommonDirectory: realpathSync(path.join(fx.product, ".git")) },
+      records: { filesystemRoot: fx.records, gitCommonDirectory: realpathSync(path.join(fx.records, ".git")) } });
+    expect(capture.paths("records")).toContain(CARD);
+    const input = capture.read("records", CARD);
+    expect(input).toMatchObject({ role: "records", repository: fx.records, commit: fx.recordsCommit,
+      path: CARD, mode: "100644", blobId: git(fx.records, ["rev-parse", `${fx.recordsCommit}:${CARD}`]) });
+    expect(input.content).toBe(cardText()); expect(capture.read("product", CARD).content).toContain("STALE PRODUCT COPY");
+    input.bytes.fill(0); expect(input.bytes.toString()).toBe(cardText());
+    writeFileSync(path.join(fx.records, CARD), cardText("LATER")); commit(fx.records, "later input");
+    expect(capture.read("records", CARD).content).toBe(cardText());
+    expect(() => capture.read("records", "absent.md")).toThrow(/records-input-missing.*absent.md/);
+    expect(() => { (capture.repositories.records as any).gitCommonDirectory = "changed"; }).toThrow();
+  } finally { removeGitFixture(fx.dir, "shared capture T-350"); }
+});
 
 test("records import performs no command or write and its process/write controls fire", () => {
   const result = spawnSync(process.execPath, ["--input-type=module", "-e", `

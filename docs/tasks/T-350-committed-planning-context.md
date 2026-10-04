@@ -33,6 +33,16 @@ Prepared at product commit e5099a01c019e7a2df748d3447817d36a5e0d473, with T-349 
 
 ## Implementation notes
 
+### Criteria echo — before implementation, 2026-10-04
+
+- [ ] Capture the selected task and all records inputs at one explicit records commit, with product inputs independently frozen at the explicit product base, through a shared committed-byte capture primitive.
+- [ ] Render only the active contract, qualified fence, component facts and explicitly selected context; retain immutable complete bytes and per-input receipts; refuse absent or ambiguous sections.
+- [ ] Measure canonical roots and Git common directories in the records layer; reject unsupported topology; use the public parser and complete committed registry with explicit ownership, without another YAML/component reader.
+- [ ] Add the standalone records-context view and strict modifiers before dependency loading and legacy construction; disclose parser prerequisites and perform only reads, preserving source-only records views.
+- [ ] Keep split legacy and mutating routes refused; extend exhaustive CLI and pipe/file flag coverage; activate no split binding.
+- [ ] Label the result selected planning context, enumerate actual selections and state that selection proves no complete rule coverage; document supported APIs, parser requirements and unresolved installed consumers.
+- [ ] Prove independent-repository provenance, frozen selections, modes/sections/registry/fences/topology/immutability/history and no side effects in deterministic fixtures, including source-only behavior without parser build.
+
 Draft v2 outside the product repository, incorporating independent review v1. Proposed new files live under already tracked script/test parents. Size M is provisional: one committed-context consumer test cycle with early CLI integration. Run only after T-349's delivered API is available; re-read the final fence and source claims against that new base before pinning the card. The local workspace stays colocated.
 
 ### Request shape and section selection
@@ -46,4 +56,3 @@ Prefer explicit selected paths/sections over an invented promise that the packet
 Requested implementation and independent code verification: GPT-6.1 Sol extra-high through native desktop workers. Workflow-only controls, if required beyond deterministic fixtures, use GPT-5.6 Luna. Record observed identity/usage only if actually available.
 
 ## Verdicts
-
