@@ -33,9 +33,18 @@ Prepared at product commit e5099a01c019e7a2df748d3447817d36a5e0d473. T-347 suppl
 
 ## Implementation notes
 
+### Executor criteria echo — 2026-10-04, before implementation
+
+- [ ] Accept role-qualified paths and frozen-registry slugs, preserving source and resolution metadata; refuse invalid inputs and legacy qualified tokens, including component paths.
+- [ ] Require exact explicit ownership for every bare split path after component expansion; refuse missing, ambiguous and qualified remapping; preserve colocated legacy semantics.
+- [ ] Preserve both sides and origins of mixed components, and expose the same pure model and types from the browser-safe entry.
+- [ ] Validate supplied canonical roots and Git common directories, reject inconsistent/shared/nested split identities, and make unusable comparison dominate retained witnesses.
+- [ ] Apply task-directory refusal and own-card exclusion to the actual records root after identity validation, preserving containment and legacy controls.
+- [ ] Publish the qualified planning grammar and advance all three method stamps consistently to 0.1.38 with the standing evaluation evidence.
+- [ ] Prove the listed behaviors, public exports and discriminating controls; report APIs, tests, per-body drills and the planning-only authority limit.
+
 Draft v2 outside the product repository, incorporating independent review v1. Qualified domains reject absolute paths, root escape/traversal, control characters and Git/runtime control paths; qualifications designate paths, while bare component slugs expand through the supplied registry. The qualified comparator’s unusable precedence is explicit; legacy comparison behavior is unchanged. Supplied measurement facts are frozen in expansion results, not assumed from a workspace label. Size M is provisional: one canonical pure-fence test cycle, with the required method publication/bump checks. Derive the actual tier at dispatch; do not write a speculative tier into frontmatter. The two roots remain colocated in this project throughout the lane. Existing legacy guards must continue refusing unsupported qualified writes.
 
 Requested implementation and independent code verification: GPT-6.1 Sol extra-high through native desktop workers. Requested identity is not observed provider identity. No separate workflow demonstration is required by this card; any deterministic workflow-only control that is needed uses GPT-5.6 Luna under the owner's setting.
 
 ## Verdicts
-

@@ -1,14 +1,18 @@
-import { readdirSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   type Fence,
   UNFENCEABLE_PATHS,
   compareFences,
+  compareQualifiedFences,
   expandFence,
+  expandQualifiedFence,
   normalizeFenceToken,
   slugPathIndex,
 } from '../src/fence.js';
+import type { FenceRepositories, FenceRepositoryRole } from '../src/pure.js';
+import * as pure from '../src/pure.js';
 import { parseProject } from '../src/index.js';
 import type { ComponentRecord, TaskRecord } from '../src/types.js';
 
@@ -111,6 +115,234 @@ function synthetic(id: string, touches: string[], file?: string): TaskRecord {
     file: file ?? `docs/tasks/${id}-fixture.md`,
   };
 }
+
+const independentRoots: FenceRepositories = {
+  product: { filesystemRoot: '/workspace/product', gitCommonDirectory: '/workspace/product/.git' },
+  records: { filesystemRoot: '/workspace/records', gitCommonDirectory: '/workspace/records/.git' },
+};
+const colocatedRoots: FenceRepositories = {
+  product: independentRoots.product,
+  records: independentRoots.product,
+};
+const qualified = (touches: string[], repositories = independentRoots, options = {}) =>
+  expandQualifiedFence(synthetic('T-349', touches), [], { repositories, ...options });
+const ownership = (...entries: [string, FenceRepositoryRole[]][]) => new Map(entries);
+const issueCodes = (fence: ReturnType<typeof qualified>) => fence.issues.map((issue) => issue.code);
+
+describe('T-349 qualified pure planning fences', () => {
+  it('retains every mixed component path and its exact source and component origin', () => {
+    const mixed = {
+      ...componentById('C-11'), id: 'C-70', touchSlugs: ['mixed'],
+      paths: [' product::src/one.ts ', 'records::notes/one.md', ' src/./legacy.ts '],
+    };
+    const fence = expandQualifiedFence(synthetic('T-349', [' mixed/ ']), [mixed], {
+      repositories: independentRoots,
+      legacyOwnership: ownership(['src/./legacy.ts', ['records']]),
+    });
+    expect(fence.usable).toBe(true);
+    expect(fence.paths.map(({ role, domain, component, source, raw, rule }) => ({ role, domain, component, source, raw, rule }))).toEqual([
+      { role: 'product', domain: 'src/one.ts', component: 'C-70', source: 'product::src/one.ts', raw: 'mixed/', rule: 'qualified' },
+      { role: 'records', domain: 'notes/one.md', component: 'C-70', source: 'records::notes/one.md', raw: 'mixed/', rule: 'qualified' },
+      { role: 'records', domain: 'src/legacy.ts', component: 'C-70', source: 'src/./legacy.ts', raw: 'mixed/', rule: 'legacy-map' },
+    ]);
+    expect(mixed.paths).toEqual([' product::src/one.ts ', 'records::notes/one.md', ' src/./legacy.ts ']);
+    // A collision on the records side discriminates a mixed-path-dropping implementation.
+    expect(compareQualifiedFences(fence, qualified(['records::notes/one.md']), independentRoots).verdict).toBe('overlapping');
+  });
+
+  it('separates same-spelled domains in independent repositories with a same-role overlap control', () => {
+    const product = qualified(['product::src/same.ts']);
+    const records = qualified(['records::src/same.ts']);
+    expect(product.usable && records.usable).toBe(true);
+    expect(compareQualifiedFences(product, product, independentRoots).verdict).toBe('overlapping');
+    expect(compareQualifiedFences(product, records, independentRoots)).toEqual({ verdict: 'disjoint', witnesses: [], issues: [] });
+  });
+
+  it('collides colocated role aliases and identifies both measured physical identities in witnesses', () => {
+    const left = qualified(['product::src/'], colocatedRoots);
+    const right = qualified(['records::src/a.ts'], colocatedRoots);
+    const comparison = compareQualifiedFences(left, right, colocatedRoots);
+    expect(left.usable && right.usable).toBe(true);
+    expect(comparison.verdict).toBe('overlapping');
+    expect(comparison.witnesses).toHaveLength(1);
+    expect(comparison.witnesses[0]).toMatchObject({
+      domain: 'src/a.ts',
+      left: { role: 'product', domain: 'src', ...colocatedRoots.product },
+      right: { role: 'records', domain: 'src/a.ts', ...colocatedRoots.records },
+    });
+  });
+
+  it('maps exact trimmed legacy sources after slug resolution beside a same-spelled qualified product path', () => {
+    const mixed = { ...componentById('C-11'), id: 'C-70', touchSlugs: ['legacy'], paths: [' src/./same.ts '] };
+    const map = ownership(['src/./same.ts', ['records']]);
+    const fence = expandQualifiedFence(synthetic('T-349', ['legacy', 'product::src/same.ts']), [mixed], {
+      repositories: independentRoots, legacyOwnership: map,
+    });
+    expect(fence.usable).toBe(true);
+    expect(fence.paths.map(({ role, domain }) => [role, domain])).toEqual([['records', 'src/same.ts'], ['product', 'src/same.ts']]);
+    expect(compareQualifiedFences(qualified(['product::src/same.ts']), qualified([' src/./same.ts '], independentRoots, { legacyOwnership: map }), independentRoots).verdict).toBe('disjoint');
+    for (const wrong of [ownership(['legacy', ['records']]), ownership(['src/same.ts', ['records']])]) {
+      const refused = expandQualifiedFence(synthetic('T-349', ['legacy']), [mixed], { repositories: independentRoots, legacyOwnership: wrong });
+      expect(refused.usable).toBe(false);
+      expect(issueCodes(refused)).toContain('missing-ownership');
+    }
+  });
+
+  it('refuses absent and ambiguous legacy ownership without inferring from files or directory spelling', () => {
+    const touches = ['docs/rooms/a.md'];
+    expect(qualified(touches, independentRoots, { legacyOwnership: ownership([touches[0]!, ['records']]) }).usable).toBe(true);
+    for (const map of [undefined, ownership([touches[0]!, []]), ownership([touches[0]!, ['product', 'records']])]) {
+      const fence = qualified(touches, independentRoots, { legacyOwnership: map, knownPaths: touches });
+      expect(fence.usable).toBe(false);
+      expect(fence.issues.some((issue) => issue.code === 'missing-ownership' || issue.code === 'ambiguous-ownership')).toBe(true);
+      expect(compareQualifiedFences(fence, qualified(['records::docs/rooms/a.md']), independentRoots).verdict).toBe('unusable');
+    }
+  });
+
+  it('refuses remapping a qualified token while accepting an ownership entry for its bare spelling', () => {
+    const token = 'product::src/a.ts';
+    expect(qualified([token], independentRoots, { legacyOwnership: ownership(['src/a.ts', ['records']]) }).usable).toBe(true);
+    const refused = qualified([token], independentRoots, { legacyOwnership: ownership([token, ['records']]) });
+    expect(refused.usable).toBe(false);
+    expect(issueCodes(refused)).toContain('qualified-remap');
+  });
+
+  it('requires measured canonical identities and rejects shared Git, nested and inconsistent physical roots', () => {
+    expect(qualified(['product::src/a.ts']).usable).toBe(true);
+    const cases: [FenceRepositories, string][] = [
+      [{ product: independentRoots.product } as FenceRepositories, 'missing-identity'],
+      [{ ...independentRoots, records: { ...independentRoots.records, filesystemRoot: '/workspace/records/../records' } }, 'noncanonical-identity'],
+      [{ ...independentRoots, records: { ...independentRoots.records, gitCommonDirectory: independentRoots.product.gitCommonDirectory } }, 'shared-common-directory'],
+      [{ ...independentRoots, records: { ...independentRoots.records, filesystemRoot: '/workspace/product/private' } }, 'nested-roots'],
+      [{ ...independentRoots, records: { ...independentRoots.records, filesystemRoot: independentRoots.product.filesystemRoot } }, 'inconsistent-identity'],
+      [{ ...independentRoots, product: { ...independentRoots.product, filesystemRoot: '/' } }, 'nested-roots'],
+    ];
+    for (const [repositories, code] of cases) {
+      const fence = qualified(['product::src/a.ts'], repositories);
+      expect(fence.usable, code).toBe(false);
+      expect(issueCodes(fence)).toContain(code);
+      expect(compareQualifiedFences(fence, fence, repositories).verdict).toBe('unusable');
+    }
+  });
+
+  it('freezes captured facts and refuses comparison facts inconsistent with either expansion', () => {
+    const mutable = { product: { ...independentRoots.product }, records: { ...independentRoots.records } };
+    const a = qualified(['product::src/a.ts'], mutable);
+    const b = qualified(['product::src/a.ts']);
+    mutable.product.filesystemRoot = '/workspace/elsewhere';
+    expect(a.repositories.product.filesystemRoot).toBe('/workspace/product');
+    expect(Object.isFrozen(a.repositories.product)).toBe(true);
+    expect(compareQualifiedFences(a, b, independentRoots).verdict).toBe('overlapping');
+    for (const facts of [mutable, { ...independentRoots, records: { ...independentRoots.records, gitCommonDirectory: '/git/new-records' } }]) {
+      const comparison = compareQualifiedFences(a, b, facts);
+      expect(comparison.verdict).toBe('unusable');
+      expect(comparison.issues.some((issue) => issue.code === 'comparison-identity-mismatch')).toBe(true);
+    }
+  });
+
+  it('makes unusable inputs dominate retained overlap witnesses and refuses an empty fence', () => {
+    const partial = qualified(['product::src/a.ts', 'unknown::src/b.ts']);
+    const complete = qualified(['product::src/a.ts']);
+    expect(compareQualifiedFences(complete, complete, independentRoots).verdict).toBe('overlapping');
+    const comparison = compareQualifiedFences(partial, complete, independentRoots);
+    expect(comparison.witnesses).toHaveLength(1);
+    expect(comparison.verdict).toBe('unusable');
+    const empty = qualified([]);
+    expect(issueCodes(empty)).toContain('empty-fence');
+    expect(compareQualifiedFences(empty, complete, independentRoots).verdict).toBe('unusable');
+  });
+
+  it('refuses unknown or malformed qualifiers, unresolved slugs and unsafe domains with named issues', () => {
+    expect(qualified(['product::src/a.ts']).usable).toBe(true);
+    const cases: [string, string][] = [
+      ['unknown::src/a.ts', 'unknown-qualifier'], ['product:src/a.ts', 'malformed-qualifier'],
+      ['product::', 'malformed-qualifier'], ['product:::src/a.ts', 'malformed-qualifier'],
+      ['no-such-slug', 'unresolved-slug'],
+      ...['/', '.', '../x', 'src/../../x', 'src/../x', '/tmp/file', '\\absolute', 'src/\u0000a.ts', '.git/config', '.supertaskr/run.json', 'src/.git/config', 'src/**/*.ts'].map((domain): [string, string] => [`product::${domain}`, 'unsafe-domain']),
+    ];
+    for (const [token, code] of cases) {
+      const fence = qualified([token]);
+      expect(fence.usable, token).toBe(false);
+      expect(issueCodes(fence), token).toContain(code);
+      expect(compareQualifiedFences(fence, qualified(['product::src/a.ts']), independentRoots).verdict).toBe('unusable');
+    }
+  });
+
+  it('applies unfenceable-domain rules only to the validated actual records root', () => {
+    expect(qualified(['product::docs/']).usable).toBe(true);
+    expect(qualified(['records::docs/tasks-neighbour/']).usable).toBe(true);
+    for (const [tokens, facts] of [[['records::docs/'], independentRoots], [['product::docs/'], colocatedRoots]] as const) {
+      const fence = qualified([...tokens], facts);
+      expect(fence.usable).toBe(false);
+      expect(issueCodes(fence)).toContain('unfenceable-domain');
+    }
+    const invalid = qualified(['records::docs/', 'records::docs/tasks/T-349-fixture.md'], { product: independentRoots.product } as FenceRepositories);
+    expect(invalid.usable).toBe(false);
+    expect(issueCodes(invalid)).not.toContain('unfenceable-domain');
+    expect(invalid.excluded).toEqual([]);
+  });
+
+  it('keys own-card exclusions by physical root so a same-spelled independent product file survives', () => {
+    const own = 'docs/tasks/T-349-fixture.md';
+    const fence = qualified([`records::${own}`, `product::${own}`]);
+    expect(fence.usable).toBe(true);
+    expect(fence.excluded).toEqual([{ filesystemRoot: '/workspace/records', domain: own }]);
+    expect(fence.paths.map((path) => path.role)).toEqual(['product']);
+    expect(compareQualifiedFences(fence, qualified([`product::${own}`]), independentRoots).verdict).toBe('overlapping');
+    expect(compareQualifiedFences(fence, qualified([`records::${own}`]), independentRoots).verdict).toBe('disjoint');
+    expect(qualified([`product::${own}`], colocatedRoots).paths).toEqual([]);
+    // Own cards are exact files; an excluded child does not subtract its parent directory.
+    const wide = qualified(['records::notes/'], independentRoots, { ownFile: 'notes/own.md' });
+    expect(compareQualifiedFences(wide, qualified(['records::notes/']), independentRoots).verdict).toBe('overlapping');
+  });
+
+  it('preserves directory containment, slash boundaries and colocated legacy normalization and slug expansion', () => {
+    expect(compareQualifiedFences(qualified(['product::src/']), qualified(['product::src/a.ts']), independentRoots).verdict).toBe('overlapping');
+    expect(compareQualifiedFences(qualified(['product::src/']), qualified(['product::srcish/a.ts']), independentRoots).verdict).toBe('disjoint');
+    const task = synthetic('T-349', ['lib/x/../parser', 'lib-parser', 'docs/tasks/T-349-fixture.md']);
+    const legacy = expandFence(task, components);
+    const planned = expandQualifiedFence(task, components, { repositories: colocatedRoots });
+    expect(planned.usable).toBe(true);
+    expect([...new Set(planned.paths.map((path) => path.domain))].sort()).toEqual(legacy.paths);
+    expect(planned.excluded.map((entry) => entry.domain)).toEqual(legacy.excluded);
+    const neighbour = synthetic('T-350', ['lib/parser/src']);
+    expect(compareQualifiedFences(planned, expandQualifiedFence(neighbour, components, { repositories: colocatedRoots }), colocatedRoots).verdict).toBe(compareFences(legacy, expandFence(neighbour, components)).verdict);
+  });
+
+  it('keeps legacy consumers refusing qualified tokens even inside component paths', () => {
+    const component = { ...componentById('C-11'), id: 'C-70', touchSlugs: ['mixed'], paths: ['product::src/a.ts', 'records::notes/a.md'] };
+    const control = { ...component, paths: ['src/a.ts', 'notes/a.md'] };
+    expect(expandFence(synthetic('T-349', ['mixed']), [control]).unusable).toEqual([]);
+    for (const touches of [['product::src/a.ts'], ['mixed']]) {
+      const legacy = expandFence(synthetic('T-349', touches), [component]);
+      expect(legacy.paths).toEqual([]);
+      expect(legacy.unusable).toEqual(touches);
+      expect(legacy.issues[0]?.message).toContain('legacy one-repository');
+      expect(compareFences(legacy, expandFence(synthetic('T-350', ['src/a.ts']), [])).verdict).toBe('unusable');
+    }
+  });
+
+  it('exports the same canonical API and types through a browser-safe entry with no filesystem imports', () => {
+    // The type annotations are also compiled by the parser typecheck.
+    const facts: pure.FenceRepositories = independentRoots;
+    const model: pure.QualifiedFence = pure.expandQualifiedFence(synthetic('T-349', ['product::src/a.ts']), [], { repositories: facts });
+    expect(model.usable).toBe(true);
+    expect(pure.expandQualifiedFence).toBe(expandQualifiedFence);
+    expect(pure.compareQualifiedFences).toBe(compareQualifiedFences);
+    const visited = new Set<string>();
+    const inspect = (url: URL): void => {
+      if (visited.has(url.href)) return;
+      visited.add(url.href);
+      const source = readFileSync(url, 'utf8');
+      expect(source, url.href).not.toMatch(/(?:from\s*|import\s*\()['"](?:node:|fs(?:\/|['"])|path(?:\/|['"]))/);
+      for (const match of source.matchAll(/(?:from\s*|import\s*\()['"](\.\.?\/[^'"]+\.js)['"]/g)) {
+        inspect(new URL(match[1]!.replace(/\.js$/, '.ts'), url));
+      }
+    };
+    inspect(new URL('../src/pure.ts', import.meta.url));
+    expect(visited.size).toBeGreaterThan(1);
+  });
+});
 
 /* ──────────────────────────────────────────────────────────────────── */
 
