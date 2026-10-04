@@ -92,6 +92,8 @@ ADR-014/015).
   records; configured split orchestration refuses before legacy context.
   records.mjs reads an exact committed association/card with a separate
   product base; receipts are immutable data, never dispatch approval.
+  The parser models qualified fences with supplied physical-root facts;
+  callers measure those facts, and unusable inputs never imply disjointness.
   Read-only foundations grant neither writes nor parallel reservations.
 - App ↔ project: read-only first; writes are single-field frontmatter
   edits or thread appends, nothing else (pure-lens rule).
