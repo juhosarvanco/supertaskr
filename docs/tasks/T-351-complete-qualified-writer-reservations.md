@@ -6,7 +6,7 @@ milestone: 4
 priority: 1
 size: M
 tier: standard
-status: verifying
+status: building
 suggested_by: codex/gpt-6.1-sol @architect
 blocked_by: [T-349, T-350]
 touches: [tools/e2e/scripts/run-record.mjs, tools/e2e/scripts/qualified-reservation.mjs, tools/e2e/tests/run-record.spec.ts, tools/e2e/tests/qualified-reservation.spec.ts, tools/e2e/tests/push-guard.spec.ts]
@@ -438,6 +438,19 @@ BOOT GATE has no matching app source/manifest; METHOD EVAL has no method path
 or new verdict citation. These are owed-at-source decisions; the final report
 supplies actual final-tree derivation and index-current check, and integration
 must re-derive for its own merged tree. No merge or push was performed.
+
+### Alias-repair criteria echo — before implementation
+
+- [ ] C1: normalize the accepted coordinator-root alias before constructing publication paths, preserving the canonical captured authority, physical identities, immutable acquired bases and legitimate HEAD advancement.
+- [ ] C2: retain every project-domain comparator, physical-worker ownership and topology/path guard; the accepted root alias names the same authority, not an independent project.
+- [ ] C3: normalize both the retained qualified scanner and the qualified acquisition's legacy scanner, preserving the existing transaction, atomic complete publication and regular-file/realpath checks; legitimate legacy overlap must report conflict in both orders.
+- [ ] C4: same-alias read, exact repeat and exact release must consume the acquired set; wrong expected release identity must preserve its bytes, and a genuinely absent release must remain false.
+- [ ] C5: preserve ordinary lifecycle, native/split refusal and the read-only conventions-copy repair, with no grant, manifest, authority or new API contract change.
+- [ ] C6: carry the three supplied verdict/body commits in order, establish the body RED on unchanged implementation, repair and run actual controls; hash/mode/clock-restore the authorized scanner-normalization control and grade the full original range after complete notes. Preserve the separate incomplete qualification and platform refusal.
+
+Requested implementation model/effort remains GPT-6.1 Sol/xhigh; observed
+model/effort/usage is unknown. The coordinator's normal alias-repair-packet
+answer was read and acknowledged before this echo or any repair work.
 
 ## Verdicts
 
