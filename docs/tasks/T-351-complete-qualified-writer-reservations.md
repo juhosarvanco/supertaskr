@@ -82,9 +82,13 @@ unsupported shared common directories and receipt drift refuse.
 Run-record performs complete validation, legacy/qualified conflict checks,
 atomic publication and exact release within the existing native transaction
 and reservation home. The retained record is reconstructed from committed
-inputs before conflict checks; narrowed valid JSON with an updated adjacent
-checksum, changed physical bindings, missing objects and malformed authority
-cannot appear free. Legacy whole-checkout conflicts work in both orders;
+inputs before conflict checks. The repaired version 2 publication additionally
+commits that reconstruction in its filename: a coherent replacement of the
+JSON's request, scope and adjacent identity cannot change the originally
+published scope. Missing objects and malformed authority cannot appear free.
+The earlier version 1 implementation lacked this acquisition commitment and
+was rejected independently; its evidence remains below. Legacy whole-checkout
+conflicts work in both orders;
 legacy release cannot remove a qualified set. Exact repeat preserves the first
 record; changed repeat and foreign expected release identity refuse. A dead
 holder does not authorize stealing. Ordinary lifecycle imports/reservations
@@ -92,7 +96,7 @@ without qualified authority load no new capture/parser dependency; unknown
 assignment root fields refuse. Qualified operations are library APIs only;
 native qualified admission and split dispatch still need the separate consumer.
 
-### Public API and retained data format — version 1
+### Public API — request version 1, retained publication version 2
 
 `captureQualifiedInputs({ authorityRoot, projectId, revisions: { product,
 records }, taskId, legacyTokenMap })` is synchronous and returns
@@ -117,20 +121,33 @@ Run-record exports asynchronous
 `{ file, reservation, repeated }`; `readQualifiedReservation(root, attempt)`,
 returning a validated record or null; and
 `releaseQualifiedReservation(root, { attempt, expectedIdentity })`, returning
-a boolean. `qualifiedReservationPath(root, attempt)` is synchronous. The API
-root must equal the captured product integration root. Scope equality includes
+a boolean. `qualifiedReservationPath(root, attempt, expectedIdentity)` is
+synchronous and requires the full canonical `sha256:<64 lowercase hex>`
+acquired identity. The API root must equal the captured product integration
+root. Scope equality includes
 ownership, bases, committed receipts and physical/domain facts, excluding
 acquisition time and holder process metadata.
 
 The sole publication is
-`.supertaskr/runs/reservations/qualified-<attempt>.json`, exactly
-`{ version: 1, kind: 'qualified-writer-set', attempt, request, scope,
+`.supertaskr/runs/reservations/qualified-<attempt>-<64 hex acquired digest>.json`, exactly
+`{ version: 2, kind: 'qualified-writer-set', attempt, request, scope,
 identity, takenAt, holder: { pid, host } }`. Filename, record and request owners
-agree. Identity is SHA-256 of canonical scope, supplementing reconstruction.
+agree. The filename digest must equal SHA-256 of the fully reconstructed
+canonical acquired scope, independently of the mutable adjacent identity.
+Every reader, conflict check, exact repeat and qualified release validates
+that commitment. Release first locates the held attempt, then compares the
+expected identity: a wrong identity refuses rather than reporting an absent
+wrongly constructed path. Old unanchored names, malformed names and multiple
+publications for one attempt fail closed; none is silently migrated, selected
+by directory order, rewritten or rekeyed. This is retained-file content
+integrity within the existing authority home. Replacing, deleting or rekeying
+the entire authority home, filesystem/OS compromise and authentication are
+outside its claim; the coordinator/native consumer protects that boundary.
 Below run-record, validation exports `deriveQualifiedScope(request,
 { retained? })`, `measureQualifiedWorker`, `qualifiedSetsConflict`,
 `legacyQualifiedConflict`, `validateQualifiedReservation`, `qualifiedContent`,
-`qualifiedIdentity`, `QUALIFIED_RESERVATION_VERSION` and
+`qualifiedIdentity`, `QUALIFIED_RESERVATION_VERSION` (2),
+`QUALIFIED_REQUEST_VERSION` (1) and
 `QualifiedReservationFinding`. Explicit qualified operations preload validation
 asynchronously, then validate/check/publish synchronously inside the existing
 transaction. Legacy take/release retain their synchronous signatures. Delivery
@@ -174,7 +191,8 @@ terminated and joined before cleanup. Their original measured refs remain
 historical. The new-file keeper was UNANSWERED at the original admitted base
 because these new files did not exist; no baseline GREEN is claimed.
 
-The fresh repair adds no body or assertion. It changes the shared seat fixture
+The initial duplicate-copy recovery adds no body or assertion. It changes the
+shared seat fixture
 so the flat docs loop excludes `CONVENTIONS.md`; `conventionsFiles` copies that
 index and every chapter once. Defect class: duplicate copying of a read-only
 source into the same fixture destination. A class sweep inside the granted
@@ -190,7 +208,8 @@ builds, TMPDIR and outputs inside that checkout. This is a procedural workspace
 authorization, not native machine ownership of a second root; the native
 callback boundary still monitors the admitted lane and does not claim OS/read
 isolation. No live authority was edited, no agent was spawned and no independent
-reviewer material was read.
+reviewer material was read during that initial recovery. The later intentionally
+supplied rejected report is the repair input disclosed below.
 
 Fresh drill: remove only the flat loop's index exclusion, leaving assertions
 unchanged. The existing case beginning `--take-seat installs the guard and
@@ -283,10 +302,142 @@ blind attack set was opened.
 
 Repair criteria echo, before implementation:
 
-- [ ] C1: retain the originally acquired committed inputs, worker bindings and bases independently of a coherently rewritten JSON request/scope/identity; continue allowing legitimate current HEAD advancement.
-- [ ] C3: check that original-acquisition commitment in every qualified reader and legacy/qualified acquisition under the existing transaction and reservation home; changed authority must refuse without partial publication.
-- [ ] C4: exact repeat and expected-content release must refuse replaced authority and retain it for reconciliation, while intact repeat/release remain effective.
+- [x] C1: retain the originally acquired committed inputs, worker bindings and bases independently of a coherently rewritten JSON request/scope/identity; continue allowing legitimate current HEAD advancement.
+- [x] C3: check that original-acquisition commitment in every qualified reader and legacy/qualified acquisition under the existing transaction and reservation home; changed authority must refuse without partial publication.
+- [x] C4: exact repeat and expected-content release must refuse replaced authority and retain it for reconciliation, while intact repeat/release remain effective.
 - [ ] C5/C6: retain the read-only fixture repair and all existing assertions, add owned causal regressions, restore necessary property-site drills by hash, and grade the complete original-base-to-repaired-source range after complete notes.
+
+The last box retains its pre-grade state in this complete notes commit. Its
+implementation and five controls are completed below; the required original
+range is graded only after this commit, with actual ref/count/exit in the
+handoff. The later status-only stamp changes no evidence or outcome in these
+notes. The prior GREEN range at 281924cd513c30d130692b7ae82998fefedece10
+had parser 469, app 1171 and e2e 1029 passing, exits 0; that result did not
+establish acceptance and is not the repaired range's grade.
+
+The allowed repair input is the ceased a7's preserved
+`phase2-interrupted-rejected-report-v1.md` and `repair-preparation-v1.md`
+in the external T-351 recovery directory, plus the two ordinary regression
+bodies in `/private/tmp/supertaskr-T-351-a7-scratch/logs/coherent-bodies-T-351.diff`
+(SHA-256 `68fd002e47b7db252d6963c8de950358ecafec93ef782cf6375f5862ba12e5f3`).
+No original blind attack set was opened. The persisted
+`repair-origin-commitment` answer approved the helper/publication format
+described above and its limited claim; it was read and acknowledged before
+implementation. One content-addressed record in the existing transaction/home
+adds no ownership table, service, second lock or native split admission.
+
+### Original-acquisition repair, ordinary regressions and corrections
+
+The minimal repair is committed at
+c8e65fa0f8f5e25ba465aab832883fd8cc6c34ba. Every retained consumer reconstructs
+the same immutable committed inputs and physical worker identities as before,
+then verifies the actual publication name against that acquired canonical
+scope. Legitimate worker HEAD advancement still uses the immutable base; it
+does not rekey the authority. The three new owned regression bodies cover
+coherent worker replacement, coherent committed card/domain replacement with
+physical workers unchanged, and publication naming/version/old/malformed/
+duplicate authority plus wrong expected release identity. Replacements refuse
+through read, exact repeat, another qualified acquisition, legacy acquisition
+and exact release; replacement bytes and the original authority are retained.
+Literal fixture restoration proves intact read/repeat/release remain effective.
+
+Two existing no-residue assertions now expect the returned publication's
+basename rather than the old unanchored literal. They still require exactly
+one reservation after the whole-set conflict, preserving their strength.
+All other existing assertions and the read-only seat fixture repair remain.
+
+Ordered repair command results: the first selector was incorrectly anchored
+at the title start and reported `No tests found`; zero bodies means no
+reproduction. Its undeclared ignored log caused the native hold. The coordinator
+normally ceased/released the exact owner, preserved that log and the identical
+tracked diff, relocated only the log and re-admitted the same native thread;
+no implementation/test/card bytes were changed. The withheld command result
+was never asserted. All subsequent logs, TMPDIR and npm cache use
+`/private/tmp/supertaskr-T-351-a6-repair-scratch/{logs,tmp,npm-cache}`,
+with only published gate/test outputs in the worker.
+
+Corrected `npx playwright test tests/qualified-reservation.spec.ts --grep
+'qualified original acquisition' --reporter=line` executed two bodies at the
+pre-repair implementation and failed both, exit 1: the reader resolved rather
+than rejected. The first repaired spec run executed twelve bodies, with eleven
+passing and one fixture setup failure (exit 1): the helper tried to commit
+unchanged records bytes while producing another valid request. Using a distinct
+records domain fixed that fixture. The first typecheck exited 2 on the optional
+regex capture; its checked-name capture annotation fixed the typing. The
+corrected complete qualified spec executed twelve and passed twelve, exit 0
+(43.4 seconds); `npm run typecheck` exited 0. These are ordinary iteration
+checks on the source bytes subsequently committed at c8e65fa0, not a blessed
+range grade. The external logs retain both the actual two-body reproduction
+and the failed/repaired twelve-body iterations. Read-only diagnostics also
+reported missing guessed runner/typecheck-log names; the actual runner and
+available logs were located and read separately, with no source change.
+
+### Self-drill block — original-acquisition repair at c8e65fa0
+
+The `repair-origin-drill-ready` answer recorded actual coordinator preparation
+of `/private/tmp/drill-T-351-a6-origin-repair` at exact clean source
+c8e65fa0f8f5e25ba465aab832883fd8cc6c34ba. Its own parser/app/e2e installs and
+parser/app builds exited 0. The answer was read and acknowledged before any
+mutation. Only the five approved ordinary controls were run, with external
+owned TMPDIR/log/cache and port 15351. Each mutation diff was read before the
+case ran; every job completed before restoration. No platform refusal or
+unexecuted selector occurred in these five controls.
+
+| Drill | Single changed side and actual body | Mutant result | Literal restored result |
+|---|---|---|---|
+| 01 | Remove filename-origin comparison in run-record; coherent worker replacement body | 1 body, resolved reader, 1 failed, exit 1 | Run-record hash A; 1 passed, exit 0 |
+| 02 | Remove filename-origin comparison in run-record; coherent committed-origin replacement body | 1 body, resolved reader, 1 failed, exit 1 | Run-record hash A; 1 passed, exit 0 |
+| 03 | Remove duplicate-attempt guard in run-record; publication-format body | 1 body, duplicate accepted, 1 failed, exit 1 | Run-record hash A; 1 passed, exit 0 |
+| 04 | Insert an owned residual reservation file immediately before the first changed no-residue assertion; complete-acquisition body | 1 body, unexpected residual filename, 1 failed, exit 1 | Qualified-spec hash B; 1 passed, exit 0 |
+| 05 | Insert the same owned residual file before the second changed no-residue assertion; second-root/legacy-conflict body | 1 body, unexpected residual filename, 1 failed, exit 1 | Qualified-spec hash B; 1 passed, exit 0 |
+
+Hash A before and after each literal staged/worktree restore:
+`255e8862e25be55d9e79491c68c4f019ef0d7ccd39ecc84643fe50f91008298f`.
+Hash B before and after each literal staged/worktree restore:
+`cbd0b359bd5ba4806eeb618242e643af90226565c5b232ba8208bf33bba397c7`.
+Each explicit source-to-path diff is empty after restoration. The three
+new bodies have one property-site mutant each; both changed old assertions
+have owned data controls that fail while those assertions remain unchanged.
+This is necessary causal qualification, not an added security campaign.
+
+The literal c8e65fa0 source also has qualified-reservation.mjs SHA-256
+`ee937d2fa2164ed6daa38871796fa0a07ba672d682bbe7231b74ffdcbc8d8073`;
+run-record.spec.ts and push-guard.spec.ts retain their historical hashes in
+the earlier block. The repaired module/request versions and naming commitment
+supersede the earlier version 1 API; historical mutant hashes remain at their
+reported original refs, not new claims about changed files.
+
+External evidence is `logs/origin-drill-01` through `origin-drill-05` with
+mutation `.diff`, RED/restored `.log` and source/hash/count/exit `.json`, plus
+`origin-drill-final-state-T-351-a6.json`, in the repair scratch. At
+2026-10-05T13:39:24Z on Juhos-MacBook-Pro.local, the disposable remained exact
+source c8e65fa0 with clean tracked state, all thirteen conventions Markdown
+sources 0444, no owned Node/Vite/Playwright/Cargo job and no port 15351
+listener. The persisted `repair-origin-artifact-reference` answer was read
+and acknowledged. The coordinator independently read the decisive logs and
+receipts, then preserved twenty-five reproduction/control artifacts
+byte-for-byte in the external evidence archive at
+`execution/repository-separation-2026-10-05/T-351/recovery/origin-repair-drill-artifacts-v1/`.
+Its `MANIFEST.json` records every literal SHA-256 and size. This packet includes
+the actual two-body pre-repair reproduction and twelve-body repaired controls.
+The disposable remains restored and retained at its exact source; it was not
+removed or independently collected as a second native writer. Preservation
+does not replace final grading or fresh independent verification.
+
+### Complete repaired range and gate handoff
+
+The complete repaired notes/source commit is the next graded source, with
+original admitted base 85eb7584e517d379f36df55e83a07f70eb93686c. The handoff
+re-derives the mechanical merge forecast against actual main and the blessed
+owed set for that exact full range after this notes commit. At c8e65fa0,
+the original range still has exactly six paths: the five frozen source/spec
+paths and this card. The notes add no seventh path or new trigger class.
+DOCS GATE fires and owes parser/app/docs readers; GRAPH REGEN fires on the
+three test suffixes, with generated reconciliation assigned to integration.
+BOOT GATE has no matching app source/manifest; METHOD EVAL has no method path
+or new verdict citation. These are owed-at-source decisions; the final report
+supplies actual final-tree derivation and index-current check, and integration
+must re-derive for its own merged tree. No merge or push was performed.
 
 ## Verdicts
 
