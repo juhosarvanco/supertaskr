@@ -589,3 +589,117 @@ disposable-source constraint was resolved through normal preparation. All
 three answers were acknowledged in the designated ask file. No merge or
 push is part of this pass. This verdict write owes its own range's gates
 at the committed tip; those results are reported by ref after the write.
+
+### 2026-10-05 — REJECTED — gpt-6.1-sol@01a10c71-2ff4-7373-98dd-23f7aaab891f — accepted coordinator aliases lose retained authority
+
+This supplements and preserves the preceding qualification-incomplete verdict committed at
+38e1a86e60861817c52b5fdb20b013beb2d714a0. Further independent, constructive owned-input
+checks found a concrete functional defect in candidate e11b10762952f74742e671688ef466786b155f37.
+An absolute symlink alias of the same canonical coordinator product root is accepted by first
+qualified acquisition, but that accepted root cannot subsequently read, exactly repeat or
+exactly release its held set: each returns `QUALIFIED_AUTHORITY_UNREADABLE` / `not a regular
+reservation file`. The canonical-root controls can perform all three operations on the same
+held set. No unsafe scope or foreign authority is supplied.
+
+The class sweep found both lexical-publication-path comparisons in `run-record.mjs`:
+`qualifiedReservations` compares the qualified file's realpath to a pathname built from the
+unnormalized API root; `acquireQualifiedReservation` independently does the same for a legacy
+publication. A legitimate legacy reservation reached through the accepted alias is therefore
+misclassified as `RESERVATION_UNREADABLE` / `unknown reservation authority`, while the canonical
+root correctly reports `QUALIFIED_CONFLICT`. Scanner normalization alone does not repair this
+second path. The normal arm's recorded q4/q5 answers confirm that this accepted-root
+availability defect is inside the existing criterion and fence; they authorize only the
+narrow prototype and regression described below.
+
+| Frozen criterion | Supplemental evidence at candidate e11b10762952f74742e671688ef466786b155f37 | Judgment |
+| --- | --- | --- |
+| 1 — committed capture, canonical authority, measured bindings and retained origin | Existing twelve qualified bodies and original-range grade cover capture/base/receipt/alias origins. `authority-alias-T-351-a9.mjs` acquires the same canonical request through its physical authority alias; retained consumers then fail while canonical controls succeed. | Failed for accepted-root retained availability; previous property-qualification limits also remain. |
+| 2 — authoritative domain comparator, topology and worker exclusivity | Existing collision/disjoint/colocated/topology bodies remained GREEN in the original range and the thirteen-body normalization prototype run. Normalization preserves domain derivation, root identity and all containment/comparator checks. | No new functional failure observed; prior independent-mutant limit remains. |
+| 3 — one transaction, atomic complete publication, both legacy orders and retained validation | `authority-alias-legacy-T-351-a9.mjs` and the new body's legacy-first phase discriminate canonical `QUALIFIED_CONFLICT` from alias `RESERVATION_UNREADABLE`. Its qualified-first phase requires the legacy take through the same alias to recognize the held complete set. | Failed for accepted-root conflict classification/scanning; no partial or competing grant was observed. |
+| 4 — exact idempotence, ownership-preserving release and crash discoverability | First alias acquisition succeeds, but same-alias read/repeat/release all fail in the constructive probe. New body pins exact repeat, foreign-identity preservation, exact release and absence after release; prototype GREEN. Existing independent crash/origin probe remains evidence at unchanged candidate. | Failed: accepted held authority cannot be consumed through the root that acquired it. |
+| 5 — legacy lifecycle, qualified exports, split refusal and read-only seat fixture | Original range and first own-write range remain GREEN at their named refs. Existing regular-file/realpath, transaction and assignment/split guards are untouched by the prototype. Duplicate-index-copy isolated control and thirteen read-only conventions inputs remain as recorded in the preceding verdict. | No new lifecycle or fixture failure observed; prior qualification limit remains separate. |
+| 6 — real owned fixtures, discriminating controls and literal restoration | New body owns two independent repositories/worktrees and one local root alias. Candidate RED, two-site normalization GREEN, single scanner-normalization removal RED, restored normalization GREEN, and exact candidate restoration plus twelve original-body rerun GREEN. | One real correction now pinned; broader unexecuted safety-guard campaign is still incomplete qualification. |
+
+**Correction: preserve accepted coordinator-root aliases across both publication scanners.**
+One correction, one correction body, one mutant block. Commit the body below in
+`tools/e2e/tests/qualified-reservation.spec.ts` after this supplemental verdict commit.
+Implementation repair remains the recovery executor's work; this bench retains candidate
+implementation bytes. The safe prototype adds only `root = realpathSync(root);` at entry to
+`qualifiedReservations` and `acquireQualifiedReservation`, before constructing their publication
+paths. Both existing regular-file/realpath checks and all conflict, receipt, origin,
+canonical captured-root equality, transaction, ownership and release checks remain intact.
+The single block removes only the newly added scanner normalization from that prototype;
+the regression's earlier legacy-first phase additionally pins the acquisition-path correction.
+
+```mutant
+correction: preserve accepted coordinator-root aliases across both publication scanners
+file: tools/e2e/scripts/run-record.mjs
+spec: tools/e2e/tests/qualified-reservation.spec.ts
+body: qualified accepted coordinator aliases preserve legacy conflicts retained reads exact repeats and release
+message: QUALIFIED_AUTHORITY_UNREADABLE
+--- old
+function qualifiedReservations(root) {
+  root = realpathSync(root);
+  const dir = path.join(root, RESERVATIONS_REL_PATH);
+--- new
+function qualifiedReservations(root) {
+  const dir = path.join(root, RESERVATIONS_REL_PATH);
+```
+
+**Measured correction readings.** All commands began at the assigned verifier bench; the
+normal disposable was the explicit test resource `/private/tmp/drill-T-351-a9`, HEAD
+`e11b10762952f74742e671688ef466786b155f37`. External driver
+`/private/tmp/supertaskr-T-351-a9-scratch/logs/root-alias-control-T-351-a9.mjs` invokes
+`node /private/tmp/drill-T-351-a9/tools/e2e/node_modules/@playwright/test/cli.js test tests/qualified-reservation.spec.ts --grep "qualified accepted coordinator aliases preserve legacy conflicts retained reads exact repeats and release"`
+with cwd `/private/tmp/drill-T-351-a9/tools/e2e` and that disposable's absolute CLI path.
+The full runs omit `--grep`. TMPDIR and npm cache are the supplied external scratch; port25351.
+
+- Exact candidate implementation plus new body: one executed body, one failure, exit1,
+  `RESERVATION_UNREADABLE` from alias legacy-first acquisition after canonical controls.
+- Two-site normalization plus new body: one executed body passed, exit0; full qualified spec
+  thirteen bodies passed, exit0, measured at candidate plus the retained literal prototype/body diffs.
+- Remove only prototype scanner normalization: one executed body failed, exit1,
+  `QUALIFIED_AUTHORITY_UNREADABLE` / `not a regular reservation file` on same-alias retained read.
+- Restore that normalization: same body passed, exit0.
+- Restore both implementation and disposable spec to literal candidate bytes: source SHA256
+  `255e8862e25be55d9e79491c68c4f019ef0d7ccd39ecc84643fe50f91008298f`, spec SHA256
+  `cbd0b359bd5ba4806eeb618242e643af90226565c5b232ba8208bf33bba397c7`;
+  modes and exact nanosecond access/modification clocks checked and restored. Disposable tracked
+  state clean; all thirteen conventions Markdown inputs0444. Twelve original qualified bodies
+  passed, exit0, at restored candidate. Every owned fixture was removed and each child joined.
+
+The external logs use `root-alias-{candidate,prototype,prototype-full,mutant,prototype-restored,candidate-restored-full}-T-351-a9.log`;
+separate driver logs record exact exits, nonzero counts and fixture cleanup. Landing diffs are
+`root-alias-{body-landing,prototype-landing,mutant-landing}-T-351-a9.diff`; the exact one-statement
+prototype-to-mutant diff is `root-alias-mutant-from-prototype-T-351-a9.diff`. All are under the
+supplied scratch logs directory. No zero-test or setup error is presented as discrimination.
+
+**Grades and limits.** The original exact base-to-candidate grade independently passed
+parser469/app1171/e2e1032 across nineteen owed specs, exit0. The first verdict's own-write
+range `e11b10762952f74742e671688ef466786b155f37..38e1a86e60861817c52b5fdb20b013beb2d714a0`
+passed parser469/app1171/e2e778 across twelve owed specs, exit0; whole-tree docs and graph checks
+also exited0 there. These counts name those refs, not the later correction tip. After the
+ordered verdict/body commits, run `node tools/e2e/scripts/gate-run.mjs --range e11b10762952f74742e671688ef466786b155f37..HEAD`,
+whole-tree docs, e2e typecheck and mandatory graph check at the actual final HEAD; report their
+actual exits/counts and cessation through native completion. The newly committed regression
+is expected to remain RED until the executor carries the implementation correction. Do not
+silently normalize this verifier bench or skip the correction to make its owed grade GREEN.
+
+The earlier broader safety-guard fault-injection campaign remains unexecuted under the
+preserved platform refusal and this fresh brief's boundary. The exact refusal remains at
+`verification-r3/previous-platform-refusal-v1.txt` in the evidence packet. No guard-disabling
+campaign was repeated or waived by the q4/q5 availability answers. Thus the functional
+correction and incomplete standard qualification are independent reasons this candidate is
+REJECTED. No new dispatch fault or pack gap was found.
+
+**Frame and seal.** This remains the fresh phase-two native verifier, canonical task
+`/root/migration351_repair_phase2_clean`, explicitly bound to native ID
+`01a10c71-2ff4-7373-98dd-23f7aaab891f`; requested GPT-6.1 Sol/xhigh, observed model/effort/usage
+unknown. Diff preceded the permitted API excerpt. Raw card notes, prior foreign judgments,
+executor conversation and commit messages remained unread. The ground is the disclosed
+scripted base census/preflight, not an independently measured empirical body matrix.
+The previously validated seals are unchanged:
+attack SHA256 `4efed69562a95932d2e0ccf2923d9b9a2f686e47d8b2b74abf28dfead4b75394`;
+ground SHA256 `b74a3dc4cf43165c5e2cef6333f1ff6af2c30254b76c2d67a0eedf5db9928874`;
+raw frozen base-card SHA256 `486c30755489e85afcab93ecab873dcb28fee64266dde47151e14a52158a7b70`.
+No merge or push. Final cessation and real final commit are collected after the own-write jobs.
