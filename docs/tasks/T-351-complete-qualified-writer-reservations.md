@@ -457,3 +457,135 @@ answer was read and acknowledged before this echo or any repair work.
 ### Recovery scope amendment — 2026-10-05
 
 The candidate at baa54a7302bdac16159e0593c7afd27b798d5c9f passed its added bodies but its original-base owed grade was RED: parser 469 and app 1171 passed, e2e 1026 passed and 3 failed. The failures were all the existing seat fixture's second copy of the read-only conventions index, before invoking seat or reservation behavior. The repair is one additional spec path already in the owed range. It preserves the source mode and existing seat assertions. Native frozen writer scope is not live-expanded: collect the ceased failed attempt, preserve its refs and evidence, complete normal failed-attempt collection and reservation release before fresh admission, then dispatch a fresh admitted worker using the retained implementation as recovery material. Disclose that recovery commit to the fresh verifier reviewing the entire new-base-to-candidate diff. No verifier record or grade is rewritten.
+
+### 2026-10-05 — REJECTED — gpt-6.1-sol@01a10c71-2ff4-7373-98dd-23f7aaab891f — qualification incomplete
+
+Fresh native phase two, T-351-a9, canonical task
+`/root/migration351_repair_phase2_clean`, judging original base
+`85eb7584e517d379f36df55e83a07f70eb93686c` through candidate
+`e11b10762952f74742e671688ef466786b155f37`. The candidate has no
+functional failure demonstrated by this sitting. REJECTED records incomplete
+qualification: the standard verifier rubric requires per-property drill proof,
+and the broader safety-property source-drill campaign remains unexecuted.
+The narrower permitted compatibility, legitimate-alias and duplicate-copy
+controls do not establish that omitted proof. This is no finding that a
+commanded but unexecuted check passed, and no earlier GREEN is acceptance.
+
+Requested model/effort: GPT-6.1 Sol/xhigh. Native identity was measured first
+as `01a10c71-2ff4-7373-98dd-23f7aaab891f`, then explicitly bound by the
+normal coordinator before repository use. Observed model, effort and token
+usage: unknown. Profile: `detached-verifier`; assigned bench:
+`supertaskr-V-T-351-r3`. The frozen preparation digest and raw card digest
+were validated privately, without displaying any raw card notes or nested
+authority. `inspectNativeBench` independently returned clean and actual
+independent check true at the candidate, including original-base ancestry.
+This is a procedural reading boundary and supported repository safeguard;
+it claims no OS isolation or authentication against arbitrary authority-home
+replacement.
+
+Frame: a fresh independent phase-two native spawn receiving a separately
+sealed packet-only phase-one artifact, rather than a continuation of phase
+one. Phase one disclosed that its packet supplied the active six-criterion
+contract and operational extraction instructions, rather than the complete
+historical role. The operational phase-two packet disclosed the prior
+interrupted uncommitted rejection and two regression bodies shared with the
+recovery executor. No prior reports/verdicts, executor conversation, raw
+notes or commit messages were opened. Implementation and test diffs were
+read before the permitted selective API delivery excerpt. That excerpt pins
+request version 1, retained publication version 2, and the actual public
+capture/acquire/read/release/path operations and limitations. It declares no
+separate in-fence follow-through. The full six-path range was reviewed.
+
+Sealed inputs, rehashed in this sitting:
+
+- attack set: `sha256:4efed69562a95932d2e0ccf2923d9b9a2f686e47d8b2b74abf28dfead4b75394`;
+- ground: `sha256:b74a3dc4cf43165c5e2cef6333f1ff6af2c30254b76c2d67a0eedf5db9928874`;
+- raw card at the original base: `sha256:486c30755489e85afcab93ecab873dcb28fee64266dde47151e14a52158a7b70`.
+
+The sealed ground is a base file/body census and preflight reading. It does
+not contain the requested empirical platform matrix. Current-source
+permission and fixture measurements below are candidate measurements,
+never represented as pre-diff base ground.
+
+| Acceptance criterion | Evidence at candidate e11b10762952f74742e671688ef466786b155f37 | Reading |
+|---|---|---|
+| 1 — complete committed request, measured roots/workers and immutable retained origins | `captureQualifiedInputs` uses existing committed capture, exact full revisions, complete registry and public `expandQualifiedFence`; `deriveQualifiedScope` validates strict request/role shape, measured worker identity, exact first HEAD/base and retained committed origins. Passing bodies: `qualified acquisition freezes complete committed receipts and mixed containment across actual worker checkouts`; `qualified validation refuses drift bases duplicate roles unsafe domains and alternate authority before publication`; `qualified colocated role bindings normalize one worker and refuse incompatible alias origins`; `qualified repeat read and exact release survive worker HEAD advancement but retain immutable identity`. Version and alias source controls below discriminate their narrow properties. | Functional evidence GREEN; wider safety-property drill proof unexecuted. |
+| 2 — authoritative project comparison and unique physical worker ownership | `qualifiedSetsConflict` uses public `compareQualifiedFences` on captured integration-root identities and additionally claims each canonical physical worker once. Passing bodies: `qualified domains separate independent roles while colocated aliases and reused workers collide`, complete mixed-containment body and validation body covering unsafe domains, symlink, nested roots and shared common directory. Independent repositories and registered linked workers are created by each fixture. | Functional evidence GREEN; no claim of a complete worker-ownership/containment source kill set. |
+| 3 — one transaction/home and one atomic complete publication, with legacy interaction and retained reconstruction | Source read confirms set discovery, retained validation, decisive complete conflict checks and `atomicJson` publication inside `withNativeTransaction`; legacy take/release share that transaction. Passing bodies: `qualified second-root and legacy conflicts in both orders leave no partial grant and preserve release ownership`; `qualified retained readers reconstruct narrowed scope changed binding malformed authority and committed receipt`; both `qualified original acquisition refuses coherent ...` bodies; `qualified publication commits scope in its name and refuses unanchored malformed and duplicate authority`. All retained consumers compare reconstruction against the digest in the original publication name. | Functional evidence GREEN; broader authority-integrity and legacy-enforcement source drills unexecuted. |
+| 4 — exact repeat/release ownership, retained progress and no dead-holder theft | Passing repeat/read/release body, coherent-replacement bodies and publication body. Independent `crash-origin-T-351-a9.mjs` acquired in a real child that exited 77; the holder actually ceased, one complete two-repository set remained discoverable, a distinct-worker contender refused, wrong expected release preserved the exact file hash, and worker commits still allowed original read/repeat/exact release. Owned fixture was removed. | Constructive lifecycle evidence GREEN; no omitted guard-disabling drill claimed. |
+| 5 — ordinary lifecycle retained, direct APIs exposed, native/split admission remains closed and seat fixture copying repaired | All owed run-record/native/adjacent bodies passed, including `ordinary reservation lifecycle loads no qualified capture and unknown assignment roots grant no permission`. Strict top-level and native assignment whitelists reject extra root/scope authority. Source review confirms no native consumer wiring, CLI bypass, hand-authored manifest, new daemon or dependency. The existing split CLI refusal remains. `seatFixture` skips the conventions index in the flat walk and copies the canonical set once; existing assertions are unchanged. Authorized duplicate-index-copy control below gives the exact setup EACCES and restored success with read-only sources. | Functional and targeted fixture evidence GREEN. |
+| 6 — owned real fixtures, required unhappy cases, independent concurrency controls and literal restoration | All 12 qualified-reservation bodies passed in the original range. The two distinct children in the normal conflict case yield one winner; the separate serialization-disabled fixture coordinates both free-state checks before publication and yields two grants; the separate conflict-disabled fixture keeps serialization and admits sequential overlap. These are existing constructive candidate controls confined to owned repositories and child module views. Retained corruption/receipt/binding/owner/version cases, alias bases, disjoint scopes, cross-worktree collision and both legacy orders are covered by the named bodies. The current source hashes were compared literally against the candidate after the original run. Three additional permitted source controls below have actual RED, exact restoration and GREEN readings. | Specified functional controls GREEN. The standard rubric's wider per-property source-drill qualification is INCOMPLETE. |
+
+Original-range command:
+`node tools/e2e/scripts/gate-run.mjs --range 85eb7584e517d379f36df55e83a07f70eb93686c..e11b10762952f74742e671688ef466786b155f37`,
+with assigned port 25351 and externally supplied temporary/log/cache homes.
+Actual exit 0 at the candidate: parser 469 bodies GREEN, app 1171 GREEN,
+e2e 1032 GREEN across the derived 19 spec files. No body was skipped and no
+zero-test result was counted. `npm run typecheck` and the whole-tree
+`npm run lint:docs` each exited 0. `npm run capabilities:check` exited 1:
+STALE, committed 129443 bytes versus candidate generation 130889 bytes.
+The conventions assign that regeneration to the integrator at merge; this
+seat preserved the read-only generated file. Docs budget warnings remain
+warnings. Rust, boot and method-eval legs were not in this range's owed set.
+
+Current candidate source SHA-256 readings, each matched against literal
+`git show` bytes at the candidate:
+
+- `tools/e2e/scripts/qualified-reservation.mjs`: `ee937d2fa2164ed6daa38871796fa0a07ba672d682bbe7231b74ffdcbc8d8073`;
+- `tools/e2e/scripts/run-record.mjs`: `255e8862e25be55d9e79491c68c4f019ef0d7ccd39ecc84643fe50f91008298f`;
+- `tools/e2e/tests/qualified-reservation.spec.ts`: `cbd0b359bd5ba4806eeb618242e643af90226565c5b232ba8208bf33bba397c7`;
+- `tools/e2e/tests/run-record.spec.ts`: `6311ea018f4eaf425dc0e1377ec89626548c38eb403218644cd089489cc88940`;
+- `tools/e2e/tests/push-guard.spec.ts`: `4796e23487dcf0a16016d870352c2ba9a15e3535dda6863234d9065981647576`.
+
+Targeted disposable-source controls were normally prepared by the
+coordinator at the exact candidate, used only after original-range job
+completion, and addressed as explicit test resources from the assigned
+bench. Their driver/results/log stems are `duplicate-copy-T-351-a9`,
+`version-T-351-a9` and `alias-T-351-a9` in the supplied external scratch.
+The tests ran from the disposable `tools/e2e` package at port 25351, using
+Playwright's existing config and exact named-body filters:
+
+- Duplicate index copy: existing body `` `--take-seat` installs the guard and announces it, and BOTH seat verbs report a checkout without the hook as UNGUARDED ``. Baseline 1 passed/exit 0. The sole mutation removed `&& f !== "CONVENTIONS.md"` from the flat-copy filter; its literal `git diff` was retained and checked. Mutant 1 failed/exit 1 with actual `EACCES: permission denied, copyfile` on the conventions index at `seatFixture`, before seat CLI execution. Candidate source hash `4796e23487dcf0a16016d870352c2ba9a15e3535dda6863234d9065981647576`, mode and exact atime/mtime were restored; same body 1 passed/exit 0.
+- Publication compatibility: sole literal change `QUALIFIED_RESERVATION_VERSION = 2` to `3`; exact landing diff read before running `qualified publication commits scope in its name and refuses unanchored malformed and duplicate authority`. Mutant 1 failed/exit 1, Expected 2 / Received 3. Exact candidate hash `ee937d2fa2164ed6daa38871796fa0a07ba672d682bbe7231b74ffdcbc8d8073`, mode and clocks restored; same body 1 passed/exit 0.
+- Legitimate colocated alias support: sole omission of `prior.roles.push(binding.role)`; exact landing diff read before running `qualified colocated role bindings normalize one worker and refuse incompatible alias origins`. Mutant 1 failed/exit 1 with `qualified-worker-missing: records` during acquisition. Exact candidate hash `ee937d2fa2164ed6daa38871796fa0a07ba672d682bbe7231b74ffdcbc8d8073`, mode and clocks restored; same body 1 passed/exit 0.
+
+These are three targeted source controls over selected bodies, not a
+complete kill-set survey across the whole owning spec graph. Canonical
+`conventionsFiles` measured 12 rule inputs; all 13 conventions Markdown
+files including the chapter README remained mode 0444. No live conventions
+source, native authority, grant or integration workspace was altered by
+these controls. The owned-input crash fixture's original publication hash
+was `6b8b0f6992309b6d805d1ab47aefe83ea797f2c8db4d7ad2da068cfc8c83d416`;
+foreign release and competing acquisition preserved it literally.
+
+Security sweep: new input paths were examined for argv injection, unsafe
+paths, unchecked authority, secrets, defaults and dependency additions.
+Git invocation uses argument arrays, strict schemas precede acquisition,
+qualified scope is reconstructed from exact committed inputs, publication
+names bind original scope, and unknown assignment extras grant no second
+root. No new endpoint, dependency or exposed secret was found in this diff.
+Architecture interface and adjacent lifecycle readings passed within the
+original owed set. Whole authority-home replacement and OS compromise
+remain outside the delivery's declared claim.
+
+The preserved prior platform refusal says: "This content was flagged for
+possible cybersecurity risk." It is a refusal, not a failing body or
+successful drill. The native boundary explicitly prohibits repeating or
+widening that previously refused campaign. The normal arm permitted only
+this sitting's duplicate-copy and two compatibility/availability source
+controls and expressly permitted no safety-guard-removal campaign. Thus
+broader per-property source drill proof for retained authority integrity,
+worker ownership/containment, legacy enforcement and the assignment guard
+was not executed. The favorable functional evidence above cannot fill that
+missing measurement. Qualification remains incomplete under the standard
+rubric until the remaining proof is legitimately obtained or the owner
+explicitly changes that requirement.
+
+Corrections assigned: 0; committed correction bodies: 0; mutant blocks: 0.
+No unmeasured implementation correction is assigned from this limitation.
+No pack gap or additional suggested task was found. The withheld raw-note
+boundary was resolved through the normal selective delivery excerpt; the
+disposable-source constraint was resolved through normal preparation. All
+three answers were acknowledged in the designated ask file. No merge or
+push is part of this pass. This verdict write owes its own range's gates
+at the committed tip; those results are reported by ref after the write.
