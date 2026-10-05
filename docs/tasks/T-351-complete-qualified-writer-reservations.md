@@ -9,6 +9,8 @@ status: planned
 suggested_by: codex/gpt-6.1-sol @architect
 blocked_by: [T-349, T-350]
 touches: [tools/e2e/scripts/run-record.mjs, tools/e2e/scripts/qualified-reservation.mjs, tools/e2e/tests/run-record.spec.ts, tools/e2e/tests/qualified-reservation.spec.ts]
+builder: gpt-6.1-sol@xhigh
+verifier: gpt-6.1-sol@xhigh
 review: independent
 ---
 
