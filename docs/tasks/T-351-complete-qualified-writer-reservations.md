@@ -32,6 +32,23 @@ Prepared at e985f1c807a2bad19017b6fef0c968a70cccf42b. The existing run-record tr
 
 ## Implementation notes
 
+### Fresh recovery criteria echo — T-351-a6
+
+- [ ] Acquire only a complete, validated qualified request: committed card/registry receipt, canonical expanded scope, measured project and worker identities, exact first-acquisition bases, and immutable retained bases after legitimate HEAD advancement.
+- [ ] Compare domains by authoritative project identity, preserve independent repository domains, reject aliases/topology/path escapes, and give each physical worker one owner.
+- [ ] Check and atomically publish the full set within the existing native transaction and reservation home; keep legacy conflicts effective in both orders and reconstruct retained authority from exact committed inputs.
+- [ ] Make exact repeats idempotent, refuse changed ownership/scope, release only an exact owned retained set, and preserve discoverable crash evidence without dead-holder stealing.
+- [ ] Preserve ordinary lifecycle and dependency loading, expose only qualified library operations, keep native/split admission refused, and copy every read-only conventions fixture input exactly once.
+- [ ] Exercise the reservation edge cases and separate concurrency controls using owned fixtures; preserve recovered hash-restored drills and measure the duplicate-copy EACCES mutation, literal restoration, and successful seat-fixture rerun in this attempt.
+
+This fresh attempt starts at 85eb7584e517d379f36df55e83a07f70eb93686c.
+The allowed recovery source is implementation-only commit
+b04953c62409d2a2d8a5395f80fe6b245f8dbc34. The original failed
+attempt at baa54a7302bdac16159e0593c7afd27b798d5c9f remains historical
+RED evidence; its original grade is not this attempt's grade. The reviewed
+recovery criteria and five-file fence above are retained, rather than
+importing that attempt's task card.
+
 Independently reviewed outside the repository in two packet-only sittings. Final review accepted this contract with the explicit acquisition-versus-retained-HEAD distinction incorporated above. Owner-authorized on 2026-10-05 as the next qualified-ownership implementation in the full repository-separation migration; implementation and independent verification remain separate.
 
 Draft outside the product repository. New files have tracked parents. Size M is provisional for one reservation-set test cycle; revise size/fence before dispatch if investigation shows an additional independent cycle. Preserve existing one-writer/digest grant hazards and callback limits. Keep transaction orchestration in run-record and validation below it. Qualified capture may load the existing built public parser on demand; ordinary lifecycle imports and operations SHALL retain their existing dependency/loading requirements, with no new capture/parser dependency when qualified scope is absent. The capture providers are library exports, not CLI entry points; introduce no circular initialization dependency. This card changes no method grammar or publication ruling. Requested implementation and independent verification are GPT-6.1 Sol extra-high; observed identity is separate. No additional agent demonstration campaign.
