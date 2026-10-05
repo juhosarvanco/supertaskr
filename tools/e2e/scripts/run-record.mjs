@@ -138,10 +138,15 @@ let loadedQualified;
 /** @returns {typeof import("./qualified-reservation.mjs")} */
 function qualifiedValidation() { return loadedQualified ?? requireQualified("./qualified-reservation.mjs"); }
 
-/** @param {string} root @param {string} attempt */
-export function qualifiedReservationPath(root, attempt) {
+/** The publication name commits the original canonical acquired scope outside
+ * rewritable JSON. APIs never rekey a retained record. This is content
+ * integrity, not protection from replacement of the whole authority home.
+ * @param {string} root @param {string} attempt @param {string} expectedIdentity */
+export function qualifiedReservationPath(root, attempt, expectedIdentity) {
   workOf(attempt);
-  return path.join(root, RESERVATIONS_REL_PATH, `qualified-${attempt}.json`);
+  const digest = /^sha256:([0-9a-f]{64})$/.exec(expectedIdentity);
+  if (!digest) throw new RunRecordFinding("QUALIFIED_IDENTITY", "QUALIFIED_IDENTITY: full canonical sha256 identity required");
+  return path.join(root, RESERVATIONS_REL_PATH, `qualified-${attempt}-${digest[1]}.json`);
 }
 
 /** Reconstruct every qualified set before answering any writer conflict.
@@ -149,13 +154,20 @@ export function qualifiedReservationPath(root, attempt) {
 function qualifiedReservations(root) {
   const dir = path.join(root, RESERVATIONS_REL_PATH);
   if (!existsSync(dir)) return [];
+  const seen = new Set();
   return readdirSync(dir).filter((name) => name.startsWith("qualified-")).map((name) => {
     const file = path.join(dir, name);
-    const attempt = /^qualified-(.+)\.json$/.exec(name)?.[1];
     try {
-      if (!attempt || !statSync(file).isFile() || realpathSync(file) !== file) throw new Error("not a regular reservation file");
+      if (/^qualified-T-\d+(?:-s\d+)?-a\d+\.json$/.test(name)) throw new Error("QUALIFIED_UNANCHORED: old publication has no original-acquisition commitment");
+      const named = /^qualified-(T-\d+(?:-s\d+)?-a\d+)-([0-9a-f]{64})\.json$/.exec(name);
+      if (!named) throw new Error("QUALIFIED_PUBLICATION_NAME: malformed acquired-scope commitment");
+      const attempt = /** @type {string} */ (named[1]);
+      if (seen.has(attempt)) throw new Error("QUALIFIED_DUPLICATE: multiple publications for the same attempt");
+      seen.add(attempt);
+      if (!statSync(file).isFile() || realpathSync(file) !== file) throw new Error("not a regular reservation file");
       const reservation = JSON.parse(readFileSync(file, "utf8"));
       const scope = qualifiedValidation().validateQualifiedReservation(reservation, root, attempt);
+      if (qualifiedValidation().qualifiedIdentity(scope) !== `sha256:${named[2]}`) throw new Error("QUALIFIED_ORIGIN_CHANGED: publication differs from its original acquired scope");
       return { file, reservation, scope };
     } catch (err) { throw new RunRecordFinding("QUALIFIED_AUTHORITY_UNREADABLE", `QUALIFIED_AUTHORITY_UNREADABLE: ${file}: ${String(err)}`); }
   });
@@ -196,9 +208,10 @@ export async function acquireQualifiedReservation(root, request, options = {}) {
     }
     if (existing) return { file: existing.file, reservation: existing.reservation, repeated: true };
     armRuntimeDir(root);
-    const file = qualifiedReservationPath(root, request.attempt);
-    const reservation = { version: 1, kind: "qualified-writer-set", attempt: request.attempt,
-      request: JSON.parse(JSON.stringify(request)), scope, identity: validation.qualifiedIdentity(scope),
+    const identity = validation.qualifiedIdentity(scope);
+    const file = qualifiedReservationPath(root, request.attempt, identity);
+    const reservation = { version: validation.QUALIFIED_RESERVATION_VERSION, kind: "qualified-writer-set", attempt: request.attempt,
+      request: JSON.parse(JSON.stringify(request)), scope, identity,
       takenAt: options.at ?? new Date().toISOString(), holder: { pid: options.pid ?? process.pid, host: options.host ?? "" } };
     validation.validateQualifiedReservation(reservation, root, request.attempt);
     atomicJson(file, reservation);
@@ -221,11 +234,11 @@ export async function readQualifiedReservation(root, attempt) {
 export async function releaseQualifiedReservation(root, options) {
   loadedQualified ??= await import("./qualified-reservation.mjs");
   return withNativeTransaction(root, { operation: "qualified-release" }, () => {
-    const file = qualifiedReservationPath(root, options.attempt);
-    const held = qualifiedReservations(root).find((set) => set.file === file);
+    workOf(options.attempt);
+    const held = qualifiedReservations(root).find((set) => set.reservation.attempt === options.attempt);
     if (!held) return false;
     if (held.reservation.identity !== options.expectedIdentity) throw new RunRecordFinding("QUALIFIED_NOT_OURS", "QUALIFIED_NOT_OURS: expected qualified content differs; authority retained");
-    rmSync(file);
+    rmSync(held.file);
     return true;
   });
 }

@@ -5,7 +5,7 @@ import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { captureQualifiedInputs, deriveQualifiedScope, qualifiedContent, qualifiedIdentity } from "../scripts/qualified-reservation.mjs";
 import { acquireQualifiedReservation, readQualifiedReservation, releaseQualifiedReservation, releaseReservation,
-  reservationPath, takeReservation } from "../scripts/run-record.mjs";
+  qualifiedReservationPath, reservationPath, takeReservation } from "../scripts/run-record.mjs";
 import { measureProductIdentity, WORKSPACE_ASSOCIATION_REL_PATH, WORKSPACE_BINDING_REL_PATH } from "../scripts/workspace.mjs";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 
@@ -81,7 +81,7 @@ test("qualified acquisition freezes complete committed receipts and mixed contai
     // A nested file collides with the component directory in another worker.
     const collision = fx.request("T-999-a2", "product::src/file, records::other/file");
     await expect(acquireQualifiedReservation(fx.product, collision)).rejects.toThrow(/QUALIFIED_CONFLICT/);
-    expect(files(fx.product)).toEqual(["qualified-T-999-a1.json"]);
+    expect(files(fx.product)).toEqual([path.basename(first.file)]);
     const disjoint = fx.request("T-999-a3", "product::other/file, records::other/file");
     const second = await acquireQualifiedReservation(fx.product, disjoint);
     expect(files(fx.product)).toHaveLength(2); expect(await release(fx.product, second)).toBe(true); expect(await release(fx.product, first)).toBe(true);
@@ -215,7 +215,7 @@ test("qualified second-root and legacy conflicts in both orders leave no partial
     const first = await acquireQualifiedReservation(fx.product, fx.request("T-999-a1", "records::rules/file"));
     const two = fx.request("T-999-a2", "product::other/file, records::rules/file");
     await expect(acquireQualifiedReservation(fx.product, two)).rejects.toThrow(/QUALIFIED_CONFLICT/);
-    expect(files(fx.product)).toEqual(["qualified-T-999-a1.json"]);
+    expect(files(fx.product)).toEqual([path.basename(first.file)]);
     expect(await release(fx.product, first)).toBe(true);
     for (const role of ["product", "records"] as const) {
       const request = fx.request(); const resource = fx.worker(role);
@@ -315,4 +315,88 @@ test("qualified conflict enforcement independently refuses sequential overlap an
       if (control === "none") expect(result.error).toContain("QUALIFIED_CONFLICT");
     } finally { fx.cleanup(); }
   }
+});
+
+/** Every consumer must refuse replaced authority, not merely reconstruct a
+ * different internally consistent set. Restoring the original JSON is the
+ * positive control for the same fixture and original acquired identity. */
+async function refuseCoherentReplacement(fx: ReturnType<typeof fixture>, request: any, acquired: any, changed: any) {
+  const original = readFileSync(acquired.file, "utf8");
+  changed.scope = deriveQualifiedScope(changed.request, { retained: true });
+  changed.identity = qualifiedIdentity(changed.scope);
+  expect(changed.identity).not.toBe(acquired.reservation.identity);
+  const replacement = JSON.stringify(changed);
+  writeFileSync(acquired.file, replacement);
+  await expect(readQualifiedReservation(fx.product, request.attempt)).rejects.toThrow(/QUALIFIED_AUTHORITY_UNREADABLE/);
+  await expect(acquireQualifiedReservation(fx.product, request)).rejects.toThrow(/QUALIFIED_AUTHORITY_UNREADABLE/);
+  await expect(acquireQualifiedReservation(fx.product, fx.request("T-999-a2", "records::other/file"))).rejects.toThrow(/QUALIFIED_AUTHORITY_UNREADABLE/);
+  expect(() => takeReservation(fx.product, { resource: fx.worker("product"), attempt: "T-998-a1", role: "executor", at: new Date().toISOString() })).toThrow(/QUALIFIED_AUTHORITY_UNREADABLE/);
+  await expect(release(fx.product, acquired)).rejects.toThrow(/QUALIFIED_AUTHORITY_UNREADABLE/);
+  expect(readFileSync(acquired.file, "utf8")).toBe(replacement);
+  expect(files(fx.product)).toEqual([path.basename(acquired.file)]);
+  writeFileSync(acquired.file, original);
+  expect((await readQualifiedReservation(fx.product, request.attempt))?.scope).toEqual(acquired.reservation.scope);
+  expect((await acquireQualifiedReservation(fx.product, request)).repeated).toBe(true);
+  expect(await release(fx.product, acquired)).toBe(true);
+}
+
+test("qualified original acquisition refuses coherent worker replacement through every retained consumer", async () => {
+  const fx = fixture();
+  try {
+    const request = fx.request("T-999-a1", "product::src/file");
+    const acquired = await acquireQualifiedReservation(fx.product, request);
+    const changed = JSON.parse(readFileSync(acquired.file, "utf8"));
+    changed.request.workers[0].checkout = fx.worker("product", request.revisions.product);
+    await refuseCoherentReplacement(fx, request, acquired, changed);
+  } finally { fx.cleanup(); }
+});
+
+test("qualified original acquisition refuses coherent committed origin replacement without changing physical workers", async () => {
+  const fx = fixture();
+  try {
+    const request = fx.request();
+    const acquired = await acquireQualifiedReservation(fx.product, request);
+    const changed = JSON.parse(readFileSync(acquired.file, "utf8"));
+    changed.request = fx.request(request.attempt, "product::other/file");
+    changed.request.workers = request.workers.map((worker: any) => ({ ...worker, base: changed.request.revisions[worker.role] }));
+    await refuseCoherentReplacement(fx, request, acquired, changed);
+  } finally { fx.cleanup(); }
+});
+
+test("qualified publication commits scope in its name and refuses unanchored malformed and duplicate authority", async () => {
+  const fx = fixture();
+  try {
+    const request = fx.request();
+    const acquired = await acquireQualifiedReservation(fx.product, request);
+    const original = readFileSync(acquired.file, "utf8");
+    expect(request.version).toBe(1);
+    expect(acquired.reservation.version).toBe(2);
+    expect(path.basename(acquired.file)).toBe(`qualified-${request.attempt}-${acquired.reservation.identity.slice("sha256:".length)}.json`);
+    expect(qualifiedReservationPath(fx.product, request.attempt, acquired.reservation.identity)).toBe(acquired.file);
+    expect(() => qualifiedReservationPath(fx.product, request.attempt, "sha256:short")).toThrow(/QUALIFIED_IDENTITY/);
+    await expect(releaseQualifiedReservation(fx.product, { attempt: request.attempt, expectedIdentity: `sha256:${"0".repeat(64)}` })).rejects.toThrow(/QUALIFIED_NOT_OURS/);
+    expect((await readQualifiedReservation(fx.product, request.attempt))?.identity).toBe(acquired.reservation.identity);
+    const alternateRequest = fx.request(request.attempt, "product::other/file");
+    const alternateScope = deriveQualifiedScope(alternateRequest, { retained: true });
+    const alternateIdentity = qualifiedIdentity(alternateScope);
+    const replacements = [
+      { name: `qualified-${request.attempt}.json`, value: JSON.stringify({ ...acquired.reservation, version: 1 }), reason: /QUALIFIED_UNANCHORED/ },
+      { name: `qualified-${request.attempt}-not-a-digest.json`, value: original, reason: /QUALIFIED_PUBLICATION_NAME/ },
+      { name: path.basename(qualifiedReservationPath(fx.product, request.attempt, alternateIdentity)),
+        value: JSON.stringify({ ...acquired.reservation, request: alternateRequest, scope: alternateScope, identity: alternateIdentity }), reason: /QUALIFIED_DUPLICATE/ },
+    ];
+    for (const replacement of replacements) {
+      const file = path.join(path.dirname(acquired.file), replacement.name);
+      writeFileSync(file, replacement.value);
+      await expect(readQualifiedReservation(fx.product, request.attempt)).rejects.toThrow(replacement.reason);
+      await expect(acquireQualifiedReservation(fx.product, request)).rejects.toThrow(/QUALIFIED_AUTHORITY_UNREADABLE/);
+      expect(() => takeReservation(fx.product, { resource: fx.worker("product"), attempt: "T-998-a1", role: "executor", at: new Date().toISOString() })).toThrow(/QUALIFIED_AUTHORITY_UNREADABLE/);
+      await expect(release(fx.product, acquired)).rejects.toThrow(/QUALIFIED_AUTHORITY_UNREADABLE/);
+      expect(readFileSync(file, "utf8")).toBe(replacement.value);
+      expect(readFileSync(acquired.file, "utf8")).toBe(original);
+      rmSync(file);
+      expect((await acquireQualifiedReservation(fx.product, request)).repeated).toBe(true);
+    }
+    expect(await release(fx.product, acquired)).toBe(true);
+  } finally { fx.cleanup(); }
 });

@@ -10,7 +10,8 @@ import * as publicParser from "../../../lib/parser/dist/pure.js";
 import { captureCommittedInputs, captureTaskSnapshot } from "./records.mjs";
 import { normalizeContextRequest } from "./records-context.mjs";
 
-export const QUALIFIED_RESERVATION_VERSION = 1;
+export const QUALIFIED_RESERVATION_VERSION = 2;
+export const QUALIFIED_REQUEST_VERSION = 1;
 const ROLES = ["product", "records"];
 
 export class QualifiedReservationFinding extends Error {
@@ -119,7 +120,7 @@ export function captureQualifiedInputs(options) {
  * @param {any} request @param {{retained?: boolean}} [options] */
 export function deriveQualifiedScope(request, { retained = false } = {}) {
   shape(request, ["version", "authorityRoot", "attempt", "projectId", "revisions", "taskId", "legacyTokenMap", "receipt", "workers"], "request");
-  if (request.version !== QUALIFIED_RESERVATION_VERSION || typeof request.attempt !== "string" ||
+  if (request.version !== QUALIFIED_REQUEST_VERSION || typeof request.attempt !== "string" ||
       !new RegExp(`^${request.taskId}-a[0-9]+$`).test(request.attempt) || !/^T-\d+(?:-s\d+)?$/.test(request.taskId)) refuse("qualified-owner", "version 1 and an attempt of the selected task are required");
   const captured = captureQualifiedInputs(request);
   same(request.receipt, captured.receipt, "committed card/registry receipt or association changed");

@@ -6,7 +6,7 @@ milestone: 4
 priority: 1
 size: M
 tier: standard
-status: verifying
+status: building
 suggested_by: codex/gpt-6.1-sol @architect
 blocked_by: [T-349, T-350]
 touches: [tools/e2e/scripts/run-record.mjs, tools/e2e/scripts/qualified-reservation.mjs, tools/e2e/tests/run-record.spec.ts, tools/e2e/tests/qualified-reservation.spec.ts, tools/e2e/tests/push-guard.spec.ts]
@@ -270,6 +270,23 @@ None outside the reviewed criteria. The read-only fixture repair is expressly
 required by the recovery contract; no new acceptance criterion or live fence
 expansion was made. No unrelated source, merge, push or foreign-lane write was
 performed.
+
+### Repair continuation after independent retained-origin rejection
+
+The independent a7 review rejected C1/C3/C4 at candidate
+910e174c2a729b5b38f37edb04318aa03c74c78b, despite its successful original-range
+grade. Its interrupted, uncommitted report is intentional repair input. Two
+fixture-owned reproductions coherently replace a valid acquired worker or a
+valid committed card/domain origin, then recompute request/scope/identity; the
+reader accepts both. The original candidate and grade remain preserved. No
+blind attack set was opened.
+
+Repair criteria echo, before implementation:
+
+- [ ] C1: retain the originally acquired committed inputs, worker bindings and bases independently of a coherently rewritten JSON request/scope/identity; continue allowing legitimate current HEAD advancement.
+- [ ] C3: check that original-acquisition commitment in every qualified reader and legacy/qualified acquisition under the existing transaction and reservation home; changed authority must refuse without partial publication.
+- [ ] C4: exact repeat and expected-content release must refuse replaced authority and retain it for reconciliation, while intact repeat/release remain effective.
+- [ ] C5/C6: retain the read-only fixture repair and all existing assertions, add owned causal regressions, restore necessary property-site drills by hash, and grade the complete original-base-to-repaired-source range after complete notes.
 
 ## Verdicts
 
