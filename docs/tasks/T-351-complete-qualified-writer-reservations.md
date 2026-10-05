@@ -34,12 +34,12 @@ Prepared at e985f1c807a2bad19017b6fef0c968a70cccf42b. The existing run-record tr
 
 ### Fresh recovery criteria echo — T-351-a6
 
-- [ ] Acquire only a complete, validated qualified request: committed card/registry receipt, canonical expanded scope, measured project and worker identities, exact first-acquisition bases, and immutable retained bases after legitimate HEAD advancement.
-- [ ] Compare domains by authoritative project identity, preserve independent repository domains, reject aliases/topology/path escapes, and give each physical worker one owner.
-- [ ] Check and atomically publish the full set within the existing native transaction and reservation home; keep legacy conflicts effective in both orders and reconstruct retained authority from exact committed inputs.
-- [ ] Make exact repeats idempotent, refuse changed ownership/scope, release only an exact owned retained set, and preserve discoverable crash evidence without dead-holder stealing.
-- [ ] Preserve ordinary lifecycle and dependency loading, expose only qualified library operations, keep native/split admission refused, and copy every read-only conventions fixture input exactly once.
-- [ ] Exercise the reservation edge cases and separate concurrency controls using owned fixtures; preserve recovered hash-restored drills and measure the duplicate-copy EACCES mutation, literal restoration, and successful seat-fixture rerun in this attempt.
+- [x] Acquire only a complete, validated qualified request: committed card/registry receipt, canonical expanded scope, measured project and worker identities, exact first-acquisition bases, and immutable retained bases after legitimate HEAD advancement.
+- [x] Compare domains by authoritative project identity, preserve independent repository domains, reject aliases/topology/path escapes, and give each physical worker one owner.
+- [x] Check and atomically publish the full set within the existing native transaction and reservation home; keep legacy conflicts effective in both orders and reconstruct retained authority from exact committed inputs.
+- [x] Make exact repeats idempotent, refuse changed ownership/scope, release only an exact owned retained set, and preserve discoverable crash evidence without dead-holder stealing.
+- [x] Preserve ordinary lifecycle and dependency loading, expose only qualified library operations, keep native/split admission refused, and copy every read-only conventions fixture input exactly once.
+- [x] Exercise the reservation edge cases and separate concurrency controls using owned fixtures; preserve recovered hash-restored drills and measure the duplicate-copy EACCES mutation, literal restoration, and successful seat-fixture rerun in this attempt.
 
 This fresh attempt starts at 85eb7584e517d379f36df55e83a07f70eb93686c.
 The allowed recovery source is implementation-only commit
@@ -52,6 +52,224 @@ importing that attempt's task card.
 Independently reviewed outside the repository in two packet-only sittings. Final review accepted this contract with the explicit acquisition-versus-retained-HEAD distinction incorporated above. Owner-authorized on 2026-10-05 as the next qualified-ownership implementation in the full repository-separation migration; implementation and independent verification remain separate.
 
 Draft outside the product repository. New files have tracked parents. Size M is provisional for one reservation-set test cycle; revise size/fence before dispatch if investigation shows an additional independent cycle. Preserve existing one-writer/digest grant hazards and callback limits. Keep transaction orchestration in run-record and validation below it. Qualified capture may load the existing built public parser on demand; ordinary lifecycle imports and operations SHALL retain their existing dependency/loading requirements, with no new capture/parser dependency when qualified scope is absent. The capture providers are library exports, not CLI entry points; introduce no circular initialization dependency. This card changes no method grammar or publication ruling. Requested implementation and independent verification are GPT-6.1 Sol extra-high; observed identity is separate. No additional agent demonstration campaign.
+
+### Delivered foundation and recovery provenance
+
+The six check marks above record the delivered implementation and its evidence;
+the final graded range is measured after this complete notes commit and is
+reported by ref, count and exit in the executor handoff. Its result is not
+preclaimed here.
+
+The exact allowed recovery commit was applied through an ordinary cherry-pick.
+Its only conflict was the historical criteria echo in this card; that conflict
+was resolved to the already committed recovery echo and reviewed criteria,
+producing b51e1ff7. At repaired source
+273f1eed77169e3638313265716f40d436fecf29, all four implementation files are
+byte-identical to b04953c62409d2a2d8a5395f80fe6b245f8dbc34. No historical
+card, verifier artifact or authority stamp was imported.
+
+Committed capture/task snapshot and the canonical public parser reconstruct
+the complete card, registry, association, repository identities and qualified
+expansion. Registered worker identity binds physical root/common directory/
+Git directory/device/inode. First acquisition checks exact HEAD/base; retained
+reads, repeats and release use the immutable committed origin and physical
+identity after legitimate worker commits advance HEAD. Colocated role aliases
+normalize one worker and reject inconsistent bases. Domain comparison uses
+project identities; independent repositories remain distinct, colocated aliases
+and repeated physical workers collide. Unsafe paths, symlinks, nested roots,
+unsupported shared common directories and receipt drift refuse.
+
+Run-record performs complete validation, legacy/qualified conflict checks,
+atomic publication and exact release within the existing native transaction
+and reservation home. The retained record is reconstructed from committed
+inputs before conflict checks; narrowed valid JSON with an updated adjacent
+checksum, changed physical bindings, missing objects and malformed authority
+cannot appear free. Legacy whole-checkout conflicts work in both orders;
+legacy release cannot remove a qualified set. Exact repeat preserves the first
+record; changed repeat and foreign expected release identity refuse. A dead
+holder does not authorize stealing. Ordinary lifecycle imports/reservations
+without qualified authority load no new capture/parser dependency; unknown
+assignment root fields refuse. Qualified operations are library APIs only;
+native qualified admission and split dispatch still need the separate consumer.
+
+### Public API and retained data format — version 1
+
+`captureQualifiedInputs({ authorityRoot, projectId, revisions: { product,
+records }, taskId, legacyTokenMap })` is synchronous and returns
+`{ authorityRoot, receipt, fence }`. Both role revisions require full commit
+object IDs. The receipt extends the existing committed task-snapshot receipt
+with normalized exact-token ownership and complete registry entries
+`{ path, blobId, mode }`, retaining the exact card, association, revision and
+measured repository facts. Capture alone grants no writer authority.
+
+The strict request is `{ version: 1, authorityRoot, attempt, projectId,
+revisions, taskId, legacyTokenMap, receipt, workers }`, with workers
+`[{ role: 'product' | 'records', checkout, base }]`. Checkout is absolute;
+base equals the captured role revision. Duplicate roles and unknown fields
+refuse. The caller supplies an expected receipt, never trusted expanded paths.
+Reconstructed scope contains `{ authorityRoot, attempt, projectId, revisions,
+receipt, fence, workers }`; canonical workers contain
+`{ identity: { filesystemRoot, gitCommonDirectory, gitDirectory, device,
+inode }, base, roles }`. Device/inode are strings; roles and workers are sorted.
+
+Run-record exports asynchronous
+`acquireQualifiedReservation(root, request, { at?, pid?, host? })`, returning
+`{ file, reservation, repeated }`; `readQualifiedReservation(root, attempt)`,
+returning a validated record or null; and
+`releaseQualifiedReservation(root, { attempt, expectedIdentity })`, returning
+a boolean. `qualifiedReservationPath(root, attempt)` is synchronous. The API
+root must equal the captured product integration root. Scope equality includes
+ownership, bases, committed receipts and physical/domain facts, excluding
+acquisition time and holder process metadata.
+
+The sole publication is
+`.supertaskr/runs/reservations/qualified-<attempt>.json`, exactly
+`{ version: 1, kind: 'qualified-writer-set', attempt, request, scope,
+identity, takenAt, holder: { pid, host } }`. Filename, record and request owners
+agree. Identity is SHA-256 of canonical scope, supplementing reconstruction.
+Below run-record, validation exports `deriveQualifiedScope(request,
+{ retained? })`, `measureQualifiedWorker`, `qualifiedSetsConflict`,
+`legacyQualifiedConflict`, `validateQualifiedReservation`, `qualifiedContent`,
+`qualifiedIdentity`, `QUALIFIED_RESERVATION_VERSION` and
+`QualifiedReservationFinding`. Explicit qualified operations preload validation
+asynchronously, then validate/check/publish synchronously inside the existing
+transaction. Legacy take/release retain their synchronous signatures. Delivery
+used Node v22.22.0 at source 273f1eed; package engines were unchanged.
+
+### Self-drill block — recovered source and fresh repair
+
+The historical notes at baa54a7302bdac16159e0593c7afd27b798d5c9f record
+eleven RED/hash-restored mutants for the ten added bodies at implementation
+source b04953c62409d2a2d8a5395f80fe6b245f8dbc34. These remain recovered
+evidence, not a final successful grade for T-351-a6. At repaired source
+273f1eed, an empty explicit source-to-recovery diff and literal SHA-256 prove
+the four implementation files still carry those same bytes/properties:
+
+| File | SHA-256 at both implementation and repaired source |
+|---|---|
+| qualified-reservation.mjs | `28b70ee29071b007521d2e4dde77b8e90adeca61ba786b044658f416a5cc13bd` |
+| run-record.mjs | `2789724ce93249cfa8b4f959044418eeec0dbc3f813bbf5b3fef17b319194f89` |
+| qualified-reservation.spec.ts | `3d281b3204d4b11032d0920e2596d08c7f07b80ae4b6d8376509209538a78b49` |
+| run-record.spec.ts | `6311ea018f4eaf425dc0e1377ec89626548c38eb403218644cd089489cc88940` |
+
+| Historical drill | Removed property or changed data | Body prefix |
+|---|---|---|
+| 01 | Committed mixed-component records domain changed | qualified acquisition freezes complete committed |
+| 02 | Canonical comparator overlap discarded | qualified domains separate independent roles |
+| 03 | Expected committed receipt comparison removed | qualified validation refuses drift |
+| 04 | Incompatible physical alias bases accepted in retained mode | qualified colocated role bindings |
+| 05 | Current HEAD required during retained validation | qualified repeat read and exact release |
+| 06 | Mutable narrowed scope trusted after capture | qualified retained readers reconstruct |
+| 07 | Legacy versus qualified conflict relation removed | qualified second-root and legacy conflicts |
+| 08 | Transaction removed with coordinated post-check interleaving | qualified concurrent acquisition has one winner |
+| 09 | Qualified-set conflict enforcement removed | qualified conflict enforcement independently |
+| 10 | Unknown assignment fields accepted | ordinary reservation lifecycle loads no qualified |
+| 11 | Validation eagerly imported by ordinary lifecycle | ordinary reservation lifecycle loads no qualified |
+
+Each historical run executed one body and exited 1; each literal restoration
+exited 0 with matching hashes. The controls discriminate independently:
+serialization removal allows both coordinated fixture children to publish,
+while conflict removal admits sequential overlap. Every child is joined or
+terminated and joined before cleanup. Their original measured refs remain
+historical. The new-file keeper was UNANSWERED at the original admitted base
+because these new files did not exist; no baseline GREEN is claimed.
+
+The fresh repair adds no body or assertion. It changes the shared seat fixture
+so the flat docs loop excludes `CONVENTIONS.md`; `conventionsFiles` copies that
+index and every chapter once. Defect class: duplicate copying of a read-only
+source into the same fixture destination. A class sweep inside the granted
+spec found one flat-docs loop and one canonical conventions loop, meeting in
+this fixture; the planted reverse repair demonstrated that pair is actionable.
+The change moves four added plus five removed lines and preserves all existing
+seat assertions, all chapters and source permissions.
+
+The persisted `duplicate-copy-drill` answer was read and acknowledged through
+the normal run arm before coordinator preparation. One disposable detached
+checkout at exact repaired source 273f1eed was used with its own installs,
+builds, TMPDIR and outputs inside that checkout. This is a procedural workspace
+authorization, not native machine ownership of a second root; the native
+callback boundary still monitors the admitted lane and does not claim OS/read
+isolation. No live authority was edited, no agent was spawned and no independent
+reviewer material was read.
+
+Fresh drill: remove only the flat loop's index exclusion, leaving assertions
+unchanged. The existing case beginning `--take-seat installs the guard and
+announces it` ran one body and failed at exit 1 with index-copy EACCES in
+`seatFixture`, before `seatVerb`. Mutant SHA-256:
+`543f697af2795f67627e5b3382f01db5a82b053e0a1da7778e213aae97cc47cd`.
+Literal restore from 273f1eed, with staged/worktree restore, matched expected
+SHA-256 `4796e23487dcf0a16016d870352c2ba9a15e3535dda6863234d9065981647576`
+and an empty explicit per-path diff. The unchanged control reran one body,
+passed one and exited 0. All thirteen conventions Markdown sources retained
+0444 before and after. The disposable root's `local-drill-output` holds the
+mutation diff, RED/restored logs and `duplicate-copy-drill-T-351-a6.json`.
+Read on Juhos-MacBook-Pro.local at 2026-10-05T07:22:03Z: no owned drill
+Node/Playwright/Vite job and no port 15351 listener remained. The coordinator
+collected this disposable workspace and its evidence. The coordinator then
+independently confirmed the literal restoration and absence of owned drill
+jobs, preserved all ten output artifacts with checksums in the external recovery
+directory `duplicate-copy-drill-artifacts-v1`, and removed only the disposable
+checkout. No drill cleanup remains for the executor.
+
+### Commands, gates and limits before the final grade
+
+At repaired source 273f1eed, setup followed parser `npm ci` then
+`npm run build`, app `npm ci` then `npm run build`, and tools/e2e `npm ci`:
+all exited 0. The disposable checkout followed that same order with its own
+dependencies; every step exited 0. End-to-end `npm run typecheck` exited 0.
+The actual mutant/control commands used `npx playwright test
+tests/push-guard.spec.ts --grep 'installs the guard and announces it'
+--reporter=line` from the disposable tools/e2e package, with port 15351 and
+the owned TMPDIR: respectively one failed/exit 1 and one passed/exit 0.
+
+At 273f1eed, the mechanical merge forecast against main
+85eb7584e517d379f36df55e83a07f70eb93686c exited 0 and returned tree
+d324c857d8caef56a0f6ddaafcd9bc7d0c8284dd with six changed paths: five
+granted source/spec paths plus this card. These notes add no seventh path.
+`docs-gate.mjs` on that exact list exited 1 meaning FIRES, with no frontmatter
+issues; parser, app and end-to-end readings are owed. The blessed owed-set
+derivation for the admitted original base through 273f1eed exited 0 and owes
+parser, app and nineteen end-to-end specs, with no unplaceable paths. The final
+grade re-derives that set after the complete notes commit.
+
+GRAPH REGEN's broad suffix trigger fires for the three changed test paths.
+The actual `cargo run -p supertaskr-index -- index --check --root ../..`
+from app/src-tauri at 273f1eed exited 0, CURRENT; tools are outside the graph
+walk. Regeneration and generated capability/index reconciliation remain
+integration work. BOOT GATE has no matching app source or manifest path;
+METHOD EVAL GATE has no method path or added verdict-citation line. The executor
+handoff rechecks these decisions against its final mechanical forecast. No
+audit or boot campaign was introduced by this repair.
+
+The original failed attempt is preserved: its grade at
+baa54a7302bdac16159e0593c7afd27b798d5c9f had parser 469 and app 1171
+passing, with end-to-end 1026 passing and three existing seat-fixture failures.
+That grade is RED, despite the added bodies passing; no waiver, verdict or
+history is rewritten. T-351-a6 owes its own one original-base-to-complete-source
+grade after all notes/source writes, then its status-only verifying stamp.
+That last commit moves only this card's status word and is the published
+exemption that reruns no suite. Independent verification and integration remain
+separate seats; the lane is left standing.
+
+Corrections: the assembler's historical template model was superseded by the
+owner's requested native Sol/xhigh seat. The implementation-only recovery
+commit also carried a historical echo insertion; its card conflict was resolved
+in favor of the reviewed recovery card, never by importing the old card.
+Fresh dependencies/builds were absent as expected and were restored in order.
+Two combined read-only diagnostics exited 1 at an unmatched chapter-heading
+search and at the absent-dependency listing; another read stopped at the
+empty permitted lsof result. Their bounded source/stat reads were completed
+separately. The first criteria-echo patch missed a long exact context line and
+edited nothing; the corrected patch was applied before any source import.
+The ordinary cherry-pick initially exited 1 for the disclosed echo conflict,
+then exact card restoration and cherry-pick continuation exited 0.
+
+### In-fence follow-through
+
+None outside the reviewed criteria. The read-only fixture repair is expressly
+required by the recovery contract; no new acceptance criterion or live fence
+expansion was made. No unrelated source, merge, push or foreign-lane write was
+performed.
 
 ## Verdicts
 
