@@ -400,3 +400,42 @@ test("qualified publication commits scope in its name and refuses unanchored mal
     expect(await release(fx.product, acquired)).toBe(true);
   } finally { fx.cleanup(); }
 });
+
+test("qualified accepted coordinator aliases preserve legacy conflicts retained reads exact repeats and release", async () => {
+  const fx = fixture();
+  try {
+    const request = fx.request();
+    const alias = path.join(fx.dir, "authority-alias");
+    symlinkSync(fx.product, alias, "dir");
+    expect(realpathSync(alias)).toBe(fx.product);
+    const control = await acquireQualifiedReservation(fx.product, request);
+    expect(await readQualifiedReservation(fx.product, request.attempt)).toEqual(control.reservation);
+    expect((await acquireQualifiedReservation(fx.product, request)).repeated).toBe(true);
+    expect(await release(fx.product, control)).toBe(true);
+
+    const legacy = { resource: fx.worker("product"), attempt: "T-998-a1", role: "executor", at: new Date().toISOString() };
+    takeReservation(fx.product, legacy);
+    const heldLegacy = [path.basename(reservationPath(fx.product, legacy.resource))];
+    await expect(acquireQualifiedReservation(fx.product, request)).rejects.toThrow(/QUALIFIED_CONFLICT/);
+    await expect(acquireQualifiedReservation(alias, request)).rejects.toThrow(/QUALIFIED_CONFLICT/);
+    expect(files(alias)).toEqual(heldLegacy);
+    expect(releaseReservation(fx.product, legacy)).toBe(true);
+
+    const acquired = await acquireQualifiedReservation(alias, request);
+    expect(acquired.reservation.scope.authorityRoot).toBe(fx.product);
+    expect(await readQualifiedReservation(fx.product, request.attempt)).toEqual(acquired.reservation);
+    expect(await readQualifiedReservation(alias, request.attempt)).toEqual(acquired.reservation);
+    const repeated = await acquireQualifiedReservation(alias, request, { pid: 1, at: "2030-01-01T00:00:00.000Z" });
+    expect(repeated.repeated).toBe(true);
+    expect(repeated.reservation).toEqual(acquired.reservation);
+    const held = readFileSync(acquired.file, "utf8");
+    await expect(releaseQualifiedReservation(alias, { attempt: request.attempt, expectedIdentity: "foreign" })).rejects.toThrow(/QUALIFIED_NOT_OURS/);
+    expect(readFileSync(acquired.file, "utf8")).toBe(held);
+    expect(() => takeReservation(alias, legacy)).toThrow(/QUALIFIED_CONFLICT/);
+    expect(files(alias)).toEqual([path.basename(acquired.file)]);
+    expect(await release(alias, acquired)).toBe(true);
+    expect(await readQualifiedReservation(alias, request.attempt)).toBeNull();
+    expect(await release(alias, acquired)).toBe(false);
+    expect(files(alias)).toEqual([]);
+  } finally { fx.cleanup(); }
+});
