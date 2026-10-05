@@ -5408,13 +5408,12 @@ function seatFixture(name: string, opts: { lane?: boolean; hook?: boolean } = {}
   git("config", "user.email", "fixture@example.invalid");
   git("config", "user.name", "T-314 fixture");
   mkdirSync(path.join(root, "docs", "tasks"), { recursive: true });
-  for (const doc of readdirSync(path.join(repoRoot, "docs")).filter((f) => f.endsWith(".md"))) {
+  for (const doc of readdirSync(path.join(repoRoot, "docs")).filter((f) => f.endsWith(".md") && f !== "CONVENTIONS.md")) {
     copyFileSync(path.join(repoRoot, "docs", doc), path.join(root, "docs", doc));
   }
-  // AND THE CHAPTERS THE CONVENTIONS INDEX POINTS AT (T-290). The walk
-  // above is FLAT, so it takes the index and leaves the rules behind, and
-  // every verb that reads a rule then refuses by name. The set is
-  // DERIVED, so a chapter added later travels without an edit here.
+  // The canonical set copies the conventions index and every chapter
+  // once. The flat walk above skips that index; the set is DERIVED, so
+  // a chapter added later travels without an edit here.
   for (const rel of conventionsFiles(repoRoot)) {
     const dest = path.join(root, rel);
     mkdirSync(path.dirname(dest), { recursive: true });
