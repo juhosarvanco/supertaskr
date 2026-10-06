@@ -5,7 +5,8 @@ feature: F-04
 milestone: 4
 priority: 1
 size: M
-status: planned
+tier: standard
+status: building
 suggested_by: codex/gpt-6.1-sol @architect
 blocked_by: []
 touches: [tools/e2e/scripts/native-codex.mjs, tools/e2e/scripts/native-transaction-recovery.mjs, tools/e2e/tests/native-codex.spec.ts, tools/e2e/tests/native-transaction-recovery.spec.ts]
