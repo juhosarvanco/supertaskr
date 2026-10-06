@@ -79,7 +79,7 @@ opens with the card id that still holds its story.
   and on 2026-09-03 the seat's chair was ruled for v1 — the architect
   sits in the user's agent app, the app assembles briefs and spawns
   nothing (ADR-021). T-315-s3 supplies packet-only phase one and frozen detached preparation,
-  and T-315-s2 qualifies complete native delivery with collection and protected publication. T-347/T-348 add read-only roots and committed snapshots; T-349/T-350 add qualified planning fences and selected committed context, while writable split execution remains deferred. Next: T-241 (the seat
+  and T-315-s2 qualifies complete native delivery with collection and protected publication. T-347/T-348 add read-only roots and committed snapshots; T-349/T-350 add qualified planning fences and selected committed context, while writable split execution remains deferred. T-351-s2 keeps delivery checks reliable for prefix-related lanes and read-only conventions. Next: T-241 (the seat
   skill), T-244 (`npx supertaskr`).
 - F-05: Rooms, sessions & daemon — @mention routing, resolutions,
   registry pane
