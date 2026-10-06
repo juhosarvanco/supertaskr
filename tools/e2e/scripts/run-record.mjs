@@ -152,6 +152,7 @@ export function qualifiedReservationPath(root, attempt, expectedIdentity) {
 /** Reconstruct every qualified set before answering any writer conflict.
  * @param {string} root @returns {{file: string, reservation: any, scope: any}[]} */
 function qualifiedReservations(root) {
+  root = realpathSync(root);
   const dir = path.join(root, RESERVATIONS_REL_PATH);
   if (!existsSync(dir)) return [];
   const seen = new Set();
@@ -177,6 +178,7 @@ function qualifiedReservations(root) {
  * API reserves data only; native launch still requires its existing admission.
  * @param {string} root @param {any} request @param {{at?: string, pid?: number, host?: string}} [options] */
 export async function acquireQualifiedReservation(root, request, options = {}) {
+  root = realpathSync(root);
   loadedQualified ??= await import("./qualified-reservation.mjs");
   return withNativeTransaction(root, { operation: "qualified-acquire" }, () => {
     const validation = qualifiedValidation();
