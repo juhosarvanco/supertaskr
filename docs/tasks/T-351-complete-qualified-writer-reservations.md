@@ -441,16 +441,138 @@ must re-derive for its own merged tree. No merge or push was performed.
 
 ### Alias-repair criteria echo — before implementation
 
-- [ ] C1: normalize the accepted coordinator-root alias before constructing publication paths, preserving the canonical captured authority, physical identities, immutable acquired bases and legitimate HEAD advancement.
-- [ ] C2: retain every project-domain comparator, physical-worker ownership and topology/path guard; the accepted root alias names the same authority, not an independent project.
-- [ ] C3: normalize both the retained qualified scanner and the qualified acquisition's legacy scanner, preserving the existing transaction, atomic complete publication and regular-file/realpath checks; legitimate legacy overlap must report conflict in both orders.
-- [ ] C4: same-alias read, exact repeat and exact release must consume the acquired set; wrong expected release identity must preserve its bytes, and a genuinely absent release must remain false.
-- [ ] C5: preserve ordinary lifecycle, native/split refusal and the read-only conventions-copy repair, with no grant, manifest, authority or new API contract change.
+- [x] C1: normalize the accepted coordinator-root alias before constructing publication paths, preserving the canonical captured authority, physical identities, immutable acquired bases and legitimate HEAD advancement.
+- [x] C2: retain every project-domain comparator, physical-worker ownership and topology/path guard; the accepted root alias names the same authority, not an independent project.
+- [x] C3: normalize both the retained qualified scanner and the qualified acquisition's legacy scanner, preserving the existing transaction, atomic complete publication and regular-file/realpath checks; legitimate legacy overlap must report conflict in both orders.
+- [x] C4: same-alias read, exact repeat and exact release must consume the acquired set; wrong expected release identity must preserve its bytes, and a genuinely absent release must remain false.
+- [x] C5: preserve ordinary lifecycle, native/split refusal and the read-only conventions-copy repair, with no grant, manifest, authority or new API contract change.
 - [ ] C6: carry the three supplied verdict/body commits in order, establish the body RED on unchanged implementation, repair and run actual controls; hash/mode/clock-restore the authorized scanner-normalization control and grade the full original range after complete notes. Preserve the separate incomplete qualification and platform refusal.
 
 Requested implementation model/effort remains GPT-6.1 Sol/xhigh; observed
 model/effort/usage is unknown. The coordinator's normal alias-repair-packet
 answer was read and acknowledged before this echo or any repair work.
+
+### Accepted coordinator alias remedy — implementation and preserved evidence
+
+The normal `alias-repair-packet` answer authorizes this concrete repair and
+the intentional appended verdict/body inputs. The three ceased a9 commits
+were read completely and carried in order through ordinary cherry-picks:
+
+| Preserved verifier commit | Corresponding lane commit |
+|---|---|
+| `38e1a86e60861817c52b5fdb20b013beb2d714a0` — qualification incomplete | `6c05f34df240ce96b53b53d90f8aeb39b383c7ed` |
+| `9cb7ef4f484a268876483b6daadd846fadf7478b` — concrete alias rejection | `7eb814364f795033759264ec7c4aedcee20bab86` |
+| `64ee0d13166ed014beef8d63cd8f847b2c969c26` — exact regression body | `9309e1110b8f158fd391955bc7cef30959a0007a` |
+
+Each cherry-pick exited 0; no conflict or verifier entry was rewritten.
+The full Verdicts section matches the supplied final verifier commit
+byte-for-byte, and the supplied regression spec matches its literal bytes
+before the implementation repair. The original six acceptance criteria and
+five-path fence also match the admitted base. No blind attack set was opened.
+
+At lane source 9309e111, unchanged candidate implementation plus the supplied
+body `qualified accepted coordinator aliases preserve legacy conflicts
+retained reads exact repeats and release` executed one body and failed,
+exit 1: after successful canonical-root controls, the legacy-first alias
+acquisition returned `RESERVATION_UNREADABLE` / `unknown reservation authority`
+instead of `QUALIFIED_CONFLICT`. No zero-test or setup failure is counted as
+that reproduction.
+
+Implementation commit 95e4c67eabcbb40b1325207d320b294601cdd8a1 adds exactly
+two statements, `root = realpathSync(root);`, at entry to
+`qualifiedReservations` and `acquireQualifiedReservation`, before either
+constructs publication paths. Class sweep: the two lexical publication-path
+comparisons identified in the supplemental verdict; both now receive the
+canonical physical authority root. This retains every regular-file/realpath,
+committed receipt/origin, canonical captured-root equality, transaction,
+conflict, topology, ownership and expected-release check. There is no new
+authority home, service, table, lock or admission permission. The same accepted
+alias reaches the same canonical set; an alias acquisition now returns the
+canonical publication path. API shapes, request version 1, publication
+version 2 and the prior original-acquisition commitment remain unchanged.
+
+The first repaired thirteen-body spec run reported twelve passes and one
+existing sequential-conflict body timeout (`Test timeout of 30000ms exceeded`),
+exit 1, with a reported duration of 14.2 hours across overnight execution.
+The new alias body passed. No functional assertion failure was reported for
+the timed-out body, and no causal attribution or GREEN is claimed for that
+run. At 2026-10-06T06:11:51Z all owned jobs and the lane listener were absent.
+One unchanged full rerun, without changing timeouts, executed thirteen and
+passed thirteen, exit 0, 56.0 seconds. Both the RED and rerun logs are retained.
+These are ordinary iterations on the source bytes subsequently committed at
+95e4c67e, not the final blessed original-range grade.
+
+`npm run typecheck`, whole-tree `npm run lint:docs`, and
+`cargo run -p supertaskr-index -- index --check --root ../..` exited 0 on
+those repaired source bytes. The docs command found zero whole-tree findings;
+it judges no diff or owed set. Graph is CURRENT. `npm run capabilities:check`
+exited 1, STALE: committed 129443 bytes versus fresh generation 130997 bytes.
+Regeneration remains the integrator's work, not an executor fence expansion.
+The final complete notes/source commit receives its own required range
+derivation and actual readings in the handoff.
+
+The coordinator initially requested a fresh identity probe before rebinding
+this already qualified continuation. That probe was refused before execution
+by the execution-not-bound native hold; no shell, file read/edit or job ran
+in that no-work turn. Its failed completion and actual cessation were normally
+reconciled; normal continue followed immediately by exact retained-identity
+binding preceded this repair's ask. No fresh probe result was invented and no
+authority was edited by hand. Requested model/effort remains Sol/xhigh;
+observed model/effort/usage remains unknown.
+
+### Self-drill block — accepted alias availability at 95e4c67e
+
+The actual `alias-repair-drill-ready` answer prepared the procedural disposable
+`drill-T-351-a6-alias-repair`, detached and clean at exact source
+95e4c67eabcbb40b1325207d320b294601cdd8a1. Its own parser/app/e2e installs
+and parser/app builds exited 0. The answer was read and acknowledged before
+use; the older origin-repair disposable was preserved unchanged. This is not
+a second native writer or a hand-authored authority.
+
+The assigned mutant block remains verbatim in the supplemental verdict below.
+Only its single scanner normalization statement was removed; acquisition
+normalization and every guard remained. The literal one-line landing diff
+was read before the exact supplied alias body ran. It executed one body,
+failed one, exit 1, at the same-alias retained read with
+`QUALIFIED_AUTHORITY_UNREADABLE` / `not a regular reservation file`.
+This is an accepted-root availability control, not a guard-disabling campaign.
+
+| Actual control | RED | Literal restoration and positive rerun |
+|---|---|---|
+| Remove only `qualifiedReservations` root normalization; supplied alias body | 1 body, 1 failed, exit 1; retained read fails after both legacy-first controls | original SHA-256, mode 0644 and exact nanosecond atime/mtime restored; same 1 body passed, exit 0 |
+
+Original and restored run-record SHA-256:
+`cc0fff3311b2df439714dd4517b8c848c945c18c7bedb4537c215960259e626c`.
+Exact restored atime: 1791267618901843924 ns; mtime:
+1791267541191271267 ns. The explicit source-to-path diff is empty, and
+tracked state is clean. Mode and clocks were checked again after the restored
+positive body completed. The unchanged supplied spec SHA-256 is
+`767cca838f289a42e851a010b4ff58526cd777a94bfd887d1439a6b7e7c528d8`.
+All thirteen conventions Markdown sources remain 0444. At
+2026-10-06T06:22:52Z on Juhos-MacBook-Pro.local, no owned
+Node/Vite/Playwright/Cargo/Chromium job or port 15351 listener remained.
+All control logs, cache, TMPDIR and Playwright outputs are in the supplied
+external repair scratch, outside managed test-output TMPDIRs and arbitrary
+worker runtime files.
+
+The actual `alias-artifact-reference` answer was read and acknowledged.
+The coordinator read the one-line mutation, decisive RED/restored logs and
+restoration/cessation receipts, then preserved nineteen completed alias
+artifacts (33969 bytes) byte-for-byte in the external evidence archive at
+`execution/repository-separation-2026-10-05/T-351/recovery/alias-repair-artifacts-v1/`.
+`MANIFEST.json` retains each literal SHA-256 and size. The packet includes
+the unchanged-implementation regression RED, overnight timeout RED and
+unchanged thirteen-body GREEN rerun. Preservation is not independent
+qualification, native collection, merge or acceptance. The disposable remains
+preserved at its restored exact source; no further control is launched.
+
+The broader platform-refused safety-guard campaign was not repeated, widened,
+waived or described as passed. Both preserved independent REJECTED entries
+remain operative evidence: this concrete remedy does not decide independent
+acceptance or close the separate standard-qualification landing hold.
+The alias C6 echo retains its pre-grade state because the complete original
+range is run after this complete notes commit; real final ref/spec/count/exit
+is reported separately, followed only by the exempt status word stamp.
 
 ## Verdicts
 
