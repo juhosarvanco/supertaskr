@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1320 behaviours** — 1318 extracted sentences + 2 named-not-extracted (listed at the end) — across 46 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1322 behaviours** — 1320 extracted sentences + 2 named-not-extracted (listed at the end) — across 46 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -560,6 +560,7 @@ Census: **1320 behaviours** — 1318 extracted sentences + 2 named-not-extracted
 - THE POSITIVE CONTROL: the filter changes what is SPELLED OUT and never what is RULED ON
 - ...AND THE FILTER IS MEASURED ON THE REAL BOARD AT THIS REF, never on the fixture alone
 - the in-flight section's POPULATED arm, on an injected board that cannot evaporate
+- COMPLETE LITERAL LANE ADDRESSES distinguish prefixes and punctuation, and expose actual repeats
 - A LANE'S ADDRESS IS SPELLED ONCE, and the ruling still NAMES the lane and the shared path
 - ...AND THE SAVING IS MEASURED ON THE REAL BOARD AT THIS REF, never on the fixture alone
 - A PENDING QUESTION MOVES A CARD OUT OF STARTABLE AND NAMES THE QUESTION ON IT — and a RESOLVED one gives it back
@@ -1235,6 +1236,7 @@ Census: **1320 behaviours** — 1318 extracted sentences + 2 named-not-extracted
 - the arm sets an executable mode the checkout lost, and it stages nothing to do it
 - the PLAN writes nothing at all, which is what makes every refusal above leave a checkout untouched
 - `--take-seat` installs the guard and announces it, and BOTH seat verbs report a checkout without the hook as UNGUARDED
+- READONLY CONVENTIONS are copied once with derived chapters and unchanged modes through BOTH real seat verbs
 - `--take-seat` records NO seat when the guard cannot be installed, and leaves the configuration and the index alone
 - a seat acquisition that fails for a reason of its own configures nothing
 
