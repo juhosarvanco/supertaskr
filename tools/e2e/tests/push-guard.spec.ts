@@ -1,4 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   chmodSync,
   copyFileSync,
@@ -5393,7 +5394,7 @@ test("the PLAN writes nothing at all, which is what makes every refusal above le
  * fixture that copied `docs/` whole would spend a second per body
  * proving nothing.
  */
-function seatFixture(name: string, opts: { lane?: boolean; hook?: boolean } = {}): {
+function seatFixture(name: string, opts: { lane?: boolean; hook?: boolean; docsRoot?: string } = {}): {
   root: string;
   git: (...args: string[]) => string;
 } {
@@ -5408,17 +5409,17 @@ function seatFixture(name: string, opts: { lane?: boolean; hook?: boolean } = {}
   git("config", "user.email", "fixture@example.invalid");
   git("config", "user.name", "T-314 fixture");
   mkdirSync(path.join(root, "docs", "tasks"), { recursive: true });
-  for (const doc of readdirSync(path.join(repoRoot, "docs")).filter((f) => f.endsWith(".md"))) {
-    copyFileSync(path.join(repoRoot, "docs", doc), path.join(root, "docs", doc));
-  }
-  // AND THE CHAPTERS THE CONVENTIONS INDEX POINTS AT (T-290). The walk
-  // above is FLAT, so it takes the index and leaves the rules behind, and
-  // every verb that reads a rule then refuses by name. The set is
-  // DERIVED, so a chapter added later travels without an edit here.
-  for (const rel of conventionsFiles(repoRoot)) {
+  const docsRoot = opts.docsRoot ?? repoRoot;
+  // One destination per document: the flat set also contains the
+  // canonical index, whose readonly mode forbids a second copy.
+  const documents = new Set([
+    ...readdirSync(path.join(docsRoot, "docs")).filter((f) => f.endsWith(".md")).map((f) => `docs/${f}`),
+    ...conventionsFiles(docsRoot),
+  ]);
+  for (const rel of documents) {
     const dest = path.join(root, rel);
     mkdirSync(path.dirname(dest), { recursive: true });
-    copyFileSync(path.join(repoRoot, rel), dest);
+    copyFileSync(path.join(docsRoot, rel), dest);
   }
   cpSync(path.join(repoRoot, "method"), path.join(root, "method"), { recursive: true });
   mkdirSync(path.join(root, HOOK_DIR_REL_PATH), { recursive: true });
@@ -5497,6 +5498,60 @@ test("`--take-seat` installs the guard and announces it, and BOTH seat verbs rep
   expect(bareRelease.status, `${bareRelease.out}\n${bareRelease.err}`).toBe(0);
   expect(bareRelease.out, "the other verb says it too").toContain("UNGUARDED");
   expect(bareRelease.out).toContain("THE SEAT — RELEASED");
+});
+
+test("READONLY CONVENTIONS are copied once with derived chapters and unchanged modes through BOTH real seat verbs", () => {
+  const source = mkdtempSync(path.join(os.tmpdir(), "T-351-s2-readonly-docs-"));
+  SCRATCH.push(source);
+  const flat = readdirSync(path.join(repoRoot, "docs")).filter((f) => f.endsWith(".md")).map((f) => `docs/${f}`);
+  for (const rel of new Set([...flat, ...conventionsFiles(repoRoot)])) {
+    const dest = path.join(source, rel);
+    mkdirSync(path.dirname(dest), { recursive: true });
+    copyFileSync(path.join(repoRoot, rel), dest);
+  }
+  // A chapter present only in this fixture discriminates derivation
+  // from copying today's live chapter list. No live source is written.
+  const extra = "docs/conventions/t-351-s2-fixture.md";
+  const index = path.join(source, "docs/CONVENTIONS.md");
+  const indexText = readFileSync(index, "utf8");
+  rmSync(index);
+  writeFileSync(index, `${indexText}\n  - ${extra} — T-351-S2 FIXTURE ONLY\n`);
+  writeFileSync(path.join(source, extra), "# Fixture chapter\n\n- T-351-S2 FIXTURE ONLY\n  A derived readonly chapter.\n");
+  const canonical = conventionsFiles(source);
+  expect(canonical).toContain("docs/CONVENTIONS.md");
+  expect(canonical).toContain(extra);
+  expect(canonical.length).toBeGreaterThan(2);
+  for (const rel of canonical) chmodSync(path.join(source, rel), 0o444);
+  const identity = (root: string, rel: string) => ({
+    sha256: createHash("sha256").update(readFileSync(path.join(root, rel))).digest("hex"),
+    mode: statSync(path.join(root, rel)).mode & 0o777,
+  });
+  const before = canonical.map((rel) => identity(source, rel));
+  expect(before.every((entry) => entry.mode === 0o444)).toBe(true);
+  process.stdout.write(`\n  READONLY source: ${JSON.stringify(canonical.map((rel, i) => ({ path: rel, ...before[i] })))}\n`);
+
+  for (const hook of [true, false]) {
+    const fx = seatFixture(`readonly-${hook ? "guarded" : "bare"}`, { docsRoot: source, hook });
+    for (const rel of flat) expect(readFileSync(path.join(fx.root, rel))).toEqual(readFileSync(path.join(source, rel)));
+    expect(canonical.map((rel) => identity(fx.root, rel)), "destination bytes and readonly modes").toEqual(before);
+    const take = seatVerb(fx.root, "--take-seat");
+    expect(take.status, `${take.out}\n${take.err}`).toBe(0);
+    expect(take.out).toContain("THE SEAT — TAKEN");
+    if (hook) {
+      expect(take.out).toContain("the pre-push guard: installed");
+      expect(take.out).toContain("THE PUSH GUARD GIT ITSELF RUNS");
+      expect(hookStatus(fx.root).guarded).toBe(true);
+    } else {
+      expect(take.out).toContain("UNGUARDED");
+      expect(configuredHooksPath(fx.root)).toBe("(unset)");
+    }
+    const release = seatVerb(fx.root, "--release-seat");
+    expect(release.status, `${release.out}\n${release.err}`).toBe(0);
+    expect(release.out).toContain("THE SEAT — RELEASED");
+    if (!hook) expect(release.out).toContain("UNGUARDED");
+    expect(canonical.map((rel) => identity(fx.root, rel)), "seat commands preserve destination modes").toEqual(before);
+  }
+  expect(canonical.map((rel) => identity(source, rel)), "source bytes and modes are untouched").toEqual(before);
 });
 
 test("`--take-seat` records NO seat when the guard cannot be installed, and leaves the configuration and the index alone", () => {
