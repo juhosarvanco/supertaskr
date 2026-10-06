@@ -5,12 +5,13 @@ feature: F-04
 milestone: 4
 priority: 1
 size: S
-status: planned
+tier: standard
+status: building
 suggested_by: codex/gpt-6.1-sol @architect
 blocked_by: []
 touches: [tools/e2e/tests/dispatch-order.spec.ts, tools/e2e/tests/push-guard.spec.ts]
-builder:
-verifier:
+builder: gpt-6.1-sol@xhigh
+verifier: gpt-6.1-sol@xhigh
 built_by:
 verified_by:
 review: independent
