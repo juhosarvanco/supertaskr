@@ -9,6 +9,10 @@ status: planned
 suggested_by: codex/gpt-6.1-sol @architect
 blocked_by: []
 touches: [tools/e2e/tests/dispatch-order.spec.ts, tools/e2e/tests/push-guard.spec.ts]
+builder:
+verifier:
+built_by:
+verified_by:
 review: independent
 ---
 
