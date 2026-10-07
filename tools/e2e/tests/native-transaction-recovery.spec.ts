@@ -1171,3 +1171,51 @@ test("public recovery refuses unreadable foreign writer authority instead of dro
     { kind: "writer-without-resource", exit: 1, unchanged: true, noIntent: true },
   ]);
 });
+
+
+test("conservative physical inventory rejects malformed ownership metadata and namespace while valid read-only authority remains accepted", () => {
+  function foreign(f: any, writer = false): any {
+    const a: Assignment = { ...f.records[0].assignment, harness: "claude-code", resource: writer ? f.lanes[0] : "none" }; delete a.native;
+    const r = startRun(f.root, { assignment: a, at: "2026-10-06T00:00:05.000Z" }).record;
+    if (writer) {
+      bindRun(f.root, { attempt: r.attempt, harnessId: "fixture-hidden-writer", pid: process.pid, at: "2026-10-06T00:00:06.000Z" });
+      expect(releaseReservation(f.root, { resource: f.lanes[0], attempt: r.attempt })).toBe(true);
+    }
+    return r;
+  }
+  const positive = fixture("inventory-read-only-positive");
+  try { foreign(positive); const result = cli(positive); expect(result.status, result.stderr).toBe(0); }
+  finally { positive.cleanup(); }
+  const observations: any[] = [];
+  for (const kind of ["hidden-writer", "assignment-id", "assignment-resource", "assignment-digest", "unknown-state", "missing-jobs", "attempt-filename", "work-not-directory", "record-not-file"]) {
+    const f = fixture(`inventory-${kind}`);
+    try {
+      const r = foreign(f, kind === "hidden-writer"), file = nativeRecordPath(f.root, r.attempt);
+      const other = JSON.parse(readFileSync(file, "utf8")), before = beforeRecords(f);
+      if (kind === "hidden-writer") { other.writer = false; other.resource = null; }
+      if (kind === "assignment-id") other.assignment.id = "T-unknown";
+      if (kind === "assignment-resource") other.assignment.resource = f.lanes[0];
+      if (kind === "assignment-digest") other.assignmentDigest = "sha256:" + "0".repeat(64);
+      if (kind === "unknown-state") other.state = "unsupported-phase";
+      if (kind === "missing-jobs") delete other.ownedJobs;
+      if (kind === "attempt-filename") other.attempt += "-unsupported";
+      writeFileSync(file, encode(other));
+      if (kind === "work-not-directory") writeFileSync(path.join(f.root, ".supertaskr/runs/not-a-work"), "unknown physical authority\n");
+      if (kind === "record-not-file") { rmSync(file); mkdirSync(file); }
+      const result = cli(f);
+      observations.push({ kind, exit: result.status, unchanged: beforeRecords(f).every((raw, i) => raw === before[i]), noIntent: !existsSync(nativeRecoveryIntentPath(f.root, f.request.id)) });
+      if (kind !== "record-not-file") expect(readFileSync(file, "utf8")).toBe(encode(other));
+    } finally { f.cleanup(); }
+  }
+  expect(observations, "unknown physical ownership metadata must refuse before intent or target effects").toEqual([
+    { kind: "hidden-writer", exit: 1, unchanged: true, noIntent: true },
+    { kind: "assignment-id", exit: 1, unchanged: true, noIntent: true },
+    { kind: "assignment-resource", exit: 1, unchanged: true, noIntent: true },
+    { kind: "assignment-digest", exit: 1, unchanged: true, noIntent: true },
+    { kind: "unknown-state", exit: 1, unchanged: true, noIntent: true },
+    { kind: "missing-jobs", exit: 1, unchanged: true, noIntent: true },
+    { kind: "attempt-filename", exit: 1, unchanged: true, noIntent: true },
+    { kind: "work-not-directory", exit: 1, unchanged: true, noIntent: true },
+    { kind: "record-not-file", exit: 1, unchanged: true, noIntent: true },
+  ]);
+});

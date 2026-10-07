@@ -13,7 +13,7 @@
  * a crash between that replacement and the progress write.
  */
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync, readdirSync, realpathSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, realpathSync, lstatSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import {
@@ -22,7 +22,7 @@ import {
   nativeTransactionFaultPath, nativeTransactionRefusalDir, readNativeRecord, withNativeTransaction,
   syncNativeFileNamespace,
 } from "./native-codex.mjs";
-import { admissionAt, allRecords, defaultRunIo, ownedJobsAlive, readRecord, readReservation, readTokens, reconcile, reservationPath } from "./run-record.mjs";
+import { STATES, admissionAt, allRecords, defaultRunIo, ownedJobsAlive, readRecord, readReservation, readTokens, reconcile, reservationPath } from "./run-record.mjs";
 import { holderVerdict } from "./checkout-currency.mjs";
 
 export const NATIVE_RECOVERY_VERSION = 1;
@@ -213,6 +213,40 @@ function foreignCeased(rec) {
     return reconcile(rec, defaultRunIo(), evidence.detail).verdict === "ended";
   } catch { return false; }
 }
+/** Independently load every physical record before ownership can be excluded.
+ * A malformed record is unknown authority, never an absent writer.
+ * @param {string} root
+ */
+function checkedRecoveryRecords(root) {
+  const dir = path.join(root, ".supertaskr", "runs");
+  if (!existsSync(dir) || !lstatSync(dir).isDirectory()) refuse("FOREIGN", "physical run authority is absent or not a directory");
+  const records = [];
+  for (const work of readdirSync(dir)) {
+    if (work === "reservations") continue;
+    const workDir = path.join(dir, work);
+    if (!lstatSync(workDir).isDirectory()) refuse("FOREIGN", "physical run namespace is malformed");
+    for (const name of readdirSync(workDir)) {
+      if (!name.endsWith(".json")) continue;
+      const file = path.join(workDir, name);
+      if (!lstatSync(file).isFile()) refuse("FOREIGN", "physical run authority is not a regular file");
+      const rec = parse(bytes(file), "physical run authority");
+      if (!object(rec) || rec.version !== 1 || typeof rec.attempt !== "string" ||
+          rec.attempt !== name.slice(0, -5) || !/^([A-Za-z0-9][A-Za-z0-9._-]{0,127})-a[1-9]\d*$/.test(rec.attempt) || !rec.attempt.startsWith(`${work}-a`) ||
+          typeof rec.writer !== "boolean" || !object(rec.assignment) || rec.assignment.id !== work ||
+          typeof rec.assignment.resource !== "string" || rec.writer !== (rec.assignment.resource !== "none") ||
+          rec.assignmentDigest !== `sha256:${digest(JSON.stringify(rec.assignment))}` ||
+          !STATES.includes(rec.state) ||
+          !Array.isArray(rec.ownedJobs) ||
+          !(rec.writer ? (typeof rec.resource === "string" && path.isAbsolute(rec.resource) &&
+            rec.resource === path.resolve(rec.assignment.resource)) : rec.resource === null)) {
+        refuse("FOREIGN", "physical run authority is malformed or unsupported");
+      }
+      records.push(rec);
+    }
+  }
+  return records;
+}
+
 /** The resolved arm is internal: its caller first proves exact resulting bytes
  * from the immutable intent. It still rechecks every physical and policy source.
  * @param {string} root @param {any} request @param {any} target @param {any} fault @param {boolean} [resolved]
@@ -231,7 +265,7 @@ function checkTarget(root, request, target, fault, resolved = false) {
   if (reservationRaw !== (target.reservation?.content ?? null)) refuse("RESERVATION", "expected reservation changed");
   const held = readReservation(root, rec.resource);
   if (reservationRaw !== null && (held === null || held.attempt !== rec.attempt || held.resource !== rec.resource)) refuse("FOREIGN", "reservation is malformed or foreign");
-  if (allRecords(root).some((other) => other.attempt !== rec.attempt && other.writer && other.resource === rec.resource &&
+  if (checkedRecoveryRecords(root).some((other) => other.attempt !== rec.attempt && other.writer && other.resource === rec.resource &&
       !foreignCeased(other))) refuse("FOREIGN", "another live or unknown writer owns this resource");
   ceased(rec);
   const holds = activeNativeHolds(rec);
