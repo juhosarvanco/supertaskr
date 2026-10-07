@@ -1138,3 +1138,36 @@ test("public raw evidence and requester records reject malformed UTF-8 without n
     } finally { f.cleanup(); }
   }
 });
+
+
+test("public recovery refuses unreadable foreign writer authority instead of dropping it from ownership checks", () => {
+  const positive = fixture("unreadable-foreign-positive");
+  try { const result = cli(positive); expect(result.status, result.stderr).toBe(0); }
+  finally { positive.cleanup(); }
+  const observations: any[] = [];
+  for (const kind of ["truncated-json", "unknown-version", "missing-writer", "writer-without-resource"]) {
+    const f = fixture(`unreadable-foreign-${kind}`);
+    try {
+      const a: Assignment = { ...f.records[0].assignment, harness: "claude-code" }; delete a.native;
+      const started = startRun(f.root, { assignment: a, at: "2026-10-06T00:00:05.000Z" }).record;
+      bindRun(f.root, { attempt: started.attempt, harnessId: "fixture-unreadable-live-foreign", pid: process.pid, at: "2026-10-06T00:00:06.000Z" });
+      expect(releaseReservation(f.root, { resource: f.lanes[0], attempt: started.attempt })).toBe(true);
+      const file = nativeRecordPath(f.root, started.attempt), original = readFileSync(file, "utf8"), before = beforeRecords(f);
+      const known = cli(f); expect(known.status, known.stderr).toBe(1); expect(known.stderr).toContain("FOREIGN"); unchanged(f, before);
+      const other = JSON.parse(original); expect(other.execution.pid).toBe(process.pid); expect(other.writer).toBe(true);
+      if (kind === "truncated-json") writeFileSync(file, original.slice(0, 60));
+      else { if (kind === "unknown-version") other.version = 999; else if (kind === "missing-writer") delete other.writer; else other.resource = null; writeFileSync(file, encode(other)); }
+      const foreignBytes = readFileSync(file), result = cli(f);
+      observations.push({ kind, exit: result.status, unchanged: beforeRecords(f).every((raw, i) => raw === before[i]),
+        noIntent: !existsSync(nativeRecoveryIntentPath(f.root, f.request.id)) });
+      expect(readFileSync(file).equals(foreignBytes), kind).toBe(true);
+      console.info("unreadable foreign writer authority observation", JSON.stringify(observations.at(-1)), result.stdout, result.stderr);
+    } finally { f.cleanup(); }
+  }
+  expect(observations, "unreadable foreign authority must remain conservative").toEqual([
+    { kind: "truncated-json", exit: 1, unchanged: true, noIntent: true },
+    { kind: "unknown-version", exit: 1, unchanged: true, noIntent: true },
+    { kind: "missing-writer", exit: 1, unchanged: true, noIntent: true },
+    { kind: "writer-without-resource", exit: 1, unchanged: true, noIntent: true },
+  ]);
+});

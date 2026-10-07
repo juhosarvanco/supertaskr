@@ -6,7 +6,7 @@ milestone: 4
 priority: 1
 size: M
 tier: standard
-status: verifying
+status: building
 suggested_by: codex/gpt-6.1-sol @architect
 blocked_by: []
 touches: [tools/e2e/scripts/native-codex.mjs, tools/e2e/scripts/native-transaction-recovery.mjs, tools/e2e/tests/native-codex.spec.ts, tools/e2e/tests/native-transaction-recovery.spec.ts]
@@ -185,6 +185,16 @@ RED; a new local result cannot rewrite it, accept the implementation, change
 production authority or turn the failed T351 review into successful acceptance.
 There was no new implementation repair or in-fence follow-through on this recut;
 the retained byte-validation/foreign-cessation classes were qualified as above.
+
+### T-351-s1-a6 repair after independent rejection
+
+The completed independent T-351-s1-a7 review rejected c145b1e155ad0e286b6bf84860ab71e9610176cc. The intentionally supplied rejection/report and literal committed unreadable-foreign regression are repair inputs; no private attack or ground document is an executor input. The previous GREEN range remains its original result and does not establish acceptance. The frozen criteria, base f02c9cae12fc429566618747e626ea2091f1e1d1 and four owning paths are unchanged.
+
+The repair criteria echo, recorded before implementation, is: C1 preserve bounded distinct requester/owner evidence and conservative unknowns; C2 pin complete authority, independently prove physical cessation/scope and preserve exact collection while refusing unknown foreign inventory; C3 preserve immutable intent, transactional rechecks, named-only atomic disposition and exact pending/replay; C4 retain exact separate owner authorization and await the pending policy clarification; C5 add genuine owning-site or discriminating data evidence for missing properties with complete selected kill sets and literal restores.
+
+The earlier external delivery recipe claiming two authorized singleton requests was unsupported. The saved owner authorization identifies the exact fault and paired T-351-a6/T-351-a11 targets. No new singleton ruling is currently recorded. The unchanged pair's dependent OTHER_HOLD refusal and strict subsets' AUTHORIZATION refusal remain controls; no unrelated hold will be cleared. Criterion4's present-case deliverability remains unresolved pending a recorded owner clarification or a separately qualified contract-preserving route. Actual RUN-ASK repair-legacy-route-T-351-s1-a6 is durably recorded while independent in-fence repair continues. No production recovery occurs here.
+
+The literal reviewer regression is retained without copying or modifying the independent rejected verdict. The defect class is permissive physical run-authority inventory being used to exclude a foreign writer. Missing, unreadable, unsupported or malformed ownership metadata must stay conservative before intent or target effects. A narrow strict namespace reader and a class sweep are to be independently qualified, preserving valid foreign cessation. The seventeen previously unqualified source properties remain qualification debt until actual primary evidence is recorded; collateral setup failures and GREEN alone do not pay it. Historical campaigns remain at their measured refs, with transitive validation and power-loss limits intact.
 
 ## Verdicts
 
