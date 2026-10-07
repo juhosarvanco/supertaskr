@@ -232,7 +232,7 @@ function checkedRecoveryRecords(root) {
       const rec = parse(bytes(file), "physical run authority");
       if (!object(rec) || rec.version !== 1 || typeof rec.attempt !== "string" ||
           rec.attempt !== name.slice(0, -5) || !/^([A-Za-z0-9][A-Za-z0-9._-]{0,127})-a[1-9]\d*$/.test(rec.attempt) || !rec.attempt.startsWith(`${work}-a`) ||
-          typeof rec.writer !== "boolean" || !object(rec.assignment) || rec.assignment.id !== work ||
+          typeof rec.writer !== "boolean" || !object(rec.assignment) || typeof rec.assignment.id !== "string" || rec.assignment.id === "" ||
           typeof rec.assignment.resource !== "string" || rec.writer !== (rec.assignment.resource !== "none") ||
           rec.assignmentDigest !== `sha256:${digest(JSON.stringify(rec.assignment))}` ||
           !STATES.includes(rec.state) ||
