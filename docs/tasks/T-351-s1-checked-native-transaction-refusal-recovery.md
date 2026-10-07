@@ -6,7 +6,7 @@ milestone: 4
 priority: 1
 size: M
 tier: standard
-status: verifying
+status: building
 suggested_by: codex/gpt-6.1-sol @architect
 blocked_by: []
 touches: [tools/e2e/scripts/native-codex.mjs, tools/e2e/scripts/native-transaction-recovery.mjs, tools/e2e/tests/native-codex.spec.ts, tools/e2e/tests/native-transaction-recovery.spec.ts]
@@ -211,6 +211,58 @@ After all executed current mutations were literally restored, the complete nativ
 RUN-ACK repair-legacy-route-T-351-s1-a6 was genuinely written after reading the answer in the actual admitted ask path /Users/ujju/Projects/supertaskr-evidence/execution/repository-separation-2026-10-05/T-351-s1/recut-v1/ask-T-351-s1.md. The earlier scratch ask copy was not the admitted channel. The latest answer grants no singleton authority and retains the pending direct owner clarification. Criterion4's present exact-pair deliverability remains unmet: paired dependent OTHER_HOLD and strict-subset AUTHORIZATION refusal are preserved. The old external report's singleton production recipe was unsupported and is superseded by this correction. Generic fixture authorizations demonstrate API behavior only. No production recovery, unrelated hold resolution, merge or push occurs. No GREEN result accepts this rejected card.
 
 The final actual original-base owed set, no-body checks and blessed range grade follow this substantive notes commit and are reported by exact tested ref/count/exit in the repair report. Final verifying status is a separate status-only commit; historical results are not rewritten.
+
+### T-351-s1-a6 approved ordered-route follow-through, 2026-10-07
+
+The prior completed repair correctly left C4's dependent exact pair operational
+route unmet. Those refs, grades, partial qualification limits and manifests remain
+unchanged. The owner subsequently explicitly approved recovering the named fault
+on the genuinely collected a6, independently reconciling failed no-work a11, then
+recovering only the same fault there if all checks pass. This executor read the
+updated normal answer stamped 2026-10-07T11:34:36.507Z and the actual owner evidence,
+then wrote renewed genuine RUN-ACK in the admitted ask channel before proceeding.
+No production disposition, new singleton policy or criterion change follows.
+
+The existing public v1 request may now carry `sequence: {version:1,index:0|1}`.
+Its pinned separately recorded complete owner authorization may carry
+`sequence: {version:1,steps:[{requestId,target},{requestId,target}]}`, retaining
+its complete `targets` identity pair. Each policy target is the full public
+`nativeRecoveryTarget` pin. The first mode is `collected-source`, the second
+`failed-no-work`. The first request must match its complete frozen original
+policy target. The second request supplies freshly read literal record and
+reservation pins after ordinary independent reconciliation, while retaining
+exact ordered attempt/resource/candidate/binding/mode/origins identities.
+The authorization reference/digest and quoted independent ruling remain required.
+Without this explicit policy, complete exact target-set equality remains required.
+
+Before the second step and each visible effect, recovery independently loads
+the first step's durable immutable intent, checks its original full target
+against the complete pinned policy, reconstructs its only exact resulting record,
+and rechecks its current cessation, jobs, reservation, candidate/cumulative scope
+and current grant/pause/seat evidence. Missing/changed/incomplete predecessor
+intent or outcome refuses. A crash before predecessor progress must be repaired
+by replaying that identical original request before sequence advancement.
+Recovery clears no intervening independent hold; public ordinary observation
+performs the failed review's lifecycle/workspace reconciliation separately.
+All records retain unknown outcome/callbacks and the original eligible collection.
+
+Three new property bodies exercise the complete route, current negative and
+inside-transaction arrangements, and actual process interruption at all twelve
+persistence operations of intent/target/progress for both steps (72 cases).
+Their actual committed-ref qualification, literal restore proofs, final positive
+and original-base grade are reported in the new separate `sequence-v1` handoff.
+The first dirty development run passed three bodies but one schema tightening
+was written during that job; its exact launch pins/output are preserved as
+mixed-development evidence and are explicitly excluded from qualification.
+No later source mutation occurs during an active owned job.
+
+Historical thirteen-site proof and prior current-site controls remain their
+actual history and limits. The disposition construction is now a shared pure
+helper used by normal replay and predecessor checking; this transitive change
+is disclosed and does not retroactively qualify an older body or campaign.
+The same four code/spec paths and admitted own-card protocol surface remain the
+entire fence. The final status-only verifying commit will rerun nothing after
+the substantive candidate's actual original-base range is graded.
 
 ## Verdicts
 

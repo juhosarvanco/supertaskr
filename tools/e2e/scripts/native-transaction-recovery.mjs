@@ -3,7 +3,10 @@
  *
  * Public v1 request: {version:1,id,fault:{id,source,rawDigest},targets:[
  * {attempt,resource,candidate,mode,record:{content,digest},reservation:null|
- * {content,digest},binding,bindingDigest,origins}],authorization:null|{id,digest}}.
+ * {content,digest},binding,bindingDigest,origins}],authorization:null|{id,digest},
+ * sequence?:{version:1,index:0|1}}. An independently recorded authorization may
+ * contain a complete two-step ordered policy; this never authorizes subsets
+ * without that exact policy or discharges intervening ordinary lifecycle holds.
  * nativeRecoveryTarget reads the pins; recoverNativeTransaction independently
  * reloads every source. Authorization is a separate owner record, never text in
  * this request. The CLI is: --root <authority-root> --request <JSON-file>.
@@ -100,6 +103,9 @@ function validateRequest(root, request) {
         !object(t.binding) || !validDigest(t.bindingDigest) || digest(JSON.stringify(t.binding)) !== t.bindingDigest ||
         !object(t.origins) || t.origins.authorityRoot !== root) refuse("REQUEST", "target identity or expected authority is malformed");
   }
+  if (request.sequence !== undefined && (!object(request.sequence) || request.sequence.version !== 1 ||
+      ![0, 1].includes(request.sequence.index) || request.targets.length !== 1 ||
+      !same(Object.keys(request.sequence).sort(), ["index", "version"]))) refuse("SEQUENCE", "invalid explicit sequence step");
   if (request.authorization !== null && (!object(request.authorization) || !validId(request.authorization.id) ||
       !validDigest(request.authorization.digest))) refuse("REQUEST", "authorization must be a pinned reference");
 }
@@ -124,7 +130,7 @@ function authorization(root, request, fault) {
       requester.event?.agentId === target.binding.agentId && requester.event?.turnId === target.binding.startTurnId &&
       requester.event?.sessionId === parse(target.record.content, "expected requester").native.launch.sessionId && request.targets.length === 1 &&
       requester.attempt === target.attempt && requester.resource === target.resource && requester.bindingDigest === target.bindingDigest &&
-      same(requester.binding, target.binding)) return { attribution: "recorded-binding", reference: null };
+      same(requester.binding, target.binding) && request.sequence === undefined) return { attribution: "recorded-binding", reference: null };
   if (requester?.attribution === "recorded-binding") refuse("TARGET_SCOPE", "an attributable fault cannot be broadened or rebound by legacy authorization");
   if (request.authorization === null) return refuse("LEGACY_UNATTRIBUTED", "legacy-unattributed: exact independently recorded owner authorization is required");
   const file = path.join(root, ".supertaskr", "native-recovery-authorizations", `${request.authorization.id}.json`);
@@ -135,13 +141,92 @@ function authorization(root, request, fault) {
       a.authorityRoot !== root || a.authorizedBy !== "owner" || a.recordedBy !== "coordinator" ||
       typeof a.recordedAt !== "string" || !Number.isFinite(Date.parse(a.recordedAt)) ||
       a.attribution !== "legacy-unattributed" || a.disposition !== "resolve-exact-native-transaction-refusal" ||
-      !same(a.fault, request.fault) || !same(a.targets, identities) || !object(a.evidenceReference) ||
+      !same(a.fault, request.fault) || !object(a.evidenceReference) ||
       typeof a.evidenceReference.path !== "string" || !path.isAbsolute(a.evidenceReference.path) ||
       !validDigest(a.evidenceReference.digest) || typeof a.evidenceReference.quote !== "string" || a.evidenceReference.quote.trim() === "" ||
       realpathSync(a.evidenceReference.path) === realpathSync(file)) refuse("AUTHORIZATION", "separately recorded exact owner authorization differs");
+  if (request.sequence === undefined) {
+    if (a.sequence !== undefined || !same(a.targets, identities)) refuse("AUTHORIZATION", "unsequenced authorization requires the complete exact target set");
+  } else {
+    const sequence = a.sequence;
+    if (!object(sequence) || sequence.version !== 1 || !Array.isArray(sequence.steps) || sequence.steps.length !== 2 ||
+        !Array.isArray(a.targets) || a.targets.length !== 2 ||
+        new Set(sequence.steps.map((/** @type {any} */ step) => step.requestId)).size !== 2 ||
+        new Set(a.targets.map((/** @type {any} */ t) => t.attempt)).size !== 2) refuse("SEQUENCE", "complete ordered owner policy is missing or malformed");
+    for (let i = 0; i < 2; i++) {
+      const step = sequence.steps[i];
+      if (!object(step) || !validId(step.requestId) || !object(step.target) ||
+          typeof step.target.attempt !== "string" || !/^([A-Za-z0-9][A-Za-z0-9._-]{0,127})-a[1-9]\d*$/.test(step.target.attempt) ||
+          typeof step.target.resource !== "string" || !path.isAbsolute(step.target.resource) ||
+          typeof step.target.candidate !== "string" || !/^[0-9a-f]{40}$/.test(step.target.candidate) || !validDigest(step.target.bindingDigest) ||
+          step.target.mode !== (i === 0 ? "collected-source" : "failed-no-work") ||
+          !same(a.targets[i], { attempt: step.target.attempt, resource: step.target.resource, candidate: step.target.candidate, bindingDigest: step.target.bindingDigest }) ||
+          !["collected-source", "failed-no-work", "terminal"].includes(step.target.mode) || !object(step.target.origins) || step.target.origins.authorityRoot !== root) {
+        refuse("SEQUENCE", "ordered policy differs from the complete binding-qualified owner target set");
+      }
+      validateRequest(root, { version: 1, id: step.requestId, fault: request.fault, targets: [step.target], authorization: request.authorization });
+    }
+    const step = sequence.steps[request.sequence.index];
+    if (step.requestId !== request.id || !same(sequenceIdentity(step.target), sequenceIdentity(target)) ||
+        (request.sequence.index === 0 && !same(step.target, target))) refuse("SEQUENCE", "request identity, order or frozen target differs from the owner policy");
+  }
   const evidence = bytes(a.evidenceReference.path);
   if (digest(evidence) !== a.evidenceReference.digest || !evidence.includes(a.evidenceReference.quote)) refuse("AUTHORIZATION", "owner ruling provenance changed or does not carry the exact quoted grant");
   return { attribution: "legacy-unattributed", reference: { id: a.id, digest: digest(raw) }, record: a };
+}
+/** The policy pins frozen identities; each step separately pins fresh physical
+ * record/reservation bytes after any independent ordinary reconciliation.
+ * @param {any} target
+ */
+function sequenceIdentity(target) {
+  return { attempt: target.attempt, resource: target.resource, candidate: target.candidate,
+    bindingDigest: target.bindingDigest, mode: target.mode, origins: target.origins };
+}
+/** Derive the only possible published record from immutable intent. This same
+ * derivation checks predecessor evidence and the current step's crash replay.
+ * @param {any} intent @param {number} i
+ */
+function resultingRecord(intent, i) {
+  const request = intent.request, target = request.targets[i];
+  const prior = parse(target.record.content, "expected record");
+  const disposition = { version: 1, requestId: request.id, fingerprint: intent.fingerprint, target: i, at: intent.at,
+    fault: intent.fault, attribution: intent.authorization.attribution, authorization: intent.authorization,
+    priorRecordDigest: target.record.digest, check: intent.checks[i].check, mode: target.mode, outcome: "unknown", actualIndependentCheck: true };
+  const hold = prior.native.holds.find((/** @type {any} */ h) => h.key === `native-transaction-refusal:${request.fault.id}`);
+  if (!hold) refuse("INTENT", "immutable target intent lacks named hold");
+  hold.clearedAt = intent.at; hold.clearedBy = `exact recovery ${request.id}`;
+  hold.disposition = { requestId: request.id, fingerprint: intent.fingerprint, target: i };
+  prior.native.transactionDispositions = [...(prior.native.transactionDispositions ?? []), disposition];
+  return prior;
+}
+/** Previous steps are independently discoverable, complete exact outcomes,
+ * never caller declarations or terminal status. Replay the earlier request to
+ * repair a crash before its progress publication before advancing the sequence.
+ * @param {string} root @param {any} request @param {any} fault @param {any} auth
+ */
+function checkSequence(root, request, fault, auth) {
+  if (request.sequence === undefined) return;
+  for (let i = 0; i < request.sequence.index; i++) {
+    const step = auth.record.sequence.steps[i];
+    const file = nativeRecoveryIntentPath(root, step.requestId);
+    const intent = parse(bytes(file), "previous sequence intent");
+    const previous = intent.request;
+    validateRequest(root, previous);
+    if (intent.version !== 1 || previous.id !== step.requestId || !same(previous.sequence, { version: 1, index: i }) ||
+        !same(previous.targets[0], step.target) || !same(previous.fault, request.fault) ||
+        !same(previous.authorization, request.authorization) || intent.fingerprint !== digest(canonical(previous)) ||
+        !same(intent.fault, fault) || !same(intent.authorization, auth) || !same(intent.completed, [0]) ||
+        !Array.isArray(intent.checks) || intent.checks.length !== 1 || !object(intent.checks[0]) ||
+        !Number.isFinite(Date.parse(intent.at))) refuse("SEQUENCE_PRIOR", "earlier exact step is absent, changed or not genuinely complete");
+    // Recheck the immutable original request and entire owner record, then the
+    // exact result, current jobs, reservation, origins, scope and policy.
+    if (!same(authorization(root, previous, fault), auth)) refuse("SEQUENCE_PRIOR", "earlier owner policy changed");
+    const after = json(resultingRecord(intent, 0));
+    const checked = checkTarget(root, previous, { ...previous.targets[0], record: { content: after, digest: digest(after) } }, fault, true);
+    if (!same(checked, intent.checks[0])) refuse("SEQUENCE_PRIOR", "earlier checked physical or policy evidence changed");
+    syncNativeFileNamespace(nativeRecordPath(root, step.target.attempt));
+    syncNativeFileNamespace(file);
+  }
 }
 /** Current policy checks, called again inside the transaction before each write.
  * @param {string} root @param {any} rec
@@ -311,6 +396,7 @@ export function recoverNativeTransaction(root, request, opts = {}) {
     noPendingFaults();
     const fault = loadFault(root, request);
     const auth = authorization(root, request, fault);
+    checkSequence(root, request, fault, auth);
     let intent = existsSync(intentFile) ? parse(bytes(intentFile), "recovery intent") : null;
     if (intent !== null && (intent.version !== 1 || intent.fingerprint !== fingerprint || !same(intent.request, request))) refuse("IDENTIFIER_REUSED", "immutable request identifier was reused with different content");
     if (intent !== null && (!same(intent.fault, fault) || !same(intent.authorization, auth) || !Array.isArray(intent.completed) ||
@@ -325,27 +411,20 @@ export function recoverNativeTransaction(root, request, opts = {}) {
         noPendingFaults();
         if (!same(checkTarget(root, request, t, loadFault(root, request)).check, checks[i].check)) refuse("WORKSPACE", "candidate changed before intent");
       });
-      authorization(root, request, loadFault(root, request));
+      checkSequence(root, request, loadFault(root, request), authorization(root, request, loadFault(root, request)));
       intent = { version: 1, fingerprint, request, at: new Date().toISOString(), fault, authorization: auth, checks, completed: [] };
       atomicJson(intentFile, intent);
       opts.onBoundary?.("intent", -1);
     }
     for (let i = 0; i < request.targets.length; i++) {
       const target = request.targets[i];
-      const prior = parse(target.record.content, "expected record");
-      const disposition = { version: 1, requestId: request.id, fingerprint, target: i, at: intent.at,
-        fault: intent.fault, attribution: intent.authorization.attribution, authorization: intent.authorization,
-        priorRecordDigest: target.record.digest, check: intent.checks[i].check, mode: target.mode, outcome: "unknown", actualIndependentCheck: true };
-      const hold = prior.native.holds.find((/** @type {any} */ h) => h.key === `native-transaction-refusal:${request.fault.id}`);
-      if (!hold) refuse("INTENT", "immutable target intent lacks named hold");
-      hold.clearedAt = intent.at; hold.clearedBy = `exact recovery ${request.id}`; hold.disposition = { requestId: request.id, fingerprint, target: i };
-      prior.native.transactionDispositions = [...(prior.native.transactionDispositions ?? []), disposition];
+      const prior = resultingRecord(intent, i);
       const after = json(prior);
       const current = bytes(nativeRecordPath(root, target.attempt));
       if (current === after) {
         noPendingFaults();
         const currentFault = loadFault(root, request);
-        authorization(root, request, currentFault);
+        checkSequence(root, request, currentFault, authorization(root, request, currentFault));
         const checked = checkTarget(root, request, { ...target, record: { content: after, digest: digest(after) } }, currentFault, true);
         if (!same(checked.check, intent.checks[i].check) || !same(checked.policy, intent.checks[i].policy)) refuse("WORKSPACE", "checked candidate identity changed during exact replay");
         syncNativeFileNamespace(nativeRecordPath(root, target.attempt));
@@ -356,7 +435,7 @@ export function recoverNativeTransaction(root, request, opts = {}) {
       opts.onBoundary?.("before-target", i);
       noPendingFaults();
       const currentFault = loadFault(root, request);
-      authorization(root, request, currentFault);
+      checkSequence(root, request, currentFault, authorization(root, request, currentFault));
       const checked = checkTarget(root, request, target, currentFault);
       if (!same(checked.check, intent.checks[i].check) || !same(checked.policy, intent.checks[i].policy)) refuse("WORKSPACE", "checked candidate identity changed after intent");
       atomicJson(nativeRecordPath(root, target.attempt), prior);

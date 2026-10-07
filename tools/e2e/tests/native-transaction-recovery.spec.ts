@@ -645,6 +645,170 @@ function dependentFixture(): any {
   return f;
 }
 
+function authorizeSequence(f: any, stem = "sequence"): void {
+  authorize(f, "complete-ordered-owner-policy");
+  const a = JSON.parse(readFileSync(f.authorizationFile, "utf8"));
+  a.sequence = { version: 1, steps: f.request.targets.map((t: any, index: number) => ({ requestId: `${stem}-${index}`,
+    target: structuredClone(t) })) };
+  const quote = `Owner explicitly permits the complete ordered pair ${a.targets.map((t: any) => t.attempt).join(", ")} for only fault ${a.fault.id}, with ordinary independent reconciliation between steps and every check retained.`;
+  writeFileSync(f.evidencePath, quote + "\n"); a.evidenceReference = { path: f.evidencePath, digest: sha(readFileSync(f.evidencePath)), quote };
+  atomicJson(f.authorizationFile, a);
+  f.sequencePolicy = a; f.sequenceAuthorization = { id: a.id, digest: sha(readFileSync(f.authorizationFile)) };
+}
+function sequenceRequest(f: any, index: number): any {
+  const step = f.sequencePolicy.sequence.steps[index];
+  return { version: 1, id: step.requestId, fault: f.request.fault,
+    targets: [nativeRecoveryTarget(f.root, step.target.attempt, step.target.candidate, step.target.mode)],
+    authorization: f.sequenceAuthorization, sequence: { version: 1, index } };
+}
+function reconcileSequence(f: any): any {
+  return observeRun(f.root, { attempt: f.failedAttempt, evidence: "RUN-DONE failed", at: "2026-10-06T00:00:05.000Z" }).record;
+}
+
+test("complete owner-pinned ordered recovery supports genuine dependent reconciliation without singleton grants", () => {
+  const f = dependentFixture();
+  try {
+    const first = f.request.targets[0].attempt, second = f.failedAttempt;
+    const originalFirst = readNativeRecord(f.root, first), originalSecond = readNativeRecord(f.root, second);
+    const originalCollection = encode(originalFirst.native.collection), originalOutcome = encode(originalFirst.outcome);
+    authorize(f, "unsequenced-pair"); const singleton = { ...f.request, targets: [f.request.targets[0]] };
+    expect(cli(f, singleton).stderr).toContain("AUTHORIZATION");
+    expect(cli(f).stderr).toContain("OTHER_HOLD");
+    authorizeSequence(f);
+    const start = sequenceRequest(f, 0), nextBefore = sequenceRequest(f, 1);
+    expect(cli(f, { ...start, sequence: undefined }).stderr).toContain("AUTHORIZATION");
+    expect(cli(f, nextBefore).status).toBe(1);
+    const otherBytes = readFileSync(nativeRecordPath(f.root, second), "utf8");
+    const recovered = cli(f, start); expect(recovered.status, recovered.stderr).toBe(0);
+    expect(readFileSync(nativeRecordPath(f.root, second), "utf8")).toBe(otherBytes);
+    const stillHeld = cli(f, nextBefore); expect(stillHeld.status, stillHeld.stderr).toBe(1); expect(stillHeld.stderr).toContain("OTHER_HOLD");
+    const reconciled = reconcileSequence(f);
+    expect(activeNativeHolds(reconciled).map((h: any) => h.code)).toEqual(["native-transaction-refusal"]);
+    expect(reconciled.native!.receipts).toEqual(originalSecond.native.receipts); expect(reconciled.outcome).toEqual(originalSecond.outcome);
+    const next = sequenceRequest(f, 1), final = cli(f, next); expect(final.status, final.stderr).toBe(0);
+    const afterFirst = readNativeRecord(f.root, first), afterSecond = readNativeRecord(f.root, second);
+    expect(encode(afterFirst.native.collection)).toBe(originalCollection); expect(encode(afterFirst.outcome)).toBe(originalOutcome);
+    expect(afterSecond.state).toBe("failed"); expect(afterSecond.native.collection).toBeUndefined();
+    expect(afterSecond.native.receipts).toEqual(originalSecond.native.receipts); expect(afterSecond.outcome).toEqual(originalSecond.outcome);
+    expect(afterSecond.native.holds.filter((h: any) => h.code !== "native-transaction-refusal")).toEqual(reconciled.native!.holds.filter((h: any) => h.code !== "native-transaction-refusal"));
+    expect(activeNativeHolds(afterSecond)).toEqual([]);
+    for (const [index, record] of [[0, afterFirst], [1, afterSecond]] as const) {
+      expect(record.native.transactionDispositions).toHaveLength(1);
+      expect(record.native.transactionDispositions[0].authorization.record.targets).toHaveLength(2);
+      expect(record.native.transactionDispositions[0].fault.rawContent).toBe(f.fault.rawContent);
+      expect(JSON.parse(readFileSync(nativeRecoveryIntentPath(f.root, f.sequencePolicy.sequence.steps[index].requestId), "utf8")).completed).toEqual([0]);
+    }
+    const finalBytes = [first, second].map(a => readFileSync(nativeRecordPath(f.root, a), "utf8"));
+    expect(cli(f, start).status).toBe(0); expect(cli(f, next).status).toBe(0);
+    expect([first, second].map(a => readFileSync(nativeRecordPath(f.root, a), "utf8"))).toEqual(finalBytes);
+    const bench = path.join(f.dir, "sequence-fresh-bench"); git(f.root, ["worktree", "add", "--quiet", "--detach", bench, f.base]);
+    const prepared = prepareNativeBenchRun(f.root, { attempt: first, resource: bench, candidate: f.base, at: AT });
+    expect(encode(prepared.record.native!.collection)).toBe(originalCollection);
+    expect(prepared.manifest.preparation.authority.executorAttempt).toBe(first);
+  } finally { f.cleanup(); }
+});
+
+test("ordered recovery refuses changed complete policy prior outcomes and current checks before effects and after intent", () => {
+  test.setTimeout(180_000);
+  const kinds = ["no-approval", "wrong-fault", "wrong-target", "wrong-order", "malformed-future", "missing-prior", "incomplete-prior", "changed-prior", "changed-result", "changed-policy", "changed-candidate", "live-job", "unknown-job", "unresolved-holds", "missing-collection", "malformed-foreign", "pause", "boundary-prior", "boundary-policy"];
+  for (const kind of kinds) {
+    const f = dependentFixture();
+    try {
+      authorizeSequence(f, `negative-${kind}`);
+      let request = sequenceRequest(f, 0);
+      if (kind === "no-approval") request.authorization = null;
+      else if (kind === "wrong-fault") request.fault = { ...request.fault, id: sha("different fault") };
+      else if (kind === "wrong-target") request.targets = [f.request.targets[1]];
+      else if (kind === "wrong-order") request.sequence.index = 1;
+      else if (kind === "malformed-future") {
+        const a = JSON.parse(readFileSync(f.authorizationFile, "utf8")); delete a.sequence.steps[1].target.record;
+        atomicJson(f.authorizationFile, a); request.authorization.digest = sha(readFileSync(f.authorizationFile));
+      }
+      else if (kind === "missing-collection") {
+        const rec = readNativeRecord(f.root, request.targets[0].attempt); delete rec.native.collection; writeNativeRecord(f.root, rec);
+        f.request.targets[0] = nativeRecoveryTarget(f.root, rec.attempt, f.base, "collected-source");
+        authorizeSequence(f, `negative-${kind}`); request = sequenceRequest(f, 0);
+      } else {
+        const done = cli(f, request); expect(done.status, `${kind} first: ${done.stderr}`).toBe(0);
+        if (kind !== "unresolved-holds") reconcileSequence(f);
+        request = sequenceRequest(f, 1);
+        const priorFile = nativeRecoveryIntentPath(f.root, f.sequencePolicy.sequence.steps[0].requestId);
+        if (kind === "missing-prior") rmSync(priorFile);
+        if (kind === "incomplete-prior" || kind === "changed-prior") {
+          const prior = JSON.parse(readFileSync(priorFile, "utf8"));
+          if (kind === "incomplete-prior") prior.completed = []; else prior.fingerprint = "0".repeat(64);
+          atomicJson(priorFile, prior);
+        }
+        if (kind === "changed-result") {
+          const rec = readNativeRecord(f.root, f.request.targets[0].attempt); rec.native.transactionDispositions[0].outcome = "complete"; writeNativeRecord(f.root, rec);
+        }
+        if (kind === "changed-policy") {
+          const a = JSON.parse(readFileSync(f.authorizationFile, "utf8")); a.sequence.steps.reverse(); atomicJson(f.authorizationFile, a);
+        }
+        if (kind === "changed-candidate") { writeFileSync(path.join(request.targets[0].resource, "allowed.txt"), "new committed candidate\n"); git(request.targets[0].resource, ["add", "allowed.txt"]); git(request.targets[0].resource, ["commit", "-qm", "changed candidate"]); }
+        if (kind === "live-job" || kind === "unknown-job") {
+          const rec = readNativeRecord(f.root, f.failedAttempt); rec.ownedJobs = [kind === "live-job" ? { kind: "pid", id: String(process.pid) } : { kind: "unknown", id: "not-probeable" }]; writeNativeRecord(f.root, rec); request = sequenceRequest(f, 1);
+        }
+        if (kind === "malformed-foreign") { const file = nativeRecordPath(f.root, "T-foreign-a1"); mkdirSync(path.dirname(file), { recursive: true }); writeFileSync(file, "{unknown"); }
+        if (kind === "pause") { const file = path.join(f.root, PAUSE_REL_PATH); mkdirSync(path.dirname(file), { recursive: true }); writeFileSync(file, "Owner pause\n"); }
+      }
+      const before = f.request.targets.map((t: any) => readFileSync(nativeRecordPath(f.root, t.attempt), "utf8"));
+      let result: any;
+      if (kind.startsWith("boundary-")) {
+        const code = errorCode(() => recoverNativeTransaction(f.root, request, { onBoundary(name) {
+          if (name !== "before-target") return;
+          if (kind === "boundary-prior") {
+            const file = nativeRecoveryIntentPath(f.root, f.sequencePolicy.sequence.steps[0].requestId), prior = JSON.parse(readFileSync(file, "utf8")); prior.completed = []; atomicJson(file, prior);
+          } else writeFileSync(f.evidencePath, "changed owner evidence\n");
+        } }));
+        expect(code, kind).not.toBe("NO_REFUSAL");
+        result = { status: 1, stderr: code };
+      } else result = cli(f, request);
+      expect(result.status, `${kind}: ${result.stdout} ${result.stderr}`).toBe(1);
+      expect(f.request.targets.map((t: any) => readFileSync(nativeRecordPath(f.root, t.attempt), "utf8")), kind).toEqual(before);
+      if (!kind.startsWith("boundary-")) expect(existsSync(nativeRecoveryIntentPath(f.root, request.id)), kind).toBe(false);
+      console.info("ordered negative control", JSON.stringify({ kind, exit: result.status, refusal: result.stderr }));
+    } finally { f.cleanup(); }
+  }
+});
+
+test("ordered recovery actual intent target and progress persistence crashes require exact prior completion and replay once", () => {
+  test.setTimeout(240_000);
+  const f = dependentFixture();
+  try {
+    const originals = f.request.targets.map((t: any) => readFileSync(nativeRecordPath(f.root, t.attempt), "utf8"));
+    let serial = 0;
+    for (const index of [0, 1]) for (const role of ["intent", "target", "progress"]) for (const stage of atomicStages) {
+      f.request.targets.forEach((t: any, i: number) => writeFileSync(nativeRecordPath(f.root, t.attempt), originals[i]));
+      authorizeSequence(f, `crash-sequence-${serial++}`);
+      const first = sequenceRequest(f, 0);
+      if (index === 1) { const start = cli(f, first); expect(start.status, start.stderr).toBe(0); reconcileSequence(f); }
+      const request = index === 0 ? first : sequenceRequest(f, 1), originalRequest = f.request;
+      f.request = request;
+      const file = role === "target" ? nativeRecordPath(f.root, request.targets[0].attempt) : nativeRecoveryIntentPath(f.root, request.id);
+      const crash = persistenceCrash(f, "recover", file, stage, role === "progress" ? 2 : 1);
+      expect(crash.status, `${index}/${role}/${stage}: ${crash.stderr}`).toBe(73);
+      f.request = originalRequest;
+      if (index === 0) {
+        const next = sequenceRequest(f, 1), heldBytes = originalRequest.targets.map((t: any) => readFileSync(nativeRecordPath(f.root, t.attempt), "utf8"));
+        expect(cli(f, next).status, `${role}/${stage}: no unproven sequence advancement`).toBe(1);
+        expect(originalRequest.targets.map((t: any) => readFileSync(nativeRecordPath(f.root, t.attempt), "utf8"))).toEqual(heldBytes);
+      }
+      const afterCrash = readNativeRecord(f.root, request.targets[0].attempt);
+      expect(afterCrash.native.transactionDispositions?.length ?? 0).toBeLessThanOrEqual(1);
+      const replay = cli(f, request); expect(replay.status, `${index}/${role}/${stage}: ${replay.stderr}`).toBe(0);
+      if (index === 0) { reconcileSequence(f); const second = sequenceRequest(f, 1); const result = cli(f, second); expect(result.status, result.stderr).toBe(0); }
+      for (const t of f.request.targets) {
+        const record = readNativeRecord(f.root, t.attempt); expect(record.native.transactionDispositions).toHaveLength(1); expect(activeNativeHolds(record)).toEqual([]);
+        expect(record.native.transactionDispositions[0].outcome).toBe("unknown");
+      }
+      const bytesBefore = f.request.targets.map((t: any) => readFileSync(nativeRecordPath(f.root, t.attempt), "utf8"));
+      expect(cli(f, request).status).toBe(0);
+      expect(f.request.targets.map((t: any) => readFileSync(nativeRecordPath(f.root, t.attempt), "utf8"))).toEqual(bytesBefore);
+    }
+  } finally { f.cleanup(); }
+});
+
 test("public exact recovery preserves unknown receipts and recorded terminal outcome, and repeated requests return the same disposition", () => {
   const f = fixture("ordinary");
   try {
