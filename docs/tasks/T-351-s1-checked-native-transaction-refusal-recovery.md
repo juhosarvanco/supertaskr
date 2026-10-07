@@ -142,5 +142,49 @@ The ruling file is separately read and pinned by content/digest/quote. Coordinat
 `collected-source` retains the exact genuinely independently sealed collection. `failed-no-work` retains a failed turn, unchanged admitted candidate, no successful collection, and every real/unknown callback; it does not require zero callbacks. `terminal` requires genuine recorded finished/failed cessation without inventing a collection. Historical stopped outcome may remain on a genuinely continued/current finished source. Immutable intent stores complete canonical request fingerprint/fault/auth/checks before target effects. Each target atomically receives one exact disposition and only its named hold resolution. Pending targets and exact-after retries revalidate current authority, whole workspace, physical cessation and grant/pause/seat before progress. No reservation release/reacquisition or historical verdict rewrite occurs.
 
 
+### Current recut qualification before final range grade
+
+At source d6d402fcbd14299728d621457bb5dff6a1c60555, the independent
+fixture's six current public byte/foreign-cessation controls passed 6/6, exit0.
+Two necessary source-only strict-reader discriminators then ran separately over
+the complete 54 native/recovery bodies in that same independent repository.
+Removing only recovery evidence's physical UTF-8 round-trip check produced
+exit1, 53 passed/1 failed at the malformed fault public-entry assertion.
+Removing only native authority's physical UTF-8 round-trip check produced
+exit1, 53 passed/1 failed at malformed raw refusal absorption. Complete runner
+reports/kill sets and intended source diffs are preserved; no test assertion
+was changed. Neither fixture mutation changed the admitted source checkout.
+
+Each mutated fixture file was restored by exact SHA256, mode and atime/mtime;
+per-path committed diffs were empty companions to those proofs. The restored
+complete native/recovery baseline then passed 54/54, exit0, with no skipped,
+unexpected or flaky body. All four fixture/source SHA256 pins remain identical
+to the retained implementation. This is bounded current strict-byte qualification,
+not a repeat or relabeling of the historic thirteen-site campaign.
+
+All 42 supplied campaign artifacts and 36 strict-byte artifacts matched their
+manifest bytes/SHA256. A fresh AST comparison confirmed all thirteen complete
+function/primary-body pairs literally identical to supplied preserved snippets;
+all nine separately enumerated changed transitive-function hashes match the
+retained strict source. Full historical kill sets, demanded primary failures,
+restoration hashes and original refs remain disclosed. Source durability still
+means observed filesystem calls plus process-crash replay, not arbitrary power
+loss. No broad platform-refused guard-removal campaign was repeated, and no S1
+proof waiver or new independent acceptance is claimed.
+
+The intentionally shared prior rejected verdict at
+563705bf49fdd3b02ca047863f526e446432f464 was read only for this card,
+and the two supplied committed regressions remain unchanged. The fresh reviewer
+must be told that this retained patch, prior report/verdict/regressions, manifests
+and these current controls were executor inputs. No original or fresh private
+phase-one attack/ground artifact or unrelated bench was opened.
+
+The complete actual new-base range grade follows this substantive notes commit
+and is reported externally by its exact ref and body counts. The old grade stays
+RED; a new local result cannot rewrite it, accept the implementation, change
+production authority or turn the failed T351 review into successful acceptance.
+There was no new implementation repair or in-fence follow-through on this recut;
+the retained byte-validation/foreign-cessation classes were qualified as above.
+
 ## Verdicts
 
