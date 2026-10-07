@@ -38,5 +38,109 @@ Owner granted the recovery and T-351 completion on 2026-10-06. The separately pr
 
 The four owning paths are disjoint from the preserved T-351 candidate fence. Native protected tools must run serially with exact assigned-checkout prefixes. Current/frozen authority and visible effects require expected-identity checks and replay-safe durable evidence.
 
+### T-351-s1-a6 recut criteria echo and implementation
+
+The actual pre-implementation criteria echo was written to the assigned external
+scratch before patch application or implementation inspection. Its five checks
+are reproduced here without changing any criterion:
+
+- C1: Preserve bounded contention, distinct durable raw refusal identities and
+  verified requester context separately from lock ownership; keep unknown
+  attribution conservative and lossless through interrupted absorption/replay.
+- C2: Pin the exact fault and complete target/authority/binding set through the
+  public entry; independently check genuine native/job cessation, candidate
+  origins and cumulative physical scope; retain exact earlier genuine collection.
+- C3: Persist immutable complete intent before effects, revalidate each target
+  inside the existing transaction, resolve only the named hold atomically and
+  safely distinguish completed/pending replay while preserving unknown callbacks.
+- C4: Refuse ordinary unattributed legacy recovery; admit only separately recorded,
+  pinned exact owner authorization after all unchanged checks, retaining the
+  specified fault's uncertainty and the earlier failed review.
+- C5: Use fixture-owned real repositories and the public entry for contention,
+  recovery, prior collection, negative refusals and durable-boundary replay;
+  retain ordinary/packet/detached controls and disclose unavailable coverage.
+
+The supplied four-path patch was verified at SHA256
+3ae08720f8b0145406a1a1458c68fe7dfa93a2a0a93b53f4b1b0662094ade83e
+and applied cleanly to actual base f02c9cae12fc429566618747e626ea2091f1e1d1.
+Each source/spec blob and SHA256 is identical to the retained candidate
+at d79a3c633c8d95f3de02417143e1bab2422ffdd5. No foreign helper,
+original T351 implementation, acceptance criterion or authority was edited.
+
+The implementation supplies exact public recovery, durable raw faults/intent,
+per-target transactional dispositions and strict physical UTF-8 validation.
+It retains both intentionally shared prior-review regression bodies: foreign
+terminal status cannot conceal live/unknown ownership; genuine stopped unbound
+cessation can qualify only with complete recorded and physical proof. The
+additional all-records inventory retains refusal for live non-native writers.
+The prior independent rejection and original-base grade remain RED: at the
+prior substantive ref bcee16e76e9cd905a63f5feb674baba27b165e7c,
+parser469/app1171 passed; scoped e2e1075 of1078 passed, three unchanged
+outside-fence fixture-copy failures. The separate S2 repair is inherited from
+this new base; these paths are not imported into this patch.
+
+Historical qualification remains historical. The thirteen property-site
+campaign ran at 3c45ec92a3bfcb83c5f137566b70369eb37a5f21, with complete
+51-body runs, each demanded property failure, full kill sets and literal restore
+proofs retained in its supplied manifest/ledger. Strict-byte controls then
+failed three whole bodies on that permissive source and passed after repair.
+The compared complete functions/primary bodies stayed byte-identical while
+transitive validation changed. That limit remains; neither reuse nor a current
+positive is described as a new thirteen-site campaign or a proof waiver.
+
+Current qualification is performed in the exact assigned independent disposable
+fixture and graded source. Actual controls/grade/ref/cessation are recorded in
+the final external handoff; no future result is asserted here. The genuine
+RUN-ASK recut-procedure-T-351-s1-a6 received a normal recorded answer and actual
+RUN-ACK before proceeding with own-card protocol and the bounded fixture route.
+Only source and accurate notes precede grading; the final verifying status-only
+commit uses the executor role's exemption and reruns nothing.
+
+### Public recovery request and authorization formats
+
+
+`recoverNativeTransaction(root, request, opts?)` is the supported operation; optional synchronous `onBoundary(name,index)` is test instrumentation, with `before-intent`, `intent`, `before-target`, `target`, `progress`. It conveys no authorization bypass. `nativeRecoveryTarget(root,attempt,candidate,mode)` constructs read-only pins; `nativeRecoveryIntentPath(root,id)` locates durable intent. Native `withNativeDurabilityObserver(observer,body)` exposes actual synchronous operation boundaries and restores its previous observer; `syncNativeFileNamespace(file)` repeats real namespace persistence.
+
+CLI: `node tools/e2e/scripts/native-transaction-recovery.mjs --root <authority-root> --request <JSON-file>`. Exit0 returns the existing/exact complete disposition, exit1 reports a named refusal, exit2 rejects CLI spelling. Request/ruling/authority text must be valid UTF-8 before decoded identity comparison.
+
+```json
+{
+  "version": 1,
+  "id": "immutable-request-id",
+  "fault": {"id": "<full64hex>", "source": "raw-ledger-v1|recorded-refusal-json-v1", "rawDigest": "<full64hex>", "reference": "<absolute preserved file; required only for recorded-refusal-json-v1>"},
+  "targets": [{
+    "attempt": "<full attempt>", "resource": "<canonical absolute resource>", "candidate": "<full40hex>",
+    "mode": "collected-source|failed-no-work|terminal",
+    "record": {"content": "<complete exact UTF-8 bytes as JSON string>", "digest": "<full64hex>"},
+    "reservation": null,
+    "binding": {"agentId": "<full identity>", "canonicalTaskName": "<exact task>", "childReportedThreadId": "<same identity>", "startTurnId": "<exact callback turn>", "identityProbeToolUseId": "<exact completed probe>", "boundAt": "<binding generation timestamp>", "correlationMethod": "<complete recorded method>"},
+    "bindingDigest": "<SHA256 of JSON.stringify(full binding)>",
+    "origins": {"authorityRoot": "<canonical root>", "resource": "<canonical resource>", "base": "<full40hex>", "gitDir": "<canonical Git dir>", "commonDir": "<canonical common dir>", "assignmentDigest": "sha256:<full64hex>", "briefDigest": "sha256:<full64hex>"}
+  }],
+  "authorization": {"id": "<recorded authorization id>", "digest": "<full64hex>"}
+}
+```
+
+`targets` is explicit, nonempty and unique. `reservation` is exact observed absence (`null`) or `{content,digest}` with complete UTF-8 content; authorization is `null` only where independently attributable raw evidence permits the ordinary route. Binding is the entire public recorded object, including generation time/probe/turn and correlation method, never a field subset. Content digests are bare full SHA256; the two origin digests keep their published `sha256:` prefix. Legacy preserved refusal encoding is exact two-space pretty JSON plus one LF; deleted original sidecar bytes are not claimed as newly read.
+
+Authorization is independently loaded only from `.supertaskr/native-recovery-authorizations/<id>.json`:
+
+```json
+{
+  "version": 1, "id": "<id>", "authorityRoot": "<canonical root>",
+  "authorizedBy": "owner", "recordedBy": "coordinator", "recordedAt": "<actual dated recording>",
+  "evidenceReference": {"path": "<separate absolute owner-ruling file>", "digest": "<full64hex>", "quote": "<exact nonempty grant quotation>"},
+  "fault": "<the exact request fault object>",
+  "targets": [{"attempt": "<attempt>", "resource": "<canonical resource>", "candidate": "<full40hex>", "bindingDigest": "<full64hex>"}],
+  "attribution": "legacy-unattributed",
+  "disposition": "resolve-exact-native-transaction-refusal"
+}
+```
+
+The ruling file is separately read and pinned by content/digest/quote. Coordinator recording remains distinct from owner authorship. Exact ordered authorization targets must match; attributable bindings cannot be broadened through legacy authorization. Missing/malformed/changed authority, unknown/live physical ownership, other holds and dirty/cumulative scope refuse. The trust boundary is the existing writable authority home; no cryptographic protection against its whole-home writer is claimed.
+
+`collected-source` retains the exact genuinely independently sealed collection. `failed-no-work` retains a failed turn, unchanged admitted candidate, no successful collection, and every real/unknown callback; it does not require zero callbacks. `terminal` requires genuine recorded finished/failed cessation without inventing a collection. Historical stopped outcome may remain on a genuinely continued/current finished source. Immutable intent stores complete canonical request fingerprint/fault/auth/checks before target effects. Each target atomically receives one exact disposition and only its named hold resolution. Pending targets and exact-after retries revalidate current authority, whole workspace, physical cessation and grant/pause/seat before progress. No reservation release/reacquisition or historical verdict rewrite occurs.
+
+
 ## Verdicts
 

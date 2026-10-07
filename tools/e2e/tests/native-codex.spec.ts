@@ -853,6 +853,16 @@ test("transaction contention is bounded and durable, and exception cleanup relea
     const refusalNamesBeforeRelease = readdirSync(refusalDir).filter((name) => name.endsWith(".json"));
     const recordFile = path.join(b.root, ".supertaskr", "runs", WORK, `${bound.attempt}.json`);
     const readableRecord = readFileSync(recordFile, "utf8");
+    const rawRefusals = refusalNamesBeforeRelease.map((name) => readFileSync(path.join(refusalDir, name), "utf8"));
+    expect(new Set(rawRefusals.map((raw) => JSON.parse(raw).id)).size).toBe(2);
+    for (const raw of rawRefusals) {
+      const fault = JSON.parse(raw);
+      expect(fault.requester.attribution).toBe("recorded-binding");
+      expect(fault.requester.attempt).toBe(bound.attempt);
+      expect(fault.requester.binding).toEqual(bound.native!.binding);
+      expect(fault.owner.pid).toBe(holder.pid);
+      expect(fault.requester.event.toolUseId).toBe("refused-by-lock");
+    }
     writeFileSync(recordFile, "{ interrupted absorption\n");
     writeFileSync(release, "release\n");
     const holderResult = await holderDone;
@@ -872,6 +882,13 @@ test("transaction contention is bounded and durable, and exception cleanup relea
     ).toBe("held-before-tool");
     expect(readdirSync(refusalDir).filter((name) => name.endsWith(".json"))).toEqual([]);
     expect(activeNativeHolds(readNativeRecord(b.root, bound.attempt)).filter((hold: any) => hold.code === "native-transaction-refusal")).toHaveLength(2);
+    for (const raw of rawRefusals) {
+      const fault = JSON.parse(raw);
+      const ledgerFile = path.join(b.root, ".supertaskr", "runs", "reservations", "native-transaction-faults", `${fault.id}.json`);
+      const ledger = JSON.parse(readFileSync(ledgerFile, "utf8"));
+      expect(ledger.rawContent).toBe(raw);
+      expect(ledger.rawDigest).toBe(nativeSha256(raw));
+    }
 
     const terminal = observeRun(b.root, {
       attempt: bound.attempt,

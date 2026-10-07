@@ -44,6 +44,59 @@ export const NATIVE_TRANSACTION_WAIT_MS = 1_500;
 const NATIVE_TRANSACTION_POLL_MS = 10;
 const nativeTransactions = new Map();
 let nativeTransactionSerial = 0;
+/** @type {((event: {stage:string,kind:string,file:string,temp?:string,directory?:string}) => void) | undefined} */
+let nativeDurabilityObserver;
+
+/** Synchronous observation of actual filesystem operation boundaries. This
+ * changes no checks, authority, lock policy or filesystem operation. A thrown
+ * observer models an interruption; process termination tests exercise crashes.
+ * @template T
+ * @param {(event: {stage:string,kind:string,file:string,temp?:string,directory?:string}) => void} observer
+ * @param {() => T} body
+ * @returns {T}
+ */
+export function withNativeDurabilityObserver(observer, body) {
+  const previous = nativeDurabilityObserver;
+  nativeDurabilityObserver = observer;
+  try { return body(); } finally { nativeDurabilityObserver = previous; }
+}
+/** @param {string} stage @param {string} kind @param {string} file @param {{temp?:string,directory?:string}} [extra] */
+function durabilityBoundary(stage, kind, file, extra = {}) {
+  nativeDurabilityObserver?.({ stage, kind, file, ...extra });
+}
+/** @param {string} dir @param {string} kind @param {string} file */
+function flushNativeDirectory(dir, kind, file) {
+  const fd = openSync(dir, "r");
+  try {
+    durabilityBoundary(`before-${kind}`, "directory", file, { directory: dir });
+    fsyncSync(fd);
+    durabilityBoundary(kind, "directory", file, { directory: dir });
+  } finally { closeSync(fd); }
+}
+/** Persist each newly created namespace before descending into it. Repeating
+ * the final parent flush also covers a crash after mkdir and before its flush.
+ * @param {string} dir
+ */
+function durableNativeDirectory(dir) {
+  const parent = path.dirname(dir);
+  if (!existsSync(dir)) {
+    if (parent !== dir) durableNativeDirectory(parent);
+    durabilityBoundary("before-directory-create", "directory", dir);
+    try { mkdirSync(dir); } catch (error) {
+      if (/** @type {NodeJS.ErrnoException} */ (error).code !== "EEXIST") throw error;
+    }
+    durabilityBoundary("directory-create", "directory", dir);
+  }
+  if (!statSync(dir).isDirectory()) throw new NativeCodexFinding("NATIVE_DIRECTORY", `native-codex: ${dir} is not a directory.`);
+  if (parent !== dir) flushNativeDirectory(parent, "parent-fsync", dir);
+}
+/** Re-establish durability when exact resulting bytes were observed on replay.
+ * @param {string} file
+ */
+export function syncNativeFileNamespace(file) {
+  durableNativeDirectory(path.dirname(file));
+  flushNativeDirectory(path.dirname(file), "directory-fsync", file);
+}
 
 export class NativeCodexFinding extends Error {
   /** @param {string} code @param {string} message */
@@ -67,6 +120,17 @@ function string(value) {
 /** @param {string | Buffer} value @returns {string} */
 export function nativeSha256(value) {
   return createHash("sha256").update(value).digest("hex");
+}
+
+/** Authority bytes must round-trip exactly before decoding can confer identity.
+ * @param {string} file @returns {string}
+ */
+function readNativeUtf8(file) {
+  const raw = readFileSync(file), text = raw.toString("utf8");
+  if (!raw.equals(Buffer.from(text, "utf8"))) {
+    throw new NativeCodexFinding("NATIVE_AUTHORITY_UTF8", `native-codex: authority at ${file} is not valid UTF-8.`);
+  }
+  return text;
 }
 
 /** @param {string} root @param {string[]} args @param {{ allowFailure?: boolean }} [opts] */
@@ -272,7 +336,7 @@ function readFence(root, manifest) {
     throw new NativeCodexFinding("NATIVE_FENCE_UNREADABLE", `native-codex: the admitted fence manifest is absent: ${manifest}`);
   }
   let parsed;
-  const text = readFileSync(manifest, "utf8");
+  const text = readNativeUtf8(manifest);
   try {
     parsed = JSON.parse(text);
   } catch (error) {
@@ -309,7 +373,7 @@ function frozenNativeCard(resource, rec, fence) {
     const dir = path.join(resource, "docs", "tasks");
     if (!existsSync(dir)) return null;
     const matches = readdirSync(dir).filter((name) => name.endsWith(".md") &&
-      /^id:\s*(\S+)\s*$/m.exec(readFileSync(path.join(dir, name), "utf8"))?.[1] === rec.assignment.id);
+      /^id:\s*(\S+)\s*$/m.exec(readNativeUtf8(path.join(dir, name)))?.[1] === rec.assignment.id);
     if (matches.length !== 1) return null;
     card = `docs/tasks/${matches[0]}`;
   }
@@ -755,16 +819,27 @@ function nativeEmergencyHoldPath(root, attempt) {
 
 /** @param {string} file @param {unknown} value */
 export function atomicJson(file, value) {
-  mkdirSync(path.dirname(file), { recursive: true });
+  durableNativeDirectory(path.dirname(file));
   const temp = `${file}.${process.pid}.${Date.now()}.${nativeTransactionSerial++}.tmp`;
+  durabilityBoundary("before-temp-create", "atomic-json", file, { temp });
   const fd = openSync(temp, "wx", 0o600);
   let closed = false;
   try {
+    durabilityBoundary("temp-create", "atomic-json", file, { temp });
+    durabilityBoundary("before-write", "atomic-json", file, { temp });
     writeFileSync(fd, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+    durabilityBoundary("write", "atomic-json", file, { temp });
+    durabilityBoundary("before-file-fsync", "atomic-json", file, { temp });
     fsyncSync(fd);
+    durabilityBoundary("file-fsync", "atomic-json", file, { temp });
+    durabilityBoundary("before-close", "atomic-json", file, { temp });
     closeSync(fd);
     closed = true;
+    durabilityBoundary("close", "atomic-json", file, { temp });
+    durabilityBoundary("before-rename", "atomic-json", file, { temp });
     renameSync(temp, file);
+    durabilityBoundary("rename", "atomic-json", file, { temp });
+    flushNativeDirectory(path.dirname(file), "directory-fsync", file);
   } finally {
     if (!closed) closeSync(fd);
     if (existsSync(temp)) unlinkSync(temp);
@@ -787,8 +862,50 @@ function nativeTransactionRecoveryPath(root) {
 }
 
 /** @param {string} root */
-function nativeTransactionRefusalDir(root) {
+export function nativeTransactionRefusalDir(root) {
   return path.join(nativeTransactionDir(root), "native-transaction-refusals");
+}
+
+/** The immutable raw fault ledger, separate from mutable target records.
+ * @param {string} root @param {string} id
+ */
+export function nativeTransactionFaultPath(root, id) {
+  if (!/^[0-9a-f]{64}$/.test(id)) throw new NativeCodexFinding("NATIVE_FAULT_ID", "native-codex: a fault needs its full SHA256 identity.");
+  return path.join(nativeTransactionDir(root), "native-transaction-faults", `${id}.json`);
+}
+
+/** A requester is independently attributable only to one complete recorded binding.
+ * Reading during contention grants no callback result and does not inspect the owner as requester.
+ * @param {string} root @param {Record<string, any> | undefined} event
+ */
+function nativeTransactionRequester(root, event) {
+  if (event === undefined) return { attribution: "unknown", event: null };
+  const meta = eventMeta(event);
+  try {
+    const matches = allNativeRecords(root).filter((rec) => rec.native.binding?.agentId === meta.agentId &&
+      rec.native.launch.sessionId === meta.sessionId && rec.native.binding.startTurnId === meta.turnId &&
+      rec.execution?.harnessId === meta.agentId);
+    if (matches.length !== 1 || meta.agentId === null || meta.turnId === null || meta.sessionId === null) {
+      return { attribution: "unknown", event: meta };
+    }
+    const rec = matches[0];
+    if (rec === undefined) return { attribution: "unknown", event: meta };
+    const n = rec.native, b = n.binding;
+    if (n.start?.agentId !== b.agentId || n.start?.turnId !== b.startTurnId ||
+        b.childReportedThreadId !== b.agentId || b.canonicalTaskName !== n.launch.taskName ||
+        !Number.isFinite(Date.parse(b.boundAt)) || rec.execution.boundAt !== b.boundAt ||
+        n.probes.length !== 1 || !n.probes.some((/** @type {any} */ p) => p.agentId === b.agentId &&
+          p.turnId === b.startTurnId && p.toolUseId === b.identityProbeToolUseId && p.postAt != null && p.reportedThreadId === b.agentId)) {
+      return { attribution: "unknown", event: meta };
+    }
+    const raw = readNativeUtf8(nativeRecordPath(root, rec.attempt));
+    const observed = JSON.parse(raw);
+    if (JSON.stringify(observed) !== JSON.stringify(rec)) return { attribution: "unknown", event: meta };
+    return { attribution: "recorded-binding", event: meta, attempt: rec.attempt, resource: rec.resource,
+      binding: rec.native.binding, bindingDigest: nativeSha256(JSON.stringify(rec.native.binding)), recordDigest: nativeSha256(raw) };
+  } catch {
+    return { attribution: "unknown", event: meta };
+  }
 }
 
 /** @param {number} pid */
@@ -804,7 +921,7 @@ function nativeTransactionOwnerAlive(pid) {
 /** @param {string} lock @returns {?{ pid: number, token: string, operation: string, acquiredAt: string }} */
 function readNativeTransactionOwner(lock) {
   try {
-    const owner = JSON.parse(readFileSync(path.join(lock, "owner.json"), "utf8"));
+    const owner = JSON.parse(readNativeUtf8(path.join(lock, "owner.json")));
     const pid = owner?.pid;
     const token = string(owner?.token);
     const operation = string(owner?.operation);
@@ -837,18 +954,27 @@ function readNativeTransactionOwner(lock) {
  */
 function persistNativeTransactionRefusal(root, refusal) {
   const dir = nativeTransactionRefusalDir(root);
-  mkdirSync(dir, { recursive: true });
+  durableNativeDirectory(dir);
   const file = path.join(
     dir,
-    `${process.pid}-${process.hrtime.bigint()}-${nativeTransactionSerial++}.json`,
+    `${refusal.id}-${process.pid}-${process.hrtime.bigint()}-${nativeTransactionSerial++}.json`,
   );
+  durabilityBoundary("before-raw-create", "raw-refusal", file);
   const fd = openSync(file, "wx", 0o600);
   try {
+    durabilityBoundary("raw-create", "raw-refusal", file);
+    durabilityBoundary("before-write", "raw-refusal", file);
     writeFileSync(fd, `${JSON.stringify(refusal, null, 2)}\n`, "utf8");
+    durabilityBoundary("write", "raw-refusal", file);
+    durabilityBoundary("before-file-fsync", "raw-refusal", file);
     fsyncSync(fd);
+    durabilityBoundary("file-fsync", "raw-refusal", file);
   } finally {
+    durabilityBoundary("before-close", "raw-refusal", file);
     closeSync(fd);
+    durabilityBoundary("close", "raw-refusal", file);
   }
+  flushNativeDirectory(dir, "directory-fsync", file);
   return file;
 }
 
@@ -896,32 +1022,56 @@ function absorbNativeTransactionSidecars(root) {
     for (const name of readdirSync(refusalDir).sort()) {
       if (!name.endsWith(".json")) continue;
       const refusalFile = path.join(refusalDir, name);
-      let refusal;
+      let refusal, rawContent;
       try {
-        refusal = JSON.parse(readFileSync(refusalFile, "utf8"));
+        rawContent = readNativeUtf8(refusalFile);
+        refusal = JSON.parse(rawContent);
       } catch (error) {
         throw new NativeCodexFinding(
           "NATIVE_TRANSACTION_REFUSAL_UNREADABLE",
           `native-codex: transaction refusal sidecar ${refusalFile} is unreadable: ${String(error)}.`,
         );
       }
+      const records = recordFiles.map((file) => ({ file, rec: JSON.parse(readNativeUtf8(file)) }));
+      const faultFile = nativeTransactionFaultPath(root, refusal.id);
+      const fault = { version: 1, id: refusal.id, rawDigest: nativeSha256(rawContent), rawContent, refusal };
+      if (existsSync(faultFile)) {
+        if (readNativeUtf8(faultFile) !== `${JSON.stringify(fault, null, 2)}\n`) {
+          throw new NativeCodexFinding("NATIVE_FAULT_REUSED", "native-codex: distinct raw fault bytes reused an identity.");
+        }
+        syncNativeFileNamespace(faultFile);
+      } else atomicJson(faultFile, fault);
+      const requester = refusal.requester;
+      const scoped = requester?.attribution === "recorded-binding" && records.filter(({ rec }) =>
+        rec.attempt === requester.attempt && rec.resource === requester.resource && rec.native?.binding != null &&
+        nativeSha256(JSON.stringify(rec.native.binding)) === requester.bindingDigest).length === 1;
       let absorbed = false;
-      for (const file of recordFiles) {
-        const rec = JSON.parse(readFileSync(file, "utf8"));
+      for (const { file, rec } of records) {
+        if (scoped && rec.attempt !== requester.attempt) continue;
         if (!isObject(rec.native) || rec.native.version !== NATIVE_CODEX_VERSION) continue;
         nativeState(rec);
         addNativeHold(rec, {
           key: `native-transaction-refusal:${string(refusal.id) ?? name}`,
           code: "native-transaction-refusal",
           refusal,
+          fault: { id: fault.id, rawDigest: fault.rawDigest },
+          attribution: scoped ? "recorded-binding" : "unknown",
           recordedAt: string(refusal.recordedAt) ?? new Date().toISOString(),
           outcome: "unknown",
         });
         atomicJson(file, rec);
         absorbed = true;
       }
-      if (absorbed) unlinkSync(refusalFile);
+      if (absorbed) {
+        durabilityBoundary("before-retire", "raw-refusal", refusalFile);
+        unlinkSync(refusalFile);
+        durabilityBoundary("retire", "raw-refusal", refusalFile);
+        flushNativeDirectory(refusalDir, "retirement-fsync", refusalFile);
+      }
     }
+    // A crash after unlink can leave an empty visible directory whose namespace
+    // still needs a flush. Normal absorption completes that retirement on retry.
+    flushNativeDirectory(refusalDir, "retirement-fsync", refusalDir);
   }
 
   for (const file of recordFiles) {
@@ -930,7 +1080,7 @@ function absorbNativeTransactionSidecars(root) {
     if (!existsSync(sidecar)) continue;
     let rec;
     try {
-      rec = JSON.parse(readFileSync(file, "utf8"));
+      rec = JSON.parse(readNativeUtf8(file));
       nativeState(rec);
     } catch {
       continue;
@@ -940,6 +1090,7 @@ function absorbNativeTransactionSidecars(root) {
       addNativeHold(rec, hold);
       atomicJson(file, rec);
       unlinkSync(sidecar);
+      flushNativeDirectory(path.dirname(sidecar), "retirement-fsync", sidecar);
     }
   }
 }
@@ -955,7 +1106,7 @@ function absorbNativeTransactionSidecars(root) {
  *
  * @template T
  * @param {string} root
- * @param {{ operation: string, at?: string, waitMs?: number, onAcquired?: () => void, onContention?: () => void, onDeadOwnerObserved?: () => void, onRecoveryClaimed?: () => void, onRecoveryChecked?: () => void }} opts
+ * @param {{ operation: string, requesterEvent?: Record<string, any>, at?: string, waitMs?: number, onAcquired?: () => void, onContention?: () => void, onDeadOwnerObserved?: () => void, onRecoveryClaimed?: () => void, onRecoveryChecked?: () => void }} opts
  * @param {() => T} body
  * @returns {T}
  */
@@ -972,7 +1123,7 @@ export function withNativeTransaction(root, opts, body) {
     }
   }
 
-  mkdirSync(path.dirname(lock), { recursive: true });
+  durableNativeDirectory(path.dirname(lock));
   const waitMs = opts.waitMs ?? NATIVE_TRANSACTION_WAIT_MS;
   const started = Date.now();
   const deadline = started + waitMs;
@@ -993,13 +1144,14 @@ export function withNativeTransaction(root, opts, body) {
     }
     const recordedAt = opts.at ?? new Date().toISOString();
     const refusal = {
-      version: 1,
+      version: 2,
       id: nativeSha256(`${token}:${recordedAt}`),
       code: "native-transaction-refusal",
       operation: opts.operation,
       recordedAt,
       outcome: "unknown",
       owner: lastOwner,
+      requester: nativeTransactionRequester(root, opts.requesterEvent),
       reason: existsSync(recovery)
         ? "transaction recovery ownership is unresolved"
         : lastOwner === null
@@ -1185,7 +1337,7 @@ function readUnreadableAuthority(root, attempt) {
   if (!existsSync(file)) return null;
   let hold;
   try {
-    hold = JSON.parse(readFileSync(file, "utf8"));
+    hold = JSON.parse(readNativeUtf8(file));
   } catch (error) {
     throw new NativeCodexFinding(
       "NATIVE_HOLD_UNREADABLE",
@@ -1212,7 +1364,7 @@ function includeUnreadableAuthority(root, attempt, rec) {
 export function readNativeRecord(root, attempt, opts = {}) {
   const file = nativeRecordPath(root, attempt);
   try {
-    const rec = JSON.parse(readFileSync(file, "utf8"));
+    const rec = JSON.parse(readNativeUtf8(file));
     nativeState(rec);
     return includeUnreadableAuthority(root, attempt, rec);
   } catch (error) {
@@ -1244,7 +1396,7 @@ export function allNativeRecords(root, opts = {}) {
       if (!name.endsWith(".json")) continue;
       const attempt = name.slice(0, -".json".length);
       try {
-        const rec = JSON.parse(readFileSync(path.join(dir, name), "utf8"));
+        const rec = JSON.parse(readNativeUtf8(path.join(dir, name)));
         if (isObject(rec.native) && rec.native.version === NATIVE_CODEX_VERSION) {
           nativeState(rec);
           records.push(includeUnreadableAuthority(root, attempt, rec));
@@ -1793,6 +1945,7 @@ export function handleNativeEvent(root, event, opts = {}) {
     root,
     {
       operation: `native-event:${string(event.hook_event_name) ?? "unknown"}`,
+      requesterEvent: event,
       ...(opts.at === undefined ? {} : { at: opts.at }),
       ...(opts.waitMs === undefined ? {} : { waitMs: opts.waitMs }),
       ...(opts.onAcquired === undefined ? {} : { onAcquired: opts.onAcquired }),
