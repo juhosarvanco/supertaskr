@@ -264,5 +264,29 @@ The same four code/spec paths and admitted own-card protocol surface remain the
 entire fence. The final status-only verifying commit will rerun nothing after
 the substantive candidate's actual original-base range is graded.
 
+The ordered-route code/spec qualification ran at
+`a62ae16a1fd7e55c1ccdd088bf66cc249a098267`. Each of three narrow current
+property controls selected one body, exited1 and failed its intended public
+assertion: unsupported persisted policy blocks the positive route; a genuinely
+complete predecessor data arrangement invalidates the incomplete-prior negative;
+corrupt new durable intent fingerprint blocks checked sequence advancement.
+No expectation was inverted and no broad safety-guard campaign was repeated.
+Literal restorations proved SHA256, mode, both nanosecond clocks and per-path
+diff0. These controls qualify their stated arrangements, not every individual
+subfield of the composite negative body through separate mutants.
+
+The actual restored full native/recovery run selected59 and exited1 with56
+passes and three failures, each receiving `spawnSync status:null` on an expected
+successful child CLI. Its actual logs and47.3m wall duration remain preserved;
+the configured900-second wait ceiling did not report a timeout, and the reason
+for that timing/status anomaly is not inferred. A necessary unchanged-source
+recheck selected exactly those three bodies and exited0 with3 passes in3.6m.
+The complete ordered route and19 negative arrangements passed in the first run;
+all72 ordered process-crash persistence cases passed in the recheck. This is not
+reported as a full59 GREEN. The substantive original-base grade below the final
+handoff will separately record its own actual ref, counts and exit. No assigned
+criterion is intentionally omitted; actual production eligibility remains for
+the coordinator after fresh independent acceptance and protected delivery.
+
 ## Verdicts
 
