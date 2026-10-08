@@ -6,7 +6,7 @@ milestone: 4
 priority: 1
 size: M
 tier: standard
-status: verifying
+status: building
 suggested_by: codex/gpt-6.1-sol @architect
 blocked_by: []
 touches: [tools/e2e/scripts/native-codex.mjs, tools/e2e/scripts/native-transaction-recovery.mjs, tools/e2e/tests/native-codex.spec.ts, tools/e2e/tests/native-transaction-recovery.spec.ts]
@@ -287,6 +287,12 @@ reported as a full59 GREEN. The substantive original-base grade below the final
 handoff will separately record its own actual ref, counts and exit. No assigned
 criterion is intentionally omitted; actual production eligibility remains for
 the coordinator after fresh independent acceptance and protected delivery.
+
+### T-351-s1-a6 focused physical-file correction, 2026-10-08
+
+The interrupted independent review and candidate797600a14ed19e010c5cd4949534f98adc6e3f75 remain preserved. The explicitly shared finding demonstrated twelve dangling-entry arrangements: reservation, emergency hold and raw-fault directory, present initially or inserted before target publication, through ordinary attributable and independently owner-authorized historical fixture routes. Both legitimate positives reached completion first. All twelve wrongly proceeded and changed their selected target while retaining the dangling entry. The reviewer prepared no qualified repair; its unfinished or refused scripts are not executor inputs.
+
+This correction retains C1's distinct unknown fault/requester evidence, C2's complete independently checked physical authority/cessation/scope and exact prior collection, C3's immutable intent and transactional named-only replay, C4's separate complete pinned owner authorization and ordered policy, and C5's real-repository positive/negative qualification with unavailable coverage disclosed. No criterion, production authority, fence or platform-stop restriction changes. The defect class is physical invalid authority being mistaken for absence or followed as a regular control entry. A newly independent public-entry regression will establish fail-before/pass-after before the required original-base grade. Existing historical RED, changed-transitive qualification limits and earlier exact evidence remain unchanged. Source changes stay in the four paths and own card; the genuinely acknowledged normal evidence-route answer retains the declared external file-handling-v1 scratch and independently owned fixture.
 
 ## Verdicts
 

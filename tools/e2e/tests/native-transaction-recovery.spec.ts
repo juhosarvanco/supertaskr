@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readlinkSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import net from "node:net";
 import os from "node:os";
 import { GRANT_STORE_REL_PATH, PAUSE_REL_PATH, composeGrantSnapshot } from "../scripts/dispatch-brief.mjs";
@@ -11,7 +11,7 @@ import {
   withNativeTransaction, writeNativeRecord,
   nativeTransactionRefusalDir,
 } from "../scripts/native-codex.mjs";
-import { bindRun, collectRun, continueRun, observeRun, prepareNativeBenchRun, readReservation, releaseReservation, startRun, stopRun } from "../scripts/run-record.mjs";
+import { bindRun, collectRun, continueRun, observeRun, prepareNativeBenchRun, readReservation, releaseReservation, reservationPath, startRun, stopRun } from "../scripts/run-record.mjs";
 import { nativeRecoveryIntentPath, nativeRecoveryTarget, recoverNativeTransaction } from "../scripts/native-transaction-recovery.mjs";
 import { processRow, writeHolder } from "../scripts/checkout-currency.mjs";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
@@ -1382,4 +1382,98 @@ test("conservative physical inventory rejects malformed ownership metadata and n
     { kind: "work-not-directory", exit: 1, unchanged: true, noIntent: true },
     { kind: "record-not-file", exit: 1, unchanged: true, noIntent: true },
   ]);
+});
+
+
+test("physical authority entries refuse dangling reservations emergency holds and raw directories before recovery effects and at the target boundary", () => {
+  test.setTimeout(180_000);
+  for (const legacy of [false, true]) {
+    const f = fixture(`physical-positive-${legacy}`, 1, true, legacy);
+    try {
+      if (legacy) authorize(f);
+      mkdirSync(nativeTransactionRefusalDir(f.root), { recursive: true });
+      const result = cli(f); expect(result.status, result.stderr).toBe(0);
+      expect(JSON.parse(result.stdout).completed).toEqual([0]);
+      const rec = readNativeRecord(f.root, f.records[0].attempt);
+      expect(rec.native.collection).toEqual(f.records[0].native.collection);
+      expect(rec.native.receipts).toEqual(f.records[0].native.receipts);
+      expect(rec.native.transactionDispositions[0].outcome).toBe("unknown");
+    } finally { f.cleanup(); }
+  }
+  const observations: any[] = [];
+  for (const legacy of [false, true]) for (const boundary of [false, true]) {
+    for (const kind of ["reservation", "emergency-hold", "raw-fault-directory"]) {
+      const f = fixture(`physical-dangling-${legacy}-${boundary}-${kind}`, 1, true, legacy);
+      try {
+        if (legacy) authorize(f);
+        const before = beforeRecords(f), record = nativeRecordPath(f.root, f.records[0].attempt);
+        const file = kind === "reservation" ? reservationPath(f.root, f.lanes[0]) :
+          kind === "emergency-hold" ? record + ".native-hold" : nativeTransactionRefusalDir(f.root);
+        const missing = path.join(f.dir, "nonexistent-authority");
+        const insert = () => { mkdirSync(path.dirname(file), { recursive: true }); symlinkSync(missing, file); };
+        let code: string;
+        if (boundary) code = errorCode(() => recoverNativeTransaction(f.root, f.request, {
+          onBoundary: name => { if (name === "before-target") insert(); },
+        }));
+        else { insert(); const result = cli(f); code = result.status === 1 ? result.stderr : "NO_REFUSAL"; }
+        const intentFile = nativeRecoveryIntentPath(f.root, f.request.id);
+        observations.push({ legacy, boundary, kind, refused: code !== "NO_REFUSAL",
+          unchanged: readFileSync(record, "utf8") === before[0],
+          linkIntact: lstatSync(file).isSymbolicLink() && readlinkSync(file) === missing,
+          completed: existsSync(intentFile) ? JSON.parse(readFileSync(intentFile, "utf8")).completed : null });
+      } finally { f.cleanup(); }
+    }
+  }
+  console.info("physical authority dangling observations", JSON.stringify(observations));
+  expect(observations).toHaveLength(12);
+  for (const observed of observations) {
+    expect(observed, JSON.stringify(observed)).toMatchObject({ refused: true, unchanged: true, linkIntact: true });
+    expect(observed.completed).toEqual(observed.boundary ? [] : null);
+  }
+});
+
+test("physical authority types and immutable intent entries remain checked through pinning publication and replay", () => {
+  test.setTimeout(180_000);
+  const observations: any[] = [];
+  for (const kind of ["record-link", "brief-link", "fault-link", "authorization-link", "ruling-link",
+    "intent-dangling", "intent-boundary-dangling", "intent-directory", "intent-parent-link", "raw-directory-file", "reservation-directory"]) {
+    const legacy = ["authorization-link", "ruling-link"].includes(kind);
+    const f = fixture(`physical-types-${kind}`, 1, true, legacy);
+    try {
+      if (legacy) authorize(f);
+      const before = beforeRecords(f), record = nativeRecordPath(f.root, f.records[0].attempt);
+      const intent = nativeRecoveryIntentPath(f.root, f.request.id);
+      const file = kind === "record-link" ? record : kind === "brief-link" ? f.records[0].assignment.brief :
+        kind === "fault-link" ? nativeTransactionFaultPath(f.root, f.request.fault.id) :
+        kind === "authorization-link" ? f.authorizationFile : kind === "ruling-link" ? f.evidencePath :
+        kind === "intent-parent-link" ? path.dirname(intent) : kind === "raw-directory-file" ? nativeTransactionRefusalDir(f.root) :
+        kind === "reservation-directory" ? reservationPath(f.root, f.lanes[0]) : intent;
+      const insert = () => {
+        mkdirSync(path.dirname(file), { recursive: true });
+        if (["intent-directory", "reservation-directory"].includes(kind)) mkdirSync(file);
+        else if (kind === "raw-directory-file") writeFileSync(file, "not a directory\n");
+        else if (kind === "intent-parent-link") {
+          const target = path.join(f.dir, "other-intent-directory"); mkdirSync(target); symlinkSync(target, file);
+        } else if (kind.startsWith("intent-")) { rmSync(file, { force: true }); symlinkSync(path.join(f.dir, "missing-intent"), file); }
+        else { const target = path.join(f.dir, `original-${kind}`); writeFileSync(target, readFileSync(file)); rmSync(file); symlinkSync(target, file); }
+      };
+      let code: string, pinRefused: boolean | null = null;
+      if (kind === "intent-boundary-dangling") code = errorCode(() => recoverNativeTransaction(f.root, f.request, {
+        onBoundary: name => { if (name === "before-target") insert(); },
+      }));
+      else {
+        insert();
+        if (kind === "record-link" || kind === "brief-link" || kind === "reservation-directory")
+          pinRefused = errorCode(() => nativeRecoveryTarget(f.root, f.records[0].attempt, f.base, "collected-source")) !== "NO_REFUSAL";
+        code = errorCode(() => recoverNativeTransaction(f.root, f.request));
+      }
+      observations.push({ kind, pinRefused, refused: code !== "NO_REFUSAL", unchanged: readFileSync(record, "utf8") === before[0],
+        entryRetained: kind.endsWith("directory") ? lstatSync(file).isDirectory() : kind === "raw-directory-file" ? lstatSync(file).isFile() : lstatSync(file).isSymbolicLink(), code });
+    } finally { f.cleanup(); }
+  }
+  console.info("physical authority type observations", JSON.stringify(observations));
+  for (const observed of observations) {
+    expect(observed, JSON.stringify(observed)).toMatchObject({ refused: true, unchanged: true, entryRetained: true });
+    if (observed.pinRefused !== null) expect(observed.pinRefused).toBe(true);
+  }
 });
