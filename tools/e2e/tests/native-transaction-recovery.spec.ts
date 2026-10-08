@@ -1501,3 +1501,54 @@ test("physical authority types and immutable intent entries remain checked throu
     }
   }
 });
+
+
+test("fresh target progress publication independently rechecks resulting authority candidate and policy at the target boundary", () => {
+  test.setTimeout(180_000);
+  for (const legacy of [false, true]) {
+    const f = fixture(`fresh-progress-positive-${legacy}`, 1, true, legacy);
+    try {
+      if (legacy) authorize(f);
+      const receipts = readNativeRecord(f.root, f.records[0].attempt).native.receipts;
+      expect(recoverNativeTransaction(f.root, f.request).completed).toEqual([0]);
+      const after = beforeRecords(f);
+      expect(recoverNativeTransaction(f.root, f.request).completed).toEqual([0]); unchanged(f, after);
+      const rec = JSON.parse(after[0]!);
+      expect(rec.native.receipts).toEqual(receipts);
+      expect(rec.native.transactionDispositions).toHaveLength(1);
+      expect(rec.native.transactionDispositions[0].outcome).toBe("unknown");
+    } finally { f.cleanup(); }
+  }
+  const changes: Array<[string, (f: any) => void]> = [
+    ["resulting-record", f => { const r = readNativeRecord(f.root, f.records[0].attempt); r.report = "external change after target publication"; writeNativeRecord(f.root, r); }],
+    ["reservation", f => atomicJson(reservationPath(f.root, f.lanes[0]), { version: 1, attempt: "T-foreign-a1", resource: f.lanes[0] })],
+    ["origins", f => writeFileSync(f.records[0].assignment.brief, "changed origin after target publication\n")],
+    ["candidate", f => writeFileSync(path.join(f.lanes[0], "allowed.txt"), "dirty candidate after target publication\n")],
+    ["pause", f => atomicJson(path.join(f.root, PAUSE_REL_PATH), { version: 1, scope: "all", by: "owner", at: AT })],
+    ["changed-valid-grant", f => installGrant(f, 2)],
+    ["owner-reference", f => writeFileSync(f.evidencePath, "authorization revoked after target publication\n")],
+    ["fault-ledger", f => atomicJson(nativeTransactionFaultPath(f.root, f.request.fault.id), { ...f.fault, rawContent: f.fault.rawContent + "changed" })],
+  ];
+  const observations: any[] = [];
+  for (const [name, change] of changes) {
+    const legacy = name === "owner-reference", f = fixture(`fresh-progress-${name}`, 1, true, legacy);
+    try {
+      if (legacy) authorize(f);
+      if (name === "changed-valid-grant") installGrant(f);
+      const receipts = readNativeRecord(f.root, f.records[0].attempt).native.receipts;
+      let arranged: string | null = null;
+      const code = errorCode(() => recoverNativeTransaction(f.root, f.request, { onBoundary(stage) {
+        if (stage === "target") { change(f); arranged = readFileSync(nativeRecordPath(f.root, f.records[0].attempt), "utf8"); }
+      } }));
+      const after = readFileSync(nativeRecordPath(f.root, f.records[0].attempt), "utf8"), rec = JSON.parse(after);
+      observations.push({ name, code, refused: code !== "NO_REFUSAL", boundaryReached: arranged !== null,
+        resultingRecordRetained: after === arranged, completed: JSON.parse(readFileSync(nativeRecoveryIntentPath(f.root, f.request.id), "utf8")).completed,
+        dispositionCount: rec.native.transactionDispositions?.length, outcome: rec.native.transactionDispositions?.[0]?.outcome,
+        receiptsPreserved: JSON.stringify(rec.native.receipts) === JSON.stringify(receipts) });
+    } finally { f.cleanup(); }
+  }
+  console.info("fresh target progress observations", JSON.stringify(observations));
+  for (const observed of observations) expect(observed, JSON.stringify(observed)).toMatchObject({
+    refused: true, boundaryReached: true, resultingRecordRetained: true, completed: [], dispositionCount: 1, outcome: "unknown", receiptsPreserved: true,
+  });
+});
