@@ -439,6 +439,13 @@ export function recoverNativeTransaction(root, request, opts = {}) {
     authorityDirectory(root, path.dirname(intentFile));
     if (authorityDirectory(root, rawSidecars) !== null && readdirSync(rawSidecars).some((name) => name.endsWith(".json"))) refuse("PENDING_FAULT", "unabsorbed raw faults remain; normal ledger absorption must finish first");
     if (request.targets.some((/** @type {any} */ t) => authorityFile(root, `${nativeRecordPath(root, t.attempt)}.native-hold`) !== null)) refuse("OTHER_HOLD", "an unabsorbed emergency hold remains on a selected target");
+    // The native engine absorbs sidecars after onAcquired. Exact recovery must
+    // first refuse pending foreign evidence rather than mutate an unselected record.
+    for (const other of checkedRecoveryRecords(root)) {
+      if (!request.targets.some((/** @type {any} */ t) => t.attempt === other.attempt) &&
+          physicalEntry(`${nativeRecordPath(root, other.attempt)}.native-hold`, "file", "FOREIGN") !== null)
+        refuse("FOREIGN", "an unabsorbed emergency hold remains on another attempt; normal absorption must finish first");
+    }
   };
   noPendingFaults();
   return withNativeTransaction(root, { operation: "native-transaction-disposition", onAcquired: noPendingFaults }, () => {
