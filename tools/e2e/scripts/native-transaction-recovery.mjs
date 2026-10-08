@@ -327,10 +327,11 @@ function jobsCeased(rec) {
 /** A foreign record is never modified or released by recovery. Public stop
  * may genuinely reconcile an unbound launch; its complete dated evidence,
  * rather than null fields or terminal status, establishes that cessation.
- * @param {any} rec
+ * @param {string} root @param {any} rec
  */
-function foreignCeased(rec) {
+function foreignCeased(root, rec) {
   try {
+    if (authorityFile(root, `${nativeRecordPath(root, rec.attempt)}.native-hold`) !== null) return false;
     if (["finished", "failed"].includes(rec.state)) { ceased(rec); return true; }
     if (rec.state !== "stopped" || rec.outcome?.state !== "stopped" ||
         !Number.isFinite(Date.parse(rec.outcome.at)) || rec.native.inflight.length !== 0) return false;
@@ -397,7 +398,7 @@ function checkTarget(root, request, target, fault, resolved = false) {
   const held = readReservation(root, rec.resource);
   if (reservationRaw !== null && (held === null || held.attempt !== rec.attempt || held.resource !== rec.resource)) refuse("FOREIGN", "reservation is malformed or foreign");
   if (checkedRecoveryRecords(root).some((other) => other.attempt !== rec.attempt && other.writer && other.resource === rec.resource &&
-      !foreignCeased(other))) refuse("FOREIGN", "another live or unknown writer owns this resource");
+      !foreignCeased(root, other))) refuse("FOREIGN", "another live or unknown writer owns this resource");
   ceased(rec);
   const holds = activeNativeHolds(rec);
   const hold = (resolved ? rec.native.holds : holds).find((/** @type {any} */ h) => h.key === `native-transaction-refusal:${request.fault.id}`);
