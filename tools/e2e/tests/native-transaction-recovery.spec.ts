@@ -1398,6 +1398,9 @@ test("physical authority entries refuse dangling reservations emergency holds an
       expect(rec.native.collection).toEqual(f.records[0].native.collection);
       expect(rec.native.receipts).toEqual(f.records[0].native.receipts);
       expect(rec.native.transactionDispositions[0].outcome).toBe("unknown");
+      const completedBytes = beforeRecords(f);
+      const replay = cli(f); expect(replay.status, replay.stderr).toBe(0);
+      expect(JSON.parse(replay.stdout).completed).toEqual([0]); unchanged(f, completedBytes);
     } finally { f.cleanup(); }
   }
   const observations: any[] = [];
@@ -1436,11 +1439,12 @@ test("physical authority types and immutable intent entries remain checked throu
   test.setTimeout(180_000);
   const observations: any[] = [];
   for (const kind of ["record-link", "brief-link", "fault-link", "authorization-link", "ruling-link",
-    "intent-dangling", "intent-boundary-dangling", "intent-directory", "intent-parent-link", "raw-directory-file", "reservation-directory"]) {
+    "intent-dangling", "intent-beforepublication-dangling", "intent-boundary-dangling", "intent-replay-link", "intent-directory", "intent-parent-link", "raw-directory-file", "reservation-directory"]) {
     const legacy = ["authorization-link", "ruling-link"].includes(kind);
     const f = fixture(`physical-types-${kind}`, 1, true, legacy);
     try {
       if (legacy) authorize(f);
+      if (kind === "intent-replay-link") expect(recoverNativeTransaction(f.root, f.request).completed).toEqual([0]);
       const before = beforeRecords(f), record = nativeRecordPath(f.root, f.records[0].attempt);
       const intent = nativeRecoveryIntentPath(f.root, f.request.id);
       const file = kind === "record-link" ? record : kind === "brief-link" ? f.records[0].assignment.brief :
@@ -1454,12 +1458,14 @@ test("physical authority types and immutable intent entries remain checked throu
         else if (kind === "raw-directory-file") writeFileSync(file, "not a directory\n");
         else if (kind === "intent-parent-link") {
           const target = path.join(f.dir, "other-intent-directory"); mkdirSync(target); symlinkSync(target, file);
+        } else if (kind === "intent-replay-link") {
+          const target = path.join(f.dir, "original-intent"); writeFileSync(target, readFileSync(file)); rmSync(file); symlinkSync(target, file);
         } else if (kind.startsWith("intent-")) { rmSync(file, { force: true }); symlinkSync(path.join(f.dir, "missing-intent"), file); }
         else { const target = path.join(f.dir, `original-${kind}`); writeFileSync(target, readFileSync(file)); rmSync(file); symlinkSync(target, file); }
       };
       let code: string, pinRefused: boolean | null = null;
-      if (kind === "intent-boundary-dangling") code = errorCode(() => recoverNativeTransaction(f.root, f.request, {
-        onBoundary: name => { if (name === "before-target") insert(); },
+      if (kind === "intent-boundary-dangling" || kind === "intent-beforepublication-dangling") code = errorCode(() => recoverNativeTransaction(f.root, f.request, {
+        onBoundary: name => { if (name === (kind === "intent-boundary-dangling" ? "before-target" : "before-intent")) insert(); },
       }));
       else {
         insert();
