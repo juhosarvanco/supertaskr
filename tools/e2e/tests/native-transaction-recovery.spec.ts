@@ -1439,7 +1439,7 @@ test("physical authority types and immutable intent entries remain checked throu
   test.setTimeout(180_000);
   const observations: any[] = [];
   for (const kind of ["record-link", "brief-link", "fault-link", "authorization-link", "ruling-link",
-    "intent-dangling", "intent-beforepublication-dangling", "intent-boundary-dangling", "intent-replay-link", "intent-directory", "intent-parent-link", "raw-directory-file", "reservation-directory"]) {
+    "intent-dangling", "intent-beforepublication-dangling", "intent-boundary-dangling", "intent-replay-link", "intent-directory", "intent-parent-link", "raw-directory-file", "reservation-directory", "foreign-emergency-dangling", "foreign-emergency-boundary-dangling"]) {
     const legacy = ["authorization-link", "ruling-link"].includes(kind);
     const f = fixture(`physical-types-${kind}`, 1, true, legacy);
     try {
@@ -1447,7 +1447,13 @@ test("physical authority types and immutable intent entries remain checked throu
       if (kind === "intent-replay-link") expect(recoverNativeTransaction(f.root, f.request).completed).toEqual([0]);
       const before = beforeRecords(f), record = nativeRecordPath(f.root, f.records[0].attempt);
       const intent = nativeRecoveryIntentPath(f.root, f.request.id);
-      const file = kind === "record-link" ? record : kind === "brief-link" ? f.records[0].assignment.brief :
+      let foreignRecord: string | null = null, foreignBefore: string | null = null;
+      if (kind.startsWith("foreign-emergency-")) {
+        const other = structuredClone(readNativeRecord(f.root, f.records[0].attempt));
+        other.attempt = "T-physical-foreign-a1"; writeNativeRecord(f.root, other);
+        foreignRecord = nativeRecordPath(f.root, other.attempt); foreignBefore = readFileSync(foreignRecord, "utf8");
+      }
+      const file = foreignRecord !== null ? foreignRecord + ".native-hold" : kind === "record-link" ? record : kind === "brief-link" ? f.records[0].assignment.brief :
         kind === "fault-link" ? nativeTransactionFaultPath(f.root, f.request.fault.id) :
         kind === "authorization-link" ? f.authorizationFile : kind === "ruling-link" ? f.evidencePath :
         kind === "intent-parent-link" ? path.dirname(intent) : kind === "raw-directory-file" ? nativeTransactionRefusalDir(f.root) :
@@ -1460,12 +1466,12 @@ test("physical authority types and immutable intent entries remain checked throu
           const target = path.join(f.dir, "other-intent-directory"); mkdirSync(target); symlinkSync(target, file);
         } else if (kind === "intent-replay-link") {
           const target = path.join(f.dir, "original-intent"); writeFileSync(target, readFileSync(file)); rmSync(file); symlinkSync(target, file);
-        } else if (kind.startsWith("intent-")) { rmSync(file, { force: true }); symlinkSync(path.join(f.dir, "missing-intent"), file); }
+        } else if (kind.startsWith("intent-") || kind.startsWith("foreign-emergency-")) { rmSync(file, { force: true }); symlinkSync(path.join(f.dir, "missing-intent"), file); }
         else { const target = path.join(f.dir, `original-${kind}`); writeFileSync(target, readFileSync(file)); rmSync(file); symlinkSync(target, file); }
       };
       let code: string, pinRefused: boolean | null = null;
-      if (kind === "intent-boundary-dangling" || kind === "intent-beforepublication-dangling") code = errorCode(() => recoverNativeTransaction(f.root, f.request, {
-        onBoundary: name => { if (name === (kind === "intent-boundary-dangling" ? "before-target" : "before-intent")) insert(); },
+      if (kind === "intent-boundary-dangling" || kind === "intent-beforepublication-dangling" || kind === "foreign-emergency-boundary-dangling") code = errorCode(() => recoverNativeTransaction(f.root, f.request, {
+        onBoundary: name => { if (name === (kind === "intent-beforepublication-dangling" ? "before-intent" : "before-target")) insert(); },
       }));
       else {
         insert();
@@ -1473,7 +1479,10 @@ test("physical authority types and immutable intent entries remain checked throu
           pinRefused = errorCode(() => nativeRecoveryTarget(f.root, f.records[0].attempt, f.base, "collected-source")) !== "NO_REFUSAL";
         code = errorCode(() => recoverNativeTransaction(f.root, f.request));
       }
-      observations.push({ kind, pinRefused, refused: code !== "NO_REFUSAL", unchanged: readFileSync(record, "utf8") === before[0],
+      observations.push({ kind, pinRefused,
+        foreignUnchanged: foreignRecord === null ? null : readFileSync(foreignRecord, "utf8") === foreignBefore,
+        foreignProgress: foreignRecord === null ? null : existsSync(intent) ? JSON.parse(readFileSync(intent, "utf8")).completed : null,
+        refused: code !== "NO_REFUSAL", unchanged: readFileSync(record, "utf8") === before[0],
         entryRetained: kind.endsWith("directory") ? lstatSync(file).isDirectory() : kind === "raw-directory-file" ? lstatSync(file).isFile() : lstatSync(file).isSymbolicLink(), code });
     } finally { f.cleanup(); }
   }
@@ -1481,5 +1490,9 @@ test("physical authority types and immutable intent entries remain checked throu
   for (const observed of observations) {
     expect(observed, JSON.stringify(observed)).toMatchObject({ refused: true, unchanged: true, entryRetained: true });
     if (observed.pinRefused !== null) expect(observed.pinRefused).toBe(true);
+    if (observed.foreignUnchanged !== null) {
+      expect(observed.foreignUnchanged).toBe(true);
+      expect(observed.foreignProgress).toEqual(observed.kind === "foreign-emergency-boundary-dangling" ? [] : null);
+    }
   }
 });
