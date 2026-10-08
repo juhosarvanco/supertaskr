@@ -16,7 +16,7 @@
  * a crash between that replacement and the progress write.
  */
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync, readdirSync, realpathSync, lstatSync } from "node:fs";
+import { readFileSync, readdirSync, realpathSync, lstatSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import {
@@ -45,9 +45,53 @@ function refuse(code, why) { throw new NativeCodexFinding(`NATIVE_RECOVERY_${cod
 function validDigest(v) { return typeof v === "string" && /^[0-9a-f]{64}$/.test(v); }
 /** @param {any} v */
 function validId(v) { return typeof v === "string" && /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(v); }
+/** ENOENT alone is observed absence. lstat never hides or follows a link.
+ * @param {string} file @param {"file"|"directory"} kind @param {string} [code]
+ */
+function physicalEntry(file, kind, code = "EVIDENCE") {
+  let entry;
+  try { entry = lstatSync(file); }
+  catch (error) {
+    if (/** @type {any} */ (error).code === "ENOENT") return null;
+    return refuse(code, `physical authority cannot be inspected: ${file}`);
+  }
+  if (kind === "file" ? !entry.isFile() : !entry.isDirectory())
+    refuse(code, `physical authority is not a regular ${kind}: ${file}`);
+  return entry;
+}
+/** Inspect each control-directory component, including a missing final parent.
+ * A followed parent link must not turn an invalid namespace into valid evidence.
+ * @param {string} root @param {string} dir @param {string} [code]
+ */
+function authorityDirectory(root, dir, code = "EVIDENCE") {
+  const rel = path.relative(root, dir);
+  if (rel === ".." || rel.startsWith(`..${path.sep}`) || path.isAbsolute(rel)) refuse(code, "authority directory escapes its root");
+  let current = root, entry = physicalEntry(root, "directory", code);
+  for (const part of rel.split(path.sep).filter(Boolean)) {
+    current = path.join(current, part);
+    entry = physicalEntry(current, "directory", code);
+    if (entry === null) return null;
+  }
+  return entry;
+}
+/** @param {string} root @param {string} file */
+function authorityFile(root, file) {
+  authorityDirectory(root, path.dirname(file));
+  return physicalEntry(file, "file");
+}
+/** @param {string} root @param {string} file */
+function authorityBytes(root, file) {
+  authorityFile(root, file);
+  return bytes(file);
+}
+/** @param {string} root @param {string} file */
+function optionalAuthorityBytes(root, file) {
+  return authorityFile(root, file) === null ? null : bytes(file);
+}
 /** @param {string} file */
 function bytes(file) {
   try {
+    if (physicalEntry(file, "file") === null) throw new Error("missing file");
     const raw = readFileSync(file), text = raw.toString("utf8");
     if (!raw.equals(Buffer.from(text, "utf8"))) throw new Error("invalid UTF-8");
     return text;
@@ -78,10 +122,12 @@ function origins(root, rec) {
  * @param {"collected-source" | "failed-no-work" | "terminal"} mode
  */
 export function nativeRecoveryTarget(root, attempt, candidate, mode) {
+  const content = authorityBytes(root, nativeRecordPath(root, attempt));
+  authorityFile(root, `${nativeRecordPath(root, attempt)}.native-hold`);
   const rec = readNativeRecord(root, attempt);
-  const content = bytes(nativeRecordPath(root, attempt));
+  bytes(rec.assignment.brief);
   const file = reservationPath(root, rec.resource);
-  const reservation = existsSync(file) ? bytes(file) : null;
+  const reservation = optionalAuthorityBytes(root, file);
   return { attempt, resource: rec.resource, candidate, mode,
     record: { content, digest: digest(content) },
     reservation: reservation === null ? null : { content: reservation, digest: digest(reservation) },
@@ -114,7 +160,7 @@ function loadFault(root, request) {
   const raw = request.fault.source === "recorded-refusal-json-v1" ? bytes(request.fault.reference) : null;
   const refusal = raw === null ? null : parse(raw, "preserved recorded refusal");
   if (raw !== null && (refusal.version !== 1 || json(refusal) !== raw)) refuse("FAULT", "unsupported recorded refusal encoding");
-  const fault = raw === null ? parse(bytes(nativeTransactionFaultPath(root, request.fault.id)), "raw fault ledger") :
+  const fault = raw === null ? parse(authorityBytes(root, nativeTransactionFaultPath(root, request.fault.id)), "raw fault ledger") :
     { version: 1, id: refusal.id, rawDigest: digest(raw), rawContent: raw, refusal };
   if (fault.version !== 1 || fault.id !== request.fault.id || fault.rawDigest !== request.fault.rawDigest ||
       typeof fault.rawContent !== "string" || digest(fault.rawContent) !== fault.rawDigest ||
@@ -134,7 +180,7 @@ function authorization(root, request, fault) {
   if (requester?.attribution === "recorded-binding") refuse("TARGET_SCOPE", "an attributable fault cannot be broadened or rebound by legacy authorization");
   if (request.authorization === null) return refuse("LEGACY_UNATTRIBUTED", "legacy-unattributed: exact independently recorded owner authorization is required");
   const file = path.join(root, ".supertaskr", "native-recovery-authorizations", `${request.authorization.id}.json`);
-  const raw = bytes(file);
+  const raw = authorityBytes(root, file);
   const a = parse(raw, "owner authorization");
   const identities = request.targets.map((/** @type {any} */ t) => ({ attempt: t.attempt, resource: t.resource, candidate: t.candidate, bindingDigest: t.bindingDigest }));
   if (digest(raw) !== request.authorization.digest || a.version !== 1 || a.id !== request.authorization.id ||
@@ -209,7 +255,7 @@ function checkSequence(root, request, fault, auth) {
   for (let i = 0; i < request.sequence.index; i++) {
     const step = auth.record.sequence.steps[i];
     const file = nativeRecoveryIntentPath(root, step.requestId);
-    const intent = parse(bytes(file), "previous sequence intent");
+    const intent = parse(authorityBytes(root, file), "previous sequence intent");
     const previous = intent.request;
     validateRequest(root, previous);
     if (intent.version !== 1 || previous.id !== step.requestId || !same(previous.sequence, { version: 1, index: i }) ||
@@ -304,16 +350,16 @@ function foreignCeased(rec) {
  */
 function checkedRecoveryRecords(root) {
   const dir = path.join(root, ".supertaskr", "runs");
-  if (!existsSync(dir) || !lstatSync(dir).isDirectory()) refuse("FOREIGN", "physical run authority is absent or not a directory");
+  if (authorityDirectory(root, dir, "FOREIGN") === null) refuse("FOREIGN", "physical run authority is absent or not a directory");
   const records = [];
   for (const work of readdirSync(dir)) {
     if (work === "reservations") continue;
     const workDir = path.join(dir, work);
-    if (!lstatSync(workDir).isDirectory()) refuse("FOREIGN", "physical run namespace is malformed");
+    if (physicalEntry(workDir, "directory", "FOREIGN") === null) refuse("FOREIGN", "physical run namespace is absent");
     for (const name of readdirSync(workDir)) {
       if (!name.endsWith(".json")) continue;
       const file = path.join(workDir, name);
-      if (!lstatSync(file).isFile()) refuse("FOREIGN", "physical run authority is not a regular file");
+      if (physicalEntry(file, "file", "FOREIGN") === null) refuse("FOREIGN", "physical run authority is absent");
       const rec = parse(bytes(file), "physical run authority");
       if (!object(rec) || rec.version !== 1 || typeof rec.attempt !== "string" ||
           rec.attempt !== name.slice(0, -5) || !/^([A-Za-z0-9][A-Za-z0-9._-]{0,127})-a[1-9]\d*$/.test(rec.attempt) || !rec.attempt.startsWith(`${work}-a`) ||
@@ -337,7 +383,7 @@ function checkedRecoveryRecords(root) {
  * @param {string} root @param {any} request @param {any} target @param {any} fault @param {boolean} [resolved]
  */
 function checkTarget(root, request, target, fault, resolved = false) {
-  const raw = bytes(nativeRecordPath(root, target.attempt));
+  const raw = authorityBytes(root, nativeRecordPath(root, target.attempt));
   if (raw !== target.record.content) refuse("RECORD", `expected record changed for ${target.attempt}`);
   const rec = /** @type {any} */ (readRecord(root, target.attempt));
   if (!same(readNativeRecord(root, target.attempt), rec)) refuse("OTHER_HOLD", "emergency authority hold remains");
@@ -346,7 +392,7 @@ function checkTarget(root, request, target, fault, resolved = false) {
       !same(origins(root, rec), target.origins) || rec.assignmentDigest !== `sha256:${digest(JSON.stringify(rec.assignment))}` ||
       rec.brief.digest !== `sha256:${digest(bytes(rec.assignment.brief))}`) refuse("IDENTITY", "binding, assignment, brief or origins changed");
   const reservationFile = reservationPath(root, rec.resource);
-  const reservationRaw = existsSync(reservationFile) ? bytes(reservationFile) : null;
+  const reservationRaw = optionalAuthorityBytes(root, reservationFile);
   if (reservationRaw !== (target.reservation?.content ?? null)) refuse("RESERVATION", "expected reservation changed");
   const held = readReservation(root, rec.resource);
   if (reservationRaw !== null && (held === null || held.attempt !== rec.attempt || held.resource !== rec.resource)) refuse("FOREIGN", "reservation is malformed or foreign");
@@ -389,15 +435,21 @@ export function recoverNativeTransaction(root, request, opts = {}) {
   const intentFile = nativeRecoveryIntentPath(root, request.id);
   const noPendingFaults = () => {
     const rawSidecars = nativeTransactionRefusalDir(root);
-    if (existsSync(rawSidecars) && readdirSync(rawSidecars).some((name) => name.endsWith(".json"))) refuse("PENDING_FAULT", "unabsorbed raw faults remain; normal ledger absorption must finish first");
-    if (request.targets.some((/** @type {any} */ t) => existsSync(`${nativeRecordPath(root, t.attempt)}.native-hold`))) refuse("OTHER_HOLD", "an unabsorbed emergency hold remains on a selected target");
+    authorityDirectory(root, path.dirname(intentFile));
+    if (authorityDirectory(root, rawSidecars) !== null && readdirSync(rawSidecars).some((name) => name.endsWith(".json"))) refuse("PENDING_FAULT", "unabsorbed raw faults remain; normal ledger absorption must finish first");
+    if (request.targets.some((/** @type {any} */ t) => authorityFile(root, `${nativeRecordPath(root, t.attempt)}.native-hold`) !== null)) refuse("OTHER_HOLD", "an unabsorbed emergency hold remains on a selected target");
   };
+  noPendingFaults();
   return withNativeTransaction(root, { operation: "native-transaction-disposition", onAcquired: noPendingFaults }, () => {
     noPendingFaults();
     const fault = loadFault(root, request);
     const auth = authorization(root, request, fault);
     checkSequence(root, request, fault, auth);
-    let intent = existsSync(intentFile) ? parse(bytes(intentFile), "recovery intent") : null;
+    let intentRaw = optionalAuthorityBytes(root, intentFile);
+    let intent = intentRaw === null ? null : parse(intentRaw, "recovery intent");
+    const checkIntent = () => {
+      if (authorityBytes(root, intentFile) !== intentRaw) refuse("INTENT", "physical immutable intent changed before publication");
+    };
     if (intent !== null && (intent.version !== 1 || intent.fingerprint !== fingerprint || !same(intent.request, request))) refuse("IDENTIFIER_REUSED", "immutable request identifier was reused with different content");
     if (intent !== null && (!same(intent.fault, fault) || !same(intent.authorization, auth) || !Array.isArray(intent.completed) ||
         intent.completed.some((/** @type {any} */ i) => !Number.isInteger(i) || i < 0 || i >= request.targets.length) ||
@@ -412,23 +464,25 @@ export function recoverNativeTransaction(root, request, opts = {}) {
         if (!same(checkTarget(root, request, t, loadFault(root, request)).check, checks[i].check)) refuse("WORKSPACE", "candidate changed before intent");
       });
       checkSequence(root, request, loadFault(root, request), authorization(root, request, loadFault(root, request)));
+      if (authorityFile(root, intentFile) !== null) refuse("INTENT", "recovery intent appeared before its initial publication");
       intent = { version: 1, fingerprint, request, at: new Date().toISOString(), fault, authorization: auth, checks, completed: [] };
-      atomicJson(intentFile, intent);
+      atomicJson(intentFile, intent); intentRaw = json(intent);
       opts.onBoundary?.("intent", -1);
     }
     for (let i = 0; i < request.targets.length; i++) {
       const target = request.targets[i];
       const prior = resultingRecord(intent, i);
       const after = json(prior);
-      const current = bytes(nativeRecordPath(root, target.attempt));
+      const current = authorityBytes(root, nativeRecordPath(root, target.attempt));
       if (current === after) {
         noPendingFaults();
         const currentFault = loadFault(root, request);
         checkSequence(root, request, currentFault, authorization(root, request, currentFault));
         const checked = checkTarget(root, request, { ...target, record: { content: after, digest: digest(after) } }, currentFault, true);
         if (!same(checked.check, intent.checks[i].check) || !same(checked.policy, intent.checks[i].policy)) refuse("WORKSPACE", "checked candidate identity changed during exact replay");
+        checkIntent();
         syncNativeFileNamespace(nativeRecordPath(root, target.attempt));
-        if (!intent.completed.includes(i)) { intent.completed.push(i); atomicJson(intentFile, intent); opts.onBoundary?.("progress", i); }
+        if (!intent.completed.includes(i)) { intent.completed.push(i); atomicJson(intentFile, intent); intentRaw = json(intent); opts.onBoundary?.("progress", i); }
         continue;
       }
       if (intent.completed.includes(i)) refuse("RESULT_CHANGED", `completed target ${target.attempt} changed after disposition`);
@@ -438,9 +492,11 @@ export function recoverNativeTransaction(root, request, opts = {}) {
       checkSequence(root, request, currentFault, authorization(root, request, currentFault));
       const checked = checkTarget(root, request, target, currentFault);
       if (!same(checked.check, intent.checks[i].check) || !same(checked.policy, intent.checks[i].policy)) refuse("WORKSPACE", "checked candidate identity changed after intent");
+      checkIntent();
       atomicJson(nativeRecordPath(root, target.attempt), prior);
       opts.onBoundary?.("target", i);
-      intent.completed.push(i); atomicJson(intentFile, intent);
+      noPendingFaults(); checkIntent();
+      intent.completed.push(i); atomicJson(intentFile, intent); intentRaw = json(intent);
       opts.onBoundary?.("progress", i);
     }
     return { version: 1, id: request.id, fingerprint, state: "complete", completed: [...intent.completed], intentFile };
