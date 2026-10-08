@@ -503,7 +503,14 @@ export function recoverNativeTransaction(root, request, opts = {}) {
       checkIntent();
       atomicJson(nativeRecordPath(root, target.attempt), prior);
       opts.onBoundary?.("target", i);
-      noPendingFaults(); checkIntent();
+      // Progress is a separate visible authority change. The target boundary
+      // cannot carry the preceding physical, candidate or policy checks forward.
+      noPendingFaults();
+      const progressFault = loadFault(root, request);
+      checkSequence(root, request, progressFault, authorization(root, request, progressFault));
+      const progressChecked = checkTarget(root, request, { ...target, record: { content: after, digest: digest(after) } }, progressFault, true);
+      if (!same(progressChecked.check, intent.checks[i].check) || !same(progressChecked.policy, intent.checks[i].policy)) refuse("WORKSPACE", "checked candidate identity changed before completed progress");
+      checkIntent();
       intent.completed.push(i); atomicJson(intentFile, intent); intentRaw = json(intent);
       opts.onBoundary?.("progress", i);
     }
