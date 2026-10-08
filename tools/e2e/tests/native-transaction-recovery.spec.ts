@@ -1439,7 +1439,7 @@ test("physical authority types and immutable intent entries remain checked throu
   test.setTimeout(180_000);
   const observations: any[] = [];
   for (const kind of ["record-link", "brief-link", "fault-link", "authorization-link", "ruling-link",
-    "intent-dangling", "intent-beforepublication-dangling", "intent-boundary-dangling", "intent-replay-link", "intent-directory", "intent-parent-link", "raw-directory-file", "reservation-directory", "foreign-emergency-dangling", "foreign-emergency-boundary-dangling"]) {
+    "intent-dangling", "intent-beforepublication-dangling", "intent-boundary-dangling", "intent-replay-link", "intent-directory", "intent-parent-link", "raw-directory-file", "reservation-directory", "foreign-emergency-dangling", "foreign-emergency-boundary-dangling", "foreign-emergency-file", "foreign-emergency-boundary-file"]) {
     const legacy = ["authorization-link", "ruling-link"].includes(kind);
     const f = fixture(`physical-types-${kind}`, 1, true, legacy);
     try {
@@ -1460,7 +1460,10 @@ test("physical authority types and immutable intent entries remain checked throu
         kind === "reservation-directory" ? reservationPath(f.root, f.lanes[0]) : intent;
       const insert = () => {
         mkdirSync(path.dirname(file), { recursive: true });
-        if (["intent-directory", "reservation-directory"].includes(kind)) mkdirSync(file);
+        if (kind === "foreign-emergency-file" || kind === "foreign-emergency-boundary-file")
+          writeFileSync(file, encode({ version: 1, attempt: "T-physical-foreign-a1", key: "unreadable-authority:T-physical-foreign-a1",
+            code: "unreadable-authority", recordedAt: AT, outcome: "unknown", problem: "fixture persisted prior unreadable authority" }));
+        else if (["intent-directory", "reservation-directory"].includes(kind)) mkdirSync(file);
         else if (kind === "raw-directory-file") writeFileSync(file, "not a directory\n");
         else if (kind === "intent-parent-link") {
           const target = path.join(f.dir, "other-intent-directory"); mkdirSync(target); symlinkSync(target, file);
@@ -1470,7 +1473,7 @@ test("physical authority types and immutable intent entries remain checked throu
         else { const target = path.join(f.dir, `original-${kind}`); writeFileSync(target, readFileSync(file)); rmSync(file); symlinkSync(target, file); }
       };
       let code: string, pinRefused: boolean | null = null;
-      if (kind === "intent-boundary-dangling" || kind === "intent-beforepublication-dangling" || kind === "foreign-emergency-boundary-dangling") code = errorCode(() => recoverNativeTransaction(f.root, f.request, {
+      if (kind === "intent-boundary-dangling" || kind === "intent-beforepublication-dangling" || kind === "foreign-emergency-boundary-dangling" || kind === "foreign-emergency-boundary-file") code = errorCode(() => recoverNativeTransaction(f.root, f.request, {
         onBoundary: name => { if (name === (kind === "intent-beforepublication-dangling" ? "before-intent" : "before-target")) insert(); },
       }));
       else {
@@ -1479,11 +1482,13 @@ test("physical authority types and immutable intent entries remain checked throu
           pinRefused = errorCode(() => nativeRecoveryTarget(f.root, f.records[0].attempt, f.base, "collected-source")) !== "NO_REFUSAL";
         code = errorCode(() => recoverNativeTransaction(f.root, f.request));
       }
+      const entry = lstatSync(file, { throwIfNoEntry: false });
       observations.push({ kind, pinRefused,
         foreignUnchanged: foreignRecord === null ? null : readFileSync(foreignRecord, "utf8") === foreignBefore,
         foreignProgress: foreignRecord === null ? null : existsSync(intent) ? JSON.parse(readFileSync(intent, "utf8")).completed : null,
         refused: code !== "NO_REFUSAL", unchanged: readFileSync(record, "utf8") === before[0],
-        entryRetained: kind.endsWith("directory") ? lstatSync(file).isDirectory() : kind === "raw-directory-file" ? lstatSync(file).isFile() : lstatSync(file).isSymbolicLink(), code });
+        entryRetained: kind.endsWith("directory") ? entry?.isDirectory() === true :
+          kind === "raw-directory-file" || kind === "foreign-emergency-file" || kind === "foreign-emergency-boundary-file" ? entry?.isFile() === true : entry?.isSymbolicLink() === true, code });
     } finally { f.cleanup(); }
   }
   console.info("physical authority type observations", JSON.stringify(observations));
@@ -1492,7 +1497,7 @@ test("physical authority types and immutable intent entries remain checked throu
     if (observed.pinRefused !== null) expect(observed.pinRefused).toBe(true);
     if (observed.foreignUnchanged !== null) {
       expect(observed.foreignUnchanged).toBe(true);
-      expect(observed.foreignProgress).toEqual(observed.kind === "foreign-emergency-boundary-dangling" ? [] : null);
+      expect(observed.foreignProgress).toEqual(observed.kind === "foreign-emergency-boundary-dangling" || observed.kind === "foreign-emergency-boundary-file" ? [] : null);
     }
   }
 });
