@@ -314,3 +314,50 @@ The minimal repair528aeb33c8ada5ce0b373d608fdc8123d6cf140e loads current fault/a
 
 ## Verdicts
 
+
+### 2026-10-16 — REJECTED — gpt-6.1-sol@01a145f7-5a42-74e0-b729-25ea18734cc1
+
+Judged candidate `19510990b518b3b42d51400833e125fcf198c4fd` against original base `f02c9cae12fc429566618747e626ea2091f1e1d1`, unchanged standard tier and all five frozen criteria. No acceptance is given. The public recovery route can publish authority after a newly recorded pause: checking before `atomicJson` does not revalidate at its later `renameSync` visibility boundary.
+
+A real fixture-owned repository, unchanged public operation and `withNativeDurabilityObserver` place a real all-scope pause immediately before the selected rename. Both ordinary attributed and independently owner-authorized legacy routes produce the same exact results:
+
+| Publication | Actual result | Authority effect after pause |
+| --- | --- | --- |
+| Initial intent | `ADMISSION_PAUSED_ALL` | Intent nevertheless becomes visible with `completed: []`. |
+| Target record | `ADMISSION_PAUSED_ALL` | Named hold is cleared and one disposition is published; progress remains pending. |
+| Completed progress | Success, recorded as `NO_REFUSAL` by the probe | Intent publishes `completed: [0]` while paused. |
+
+The new body `recovery publications recheck a newly recorded pause at the actual rename boundary` asserts an otherwise successful unpaused control, the pause's actual absence and presence, each reached rename, refusal and unchanged authority. It ran RED on the candidate and GREEN on a transient corrected witness that rechecks complete current authority immediately before rename. Its five assertion sites were poisoned individually, 5-for-5 RED with no skips, then restored against the literal snapshot SHA256. The witness is evidence, not a delivered implementation; all transient production-source changes are restored. Exact configurations, arguments, source/body hashes, per-operator receipts and landings are retained in the `measurements-T-351-s1-a13` evidence bundle. The single actual callback-site mutant ran over the recovery spec: its 600-second overall bound interrupted body 31 after 30 completed bodies with no failure entries; the unchanged-source three-body continuation passed two and failed only the new pinning body. The initial partial run has no structured final grade, and its timeout is retained. Restoring the callback again produced one passing body, zero skips. This is the measured spec scope, not a whole-owning-set or full-candidate mutation claim.
+
+| Frozen criterion | Evidence and disposition |
+| --- | --- |
+| 1 — attributable distinct durable refusals | Full source/test diff read, including requester attribution, actual write/fsync/rename/retirement sites and all code/data controls. Functional proof is partial; the complete property/data/assertion matrix remains unperformed. No criterion acceptance is claimed. |
+| 2 — exact independently checked public recovery | Full request/physical inventory/cessation/jobs/origins/cumulative-scope/historical-collection reading and controls inventoried. The six new observations use exact candidate imports and fixture authority only. Remaining complete mutation qualification is unperformed. |
+| 3 — exact transactional publication, replay and preservation | REJECTED: all three publication boundaries above change visible authority after the pause. The target case resolves its hold before the eventual refusal; progress can return successful completion. Pinning body RED/GREEN and its actual property-site mutation are separately preserved. |
+| 4 — narrow legacy authorization with current policy checks | REJECTED: the independently authorized legacy fixture reproduces the same three publication failures. Authorization does not waive pause; all other legacy/sequence and history obligations remain unchanged and require qualification after repair. |
+| 5 — real public controls and discriminating proof | Candidate inventory is 355 changed assertion sites at the judged candidate: 8 in the changed native contention body, 347 in the new recovery spec, including 2 helper sites. Independent AST completeness found no unmatched changed `expect` calls; body hashes and 44 literal array declaration/loop sites are retained. The candidate's complete poison/property matrix is not represented as run. The new correction alone has its complete five-site poison proof. |
+
+**Correction 1 — Revalidate recovery authority at actual publication.** Make exact record/reservation/binding/fault/authorization/candidate/origin and current grant/pause/seat checks immediately before each visible intent, target, fresh-progress and replay-progress rename. The transient witness patch records one demonstrated implementation using a checked publication callback plus the required recovery call sites; its supporting signature and all call-site changes matter. Commit the regression body after this verdict. One correction, one body, one mutant block. The block below is pinned to that corrected witness: it removes only the actual publication callback, and must be transplanted honestly if a different repair mechanism is chosen. It is not a claim that the uncorrected candidate already contains its `old` anchor.
+
+```mutant
+correction: correction 1 — Revalidate recovery authority at actual publication
+file: tools/e2e/scripts/native-codex.mjs
+spec: tools/e2e/tests/native-transaction-recovery.spec.ts
+body: recovery publications recheck a newly recorded pause at the actual rename boundary
+message: intentUnchanged
+--- old
+    durabilityBoundary("before-rename", "atomic-json", file, { temp });
+    beforePublish?.();
+    renameSync(temp, file);
+--- new
+    durabilityBoundary("before-rename", "atomic-json", file, { temp });
+    renameSync(temp, file);
+```
+
+Security/interface sweep: no added dependency, secret, model call or shell-evaluated public input; identifiers and evidence are pinned and the existing synchronous transaction remains. The publication-policy race is a blocking correctness/security finding. No claim is made for arbitrary power loss, authority-home adversaries, read isolation or competing writers. All changed product surface maps to the frozen four-path contract; no additional follow-through is approved.
+
+Frame and integrity: fresh normally bound native phase two after sealed precommitments; tools remained available and reading limits were procedural. Full frozen role matched its original-base bytes. All sealed inputs, raw card and preparation/source digests validated privately; raw nested authority/card notes and executor conversations were not displayed or read as review rationale. Earlier selected-role phases and historical review exposures remain disclosed in their sealed records; this sitting does not relabel them blind. Requested model/effort `gpt-6.1-sol/xhigh`; observed model/effort and usage are unknown. Binding/probe scalars are retained in the safe metadata. The one metadata ask was answered and acknowledged.
+
+Attack digests: original `651bcea6c27ba06297a9dabb6c03de510375827445de0e39dcf8459a745f2e18`; re-entry `e356a7a37610734fd06c8ebf9fb9532f388d60b5a47cae05450850541cb9d0b2`; full-role re-entry `d0b2a1da2262638219135ec34c02e77d32c53f62b05d955b80ec642970f208b8`. Ground `eabee89b71f737f17301ee65b5099c26d8a3f7d2882b8cb27204e3b34dba4f07`; owner sequence `34450b3458a03e5bd84f424bde907980e2bbb9a534b77ea75e6e0ac6ece949de`; sequence addendum `25f8f0a8da00d9394e96e4fb7e15f7af89d16efd34397a01606e13896d7025c0`.
+
+The candidate original-range grade derived app/parser and 21 e2e specs. Its actual interrupted reading retains 469 parser passes, 1157 app passes and 14 missing-app-build setup failures, plus 661 completed e2e body lines out of 1088 planned at the judged candidate. The app build omission is the verifier's setup error, not a candidate defect. The grade was deliberately ended on exactly attributable jobs after the concrete blocker; both process groups ceased and the port closed. It is interrupted/ungraded, never GREEN. The app build subsequently succeeded. No complete original-range grade, whole-property matrix, full 355-site poison, qualification exception or acceptance is asserted. The repaired candidate will owe those proofs. Exact final own-write checks, the separately bounded property drill, its timeout/remaining-scope receipts and full job cessation belong to the genuine final report/manifest; none may be inferred from this verdict. No production recovery, merge, push or CI was performed.
