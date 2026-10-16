@@ -366,6 +366,60 @@ external report before handoff. Historical RED and incomplete campaigns stay
 at their actual refs; this repair supplies no acceptance or proof waiver.
 No production recovery, authority edit, merge, push or CI is performed.
 
+#### A14 committed-snapshot qualification
+
+At 2e5c8e83b175afd7d3c7f345ca962e7526732291 the independent fixture
+matched all four admitted code/spec SHA256 pins. Its three focused positives
+passed3/3 before mutation and again after all literal restorations. Removing
+only the atomic writer's final pre-publication callback killed both selected
+publication bodies, exit1/2failed, at their actual unchanged-authority
+assertions. This includes the new replay body's 22 authority arrangements.
+Both new assertion sites were then poisoned separately, each exit1/1failed
+at its intended assertion, zero skips. The full selected kill sets and
+landings are retained; no broad guard-removal campaign was repeated.
+
+The separately authorized legacy fresh-publication data arrangement passed
+1/1 with all three actual before-rename pauses refusing before visibility.
+The contention teardown's forced early assertion control exited1/1failed
+as intended; independently observed owned holder PID31213 had ceased and
+its fixture was removed, with no signal sent. The unchanged positive
+contention body passed in both restored focused runs. This is one small
+in-fence follow-through, with four changed lines as measured above.
+
+Every executed fixture mutation was restored to its named snapshot by
+SHA256, original mode and both nanosecond clocks, with empty explicit
+HEAD-to-path diffs as companions. An initial restoration instrument check
+failed because its subsequent Git diff reread advanced atime; bytes, mode
+and mtime already matched. That failure is retained. Restoring the clocks
+after the companion read established all exact proofs before more work.
+Native source restored to SHA256
+62f529d9e65ed6b579e46eebd572c94fea37f162d317569223b6541072cfd77b;
+recovery spec to
+03da7d14c09d1acb590fca82c2638bdb67b485680eef659787fa91dbd5fa951b;
+native spec to
+3aa4bdc2cd18516b649383266c3866f3b08bbca67cd335180f36a3ecdca1de38.
+
+The class sweep enumerates all four recovery atomic writers: each now
+supplies publication validation; the unchanged entry source supplies none,
+which demonstrates the sweep's nonempty control. This structural sweep
+complements the functional property mutant rather than replacing it.
+Typecheck, token lint, whole-tree docs lint and graph check passed at the
+committed snapshot. The docs diff gate exited1 because it owes parser, app
+and e2e; it found no illegal frontmatter. Capability currency exited1:
+committed census129651 bytes versus fresh133879. The generated index passed
+its docs check. No generated output outside the manifest was changed.
+
+Both original cumulative and re-entry owed sets were independently derived
+at that snapshot, each covering five paths, parser/app and21 e2e specs.
+The required original-base range grade runs after this substantive notes
+commit; its exact final ref/counts/exits and job cessation belong to the
+external report. Earlier incomplete qualification, historical RED and
+changed-transitive limits remain unchanged. No whole historical assertion
+or property matrix, arbitrary power-loss proof, competing-writer guarantee
+or qualification waiver is claimed. The card already carries verifying;
+no status-only change is needed and no post-grade substantive commit is
+planned. The verifier and integrator remain separate seats.
+
 ## Verdicts
 
 
