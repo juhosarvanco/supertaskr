@@ -817,8 +817,8 @@ function nativeEmergencyHoldPath(root, attempt) {
   return `${nativeRecordPath(root, attempt)}.native-hold`;
 }
 
-/** @param {string} file @param {unknown} value */
-export function atomicJson(file, value) {
+/** @param {string} file @param {unknown} value @param {() => void} [beforePublish] */
+export function atomicJson(file, value, beforePublish) {
   durableNativeDirectory(path.dirname(file));
   const temp = `${file}.${process.pid}.${Date.now()}.${nativeTransactionSerial++}.tmp`;
   durabilityBoundary("before-temp-create", "atomic-json", file, { temp });
@@ -836,7 +836,9 @@ export function atomicJson(file, value) {
     closeSync(fd);
     closed = true;
     durabilityBoundary("close", "atomic-json", file, { temp });
+    // No observer or asynchronous work may separate this check from visibility.
     durabilityBoundary("before-rename", "atomic-json", file, { temp });
+    beforePublish?.();
     renameSync(temp, file);
     durabilityBoundary("rename", "atomic-json", file, { temp });
     flushNativeDirectory(path.dirname(file), "directory-fsync", file);

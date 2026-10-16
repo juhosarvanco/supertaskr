@@ -458,6 +458,23 @@ export function recoverNativeTransaction(root, request, opts = {}) {
     const checkIntent = () => {
       if (authorityBytes(root, intentFile) !== intentRaw) refuse("INTENT", "physical immutable intent changed before publication");
     };
+    // Each atomic writer calls this after its last durability observer. Earlier
+    // validation cannot authorize a later rename, including crash-replay progress.
+    const publicationFault = () => {
+      noPendingFaults();
+      const currentFault = loadFault(root, request);
+      const currentAuth = authorization(root, request, currentFault);
+      if (!same(currentFault, intent.fault) || !same(currentAuth, intent.authorization)) refuse("INTENT", "fault or authorization changed before publication");
+      checkSequence(root, request, currentFault, currentAuth);
+      return currentFault;
+    };
+    /** @param {number} i @param {string} content @param {boolean} resolved */
+    const checkTargetPublication = (i, content, resolved) => {
+      const target = { ...request.targets[i], record: { content, digest: digest(content) } };
+      const checked = checkTarget(root, request, target, publicationFault(), resolved);
+      if (!same(checked, intent.checks[i])) refuse("WORKSPACE", "checked candidate or policy changed before publication");
+      checkIntent();
+    };
     if (intent !== null && (intent.version !== 1 || intent.fingerprint !== fingerprint || !same(intent.request, request))) refuse("IDENTIFIER_REUSED", "immutable request identifier was reused with different content");
     if (intent !== null && (!same(intent.fault, fault) || !same(intent.authorization, auth) || !Array.isArray(intent.completed) ||
         intent.completed.some((/** @type {any} */ i) => !Number.isInteger(i) || i < 0 || i >= request.targets.length) ||
@@ -474,7 +491,13 @@ export function recoverNativeTransaction(root, request, opts = {}) {
       checkSequence(root, request, loadFault(root, request), authorization(root, request, loadFault(root, request)));
       if (authorityFile(root, intentFile) !== null) refuse("INTENT", "recovery intent appeared before its initial publication");
       intent = { version: 1, fingerprint, request, at: new Date().toISOString(), fault, authorization: auth, checks, completed: [] };
-      atomicJson(intentFile, intent); intentRaw = json(intent);
+      atomicJson(intentFile, intent, () => {
+        const currentFault = publicationFault();
+        request.targets.forEach((/** @type {any} */ t, /** @type {number} */ i) => {
+          if (!same(checkTarget(root, request, t, currentFault), checks[i])) refuse("WORKSPACE", "checked authority changed before intent publication");
+        });
+        if (authorityFile(root, intentFile) !== null) refuse("INTENT", "recovery intent appeared before its initial publication");
+      }); intentRaw = json(intent);
       opts.onBoundary?.("intent", -1);
     }
     for (let i = 0; i < request.targets.length; i++) {
@@ -490,7 +513,11 @@ export function recoverNativeTransaction(root, request, opts = {}) {
         if (!same(checked.check, intent.checks[i].check) || !same(checked.policy, intent.checks[i].policy)) refuse("WORKSPACE", "checked candidate identity changed during exact replay");
         checkIntent();
         syncNativeFileNamespace(nativeRecordPath(root, target.attempt));
-        if (!intent.completed.includes(i)) { intent.completed.push(i); atomicJson(intentFile, intent); intentRaw = json(intent); opts.onBoundary?.("progress", i); }
+        if (!intent.completed.includes(i)) {
+          intent.completed.push(i);
+          atomicJson(intentFile, intent, () => checkTargetPublication(i, after, true));
+          intentRaw = json(intent); opts.onBoundary?.("progress", i);
+        }
         continue;
       }
       if (intent.completed.includes(i)) refuse("RESULT_CHANGED", `completed target ${target.attempt} changed after disposition`);
@@ -501,7 +528,7 @@ export function recoverNativeTransaction(root, request, opts = {}) {
       const checked = checkTarget(root, request, target, currentFault);
       if (!same(checked.check, intent.checks[i].check) || !same(checked.policy, intent.checks[i].policy)) refuse("WORKSPACE", "checked candidate identity changed after intent");
       checkIntent();
-      atomicJson(nativeRecordPath(root, target.attempt), prior);
+      atomicJson(nativeRecordPath(root, target.attempt), prior, () => checkTargetPublication(i, target.record.content, false));
       opts.onBoundary?.("target", i);
       // Progress is a separate visible authority change. The target boundary
       // cannot carry the preceding physical, candidate or policy checks forward.
@@ -511,7 +538,8 @@ export function recoverNativeTransaction(root, request, opts = {}) {
       const progressChecked = checkTarget(root, request, { ...target, record: { content: after, digest: digest(after) } }, progressFault, true);
       if (!same(progressChecked.check, intent.checks[i].check) || !same(progressChecked.policy, intent.checks[i].policy)) refuse("WORKSPACE", "checked candidate identity changed before completed progress");
       checkIntent();
-      intent.completed.push(i); atomicJson(intentFile, intent); intentRaw = json(intent);
+      intent.completed.push(i);
+      atomicJson(intentFile, intent, () => checkTargetPublication(i, after, true)); intentRaw = json(intent);
       opts.onBoundary?.("progress", i);
     }
     return { version: 1, id: request.id, fingerprint, state: "complete", completed: [...intent.completed], intentFile };

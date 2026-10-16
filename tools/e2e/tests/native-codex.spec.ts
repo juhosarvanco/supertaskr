@@ -792,6 +792,7 @@ test("transaction contention is bounded and durable, and exception cleanup relea
   // clearing an unknown transaction refusal at collection, or leaking a lock
   // when a transaction body throws.
   const b = bench("transaction-lifecycle");
+  let releaseHolder: (() => Promise<void>) | undefined;
   try {
     const bound = startNative(b);
     const ready = path.join(b.dir, "contention-ready");
@@ -808,6 +809,7 @@ test("transaction contention is bounded and durable, and exception cleanup relea
       5_000,
     );
     const holderDone = completedChild(holder);
+    releaseHolder = async () => { writeFileSync(release, "release\n"); await holderDone; };
     await waitForPath(ready);
 
     const contenderOnePath = path.join(b.dir, "contender-one");
@@ -922,7 +924,7 @@ test("transaction contention is bounded and durable, and exception cleanup relea
     );
 
   } finally {
-    b.cleanup();
+    try { await releaseHolder?.(); } finally { b.cleanup(); }
   }
 });
 

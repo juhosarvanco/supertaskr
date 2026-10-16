@@ -312,6 +312,60 @@ Criterion3 also covers completed-progress publication after the fresh target bou
 
 The minimal repair528aeb33c8ada5ce0b373d608fdc8123d6cf140e loads current fault/authorization/ordered predecessor evidence and reuses the resolved exact target check after the target boundary. It compares candidate and policy against the immutable intent, then checks exact intent bytes immediately before progress publication. A refusal preserves the arranged resulting record and its legitimate already published named disposition, with completed[] pending and unknown outcome/receipts intact. The exact unchanged new body passed together with the two current physical-file bodies, existing interrupted replay, pending-next-target, genuine foreign-terminal and genuine stopped-unbound controls:7/7, exit0. The three focused property bodies cover twelve reported dangling, seventeen adjacent physical/intent and eight progress arrangements,37 total. These narrow public data arrangements qualify their actual current properties and kill sets; they do not rerun the historical thirteen-site campaign or the unavailable refused broad campaign. The earlier intermediate full grade remains at its real ref; the required final original-base range follows this substantive notes commit. No independent acceptance or production recovery is inferred.
 
+### T-351-s1-a14 publication-boundary repair, 2026-10-16
+
+The independent a13 rejection and its committed regression remain unchanged.
+Clean re-entry is 44062efc08f6b4b3df5f145577fda83c168a8f10; the original
+cumulative contract/range base remains f02c9cae12fc429566618747e626ea2091f1e1d1.
+All five criteria and the four-path fence are unchanged. This executor read
+the shared verdict/regression and transient witness patch as repair inputs,
+without opening private attack or ground files. Requested model/effort is
+GPT-6.1 Sol/xhigh; observed serving identity and usage are unknown.
+
+The pre-implementation criteria echo was written in the assigned durable
+external evidence directory before source inspection or editing: C1 preserve
+bounded distinct raw refusals and independent requester/owner attribution;
+C2 pin complete authority and independently check cessation/jobs/cumulative
+scope and exact prior collection; C3 persist immutable intent and check exact
+current authority at each visible publication, retaining named-only pending
+and replay outcomes; C4 retain the separately recorded exact legacy/ordered
+owner policy and current fault/binding/grant/pause/seat checks; C5 use public
+fixture-owned positive/negative/interruption controls and honest drills.
+
+The defect class is validation separated from visibility by atomic-write
+observers and persistence work. The atomic writer accepts a synchronous
+pre-publication check after its final before-rename observer, immediately
+before rename. Recovery supplies that check at initial intent, target, fresh
+progress and replay-progress sites. Each independently reloads fault and owner
+authorization, ordered predecessors and pending faults; exact target checks
+retain record/reservation/binding/origins/candidate/cessation/jobs/policy and
+immutable intent. Initial intent checks the entire target set and absence.
+Earlier successful target publication remains discoverable with progress
+pending after refusal. Unknown callbacks and genuine collection stay intact.
+
+At the unmodified re-entry source the committed pause regression ran RED,
+exit1/one failed body, reproducing all three reported escapes. The first
+development repair run passed the unchanged regression, contention body and
+new replay body, 3/3. The new body supplies ordinary and separately authorized
+legacy replay positives with exact collection/receipt preservation, and 22
+actual rename arrangements spanning pause, record, binding, reservation,
+candidate, origins, grant, seat, intent, fault and legacy policy evidence.
+These diagnostics are dirty-source development readings, not final grades.
+
+#### In-fence follow-through
+
+- In native-codex.spec.ts's transaction-contention body, four added-plus-removed
+  lines retain an owned-holder release/await closure and invoke it in finally
+  before fixture cleanup. This restores owned-child cleanup when an earlier
+  assertion throws; no production path, criterion or suite scope is added.
+
+Property-site qualification, assertion poisons, failure-path cleanup proof,
+literal restoration hashes, final gate derivations and the original cumulative
+range reading follow this code/notes snapshot and will be retained in the
+external report before handoff. Historical RED and incomplete campaigns stay
+at their actual refs; this repair supplies no acceptance or proof waiver.
+No production recovery, authority edit, merge, push or CI is performed.
+
 ## Verdicts
 
 

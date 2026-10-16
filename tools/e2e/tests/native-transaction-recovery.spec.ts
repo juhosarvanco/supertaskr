@@ -1590,3 +1590,57 @@ test("recovery publications recheck a newly recorded pause at the actual rename 
     publication, boundaryReached: true, refused: true, targetUnchanged: true, intentUnchanged: true,
   })));
 });
+
+test("replay progress revalidates exact current authority at rename and retains its already published result", () => {
+  test.setTimeout(120_000);
+  const positives: any[] = [], observations: any[] = [];
+  const changes: [string, (f: any) => void][] = [
+    ["pause", f => writeFileSync(path.join(f.root, PAUSE_REL_PATH), encode({ version: 1, scope: "all", by: "fixture owner", at: AT }))],
+    ["record", f => writeFileSync(nativeRecordPath(f.root, f.records[0].attempt), readFileSync(nativeRecordPath(f.root, f.records[0].attempt), "utf8") + "\n")],
+    ["binding", f => { const file = nativeRecordPath(f.root, f.records[0].attempt), rec = JSON.parse(readFileSync(file, "utf8")); rec.native.binding.boundAt = "2026-10-06T00:00:03.000Z"; writeFileSync(file, encode(rec)); }],
+    ["reservation", f => writeFileSync(reservationPath(f.root, f.lanes[0]), "{}\n")],
+    ["candidate", f => { writeFileSync(path.join(f.lanes[0], "allowed.txt"), "changed\n"); git(f.lanes[0], ["commit", "-qam", "changed fixture candidate"]); }],
+    ["origins", f => writeFileSync(f.records[0].assignment.brief, "changed brief\n")],
+    ["grant", f => installGrant(f, 2)],
+    ["seat", f => { const row = processRow(process.pid)!; writeHolder(f.root, { pid: process.pid, startedAt: row.startedAt, program: row.command }); }],
+    ["intent", f => { const file = nativeRecoveryIntentPath(f.root, f.request.id); writeFileSync(file, readFileSync(file, "utf8") + "\n"); }],
+    ["fault", f => { const file = f.request.fault.source === "raw-ledger-v1" ? nativeTransactionFaultPath(f.root, f.request.fault.id) : f.faultReference; writeFileSync(file, encode({ ...JSON.parse(readFileSync(file, "utf8")), changedEvidence: true })); }],
+    ["authorization", f => writeFileSync(f.authorizationFile, readFileSync(f.authorizationFile, "utf8") + "\n")],
+    ["owner-ruling", f => writeFileSync(f.evidencePath, readFileSync(f.evidencePath, "utf8") + "\n")],
+  ];
+  for (const legacy of [false, true]) {
+    for (const name of ["positive", ...changes.filter(([key]) => legacy || !["authorization", "owner-ruling"].includes(key)).map(([key]) => key)]) {
+      const f = fixture(`replay-rename-${legacy}-${name}`, 1, true, legacy);
+      try {
+        if (legacy) authorize(f);
+        if (name === "grant") installGrant(f);
+        const record = nativeRecordPath(f.root, f.records[0].attempt), intent = nativeRecoveryIntentPath(f.root, f.request.id);
+        const before = readNativeRecord(f.root, f.records[0].attempt);
+        const interrupted = errorCode(() => recoverNativeTransaction(f.root, f.request, { onBoundary(stage) { if (stage === "target") throw new Error("fixture interruption after target"); } }));
+        const pending = JSON.parse(readFileSync(intent, "utf8"));
+        if (name === "positive") {
+          const result = recoverNativeTransaction(f.root, f.request), after = readNativeRecord(f.root, f.records[0].attempt);
+          positives.push({ legacy, completed: result.completed, pending: pending.completed, interrupted,
+            dispositions: after.native.transactionDispositions.length,
+            collectionPreserved: JSON.stringify(after.native.collection) === JSON.stringify(before.native.collection),
+            receiptsPreserved: JSON.stringify(after.native.receipts) === JSON.stringify(before.native.receipts) });
+          continue;
+        }
+        let reached = false, arrangedRecord: string | null = null, arrangedIntent: string | null = null;
+        const code = errorCode(() => withNativeDurabilityObserver(e => {
+          if (e.file !== intent || e.stage !== "before-rename") return;
+          changes.find(([key]) => key === name)![1](f);
+          arrangedRecord = readFileSync(record, "utf8"); arrangedIntent = readFileSync(intent, "utf8"); reached = true;
+        }, () => recoverNativeTransaction(f.root, f.request)));
+        observations.push({ legacy, name, reached, interrupted, pending: pending.completed, refused: code !== "NO_REFUSAL",
+          recordRetained: readFileSync(record, "utf8") === arrangedRecord, intentRetained: readFileSync(intent, "utf8") === arrangedIntent });
+      } finally { f.cleanup(); }
+    }
+  }
+  console.info("replay rename authority observations", JSON.stringify({ positives, observations }));
+  expect(positives).toEqual([false, true].map(legacy => ({ legacy, completed: [0], pending: [],
+    interrupted: "Error: fixture interruption after target", dispositions: 1, collectionPreserved: true, receiptsPreserved: true })));
+  expect(observations).toEqual([false, true].flatMap(legacy => changes.filter(([key]) => legacy || !["authorization", "owner-ruling"].includes(key)).map(([name]) => ({
+    legacy, name, reached: true, interrupted: "Error: fixture interruption after target", pending: [], refused: true, recordRetained: true, intentRetained: true,
+  }))));
+});
