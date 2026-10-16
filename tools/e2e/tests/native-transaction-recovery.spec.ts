@@ -8,7 +8,7 @@ import { expect, test } from "@playwright/test";
 import {
   NATIVE_CODEX_HARNESS, NATIVE_IDENTITY_PROBE, activeNativeHolds, addNativeHold, atomicJson,
   handleNativeEvent, nativeRecordPath, nativeSha256, nativeTransactionFaultPath, readNativeRecord,
-  withNativeTransaction, writeNativeRecord,
+  withNativeTransaction, writeNativeRecord, withNativeDurabilityObserver,
   nativeTransactionRefusalDir,
 } from "../scripts/native-codex.mjs";
 import { bindRun, collectRun, continueRun, observeRun, prepareNativeBenchRun, readReservation, releaseReservation, reservationPath, startRun, stopRun } from "../scripts/run-record.mjs";
@@ -1551,4 +1551,42 @@ test("fresh target progress publication independently rechecks resulting authori
   for (const observed of observations) expect(observed, JSON.stringify(observed)).toMatchObject({
     refused: true, boundaryReached: true, resultingRecordRetained: true, completed: [], dispositionCount: 1, outcome: "unknown", receiptsPreserved: true,
   });
+});
+
+
+test("recovery publications recheck a newly recorded pause at the actual rename boundary", () => {
+  const positive = fixture("rename-pause-positive");
+  try {
+    expect(existsSync(path.join(positive.root, PAUSE_REL_PATH))).toBe(false);
+    expect(recoverNativeTransaction(positive.root, positive.request).completed).toEqual([0]);
+  } finally { positive.cleanup(); }
+  const observations: any[] = [];
+  for (const publication of ["intent", "target", "progress"]) {
+    const f = fixture(`rename-pause-${publication}`);
+    try {
+      const pause = path.join(f.root, PAUSE_REL_PATH), record = nativeRecordPath(f.root, f.records[0].attempt);
+      const intent = nativeRecoveryIntentPath(f.root, f.request.id);
+      expect(existsSync(pause), publication).toBe(false);
+      let renames = 0, beforeRecord: string | null = null, beforeIntent: string | null = null, reached = false;
+      const selected = publication === "target" ? record : intent;
+      const ordinal = publication === "progress" ? 2 : 1;
+      const code = errorCode(() => withNativeDurabilityObserver(e => {
+        if (e.file !== selected || e.stage !== "before-rename" || ++renames !== ordinal) return;
+        beforeRecord = readFileSync(record, "utf8");
+        beforeIntent = existsSync(intent) ? readFileSync(intent, "utf8") : null;
+        // The fixture owns the entire authority tree. The observer changes no
+        // recovery guard; it records a real pause before the visible rename.
+        writeFileSync(pause, encode({ version: 1, scope: "all", by: "fixture owner", at: AT }));
+        expect(existsSync(pause), publication).toBe(true);
+        reached = true;
+      }, () => recoverNativeTransaction(f.root, f.request)));
+      observations.push({ publication, boundaryReached: reached, refused: code !== "NO_REFUSAL",
+        targetUnchanged: readFileSync(record, "utf8") === beforeRecord,
+        intentUnchanged: (existsSync(intent) ? readFileSync(intent, "utf8") : null) === beforeIntent });
+    } finally { f.cleanup(); }
+  }
+  console.info("rename pause publication observations", JSON.stringify(observations));
+  expect(observations).toEqual(["intent", "target", "progress"].map(publication => ({
+    publication, boundaryReached: true, refused: true, targetUnchanged: true, intentUnchanged: true,
+  })));
 });
