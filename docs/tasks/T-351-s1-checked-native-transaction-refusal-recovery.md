@@ -565,6 +565,65 @@ The already-verifying card needs no later status-only change. The final original
 range is graded only after all substantive code and notes are committed.
 
 
+
+#### A18 committed-snapshot qualification
+
+At 8a72994645f1c897c5978deb17cfe0a072894637 the new independent clone
+matched every tracked input and used fresh locked installs and fresh parser/app
+builds. The retained a17 regression and both new bodies passed3/3, exit0,
+with zero skips/flakes/timeouts in557.359 seconds. The two new bodies exercise
+six viable boundary controls plus48 actual interventions across six consumer
+boundaries, two predecessor namespaces and four before/after flush stages;
+the dependency body adds one viable grant control and20 persisted-data cases.
+All68 interventions refused without a further record or progress effect.
+Original collection, terminal outcome and unknown receipts remain checked.
+
+The exact original re-entry recovery module was then substituted only in that
+owned clone, with every assertion unchanged. Its literal18-line class landing
+produced three intended body failures, exit1, zero skips/harness errors/timeouts,
+in504.214 seconds. All48 boundary cases violated their expected no-further-effect
+or successful-return requirement; nine dependency cases exposed further effects
+(prior intent/binding/jobs/reservation/candidate, fault, authorization, owner
+ruling and pending fault). The remaining eleven cases already refused correctly
+and remain controls. These actual data arrangements qualify the boundary class;
+record-byte pinning of job/binding arrangements does not separately remove or
+qualify each internal physical subguard. The selected kill set is these three
+bodies, not a whole-owning-set containment claim or a repeated historic campaign.
+
+Each of the four new matcher sites was poisoned separately on one assertion
+side and failed at its intended site,4-for-4 RED, zero skips/flakes/timeouts.
+The jobs used four newly owned disjoint clones, outputs and ports15352–15355,
+with all tracked/configuration/dependency bytes verified and parser/app freshly
+built. Their provenance names the actual common3/3 baseline; no separate baseline
+run in each copy is invented. Each complete poisoned body also executed its
+viable controls. Every sampled descendant identity and recorded process group
+ceased. Exact original bytes,0644 mode and both nanosecond clocks were restored,
+with explicit HEAD-to-path diff0 companions. Recovery restore SHA256 is
+89ae5c0814518bb5f3d16b55006a8ae173b09df7c8cbea7b8c29f22dbc5e8235;
+spec restore SHA256 is
+94efc697835d94d4a7b31e68171e04427f2c5b312743c7e1f6125ca2b8a05c3c.
+
+The original cumulative AST inventory derives378 changed matcher sites:
+370 recovery and8 native, across40 recovery and30 native bodies at that ref.
+A synthetic planted matcher changes recovery370 to371. There are exactly two
+new bodies and four new matcher sites. The class sweep finds two persistence
+calls inside the defective sequence checker, zero in the repaired checker and
+one in its planted control. All four recovery atomic writers retain their
+publication callback. The final callback performs predecessor persistence first,
+then fresh exact fault/owner, pure predecessor and complete selected-target checks.
+Manual transitive reading found no native persistence/observer call in those
+final readers. This complements actual functional failures; it is no arbitrary
+OS/read isolation or concurrent-writer proof.
+
+Full raw outputs, source/configuration/dependency pins, per-operator landings,
+restores, actual argument/ref/process/elapsed/ceiling receipts and unrun limits
+are retained in ordered-namespace-repair-2026-10-17-v1. Final static/gate results
+and the one original f02 cumulative range grade follow this substantive notes
+commit and are reported externally by exact final ref. Historical qualification
+debt, the remaining full independent matrix and generated integration-only
+census currency are not waived. No further in-fence follow-through was added.
+
+
 ## Verdicts
 
 
