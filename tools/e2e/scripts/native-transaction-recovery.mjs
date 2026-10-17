@@ -21,11 +21,11 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import {
   NativeCodexFinding, activeNativeHolds, atomicJson,
-  collectNativeWorkspace, nativeRecordPath, nativeSha256,
+  collectNativeWorkspace, nativeRecordPath, nativeReservationMetadata, nativeSha256,
   nativeTransactionFaultPath, nativeTransactionRefusalDir, readNativeRecord, withNativeTransaction,
   syncNativeFileNamespace,
 } from "./native-codex.mjs";
-import { STATES, admissionAt, allRecords, defaultRunIo, ownedJobsAlive, readRecord, readReservation, readTokens, reconcile, reservationPath } from "./run-record.mjs";
+import { STATES, admissionAt, defaultRunIo, ownedJobsAlive, readRecord, readReservation, readTokens, reconcile, reservationPath } from "./run-record.mjs";
 import { holderVerdict } from "./checkout-currency.mjs";
 
 export const NATIVE_RECOVERY_VERSION = 1;
@@ -366,7 +366,6 @@ function checkedRecoveryRecords(root) {
   if (authorityDirectory(root, dir, "FOREIGN") === null) refuse("FOREIGN", "physical run authority is absent or not a directory");
   const records = [];
   for (const work of readdirSync(dir)) {
-    if (work === "reservations") continue;
     const workDir = path.join(dir, work);
     if (physicalEntry(workDir, "directory", "FOREIGN") === null) refuse("FOREIGN", "physical run namespace is absent");
     for (const name of readdirSync(workDir)) {
@@ -374,6 +373,7 @@ function checkedRecoveryRecords(root) {
       const file = path.join(workDir, name);
       if (physicalEntry(file, "file", "FOREIGN") === null) refuse("FOREIGN", "physical run authority is absent");
       const rec = parse(bytes(file), "physical run authority");
+      if (work === "reservations" && nativeReservationMetadata(root, file, rec)) continue;
       if (!object(rec) || rec.version !== 1 || typeof rec.attempt !== "string" ||
           rec.attempt !== name.slice(0, -5) || !/^([A-Za-z0-9][A-Za-z0-9._-]{0,127})-a[1-9]\d*$/.test(rec.attempt) || !rec.attempt.startsWith(`${work}-a`) ||
           typeof rec.writer !== "boolean" || !object(rec.assignment) || typeof rec.assignment.id !== "string" || rec.assignment.id === "" ||

@@ -21,6 +21,9 @@ import {
   NATIVE_TRANSACTION_WAIT_MS,
   NativeCodexFinding,
   activeNativeHolds,
+  allNativeRecords,
+  atomicJson,
+  nativeTransactionRefusalDir,
   collectNativeWorkspace,
   deriveNativeBenchAuthority,
   explicitResourceProblem,
@@ -36,6 +39,7 @@ import {
 } from "../scripts/native-codex.mjs";
 import {
   RunRecordFinding,
+  allRecords,
   bindRun,
   collectRun,
   continueRun,
@@ -1921,4 +1925,34 @@ test("native record and public launch disclose every callback registered by the 
       expect(record.reservation.file!==null).toBe(profile==="writer-resource");
     }finally{b.cleanup();}
   }
+});
+
+
+test("native reserved-work records remain bindable listed and covered by durable unknown refusal absorption beside reservation metadata", () => {
+  const b = bench("reserved-work-inventory");
+  try {
+    const file = path.join(b.lane, ".supertaskr/lane-fence.json");
+    const fence = JSON.parse(readFileSync(file, "utf8")); fence.taskId = "reservations";
+    writeFileSync(file, JSON.stringify(fence, null, 2) + "\n");
+    const rec = startNative(b, { assigned: { ...assignment(b), id: "reservations" } });
+    expect(rec.attempt).toBe("reservations-a1");
+    expect(rec.native!.binding!.agentId).toBe("agent-1");
+    expect(allNativeRecords(b.root).map(r => r.attempt)).toEqual([rec.attempt]);
+    console.info("adjacent generic inventory observation", JSON.stringify({ attempt: rec.attempt,
+      nativeVisible: allNativeRecords(b.root).some(r => r.attempt === rec.attempt),
+      genericVisible: allRecords(b.root).some(r => r.attempt === rec.attempt) }));
+    const metadata = readReservation(b.root, b.lane)!;
+    expect(metadata.attempt).toBe(rec.attempt);
+    const fault = { version: 1, id: nativeSha256("reserved-work-unknown-refusal"), code: "native-transaction-refusal",
+      operation: "fixture-reserved-work", recordedAt: AT, outcome: "unknown", owner: null, reason: "fixture unknown owner" };
+    const rawFile = path.join(nativeTransactionRefusalDir(b.root), "fixture-reserved-work.json");
+    atomicJson(rawFile, fault);
+    withNativeTransaction(b.root, { operation: "fixture-reserved-work-absorption" }, () => undefined);
+    const current = readNativeRecord(b.root, rec.attempt);
+    expect(activeNativeHolds(current).map((h: any) => h.refusal?.id)).toEqual([fault.id]);
+    expect(current.native!.binding).toEqual(rec.native!.binding);
+    expect(readReservation(b.root, b.lane)).toEqual(metadata);
+    expect(existsSync(rawFile)).toBe(false);
+    expect(allNativeRecords(b.root).map(r => r.attempt)).toEqual([rec.attempt]);
+  } finally { b.cleanup(); }
 });

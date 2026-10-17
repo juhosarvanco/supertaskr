@@ -980,6 +980,25 @@ function persistNativeTransactionRefusal(root, refusal) {
   return file;
 }
 
+/** Reservations share their directory with the supported work id "reservations".
+ * Exclude only the complete published reservation format at its resource-derived
+ * path; a record (including an existing one) never disappears by namespace.
+ * @param {string} root @param {string} file @param {any} value
+ */
+export function nativeReservationMetadata(root, file, value) {
+  if (!isObject(value) || Object.keys(value).sort().join(",") !== "attempt,holder,resource,role,takenAt,version,work" ||
+      value.version !== 1 || typeof value.resource !== "string" || !path.isAbsolute(value.resource) ||
+      typeof value.attempt !== "string" || !/^([A-Za-z0-9][A-Za-z0-9._-]{0,127})-a\d+$/.test(value.attempt) ||
+      value.work !== workOf(value.attempt) || typeof value.role !== "string" || value.role === "" ||
+      typeof value.takenAt !== "string" || value.takenAt === "" || !isObject(value.holder) ||
+      typeof value.holder.pid !== "number" || !Number.isInteger(value.holder.pid) || value.holder.pid <= 0 || typeof value.holder.host !== "string") return false;
+  let resource = path.resolve(value.resource);
+  try { resource = realpathSync(resource); }
+  catch (error) { if (/** @type {any} */ (error).code !== "ENOENT") return false; }
+  const suffix = createHash("sha256").update(resource).digest("hex").slice(0, 12);
+  return file === path.join(nativeTransactionDir(root), `${path.basename(resource)}-${suffix}.json`);
+}
+
 /** @param {string} root */
 function nativeRecordFiles(root) {
   const runs = path.join(root, ".supertaskr", "runs");
@@ -987,9 +1006,12 @@ function nativeRecordFiles(root) {
   const files = [];
   for (const work of readdirSync(runs)) {
     const dir = path.join(runs, work);
-    if (work === "reservations" || !statSync(dir).isDirectory()) continue;
+    if (!statSync(dir).isDirectory()) continue;
     for (const name of readdirSync(dir).sort()) {
-      if (name.endsWith(".json")) files.push(path.join(dir, name));
+      if (!name.endsWith(".json")) continue;
+      const file = path.join(dir, name);
+      if (work === "reservations" && nativeReservationMetadata(root, file, JSON.parse(readNativeUtf8(file)))) continue;
+      files.push(file);
     }
   }
   return files;
@@ -1001,7 +1023,6 @@ function removeAbandonedNativeTemps(root, pid) {
   if (!existsSync(runs)) return;
   const marker = `.json.${pid}.`;
   for (const work of readdirSync(runs)) {
-    if (work === "reservations") continue;
     const dir = path.join(runs, work);
     if (!statSync(dir).isDirectory()) continue;
     for (const name of readdirSync(dir)) {
@@ -1391,34 +1412,29 @@ export function allNativeRecords(root, opts = {}) {
   const runs = path.join(root, ".supertaskr", "runs");
   if (!existsSync(runs)) return [];
   const records = [];
-  for (const work of readdirSync(runs)) {
-    const dir = path.join(runs, work);
-    if (work === "reservations" || !statSync(dir).isDirectory()) continue;
-    for (const name of readdirSync(dir).sort()) {
-      if (!name.endsWith(".json")) continue;
-      const attempt = name.slice(0, -".json".length);
-      try {
-        const rec = JSON.parse(readNativeUtf8(path.join(dir, name)));
-        if (isObject(rec.native) && rec.native.version === NATIVE_CODEX_VERSION) {
-          nativeState(rec);
-          records.push(includeUnreadableAuthority(root, attempt, rec));
-        } else if (existsSync(nativeEmergencyHoldPath(root, attempt))) {
-          throw new NativeCodexFinding(
-            "NATIVE_AUTHORITY_UNREADABLE",
-            `native-codex: ${attempt} has a persisted native authority hold but no readable native state.`,
-          );
-        }
-      } catch (error) {
-        if (opts.persistFailures === true) {
-          persistUnreadableAuthority(root, attempt, error, opts.at ?? new Date().toISOString());
-        }
-        throw error instanceof NativeCodexFinding
-          ? error
-          : new NativeCodexFinding(
-              "NATIVE_AUTHORITY_UNREADABLE",
-              `native-codex: attempt authority at ${path.join(dir, name)} is unreadable: ${String(error)}.`,
-            );
+  for (const file of nativeRecordFiles(root)) {
+    const attempt = path.basename(file, ".json");
+    try {
+      const rec = JSON.parse(readNativeUtf8(file));
+      if (isObject(rec.native) && rec.native.version === NATIVE_CODEX_VERSION) {
+        nativeState(rec);
+        records.push(includeUnreadableAuthority(root, attempt, rec));
+      } else if (existsSync(nativeEmergencyHoldPath(root, attempt))) {
+        throw new NativeCodexFinding(
+          "NATIVE_AUTHORITY_UNREADABLE",
+          `native-codex: ${attempt} has a persisted native authority hold but no readable native state.`,
+        );
       }
+    } catch (error) {
+      if (opts.persistFailures === true) {
+        persistUnreadableAuthority(root, attempt, error, opts.at ?? new Date().toISOString());
+      }
+      throw error instanceof NativeCodexFinding
+        ? error
+        : new NativeCodexFinding(
+            "NATIVE_AUTHORITY_UNREADABLE",
+            `native-codex: attempt authority at ${file} is unreadable: ${String(error)}.`,
+          );
     }
   }
   return records;

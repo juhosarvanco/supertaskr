@@ -11,7 +11,7 @@ import {
   withNativeTransaction, writeNativeRecord, withNativeDurabilityObserver,
   nativeTransactionRefusalDir,
 } from "../scripts/native-codex.mjs";
-import { bindRun, collectRun, continueRun, observeRun, prepareNativeBenchRun, readReservation, releaseReservation, reservationPath, startRun, stopRun } from "../scripts/run-record.mjs";
+import { bindRun, collectRun, continueRun, observeRun, prepareNativeBenchRun, readReservation, releaseReservation, reservationPath, startRun, stopRun, takeReservation } from "../scripts/run-record.mjs";
 import { nativeRecoveryIntentPath, nativeRecoveryTarget, recoverNativeTransaction } from "../scripts/native-transaction-recovery.mjs";
 import { processRow, writeHolder } from "../scripts/checkout-currency.mjs";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
@@ -31,19 +31,20 @@ function git(root: string, args: string[]): string {
 function event(name: string, agent: string, extra: Record<string, any> = {}): any {
   return { hook_event_name: name, session_id: "fixture-session", turn_id: "fixture-turn", agent_id: agent, ...extra };
 }
-function fixture(stem: string, count = 1, collected = false, legacy = false, deferHold = false): any {
+function fixture(stem: string, count = 1, collected = false, legacy = false, deferHold = false, reservedWork?: string): any {
   const dir = realpathSync(mkdtempSync(path.join(os.tmpdir(), `T-351-s1-${stem}-`)));
   const root = path.join(dir, "authority"); mkdirSync(root);
   git(root, ["init", "-q", "-b", "main"]); git(root, ["config", "user.name", "fixture"]); git(root, ["config", "user.email", "fixture@example.invalid"]);
   writeFileSync(path.join(root, ".gitignore"), ".supertaskr/\nignored/\n");
   writeFileSync(path.join(root, "allowed.txt"), "base\n"); writeFileSync(path.join(root, "outside.txt"), "base\n");
   mkdirSync(path.join(root, "docs/tasks"), { recursive: true });
-  for (let i = 0; i < count; i++) writeFileSync(path.join(root, `docs/tasks/T-935-s${i}-fixture.md`), `---\nid: T-935-s${i}\nstatus: building\ntouches: [allowed.txt]\n---\ncriteria\n`);
+  const workId = (i: number) => i === 0 && reservedWork ? reservedWork : `T-935-s${i}`;
+  for (let i = 0; i < count; i++) writeFileSync(path.join(root, `docs/tasks/${workId(i)}-fixture.md`), `---\nid: ${workId(i)}\nstatus: building\ntouches: [allowed.txt]\n---\ncriteria\n`);
   git(root, ["add", "."]); git(root, ["commit", "-qm", "fixture base"]);
   const base = git(root, ["rev-parse", "HEAD"]);
   const records: any[] = [], lanes: string[] = [];
   for (let i = 0; i < count; i++) {
-    const id = `T-935-s${i}`, lane = path.join(dir, `lane-${i}`), brief = path.join(dir, `brief-${id}.txt`), agent = `fixture-agent-${i}`;
+    const id = workId(i), lane = path.join(dir, `lane-${i}`), brief = path.join(dir, `brief-${id}.txt`), agent = `fixture-agent-${i}`;
     git(root, ["worktree", "add", "--quiet", "--detach", lane, base]); lanes.push(lane);
     mkdirSync(path.join(lane, ".supertaskr")); writeFileSync(brief, "fixture brief\n");
     atomicJson(path.join(lane, ".supertaskr/lane-fence.json"), { version: 1, taskId: id, ref: base, worktree: lane,
@@ -1931,4 +1932,103 @@ test("ordered namespace observers cannot carry stale fault owner policy predeces
   expect(positive).toMatchObject({ reached: true, code: "NO_REFUSAL", completed: [0], dispositions: 1, historyPreserved: true });
   expect(observations).toEqual(changes.map(([name]) => ({ name, reached: true, code: expect.not.stringMatching(/^NO_REFUSAL$/),
     refused: true, recordsRetained: true, intentRetained: true, completed: [], dispositions: 0, historyPreserved: true })));
+});
+
+
+test("public recovery inventories a supported live foreign writer whose work id shares the reservation namespace", () => {
+  const observations: any[] = [];
+  for (const work of ["ordinary-foreign", "reservations"]) {
+    const f = fixture(`independent-reserved-work-${work}`);
+    try {
+      const assignment: Assignment = { ...f.records[0].assignment, id: work, harness: "claude-code" };
+      delete assignment.native;
+      const started = startRun(f.root, { assignment, at: "2026-10-06T00:00:05.000Z" }).record;
+      bindRun(f.root, { attempt: started.attempt, harnessId: `fixture-${work}`, pid: process.pid, at: "2026-10-06T00:00:06.000Z" });
+      expect(releaseReservation(f.root, { resource: f.lanes[0], attempt: started.attempt })).toBe(true);
+      const foreignFile = nativeRecordPath(f.root, started.attempt), foreignBytes = readFileSync(foreignFile, "utf8");
+      const before = beforeRecords(f), result = cli(f);
+      observations.push({ work, attempt: started.attempt, livePid: JSON.parse(foreignBytes).execution.pid,
+        exit: result.status, error: result.stderr, targetUnchanged: JSON.stringify(beforeRecords(f)) === JSON.stringify(before),
+        foreignUnchanged: readFileSync(foreignFile, "utf8") === foreignBytes,
+        intentAbsent: !existsSync(nativeRecoveryIntentPath(f.root, f.request.id)) });
+    } finally { f.cleanup(); }
+  }
+  console.info("independent reserved namespace live-writer observations", JSON.stringify(observations));
+  expect(observations).toEqual(["ordinary-foreign", "reservations"].map(work => ({
+    work, attempt: `${work}-a1`, livePid: process.pid, exit: 1, error: expect.stringContaining("FOREIGN"),
+    targetUnchanged: true, foreignUnchanged: true, intentAbsent: true,
+  })));
+});
+
+
+test("reserved-work recovery distinguishes genuine stopped and ended records from legitimate metadata and unknown physical authority", () => {
+  const cases = ["metadata-only", "genuine-ended", "genuine-stopped", "live", "unknown-job", "malformed", "wrong-version", "wrong-assignment", "symlink", "directory", "damaged-metadata", "misplaced-metadata", "wrong-metadata-work", "metadata-extra-field"];
+  for (const name of cases) {
+    const f = fixture(`reserved-layout-${name}`, 1, true, false, false, name === "genuine-stopped" ? "reservations" : undefined);
+    try {
+      const metadataResource = path.join(f.dir, "metadata-resource"); mkdirSync(metadataResource);
+      const metadata = takeReservation(f.root, { resource: metadataResource, attempt: "metadata-a1", role: "executor", at: AT });
+      if (name === "damaged-metadata") writeFileSync(metadata.file, "{unreadable");
+      if (name === "wrong-metadata-work") writeFileSync(metadata.file, encode({ ...metadata.reservation, work: "wrong-work" }));
+      if (name === "metadata-extra-field") writeFileSync(metadata.file, encode({ ...metadata.reservation, writer: true }));
+      const metadataBytes = readFileSync(metadata.file, "utf8");
+      let foreignFile: string | undefined, foreignBytes: string | undefined;
+      if (!["metadata-only", "damaged-metadata", "wrong-metadata-work", "metadata-extra-field"].includes(name)) {
+        let other: any;
+        if (name === "genuine-stopped") {
+          const started = startRun(f.root, { assignment: f.records[0].assignment, at: AT }).record;
+          other = stopRun(f.root, { attempt: started.attempt, evidence: "RUN-DONE gone\nFixture-owned launch never started a process or job.", at: "2026-10-06T00:00:06.000Z" }).record;
+          expect(other.state).toBe("stopped"); expect(other.execution).toBeNull();
+          expect(releaseReservation(f.root, { resource: f.lanes[0], attempt: other.attempt })).toBe(true);
+          expect(other.native.binding).toBeNull();
+          expect(other.outcome.evidence.some((e: any) => e.kind === "termination established")).toBe(true);
+        } else {
+          other = structuredClone(f.records[0]); other.attempt = "reservations-a1";
+          if (name === "live") { other.execution.pid = process.pid; other.execution.identity = null; }
+          if (name === "unknown-job") other.ownedJobs = [{ kind: "native-task", id: "unprobeable" }];
+          if (name === "wrong-version") other.version = 99;
+          if (name === "wrong-assignment") other.assignmentDigest = "sha256:" + "0".repeat(64);
+          writeNativeRecord(f.root, other);
+        }
+        foreignFile = nativeRecordPath(f.root, other.attempt);
+        if (name === "malformed") writeFileSync(foreignFile, "{unreadable");
+        if (name === "misplaced-metadata") writeFileSync(foreignFile, metadataBytes);
+        if (name === "symlink") { rmSync(foreignFile); symlinkSync(path.join(f.dir, "missing-authority"), foreignFile); }
+        if (name === "directory") { rmSync(foreignFile); mkdirSync(foreignFile); }
+        if (!["symlink", "directory"].includes(name)) foreignBytes = readFileSync(foreignFile, "utf8");
+      }
+      const before = beforeRecords(f), collection = encode(f.records[0].native.collection), receipts = encode(f.records[0].native.receipts);
+      const result = cli(f), accepted = ["metadata-only", "genuine-ended", "genuine-stopped"].includes(name);
+      expect(result.status, `${name}: ${result.stdout} ${result.stderr}`).toBe(accepted ? 0 : 1);
+      if (accepted) {
+        const current = readNativeRecord(f.root, f.records[0].attempt);
+        expect(encode(current.native.collection), name).toBe(collection); expect(encode(current.native.receipts), name).toBe(receipts);
+        expect(current.native.transactionDispositions, name).toHaveLength(1);
+        expect(cli(f).status, name).toBe(0);
+      } else {
+        expect(result.stderr, name).toMatch(/FOREIGN|EVIDENCE/); unchanged(f, before);
+        expect(existsSync(nativeRecoveryIntentPath(f.root, f.request.id)), name).toBe(false);
+      }
+      expect(readFileSync(metadata.file, "utf8"), name).toBe(metadataBytes);
+      if (foreignFile && foreignBytes !== undefined) expect(readFileSync(foreignFile, "utf8"), name).toBe(foreignBytes);
+      if (name === "symlink") expect(lstatSync(foreignFile!).isSymbolicLink()).toBe(true);
+      if (name === "directory") expect(lstatSync(foreignFile!).isDirectory()).toBe(true);
+    } finally { f.cleanup(); }
+  }
+});
+
+test("accepted work identifiers that resemble internal metadata retain live foreign-writer refusal", () => {
+  const works = ["native-transaction-refusals", "native-transaction-faults", "native-transaction-recoveries", "a-a1", "R._-", "w".repeat(128)];
+  for (const work of works) {
+    const f = fixture(`work-shape-${work.slice(0, 24)}`);
+    try {
+      const a: Assignment = { ...f.records[0].assignment, id: work, harness: "claude-code" }; delete a.native;
+      const started = startRun(f.root, { assignment: a, at: AT }).record;
+      bindRun(f.root, { attempt: started.attempt, harnessId: "fixture-work-shape", pid: process.pid, at: AT });
+      expect(releaseReservation(f.root, { resource: f.lanes[0], attempt: started.attempt })).toBe(true);
+      const file = nativeRecordPath(f.root, started.attempt), foreign = readFileSync(file, "utf8"), before = beforeRecords(f), result = cli(f);
+      expect(result.status, `${work}: ${result.stderr}`).toBe(1); expect(result.stderr, work).toContain("FOREIGN"); unchanged(f, before);
+      expect(readFileSync(file, "utf8"), work).toBe(foreign); expect(existsSync(nativeRecoveryIntentPath(f.root, f.request.id)), work).toBe(false);
+    } finally { f.cleanup(); }
+  }
 });

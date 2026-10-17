@@ -624,6 +624,83 @@ debt, the remaining full independent matrix and generated integration-only
 census currency are not waived. No further in-fence follow-through was added.
 
 
+### T-351-s1-a20 accepted-work namespace inventory repair, 2026-10-17
+
+The permitted ordinary repair re-enters at
+1d3cbbd1238aaa1dac20d150bcc57be29e749a85; the original cumulative
+contract/range base remains f02c9cae12fc429566618747e626ea2091f1e1d1.
+All five criteria, four source/spec paths, legacy policy and prior verdicts
+remain unchanged. Native registration and explicit normal binding preceded
+repository reads. Requested GPT-6.1 Sol/xhigh is distinct from unknown observed
+serving identity, effort and usage. The complete packet, current card and role,
+public coordinator status and preserved literal regression were inputs. No
+private attack, ground or verifier conversation was opened.
+
+The external criteria checklist preceded implementation inspection: C1 retain
+bounded distinct durable refusal/requester evidence and conservative unknowns;
+C2 retain exact complete authority pins, independent cessation/jobs/origins/
+cumulative scope and original collection while inventorying every supported
+work namespace; C3 retain immutable intent, current transactional checks,
+named-only disposition and exact pending/replay; C4 retain the separately
+recorded exact legacy/ordered owner policy and current authority; C5 use public
+fixture-owned ordinary controls and disclose unavailable independent proof.
+
+The accepted work grammar admits reservations and internal-metadata-like names.
+Run records are direct JSON children of their work directory. Reservation
+metadata is also direct JSON in runs/reservations, at its resource-basename and
+12-hex-digest path; native lock/recovery files and fault/refusal/intent directories
+share that metadata namespace. The repair removes whole-directory exclusion
+from the strict recovery inventory and native record/listing/temporary cleanup
+walks. Only complete version-one published reservation metadata, with agreeing
+work/attempt fields at its independently derived resource path, is excluded
+from the record inventory. Malformed, linked, wrong-type or unsupported physical
+record/metadata authority remains conservative. Pre-existing valid records are
+read; future identifier rejection is not the repair. No public recovery request
+or authorization version, contention bound or four publication callback changes.
+
+The preserved patch matched SHA256
+493b3abaf8096182deb84089ed7fdcd4fec5339aba50420aa5890bd2a5727fcc,
+passed exact applicability checks and produced the literal preserved spec
+snapshot at import. Its unchanged public live-foreign body now passes. Three
+additional ordinary bodies cover native reserved-work binding/listing/unknown
+refusal absorption, fourteen metadata/record arrangements, and six further
+accepted work shapes. Successful metadata-only, historical ended-record and
+public genuinely stopped/unbound reserved-native cases remain viable, including
+recovery of a genuinely collected reservations-a1 beside stopped reservations-a2.
+Unknown jobs, live owners, malformed/type/link entries and metadata lookalikes
+refuse before intent/target effects; genuine collections, unknown receipts and
+foreign bytes remain exact. The final dirty development focused run selected
+four bodies and passed4/4, exit0, no skips/flakes/timeouts,22.719 seconds.
+Fresh locked installs and parser/app builds preceded it. An earlier development
+typecheck reported two type annotations, corrected before that final run;
+final committed static/range results belong to the external handoff.
+
+The ordinary source-class search finds three native and one recovery whole
+namespace skips at the actual known-defective re-entry and zero at the repaired
+source. This is a read-only comparison, not a new property mutation. The generic
+run-record allRecords omission remains outside this fence: the ordinary public
+fixture actually reported nativeVisible:true and genericVisible:false for its
+bound reservations-a1. The strict recovery inventory does not depend on it.
+RUN-ASK adjacent-generic-inventory-T-351-s1-a20 parks a separate generic inventory
+and admission/quota-consumer task, waking before a generic sweep is treated as
+complete writer authority or the next run-record lifecycle/inventory repair.
+No out-of-fence product edit or new follow-through was made.
+
+Independent qualification remains UNRUN and not waived: no source mutant,
+guard-removal experiment, assertion poison, test-only weakened module view,
+corrected a19 witness, full property/data/assertion matrix, independent full
+range verdict or acceptance is supplied by this ordinary repair. The a19
+platform-ended review and all earlier rejected/RED/partial readings remain
+history; normal positives are neither platform clearance nor independent
+approval. The MF-09 selftest baseline remains distinct from normal model-free
+evals. No arbitrary power-loss, whole-home adversary, OS/read isolation or
+competing-writer qualification is claimed. Final ordinary static/docs/graph/
+model-free checks and one original-base range grade follow this substantive
+code/notes commit and are recorded externally at the actual tested ref. The
+already-verifying card needs no post-grade status-only change. No production
+recovery, authority edit, merge, push, CI or migration activation is assigned.
+
+
 ## Verdicts
 
 
