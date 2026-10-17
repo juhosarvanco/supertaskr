@@ -1679,3 +1679,98 @@ test("later target publication refuses changed completed-target authority before
     expect(rejected.code).not.toBe("NO_REFUSAL");
   }
 });
+
+const selectedTargetChanges: [string, (f: any, index: number) => void][] = [
+  ["record", (f, index) => { const file = nativeRecordPath(f.root, f.records[index].attempt); writeFileSync(file, readFileSync(file, "utf8") + "\n"); }],
+  ["reservation", (f, index) => writeFileSync(reservationPath(f.root, f.lanes[index]), "{}\n")],
+  ["binding", (f, index) => { const file = nativeRecordPath(f.root, f.records[index].attempt), rec = JSON.parse(readFileSync(file, "utf8")); rec.native.binding.boundAt = "2026-10-06T00:00:03.000Z"; writeFileSync(file, encode(rec)); }],
+  ["candidate", (f, index) => { writeFileSync(path.join(f.lanes[index], "allowed.txt"), "changed selected candidate\n"); git(f.lanes[index], ["commit", "-qam", "changed selected fixture candidate"]); }],
+  ["origins", (f, index) => writeFileSync(f.records[index].assignment.brief, "changed selected origins\n")],
+  ["unknown-job", (f, index) => { const file = nativeRecordPath(f.root, f.records[index].attempt), rec = JSON.parse(readFileSync(file, "utf8")); rec.ownedJobs = [{ kind: "native-task", id: "unknown fixture job" }]; writeFileSync(file, encode(rec)); }],
+];
+
+test("complete selected target intent remains exact at target fresh progress and replay progress publication", () => {
+  test.setTimeout(240_000);
+  const positives: any[] = [], observations: any[] = [];
+  for (const publication of ["target", "progress", "replay-progress"]) {
+    for (const change of [null, ...[0, 2].flatMap(index => selectedTargetChanges.map(([name, mutate]) => ({ index, name, mutate })))]) {
+      const f = fixture(`selected-set-${publication}-${change?.index}-${change?.name}`, 3, true, true);
+      try {
+        authorize(f);
+        const intent = nativeRecoveryIntentPath(f.root, f.request.id), second = nativeRecordPath(f.root, f.records[1].attempt);
+        const preserved = f.records.map((rec: any) => ({ collection: rec.native.collection, receipts: rec.native.receipts }));
+        const interrupted = publication === "replay-progress" ? errorCode(() => recoverNativeTransaction(f.root, f.request, {
+          onBoundary(stage, index) { if (stage === "target" && index === 1) throw Error("fixture selected-set interruption"); },
+        })) : null;
+        let reached = false, intentRenames = 0, arranged: string[] = [], arrangedIntent = "";
+        const code = errorCode(() => withNativeDurabilityObserver(e => {
+          if (e.stage !== "before-rename") return;
+          if (publication === "target" ? e.file !== second : e.file !== intent || (publication === "progress" && ++intentRenames !== 3)) return;
+          if (reached) return;
+          reached = true;
+          change?.mutate(f, change.index);
+          arranged = beforeRecords(f); arrangedIntent = readFileSync(intent, "utf8");
+        }, () => recoverNativeTransaction(f.root, f.request)));
+        const completed = JSON.parse(readFileSync(intent, "utf8")).completed;
+        if (change === null) {
+          const after = f.records.map((rec: any) => readNativeRecord(f.root, rec.attempt));
+          positives.push({ publication, reached, code, interrupted, completed,
+            dispositions: after.map((rec: any) => rec.native.transactionDispositions.length),
+            historyPreserved: JSON.stringify(after.map((rec: any) => ({ collection: rec.native.collection, receipts: rec.native.receipts }))) === JSON.stringify(preserved) });
+        } else observations.push({ publication, index: change.index, name: change.name, reached, interrupted,
+          refused: code !== "NO_REFUSAL", completed, recordsRetained: JSON.stringify(beforeRecords(f)) === JSON.stringify(arranged),
+          intentRetained: readFileSync(intent, "utf8") === arrangedIntent });
+      } finally { f.cleanup(); }
+    }
+  }
+  console.info("complete selected-set publication observations", JSON.stringify({ positives, observations }));
+  expect(positives).toEqual(["target", "progress", "replay-progress"].map(publication => ({ publication, reached: true, code: "NO_REFUSAL",
+    interrupted: publication === "replay-progress" ? "Error: fixture selected-set interruption" : null,
+    completed: [0, 1, 2], dispositions: [1, 1, 1], historyPreserved: true })));
+  expect(observations).toEqual(["target", "progress", "replay-progress"].flatMap(publication => [0, 2].flatMap(index => selectedTargetChanges.map(([name]) => ({
+    publication, index, name, reached: true, interrupted: publication === "replay-progress" ? "Error: fixture selected-set interruption" : null,
+    refused: true, completed: [0], recordsRetained: true, intentRetained: true,
+  })))));
+});
+
+test("final fresh and no-write replay success recheck the complete resulting target set after its last observer", () => {
+  test.setTimeout(180_000);
+  const positives: any[] = [], observations: any[] = [];
+  const changes = [0, 1, 2].map(index => ({ index, name: "record", mutate: selectedTargetChanges[0]![1] })).concat([
+    { index: 0, name: "origins", mutate: selectedTargetChanges[4]![1] },
+    { index: 1, name: "candidate", mutate: selectedTargetChanges[3]![1] },
+    { index: 2, name: "reservation", mutate: selectedTargetChanges[1]![1] },
+    { index: 1, name: "unknown-job", mutate: selectedTargetChanges[5]![1] },
+  ]);
+  for (const replay of [false, true]) for (const change of [null, ...changes]) {
+    const f = fixture(`selected-complete-${replay}-${change?.index}-${change?.name}`, 3, true, true);
+    try {
+      authorize(f);
+      const intent = nativeRecoveryIntentPath(f.root, f.request.id), last = nativeRecordPath(f.root, f.records[2].attempt);
+      const preserved = f.records.map((rec: any) => ({ collection: rec.native.collection, receipts: rec.native.receipts }));
+      if (replay) recoverNativeTransaction(f.root, f.request);
+      let reached = false, arranged: string[] = [], arrangedIntent = "";
+      const intervene = () => {
+        if (reached) return;
+        reached = true; change?.mutate(f, change.index);
+        arranged = beforeRecords(f); arrangedIntent = readFileSync(intent, "utf8");
+      };
+      const code = errorCode(() => withNativeDurabilityObserver(e => {
+        if (replay && e.file === last && e.stage === "before-directory-fsync") intervene();
+      }, () => recoverNativeTransaction(f.root, f.request, { onBoundary(stage, index) {
+        if (!replay && stage === "progress" && index === 2) intervene();
+      } })));
+      const completed = JSON.parse(readFileSync(intent, "utf8")).completed;
+      if (change === null) {
+        const after = f.records.map((rec: any) => readNativeRecord(f.root, rec.attempt));
+        positives.push({ replay, reached, code, completed, dispositions: after.map((rec: any) => rec.native.transactionDispositions.length),
+          historyPreserved: JSON.stringify(after.map((rec: any) => ({ collection: rec.native.collection, receipts: rec.native.receipts }))) === JSON.stringify(preserved) });
+      } else observations.push({ replay, index: change.index, name: change.name, reached, refused: code !== "NO_REFUSAL", completed,
+        recordsRetained: JSON.stringify(beforeRecords(f)) === JSON.stringify(arranged), intentRetained: readFileSync(intent, "utf8") === arrangedIntent });
+    } finally { f.cleanup(); }
+  }
+  console.info("complete selected-set final observations", JSON.stringify({ positives, observations }));
+  expect(positives).toEqual([false, true].map(replay => ({ replay, reached: true, code: "NO_REFUSAL", completed: [0, 1, 2], dispositions: [1, 1, 1], historyPreserved: true })));
+  expect(observations).toEqual([false, true].flatMap(replay => changes.map(({ index, name }) => ({ replay, index, name, reached: true,
+    refused: true, completed: [0, 1, 2], recordsRetained: true, intentRetained: true }))));
+});

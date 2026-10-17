@@ -470,9 +470,17 @@ export function recoverNativeTransaction(root, request, opts = {}) {
     };
     /** @param {number} i @param {string} content @param {boolean} resolved */
     const checkTargetPublication = (i, content, resolved) => {
-      const target = { ...request.targets[i], record: { content, digest: digest(content) } };
-      const checked = checkTarget(root, request, target, publicationFault(), resolved);
-      if (!same(checked, intent.checks[i])) refuse("WORKSPACE", "checked candidate or policy changed before publication");
+      const currentFault = publicationFault();
+      // The complete selected set stays pinned: earlier targets have their exact
+      // resulting records, the current target has this boundary's expected state,
+      // and later targets still have their immutable pending authority.
+      request.targets.forEach((/** @type {any} */ target, /** @type {number} */ index) => {
+        const isResolved = index < i || (index === i && resolved);
+        const expected = index < i ? json(resultingRecord(intent, index)) : index === i ? content : target.record.content;
+        const checked = checkTarget(root, request, { ...target,
+          record: { content: expected, digest: digest(expected) } }, currentFault, isResolved);
+        if (!same(checked, intent.checks[index])) refuse("WORKSPACE", "selected target candidate or policy changed before publication");
+      });
       checkIntent();
     };
     if (intent !== null && (intent.version !== 1 || intent.fingerprint !== fingerprint || !same(intent.request, request))) refuse("IDENTIFIER_REUSED", "immutable request identifier was reused with different content");
@@ -542,6 +550,10 @@ export function recoverNativeTransaction(root, request, opts = {}) {
       atomicJson(intentFile, intent, () => checkTargetPublication(i, after, true)); intentRaw = json(intent);
       opts.onBoundary?.("progress", i);
     }
+    // Exact replay may publish nothing. Recheck the complete resulting set after
+    // the last progress/namespace observer before returning successful completion.
+    const last = request.targets.length - 1;
+    checkTargetPublication(last, json(resultingRecord(intent, last)), true);
     return { version: 1, id: request.id, fingerprint, state: "complete", completed: [...intent.completed], intentFile };
   });
 }

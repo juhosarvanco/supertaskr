@@ -420,6 +420,63 @@ or qualification waiver is claimed. The card already carries verifying;
 no status-only change is needed and no post-grade substantive commit is
 planned. The verifier and integrator remain separate seats.
 
+
+### T-351-s1-a16 complete selected-target repair, 2026-10-17
+
+The actual a15 rejection at42b67b8676ddbe9a4f395ae418b69cba8bdb2360
+and regression2861c25bd6c167c58ccb32ae8522f51a3386fb3b are preserved
+unchanged. The latter is this writer's clean re-entry; the complete original
+contract/range base remains f02c9cae12fc429566618747e626ea2091f1e1d1.
+All five criteria, four owning paths, legacy owner policy and ordered route
+remain literal. The published native binding and actual fixture-route answer
+were read and genuinely acknowledged. Requested model/effort is GPT-6.1
+Sol/xhigh; observed serving identity, effort and usage remain unknown.
+The shared verdict, committed regression and named transient witness patch
+were repair inputs; no private attack/ground artifact or verifier conversation
+was opened. All prior rejected, interrupted and unknown readings remain history.
+
+Before implementation inspection, the external criteria echo restated C1's
+bounded distinct fault/requester evidence and conservative unknowns; C2's exact
+complete pins and independent cessation/jobs/origins/cumulative scope/collection;
+C3's immutable intent, named-only atomic disposition and exact selected-set
+pending/resulting/replay checks; C4's separately recorded exact legacy/sequence
+policy and current authority; and C5's public fixture controls, actual drills
+and honest qualification limits.
+
+The defect class is selected target authority falling out of the checked intent
+between effects. The common publication callback now validates every selected
+target: earlier exact resulting records, the current publication's expected
+state, and later original pending authority. Each uses the same independent
+record/reservation/binding/origins/candidate/cessation/jobs/policy checks and
+compares the complete check with immutable intent. The existing final atomic
+callback remains immediately before rename at all four guarded writers. A final
+complete-result check also covers successful no-write replay and interventions
+after the last progress or namespace observer. Refusal keeps legitimate prior
+completion discoverable, without mutating any further target or progress.
+
+The unchanged a15 two-target regression and two new three-target bodies passed
+3/3, exit0, on dirty development source based at2861c25b. The new bodies retain
+five successful multi-target/fresh/replay controls and50 actual drift cases:
+36 completed-or-pending target record/reservation/binding/candidate/origin/
+unknown-job arrangements at target, fresh progress and replay-progress rename;
+14 final fresh/no-write-replay result arrangements across first/middle/last
+records, origins, candidate, reservation and unknown jobs. Unknown-job and
+binding arrangements change exact record bytes; they are not separate proofs
+of physical liveness or individual internal subguards. Actual source pins,
+body counts, per-body durations, bounded process identity and cessation are
+retained externally. No skipped, flaky or unexpected body was reported.
+Installed package/lock metadata and actual package versions matched before
+reuse; parser and app were freshly built before these tests.
+
+The committed-snapshot property controls, four new assertion-site poisons,
+literal bytes/mode/nanosecond-clock restores, source-class sweep, final gate
+readings and one complete original-base range grade are recorded in the final
+external handoff after actual execution. No current full historic property or
+assertion matrix, arbitrary power-loss proof, competing-writer guarantee,
+qualification waiver, independent acceptance or production recovery is claimed.
+The card already reads verifying, so no status-only commit is needed after the
+final grade. No merge, push, CI or real authority edit is assigned.
+
 ## Verdicts
 
 
