@@ -628,3 +628,59 @@ Product restore SHA256: 90d1b3158574b12759ca72064b3234e4f9deb87c597ecf60d4f33769
 Security/interface reading found no separate demonstrated blocker before stopping: the new CLI uses fixed argument arrays, pins fault/owner evidence and rejects nonregular authority. This is bounded source inspection, not a completed security/malformed-input campaign. No real authority, historical collection, root hook, grant/pause/holder or reservation was edited. The first regression append used a cwd-resolved relative Path despite the packet's absolute-patch form; its actual diff was wholly inside the explicitly bound checkout, and subsequent product writes used absolute paths. No platform safety refusal occurred in this pass.
 
 The full original-range grade is deliberately unrun on this known-invalid candidate under the packet's stop-on-counterexample instruction. Own verdict/body checks and final exact refs/job closure are reported separately after those commits; a generated capability-census pass is not claimed. No merge, push, CI or production disposition is assigned or performed.
+
+
+### 2026-10-17 — REJECTED — gpt-6.1-sol@01a14917-54fc-7881-b837-5e7e12216ffc — T-351-s1-a17
+
+Candidate `c0990686b5af792ee4ba1d8f806771ff0987bd28` is rejected: an ordered legacy recovery can publish its later target after its already completed predecessor's exact authority changes. `checkSequence` checks that predecessor, then calls `syncNativeFileNamespace` for its record and intent. The actual directory flush observer can change the predecessor after those checks. The final publication callback then validates only its currently selected step, so the target replacement becomes visible. Recovery notices the changed predecessor only before progress, after resolving the later hold and appending its disposition. This violates criteria 3 and 4; the refused return does not undo that unsupported authority change.
+
+The independent owning body `ordered prior-step namespace flush cannot authorize a later target after predecessor authority changes` uses the real fixture-owned dependent lifecycle and the public recovery entry. Its unchanged control completes successfully. Its changed control appends one newline to the predecessor's exact record bytes at `directory-fsync`, armed only by the later target's `before-rename`. At the candidate it returns `NATIVE_RECOVERY_RECORD` but the later record changed, contains one disposition, and its intent remains `completed: []`; expected is refusal before that later record changes, zero dispositions and pending progress. Run from tools/e2e with bench port25351: `node_modules/.bin/playwright test tests/native-transaction-recovery.spec.ts -g 'ordered prior-step namespace flush cannot authorize' --reporter=json`. RED: one named assertion failure, zero skips and no harness errors. A separately retained corrected witness settles prior-step namespace observation before fresh final fault/authorization/sequence snapshots and makes the final sequence check observation-free. The same body is GREEN there, one passed and zero skips. The witness is a proof input, not an accepted source repair.
+
+| Criterion | Current independent evidence and disposition |
+| --- | --- |
+| 1 — durable bounded attribution and unknown preservation | Entire original native engine diff and corresponding bodies read. The current assertion inventory includes all eight new native-codex matcher sites. No fresh full contention/absorption/durability mutation campaign was run after the decisive rejection; not qualified by this verdict. |
+| 2 — complete exact request and independent eligibility | Entire request/physical-entry/cessation/jobs/origins/scope/collection implementation and all new bodies read. The genuine ordered positive control passed through the public CLI. Complete malformed, scope and data matrix remains unrun independently here; not qualified. |
+| 3 — exact transaction, intent, publication, replay | REJECTED by the reproduced predecessor namespace publication gap. Actual later target mutation occurs after changed coupled authority and before the eventual refusal. New body RED at the candidate and GREEN at the named witness. |
+| 4 — narrow independent owner sequence | Genuine complete ordered-policy positive passes. The same prior-step counterexample violates current predecessor revalidation in the authorized sequence. No real a6/a11 recovery was invoked. |
+| 5 — discriminating executable bodies and retained controls | Existing ordered positive: one passed. New regression: one failed at candidate, one passed at witness; four new assertion sites poisoned separately, four intended failures, zero skips/errors. Full original assertion/property/data/interruption qualification and whole-owning kill-set containment remain unrun after the blocking defect, under the packet's explicit counterexample stop rule. |
+
+Original cumulative range is `f02c9cae12fc429566618747e626ea2091f1e1d1..c0990686b5af792ee4ba1d8f806771ff0987bd28`; the smaller writer re-entry range starts at `2861c25bd6c167c58ccb32ae8522f51a3386fb3b` and was read separately. The original owed derivation exits0 and names parser/app plus 21 E2E specs; re-entry names parser/app plus 13. Neither a smaller diagnostic nor the executor's grade is claimed as independent range acceptance. The original full range grade and the remainder of the large drill matrix are explicitly unrun after this concrete rejection. At the candidate, independent TypeScript AST enumeration derives 362 new recovery matcher sites plus eight new native-codex sites, 370 total, across the original cumulative diff; it does not copy the earlier historical362 figure. The detailed property/control and assertion inventory is retained with this attempt.
+
+All four added-body assertion poisons failed at the named body against the corrected witness, with actual per-operator landings, nonzero execution, zero skips/errors and literal SHA256/mode/nanosecond-clock restoration. The selected defect kill set is this new body; complete whole-owning kill-set containment is unrun and is not inferred from the selected run. Source restoration is SHA256 `13b2a733254b4928324c69d434c51efff5b5f7667732c96e2bfac5c233f7e37b`, exact candidate Git bytes, mode and both clocks, with source diff0. The corrected witness source SHA256 is `0727213166a68ca1d18b405b4f40a6d1759766ae3f383a8e9d5c4b89c44b1df0`; its exact patch is retained. Every test process/group receipt reports zero survivors. Parser and app were built in the required order; E2E types passed with the witness/new body.
+
+One correction, one body and one mutant block. The body is committed immediately after this verdict commit, as role5b requires. The block below anchors exactly once in the explicitly named corrected witness, candidate plus `corrected-witness-T-351-s1.patch`. It restores the defective final publication callback while retaining the witness's optional sequence argument; the same RED/GREEN results distinguish that missing final closure. The block does not purport to anchor a repair already present at the rejected candidate.
+
+```mutant
+correction: close prior-step namespace observations before final publication authority
+file: tools/e2e/scripts/native-transaction-recovery.mjs
+spec: tools/e2e/tests/native-transaction-recovery.spec.ts
+body: ordered prior-step namespace flush cannot authorize a later target after predecessor authority changes
+message: changed predecessor must refuse before a later target disposition becomes visible
+--- old
+    const publicationFault = () => {
+      // Complete prior-step namespace observation before final authority snapshots.
+      const namespaceFault = loadFault(root, request);
+      checkSequence(root, request, namespaceFault, authorization(root, request, namespaceFault));
+      noPendingFaults();
+      const currentFault = loadFault(root, request);
+      const currentAuth = authorization(root, request, currentFault);
+      if (!same(currentFault, intent.fault) || !same(currentAuth, intent.authorization)) refuse("INTENT", "fault or authorization changed before publication");
+      checkSequence(root, request, currentFault, currentAuth, false);
+      return currentFault;
+    };
+--- new
+    const publicationFault = () => {
+      noPendingFaults();
+      const currentFault = loadFault(root, request);
+      const currentAuth = authorization(root, request, currentFault);
+      if (!same(currentFault, intent.fault) || !same(currentAuth, intent.authorization)) refuse("INTENT", "fault or authorization changed before publication");
+      checkSequence(root, request, currentFault, currentAuth);
+      return currentFault;
+    };
+```
+
+The retained original attack SHA256 is `651bcea6c27ba06297a9dabb6c03de510375827445de0e39dcf8459a745f2e18`; earlier re-entry is `e356a7a37610734fd06c8ebf9fb9532f388d60b5a47cae05450850541cb9d0b2`; full-role repair re-entry is `d0b2a1da2262638219135ec34c02e77d32c53f62b05d955b80ec642970f208b8`; ground is `eabee89b71f737f17301ee65b5099c26d8a3f7d2882b8cb27204e3b34dba4f07`; owner-sequence addendum is `25f8f0a8da00d9394e96e4fb7e15f7af89d16efd34397a01606e13896d7025c0`. All sealed byte counts/digests and historical seals were privately checked. Preparation digest `51c86aa6aaf2cc8ab9360f47e04887840d97491ae16aefe8b734d3c45848aed7`, manifest digest `f550dcf42fe4dfaea84e2ba07c4632e32ad7c7bdc353f76f3a2739fc7217bbf9`, source frozen re-entry card, actual source authority and consumedBy all match. Original versus candidate verifier card historical differences were privately checked at their own refs; criteria/touches are byte-identical. Raw cards/authority and executor conversations were not displayed.
+
+Actual frame: fresh regular native detached verifier phase two, after actual a16 completion/collection, receiving three retained precommitments with their original selected/full-role limitations. Tools remained exposed and the reading boundary was procedural. The packet disclosed the completed-target repair and historical count before implementation; no stronger unexposed frame is claimed. Requested model/effort is GPT-6.1 Sol/xhigh; observed serving identity/effort/usage is unknown. First bound repository read was refused by Supertaskr `writer-resource-not-explicit`; no work/job ran, the genuine turn ended failed, normal continuation/exact rebind cleared the hold, and `RUN-ACK question-id` acknowledged the answer. That original refusal and any unknown callbacks remain preserved. No actual OpenAI safety refusal occurred. No additional pack gap was observed; the cited pack has no component slug entry, and architecture interfaces plus verification/command/gate/port rules were opened on demand. Security review covered request path/identity shape, physical authority types/UTF-8, separately loaded owner evidence, fixed argv and dependency/secret surface; the demonstrated publication authorization defect is blocking.
+
+Evidence lives in `completed-target-verification-2026-10-17-v1/measurements-T-351-s1-a17/`, including exact command logs/receipts, snapshots, landings, inventories, restoration and the independent report. Generated capability currency is known stale and remains for integration. Own final-ref gate outcomes and complete job closure are recorded in the independent report; no acceptance, publication, CI, real recovery or migration activation is implied.
