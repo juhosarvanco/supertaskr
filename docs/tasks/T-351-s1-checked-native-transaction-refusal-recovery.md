@@ -469,3 +469,62 @@ Frame and integrity: fresh normally bound native phase two after sealed precommi
 Attack digests: original `651bcea6c27ba06297a9dabb6c03de510375827445de0e39dcf8459a745f2e18`; re-entry `e356a7a37610734fd06c8ebf9fb9532f388d60b5a47cae05450850541cb9d0b2`; full-role re-entry `d0b2a1da2262638219135ec34c02e77d32c53f62b05d955b80ec642970f208b8`. Ground `eabee89b71f737f17301ee65b5099c26d8a3f7d2882b8cb27204e3b34dba4f07`; owner sequence `34450b3458a03e5bd84f424bde907980e2bbb9a534b77ea75e6e0ac6ece949de`; sequence addendum `25f8f0a8da00d9394e96e4fb7e15f7af89d16efd34397a01606e13896d7025c0`.
 
 The candidate original-range grade derived app/parser and 21 e2e specs. Its actual interrupted reading retains 469 parser passes, 1157 app passes and 14 missing-app-build setup failures, plus 661 completed e2e body lines out of 1088 planned at the judged candidate. The app build omission is the verifier's setup error, not a candidate defect. The grade was deliberately ended on exactly attributable jobs after the concrete blocker; both process groups ceased and the port closed. It is interrupted/ungraded, never GREEN. The app build subsequently succeeded. No complete original-range grade, whole-property matrix, full 355-site poison, qualification exception or acceptance is asserted. The repaired candidate will owe those proofs. Exact final own-write checks, the separately bounded property drill, its timeout/remaining-scope receipts and full job cessation belong to the genuine final report/manifest; none may be inferred from this verdict. No production recovery, merge, push or CI was performed.
+
+
+### 2026-10-17 — REJECTED — gpt-6.1-sol@01a1464a-e710-7aa1-bfbe-0f97db09d7b2
+
+Candidate: e3c27f53e66fe0f14d9ada1263719c576a89ce84. Original contract/range base: f02c9cae12fc429566618747e626ea2091f1e1d1; source a14 re-entry base: 44062efc08f6b4b3df5f145577fda83c168a8f10. Fresh native a15 detached verifier, canonical task `/root/native_s351_publication_verification_20261016`; normal exact binding preceded repository reads. Requested model/effort gpt-6.1-sol/xhigh; observed serving model, effort and usage unknown. Full frozen role, contract, all three saved attacks and ground preceded the complete original source/test diff; executor notes and conversations were not orientation. The original selected-role frames and later full-role frame remain disclosed. No OS/read isolation is claimed.
+
+attack set: sha256:651bcea6c27ba06297a9dabb6c03de510375827445de0e39dcf8459a745f2e18 (verification-v1/attack-set-original-T-351-s1.md)
+
+attack set: sha256:e356a7a37610734fd06c8ebf9fb9532f388d60b5a47cae05450850541cb9d0b2 (verification-v1/attack-set-reentry-T-351-s1.md)
+
+attack set: sha256:d0b2a1da2262638219135ec34c02e77d32c53f62b05d955b80ec642970f208b8 (repair-reentry-phase1-v1/attack-set-repair-reentry-T-351-s1.md)
+
+Ground: sha256:eabee89b71f737f17301ee65b5099c26d8a3f7d2882b8cb27204e3b34dba4f07. Owner-sequence addendum: sha256:25f8f0a8da00d9394e96e4fb7e15f7af89d16efd34397a01606e13896d7025c0. All eight sealed inputs, three additional raw/seal inputs and nineteen historical sealed members were privately verified; raw authority was not displayed. Preparation authority/digest, manifest digest, exact consumedBy and native binding matched this attempt.
+
+**Blocking correction — completed-target authority before later publication.** In a valid two-target fixture, target zero and its progress are durably recorded. Immediately before target one's actual rename, the observer appends one newline to target zero's exact record bytes. Recovery still publishes target one and records `[0,1]` complete. The same change immediately before target one's fresh progress rename also records `[0,1]`. Expected: refuse and retain `[0]`, with no further target effect. Both otherwise identical unchanged controls succeed. `checkTargetPublication` rechecks only its current index; earlier completed targets' exact resulting record/reservation/binding/candidate/origins/jobs/policy are not coupled to that later publication.
+
+Reproduce from tools/e2e with `SUPERTASKR_E2E_PORT=25351 node node_modules/@playwright/test/cli.js test tests/native-transaction-recovery.spec.ts --grep 'later target publication refuses changed completed-target authority before any further effect' --reporter=list,json` after applying the following committed regression. Candidate RED: one body failed, zero skipped; final run 2026-10-17T07:30:41.837341Z to 07:30:54.659414Z, 12.822 monotonic seconds within a ninety-second bound, no timeout, process group 70904 ceased. Normal corrected witness GREEN: one body passed, zero skipped; both changed cases refuse `NATIVE_RECOVERY_RECORD`, retain `[0]` and preserve the second record at that publication boundary.
+
+The correction revalidates every earlier completed target's exact derived resulting bytes and independent `checkTarget` evidence inside the shared publication callback. The source witness and patch are retained in `publication-verification-2026-10-16-v1/measurements-T-351-s1-a15/corrected-witness-T-351-s1.mjs` and its `.patch`. Product code is restored to the candidate; only the verdict and regression body are committed. The following block anchors exactly once in that explicitly named corrected witness and removes precisely the missing guard. Correction count: one; block count: one. Selected-scope kill set: only the named new body; this is not a whole-owning-set containment claim.
+
+```mutant
+correction: completed-target authority before later publication
+file: tools/e2e/scripts/native-transaction-recovery.mjs
+spec: tools/e2e/tests/native-transaction-recovery.spec.ts
+body: later target publication refuses changed completed-target authority before any further effect
+message: changed completed target must refuse before publishing another target or its progress
+--- old
+      const currentFault = publicationFault();
+      // Earlier completed targets remain part of the exact multi-target intent.
+      // Revalidate their recorded results before publishing another effect.
+      for (let priorIndex = 0; priorIndex < i; priorIndex++) {
+        const priorTarget = request.targets[priorIndex];
+        const priorContent = json(resultingRecord(intent, priorIndex));
+        const priorChecked = checkTarget(root, request, { ...priorTarget,
+          record: { content: priorContent, digest: digest(priorContent) } }, currentFault, true);
+        if (!same(priorChecked, intent.checks[priorIndex])) refuse("WORKSPACE", "completed target authority changed before later publication");
+      }
+      const checked = checkTarget(root, request, target, currentFault, resolved);
+--- new
+      const checked = checkTarget(root, request, target, publicationFault(), resolved);
+```
+
+Class/sweep: read all four recovery atomic publication call sites (intent, target, fresh progress, replay progress). Intent already checks the complete initial target set; the other three share the current-index-only helper. The body measures earlier completed record-byte drift at the second target and second fresh-progress rename. Coupled earlier reservation/binding/candidate/origin/job changes, replay-progress drift and more than two targets remain unrun. No complete property/data-mutant containment matrix is claimed.
+
+| Criterion | Independent evidence and outcome at the candidate |
+| --- | --- |
+| 1 — bounded attributable durable refusals | Complete source/test diff read; production bound remains 1500 ms. Full independent contention, raw durability and absorption qualification unrun after the blocker. Not approved. |
+| 2 — exact request and independent checks | Real-repository public recovery controls successfully complete before the isolated byte intervention. Full malformed/lifecycle/scope/collection matrix unrun. Not approved. |
+| 3 — revalidation, immutable intent and exact disposition/replay | REJECTED by the two actual later-publication interventions and paired viable controls above; candidate broadens completed progress after exact authority changes. |
+| 4 — narrow independently recorded legacy policy | Regression uses separate fixture-owned pinned owner evidence and a complete two-target request. Production a6/a11 authorization/recovery not performed; complete legacy/ordered-sequence matrix unrun. Not approved. |
+| 5 — discriminating public fixture bodies | One new public-entry body is RED on candidate and GREEN on corrected witness. Four assertion-site poisons each run one named failing body with zero skips/timeouts; exact body bytes/mode/mtime restored after each. Complete candidate qualification unrun. |
+
+At e3c27f5, the independently derived cumulative-diff inventory contains 362 changed matcher-call sites (354 in the new recovery spec; eight in native-codex), using an AST query first proven on a planted assertion. Those candidate poisons, comprehensive property/DATA mutants, owning-set kill-set containment and the complete original-range grade remain unrun because a real blocker was found. The initial anchored grep matched zero bodies; that setup failure is retained and is not a RED reading. The final regression's four assertion sites were each poisoned on one expected side and seen RED on the corrected witness, with actual diffs and named failures retained.
+
+Product restore SHA256: 90d1b3158574b12759ca72064b3234e4f9deb87c597ecf60d4f33769eb957ebc, equal to candidate and saved bytes, mode 0644 and original nanosecond mtime restored. Regression snapshot SHA256: 7091f75c423a628e047f3e5d6a22b0ab48f35a20d7150269ac55a62b86671a2e. Evidence lives in `publication-verification-2026-10-16-v1/measurements-T-351-s1-a15/`, including logs, JSON body counts, receipts, literal landings/restores and candidate inventory. Actual readings span two dates; no continuous overnight active test or cause of that wall-clock gap is inferred.
+
+Security/interface reading found no separate demonstrated blocker before stopping: the new CLI uses fixed argument arrays, pins fault/owner evidence and rejects nonregular authority. This is bounded source inspection, not a completed security/malformed-input campaign. No real authority, historical collection, root hook, grant/pause/holder or reservation was edited. The first regression append used a cwd-resolved relative Path despite the packet's absolute-patch form; its actual diff was wholly inside the explicitly bound checkout, and subsequent product writes used absolute paths. No platform safety refusal occurred in this pass.
+
+The full original-range grade is deliberately unrun on this known-invalid candidate under the packet's stop-on-counterexample instruction. Own verdict/body checks and final exact refs/job closure are reported separately after those commits; a generated capability-census pass is not claimed. No merge, push, CI or production disposition is assigned or performed.
