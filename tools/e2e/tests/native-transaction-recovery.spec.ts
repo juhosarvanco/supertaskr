@@ -1644,3 +1644,38 @@ test("replay progress revalidates exact current authority at rename and retains 
     legacy, name, reached: true, interrupted: "Error: fixture interruption after target", pending: [], refused: true, recordRetained: true, intentRetained: true,
   }))));
 });
+
+
+test("later target publication refuses changed completed-target authority before any further effect", () => {
+  test.setTimeout(60_000);
+  const observations: any[] = [];
+  for (const publication of ["target", "progress"]) for (const changed of [false, true]) {
+    const f = fixture(`completed-target-publication-${changed}`, 2, true, true);
+    try {
+      authorize(f);
+      const first = nativeRecordPath(f.root, f.records[0].attempt);
+      const second = nativeRecordPath(f.root, f.records[1].attempt);
+      const intent = nativeRecoveryIntentPath(f.root, f.request.id);
+      let reached = false, beforeSecond: string | null = null, completedBefore: number[] | null = null, intentRenames = 0;
+      const code = errorCode(() => withNativeDurabilityObserver(e => {
+        if (e.stage !== "before-rename") return;
+        if (publication === "target" ? e.file !== second : e.file !== intent || ++intentRenames !== 3) return;
+        reached = true;
+        expect(JSON.parse(readFileSync(first, "utf8")).native.transactionDispositions).toHaveLength(1);
+        beforeSecond = readFileSync(second, "utf8");
+        completedBefore = JSON.parse(readFileSync(intent, "utf8")).completed;
+        if (changed) writeFileSync(first, readFileSync(first, "utf8") + "\n");
+      }, () => recoverNativeTransaction(f.root, f.request)));
+      observations.push({ publication, changed, reached, code, completedBefore,
+        secondUnchanged: readFileSync(second, "utf8") === beforeSecond,
+        completed: JSON.parse(readFileSync(intent, "utf8")).completed });
+    } finally { f.cleanup(); }
+  }
+  console.info("completed-target publication observations", JSON.stringify(observations));
+  for (const publication of ["target", "progress"]) {
+    expect(observations.find(v => v.publication === publication && !v.changed)).toMatchObject({ changed: false, reached: true, code: "NO_REFUSAL", completedBefore: [0], secondUnchanged: publication === "progress", completed: [0, 1] });
+    const rejected = observations.find(v => v.publication === publication && v.changed);
+    expect(rejected, "changed completed target must refuse before publishing another target or its progress").toMatchObject({ changed: true, reached: true, completedBefore: [0], secondUnchanged: true, completed: [0] });
+    expect(rejected.code).not.toBe("NO_REFUSAL");
+  }
+});
