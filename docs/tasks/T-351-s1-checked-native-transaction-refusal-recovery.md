@@ -6,10 +6,10 @@ milestone: 4
 priority: 1
 size: M
 tier: standard
-status: verifying
+status: building
 suggested_by: codex/gpt-6.1-sol @architect
 blocked_by: []
-touches: [tools/e2e/scripts/native-codex.mjs, tools/e2e/scripts/native-transaction-recovery.mjs, tools/e2e/tests/native-codex.spec.ts, tools/e2e/tests/native-transaction-recovery.spec.ts]
+touches: [tools/e2e/scripts/native-codex.mjs, tools/e2e/scripts/native-transaction-recovery.mjs, tools/e2e/tests/native-codex.spec.ts, tools/e2e/tests/native-transaction-recovery.spec.ts, tools/e2e/scripts/run-record.mjs, tools/e2e/tests/run-record.spec.ts]
 builder: gpt-6.1-sol@xhigh
 verifier: gpt-6.1-sol@xhigh
 review: independent
@@ -725,6 +725,10 @@ code/notes commit and are recorded externally at the actual tested ref. The
 already-verifying card needs no post-grade status-only change. No production
 recovery, authority edit, merge, push, CI or migration activation is assigned.
 
+
+### Coordinator scope correction — 2026-10-17
+
+Ordinary independent review at `e5fd46c8f764bed4c860a0e589cb1187c31f7990` found that the shared admission ledger omits supported `reservations` work. Its public attributable and exact legacy fixtures demonstrate that a consumed `each` grant can be admitted again. The required policy dependency is `tools/e2e/scripts/run-record.mjs`, with regression coverage in `tools/e2e/tests/run-record.spec.ts`. These paths join this card's fence under the existing namespace-repair authorization. Acceptance criteria are unchanged. The earlier separate-follow-up classification is withdrawn for delivery. The review is preserved by SHA256 `c9b14831a0c18c2c0f2d381c85ad2975cf0fc8517d4ec24c5eed4e0b67987d47`. A fresh executor admission and pre-implementation verifier re-stamp are required; no acceptance, qualification exception or production authority change is inferred.
 
 ## Verdicts
 
