@@ -9,7 +9,7 @@ tier: standard
 status: building
 suggested_by: codex/gpt-6.1-sol @architect
 blocked_by: []
-touches: [tools/e2e/scripts/native-codex.mjs, tools/e2e/scripts/native-transaction-recovery.mjs, tools/e2e/tests/native-codex.spec.ts, tools/e2e/tests/native-transaction-recovery.spec.ts]
+touches: [tools/e2e/scripts/native-codex.mjs, tools/e2e/scripts/native-transaction-recovery.mjs, tools/e2e/tests/native-codex.spec.ts, tools/e2e/tests/native-transaction-recovery.spec.ts, tools/e2e/scripts/run-record.mjs, tools/e2e/tests/run-record.spec.ts]
 builder: gpt-6.1-sol@xhigh
 verifier: gpt-6.1-sol@xhigh
 review: independent
@@ -37,6 +37,10 @@ Drafted and independently reviewed outside the repository in two packet-only sit
 Owner granted the recovery and T-351 completion on 2026-10-06. The separately preserved authorization identifies one legacy fault and T-351-a6/T-351-a11 only, with unresolved attribution disclosed and all other checks unchanged. This card does not accept T-351, widen another grant, rewrite a historical verdict or enable split roots. It supplies a supported recovery operation; no coordinator hand-edits authority. Existing unknown-fault collection refusal remains a control. Requested implementation/review GPT-6.1 Sol extra-high; observed identity is separate. No extra model demonstration, new lock framework, daemon or repeated platform-refused broad source-drill campaign.
 
 The four owning paths are disjoint from the preserved T-351 candidate fence. Native protected tools must run serially with exact assigned-checkout prefixes. Current/frozen authority and visible effects require expected-identity checks and replay-safe durable evidence.
+
+### Coordinator scope correction — 2026-10-17
+
+Ordinary independent review at `e5fd46c8f764bed4c860a0e589cb1187c31f7990` found that the shared admission ledger omits supported `reservations` work. Its public attributable and exact legacy fixtures demonstrate that a consumed `each` grant can be admitted again. The required policy dependency is `tools/e2e/scripts/run-record.mjs`, with regression coverage in `tools/e2e/tests/run-record.spec.ts`. These paths join this card's fence under the existing namespace-repair authorization. Acceptance criteria are unchanged. The earlier separate-follow-up classification is withdrawn for delivery. The review is preserved by SHA256 `c9b14831a0c18c2c0f2d381c85ad2975cf0fc8517d4ec24c5eed4e0b67987d47`. A fresh executor admission and pre-implementation verifier re-stamp are required; no acceptance, qualification exception or production authority change is inferred.
 
 ## Verdicts
 
