@@ -115,6 +115,7 @@ import {
   deriveNativeBenchAuthority,
   inspectNativeBench,
   nativeFinalGate,
+  nativeReservationMetadata,
   prepareNativeRecord,
   readNativeAssignment,
   withNativeTransaction,
@@ -716,11 +717,16 @@ export function allRecords(root) {
   const out = [];
   for (const work of readdirSync(dir)) {
     const workDir = path.join(dir, work);
-    if (work === "reservations" || !statSync(workDir).isDirectory()) continue;
+    if (!statSync(workDir).isDirectory()) continue;
     for (const file of readdirSync(workDir).sort()) {
       if (!file.endsWith(".json")) continue;
+      // This supported work shares its directory with reservation metadata.
+      // Match native discovery so non-record entries retain exclusive-create handling.
+      if (work === "reservations" && !/^reservations-a\d+\.json$/.test(file)) continue;
       try {
-        const rec = /** @type {RunRecord} */ (JSON.parse(readFileSync(path.join(workDir, file), "utf8")));
+        const recordFile = path.join(workDir, file);
+        const rec = /** @type {RunRecord} */ (JSON.parse(readFileSync(recordFile, "utf8")));
+        if (work === "reservations" && nativeReservationMetadata(root, recordFile, rec)) continue;
         if (rec.version === RECORD_VERSION) out.push(rec);
       } catch {
         // A record this reader cannot parse is REPORTED by whoever asked

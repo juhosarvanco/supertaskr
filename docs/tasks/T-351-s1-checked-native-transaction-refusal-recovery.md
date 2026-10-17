@@ -730,6 +730,75 @@ recovery, authority edit, merge, push, CI or migration activation is assigned.
 
 Ordinary independent review at `e5fd46c8f764bed4c860a0e589cb1187c31f7990` found that the shared admission ledger omits supported `reservations` work. Its public attributable and exact legacy fixtures demonstrate that a consumed `each` grant can be admitted again. The required policy dependency is `tools/e2e/scripts/run-record.mjs`, with regression coverage in `tools/e2e/tests/run-record.spec.ts`. These paths join this card's fence under the existing namespace-repair authorization. Acceptance criteria are unchanged. The earlier separate-follow-up classification is withdrawn for delivery. The review is preserved by SHA256 `c9b14831a0c18c2c0f2d381c85ad2975cf0fc8517d4ec24c5eed4e0b67987d47`. A fresh executor admission and pre-implementation verifier re-stamp are required; no acceptance, qualification exception or production authority change is inferred.
 
+### T-351-s1-a23 required policy-ledger namespace repair, 2026-10-17
+
+The clean native writer re-entry is 0c07d7a78e9c28ca7ba4a5177aed1b653df0eb7c;
+the original cumulative contract/range base remains
+f02c9cae12fc429566618747e626ea2091f1e1d1. The actual card and stamped manifest
+agree on all six authorized code/spec paths. All six admitted product/spec
+blobs at the re-entry equal e5fd46c8f764bed4c860a0e589cb1187c31f7990.
+The complete actual brief, current card and executor role were read. The public
+a21 report and fixture reproducers were repair inputs. No new withheld phase-one
+attack/ground directory, private reviewer conversation or production native
+recovery authority was read.
+Native registration and explicit normal binding preceded repository reads.
+Requested GPT-6.1 Sol/xhigh remains distinct from unknown observed serving
+identity, effort and usage.
+
+The external pre-implementation echo retains C1's bounded distinct durable
+refusal and requester/owner evidence; C2's complete exact authority pins,
+independent cessation/jobs/origins/cumulative scope and original collection;
+C3's immutable intent, current transactional named-only disposition and exact
+pending/resulting/replay checks; C4's separately recorded exact legacy/ordered
+owner policy and current grant/pause/seat checks; and C5's fixture-owned public
+controls with unavailable proof explicitly unrun. The actual five criteria,
+amended touches and all old Verdicts remain unchanged.
+
+The required defect class is generic policy discovery skipping the supported
+reservations work namespace. Admission and both recovery routes share that
+ledger. Generic discovery now reads supported reservations-aN record names and
+reuses nativeReservationMetadata to exclude only legitimate complete published
+reservation metadata at its independently derived resource path. Non-record
+metadata entries retain their existing exclusive-create treatment. Existing
+strict recovery inventory, physical malformed/type/symlink refusal, unknown
+callbacks, exact public request/authorization formats and the 1500ms contention
+bound are unchanged. No separate policy implementation is added.
+
+Four new ordinary bodies cover generic metadata-only/record coexistence and
+consumed admission, plus attributable and independently authorized legacy
+public recovery. Each recovery body establishes standing positives and exact
+replay for ordinary-work and reservations before comparing consumed each
+revision1 grants. All four bodies failed their intended public assertions at
+the unchanged product baseline: generic inventory omitted reservations-a1,
+generic admission reused its consumed approval, and both recovery routes
+published a disposition and completed intent for that consumed permission.
+These are real fixture-owned repositories and public lifecycle/CLI operations;
+no production authority, weakened module, guard removal or assertion poison
+was used. After the ordinary repair, the exact four bodies and five unchanged
+native/strict-inventory/exclusive-create compatibility controls passed9/9,
+exit0, zero skips/flakes,33.898 seconds. The baseline RED selected4/failed4,
+exit1,17.364 seconds. Exact dirty snapshot pins and finite child/process closure
+receipts are retained in the separate required-policy-ledger-repair bundle.
+Locked installs, parser then app builds, and regression typecheck passed.
+
+This ordinary functional repair supplies no independent APPROVED verdict or
+proof waiver. Mandatory source-property/DATA/assertion/whole-owning containment
+qualification remains UNRUN and unwaived. Historical rejected, interrupted,
+RED and partial qualification readings remain at their original refs. No
+platform-stopped a19 mutation work, corrected witness, weakened module or other
+model/tool route was retried. No arbitrary power-loss, whole-home adversary,
+OS/read isolation or competing-writer qualification is claimed. No additional
+in-fence follow-through was added.
+
+The substantive code and accurate notes precede static checks and the one
+complete original f02 cumulative range grade. Exact original and fresh re-entry
+owed sets, static/docs/census/graph/model-free results, final refs/counts/exits,
+wrapper bounds and process/port cessation will be reported externally after
+actual execution. Generated capability/INDEX output outside this fence remains
+integration-owned. Only a separate status-only verifying stamp may follow the
+grade under the executor role exemption; no done/verified_by stamp, merge,
+push, CI, production recovery or migration activation is assigned.
+
 ## Verdicts
 
 

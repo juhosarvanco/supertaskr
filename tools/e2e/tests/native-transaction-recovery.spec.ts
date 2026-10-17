@@ -5,13 +5,14 @@ import os from "node:os";
 import { GRANT_STORE_REL_PATH, PAUSE_REL_PATH, composeGrantSnapshot } from "../scripts/dispatch-brief.mjs";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
+import { repoRoot } from "../preflight";
 import {
   NATIVE_CODEX_HARNESS, NATIVE_IDENTITY_PROBE, activeNativeHolds, addNativeHold, atomicJson,
   handleNativeEvent, nativeRecordPath, nativeSha256, nativeTransactionFaultPath, readNativeRecord,
   withNativeTransaction, writeNativeRecord, withNativeDurabilityObserver,
   nativeTransactionRefusalDir,
 } from "../scripts/native-codex.mjs";
-import { bindRun, collectRun, continueRun, observeRun, prepareNativeBenchRun, readReservation, releaseReservation, reservationPath, startRun, stopRun, takeReservation } from "../scripts/run-record.mjs";
+import { admissionAt, allRecords, bindRun, collectRun, continueRun, observeRun, prepareNativeBenchRun, readReservation, releaseReservation, reservationPath, startRun, stopRun, takeReservation } from "../scripts/run-record.mjs";
 import { nativeRecoveryIntentPath, nativeRecoveryTarget, recoverNativeTransaction } from "../scripts/native-transaction-recovery.mjs";
 import { processRow, writeHolder } from "../scripts/checkout-currency.mjs";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
@@ -31,7 +32,7 @@ function git(root: string, args: string[]): string {
 function event(name: string, agent: string, extra: Record<string, any> = {}): any {
   return { hook_event_name: name, session_id: "fixture-session", turn_id: "fixture-turn", agent_id: agent, ...extra };
 }
-function fixture(stem: string, count = 1, collected = false, legacy = false, deferHold = false, reservedWork?: string): any {
+function fixture(stem: string, count = 1, collected = false, legacy = false, deferHold = false, reservedWork?: string, approval?: "each" | "standing"): any {
   const dir = realpathSync(mkdtempSync(path.join(os.tmpdir(), `T-351-s1-${stem}-`)));
   const root = path.join(dir, "authority"); mkdirSync(root);
   git(root, ["init", "-q", "-b", "main"]); git(root, ["config", "user.name", "fixture"]); git(root, ["config", "user.email", "fixture@example.invalid"]);
@@ -40,8 +41,19 @@ function fixture(stem: string, count = 1, collected = false, legacy = false, def
   mkdirSync(path.join(root, "docs/tasks"), { recursive: true });
   const workId = (i: number) => i === 0 && reservedWork ? reservedWork : `T-935-s${i}`;
   for (let i = 0; i < count; i++) writeFileSync(path.join(root, `docs/tasks/${workId(i)}-fixture.md`), `---\nid: ${workId(i)}\nstatus: building\ntouches: [allowed.txt]\n---\ncriteria\n`);
+  if (approval) {
+    mkdirSync(path.join(root, "method/runtime"), { recursive: true });
+    writeFileSync(path.join(root, "method/runtime/process-schema.yaml"), readFileSync(path.join(repoRoot, "method/runtime/process-schema.yaml")));
+  }
   git(root, ["add", "."]); git(root, ["commit", "-qm", "fixture base"]);
   const base = git(root, ["rev-parse", "HEAD"]);
+  if (approval) {
+    const block = ["dispatch:", `  approval: ${approval}`, "  recovery: repairs", "  grant:",
+      '    given_by: "fixture owner"', `    at: "${AT}"`, "    revision: 1", `    order: [${workId(0)}]`,
+      "    cards:", `      ${workId(0)}: ${git(root, ["hash-object", `docs/tasks/${workId(0)}-fixture.md`])}`, "  history: []", ""].join("\n");
+    mkdirSync(path.join(root, ".supertaskr"), { recursive: true });
+    writeFileSync(path.join(root, GRANT_STORE_REL_PATH), composeGrantSnapshot({ blockText: block, root, revision: 1, writtenBy: "fixture coordinator", at: AT }));
+  }
   const records: any[] = [], lanes: string[] = [];
   for (let i = 0; i < count; i++) {
     const id = workId(i), lane = path.join(dir, `lane-${i}`), brief = path.join(dir, `brief-${id}.txt`), agent = `fixture-agent-${i}`;
@@ -2032,3 +2044,38 @@ test("accepted work identifiers that resemble internal metadata retain live fore
     } finally { f.cleanup(); }
   }
 });
+
+
+for (const legacy of [false, true]) {
+  test(`${legacy ? "legacy authorized" : "attributable"} public recovery refuses consumed each approvals in the reserved-work policy ledger`, () => {
+    const observations: any[] = [];
+    for (const approval of ["standing", "each"] as const) for (const work of ["ordinary-work", "reservations"]) {
+      const f = fixture(`policy-ledger-${legacy}-${approval}-${work}`, 1, false, legacy, false, work, approval);
+      try {
+        if (legacy) authorize(f);
+        expect(f.records[0].state).toBe("finished"); expect(f.records[0].admission.revision).toBe(1);
+        if (approval === "each") expect(f.records[0].admission.consumed).toBe(true);
+        const before = beforeRecords(f), receipts = encode(f.records[0].native.receipts);
+        const grantBefore = readFileSync(path.join(f.root, GRANT_STORE_REL_PATH), "utf8");
+        const policy = errorCode(() => admissionAt(f.root, f.records[0].assignment, "re-entry", { resource: f.lanes[0] }));
+        const result = cli(f), after = readNativeRecord(f.root, f.records[0].attempt);
+        observations.push({ approval, work, visible: allRecords(f.root).some(r => r.attempt === after.attempt), policy,
+          exit: result.status, stderr: result.stderr, targetUnchanged: JSON.stringify(beforeRecords(f)) === JSON.stringify(before),
+          holds: activeNativeHolds(after).length, dispositions: after.native.transactionDispositions?.length ?? 0,
+          intent: existsSync(nativeRecoveryIntentPath(f.root, f.request.id)) });
+        expect(encode(after.native.receipts)).toBe(receipts);
+        expect(readFileSync(path.join(f.root, GRANT_STORE_REL_PATH), "utf8")).toBe(grantBefore);
+        if (approval === "standing") {
+          expect(result.status, result.stderr).toBe(0); expect(cli(f).status).toBe(0);
+        }
+      } finally { f.cleanup(); }
+    }
+    console.info("public recovery policy ledger observations", JSON.stringify({ legacy, observations }));
+    expect(observations).toEqual(["standing", "each"].flatMap(approval => ["ordinary-work", "reservations"].map(work => ({
+      approval, work, visible: true, policy: approval === "each" ? "ADMISSION_APPROVAL_CONSUMED" : "NO_REFUSAL",
+      exit: approval === "each" ? 1 : 0, stderr: approval === "each" ? expect.stringContaining("ADMISSION_APPROVAL_CONSUMED") : "",
+      targetUnchanged: approval === "each", holds: approval === "each" ? 1 : 0,
+      dispositions: approval === "each" ? 0 : 1, intent: approval !== "each",
+    }))));
+  });
+}
