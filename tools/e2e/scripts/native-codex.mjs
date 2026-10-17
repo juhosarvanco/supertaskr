@@ -1010,7 +1010,13 @@ function nativeRecordFiles(root) {
     for (const name of readdirSync(dir).sort()) {
       if (!name.endsWith(".json")) continue;
       const file = path.join(dir, name);
-      if (work === "reservations" && nativeReservationMetadata(root, file, JSON.parse(readNativeUtf8(file)))) continue;
+      // Open only supported record names in the shared metadata directory.
+      // Other entries still reach reservation admission's exclusive-create check;
+      // checked recovery separately validates every physical JSON entry.
+      if (work === "reservations") {
+        if (!/^reservations-a\d+\.json$/.test(name)) continue;
+        if (nativeReservationMetadata(root, file, JSON.parse(readNativeUtf8(file)))) continue;
+      }
       files.push(file);
     }
   }

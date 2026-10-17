@@ -651,10 +651,14 @@ metadata is also direct JSON in runs/reservations, at its resource-basename and
 12-hex-digest path; native lock/recovery files and fault/refusal/intent directories
 share that metadata namespace. The repair removes whole-directory exclusion
 from the strict recovery inventory and native record/listing/temporary cleanup
-walks. Only complete version-one published reservation metadata, with agreeing
-work/attempt fields at its independently derived resource path, is excluded
-from the record inventory. Malformed, linked, wrong-type or unsupported physical
-record/metadata authority remains conservative. Pre-existing valid records are
+walks. Strict recovery checks every direct JSON entry, excluding only complete
+version-one published reservation metadata with agreeing work/attempt fields
+at its independently derived resource path. Native discovery opens supported
+reservations-aN.json record names in that shared directory and applies the same
+metadata discriminator there; other metadata filenames remain the existing
+exclusive-create reservation admission's responsibility. Strict recovery keeps
+malformed, linked, wrong-type or unsupported physical authority conservative.
+Pre-existing valid records are
 read; future identifier rejection is not the repair. No public recovery request
 or authorization version, contention bound or four publication callback changes.
 
@@ -688,6 +692,24 @@ The actual normal answer was read and RUN-ACK was written before final grading;
 this suggested follow-up remains for coordinator filing under the established
 ID convention, without a new task path inside this frozen fence. The generic
 omission remains unfixed. No out-of-fence edit or new follow-through was made.
+
+The first actual original-range reading at
+d746e077db93e3799638c6c40d5c8e7f44f57233 is retained RED: parser469
+and app1171 passed; E2E1099 passed and one of1100 failed, exit1,2507.162
+seconds within3600, no timeout. The unchanged run-record exclusive-create
+reservation body received an early metadata-read error instead of its expected
+RESOURCE_RESERVED finding when a non-record reservation filename was a dangling
+link. The compatibility correction limits native discovery to the supported
+record filenames in the shared metadata directory. Strict recovery still
+physically inspects every JSON entry and retains all current refusal checks.
+The unchanged failed body plus the four focused namespace bodies then passed
+5/5 on dirty development source, exit0,21.578 seconds, no skips/flakes/timeouts
+or sampled survivors. The failed full grade's4523 sampled process identities,
+its outer wrapper/group and port15351 were independently checked ceased before
+this further source edit. This is a required compatibility correction within
+the assigned inventory outcome, not a test weakening or new follow-through.
+The changed source and these accurate notes require their own final original
+range reading; the earlier RED is not relabeled or erased.
 
 Independent qualification remains UNRUN and not waived: no source mutant,
 guard-removal experiment, assertion poison, test-only weakened module view,
