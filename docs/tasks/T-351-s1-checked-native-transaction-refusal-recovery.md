@@ -477,6 +477,49 @@ qualification waiver, independent acceptance or production recovery is claimed.
 The card already reads verifying, so no status-only commit is needed after the
 final grade. No merge, push, CI or real authority edit is assigned.
 
+
+#### A16 committed-snapshot qualification
+
+The permitted isolated clone atb1034d3641b8530c97ccd2f7a03c1f6823854a41
+matched457 tracked source/package/configuration inputs,72 fresh parser build
+files and all four product/spec SHA256 pins. Dependencies were independently
+copied only after actual installed lock/package-version validation; no real
+native authority was copied. Frozen focused baseline and final restored runs
+both passed3/3, exit0, with no skips, flakes or timeout.
+
+The complete-selected-set property control reduced only the common helper to
+current-index checking, leaving the atomic visibility callback intact. All
+three selected bodies failed at their actual authority/refusal assertions,
+exit1. The final-success property control removed only the last result check;
+its one selected body failed with all14 final drift cases escaping, exit1.
+The positive controls stayed viable. These are complete selected kill sets,
+not whole-owning containment. Each of the four new matcher sites then received
+one separate one-sided assertion poison and failed its intended body,
+4-for-4 RED, zero skipped. One initial selector preparation counted both later
+bodies and stopped before any fixture write or test job; its actual setup
+failure is retained and supplies no qualification.
+
+All six executed mutations restored exact SHA256, original mode and both
+nanosecond clocks, with explicit HEAD-to-path diff0 as companions. Recovery
+restored to13b2a733254b4928324c69d434c51efff5b5f7667732c96e2bfac5c233f7e37b;
+recovery spec restored to5b233d5328f0eb7dc0276d9e182974c35a27c9ff1ced4b882ad9c9032472c84f.
+All four source/fixture pins matched after the restored positive run; its
+fixture tracked diff was empty and port15351 had no OS listener. Every recorded
+owned process had ceased. Per-run arguments, cwd/ref/pins, starts/ends/elapsed,
+ceilings/exits, actual failure text, restore proofs and full selected outputs
+are in the separate completed-target-repair evidence bundle.
+
+The source-class sweep enumerated all four recovery atomic writers with their
+publication callbacks. Its known-defective re-entry control reported both
+missing complete-set and final-result guards; the repaired snapshot reported
+neither missing. Independent AST inventory found exactly two new bodies and
+four matcher-call sites, matching the executed assertion poisons. Functional
+controls complement this structural sweep. No further in-fence follow-through
+or broader historical campaign is claimed. Final static/gate derivations and
+the complete original f02 range grade follow this substantive notes commit
+and are reported externally at the actual final ref. The already-verifying
+card needs no subsequent status-only commit.
+
 ## Verdicts
 
 
