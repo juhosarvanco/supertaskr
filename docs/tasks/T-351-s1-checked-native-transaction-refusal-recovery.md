@@ -520,6 +520,51 @@ the complete original f02 range grade follow this substantive notes commit
 and are reported externally at the actual final ref. The already-verifying
 card needs no subsequent status-only commit.
 
+
+### T-351-s1-a18 ordered namespace repair, 2026-10-17
+
+The completed a17 rejection and committed regression at
+b683413a00cbc1deb7db75aa9e95a9b39980e897 remain unchanged. This is the
+clean repair re-entry; f02c9cae12fc429566618747e626ea2091f1e1d1 remains
+the original cumulative contract and grading base. All five criteria and
+four owning paths remain literal. The public a17 report and corrected witness
+were repair inputs; no private attack, ground or verifier conversation was
+opened. Requested GPT-6.1 Sol/xhigh is distinct from unknown observed serving
+identity, effort and usage. Native binding preceded every repository read.
+
+The criteria echo was written externally before implementation inspection:
+C1 retains bounded distinct fault/requester evidence and conservative unknowns;
+C2 retains complete exact pins, genuine cessation/jobs, origins/cumulative scope
+and the original collection; C3 retains immutable intent, named-only atomic
+resolution and exact coupled/selected authority for publication and replay;
+C4 retains the separately recorded exact legacy/sequence owner policy and
+current authority; C5 requires public fixture controls and honest actual proof.
+The normal owned-fixture answer was read and genuinely acknowledged before use.
+
+The defect class is a final authority checker performing namespace persistence
+and invoking another durability observer after checking coupled predecessor
+evidence. Predecessor namespace persistence is now a separate operation before
+fresh fault/owner snapshots and the observation-free final sequence and complete
+selected-target checks. The same final path covers all four atomic writers and
+successful fresh/no-write replay completion. Ordinary serialization and actual
+persistence calls remain; no timeout, callback, authority policy or hold is
+broadened. The final checks' transitive record/workspace/policy/liveness readers
+perform no native persistence or durability-observer callbacks; transaction
+release checks ownership and removes only its own lock without a new observer.
+
+Two new paired public bodies exercise each consumer boundary, both predecessor
+record/intent namespaces, before/after parent and directory flushes, and coupled
+fault/owner/policy/predecessor/selected-target evidence changes. Actual committed
+snapshot controls, body/assertion inventory, property/data/assertion failures,
+literal restores and final counts belong to the external a18 handoff after
+execution. No new result, complete historical qualification, independent
+acceptance, arbitrary power-loss or competing-writer guarantee is asserted here.
+The earlier verdicts, historical RED and incomplete campaigns stay at their
+actual refs. No production recovery, grant change, merge, push or CI is assigned.
+The already-verifying card needs no later status-only change. The final original
+range is graded only after all substantive code and notes are committed.
+
+
 ## Verdicts
 
 

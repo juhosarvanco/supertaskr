@@ -270,8 +270,20 @@ function checkSequence(root, request, fault, auth) {
     const after = json(resultingRecord(intent, 0));
     const checked = checkTarget(root, previous, { ...previous.targets[0], record: { content: after, digest: digest(after) } }, fault, true);
     if (!same(checked, intent.checks[0])) refuse("SEQUENCE_PRIOR", "earlier checked physical or policy evidence changed");
+  }
+}
+/** Finish predecessor durability observations before taking final authority
+ * snapshots. checkSequence and the final publication checks themselves perform
+ * no persistence operations or durability-observer callbacks.
+ * @param {string} root @param {any} request @param {any} fault @param {any} auth
+ */
+function syncSequenceNamespaces(root, request, fault, auth) {
+  checkSequence(root, request, fault, auth);
+  if (request.sequence === undefined) return;
+  for (let i = 0; i < request.sequence.index; i++) {
+    const step = auth.record.sequence.steps[i];
     syncNativeFileNamespace(nativeRecordPath(root, step.target.attempt));
-    syncNativeFileNamespace(file);
+    syncNativeFileNamespace(nativeRecoveryIntentPath(root, step.requestId));
   }
 }
 /** Current policy checks, called again inside the transaction before each write.
@@ -461,6 +473,10 @@ export function recoverNativeTransaction(root, request, opts = {}) {
     // Each atomic writer calls this after its last durability observer. Earlier
     // validation cannot authorize a later rename, including crash-replay progress.
     const publicationFault = () => {
+      const namespaceFault = loadFault(root, request);
+      syncSequenceNamespaces(root, request, namespaceFault, authorization(root, request, namespaceFault));
+      // Namespace persistence can invoke observers. Only fresh, observation-free
+      // checks after all of it may authorize visibility or successful replay.
       noPendingFaults();
       const currentFault = loadFault(root, request);
       const currentAuth = authorization(root, request, currentFault);

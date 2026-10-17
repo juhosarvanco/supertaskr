@@ -1813,3 +1813,122 @@ test("ordered prior-step namespace flush cannot authorize a later target after p
     secondUnchanged: true, priorRetained: true, dispositions: 0, completed: [] });
   expect(observations[1].code).not.toBe("NO_REFUSAL");
 });
+
+
+// Observe real predecessor namespace work at each consumer boundary. Every
+// arrangement owns its repositories and independently completes the first step.
+function orderedNamespaceProbe(phase: string, namespace: "record" | "intent", stage: string,
+  change: null | ((f: any, request: any, priorIntent: string) => void), grant = false): any {
+  const f = dependentFixture();
+  try {
+    if (grant) installGrant(f);
+    authorizeSequence(f, `settled-${phase}`);
+    const firstRequest = sequenceRequest(f, 0), firstResult = cli(f, firstRequest);
+    if (firstResult.status !== 0) throw new Error(`first-step setup: ${firstResult.stderr}`);
+    reconcileSequence(f);
+    const request = sequenceRequest(f, 1);
+    const first = nativeRecordPath(f.root, firstRequest.targets[0].attempt);
+    const second = nativeRecordPath(f.root, request.targets[0].attempt);
+    const priorIntent = nativeRecoveryIntentPath(f.root, firstRequest.id);
+    const intent = nativeRecoveryIntentPath(f.root, request.id);
+    const history = [first, second].map(file => {
+      const rec = JSON.parse(readFileSync(file, "utf8"));
+      return { collection: rec.native.collection, receipts: rec.native.receipts, outcome: rec.outcome };
+    });
+    if (phase === "replay-progress") {
+      const stopped = errorCode(() => recoverNativeTransaction(f.root, request, { onBoundary(name) {
+        if (name === "target") throw new Error("owned interruption before progress");
+      } }));
+      if (stopped !== "Error: owned interruption before progress") throw new Error(`pending replay setup: ${stopped}`);
+    } else if (phase === "replay-return") recoverNativeTransaction(f.root, request);
+    let armed = false, reached = false, intentRenames = 0, arranged: string[] = [], arrangedIntent: string | null = null;
+    const file = namespace === "record" ? first : priorIntent;
+    const observed = stage.includes("parent-") ? path.dirname(file) : file;
+    const code = errorCode(() => withNativeDurabilityObserver(e => {
+      if (e.file === intent && e.stage === "before-rename") {
+        intentRenames++;
+        if ((phase === "intent" || phase === "replay-progress") && intentRenames === 1 || phase === "progress" && intentRenames === 2) armed = true;
+      }
+      if (phase === "target" && e.file === second && e.stage === "before-rename" ||
+          phase === "replay-return" && e.file === second && e.stage === "directory-fsync") armed = true;
+      if (!armed || reached || e.file !== observed || e.stage !== stage) return;
+      reached = true; change?.(f, request, priorIntent);
+      arranged = [first, second].map(file => readFileSync(file, "utf8"));
+      arrangedIntent = existsSync(intent) ? readFileSync(intent, "utf8") : null;
+    }, () => recoverNativeTransaction(f.root, request, { onBoundary(name) {
+      if (phase === "return" && name === "progress") armed = true;
+    } })));
+    const records = [first, second].map(file => readFileSync(file, "utf8"));
+    const currentIntent = existsSync(intent) ? readFileSync(intent, "utf8") : null;
+    return { reached, code, refused: code !== "NO_REFUSAL", recordsRetained: JSON.stringify(records) === JSON.stringify(arranged),
+      intentRetained: currentIntent === arrangedIntent, completed: currentIntent === null ? null : JSON.parse(currentIntent).completed,
+      dispositions: JSON.parse(records[1]!).native.transactionDispositions?.length ?? 0,
+      historyPreserved: JSON.stringify(records.map(raw => { const rec = JSON.parse(raw);
+        return { collection: rec.native.collection, receipts: rec.native.receipts, outcome: rec.outcome }; })) === JSON.stringify(history) };
+  } finally { f.cleanup(); }
+}
+
+test("ordered namespace observations settle before intent target progress replay and successful return authority", () => {
+  test.setTimeout(600_000);
+  const phases = ["intent", "target", "progress", "replay-progress", "return", "replay-return"];
+  const stages = ["before-parent-fsync", "parent-fsync", "before-directory-fsync", "directory-fsync"];
+  const positives: any[] = [], observations: any[] = [];
+  for (const phase of phases) {
+    positives.push({ phase, ...orderedNamespaceProbe(phase, "intent", "directory-fsync", null) });
+    for (const namespace of ["record", "intent"] as const) for (const stage of stages) {
+      const value = orderedNamespaceProbe(phase, namespace, stage, f => {
+        const file = nativeRecordPath(f.root, f.request.targets[0].attempt);
+        writeFileSync(file, readFileSync(file, "utf8") + "\n");
+      });
+      observations.push({ phase, namespace, stage, ...value });
+    }
+  }
+  console.info("settled ordered boundary observations", JSON.stringify({ positives, observations }));
+  expect(positives).toEqual(phases.map(phase => ({ phase, reached: true, code: "NO_REFUSAL", refused: false,
+    recordsRetained: !["intent", "target"].includes(phase), intentRetained: ["return", "replay-return"].includes(phase),
+    completed: [0], dispositions: 1, historyPreserved: true })));
+  expect(observations).toEqual(phases.flatMap(phase => ["record", "intent"].flatMap(namespace => stages.map(stage => ({
+    phase, namespace, stage, reached: true, code: "NATIVE_RECOVERY_RECORD", refused: true, recordsRetained: true, intentRetained: true,
+    completed: phase === "intent" ? null : ["return", "replay-return"].includes(phase) ? [0] : [],
+    dispositions: ["intent", "target"].includes(phase) ? 0 : 1, historyPreserved: true,
+  })))));
+});
+
+test("ordered namespace observers cannot carry stale fault owner policy predecessor or selected target evidence into publication", () => {
+  test.setTimeout(300_000);
+  const recordChange = (f: any, attempt: string, key: "binding" | "jobs") => {
+    const file = nativeRecordPath(f.root, attempt), rec = JSON.parse(readFileSync(file, "utf8"));
+    if (key === "binding") rec.native.binding.boundAt = "2026-10-06T00:00:09.000Z";
+    else rec.ownedJobs = [{ kind: "unknown", id: "unprobeable fixture owner" }];
+    writeFileSync(file, encode(rec));
+  };
+  const changes: [string, (f: any, request: any, prior: string) => void][] = [
+    ["prior-intent", (_f, _r, prior) => { const value = JSON.parse(readFileSync(prior, "utf8")); value.completed = []; writeFileSync(prior, encode(value)); }],
+    ["prior-binding", f => recordChange(f, f.request.targets[0].attempt, "binding")],
+    ["prior-jobs", f => recordChange(f, f.request.targets[0].attempt, "jobs")],
+    ["prior-reservation", f => writeFileSync(reservationPath(f.root, f.request.targets[0].resource), "{}\n")],
+    ["prior-origins", f => writeFileSync(f.records[0].assignment.brief, "changed prior brief\n")],
+    ["prior-candidate", f => writeFileSync(path.join(f.request.targets[0].resource, "allowed.txt"), "changed prior candidate\n")],
+    ["fault", f => writeFileSync(f.faultReference, readFileSync(f.faultReference, "utf8") + "\n")],
+    ["authorization", f => writeFileSync(f.authorizationFile, readFileSync(f.authorizationFile, "utf8") + "\n")],
+    ["owner-ruling", f => writeFileSync(f.evidencePath, readFileSync(f.evidencePath, "utf8") + "\n")],
+    ["selected-record", (f, r) => { const file = nativeRecordPath(f.root, r.targets[0].attempt); writeFileSync(file, readFileSync(file, "utf8") + "\n"); }],
+    ["selected-binding", (f, r) => recordChange(f, r.targets[0].attempt, "binding")],
+    ["selected-jobs", (f, r) => recordChange(f, r.targets[0].attempt, "jobs")],
+    ["selected-reservation", (f, r) => writeFileSync(reservationPath(f.root, r.targets[0].resource), "{}\n")],
+    ["selected-origins", (f, r) => writeFileSync(JSON.parse(r.targets[0].record.content).assignment.brief, "changed selected brief\n")],
+    ["selected-candidate", (_f, r) => writeFileSync(path.join(r.targets[0].resource, "allowed.txt"), "changed selected candidate\n")],
+    ["current-intent", (f, r) => { const file = nativeRecoveryIntentPath(f.root, r.id); writeFileSync(file, readFileSync(file, "utf8") + "\n"); }],
+    ["pending-fault", f => { const dir = nativeTransactionRefusalDir(f.root); mkdirSync(dir, { recursive: true }); writeFileSync(path.join(dir, "pending.json"), f.fault.rawContent); }],
+    ["grant", f => installGrant(f, 2)],
+    ["pause", f => writeFileSync(path.join(f.root, PAUSE_REL_PATH), encode({ version: 1, scope: "all", by: "fixture owner", at: AT }))],
+    ["seat", f => { const row = processRow(process.pid)!; writeHolder(f.root, { pid: process.pid, startedAt: row.startedAt, program: row.command }); }],
+  ];
+  const positive = orderedNamespaceProbe("target", "intent", "directory-fsync", null, true);
+  const observations = changes.map(([name, change]) => ({ name,
+    ...orderedNamespaceProbe("target", "intent", "directory-fsync", change, name === "grant") }));
+  console.info("settled ordered dependency observations", JSON.stringify({ positive, observations }));
+  expect(positive).toMatchObject({ reached: true, code: "NO_REFUSAL", completed: [0], dispositions: 1, historyPreserved: true });
+  expect(observations).toEqual(changes.map(([name]) => ({ name, reached: true, code: expect.not.stringMatching(/^NO_REFUSAL$/),
+    refused: true, recordsRetained: true, intentRetained: true, completed: [], dispositions: 0, historyPreserved: true })));
+});
