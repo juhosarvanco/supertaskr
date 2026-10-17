@@ -684,7 +684,10 @@ bound reservations-a1. The strict recovery inventory does not depend on it.
 RUN-ASK adjacent-generic-inventory-T-351-s1-a20 parks a separate generic inventory
 and admission/quota-consumer task, waking before a generic sweep is treated as
 complete writer authority or the next run-record lifecycle/inventory repair.
-No out-of-fence product edit or new follow-through was made.
+The actual normal answer was read and RUN-ACK was written before final grading;
+this suggested follow-up remains for coordinator filing under the established
+ID convention, without a new task path inside this frozen fence. The generic
+omission remains unfixed. No out-of-fence edit or new follow-through was made.
 
 Independent qualification remains UNRUN and not waived: no source mutant,
 guard-removal experiment, assertion poison, test-only weakened module view,
