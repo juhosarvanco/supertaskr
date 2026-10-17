@@ -1774,3 +1774,42 @@ test("final fresh and no-write replay success recheck the complete resulting tar
   expect(observations).toEqual([false, true].flatMap(replay => changes.map(({ index, name }) => ({ replay, index, name, reached: true,
     refused: true, completed: [0, 1, 2], recordsRetained: true, intentRetained: true }))));
 });
+
+
+test("ordered prior-step namespace flush cannot authorize a later target after predecessor authority changes", () => {
+  test.setTimeout(120_000);
+  const observations: any[] = [];
+  for (const changed of [false, true]) {
+    const f = dependentFixture();
+    try {
+      authorizeSequence(f, `prior-namespace-${changed}`);
+      const firstRequest = sequenceRequest(f, 0);
+      const firstResult = cli(f, firstRequest);
+      expect(firstResult.status, firstResult.stderr).toBe(0);
+      reconcileSequence(f);
+      const request = sequenceRequest(f, 1);
+      const first = nativeRecordPath(f.root, firstRequest.targets[0].attempt);
+      const second = nativeRecordPath(f.root, request.targets[0].attempt);
+      const intent = nativeRecoveryIntentPath(f.root, request.id);
+      let armed = false, reached = false, beforeSecond = "", arrangedFirst = "";
+      const code = errorCode(() => withNativeDurabilityObserver(e => {
+        if (e.file === second && e.stage === "before-rename") armed = true;
+        if (!armed || reached || e.file !== first || e.stage !== "directory-fsync") return;
+        reached = true;
+        beforeSecond = readFileSync(second, "utf8");
+        if (changed) writeFileSync(first, readFileSync(first, "utf8") + "\n");
+        arrangedFirst = readFileSync(first, "utf8");
+      }, () => recoverNativeTransaction(f.root, request)));
+      const current = readNativeRecord(f.root, request.targets[0].attempt);
+      observations.push({ changed, reached, code, secondUnchanged: readFileSync(second, "utf8") === beforeSecond,
+        priorRetained: readFileSync(first, "utf8") === arrangedFirst,
+        dispositions: current.native.transactionDispositions?.length ?? 0,
+        completed: JSON.parse(readFileSync(intent, "utf8")).completed });
+    } finally { f.cleanup(); }
+  }
+  console.info("ordered prior namespace publication observations", JSON.stringify(observations));
+  expect(observations[0]).toMatchObject({ changed: false, reached: true, code: "NO_REFUSAL", priorRetained: true, dispositions: 1, completed: [0] });
+  expect(observations[1], "changed predecessor must refuse before a later target disposition becomes visible").toMatchObject({ changed: true, reached: true,
+    secondUnchanged: true, priorRetained: true, dispositions: 0, completed: [] });
+  expect(observations[1].code).not.toBe("NO_REFUSAL");
+});
