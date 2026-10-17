@@ -779,7 +779,12 @@ native/strict-inventory/exclusive-create compatibility controls passed9/9,
 exit0, zero skips/flakes,33.898 seconds. The baseline RED selected4/failed4,
 exit1,17.364 seconds. Exact dirty snapshot pins and finite child/process closure
 receipts are retained in the separate required-policy-ledger-repair bundle.
-Locked installs, parser then app builds, and regression typecheck passed.
+Locked installs, parser then app builds, and regression typecheck passed. The first
+committed static census reported an unlinked fixture root introduced by the
+schema-copy repository-root import. Resolving that source schema by the test's
+module URL removes the unnecessary root alias; the failed census and its exact
+candidate remain retained. The affected checks and recovery bodies are rerun
+before the final original-range grade.
 
 This ordinary functional repair supplies no independent APPROVED verdict or
 proof waiver. Mandatory source-property/DATA/assertion/whole-owning containment

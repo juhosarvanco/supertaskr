@@ -5,7 +5,6 @@ import os from "node:os";
 import { GRANT_STORE_REL_PATH, PAUSE_REL_PATH, composeGrantSnapshot } from "../scripts/dispatch-brief.mjs";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
-import { repoRoot } from "../preflight";
 import {
   NATIVE_CODEX_HARNESS, NATIVE_IDENTITY_PROBE, activeNativeHolds, addNativeHold, atomicJson,
   handleNativeEvent, nativeRecordPath, nativeSha256, nativeTransactionFaultPath, readNativeRecord,
@@ -43,7 +42,7 @@ function fixture(stem: string, count = 1, collected = false, legacy = false, def
   for (let i = 0; i < count; i++) writeFileSync(path.join(root, `docs/tasks/${workId(i)}-fixture.md`), `---\nid: ${workId(i)}\nstatus: building\ntouches: [allowed.txt]\n---\ncriteria\n`);
   if (approval) {
     mkdirSync(path.join(root, "method/runtime"), { recursive: true });
-    writeFileSync(path.join(root, "method/runtime/process-schema.yaml"), readFileSync(path.join(repoRoot, "method/runtime/process-schema.yaml")));
+    writeFileSync(path.join(root, "method/runtime/process-schema.yaml"), readFileSync(new URL("../../../method/runtime/process-schema.yaml", import.meta.url)));
   }
   git(root, ["add", "."]); git(root, ["commit", "-qm", "fixture base"]);
   const base = git(root, ["rev-parse", "HEAD"]);
