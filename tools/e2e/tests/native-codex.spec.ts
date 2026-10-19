@@ -21,6 +21,9 @@ import {
   NATIVE_TRANSACTION_WAIT_MS,
   NativeCodexFinding,
   activeNativeHolds,
+  allNativeRecords,
+  atomicJson,
+  nativeTransactionRefusalDir,
   collectNativeWorkspace,
   deriveNativeBenchAuthority,
   explicitResourceProblem,
@@ -36,6 +39,7 @@ import {
 } from "../scripts/native-codex.mjs";
 import {
   RunRecordFinding,
+  allRecords,
   bindRun,
   collectRun,
   continueRun,
@@ -792,6 +796,7 @@ test("transaction contention is bounded and durable, and exception cleanup relea
   // clearing an unknown transaction refusal at collection, or leaking a lock
   // when a transaction body throws.
   const b = bench("transaction-lifecycle");
+  let releaseHolder: (() => Promise<void>) | undefined;
   try {
     const bound = startNative(b);
     const ready = path.join(b.dir, "contention-ready");
@@ -808,6 +813,7 @@ test("transaction contention is bounded and durable, and exception cleanup relea
       5_000,
     );
     const holderDone = completedChild(holder);
+    releaseHolder = async () => { writeFileSync(release, "release\n"); await holderDone; };
     await waitForPath(ready);
 
     const contenderOnePath = path.join(b.dir, "contender-one");
@@ -853,6 +859,16 @@ test("transaction contention is bounded and durable, and exception cleanup relea
     const refusalNamesBeforeRelease = readdirSync(refusalDir).filter((name) => name.endsWith(".json"));
     const recordFile = path.join(b.root, ".supertaskr", "runs", WORK, `${bound.attempt}.json`);
     const readableRecord = readFileSync(recordFile, "utf8");
+    const rawRefusals = refusalNamesBeforeRelease.map((name) => readFileSync(path.join(refusalDir, name), "utf8"));
+    expect(new Set(rawRefusals.map((raw) => JSON.parse(raw).id)).size).toBe(2);
+    for (const raw of rawRefusals) {
+      const fault = JSON.parse(raw);
+      expect(fault.requester.attribution).toBe("recorded-binding");
+      expect(fault.requester.attempt).toBe(bound.attempt);
+      expect(fault.requester.binding).toEqual(bound.native!.binding);
+      expect(fault.owner.pid).toBe(holder.pid);
+      expect(fault.requester.event.toolUseId).toBe("refused-by-lock");
+    }
     writeFileSync(recordFile, "{ interrupted absorption\n");
     writeFileSync(release, "release\n");
     const holderResult = await holderDone;
@@ -872,6 +888,13 @@ test("transaction contention is bounded and durable, and exception cleanup relea
     ).toBe("held-before-tool");
     expect(readdirSync(refusalDir).filter((name) => name.endsWith(".json"))).toEqual([]);
     expect(activeNativeHolds(readNativeRecord(b.root, bound.attempt)).filter((hold: any) => hold.code === "native-transaction-refusal")).toHaveLength(2);
+    for (const raw of rawRefusals) {
+      const fault = JSON.parse(raw);
+      const ledgerFile = path.join(b.root, ".supertaskr", "runs", "reservations", "native-transaction-faults", `${fault.id}.json`);
+      const ledger = JSON.parse(readFileSync(ledgerFile, "utf8"));
+      expect(ledger.rawContent).toBe(raw);
+      expect(ledger.rawDigest).toBe(nativeSha256(raw));
+    }
 
     const terminal = observeRun(b.root, {
       attempt: bound.attempt,
@@ -905,7 +928,7 @@ test("transaction contention is bounded and durable, and exception cleanup relea
     );
 
   } finally {
-    b.cleanup();
+    try { await releaseHolder?.(); } finally { b.cleanup(); }
   }
 });
 
@@ -1902,4 +1925,34 @@ test("native record and public launch disclose every callback registered by the 
       expect(record.reservation.file!==null).toBe(profile==="writer-resource");
     }finally{b.cleanup();}
   }
+});
+
+
+test("native reserved-work records remain bindable listed and covered by durable unknown refusal absorption beside reservation metadata", () => {
+  const b = bench("reserved-work-inventory");
+  try {
+    const file = path.join(b.lane, ".supertaskr/lane-fence.json");
+    const fence = JSON.parse(readFileSync(file, "utf8")); fence.taskId = "reservations";
+    writeFileSync(file, JSON.stringify(fence, null, 2) + "\n");
+    const rec = startNative(b, { assigned: { ...assignment(b), id: "reservations" } });
+    expect(rec.attempt).toBe("reservations-a1");
+    expect(rec.native!.binding!.agentId).toBe("agent-1");
+    expect(allNativeRecords(b.root).map(r => r.attempt)).toEqual([rec.attempt]);
+    console.info("adjacent generic inventory observation", JSON.stringify({ attempt: rec.attempt,
+      nativeVisible: allNativeRecords(b.root).some(r => r.attempt === rec.attempt),
+      genericVisible: allRecords(b.root).some(r => r.attempt === rec.attempt) }));
+    const metadata = readReservation(b.root, b.lane)!;
+    expect(metadata.attempt).toBe(rec.attempt);
+    const fault = { version: 1, id: nativeSha256("reserved-work-unknown-refusal"), code: "native-transaction-refusal",
+      operation: "fixture-reserved-work", recordedAt: AT, outcome: "unknown", owner: null, reason: "fixture unknown owner" };
+    const rawFile = path.join(nativeTransactionRefusalDir(b.root), "fixture-reserved-work.json");
+    atomicJson(rawFile, fault);
+    withNativeTransaction(b.root, { operation: "fixture-reserved-work-absorption" }, () => undefined);
+    const current = readNativeRecord(b.root, rec.attempt);
+    expect(activeNativeHolds(current).map((h: any) => h.refusal?.id)).toEqual([fault.id]);
+    expect(current.native!.binding).toEqual(rec.native!.binding);
+    expect(readReservation(b.root, b.lane)).toEqual(metadata);
+    expect(existsSync(rawFile)).toBe(false);
+    expect(allNativeRecords(b.root).map(r => r.attempt)).toEqual([rec.attempt]);
+  } finally { b.cleanup(); }
 });

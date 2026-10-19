@@ -46,6 +46,7 @@ import {
   sendAnswer,
   startRun,
   stopRun,
+  takeReservation,
   waitRun,
 } from "../scripts/run-record.mjs";
 import type { Assignment, RunIo, RunRecord } from "../scripts/run-record.mjs";
@@ -2834,4 +2835,41 @@ test("T-315-s1 — explicit native bind identity and the exact continuation ref 
       ref: "0123456789abcdef0123456789abcdef01234567",
     }),
   ).toEqual(expect.objectContaining({ ref: "0123456789abcdef0123456789abcdef01234567" }));
+});
+
+
+test("generic inventory includes reserved-work records beside genuine reservation metadata", () => {
+  const b = grantBench("reserved-work-inventory", ["ordinary-work", "reservations"]);
+  try {
+    const metadataResource = path.join(b.scratch, "metadata-resource"); mkdirSync(metadataResource);
+    const metadata = takeReservation(b.root, { resource: metadataResource, attempt: "metadata-a1", role: "executor", at: "2026-09-14T00:00:01.000Z" });
+    const metadataBytes = readFileSync(metadata.file, "utf8");
+    expect(allRecords(b.root), "metadata alone is not a run record").toEqual([]);
+    const ordinary = startRun(b.root, { assignment: grantAssignment(b, "ordinary-work", { resource: "none" }), io: io() }).record;
+    const reserved = startRun(b.root, { assignment: grantAssignment(b, "reservations"), io: io() }).record;
+    const before = [ordinary, reserved].map(r => readFileSync(recordPath(b.root, r.attempt), "utf8"));
+    expect(allRecords(b.root).map(r => r.attempt).sort()).toEqual([ordinary.attempt, reserved.attempt].sort());
+    expect(allRecords(b.root).find(r => r.attempt === reserved.attempt)).toEqual(readRecord(b.root, reserved.attempt));
+    expect(readFileSync(metadata.file, "utf8")).toBe(metadataBytes);
+    expect([ordinary, reserved].map(r => readFileSync(recordPath(b.root, r.attempt), "utf8"))).toEqual(before);
+  } finally { b.cleanup(); }
+});
+
+test("generic admission retains consumed each approvals for supported reserved-work records and standing positives", () => {
+  for (const approval of ["standing", "each"] as const) for (const work of ["ordinary-work", "reservations"]) {
+    const b = grantBench(`reserved-work-policy-${approval}-${work}`, [work]);
+    try {
+      b.grant(grantBlock({ approval, recovery: "none", order: [work], blobs: { [work]: b.blob(work) } }));
+      const first = startRun(b.root, { assignment: grantAssignment(b, work), at: "2026-09-14T00:00:01.000Z", io: io() }).record;
+      expect(first.admission?.revision).toBe(1);
+      if (approval === "each") expect(first.admission?.consumed).toBe(true);
+      bindRun(b.root, { attempt: first.attempt, harnessId: "fixture-policy", at: "2026-09-14T00:00:02.000Z", io: io() });
+      observeRun(b.root, { attempt: first.attempt, evidence: `${DONE_TOKEN} ok`, at: "2026-09-14T00:00:03.000Z", io: io() });
+      collectRun(b.root, { attempt: first.attempt, at: "2026-09-14T00:00:04.000Z", io: io() });
+      const before = readFileSync(recordPath(b.root, first.attempt), "utf8");
+      const refusal = refusalOfStart(b.root, grantAssignment(b, work), "2026-09-14T00:00:05.000Z");
+      expect(refusal?.code ?? null, `${approval}/${work}`).toBe(approval === "each" ? "ADMISSION_APPROVAL_CONSUMED" : null);
+      expect(readFileSync(recordPath(b.root, first.attempt), "utf8")).toBe(before);
+    } finally { b.cleanup(); }
+  }
 });

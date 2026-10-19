@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1322 behaviours** — 1320 extracted sentences + 2 named-not-extracted (listed at the end) — across 46 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1368 at least behaviours** — 1366 extracted sentences + 2 at least named-not-extracted (listed at the end) — across 47 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -1076,6 +1076,53 @@ Census: **1322 behaviours** — 1320 extracted sentences + 2 named-not-extracted
 - the shared native arm visibly launches packet-only and prepared detached profiles and discloses the existing writer-resource bootstrap
 - published writer admissions reconstruct detached preparation only from matching frozen fence bytes and the original-base card
 - native record and public launch disclose every callback registered by the unchanged portable hook for both profiles
+- native reserved-work records remain bindable listed and covered by durable unknown refusal absorption beside reservation metadata
+
+## native-transaction-recovery
+
+- plain owned atomic publication detects each actual persistence operation without native fixture bootstrap writes
+- forwarded public raw timeout publication proves its own complete write file fsync close and directory flush before unknown refusal
+- actual atomic persistence boundaries retain immutable intent and replay target and progress writes exactly once after process crashes
+- raw refusal archive and every hold write survive process interruption with distinct replay and durable sidecar retirement
+- raw refusal write and namespace interruption preserves unknown partial evidence without fabricated callbacks
+- forwarded filesystem calls prove exclusive complete atomic publication and real directory namespace and retirement flush order
+- every pending target independently rechecks records reservations bindings origins candidate and policy after the first committed effect
+- exact target bytes on interrupted replay still require current physical cessation reservation origins policy and pending fault checks
+- public data controls distinguish malformed jobs ports collection modes and cumulative historical scope without target effects
+- separate process recovery races serialize identical requests and refuse conflicting immutable identifiers
+- independently bound requester contexts stay scoped while absent stale malformed mismatched and changed generations remain unknown
+- complete owner-pinned ordered recovery supports genuine dependent reconciliation without singleton grants
+- ordered recovery refuses changed complete policy prior outcomes and current checks before effects and after intent
+- ordered recovery actual intent target and progress persistence crashes require exact prior completion and replay once
+- public exact recovery preserves unknown receipts and recorded terminal outcome, and repeated requests return the same disposition
+- separate owner authorization resolves only exact legacy targets while preserving original collection and normal detached preparation
+- exact recovery refuses malformed or mismatched fault, target, record, reservation, binding and owner provenance without target writes
+- physical and lifecycle negative controls refuse live or unknown jobs and writers, dirty complete scope, foreign ownership, missing collection and other holds
+- inside-transaction boundaries reject intervening record, reservation, binding, candidate, fault, grant, pause or authorization changes before any target effect
+- interrupted multi-target public recovery resumes every durable boundary exactly once and remains explicitly pending after changed authority
+- real separate-process contention records distinct scoped requesters and raw faults before absorption, while unverifiable context stays conservative
+- public recovery rechecks cessation of same-resource foreign terminal writers and their owned jobs
+- public recovery refuses a genuinely bound foreign process writer even when its physical reservation is independently absent
+- public recovery recognizes genuine stopped unbound foreign cessation while refusing missing proof or unknown jobs
+- exact record byte pins refuse malformed UTF-8 without normalizing authority
+- independently pinned recovery evidence rejects malformed UTF-8 while valid Unicode remains supported
+- public raw evidence and requester records reject malformed UTF-8 without normalization or fabricated effects
+- public recovery refuses unreadable foreign writer authority instead of dropping it from ownership checks
+- conservative physical inventory rejects malformed ownership metadata and namespace while valid read-only authority remains accepted
+- physical authority entries refuse dangling reservations emergency holds and raw directories before recovery effects and at the target boundary
+- physical authority types and immutable intent entries remain checked through pinning publication and replay
+- fresh target progress publication independently rechecks resulting authority candidate and policy at the target boundary
+- recovery publications recheck a newly recorded pause at the actual rename boundary
+- replay progress revalidates exact current authority at rename and retains its already published result
+- later target publication refuses changed completed-target authority before any further effect
+- complete selected target intent remains exact at target fresh progress and replay progress publication
+- final fresh and no-write replay success recheck the complete resulting target set after its last observer
+- ordered prior-step namespace flush cannot authorize a later target after predecessor authority changes
+- ordered namespace observations settle before intent target progress replay and successful return authority
+- ordered namespace observers cannot carry stale fault owner policy predecessor or selected target evidence into publication
+- public recovery inventories a supported live foreign writer whose work id shares the reservation namespace
+- reserved-work recovery distinguishes genuine stopped and ended records from legitimate metadata and unknown physical authority
+- accepted work identifiers that resemble internal metadata retain live foreign-writer refusal
 
 ## no-plan-card
 
@@ -1343,6 +1390,8 @@ Census: **1322 behaviours** — 1320 extracted sentences + 2 named-not-extracted
 - T-320 C6 — THE FIVE MEASUREMENTS COME OFF THE RECORD'S OWN STAMPED INSTANTS: the dispatch's two ride in on the assignment, the candidate is stamped at the outcome, and the seat's three arrive through collect
 - T-320 C6 — AN ATTEMPT WITH NOTHING TO MEASURE PRINTS NO MEASUREMENT BLOCK, and a half-read instant dial is refused rather than kept
 - T-315-s1 — explicit native bind identity and the exact continuation ref survive the shared run-plan parser
+- generic inventory includes reserved-work records beside genuine reservation metadata
+- generic admission retains consumed each approvals for supported reserved-work records and standing positives
 
 ## session-economics
 
@@ -1475,4 +1524,5 @@ A generated document that quietly omits is worse than prose that
 visibly goes stale (T-138-s1). These behaviours run in the suite
 and are not sentence-expanded here:
 
+- `native-transaction-recovery.spec.ts:2049` — an unknown number of behaviour(s) from `test(\`${legacy ? "legacy authorized" : "attributable"} public recovery refuses consumed each approvals in the reserved-work policy ledger\`)`: the iterable `[false, true]` did not resolve.
 - `window-contract.spec.ts:442` — 2 behaviour(s) from `test(\`every screen is usable at ${label} (${size.width}x${size.height})\`)`: `MINIMUM` is not a literal object — its fields are computed at run time.
