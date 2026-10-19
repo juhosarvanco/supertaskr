@@ -85,6 +85,9 @@ ADR-014/015).
   with independent verification, collected jobs and protected publication.
   Bash/apply_patch are the measured boundary; reads remain procedural
   and competing writers remain unqualified.
+  Checked native transaction recovery (T-351-s1) revalidates exact authority,
+  ceased owners, physical scope and current admission before disposition;
+  unknown callback evidence remains recorded.
   CLI adapters remain a separate route; cross-harness work is deferred.
 - Workspace inspection: workspace.mjs resolves product, records and runtime
   locations, validates association against product lineage and confines
