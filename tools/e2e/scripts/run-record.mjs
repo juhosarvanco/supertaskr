@@ -196,7 +196,7 @@ export async function acquireQualifiedReservation(root, request, options = {}) {
     if (existsSync(dir)) for (const name of readdirSync(dir)) {
       if (name.startsWith("qualified-")) continue;
       // These entries belong to the existing transaction, not writer ownership.
-      if ([".native-transaction.lock", ".native-transaction.lock.recovery", "native-transaction-refusals"].includes(name)) continue;
+      if ([".native-transaction.lock", ".native-transaction.lock.recovery", "native-transaction-refusals", "native-transaction-faults", "native-transaction-recoveries"].includes(name)) continue;
       const file = path.join(dir, name);
       let legacy;
       try {

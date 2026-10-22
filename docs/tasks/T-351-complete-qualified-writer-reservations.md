@@ -574,6 +574,25 @@ The alias C6 echo retains its pre-grade state because the complete original
 range is run after this complete notes commit; real final ref/spec/count/exit
 is reported separately, followed only by the exempt status word stamp.
 
+### Namespace compatibility repair criteria echo — T-351-a13
+
+Before implementation, at verifier-feedback source
+566858522c365d3e352d8891b919b7b3841e8dc4:
+
+- [ ] C1: preserve committed capture, canonical authority and measured worker identities, strict requests, immutable acquired origins and legitimate HEAD advancement.
+- [ ] C2: preserve authoritative project-domain comparison, independent repository separation, physical worker ownership and topology/path refusals.
+- [ ] C3: recognize only the published native transaction fault/recovery namespaces while preserving complete conflict checks, atomic publication, legacy coexistence and retained reconstruction in the existing transaction/home.
+- [ ] C4: preserve exact idempotent repeats, expected-content owned release and discoverable retained sets; unknown authority must still refuse without deletion or a partial grant.
+- [ ] C5: preserve ordinary lifecycle, library-only qualified APIs, native/split admission refusal and the existing read-only conventions-copy correction.
+- [ ] C6: reproduce the already committed namespace body RED on unchanged source, show the narrow correction GREEN including unknown-authority preservation, retain hash-restored property evidence and required focused controls, then grade the complete original range after all source/notes commits.
+
+Original cumulative origin remains
+85eb7584e517d379f36df55e83a07f70eb93686c; original retained candidate
+remains a9a651257ab01906481eec5548a7c7c172318d9e. This replacement starts
+at the actual collected verifier feedback above. Prior verdicts and the
+assigned regression body are retained unchanged; no independent attack
+artifact or verifier workspace is an input to this repair.
+
 ## Verdicts
 
 ### Recovery scope amendment — 2026-10-05
