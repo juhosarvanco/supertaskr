@@ -207,12 +207,27 @@ export async function acquireQualifiedReservation(root, request, options = {}) {
           const record = readRecord(root, attempt);
           const assignment = /** @type {Record<string, any>} */ (record.assignment);
           if (file !== recordPath(root, attempt) || record.attempt !== attempt || !STATES.includes(record.state) ||
-              record.writer !== false || record.resource !== null || record.reservation?.file !== null ||
-              record.reservation?.takenAt !== null || record.reservation?.releasedAt !== null ||
-              assignment?.id !== "reservations" || assignment.resource !== "none" || !["card", "consultation"].includes(assignment.kind) ||
+              typeof record.writer !== "boolean" ||
+              assignment?.id !== "reservations" || !["card", "consultation"].includes(assignment.kind) ||
               ASSIGNMENT_FIELDS.some((field) => typeof assignment[field] !== "string" || assignment[field].trim() === "") ||
               Object.keys(assignment).some((field) => ![...ASSIGNMENT_FIELDS, "native", "ownedJobs", "admission", "instants"].includes(field)) ||
-              record.assignmentDigest !== sha256(JSON.stringify(assignment))) throw new Error("invalid resource-free work record");
+              record.assignmentDigest !== sha256(JSON.stringify(assignment))) throw new Error("invalid shared-home work record");
+          if (!record.writer) {
+            if (record.resource !== null || assignment.resource !== "none" || record.reservation?.file !== null ||
+                record.reservation?.takenAt !== null || record.reservation?.releasedAt !== null) throw new Error("invalid resource-free work record");
+          } else {
+            if (typeof record.resource !== "string" || !path.isAbsolute(record.resource) ||
+                path.resolve(assignment.resource) !== record.resource ||
+                record.reservation?.file !== reservationPath(root, record.resource) ||
+                typeof record.reservation.takenAt !== "string" || !Number.isFinite(Date.parse(record.reservation.takenAt))) throw new Error("invalid writer work record");
+            if (record.reservation.releasedAt === null) {
+              const ownership = readReservation(root, record.resource);
+              if (ownership?.version !== RECORD_VERSION || ownership.attempt !== attempt || ownership.work !== workOf(attempt) ||
+                  ownership.resource !== record.resource || ownership.role !== assignment.role ||
+                  ownership.takenAt !== record.reservation.takenAt || "kind" in ownership) throw new Error("writer reservation ownership changed");
+            } else if (typeof record.reservation.releasedAt !== "string" || !Number.isFinite(Date.parse(record.reservation.releasedAt)) ||
+                !TERMINAL_STATES.includes(record.state)) throw new Error("invalid released writer work record");
+          }
           continue;
         }
         if (legacy.version !== RECORD_VERSION || typeof legacy.resource !== "string" || !path.isAbsolute(legacy.resource) ||

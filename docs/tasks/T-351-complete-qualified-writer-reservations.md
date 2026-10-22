@@ -737,6 +737,25 @@ The inherited card is already `verifying`; it stays so. There is no new
 status-only stamp commit or post-grade content change to exempt. Prior
 verdicts remain intact and fresh independent acceptance is still required.
 
+### Intact writer compatibility repair criteria echo — T-351-a15
+
+Before implementation, at replacement base
+a50dfa8faedffbb02aaf4c26fd2209f4900799d8:
+
+- [ ] C1: preserve strict committed capture, exact receipts/revisions, measured project and worker identities, immutable acquired bases and legitimate retained HEAD advancement.
+- [ ] C2: preserve authoritative project-domain comparison, independent repositories, colocated aliases, physical worker ownership and unsafe topology/path refusal.
+- [ ] C3: recognize canonical intact active writers only with matching actual legacy ownership, and normal terminal released history, while retaining atomic complete acquisition, retained reconstruction and legacy conflicts in both orders inside the existing transaction/home.
+- [ ] C4: preserve exact idempotent repeats and expected-content owned release; changed, malformed, foreign and unknown authority must refuse and remain retained without partial publication.
+- [ ] C5: preserve the public unqualified lifecycle and resource-free records, library-only qualified operations, native/split refusal and the read-only conventions-copy repair.
+- [ ] C6: reproduce the committed writer body RED, apply the exact proved correction GREEN, retain the restrictive property-site and namespace/duplicate-copy RED/hash-restore/GREEN controls, then grade the complete original cumulative range after every source and notes commit.
+
+The newest committed verdict and exact proved prototype are shared repair
+inputs, not a fresh independent attack. Every prior verdict and genuine
+failure remains intact. The existing T-351-only limited qualification
+exception preserves its explicit coverage limitation and waives no
+functional failure. This size-M executor leaves independent verification
+and integration to their separate seats.
+
 ## Verdicts
 
 ### Recovery scope amendment — 2026-10-05
