@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1368 at least behaviours** — 1366 extracted sentences + 2 at least named-not-extracted (listed at the end) — across 47 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1390 at least behaviours** — 1388 extracted sentences + 2 at least named-not-extracted (listed at the end) — across 48 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -1287,6 +1287,30 @@ Census: **1368 at least behaviours** — 1366 extracted sentences + 2 at least n
 - `--take-seat` records NO seat when the guard cannot be installed, and leaves the configuration and the index alone
 - a seat acquisition that fails for a reason of its own configures nothing
 
+## qualified-reservation
+
+- qualified retained byte integrity refuses invalid UTF-8 through every public consumer
+- qualified legacy conflict scanning refuses invalid UTF-8 without partial publication
+- qualified acquisition freezes complete committed receipts and mixed containment across actual worker checkouts
+- qualified domains separate independent roles while colocated aliases and reused workers collide
+- qualified validation refuses drift bases duplicate roles unsafe domains and alternate authority before publication
+- qualified colocated role bindings normalize one worker and refuse incompatible alias origins
+- qualified repeat read and exact release survive worker HEAD advancement but retain immutable identity
+- qualified retained readers reconstruct narrowed scope changed binding malformed authority and committed receipt
+- qualified second-root and legacy conflicts in both orders leave no partial grant and preserve release ownership
+- qualified concurrent acquisition has one winner and serialization removal admits the coordinated unsafe interleaving
+- qualified conflict enforcement independently refuses sequential overlap and its removal admits a conflicting set
+- qualified original acquisition refuses coherent worker replacement through every retained consumer
+- qualified original acquisition refuses coherent committed origin replacement without changing physical workers
+- qualified publication commits scope in its name and refuses unanchored malformed and duplicate authority
+- qualified accepted coordinator aliases preserve legacy conflicts retained reads exact repeats and release
+- qualified acquisition preserves persisted transaction fault and recovery metadata while refusing unknown authority
+- qualified acquisition preserves public read-only work records in the shared reservation home while refusing malformed authority
+- shared-home malformed record decoding preserves named qualified refusal and native unreadable-authority evidence
+- qualified sets preserve intact active and released writer work records in the shared home
+- qualified writer history accepts physical coordinator aliases and preserves foreign recorded-path refusals
+- qualified recorded writer paths require the exact basename in the same resolvable physical parent
+
 ## range-rule
 
 - RANGE RULE — range-spelling-with-its-count
@@ -1350,6 +1374,7 @@ Census: **1368 at least behaviours** — 1366 extracted sentences + 2 at least n
 
 ## run-record
 
+- ordinary reservation lifecycle loads no qualified capture and unknown assignment roots grant no permission
 - a WRITER takes the resource's reservation before its launch and a READ-ONLY participant takes none, so an executor and a tool-less phase one run for one card at once
 - the assignment is refused FIELD BY FIELD, and `none` has to be typed rather than defaulted
 - a BIND attaches the harness's task id before the record is started, and one harness id cannot serve two attempts

@@ -52,6 +52,32 @@ import {
 import type { Assignment, RunIo, RunRecord } from "../scripts/run-record.mjs";
 import { conventionsText } from "../scripts/docs-scan.mjs";
 
+test("ordinary reservation lifecycle loads no qualified capture and unknown assignment roots grant no permission", () => {
+  const b = bench("qualified-absence-T-351");
+  try {
+    const subject = new URL("../scripts/run-record.mjs", import.meta.url).href;
+    const result = spawnSync(process.execPath, ["--input-type=module", "-e", `
+      import {registerHooks} from 'node:module';
+      registerHooks({load(url,context,next){if(/\\/(qualified-reservation|records|records-context)\\.mjs$/.test(url))throw Error('unexpected qualified dependency');return next(url,context);}});
+      const api=await import(${JSON.stringify(subject)});
+      const root=${JSON.stringify(b.root)},resource=${JSON.stringify(b.lane)};
+      const taken=api.takeReservation(root,{resource,attempt:'T-999-a1',role:'executor',at:new Date().toISOString()});
+      if(!api.readReservation(root,resource)||!api.releaseReservation(root,{resource,attempt:'T-999-a1'}))throw Error('ordinary ownership failed');
+      console.log(JSON.stringify({held:taken.reservation.attempt,released:api.readReservation(root,resource)===null}));
+    `], { encoding: "utf8" });
+    expect(result.status, result.stderr).toBe(0);
+    expect(JSON.parse(result.stdout)).toEqual({ held: "T-999-a1", released: true });
+    const file = path.join(b.scratch, "assignment-T-351.json");
+    writeFileSync(file, JSON.stringify(assignment(b)));
+    expect(readAssignment(file).resource).toBe(b.lane);
+    for (const extra of [{ qualifiedScope: { recordsRoot: b.scratch } }, { workers: [{ role: "records", checkout: b.scratch }] },
+      { native: { taskName: "child", sessionId: "session", coordinatorTurnId: "turn", ignoredOutputs: [], recordsRoot: b.scratch }, harness: "codex-desktop-native" }]) {
+      writeFileSync(file, JSON.stringify({ ...assignment(b), ...extra }));
+      expect(() => readAssignment(file)).toThrow(/ASSIGNMENT_UNKNOWN_FIELD/);
+    }
+  } finally { b.cleanup(); }
+});
+
 /**
  * THE RUN RECORD (T-311) — no browser.
  *

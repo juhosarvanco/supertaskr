@@ -87,6 +87,7 @@ import {
   writeSync,
 } from "node:fs";
 import path from "node:path";
+import { createRequire } from "node:module";
 import { RUNTIME_DIR, armRuntimeDir } from "../../../.claude/hooks/gate-token.mjs";
 import { isRecordablePid, processRow } from "./checkout-currency.mjs";
 import {
@@ -130,6 +131,157 @@ export const RUNS_REL_PATH = `${RUNTIME_DIR}/runs`;
 
 /** Where the writer reservations live: ONE file per resource, and the file IS the lock. */
 export const RESERVATIONS_REL_PATH = `${RUNS_REL_PATH}/reservations`;
+
+// No capture/parser dependency is loaded for an ordinary reservation home.
+const requireQualified = createRequire(import.meta.url);
+/** @type {typeof import("./qualified-reservation.mjs")|undefined} */
+let loadedQualified;
+/** @returns {typeof import("./qualified-reservation.mjs")} */
+function qualifiedValidation() { return loadedQualified ?? requireQualified("./qualified-reservation.mjs"); }
+
+/** Decode reservation authority without silently replacing malformed bytes.
+ * @param {string} file @returns {any} */
+function readReservationAuthority(file) {
+  const raw = readFileSync(file), text = raw.toString("utf8");
+  if (!raw.equals(Buffer.from(text, "utf8"))) throw new Error("reservation authority is not valid UTF-8");
+  return JSON.parse(text);
+}
+
+/** The publication name commits the original canonical acquired scope outside
+ * rewritable JSON. APIs never rekey a retained record. This is content
+ * integrity, not protection from replacement of the whole authority home.
+ * @param {string} root @param {string} attempt @param {string} expectedIdentity */
+export function qualifiedReservationPath(root, attempt, expectedIdentity) {
+  workOf(attempt);
+  const digest = /^sha256:([0-9a-f]{64})$/.exec(expectedIdentity);
+  if (!digest) throw new RunRecordFinding("QUALIFIED_IDENTITY", "QUALIFIED_IDENTITY: full canonical sha256 identity required");
+  return path.join(root, RESERVATIONS_REL_PATH, `qualified-${attempt}-${digest[1]}.json`);
+}
+
+/** Reconstruct every qualified set before answering any writer conflict.
+ * @param {string} root @returns {{file: string, reservation: any, scope: any}[]} */
+function qualifiedReservations(root) {
+  root = realpathSync(root);
+  const dir = path.join(root, RESERVATIONS_REL_PATH);
+  if (!existsSync(dir)) return [];
+  const seen = new Set();
+  return readdirSync(dir).filter((name) => name.startsWith("qualified-")).map((name) => {
+    const file = path.join(dir, name);
+    try {
+      if (/^qualified-T-\d+(?:-s\d+)?-a\d+\.json$/.test(name)) throw new Error("QUALIFIED_UNANCHORED: old publication has no original-acquisition commitment");
+      const named = /^qualified-(T-\d+(?:-s\d+)?-a\d+)-([0-9a-f]{64})\.json$/.exec(name);
+      if (!named) throw new Error("QUALIFIED_PUBLICATION_NAME: malformed acquired-scope commitment");
+      const attempt = /** @type {string} */ (named[1]);
+      if (seen.has(attempt)) throw new Error("QUALIFIED_DUPLICATE: multiple publications for the same attempt");
+      seen.add(attempt);
+      if (!statSync(file).isFile() || realpathSync(file) !== file) throw new Error("not a regular reservation file");
+      const reservation = readReservationAuthority(file);
+      const scope = qualifiedValidation().validateQualifiedReservation(reservation, root, attempt);
+      if (qualifiedValidation().qualifiedIdentity(scope) !== `sha256:${named[2]}`) throw new Error("QUALIFIED_ORIGIN_CHANGED: publication differs from its original acquired scope");
+      return { file, reservation, scope };
+    } catch (err) { throw new RunRecordFinding("QUALIFIED_AUTHORITY_UNREADABLE", `QUALIFIED_AUTHORITY_UNREADABLE: ${file}: ${String(err)}`); }
+  });
+}
+
+/** Complete publication shares the native callback/start transaction. This
+ * API reserves data only; native launch still requires its existing admission.
+ * @param {string} root @param {any} request @param {{at?: string, pid?: number, host?: string}} [options] */
+export async function acquireQualifiedReservation(root, request, options = {}) {
+  root = realpathSync(root);
+  loadedQualified ??= await import("./qualified-reservation.mjs");
+  return withNativeTransaction(root, { operation: "qualified-acquire" }, () => {
+    const validation = qualifiedValidation();
+    const sets = qualifiedReservations(root);
+    const existing = sets.find((set) => set.reservation.attempt === request.attempt);
+    const scope = validation.deriveQualifiedScope(request, { retained: existing !== undefined });
+    if (scope.authorityRoot !== realpathSync(root)) throw new RunRecordFinding("QUALIFIED_AUTHORITY", "QUALIFIED_AUTHORITY: request names a different coordinator authority root");
+    if (existing) {
+      if (validation.qualifiedContent(scope) !== validation.qualifiedContent(existing.scope)) throw new RunRecordFinding("QUALIFIED_CHANGED", "QUALIFIED_CHANGED: attempt already owns a different qualified set");
+    }
+    for (const set of sets) {
+      if (set !== existing && validation.qualifiedSetsConflict(scope, set.scope)) throw new RunRecordFinding("QUALIFIED_CONFLICT", `QUALIFIED_CONFLICT: writer set conflicts with ${set.reservation.attempt}`);
+    }
+    const dir = path.join(root, RESERVATIONS_REL_PATH);
+    if (existsSync(dir)) for (const name of readdirSync(dir)) {
+      if (name.startsWith("qualified-")) continue;
+      // These entries belong to the existing transaction, not writer ownership.
+      if ([".native-transaction.lock", ".native-transaction.lock.recovery", "native-transaction-refusals", "native-transaction-faults", "native-transaction-recoveries"].includes(name)) continue;
+      const file = path.join(dir, name);
+      let legacy;
+      try {
+        if (!name.endsWith(".json") || !statSync(file).isFile() || realpathSync(file) !== file) throw new Error("unknown reservation authority");
+        legacy = readReservationAuthority(file);
+        if (/^reservations-a\d+\.json$/.test(name)) {
+          const attempt = name.slice(0, -5);
+          const record = readRecord(root, attempt);
+          const assignment = /** @type {Record<string, any>} */ (record.assignment);
+          if (file !== recordPath(root, attempt) || record.attempt !== attempt || !STATES.includes(record.state) ||
+              typeof record.writer !== "boolean" ||
+              assignment?.id !== "reservations" || !["card", "consultation"].includes(assignment.kind) ||
+              ASSIGNMENT_FIELDS.some((field) => typeof assignment[field] !== "string" || assignment[field].trim() === "") ||
+              Object.keys(assignment).some((field) => ![...ASSIGNMENT_FIELDS, "native", "ownedJobs", "admission", "instants"].includes(field)) ||
+              record.assignmentDigest !== sha256(JSON.stringify(assignment))) throw new Error("invalid shared-home work record");
+          if (!record.writer) {
+            if (record.resource !== null || assignment.resource !== "none" || record.reservation?.file !== null ||
+                record.reservation?.takenAt !== null || record.reservation?.releasedAt !== null) throw new Error("invalid resource-free work record");
+          } else {
+            if (typeof record.resource !== "string" || !path.isAbsolute(record.resource) ||
+                path.resolve(assignment.resource) !== record.resource ||
+                typeof record.reservation?.file !== "string" || !path.isAbsolute(record.reservation.file) ||
+                path.join(realpathSync(path.dirname(record.reservation.file)), path.basename(record.reservation.file)) !== reservationPath(root, record.resource) ||
+                typeof record.reservation.takenAt !== "string" || !Number.isFinite(Date.parse(record.reservation.takenAt))) throw new Error("invalid writer work record");
+            if (record.reservation.releasedAt === null) {
+              const ownership = readReservation(root, record.resource);
+              if (ownership?.version !== RECORD_VERSION || ownership.attempt !== attempt || ownership.work !== workOf(attempt) ||
+                  ownership.resource !== record.resource || ownership.role !== assignment.role ||
+                  ownership.takenAt !== record.reservation.takenAt || "kind" in ownership) throw new Error("writer reservation ownership changed");
+            } else if (typeof record.reservation.releasedAt !== "string" || !Number.isFinite(Date.parse(record.reservation.releasedAt)) ||
+                !TERMINAL_STATES.includes(record.state)) throw new Error("invalid released writer work record");
+          }
+          continue;
+        }
+        if (legacy.version !== RECORD_VERSION || typeof legacy.resource !== "string" || !path.isAbsolute(legacy.resource) ||
+            typeof legacy.attempt !== "string" || legacy.work !== workOf(legacy.attempt) ||
+            file !== reservationPath(root, legacy.resource) || legacy.kind !== undefined) throw new Error("invalid legacy reservation");
+      } catch (err) { throw new RunRecordFinding("RESERVATION_UNREADABLE", `RESERVATION_UNREADABLE: ${file}: ${String(err)}`); }
+      if (validation.legacyQualifiedConflict(legacy.resource, scope)) throw new RunRecordFinding("QUALIFIED_CONFLICT", `QUALIFIED_CONFLICT: whole-checkout reservation held by ${legacy.attempt}`);
+    }
+    if (existing) return { file: existing.file, reservation: existing.reservation, repeated: true };
+    armRuntimeDir(root);
+    const identity = validation.qualifiedIdentity(scope);
+    const file = qualifiedReservationPath(root, request.attempt, identity);
+    const reservation = { version: validation.QUALIFIED_RESERVATION_VERSION, kind: "qualified-writer-set", attempt: request.attempt,
+      request: JSON.parse(JSON.stringify(request)), scope, identity,
+      takenAt: options.at ?? new Date().toISOString(), holder: { pid: options.pid ?? process.pid, host: options.host ?? "" } };
+    validation.validateQualifiedReservation(reservation, root, request.attempt);
+    atomicJson(file, reservation);
+    return { file, reservation, repeated: false };
+  });
+}
+
+/** @param {string} root @param {string} attempt */
+export async function readQualifiedReservation(root, attempt) {
+  loadedQualified ??= await import("./qualified-reservation.mjs");
+  return withNativeTransaction(root, { operation: "qualified-read" }, () => {
+    workOf(attempt);
+    return qualifiedReservations(root).find((set) => set.reservation.attempt === attempt)?.reservation ?? null;
+  });
+}
+
+/** Expected content is the identity returned by acquisition/read. Neither an
+ * owner name nor a dead holder alone authorizes removal.
+ * @param {string} root @param {{attempt: string, expectedIdentity: string}} options */
+export async function releaseQualifiedReservation(root, options) {
+  loadedQualified ??= await import("./qualified-reservation.mjs");
+  return withNativeTransaction(root, { operation: "qualified-release" }, () => {
+    workOf(options.attempt);
+    const held = qualifiedReservations(root).find((set) => set.reservation.attempt === options.attempt);
+    if (!held) return false;
+    if (held.reservation.identity !== options.expectedIdentity) throw new RunRecordFinding("QUALIFIED_NOT_OURS", "QUALIFIED_NOT_OURS: expected qualified content differs; authority retained");
+    rmSync(held.file);
+    return true;
+  });
+}
 
 /**
  * THE SEVEN OPERATIONS, PLUS THE BIND THAT CLOSES THE LAUNCH.
@@ -485,6 +637,13 @@ export function readAssignment(file) {
     );
   }
   const obj = /** @type {Record<string, unknown>} */ (parsed);
+  const allowed = [...ASSIGNMENT_FIELDS, "native", "ownedJobs", "admission", "instants"];
+  const unknown = Object.keys(obj).filter((key) => !allowed.includes(key));
+  const nativeFields = ["taskName", "sessionId", "coordinatorTurnId", "ignoredOutputs", "profile", "executorAttempt"];
+  if (obj["native"] && typeof obj["native"] === "object" && !Array.isArray(obj["native"])) {
+    unknown.push(...Object.keys(obj["native"]).filter((key) => !nativeFields.includes(key)).map((key) => `native.${key}`));
+  }
+  if (unknown.length) throw new RunRecordFinding("ASSIGNMENT_UNKNOWN_FIELD", `ASSIGNMENT_UNKNOWN_FIELD: unknown fields cannot grant additional write authority: ${unknown.join(", ")}`);
   const missing = ASSIGNMENT_FIELDS.filter((f) => {
     const v = obj[f];
     return typeof v !== "string" || v.trim() === "";
@@ -784,6 +943,10 @@ export function nextAttemptId(root, work) {
  * @returns {{ file: string, reservation: Reservation }}
  */
 export function takeReservation(root, opts) {
+  return withNativeTransaction(root, { operation: "legacy-acquire" }, () => {
+  for (const set of qualifiedReservations(root)) {
+    if (qualifiedValidation().legacyQualifiedConflict(opts.resource, set.scope)) throw new RunRecordFinding("QUALIFIED_CONFLICT", `QUALIFIED_CONFLICT: resource intersects qualified set ${set.reservation.attempt}`);
+  }
   armRuntimeDir(root);
   const file = reservationPath(root, opts.resource);
   mkdirSync(path.dirname(file), { recursive: true });
@@ -819,6 +982,7 @@ export function takeReservation(root, opts) {
     closeSync(fd);
   }
   return { file, reservation };
+  });
 }
 
 /**
@@ -854,9 +1018,11 @@ export function readReservation(root, resource) {
  * @returns {boolean} whether a reservation was removed
  */
 export function releaseReservation(root, opts) {
+  return withNativeTransaction(root, { operation: "legacy-release" }, () => {
   const file = reservationPath(root, opts.resource);
   if (!existsSync(file)) return false;
   const held = readReservation(root, opts.resource);
+  if (held !== null && "kind" in held) throw new RunRecordFinding("RESERVATION_NOT_OURS", "legacy release cannot remove qualified authority");
   if (held !== null && held.attempt !== opts.attempt) {
     throw new RunRecordFinding(
       "RESERVATION_NOT_OURS",
@@ -867,6 +1033,7 @@ export function releaseReservation(root, opts) {
   }
   rmSync(file, { force: true });
   return true;
+  });
 }
 
 /* ────────────────────────────────────────────────────────────────────

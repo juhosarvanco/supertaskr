@@ -1015,12 +1015,23 @@ function nativeRecordFiles(root) {
       // checked recovery separately validates every physical JSON entry.
       if (work === "reservations") {
         if (!/^reservations-a\d+\.json$/.test(name)) continue;
-        if (nativeReservationMetadata(root, file, JSON.parse(readNativeUtf8(file)))) continue;
       }
       files.push(file);
     }
   }
   return files;
+}
+
+/** Decode at the consumer boundary so native scans can persist unreadable
+ * authority holds, while the shared reservation home retains its named refusal.
+ * @param {string} root @param {string} file @returns {any}
+ */
+function readNativeInventoryRecord(root, file) {
+  try { return JSON.parse(readNativeUtf8(file)); }
+  catch (error) {
+    if (path.dirname(file) !== nativeTransactionDir(root)) throw error;
+    throw new NativeCodexFinding("RESERVATION_UNREADABLE", `RESERVATION_UNREADABLE: attempt authority at ${file} is unreadable: ${String(error)}.`);
+  }
 }
 
 /** @param {string} root @param {number} pid */
@@ -1045,7 +1056,11 @@ function removeAbandonedNativeTemps(root, pid) {
  * @param {string} root
  */
 function absorbNativeTransactionSidecars(root) {
-  const recordFiles = nativeRecordFiles(root);
+  // Shared-home byte validation remains a transaction precondition even with
+  // no pending sidecar; a permissive JSON reader must not normalize authority.
+  const recordFiles = nativeRecordFiles(root).filter((file) =>
+    path.dirname(file) !== nativeTransactionDir(root) ||
+    !nativeReservationMetadata(root, file, readNativeInventoryRecord(root, file)));
   const refusalDir = nativeTransactionRefusalDir(root);
   if (existsSync(refusalDir)) {
     for (const name of readdirSync(refusalDir).sort()) {
@@ -1061,7 +1076,7 @@ function absorbNativeTransactionSidecars(root) {
           `native-codex: transaction refusal sidecar ${refusalFile} is unreadable: ${String(error)}.`,
         );
       }
-      const records = recordFiles.map((file) => ({ file, rec: JSON.parse(readNativeUtf8(file)) }));
+      const records = recordFiles.map((file) => ({ file, rec: readNativeInventoryRecord(root, file) }));
       const faultFile = nativeTransactionFaultPath(root, refusal.id);
       const fault = { version: 1, id: refusal.id, rawDigest: nativeSha256(rawContent), rawContent, refusal };
       if (existsSync(faultFile)) {
@@ -1109,7 +1124,7 @@ function absorbNativeTransactionSidecars(root) {
     if (!existsSync(sidecar)) continue;
     let rec;
     try {
-      rec = JSON.parse(readNativeUtf8(file));
+      rec = readNativeInventoryRecord(root, file);
       nativeState(rec);
     } catch {
       continue;
@@ -1421,7 +1436,8 @@ export function allNativeRecords(root, opts = {}) {
   for (const file of nativeRecordFiles(root)) {
     const attempt = path.basename(file, ".json");
     try {
-      const rec = JSON.parse(readNativeUtf8(file));
+      const rec = readNativeInventoryRecord(root, file);
+      if (nativeReservationMetadata(root, file, rec)) continue;
       if (isObject(rec.native) && rec.native.version === NATIVE_CODEX_VERSION) {
         nativeState(rec);
         records.push(includeUnreadableAuthority(root, attempt, rec));
