@@ -603,6 +603,140 @@ at the actual collected verifier feedback above. Prior verdicts and the
 assigned regression body are retained unchanged; no independent attack
 artifact or verifier workspace is an input to this repair.
 
+### Namespace compatibility delivery — T-351-a13
+
+The source corrections are committed at
+877cdf33 (published transaction metadata) and
+a167a6f1d0b4bc5671f417d37fb6e3751f4d0c5b (resource-free public work records).
+This complete notes commit is the next graded source; its actual ref,
+original-range counts/exits and final job cessation are reported in the
+native handoff after the run, rather than preclaimed here.
+
+`acquireQualifiedReservation` now recognizes the existing transaction's
+`native-transaction-faults` and `native-transaction-recoveries` namespaces.
+The same scanner also recognizes a resource-free work record only at its
+exact canonical `reservations-aN.json` path. It uses `readRecord`'s existing
+version check and requires matching attempt/assignment ownership, known
+state, intact assignment digest and fields, false writer, null resource
+and no reservation claim. Every other entry still undergoes the existing
+legacy reservation validation. The transaction, canonical regular-file and
+realpath checks, complete qualified conflict/publication/reconstruction,
+expected-content release and actual legacy ownership checks remain active.
+Request version 1, publication version 2 and all public API shapes stay as
+declared above. No new authority table, lock, native admission or split
+permission is introduced.
+
+Class sweep: reservation-home enumeration in `qualifiedReservations` and
+the acquisition legacy scanner, plus current-main committed producers
+`nativeTransactionFaultPath`, `nativeRecoveryIntentPath`, `allRecords` and
+`nativeRecordFiles`, at e8aabf062b289c2cd1a460a9a3c1413f69262125. The two
+directory namespaces and real public resource-free record were exercised;
+the qualified scanner's existing qualified-prefix selection needed no
+change. The initial brief's assigned directory body was already committed
+and was not applied again. The additional work-record body implements the
+same required C3/C5 compatibility property, as ruled in the acknowledged
+scope answer, not an incidental follow-through. At a167a6f1 relative to
+feedback 56685852, source changes are 14 added/1 removed lines and spec
+changes are 51 added/1 removed lines; the full repair is not claimed to be
+under twenty moved lines. There is no separate in-fence follow-through.
+
+| Criterion | Implementation and actual pre-grade controls |
+|---|---|
+| C1 | Strict captured inputs, canonical authority, measured identities and immutable origins are retained; the complete qualified spec passes at the repaired source. |
+| C2 | Existing independent/colocated domains, cross-worker ownership, mixed containment and unsafe topology/path cases remain in that passing spec. |
+| C3 | Both namespace compatibility cases now acquire/read/repeat/release, preserve nonwriter metadata bytes and retain real legacy conflicts in both orders; complete publication/reconstruction remains unchanged. |
+| C4 | Existing exact-repeat, retained-HEAD, foreign release, malformed/coherent replacement and acquired-origin cases pass; new malformed work records retain their bytes and leave no qualified residue. |
+| C5 | Ordinary lifecycle remains covered by the earlier scoped run and the final range owed below; read-only seat fixtures pass with unchanged assertions and source modes. Qualified/native/split admission boundaries are unchanged. |
+| C6 | Real public start reproduction, final fifteen-body qualified controls, both constructive concurrency controls and three isolated RED/restore/GREEN controls are completed below; the complete committed range remains to be graded after these notes. |
+
+### Self-drill block — namespace compatibility at a167a6f1
+
+The actual `namespace-drill-resource` and `namespace-work-record-scope`
+answers were read and acknowledged before their isolated writes. The two
+owned scratch source copies were literal committed exports of full ref
+a167a6f1d0b4bc5671f417d37fb6e3751f4d0c5b, with 1722 regular source files
+each. No live runtime authority or source implementation symlink was
+copied; only dependency/build outputs were linked. These are owned test
+fixtures without a source Git HEAD, not native worker resources. Each test
+creates and removes its own independent Git histories. All thirteen copied
+conventions Markdown sources remain 0444. Primary source permissions were
+not changed.
+
+| Property-site control | Actual RED | Literal restoration and positive rerun |
+|---|---|---|
+| Remove only the two newly recognized transaction metadata names; supplied persisted-transaction body | 1 executed, 1 failed, exit 1; `RESERVATION_UNREADABLE` at `native-transaction-faults` | Run-record hash A, exported mode 0664 and exact atime/mtime restored; 1 passed, exit 0 |
+| Remove only resource-free work-record recognition; new public work-record body | 1 executed, 1 failed, exit 1; `RESERVATION_UNREADABLE` at `reservations-a1.json` | Same hash A, mode and clocks restored; 1 passed, exit 0 |
+| Reintroduce only the duplicate conventions-index copy; existing seat-install body | 1 executed, 1 failed, exit 1; actual index-copy `EACCES` in `seatFixture`, before `seatVerb` | Push-guard spec hash B, mode and clocks restored; all 3 existing seat bodies passed, exit 0 |
+
+Hash A: `dd57385e7ff097dd37817f5cc0bb7bae095a8b483be0f2ecf9cca8257bad23ce`.
+Hash B: `4796e23487dcf0a16016d870352c2ba9a15e3535dda6863234d9065981647576`.
+Qualified spec hash: `01eb867efe3d876be475394d46da5575d5ca243e372a955bfe54e357c164c09a`.
+Both compatibility bodies passed together at fixture baseline (2 bodies,
+exit 0); the read-only seat baseline passed 3 bodies, exit 0. Literal
+one-sided mutation diffs were read before every RED. Final restoration
+checked every exported source hash and mode, then restored controlled
+nanosecond timestamps after the positive runs. The primary remained clean.
+External `logs/fixture-final-restoration-T-351.json` records that check at
+2026-10-22T10:12:57Z, alongside per-control commands, exits, counts, mutation
+diffs and restoration receipts. Every test process completed before the
+next source/fixture command. No wider source-drill campaign was resumed;
+the existing T-351-only owner coverage exception and historical limitations
+remain preserved, and no prior rejection is rewritten.
+
+### Ordered readings and final qualification handoff — T-351-a13
+
+The identity probe returned native thread
+01a16305-90a8-7b91-a3eb-cf3d22ac9495, canonical task
+`/root/t351_namespace_repair_20261022`; explicit binding preceded repository
+tools. Requested profile is GPT-6.1 Sol/xhigh; observed model/usage is
+unknown. Commands and callbacks were serial, with yielded sessions polled
+to completion; no helper, verifier workspace or attack artifact was used.
+Parser/app/e2e dependencies and built prerequisites already existed and
+were rechecked; no dependency install or package manifest changed.
+
+Ordered functional commands from tools/e2e, all with assigned port 15351
+and external temporary/output homes:
+
+- `npx playwright test tests/qualified-reservation.spec.ts --grep 'preserves persisted transaction' --reporter=line`: unchanged feedback implementation, 1 failed, exit 1; corrected source later committed at 877cdf33, 1 passed, exit 0.
+- `npx playwright test tests/qualified-reservation.spec.ts tests/run-record.spec.ts --reporter=line`: source later committed at 877cdf33, 59 passed, exit 0. This predates the additional work-record repair and is not claimed as that repair's grade.
+- `npx playwright test tests/qualified-reservation.spec.ts --grep 'public read-only work records' --reporter=line`: 877cdf33 implementation plus the new public-start body, 1 failed, exit 1, `invalid legacy reservation`.
+- `npm run typecheck`: new work-record body before production correction, exit 0.
+- `npx playwright test tests/qualified-reservation.spec.ts --reporter=line`: repaired runtime source subsequently committed at a167a6f1, 15 passed, exit 0, including both required constructive concurrency controls.
+- `npm run typecheck`: first repaired-source reading exited 2 for a typed indexed-field access; a type-only record-map annotation fixed it, and the corrected reading exited 0 at the source committed as a167a6f1. No failed reading is replaced by its rerun.
+- The three isolated controls above invoke the copied repository's Playwright CLI with its own config; their exact argv, body counts and exits are retained in the external per-control receipts. All setup, mutations and literal restorations exited 0; deliberate RED test runs each exited 1.
+
+Every mandatory graph reading so far returned CURRENT/exit 0; tools are
+outside the graph walk. At a167a6f1, whole-tree `npm run lint:docs` exited 0
+with zero findings (no diff judged). `npm run capabilities:check` exited 1,
+STALE: committed 129443 bytes versus fresh 131244 bytes. This is a source
+currency finding, not an environment failure; generated reconciliation
+remains integration work outside the frozen fence.
+
+At a167a6f1 the blessed `--owed-set --range` derivations both exited 0:
+original origin 85eb7584e517d379f36df55e83a07f70eb93686c has six changed
+paths, replacement feedback 566858522c365d3e352d8891b919b7b3841e8dc4 has
+three. Both derive whole parser/app plus the same nineteen e2e specs, with
+no unplaceable path. The final original-range run will re-derive and grade
+the complete notes/source commit once; its unchanged final inputs and
+selected set can cover the identical replacement owed set. That is one
+measurement of both obligations, not two alleged runs.
+
+The mechanical merge forecast against current main
+e8aabf062b289c2cd1a460a9a3c1413f69262125 exited 1 with an actual tree and
+one content conflict in `tools/e2e/tests/push-guard.spec.ts`; run-record
+auto-merged. No conflict was resolved locally. Therefore no clean final
+merge-diff gate decision is claimed: the integrator must re-derive after
+reconciliation. Source-range docs-gate on the actual six original paths
+exited 1 meaning FIRES, owing parser/app/e2e; source scope has no boot or
+method-eval trigger, and the broad graph trigger matches the test suffixes.
+These are owed-at-source readings. The notes add no new path or trigger
+class; final source derivations and graph/docs/type readings are reported
+after this commit. No merge, push or CI claim is made.
+
+The inherited card is already `verifying`; it stays so. There is no new
+status-only stamp commit or post-grade content change to exempt. Prior
+verdicts remain intact and fresh independent acceptance is still required.
+
 ## Verdicts
 
 ### Recovery scope amendment — 2026-10-05
