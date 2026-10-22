@@ -1217,6 +1217,151 @@ an independent discovery or source-disabling drill. No stopped a16 activity
 is resumed. The existing broader independent source-drill gap remains NOT
 ESTABLISHED under the exact T-351-only exception.
 
+### Retained qualified-authority byte integrity delivery — T-351-a22
+
+Production and the two ordinary data bodies are committed at
+5a69a2343f9dec9abca76ededd70a618acee92f5, from admitted source
+4d899fdd17cabfb77f3e08070fb192b9d835f567. The complete final notes/source
+commit receives the one original cumulative grade after every write. Its
+actual ref, suite/body counts, exits and cessation are reported separately.
+
+`readReservationAuthority` requires the raw reservation bytes to round-trip
+through UTF-8 before parsing JSON. Both the retained qualified scanner and
+qualified acquisition's legacy scanner use it inside their existing named
+error boundaries. Thus read, exact repeat, qualified acquisition, legacy
+acquisition and exact qualified release refuse malformed qualified encoding
+as QUALIFIED_AUTHORITY_UNREADABLE; malformed legacy authority refuses as
+RESERVATION_UNREADABLE before a complete set can be published. The transaction,
+physical file/root checks, committed reconstruction, acquired-name commitment,
+conflict comparators and exact release ownership remain unchanged. No input
+or scope is skipped, and no new table, lock, service or policy route is added.
+Request version 1, retained format 2 and public APIs remain as pinned above.
+
+Class sweep: complete qualified acquire/read/repeat/release and both conflict
+paths in run-record, plus native shared-home inventory and transaction-entry
+error boundaries. The native attempt-record reader already checks exact UTF-8
+bytes and its durable unreadable-authority handling is preserved. The runtime
+correction is 10 added/2 removed lines in run-record; 86 test lines add the two
+owned data bodies. No extra in-fence follow-through or path need was found.
+
+| Criterion | Actual implementation and pre-grade evidence |
+|---|---|
+| C1 | The complete focused run retains strict committed capture/receipts/revisions, measured workers, immutable acquired origins and valid retained operations after worker HEAD advances. |
+| C2 | Its independent/colocated domains, cross-worker conflicts, disjoint controls, worker exclusivity and topology/path refusal cases pass. |
+| C3 | Invalid bytes in an otherwise JSON-shaped qualified record now refuse every consuming operation before publication. Both legacy conflict directions remain covered; malformed legacy authority refuses under the same transaction without a qualified residue. |
+| C4 | Read/repeat/release preserve malformed bytes; literal fixture SHA256 restoration allows valid read/repeat/exact release again. Exact/foreign/changed ownership and retained-origin cases still pass. |
+| C5 | All 47 ordinary run-record bodies pass; the shared-home malformed-record/native durable-evidence body also passes. Native/split admission stays closed. Main's stronger push-guard blob and all thirteen read-only conventions inputs are preserved. |
+| C6 | Two new meaningful ordinary byte-data bodies are RED on unchanged runtime and GREEN after repair; focused qualified/run-record is 68/68, including the two unchanged constructive concurrency controls. The final complete original-range grade remains owed after these notes. |
+
+#### Ordinary byte-data RED, restoration and GREEN
+
+The retained a21 manifest SHA256
+9c8439e5183cbee6e130478587a527916b3fd9b9ef6452bffe6b09f2116fb30d
+verified all 19 members/378459 bytes before its exact reproducer was read.
+No ephemeral scratch substituted for this disclosed feedback.
+
+The qualified body tests raw ff, a truncated multibyte sequence, an overlong
+sequence and an encoded surrogate inside incidental holder.host. Its valid
+host contains an actual replacement character, CJK and a supplementary Unicode
+character. Valid acquire/read/exact-repeat, disjoint qualified and legacy
+acquisition, and exact release controls succeed. Every malformed variant is
+exercised through read, repeat, disjoint qualified acquisition, disjoint legacy
+acquisition and expected-content release; bytes and publication names must
+remain exact. The legacy body covers malformed holder bytes in both product
+and records whole-checkout authority, with valid conflicts/restoration/release
+and qualified reacquisition controls.
+
+| Unique log stem in assigned external scratch | Runtime/data and actual result |
+|---|---|
+| unchanged-byte-data-red-T-351-a22 | Unchanged admitted runtime plus new bodies: 2 executed, 2 failed, exit 1. Read/repeat were accepted, both disjoint acquisitions published, and exact release deleted malformed authority. The qualified body's 20 literal data restorations and valid final release completed. |
+| unchanged-legacy-byte-red-v2-T-351-a22 | Final legacy body alone on unchanged runtime: 1 failed, exit 1. Both product and records cases returned ordinary conflict instead of unreadable authority; both literal restorations and valid controls completed. The initial version stopped at the first failing assertion; using a soft assertion completes both roles and restoration without changing the expected property. |
+| changed-byte-data-green-T-351-a22 | Corrected source bytes later committed as 5a69a234: 2 passed, exit 0. All 22 logged fixture restoration hashes match their literal original bytes. |
+| focused-reservation-lifecycle-T-351-a22 | Same corrected runtime/spec bytes: 68 passed, exit 0 (21 qualified and 47 ordinary); all 22 new fixture restoration hashes match. |
+| retained-reproducer-green-T-351-a22 | Exact unchanged retained a21 module, exit 0 measurement: valid read/repeat succeed; malformed read/repeat/release each refuse QUALIFIED_AUTHORITY_UNREADABLE; file remains, literal original restoration and valid release succeed. |
+
+Before source repair, run-record SHA256 remained
+01b6859a094ff1d324ef3b211707eeaf59ccd8050fa380339c247864fb3e9bb7,
+with all other runtime/spec protections unchanged. At 5a69a234, run-record is
+695fb29011e36e70f4edb9c3950df64a9a5ed90ad14c0ba42c3c36d4318e3ab5
+and qualified spec is
+c1fcecdef562bdf29cd2b5e5c553b4bfbfd5173577d2bb118d581ae088066b36.
+The external unchanged-runtime receipt binds the actual REDs to source hashes;
+byte-data-restorations-T-351-a22.json retains each literal malformed/restored
+fixture hash, separately from source hashes. No source restoration is claimed
+because no production source was mutated for a drill.
+
+#### Self-drill block and proof boundary
+
+The two new bodies change only owned fixture data at the byte-encoding property.
+Actual unchanged-source RED/current-source GREEN with constructive controls is
+ordinary implementation qualification. No source guard was disabled, no new
+source-mutation campaign was run, and no stopped a16 activity was resumed or
+reframed. Fresh broader independent source-drill proof for retained integrity,
+worker ownership/containment, legacy enforcement and assignment/admission
+remains NOT ESTABLISHED under the preserved exact T-351-only exception.
+Historical controls retain their own refs. No functional failure, normal grade
+or completion uncertainty is waived; fresh independent review remains owed.
+
+#### Gates, source preservation and completion boundary
+
+At corrected bytes subsequently committed as 5a69a234, e2e typecheck and whole-tree
+docs each exit 0. At 5a69a234, normal model-free evals pass 13/exit 0. They establish
+neither MF09 selftest nor live-model proof. Every mandatory graph reading is
+CURRENT/0. Capabilities currency is STALE/1: 135487 committed versus 137879
+fresh bytes at 5a69a234. Generated capability/index reconciliation remains an
+integration obligation outside this frozen source fence.
+
+Independent original/replacement owed derivations at 5a69a234 each exit 0 with
+no unplaceable input or unresolved import. Original 85eb7584 changes 20 paths;
+admitted replacement 4d899fdd changes 3. Both owe whole parser/app; original owes 22
+e2e specs and replacement 20. The original additionally owes brief-flush and
+card-figures, and contains every replacement spec. These complete sets are
+unequal; the final original-range run must satisfy its two additional
+obligations and explicitly measure all replacement specs. The wording ruling
+is routed through the own durable ask, with final comparison and actual
+coverage reported after this complete committed tree.
+
+Source-range docs gate on the 20 actual original paths is FIRES/1, with no
+frontmatter issues. Six changed test suffixes trigger the broad graph rule;
+tools remain outside its walk. No original path triggers boot. Historical
+added verdict-citation lines owe normal model-free evals. The mechanical
+forecast against main 7072de95987996c0da04862eb05fba4f17a6201a is exit 1 with
+only this task's content conflict; no local merge or resolution is performed.
+These are owed-at-source readings; integration must re-derive its resolved
+merged tree. Known Rust watcher failures remain unwaived, and no whole-Rust
+GREEN is claimed from a range that owes no Rust leg.
+
+Main's push-guard Git blob remains exactly
+15ef9c136251d7c8df4e6eab3bd77daccdfa137c. Its source SHA256, native-codex,
+qualified-reservation and run-record-spec bytes match the admitted base.
+All 13 live conventions Markdown sources remain 0444 without permission edits.
+Every old note and verifier entry is preserved; own sections alone are added.
+No API/dependency/secret/network/command-execution surface was introduced;
+strict decoding precedes existing validation and ownership decisions.
+
+Native first probe: 01a16504-12a3-7ad2-937d-9bfc76e744a9, canonical task
+/root/t351_qualified_bytes_repair_20261022, public attempt T-351-a22. Explicit
+binding preceded repository reads. Requested Sol/xhigh is separate from
+unknown observed model/usage. Every shell entered the assigned absolute
+resource, tools were serial, and every yielded session was retained and polled
+to terminal before another shell. No helper, foreign writer tree or sealed
+phase-one artifact was opened. Existing built prerequisites were reused.
+
+Corrections: initial guessed short card path did not exist; the actual path
+was derived and the complete card read in bounded chunks. Two read-only rule
+selectors were shortened to their unique actual openers. Scope comparison
+first expected the wrong output key, then correctly found unequal 22/20 sets;
+no failed diagnostic or asserted equality is a grade. No new pack refusal or
+out-of-fence implementation need was found. The owning scope-wording ask is
+the only routed question and is acknowledged before final grading.
+
+The inherited card stays verifying with verified_by empty. This size-M row
+owes separate verifier and integrator seats. All source/body/protocol/notes
+commits precede the ONE final original cumulative 85eb7584-to-final grade.
+No post-grade commit, status-only exemption, merge, push or CI is planned.
+Actual complete final ref, counts, exits, clean tracked state, ceased owned
+jobs and clear 15351 port are supplied at genuine RUN-DONE completion.
+
 ## Verdicts
 
 ### Recovery scope amendment — 2026-10-05
