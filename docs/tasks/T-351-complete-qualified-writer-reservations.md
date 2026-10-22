@@ -13,6 +13,8 @@ touches: [tools/e2e/scripts/run-record.mjs, tools/e2e/scripts/qualified-reservat
 builder: gpt-6.1-sol@xhigh
 verifier: gpt-6.1-sol@xhigh
 review: independent
+built_by: gpt-6.1-sol@xhigh
+verified_by:
 ---
 
 Reserve the entire product/records scope before any writer can start, using the existing coordinator transaction and reservation home. Keep one answer about who owns each domain. This reservation foundation is consumed by the next native-lifecycle contract; it does not by itself enable split dispatch.
@@ -1105,6 +1107,147 @@ including native-codex.mjs. The integration brief's remaining phrase
 the actual six-path manifest governs. The prior a19 RED and failed closure
 remain preserved. This ordinary implementation pass does not retry a16 or
 establish the expressly unexecuted independent source-drill coverage.
+
+### Native inventory integration delivery — T-351-a20
+
+The ordinary compatibility correction is committed at
+057d5dc754995efa3c403f234c2f706bda878943, from prepared source
+e5412d0a8e6be32cb45d043b39f6246d08ae2ed2. The inventory now enumerates
+supported work-record paths without decoding their bytes. Its two consumers,
+transaction-sidecar absorption and allNativeRecords, decode and distinguish
+the exact published legacy metadata at their own consumption boundaries.
+Shared-home read/UTF-8/JSON failures receive RESERVATION_UNREADABLE; native
+scans retain their existing per-attempt failure persistence. Errors outside
+that shared home retain their existing handling. Nothing unreadable is
+omitted from the inventory or treated as free authority.
+
+The class sweep found the one inventory declaration and both consumers,
+including refusal absorption and emergency-hold absorption within the
+transaction consumer. Every corresponding metadata exclusion still uses
+nativeReservationMetadata's complete published shape and resource-derived
+path. Existing lock, fault archival, hold absorption, retirement, ownership,
+qualified reconstruction, complete conflict checks and atomic publication
+remain in place. No qualified/run-record implementation, public API shape,
+request version 1 or publication version 2 changed. Main's stronger
+push-guard spec remains exact Git blob
+15ef9c136251d7c8df4e6eab3bd77daccdfa137c. All thirteen live conventions
+Markdown inputs were measured at 0444, without permission changes.
+
+| Criterion | Actual ordinary evidence before final grading |
+|---|---|
+| C1 | Complete qualified/run-record controls pass with committed capture, exact receipts and revisions, measured roots/workers, first-acquisition bases and retained immutable origins after worker commits. No scope derivation changed. |
+| C2 | The same passing qualified spec retains independent/colocated domains, mixed containment, cross-worker collision, physical worker exclusivity and unsafe topology/path refusals. |
+| C3 | The unchanged malformed shared-home body now passes; the new owned data case proves named refusal, unchanged corrupt bytes and no partial grant. Native fault archival, hold crash/replay, raw sidecar retirement and reserved-work metadata compatibility pass in the focused consumer checks. |
+| C4 | Existing idempotent/changed repeat, exact/foreign release, retained-HEAD, malformed/coherent replacement and publication-origin bodies pass. Native read-only inspection creates no emergency hold; failure-persisting inspection records the unknown, and restored record bytes do not erase its evidence. |
+| C5 | All 47 current-main ordinary run-record bodies pass, including reserved-work inventory and consumed-approval compatibility. Existing shared-home resource-free/writer/alias histories pass. Native/split admission and library-only qualified operations are unchanged; existing seat assertions and read-only source modes are retained. |
+| C6 | The exact existing body is RED on unchanged prepared source and GREEN after correction. The focused qualified/run-record run passes 66 bodies (19 qualified, 47 ordinary), including both unchanged constructive concurrency controls. The focused native/sidecar/public inventory set passes 8 bodies. The complete original-range grade remains owed after this notes commit. |
+
+The additional single body uses public startRun/readAssignment and actual
+independent repositories. It supplies malformed JSON and invalid UTF-8 as
+ordinary fixture data, then exercises qualified acquisition and both native
+inspection modes. Its valid control acquires/releases and inspects the intact
+resource-free record first. It adds no source-disabling or guard-removal
+experiment, copied runtime authority, fake admission or helper process.
+
+### Self-drill block and retained proof boundary — T-351-a20
+
+One ordinary data-case body was added. No new source mutation, source-drill
+campaign, safety-guard removal or retry of stopped a16 activity was performed.
+The new body's per-body source-drill proof is therefore NOT ESTABLISHED in
+this pass. The unchanged existing body's actual prepared-source RED and the
+corrected focused GREEN readings establish this compatibility repair; they
+do not fill the broader explicitly retained independent qualification gap.
+Historical controls and the owner-adopted T-351-only exception keep their
+original scope and refs. No literal restoration of a mutation is claimed
+because this attempt made no mutation. Independent review remains required.
+
+At 057d5dc754995efa3c403f234c2f706bda878943:
+
+| File | SHA-256 |
+|---|---|
+| native-codex.mjs | 281480413c92d8396b86944dd3c6434ee398234774298eb3a20f26f30ae3c547 |
+| qualified-reservation.spec.ts | a8110ff790ce804adab3e16d9466d6750c37a4907a292a410f53a43b560124a7 |
+| push-guard.spec.ts, unchanged from prepared source | 83f8459e0896bb307cb5f97e7af98458dfcba89f3e8041c89b1e754b969bcff1 |
+
+### Ordered readings, corrections and final boundary — T-351-a20
+
+The exact first identity probe returned native thread
+01a16447-c1d1-7b70-89a5-ff723c31c963, canonical task
+/root/t351_native_inventory_repair_20261022. Explicit public binding
+preceded repository tools. Requested profile is GPT-6.1 Sol/xhigh; observed
+provider identity/usage remains unknown. The complete current executor role,
+task history, standing STATE/INDEX and supplied generated v2 context packet
+were read before implementation. Every shell entered the assigned resource
+first; tools were serial and owned yielded commands were polled to terminal.
+No helper, sealed attack artifact, foreign source tree, live runtime copy,
+merge, push or CI was used. Existing parser/app/e2e prerequisites were built
+and installed; the mandatory graph check built its own local index package.
+
+Ordered normal test and check commands:
+
+1. At exact unchanged e5412d0a8e6be32cb45d043b39f6246d08ae2ed2,
+   the existing public read-only/malformed-authority body ran one and failed
+   one, exit 1, with the actual nativeRecordFiles JSON SyntaxError. Before/
+   after runtime/spec hashes match. Unique base-public-record-red-T-351-a20
+   log, trace and receipt preserve this failure independently of a19.
+2. The first focused qualified/run-record invocation exited 1 before any
+   body, because the new fixture imported a private, unexported path helper.
+   The fixture now derives the already published sidecar path from its actual
+   public record file. This setup failure is retained and is no test grade.
+3. npx playwright test tests/qualified-reservation.spec.ts tests/run-record.spec.ts
+   --reporter=line executed 66 and passed 66, exit 0. A subsequent narrow
+   correction retained non-shared native decode errors. The final consumer
+   check then executed the two public qualified bodies, native transaction
+   contention, unreadable-hold and reserved-work absorption bodies, raw fault
+   archive/hold crash replay/retirement, foreign reserved-work inventory and
+   reserved-work recovery metadata cases: 8 passed, exit 0, at the final
+   production bytes committed as 057d5dc7.
+4. E2e npm run typecheck exited 0. Whole-tree npm run lint:docs exited 0
+   with zero findings, judging no diff. Every mandatory graph reading returned
+   CURRENT, exit 0. git diff --check and the implementation commit exited 0.
+5. npm run capabilities:check exited 1, STALE: 135487 committed bytes versus
+   137704 fresh bytes. This is a generated source-currency finding; the
+   integration-owned reconciliation is outside the six-path fence.
+6. Both blessed --owed-set --range derivations at 057d5dc7 exited 0:
+   original origin 85eb7584e517d379f36df55e83a07f70eb93686c has 20 changed
+   paths, prepared origin e5412d0a8e6be32cb45d043b39f6246d08ae2ed2 has 3.
+   Each owes whole parser/app and the same 22 e2e specs, with no unplaceable
+   path. The former 19-spec selection is superseded. Final-tree derivations
+   and actual coverage are reported after this complete notes commit.
+
+The mechanical merge forecast against main
+7072de95987996c0da04862eb05fba4f17a6201a exited 1 with a sole content
+conflict in this task card; no source/spec conflict was reported or resolved.
+Thus no clean merged-tree gate decision is claimed. The original source-range
+docs gate exited 1 meaning FIRES, owing parser/app/e2e readers. Its 20 paths
+include six test suffix matches for the broad graph trigger; the actual
+graph is CURRENT because tools are outside its walk. BOOT GATE has no app
+source/manifest trigger. Existing added verdict citations make the cumulative
+source-range model-free method eval owed; its exact final-tree result is
+reported in the native handoff. No selftest or model-in-loop result is inferred.
+Integration must resolve the card conflict and re-derive its own merged tree.
+
+Corrections and limits: the generated template's model line yields to the
+requested native Sol/xhigh profile. The integration brief's five-path phrase
+means the actual agreeing six-path manifest, as explicitly corrected before
+work. An initial orientation named the non-existent short task filename;
+the actual card was derived from the packet and read in bounded chunks.
+The ignored-runtime file query initially returned no entries and was rerun
+with hidden/ignored discovery. A later read-only search named the absent
+method/evals directory; the real tools/method-evals path was derived and its
+published runner read. Truncated combined reads were completed in bounded
+sections. No failed reading or pre-test setup error is relabelled GREEN.
+No pack gap, out-of-fence source need or incidental follow-through was found.
+
+Unique raw command/ref/count/exit receipts and logs use T-351-a20 stems in
+the assigned external integration-repair scratch. The fresh named ask was
+not needed; no old a19 ask or acknowledgement was reused. The card remains
+verifying, built_by records the requested profile and verified_by is empty
+for fresh review. All source/test/protocol/notes commits precede the one final
+original cumulative grade, with prepared-origin coverage derived separately
+at that same tree. No status-only exemption or post-grade commit is planned.
+The final actual ref, grades, clean tracked tree and owned-job/port 15351
+cessation are reported after that run; no future success is preclaimed here.
 
 ## Verdicts
 
