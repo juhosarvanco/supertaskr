@@ -825,3 +825,147 @@ attack SHA256 `4efed69562a95932d2e0ccf2923d9b9a2f686e47d8b2b74abf28dfead4b75394`
 ground SHA256 `b74a3dc4cf43165c5e2cef6333f1ff6af2c30254b76c2d67a0eedf5db9928874`;
 raw frozen base-card SHA256 `486c30755489e85afcab93ecab873dcb28fee64266dde47151e14a52158a7b70`.
 No merge or push. Final cessation and real final commit are collected after the own-write jobs.
+
+
+### 2026-10-22 — REJECTED — gpt-6.1-sol@01a162d0-6207-7ae3-a35d-cf9868c15326 — T-351-a12
+
+Candidate: `a9a651257ab01906481eec5548a7c7c172318d9e`; original base:
+`85eb7584e517d379f36df55e83a07f70eb93686c`. All candidate figures below
+name that candidate, not this later verdict commit. The candidate's owed
+range is GREEN, but an independently constructed namespace compatibility
+case reproduces a functional failure. Acceptance is refused.
+
+**Finding: persisted transaction metadata blocks qualified acquisition.**
+Current authority main `e8aabf062b289c2cd1a460a9a3c1413f69262125` reserves
+`native-transaction-faults` in `nativeTransactionFaultPath` and
+`native-transaction-recoveries` in `nativeRecoveryIntentPath`, beneath the
+existing reservations home. The candidate's qualified acquisition enumerates
+that home and excludes neither directory. An owned real-repository fixture
+acquires/releases normally, plants both metadata directories, proves legacy
+acquisition/release still works, then attempts the same qualified request.
+Expected: acquire the complete set while preserving transaction metadata.
+Actual: `RESERVATION_UNREADABLE`, naming `native-transaction-faults` and
+`unknown reservation authority`, before publication. This is an exercised
+compatibility defect, not an inference from inspecting current main.
+
+Reproduce after the correction-body commit with the repository's Playwright
+runner, config `tools/e2e/playwright.config.ts`, spec
+`tools/e2e/tests/qualified-reservation.spec.ts`, grep
+`preserves persisted transaction`, port `25351`. The exact body is named in
+the mutant block below. `namespace-red-T-351.log` retains the failure.
+A temporary in-fence prototype adding only the two reserved metadata names
+passes the same body, including its unknown-authority refusal and metadata
+preservation assertions (`namespace-green-T-351.log`). The prototype was
+removed: restored `run-record.mjs` SHA256 is
+`cc0fff3311b2df439714dd4517b8c848c945c18c7bedb4537c215960259e626c`, equal
+to the candidate blob. No implementation repair is committed by this seat.
+The regression body is committed after this verdict, under the role's
+correction protocol. The sweep covered reservation-home enumeration and the
+current transaction fault/recovery path producers; full integrated-source
+qualification remains the coordinator's separate obligation.
+
+| Criterion | Evidence and decision at the candidate |
+|---|---|
+| C1: committed inputs, authority, revisions, physical workers and immutable origin | Qualified acquisition/validation, colocated role normalization, advanced-HEAD retained consumers, coherent-origin replacement and accepted coordinator-alias bodies pass. The sanitized delivery declaration supplied through this attempt's ask pins request version 1, retained version 2, strict schemas and public operations; those declarations match the reviewed source. No caller-expanded paths grant scope. |
+| C2: authoritative project domains, topology and unique worker ownership | Independent versus colocated repositories, mixed containment, cross-checkout collision, disjoint scopes, reused worker, unsafe paths, symlink, shared-common-directory and nested-root bodies pass using real Git repositories/worktrees. |
+| C3: complete transaction/publication, legacy coexistence and reconstruction | Existing second-root/no-residue, both legacy acquisition orders, malformed/narrowed/coherent-replacement authority and cold legacy-consumer bodies pass. **FAIL:** the added owned namespace case rejects valid acquisition once current transaction metadata directories exist. The existing transaction and recovery namespace must survive integration. |
+| C4: exact repeat, exact release, retained origin and dead-holder behavior | Repeat/read/release after worker commits, changed/foreign identity refusal, coherent replacement preservation and child-process controls pass. A completed child leaves discoverable retained authority and a conflicting sequential child still refuses; holder death grants no takeover. |
+| C5: ordinary lifecycle, admission boundary and conventions fixtures | Original-range run-record/native/CLI consumers pass; unknown assignment-root fields refuse; public operations remain data APIs. The unchanged seat cases pass against an owned read-only source copy, with assertions preserved. No CLI escape, manifest or daemon is added. |
+| C6: real fixtures and discriminating controls | Targeted run: 14/14 GREEN, including the separate serialization-disabled coordinated unsafe interleaving and conflict-disabled sequential-admission controls. Read-only seat control: 3/3 GREEN; isolated duplicate-index mutation: 1/1 RED with actual index-copy EACCES during `seatFixture`, before `seatVerb`; literal restoration: 3/3 GREEN. The original broad guard-removal coverage limitation remains expressly retained under the owner-approved T-351-only exception; no functional failure is waived. |
+
+**Original-range grade.** The blessed command
+`node tools/e2e/scripts/gate-run.mjs e2e --range 85eb7584e517d379f36df55e83a07f70eb93686c..a9a651257ab01906481eec5548a7c7c172318d9e`
+returned exit 0: parser 469 bodies GREEN, app 1171 GREEN, e2e 1033 GREEN
+over its derived 19 spec files. `original-range-T-351.log` records the
+complete derivation and exact-ref verdicts. This is distinct from the added
+correction-body RED/GREEN and the later own-write grade.
+
+**Read-only control and restoration.** This detached bench does not have the
+legacy lane-lock permission layer; its conventions sources were mode 0644.
+An owned exported source copy of the candidate supplied the fixture control,
+with the conventions index and chapter files kept at 0444 throughout. The
+canonical `conventionsFiles` set contains 12 sources at the candidate; the
+flat walk plus canonical walk copies each exactly once. The isolated mutant
+copies the index twice and produces the required EACCES. The source copy's
+spec restored SHA256 is
+`4796e23487dcf0a16016d870352c2ba9a15e3535dda6863234d9065981647576`;
+all read-only source hashes and modes match their pre-drill manifest.
+Live source permissions and existing assertions were not changed.
+A source-copy setup attempt failed before tests because the local Python
+lacked `tarfile.extractall(filter=...)`; the next setup omitted that optional
+argument. The initial Playwright copy setup then found no tests because the
+copied parser lacked its YAML dependency link. Both setup failures are
+retained and are not grades; the subsequent successful baseline, mutation
+and restoration runs are separate logs.
+
+**Seals and actual frame.** Original attack SHA256:
+`4efed69562a95932d2e0ccf2923d9b9a2f686e47d8b2b74abf28dfead4b75394`;
+original-base ground:
+`b74a3dc4cf43165c5e2cef6333f1ff6af2c30254b76c2d67a0eedf5db9928874`;
+base card:
+`486c30755489e85afcab93ecab873dcb28fee64266dde47151e14a52158a7b70`.
+Re-entry attack:
+`4ebe6be51af393056342993d3fb5fd923f4bfe9841756dc4d2755d842866d793`;
+re-entry ground:
+`187941cf1dffe6d96e1e6a648ad8fa42bc65327a882a3f62ed48602b44866fa5`;
+re-entry actual-frame record:
+`68da86e7c76efb490e7a9595adcff03eeb86f1f579a9ce590ebfc8294dcb6bf7`.
+All seals match. The relative card seal was evaluated at its original base,
+not against the candidate's later task file. The re-entry ground was taken
+at `e11b10762952f74742e671688ef466786b155f37`, before alias repair;
+it is not original-base ground. Both attacks were evaluated. The original
+phase-one frame supplied conduct extraction and six criteria; the re-entry
+frame also disclosed its absent standing/full-role packet. Those limitations
+are retained. The retained-origin regression bodies and accepted coordinator
+alias body were shared repair inputs to the executor, so their presence is
+not claimed as fresh independent discovery.
+
+This was a fresh independent phase-two native session, canonical task
+`/root/t351_phase2_20261022`, profile `detached-verifier`. The exact initial
+identity probe returned `01a162d0-6207-7ae3-a35d-cf9868c15326`, followed by
+explicit coordinator binding before repository tools. Requested model/effort:
+GPT-6.1 Sol/xhigh; observed model and usage: unknown. Raw preparation authority
+was checked privately: digest, frozen base-card bytes, endpoints, resource
+and executor identity, without displaying nested authority or private text.
+The full implementation diff preceded delivery declarations. A batched
+read-only call caused a native transaction-busy hold; the attempted
+implementation-notes read returned no contents, and an attempted ask append
+was blocked. The attempt ceased as directed, then resumed only after the
+coordinator reported checked public recovery, normal continuation and exact
+rebind. Commands were serialized thereafter. The failed history and unknown
+callback evidence remain preserved. Later delivery metadata arrived only as
+a sanitized declaration through this attempt's ask, with acknowledgement.
+No raw executor reasoning, previous verdicts or commit messages oriented
+this pass. This is a procedural read boundary, not OS/read isolation.
+
+**Security and adjacent interfaces.** Reviewed new request, receipt, path,
+Git invocation, retained-record, release and assignment inputs. Git uses argv
+rather than shell interpolation; committed scope and physical measurements
+remain authoritative; malformed retained authority refuses; native admission
+is separate. No dependency, secret, network endpoint, CLI bypass or daemon
+was added. Architecture's files/receipts/physical-root interface remains the
+intended model; the namespace incompatibility above is the concrete defect.
+No additional security finding or pack gap was identified. The coordinator's
+sanitized declaration reports no extra in-fence follow-through outside the
+reviewed criteria; source inspection agrees. No helper was spawned.
+
+Correction count at the candidate plus this independently graded body: 1;
+mutant block count: 1. The block removes the demonstrated prototype property
+and must be re-drilled after the corresponding implementation repair.
+
+```mutant
+correction: Preserve persisted transaction metadata during qualified acquisition
+file: tools/e2e/scripts/run-record.mjs
+spec: tools/e2e/tests/qualified-reservation.spec.ts
+body: qualified acquisition preserves persisted transaction fault and recovery metadata while refusing unknown authority
+message: RESERVATION_UNREADABLE
+--- old
+      if ([".native-transaction.lock", ".native-transaction.lock.recovery", "native-transaction-refusals", "native-transaction-faults", "native-transaction-recoveries"].includes(name)) continue;
+--- new
+      if ([".native-transaction.lock", ".native-transaction.lock.recovery", "native-transaction-refusals"].includes(name)) continue;
+```
+
+The verdict and correction-body commits still owe their independent write-range
+grade. Final exact refs, that grade and actual owned-job cessation are reported
+through native output for independent collection. This local verdict makes
+no push or CI claim.
