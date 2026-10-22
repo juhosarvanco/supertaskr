@@ -5,7 +5,7 @@ import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { captureQualifiedInputs, deriveQualifiedScope, qualifiedContent, qualifiedIdentity } from "../scripts/qualified-reservation.mjs";
 import { acquireQualifiedReservation, readQualifiedReservation, releaseQualifiedReservation, releaseReservation,
-  qualifiedReservationPath, reservationPath, takeReservation } from "../scripts/run-record.mjs";
+  qualifiedReservationPath, readAssignment, recordPath, reservationPath, startRun, takeReservation } from "../scripts/run-record.mjs";
 import { measureProductIdentity, WORKSPACE_ASSOCIATION_REL_PATH, WORKSPACE_BINDING_REL_PATH } from "../scripts/workspace.mjs";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 
@@ -464,5 +464,55 @@ test("qualified acquisition preserves persisted transaction fault and recovery m
     put(fx.product, path.relative(fx.product, path.join(home, "unknown-authority", "fixture.json")), "{}");
     await expect(acquireQualifiedReservation(fx.product, request)).rejects.toThrow(/RESERVATION_UNREADABLE/);
     for (const entry of metadata) expect(readFileSync(entry.file, "utf8")).toBe(entry.content);
+  } finally { fx.cleanup(); }
+});
+
+test("qualified acquisition preserves public read-only work records in the shared reservation home while refusing malformed authority", async () => {
+  const fx = fixture();
+  try {
+    const request = fx.request();
+    const brief = path.join(fx.dir, "brief-reservations.md");
+    const assignment = path.join(fx.dir, "assignment-reservations.json");
+    writeFileSync(brief, "Owned read-only consultation.\n");
+    writeFileSync(assignment, JSON.stringify({ kind: "consultation", id: "reservations", role: "planner",
+      resource: "none", harness: "fixture", model: "fixture", effort: "none", base: fx.productBase,
+      brief, cwd: fx.product, deadline: "none", budget: "none" }));
+    const participant = startRun(fx.product, { assignment: readAssignment(assignment) });
+    expect(participant.record.writer).toBe(false);
+    expect(participant.reservation).toBeNull();
+    expect(participant.file).toBe(recordPath(fx.product, "reservations-a1"));
+    const original = readFileSync(participant.file, "utf8");
+    const acquired = await acquireQualifiedReservation(fx.product, request);
+    expect((await acquireQualifiedReservation(fx.product, request)).repeated).toBe(true);
+    expect(await release(fx.product, acquired)).toBe(true);
+    expect(readFileSync(participant.file, "utf8")).toBe(original);
+    const malformed = ["{", JSON.stringify({ version: 1 }), JSON.stringify({ ...participant.record, version: 2 }),
+      JSON.stringify({ ...participant.record, state: "unknown-state" }), JSON.stringify({ ...participant.record, attempt: "reservations-a2" }),
+      JSON.stringify({ ...participant.record, writer: true }), JSON.stringify({ ...participant.record, resource: fx.product }),
+      JSON.stringify({ ...participant.record, assignmentDigest: "changed" }),
+      JSON.stringify({ ...participant.record, reservation: { file: "foreign", takenAt: null, releasedAt: null } }),
+      JSON.stringify({ ...participant.record, assignment: { ...participant.record.assignment, id: "other" } }),
+      JSON.stringify({ ...participant.record, assignment: { ...participant.record.assignment, role: "" } }),
+      JSON.stringify({ ...participant.record, assignment: { ...participant.record.assignment, extraRoot: fx.records } })];
+    for (const content of malformed) {
+      writeFileSync(participant.file, content);
+      await expect(acquireQualifiedReservation(fx.product, request)).rejects.toThrow(/RESERVATION_UNREADABLE/);
+      expect(readFileSync(participant.file, "utf8")).toBe(content);
+      expect(files(fx.product)).toEqual([path.basename(participant.file)]);
+    }
+    writeFileSync(participant.file, original);
+    const unknown = path.join(path.dirname(participant.file), "reservations-a1-shadow.json");
+    writeFileSync(unknown, original);
+    await expect(acquireQualifiedReservation(fx.product, request)).rejects.toThrow(/RESERVATION_UNREADABLE/);
+    expect(readFileSync(unknown, "utf8")).toBe(original);
+    rmSync(unknown);
+    const restored = await acquireQualifiedReservation(fx.product, request);
+    const legacy = { resource: fx.worker("product"), attempt: "T-998-a1", role: "executor", at: new Date().toISOString() };
+    expect(() => takeReservation(fx.product, legacy)).toThrow(/QUALIFIED_CONFLICT/);
+    expect(await release(fx.product, restored)).toBe(true);
+    expect(takeReservation(fx.product, legacy).reservation.attempt).toBe(legacy.attempt);
+    await expect(acquireQualifiedReservation(fx.product, request)).rejects.toThrow(/QUALIFIED_CONFLICT/);
+    expect(releaseReservation(fx.product, legacy)).toBe(true);
+    expect(readFileSync(participant.file, "utf8")).toBe(original);
   } finally { fx.cleanup(); }
 });

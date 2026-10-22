@@ -202,6 +202,19 @@ export async function acquireQualifiedReservation(root, request, options = {}) {
       try {
         if (!name.endsWith(".json") || !statSync(file).isFile() || realpathSync(file) !== file) throw new Error("unknown reservation authority");
         legacy = JSON.parse(readFileSync(file, "utf8"));
+        if (/^reservations-a\d+\.json$/.test(name)) {
+          const attempt = name.slice(0, -5);
+          const record = readRecord(root, attempt);
+          const assignment = /** @type {Record<string, any>} */ (record.assignment);
+          if (file !== recordPath(root, attempt) || record.attempt !== attempt || !STATES.includes(record.state) ||
+              record.writer !== false || record.resource !== null || record.reservation?.file !== null ||
+              record.reservation?.takenAt !== null || record.reservation?.releasedAt !== null ||
+              assignment?.id !== "reservations" || assignment.resource !== "none" || !["card", "consultation"].includes(assignment.kind) ||
+              ASSIGNMENT_FIELDS.some((field) => typeof assignment[field] !== "string" || assignment[field].trim() === "") ||
+              Object.keys(assignment).some((field) => ![...ASSIGNMENT_FIELDS, "native", "ownedJobs", "admission", "instants"].includes(field)) ||
+              record.assignmentDigest !== sha256(JSON.stringify(assignment))) throw new Error("invalid resource-free work record");
+          continue;
+        }
         if (legacy.version !== RECORD_VERSION || typeof legacy.resource !== "string" || !path.isAbsolute(legacy.resource) ||
             typeof legacy.attempt !== "string" || legacy.work !== workOf(legacy.attempt) ||
             file !== reservationPath(root, legacy.resource) || legacy.kind !== undefined) throw new Error("invalid legacy reservation");

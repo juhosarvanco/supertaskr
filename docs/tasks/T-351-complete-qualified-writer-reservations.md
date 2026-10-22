@@ -586,6 +586,16 @@ Before implementation, at verifier-feedback source
 - [ ] C5: preserve ordinary lifecycle, library-only qualified APIs, native/split admission refusal and the existing read-only conventions-copy correction.
 - [ ] C6: reproduce the already committed namespace body RED on unchanged source, show the narrow correction GREEN including unknown-authority preservation, retain hash-restored property evidence and required focused controls, then grade the complete original range after all source/notes commits.
 
+The coordinator's current-source sweep lead was reproduced through public
+`readAssignment` and `startRun`: the resource-free consultation with work id
+`reservations` creates a real `reservations-a1.json` in the shared home,
+and qualified acquisition misclassifies it as legacy authority. The actual
+`namespace-work-record-scope` answer was read and acknowledged before its
+production repair. This is required C3/C5 compatibility under the existing
+six criteria, not an incidental follow-through or an additional criterion.
+Recognize only a canonical, intact resource-free work record; retain strict
+malformed, changed-owner, writer/resource and actual legacy-conflict refusals.
+
 Original cumulative origin remains
 85eb7584e517d379f36df55e83a07f70eb93686c; original retained candidate
 remains a9a651257ab01906481eec5548a7c7c172318d9e. This replacement starts
