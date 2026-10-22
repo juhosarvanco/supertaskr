@@ -9,7 +9,7 @@ tier: standard
 status: building
 suggested_by: codex/gpt-6.1-sol @architect
 blocked_by: [T-349, T-350]
-touches: [tools/e2e/scripts/run-record.mjs, tools/e2e/scripts/qualified-reservation.mjs, tools/e2e/tests/run-record.spec.ts, tools/e2e/tests/qualified-reservation.spec.ts, tools/e2e/tests/push-guard.spec.ts]
+touches: [tools/e2e/scripts/run-record.mjs, tools/e2e/scripts/qualified-reservation.mjs, tools/e2e/tests/run-record.spec.ts, tools/e2e/tests/qualified-reservation.spec.ts, tools/e2e/tests/push-guard.spec.ts, tools/e2e/scripts/native-codex.mjs]
 builder: gpt-6.1-sol@xhigh
 verifier: gpt-6.1-sol@xhigh
 review: independent
@@ -35,6 +35,22 @@ Prepared at e985f1c807a2bad19017b6fef0c968a70cccf42b. The existing run-record tr
 Independently reviewed outside the repository in two packet-only sittings. Final review accepted this contract with the explicit acquisition-versus-retained-HEAD distinction incorporated above. Owner-authorized on 2026-10-05 as the next qualified-ownership implementation in the full repository-separation migration; implementation and independent verification remain separate.
 
 Draft outside the product repository. New files have tracked parents. Size M is provisional for one reservation-set test cycle; revise size/fence before dispatch if investigation shows an additional independent cycle. Preserve existing one-writer/digest grant hazards and callback limits. Keep transaction orchestration in run-record and validation below it. Qualified capture may load the existing built public parser on demand; ordinary lifecycle imports and operations SHALL retain their existing dependency/loading requirements, with no new capture/parser dependency when qualified scope is absent. The capture providers are library exports, not CLI entry points; introduce no circular initialization dependency. This card changes no method grammar or publication ruling. Requested implementation and independent verification are GPT-6.1 Sol extra-high; observed identity is separate. No additional agent demonstration campaign.
+
+
+Coordinator scope reconciliation, 2026-10-22: the normal current-main merge
+was refused before publication. The existing malformed shared-home record
+body produces a raw JSON error in the native inventory before the qualified
+callback, reproduced unchanged at prepared base
+6f6ed6cfef47abb10c5713a883f1cc56d5ac1f2c. Its exact owning source is
+tools/e2e/scripts/native-codex.mjs, now added to this same-contract repair
+fence. This adds no criterion, weakens no named refusal or native fault
+recording, and grants no new source-disabling proof campaign. The actual
+diagnostic worker completed and was collected without a source edit; a fresh
+worker must read the agreeing card/manifest before writing the added path.
+Original cumulative origin85eb7584e517d379f36df55e83a07f70eb93686c remains
+distinct from the prepared repair origin; complete obligations for both are
+derived at the final candidate. Prior accepted source, refused merged-tree
+logs and all earlier verdicts remain preserved.
 
 ## Verdicts
 
