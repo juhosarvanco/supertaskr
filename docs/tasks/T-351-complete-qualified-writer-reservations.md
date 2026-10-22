@@ -1198,6 +1198,25 @@ at that same final tree. No post-grade commit or status-only exemption is
 planned. Actual final ref/counts/exits, clean tracked state and owned-job/
 15351 cessation are reported after the run; future success is not preclaimed.
 
+### Retained qualified-authority byte repair criteria echo — T-351-a22
+
+Before source or test implementation at admitted base
+4d899fdd17cabfb77f3e08070fb192b9d835f567:
+
+- [ ] C1: preserve exact committed capture, canonical authority, complete revisions/receipts, measured workers and immutable acquired origins after legitimate HEAD advancement.
+- [ ] C2: preserve authoritative project-domain comparison, independent and colocated domains, exclusive physical workers and unsafe topology/path refusal.
+- [ ] C3: reject malformed encoded qualified and legacy reservation authority before conflict admission or publication, using the existing transaction/home and retained reconstruction with no partial grant.
+- [ ] C4: require readable retained bytes for read, exact repeat and expected-content release; preserve malformed authority byte-for-byte and restore valid controls using literal SHA256.
+- [ ] C5: preserve the ordinary/native lifecycle, existing durable unreadable-record evidence, library-only qualified APIs, admission refusal and main's stronger read-only seat fixture.
+- [ ] C6: pin unchanged-source RED with ordinary owned byte-data bodies and valid Unicode/acquire/read/repeat/release/conflict controls, then focused GREEN and one final original cumulative grade after all commits; derive replacement coverage independently.
+
+The retained a21 reproducer and all nineteen closed manifest members were
+verified by size/SHA256 before reading the disclosed reproducer. This is
+ordinary implementation feedback and owned fixture-data qualification, not
+an independent discovery or source-disabling drill. No stopped a16 activity
+is resumed. The existing broader independent source-drill gap remains NOT
+ESTABLISHED under the exact T-351-only exception.
+
 ## Verdicts
 
 ### Recovery scope amendment — 2026-10-05

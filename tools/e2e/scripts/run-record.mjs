@@ -139,6 +139,14 @@ let loadedQualified;
 /** @returns {typeof import("./qualified-reservation.mjs")} */
 function qualifiedValidation() { return loadedQualified ?? requireQualified("./qualified-reservation.mjs"); }
 
+/** Decode reservation authority without silently replacing malformed bytes.
+ * @param {string} file @returns {any} */
+function readReservationAuthority(file) {
+  const raw = readFileSync(file), text = raw.toString("utf8");
+  if (!raw.equals(Buffer.from(text, "utf8"))) throw new Error("reservation authority is not valid UTF-8");
+  return JSON.parse(text);
+}
+
 /** The publication name commits the original canonical acquired scope outside
  * rewritable JSON. APIs never rekey a retained record. This is content
  * integrity, not protection from replacement of the whole authority home.
@@ -167,7 +175,7 @@ function qualifiedReservations(root) {
       if (seen.has(attempt)) throw new Error("QUALIFIED_DUPLICATE: multiple publications for the same attempt");
       seen.add(attempt);
       if (!statSync(file).isFile() || realpathSync(file) !== file) throw new Error("not a regular reservation file");
-      const reservation = JSON.parse(readFileSync(file, "utf8"));
+      const reservation = readReservationAuthority(file);
       const scope = qualifiedValidation().validateQualifiedReservation(reservation, root, attempt);
       if (qualifiedValidation().qualifiedIdentity(scope) !== `sha256:${named[2]}`) throw new Error("QUALIFIED_ORIGIN_CHANGED: publication differs from its original acquired scope");
       return { file, reservation, scope };
@@ -202,7 +210,7 @@ export async function acquireQualifiedReservation(root, request, options = {}) {
       let legacy;
       try {
         if (!name.endsWith(".json") || !statSync(file).isFile() || realpathSync(file) !== file) throw new Error("unknown reservation authority");
-        legacy = JSON.parse(readFileSync(file, "utf8"));
+        legacy = readReservationAuthority(file);
         if (/^reservations-a\d+\.json$/.test(name)) {
           const attempt = name.slice(0, -5);
           const record = readRecord(root, attempt);

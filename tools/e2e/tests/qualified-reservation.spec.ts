@@ -1,4 +1,5 @@
 import { execFileSync, spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -68,6 +69,91 @@ async function release(root: string, acquired: any) {
 function files(root: string) {
   const home = path.join(root, ".supertaskr/runs/reservations"); return existsSync(home) ? readdirSync(home).sort() : [];
 }
+
+test("qualified retained byte integrity refuses invalid UTF-8 through every public consumer", async () => {
+  const fx = fixture();
+  try {
+    const host = "byte-marker-\ufffd-雪-😀";
+    const request = fx.request();
+    const acquired = await acquireQualifiedReservation(fx.product, request, { host });
+    const contender = fx.request("T-999-a2", "product::other/file, records::other/file");
+    const legacyResource = path.join(fx.dir, "independent-legacy"); mkdirSync(legacyResource);
+    const legacy = { resource: legacyResource, attempt: "T-998-a1", role: "executor", at: new Date().toISOString() };
+    const original = readFileSync(acquired.file);
+    const digest = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex");
+    const originalHash = digest(original), marker = Buffer.from(host), offset = original.indexOf(marker);
+    expect(offset).toBeGreaterThan(0);
+    expect((await readQualifiedReservation(fx.product, request.attempt))?.holder.host).toBe(host);
+    expect((await acquireQualifiedReservation(fx.product, request, { host: "incidental" })).repeated).toBe(true);
+    const disjoint = await acquireQualifiedReservation(fx.product, contender); expect(await release(fx.product, disjoint)).toBe(true);
+    expect(takeReservation(fx.product, legacy).reservation.attempt).toBe(legacy.attempt);
+    expect(releaseReservation(fx.product, legacy)).toBe(true);
+    const names = files(fx.product);
+    for (const invalid of [[0xff], [0xe2, 0x82], [0xc0, 0xaf], [0xed, 0xa0, 0x80]]) {
+      const malformed = Buffer.concat([original.subarray(0, offset), Buffer.from(invalid), original.subarray(offset + marker.length)]);
+      expect(malformed.equals(Buffer.from(malformed.toString("utf8"), "utf8"))).toBe(false);
+      expect(typeof JSON.parse(malformed.toString("utf8")).holder.host).toBe("string");
+      const operations = [
+        { name: "read", run: () => readQualifiedReservation(fx.product, request.attempt) },
+        { name: "repeat", run: () => acquireQualifiedReservation(fx.product, request) },
+        { name: "qualified acquire", run: () => acquireQualifiedReservation(fx.product, contender) },
+        { name: "legacy acquire", run: () => takeReservation(fx.product, legacy) },
+        { name: "release", run: () => release(fx.product, acquired) },
+      ];
+      for (const operation of operations) {
+        writeFileSync(acquired.file, malformed);
+        let code: string | undefined, value: any;
+        try { value = await operation.run(); } catch (error) { code = (error as { code?: string }).code; }
+        expect.soft(code, operation.name).toBe("QUALIFIED_AUTHORITY_UNREADABLE");
+        expect.soft(files(fx.product), operation.name).toEqual(names);
+        expect.soft(existsSync(acquired.file), operation.name).toBe(true);
+        if (existsSync(acquired.file)) expect.soft(readFileSync(acquired.file), operation.name).toEqual(malformed);
+        // A missing-property run may have admitted owned fixture data. Restore
+        // authority before releasing only that actual returned fixture grant.
+        writeFileSync(acquired.file, original);
+        if (value && operation.name === "qualified acquire") expect(await release(fx.product, value)).toBe(true);
+        if (value && operation.name === "legacy acquire") expect(releaseReservation(fx.product, legacy)).toBe(true);
+        expect(digest(readFileSync(acquired.file))).toBe(originalHash);
+        console.log(JSON.stringify({ consumer: operation.name, invalid, code: code ?? "accepted", malformedSha256: digest(malformed), restoredSha256: originalHash }));
+      }
+      expect((await readQualifiedReservation(fx.product, request.attempt))?.holder.host).toBe(host);
+      expect((await acquireQualifiedReservation(fx.product, request)).repeated).toBe(true);
+    }
+    expect(await release(fx.product, acquired)).toBe(true);
+    expect(await readQualifiedReservation(fx.product, request.attempt)).toBeNull();
+    expect(files(fx.product)).toEqual([]);
+  } finally { fx.cleanup(); }
+});
+
+test("qualified legacy conflict scanning refuses invalid UTF-8 without partial publication", async () => {
+  const fx = fixture();
+  try {
+    const request = fx.request();
+    const baseline = await acquireQualifiedReservation(fx.product, request); expect(await release(fx.product, baseline)).toBe(true);
+    for (const role of ["product", "records"] as const) {
+      const host = "legacy-byte-marker-\ufffd-雪-😀";
+      const legacy = { resource: fx.worker(role), attempt: "T-998-a1", role: "executor", at: new Date().toISOString(), host };
+      const held = takeReservation(fx.product, legacy), original = readFileSync(held.file);
+      const hash = createHash("sha256").update(original).digest("hex");
+      await expect(acquireQualifiedReservation(fx.product, request)).rejects.toThrow(/QUALIFIED_CONFLICT/);
+      const marker = Buffer.from(host), offset = original.indexOf(marker); expect(offset).toBeGreaterThan(0);
+      const malformed = Buffer.concat([original.subarray(0, offset), Buffer.from([0xff]), original.subarray(offset + marker.length)]);
+      expect(JSON.parse(malformed.toString("utf8")).holder.host).toBe("\ufffd");
+      writeFileSync(held.file, malformed);
+      await expect.soft(acquireQualifiedReservation(fx.product, request)).rejects.toThrow(/RESERVATION_UNREADABLE/);
+      expect(readFileSync(held.file)).toEqual(malformed); expect(files(fx.product)).toEqual([path.basename(held.file)]);
+      writeFileSync(held.file, original);
+      expect(createHash("sha256").update(readFileSync(held.file)).digest("hex")).toBe(hash);
+      console.log(JSON.stringify({ role, malformedSha256: createHash("sha256").update(malformed).digest("hex"), restoredSha256: hash }));
+      await expect(acquireQualifiedReservation(fx.product, request)).rejects.toThrow(/QUALIFIED_CONFLICT/);
+      expect(releaseReservation(fx.product, legacy)).toBe(true);
+      const restored = await acquireQualifiedReservation(fx.product, request);
+      expect((await readQualifiedReservation(fx.product, request.attempt))?.identity).toBe(restored.reservation.identity);
+      expect((await acquireQualifiedReservation(fx.product, request)).repeated).toBe(true);
+      expect(await release(fx.product, restored)).toBe(true); expect(files(fx.product)).toEqual([]);
+    }
+  } finally { fx.cleanup(); }
+});
 
 test("qualified acquisition freezes complete committed receipts and mixed containment across actual worker checkouts", async () => {
   const fx = fixture();
