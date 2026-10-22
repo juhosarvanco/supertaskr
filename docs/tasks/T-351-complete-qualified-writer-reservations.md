@@ -2216,3 +2216,100 @@ The permitted existing child controls ran unchanged and child module views termi
 Procedural fault: the first focused command's wrapper discarded its yielded session identifier. I stopped issuing shells; the coordinator independently established the actual job's cessation and clear port before explicitly authorizing serial resumption. The retained focused output still proves66 passed; no rerun, invented callback or parallel shell was used to repair that metadata fault. Later yielded jobs were polled to terminal. The own ask file carries actual acknowledgements for evidence retention and the C3/C4 owning disposition. This is not OS isolation or a new blind phase-one claim. No new pack refusal occurred in the measured suites; stale generated currency remains an integrator obligation. Prior Rust watcher failures are separately attributed and no whole-Rust GREEN is claimed.
 
 At-merge correction assignments:0; committed pinning bodies:0; mutant blocks:0. This is an executor-repair rejection, as the owning answer explicitly directs. The retained public data reproducer is the concrete handoff; no unestablished repaired-source GREEN is invented. No merge, push or CI result is claimed. Final review-record grading, exact final ref, tracked cleanliness and ceased owned jobs/port are owed after this entry's commit and are reported separately at genuine completion.
+
+
+### 2026-10-23 — APPROVED — gpt-6.1-sol@xhigh / T-351-a23
+
+Fresh independent native phase two approves the whole frozen candidate
+`5d2bc544b51422e0de35cadc078c0aedfecfb273` under the existing T-351-only
+qualification exception. All six unchanged functional criteria pass. This
+is a local candidate verdict; integration, generated currency, checkpoint
+qualification, publication and exact-tip CI remain separate obligations.
+
+**Frame and binding.** Native thread
+`01a1655b-47ee-7fb3-9f39-d11297ffd91e`, canonical task
+`/root/t351_qualified_bytes_review_20261022`, detached-verifier profile,
+actually probed identity first and waited for successful public binding.
+Requested model/effort is gpt-6.1-sol/xhigh; observed model and usage are
+unknown. This is a fresh phase-two sitting, not a new blind phase one.
+The complete current role, STATE/INDEX, active contract and context pack
+were read. The brief and mandatory exception disclosed prior facts;
+separate source feedback was opened only after complete changed-path/mode
+inventory and implementation/body orientation, including native-codex.
+No executor conversation or commit subjects were opened.
+
+**Sealed inputs.** Original attack/ground at original base
+`85eb7584e517d379f36df55e83a07f70eb93686c` retain SHA256
+`4efed69562a95932d2e0ccf2923d9b9a2f686e47d8b2b74abf28dfead4b75394`
+and `b74a3dc4cf43165c5e2cef6333f1ff6af2c30254b76c2d67a0eedf5db9928874`.
+The separate completion-reentry attack/ground retain
+`4ebe6be51af393056342993d3fb5fd923f4bfe9841756dc4d2755d842866d793`
+and `187941cf1dffe6d96e1e6a648ad8fa42bc65327a882a3f62ed48602b44866fa5`;
+its actual-frame seal is
+`68da86e7c76efb490e7a9595adcff03eeb86f1f579a9ce590ebfc8294dcb6bf7`.
+These files were independently hash-checked; reentry ground is pre-alias
+e11b, not original 85eb. Criteria were privately confirmed identical
+across original, admission, candidate and current main. No raw nested
+authority/card history was displayed for orientation.
+
+**Existing evidence.** The closed candidate archive is
+[retained-review-a23-candidate-v2](../../../supertaskr-evidence/execution/repository-separation-2026-10-05/resume-2026-10-22-v1/verification-qualified-bytes-v1/retained-review-a23-candidate-v2/MANIFEST-T-351-a23-candidate-v2.json),
+manifest SHA256
+`74985adfb94c9a93e81d6d1dd9c23b370564a9969ae5b623ad47b297799488fa`.
+All 37 members / 877323 bytes were retained and independently verified
+before this entry. Artifact filenames below are relative to that archive.
+The genuine Retain answer was read and RUN-ACK recorded in the own ask.
+
+| Criterion | Independent deciding evidence at candidate 5d2bc544b51422e0de35cadc078c0aedfecfb273 |
+|---|---|
+| 1 — complete committed and physical facts | `qualified acquisition freezes complete committed receipts and mixed containment across actual worker checkouts`, validation/base/duplicate-role/alternate-authority cases, colocated binding normalization, and retained origin cases passed in `focused-qualified-lifecycle-T-351.log`. Delivery notes pin request version 1, retained format 2 and public acquire/read/release APIs. |
+| 2 — authoritative project domains and worker ownership | Independent versus colocated roots, cross-checkout overlap, genuinely disjoint scopes, containment, worker reuse, unsafe/symlink domains and unsupported topology cases passed in that focused run. Physical replacement at the same worker path independently refused; literal physical restoration restored access in `independent-crash-rebind-control-T-351.json`. |
+| 3 — one transaction, complete publication and retained reconstruction | Second-root conflict leaves no partial grant; legacy conflicts refuse in both orders and cold-process acquisition; narrowed/coherently replaced scope, receipt/binding corruption, shared-home malformed authority and invalid UTF-8 refuse without removal. Existing serialization/conflict-disabled child controls passed unchanged. Code review confirms decisive checks and publication share withNativeTransaction and the existing home. |
+| 4 — exact repeat, ownership, release and crash retention | Exact repeats ignore incidental PID/time, changed repeats and foreign release refuse, and retained reads/repeats/release survive worker HEAD advancement. An independently terminated acquiring child exited 73; its complete two-root set remained discoverable and blocked a competing owner despite the holder actually being gone. Exact repeat, subsequent commits, physical-rebind refusal/restoration and exact release passed in the independent crash/rebind artifact. |
+| 5 — ordinary lifecycle and admission fence | Full run-record lifecycle plus ordinary dependency-absence/unknown-assignment cases passed; complete source grading includes native-codex and adjacent lifecycle suites. Code review finds no native/split admission enablement or CLI escape. Four existing/read-only seat controls passed in `focused-seat-positive-T-351.log`; the stronger push-guard blob remains unchanged. |
+| 6 — real fixtures and discriminating controls | Focused qualified/run-record execution passed 68 bodies. Existing independent child controls distinguish one normal winner from two unsafe grants and independently distinguish conflict enforcement. The duplicate-index-copy fixture alone produced setup copyfile EACCES before the seat operation (1 failed); exact source SHA256 restoration then passed the existing case (1 passed). See duplicate-copy patch/log/restoration artifacts. All 13 read-only conventions sources preserved bytes and mode 0444. |
+
+**Complete source grades and coverage.** The independently derived original
+range `85eb7584e517d379f36df55e83a07f70eb93686c..5d2bc544b51422e0de35cadc078c0aedfecfb273`
+passed parser 469, app 1171 and e2e 1126 bodies over all 22 derived specs,
+all exit 0/GREEN at the unchanged source, with a clean tracked tree.
+`original-cumulative-grade-T-351.log`, the three original-raw logs,
+`original-gate-token-T-351.json` and
+`validated-complete-coverage-T-351.json` retain actual evidence.
+The complete admitted-replacement range
+`4d899fdd17cabfb77f3e08070fb192b9d835f567..5d2bc544b51422e0de35cadc078c0aedfecfb273`
+owes the same three suites and 20 specs. Original 22 is a strict superset,
+with brief-flush and card-figures additional; replacement has no missing
+obligation. Actual token scope exactly matches the original set under the
+same configuration. This is measured coverage, not an equality claim or
+reuse of executor grades. Graph check was CURRENT.
+
+**Repair and proof boundary.** The source a22 closed 84-member manifest
+SHA256 `1a8e4fd7782fb6d3d5f9a702f1d303ce32d505cff2dd43957f29af2350b62874`
+was independently verified. Its ordinary byte-data RED at admission 4d899
+and corrected-source GREEN, including literal restorations, remain shared
+repair evidence; `shared-source-evidence-verified-T-351.json` distinguishes
+that evidence from this sitting's fresh 68-body execution and complete
+source grade. Fresh byte controls preserve malformed authority, reject
+four invalid encodings through every qualified consumer, support valid
+Unicode and check literal restored hashes (22 restoration observations).
+No new production correction or source-disabling campaign was performed.
+Remaining broad fresh independent safety-guard-removal source-drill proof
+is **NOT ESTABLISHED** under the exact adopted owner exception; a16 remains
+incomplete/no verdict and its missing callback UNKNOWN. This exception is
+T-351-only, distinct from T-351-s1 c7, and waives no functional defect,
+normal grade, ownership or completion requirement.
+
+**Sweep and exit.** New inputs use argument-vector Git calls, strict
+shapes and committed-input/physical identity reconstruction; no dependency,
+endpoint, secret or CLI bypass was added. Architecture's existing file
+state, transaction and refused split-admission interfaces are preserved.
+No unexcepted functional failure, pack gap or dispatch fault was found.
+Corrections assigned: 0; correction mutant blocks: 0. All source jobs
+actually finished; port 25351 had no listener. An earlier cwd PID's
+command attribution remains unknown, its later ESRCH is actual, and the
+subsequent probe excludes measured inspector PIDs and finds no remaining
+bench cwd process; the archive retains that explicit clarification.
+This verdict append creates a new ref: its own complete reviewer-write
+grade and final cessation are separately delivered after the final commit,
+without a post-grade source or record commit.
