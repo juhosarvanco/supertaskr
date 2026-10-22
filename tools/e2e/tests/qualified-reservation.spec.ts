@@ -5,7 +5,7 @@ import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { captureQualifiedInputs, deriveQualifiedScope, qualifiedContent, qualifiedIdentity } from "../scripts/qualified-reservation.mjs";
 import { acquireQualifiedReservation, readQualifiedReservation, releaseQualifiedReservation, releaseReservation,
-  qualifiedReservationPath, readAssignment, recordPath, reservationPath, startRun, takeReservation } from "../scripts/run-record.mjs";
+  qualifiedReservationPath, collectRun, stopRun, readAssignment, recordPath, reservationPath, startRun, takeReservation } from "../scripts/run-record.mjs";
 import { measureProductIdentity, WORKSPACE_ASSOCIATION_REL_PATH, WORKSPACE_BINDING_REL_PATH } from "../scripts/workspace.mjs";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 
@@ -515,4 +515,70 @@ test("qualified acquisition preserves public read-only work records in the share
     expect(releaseReservation(fx.product, legacy)).toBe(true);
     expect(readFileSync(participant.file, "utf8")).toBe(original);
   } finally { fx.cleanup(); }
+});
+
+
+test("qualified sets preserve intact active and released writer work records in the shared home", async () => {
+  const outcomes: { state: string; code: string | null }[] = [];
+  for (const state of ["active", "released", "overlap"] as const) {
+    const fx = fixture();
+    try {
+      const request = fx.request();
+      const control = await acquireQualifiedReservation(fx.product, request);
+      expect(await release(fx.product, control)).toBe(true);
+      const resource = state === "overlap" ? fx.worker("product") : path.join(fx.dir, "independent-legacy-resource");
+      if (state !== "overlap") mkdirSync(resource);
+      const brief = path.join(fx.dir, "brief-writer-reservations.md");
+      const assignment = path.join(fx.dir, "assignment-writer-reservations.json");
+      writeFileSync(brief, "Owned legacy writer fixture.\n");
+      writeFileSync(assignment, JSON.stringify({ kind: "card", id: "reservations", role: "executor",
+        resource, harness: "fixture", model: "fixture", effort: "none", base: fx.productBase,
+        brief, cwd: resource, deadline: "none", budget: "none" }));
+      const participant = startRun(fx.product, { assignment: readAssignment(assignment) });
+      expect(participant.record.writer).toBe(true);
+      expect(participant.file).toBe(recordPath(fx.product, "reservations-a1"));
+      expect(participant.reservation?.resource).toBe(resource);
+      if (state === "released") {
+        // No execution or child is launched by this fixture. The public stop
+        // records that known nonexecution, then collection retains history.
+        const stopped = stopRun(fx.product, { attempt: participant.record.attempt,
+          evidence: "Fixture launched no execution or owned job.\nRUN-DONE ok" });
+        expect(stopped.record.state).toBe("stopped");
+        const collected = collectRun(fx.product, { attempt: participant.record.attempt, usage: "unknown" });
+        expect(collected.record.reservation.releasedAt).not.toBeNull();
+        expect(existsSync(reservationPath(fx.product, resource))).toBe(false);
+      }
+      const record = readFileSync(participant.file, "utf8");
+      let code: string | null = null;
+      try {
+        const acquired = await acquireQualifiedReservation(fx.product, request);
+        expect((await acquireQualifiedReservation(fx.product, request)).repeated).toBe(true);
+        expect(await release(fx.product, acquired)).toBe(true);
+      } catch (error) { code = (error as { code?: string }).code ?? String(error); }
+      outcomes.push({ state, code });
+      expect(readFileSync(participant.file, "utf8")).toBe(record);
+      if (state === "active" && code === null) {
+        const actual = reservationPath(fx.product, resource);
+        const owned = readFileSync(actual, "utf8");
+        const foreign = JSON.parse(owned); foreign.attempt = "foreign-a1"; foreign.work = "foreign";
+        writeFileSync(actual, JSON.stringify(foreign));
+        await expect(acquireQualifiedReservation(fx.product, request)).rejects.toThrow(/RESERVATION_UNREADABLE/);
+        expect(readFileSync(actual, "utf8")).toBe(JSON.stringify(foreign));
+        writeFileSync(actual, owned);
+        for (const changed of [{ ...JSON.parse(record), assignmentDigest: "changed" },
+          { ...JSON.parse(record), resource: fx.product }, { ...JSON.parse(record), attempt: "reservations-a2" },
+          { ...JSON.parse(record), reservation: { ...JSON.parse(record).reservation, releasedAt: "invalid" } }]) {
+          const corrupted = JSON.stringify(changed); writeFileSync(participant.file, corrupted);
+          await expect(acquireQualifiedReservation(fx.product, request)).rejects.toThrow(/RESERVATION_UNREADABLE/);
+          expect(readFileSync(participant.file, "utf8")).toBe(corrupted);
+        }
+        writeFileSync(participant.file, record);
+        const restored = await acquireQualifiedReservation(fx.product, request);
+        expect(await release(fx.product, restored)).toBe(true);
+        expect(readFileSync(actual, "utf8")).toBe(owned);
+      }
+    } finally { fx.cleanup(); }
+  }
+  expect(outcomes).toEqual([{ state: "active", code: null }, { state: "released", code: null },
+    { state: "overlap", code: "QUALIFIED_CONFLICT" }]);
 });
