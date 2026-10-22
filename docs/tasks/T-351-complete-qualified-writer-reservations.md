@@ -949,7 +949,20 @@ No additional security finding or pack gap was identified. The coordinator's
 sanitized declaration reports no extra in-fence follow-through outside the
 reviewed criteria; source inspection agrees. No helper was spawned.
 
-Correction count at the candidate plus this independently graded body: 1;
+**Generated currency, checked separately from the functional range.** The
+candidate-owned source copy at `a9a651257ab01906481eec5548a7c7c172318d9e`
+returns exit 1 from `capabilities.mjs --check`: committed census 129443 bytes,
+fresh census 130997 bytes. At the correction-body commit
+`86e3a8212e694fbfee6dfa3897517f63d5f4e93b`, the same check returns exit 1
+with fresh census 131114 bytes. These are source-generation failures, not an
+environment failure or a functional waiver. Regeneration is required at
+integration; the generated documents are outside this frozen fence and were
+not edited. This regeneration action has no new property to pin: the existing
+currency checker already detects it, so it carries no additional body or
+mutant block.
+
+Correction count: 2 (the independently graded compatibility property and the
+existing-check regeneration action); committed property-body count: 1;
 mutant block count: 1. The block removes the demonstrated prototype property
 and must be re-drilled after the corresponding implementation repair.
 
