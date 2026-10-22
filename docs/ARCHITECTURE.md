@@ -88,6 +88,8 @@ ADR-014/015).
   Checked native transaction recovery (T-351-s1) revalidates exact authority,
   ceased owners, physical scope and current admission before disposition;
   unknown callback evidence remains recorded.
+  Complete qualified writer-set reservations (T-351) use that shared transaction;
+  split native execution remains refused.
   CLI adapters remain a separate route; cross-harness work is deferred.
 - Workspace inspection: workspace.mjs resolves product, records and runtime
   locations, validates association against product lineage and confines
