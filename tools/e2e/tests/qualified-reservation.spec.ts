@@ -7,6 +7,7 @@ import { captureQualifiedInputs, deriveQualifiedScope, qualifiedContent, qualifi
 import { acquireQualifiedReservation, readQualifiedReservation, releaseQualifiedReservation, releaseReservation,
   qualifiedReservationPath, collectRun, stopRun, readAssignment, recordPath, reservationPath, startRun, takeReservation } from "../scripts/run-record.mjs";
 import { measureProductIdentity, WORKSPACE_ASSOCIATION_REL_PATH, WORKSPACE_BINDING_REL_PATH } from "../scripts/workspace.mjs";
+import { allNativeRecords } from "../scripts/native-codex.mjs";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 
 const ENV = { ...process.env, GIT_AUTHOR_NAME: "Qualified fixture", GIT_AUTHOR_EMAIL: "fixture@example.invalid",
@@ -517,6 +518,42 @@ test("qualified acquisition preserves public read-only work records in the share
   } finally { fx.cleanup(); }
 });
 
+
+test("shared-home malformed record decoding preserves named qualified refusal and native unreadable-authority evidence", async () => {
+  for (const content of [Buffer.from("{"), Buffer.from([0x7b, 0xff])]) {
+    const fx = fixture();
+    try {
+      const request = fx.request();
+      const brief = path.join(fx.dir, "brief-reservations.md");
+      const assignment = path.join(fx.dir, "assignment-reservations.json");
+      writeFileSync(brief, "Owned read-only inventory consultation.\n");
+      writeFileSync(assignment, JSON.stringify({ kind: "consultation", id: "reservations", role: "planner",
+        resource: "none", harness: "fixture", model: "fixture", effort: "none", base: fx.productBase,
+        brief, cwd: fx.product, deadline: "none", budget: "none" }));
+      const participant = startRun(fx.product, { assignment: readAssignment(assignment) });
+      const original = readFileSync(participant.file);
+      const holdFile = `${participant.file}.native-hold`;
+      expect(allNativeRecords(fx.product)).toEqual([]);
+      const control = await acquireQualifiedReservation(fx.product, request);
+      expect(await release(fx.product, control)).toBe(true);
+      writeFileSync(participant.file, content);
+      expect(() => allNativeRecords(fx.product)).toThrow(/RESERVATION_UNREADABLE/);
+      expect(existsSync(holdFile)).toBe(false);
+      await expect(acquireQualifiedReservation(fx.product, request)).rejects.toThrow(/RESERVATION_UNREADABLE/);
+      expect(readFileSync(participant.file)).toEqual(content);
+      expect(files(fx.product)).toEqual([path.basename(participant.file)]);
+      expect(() => allNativeRecords(fx.product, { persistFailures: true })).toThrow(/RESERVATION_UNREADABLE/);
+      const hold = JSON.parse(readFileSync(holdFile, "utf8"));
+      expect(hold).toMatchObject({ attempt: participant.record.attempt, code: "unreadable-authority", outcome: "unknown" });
+      expect(hold.problem).toContain("RESERVATION_UNREADABLE");
+      expect(readFileSync(participant.file)).toEqual(content);
+      writeFileSync(participant.file, original);
+      expect(() => allNativeRecords(fx.product)).toThrow(/persisted native authority hold/);
+      expect(JSON.parse(readFileSync(holdFile, "utf8"))).toEqual(hold);
+      expect(readFileSync(participant.file)).toEqual(original);
+    } finally { fx.cleanup(); }
+  }
+});
 
 test("qualified sets preserve intact active and released writer work records in the shared home", async () => {
   const outcomes: { state: string; code: string | null }[] = [];

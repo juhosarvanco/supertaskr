@@ -1087,6 +1087,25 @@ distinct from the prepared repair origin; complete obligations for both are
 derived at the final candidate. Prior accepted source, refused merged-tree
 logs and all earlier verdicts remain preserved.
 
+### Native inventory integration repair criteria echo — T-351-a20
+
+Before implementation at prepared source
+e5412d0a8e6be32cb45d043b39f6246d08ae2ed2:
+
+- [ ] C1: retain committed capture, exact receipts/revisions, canonical authority and measured identities, immutable acquired origins and legitimate retained HEAD advancement.
+- [ ] C2: retain authoritative project domains, independent repository separation, colocated aliases, physical worker ownership and unsafe topology/path refusal.
+- [ ] C3: keep inventory discovery separate from record decoding so malformed shared-home authority reaches a named refusal, while retaining native sidecar/fault handling, complete conflict checks and atomic publication inside the existing transaction/home.
+- [ ] C4: retain exact repeats, expected-content owned release, crash discoverability and unchanged malformed/foreign authority without a partial acquisition.
+- [ ] C5: preserve ordinary public lifecycle and shared-home work records, native/split admission refusal, library-only qualified operations and main's stronger read-only conventions fixture.
+- [ ] C6: reproduce the unchanged public body RED, exercise the production-class correction with ordinary owned data and focused qualified/native/run-record compatibility tests, then grade the complete original cumulative range after all commits and separately derive prepared-origin coverage.
+
+Both the card and armed manifest were read back and agree on six paths,
+including native-codex.mjs. The integration brief's remaining phrase
+"beyond those five paths" is the coordinator-supplied copied wording error;
+the actual six-path manifest governs. The prior a19 RED and failed closure
+remain preserved. This ordinary implementation pass does not retry a16 or
+establish the expressly unexecuted independent source-drill coverage.
+
 ## Verdicts
 
 ### Recovery scope amendment — 2026-10-05
