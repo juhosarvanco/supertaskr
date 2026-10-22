@@ -1312,3 +1312,53 @@ message: RESERVATION_UNREADABLE
 The verdict and subsequent correction-body commit owe their independently
 derived write-range checks. Their actual final refs, readings and owned-job
 cessation will be reported for independent collection; no result is preclaimed.
+
+#### Exact proved availability prototype — correction handoff
+
+This literal prototype patch was applied only to the owned committed export
+of f0941fe6375cec13e8d3970b5e5c98023ea04a97. It is preserved as correction
+evidence, not a production change or a mandated design. Applying it to
+run-record source SHA-256
+`dd57385e7ff097dd37817f5cc0bb7bae095a8b483be0f2ecf9cca8257bad23ce`
+produced the GREEN prototype SHA-256
+`34cae83bfcde48740d1cdf07558ced59ce2c8400055fb159b413f34b13bff4f7`.
+The literal patch text's SHA-256 is `1f3798b3bf71375060bc636ddc133a2584a30b3835df3f9aee72960ae47197c8`.
+The later corrective body and preceding mutant block carry the executable
+RED/GREEN handoff; primary production remains unchanged.
+
+```diff
+--- run-record.mjs original
++++ run-record.mjs availability prototype
+@@ -207,12 +207,27 @@
+           const record = readRecord(root, attempt);
+           const assignment = /** @type {Record<string, any>} */ (record.assignment);
+           if (file !== recordPath(root, attempt) || record.attempt !== attempt || !STATES.includes(record.state) ||
+-              record.writer !== false || record.resource !== null || record.reservation?.file !== null ||
+-              record.reservation?.takenAt !== null || record.reservation?.releasedAt !== null ||
+-              assignment?.id !== "reservations" || assignment.resource !== "none" || !["card", "consultation"].includes(assignment.kind) ||
++              typeof record.writer !== "boolean" ||
++              assignment?.id !== "reservations" || !["card", "consultation"].includes(assignment.kind) ||
+               ASSIGNMENT_FIELDS.some((field) => typeof assignment[field] !== "string" || assignment[field].trim() === "") ||
+               Object.keys(assignment).some((field) => ![...ASSIGNMENT_FIELDS, "native", "ownedJobs", "admission", "instants"].includes(field)) ||
+-              record.assignmentDigest !== sha256(JSON.stringify(assignment))) throw new Error("invalid resource-free work record");
++              record.assignmentDigest !== sha256(JSON.stringify(assignment))) throw new Error("invalid shared-home work record");
++          if (!record.writer) {
++            if (record.resource !== null || assignment.resource !== "none" || record.reservation?.file !== null ||
++                record.reservation?.takenAt !== null || record.reservation?.releasedAt !== null) throw new Error("invalid resource-free work record");
++          } else {
++            if (typeof record.resource !== "string" || !path.isAbsolute(record.resource) ||
++                path.resolve(assignment.resource) !== record.resource ||
++                record.reservation?.file !== reservationPath(root, record.resource) ||
++                typeof record.reservation.takenAt !== "string" || !Number.isFinite(Date.parse(record.reservation.takenAt))) throw new Error("invalid writer work record");
++            if (record.reservation.releasedAt === null) {
++              const ownership = readReservation(root, record.resource);
++              if (ownership?.version !== RECORD_VERSION || ownership.attempt !== attempt || ownership.work !== workOf(attempt) ||
++                  ownership.resource !== record.resource || ownership.role !== assignment.role ||
++                  ownership.takenAt !== record.reservation.takenAt || "kind" in ownership) throw new Error("writer reservation ownership changed");
++            } else if (typeof record.reservation.releasedAt !== "string" || !Number.isFinite(Date.parse(record.reservation.releasedAt)) ||
++                !TERMINAL_STATES.includes(record.state)) throw new Error("invalid released writer work record");
++          }
+           continue;
+         }
+         if (legacy.version !== RECORD_VERSION || typeof legacy.resource !== "string" || !path.isAbsolute(legacy.resource) ||
+```
