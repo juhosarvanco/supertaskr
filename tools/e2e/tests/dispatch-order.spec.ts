@@ -718,10 +718,51 @@ function rulingRows(rendered: string): string[] {
   return rendered.split("\n").filter((l) => l.startsWith("   "));
 }
 
-/** Every line of the whole answer carrying `needle`, as a count. */
+/** Complete literal addresses, separated by the renderer's whitespace. */
 function linesWith(rendered: string, needle: string): number {
-  return rendered.split("\n").filter((l) => l.includes(needle)).length;
+  const literal = needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return rendered.match(new RegExp(`(?:^|\\s)${literal}(?=\\s|$)`, "g"))?.length ?? 0;
 }
+
+test("COMPLETE LITERAL LANE ADDRESSES distinguish prefixes and punctuation, and expose actual repeats", async () => {
+  const addresses = [
+    { branch: "refs/heads/task/T-901-parent+.(literal)", worktree: "/Users/x/supertaskr-T-901+[literal]." },
+    { branch: "refs/heads/task/T-901-parent+.(literal)-s1", worktree: "/Users/x/supertaskr-T-901+[literal].-s1" },
+    { branch: "refs/heads/task/T-901-parent+.(literal)-s2", worktree: "/Users/x/supertaskr-T-901+[literal].-s2" },
+  ] as const;
+  // Assert the data property before spending it: suffix edits cannot
+  // quietly turn the prefix or literal-metacharacter control off.
+  expect(addresses[0].branch).toContain("+.(literal)");
+  expect(addresses[0].worktree).toContain("+[literal].");
+  for (const sibling of addresses.slice(1)) {
+    expect(sibling.branch.startsWith(addresses[0].branch)).toBe(true);
+    expect(sibling.worktree.startsWith(addresses[0].worktree)).toBe(true);
+  }
+  const porcelain = [
+    ONE_LANE.split("\n\n")[0],
+    ...addresses.map((a) => `worktree ${a.worktree}\nHEAD ${"2".repeat(40)}\nbranch ${a.branch}`),
+    "",
+  ].join("\n\n");
+  const ctx = await dispatchContext({ files: FILTER_BOARD, porcelain, full: true });
+  expect(ctx.order.lanes.map((l: { branch: string; worktree: string }) => ({ branch: l.branch, worktree: l.worktree }))).toEqual(addresses);
+  expect(ctx.order.fenced.length).toBeGreaterThan(0);
+  const rendered = render(dispatchReport(ctx));
+  expect(unstampedLines(rendered)).toEqual([]);
+  for (const address of addresses) {
+    for (const needle of [address.branch, address.worktree, `worktree ${address.worktree}`]) {
+      expect(linesWith(rendered, needle), `complete literal ${needle}`).toBe(1);
+      expect(linesWith(rendered, `${needle}-absent`), `absent literal ${needle}`).toBe(0);
+    }
+    const row = rendered.split("\n").find((l) => l.includes(`branch ${address.branch} worktree ${address.worktree} `));
+    expect(row, "the actual renderer supplied the repeated-address control").toBeTruthy();
+    // The control is armed after rendering, independently of the
+    // report's once-only arrangement, on both separate and shared rows.
+    expect(linesWith(`${rendered}\n${row}`, address.branch)).toBe(2);
+    expect(linesWith(`${rendered}\n${row}`, address.worktree)).toBe(2);
+    expect(linesWith(`${row} ${row}`, address.branch)).toBe(2);
+    expect(linesWith(`${row} ${row}`, address.worktree)).toBe(2);
+  }
+});
 
 test("A LANE'S ADDRESS IS SPELLED ONCE, and the ruling still NAMES the lane and the shared path", async () => {
   // KILLED BY: `laneAddressOnce` returning its argument — the no-op
