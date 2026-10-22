@@ -926,6 +926,24 @@ out-of-fence implementation need was discovered. The read-only source
 fixture arrangement and exact correction were already authorized by the
 frozen brief, so no new ask or scope decision was required.
 
+### Physical recorded-path compatibility criteria echo — T-351-a17
+
+Before implementation, at unchanged source
+e8e5f6657c2efc00c890ee8203fb7162a6c85761:
+
+- [ ] C1: preserve strict committed capture, complete receipts and role revisions, measured identities, immutable acquired origins and retained reads after legitimate worker HEAD advancement.
+- [ ] C2: preserve authoritative project-domain comparison, independent repository separation, colocated aliases, unique physical worker ownership and unsafe topology/path refusal.
+- [ ] C3: accept a legacy writer record's supported coordinator alias only when its recorded reservation parent resolves to the existing physical home and its exact expected basename matches; preserve actual legacy ownership, all conflict checks and atomic complete publication in the existing transaction.
+- [ ] C4: preserve exact repeats and expected-content owned release; changed, foreign, missing or unreadable recorded authority must refuse without deletion or partial acquisition.
+- [ ] C5: preserve ordinary public start/bind/continuation/stop/collection, metadata and resource-free records, library-only qualified APIs, native/split refusal and the read-only conventions fixture repair.
+- [ ] C6: retain the supplied regression, demonstrate its unchanged-base failure and corrected normal qualified/run-record readings, assess canonical/alias active/released/disjoint/overlap/foreign cases, and grade the final committed original range once after all notes; disclose the stopped independent review and every unexecuted proof without retrying source mutations or guard-disabling work.
+
+The a16 review was stopped before a verdict and remains incomplete. Its
+copied regression and narrow prototype are shared ordinary repair inputs,
+not independent acceptance. The standing source-drill requirement is not
+executed in this ordinary compatibility pass; prior evidence keeps its own
+refs and the explicitly retained qualification limitation remains visible.
+
 ## Verdicts
 
 ### Recovery scope amendment — 2026-10-05

@@ -218,7 +218,8 @@ export async function acquireQualifiedReservation(root, request, options = {}) {
           } else {
             if (typeof record.resource !== "string" || !path.isAbsolute(record.resource) ||
                 path.resolve(assignment.resource) !== record.resource ||
-                record.reservation?.file !== reservationPath(root, record.resource) ||
+                typeof record.reservation?.file !== "string" || !path.isAbsolute(record.reservation.file) ||
+                path.join(realpathSync(path.dirname(record.reservation.file)), path.basename(record.reservation.file)) !== reservationPath(root, record.resource) ||
                 typeof record.reservation.takenAt !== "string" || !Number.isFinite(Date.parse(record.reservation.takenAt))) throw new Error("invalid writer work record");
             if (record.reservation.releasedAt === null) {
               const ownership = readReservation(root, record.resource);

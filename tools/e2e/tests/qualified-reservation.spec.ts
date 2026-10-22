@@ -582,3 +582,122 @@ test("qualified sets preserve intact active and released writer work records in 
   expect(outcomes).toEqual([{ state: "active", code: null }, { state: "released", code: null },
     { state: "overlap", code: "QUALIFIED_CONFLICT" }]);
 });
+
+
+test("qualified writer history accepts physical coordinator aliases and preserves foreign recorded-path refusals", async () => {
+  const outcomes: { alias: boolean; state: string; code: string | null }[] = [];
+  for (const alias of [false, true]) for (const state of ["active", "released", "overlap"] as const) {
+    const fx = fixture();
+    try {
+      const request = fx.request();
+      const linked = path.join(fx.dir, "coordinator-alias"); symlinkSync(fx.product, linked, "dir");
+      const root = alias ? linked : fx.product;
+      const resource = state === "overlap" ? fx.worker("product") : path.join(fx.dir, "independent-writer");
+      if (state !== "overlap") mkdirSync(resource);
+      const brief = path.join(fx.dir, "brief-alias-T-351.md"); writeFileSync(brief, "Owned public legacy alias fixture.\n");
+      const assignment = path.join(fx.dir, "assignment-alias-T-351.json");
+      writeFileSync(assignment, JSON.stringify({ kind: "card", id: "reservations", role: "executor", resource,
+        harness: "fixture", model: "fixture", effort: "none", base: fx.productBase, brief, cwd: resource, deadline: "none", budget: "none" }));
+      const participant = startRun(root, { assignment: readAssignment(assignment) });
+      expect(participant.record.writer).toBe(true);
+      if (state === "released") {
+        expect(stopRun(root, { attempt: participant.record.attempt, evidence: "Fixture launched no execution or jobs.\nRUN-DONE ok" }).record.state).toBe("stopped");
+        expect(collectRun(root, { attempt: participant.record.attempt, usage: "unknown" }).record.reservation.releasedAt).not.toBeNull();
+      }
+      const recordFile = recordPath(fx.product, participant.record.attempt);
+      const original = readFileSync(recordFile, "utf8"); const names = files(fx.product);
+      const ownershipFile = reservationPath(fx.product, resource);
+      const ownership = existsSync(ownershipFile) ? readFileSync(ownershipFile, "utf8") : null;
+      let code: string | null = null;
+      try {
+        const acquired = await acquireQualifiedReservation(fx.product, request);
+        expect((await acquireQualifiedReservation(linked, request)).repeated).toBe(true);
+        expect((await readQualifiedReservation(linked, request.attempt))?.identity).toBe(acquired.reservation.identity);
+        expect(await release(linked, acquired)).toBe(true);
+      } catch (error) { code = (error as { code?: string }).code ?? String(error); }
+      outcomes.push({ alias, state, code });
+      expect(readFileSync(recordFile, "utf8")).toBe(original); expect(files(fx.product)).toEqual(names);
+      if (ownership !== null) expect(readFileSync(ownershipFile, "utf8")).toBe(ownership);
+      if (state !== "overlap" && code === null) {
+        const foreignParent = path.join(fx.dir, "foreign-home"); mkdirSync(foreignParent);
+        const foreignAlias = path.join(fx.dir, "foreign-parent-alias"); symlinkSync(foreignParent, foreignAlias, "dir");
+        for (const parent of [foreignParent, foreignAlias, path.join(fx.dir, "missing-home")]) {
+          const changed = JSON.parse(original); changed.reservation.file = path.join(parent, path.basename(ownershipFile));
+          const bytes = JSON.stringify(changed); writeFileSync(recordFile, bytes);
+          await expect(acquireQualifiedReservation(fx.product, request)).rejects.toThrow(/RESERVATION_UNREADABLE/);
+          expect(readFileSync(recordFile, "utf8")).toBe(bytes); expect(files(fx.product)).toEqual(names);
+        }
+        writeFileSync(recordFile, original);
+        if (ownership !== null) {
+          const changed = JSON.parse(ownership); changed.attempt = "foreign-a1"; changed.work = "foreign";
+          const bytes = JSON.stringify(changed); writeFileSync(ownershipFile, bytes);
+          await expect(acquireQualifiedReservation(fx.product, request)).rejects.toThrow(/RESERVATION_UNREADABLE/);
+          expect(readFileSync(ownershipFile, "utf8")).toBe(bytes); writeFileSync(ownershipFile, ownership);
+        }
+        const restored = await acquireQualifiedReservation(fx.product, request); expect(await release(fx.product, restored)).toBe(true);
+        expect(readFileSync(recordFile, "utf8")).toBe(original);
+      }
+    } finally { fx.cleanup(); }
+  }
+  expect(outcomes).toEqual([false, true].flatMap((alias) => [
+    { alias, state: "active", code: null }, { alias, state: "released", code: null }, { alias, state: "overlap", code: "QUALIFIED_CONFLICT" },
+  ]));
+});
+
+test("qualified recorded writer paths require the exact basename in the same resolvable physical parent", async () => {
+  for (const state of ["active", "released"] as const) {
+    const fx = fixture();
+    try {
+      const request = fx.request();
+      const alias = path.join(fx.dir, "coordinator-alias"); symlinkSync(fx.product, alias, "dir");
+      const chain = path.join(fx.dir, "coordinator-chain"); symlinkSync(alias, chain, "dir");
+      const resource = path.join(fx.dir, "independent-writer"); mkdirSync(resource);
+      const brief = path.join(fx.dir, "brief-recorded-path-T-351.md"); writeFileSync(brief, "Owned recorded-path fixture.\n");
+      const assignment = path.join(fx.dir, "assignment-recorded-path-T-351.json");
+      writeFileSync(assignment, JSON.stringify({ kind: "card", id: "reservations", role: "executor", resource,
+        harness: "fixture", model: "fixture", effort: "none", base: fx.productBase, brief, cwd: resource, deadline: "none", budget: "none" }));
+      const participant = startRun(chain, { assignment: readAssignment(assignment) });
+      if (state === "released") {
+        stopRun(fx.product, { attempt: participant.record.attempt, evidence: "Fixture launched no execution or jobs.\nRUN-DONE ok" });
+        collectRun(fx.product, { attempt: participant.record.attempt, usage: "unknown" });
+      }
+      const recordFile = recordPath(fx.product, participant.record.attempt);
+      const original = readFileSync(recordFile, "utf8");
+      const record = JSON.parse(original); const names = files(fx.product);
+      const ownershipFile = reservationPath(fx.product, resource);
+      expect(record.reservation.file).toBe(reservationPath(chain, resource));
+      const ownership = existsSync(ownershipFile) ? readFileSync(ownershipFile, "utf8") : null;
+      const parent = path.dirname(ownershipFile); const basename = path.basename(ownershipFile);
+      const parentAlias = path.join(fx.dir, "reservation-parent-alias"); symlinkSync(parent, parentAlias, "dir");
+      for (const recorded of [record.reservation.file, path.join(parentAlias, basename), `${parentAlias}//./${basename}`]) {
+        const bytes = JSON.stringify({ ...record, reservation: { ...record.reservation, file: recorded } });
+        writeFileSync(recordFile, bytes);
+        const acquired = await acquireQualifiedReservation(fx.product, request);
+        expect((await readQualifiedReservation(chain, request.attempt))?.identity).toBe(acquired.reservation.identity);
+        expect((await acquireQualifiedReservation(chain, request)).repeated).toBe(true);
+        expect(await release(chain, acquired)).toBe(true);
+        expect(readFileSync(recordFile, "utf8")).toBe(bytes); expect(files(fx.product)).toEqual(names);
+      }
+      const foreign = path.join(fx.dir, "foreign-parent"); mkdirSync(foreign);
+      rmSync(parentAlias); symlinkSync(foreign, parentAlias, "dir");
+      const dangling = path.join(fx.dir, "dangling-parent"); symlinkSync(path.join(fx.dir, "absent"), dangling, "dir");
+      const loop = path.join(fx.dir, "loop-parent"); symlinkSync(loop, loop, "dir");
+      const nondirectory = path.join(fx.dir, "file-parent"); writeFileSync(nondirectory, "not a directory");
+      for (const recorded of [null, basename, path.join(parent, `wrong-${basename}`), path.join(parentAlias, basename),
+        path.join(dangling, basename), path.join(loop, basename), path.join(nondirectory, basename)]) {
+        const bytes = JSON.stringify({ ...record, reservation: { ...record.reservation, file: recorded } });
+        writeFileSync(recordFile, bytes);
+        await expect(acquireQualifiedReservation(fx.product, request)).rejects.toThrow(/RESERVATION_UNREADABLE/);
+        expect(readFileSync(recordFile, "utf8")).toBe(bytes); expect(files(fx.product)).toEqual(names);
+        if (ownership !== null) expect(readFileSync(ownershipFile, "utf8")).toBe(ownership);
+      }
+      rmSync(alias); symlinkSync(foreign, alias, "dir"); writeFileSync(recordFile, original);
+      await expect(acquireQualifiedReservation(fx.product, request)).rejects.toThrow(/RESERVATION_UNREADABLE/);
+      expect(readFileSync(recordFile, "utf8")).toBe(original); expect(files(fx.product)).toEqual(names);
+      rmSync(alias); symlinkSync(fx.product, alias, "dir");
+      const restored = await acquireQualifiedReservation(fx.product, request); expect(await release(fx.product, restored)).toBe(true);
+      expect(readFileSync(recordFile, "utf8")).toBe(original); expect(files(fx.product)).toEqual(names);
+      if (ownership !== null) expect(readFileSync(ownershipFile, "utf8")).toBe(ownership);
+    } finally { fx.cleanup(); }
+  }
+});
