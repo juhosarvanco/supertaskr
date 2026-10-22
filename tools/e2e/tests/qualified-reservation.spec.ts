@@ -520,7 +520,7 @@ test("qualified acquisition preserves public read-only work records in the share
 
 
 test("shared-home malformed record decoding preserves named qualified refusal and native unreadable-authority evidence", async () => {
-  for (const content of [Buffer.from("{"), Buffer.from([0x7b, 0xff])]) {
+  for (const invalid of ["json", "utf8"]) {
     const fx = fixture();
     try {
       const request = fx.request();
@@ -536,6 +536,13 @@ test("shared-home malformed record decoding preserves named qualified refusal an
       expect(allNativeRecords(fx.product)).toEqual([]);
       const control = await acquireQualifiedReservation(fx.product, request);
       expect(await release(fx.product, control)).toBe(true);
+      const encoded = Buffer.from(JSON.stringify({ ...participant.record, fixtureInvalidUtf8: "fixture-byte" }));
+      const marker = Buffer.from("fixture-byte"), offset = encoded.indexOf(marker);
+      expect(offset).toBeGreaterThan(0);
+      const content = invalid === "json" ? Buffer.from("{") : Buffer.concat([
+        encoded.subarray(0, offset), Buffer.from([0xff]), encoded.subarray(offset + marker.length),
+      ]);
+      if (invalid === "utf8") expect(JSON.parse(content.toString("utf8")).fixtureInvalidUtf8).toBe("\ufffd");
       writeFileSync(participant.file, content);
       expect(() => allNativeRecords(fx.product)).toThrow(/RESERVATION_UNREADABLE/);
       expect(existsSync(holdFile)).toBe(false);

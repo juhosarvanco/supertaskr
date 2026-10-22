@@ -1056,7 +1056,11 @@ function removeAbandonedNativeTemps(root, pid) {
  * @param {string} root
  */
 function absorbNativeTransactionSidecars(root) {
-  const recordFiles = nativeRecordFiles(root);
+  // Shared-home byte validation remains a transaction precondition even with
+  // no pending sidecar; a permissive JSON reader must not normalize authority.
+  const recordFiles = nativeRecordFiles(root).filter((file) =>
+    path.dirname(file) !== nativeTransactionDir(root) ||
+    !nativeReservationMetadata(root, file, readNativeInventoryRecord(root, file)));
   const refusalDir = nativeTransactionRefusalDir(root);
   if (existsSync(refusalDir)) {
     for (const name of readdirSync(refusalDir).sort()) {
@@ -1072,8 +1076,7 @@ function absorbNativeTransactionSidecars(root) {
           `native-codex: transaction refusal sidecar ${refusalFile} is unreadable: ${String(error)}.`,
         );
       }
-      const records = recordFiles.map((file) => ({ file, rec: readNativeInventoryRecord(root, file) }))
-        .filter(({ file, rec }) => !nativeReservationMetadata(root, file, rec));
+      const records = recordFiles.map((file) => ({ file, rec: readNativeInventoryRecord(root, file) }));
       const faultFile = nativeTransactionFaultPath(root, refusal.id);
       const fault = { version: 1, id: refusal.id, rawDigest: nativeSha256(rawContent), rawContent, refusal };
       if (existsSync(faultFile)) {
@@ -1122,7 +1125,6 @@ function absorbNativeTransactionSidecars(root) {
     let rec;
     try {
       rec = readNativeInventoryRecord(root, file);
-      if (nativeReservationMetadata(root, file, rec)) continue;
       nativeState(rec);
     } catch {
       continue;
