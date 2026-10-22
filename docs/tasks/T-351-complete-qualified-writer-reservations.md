@@ -1696,3 +1696,174 @@ RED/GREEN handoff; primary production remains unchanged.
          }
          if (legacy.version !== RECORD_VERSION || typeof legacy.resource !== "string" || !path.isAbsolute(legacy.resource) ||
 ```
+
+
+### 2026-10-22 — APPROVED — codex/gpt-6.1-sol@T-351-a18 — independent normal review under the existing limited exception
+
+I approve collected candidate b1ed2d7744c4fd6275e0b272bf4c9170a50a1652
+for the six unchanged frozen functional criteria, under the exact owner-adopted
+T-351-only qualification exception of 2026-10-06. No new functional defect or
+additional unexcepted property gap was established. This local verdict does
+not certify a merged tree, publication or CI. All earlier rejections and the
+incomplete a16 review remain intact.
+
+#### Actual frame and seals
+
+Native first probe: 01a163c7-71e0-7352-af85-77b47292eb00; canonical task:
+`/root/t351_normal_review_20261022`. Explicit binding preceded repository
+reads. Profile: detached-verifier. Requested model/effort: GPT-6.1 Sol/xhigh;
+observed provider identity/usage: unknown. Tools were serial, without helpers.
+The native resource prefix was used throughout. This was a procedural reading
+boundary, not OS/read isolation.
+
+I read STATE/INDEX, the supplied current standing and complete verifier role,
+the frozen contract, both distinct attack/ground sets and the original context
+pack. The complete five-path implementation diff and full changed-path/mode
+inventory preceded source notes, reports and old verdicts. The sole additional
+changed path is this task record; no implementation path or executable mode
+was hidden. Its criteria still match the original card exactly. No executor
+conversation or commit subjects were used for orientation.
+
+This is a fresh phase-two normal review of a completed/collected repair,
+not a new preimplementation blind sitting. Original phase one received the
+contract/conduct extraction rather than the whole historical role. Reentry
+ground names pre-alias-repair e11b10762952f74742e671688ef466786b155f37,
+not the original base. Metadata, resource-free, writer-record and alias
+regressions were shared repair inputs, not fresh discoveries by this reviewer.
+
+Rehashed original inputs:
+
+attack set: sha256:4efed69562a95932d2e0ccf2923d9b9a2f686e47d8b2b74abf28dfead4b75394 (/Users/ujju/Projects/supertaskr-evidence/execution/repository-separation-2026-10-05/T-351/recovery/verification-r4/attack-set-T-351.md)
+
+ground: sha256:b74a3dc4cf43165c5e2cef6333f1ff6af2c30254b76c2d67a0eedf5db9928874 (ground-T-351.md, same original packet)
+
+Raw card at 85eb7584e517d379f36df55e83a07f70eb93686c:
+`486c30755489e85afcab93ecab873dcb28fee64266dde47151e14a52158a7b70`.
+Reentry attack: `4ebe6be51af393056342993d3fb5fd923f4bfe9841756dc4d2755d842866d793`;
+reentry ground: `187941cf1dffe6d96e1e6a648ad8fa42bc65327a882a3f62ed48602b44866fa5`;
+actual-frame seal: `68da86e7c76efb490e7a9595adcff03eeb86f1f579a9ce590ebfc8294dcb6bf7`.
+All match their saved files. The native preparation digest
+`4018137c16d6033d2bdbe5386dd96b257c014d6ba77336687ca8f2c983ae4b8b`
+and its frozen card digest
+`f8e5f84abb9ce724df185ebec3421dddc5f4412bebf40b16a140f5bc8a816781`
+were validated privately against replacement origin
+e8e5f6657c2efc00c890ee8203fb7162a6c85761, source a17, the exact candidate,
+resource, profile and combined paths/alwaysWritable fence. Nested authority
+card text was not displayed. An initial validator incorrectly expected a
+`sha256:` prefix on the native bare-hex card digest; the corrected comparison
+matched without changing authority.
+
+The named public asks `normal-suite-boundary-T-351-a18` and
+`readonly-preparation-T-351-a18` were answered through the run arm and read
+before actual line-initial acknowledgements. The first preserved the two
+already-committed constructive concurrency controls inside the unmodified
+normal suite; it granted no new mutation or stopped-prototype retry. The
+initial preparation condition check exited 1 before any suite: all thirteen
+conventions inputs were 0644. Under the second answer I derived only the
+tracked canonical input set, validated regular non-symlink targets in this
+bench and removed write bits. At the candidate, all thirteen became 0444;
+bytes, Git modes, HEAD/tree and tracked cleanliness stayed exact. This setup
+failure is retained as a preparation gap, not an implementation test failure
+or proof that a fixture ran. No fake lane-lock or authority was introduced.
+
+#### Six literal criteria
+
+The current-source evidence below is the independent original-range reading
+at b1ed2d7744c4fd6275e0b272bf4c9170a50a1652. Named bodies are in the frozen
+qualified-reservation and run-record specs unless otherwise stated.
+
+| Criterion | Result and deciding evidence |
+|---|---|
+| C1 — complete committed scope, authority and immutable origins | MET functionally. Source `captureQualifiedInputs` and `deriveQualifiedScope` use existing committed capture and the public parser, exact receipts/revisions, measured roots/workers, strict role bindings and first HEAD/base checks. Complete mixed-receipt, malformed/drift/alternate-authority, colocated-alias-base and advanced-HEAD read/repeat/release bodies all pass. Request version 1, retained publication version 2 and public API/failure contracts are pinned in the delivery notes. |
+| C2 — authoritative project domains and exclusive physical workers | MET functionally. `qualifiedSetsConflict` uses the canonical comparator on captured project identities and separately claims physical workers. Passing bodies distinguish same-project overlap across separate workers, genuinely disjoint scopes, independent equal relative paths, colocated aliases, worker reuse, mixed containment, unsafe paths/symlinks and unsupported nested/shared-common-directory topology. |
+| C3 — existing transaction/home, complete atomic publication, interoperability and retained reconstruction | MET functionally. Source discovery, reconstruction, complete conflicts and single `atomicJson` publication are within `withNativeTransaction`; legacy take/release use the same boundary. Both acquisition orders and the second-root/no-residue body pass. Coherent worker/origin replacement, narrowed JSON, receipt/binding/version/publication corruption and unknown authority refuse through retained consumers. Metadata, resource-free, intact writer and recorded-path bodies pass. The latest comparison resolves the recorded parent physically and requires the exact basename; actual legacy ownership checks remain. |
+| C4 — exact repeat/release, preservation and recoverability | MET functionally. Exact repeat excludes holder/time, meaningful changed repeats refuse, foreign expected identity preserves authority, and advanced HEAD retains the acquired origin. Current coherent-replacement/publication tests pass. Retained independent a9 crash-origin evidence at e11b1076 records actual child exit 77, ceased holder, one complete discoverable two-repository set, refused dead-holder theft, unchanged hash after foreign release and successful advanced-HEAD read/repeat/exact release. Its publication/retained-origin mechanism remains in the reviewed source; this is historical evidence at its named ref, not a newly run crash campaign. |
+| C5 — ordinary lifecycle and admission fence, library APIs and read-only seat fixtures | MET functionally. All 45 ordinary run-record bodies pass, including lazy loading and unknown second-root assignment refusal; ordinary start/bind/continuation/stop/collection remain covered. Qualified operations remain library exports; no new native/split admission, CLI bypass, lane manifest, daemon or dependency was introduced. The shared seat fixture copies the conventions index only through its canonical derived set, preserving assertions; all three existing seat bodies pass with the candidate's thirteen sources at 0444. |
+| C6 — real owned fixtures and required constructive/discriminating evidence | MET for the frozen functional/control requirements, with the precise rubric limitation below. All 18 qualified bodies pass using owned actual repositories/worktrees. The unchanged separate child controls execute: normal conflicting acquisition has one winner; coordinated serialization-disabled interleaving has two grants; serialized conflict-disabled overlap is admitted. Historical read-only duplicate-copy RED/hash restoration/GREEN and assigned availability correction evidence were inspected as detailed below. No incomplete a16 result supplies a missing control. |
+
+#### Retained controls and exact proof limits
+
+I inspected the literal mutation landings, raw RED/GREEN logs and restoration
+receipts, not only delivery summaries. The preserved a9 archive verifies all
+66 manifest entries by size/hash. Its independent duplicate-copy control at
+e11b1076 changes only the index exclusion, fails the existing seat-install
+case with actual index-copy EACCES in `seatFixture` before `seatVerb`, restores
+the unchanged push-guard spec hash and modes/clocks, and passes the same case.
+Current push-guard spec SHA-256 is still
+`4796e23487dcf0a16016d870352c2ba9a15e3535dda6863234d9065981647576`.
+
+The retained a15 artifact manifest verifies all 92 entries. At cb1dec0f its
+writer, metadata and resource-free availability controls each run one body
+RED/exit 1, restore literal run-record hash
+`34cae83bfcde48740d1cdf07558ced59ce2c8400055fb159b413f34b13bff4f7`,
+and run that body GREEN/exit 0. Its duplicate-copy control gives the specific
+setup EACCES, literal restoration and three restored seat passes. The
+whole-export receipt records 1722 unchanged hashes/modes and restored clocks.
+These are preserved executor controls independently inspected here, not
+executor self-approval. The disclosed reused stdout stem is not treated as
+preserved original output; its separately retained exact-base repeat supplies
+the genuine prior-source writer RED.
+
+For the latest physical-parent availability repair, the actual a17 raw
+`base-alias-regression-red-T-351-a17.log` executes one supplied body against
+exact e8e5f665 runtime/hash and fails only the aliased active/released/overlap
+expectations with RESERVATION_UNREADABLE; canonical controls agree. The narrow
+production difference and current independent passing history/path bodies
+establish the availability correction. Current data cases also require exact
+parent/basename, reject foreign, missing, looping and retargeted aliases,
+preserve record/ownership bytes and recover after literal fixture restoration.
+This ordinary prior-source RED/current-source GREEN is not relabelled as a
+completed new independent source-mutation drill.
+
+The exact adopted exception leaves the broader fresh independent safety-
+guard-removal source-drill campaign unexecuted for retained-authority
+integrity, worker ownership/containment, legacy enforcement and assignment/
+admission guards. That coverage is still NOT ESTABLISHED. No general waiver
+for arbitrary new tests, functional failures, constructive controls,
+correction RED/GREEN/restoration, completion or ownership is inferred. The
+latest retained legacy-path refusal boundaries were exercised with ordinary
+fixture data; no new source-disabling kill set is claimed for them. The
+availability property has the specific actual missing-property RED and
+corrected GREEN above. I found no further unexcepted property requiring an
+unsupported proof to declare these six functional criteria satisfied.
+
+Automatic cybersecurity review stopped a16's new mutation verification. It
+has no verdict; its partial 17-body prototype pass and unknown missing
+callback remain incomplete evidence. I did not resume, reframe or route
+around that activity, mutate a source copy or launch another drill campaign.
+No missing callback, success or independent approval was manufactured.
+
+#### Independent grades, scope and handoff
+
+The one original cumulative command was:
+`node tools/e2e/scripts/gate-run.mjs --range 85eb7584e517d379f36df55e83a07f70eb93686c..b1ed2d7744c4fd6275e0b272bf4c9170a50a1652`,
+with port 25351. Exit 0: parser 469 GREEN, app 1171 GREEN, e2e 1038 GREEN
+over 19 derived specs, all at the exact candidate/tree
+d85f8cfc592d391ee81bc7ffc040a6db9223ca22. Source remained unchanged and
+tracked clean until the command was terminal. Original origin 85eb7584 has
+six paths; replacement origin e8e5f665 has three. Their complete required
+suite/spec sets match, and actual measured coverage matches both with no
+unplaceable path. These are separate derivations covered by one run, not two
+claimed source grades. Raw suite outputs, range log/token and coverage receipt
+are retained in the declared `supertaskr-T-351-final-normal-review-20261022`
+scratch under unique T-351-a18 stems.
+
+At the candidate, typecheck and whole-tree docs checks exit 0; graph check is
+CURRENT/0. Capabilities check is STALE/1: 129443 committed versus 131545
+fresh bytes. That known generated reconciliation belongs to integration,
+not a quiet fence expansion. The existing push-guard integration conflict
+must retain main's stronger source/canonical Set dedup and derived-chapter
+control. Integration must re-derive and grade its merged tree. No merge,
+push, CI or current-main certification was performed here.
+
+Security/interface review found fixed-argument Git calls, strict new input
+shapes and committed/physical validation, with no new dependency, endpoint,
+secret, shell interpolation or undocumented authority surface. The complete
+diff contains no undeclared follow-through. No new correction is assigned:
+zero new corrections and zero new mutant blocks. Historical blocks and all
+138689 bytes of task history at b1ed2d77 are preserved as the exact prefix.
+
+This verdict is the only tracked write. Its own committed range, whole-tree
+docs check and triggered model-free evals are owed after this append; the
+native final report will state their actual final ref/counts/exits and job/
+25351 cessation. No own-write result or future collection is preclaimed.
