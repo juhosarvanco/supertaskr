@@ -1145,3 +1145,170 @@ The verdict and correction-body commits still owe their independent write-range
 grade. Final exact refs, that grade and actual owned-job cessation are reported
 through native output for independent collection. This local verdict makes
 no push or CI claim.
+
+
+### 2026-10-22 — REJECTED — codex/gpt-6.1-sol@T-351-a14
+
+Fresh independent repair review of collected candidate
+f0941fe6375cec13e8d3970b5e5c98023ea04a97. The delivered scanner still
+misclassifies intact public **writer** work records for work id
+`reservations`. Both an active writer on a disjoint resource and its
+normally stopped/collected historical record make qualified acquisition
+refuse with `RESERVATION_UNREADABLE` / `invalid resource-free work record`.
+This is a C3/C5 compatibility failure, not unknown or corrupt authority.
+No acceptance is inferred from preparation, the executor's report, or the
+existing green suites.
+
+The native first probe returned thread
+`01a16330-3db5-75d2-b71f-b0f5bababbe9`, canonical task
+`/root/t351_repair_phase2_20261022`; the coordinator explicitly bound it
+before repository tools. Profile: detached-verifier. Requested model/effort:
+GPT-6.1 Sol/xhigh; provider identity and usage: unknown. The preparation
+hash, frozen card hash, resource, profile and combined writable fence were
+validated privately without displaying nested card notes. An initial
+metadata comparison omitted the manifest's separate `alwaysWritable` array;
+the corrected combined comparison matched. All commands and callbacks were
+serial. This is a procedural repository boundary, not OS/read isolation.
+
+The standing STATE/INDEX, supplied current standing, complete current role,
+frozen six criteria, both preserved attack sets and their distinct grounds
+were read. The full five-file implementation diff preceded delivery notes;
+no executor conversation or commit messages were consulted. This is a fresh
+phase-two repair review using the preserved original and reentry frames,
+not a claim of new preimplementation blindness. Original phase one received
+the conduct extraction and contract rather than the complete historical
+role. Reentry phase one likewise disclosed its supplied frame. Its ground
+was taken at pre-alias-repair e11b10762952f74742e671688ef466786b155f37,
+not retroactively at the original base. Retained-origin, alias and a12
+namespace feedback, plus the resource-free `reservations` observation, were
+shared with the repair executor. Those are shared inputs. The active and
+released writer variant below was independently derived during this review.
+
+Seals were independently rehashed and matched:
+
+- Original attack: `4efed69562a95932d2e0ccf2923d9b9a2f686e47d8b2b74abf28dfead4b75394`.
+- Original base ground: `b74a3dc4cf43165c5e2cef6333f1ff6af2c30254b76c2d67a0eedf5db9928874`.
+- Card at 85eb7584e517d379f36df55e83a07f70eb93686c: `486c30755489e85afcab93ecab873dcb28fee64266dde47151e14a52158a7b70`.
+- Reentry attack: `4ebe6be51af393056342993d3fb5fd923f4bfe9841756dc4d2755d842866d793`.
+- Reentry ground: `187941cf1dffe6d96e1e6a648ad8fa42bc65327a882a3f62ed48602b44866fa5`.
+- Reentry actual frame: `68da86e7c76efb490e7a9595adcff03eeb86f1f579a9ce590ebfc8294dcb6bf7`.
+
+#### Literal criteria and deciding evidence
+
+All figures in this table describe candidate
+f0941fe6375cec13e8d3970b5e5c98023ea04a97 or the explicitly named owned
+prototype, not this later verdict commit.
+
+| Criterion | Finding and actual evidence |
+|---|---|
+| C1 | Existing controls pass: committed mixed-component receipt, exact revisions, forged/changed facts and alternate authority refusal, measured physical bindings, colocated normalization, differing alias bases, retained read/repeat/release after worker commits. Full diff confirms committed capture/public parser reconstruction and first-acquisition versus retained-origin separation. |
+| C2 | Existing controls pass: independent roots with equal relative paths, same-project collisions across distinct workers, disjoint scopes, colocation, worker reuse, containment, unsafe paths/symlink and nested/shared-common-directory refusals. The comparator uses authoritative repository identities. |
+| C3 | **FAIL.** Direct legacy/qualified conflict cases and published metadata controls pass, but the real `startRun` writer record at the canonical shared-home work-record path is rejected as corrupt even with an intact matching legacy reservation on an independent resource. Normal released history causes the same permanent acquisition refusal. Complete checks/publication remain inside the existing native transaction; no second lock or authority table was added. |
+| C4 | Existing controls pass: exact repeats exclude incidental process/time, changed repeats and foreign expected identity refuse, retained bases survive HEAD advancement, coherent request/scope replacement is checked against the acquired filename commitment, malformed/duplicate/unanchored authority stays retained. A dead holder does not grant stealing. |
+| C5 | **FAIL in coexistence with the public lifecycle.** The unqualified run-record suite passes and public start/stop/collection produce the legitimate writer states in the new reproduction, but qualified acquisition cannot coexist with their intact records. Ordinary lazy loading, unknown assignment-field refusal, library-only API exposure and unchanged native/split admission boundaries remain intact. The three existing seat cases pass with read-only conventions and unchanged assertions. |
+| C6 | The delivered 15 qualified bodies and 45 run-record bodies pass at the candidate. Both separate constructive child-process concurrency controls execute. Required retained-data, receipt, ownership/release, alias and advanced-HEAD fixtures use owned actual Git repositories/worktrees. Required duplicate-index setup control and both assigned namespace availability controls were independently RED, hash-restored and GREEN. The added correction body exposes the C3/C5 gap that the delivered bodies missed. |
+
+#### Original and reentry grades
+
+The one blessed original cumulative grade was
+`node tools/e2e/scripts/gate-run.mjs e2e --range 85eb7584e517d379f36df55e83a07f70eb93686c..f0941fe6375cec13e8d3970b5e5c98023ea04a97`
+from the assigned bench, with port 25351. Exit 0: parser **469 GREEN**,
+app **1171 GREEN**, e2e **1035 GREEN** over the derived **19 specs**, all
+verdicts explicitly at the candidate. The source was held unchanged until
+that command was terminal. Original-range derivation has six paths;
+replacement range 566858522c365d3e352d8891b919b7b3841e8dc4 through the
+same candidate has three, with the same suite/spec set and no unplaceable
+paths. These are distinct origins covered by the same unchanged-source
+measurement, not two alleged full runs. Earlier focused qualified/run-record
+execution passed 60 bodies, exit 0. Local results make no push or CI claim.
+
+`npm run capabilities:check` independently remains STALE at the candidate,
+exit 1: committed 129443 bytes versus generation 131244. This is a source
+currency finding. Generated reconciliation is outside this verifier's fence
+and is not silently regenerated or called an environment failure.
+
+#### Independent controls and restoration
+
+Owned source fixtures were literal committed exports of the candidate, with
+no source Git HEAD and no live runtime authority, grant, manifest, reservation
+or run record copied. Only dependency/build outputs were linked. Every Git
+repository and authority record exercised by the tests was fixture-owned.
+All copied conventions Markdown sources remained 0444; primary permissions
+were unchanged. Node was v22.22.0; Git was 2.50.1 (Apple Git-155).
+
+The actual `fixture-controls` and `disjoint-writer-feedback` answers in this
+attempt's own ask file were read and acknowledged with literal line-initial
+RUN-ACK tokens. The latter confirmed that active and released writer records
+are the same existing C3/C5 compatibility class; it did not direct a verdict.
+
+| Bounded control | Actual result |
+|---|---|
+| Remove only recognized transaction fault/recovery names | One existing body RED, exit 1, `RESERVATION_UNREADABLE`; literal source restoration; same one body GREEN, exit 0. |
+| Remove only resource-free work-record recognition | One existing body RED, exit 1, `RESERVATION_UNREADABLE`; literal source restoration; same one body GREEN, exit 0. |
+| Reintroduce only duplicate index copy | Baseline three existing seat bodies GREEN. Isolated one-body RED, exit 1, actual `copyfile` index `EACCES` in `seatFixture` before seat operation; literal restoration; same three seat bodies GREEN, exit 0. Assertions and conventions modes unchanged. |
+| New intact writer lifecycle correction | One body RED on unchanged candidate: active, normally stopped/collected and overlapping public writer records all report `RESERVATION_UNREADABLE`. A bounded availability prototype with matching actual legacy ownership and terminal-release checks passes all 16 qualified bodies, including malformed work-record, foreign reservation, unknown authority, overlap, retained-origin and both concurrency controls. |
+| New correction's restrictive property-site mutant | One unchanged guard expression additionally rejects writer records: new body RED, exit 1. Literal prototype restoration by SHA-256: same body GREEN, exit 0. This is an availability discriminator, not safety-guard removal. |
+
+Original and finally restored run-record SHA-256:
+`dd57385e7ff097dd37817f5cc0bb7bae095a8b483be0f2ecf9cca8257bad23ce`;
+qualified spec:
+`01eb867efe3d876be475394d46da5575d5ca243e372a955bfe54e357c164c09a`;
+push-guard spec:
+`4796e23487dcf0a16016d870352c2ba9a15e3535dda6863234d9065981647576`.
+The prototype SHA-256 was
+`34cae83bfcde48740d1cdf07558ced59ce2c8400055fb159b413f34b13bff4f7`;
+it was restored after its restrictive mutant, then discarded in favor of
+literal candidate bytes. Run-record mode 0644 and its saved modification
+clock were restored. Exact mutation diffs, command logs and restoration
+receipts are retained under this attempt's declared owned scratch. Primary
+production is unchanged; no corrective production patch is committed here.
+
+The exact owner-approved T-351-only limited-qualification exception remains
+explicit: the broader independent safety-guard-removal source-drill campaign
+for retained-authority integrity, worker ownership/containment, legacy
+enforcement and admission/assignment guards was not executed or reopened.
+Existing executor evidence is separate from that missing independent source
+measurement. The required constructive fixtures, independent concurrency
+controls, copy control, correction RED/GREEN/restoration and original-range
+grade were performed. No functional failure is waived; this implementation
+is REJECTED. No broad kill-set matrix is claimed from these bounded controls.
+
+Security/interface sweep found fixed-argument Git calls, no new dependency,
+endpoint, CLI escape hatch, monitoring daemon or secret in the implementation
+diff. Committed planning remains distinct from native admission. There is no
+undeclared in-fence follow-through. No additional pack gap was discovered;
+the disclosed phase-one packet limitations and source census staleness stay
+named rather than being recast as acceptance.
+
+#### Assigned correction — one correction, one committed body, one block
+
+Preserve legitimate active and normally released writer work records in the
+shared reservation home. Validate canonical record/assignment ownership and
+the matching actual legacy reservation while active; preserve normal terminal
+history after release. Keep resource-free records, malformed/foreign/unknown
+refusal, actual overlapping ownership and atomic complete-set acquisition.
+Do not solve this by skipping arbitrary prefixes. The demonstrated prototype
+is evidence of feasibility, not a mandated production design.
+
+The body below is committed separately after this verdict, as the acting role
+requires. It ran RED against the implementation lacking the property and
+GREEN with the bounded prototype carrying it. Its restrictive mutant anchor
+matches exactly once in both candidate and prototype and preserves the
+existing guard; the corrective executor must retain or explicitly reconcile
+that property-site anchor with its final implementation.
+
+```mutant
+correction: Preserve intact active and released writer work records during qualified acquisition
+file: tools/e2e/scripts/run-record.mjs
+spec: tools/e2e/tests/qualified-reservation.spec.ts
+body: qualified sets preserve intact active and released writer work records in the shared home
+message: RESERVATION_UNREADABLE
+--- old
+          if (file !== recordPath(root, attempt) || record.attempt !== attempt || !STATES.includes(record.state) ||
+--- new
+          if (record.writer === true || file !== recordPath(root, attempt) || record.attempt !== attempt || !STATES.includes(record.state) ||
+```
+
+The verdict and subsequent correction-body commit owe their independently
+derived write-range checks. Their actual final refs, readings and owned-job
+cessation will be reported for independent collection; no result is preclaimed.
