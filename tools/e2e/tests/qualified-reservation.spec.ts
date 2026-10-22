@@ -439,3 +439,30 @@ test("qualified accepted coordinator aliases preserve legacy conflicts retained 
     expect(files(alias)).toEqual([]);
   } finally { fx.cleanup(); }
 });
+
+test("qualified acquisition preserves persisted transaction fault and recovery metadata while refusing unknown authority", async () => {
+  const fx = fixture();
+  try {
+    const request = fx.request();
+    const control = await acquireQualifiedReservation(fx.product, request);
+    expect(await release(fx.product, control)).toBe(true);
+    const home = path.join(fx.product, ".supertaskr/runs/reservations");
+    const metadata = ["native-transaction-faults", "native-transaction-recoveries"].map((name) => {
+      const file = path.join(home, name, "fixture.json");
+      put(fx.product, path.relative(fx.product, file), JSON.stringify({ version: 1, fixture: name }));
+      return { file, content: readFileSync(file, "utf8") };
+    });
+    const legacy = { resource: fx.worker("product"), attempt: "T-998-a1", role: "executor", at: new Date().toISOString() };
+    expect(takeReservation(fx.product, legacy).reservation.attempt).toBe(legacy.attempt);
+    expect(releaseReservation(fx.product, legacy)).toBe(true);
+    const acquired = await acquireQualifiedReservation(fx.product, request);
+    expect((await readQualifiedReservation(fx.product, request.attempt))?.identity).toBe(acquired.reservation.identity);
+    expect((await acquireQualifiedReservation(fx.product, request)).repeated).toBe(true);
+    expect(() => takeReservation(fx.product, legacy)).toThrow(/QUALIFIED_CONFLICT/);
+    expect(await release(fx.product, acquired)).toBe(true);
+    for (const entry of metadata) expect(readFileSync(entry.file, "utf8")).toBe(entry.content);
+    put(fx.product, path.relative(fx.product, path.join(home, "unknown-authority", "fixture.json")), "{}");
+    await expect(acquireQualifiedReservation(fx.product, request)).rejects.toThrow(/RESERVATION_UNREADABLE/);
+    for (const entry of metadata) expect(readFileSync(entry.file, "utf8")).toBe(entry.content);
+  } finally { fx.cleanup(); }
+});
