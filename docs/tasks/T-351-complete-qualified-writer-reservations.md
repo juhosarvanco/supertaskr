@@ -944,6 +944,133 @@ not independent acceptance. The standing source-drill requirement is not
 executed in this ordinary compatibility pass; prior evidence keeps its own
 refs and the explicitly retained qualification limitation remains visible.
 
+### Physical recorded-path compatibility delivery — T-351-a17
+
+The correction and both ordinary regressions are committed at
+15d5c9668559a8099010813b5541d62f809b3f4c, from unchanged completed source
+e8e5f6657c2efc00c890ee8203fb7162a6c85761. Production is the exact narrow
+copied prototype: require an absolute recorded reservation path, resolve
+its parent physically, retain its basename, then compare that complete
+location to the existing expected reservation path. The retained file
+itself may be absent after normal release; its shared physical parent is
+still required. An unresolved, removed or retargeted alias cannot establish
+the original location and refuses for reconciliation. No lexical-prefix
+exception or historical-record rewrite is introduced.
+
+The class sweep read both reservation-home scanners, `recordPath`,
+`reservationPath`, `readRecord`, `takeReservation`, `readReservation`,
+`startRun`, `releaseIfOurs`, `stopRun` and `collectRun`. Public legacy start
+retains the accepted root representation in `reservation.file`; release
+retains that history after removing the actual owned legacy reservation.
+The corrected comparison is at that shared-home record classifier. The
+actual active reservation still needs matching version, attempt, work,
+resource, role and acquisition time. Complete legacy enumeration and
+qualified overlap checks, common record/assignment/digest/state checks,
+retained acquired-origin reconstruction, regular-file checks, transaction,
+atomic publication and expected-content release are unchanged. Request
+version 1, publication version 2 and the declared API remain unchanged.
+
+| Criterion | Actual ordinary evidence and remaining qualification |
+|---|---|
+| C1 | All 18 qualified bodies pass with strict committed capture, receipts, measured roots/workers, first-acquisition bases and retained immutable origins after worker commits. No derivation or retained validator changed. |
+| C2 | The same passing bodies retain independent and colocated domains, mixed containment, different-worker collisions, physical worker reuse and unsafe topology/path refusals. |
+| C3 | The supplied body accepts canonical and aliased disjoint active/released histories and still reports overlapping writers as `QUALIFIED_CONFLICT`. The added path-class body requires the exact physical parent and basename. Matching legacy ownership and both acquisition orders remain covered. |
+| C4 | Existing read/repeat/release, coherent replacement, malformed/version/owner and advanced-HEAD cases pass. The two new bodies retain every tested record and ownership byte on success/refusal and leave no qualified residue after release or refused acquisition. |
+| C5 | All 45 ordinary run-record bodies pass. Metadata, resource-free and prior writer compatibility bodies pass unchanged. Native/split admission, unknown-field refusal, lazy loading and existing seat assertions are unchanged; all 13 live conventions Markdown sources remain 0444. |
+| C6 | The supplied regression is RED on unchanged implementation and GREEN after correction. The additional ordinary data cases pass, as do both unchanged constructive concurrency bodies. The final original cumulative grade is owed after this complete notes commit. Source-drill qualification for the two new bodies remains unexecuted under this pass's explicit ordinary-tests-only boundary; independent acceptance is not claimed. |
+
+The supplied partial-review spec is retained byte-for-byte as the prefix of
+the final spec. The added body exercises chained coordinator aliases,
+direct reservation-parent aliases and redundant separator/dot spelling in
+both active and released states. It rejects null/relative paths, the wrong
+basename in the correct parent, retargeted parent and coordinator aliases,
+dangling aliases, symlink loops and a non-directory parent. Restoring the
+original fixture alias/record allows normal acquisition/release again.
+These are ordinary fixture-data cases; no implementation guard or source
+file was disabled or mutated for qualification.
+
+Source hashes at 15d5c9668559a8099010813b5541d62f809b3f4c:
+
+| File | SHA-256 |
+|---|---|
+| run-record.mjs | `5654674180efbab7f29c52acdf68ad417bc8d88c84a4353ebc83f3cdc4e088f1` |
+| qualified-reservation.spec.ts | `073ab07a7f8ef3cc7e4ae3c81fc3e50077a85aca331659f45154760cd4d429b6` |
+
+### Self-drill block and stopped-review limit — T-351-a17
+
+Two bodies are added in this pass: the exact supplied alias-history body
+and one physical-parent/basename data-case body. No new source mutation,
+poison drill, guard-disabling experiment or a16 verification retry was
+performed. Consequently neither body's new per-body source-drill proof is
+marked MET. The unchanged-base functional failure and normal corrected
+tests establish the ordinary compatibility behavior, without filling the
+separate missing independent source measurement. Historical source/control
+hashes and results above retain their own refs; the copied a16 17-body
+prototype/typecheck readings remain partial observations with no verdict.
+
+### Ordered readings, gates and completion boundary — T-351-a17
+
+The required first identity probe returned native thread
+01a163a6-a078-71a2-82e7-6d1e11d1de45, canonical task
+`/root/t351_alias_repair_20261022`. Explicit public binding preceded all
+repository tools. Requested profile remains GPT-6.1 Sol/xhigh; observed
+provider model, effort and usage are unknown. Every shell began with the
+exact assigned-resource prefix. All commands and owned test processes were
+serial and polled to terminal. No helper, foreign worker, sealed attack set,
+live authority copy, merge, push or CI operation was used. Existing built
+prerequisites satisfied the normal test preflight; no install was needed.
+
+Ordered functional commands and actual results before this notes commit:
+
+1. Read-only orientation, source/path/digest/mode checks and criteria/source
+   patch operations exited 0. Mandatory graph checks after the echo,
+   supplied body, added data body and correction each returned CURRENT/0.
+2. `npx playwright test tests/qualified-reservation.spec.ts --grep 'qualified writer history accepts physical coordinator aliases' --reporter=line`
+   ran the unchanged e8e5f665 runtime with the exact supplied regression:
+   1 executed, 1 failed, exit 1. Canonical active/released/overlap controls
+   matched; alias variants all returned `RESERVATION_UNREADABLE`.
+3. `npx playwright test tests/qualified-reservation.spec.ts tests/run-record.spec.ts --reporter=line`
+   on source bytes subsequently committed at 15d5c966 ran 63 and passed
+   63, exit 0 (18 qualified, 45 lifecycle). `npm run typecheck` exited 0.
+   `git diff --check` and the source commit exited 0.
+4. At 15d5c966, original and current-repair `--owed-set --range`
+   derivations each exited 0. Original origin 85eb7584e517d379f36df55e83a07f70eb93686c
+   has six paths; replacement e8e5f6657c2efc00c890ee8203fb7162a6c85761
+   has three. Both derive whole parser/app and the same 19 e2e specs,
+   with no unplaceable paths. The actual final-tree coverage is rechecked
+   after this complete notes commit, before the one original-range grade.
+5. The main merge forecast at 15d5c966 exited 1 with an actual tree and
+   the existing `tools/e2e/tests/push-guard.spec.ts` content conflict.
+   No local reconciliation was attempted. Source-range docs gate on the
+   actual six paths exited 1, meaning FIRES for parser/app/e2e readers.
+   Whole-tree `npm run lint:docs` exited 0 with zero findings, no diff
+   judged. `npm run capabilities:check` exited 1, STALE: committed 129443
+   bytes versus fresh 131545. Generated reconciliation remains outside
+   the frozen fence and belongs to integration.
+
+Unique raw logs and command/ref/count/exit receipts are retained under
+`supertaskr-T-351-alias-repair-20261022/logs` in the assigned external
+scratch. The original failure log was never reused. There is no source
+export fixture or constructed fixture HEAD in this pass; each test owns
+its independent Git repositories and runtime records.
+
+On the original six-path source range, DOCS GATE fires and the broad GRAPH
+REGEN trigger matches the three test suffixes; the actual graph remains
+CURRENT because tools are outside its walk. BOOT GATE has no app source or
+manifest trigger. METHOD EVAL has no method path or new verdict-citation
+line. These are owed-at-source decisions: the conflict prevents a clean
+merged-tree claim, and integration must re-derive after reconciliation.
+The notes add no new path or trigger class. No in-fence follow-through or
+new pack gap was found.
+
+The inherited card stays `verifying`; there is no new status-only stamp
+and no post-grade source/notes commit. This complete committed tree gets
+one final original cumulative grade; final replacement coverage, actual
+full ref, body counts/exits, clean tracked state and owned-job/15351
+cessation are reported after the grade. Size M retains separate verifier
+and integrator seats. The stopped a16 review stays incomplete without a
+verdict; fresh independent acceptance remains required.
+
 ## Verdicts
 
 ### Recovery scope amendment — 2026-10-05
