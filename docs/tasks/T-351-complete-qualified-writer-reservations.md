@@ -756,6 +756,176 @@ exception preserves its explicit coverage limitation and waives no
 functional failure. This size-M executor leaves independent verification
 and integration to their separate seats.
 
+### Intact writer compatibility delivery — T-351-a15
+
+The production correction is committed at
+cb1dec0f40bf2f3799b4324b2a96f8d455441947, based on
+a50dfa8faedffbb02aaf4c26fd2209f4900799d8. Its run-record SHA-256 is
+`34cae83bfcde48740d1cdf07558ced59ce2c8400055fb159b413f34b13bff4f7`,
+identical to the exact proved prototype preserved at
+8d7483dfdaded79d73da72b645045d8d6dc44581. The committed correction body
+is unchanged: qualified-spec SHA-256
+`8ebcf2b03a9bdcfdd8892d54bab84787963b545a462f0b5a8ef08a8f58759b1a`.
+The latest ae419c2baa5447bd1485ed0ad0481d3e17b3365f rejection and all
+earlier verdicts remain append-only. No new test body or assertion was
+added, duplicated or changed in this repair.
+
+The canonical shared-home work record now validates common record and
+assignment ownership, known state, boolean writer, complete allowed
+assignment fields and intact assignment digest. A resource-free record
+still requires no resource or reservation claim. An active writer must
+name the absolute assignment resource and canonical reservation file,
+with a readable acquisition instant and actual matching legacy version,
+attempt, work, resource, role and acquisition time, without a qualified
+kind. Released history must carry a readable release instant and a
+terminal state. Its actual reservation is still independently enumerated
+when present, so real overlap remains a conflict. The existing regular-file
+and realpath checks, unknown-authority refusal, complete transaction,
+retained reconstruction and acquired-origin commitment are unchanged.
+Request version 1, publication version 2 and all public API shapes remain
+as declared above. No native/split admission, authority table or lock is
+added.
+
+Class sweep at cb1dec0f: reservation-home enumeration in
+`qualifiedReservations` and `acquireQualifiedReservation`, canonical
+`recordPath` and `reservationPath`, public `startRun`/`takeReservation`,
+`readRecord`/`readReservation`, `releaseIfOurs`, `stopRun` and `collectRun`.
+The acquired scanner is the shared-home classifier; the retained qualified
+scanner only selects qualified publications. The correction applies at
+that existing classifier rather than skipping an arbitrary prefix. There
+is no extra in-fence follow-through.
+
+| Criterion | Repaired source evidence before final grading |
+|---|---|
+| C1 | All 16 qualified bodies pass, retaining strict committed capture, measured identities, exact first bases, colocated normalization and immutable origin after legitimate worker commits. The correction changes no derivation or retained validator. |
+| C2 | The same passing spec retains independent and colocated domains, cross-worker collisions, worker reuse, mixed containment, symlink and unsafe topology/path refusals. |
+| C3 | The unchanged committed writer body now accepts intact disjoint active writers and normal released history, preserves matching legacy ownership, refuses changed/foreign authority and reports actual overlap as `QUALIFIED_CONFLICT`. Metadata/resource-free and both legacy acquisition orders remain exercised. |
+| C4 | Existing exact-repeat, advanced-HEAD, expected-release, coherent replacement, malformed publication and acquired-origin bodies pass. Writer/digest/resource/attempt/release corruptions retain their actual bytes and refuse acquisition. |
+| C5 | All 45 ordinary run-record bodies pass. Resource-free compatibility and the three existing seat cases pass with read-only conventions; ordinary lazy loading, unknown assignment refusal and native/split boundaries are unchanged. |
+| C6 | The committed writer body is RED on unchanged runtime and GREEN after the precise correction. All four bounded controls below are RED, literally restored and GREEN. The focused 61-body run includes both separate constructive concurrency controls. The complete original-range grade is still owed after this notes commit. |
+
+### Self-drill block — intact writer compatibility at cb1dec0f
+
+The owned source fixture is a literal committed export of
+cb1dec0f40bf2f3799b4324b2a96f8d455441947, with no source Git HEAD.
+Its 1722 regular source files are recorded by hash and mode. Only the
+parser/app dependency and build outputs and e2e dependencies are linked;
+no live runtime authority, grant, manifest, holder, run or reservation was
+copied. Each executed body constructs its own repositories and authority.
+All thirteen copied conventions Markdown files are 0444, and primary
+conventions permissions remain 0444. The native boundary explicitly
+authorizes these confined test data exports; no second worker or helper
+was admitted.
+
+| Bounded control, one changed side | Actual RED | Literal restoration and GREEN |
+|---|---|---|
+| Exact supplied restrictive mutant: add `record.writer === true` to the existing shared-home record guard; unchanged writer body | 1 executed, 1 failed, exit 1; `RESERVATION_UNREADABLE` for intact writer states | Run-record hash A, exported mode 0664 and exact nanosecond clocks restored; same 1 body passed, exit 0 |
+| Remove only the two recognized transaction fault/recovery namespace names; unchanged metadata body | 1 executed, 1 failed, exit 1; `RESERVATION_UNREADABLE` at the metadata directory | Hash A, mode and clocks restored; same 1 body passed, exit 0 |
+| Restrict the same record guard with `record.writer === false`; unchanged resource-free body | 1 executed, 1 failed, exit 1; `RESERVATION_UNREADABLE` at its canonical work record | Hash A, mode and clocks restored; same 1 body passed, exit 0 |
+| Reintroduce only the flat loop's duplicate conventions-index copy; unchanged seat-install body | 1 executed, 1 failed, exit 1; actual index-copy `EACCES` in `seatFixture`, before any `seatVerb` | Push-guard spec hash B, mode and clocks restored; all 3 existing seat bodies passed, exit 0 |
+
+Hash A: `34cae83bfcde48740d1cdf07558ced59ce2c8400055fb159b413f34b13bff4f7`.
+Hash B: `4796e23487dcf0a16016d870352c2ba9a15e3535dda6863234d9065981647576`.
+Every one-sided mutation diff was read before its test. Fixture baseline
+executed the writer, metadata and resource-free bodies plus all three seat
+cases: 6 passed, exit 0. Final whole-export verification found all 1722
+source hashes and modes unchanged, then restored the controlled clocks
+again after positive runs. The source fixture has no runtime directory.
+External `fixture-final-restoration-T-351.json`, individual mutation diffs,
+RED/GREEN logs, exact argv/count/exit receipts and restoration receipts
+record the measurements. Python's exact nanosecond restoration was used;
+Node v22.22.0 reports libuv 1.52.0. Primary implementation was never mutated
+by these controls.
+
+The broader previously platform-refused safety-guard-removal campaign was
+not resumed. The owner-adopted T-351-only limited-qualification exception
+retains the missing fresh independent source-drill coverage for retained
+authority integrity, worker ownership/containment, legacy enforcement and
+admission/assignment guards. Existing source evidence and constructive
+fixtures are separate from that missing independent measurement. No
+functional failure or completion uncertainty is waived; fresh independent
+review still decides acceptance.
+
+### Ordered readings, corrections and final handoff — T-351-a15
+
+The exact first identity probe returned native thread
+01a16368-03e8-78c3-bbba-11f7a4b3b0c3; the canonical child is
+`t351_writer_compat_repair_20261022` under the root coordinator. Explicit
+public binding preceded repository tools. Requested model/effort is
+GPT-6.1 Sol/xhigh; observed provider identity and usage are unknown.
+Every shell entered the assigned resource first; all tools and callbacks
+were serial and every yielded job was polled to terminal. No helper,
+foreign review workspace, withheld attack set or other worker conversation
+was opened. Prerequisites were already installed and built, and were
+rechecked; no install or manifest change was made.
+
+Ordered functional readings, with port 15351 and assigned external output
+homes:
+
+1. At unchanged a50dfa8f runtime plus this attempt's criteria echo, the
+   committed writer body executed 1 and failed 1, exit 1. Active, released
+   and overlap all returned `RESERVATION_UNREADABLE` rather than the
+   required successful coexistence or actual conflict.
+2. With exact prototype bytes subsequently committed at cb1dec0f,
+   `npx playwright test tests/qualified-reservation.spec.ts tests/run-record.spec.ts --reporter=line`
+   executed 61 and passed 61, exit 0: 16 qualified and 45 ordinary bodies.
+   E2e `npm run typecheck` exited 0. Mandatory graph readings after the
+   criteria and source writes each returned CURRENT, exit 0.
+3. At the literal cb1dec0f export, the six-body baseline and four
+   RED/restored-GREEN controls ran in the order in the block above.
+   Each deliberate RED command exited 1; baseline, restoration and
+   positive test commands exited 0. Exact commands, working directories,
+   source refs, counts and exits are in the per-control JSON receipts.
+4. A later control driver reused the first primary reproduction's raw
+   stdout-log filename. Its native tool result and original error-context
+   and trace artifacts remain retained; the overwritten text file is not
+   claimed as preserved. The conflict was immediately disclosed and
+   recorded in `log-stem-correction-T-351.json`, and unique fixture stems
+   were applied. A separately exported exact a50dfa8f source then repeated
+   the unchanged-body reproduction: 1 executed, 1 failed, exit 1, with
+   unchanged run-record hash
+   `dd57385e7ff097dd37817f5cc0bb7bae095a8b483be0f2ecf9cca8257bad23ce`.
+   `unchanged-base-writer-red-repeat-T-351` retains that genuine later
+   run's argv, raw log, count, exit, trace and before/after hashes. No
+   fabricated replacement log or erased failure is asserted.
+5. At cb1dec0f, all three `--owed-set --range` derivations exited 0:
+   original 85eb7584e517d379f36df55e83a07f70eb93686c has six changed
+   paths; previous replacement 566858522c365d3e352d8891b919b7b3841e8dc4
+   has three; current repair a50dfa8faedffbb02aaf4c26fd2209f4900799d8
+   has two. Each derives whole parser/app and the same nineteen e2e
+   specs, with no unplaceable paths. Final derivation and measured
+   coverage are repeated at the complete final notes/source ref.
+6. At cb1dec0f, source-range `docs-gate.mjs` on the six actual paths
+   exited 1 meaning FIRES; whole-tree `npm run lint:docs` exited 0 with
+   zero findings and no diff judged. `npm run capabilities:check` exited
+   1, STALE: committed 129443 bytes versus fresh 131336. This remains a
+   source currency finding. Generated reconciliation belongs to
+   integration outside this frozen fence and was not performed here.
+
+The mechanical merge forecast at cb1dec0f against main
+e8aabf062b289c2cd1a460a9a3c1413f69262125 exited 1 with the existing
+content conflict in `tools/e2e/tests/push-guard.spec.ts`; run-record
+auto-merged. No local merge or resolution was performed, so these are
+owed-at-source decisions, not a clean merged-tree certification. On the
+six-path original source range, DOCS GATE fires; the broad GRAPH REGEN
+trigger matches the three test suffixes, while actual graph check is
+CURRENT because tools are outside the walk. BOOT GATE has no app source
+or manifest trigger. METHOD EVAL has no method path or added verdict
+citation. Final source derivation is supplied in the handoff; the
+integrator must re-derive after reconciliation. This notes append adds
+no path or trigger class.
+
+The initial card remains `verifying`; no status-only stamp or post-grade
+source/note commit is planned. This complete notes/source commit owes the
+one final original cumulative grade, with final replacement ranges derived
+separately and covered only by the actual identical final suites/specs.
+The native completion reports its real full ref, counts, exits, clean
+tracked state and actual owned-job/port cessation after that grade. No
+merge, push or CI is part of this executor pass. No new pack gap or
+out-of-fence implementation need was discovered. The read-only source
+fixture arrangement and exact correction were already authorized by the
+frozen brief, so no new ask or scope decision was required.
+
 ## Verdicts
 
 ### Recovery scope amendment — 2026-10-05
