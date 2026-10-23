@@ -6,7 +6,7 @@ milestone: 4
 priority: 1
 size: M
 tier: standard
-status: building
+status: verifying
 suggested_by: codex/gpt-6.1-sol @architect
 blocked_by: [T-351]
 touches: [tools/e2e/scripts/qualified-admission.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/tests/qualified-admission.spec.ts, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/brief-flush.spec.ts]
