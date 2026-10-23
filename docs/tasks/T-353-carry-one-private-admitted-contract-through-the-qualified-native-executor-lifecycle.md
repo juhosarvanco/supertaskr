@@ -6,7 +6,7 @@ milestone: 4
 priority: 1
 size: L
 tier: guarded
-status: building
+status: verifying
 suggested_by: codex/gpt-6.1-sol @architect
 blocked_by: [T-352]
 touches: [tools/e2e/scripts/run-record.mjs, tools/e2e/scripts/native-codex.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/scripts/qualified-native.mjs, tools/e2e/scripts/qualified-admission.mjs, tools/e2e/scripts/native-transaction-recovery.mjs, tools/e2e/tests/run-record.spec.ts, tools/e2e/tests/native-codex.spec.ts, tools/e2e/tests/qualified-native.spec.ts, tools/e2e/tests/qualified-admission.spec.ts, tools/e2e/tests/native-transaction-recovery.spec.ts]
