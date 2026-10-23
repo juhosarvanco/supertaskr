@@ -102,6 +102,8 @@ ADR-014/015).
   records-context.mjs captures selected committed inputs, complete registry
   and per-input provenance using the public pure parser. It is read-only
   planning, not complete rule coverage, admission or a writer reservation.
+  T-352 previews committed private-card approval against current policy without
+  starting or reserving a worker.
 - App ↔ project: read-only first; writes are single-field frontmatter
   edits or thread appends, nothing else (pure-lens rule).
 - Genesis (ADR-017): the spawned planner session is the WRITER; the
