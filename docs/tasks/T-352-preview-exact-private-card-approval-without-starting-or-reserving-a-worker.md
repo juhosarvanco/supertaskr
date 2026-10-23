@@ -96,9 +96,38 @@ D12 drills that named-request boundary at ae597f434adf9158cd632dc70ea0bf4c59e2ea
 
 The genuine independent rejection and unchanged C1 regression are preserved as commits 3a7e8e5529466934407d7e2fb1e8110e26a371e1 and 745dcfd2bcfe93ed3836ddf82af27596502b33b7. They were fast-forward applied in that order after normal continuation and exact rebind of the existing attempt. G2 remains an executor GREEN for the rejected candidate, not an independent approval. No frozen criterion or scope changed.
 
-- [ ] C3: Recognize valid closing ATX hashes at the existing private-history cutoff, retaining the active contract and privately available integrity bytes.
-- [ ] C6: Preserve C1 byte-for-byte, show it assertion RED before repair, and qualify each named private heading independently in first position with positive active-text controls, success/refusal privacy checks and property-site restoration proofs.
-- [ ] C1/C2/C4/C5: Retain request/capture/policy/origin/no-effect behavior and discharge the full original range at a new unchanged notes-complete commit; earlier readings keep their original refs.
+- [x] C3: Recognize valid closing ATX hashes at the existing private-history cutoff, retaining the active contract and privately available integrity bytes.
+- [x] C6: Preserve C1 byte-for-byte, show it assertion RED before repair, and qualify each named private heading independently in first position with positive active-text controls, success/refusal privacy checks and property-site restoration proofs.
+- [x] C1/C2/C4/C5: Retain request/capture/policy/origin/no-effect behavior; the focused controls pass and the full original-range reading follows this notes-complete commit. Earlier readings keep their original refs.
+
+### Executor C1 repair and focused evidence
+
+The owning repair is f72783e1717f626e5997191b53fc3bb99bb4abb0. It changes one projection expression to recognize an optional whitespace-delimited closing ATX hash sequence. It adds no parser, policy, authority or persistent projection. The committed C1 body and every preceding spec byte remain unchanged; the seven heading-first controls are appended after it. This associated verifier correction is a fix pass under the existing contract, not a new criterion or an incidental small follow-through.
+
+Before the fix, C1 independently ran one assertion-failing body against the unchanged implementation at 745dcfd2bcfe93ed3836ddf82af27596502b33b7. Each of seven new bodies then independently failed with its named private heading first. Each new body has an ordinary-heading control and a closing-hash variant with three-space indentation, a tab separator, uppercase spelling and CRLF. A similarly named visible reference heading must remain, the private first section and later tail must remain in detached raw bytes, and both public success and paused-refusal displays must exclude them. These controls do not depend on an earlier private heading masking the selected case. With the repair, token lint, typecheck and all 17 focused public/inventory/token/C1/heading-first bodies passed at exit 0. The separate unmutated detached fixture at the repair commit passed all 8 changed privacy bodies before mutations.
+
+The artifact root was absent at re-entry: the first child-directory setup exited 1 before any test launched. Only the already declared root was recreated. Earlier G1/G2 evidence was already independently retained by the coordinator; none is rewritten or relabeled. The reviewer-original full candidate grade was UNRUN after its focused security RED. Its completion range is a separate reported reading: parser 469 and app 1171 GREEN, e2e 786 passed and one C1 failure at exit 1. The coordinator read that actual runner result after a cross-turn polling refusal; a missing callback remains unknown, not an invented child receipt. Those are review-history facts supplied in the actual postscript, not this executor's new grade.
+
+### Privacy repair self-drill block
+
+These eight drills use the disposable detached fixture at f72783e1717f626e5997191b53fc3bb99bb4abb0. Each actual property-site diff was read before its selected-body run. Every run executed one body, failed at its privacy assertion with test exit 1, then restored the exact module bytes. The driver exited 0 only after validating the real assertion RED and restoration. The module SHA256 restored after every drill to 01744fe9e754c31310b9b469ab3be8a5b5118c3356dac7dcd89016c38a179e39, with an empty per-path diff. This is selected-body evidence, not a whole-suite kill-set census. The original twelve executor drills retain their earlier refs and are not claimed rerun; the independent review's eighteen drills remain separate reviewer evidence.
+
+| Drill | One-side property mutation | Body that became assertion RED |
+| --- | --- | --- |
+| C1 | Remove only optional closing-hash recognition | Exact unchanged reviewer C1 public-success privacy body |
+| H1 | Remove Implementation notes from the cutoff's name data | First Implementation notes privacy body |
+| H2 | Remove Verdicts from the cutoff's name data | First Verdicts privacy body |
+| H3 | Remove History from the cutoff's name data | First History privacy body |
+| H4 | Remove Reports from the cutoff's name data | First Reports privacy body |
+| H5 | Remove Approval history from the cutoff's name data | First Approval history privacy body |
+| H6 | Remove Archived grant history from the cutoff's name data | First Archived grant history privacy body |
+| H7 | Remove Repair ledger from the cutoff's name data | First Repair ledger privacy body |
+
+### Adjacent projection finding — routed, outside this fence
+
+The heading-first public-entry class sweep is the seven real before/after controls above. The adjacent unchanged exported activeTaskContract in tools/e2e/scripts/records.mjs was also exercised directly at 745dcfd2bcfe93ed3836ddf82af27596502b33b7: all seven closing-hash forms retained a private marker; the plain five recognized names excluded it, while plain Approval history and Repair ledger retained it. This is a helper-level observation, not a full planning/records CLI grade. The complete owning capturePlanningContext function in tools/e2e/scripts/records-context.mjs and its headings helper were inspected: they normalize closing hashes, while the private-name set remains the earlier five. Broader behavior there was not experimentally graded. Exact unchanged file hashes and rows were preserved externally and the finding was routed in the own ask for the coordinator's remaining consumer obligations. Neither outside path was edited or silently included in this repair.
+
+No new scope, proof exception, grant revision, side agent, worker, merge, push, CI or self-approval was used. The final original d2078ded64a1e6a479ea3cdad68266783b69026e range is derived and graded after these notes; only a successful unchanged-head reading permits the separate last status-only stamp.
 
 ## Verdicts
 
