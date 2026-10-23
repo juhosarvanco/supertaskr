@@ -197,9 +197,29 @@ test("qualified collection recovers partial final publication only against its o
   } finally { fx.cleanup(); }
 });
 
-test("qualified cold public CLI starts the private route and allowed ignored policies remain scoped in every participant", async () => {
+test("qualified cold public CLI preserves ordinary split refusal, validates malformed explicit authority and starts the private route with scoped ignored policies", async () => {
   const fx = fixture();
   try {
+    const cli = (args: string[]) => spawnSync(process.execPath, [path.join(SOURCE, "tools/e2e/scripts/brief.mjs"), "--root", fx.product, "--run", ...args], {
+      cwd: SOURCE, encoding: "utf8", env: ENV, maxBuffer: 4 * 1024 * 1024,
+    });
+    const ordinary = { ...fx.assignment }; delete ordinary.qualified;
+    put(fx.dir, "ordinary.json", JSON.stringify(ordinary));
+    put(fx.dir, "preview.json", JSON.stringify({ version: 1, authorityRoot: fx.product, taskId: "T-999" }));
+    put(fx.dir, "malformed.json", "{not JSON}");
+    for (const args of [["start", "--assignment", path.join(fx.dir, "missing.json")],
+      ["start", "--assignment", path.join(fx.dir, "ordinary.json")], ["start", "--assignment", path.join(fx.dir, "preview.json")],
+      ["start", "--assignment", path.join(fx.dir, "malformed.json")], ["observe", "--attempt", "T-999-a1"]]) {
+      const refused = cli(args);
+      expect(refused.status, refused.stderr).toBe(3); expect(refused.stderr).toContain("workspace-split-unsupported");
+      expect(refused.stderr).not.toContain("workspace-unavailable"); expect(refused.stdout).toBe("");
+      expect(existsSync(path.join(fx.product, ".supertaskr/runs"))).toBe(false);
+    }
+    put(fx.dir, "explicit-malformed.json", JSON.stringify({ ...fx.assignment, qualified: null }));
+    const malformed = cli(["start", "--assignment", path.join(fx.dir, "explicit-malformed.json")]);
+    expect(malformed.status, malformed.stderr).toBe(1); expect(malformed.stderr).toContain("[QUALIFIED_ASSIGNMENT_SHAPE]");
+    expect(malformed.stderr).not.toContain("workspace-split-unsupported"); expect(malformed.stderr).not.toContain("workspace-unavailable");
+    expect(existsSync(path.join(fx.product, ".supertaskr/runs"))).toBe(false);
     fx.assignment.native.ignoredOutputs = ["build"];
     fx.selected();
     const output = execFileSync(process.execPath, [path.join(SOURCE, "tools/e2e/scripts/brief.mjs"), "--root", fx.product, "--run", "start", "--assignment", path.join(fx.dir, "assignment-T-353.json")], {
@@ -215,6 +235,12 @@ test("qualified cold public CLI starts the private route and allowed ignored pol
       cwd: SOURCE, encoding: "utf8", env: ENV, stdio: ["ignore", "pipe", "pipe"], maxBuffer: 4 * 1024 * 1024,
     });
     expect(continued).toContain("T-999-a1"); expect(readRecord(fx.product, "T-999-a1").native?.binding).toBeNull();
+    const corrupted = readRecord(fx.product, "T-999-a1"); corrupted.native!.qualified = null; writeRecord(fx.product, corrupted);
+    const retained = cli(["observe", "--attempt", "T-999-a1"]);
+    expect(retained.status, retained.stderr).toBe(1); expect(retained.stderr).toContain("[QUALIFIED_ASSIGNMENT_SHAPE]");
+    expect(retained.stderr).not.toContain("workspace-split-unsupported"); expect(retained.stderr).not.toContain("workspace-unavailable");
+    expect(await readQualifiedReservation(fx.product, "T-999-a1")).not.toBeNull();
+    expect(activeNativeHolds(readRecord(fx.product, "T-999-a1")).some((hold: any) => hold.code === "qualified-authority-changed")).toBe(true);
   } finally { fx.cleanup(); }
 });
 

@@ -5,7 +5,6 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import path from "node:path";
-import { admissionPreflight, decisiveQualifiedAdmission } from "./qualified-admission.mjs";
 import * as runs from "./run-record.mjs";
 import { NativeCodexFinding, activeNativeHolds, addNativeHold, collectNativeWorkspace, explicitResourceProblem,
   nativeFinalGate, nativeIgnoredSnapshot, nativePathAllowed, nativeSha256, readNativeRecord, withNativeTransaction } from "./native-codex.mjs";
@@ -13,6 +12,16 @@ import { NativeCodexFinding, activeNativeHolds, addNativeHold, collectNativeWork
 /** Loaded only for explicitly qualified calls.
  * @returns {typeof import("./qualified-reservation.mjs")} */
 function validator() { return runs.qualifiedValidation(); }
+/** Ordinary run-record consumers must load no records/capture modules.
+ * @type {typeof import("./qualified-admission.mjs") | undefined} */
+let qualifiedAdmission;
+async function preloadAdmission() {
+  return qualifiedAdmission ??= await import("./qualified-admission.mjs");
+}
+function admission() {
+  if (qualifiedAdmission === undefined) refuse("QUALIFIED_ADMISSION_NOT_LOADED");
+  return qualifiedAdmission;
+}
 /** @param {string} code @returns {never} */
 function refuse(code) { throw new NativeCodexFinding(code, `${code}: qualified executor refused; retained ownership is not widened`); }
 /** @param {any} value */
@@ -78,7 +87,7 @@ export function validateQualifiedNative(root, rec, requireHeld = true) {
 export function qualifiedAdmissionAt(root, a, boundary) {
   const input = request(a, boundary);
   if (realpathSync(root) !== realpathSync(input.authorityRoot)) refuse("QUALIFIED_AUTHORITY_HOME");
-  return decisiveQualifiedAdmission(input, null, false, a.resource).admission();
+  return admission().decisiveQualifiedAdmission(input, null, false, a.resource).admission();
 }
 /** Only qualified start is asynchronous. Every await precedes the decisive
  * transaction; its body is synchronous all the way through publication.
@@ -88,11 +97,12 @@ export async function startQualifiedNativeRun(root, opts) {
   const input = request(a, "child-start");
   if (realpathSync(root) !== realpathSync(input.authorityRoot)) refuse("QUALIFIED_AUTHORITY_HOME");
   await runs.loadQualifiedReservations();
-  const earlier = await admissionPreflight(input);
+  await preloadAdmission();
+  const earlier = await admission().admissionPreflight(input);
   // Testable boundary: the actual transaction's acquisition hook can change
   // inputs here; the decisive recapture below must detect that change.
   return withNativeTransaction(root, { operation: "qualified-run-start", ...(opts.transaction ?? {}) }, () => {
-    const preview = decisiveQualifiedAdmission(input, earlier, false, a.resource);
+    const preview = admission().decisiveQualifiedAdmission(input, earlier, false, a.resource);
     if (!equal(preview.receipt, a.qualified.receipt)) refuse("QUALIFIED_RECEIPT_CHANGED");
     if (!existsSync(a.brief)) refuse("QUALIFIED_BRIEF_ABSENT");
     const attempt = runs.nextAttemptId(root, a.id), at = opts.at ?? new Date().toISOString();
@@ -223,7 +233,8 @@ export function validateQualifiedOperation(root, rec, phase) {
 export async function prepareQualifiedNativeContinuation(root, opts) {
   const before = runs.readRecord(root, opts.attempt);
   await runs.loadQualifiedReservations();
-  const earlier = await admissionPreflight(request(before.assignment, "child-start"));
+  await preloadAdmission();
+  const earlier = await admission().admissionPreflight(request(before.assignment, "child-start"));
   return withNativeTransaction(root, { operation: "qualified-run-continue" }, () => {
     const rec = runs.readRecord(root, opts.attempt);
     if (rec.assignmentDigest !== before.assignmentDigest) refuse("QUALIFIED_RETAINED_AUTHORITY_CHANGED");
@@ -241,7 +252,7 @@ export function continueQualifiedNativeRun(root, rec, opts) {
   if (reconciliation.verdict !== "ended") refuse("QUALIFIED_PRIOR_NOT_CEASED");
   const final = nativeFinalGate(rec, { phase: "continue", expectedRef: opts.ref, at, lifecycleReconciled: true, aliveJobs: runs.ownedJobsAlive(rec, io) });
   if (!final.eligible) { runs.writeRecord(root, rec); refuse("QUALIFIED_CONTINUE_HELD"); }
-  const preview = decisiveQualifiedAdmission(request(rec.assignment, opts.replace ? "replacement" : "re-entry", rec.attempt), opts.earlier, true, rec.resource);
+  const preview = admission().decisiveQualifiedAdmission(request(rec.assignment, opts.replace ? "replacement" : "re-entry", rec.attempt), opts.earlier, true, rec.resource);
   rec.admission = preview.admission();
   if (rec.execution) { rec.execution.endedAt ??= at; rec.history.push(rec.execution); }
   rec.execution = null; rec.outcome = null; rec.state = "reserved";
