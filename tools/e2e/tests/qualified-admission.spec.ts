@@ -314,3 +314,33 @@ test("private preflight refuses missing current approved objects wrong associati
     } finally { unsupported.cleanup(); }
   }
 });
+
+test("T-352 correction C1 — closing ATX hashes keep private history out of public success and refusal displays", async () => {
+  const fx = fixture();
+  try {
+    const ordinary = await admissionPreflight(fx.request());
+    expect(ordinary.permitted).toBe(true);
+    expect(JSON.stringify(ordinary)).not.toContain(PRIVATE);
+    const privateHeadings = ["Implementation notes", "Reports", "Verdicts", "History", "Approval history", "Archived grant history", "Repair ledger"];
+    const active = card().split("## Implementation notes")[0]!;
+    put(fx.records, CARD, active + privateHeadings.map((heading) => `## ${heading} ##\n\n${PRIVATE} ${heading}\n\n`).join(""));
+    const request = fx.request(); request.revisions.records = commit(fx.records);
+    fx.grant({ blobs: { "T-999": git(fx.records, ["rev-parse", `${request.revisions.records}:${CARD}`]) } });
+    const requestFile = path.join(fx.dir, "closing-headings-request-T-352.json");
+    writeFileSync(requestFile, JSON.stringify(request));
+    const run = () => childProcess.spawnSync(process.execPath, [path.join(SOURCE, "tools/e2e/scripts/brief.mjs"), "--admission-preflight", requestFile], { encoding: "utf8", env: ENV });
+    const allowed = run();
+    expect(allowed.status, allowed.stderr).toBe(0);
+    expect(JSON.parse(allowed.stdout).permitted).toBe(true);
+    expect(allowed.stdout + allowed.stderr, "public success display must exclude private history behind closing ATX hashes").not.toContain(PRIVATE);
+    const direct = await observedRead(fx.dir, () => admissionPreflight(request));
+    expect(direct.contract).toContain("Active fixture contract.");
+    expect(JSON.stringify(direct)).not.toContain(PRIVATE);
+    expect(direct.inputBytes("current").toString()).toContain(PRIVATE);
+    put(fx.product, ".supertaskr/pause.json", JSON.stringify({version:1,at:"2026-10-23T01:00:00Z",by:"fixture",scope:"all",why:PRIVATE}));
+    const refused = run();
+    expect(refused.status, refused.stderr).toBe(1);
+    expect(JSON.parse(refused.stdout).refusals[0]?.code).toBe("ADMISSION_PAUSED_ALL");
+    expect(refused.stdout + refused.stderr, "public refusal display must exclude private history behind closing ATX hashes").not.toContain(PRIVATE);
+  } finally { fx.cleanup(); }
+});
