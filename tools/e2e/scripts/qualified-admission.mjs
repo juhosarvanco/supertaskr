@@ -4,7 +4,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync } from "node:fs";
 import path from "node:path";
-import { captureCommittedInputs, captureTaskSnapshot, activeTaskContract } from "./records.mjs";
+import { captureCommittedInputs, captureTaskSnapshot } from "./records.mjs";
 import { normalizeContextRequest } from "./records-context.mjs";
 import { resolveWorkspace } from "./workspace.mjs";
 
@@ -162,8 +162,12 @@ export const ADMISSION_PREFLIGHT_LIMITS = Object.freeze([
  * @param {any} input */
 export async function admissionPreflight(input) {
   const request = normalizeAdmissionPreflight(input);
-  let qualifier, policy, runs, native;
-  try { qualifier = await import("./qualified-reservation.mjs"); }
+  let qualifier, parser, inert, policy, runs, native;
+  try {
+    qualifier = await import("./qualified-reservation.mjs");
+    parser = await import("../../../lib/parser/dist/pure.js");
+    inert = await import("../../../lib/parser/dist/inert-spans.js");
+  }
   catch { refuse("preflight-qualifier-unavailable"); }
   try { policy = await import("./dispatch-brief.mjs"); runs = await import("./run-record.mjs"); native = await import("./native-codex.mjs"); }
   catch { refuse("preflight-policy-unavailable"); }
@@ -216,6 +220,11 @@ export async function admissionPreflight(input) {
       admission = policy.admit(state, { ...a, card: request.taskId, work: "card", blob: snapshot.task.blobId,
         cardText: snapshot.content, approvedText: () => approved, resource: null, board }, ledger);
     } catch (error) { const safe = finding(error, "preflight-policy-refused"); refusals.push({ code: safe.code, message: safe.message }); }
+    // Reuse the parser's position-preserving structural view, then slice the
+    // original capture once. Literal examples cannot select a private boundary.
+    const body = parser.extractFrontmatter(snapshot.content, snapshot.task.relativePath).body;
+    const privateStart = /^ {0,3}##[ \t]+(?:Implementation notes|Verdicts|History|Reports|Approval history|Archived grant history|Repair ledger)(?:[ \t]+#+)?[ \t]*(?:\r?\n|$)/im.exec(inert.blankInertSpans(body).content)?.index ?? body.length;
+    const contract = snapshot.content.slice(0, snapshot.content.length - body.length + privateStart).trimEnd();
     const preview = {
       view: "Private approval preflight", permitted: refusals.length === 0,
       status: refusals.length === 0 ? "currently-permitted-preparation" : "refused",
@@ -225,7 +234,7 @@ export async function admissionPreflight(input) {
       grant: { revision: state.revision, digest: state.store.digest, enforced: state.enforced,
         approval: state.approval, recovery: state.recovery, paused: state.pause?.scope ?? null },
       policy: admission === undefined ? null : { reuses: admission.reuses, mechanicalDrift: admission.drift.length > 0 },
-      contract: activeTaskContract({ content: snapshot.content.split(/(?=^ {0,3}##[ \t]+(?:Implementation notes|Verdicts|History|Reports|Approval history|Archived grant history|Repair ledger)(?:[ \t]+#+)?[ \t]*(?:\r?\n|$))/im)[0] ?? "" }),
+      contract,
       receipt: canonical.receipt,
       scope: canonical.fence, origins: request.roles.map(/** @param {"product"|"records"} role */ (role) => ({ role,
         repository: capture.repositories[role], commit: request.revisions[role],

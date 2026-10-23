@@ -380,3 +380,34 @@ for (const heading of ["Implementation notes", "Reports", "Verdicts", "History",
     }
   });
 }
+
+test("private preflight preserves the complete active contract around inert literal private headings", async () => {
+  for (const literal of ["~~~markdown\n## Reports\n~~~", "```markdown\n## Reports\n```", "<!--\n## Reports\n-->"]) {
+    const fx = fixture();
+    try {
+      const active = card().split("## Implementation notes")[0]! + literal +
+        "\n\n- WHEN the literal example ends THE contract SHALL retain ACTIVE_AFTER_FENCED_EXAMPLE_T352.\n\n";
+      put(fx.records, CARD, active + `## Implementation notes ##\n\n${PRIVATE} actual private history\n`);
+      const request = fx.request(); request.revisions.records = commit(fx.records);
+      fx.grant({ blobs: { "T-999": git(fx.records, ["rev-parse", `${request.revisions.records}:${CARD}`]) } });
+      const requestFile = path.join(fx.dir, "inert-private-heading-request-T-352.json");
+      writeFileSync(requestFile, JSON.stringify(request));
+      const run = () => childProcess.spawnSync(process.execPath, [path.join(SOURCE, "tools/e2e/scripts/brief.mjs"), "--admission-preflight", requestFile], { encoding: "utf8", env: ENV });
+      const direct = await observedRead(fx.dir, () => admissionPreflight(request));
+      expect(direct.permitted).toBe(true);
+      expect(direct.contract, "inert examples must not remove a later active criterion or alter active bytes").toBe(active.trimEnd());
+      expect(direct.inputBytes("current").toString()).toContain(`${PRIVATE} actual private history`);
+      expect(JSON.stringify(direct)).not.toContain(PRIVATE);
+      const allowed = run();
+      expect(allowed.status, allowed.stderr).toBe(0);
+      expect(JSON.parse(allowed.stdout).contract).toBe(active.trimEnd());
+      expect(allowed.stdout + allowed.stderr).not.toContain(PRIVATE);
+      put(fx.product, ".supertaskr/pause.json", JSON.stringify({ version: 1, at: "2026-10-23T01:00:00Z", by: "fixture", scope: "all", why: PRIVATE }));
+      const refused = run();
+      expect(refused.status, refused.stderr).toBe(1);
+      expect(JSON.parse(refused.stdout).refusals[0]?.code).toBe("ADMISSION_PAUSED_ALL");
+      expect(JSON.parse(refused.stdout).contract).toBe(active.trimEnd());
+      expect(refused.stdout + refused.stderr).not.toContain(PRIVATE);
+    } finally { fx.cleanup(); }
+  }
+});

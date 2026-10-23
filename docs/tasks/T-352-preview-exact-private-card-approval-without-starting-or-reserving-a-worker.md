@@ -129,6 +129,10 @@ The heading-first public-entry class sweep is the seven real before/after contro
 
 No new scope, proof exception, grant revision, side agent, worker, merge, push, CI or self-approval was used. The final original d2078ded64a1e6a479ea3cdad68266783b69026e range is derived and graded after these notes; only a successful unchanged-head reading permits the separate last status-only stamp.
 
+### Executor active-contract boundary correction — before implementation
+
+The notes-complete 1f3692910e191f3282a283c6fdd23bf49d9c39b9 remains UNGRADED. Before its broad run, the coordinator delivered an actual permitted public-route result whose fenced literal Reports heading cut off a later genuine criterion. C3 requires preservation of the active contract as well as privacy, and C6 must qualify the whole returned contract. The new independent regression will compare the complete active bytes around tilde/backtick fenced examples and a comment, retain an actual private-history control, and leave the exact reviewer C1 body unchanged. The remedy must reuse existing parser structure rather than duplicate it, and must not pass the corrected slice through the adjacent unmasked projection again. No new criterion or outside owning path is added.
+
 ## Verdicts
 
 ### Coordinator scope amendment — 2026-10-23
