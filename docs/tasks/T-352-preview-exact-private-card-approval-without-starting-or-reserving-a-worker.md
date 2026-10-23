@@ -36,16 +36,49 @@ Preparation refreshed on 2026-10-23 against the independent T-351 approval at fe
 
 ### Executor criteria echo — before implementation
 
-- [ ] C1: Validate the complete standalone request early, capture the explicitly selected committed private card and registry, and derive scope only through qualified capture; name malformed/topology refusals.
-- [ ] C2: Require exact current and historical approved bytes, preserve existing grant/ledger policy wiring and fail closed on unavailable boundary evidence or unsupported Git object formats.
-- [ ] C3: Return an immutable preparation reading with exact origins and current policy observations, display only the active contract and permitted metadata, and confer no execution authority.
-- [ ] C4: Prove success and refusal cause no lifecycle, repository, process or remote side effects; preserve ordinary operation and refuse unqualified native consumers before reservation.
-- [ ] C5: Prove fresh previews reflect pause/revocation and separately committed substantive/mechanical drift while earlier readings retain their named origins.
-- [ ] C6: Qualify the public routes with independent fixture origins, refusals and side-effect controls; retain the flag-inventory comparison and unannounced-flag control, account honestly for the external request, and drill property sites with hash-proved restoration.
+- [x] C1: Validate the complete standalone request early, capture the explicitly selected committed private card and registry, and derive scope only through qualified capture; name malformed/topology refusals.
+- [x] C2: Require exact current and historical approved bytes, preserve existing grant/ledger policy wiring and fail closed on unavailable boundary evidence or unsupported Git object formats.
+- [x] C3: Return an immutable preparation reading with exact origins and current policy observations, display only the active contract and permitted metadata, and confer no execution authority.
+- [x] C4: Prove success and refusal cause no lifecycle, repository, process or remote side effects; preserve ordinary operation and refuse unqualified native consumers before reservation.
+- [x] C5: Prove fresh previews reflect pause/revocation and separately committed substantive/mechanical drift while earlier readings retain their named origins.
+- [x] C6: Qualify the public routes with independent fixture origins, refusals and side-effect controls; retain the flag-inventory comparison and unannounced-flag control, account honestly for the external request, and drill property sites with hash-proved restoration.
 
 Prepared and independently reviewed outside the repository; final preview v4 and admission-preflight-independent-review-v1.md preserve the complete review/reconciliation. The reviewer had a supplied packet, no source inspection. Rendered v5 names the previously declared four owning paths in the same reviewed criteria; it adds no obligation or permission. V6 added the two empty worker receipt fields required from filing. V7 refreshed source status and preparation notes. V8 refreshes those notes at the actual T-351 local merge; all six acceptance criteria and four owning paths remain byte-for-byte unchanged from the independently reviewed contract. Source/load audit v8 retains the existing public-policy versus product-card-lookup distinction, current-only grant reading and early request-validation requirement. Final dispatch follows exact-tip delivery qualification.
 
 Size M means one public read-only capture/admission view test cycle. It remains useful before worktree creation and creates no ownership, run, approval consumption or publication token. Existing canonical committed-board validation is permitted; displaying or substituting the whole live board is not. Scope/origin readings are immutable; current grant/pause/ledger observations are revalidated at each actual execution boundary. No native worker or split delivery is enabled here. Product-only views retain their no-private-record operation. Implementation and independent phase two request native GPT-6.1 Sol extra-high; observed provider identity is recorded separately.
+
+### Executor implementation and focused qualification
+
+The implementation snapshot is 3a31ba7d95241e8e186f956b379af1def214b20c, based on d2078ded64a1e6a479ea3cdad68266783b69026e. The four paths restored from dedb3027687dc677c457f8b907c1f223c0fed0ce were disclosed repair material, independently read against the current committed capture, qualified scope, grant policy, ledger and early CLI APIs. No prior grade is reused: the disclosed earlier parser/app passes did not make its interrupted inventory-red e2e run GREEN.
+
+`qualified-admission.mjs` validates and detaches the complete request before generated consumers load, cross-checks its committed capture against T-351's canonical receipt, retrieves historical approved bytes from the records object database, validates the complete ledger, and delegates to the existing admission policy. It returns frozen origins/scope and a blinded active contract; detached integrity bytes remain available only through its nonserializable accessor. Re-entry/replacement without qualified worker evidence refuse. Both physical Git repositories must use the SHA-1 format supported by the existing grant consumers; full SHA-256 identities remain intact during normalization and receive a named unsupported-format refusal.
+
+C1 and C2 are covered by the source-only CLI validation body and the exact-origin, policy/ledger, historical-diagnostic and missing-input/object-format bodies. C3 and C4 are covered by immutable byte/origin checks, private-history markers, complete fixture file/Git snapshots, intercepted write/job/remote surfaces, and public native launch/dispatch refusals before reservation. C5 has separate committed mechanical and substantive drift controls, pause/revocation rereadings and an unchanged earlier result. C6's existing inventory now declares an explicit external-request reason: a complete external JSON request determines this entry's answer and size, so the live-tree sizing guard has no repository-default invocation to derive. Its declaration, coverage comparison, reverse checks and planted unannounced-flag control are retained; the public entry is exercised by the two owning route specs.
+
+Focused commands all exited 0: the inventory plus source-only missing-build route ran 2 bodies; the seven new public bodies ran 7; parser `test/assignment.test.ts` ran 21; the app assignment selection ran 8 with 125 unrelated bodies skipped; e2e typecheck passed. The actual app build was absent during drill-fixture setup, so the copy step exited 1, then the ordinary app build exited 0 and its output was copied into the detached fixture. That was setup evidence, not a suite grade. The detached baseline at the implementation snapshot ran all 8 relevant bodies successfully. These focused readings precede the final notes commit; the handoff records the full original-range grade at its own exact ref.
+
+### Self-drill block
+
+All mutations were confined to disposable copies of the owning paths in a detached fixture at 3a31ba7d95241e8e186f956b379af1def214b20c. Each mutation's actual per-path diff was read before its run. Every row executed one targeted body and produced assertion RED at test exit 1; no syntax/load failure or zero-body result is counted. Seven new bodies and the changed inventory body's data are covered; the two additional rows exercise private display and the inventory control itself. Targeted runs establish the named assertion failures, not a whole-suite kill-set census.
+
+| Drill | Property-site mutation | Assertion that failed | Restored file |
+|---|---|---|---|
+| D1 | Falsify the returned selected-card blob identity | Independent Git blob comparison | qualified-admission.mjs |
+| D2 | Swallow the existing policy's named refusal | Membership refusal must be disallowed | qualified-admission.mjs |
+| D3 | Ignore an unresolved relevant native attempt | Missing attempt evidence must reject | qualified-admission.mjs |
+| D4 | Substitute approved text for captured current text | Mechanical committed drift must be reported | qualified-admission.mjs |
+| D5 | Remove the actual Git object-format guard | Unsupported full identities need the named refusal | qualified-admission.mjs |
+| D6 | Load the qualifier before request validation | Source-only missing-build result must be the preflight refusal | brief.mjs |
+| D7 | Attempt a write from the public preview | Public success fails, intercepted effects rises to 1 | qualified-admission.mjs |
+| D8 | Delete the external-input inventory entry | Coverage names the unannounced public flag | brief-flush.spec.ts |
+| D9 | Display the raw captured card as the contract | Private-history marker appears in ordinary serialization | qualified-admission.mjs |
+| D10 | Make the planted-flag comparison always empty | The existing unannounced-flag control itself fails | brief-flush.spec.ts |
+
+Every restore matched both the named commit's bytes and its SHA-256, with an empty per-path diff as a companion. `qualified-admission.mjs`: 3bf6976c3aa1b4deba131c8cf51e91b487facd34f18f0f91185adcd1fcd57396; `brief.mjs`: 8817dfe045b1a429dd2b9899a1ca1d3771558a71df9c3a7496e86e39fd4e35ea; `brief-flush.spec.ts`: 6a36bfdcfad6ea729e78528bd00bf6110dcb9c74f12940d2a4e4eaeb8cb4d6ae. The D7 test was a genuine assertion RED with `EFFECTS=1`; the evidence helper initially exited 1 because it expected a single-line error prefix. Its recognition was corrected and the original log independently checked without rerunning or replacing that result.
+
+The defect class is an accepted standalone flag absent from the existing inventory. The live declaration comparison found no unaccounted flags after repair: 70 declared, 16 exercised, 54 reasoned external/modifier entries at the implementation snapshot. D8 demonstrates a positive missing-entry result and D10 demonstrates that the retained control fails when its comparison is degraded. No additional in-fence follow-through, side agent, authority edit, merge, push or CI action was performed. Generated integration reconciliation remains with the coordinator.
+
+The generated brief's legacy default model is superseded by the actual assignment: requested gpt-6.1-sol/xhigh on codex-desktop-native. The `built_by` token records that requested assignment in the parser's model@vehicle syntax; observed provider model/usage remain unavailable, and are not inferred from the request. The implementation, notes and metadata are committed before the original-range grade. Only a successful grade permits the executor role's separate last status-only commit; that exemption is checked and reported in the handoff.
 
 ## Verdicts
 
