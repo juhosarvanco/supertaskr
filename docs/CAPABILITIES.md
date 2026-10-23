@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1390 at least behaviours** — 1388 extracted sentences + 2 at least named-not-extracted (listed at the end) — across 48 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1406 at least behaviours** — 1404 extracted sentences + 2 at least named-not-extracted (listed at the end) — across 49 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -49,6 +49,8 @@ Census: **1390 at least behaviours** — 1388 extracted sentences + 2 at least n
 
 ## brief
 
+- private approval CLI validates its complete standalone request before absent qualifier builds and never installs them
+- private approval CLI previews without a product card then refuses native dispatch and launch before reservation while product-only stays independent
 - planning CLI validates standalone modifiers and selection data before parser loading while old records views remain source-only
 - records CLI views read committed split records before legacy loading with concise provenance and explicit paired product base
 - records CLI process and write controls admit real reads and split guards refuse all unsupported routes before effects
@@ -1286,6 +1288,23 @@ Census: **1390 at least behaviours** — 1388 extracted sentences + 2 at least n
 - READONLY CONVENTIONS are copied once with derived chapters and unchanged modes through BOTH real seat verbs
 - `--take-seat` records NO seat when the guard cannot be installed, and leaves the configuration and the index alone
 - a seat acquisition that fails for a reason of its own configures nothing
+
+## qualified-admission
+
+- private preflight selects exact committed private bytes without a product card or worker and exposes immutable blinded origins
+- private preflight wires current membership recovery endpoint and complete spent or open run ledger policy
+- private preflight preserves collected historical native diagnostics while unresolved relevant attempts still refuse
+- private preflight reobserves pause revocation and committed substantive versus mechanical drift without granting later authority
+- private preflight refuses missing current approved objects wrong association and unsupported full object identities
+- T-352 correction C1 — closing ATX hashes keep private history out of public success and refusal displays
+- private preflight keeps first Implementation notes private across plain and closing ATX headings
+- private preflight keeps first Reports private across plain and closing ATX headings
+- private preflight keeps first Verdicts private across plain and closing ATX headings
+- private preflight keeps first History private across plain and closing ATX headings
+- private preflight keeps first Approval history private across plain and closing ATX headings
+- private preflight keeps first Archived grant history private across plain and closing ATX headings
+- private preflight keeps first Repair ledger private across plain and closing ATX headings
+- private preflight preserves the complete active contract around inert literal private headings
 
 ## qualified-reservation
 

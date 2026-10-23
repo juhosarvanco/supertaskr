@@ -223,6 +223,7 @@ const FLAGS = Object.freeze([
   "--help",
   "--records",
   "--records-context",
+  "--admission-preflight",
   "--context-inputs",
   "--records-revision",
   "--product-base",
@@ -242,6 +243,24 @@ async function legacyModule(load) {
 /** @param {string[]} argv @returns {Promise<number|undefined>} */
 async function earlyView(argv) {
   try {
+    if (argv.some((flag) => flag.startsWith("--admission-preflight"))) {
+      if (argv.length !== 2 || argv[0] !== "--admission-preflight" || !argv[1] || argv[1].startsWith("-")) {
+        console.error("brief: preflight-view-usage: use standalone --admission-preflight <complete-request-JSON-file>.");
+        return 2;
+      }
+      const { admissionPreflight, readAdmissionPreflightRequest } = await import("./qualified-admission.mjs");
+      let request;
+      try { request = readAdmissionPreflightRequest(argv[1]); }
+      catch (error) { console.error(`brief: ${error instanceof Error ? error.message : "preflight-request-unreadable"}`); return 2; }
+      try {
+        const preview = await admissionPreflight(request);
+        EARLY_OUT.push(`${JSON.stringify(preview, null, 2)}\n`);
+        return preview.permitted ? 0 : 1;
+      } catch (error) {
+        console.error(`brief: ${error instanceof Error ? error.message : "preflight-input-unavailable"}`);
+        return 3;
+      }
+    }
     if (argv.includes("--records-context") || argv.includes("--context-inputs")) {
       /** @type {Record<string, string>} */
       const opts = {};
@@ -681,6 +700,7 @@ async function main(argv) {
           + "[--full] [--root <path>]",
       );
       console.log("workspace inspection: --workspace [--product-only] [--root <product checkout>] (standalone, read-only)");
+      console.log("private approval preview: --admission-preflight <complete-request-JSON-file> (standalone, read-only; grants no execution authority)");
       return EXIT.CLEAN;
     }
     if (a === "--state") {
