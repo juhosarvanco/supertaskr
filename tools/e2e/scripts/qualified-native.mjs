@@ -61,7 +61,10 @@ function commitment(q) { return nativeSha256(validator().qualifiedContent({ rese
 /** @param {string} root @param {any} rec @param {boolean} [requireHeld] */
 export function validateQualifiedNative(root, rec, requireHeld = true) {
   const q = rec.native.qualified;
+  shape(q, ["reservation", "identity", "ignored", "origins"], ["collection"]);
   if (rec.assignmentDigest !== runs.sha256(JSON.stringify(rec.assignment)) || rec.permission.digest !== commitment(q)) refuse("QUALIFIED_RETAINED_AUTHORITY_CHANGED");
+  if (!equal(q.origins.launch, rec.assignment.native) || rec.native.launch.taskName !== q.origins.launch.taskName ||
+      rec.native.launch.sessionId !== q.origins.launch.sessionId || !rec.native.launch.coordinatorTurnIds.includes(q.origins.launch.coordinatorTurnId)) refuse("QUALIFIED_LAUNCH_AUTHORITY_CHANGED");
   const scope = validator().validateQualifiedReservation(q.reservation, root, rec.attempt);
   if (!equal({ ...qualifiedAssignment(rec.assignment.qualified), attempt: rec.attempt }, q.reservation.request) ||
       q.reservation.identity !== q.identity || q.reservation.scope.authorityRoot !== realpathSync(root)) refuse("QUALIFIED_RETAINED_AUTHORITY_CHANGED");
@@ -106,7 +109,7 @@ export async function startQualifiedNativeRun(root, opts) {
     const taken = runs.acquireQualifiedReservationSync(root, acquisition, { at, host: opts.host });
     if (taken.repeated) refuse("QUALIFIED_ORPHAN_REQUIRES_RECONCILIATION");
     const q = { reservation: taken.reservation, identity: taken.reservation.identity, ignored, origins: {
-      receipt: preview.receipt, grant: preview.grant, scope: preview.scope, admission: copy(input.admission), bases: copy(a.qualified.workers),
+      receipt: preview.receipt, grant: preview.grant, scope: preview.scope, admission: copy(input.admission), launch: copy(a.native), bases: copy(a.qualified.workers),
     } };
     const brief = { path: a.brief, digest: runs.sha256(readFileSync(a.brief, "utf8")) };
     const rec = /** @type {any} */ ({ version: runs.RECORD_VERSION, attempt, state: "reserved", assignment: a,

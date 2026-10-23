@@ -321,6 +321,12 @@ test("qualified scope cannot fall back through unknown fields or legacy verifier
     expect(() => collectNativeWorkspace(readRecord(fx.product, started.record.attempt))).toThrow(/RETAINED_AUTHORITY/);
     retained.permission.digest = started.record.permission.digest; writeRecord(fx.product, retained);
     expect(collectNativeWorkspace(readRecord(fx.product, started.record.attempt)).clean).toBe(true);
+    retained.native!.qualified.unknownAuthority = true; writeRecord(fx.product, retained);
+    expect(() => collectNativeWorkspace(readRecord(fx.product, started.record.attempt))).toThrow(/SHAPE/);
+    delete retained.native!.qualified.unknownAuthority;
+    retained.native!.launch.sessionId = "replacement-without-authority"; writeRecord(fx.product, retained);
+    expect(() => collectNativeWorkspace(readRecord(fx.product, started.record.attempt))).toThrow(/LAUNCH_AUTHORITY/);
+    retained.native!.launch.sessionId = fx.assignment.native.sessionId; writeRecord(fx.product, retained);
     expect(() => nativeRecoveryTarget(fx.product, started.record.attempt, git(fx.productWorker, ["rev-parse", "HEAD"]), "terminal")).toThrow(/legacy transaction/);
     expect(handleNativeEvent(fx.product, fx.event("PreToolUse", "unknown", undefined, "unknown-agent")).disposition).toBe("unknown-held");
     expect(activeNativeHolds(readRecord(fx.product, started.record.attempt)).map((hold: any) => hold.code)).toContain("unknown-worker");
