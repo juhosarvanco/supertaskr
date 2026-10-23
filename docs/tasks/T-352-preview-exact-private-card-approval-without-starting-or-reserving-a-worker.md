@@ -6,7 +6,7 @@ milestone: 4
 priority: 1
 size: M
 tier: standard
-status: verifying
+status: building
 suggested_by: codex/gpt-6.1-sol @architect
 blocked_by: [T-351]
 touches: [tools/e2e/scripts/qualified-admission.mjs, tools/e2e/scripts/brief.mjs, tools/e2e/tests/qualified-admission.spec.ts, tools/e2e/tests/brief.spec.ts, tools/e2e/tests/brief-flush.spec.ts]
@@ -91,6 +91,14 @@ D11 is a data-site regression drill in a separate detached fixture at 56977c7706
 Before that next grade, the coordinator delivered an actual public-route finding through the own ask: a shallow unknown request field received the named shape refusal, while an unknown field wrapping 20,000 nested arrays returned a bare stack-overflow message. The finding was independently reproduced by adding shallow and deep controls to the existing source-only CLI body: one executed body was assertion RED before repair. At ae597f434adf9158cd632dc70ea0bf4c59e2ea34 the duplicate-member walk is enclosed by the existing sanitized finding boundary, preserving its named duplicate refusal and UTF-8/standalone/missing-build ordering while naming an otherwise unclassified traversal failure as a request-shape refusal. This moves 11 added plus 1 removed lines across the already owned module and spec, adds no acceptance criterion, and is the second in-fence follow-through. Token lint, typecheck and all 9 targeted public/inventory/token-gate bodies then passed.
 
 D12 drills that named-request boundary at ae597f434adf9158cd632dc70ea0bf4c59e2ea34: in a separate detached fixture, remove only the new traversal exception boundary, observe the public CLI's named-refusal assertion RED at test exit 1, and restore the exact committed module. Its SHA-256 restored to 42ab46ac3680634ad17aa9c90b4a7f2b75bfa11346d9268408268c55b395f687 with an empty per-path diff. The fixture's unmutated public-route baseline passed first. All 12 drill results retain their own ref, diff, actual failure and restore evidence; the newly requested full original-range reading follows the final notes commit.
+
+### Executor privacy repair — criteria echo before implementation
+
+The genuine independent rejection and unchanged C1 regression are preserved as commits 3a7e8e5529466934407d7e2fb1e8110e26a371e1 and 745dcfd2bcfe93ed3836ddf82af27596502b33b7. They were fast-forward applied in that order after normal continuation and exact rebind of the existing attempt. G2 remains an executor GREEN for the rejected candidate, not an independent approval. No frozen criterion or scope changed.
+
+- [ ] C3: Recognize valid closing ATX hashes at the existing private-history cutoff, retaining the active contract and privately available integrity bytes.
+- [ ] C6: Preserve C1 byte-for-byte, show it assertion RED before repair, and qualify each named private heading independently in first position with positive active-text controls, success/refusal privacy checks and property-site restoration proofs.
+- [ ] C1/C2/C4/C5: Retain request/capture/policy/origin/no-effect behavior and discharge the full original range at a new unchanged notes-complete commit; earlier readings keep their original refs.
 
 ## Verdicts
 

@@ -344,3 +344,39 @@ test("T-352 correction C1 — closing ATX hashes keep private history out of pub
     expect(refused.stdout + refused.stderr, "public refusal display must exclude private history behind closing ATX hashes").not.toContain(PRIVATE);
   } finally { fx.cleanup(); }
 });
+
+for (const heading of ["Implementation notes", "Reports", "Verdicts", "History", "Approval history", "Archived grant history", "Repair ledger"]) {
+  test(`private preflight keeps first ${heading} private across plain and closing ATX headings`, async () => {
+    for (const closing of [false, true]) {
+      const fx = fixture();
+      try {
+        const active = card().split("## Implementation notes")[0]!;
+        const visible = `Visible ${heading} reference stays in the active contract.`;
+        const header = closing ? `   ##\t${heading.toUpperCase()}\t### \t\r\n` : `## ${heading}\n`;
+        put(fx.records, CARD, active + `## ${heading} reference ##\n\n${visible}\n\n` + header +
+          `\n${PRIVATE} first private section\n\n## Later material\n\n${PRIVATE} later tail\n`);
+        const request = fx.request(); request.revisions.records = commit(fx.records);
+        fx.grant({ blobs: { "T-999": git(fx.records, ["rev-parse", `${request.revisions.records}:${CARD}`]) } });
+        const requestFile = path.join(fx.dir, "first-private-heading-request-T-352.json");
+        writeFileSync(requestFile, JSON.stringify(request));
+        const run = () => childProcess.spawnSync(process.execPath, [path.join(SOURCE, "tools/e2e/scripts/brief.mjs"), "--admission-preflight", requestFile], { encoding: "utf8", env: ENV });
+        const direct = await observedRead(fx.dir, () => admissionPreflight(request));
+        expect(direct.permitted).toBe(true);
+        expect(direct.contract).toContain(visible);
+        expect(JSON.stringify(direct), `${heading} must independently start the private tail`).not.toContain(PRIVATE);
+        expect(direct.inputBytes("current").toString()).toContain(`${PRIVATE} first private section`);
+        expect(direct.inputBytes("current").toString()).toContain(`${PRIVATE} later tail`);
+        const allowed = run();
+        expect(allowed.status, allowed.stderr).toBe(0);
+        expect(JSON.parse(allowed.stdout).contract).toContain(visible);
+        expect(allowed.stdout + allowed.stderr, `${heading} public success must exclude its private tail`).not.toContain(PRIVATE);
+        put(fx.product, ".supertaskr/pause.json", JSON.stringify({ version: 1, at: "2026-10-23T01:00:00Z", by: "fixture", scope: "all", why: PRIVATE }));
+        const refused = run();
+        expect(refused.status, refused.stderr).toBe(1);
+        expect(JSON.parse(refused.stdout).refusals[0]?.code).toBe("ADMISSION_PAUSED_ALL");
+        expect(JSON.parse(refused.stdout).contract).toContain(visible);
+        expect(refused.stdout + refused.stderr, `${heading} public refusal must exclude its private tail`).not.toContain(PRIVATE);
+      } finally { fx.cleanup(); }
+    }
+  });
+}

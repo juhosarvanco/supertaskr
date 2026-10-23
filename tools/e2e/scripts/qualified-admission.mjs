@@ -225,7 +225,7 @@ export async function admissionPreflight(input) {
       grant: { revision: state.revision, digest: state.store.digest, enforced: state.enforced,
         approval: state.approval, recovery: state.recovery, paused: state.pause?.scope ?? null },
       policy: admission === undefined ? null : { reuses: admission.reuses, mechanicalDrift: admission.drift.length > 0 },
-      contract: activeTaskContract({ content: snapshot.content.split(/(?=^ {0,3}##[ \t]+(?:Implementation notes|Verdicts|History|Reports|Approval history|Archived grant history|Repair ledger)[ \t]*(?:\r?\n|$))/im)[0] ?? "" }),
+      contract: activeTaskContract({ content: snapshot.content.split(/(?=^ {0,3}##[ \t]+(?:Implementation notes|Verdicts|History|Reports|Approval history|Archived grant history|Repair ledger)(?:[ \t]+#+)?[ \t]*(?:\r?\n|$))/im)[0] ?? "" }),
       receipt: canonical.receipt,
       scope: canonical.fence, origins: request.roles.map(/** @param {"product"|"records"} role */ (role) => ({ role,
         repository: capture.repositories[role], commit: request.revisions[role],
