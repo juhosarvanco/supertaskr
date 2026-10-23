@@ -133,6 +133,24 @@ No new scope, proof exception, grant revision, side agent, worker, merge, push, 
 
 The notes-complete 1f3692910e191f3282a283c6fdd23bf49d9c39b9 remains UNGRADED. Before its broad run, the coordinator delivered an actual permitted public-route result whose fenced literal Reports heading cut off a later genuine criterion. C3 requires preservation of the active contract as well as privacy, and C6 must qualify the whole returned contract. The new independent regression will compare the complete active bytes around tilde/backtick fenced examples and a comment, retain an actual private-history control, and leave the exact reviewer C1 body unchanged. The remedy must reuse existing parser structure rather than duplicate it, and must not pass the corrected slice through the adjacent unmasked projection again. No new criterion or outside owning path is added.
 
+### Executor structural projection correction and qualification
+
+At 11fddd334c8f1dbac0e21b84048e87905a421a2f, the preflight reuses extractFrontmatter from the existing generated pure parser and blankInertSpans from its existing generated companion module. The pure barrel does not export the latter; its ordinary task parser already loads that same position-preserving helper. Both imports occur only after request validation, with the existing named unavailable-qualifier boundary. No new parser or generated source was added. The private-heading search runs on the structural Markdown body; its offset selects one slice of the original committed capture, preserving frontmatter and active bytes. The adjacent unmasked activeTaskContract projection is no longer called, so it cannot remove a literal example after the structural cutoff was correctly chosen. This does not broaden the existing inert-span helper into a complete Markdown parser.
+
+The independent new regression first produced one actual assertion RED against unchanged 1f369291 implementation bytes: the permitted contract omitted the fenced Reports example and a genuine later criterion. Its corrected body compares the complete expected active text byte-for-byte for tilde fences, backtick fences and a comment, through direct and public success/paused-refusal reads. Actual private closing-hash history is still excluded and privately retained. Token lint, typecheck and all 18 focused bodies then passed at exit 0. The seven heading-first bodies and exact C1 regression remain unchanged. The ungraded 1f369291 forecast is preserved separately; it was never launched as a broad grade.
+
+### Structural correction self-drill block
+
+A separate detached fixture at 11fddd334c8f1dbac0e21b84048e87905a421a2f passed its two relevant unmutated bodies first. These three changed-projection drills then each ran one assertion-failing body at test exit 1, after the actual one-side diff was read. Every restoration matched module SHA256 e7df1ea988f3b2fe6f8b5e0980c32cc877dacc4ba4031b28170bad3aafe86f23 and had an empty per-path diff. The earlier heading-name drills remain readings of their original repair ref, not relabeled current proofs.
+
+| Drill | Actual property mutation | Assertion RED |
+| --- | --- | --- |
+| S1 | Remove closing-hash recognition at the structural boundary | Exact retained C1 public success privacy assertion |
+| S2 | Search the unmasked body instead of the existing inert-span view | Complete active contract around the literal example differs |
+| S3 | Reapply the adjacent unmasked projector to the correctly sliced contract | Complete active contract around the literal example differs |
+
+The coordinator finding's exact request/result and unchanged-source evidence are retained alongside the independently produced regression readings. The existing adjacent finding remains routed and outside the fence. All prior rejection, incomplete-grade and unknown-receipt records remain intact. The final full original-range run follows this notes-complete commit; it is not a grade of only this correction or a substitute of any earlier reading.
+
 ## Verdicts
 
 ### Coordinator scope amendment — 2026-10-23
