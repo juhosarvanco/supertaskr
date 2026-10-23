@@ -154,8 +154,13 @@ export const ADMISSION_PREFLIGHT_LIMITS = Object.freeze([
   "Preparation preview only; no admission, approval consumption, reservation or execution has occurred.",
   "Committed origins and this returned reading are immutable; grant, pause and ledger are current observations, not an atomic reservation.",
   "Every consuming lifecycle must recapture and revalidate at its actual admission boundary.",
-  "Qualified native launch and dispatch remain unsupported before reservation; qualified reservation data APIs are unchanged.",
+  "This preview grants no qualified native launch or dispatch; consuming lifecycles must recapture at actual admission.",
 ]);
+
+/** Dependencies must finish loading before a consumer enters a synchronous
+ * authority transaction. No Promise returned by this module is authority.
+ * @type {any} */
+let consumers;
 
 /** Public read-only entry. Integrity bytes are detached private copies exposed
  * only by a nonserializable accessor, following the existing capture contract.
@@ -171,6 +176,17 @@ export async function admissionPreflight(input) {
   catch { refuse("preflight-qualifier-unavailable"); }
   try { policy = await import("./dispatch-brief.mjs"); runs = await import("./run-record.mjs"); native = await import("./native-codex.mjs"); }
   catch { refuse("preflight-policy-unavailable"); }
+  consumers = { qualifier, parser, inert, policy, runs, native };
+  return captureAdmission(request);
+}
+
+/** Synchronous recapture using already loaded dependencies. The native
+ * consumer supplies reconciled worker evidence before selecting re-entry.
+ * @param {any} input @param {boolean} [reconciled] @param {string|null} [resource] */
+function captureAdmission(input, reconciled = false, resource = null) {
+  const request = normalizeAdmissionPreflight(input);
+  if (!consumers) refuse("preflight-consumers-not-loaded");
+  const { qualifier, parser, inert, policy, runs, native } = consumers;
   try {
     const workspace = resolveWorkspace({ productRoot: request.authorityRoot, mode: "product-only" });
     // Records supports sha256 independently; grant blob validation and its
@@ -197,7 +213,7 @@ export async function admissionPreflight(input) {
     const a = request.admission;
     // These boundaries also depend on reconciled execution and worker facts.
     // This pre-worker request carries none of the consumer's binding evidence.
-    if (["re-entry", "replacement"].includes(a.boundary)) refuse(a.attempt === null ? "preflight-attempt-evidence-unavailable" : "preflight-worker-evidence-unavailable");
+    if (!reconciled && ["re-entry", "replacement"].includes(a.boundary)) refuse(a.attempt === null ? "preflight-attempt-evidence-unavailable" : "preflight-worker-evidence-unavailable");
     const approvedBlob = state.block?.current?.cards.get(request.taskId);
     let approved = null;
     let approvedBytes = null;
@@ -214,11 +230,12 @@ export async function admissionPreflight(input) {
     const board = new Map(capture.tasks.map((task) => [task.id, String(task.fields.status)]));
     if (state.block?.current?.until && !board.has(state.block.current.until)) refuse("preflight-endpoint-evidence-unavailable");
     if (a.kind === "derived" && a.parent !== "" && !board.has(a.parent)) refuse("preflight-recovery-evidence-unavailable");
+    /** @type {any} */
     let admission;
     const refusals = [];
     try {
       admission = policy.admit(state, { ...a, card: request.taskId, work: "card", blob: snapshot.task.blobId,
-        cardText: snapshot.content, approvedText: () => approved, resource: null, board }, ledger);
+        cardText: snapshot.content, approvedText: () => approved, resource, board }, ledger);
     } catch (error) { const safe = finding(error, "preflight-policy-refused"); refusals.push({ code: safe.code, message: safe.message }); }
     // Reuse the parser's position-preserving structural view, then slice the
     // original capture once. Literal examples cannot select a private boundary.
@@ -247,7 +264,22 @@ export async function admissionPreflight(input) {
         if (typeof which === "number" && registry[which]) return registry[which].bytes;
         refuse("preflight-input-unavailable");
       },
+      // This accessor, like inputBytes, is deliberately absent from JSON.
+      admission() { return admission; },
     };
     return freeze(preview);
   } catch (error) { throw finding(error, "preflight-input-unavailable"); }
+}
+
+/** Actual admission always recaptures inside the caller's transaction and
+ * reuses admit(), including the live pause and existing run-record ledger.
+ * A permitted preview cannot be replayed after any authority input drifts.
+ * @param {any} request @param {any} earlier @param {boolean} [reconciled] @param {string|null} [resource] */
+export function decisiveQualifiedAdmission(request, earlier, reconciled = false, resource = null) {
+  const now = captureAdmission(request, reconciled, resource);
+  if (earlier && consumers.qualifier.qualifiedContent({ grant: earlier.grant, receipt: earlier.receipt, scope: earlier.scope }) !==
+      consumers.qualifier.qualifiedContent({ grant: now.grant, receipt: now.receipt, scope: now.scope })) refuse("preflight-decisive-drift");
+  if (!now.permitted) refuse(now.refusals[0]?.code ?? "preflight-policy-refused");
+  if (!now.grant.enforced || now.inputBytes("current").length === 0 || now.inputBytes("approved").length === 0) refuse("preflight-approved-bytes-unavailable");
+  return now;
 }

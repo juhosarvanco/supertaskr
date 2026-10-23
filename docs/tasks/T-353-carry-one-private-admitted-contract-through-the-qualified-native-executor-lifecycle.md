@@ -36,6 +36,29 @@ The accepted T-352 source at 42d20fe611d02d8a352a76f28973fa9da58987ea supplies r
 
 ## Implementation notes
 
+### Executor criteria echo — 2026-10-24
+
+- [ ] Capture the private historical/current contract and project receipt through the existing qualified preflight, explicitly translate legacy scopes, and retain immutable qualified origins without exposing raw authority during orientation.
+- [ ] Preload asynchronous inputs, decisively revalidate and acquire the complete reservation with attempt publication inside the synchronous transaction, and preserve discoverable failures and rollback identity.
+- [ ] Bind supported Bash/apply_patch callbacks to an explicitly owned root and inspect every physical participant and workspace layer against the frozen domains.
+- [ ] Preserve and hold qualified expansion requests without granting scope through live edits, continuation or replacement; keep ordinary expansion behavior.
+- [ ] Carry exact native receipt/history and all ownership through observation, continuation, replacement and independently verified stop reconciliation, requiring actual final and ceased jobs for successful collection.
+- [ ] Collect exact original-base candidate pairs only after all participants are quiescent; make durable completed retry historical and reconcile partial finalization against only its original set.
+- [ ] Retain existing one-root and packet-only behavior, explicitly refuse unknown qualified fields and deferred verifier/delivery consumers, and introduce no separate policy or ledger.
+- [ ] Demonstrate the complete public lifecycle with separate private/product repositories and colocated controls, named adversarial cases, property-site mutants and SHA256 restoration evidence.
+
+### Executor implementation — 2026-10-24
+
+The explicit qualified assignment reaches the normal run verbs. Qualified start and continuation preload asynchronous consumers, then synchronously recapture private inputs, reread the existing approval policy and operate under the existing native transaction. Ordinary one-root calls keep their synchronous behavior. The complete T-351 reservation is mutually bound to the immutable captured scope and run record; an orphan remains discoverable and cannot be turned into a launch by retry.
+
+Supported callbacks inspect every physical worker using the existing cumulative raw-diff checker. Colocated roles union domains once. Patch targets require canonical admitted domains; Bash retains the exact declared-root prefix convention. Binding and delivery validate retained authority. Continuation and replacement preserve the original complete set and turn history, clear binding and require a new exact native turn binding. Unsupported expansion is a retained request/hold, with independent stopped release distinct from successful collection.
+
+Collection requires actual successful final notification, all jobs ceased, exact role-qualified candidate pairs, clean final workspaces and a second readiness check. It durably records readiness before releasing only its original complete set and persists the historical result. Completed exact retry reads that result without inspecting workspaces or touching a later owner; interrupted final publication reconciles the original intent. Paired verifier preparation, legacy transaction disposition of qualified sets and default split operator routes remain refused.
+
+Targeted fixture controls demonstrate separate product/private-records repositories with no product card, full private current/approved objects, real worker worktrees, colocated aliases, public CLI start and cold-process continuation, actual process interruption between reservation and record publication, callback escapes, live jobs, stopped release, stale pairs, late workspace/callback changes and partial finalization. They measure supported callbacks and fixture processes, not a new live-model qualification or OS/read isolation. The initial targeted failures and their corrections remain in the executor's external report; no failed reading is represented as a grade.
+
+The dispatcher explicitly requests gpt-6.1-sol/xhigh; observed provider identity, effort and usage remain UNKNOWN. The generated brief's legacy Claude default does not govern this assignment. No generated census or index is regenerated in this lane; their expected currency change belongs to the integrator. Mutation and graded results follow in the completion record after the implementation snapshot is committed.
+
 Prepared and independently reviewed outside the repository. Candidate v11 retains v10's two admission amendments and public controls. The actual packet-only review accepted one complete L cycle after those amendments; it did not inspect source or certify fence completeness. The coordinator checked current source/caller/fence currency at that local predecessor merge; this is not independent source qualification. Current proposed owners include both the existing admission seam and its tests, and the minimal legacy recovery before-mutation refusal with its tests. Add no missing owner by assumption: request reviewed scope expansion before writing.
 
 The accepted preview has an asynchronous public API and no exported synchronous retained-admission seam. Preload asynchronous dependencies and observations before the decisive synchronous transaction, then revalidate all relevant authority inside it, including current pause and ledger facts, and use the existing canonical admission/acquisition logic. A successful prior observation is never a launch token. Scope translation must be explicit and preserve policy meaning. Colocated aliases cannot represent incompatible physical bases; merge their domains and inspect the physical checkout once only when actual bases/candidates agree.

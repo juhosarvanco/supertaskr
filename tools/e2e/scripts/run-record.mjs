@@ -119,9 +119,12 @@ import {
   nativeReservationMetadata,
   prepareNativeRecord,
   readNativeAssignment,
+  syncNativeFileNamespace,
   withNativeTransaction,
 } from "./native-codex.mjs";
 import { buildDetachedBenchFence } from "./lane-fence.mjs";
+import { startQualifiedNativeRun, continueQualifiedNativeRun, collectQualifiedNativeRun,
+  qualifiedAssignment, qualifiedAdmissionAt, releaseQualifiedRun, qualifiedExpansionHold, prepareQualifiedNativeContinuation, validateQualifiedOperation } from "./qualified-native.mjs";
 
 /** The record format this reader knows. A document declaring another is refused, never guessed at. */
 export const RECORD_VERSION = 1;
@@ -137,7 +140,9 @@ const requireQualified = createRequire(import.meta.url);
 /** @type {typeof import("./qualified-reservation.mjs")|undefined} */
 let loadedQualified;
 /** @returns {typeof import("./qualified-reservation.mjs")} */
-function qualifiedValidation() { return loadedQualified ?? requireQualified("./qualified-reservation.mjs"); }
+export function qualifiedValidation() { return loadedQualified ?? requireQualified("./qualified-reservation.mjs"); }
+/** Preload before entering any decisive synchronous native transaction. */
+export async function loadQualifiedReservations() { loadedQualified ??= await import("./qualified-reservation.mjs"); }
 
 /** Decode reservation authority without silently replacing malformed bytes.
  * @param {string} file @returns {any} */
@@ -189,6 +194,12 @@ function qualifiedReservations(root) {
 export async function acquireQualifiedReservation(root, request, options = {}) {
   root = realpathSync(root);
   loadedQualified ??= await import("./qualified-reservation.mjs");
+  return acquireQualifiedReservationSync(root, request, options);
+}
+
+/** Already-loaded synchronous seam; callers hold the same native transaction.
+ * @param {string} root @param {any} request @param {{at?: string, pid?: number, host?: string}} [options] */
+export function acquireQualifiedReservationSync(root, request, options = {}) {
   return withNativeTransaction(root, { operation: "qualified-acquire" }, () => {
     const validation = qualifiedValidation();
     const sets = qualifiedReservations(root);
@@ -273,12 +284,18 @@ export async function readQualifiedReservation(root, attempt) {
  * @param {string} root @param {{attempt: string, expectedIdentity: string}} options */
 export async function releaseQualifiedReservation(root, options) {
   loadedQualified ??= await import("./qualified-reservation.mjs");
+  return releaseQualifiedReservationSync(root, options);
+}
+
+/** @param {string} root @param {{attempt: string, expectedIdentity: string}} options */
+export function releaseQualifiedReservationSync(root, options) {
   return withNativeTransaction(root, { operation: "qualified-release" }, () => {
     workOf(options.attempt);
     const held = qualifiedReservations(root).find((set) => set.reservation.attempt === options.attempt);
     if (!held) return false;
     if (held.reservation.identity !== options.expectedIdentity) throw new RunRecordFinding("QUALIFIED_NOT_OURS", "QUALIFIED_NOT_OURS: expected qualified content differs; authority retained");
     rmSync(held.file);
+    syncNativeFileNamespace(held.file);
     return true;
   });
 }
@@ -462,6 +479,7 @@ export class RunRecordFinding extends Error {
  * @property {OwnedJob[]} [ownedJobs]
  * @property {{ kind: string, parent: string, evidence: string, scope: string }} [admission]
  * @property {Record<string, string>} [instants]  the instants the DISPATCH already stamped
+ * @property {any} [qualified] explicit committed private contract and worker bindings
  * @property {?{ taskName: string, sessionId: string, coordinatorTurnId: string, ignoredOutputs: string[], profile?: string, executorAttempt?: string }} [native]
  */
 
@@ -637,7 +655,7 @@ export function readAssignment(file) {
     );
   }
   const obj = /** @type {Record<string, unknown>} */ (parsed);
-  const allowed = [...ASSIGNMENT_FIELDS, "native", "ownedJobs", "admission", "instants"];
+  const allowed = [...ASSIGNMENT_FIELDS, "native", "ownedJobs", "admission", "instants", "qualified"];
   const unknown = Object.keys(obj).filter((key) => !allowed.includes(key));
   const nativeFields = ["taskName", "sessionId", "coordinatorTurnId", "ignoredOutputs", "profile", "executorAttempt"];
   if (obj["native"] && typeof obj["native"] === "object" && !Array.isArray(obj["native"])) {
@@ -696,6 +714,7 @@ export function readAssignment(file) {
       );
     }
     const a = /** @type {Record<string, unknown>} */ (rawAdmission);
+    if (Object.keys(a).some((key) => !["kind", "parent", "evidence", "scope"].includes(key))) throw new RunRecordFinding("ASSIGNMENT_UNKNOWN_FIELD", "unknown admission fields cannot grant scope");
     admission = {
       kind: String(a["kind"] ?? "explicit").trim(),
       parent: String(a["parent"] ?? "").trim(),
@@ -735,6 +754,7 @@ export function readAssignment(file) {
     // where they are measured from, and this is the door.
     instants: readInstants(obj["instants"]),
     ...(native === null ? {} : { native }),
+    ...(obj.qualified === undefined ? {} : { qualified: qualifiedAssignment(obj.qualified) }),
   };
 }
 
@@ -755,6 +775,7 @@ export function readAssignment(file) {
  * @returns {import("./dispatch-brief.mjs").Admission}
  */
 export function admissionAt(root, a, boundary, opts = {}) {
+  if (a.qualified !== undefined) return qualifiedAdmissionAt(root, a, boundary);
   const declared = a.admission ?? { kind: "explicit", parent: "", evidence: "", scope: "repair" };
   const rel = a.kind === "card" ? cardFileOf(root, a.id) : "";
   const blob = rel === "" ? "" : cardBlobSha(root, rel);
@@ -1098,9 +1119,10 @@ function transition(rec, at, op, to, why) {
  *
  * @param {string} root
  * @param {{ assignment: Assignment, at?: string, host?: string, io?: RunIo }} opts
- * @returns {{ record: RunRecord, file: string, reservation: ?Reservation }}
+ * @returns {{ record: RunRecord, file: string, reservation: any }} Ordinary callers remain synchronous; qualified start is explicitly awaited.
  */
 export function startRun(root, opts) {
+  if (opts.assignment.qualified !== undefined) return /** @type {any} */ (startQualifiedNativeRun(root, opts));
   return withNativeTransaction(root, { operation: "run-start", ...(opts.at === undefined ? {} : { at: opts.at }) }, () => {
   const io = opts.io ?? defaultRunIo();
   const at = opts.at ?? io.now();
@@ -1450,6 +1472,7 @@ export function observeRun(root, opts) {
   const rec = readRecord(root, opts.attempt);
   /** @type {string[]} */
   const signals = [];
+  if (rec.native?.qualified !== undefined && rec.reservation.releasedAt === null) validateQualifiedOperation(root, rec, "observe");
   const evidence = (opts.evidence ?? "").trim();
   const askText = rec.ask !== null && existsSync(rec.ask) ? readFileSync(rec.ask, "utf8") : "";
   signals.push(
@@ -1459,6 +1482,7 @@ export function observeRun(root, opts) {
   );
   const fromAsk = readTokens(askText);
   const fromEvidence = readTokens(evidence);
+  qualifiedExpansionHold(rec, askText, at);
 
   // QUESTIONS — recorded against the attempt with their own id, from
   // whichever channel carried them. A question already recorded is never
@@ -1625,7 +1649,8 @@ export function observeRun(root, opts) {
       lifecycleReconciled: completion && executionEnded,
       aliveJobs: jobs,
     });
-    if (final.eligible && rec.writer) releaseIfOurs(root, rec, at);
+    if (final.eligible && rec.native?.qualified !== undefined && to === "finished") signals.push("complete qualified set retained until exact candidate collection");
+    else if (final.eligible && rec.writer) releaseIfOurs(root, rec, at);
     else {
       signals.push(
         `native final gate retained the writer reservation: ${final.holds.map((/** @type {any} */ hold) => hold.code).join(", ") || "lifecycle not reconciled"}`,
@@ -1694,6 +1719,7 @@ export function ownedJobsAlive(rec, io) {
 
 /** @param {string} root @param {RunRecord} rec @param {string} at */
 function releaseIfOurs(root, rec, at) {
+  if (rec.native?.qualified !== undefined) { releaseQualifiedRun(root, rec, at); return; }
   if (rec.resource === null) return;
   const held = readReservation(root, rec.resource);
   if (held === null || held.attempt !== rec.attempt) return;
@@ -1843,6 +1869,11 @@ export function sendAnswer(root, opts) {
  * @param {RunRecord} rec @param {string} what
  */
 function refuseGrantAfterStamp(rec, what) {
+  if (rec.native?.qualified !== undefined) {
+    validateQualifiedOperation(rec.native.authorityRoot, rec, "delivery");
+    if (rec.native.binding === null || rec.execution === null || rec.execution.endedAt !== null) throw new NativeCodexFinding("QUALIFIED_BINDING_REQUIRED", "exact new native binding is required before delivery");
+    return;
+  }
   if (rec.native?.profile === "packet-only") return;
   const now = permissionBoundary(rec.assignment.cwd);
   if (now.digest === rec.permission.digest) return;
@@ -1929,6 +1960,7 @@ export function collectRun(root, opts) {
   const io = opts.io ?? defaultRunIo();
   const at = opts.at ?? io.now();
   const rec = readRecord(root, opts.attempt);
+  if (rec.native?.qualified !== undefined) return collectQualifiedNativeRun(root, rec, opts);
   if (rec.native?.profile === "packet-only" && opts.ref !== undefined) {
     throw new NativeCodexFinding("NATIVE_NONWRITER_REF", "native-codex: packet-only collection reports no repository commit.");
   }
@@ -2014,6 +2046,7 @@ export function collectRun(root, opts) {
  */
 export function nativeBenchAssignmentInputs(root, opts) {
   const source = readRecord(root, opts.attempt);
+  if (source.native?.qualified !== undefined) throw new NativeCodexFinding("QUALIFIED_VERIFIER_UNSUPPORTED", "qualified paired verification is not yet supported");
   const a = opts.assignment;
   if (source.native === undefined || source.writer !== true || source.assignment.role !== "executor" ||
       a.kind !== source.assignment.kind || a.id !== source.assignment.id || a.role !== "verifier" ||
@@ -2039,6 +2072,7 @@ export function prepareNativeBenchRun(root, opts) {
     const io = opts.io ?? defaultRunIo();
     const at = opts.at ?? io.now();
     const rec = readRecord(root, opts.attempt);
+    if (rec.native?.qualified !== undefined) throw new NativeCodexFinding("QUALIFIED_VERIFIER_UNSUPPORTED", "qualified paired verification is not yet supported");
     const native = rec.native;
     if (native === undefined) throw new NativeCodexFinding("NATIVE_PREPARATION_SOURCE", "native-codex: a bench requires a native executor source record.");
     const authority = deriveNativeBenchAuthority(rec, { resource: opts.resource, candidate: opts.candidate, at });
@@ -2222,10 +2256,12 @@ export function reconcile(rec, io, evidence) {
  * @returns {{ record: RunRecord, reconciliation: Reconciliation, redelivered: string[], replaced: ?string }}
  */
 export function continueRun(root, opts) {
+  if (readRecord(root, opts.attempt).native?.qualified !== undefined) return /** @type {any} */ (prepareQualifiedNativeContinuation(root, opts));
   return withNativeTransaction(root, { operation: "run-continue", ...(opts.at === undefined ? {} : { at: opts.at }) }, () => {
   const io = opts.io ?? defaultRunIo();
   const at = opts.at ?? io.now();
   const rec = readRecord(root, opts.attempt);
+  if (rec.native?.qualified !== undefined) return continueQualifiedNativeRun(root, rec, opts);
   const reconciliation = reconcile(rec, io, opts.evidence);
   if (reconciliation.verdict !== "ended") {
     throw new RunRecordFinding(

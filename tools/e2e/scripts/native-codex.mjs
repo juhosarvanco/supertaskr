@@ -33,6 +33,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import path from "node:path";
+import { inspectQualifiedWorkspace, qualifiedResourceProblem, validateQualifiedOperation } from "./qualified-native.mjs";
 
 export const NATIVE_CODEX_VERSION = 1;
 export const NATIVE_CODEX_HARNESS = "codex-desktop-native";
@@ -58,7 +59,12 @@ let nativeDurabilityObserver;
 export function withNativeDurabilityObserver(observer, body) {
   const previous = nativeDurabilityObserver;
   nativeDurabilityObserver = observer;
-  try { return body(); } finally { nativeDurabilityObserver = previous; }
+  try {
+    const value = body();
+    if (value instanceof Promise) return /** @type {T} */ (value.finally(() => { nativeDurabilityObserver = previous; }));
+    nativeDurabilityObserver = previous;
+    return value;
+  } catch (error) { nativeDurabilityObserver = previous; throw error; }
 }
 /** @param {string} stage @param {string} kind @param {string} file @param {{temp?:string,directory?:string}} [extra] */
 function durabilityBoundary(stage, kind, file, extra = {}) {
@@ -562,6 +568,7 @@ function nativeState(rec) {
 
 /** @param {Record<string, any>} source @param {{ resource: string, candidate: string, at: string }} opts */
 export function deriveNativeBenchAuthority(source, opts) {
+  if (source.native?.qualified !== undefined) throw new NativeCodexFinding("QUALIFIED_VERIFIER_UNSUPPORTED", "qualified paired verification is not yet supported");
   const native = nativeState(source);
   const collection = native.collection;
   if (source.writer !== true || native.profile === "detached-verifier" || source.assignment.role !== "executor" ||
@@ -693,10 +700,12 @@ function validateNativeBenchPreparation(root, rec, fence) {
  * out-of-fence change.
  *
  * @param {Record<string, any>} rec
- * @param {{ expectedRef?: string, final?: boolean }} opts
+ * @param {{ expectedRef?: string, final?: boolean, qualifiedPhysical?: boolean }} opts
+ * @returns {{clean: boolean, profile?: string, base: any, head: any, tracked: any[], untracked: any[], ignoredOutsidePolicy?: any[], ignoredOutputs?: any[], findings: any[], participants?: any[]}}
  */
 export function collectNativeWorkspace(rec, opts = {}) {
   const native = nativeState(rec);
+  if (native.qualified !== undefined) return inspectQualifiedWorkspace(rec, opts);
   if (native.profile === "packet-only") {
     if (rec.writer || rec.resource !== null || rec.assignment.resource !== "none" || rec.permission.kind !== "supplied-packet-only" ||
         rec.reservation.file !== null || rec.reservation.takenAt !== null || rec.permission.digest !== rec.brief.digest) {
@@ -706,7 +715,7 @@ export function collectNativeWorkspace(rec, opts = {}) {
     return { clean: true, profile: "packet-only", base: null, head: null, tracked: [], untracked: [], ignoredOutsidePolicy: [], ignoredOutputs: [], findings: [] };
   }
   const root = exactGitRoot(rec.resource);
-  const currentFence = readFence(root, native.fence.manifest);
+  const currentFence = opts.qualifiedPhysical === true ? native.fence : readFence(root, native.fence.manifest);
   const findings = [];
   if (currentFence.digest !== native.fence.digest || JSON.stringify(currentFence.paths) !== JSON.stringify(native.fence.paths)) {
     findings.push({ code: "fence-authority-changed", manifest: native.fence.manifest });
@@ -1480,9 +1489,10 @@ export function activeNativeHolds(rec) {
   );
 }
 
-/** @param {Record<string, any>} rec @param {string} at @param {string} why */
-function clearReconciledHolds(rec, at, why) {
+/** @param {Record<string, any>} rec @param {string} at @param {string} why @param {boolean} [stoppedRelease] */
+function clearReconciledHolds(rec, at, why, stoppedRelease = false) {
   for (const hold of activeNativeHolds(rec)) {
+    if (hold.code === "qualified-expansion-unsupported" && !stoppedRelease) continue;
     if (
       [
         "unknown-worker",
@@ -1494,6 +1504,7 @@ function clearReconciledHolds(rec, at, why) {
         "native-transaction-refusal",
         "packet-tool-refused",
         "duplicate-probe",
+        "qualified-stale-turn",
       ].includes(hold.code)
     ) {
       continue;
@@ -1797,6 +1808,11 @@ function handleNativeEventUnlocked(root, event, opts = {}) {
   const toolUseId = string(event.tool_use_id);
   const turnId = string(event.turn_id);
   const input = isObject(event.tool_input) ? event.tool_input : {};
+  if (native.qualified !== undefined && native.binding !== null && turnId !== native.binding.startTurnId) {
+    addNativeHold(rec, { key: `qualified-stale-turn:${String(turnId)}`, code: "qualified-stale-turn", event: eventMeta(event), recordedAt: at });
+    writeNativeRecord(root, rec);
+    return { output: { hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: "exact new native turn binding required" } }, disposition: "stale-turn-held" };
+  }
   if (native.binding === null) {
     const exactProbe = tool === "Bash" && string(input.command) === NATIVE_IDENTITY_PROBE;
     if (eventName === "PreToolUse" && exactProbe && toolUseId !== null && turnId === native.start?.turnId) {
@@ -1888,7 +1904,7 @@ function handleNativeEventUnlocked(root, event, opts = {}) {
     if (toolUseId === null || turnId === null || tool === null || !NATIVE_SUPPORTED_TOOLS.includes(tool)) {
       addNativeHold(rec, { key: "missing-tool-identity", code: "missing-tool-identity", event: eventMeta(event), recordedAt: at });
     } else {
-      const resourceProblem = explicitResourceProblem(event, rec.resource);
+      const resourceProblem = native.qualified === undefined ? explicitResourceProblem(event, rec.resource) : qualifiedResourceProblem(rec, event);
       if (resourceProblem !== null) {
         addNativeHold(rec, {
           key: `explicit-resource:${toolUseId}`,
@@ -2008,6 +2024,7 @@ export function handleNativeEvent(root, event, opts = {}) {
  */
 export function bindNativeIdentity(root, rec, opts) {
   if (rec.assignment?.native === null || rec.assignment?.native === undefined) return rec;
+  if (rec.native?.qualified !== undefined) validateQualifiedOperation(root, rec, "bind");
   const native = nativeState(rec);
   const agentId = string(opts.harnessId);
   if (native.binding !== null) {
@@ -2094,7 +2111,7 @@ export function nativeFinalGate(rec, opts) {
     checkerHold(rec, opts.at, `final-${opts.phase}`, error);
   }
   const bound = native.binding !== null && rec.execution?.harnessId === native.binding.agentId;
-  const questionsSettled = !packetOnly || opts.phase !== "collect" ||
+  const questionsSettled = (!packetOnly && native.qualified === undefined) || opts.phase !== "collect" ||
     (rec.questions ?? []).every((/** @type {any} */ q) => q.answer?.state === "acknowledged");
   if (!bound) addNativeHold(rec, { key: "final-binding", code: "final-binding-required", recordedAt: opts.at });
   if (!questionsSettled) addNativeHold(rec, { key: "final-questions", code: "unresolved-question", recordedAt: opts.at });
@@ -2141,7 +2158,8 @@ export function nativeFinalGate(rec, opts) {
     bound && questionsSettled &&
     (!reportedRefRequired || reportedRefPresent)
   ) {
-    clearReconciledHolds(rec, opts.at, `T-311 lifecycle and owned-job reconciliation at native ${opts.phase}`);
+    clearReconciledHolds(rec, opts.at, `T-311 lifecycle and owned-job reconciliation at native ${opts.phase}`,
+      native.qualified !== undefined && opts.phase === "release" && ["stopped", "failed"].includes(rec.state));
   }
   const holds = activeNativeHolds(rec);
   const eligible =
