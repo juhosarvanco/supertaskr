@@ -318,7 +318,7 @@ function committedRecordsCliFixture() {
   }
   const codeRoot = path.join(fx.dir, "source-only");
   for (const rel of ["tools/e2e/scripts/brief.mjs", "tools/e2e/scripts/records.mjs", "tools/e2e/scripts/workspace.mjs",
-    "tools/e2e/scripts/records-context.mjs",
+    "tools/e2e/scripts/records-context.mjs", "tools/e2e/scripts/qualified-admission.mjs", "tools/e2e/scripts/qualified-reservation.mjs",
     "tools/e2e/scripts/docs-scan.mjs", "tools/e2e/scripts/token-scan.mjs", ".claude/hooks/lane-fence.mjs"]) {
     const target = path.join(codeRoot, rel); mkdirSync(path.dirname(target), { recursive: true });
     writeFileSync(target, readFileSync(path.join(repoRoot, rel)));
@@ -333,6 +333,109 @@ function committedRecordsCliFixture() {
   }));
   return { ...fx, codeRoot, cli, cardPath, text, run, state };
 }
+
+test("private approval CLI validates its complete standalone request before absent qualifier builds and never installs them", () => {
+  const fx = committedRecordsCliFixture();
+  try {
+    const file = path.join(fx.dir, "request-T-352.json");
+    const request = { version: 1, authorityRoot: fx.product, projectId: "cli-fixture",
+      revisions: { product: fixtureGit(fx.product, ["rev-parse", "HEAD"]).trim(), records: fixtureGit(fx.records, ["rev-parse", "HEAD"]).trim() },
+      taskId: "T-999", roles: ["product", "records"], legacyTokenMap: {},
+      admission: { boundary: "lane-cut", role: "executor", kind: "explicit", parent: "", evidence: "", scope: "repair", attempt: null } };
+    const run = (args: string[]) => spawnSync(process.execPath, [fx.cli, ...args], { encoding: "utf8", env: FIXTURE_GIT_ENV });
+    const args = ["--admission-preflight", file]; const before = fx.state();
+    writeFileSync(file, JSON.stringify(request));
+    const positive = run(args);
+    expect(positive.status, positive.stderr).toBe(3); expect(positive.stderr).toContain("preflight-qualifier-unavailable");
+    for (const extra of [["--root", fx.product], ["--run", "start"], ["--dispatch-lane", "T-999"], ["--records", "list"], ["--workspace"], ["--help"], args, ["--unknown"]]) {
+      for (const mixed of [[...args, ...extra], [...extra, ...args]]) {
+        const result = run(mixed); expect(result.status).toBe(2); expect(result.stderr).toContain("preflight-view-usage");
+        expect(result.stderr).not.toContain("preflight-qualifier-unavailable");
+      }
+    }
+    for (const malformed of [{ ...request, receipt: {} }, { ...request, admission: {} }, { ...request, revisions: { product: "HEAD", records: "HEAD" } },
+      { ...request, roles: ["product", "product"] }, { ...request, workers: [] }, { ...request, authorityRoot: "relative" },
+      { ...request, legacyTokenMap: { unsafe: ["product", "records"] } }]) {
+      writeFileSync(file, JSON.stringify(malformed)); const result = run(args);
+      expect(result.status, result.stderr).toBe(2); expect(result.stderr).not.toContain("preflight-qualifier-unavailable");
+      expect(result.stderr).not.toContain("PRIVATE ARCHIVED GRANTS");
+    }
+    writeFileSync(file, '{"version":1,"version":2,"private":"PRIVATE ARCHIVED GRANTS"}');
+    expect(run(args).stderr).toContain("preflight-request-duplicate-member");
+    writeFileSync(file, '{"PRIVATE ARCHIVED GRANTS":');
+    const unreadable = run(args); expect(unreadable.status).toBe(2); expect(unreadable.stderr).not.toContain("PRIVATE ARCHIVED GRANTS");
+    expect(existsSync(path.join(fx.codeRoot, "lib/parser/dist"))).toBe(false);
+    expect(existsSync(path.join(fx.product, "node_modules"))).toBe(false);
+    expect(fx.state()).toEqual(before);
+    expect(fx.run(["--workspace", "--product-only"]).status).toBe(0);
+    expect(fx.run(["--records", "list", "--records-revision", "main"]).status).toBe(0);
+  } finally { removeGitFixture(fx.dir, "private preflight source-only CLI"); }
+});
+
+test("private approval CLI previews without a product card then refuses native dispatch and launch before reservation while product-only stays independent", () => {
+  const fx = committedRecordsCliFixture();
+  try {
+    const privateCard = fx.text("PRIVATE APPROVAL CONTRACT").replace("status: planned\n", 'status: planned\nfeature: F-04\nmilestone: 4\npriority: 1\nsize: M\ntouches: ["product::src/new-file"]\n');
+    writeFileSync(path.join(fx.records, fx.cardPath), privateCard);
+    fixtureGit(fx.records, ["add", "."]); fixtureGit(fx.records, ["commit", "-qm", "private approval contract"]);
+    fixtureGit(fx.product, ["rm", fx.cardPath]);
+    mkdirSync(path.join(fx.product, "method/runtime"), { recursive: true });
+    writeFileSync(path.join(fx.product, "method/runtime/process-schema.yaml"), readFileSync(path.join(repoRoot, "method/runtime/process-schema.yaml")));
+    fixtureGit(fx.product, ["add", "method"]); fixtureGit(fx.product, ["commit", "-qm", "product with no task card"]);
+    const product = fixtureGit(fx.product, ["rev-parse", "HEAD"]).trim(), records = fixtureGit(fx.records, ["rev-parse", "HEAD"]).trim();
+    const blob = fixtureGit(fx.records, ["rev-parse", `${records}:${fx.cardPath}`]).trim();
+    grantIn(fx.product, dispatchBlockText({ approval: "each", recovery: "repairs", order: ["T-999"], blobs: { "T-999": blob } }));
+    const requestFile = path.join(fx.dir, "preview-request-T-352.json");
+    const request = { version: 1, authorityRoot: fx.product, projectId: "cli-fixture", revisions: { product, records },
+      taskId: "T-999", roles: ["product", "records"], legacyTokenMap: {},
+      admission: { boundary: "child-start", role: "executor", kind: "explicit", parent: "", evidence: "", scope: "repair", attempt: null } };
+    writeFileSync(requestFile, JSON.stringify(request));
+    const state = () => [fx.product, fx.records].map((root) => ({
+      refs: fixtureGit(root, ["show-ref"]), status: fixtureGit(root, ["status", "--porcelain", "--untracked-files=all"]),
+      index: readFileSync(path.join(root, ".git/index")).toString("hex"),
+      runtime: root === fx.product ? readdirSync(path.join(root, ".supertaskr")).sort().map((name) => [name, readFileSync(path.join(root, ".supertaskr", name), "utf8")]) : [],
+    }));
+    const run = (args: string[]) => spawnSync(process.execPath, ["--input-type=module", "-e", `
+      import fs from 'node:fs'; import cp from 'node:child_process'; import net from 'node:net';
+      import http from 'node:http'; import https from 'node:https'; import {syncBuiltinESMExports} from 'node:module';
+      let effects=0,reads=0;const trap=()=>{effects++;throw Error('T352_SIDE_EFFECT')};
+      for(const key of ['writeFileSync','appendFileSync','mkdirSync','renameSync','rmSync','unlinkSync','chmodSync','utimesSync','watch','watchFile','createWriteStream']) fs[key]=trap;
+      for(const key of ['writeFile','appendFile','mkdir','rename','rm','unlink','chmod']) fs.promises[key]=trap;
+      for(const key of ['execFileSync','spawnSync']) {const original=cp[key];cp[key]=(file,args,...rest)=>{
+        if(file!=='git'||args.some(a=>['fetch','push','clone','commit','checkout','reset','update-ref','add','gc','maintenance'].includes(a))) return trap();
+        reads++;return original(file,args,...rest);
+      };}
+      for(const key of ['exec','execSync','spawn','execFile','fork']) cp[key]=trap;
+      net.Socket.prototype.connect=trap;http.request=trap;http.get=trap;https.request=trap;https.get=trap;
+      globalThis.fetch=trap;globalThis.setInterval=trap;syncBuiltinESMExports();
+      process.argv=[process.execPath,${JSON.stringify(CLI)},...${JSON.stringify(args)}];
+      await import(${JSON.stringify(CLI)});console.error('T352_EFFECTS='+effects+' READS='+reads);
+    `], { encoding: "utf8", env: FIXTURE_GIT_ENV });
+    const before = state();
+    const output = run(["--admission-preflight", requestFile]);
+    expect(output.status, output.stderr).toBe(0);
+    const preview = JSON.parse(output.stdout);
+    expect(output.stderr).toMatch(/T352_EFFECTS=0 READS=[1-9]/);
+    expect(preview).toMatchObject({ permitted: true, admitted: false, reserved: false, consumed: false,
+      receipt: { cardBlobId: blob, recordsCommit: records, productBase: product } });
+    expect(output.stdout + output.stderr).not.toContain("PRIVATE ARCHIVED GRANTS");
+    expect(existsSync(path.join(fx.product, fx.cardPath))).toBe(false);
+    for (const args of [["--dispatch-lane", "T-999", "--slug", "private"], ["--run", "start", "--assignment", requestFile]]) {
+      const refused = run(["--root", fx.product, ...args]);
+      expect(refused.status, refused.stderr).toBe(3); expect(refused.stderr).toContain("workspace-split-unsupported");
+      expect(existsSync(path.join(fx.product, ".supertaskr/runs"))).toBe(false);
+      expect(state()).toEqual(before);
+    }
+    writeFileSync(path.join(fx.product, ".supertaskr/pause.json"), JSON.stringify({ version: 1, at: "2026-10-23T00:00:00Z", by: "fixture", scope: "all", why: "PRIVATE ARCHIVED GRANTS" }));
+    const pausedBefore = state(), paused = run(["--admission-preflight", requestFile]);
+    expect(paused.status).toBe(1); expect(JSON.parse(paused.stdout).refusals[0].code).toBe("ADMISSION_PAUSED_ALL");
+    expect(paused.stderr).toMatch(/T352_EFFECTS=0 READS=[1-9]/);
+    expect(paused.stdout + paused.stderr).not.toContain("PRIVATE ARCHIVED GRANTS"); expect(state()).toEqual(pausedBefore);
+    rmSync(fx.records, { recursive: true });
+    const ordinary = run(["--workspace", "--product-only", "--root", fx.product]);
+    expect(ordinary.status, ordinary.stderr).toBe(0);
+  } finally { removeGitFixture(fx.dir, "private approval public CLI T-352"); }
+});
 
 test("planning CLI validates standalone modifiers and selection data before parser loading while old records views remain source-only", () => {
   const fx = committedRecordsCliFixture();

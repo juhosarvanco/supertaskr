@@ -707,6 +707,10 @@ const LIVE_ARMS: ReadonlyArray<{ label: string; args: string[]; format?: "worksp
  */
 const NOT_AN_ARM: ReadonlyArray<{ flag: string; why: string }> = [
   {
+    flag: "--admission-preflight",
+    why: "A STANDALONE EXTERNAL REQUEST (T-352): its complete JSON file selects independent committed product and records revisions, project association, task, admission boundary and repository roles. There is no repository-default request this live-tree sizing guard can derive; its answer and size depend on the external file and fixture-owned authority. `qualified-admission.spec.ts` and `brief.spec.ts` drive the public entry with those fixtures, including success, named refusals, private display and side-effect checks. This entry accounts for the flag without removing it from the command's declaration or weakening this inventory comparison.",
+  },
+  {
     flag: "--grant",
     why: "THE OPERATIONAL GRANT STORE'S VERB (T-344), and the one flag on this command that CANNOT be sized from here by the card's own design. The store is read only at the DESIGNATED INTEGRATION CHECKOUT: from a lane worktree or the verifier's detached bench — the two places this suite actually runs — every spelling of it answers a refusal on stderr naming the location, which is the eleventh criterion working rather than a failure. So there is no sized answer for this file to take, and its content is graded in `brief.spec.ts`, which drives the verbs over fixtures that ARE designated checkouts.",
   },

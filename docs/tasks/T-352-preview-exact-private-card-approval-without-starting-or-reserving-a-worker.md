@@ -13,7 +13,7 @@ touches: [tools/e2e/scripts/qualified-admission.mjs, tools/e2e/scripts/brief.mjs
 builder: gpt-6.1-sol@xhigh
 verifier: gpt-6.1-sol@xhigh
 review: independent
-built_by:
+built_by: gpt-6.1-sol@codex-desktop-native (requested assignment; observed provider identity/usage unavailable)
 verified_by:
 ---
 
@@ -33,6 +33,15 @@ Preparation refreshed on 2026-10-23 against the independent T-351 approval at fe
 - WHEN qualification runs in tools/e2e/tests/qualified-admission.spec.ts, tools/e2e/tests/brief.spec.ts and tools/e2e/tests/brief-flush.spec.ts, THEN independent fixture-owned product/records repositories, committed cards/registries/approved historical blobs, the public entry before any worker checkout exists establish successful preflight with no product card, colocated compatibility and all declared refusals. Bodies check named before/after filesystem and Git state plus intercepted process/remote/job surfaces to prove no side effect on both success and refusal; record origin/blob metadata independently from the subject helper. Plant policy/capture/display/side-effect defects at their property sites, observe the relevant assertion RED and restore by hash. The same public route used by the coordinator must establish malformed request refusal before missing qualifier builds, valid-request missing-build refusal without installation, missing current bytes, missing approved objects and unsupported object formats including no truncation of a 64-character identity, actual membership/recovery/endpoint/spent/open policy wiring, allowed-then-paused/revoked results, substantive-versus-mechanical committed drift, private-history markers absent from both success and refusal/error displays, ordinary product-only operation without private records, and qualified native launch/dispatch refusal before reservation despite a permitted preview. The existing command-flag inventory must account for the new standalone entry with either a measured arm or an explicit reasoned external-input entry; retain its coverage comparison and planted unannounced-flag control, with the owning public-route fixtures grading the entry itself. Existing pure-policy tests alone do not establish this wiring. Callbacks/fixtures do not imply a new live-model or isolation guarantee.
 
 ## Implementation notes
+
+### Executor criteria echo — before implementation
+
+- [ ] C1: Validate the complete standalone request early, capture the explicitly selected committed private card and registry, and derive scope only through qualified capture; name malformed/topology refusals.
+- [ ] C2: Require exact current and historical approved bytes, preserve existing grant/ledger policy wiring and fail closed on unavailable boundary evidence or unsupported Git object formats.
+- [ ] C3: Return an immutable preparation reading with exact origins and current policy observations, display only the active contract and permitted metadata, and confer no execution authority.
+- [ ] C4: Prove success and refusal cause no lifecycle, repository, process or remote side effects; preserve ordinary operation and refuse unqualified native consumers before reservation.
+- [ ] C5: Prove fresh previews reflect pause/revocation and separately committed substantive/mechanical drift while earlier readings retain their named origins.
+- [ ] C6: Qualify the public routes with independent fixture origins, refusals and side-effect controls; retain the flag-inventory comparison and unannounced-flag control, account honestly for the external request, and drill property sites with hash-proved restoration.
 
 Prepared and independently reviewed outside the repository; final preview v4 and admission-preflight-independent-review-v1.md preserve the complete review/reconciliation. The reviewer had a supplied packet, no source inspection. Rendered v5 names the previously declared four owning paths in the same reviewed criteria; it adds no obligation or permission. V6 added the two empty worker receipt fields required from filing. V7 refreshed source status and preparation notes. V8 refreshes those notes at the actual T-351 local merge; all six acceptance criteria and four owning paths remain byte-for-byte unchanged from the independently reviewed contract. Source/load audit v8 retains the existing public-policy versus product-card-lookup distinction, current-only grant reading and early request-validation requirement. Final dispatch follows exact-tip delivery qualification.
 
