@@ -83,7 +83,9 @@ export function readAdmissionPreflightRequest(file) {
       at += 1;
     }
   }
-  visit();
+  // Deep malformed JSON must keep the named, private request boundary too.
+  try { visit(); }
+  catch (error) { throw finding(error, "preflight-request-shape"); }
   return normalizeAdmissionPreflight(input);
 }
 /** @param {string} root @param {string[]} args */

@@ -360,6 +360,14 @@ test("private approval CLI validates its complete standalone request before abse
       expect(result.status, result.stderr).toBe(2); expect(result.stderr).not.toContain("preflight-qualifier-unavailable");
       expect(result.stderr).not.toContain("PRIVATE ARCHIVED GRANTS");
     }
+    for (const depth of [0, 20_000]) {
+      const nested = "[".repeat(depth) + "0" + "]".repeat(depth);
+      writeFileSync(file, JSON.stringify(request).slice(0, -1) + `,"unknown":${nested},"private":"PRIVATE ARCHIVED GRANTS"}`);
+      const malformed = run(args);
+      expect(malformed.status, malformed.stderr).toBe(2);
+      expect(malformed.stderr).toContain("preflight-request-shape");
+      expect(malformed.stderr).not.toContain("PRIVATE ARCHIVED GRANTS");
+    }
     writeFileSync(file, '{"version":1,"version":2,"private":"PRIVATE ARCHIVED GRANTS"}');
     expect(run(args).stderr).toContain("preflight-request-duplicate-member");
     writeFileSync(file, '{"PRIVATE ARCHIVED GRANTS":');
