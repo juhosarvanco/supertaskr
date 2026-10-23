@@ -32,7 +32,7 @@ function commit(root: string) {
   git(root, ["add", ".", ":(exclude).supertaskr"]); git(root, ["commit", "-qm", "fixture snapshot"]); return git(root, ["rev-parse", "HEAD"]);
 }
 function card(id = "T-999") {
-  return `---\nid: ${id}\ntitle: Private fixture\nfeature: F-04\nmilestone: 4\npriority: 1\nsize: M\nstatus: planned\ntouches: [product::src/file, records::rules/file]\n---\n\nActive fixture contract.\n\n## Acceptance criteria\n\n- WHEN previewed THE contract SHALL stay private.\n\n## Implementation notes\n\n${PRIVATE} notes\n\n## Reports\n\n${PRIVATE} report\n\n## Verdicts\n\n${PRIVATE} verdict\n\n## Archived grant history\n\n${PRIVATE} approval history\n`;
+  return `---\nid: ${id}\ntitle: Private fixture\nfeature: F-04\nmilestone: 4\npriority: 1\nsize: M\nstatus: planned\ntouches: ["product::src/file", "records::rules/file"]\n---\n\nActive fixture contract.\n\n## Acceptance criteria\n\n- WHEN previewed THE contract SHALL stay private.\n\n## Implementation notes\n\n${PRIVATE} notes\n\n## Reports\n\n${PRIVATE} report\n\n## Verdicts\n\n${PRIVATE} verdict\n\n## Archived grant history\n\n${PRIVATE} approval history\n`;
 }
 function fixture(colocated = false, format: "sha1" | "sha256" = "sha1", recordsFormat = format) {
   const dir = realpathSync(mkdtempSync(path.join(os.tmpdir(), "preflight-T-352-")));
