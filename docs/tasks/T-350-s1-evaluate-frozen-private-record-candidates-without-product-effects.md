@@ -39,7 +39,26 @@ Source-based prospective owners are the six literal paths in touches. Existing s
 
 ## Implementation notes
 
-<!-- Executor appends here. -->
+### Criteria echo before implementation
+
+- [x] Capture exact selected repository identities/revisions and all required literal bytes/path absence before pure overlay evaluation; return diagnostics, affected index bytes and matching input identity.
+- [x] Retain malformed/duplicate historical cards through additive raw capture while preserving strict readers, receipt timing and cold imports without generated parser loading.
+- [x] Reuse canonical validation and compare full baseline/candidate issue identities, participants and worsening reference debt; reject newly unusable dependencies and retain incoming context.
+- [x] Render the existing ruled index set from the same candidate with explicit product-input origins and captured chapter enumeration; preserve legacy byte output and refusals.
+- [x] Demonstrate detached evaluation performs no commands/writes or authority/product actions after materialization, on success and failure.
+- [x] Qualify actual exported entries with separate repositories, origin decoys, unsupported entries, historical debt, overlay chapters and removed live roots; run strict-reader/default-renderer public-caller regressions.
+- [ ] Preserve independent verification, decisive actual-site drills with SHA256 restoration and honest limitations; deliver no persistence, activation or inherited T351/T353 exception.
+
+
+### Implementation
+
+Added `captureRawCommittedInputs` beneath the unchanged strict capture path, plus eager `captureRecordCandidateInputs` and pure `evaluateRecordCandidate` in the additive validator module. Materialization retains canonical repository receipts, complete path/type/mode inventories and all required model/index bytes; the evaluator owns no lazy reader. Explicit overlays reject unsupported entries, ambiguous operations and unselected origins. Parser findings are compared by full stable identities with occurrence counts, and retained unusable targets or unavailable feature context remain named reference debt. Accepted results contain detached affected index bytes and input identities, with an explicit no-authority limit.
+
+`renderDocsIndexFromSource` and `ruledIndexedDocsFromText` reuse the existing index grammar and ordering. CAPABILITIES is explicitly product-owned; model documents, ruling and chapters remain selected records inputs. The legacy filesystem renderer retains visible filesystem reads for the docs-input census and renders through the same pure entry. No existing strict consumer imports the new parser-dependent module.
+
+Exploratory checks before the committed drill candidate: package setup/build succeeded; initial evaluator qualification 6/6; strict capture, default renderer, planning context, admission and reservation regressions 135/135; after hardening, evaluator and strict records regressions 17/17 and e2e typecheck passed. These are development readings, not the final committed grade. Independent verification, persistence, census separation, app composition and activation remain external duties; no T351/T353 exception or retry was used.
+
+In-fence follow-through: none outside the stated acceptance criteria. Generated census/index/graph artifacts outside this fence are not written by this lane; currency is reported for the integrator.
 
 ## Verdicts
 

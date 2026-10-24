@@ -102,8 +102,10 @@ function card(root, entry) {
  * all later reads use the frozen tree and blob ids, never a working file.
  * Buffers stay private and every exposed byte view is a detached copy.
  * @param {{productRoot?: string, recordsRevision: string, productRevision?: string}} options
+ * @param {boolean} strict
+ * @param {((trees: {product: Entry[], records: Entry[]}) => void)} [onTrees]
  */
-export function captureCommittedInputs(options) {
+function captureInputs(options, strict, onTrees) {
   const { productRoot, recordsRevision, productRevision } = { ...options };
   const workspace = resolveWorkspace({ ...(productRoot === undefined ? {} : { productRoot }), mode: "product-only" });
   let recordsRoot;
@@ -131,7 +133,7 @@ export function captureCommittedInputs(options) {
     const entry = tree.find((e) => e.relativePath === parent);
     if (entry && entry.type !== "tree") refuse("records-entry-not-regular", `${parent}: expected a Git tree, got ${entry.mode} ${entry.type}`);
   }
-  const tasks = tree.filter((e) => isTaskCardPath(e.relativePath)).map((e) => card(recordsRoot, e));
+  const tasks = strict ? tree.filter((e) => isTaskCardPath(e.relativePath)).map((e) => card(recordsRoot, e)) : [];
   const ids = new Map();
   for (const task of tasks) {
     if (ids.has(task.id)) refuse("records-task-duplicate", `${task.id}: ${ids.get(task.id)} and ${task.relativePath}`);
@@ -149,6 +151,7 @@ export function captureCommittedInputs(options) {
   const roots = { product: productRootCanonical, records: recordsRoot };
   const commits = { product: /** @type {string} */ (productIdentity.selectedCommit), records: recordsCommit };
   const trees = { product: entries(productRootCanonical, commits.product), records: tree };
+  onTrees?.(trees);
   /** @param {string} root */
   function physicalFacts(root) {
     let common;
@@ -170,7 +173,39 @@ export function captureCommittedInputs(options) {
   return Object.freeze({ receipt: immutable({ ...receipt, repositories }), tasks: Object.freeze(tasks),
     repositories, read,
     /** @param {"product"|"records"} role */
-    paths(role) { return Object.freeze(trees[role].map((e) => e.relativePath)); } });
+    paths(role) {
+      if (role !== "product" && role !== "records") refuse("records-input-role-invalid", String(role));
+      return Object.freeze(trees[role].map((e) => e.relativePath));
+    } });
+}
+
+/** Strict legacy capture: parsing/refusal timing and receipts stay unchanged.
+ * @param {{productRoot?: string, recordsRevision: string, productRevision?: string}} options
+ */
+export function captureCommittedInputs(options) { return captureInputs(options, true); }
+
+/** Additive raw capture for materialization, never a strict-board substitute.
+ * Card bytes (including malformed historical cards) are not parsed here.
+ * Reads still use canonical identity, association, entry and blob checks.
+ * This stage may run Git; a pure consumer must materialize its inputs first.
+ * @param {{productRoot: string, recordsRevision: string, productRevision: string}} options
+ */
+export function captureRawCommittedInputs(options) {
+  if (typeof options?.productRoot !== "string" || !options.productRoot ||
+      typeof options.productRevision !== "string" || !options.productRevision) {
+    refuse("records-explicit-inputs-required", "raw capture requires productRoot and productRevision");
+  }
+  /** @type {{product: Entry[], records: Entry[]}} */
+  let retainedEntries;
+  const captured = captureInputs(options, false, (trees) => { retainedEntries = trees; });
+  return Object.freeze({
+    /** Detached tree metadata includes directories and unsupported entries, never lazy bytes.
+     * @param {"product"|"records"} role */
+    entries(role) {
+      if (role !== "product" && role !== "records") refuse("records-input-role-invalid", String(role));
+      return immutable(retainedEntries[role]);
+    }, receipt: captured.receipt, repositories: captured.repositories,
+    read: captured.read, paths: captured.paths });
 }
 
 /** Read all tracked cards and the committed association without parser build.
