@@ -102,6 +102,22 @@ Rejected overlay metadata previously retained caller objects and could throw whi
 
 Correction development qualification: e2e typecheck exits 0 and all six evaluator bodies pass; owned side-by-side fixture controls pass. These are targeted readings before the new committed grade. The original 13 actual-site self-drills remain evidence at their named earlier candidate; changed-property correction drills and exact restoration are recorded separately before the new grade. No source outside the existing fence, setup repeat, authority edit or T353 retry was needed.
 
+### Correction self-drills at `3d2e57cb3da9a278f5f8a5097ab456c38b7eb261`
+
+A fresh owned local clone detached at this committed correction had an independent common directory, no alternates and 4849 matching object files verified to use different inodes. Setup completed in parser, app, e2e order. Baseline and restored runs each passed all six bodies, exit 0. Seven actual-site mutations each exited 1 with exactly one selected failed body, at the intended assertion:
+
+| Mutant | Actual changed property | Observed failed assertion |
+|---|---|---|
+| R1 | Restore aggregate target findings | Partial target repair must be accepted |
+| R2 | Restore aggregate target findings | Delete one of three historical duplicate participants must be accepted |
+| R3 | Restore aggregate unavailable-context findings | Partial context repair must be accepted |
+| R4 | Retain raw typed metadata | Nonempty typed-array freeze throws instead of named rejection |
+| R5 | Retain raw plain-object metadata | Caller metadata must remain unfrozen |
+| R6 | Collapse full issue identity to kind/id | Same-target/new-source issue swap must be rejected |
+| R7 | Disable occurrence subtraction | Worsening reference occurrence must be introduced |
+
+Each planted source diff was retained and read back; after every mutation the source SHA256 matched the original and the explicit HEAD-to-worktree source diff was empty. Final clone HEAD and clean status matched the candidate. Correction evidence is retained in lane-named OS scratch `drill-T-350-s1-correction-4_ukhg2x`; the driver ceased exit 0. Validator restoration SHA256 is `878aec762de7d363556b2a0e974684088246b98cdd663c58735ecb6fb3c4ac61`; unchanged corrected spec SHA256 is `4c1d98a263cc80f0033fc9aefaf2742917265cee8fd2154ce65cf60e52f8f058`. The original records and renderer hashes remain those in the earlier drill block. These are self-qualification, not independent verification.
+
 ## Verdicts
 
 <!-- Fresh independent verifier appends here; no verdict exists. -->
