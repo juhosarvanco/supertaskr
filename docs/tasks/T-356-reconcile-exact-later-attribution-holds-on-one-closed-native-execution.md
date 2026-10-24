@@ -43,6 +43,17 @@ Prepared outside the repository and independently reviewed at `82dd072900b2d6ccd
 
 ## Implementation notes
 
+### Executor criterion echo — 2026-10-24, before implementation
+
+- [ ] Bind one exact closed execution, its selected later-attribution incidents and immutable evidence/policy to a separately pinned owner disposition grant; reject unsupported or ambiguous input.
+- [ ] Return an exact retained historical receipt before current qualification, without rewriting later state; refuse inconsistent or changed retained requests.
+- [ ] Establish closure, collection and reservation release before the incidents, current candidate/scope/policy/source authority, actor audit and absence of live work, later ownership or unexpected holds.
+- [ ] Require a2's exact successful a1 predecessor and independently requalify a2 and its current source, retaining each target's independent result.
+- [ ] Use the real cooperative transaction, reject pending faults initially and on acquisition, and refuse receipt races without converting body errors or release uncertainty into replay success.
+- [ ] Compare records and raw, emergency and retained absorbed-fault inventories after absorption and at the actual last publication check; retain any quarantine housekeeping.
+- [ ] Atomically replace one target with request, receipt and selected dispositions together; report prepublication refusal and committed/uncertain postpublication failures honestly, recovering only through explicit exact retry.
+- [ ] Exercise the direct public entry with ordinary synthetic protocol fixtures across success, authority/closure refusals, races, consumed faults and publication/release/response failures, preserving original evidence.
+
 Pending implementation.
 
 Existing `native-codex.mjs` and run-record facilities are read-only dependencies. Qualify import behavior, record-schema compatibility, receipt retention, authority checks, fault inventories and transaction error handling during implementation. Any required core modification needs revised scope and serialized scheduling; it is not silently included.
