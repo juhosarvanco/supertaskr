@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1418 at least behaviours** — 1416 extracted sentences + 2 at least named-not-extracted (listed at the end) — across 50 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1427 at least behaviours** — 1425 extracted sentences + 2 at least named-not-extracted (listed at the end) — across 51 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -534,6 +534,18 @@ Census: **1418 at least behaviours** — 1416 extracted sentences + 2 at least n
 - a `set` naming a DECLARATIVE switch is refused with the code `declarative`, at the exit every other refusal takes, and the template is byte-identical
 - the settings command reads the loop through the PARSER LIBRARY's own module, and keeps no reader, resolver or constraint engine of its own
 - the settings command LOADS the parser library's own browser entry — the module it imports, and not a path its comments also spell
+
+## closed-attribution-recovery
+
+- ordered public a1/a2 disposition retains original collections, incident details and unknown evidence and grants no admission
+- exact owner request content, audit, bindings, candidate, scope and policy refuse independently with a successful public control
+- each target needs its own genuine pre-incident completion collection and released reservation
+- a2 first unrelated predecessors and changed source refuse while a1 independently remains applied
+- live target or actor work later ownership unexpected holds and incomplete audits block disposition
+- actual beforePublish refuses changed evidence policy records candidate and retained fault inventory with old image retained
+- pending acquisition faults and a genuinely consumed raw sidecar retain quarantine and refuse selected publication
+- pre-lock exact replay preserves later state and acquisition receipt races fail even when exact lock release also fails
+- atomic publication and explicit retry classify before rename after rename directory sync release and response loss honestly
 
 ## crescendo
 
