@@ -156,3 +156,63 @@ Each mutation's full SHA256 restored to `a76cc86e84cdbd91e47227251c9267280b527d1
 ## Verdicts
 
 <!-- Fresh independent verifier appends here; no verdict exists. -->
+
+### 2026-10-24 — REJECTED — requested-gpt-6.1-sol@01a16cb2-94d7-7c02-898b-51b20527f1d4
+
+Judged candidate `ffea1d8dd78dedabde6cccc7f92759ef84259bad` against original base `520d30663dd0c76d90d923da087d1494267d36a0`, standard tier. Reject criterion 4: both new byte-to-text seams erase a leading UTF-8 BOM and accept a document the existing filesystem renderer refuses. Two assigned corrections, two committed regression bodies, and two mutant blocks below; implementation remains unchanged on this verifier bench.
+
+**Frame and custody.** Fresh registered phase two, attempt `T-350-s1-a2`, native identity `01a16cb2-94d7-7c02-898b-51b20527f1d4`, detached-verifier profile, explicitly bound to the supplied candidate resource. Requested model/effort: GPT-6.1 Sol/xhigh; provider-observed model and usage: unknown. The saved phase-one attack describes its actual coordinator-selected frozen packet and procedural tool boundary, rather than complete generated-role delivery or mechanical tool removal. This seat read the sealed contract/attacks and source diff before candidate executor notes; no candidate executor notes, reports, conversation or commit subjects were displayed.
+
+There were procedural faults, retained rather than erased. The first resource-prefix spelling was refused before any brief content executed; checked continuation and exact same-identity rebind preceded resumed tools. The supplement named a noncanonical ask path; the coordinator corrected it, and this seat appended/acknowledged only its own new question/answer in the actual protocol file. During preparation checking, tool output `7b9ce9` accidentally serialized nested preparation authority: the frozen original-base card, empty Implementation notes/Verdicts placeholders, and admission/fence metadata were displayed after source orientation had begun. That breached the display restriction; it exposed no candidate executor reasoning. The coordinator retained and reviewed the actual output. This is not a claim of an untouched packet boundary.
+
+A second correction to the procedural account: this seat initially called yielded command sessions callback-closed. The coordinator later observed proof session 6727's actual Bash entry still INFLIGHT. Yield did not establish native callback cessation. After actual final result collection, the coordinator's public-state read reported `native.inflight=[]`, `activeHolds=[]`, `ownedJobs=[]`, and actual PostCallback at `2026-10-24T08:54:38.802Z`. No completion callback was manufactured. The earlier callback-idle claims and root inspection windows are retained as such; process completion and native callback completion are separate observations.
+
+**Seals checked privately against saved bytes.** Attack SHA256 `5fe767764142328adf2b9007353b75877ff7188624a801affdcc5aa0d217f7fb`; ground SHA256 `ae400125aa44a91d1f18b41c7b2172099ba238bcb10f77d68cd346e974788404`; raw original-base card SHA256 `50f89e6bae3b0f199213c592a90647828345128f3fbadb06fca24371e791e20f`. Task/base/candidate, prepared profile/resource and the six frozen source/spec owners matched the supplied preparation. Raw base card bytes were hashed without displaying its private fields during that integrity operation; the later accidental display is disclosed above.
+
+| Criterion | Finding and deciding evidence |
+|---|---|
+| 1 — frozen identities, explicit overlay, detached evaluation | The original candidate's ten-body records-validation spec passed. Its frozen-root body exercises exact role revisions, divergent origins, live changes/removal, byte detachment and repeated identity. Actual-site wrong-origin, live-read and shared-output-buffer mutants killed the corresponding checks. BOM decoding remains the separate failure under criterion 4. |
+| 2 — historical raw debt and unchanged strict consumers | Raw historical malformed bytes and duplicate participants survive the additive capture. Existing strict capture still rejects by name. The original-base owed e2e range passed 1,321 bodies, including records, records-context, qualified-admission, qualified-reservation and brief callers, and the cold-import controls. Forcing raw capture back through strict parsing killed the historical-debt checks. |
+| 3 — canonical failure identity, incoming references, worsening debt | The actual exported evaluator's malformed/duplicate, deletion, source/target issue swap, occurrence, typed duplicate/alias/SCC and feature-participant matrices passed on the candidate. Dropping canonical diagnostics, replacing comparison with broad kind/id keys, and blanket baseline-debt refusal each caused semantic failures. These are measured fixtures and kill sets, not a claim that every diagnostic shape was exhaustively explored. |
+| 4 — exact compatible index derivation and refusal behavior | **FAIL.** A BOM-prefixed `docs/ARCHITECTURE.md` produces the legacy `has no top-level heading` refusal. Both a committed capture and an overlay instead return `accepted: true`; the overlay returns generated index bytes. VC1 and VC2 below are independently RED on the actual candidate and GREEN with the respective decoding corrections. Existing plain-byte renderer compatibility, chapter add/delete, order and atomic-refusal tests passed; reversing the actual chapter rendering order killed its ordering assertion. |
+| 5 — no product effects or authority | The success/failure effect body passed with command, selected sync/promises filesystem and ref/index/HEAD observations. An actual evaluator-site invocation of the owned clone's capabilities checker killed that body with `EFFECT spawnSync`. Its observation starts after materialization; it is not an OS-wide syscall trace or a proof of every native/delayed channel. No evaluator persistence, dispatch, journal, grant or activation authority is claimed. |
+| 6 — actual entries, owned separate roots, caller regressions | The original ten-body qualification uses actual exported capture/evaluate/render entries and separate owned product/records fixtures, including conflicting same-named inputs and sibling prefixes. Named invalid modes/types/context, debt, reference, chapter and removed-root cases passed, as did all 1,321 original-base e2e bodies. The added BOM cases expose missing byte-compatibility coverage and fail the candidate. |
+| 7 — independent proof, restoration and honest limits | Seals/frame and breaches are stated above. Eleven actual-site semantic mutants were killed: ten full ten-body runs and a selected one-body prohibited-census run. Baseline/restored candidate runs were GREEN over ten. The final correction proof is separately pinned to disposable local reference `629e5862b35f4717d6d1b0e51319ba67ce0f6ac9`, described below. No T-351/T-353 proof retry or waiver was used; private save/backup, product census separation, app composition and activation remain external duties. |
+
+**Graded boundaries and setup evidence.** At the candidate, the blessed command was `SUPERTASKR_E2E_PORT=25350 node tools/e2e/scripts/gate-run.mjs e2e --range 520d30663dd0c76d90d923da087d1494267d36a0..ffea1d8dd78dedabde6cccc7f92759ef84259bad`. The actual derivation owed parser, app and e2e over thirty specs, not Rust. Parser: GREEN, 469 bodies. E2e: GREEN, 1,321 bodies. App: RED, 1,171 executed, fourteen failures, each explicitly absent ignored `app/dist/assets`; this verifier omitted the build prerequisite, so that app result is unqualified setup evidence, not a candidate defect. E2e output ended at `2026-10-24T08:32:57.355Z` and the token was written at `08:32:57.406Z`; cessation of the recorded process tree was observed at `08:47:01 UTC`, not asserted at the earlier write instant. The normal ignored app build subsequently exited zero. Checks owed by this verdict/body work are separately derived from the candidate to the owned final tip and reported at completion; the unbuilt app RED is not reused as qualification. No graded-final-evidence exemption is invoked for changed executable test bodies.
+
+**Proof custody and restoration.** The disposable clone has its own Git common directory, no alternates, copied non-hardlinked objects and clone-local dependencies. An initial zero-body dependency-link refusal was retained and never counted as qualification. Proof logs, actual diffs, body source and result metadata are retained under its `target/proof-T-350-s1/`. At named fixed proof reference `629e5862b35f4717d6d1b0e51319ba67ce0f6ac9`, baseline and restored runs were GREEN over twelve bodies. Each block's actual `git diff` was read; planting it executed the full twelve-body spec and redded its named body alone. After each restoration the production file matched the named reference with SHA256 `324a59095b3720cd8648c23871732a352814307094339e9e49cee9e4f9de033e`. The clone was then reset to the original candidate; all six saved subject hashes matched and its original ten-body qualification passed again. In particular, restored candidate evaluator SHA256 is `a76cc86e84cdbd91e47227251c9267280b527d1d24da07bec58d6efb3bb6b615`.
+
+**Class, sweep and security.** The failure class is normalization of exact retained bytes at an additive decoding seam. The sweep covered `records-validation.mjs` retention and overlay decoding, the existing `records.mjs` UTF-8 helper, and `docs-scan.mjs` filesystem rendering. The new capture inherits the helper's BOM stripping; its fix must use the retained validated bytes without altering strict-consumer behavior. Overlay decoding needs the matching preservation. Path/role/mode checks, Git argument boundaries, parser reuse, import closure, dependencies and the source diff were inspected; no new endpoint, dependency, secret or additional security finding was identified. Capability generation is STALE at the candidate (committed 139631 bytes versus generated 140930); the owning integrator must regenerate after source/test corrections. Direct graph currency was not measured here, and no graph regeneration or migration completion is claimed.
+
+#### Correction 1 — Preserve captured document bytes at candidate materialization
+
+Body: `T-350-s1 VC1 — captured document bytes retain the legacy BOM refusal`. A valid fixture first renders normally; after committing BOM-prefixed architecture bytes the unchanged legacy renderer refuses, while the candidate currently accepts. Preserve the BOM when obtaining candidate text from the already validated retained bytes. The candidate RED, minimal-fix GREEN, named-reference mutant-alone RED and exact restoration are retained.
+
+```mutant
+correction: Preserve captured document bytes at candidate materialization
+file: tools/e2e/scripts/records-validation.mjs
+spec: tools/e2e/tests/records-validation.spec.ts
+body: T-350-s1 VC1 — captured document bytes retain the legacy BOM refusal
+message: captured BOM document must retain legacy renderer refusal
+--- old
+    inputs.set(key(role, relativePath), { ...selected, content: selected.bytes.toString("utf8"), type: "blob", bytes: selected.bytes });
+--- new
+    inputs.set(key(role, relativePath), { ...selected, type: "blob", bytes: selected.bytes });
+```
+
+#### Correction 2 — Preserve overlay document bytes while validating UTF-8
+
+Body: `T-350-s1 VC2 — overlay document bytes retain the legacy BOM refusal`. A frozen valid fixture and the same BOM document distinguish the legacy refusal from the overlay's current accepted generated output. Preserve the BOM while retaining fatal UTF-8 validation. The candidate RED, minimal-fix GREEN, named-reference mutant-alone RED and exact restoration are retained.
+
+```mutant
+correction: Preserve overlay document bytes while validating UTF-8
+file: tools/e2e/scripts/records-validation.mjs
+spec: tools/e2e/tests/records-validation.spec.ts
+body: T-350-s1 VC2 — overlay document bytes retain the legacy BOM refusal
+message: overlay BOM document must retain legacy renderer refusal
+--- old
+        try { content = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes); }
+--- new
+        try { content = new TextDecoder("utf-8", { fatal: true }).decode(bytes); }
+```
