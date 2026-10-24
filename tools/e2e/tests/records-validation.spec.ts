@@ -414,3 +414,34 @@ test("rejected unevaluated overlays report no resolved debt while completed diag
     expect(late.resolvedDiagnostics).toEqual(late.baselineDiagnostics); expect(late.outputs).toBeUndefined();
   } finally { removeGitFixture(fx.dir, "unevaluated reporting T-350-s1"); }
 });
+
+
+test("T-350-s1 VC1 — captured document bytes retain the legacy BOM refusal", () => {
+  const fx = fixture();
+  try {
+    accepted(fx);
+    expect(renderDocsIndex(fx.records)).toContain("RECORDS ARCHITECTURE.md");
+    put(fx.records, "docs/ARCHITECTURE.md", "\uFEFF" + doc("BOM architecture"));
+    fx.options.recordsRevision = commit(fx.records, "BOM captured document");
+    expect(() => renderDocsIndex(fx.records)).toThrow(/docs\/ARCHITECTURE\.md has no top-level heading/);
+    const result = evaluateRecordCandidate(captureRecordCandidateInputs(fx.options), []);
+    expect(result.accepted, "captured BOM document must retain legacy renderer refusal").toBe(false);
+    expect(result.outputs).toBeUndefined();
+    expect(result.failures).toEqual(expect.arrayContaining([expect.objectContaining({ kind: "baseline-context-unavailable" })]));
+  } finally { removeGitFixture(fx.dir, "verifier captured BOM compatibility T-350-s1"); }
+});
+
+test("T-350-s1 VC2 — overlay document bytes retain the legacy BOM refusal", () => {
+  const fx = fixture();
+  try {
+    const captured = accepted(fx);
+    expect(renderDocsIndex(fx.records)).toContain("RECORDS ARCHITECTURE.md");
+    const document = "\uFEFF" + doc("BOM architecture");
+    put(fx.records, "docs/ARCHITECTURE.md", document);
+    expect(() => renderDocsIndex(fx.records)).toThrow(/docs\/ARCHITECTURE\.md has no top-level heading/);
+    const result = evaluateRecordCandidate(captured, [edit("docs/ARCHITECTURE.md", document)]);
+    expect(result.accepted, "overlay BOM document must retain legacy renderer refusal").toBe(false);
+    expect(result.outputs).toBeUndefined();
+    expect(result.failures).toEqual(expect.arrayContaining([expect.objectContaining({ kind: "candidate-input-invalid" })]));
+  } finally { removeGitFixture(fx.dir, "verifier overlay BOM compatibility T-350-s1"); }
+});
