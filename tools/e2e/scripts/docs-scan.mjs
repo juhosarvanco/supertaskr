@@ -3097,7 +3097,11 @@ export const INDEX_RULING = Object.freeze({
  * @returns {string[]}
  */
 export function ruledIndexedDocs(root = repoRoot) {
-  const text = readFileSync(path.join(root, INDEX_RULING.file), "utf8");
+  return ruledIndexedDocsFromText(readFileSync(path.join(root, INDEX_RULING.file), "utf8"));
+}
+
+/** Read the same ruling from explicitly captured bytes. @param {string} text */
+export function ruledIndexedDocsFromText(text) {
   const at = text.indexOf(INDEX_RULING.phrase);
   if (at < 0) {
     throw new Error(
@@ -3284,6 +3288,31 @@ export function chapterIndexLine(rel, text) {
  * @returns {string}
  */
 export function renderDocsIndex(root = repoRoot) {
+  /** @type {Map<string, string>} */
+  const files = new Map();
+  // Keep the legacy filesystem reads visible to the docs-input reader census.
+  for (const rel of INDEXED_DOCS) {
+    files.set(rel, readFileSync(path.join(root, rel), "utf8"));
+    if (rel !== CONVENTIONS_DOC) continue;
+    for (const chapter of conventionsChapters(conventionsIndexText(root))) {
+      files.set(chapter, readFileSync(path.join(root, chapter), "utf8"));
+    }
+  }
+  return renderDocsIndexFromSource({
+    read: (rel) => {
+      const content = files.get(rel);
+      if (content === undefined) throw new Error(`docs-scan: missing document ${rel}`);
+      return content;
+    },
+    paths: () => [...files.keys()],
+  });
+}
+
+/** Render from one explicit byte/path source, with no filesystem fallback.
+ * Enumeration and reads must describe the same candidate, including absence.
+ * @param {{read: (relativePath: string) => string, paths: () => readonly string[]}} source
+ */
+export function renderDocsIndexFromSource(source) {
   const out = [
     "# Index",
     "",
@@ -3313,7 +3342,7 @@ export function renderDocsIndex(root = repoRoot) {
     "",
   ];
   for (const rel of INDEXED_DOCS) {
-    out.push(indexLine(rel, readFileSync(path.join(root, rel), "utf8")));
+    out.push(indexLine(rel, source.read(rel)));
     if (rel !== CONVENTIONS_DOC) continue;
     // THE CHAPTERS, ONE GENERATED LINE EACH (T-290, ADR-023). The
     // conventions are an INDEX now, so a reader sent to that document
@@ -3328,8 +3357,9 @@ export function renderDocsIndex(root = repoRoot) {
     // to it would be this project quietly editing a ruling to fit a
     // refactor. The standing read is still four documents; what the
     // index gained is the map of where a rule inside one of them lives.
-    for (const chapter of conventionsChapters(conventionsIndexText(root))) {
-      out.push(`  ${chapterIndexLine(chapter, readFileSync(path.join(root, chapter), "utf8"))}`);
+    for (const chapter of conventionsChapters(source.read(CONVENTIONS_DOC))) {
+      if (!source.paths().includes(chapter)) throw new Error(`docs-scan: missing chapter ${chapter}`);
+      out.push(`  ${chapterIndexLine(chapter, source.read(chapter))}`);
     }
   }
   out.push("");

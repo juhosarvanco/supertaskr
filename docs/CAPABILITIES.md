@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1406 at least behaviours** — 1404 extracted sentences + 2 at least named-not-extracted (listed at the end) — across 49 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1418 at least behaviours** — 1416 extracted sentences + 2 at least named-not-extracted (listed at the end) — across 50 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -1369,6 +1369,21 @@ Census: **1406 at least behaviours** — 1404 extracted sentences + 2 at least n
 - planning committed context inputs and registry require present regular UTF-8 blobs at their selected role commit
 - planning measures actual linked-worktree and nested-repository identities and refuses unsupported physical topology
 - planning import has no effects and capture admits actual Git reads while process and write controls remain discriminating
+
+## records-validation
+
+- frozen candidates evaluate exact explicit role revisions with detached identity and renderer bytes after live roots disappear
+- raw historical malformed debt survives canonical comparison while repair succeeds and new malformed duplicate or unusable dependencies refuse
+- failure identities retain incoming references duplicate participants occurrence debt aliases cycles and assignments
+- candidate input modes paths operations and missing selected context fail explicitly with no role fallback
+- captured renderer preserves legacy bytes and chapter order while overlay addition deletion and malformed inputs are atomic
+- pure evaluation observes no command write or ref effects on accepted and rejected results and its effect controls discriminate
+- typed duplicate groups preserve first middle last removal and ordering while new participants references and occurrences reject
+- typed alias participants and actual cyclic reference occurrences retain shrinking historical groups without hiding new debt
+- feature duplicate and alias declaration payload multisets survive line shifts and reordering but retain multiplicity and new participant rejection
+- rejected unevaluated overlays report no resolved debt while completed diagnostics survive a later rendering refusal
+- T-350-s1 VC1 — captured document bytes retain the legacy BOM refusal
+- T-350-s1 VC2 — overlay document bytes retain the legacy BOM refusal
 
 ## records
 
