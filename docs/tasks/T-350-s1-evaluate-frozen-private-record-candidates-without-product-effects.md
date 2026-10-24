@@ -164,7 +164,7 @@ The same original attempt adopted the exact descendant verifier body/verdict tip
 - [x] Preserve the legacy renderer's BOM refusal for both captured and overlay documents through the two exact decoding corrections.
 - [x] Preserve the evaluator's no-command/no-write/no-authority behavior.
 - [x] Reuse committed VC1/VC2 and qualify all twelve evaluator bodies plus legacy renderer controls before the required range grade.
-- [ ] At a committed fixed candidate, separately remove each correction in a new owned independent local clone, require the named semantic RED, prove exact SHA256 restoration, and retain fresh independent verification as owed.
+- [x] At a committed fixed candidate, separately remove each correction in a new owned independent local clone, require the named semantic RED, prove exact SHA256 restoration, and retain fresh independent verification as owed.
 
 
 
@@ -177,6 +177,25 @@ The failure class is normalization of retained bytes at additive UTF8 decoding s
 Normal ignored parser and app builds exited 0 before qualification. Against the adopted c32 production bytes, with only repair-planning notes dirty, the twelve-body evaluator run exited 1: the original ten passed and only VC1/VC2 failed their named acceptance assertions. After correction, typecheck exited 0 and all twelve bodies passed in 9.4 seconds. The legacy-renderer invocation accidentally passed its grep option to npm, expanding the selection to all 74 docs-input bodies. Actual Playwright exit was 0, all 74 passed in 1.4 minutes, including both intended renderer controls. The wrapper's expected-two-body assertion then exited 1; this is a retained selection/count error, not a product failure or a required-range grade. No repeat was run.
 
 The original rejected verdict and all prior readings remain unchanged. This committed correction still owes its own separate correction-removal self-drills, original seed-to-final required range and fresh independent verification. The approved seed remains `520d30663dd0c76d90d923da087d1494267d36a0`; the old GREEN does not qualify this repaired tree.
+
+
+
+### First-rejection correction self-drills at `2a158ccf2ff6b3039f9a0bb9d253840fe4b29af2`
+
+A new owned disposable local clone, `drill-T-350-s1-bom-repair-zwe7vdt7`, was detached at this committed fix. Its Git common directory is separate, it has no alternates, and all 4900 matching object files have independent inodes. The six subject bytes match that reference. Clone-local parser/app/e2e installs and ordered parser/app builds all exited 0; no prior clone or existing checkout was changed.
+
+The baseline and final restored evaluator runs each passed all twelve bodies, exit 0. The two exact actual-site correction removals were planted separately; each actual source diff was retained and read before the full twelve-body invocation. The direct Playwright CLI preserved the intended selection:
+
+| Removal | Actual production site | Observed result |
+|---|---|---|
+| VC1 | Remove retained-byte text preservation at capture materialization only | Exit 1; only VC1 fails its named captured-BOM acceptance assertion, with 11 other bodies passing |
+| VC2 | Remove overlay decoder ignoreBOM option only | Exit 1; only VC2 fails its named overlay-BOM acceptance assertion, with 11 other bodies passing |
+
+After each removal, explicit restoration from the named reference produced evaluator SHA256 `324a59095b3720cd8648c23871732a352814307094339e9e49cee9e4f9de033e` and an empty reference-to-worktree subject diff. The unchanged spec remained `ef4b7115e0c7efbfb4521b2e381072772ce8d28fa9d08bdbd6c7b987bf29e1b7`. All six subject hashes, clone HEAD and clean status matched at completion. Full logs, actual mutant diffs, command exits and restoration receipts remain in that lane-named scratch. Every owned setup/test job actually ceased; the recorded process check found none and lane port 15350 was free. These are this lane's self-drills, not independent approval.
+
+The ordinary first-rejection repair continues the original attempt and original seed. The final substantive code and notes still owe the actual `520d30663dd0c76d90d923da087d1494267d36a0`-to-repaired-tip blessed range, derived after this commit; no earlier GREEN or expected RED is reused as that grade. Generated census/index/graph updates remain outside this fence and integrator-owned. No persistence, migration activation, authority/grant change or T353 proof was attempted.
+
+Current brief corrections: the continued worktree already had its installed dependencies, unlike the original fresh-cut live facts; its normal ignored parser and app prerequisites were nevertheless rebuilt successfully. The generated historical model/default and live facts remain historical, not a new assignment. One oversized combined brief read was explicitly re-read in bounded chunks. The first repair-ask extraction also displayed prior protocol questions/answers and verifier procedural metadata; this was disclosed to the coordinator, and no phase-one attack artifact/content was opened. The rejected verdict is preserved byte-for-byte. Fresh independent phase two remains owed after this lane's repaired grade.
 
 
 ## Verdicts
