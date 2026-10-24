@@ -49,6 +49,11 @@ function safePath(relativePath) {
 function chapterPath(relativePath) { return /^docs\/conventions\/[a-z0-9-]+\.md$/.test(relativePath); }
 /** @param {Role} role @param {string} relativePath */
 function key(role, relativePath) { return `${role}:${relativePath}`; }
+/** Locale-independent identity ordering. @param {{role: Role, path: string}} a @param {{role: Role, path: string}} b */
+function compareInputs(a, b) {
+  const left = key(a.role, a.path), right = key(b.role, b.path);
+  return left < right ? -1 : left > right ? 1 : 0;
+}
 /** @param {Map<string, Input>} inputs @param {Role} role @param {string} relativePath */
 function read(inputs, role, relativePath) {
   const input = inputs.get(key(role, relativePath));
@@ -102,7 +107,7 @@ export function captureRecordCandidateInputs(options) {
     if (!inputs.has(key("records", chapter))) retain("records", chapter);
   }
   const manifest = [...inputs.values()].map((i) => ({ role: i.role, path: i.path, mode: i.mode, type: i.type,
-    blobId: i.blobId, sha256: digest(i.bytes) })).sort((a, b) => key(a.role, a.path).localeCompare(key(b.role, b.path)));
+    blobId: i.blobId, sha256: digest(i.bytes) })).sort(compareInputs);
   const identity = freeze({ receipt: captured.receipt, paths, entries, inputs: manifest });
   const handle = Object.freeze({ receipt: captured.receipt, identity, digest: digest(stable(identity)) });
   materialized.set(handle, { receipt: captured.receipt, paths, inputs, identity });
@@ -117,7 +122,14 @@ function diagnostics(inputs) {
   const files = [...inputs.values()].filter((i) => i.role === "records").map((i) => ({ path: i.path, content: i.content }));
   const model = parseProjectFromFiles(files);
   /** @type {Diagnostic[]} */
-  const canonical = model.issues;
+  const canonical = model.issues.map((issue) => {
+    // An unparseable file has no field-level value to identify its failure.
+    // Retain its exact byte identity so rewriting malformed input cannot be
+    // passed off as unchanged historical debt with the same generic message.
+    const structural = ["missing-frontmatter", "yaml-error", "not-a-mapping"].includes(issue.kind);
+    const input = "file" in issue ? inputs.get(key("records", issue.file)) : undefined;
+    return structural && input ? { ...issue, inputSha256: digest(input.bytes) } : issue;
+  });
   /** @type {Diagnostic[]} */
   const out = [...canonical];
   /** @param {{id?: string, file: string}} target */
@@ -237,7 +249,7 @@ export function evaluateRecordCandidate(captured, overlay) {
     type: op?.type, mode: op?.mode, ...(op?.bytes instanceof Uint8Array ? { sha256: digest(op.bytes) } : { bytes: typeof op?.bytes }) })) : null;
   const identity = freeze({ baseline: captured.digest, overlay: suppliedOverlay, applied: operations,
     candidateInputs: [...inputs.values()].map((i) => ({ role: i.role, path: i.path, type: i.type, mode: i.mode, sha256: digest(i.bytes) }))
-      .sort((a, b) => key(a.role, a.path).localeCompare(key(b.role, b.path))), paths: [...paths].sort() });
+      .sort(compareInputs), paths: [...paths].sort() });
   const retainedIndex = accepted && candidateIndex !== beforeIndex ? Buffer.from(/** @type {string} */ (candidateIndex)) : undefined;
   const outputs = accepted ? Object.freeze(retainedIndex === undefined ? [] : [Object.freeze({ role: "records", path: INDEX_DOC, type: "blob", mode: "100644",
     sha256: digest(retainedIndex), content: retainedIndex.toString("utf8"), get bytes() { return Buffer.from(retainedIndex); } })]) : undefined;

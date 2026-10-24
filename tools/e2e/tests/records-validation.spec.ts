@@ -98,6 +98,8 @@ test("raw historical malformed debt survives canonical comparison while repair s
     const unrelated = evaluateRecordCandidate(captured, [edit(CARD, card().replace("Candidate task", "Valid edit"))]);
     expect(unrelated.baselineDiagnostics).toEqual(expect.arrayContaining([expect.objectContaining({ kind: "missing-frontmatter", file: historical })]));
     expect(unrelated.accepted).toBe(true);
+    const rewrittenMalformed = evaluateRecordCandidate(captured, [edit(historical, "different malformed bytes")]);
+    expect(rewrittenMalformed.accepted).toBe(false); expect(rewrittenMalformed.outputs).toBeUndefined();
     const repaired = evaluateRecordCandidate(captured, [edit(historical, card("T-903"))]);
     expect(repaired.accepted).toBe(true); expect(repaired.resolvedDiagnostics).toHaveLength(1);
     for (const overlay of [[edit(SECOND, "new malformed", "add")], [edit(SECOND, card("T-901"), "add")]]) {
@@ -138,11 +140,16 @@ test("failure identities retain incoming references duplicate participants occur
     const debt = accepted(fx);
     const swapped = evaluateRecordCandidate(debt, [edit(SECOND, card("T-902", "blocked_by: [T-998]\n"))]);
     expect(swapped.introducedDiagnostics).toEqual(expect.arrayContaining([expect.objectContaining({ kind: "dangling-reference", id: "T-998" })])); expect(swapped.accepted).toBe(false);
+    const sameTargetNewSource = evaluateRecordCandidate(debt, [edit(SECOND, card("T-902")), edit(CARD, card("T-901", "blocked_by: [T-999]\n"))]);
+    expect(sameTargetNewSource.accepted).toBe(false);
+    expect(sameTargetNewSource.introducedDiagnostics).toEqual(expect.arrayContaining([expect.objectContaining({ kind: "dangling-reference", file: CARD, field: "blocked_by", id: "T-999" })]));
     const worsened = evaluateRecordCandidate(debt, [edit(SECOND, card("T-902", "blocked_by: [T-999, T-999]\n"))]);
     expect(worsened.introducedDiagnostics).toHaveLength(1); expect(worsened.accepted).toBe(false);
     put(fx.records, "docs/tasks/T-901-duplicate.md", card()); fx.options.recordsRevision = commit(fx.records, "old duplicate debt");
     const duplicate = accepted(fx);
     const third = evaluateRecordCandidate(duplicate, [edit("docs/tasks/T-901-third.md", card(), "add")]);
+    const replacedParticipant = evaluateRecordCandidate(duplicate, [{ operation: "delete", path: "docs/tasks/T-901-duplicate.md" }, edit("docs/tasks/T-901-third.md", card(), "add")]);
+    expect(replacedParticipant.accepted).toBe(false);
     expect(third.accepted).toBe(false); expect(third.introducedDiagnostics).toEqual(expect.arrayContaining([expect.objectContaining({ kind: "duplicate-id", files: expect.arrayContaining(["docs/tasks/T-901-third.md"]) })]));
   } finally { removeGitFixture(fx.dir, "candidate identities T-350-s1"); }
 });
