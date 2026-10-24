@@ -16,6 +16,8 @@ export const RECORD_INDEX_INPUTS = Object.freeze(INDEXED_DOCS.map((relativePath)
 /** @typedef {{role: Role, path: string, mode: string, type: string, blobId: string, content: string, bytes: Buffer}} Input */
 /** @typedef {{operation: "add"|"edit"|"delete", path: string, type?: string, mode?: string, bytes?: Uint8Array}} Overlay */
 /** @typedef {Record<string, any> & {kind: string, message: string}} Diagnostic */
+/** @typedef {{family: any, members: any[]}} CauseGroup */
+/** @typedef {{identity: any, diagnostic: Diagnostic, group?: CauseGroup}} Fact */
 /** @type {WeakMap<object, {receipt: any, paths: Record<Role, readonly string[]>, inputs: Map<string, Input>, identity: any}>} */
 const materialized = new WeakMap();
 /** @param {string} code @param {string} detail @returns {never} */
@@ -114,31 +116,87 @@ export function captureRecordCandidateInputs(options) {
   return handle;
 }
 
-/** Canonical findings plus references to targets the canonical model retains with debt.
- * No grammar is duplicated: all records, references, aliases and issues come from the parser.
- * @param {Map<string, Input>} inputs @returns {Diagnostic[]}
+/** Canonical display is kept verbatim. Comparison facts describe typed causes:
+ * complete duplicate/alias participant multisets and actual edges in a reported
+ * SCC. Parser ordering, first anchors and feature line shifts are not new debt.
+ * All other canonical issues retain their full identity and multiplicity.
+ * @param {Map<string, Input>} inputs
+ * @returns {{diagnostics: Diagnostic[], facts: Fact[]}}
  */
 function diagnostics(inputs) {
   const files = [...inputs.values()].filter((i) => i.role === "records").map((i) => ({ path: i.path, content: i.content }));
   const model = parseProjectFromFiles(files);
   /** @type {Diagnostic[]} */
   const canonical = model.issues.map((issue) => {
-    // An unparseable file has no field-level value to identify its failure.
-    // Retain its exact byte identity so rewriting malformed input cannot be
-    // passed off as unchanged historical debt with the same generic message.
     const structural = ["missing-frontmatter", "yaml-error", "not-a-mapping"].includes(issue.kind);
     const input = "file" in issue ? inputs.get(key("records", issue.file)) : undefined;
     return structural && input ? { ...issue, inputSha256: digest(input.bytes) } : issue;
   });
+  /** @param {any} record @param {string} space */
+  function participant(record, space) {
+    // Features have no individual file identity. Preserve the complete parsed
+    // declaration and its multiplicity, while letting an unchanged line move.
+    return space === "feature" ? { id: record.id, file: record.file, name: record.name, description: record.description }
+      : { id: record.id, file: record.file };
+  }
+  const spaces = { task: model.tasks, component: model.components ?? [], feature: model.features };
+  /** @type {Map<Diagnostic, {issues: Diagnostic[], facts: Fact[]}>} */
+  const units = new Map();
+  /** @type {Fact[]} */
+  const facts = [];
+  for (const issue of canonical) {
+    if (units.has(issue)) continue;
+    let issues = [issue];
+    /** @type {Fact[]} */
+    let causes = [{ identity: issue, diagnostic: issue }];
+    if (["duplicate-id", "aliased-id"].includes(issue.kind) && issue.space in spaces) {
+      const space = /** @type {keyof typeof spaces} */ (issue.space);
+      const duplicate = issue.kind === "duplicate-id";
+      const members = spaces[space].filter((r) => duplicate ? r.id === issue.id : issue.ids.includes(r.id));
+      const related = duplicate ? canonical.filter((i) => i.kind === issue.kind && i.space === space && i.id === issue.id) : [issue];
+      // These are the actual typed producer shapes. Unknown future shapes stay
+      // exact rather than being silently folded into a known cause.
+      if (members.length >= 2 && (!duplicate || related.length === members.length - 1)) {
+        issues = related; causes = [];
+        const { message: _message, files: _files, ids: _ids, ...shape } = issue;
+        const group = { family: shape, members: members.map((r) => participant(r, space)) };
+        for (let i = 0; i < members.length; i++) {
+          causes.push({ identity: { cause: "ambiguous-participant", ...shape, participant: group.members[i] }, group,
+            diagnostic: duplicate ? related[Math.max(0, i - 1)] ?? issue : issue });
+        }
+      }
+    } else if (issue.kind === "dependency-cycle") {
+      const ids = /** @type {string[]} */ (issue.ids);
+      const members = ids.map((id, i) => model.tasks.find((t) => t.id === id && t.file === issue.files[i]));
+      if (members.length > 0 && members.every(Boolean)) {
+        const { message: _message, files: _files, ids: _ids, ...shape } = issue;
+        causes = [];
+        const group = { family: shape, members: members.map((r) => participant(r, "task")) };
+        for (const source of members) {
+          if (!source) continue;
+          for (const id of source.blockedBy) {
+          const target = members.find((t) => t?.id === id);
+          if (target) causes.push({ identity: { cause: "cyclic-reference", ...shape,
+            source: participant(source, "task"), target: participant(target, "task") }, group, diagnostic: issue });
+          }
+        }
+      }
+    }
+    const unit = { issues, facts: causes };
+    for (const related of issues) units.set(related, unit);
+    facts.push(...causes);
+  }
   /** @type {Diagnostic[]} */
   const out = [...canonical];
+  /** @type {Map<string, Diagnostic[]>} */
+  const byFile = new Map();
+  for (const issue of canonical) for (const file of new Set(issue.files ?? (issue.file ? [issue.file] : []))) {
+    if (!byFile.has(file)) byFile.set(file, []);
+    byFile.get(file)?.push(issue);
+  }
   /** @param {{id?: string, file: string}} target */
   function debt(target) {
-    return canonical.filter((issue) => {
-      const participants = issue.files ?? (issue.file ? [issue.file] : []);
-      if (!participants.includes(target.file)) return false;
-      // A feature's file contains many identities: an issue naming another feature
-      // is unrelated. Card/component files each declare a single identity.
+    return (byFile.get(target.file) ?? []).filter((issue) => {
       if (target.file === "docs/ROADMAP.md") {
         if (issue.id !== undefined) return issue.id === target.id;
         if (issue.ids !== undefined) return issue.ids.includes(target.id);
@@ -146,29 +204,77 @@ function diagnostics(inputs) {
       return true;
     });
   }
-  /** @param {string} file @param {string} field @param {string} id @param {{id?: string, file: string}[]} space */
-  function reference(file, field, id, space) {
+  /** @param {string} file @param {string} field @param {string} id @param {any[]} space @param {string} spaceName */
+  function reference(file, field, id, space, spaceName) {
     const targets = space.filter((t) => t.id === id);
     const unavailable = field === "feature" && space.length === 0
       ? canonical.filter((i) => i.file === "docs/ROADMAP.md" && ["roadmap-error", "io-error"].includes(i.kind)) : [];
-    // One derived finding per canonical failure, retaining its complete participants.
-    // Removing another independent failure must not manufacture a new aggregate identity.
-    for (const context of unavailable) out.push({ kind: "unavailable-reference-context", file, field, id, context: [context],
-      message: `${file}: ${field} names '${id}' but its canonical reference space is unavailable` });
-    for (const target of targets) for (const issue of debt(target)) {
-      out.push({ kind: "unusable-reference", file, field, id,
-        targets: [{ file: target.file, id: target.id, issues: [issue] }],
-        message: `${file}: ${field} names '${id}' whose retained target has canonical validation debt` });
+    /** @type {Diagnostic|undefined} */
+    let firstDebt;
+    for (const context of unavailable) {
+      const diagnostic = { kind: "unavailable-reference-context", file, field, id, context: [context],
+        message: `${file}: ${field} names '${id}' but its canonical reference space is unavailable` };
+      out.push(diagnostic); firstDebt ??= diagnostic; facts.push({ identity: diagnostic, diagnostic });
     }
+    // Display each real canonical issue once within this reference occurrence.
+    // Feature declarations may share file/id; their individual payload and
+    // occurrence identities remain in comparison facts, never coalesced there.
+    /** @type {Map<Diagnostic, {diagnostic: Diagnostic, targets: Set<string>}>} */
+    const display = new Map();
+    /** @type {Map<string, {grouped: {unit: any, diagnostic: Diagnostic}[]}>} */
+    const contexts = new Map();
+    for (const target of targets) {
+      const targetIdentity = { file: target.file, id: target.id };
+      const tuple = stable(targetIdentity);
+      let context = contexts.get(tuple);
+      if (!context) {
+        const retained = debt(target);
+        /** @type {Map<Diagnostic, Diagnostic>} */
+        const reported = new Map();
+        for (const issue of retained) {
+          let entry = display.get(issue);
+          if (!entry) {
+            const diagnostic = { kind: "unusable-reference", file, field, id, targets: [],
+              message: `${file}: ${field} names '${id}' whose retained target has canonical validation debt` };
+            entry = { diagnostic, targets: new Set() }; display.set(issue, entry);
+            out.push(diagnostic); firstDebt ??= diagnostic;
+          }
+          if (!entry.targets.has(tuple)) {
+            entry.targets.add(tuple); entry.diagnostic.targets.push({ ...targetIdentity, issues: [issue] });
+          }
+          reported.set(issue, entry.diagnostic);
+        }
+        context = { grouped: [] };
+        for (const unit of new Set(retained.map((i) => units.get(i)))) {
+          const first = unit?.issues.find((i) => reported.has(i));
+          const fallback = first && reported.get(first);
+          if (!unit || !fallback) continue;
+          if (unit.facts[0]?.group) context.grouped.push({ unit, diagnostic: fallback });
+          else for (const fact of unit.facts) facts.push({ identity: { cause: "unusable-reference", file, field, id,
+            target: targetIdentity, issue: fact.identity }, diagnostic: reported.get(fact.diagnostic) ?? fallback });
+        }
+        contexts.set(tuple, context);
+      }
+      // Keep every typed grouped participant/occurrence, including repeated
+      // feature payloads, without repeating its shared canonical display list.
+      for (const { unit, diagnostic } of context.grouped) {
+        const group = unit.facts[0].group;
+        facts.push({ identity: { cause: "unusable-reference", file, field, id,
+          target: participant(target, spaceName), issue: group.family }, group, diagnostic });
+      }
+    }
+    // Count reference occurrences independently: shrinking the target/context
+    // debt cannot pay for an added dependency occurrence.
+    if (firstDebt) facts.push({ identity: { cause: "unusable-reference-occurrence", file, field, id }, diagnostic: firstDebt });
   }
   for (const task of model.tasks) {
-    for (const id of task.blockedBy) reference(task.file, "blocked_by", id, model.tasks);
-    if (task.feature !== undefined) reference(task.file, "feature", task.feature, model.features);
+    for (const id of task.blockedBy) reference(task.file, "blocked_by", id, model.tasks, "task");
+    if (task.feature !== undefined) reference(task.file, "feature", task.feature, model.features, "feature");
   }
   for (const component of model.components ?? []) {
-    for (const id of component.dependsOn) reference(component.file, "depends_on", id, model.components ?? []);
+    for (const id of component.dependsOn) reference(component.file, "depends_on", id, model.components ?? [], "component");
   }
-  return out;
+  return { diagnostics: out, facts };
 }
 /** Copy rejected metadata too: result freezing must never freeze caller objects.
  * Valid scalar metadata keeps its exact identity spelling. Unsupported data is
@@ -188,13 +294,42 @@ function metadata(value) {
   } catch (err) { refuse("records-overlay-metadata-invalid", message(err)); }
 }
 /** Multiset subtraction, not counts or broad kind/id comparisons.
- * @param {Diagnostic[]} left @param {Diagnostic[]} right
+ * @param {Fact[]} left @param {Fact[]} right @param {boolean} [requireGroupSupport]
  */
-function difference(left, right) {
+function difference(left, right, requireGroupSupport = true) {
   const counts = new Map();
-  for (const issue of right) { const id = stable(issue); counts.set(id, (counts.get(id) ?? 0) + 1); }
+  /** @type {Map<string, Set<CauseGroup>>} */
+  const groups = new Map();
+  const indexed = new Set();
+  for (const issue of right) {
+    const id = stable(issue.identity); counts.set(id, (counts.get(id) ?? 0) + 1);
+    if (issue.group && !indexed.has(issue.group)) {
+      indexed.add(issue.group);
+      for (const member of issue.group.members) {
+        const index = stable({ family: issue.group.family, member });
+        if (!groups.has(index)) groups.set(index, new Set());
+        groups.get(index)?.add(issue.group);
+      }
+    }
+  }
+  /** @type {Map<CauseGroup, boolean>} */
+  const supported = new Map();
   return left.filter((issue) => {
-    const id = stable(issue); const count = counts.get(id) ?? 0;
+    if (requireGroupSupport && issue.group) {
+      let known = supported.get(issue.group);
+      if (known === undefined) {
+        const needed = issue.group.members.map(stable);
+        known = [...(groups.get(stable({ family: issue.group.family, member: issue.group.members[0] })) ?? [])].some((prior) => {
+          const available = new Map();
+          for (const member of prior.members) { const id = stable(member); available.set(id, (available.get(id) ?? 0) + 1); }
+          // ONE whole prior group must support every current participant.
+          return needed.every((id) => { const count = available.get(id) ?? 0; if (!count) return false; available.set(id, count - 1); return true; });
+        });
+        supported.set(issue.group, known);
+      }
+      if (!known) return true;
+    }
+    const id = stable(issue.identity); const count = counts.get(id) ?? 0;
     if (!count) return true;
     counts.set(id, count - 1); return false;
   });
@@ -213,8 +348,13 @@ export function evaluateRecordCandidate(captured, overlay) {
   const paths = new Set(baseline.paths.records);
   /** @type {Diagnostic[]} */
   let baselineDiagnostics = [];
+  /** @type {Fact[]} */
+  let baselineFacts = [];
   /** @type {Diagnostic[]} */
   let candidateDiagnostics = [];
+  /** @type {Fact[]} */
+  let candidateFacts = [];
+  let candidateDiagnosticsComplete = false;
   /** @type {Diagnostic[]} */
   const failures = [];
   /** @type {any[]} */
@@ -224,7 +364,8 @@ export function evaluateRecordCandidate(captured, overlay) {
   /** @type {string|undefined} */
   let beforeIndex, candidateIndex;
   try {
-    baselineDiagnostics = diagnostics(baseline.inputs);
+    const reading = diagnostics(baseline.inputs);
+    baselineDiagnostics = reading.diagnostics; baselineFacts = reading.facts;
     beforeIndex = render(baseline.inputs, baseline.paths.records);
   } catch (err) {
     failures.push({ kind: "baseline-context-unavailable", message: message(err) });
@@ -263,13 +404,17 @@ export function evaluateRecordCandidate(captured, overlay) {
         operations.push({ operation: operation.operation, path: relativePath, type: operation.type, mode: operation.mode, sha256: digest(bytes) });
       }
     }
-    candidateDiagnostics = diagnostics(inputs);
+    const reading = diagnostics(inputs);
+    candidateDiagnostics = reading.diagnostics; candidateFacts = reading.facts;
+    candidateDiagnosticsComplete = true;
     candidateIndex = render(inputs, [...paths].sort());
   } catch (err) {
     failures.push({ kind: "candidate-input-invalid", code: err instanceof RecordReaderFinding ? err.code : "records-index-invalid", message: message(err) });
   }
-  const introducedDiagnostics = difference(candidateDiagnostics, baselineDiagnostics);
-  const resolvedDiagnostics = difference(baselineDiagnostics, candidateDiagnostics);
+  const introduced = new Set(difference(candidateFacts, baselineFacts).map((f) => f.diagnostic));
+  const resolved = new Set(candidateDiagnosticsComplete ? difference(baselineFacts, candidateFacts, false).map((f) => f.diagnostic) : []);
+  const introducedDiagnostics = candidateDiagnostics.filter((i) => introduced.has(i));
+  const resolvedDiagnostics = baselineDiagnostics.filter((i) => resolved.has(i));
   const accepted = failures.length === 0 && introducedDiagnostics.length === 0;
   const identity = freeze({ baseline: captured.digest, overlay: suppliedOverlay, applied: operations,
     candidateInputs: [...inputs.values()].map((i) => ({ role: i.role, path: i.path, type: i.type, mode: i.mode, sha256: digest(i.bytes) }))

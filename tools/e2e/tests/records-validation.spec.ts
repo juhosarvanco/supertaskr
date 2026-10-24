@@ -116,6 +116,10 @@ test("raw historical malformed debt survives canonical comparison while repair s
     put(fx.records, historical, partiallyInvalid); put(fx.records, CARD, card("T-901", "blocked_by: [T-903]\n"));
     fx.options.recordsRevision = commit(fx.records, "two historical target failures with an existing reference");
     const partialCapture = accepted(fx);
+    const mixed = semanticCase(partialCapture, [edit("docs/tasks/T-903-mixed-duplicate.md", card("T-903"), "add")], false, "mixed ordinary and new grouped target debt reports its actual group cause");
+    const mixedReferences = mixed.introducedDiagnostics.filter((i: any) => i.kind === "unusable-reference");
+    expect(mixedReferences.length).toBeGreaterThan(0);
+    expect(mixedReferences.flatMap((i: any) => i.targets.flatMap((t: any) => t.issues)).every((i: any) => i.kind === "duplicate-id")).toBe(true);
     const partial = evaluateRecordCandidate(partialCapture, [edit(historical, partiallyInvalid.replace("milestone: wrong", "milestone: 1"))]);
     expect(partial.accepted).toBe(true); expect(partial.introducedDiagnostics).toEqual([]);
     const swappedTargetDebt = evaluateRecordCandidate(partialCapture, [edit(historical, partiallyInvalid.replace("milestone: wrong", "milestone: 1").replace("size: M", "size: wrong"))]);
@@ -282,4 +286,131 @@ test("pure evaluation observes no command write or ref effects on accepted and r
     expect(after).toEqual(before); expect(fs.existsSync(path.join(fx.product, "effect-control"))).toBe(false);
     expect(readCommittedBoard(fx.options).tasks).toHaveLength(1);
   } finally { removeGitFixture(fx.dir, "candidate effects T-350-s1"); }
+});
+
+function component(id: string, suffix: string, extra = "") {
+  return `---\nid: ${id}\nname: Fixture ${suffix}\npaths: [safe/${id}-${suffix}]\n${extra}---\n`;
+}
+function semanticCase(captured: ReturnType<typeof captureRecordCandidateInputs>, overlay: any, expected: boolean, label: string) {
+  const r = evaluateRecordCandidate(captured, overlay);
+  console.log("semantic-case", JSON.stringify({ label, expected, accepted: r.accepted, failures: r.failures,
+    baselineDiagnostics: r.baselineDiagnostics, candidateDiagnostics: r.candidateDiagnostics,
+    introducedDiagnostics: r.introducedDiagnostics, resolvedDiagnostics: r.resolvedDiagnostics }));
+  expect(r.accepted, label).toBe(expected);
+  if (expected) expect(r.introducedDiagnostics, label).toEqual([]);
+  else expect(r.introducedDiagnostics.length, label).toBeGreaterThan(0);
+  return r;
+}
+
+test("typed duplicate groups preserve first middle last removal and ordering while new participants references and occurrences reject", () => {
+  for (const space of ["task", "component"] as const) {
+    const fx = fixture();
+    try {
+      const root = space === "task" ? "docs/tasks" : "docs/architecture/components";
+      const id = space === "task" ? "T-901" : "C-901";
+      const ref = `${root}/${space === "task" ? "T-902" : "C-902"}-reference.md`;
+      const make = (suffix: string) => space === "task" ? card(id) : component(id, suffix);
+      const reference = (twice = false) => space === "task" ? card("T-902", `blocked_by: [${id}${twice ? `, ${id}` : ""}]\n`)
+        : component("C-902", "reference", `depends_on: [${id}${twice ? `, ${id}` : ""}]\n`);
+      if (space === "task") fs.rmSync(path.join(fx.records, CARD));
+      const members = ["a", "b", "c"].map((suffix) => `${root}/${id}-${suffix}.md`);
+      for (const [i, member] of members.entries()) put(fx.records, member, make(String(i)));
+      put(fx.records, ref, reference()); fx.options.recordsRevision = commit(fx.records, `${space} duplicate matrix`);
+      const captured = accepted(fx);
+      for (const member of members) semanticCase(captured, [{ operation: "delete", path: member }], true, `${space} remove ${member}`);
+      const deletion = { operation: "delete", path: members[0] };
+      const a = semanticCase(captured, [deletion, edit(members[1]!, make("1"))], true, `${space} delete/edit order`);
+      const b = semanticCase(captured, [edit(members[1]!, make("1")), deletion], true, `${space} edit/delete order`);
+      expect(a.candidateDiagnostics).toEqual(b.candidateDiagnostics);
+      const fourth = edit(`${root}/${id}-d.md`, make("d"), "add");
+      semanticCase(captured, [fourth], false, `${space} fourth participant`);
+      semanticCase(captured, [deletion, fourth], false, `${space} replacement participant`);
+      semanticCase(captured, [deletion, edit(ref, reference(true))], false, `${space} shrinking group cannot pay for reference occurrence`);
+      const newcomer = space === "task" ? card("T-904", `blocked_by: [${id}]\n`) : component("C-904", "new", `depends_on: [${id}]\n`);
+      semanticCase(captured, [deletion, edit(`${root}/${space === "task" ? "T-904" : "C-904"}-new.md`, newcomer, "add")], false, `${space} new reference to retained group`);
+    } finally { removeGitFixture(fx.dir, "duplicate semantic matrix T-350-s1"); }
+  }
+});
+
+test("typed alias participants and actual cyclic reference occurrences retain shrinking historical groups without hiding new debt", () => {
+  for (const space of ["task", "component"] as const) {
+    const fx = fixture();
+    try {
+      const root = space === "task" ? "docs/tasks" : "docs/architecture/components";
+      const ids = space === "task" ? ["T-901", "T-0901", "T-00901"] : ["C-901", "C-0901", "C-00901"];
+      if (space === "task") fs.rmSync(path.join(fx.records, CARD));
+      const members = ids.map((id) => `${root}/${id}-alias.md`);
+      for (const [i, id] of ids.entries()) put(fx.records, members[i]!, space === "task" ? card(id) : component(id, String(i)));
+      const ref = `${root}/${space === "task" ? "T-902" : "C-902"}-reference.md`;
+      const reference = (twice = false) => space === "task" ? card("T-902", `blocked_by: [${ids[1]}${twice ? `, ${ids[1]}` : ""}]\n`)
+        : component("C-902", "reference", `depends_on: [${ids[1]}${twice ? `, ${ids[1]}` : ""}]\n`);
+      put(fx.records, ref, reference()); fx.options.recordsRevision = commit(fx.records, `${space} alias matrix`);
+      const captured = accepted(fx);
+      // Keep the exact referenced spelling; removing that identity would be a new dangling reference.
+      for (const member of [members[0]!, members[2]!]) semanticCase(captured, [{ operation: "delete", path: member }], true, `${space} alias shrink ${member}`);
+      const deletion = { operation: "delete", path: members[0] };
+      semanticCase(captured, [deletion, edit(ref, reference(true))], false, `${space} alias shrink plus extra occurrence`);
+      const id = space === "task" ? "T-000901" : "C-000901";
+      semanticCase(captured, [deletion, edit(`${root}/${id}-new.md`, space === "task" ? card(id) : component(id, "new"), "add")], false, `${space} alias participant swap`);
+    } finally { removeGitFixture(fx.dir, "alias semantic matrix T-350-s1"); }
+  }
+  const fx = fixture();
+  try {
+    const ids = ["T-901", "T-902", "T-903"];
+    const paths = [CARD, SECOND, "docs/tasks/T-903-third.md"];
+    const ref = "docs/tasks/T-904-reference.md";
+    const graph = (id: string, remaining = ids) => card(id, `blocked_by: [${remaining.filter((x) => x !== id).join(", ")}]\n`);
+    for (const [i, id] of ids.entries()) put(fx.records, paths[i]!, graph(id));
+    put(fx.records, ref, card("T-904", `blocked_by: [${ids.join(", ")}]\n`));
+    fx.options.recordsRevision = commit(fx.records, "complete historical SCC with incoming references"); const captured = accepted(fx);
+    for (const [i, removed] of ids.entries()) {
+      const remaining = ids.filter((id) => id !== removed);
+      const overlay = [{ operation: "delete", path: paths[i] }, ...remaining.map((id) => edit(paths[ids.indexOf(id)]!, graph(id, remaining))),
+        edit(ref, card("T-904", `blocked_by: [${remaining.join(", ")}]\n`))];
+      semanticCase(captured, overlay, true, `SCC remove ${removed} with retained references`);
+      semanticCase(captured, [...overlay.slice(0, -1), edit(ref, card("T-904", `blocked_by: [${remaining[0]}, ${remaining.join(", ")}]\n`))], false, `SCC shrink plus extra incoming occurrence ${removed}`);
+    }
+    semanticCase(captured, [edit(CARD, card("T-901", "blocked_by: [T-901, T-902, T-903]\n"))], false, "SCC same vertices plus new cyclic self edge");
+    semanticCase(captured, [edit("docs/tasks/T-905-new.md", card("T-905", "blocked_by: [T-902]\n"), "add")], false, "new reference to retained SCC");
+  } finally { removeGitFixture(fx.dir, "cycle semantic matrix T-350-s1"); }
+});
+
+test("feature duplicate and alias declaration payload multisets survive line shifts and reordering but retain multiplicity and new participant rejection", () => {
+  const fx = fixture();
+  try {
+    const declarations = ["- F-01: A — alpha", "- F-01: B — beta", "- F-01: C — gamma"];
+    const roadmap = (lines: string[]) => doc("Feature matrix") + `\n## Backbone\n\n${lines.join("\n")}\n`;
+    put(fx.records, "docs/ROADMAP.md", roadmap(declarations)); fx.options.recordsRevision = commit(fx.records, "feature duplicate declarations");
+    const captured = accepted(fx);
+    for (let i = 0; i < declarations.length; i++) semanticCase(captured, [edit("docs/ROADMAP.md", roadmap(declarations.filter((_, j) => i !== j)))], true, `feature remove declaration ${i}`);
+    semanticCase(captured, [edit("docs/ROADMAP.md", roadmap([declarations[2]!, declarations[0]!, declarations[1]!]))], true, "feature reorder complete declarations");
+    semanticCase(captured, [edit("docs/ROADMAP.md", roadmap([...declarations, "- F-01: D — delta"]))], false, "feature fourth declaration");
+    semanticCase(captured, [edit("docs/ROADMAP.md", roadmap([declarations[0]!, declarations[2]!, "- F-01: D — delta"]))], false, "feature declaration payload swap");
+    semanticCase(captured, [edit("docs/ROADMAP.md", roadmap(declarations.slice(1))), edit(SECOND, card("T-902"), "add")], false, "feature shrink plus new reference");
+    put(fx.records, "docs/ROADMAP.md", roadmap([declarations[0]!, declarations[0]!, declarations[0]!]));
+    fx.options.recordsRevision = commit(fx.records, "identical feature declaration occurrences"); const repeated = accepted(fx);
+    semanticCase(repeated, [edit("docs/ROADMAP.md", roadmap([declarations[0]!, declarations[0]!]))], true, "identical feature occurrence removal");
+    semanticCase(repeated, [edit("docs/ROADMAP.md", roadmap([declarations[0]!, declarations[0]!, declarations[0]!, declarations[0]!]))], false, "identical feature occurrence worsening");
+    const aliases = ["- F-1: A — alpha", "- F-01: B — beta", "- F-001: C — gamma"];
+    put(fx.records, "docs/ROADMAP.md", roadmap(aliases)); fx.options.recordsRevision = commit(fx.records, "feature aliases"); const aliased = accepted(fx);
+    for (const i of [0, 2]) semanticCase(aliased, [edit("docs/ROADMAP.md", roadmap(aliases.filter((_, j) => i !== j)))], true, `feature alias remove ${i}`);
+    semanticCase(aliased, [edit("docs/ROADMAP.md", roadmap([aliases[2]!, aliases[1]!, aliases[0]!]))], true, "feature alias line-only reorder");
+    semanticCase(aliased, [edit("docs/ROADMAP.md", roadmap([aliases[1]!, aliases[2]!, "- F-0001: D — delta"]))], false, "feature alias participant replacement");
+  } finally { removeGitFixture(fx.dir, "feature semantic matrix T-350-s1"); }
+});
+
+test("rejected unevaluated overlays report no resolved debt while completed diagnostics survive a later rendering refusal", () => {
+  const fx = fixture();
+  try {
+    put(fx.records, CARD, card("T-901", "blocked_by: [T-902]\n")); put(fx.records, SECOND, card("T-902").replace("priority: 1", "priority: wrong"));
+    fx.options.recordsRevision = commit(fx.records, "historical target debt for rejected-input reporting"); const captured = accepted(fx);
+    for (const overlay of [null, [{ ...edit(CARD, card()), mode: "160000" }], [edit(SECOND, card("T-902")), edit("docs/INDEX.md", "bad")]]) {
+      const r = evaluateRecordCandidate(captured, overlay as any);
+      expect(r.accepted).toBe(false); expect(r.failures.length).toBeGreaterThan(0); expect(r.baselineDiagnostics.length).toBeGreaterThan(0);
+      expect(r.candidateDiagnostics).toEqual([]); expect(r.resolvedDiagnostics).toEqual([]);
+    }
+    const late = evaluateRecordCandidate(captured, [edit(SECOND, card("T-902")), edit(CHAPTER, "# Missing required rule\n")]);
+    expect(late.accepted).toBe(false); expect(late.failures.length).toBeGreaterThan(0); expect(late.candidateDiagnostics).toEqual([]);
+    expect(late.resolvedDiagnostics).toEqual(late.baselineDiagnostics); expect(late.outputs).toBeUndefined();
+  } finally { removeGitFixture(fx.dir, "unevaluated reporting T-350-s1"); }
 });
