@@ -6,7 +6,7 @@ milestone: 4
 priority: 1
 size: M
 tier: standard
-status: verifying
+status: building
 suggested_by: codex/gpt-6.1-sol @architect
 blocked_by: [T-350]
 touches: [tools/e2e/scripts/records.mjs, tools/e2e/scripts/docs-scan.mjs, tools/e2e/scripts/records-validation.mjs, tools/e2e/tests/records.spec.ts, tools/e2e/tests/docs-input-gate.spec.ts, tools/e2e/tests/records-validation.spec.ts]
@@ -152,6 +152,32 @@ The owned independent local clone `drill-T-350-s1-semantic-cdi5o80a` was detache
 | S12 | Complete ordinary issue identity | Same-target/new-source issue swap |
 
 Each mutation's full SHA256 restored to `a76cc86e84cdbd91e47227251c9267280b527d1d24da07bec58d6efb3bb6b615`, with an empty explicit HEAD-to-worktree subject diff. The spec remained `67ac1d5cdf530e5a1a13680e6376f5f05465297c474a447714e0acc14e246d4d`. Final clone HEAD and clean status matched the named candidate; the driver ceased exit 0. Original records/renderer hashes remain those in the first drill block. Complete actual diffs, logs and restoration hashes remain retained in the lane-named clone scratch; the earlier 13 plus 7 drills remain evidence at their own named candidates. No independent approval is claimed from these self-drills.
+
+
+### First-rejection repair criteria echo
+
+The same original attempt adopted the exact descendant verifier body/verdict tip `c32a7b0549cb276f8328da8ef4c972ff24e1e9df` by verified clean fast-forward. The REJECTED verdict remains unchanged. Its two BOM compatibility findings are the bounded repair; the frozen contract, original seed and six source/spec owners are unchanged.
+
+- [x] Preserve exact captured BOM bytes in candidate text while retaining eager frozen identities, path absence and detached evaluation.
+- [x] Preserve strict raw/board/context/admission decoding behavior and cold-import boundaries; change only the additive evaluator's retained text.
+- [x] Preserve canonical diagnostics, semantic historical-debt comparison and fatal invalid-UTF8 refusal.
+- [x] Preserve the legacy renderer's BOM refusal for both captured and overlay documents through the two exact decoding corrections.
+- [x] Preserve the evaluator's no-command/no-write/no-authority behavior.
+- [x] Reuse committed VC1/VC2 and qualify all twelve evaluator bodies plus legacy renderer controls before the required range grade.
+- [ ] At a committed fixed candidate, separately remove each correction in a new owned independent local clone, require the named semantic RED, prove exact SHA256 restoration, and retain fresh independent verification as owed.
+
+
+
+### First-rejection correction qualification
+
+Applied only the two exact corrections assigned by the retained verdict: candidate materialization obtains text from the already validated retained bytes with `bytes.toString("utf8")`; overlay decoding retains fatal UTF8 validation and sets `ignoreBOM: true`. The strict committed reader's helper and the filesystem renderer are unchanged. The evaluator SHA256 is `324a59095b3720cd8648c23871732a352814307094339e9e49cee9e4f9de033e`, equal to the independent proof comparison point; equality is not a substitute for this lane's qualification. The unchanged VC1/VC2 spec SHA256 is `ef4b7115e0c7efbfb4521b2e381072772ce8d28fa9d08bdbd6c7b987bf29e1b7`.
+
+The failure class is normalization of retained bytes at additive UTF8 decoding seams. A bounded sweep inspected the two evaluator seams, the existing strict UTF8 helper and the filesystem renderer. Its exact old-site searches each find one hit in the adopted production reference and zero after correction; the two fixed sites each occur once. The unchanged strict helper deliberately retains its old behavior. No other decoding, validation, rendering or authority semantics were changed.
+
+Normal ignored parser and app builds exited 0 before qualification. Against the adopted c32 production bytes, with only repair-planning notes dirty, the twelve-body evaluator run exited 1: the original ten passed and only VC1/VC2 failed their named acceptance assertions. After correction, typecheck exited 0 and all twelve bodies passed in 9.4 seconds. The legacy-renderer invocation accidentally passed its grep option to npm, expanding the selection to all 74 docs-input bodies. Actual Playwright exit was 0, all 74 passed in 1.4 minutes, including both intended renderer controls. The wrapper's expected-two-body assertion then exited 1; this is a retained selection/count error, not a product failure or a required-range grade. No repeat was run.
+
+The original rejected verdict and all prior readings remain unchanged. This committed correction still owes its own separate correction-removal self-drills, original seed-to-final required range and fresh independent verification. The approved seed remains `520d30663dd0c76d90d923da087d1494267d36a0`; the old GREEN does not qualify this repaired tree.
+
 
 ## Verdicts
 

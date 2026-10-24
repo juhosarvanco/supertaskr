@@ -98,7 +98,7 @@ export function captureRecordCandidateInputs(options) {
     if (role !== "product" && role !== "records") refuse("records-input-role-invalid", String(role));
     safePath(relativePath);
     const selected = captured.read(role, relativePath);
-    inputs.set(key(role, relativePath), { ...selected, type: "blob", bytes: selected.bytes });
+    inputs.set(key(role, relativePath), { ...selected, content: selected.bytes.toString("utf8"), type: "blob", bytes: selected.bytes });
   }
   for (const input of [...RECORD_INDEX_INPUTS, { role: /** @type {Role} */ ("records"), path: INDEX_RULING.file }, ...(options.requiredInputs ?? [])]) retain(input.role, input.path);
   for (const relativePath of paths.records) {
@@ -397,7 +397,7 @@ export function evaluateRecordCandidate(captured, overlay) {
         if (!(operation.bytes instanceof Uint8Array)) refuse("records-overlay-bytes-required", relativePath);
         const bytes = Buffer.from(operation.bytes);
         let content;
-        try { content = new TextDecoder("utf-8", { fatal: true }).decode(bytes); }
+        try { content = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes); }
         catch (err) { refuse("records-encoding-invalid", `${relativePath}: ${message(err)}`); }
         inputs.set(key("records", relativePath), { role: "records", path: relativePath, mode: /** @type {string} */ (operation.mode), type: "blob", blobId: "", content, bytes });
         paths.add(relativePath);
