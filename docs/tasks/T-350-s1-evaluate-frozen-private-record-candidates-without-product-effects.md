@@ -47,7 +47,7 @@ Source-based prospective owners are the six literal paths in touches. Existing s
 - [x] Render the existing ruled index set from the same candidate with explicit product-input origins and captured chapter enumeration; preserve legacy byte output and refusals.
 - [x] Demonstrate detached evaluation performs no commands/writes or authority/product actions after materialization, on success and failure.
 - [x] Qualify actual exported entries with separate repositories, origin decoys, unsupported entries, historical debt, overlay chapters and removed live roots; run strict-reader/default-renderer public-caller regressions.
-- [ ] Preserve independent verification, decisive actual-site drills with SHA256 restoration and honest limitations; deliver no persistence, activation or inherited T351/T353 exception.
+- [x] Preserve independent verification, decisive actual-site drills with SHA256 restoration and honest limitations; deliver no persistence, activation or inherited T351/T353 exception.
 
 
 ### Implementation
@@ -59,6 +59,38 @@ Added `captureRawCommittedInputs` beneath the unchanged strict capture path, plu
 Exploratory checks before the committed drill candidate: package setup/build succeeded; initial evaluator qualification 6/6; strict capture, default renderer, planning context, admission and reservation regressions 135/135; after hardening, evaluator and strict records regressions 17/17 and e2e typecheck passed. These are development readings, not the final committed grade. Independent verification, persistence, census separation, app composition and activation remain external duties; no T351/T353 exception or retry was used.
 
 In-fence follow-through: none outside the stated acceptance criteria. Generated census/index/graph artifacts outside this fence are not written by this lane; currency is reported for the integrator.
+
+### Self-drill block at implementation candidate `4bc195009cf8e2808f92d0da9a5d4a761c2db5f6`
+
+An owned independent local clone, detached at the named candidate, was built and baseline-tested. Its Git common directory differs from the source; no alternates exist, and all 4831 matching object files were checked for independent inodes. The initial clone at `150bd3320526749d6fdb22f049abe41afff6e8dd` was unused setup and remains separate. The drill-location ask was answered and acknowledged before relevant work. No shared worktree, source lane, authority or T353 proof was mutated.
+
+Every row below was planted at the actual implementation/data site, read back as a diff, and run against the named body only: each command exited 1 with exactly one failed body. Baseline and restored runs each passed all six bodies, exit 0. All mutations were restored exactly, with the subject's full SHA256 equal before/after and an empty explicit HEAD-to-worktree subject diff. Complete attempted diffs, command logs and per-mutation hashes are retained in the lane-named OS scratch `drill-T-350-s1-final-pii1ml3f`.
+
+| Mutant | Actual changed property | New body |
+|---|---|---|
+| M1 | Product capability origin changed to records | frozen candidates |
+| M2 | Raw capture re-enabled strict eager card rejection | historical debt |
+| M3 | Unusable retained target finding disabled | historical debt |
+| M4 | Full issue identities collapsed to kind/id | failure identities |
+| M5 | Reference occurrence consumption disabled | failure identities |
+| M6 | Regular overlay mode guard removed | input modes |
+| M7 | Non-tree namespace refusal disabled | input modes |
+| M8 | Captured chapter enumeration removed | captured renderer |
+| M9 | Malformed input byte identity removed | historical debt |
+| M10 | Unavailable reference-space finding disabled | historical debt |
+| M11 | Eager content replaced by lazy committed reader | frozen candidates |
+| M12 | Write inserted at pure exported evaluation entry | effect boundary |
+| M13 | Command inserted at pure exported evaluation entry | effect boundary |
+
+Restoration SHA256: `records.mjs` = `c6076c10310728507edf04a8f5a2d030542a663121c08a1dc9267bfeb1812aba`; `docs-scan.mjs` = `d8d40fce8ce3ea865986e62dcc30be5ba3072d3df2923b389c3aa9413801068e`; `records-validation.mjs` = `c1b85d6b8b54e74d55a8ef715e15c8311ac84bab45cd17846f9f41a589deacce`. The spec stayed at `d5fab36e6d68bda8d829b8d43150e3b2918f7034d1d19aea072c90260abfcfe9`. M12/M13 show the command/write controls fail against an implementation that actually violates purity, with all effects confined to fixtures. These are T350s1 self-drills; independent verification is still owed.
+
+### Required reading and limits before the final grade
+
+The range from seed `520d30663dd0c76d90d923da087d1494267d36a0` derives app, parser and e2e with 30 spec files, no unplaceable path and no Rust leg. The final substantive notes commit carries the same implementation/spec bytes as the drill candidate. It will be graded once through the blessed range runner; actual graded ref, counts and exits are reported at handoff. The last status-only verifying commit is exempt and will re-run nothing.
+
+Standing gate derivation over the five changed paths: docs gate FIRES for the task notes (exit 1 meaning suites owed, not a failed suite); graph regeneration is integrator-owned because the new spec is TypeScript; boot and method eval triggers do not fire. Docs gate reports no unlinked root or package-relative site and valid live-card frontmatter. Currency check at the drill candidate exits 1 because CAPABILITIES is stale: 139631 committed bytes versus 140407 freshly derived bytes. It was not regenerated inside this fence. Index rendering remains covered by the existing default-renderer regressions. The integrator must regenerate the generated census/graph outputs at the merged tree.
+
+Brief corrections: the generated template's Claude default is not the actual gpt-6.1-sol/xhigh assignment; the keeper graded nothing when new-file ownership was unplaceable, so standard tier is the independently derived classification, not a keeper pass. The standing read is STATE then INDEX, and only the role's ceremony-table addition is read from TASK-FORMAT. Every subsequent shell explicitly entered the armed source resource. The source worktree started without installs/builds and the documented setup order was performed. No other owner or additional approval was manufactured.
 
 ## Verdicts
 
