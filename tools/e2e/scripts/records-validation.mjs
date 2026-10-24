@@ -151,11 +151,15 @@ function diagnostics(inputs) {
     const targets = space.filter((t) => t.id === id);
     const unavailable = field === "feature" && space.length === 0
       ? canonical.filter((i) => i.file === "docs/ROADMAP.md" && ["roadmap-error", "io-error"].includes(i.kind)) : [];
-    if (unavailable.length) out.push({ kind: "unavailable-reference-context", file, field, id, context: unavailable,
+    // One derived finding per canonical failure, retaining its complete participants.
+    // Removing another independent failure must not manufacture a new aggregate identity.
+    for (const context of unavailable) out.push({ kind: "unavailable-reference-context", file, field, id, context: [context],
       message: `${file}: ${field} names '${id}' but its canonical reference space is unavailable` });
-    const affected = targets.map((target) => ({ file: target.file, id: target.id, issues: debt(target) })).filter((t) => t.issues.length > 0);
-    if (affected.length) out.push({ kind: "unusable-reference", file, field, id, targets: affected,
-      message: `${file}: ${field} names '${id}' whose retained target has canonical validation debt` });
+    for (const target of targets) for (const issue of debt(target)) {
+      out.push({ kind: "unusable-reference", file, field, id,
+        targets: [{ file: target.file, id: target.id, issues: [issue] }],
+        message: `${file}: ${field} names '${id}' whose retained target has canonical validation debt` });
+    }
   }
   for (const task of model.tasks) {
     for (const id of task.blockedBy) reference(task.file, "blocked_by", id, model.tasks);
@@ -165,6 +169,23 @@ function diagnostics(inputs) {
     for (const id of component.dependsOn) reference(component.file, "depends_on", id, model.components ?? []);
   }
   return out;
+}
+/** Copy rejected metadata too: result freezing must never freeze caller objects.
+ * Valid scalar metadata keeps its exact identity spelling. Unsupported data is
+ * represented by detached JSON values; byte arrays retain an exact digest.
+ * @param {any} value @returns {any}
+ */
+function metadata(value) {
+  if (value === null || value === undefined || ["string", "boolean", "number"].includes(typeof value)) return value;
+  try {
+    const encoded = JSON.stringify(value, (_key, item) => {
+      if (item instanceof Uint8Array) return { invalidMetadataType: "Uint8Array", sha256: digest(item), byteLength: item.byteLength };
+      if (typeof item === "bigint") return { invalidMetadataType: "bigint", value: item.toString() };
+      if (["symbol", "function"].includes(typeof item)) return { invalidMetadataType: typeof item };
+      return item;
+    });
+    return encoded === undefined ? { invalidMetadataType: typeof value } : JSON.parse(encoded);
+  } catch (err) { refuse("records-overlay-metadata-invalid", message(err)); }
 }
 /** Multiset subtraction, not counts or broad kind/id comparisons.
  * @param {Diagnostic[]} left @param {Diagnostic[]} right
@@ -198,6 +219,8 @@ export function evaluateRecordCandidate(captured, overlay) {
   const failures = [];
   /** @type {any[]} */
   const operations = [];
+  /** @type {any} */
+  let suppliedOverlay = null;
   /** @type {string|undefined} */
   let beforeIndex, candidateIndex;
   try {
@@ -208,6 +231,9 @@ export function evaluateRecordCandidate(captured, overlay) {
   }
   try {
     if (!Array.isArray(overlay)) refuse("records-overlay-invalid", "overlay must be an explicit array");
+    suppliedOverlay = overlay.map((op) => ({ operation: metadata(op?.operation), path: metadata(op?.path),
+      type: metadata(op?.type), mode: metadata(op?.mode),
+      ...(op?.bytes instanceof Uint8Array ? { sha256: digest(op.bytes) } : { bytes: typeof op?.bytes }) }));
     const seen = new Set();
     for (const operation of overlay) {
       const relativePath = safePath(operation?.path);
@@ -245,8 +271,6 @@ export function evaluateRecordCandidate(captured, overlay) {
   const introducedDiagnostics = difference(candidateDiagnostics, baselineDiagnostics);
   const resolvedDiagnostics = difference(baselineDiagnostics, candidateDiagnostics);
   const accepted = failures.length === 0 && introducedDiagnostics.length === 0;
-  const suppliedOverlay = Array.isArray(overlay) ? overlay.map((op) => ({ operation: op?.operation, path: op?.path,
-    type: op?.type, mode: op?.mode, ...(op?.bytes instanceof Uint8Array ? { sha256: digest(op.bytes) } : { bytes: typeof op?.bytes }) })) : null;
   const identity = freeze({ baseline: captured.digest, overlay: suppliedOverlay, applied: operations,
     candidateInputs: [...inputs.values()].map((i) => ({ role: i.role, path: i.path, type: i.type, mode: i.mode, sha256: digest(i.bytes) }))
       .sort(compareInputs), paths: [...paths].sort() });

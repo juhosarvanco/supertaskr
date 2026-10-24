@@ -112,12 +112,25 @@ test("raw historical malformed debt survives canonical comparison while repair s
     expect(dependency.accepted).toBe(false);
     expect(dependency.introducedDiagnostics).toEqual(expect.arrayContaining([expect.objectContaining({ kind: "unusable-reference", file: CARD, field: "blocked_by", id: "T-903" })]));
     expect(dependency.outputs).toBeUndefined();
+    const partiallyInvalid = card("T-903", "priority: wrong\nmilestone: wrong\n").replace("priority: 1\n", "").replace("milestone: 1\n", "");
+    put(fx.records, historical, partiallyInvalid); put(fx.records, CARD, card("T-901", "blocked_by: [T-903]\n"));
+    fx.options.recordsRevision = commit(fx.records, "two historical target failures with an existing reference");
+    const partialCapture = accepted(fx);
+    const partial = evaluateRecordCandidate(partialCapture, [edit(historical, partiallyInvalid.replace("milestone: wrong", "milestone: 1"))]);
+    expect(partial.accepted).toBe(true); expect(partial.introducedDiagnostics).toEqual([]);
+    const swappedTargetDebt = evaluateRecordCandidate(partialCapture, [edit(historical, partiallyInvalid.replace("milestone: wrong", "milestone: 1").replace("size: M", "size: wrong"))]);
+    expect(swappedTargetDebt.accepted).toBe(false);
+    expect(swappedTargetDebt.introducedDiagnostics).toEqual(expect.arrayContaining([expect.objectContaining({ kind: "invalid-field", file: historical, field: "size" })]));
     put(fx.records, "docs/ROADMAP.md", doc("Historical roadmap without a backbone"));
     fx.options.recordsRevision = commit(fx.records, "unavailable feature reference space");
     const contextDebt = accepted(fx);
     const newFeature = evaluateRecordCandidate(contextDebt, [edit(CARD, card().replace("F-01", "F-02"))]);
     expect(newFeature.accepted).toBe(false);
     expect(newFeature.introducedDiagnostics).toEqual(expect.arrayContaining([expect.objectContaining({ kind: "unavailable-reference-context", file: CARD, field: "feature", id: "F-02" })]));
+    put(fx.records, "docs/ROADMAP.md", doc("Historical roadmap without a backbone") + "\n<!-- unclosed");
+    fx.options.recordsRevision = commit(fx.records, "two unavailable reference context failures");
+    const partialContext = evaluateRecordCandidate(accepted(fx), [edit("docs/ROADMAP.md", doc("Historical roadmap without a backbone"))]);
+    expect(partialContext.accepted).toBe(true); expect(partialContext.introducedDiagnostics).toEqual([]);
   } finally { removeGitFixture(fx.dir, "candidate debt T-350-s1"); }
 });
 
@@ -151,6 +164,17 @@ test("failure identities retain incoming references duplicate participants occur
     const replacedParticipant = evaluateRecordCandidate(duplicate, [{ operation: "delete", path: "docs/tasks/T-901-duplicate.md" }, edit("docs/tasks/T-901-third.md", card(), "add")]);
     expect(replacedParticipant.accepted).toBe(false);
     expect(third.accepted).toBe(false); expect(third.introducedDiagnostics).toEqual(expect.arrayContaining([expect.objectContaining({ kind: "duplicate-id", files: expect.arrayContaining(["docs/tasks/T-901-third.md"]) })]));
+    put(fx.records, SECOND, card("T-902", "blocked_by: [T-901]\n")); put(fx.records, "docs/tasks/T-901-third.md", card());
+    fx.options.recordsRevision = commit(fx.records, "three historical duplicate participants with incoming references");
+    const duplicateDebt = accepted(fx);
+    const removal = evaluateRecordCandidate(duplicateDebt, [{ operation: "delete", path: "docs/tasks/T-901-third.md" }]);
+    expect(removal.accepted).toBe(true); expect(removal.introducedDiagnostics).toEqual([]);
+    const fourth = evaluateRecordCandidate(duplicateDebt, [edit("docs/tasks/T-901-fourth.md", card(), "add")]);
+    expect(fourth.accepted).toBe(false);
+    expect(fourth.introducedDiagnostics).toEqual(expect.arrayContaining([expect.objectContaining({ kind: "duplicate-id", files: expect.arrayContaining(["docs/tasks/T-901-fourth.md"]) })]));
+    const newDuplicateDependency = evaluateRecordCandidate(duplicateDebt, [edit("docs/tasks/T-904-new-reference.md", card("T-904", "blocked_by: [T-901]\n"), "add")]);
+    expect(newDuplicateDependency.accepted).toBe(false);
+    expect(newDuplicateDependency.introducedDiagnostics).toEqual(expect.arrayContaining([expect.objectContaining({ kind: "unusable-reference", file: "docs/tasks/T-904-new-reference.md", id: "T-901" })]));
   } finally { removeGitFixture(fx.dir, "candidate identities T-350-s1"); }
 });
 
@@ -168,6 +192,17 @@ test("candidate input modes paths operations and missing selected context fail e
       const r = evaluateRecordCandidate(captured, [operation as any]); expect(r.accepted).toBe(false); expect(r.failures.length).toBeGreaterThan(0);
     }
     expect(evaluateRecordCandidate(captured, [edit(CARD, card()), edit(CARD, card())]).failures[0]?.code).toBe("records-overlay-duplicate-path");
+    const typedMetadata = new Uint8Array([1]);
+    const typedRejection = evaluateRecordCandidate(captured, [{ operation: "edit", path: "docs/INDEX.md", type: typedMetadata } as any]);
+    expect(typedRejection.accepted).toBe(false); expect(typedRejection.failures[0]?.code).toBe("records-overlay-path-unselected");
+    expect([...typedMetadata]).toEqual([1]);
+    const plainMetadata = { nested: { marker: 1 } };
+    for (const field of ["type", "mode"]) {
+      const rejected = evaluateRecordCandidate(captured, [{ ...edit(CARD, card()), [field]: plainMetadata } as any]);
+      expect(rejected.accepted).toBe(false); expect(rejected.failures[0]?.code).toBe("records-overlay-not-regular");
+      expect(Object.isFrozen(plainMetadata)).toBe(false); expect(Object.isFrozen(plainMetadata.nested)).toBe(false);
+    }
+    plainMetadata.nested.marker = 2; expect(plainMetadata.nested.marker).toBe(2);
     expect(() => evaluateRecordCandidate({} as any, [])).toThrow(/records-candidate-not-materialized/);
     expect(() => captureRawCommittedInputs({ ...fx.options, productRoot: undefined } as any)).toThrow(/records-explicit-inputs-required/);
     expect(() => captureRawCommittedInputs(fx.options).paths("decoy" as any)).toThrow(/records-input-role-invalid/);
