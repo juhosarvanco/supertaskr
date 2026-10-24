@@ -13,6 +13,8 @@ touches: [tools/e2e/scripts/gate-closed-attribution-recovery.mjs, tools/e2e/test
 builder: gpt-6.1-sol@xhigh
 verifier: gpt-6.1-sol@xhigh
 review: independent
+built_by: unknown@01a16f04-a248-7cc3-878b-cd2e5b8f1679
+verified_by: unknown@01a16f5c-4f6c-78e1-9e78-e6253e6df1d6
 ---
 
 # Reconcile exact later attribution holds on a closed execution

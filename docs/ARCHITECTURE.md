@@ -88,6 +88,9 @@ ADR-014/015).
   Checked native transaction recovery (T-351-s1) revalidates exact authority,
   ceased owners, physical scope and current admission before disposition;
   unknown callback evidence remains recorded.
+  Closed-attribution recovery (T-356) separately revalidates exact closed attempts,
+  retained incident evidence and current scope before atomic per-file disposition;
+  historical use requires its own owner authorization.
   Complete qualified writer-set reservations (T-351) use that shared transaction;
   split native execution remains refused.
   CLI adapters remain a separate route; cross-harness work is deferred.
