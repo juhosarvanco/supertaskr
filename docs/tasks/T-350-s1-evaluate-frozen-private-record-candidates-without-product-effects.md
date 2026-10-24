@@ -118,6 +118,41 @@ A fresh owned local clone detached at this committed correction had an independe
 
 Each planted source diff was retained and read back; after every mutation the source SHA256 matched the original and the explicit HEAD-to-worktree source diff was empty. Final clone HEAD and clean status matched the candidate. Correction evidence is retained in lane-named OS scratch `drill-T-350-s1-correction-4_ukhg2x`; the driver ceased exit 0. Validator restoration SHA256 is `878aec762de7d363556b2a0e974684088246b98cdd663c58735ecb6fb3c4ac61`; unchanged corrected spec SHA256 is `4c1d98a263cc80f0033fc9aefaf2742917265cee8fd2154ce65cf60e52f8f058`. The original records and renderer hashes remain those in the earlier drill block. These are self-qualification, not independent verification.
 
+### Typed causal correction at `b3a0a9636ff0f45cbdd07c751c538ef9a443bcf7`
+
+A further actual exported-entry witness established that deleting the first of three historical duplicate participants changes canonical first-anchor pairs AB/AC into BC. The evaluator incorrectly reported BC and its existing incoming reference as introduced debt. The b3cd required run was therefore stopped through its owned normal lifecycle: parser 469 and app 1171 passed, but e2e remained an interrupted 976-passing observation, with REFUSED `exit=-1`, `bodies=0`, `reason=zero-bodies`; aggregate exit 3. All owned processes, including the orphan worker and web group, actually ceased before repair; SIGTERM completed and the guarded escalation sent no SIGKILL. Neither interrupted e2e run supplies a completed baseline or an exact-candidate GREEN.
+
+The normal anchor-grading ask was answered and acknowledged. The final substantive tree still owes the blessed approved seed-to-final range, not a delta-only composition over the interrupted b3cd result. No waiver, fence expansion, parser API edit or T353 retry was used.
+
+Typed-source inventory distinguished duplicate-id (space/id/first-file pair), aliased-id (space/aligned participant group), dependency-cycle (field/aligned SCC), and ambiguous-mapping (already every actual component/pattern pair). Feature records expose file/id/name/description/line. Canonical diagnostic display remains intact. Comparison uses complete typed participant multisets for established duplicate/alias groups, supported by ONE complete historical group, and actual directed cyclic reference occurrences from reported SCCs. Feature payloads and repeated declarations remain distinct; line is provenance rather than semantic identity. All ordinary canonical issues, including nearMiss hints, assignment readings and ambiguous-mapping patterns, retain their complete identities and multiplicities. No prose is parsed and no grammar is copied.
+
+Reference occurrences are compared independently by exact source/field/ID so reduced target/context debt cannot pay for another dependency occurrence. Target membership and normalized debt support remain explicit. Shared derived display is coalesced per actual canonical issue within each reference occurrence; individual group payload and occurrence facts are retained. Unit-specific reporting selects the actual duplicate/alias/cycle cause rather than an unrelated ordinary target issue. Participant lookup and shared feature context avoid quadratic duplicate-pair and reference/target/diagnostic expansion.
+
+A separate actual b3cd-equivalent exported-entry witness confirmed that a rejected null overlay falsely called two baseline findings resolved without evaluating a candidate. Resolved reporting now requires completed candidate diagnostics. A later rendering refusal still retains genuine evaluated findings; it does not erase them or accept output.
+
+At the named correction source, e2e typecheck exits 0 and the ten evaluator bodies pass (11.1 seconds). Their retained 48 exported semantic cases comprise 25 positives and 23 negatives, all matching: first/middle/last record removals, retained incoming references, alias and SCC shrink, feature line shifts/reordering, identical declaration multiplicity, replacement/fourth participants, new references, shrinking-debt plus extra reference occurrences, ordinary issue swaps, and mixed ordinary/group cause reporting. Earlier typed/plain metadata controls pass; an old-versus-corrected same-root/revision foundation edit confirms unchanged valid identity, digest and nonempty output bytes. These are focused readings before the required final grade, not a replacement for it. Preliminary packet-only reviews informed the repair; fresh independent phase two remains owed.
+
+### Typed-cause self-drills at `b3a0a9636ff0f45cbdd07c751c538ef9a443bcf7`
+
+The owned independent local clone `drill-T-350-s1-semantic-cdi5o80a` was detached at this commit. Common directories differ, no alternates exist, and 4864 matching object files have independent inodes. Its own parser/app/e2e setup completed in order, all exits 0. Baseline and restored runs each passed all ten bodies, exit 0. Every following actual-site mutation was diffed/read back, ran only its named body, exited 1 with exactly one failed body, and was restored exactly before the next mutation:
+
+| Mutant | Actual property removed | Observed failing control |
+|---|---|---|
+| S1 | Duplicate/alias causal normalization | First task duplicate participant removal |
+| S2 | Duplicate/alias causal normalization | Historical task alias shrink |
+| S3 | Feature causal normalization | Feature declaration payload swap |
+| S4 | SCC cyclic-reference causes | First SCC participant removal with retained references |
+| S5 | Record participant file identity | Same-count replacement participant |
+| S6 | Feature declaration payload identity | Same-count feature payload swap |
+| S7 | Treat feature line as semantic identity | First feature declaration removal |
+| S8 | Consume matched occurrence counts | Shrinking duplicate group plus extra reference occurrence |
+| S9 | Candidate-completion resolution guard | Invalid overlay must resolve no unevaluated debt |
+| S10 | Mark diagnostics complete only after rendering | Late rendering refusal must retain evaluated repairs |
+| S11 | Unit-specific reference cause selection | Mixed ordinary/group debt must name duplicate cause |
+| S12 | Complete ordinary issue identity | Same-target/new-source issue swap |
+
+Each mutation's full SHA256 restored to `a76cc86e84cdbd91e47227251c9267280b527d1d24da07bec58d6efb3bb6b615`, with an empty explicit HEAD-to-worktree subject diff. The spec remained `67ac1d5cdf530e5a1a13680e6376f5f05465297c474a447714e0acc14e246d4d`. Final clone HEAD and clean status matched the named candidate; the driver ceased exit 0. Original records/renderer hashes remain those in the first drill block. Complete actual diffs, logs and restoration hashes remain retained in the lane-named clone scratch; the earlier 13 plus 7 drills remain evidence at their own named candidates. No independent approval is claimed from these self-drills.
+
 ## Verdicts
 
 <!-- Fresh independent verifier appends here; no verdict exists. -->
