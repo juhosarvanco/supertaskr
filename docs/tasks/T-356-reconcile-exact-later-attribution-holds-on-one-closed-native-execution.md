@@ -6,7 +6,7 @@ milestone: 4
 priority: 1
 size: M
 tier: guarded
-status: building
+status: verifying
 suggested_by: codex/gpt-6.1-sol @architect
 blocked_by: []
 touches: [tools/e2e/scripts/gate-closed-attribution-recovery.mjs, tools/e2e/tests/closed-attribution-recovery.spec.ts]
