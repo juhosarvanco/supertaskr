@@ -443,6 +443,35 @@ fn product_only_attempts_zero_private_operations_with_live_controls() {
     let fx = Fixture::new();
     let plain = resolver();
     fx.bind(&plain, "HEAD");
+    assert!(plain.workspace_binding_present(&fx.product).unwrap());
+    assert_eq!(
+        development(&plain, &fx.product).association().status,
+        AssociationStatus::Verified
+    );
+    // A denial cannot manufacture absence and hide an explicit binding.
+    struct MissingBinding {
+        path: PathBuf,
+        hits: RefCell<usize>,
+    }
+    impl AccessObserver for MissingBinding {
+        fn before(&self, operation: AccessOperation, path: &Path) -> io::Result<()> {
+            if operation == AccessOperation::Metadata && path == self.path {
+                *self.hits.borrow_mut() += 1;
+                Err(io::Error::new(io::ErrorKind::NotFound, "binding denial"))
+            } else {
+                Ok(())
+            }
+        }
+    }
+    let missing = MissingBinding {
+        path: fx.product.join(WORKSPACE_BINDING_REL_PATH),
+        hits: RefCell::new(0),
+    };
+    let denied = WorkspaceResolver::with_observer(Some(&missing))
+        .unwrap()
+        .resolve_workspace(&fx.product, WorkspaceMode::Development, "HEAD");
+    assert_eq!(*missing.hits.borrow(), 1);
+    error(denied, "binding-unreadable");
     let audit = Audit {
         private: fx.records.clone(),
         deny: true,
@@ -537,45 +566,47 @@ fn product_only_attempts_zero_private_operations_with_live_controls() {
     struct One {
         root: PathBuf,
         operation: AccessOperation,
+        kind: io::ErrorKind,
         hits: RefCell<usize>,
     }
     impl AccessObserver for One {
         fn before(&self, op: AccessOperation, path: &Path) -> io::Result<()> {
             if op == self.operation && path.starts_with(&self.root) {
                 *self.hits.borrow_mut() += 1;
-                Err(io::Error::new(
-                    io::ErrorKind::PermissionDenied,
-                    "one-operation trap",
-                ))
+                Err(io::Error::new(self.kind, "one-operation trap"))
             } else {
                 Ok(())
             }
         }
     }
-    for operation in [
-        AccessOperation::Metadata,
-        AccessOperation::Read,
-        AccessOperation::Canonicalize,
-        AccessOperation::Git,
-    ] {
-        let one = One {
-            root: fx.records.clone(),
-            operation,
-            hits: RefCell::new(0),
-        };
-        let r = WorkspaceResolver::with_observer(Some(&one)).unwrap();
-        let w = r
-            .resolve_workspace(&fx.product, WorkspaceMode::ProductOnly, "HEAD")
-            .unwrap();
-        error(
-            resource(&r, &w, RepositoryRole::Records, "safe/new.txt"),
-            "resource-records-unverified",
-        );
-        assert_eq!(*one.hits.borrow(), 0);
-        assert!(r
-            .resolve_workspace(&fx.product, WorkspaceMode::Development, "HEAD")
-            .is_err());
-        assert!(*one.hits.borrow() > 0);
+    for kind in [io::ErrorKind::PermissionDenied, io::ErrorKind::NotFound] {
+        for (operation, code) in [
+            (AccessOperation::Metadata, "association-unreadable"),
+            (AccessOperation::Read, "association-unreadable"),
+            (AccessOperation::Canonicalize, "records-root-unreadable"),
+            (AccessOperation::Git, "records-repository-unavailable"),
+        ] {
+            let one = One {
+                root: fx.records.clone(),
+                operation,
+                kind,
+                hits: RefCell::new(0),
+            };
+            let r = WorkspaceResolver::with_observer(Some(&one)).unwrap();
+            let w = r
+                .resolve_workspace(&fx.product, WorkspaceMode::ProductOnly, "HEAD")
+                .unwrap();
+            error(
+                resource(&r, &w, RepositoryRole::Records, "safe/new.txt"),
+                "resource-records-unverified",
+            );
+            assert_eq!(*one.hits.borrow(), 0);
+            error(
+                r.resolve_workspace(&fx.product, WorkspaceMode::Development, "HEAD"),
+                code,
+            );
+            assert!(*one.hits.borrow() > 0);
+        }
     }
 }
 

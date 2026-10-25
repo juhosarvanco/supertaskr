@@ -230,10 +230,11 @@ impl<'a> WorkspaceResolver<'a> {
         }
     }
     fn stat(&self, path: &Path, label: &str) -> Result<Option<Metadata>> {
-        let result = self
-            .before(AccessOperation::Metadata, path)
-            .and_then(|_| fs::symlink_metadata(path));
-        match result {
+        // Only the filesystem can establish absence. An observer denial,
+        // including NotFound, must never manufacture a missing binding.
+        self.before(AccessOperation::Metadata, path)
+            .map_err(|err| finding(format!("{label}-unreadable"), err))?;
+        match fs::symlink_metadata(path) {
             Ok(stat) => Ok(Some(stat)),
             Err(err) if err.kind() == io::ErrorKind::NotFound => Ok(None),
             Err(err) => Err(finding(format!("{label}-unreadable"), err)),
