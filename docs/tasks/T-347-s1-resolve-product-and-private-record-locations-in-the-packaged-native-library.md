@@ -6,7 +6,7 @@ milestone: 4
 priority: 1
 size: L
 tier: guarded
-status: building
+status: verifying
 suggested_by: codex/gpt-6.1-sol @architect
 blocked_by: [T-347]
 touches: [app/src-tauri/src/workspace.rs, app/src-tauri/src/lib.rs, app/src-tauri/src/churn.rs, app/src-tauri/tests/workspace.rs]
