@@ -41,6 +41,34 @@ Only a portable association is compared; it detects accidental mismatches and au
 
 Not built. Choose the finite idiomatic native types against the complete delivered Node contract; no owner product decision is reserved over routine signatures. The denied-private-I/O observation seam must be justified by the implementation without environment bypasses or a second policy engine. A crate-visible extraction may generalize shared process plumbing while preserving the old churn call's fixed-argument contract. No additional source path is implicitly approved. Existing executable validation checks shape and executability, not signatures or ownership; preserve that honest boundary. The coordinator read the complete existing Git-driver functions and production callers, the relevant program-validation and login-shell functions, environment removal list and affected regression bodies. The helper is reusable within this fence without presuming an existing dynamic-operand interface.
 
+### Executor criteria echo — 2026-10-25, before implementation
+
+- [x] Export the real finite native resolver from the production library without startup effects, webview commands or write authority.
+- [x] Preserve absent-binding colocation, exact explicit configuration validation and selected product identity; product-only leaves private locations unverified and never probes them.
+- [x] Validate distinct private repository and contained association against the selected complete normalized product root history, refusing shallow, grafted and incomplete history while ignoring replacements.
+- [x] Resolve explicit roles or unambiguous legacy mappings with stable source/rule keys; validate syntax and physical containment against Git controls and runtime aliases for existing and new locations.
+- [x] Preserve checkout-local runtime semantics and reuse the trusted fixed executable and sanitized Git plumbing with finite read-only operations; perform no product writes or activation.
+- [x] Qualify the actual exports on owned fixtures, including denied private I/O controls, selected multi-root/object formats, history defects, role/path aliases and trailing newline roots; compare representative outcomes with the actual Node resolver and retain effects evidence.
+- [ ] Hand off exact refs, actual-site drill/restoration evidence and affected-caller results for fresh independent guarded verification; make no claim about later consumers or activation.
+
 ## Verdicts
 
 None.
+
+### Native executor implementation — 2026-10-25
+
+Built the production `workspace` module and registered its public export without startup or IPC wiring. `WorkspaceResolver` fixes one trusted Git executable; typed modes, repository roles, object formats and resolution rules keep the operations finite. A resolved workspace cannot be manufactured through its public fields. `validate_association` is pure over captured JSON and separately measured identity. Results describe locations and explicit limitations only.
+
+The existing churn static-argument entry now calls shared private process plumbing; its resolver, absolute executable gate, sanitized child PATH, removed environment, literal probe/log arguments and output handling are retained. Only the finite workspace dispatcher accepts a validated commit operand. Workspace queries additionally ignore replacement objects, disable lazy fetch, optional locks and commit-graph acceleration, and remove history/config/trace environment redirects. No manifest or dependency changed.
+
+All workspace filesystem reads use the metadata/read/canonicalization wrappers; all workspace Git queries invoke the observer at the actual shared launch boundary. The optional observer can only allow the unchanged operation or deny it with an I/O error. The production API exposes the same implementation to the fixture suite. This is attempted-operation instrumentation, not OS isolation. Trusted executable resolution remains the existing app policy and does not authenticate a binary or its owner.
+
+The integration suite covers the criteria through owned repositories, exact/malformed binding and association, no fallback, both modes and legacy status distinctions, independent private-I/O denial controls for all operation classes, selected non-HEAD multi-root history excluding an unrelated ref, replacements/grafts/shallow/incomplete parents with a real commit graph, actual SHA-1 and SHA-256, explicit and legacy keys/sources, path syntax, existing/new inside/outside symlinks, separate Git and common directories plus physical aliases, runtime aliases, linked checkout discovery and roots ending in space plus newline. Representative native/Node outcomes share those fixture identities, including selected multi-root history, both formats, both modes, existing/new resources and named malformed-binding failures. Non-repository refusal uses an explicit invalid Git control entry so this checkout's enclosing repository cannot act as its fixture.
+
+Real file/ref byte and file-metadata snapshots surround reads; planted file and ref changes demonstrate that the witness can fail. Actual Git-launch denial also demonstrates the process boundary is live. No resolver operation writes fixtures, starts a watcher or activates migration. Invalid native modes/roles and manufactured roots are prevented by types/private fields rather than accepting arbitrary string states.
+
+Development checks are not the graded reading. The first workspace run retained a fixture failure: a directory under the source checkout was correctly reported nested, rather than unavailable. The fixture was corrected, with no resolver relaxation. Later development runs were green. The final original-range grade follows the completed notes. Graph regeneration and dogfood pin reconciliation remain the integration seat's work; this lane will record the actual check rather than write outside its fence.
+
+Detached self-drills follow the public `self-drill-resource` ask and acknowledged answer. The source executor receives no second resource or in-place exception. The coordinator will operate its own detached scratch at the committed candidate, preserve one-sided actual-site failures and per-path SHA256 restoration, and return evidence for executor review. This is separately attributed qualification and does not replace the independent guarded verifier.
+
+No in-fence follow-through outside the accepted resolver behavior was added. Watcher/reducer consumers, frontend, saves/backup, index/genesis adaptation, installed-product independence and final activation remain external obligations. No restricted T-351/T-353 proof was retried. Requested model/effort are supplied by the assignment; actual model usage was not observed.

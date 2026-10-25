@@ -14,6 +14,8 @@ pub mod docs_watch;
 /// the seam is driven directly by tests. src/churn.rs states the four
 /// properties its argv, its environment and its output parser hold.
 pub mod churn;
+/// Read-only repository association and resource locations; no startup or IPC.
+pub mod workspace;
 /// T-126 (C-15's data, C-05's registration): the dispatch surface's Rust
 /// half — the lane reader T-110 built, verified three times, and merged
 /// into nothing.
