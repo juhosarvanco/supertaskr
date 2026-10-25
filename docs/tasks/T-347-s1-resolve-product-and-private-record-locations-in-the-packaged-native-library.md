@@ -122,3 +122,32 @@ Corrected those classifications, retained the resource NUL syntax refusal and fi
 The defect classes are premature classification at a semantic boundary and inherited diagnostic write effects. The sweep compared the binding, selected-commit and resource guards plus the two affected process owners against the first graded ref; it found the targeted binding/commit sites and retained the intentional resource/operand guards. The real trace-file control establishes a capable-of-failing effect witness. This is completion of the existing criteria, with no new owner, criterion, dependency or activation.
 
 A renewed plan carries the original nine body controls plus four controls at the corrected sites, with new frozen source/test hashes. The old detached packet remains evidence about its own candidate only. The coordinator will again operate a separate scratch during an explicit source quiet window; final notes and the new original-range grade follow its actual evidence.
+
+### Renewed self-drill block at the corrected candidate
+
+The coordinator operated the renewed detached controls at `42d554445f1254a9db092072599f7ee5269758ed`, with this source executor's tools/jobs ceased. M1–M9 repeated the preceding table's production-site controls against the corrected bytes, and M10–M13 covered the new boundary/effect assertions:
+
+| Control | Production property removed | Target body |
+| --- | --- | --- |
+| M10 | Product-only preserves a declared absolute private path without an OS probe | `explicit_binding_and_association_never_fall_back` |
+| M11 | NUL commit failure matches Node's commit-unavailable classification | `selected_complete_history_ignores_other_refs_and_replacements` |
+| M12 | Windows device root requires an ASCII alphabetic drive letter | `resources_require_roles_sources_and_safe_physical_locations` |
+| M13 | All inherited Git trace family members are removed, including refs tracing | `trusted_query_environment_is_shared_with_churn` |
+
+All thirteen scoped runs produced exactly 0 passed, 1 failed and 8 filtered, exit 101. The M13 failure was the actual trace file's existence; its positive control independently produced that file with the real Git. The separate non-test inclusion mutant again failed compilation, exit 101, and was not counted as a body kill. The restored final baseline ran nine passed, exit 0, and the restored production build exited 0. The coordinator reports matching frozen hashes after each restoration; retained final hashes match the source executor's actual unchanged production/test bytes:
+
+| Owner | Restored SHA256 at the corrected candidate |
+| --- | --- |
+| `workspace.rs` | `d56a0f606975dd103b7f32cd4bf56e4b5b4ea74e6ee51dca0bdc4eca91c00513` |
+| `churn.rs` | `f7d2f5bd34c31f144379957923832008faf1d15fc5387e0013cb408d46475a38` |
+| `tests/workspace.rs` | `22317431c2e7555851bc0be99b89c049644f3a9231d083a273ecaadaa0543178` |
+
+The returned v2 packet contains the actual mutations/diffs, outputs, restore steps, final summary, later group-cessation result and digest manifest. This executor reviewed the operator-attributed outcomes and verified every retained artifact digest. All actual coordinator groups ceased before source work resumed. The executor accessed only the returned evidence, never that detached scratch. The old packet and old full grade remain historical; thirteen decisive body controls are not an independent verdict or complete assertion-coverage claim. No further source correction remains planned after the completed semantic/parity audit.
+
+### Final source-side pre-grade readings
+
+At corrected production/test candidate `42d554445f1254a9db092072599f7ee5269758ed` (only task notes pending), the refreshed graph check exited 1, STALE: files +2 -0 ~2 and edges +8 -0, exactly the original four native owners. Fresh index totals are 205 files, 2723 symbols and 2571 edges. The source lane changes no graph or dogfood pins; integration checkpoint regeneration remains explicitly owed.
+
+The refreshed boot check on port 15347 exited 0 and printed both actual startup lines: `[supertaskr] project folder:` with this selected lane and `[supertaskr] window "main" created`. The tool stopped its captured process group; a subsequent process-group check found it ceased and the OS holder query found no listener. Port 1420 was queried only by the prescribed read-only OS command. These refreshed readings replace neither the retained old readings nor the final original-range suite grade.
+
+All implementation, correction, negative-control, coordinator drill and scope-limit notes are now complete before the final original-base grade. Only a one-line status stamp is planned after that grade. The source owner hashes remain those of the corrected candidate, and no independent verification, merge, push, CI or migration activation is claimed by this executor.
