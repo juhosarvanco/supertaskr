@@ -482,11 +482,15 @@ impl ResolvedGit {
             "GIT_REPLACE_REF_BASE",
             "GIT_NAMESPACE",
             "GIT_CONFIG_PARAMETERS",
-            "GIT_TRACE", "GIT_TRACE_SETUP", "GIT_TRACE_PERFORMANCE",
-            "GIT_TRACE_PACK_ACCESS", "GIT_TRACE_PACKFILE", "GIT_TRACE_CURL",
-            "GIT_TRACE_SHALLOW", "GIT_TRACE2", "GIT_TRACE2_EVENT", "GIT_TRACE2_PERF",
         ] {
             command.env_remove(key);
+        }
+        // Trace families can write files even for a read-only query. Remove
+        // every inherited member instead of keeping a list that goes stale.
+        for (key, _) in std::env::vars_os() {
+            if key.to_string_lossy().to_ascii_uppercase().starts_with("GIT_TRACE") {
+                command.env_remove(key);
+            }
         }
         // Observe at the actual process boundary, even if a caller later
         // handles the error. No selected-root process can bypass this call.

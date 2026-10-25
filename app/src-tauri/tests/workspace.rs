@@ -385,6 +385,37 @@ fn explicit_binding_and_association_never_fall_back() {
     .unwrap();
     assert_eq!(captured.source, "commit:captured");
     assert!(captured.assurance.unwrap().contains("not authentication"));
+    // Match the actual Node boundary: product-only preserves this declaration
+    // without an OS path operation, while development reports unreadable.
+    fs::remove_file(fx.product.join(WORKSPACE_BINDING_REL_PATH)).unwrap();
+    let mut nul_binding = fx.binding();
+    nul_binding["recordsRoot"] = json!(format!("{}\0declared", fx.records.display()));
+    fx.write_binding(&nul_binding);
+    let oracle = node(&fx.product, "product-only", "HEAD");
+    assert_eq!(oracle["ok"]["recordsRoot"], nul_binding["recordsRoot"]);
+    let only = r
+        .resolve_workspace(&fx.product, WorkspaceMode::ProductOnly, "HEAD")
+        .unwrap();
+    assert_eq!(oracle, json!({"ok": only}));
+    error(
+        r.resolve_workspace(&fx.product, WorkspaceMode::Development, "HEAD"),
+        "records-root-unreadable",
+    );
+    assert_eq!(
+        node(&fx.product, "development", "HEAD"),
+        json!({"error":"records-root-unreadable"})
+    );
+    nul_binding = fx.binding();
+    nul_binding["productRoot"] = json!(format!("{}\0declared", fx.product.display()));
+    fx.write_binding(&nul_binding);
+    error(
+        r.resolve_workspace(&fx.product, WorkspaceMode::ProductOnly, "HEAD"),
+        "product-root-unreadable",
+    );
+    assert_eq!(
+        node(&fx.product, "product-only", "HEAD"),
+        json!({"error":"product-root-unreadable"})
+    );
 }
 
 struct Audit {
@@ -468,7 +499,7 @@ fn product_only_attempts_zero_private_operations_with_live_controls() {
             control.workspace_binding_present(&fx.records),
             "binding-unreadable",
         );
-        error(control.runtime_location(&fx.records), "runtime-unreadable");
+
         #[cfg(unix)]
         if state == "inaccessible" {
             use std::os::unix::fs::PermissionsExt;
@@ -617,7 +648,7 @@ fn selected_complete_history_ignores_other_refs_and_replacements() {
         id
     );
     git(&fx.product, &["replace", "-d", &original]);
-    for commit in ["", "--all", "-h", "HEAD\0"] {
+    for commit in ["", "--all", "-h"] {
         error(
             r.measure_product_identity(&fx.product, commit),
             "product-commit-invalid",
@@ -625,6 +656,14 @@ fn selected_complete_history_ignores_other_refs_and_replacements() {
     }
     error(
         r.measure_product_identity(&fx.product, "unknown-ref"),
+        "product-commit-unavailable",
+    );
+    assert_eq!(
+        node(&fx.product, "identity", "HEAD\0"),
+        json!({"error":"product-commit-unavailable"})
+    );
+    error(
+        r.measure_product_identity(&fx.product, "HEAD\0"),
         "product-commit-unavailable",
     );
     let graft = fx.product.join(".git/info/grafts");
@@ -782,6 +821,21 @@ fn resources_require_roles_sources_and_safe_physical_locations() {
         );
     }
     error(RepositoryRole::parse("runtime"), "resource-role-unknown");
+    let numeric = r
+        .resolve_resource(
+            &w,
+            ResourceRequest {
+                role: Some(RepositoryRole::Records),
+                path: "1:/new.txt",
+                source: Some("commit:captured"),
+            },
+            &LegacyTokenMap::new(),
+        )
+        .unwrap();
+    assert_eq!(
+        node(&fx.product, "resource-numeric-drive", "HEAD"),
+        json!({"ok":numeric})
+    );
     for (path, code) in [
         ("", "resource-absolute-or-empty"),
         ("/absolute", "resource-absolute-or-empty"),
@@ -943,6 +997,19 @@ fn trusted_query_environment_is_shared_with_churn() {
         &fx.records,
         &["commit", "--allow-empty", "-qm", "decoy selected commit"],
     );
+    let trace_control = fx.dir.join("trace-refs-positive-control");
+    let trace = Command::new("git")
+        .current_dir(&fx.product)
+        .args(["rev-parse", "HEAD"])
+        .env("GIT_TRACE_REFS", &trace_control)
+        .output()
+        .unwrap();
+    assert!(trace.status.success());
+    assert!(
+        trace_control.is_file(),
+        "the trace-effect assertion requires actual tool support"
+    );
+    fs::remove_file(trace_control).unwrap();
     let decoy = fx.records.join(".git");
     let output = Command::new(std::env::current_exe().unwrap())
         .args([
@@ -965,6 +1032,7 @@ fn trusted_query_environment_is_shared_with_churn() {
         .env("GIT_SHALLOW_FILE", fx.dir.join("missing-shallow"))
         .env("GIT_TRACE", fx.dir.join("unexpected-trace"))
         .env("GIT_TRACE2_EVENT", fx.dir.join("unexpected-trace2"))
+        .env("GIT_TRACE_REFS", fx.dir.join("unexpected-trace-refs"))
         .output()
         .unwrap();
     assert!(
@@ -976,6 +1044,7 @@ fn trusted_query_environment_is_shared_with_churn() {
     assert!(String::from_utf8_lossy(&output.stdout).contains("1 passed"));
     assert!(!fx.dir.join("unexpected-trace").exists());
     assert!(!fx.dir.join("unexpected-trace2").exists());
+    assert!(!fx.dir.join("unexpected-trace-refs").exists());
 }
 
 fn node(product: &Path, operation: &str, commit: &str) -> Value {
@@ -989,7 +1058,8 @@ fn node(product: &Path, operation: &str, commit: &str) -> Value {
       const [product,operation,commit]=JSON.parse(process.env.SUPERTASKR_WORKSPACE_ORACLE);
       try {let value; if(operation==='identity')value=measureProductIdentity(product,{commit});
       else {const w=resolveWorkspace({productRoot:product,mode:operation==='product-only'?'product-only':'development',commit});
-      value=operation.startsWith('resource')?resolveResource(w,{role:'records',path:operation==='resource'?'safe/new.txt':'safe/existing.txt',source:'commit:captured'}):w;}
+      const token=operation==='resource'?'safe/new.txt':operation==='resource-numeric-drive'?'1:/new.txt':'safe/existing.txt';
+      value=operation.startsWith('resource')?resolveResource(w,{role:'records',path:token,source:'commit:captured'}):w;}
       console.log(JSON.stringify({ok:value}));}catch(e){console.log(JSON.stringify({error:e.code}));}
     "#]).env("SUPERTASKR_WORKSPACE_ORACLE",serde_json::to_string(&(product,operation,commit)).unwrap()).output().unwrap();
     assert!(

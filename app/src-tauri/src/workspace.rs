@@ -301,7 +301,7 @@ impl<'a> WorkspaceResolver<'a> {
             .stat(&product.join(WORKSPACE_BINDING_REL_PATH), "binding")?
             .is_some())
     }
-    pub fn runtime_location(&self, product: &Path) -> Result<PathBuf> {
+    fn runtime_location(&self, product: &Path) -> Result<PathBuf> {
         let runtime = product.join(".supertaskr");
         if self.stat(&runtime, "runtime")?.is_some() {
             let physical = self.canonical(&runtime, "runtime-unreadable")?;
@@ -372,7 +372,7 @@ impl<'a> WorkspaceResolver<'a> {
                 "grafted history cannot establish actual roots",
             ));
         }
-        if commit.is_empty() || commit.starts_with('-') || commit.contains('\0') {
+        if commit.is_empty() || commit.starts_with('-') {
             return Err(finding(
                 "product-commit-invalid",
                 "name a selected product commit",
@@ -445,10 +445,7 @@ impl<'a> WorkspaceResolver<'a> {
         let project_id = project_identifier(&binding["projectId"], "binding")?;
         for role in [RepositoryRole::Product, RepositoryRole::Records] {
             let value = &binding[format!("{}Root", role.as_str())];
-            if !value
-                .as_str()
-                .is_some_and(|s| Path::new(s).is_absolute() && !s.contains('\0'))
-            {
+            if !value.as_str().is_some_and(|s| Path::new(s).is_absolute()) {
                 return Err(finding(
                     format!("binding-{}-root-invalid", role.as_str()),
                     "local repository locations must be absolute paths",
@@ -730,7 +727,11 @@ fn has_control_segment(path: &str, runtime: bool) -> bool {
 }
 fn safe_relative(token: &str) -> Result<()> {
     let windows_absolute = token.starts_with(['/', '\\'])
-        || (token.as_bytes().get(1) == Some(&b':')
+        || (token
+            .as_bytes()
+            .first()
+            .is_some_and(u8::is_ascii_alphabetic)
+            && token.as_bytes().get(1) == Some(&b':')
             && token.as_bytes().get(2).is_some_and(|b| b"/\\".contains(b)));
     if token.is_empty() || Path::new(token).is_absolute() || windows_absolute {
         return Err(finding("resource-absolute-or-empty", token));
