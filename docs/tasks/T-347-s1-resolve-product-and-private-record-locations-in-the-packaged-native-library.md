@@ -72,3 +72,41 @@ Development checks are not the graded reading. The first workspace run retained 
 Detached self-drills follow the public `self-drill-resource` ask and acknowledged answer. The source executor receives no second resource or in-place exception. The coordinator will operate its own detached scratch at the committed candidate, preserve one-sided actual-site failures and per-path SHA256 restoration, and return evidence for executor review. This is separately attributed qualification and does not replace the independent guarded verifier.
 
 No in-fence follow-through outside the accepted resolver behavior was added. Watcher/reducer consumers, frontend, saves/backup, index/genesis adaptation, installed-product independence and final activation remain external obligations. No restricted T-351/T-353 proof was retried. Requested model/effort are supplied by the assignment; actual model usage was not observed.
+
+### Self-drill block — coordinator operated, executor reviewed
+
+The frozen source/test candidate is `00d054a7518da441a54bd21a87065d0f7ca74412`. Following the acknowledged resource ask, the coordinator operated a separate detached scratch with its own target while this executor's tools and owned jobs were ceased. The returned baseline and restored final baseline each ran the real integration target: 9 passed, 0 failed, exit 0. Each row below changed production code only, ran the named body with an exact filter, and produced 0 passed, 1 failed, 8 filtered, exit 101; none was a compile error counted as a body kill.
+
+| Control | Production property removed | Target body |
+| --- | --- | --- |
+| M1 | Unconfigured legacy development status | `legacy_modes_and_runtime_are_checkout_local` |
+| M2 | Exact configuration key set | `explicit_binding_and_association_never_fall_back` |
+| M3 | Product-only return before private operations | `product_only_attempts_zero_private_operations_with_live_controls` |
+| M4 | Actual parent-object walk without commit-graph acceleration | `selected_complete_history_ignores_other_refs_and_replacements` |
+| M5 | Removal of only one Git protocol newline | `supported_object_formats_and_trailing_newline_roots_preserve_identity` |
+| M6 | Repository role in the semantic resource key | `resources_require_roles_sources_and_safe_physical_locations` |
+| M7 | Actual Git/common-directory exclusion | `actual_git_common_storage_and_runtime_aliases_are_excluded` |
+| M8 | Inherited Git-directory removal in shared process plumbing | `trusted_query_environment_is_shared_with_churn` |
+| M9 | Node-compatible resource authority limitation data | `native_and_node_semantics_agree_without_filesystem_or_ref_effects` |
+
+The separate non-test production-inclusion control changed the binding-path constant's type and made `cargo build -p supertaskr --lib` fail at `workspace.rs`, exit 101. After restoration the real production build exited 0. The coordinator reports matching frozen SHA256 after each restore; the retained final owner hashes also match the source executor's own bytes:
+
+| Owner | Restored SHA256 at the frozen candidate |
+| --- | --- |
+| `workspace.rs` | `9f10eb6a92f446ba83fa399c037acc55e2cfbee74fadf92288d20779c88b8d40` |
+| `churn.rs` | `7f92d7feceae11bba92c500ea0779a3e2bb68f9fa1d5aa8f96919b3b8cb4557f` |
+| `tests/workspace.rs` | `8b497097da4af51b79d0ab16d312257dcfa1635ebfa1209f3f43418c28dead9a` |
+
+Evidence is retained in the coordinator's `coordinator-detached-drills-v1` packet beside the canonical ask. This executor reviewed the actual failure outputs, one-sided mutation records, restore steps, baseline/final baseline, compile-inclusion output and later process-group cessation; every retained artifact digest matched its manifest. The retained driver-failure artifact is SystemExit 0 after completed steps, not an erased failure. The initial summary's outstanding cessation check is closed by the later cessation record. These are 9-for-9 body controls, not independent verification or a claim to have mutated every assertion. Actual operator attribution and the later independent guarded review remain explicit.
+
+### Pre-grade gate readings and handoff limits
+
+At production source candidate `00d054a7518da441a54bd21a87065d0f7ca74412` (only these task notes pending), the graph check exited 1 with STALE: files +2 -0 ~2, edges +8 -0. It identified exactly the new workspace source/test and changed churn/lib owners. The graph is 205 files, 2723 symbols and 2571 edges at these source bytes. Regeneration plus dogfood pins belong to the integration checkpoint and are deliberately not changed inside this four-owner lane. This is an explicit outstanding integration gate, not a waived green.
+
+The boot check on derived scratch port 15347 exited 0. The actual startup lines were `[supertaskr] project folder:` with this selected lane and `[supertaskr] window "main" created`. The boot tool reported its captured process tree stopped with SIGTERM; the subsequent OS port-holder query returned no listener. Port 1420 was read only with the prescribed OS query and had no listener when checked. No UI interaction was performed.
+
+The original-range owed-set derivation at `82dd072900b2d6ccd5de798eaa3581340bd3bd4a..00d054a7518da441a54bd21a87065d0f7ca74412` placed all five changed paths: four native owners owe Rust; this task card's readers owe parser, app and the derived end-to-end set. It selected four suite legs and twelve end-to-end specs with no unplaceable path. The final original-range grade will use the notes-complete commit and hold source/ref/index fixed for the run. Its actual count/ref/exit is reported on handoff; this paragraph is not a prediction of green.
+
+Correction clause: the generated brief's role addition is the ceremony table at `method/tasks/TASK-FORMAT.md`, not a root tasks directory; the explicit native assignment supersedes historical Claude launch boilerplate. The role's actual addition is its ceremony table, and the executor read that authoritative table and tier section. The evidence packet's retained SystemExit 0 wrapper artifact and later process-cessation reading are disclosed above. The delivered code owners, frozen task and Node semantics required no feature scope expansion.
+
+The status-only final commit will intentionally run no suite: its only content change will be this card's `building` to `verifying` line, under the executor role's explicit exemption. Independent review, fresh original-range bench qualification, integration regeneration, merge, push, exact-tip CI and migration activation are not executor approvals.
