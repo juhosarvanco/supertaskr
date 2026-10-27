@@ -1243,3 +1243,38 @@ fn native_and_node_semantics_agree_without_filesystem_or_ref_effects() {
     );
     assert_eq!(*trap.0.borrow(), 1);
 }
+
+#[test]
+fn replacement_refs_cannot_rewrite_selected_product_roots() {
+    let fx = Fixture::new();
+    let r = resolver();
+    let original = git(&fx.product, &["rev-parse", "HEAD"]);
+    let clean = r.measure_product_identity(&fx.product, &original).unwrap();
+    assert_eq!(clean.root_commits, vec![original.clone()]);
+    git(&fx.product, &["checkout", "-q", "--orphan", "replacement-lineage"]);
+    git(&fx.product, &["commit", "-qm", "unrelated replacement root"]);
+    let other = git(&fx.product, &["rev-parse", "HEAD"]);
+    assert_ne!(original, other);
+    let tree = git(&fx.product, &["rev-parse", "HEAD^{tree}"]);
+    let replacement = git(
+        &fx.product,
+        &["commit-tree", &tree, "-p", &other, "-m", "parented replacement"],
+    );
+    git(&fx.product, &["replace", &original, &replacement]);
+    assert_eq!(
+        git(&fx.product, &["rev-list", "--max-parents=0", &original]),
+        other,
+        "replacement positive control must alter the ordinary root walk"
+    );
+    assert_eq!(
+        r.measure_product_identity(&fx.product, &original).unwrap(),
+        clean,
+        "replacement refs changed native product lineage"
+    );
+    git(&fx.product, &["replace", "-d", &original]);
+    assert_eq!(
+        git(&fx.product, &["rev-list", "--max-parents=0", &original]),
+        original
+    );
+    assert_eq!(r.measure_product_identity(&fx.product, &original).unwrap(), clean);
+}
