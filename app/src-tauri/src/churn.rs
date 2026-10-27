@@ -238,7 +238,7 @@ enum RepoProbe {
 /// name-checked, executable program (through the SHARED T-060 gate) plus
 /// the sanitized `PATH` the child is GIVEN — never the app's own
 /// inherited one. Both halves are property 0.
-struct ResolvedGit {
+pub(crate) struct ResolvedGit {
     /// Absolute path to the `git` binary; passed to `Command::new`, so
     /// no `current_dir` and no `PATH` element can change which file runs.
     program: PathBuf,
@@ -267,7 +267,7 @@ const GIT_LOGIN_PROBE: &str = "command -v git && echo SUPERTASKR_GIT_PATH=$PATH"
 /// [`validate_resolved_program`] and the name-checked shell selection
 /// [`login_shell`] — is REUSED, not re-implemented, so the one standard
 /// lives in one place (T-057).
-fn resolve_git() -> Option<ResolvedGit> {
+pub(crate) fn resolve_git() -> Option<ResolvedGit> {
     let (login_answer, login_path) = login_shell_git();
     // The search list we resolve over AND hand to the child: the login
     // shell's rich PATH if we captured one, else the app's own.
@@ -380,6 +380,22 @@ fn login_shell_git() -> (Option<PathBuf>, Option<String>) {
 /// `git.child_path` and never inherited, and every element of `argv` is a
 /// `&'static str` by type (property 1).
 fn run_git(git: &ResolvedGit, root: &Path, argv: &[&'static str]) -> Option<Output> {
+    match git_command(git, root, argv).output() {
+        Ok(output) => Some(output),
+        Err(err) => {
+            eprintln!(
+                "[supertaskr] churn: git could not start: {}",
+                sanitize_for_log(&err.to_string())
+            );
+            None
+        }
+    }
+}
+
+/// Shared process plumbing; churn's entry above still accepts only literals.
+/// The other caller is the finite workspace query dispatcher below. Neither
+/// exposes an arbitrary argv or an executable override outside this module.
+fn git_command(git: &ResolvedGit, root: &Path, argv: &[&str]) -> Command {
     let mut command = Command::new(&git.program);
     command
         .args(argv)
@@ -391,15 +407,95 @@ fn run_git(git: &ResolvedGit, root: &Path, argv: &[&'static str]) -> Option<Outp
     for key in GIT_ENV_REMOVED {
         command.env_remove(key);
     }
-    match command.output() {
-        Ok(output) => Some(output),
-        Err(err) => {
-            eprintln!(
-                "[supertaskr] churn: git could not start: {}",
-                sanitize_for_log(&err.to_string())
-            );
-            None
+    command
+}
+
+/// The only variable operand is a commit-ish in its designated verify slot,
+/// or the full object id that verification returned in the history slot.
+pub(crate) enum WorkspaceGitQuery<'a> {
+    Top,
+    GitDir,
+    CommonDir,
+    Bare,
+    Shallow,
+    Grafts,
+    ObjectFormat,
+    Verify(&'a str),
+    Roots(&'a str),
+}
+
+impl ResolvedGit {
+    pub(crate) fn workspace_query(
+        &self,
+        root: &Path,
+        query: WorkspaceGitQuery<'_>,
+        before_launch: impl FnOnce() -> std::io::Result<()>,
+    ) -> std::io::Result<Output> {
+        use WorkspaceGitQuery::*;
+        let operand;
+        let args: Vec<&str> = match query {
+            Top => vec!["rev-parse", "--show-toplevel"],
+            GitDir => vec!["rev-parse", "--absolute-git-dir"],
+            CommonDir => vec!["rev-parse", "--git-common-dir"],
+            Bare => vec!["rev-parse", "--is-bare-repository"],
+            Shallow => vec!["rev-parse", "--is-shallow-repository"],
+            Grafts => vec!["rev-parse", "--git-path", "info/grafts"],
+            ObjectFormat => vec!["rev-parse", "--show-object-format"],
+            Verify(commit) => {
+                if commit.is_empty() || commit.starts_with('-') || commit.contains('\0') {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::InvalidInput,
+                        "invalid selected commit",
+                    ));
+                }
+                operand = format!("{commit}^{{commit}}");
+                vec!["rev-parse", "--verify", &operand]
+            }
+            Roots(commit) => {
+                if ![40, 64].contains(&commit.len())
+                    || !commit.bytes().all(|b| b.is_ascii_hexdigit())
+                {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::InvalidInput,
+                        "invalid verified object id",
+                    ));
+                }
+                vec!["rev-list", "--max-parents=0", commit]
+            }
+        };
+        let mut argv = vec![
+            "--no-optional-locks",
+            "--no-replace-objects",
+            "-c",
+            "core.fsmonitor=",
+            "-c",
+            "core.commitGraph=false",
+        ];
+        argv.extend(args);
+        let mut command = git_command(self, root, &argv);
+        command
+            .env("GIT_NO_LAZY_FETCH", "1")
+            .env("GIT_OPTIONAL_LOCKS", "0");
+        for key in [
+            "GIT_SHALLOW_FILE",
+            "GIT_GRAFT_FILE",
+            "GIT_REPLACE_REF_BASE",
+            "GIT_NAMESPACE",
+            "GIT_CONFIG_PARAMETERS",
+        ] {
+            command.env_remove(key);
         }
+        // Trace families can write files even for a read-only query. Remove
+        // every inherited member instead of keeping a list that goes stale.
+        for (key, _) in std::env::vars_os() {
+            if key.to_string_lossy().to_ascii_uppercase().starts_with("GIT_TRACE") {
+                command.env_remove(key);
+            }
+        }
+        // Observe at the actual process boundary, even if a caller later
+        // handles the error. No selected-root process can bypass this call.
+        before_launch()?;
+        command.output()
     }
 }
 

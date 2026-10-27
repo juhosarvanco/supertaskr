@@ -1268,7 +1268,7 @@ describe("dogfood: the supertaskr repo through its own derivation engine", () =>
     expect(derived.issues).toEqual([]);
   });
 
-  it("all 185 files map and the bucket is EMPTY again — T-141 closes the THIRD D2, which stood for exactly one merge", () => {
+  it("all 205 graph files are accounted for, including two explicitly unmapped native workspace files", () => {
     // 126 → 172 at the T-010 merge regen (2026-08-25), the largest single
     // move this row has ever taken and the only one whose cause is a new
     // LANGUAGE rather than a new file. `Lang::for_extension("rs")` now
@@ -1424,7 +1424,9 @@ describe("dogfood: the supertaskr repo through its own derivation engine", () =>
     // the process settings reader moved into the library, mapped under
     // C-06, the bucket still empty. Re-derived from the fresh index
     // (203 files, 2591 symbols, 2488 edges), not from the failure output.
-    expect(derived.fileComponent.size).toBe(203);
+    // T-347-s1 integration, 2026-10-27: +2 native workspace owners.
+    // Derived independently from regenerated graph and unchanged registry.
+    expect(derived.fileComponent.size).toBe(205);
     // AND THE BUCKET IS EMPTY AGAIN, ONE MERGE AFTER IT RE-OPENED.
     // T-033's settlement kept `tests/dispatch_lanes.rs` out of it by
     // CLAIMING it and T-126 kept it out by DELETING it; T-139 put a file IN
@@ -1455,8 +1457,11 @@ describe("dogfood: the supertaskr repo through its own derivation engine", () =>
     // opened and is byte-identical again now that it has closed. This
     // assertion and the three below it are still the only things in the
     // repository that notice — see the note in the drift body.
-    expect(derived.unmappedFiles).toEqual([]);
-    expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
+    expect(derived.unmappedFiles).toEqual([
+      "app/src-tauri/src/workspace.rs",
+      "app/src-tauri/tests/workspace.rs",
+    ]);
+    expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeDefined();
     const counts = new Map<string, number>();
     for (const id of derived.fileComponent.values()) counts.set(id, (counts.get(id) ?? 0) + 1);
     expect([...counts.entries()].sort()).toEqual([
@@ -1928,6 +1933,7 @@ describe("dogfood: the supertaskr repo through its own derivation engine", () =>
       // `cycle C-05 -> C-13 -> C-05`, `1 cycle(s) among 14 components`,
       // exit 1. One cycle traded for another; C-18 earns its node.
       ["C-18", 2],
+      ["unmapped", 2], // T-347-s1: ownership declaration remains separate work.
     ]);
     // The map pane joined its engine at the T-012 merge regen
     // (T-011-s1 option a keeps the trio in place under lib/).
@@ -1994,7 +2000,7 @@ describe("dogfood: the supertaskr repo through its own derivation engine", () =>
     expect(derived.issues).toEqual([]);
   });
 
-  it("THE FINDINGS: TWO D1 ROWS, ONE OF THEM REVEALED RATHER THAN CREATED — AND THE D2 IS GONE, RETIRED BY A DECLARATION THAT COST NO EDGE", () => {
+  it("THE FINDINGS: two unchanged D1 rows, two unmapped native workspace files and the existing informational D3 rows", () => {
     // T-033 TAKES THIS ARRAY FROM FIFTEEN ROWS TO THREE, and the shape of
     // what is left is the whole deliverable. Eleven undeclared rows were a
     // warning light wired to always-on; after this, an undeclared edge is
@@ -2103,12 +2109,18 @@ describe("dogfood: the supertaskr repo through its own derivation engine", () =>
       // `non_code:` key, never derived from the empty file list — the two
       // are asserted apart in architecture-derive.test.ts, where a second
       // component with no files and no flag keeps `informational: false`.
+      {
+        rule: "D2",
+        id: "D2:unmapped",
+        files: ["app/src-tauri/src/workspace.rs", "app/src-tauri/tests/workspace.rs"],
+        count: 2,
+      },
       { rule: "D3", id: "D3:C-01", component: "C-01", informational: true },
       { rule: "D3", id: "D3:C-11", component: "C-11", informational: true },
     ]);
   });
 
-  it("the full relation table: 34 confirmed, 2 undeclared, 10 planned", () => {
+  it("the full relation table: 34 confirmed, 4 undeclared, 10 planned", () => {
     // T-127-s6: 37 ROWS -> 45, AND EVERY ONE OF THE EIGHT IS A RENAMED OR
     // RE-ATTRIBUTED EDGE RATHER THAN A NEW IMPORT. The graph did not move
     // — `derived.fileComponent.size` is still 189 and `index --check` is
@@ -2241,6 +2253,7 @@ describe("dogfood: the supertaskr repo through its own derivation engine", () =>
       // the shell mounts `Board.tsx`, which is C-18's from this commit. Two
       // observed edges before, two after — nothing was added to the graph.
       ["C-05", "C-18", "confirmed", 2],
+      ["C-05", "unmapped", "undeclared", 1],
       ["C-06", "C-01", "planned", 0],
       ["C-08", "C-06", "confirmed", 3],   // T-149: 4 -> 5; T-127-s6: 5 -> 3; T-169: 3 -> 4 and back to 3 at integration — the panel tests took the parser usage with them when they moved to C-09
       // `["C-08","C-09","confirmed",6]` IS GONE, AND THIS IS THE ROW THE
@@ -2373,6 +2386,7 @@ describe("dogfood: the supertaskr repo through its own derivation engine", () =>
       ["C-18", "C-08", "confirmed", 1],
       ["C-18", "C-09", "confirmed", 1],
       ["C-18", "C-17", "confirmed", 4],
+      ["unmapped", "C-05", "undeclared", 1],
       // AND THE TWO ROWS THAT STOOD HERE FOR ONE MERGE, KEPT AS A COMMENT.
       // T-139 (2026-08-26, merge `aed77b6`) added `unmapped -> C-07` and
       // `unmapped -> C-10`, the first and only rows this table has ever
@@ -2418,7 +2432,7 @@ describe("dogfood: the supertaskr repo through its own derivation engine", () =>
       // numbers were derived from `arch` with the claim applied (26
       // confirmed / 2 undeclared / 9 planned = 37) before the suite was
       // re-run, never off the failure output.
-      ["undeclared", 2],
+      ["undeclared", 4], // T-347-s1: two measured bucket relations, no declaration inferred.
     ]);
     // AND THE INVARIANT THE CARD EXISTS TO RESTORE: every undeclared edge
     // is now either declared or owned by a named card. TWO rows at the
@@ -2443,7 +2457,7 @@ describe("dogfood: the supertaskr repo through its own derivation engine", () =>
     // of the two above it and was derived, like them, from `arch`.
     expect(
       derived.edges.filter((e) => e.relation === "undeclared").map((e) => `${e.from}->${e.to}`),
-    ).toEqual(["C-05->C-15", "C-10->C-14"]);
+    ).toEqual(["C-05->C-15", "C-05->unmapped", "C-10->C-14", "unmapped->C-05"]);
   });
 
   it("the T-009 package.path seam is consumed: C-0x→C-06 edges are real, never absent", () => {
@@ -2624,7 +2638,7 @@ describe("dogfood: the supertaskr repo through its own derivation engine", () =>
     // and does NOT move, which is the tell that a NODE left rather than a
     // component changing shape — the mirror of the T-135 Half A entry
     // above, where a drift source arrived and the control also held.
-    expect(drift).toEqual(["C-05", "C-10"]);
+    expect(drift).toEqual(["C-05", "C-10", "unmapped"]);
     const declaredOnly = derived.components.filter((c) => c.declaredOnly).map((c) => c.id);
     expect(declaredOnly).toEqual(["C-01", "C-11"]);
     // THE CONTROL FOR THE DOWNGRADE, stated as its own assertion: the two
@@ -2661,6 +2675,7 @@ describe("dogfood: the supertaskr repo through its own derivation engine", () =>
     expect(derived.findings.filter(isDriftFinding).map((f) => f.id)).toEqual([
       "D1:C-05->C-15",
       "D1:C-10->C-14",
+      "D2:unmapped",
     ]);
   });
 

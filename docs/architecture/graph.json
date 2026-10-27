@@ -7193,8 +7193,8 @@
       "id": "f:app/src-tauri/src/churn.rs",
       "path": "app/src-tauri/src/churn.rs",
       "lang": "rust",
-      "hash": "blake3:d19ab77085dc3d786bd93b009a73a16cde97deadd18a037294f9d020eb502774",
-      "loc": 1158,
+      "hash": "blake3:5fff35753627ce9efa0937b57b1dd0d8ac0f196db5a0b3592d412576695a3280",
+      "loc": 1254,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/churn.rs#ARG_MAX_COUNT",
@@ -7322,8 +7322,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            448,
-            453
+            544,
+            549
           ]
         },
         {
@@ -7340,10 +7340,20 @@
           "id": "s:app/src-tauri/src/churn.rs#ResolvedGit",
           "name": "ResolvedGit",
           "kind": "struct",
-          "exported": false,
+          "exported": true,
           "range": [
             241,
             249
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/churn.rs#WorkspaceGitQuery",
+          "name": "WorkspaceGitQuery",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            415,
+            425
           ]
         },
         {
@@ -7352,8 +7362,18 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            566,
-            604
+            662,
+            700
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/churn.rs#git_command",
+          "name": "git_command",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            398,
+            411
           ]
         },
         {
@@ -7367,13 +7387,23 @@
           ]
         },
         {
+          "id": "s:app/src-tauri/src/churn.rs#impl ResolvedGit",
+          "name": "impl ResolvedGit",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            427,
+            500
+          ]
+        },
+        {
           "id": "s:app/src-tauri/src/churn.rs#is_safe_repo_relative",
           "name": "is_safe_repo_relative",
           "kind": "fn",
           "exported": true,
           "range": [
-            432,
-            444
+            528,
+            540
           ]
         },
         {
@@ -7392,8 +7422,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            476,
-            552
+            572,
+            648
           ]
         },
         {
@@ -7402,15 +7432,15 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            406,
-            422
+            502,
+            518
           ]
         },
         {
           "id": "s:app/src-tauri/src/churn.rs#resolve_git",
           "name": "resolve_git",
           "kind": "fn",
-          "exported": false,
+          "exported": true,
           "range": [
             270,
             276
@@ -7432,8 +7462,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            557,
-            562
+            653,
+            658
           ]
         },
         {
@@ -7443,7 +7473,7 @@
           "exported": false,
           "range": [
             382,
-            404
+            393
           ]
         },
         {
@@ -7462,8 +7492,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            607,
-            1158
+            703,
+            1254
           ]
         },
         {
@@ -9485,8 +9515,8 @@
       "id": "f:app/src-tauri/src/lib.rs",
       "path": "app/src-tauri/src/lib.rs",
       "lang": "rust",
-      "hash": "blake3:6cfe13b6b77d7497486358ba61f4b72c16659cc7ef34eb0f5967d8b5473a4eb8",
-      "loc": 1382,
+      "hash": "blake3:4e245f8968a5e4448c7b203150dc45575cfd7351164c30ebaed14528e7380284",
+      "loc": 1384,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/lib.rs#DispatchBriefOutcome",
@@ -9494,8 +9524,8 @@
           "kind": "enum",
           "exported": false,
           "range": [
-            556,
-            562
+            558,
+            564
           ]
         },
         {
@@ -9504,8 +9534,8 @@
           "kind": "enum",
           "exported": false,
           "range": [
-            481,
-            487
+            483,
+            489
           ]
         },
         {
@@ -9514,8 +9544,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            130,
-            130
+            132,
+            132
           ]
         },
         {
@@ -9524,8 +9554,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            58,
-            58
+            60,
+            60
           ]
         },
         {
@@ -9544,8 +9574,8 @@
           "kind": "mod",
           "exported": true,
           "range": [
-            52,
-            52
+            54,
+            54
           ]
         },
         {
@@ -9554,8 +9584,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            402,
-            421
+            404,
+            423
           ]
         },
         {
@@ -9564,8 +9594,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            373,
-            383
+            375,
+            385
           ]
         },
         {
@@ -9574,8 +9604,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            121,
-            123
+            123,
+            125
           ]
         },
         {
@@ -9594,8 +9624,8 @@
           "kind": "mod",
           "exported": true,
           "range": [
-            45,
-            45
+            47,
+            47
           ]
         },
         {
@@ -9604,8 +9634,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            634,
-            667
+            636,
+            669
           ]
         },
         {
@@ -9614,8 +9644,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            570,
-            595
+            572,
+            597
           ]
         },
         {
@@ -9624,8 +9654,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            533,
-            535
+            535,
+            537
           ]
         },
         {
@@ -9634,8 +9664,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            497,
-            504
+            499,
+            506
           ]
         },
         {
@@ -9644,8 +9674,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            165,
-            167
+            167,
+            169
           ]
         },
         {
@@ -9664,8 +9694,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            714,
-            716
+            716,
+            718
           ]
         },
         {
@@ -9674,8 +9704,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            734,
-            739
+            736,
+            741
           ]
         },
         {
@@ -9684,8 +9714,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            754,
-            756
+            756,
+            758
           ]
         },
         {
@@ -9694,8 +9724,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            723,
-            728
+            725,
+            730
           ]
         },
         {
@@ -9704,8 +9734,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            694,
-            700
+            696,
+            702
           ]
         },
         {
@@ -9714,8 +9744,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            681,
-            686
+            683,
+            688
           ]
         },
         {
@@ -9724,8 +9754,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            706,
-            708
+            708,
+            710
           ]
         },
         {
@@ -9734,8 +9764,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            745,
-            747
+            747,
+            749
           ]
         },
         {
@@ -9744,8 +9774,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            75,
-            85
+            77,
+            87
           ]
         },
         {
@@ -9754,8 +9784,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            53,
-            53
+            55,
+            55
           ]
         },
         {
@@ -9764,8 +9794,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            330,
-            351
+            332,
+            353
           ]
         },
         {
@@ -9774,8 +9804,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            243,
-            280
+            245,
+            282
           ]
         },
         {
@@ -9784,8 +9814,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            184,
-            227
+            186,
+            229
           ]
         },
         {
@@ -9794,8 +9824,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            446,
-            461
+            448,
+            463
           ]
         },
         {
@@ -9804,8 +9834,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            101,
-            117
+            103,
+            119
           ]
         },
         {
@@ -9814,8 +9844,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            759,
-            927
+            761,
+            929
           ]
         },
         {
@@ -9824,8 +9854,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            291,
-            318
+            293,
+            320
           ]
         },
         {
@@ -9834,8 +9864,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            151,
-            156
+            153,
+            158
           ]
         },
         {
@@ -9844,8 +9874,18 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            930,
-            1382
+            932,
+            1384
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/lib.rs#workspace",
+          "name": "workspace",
+          "kind": "mod",
+          "exported": true,
+          "range": [
+            18,
+            18
           ]
         }
       ]
@@ -9865,6 +9905,375 @@
           "range": [
             4,
             6
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src-tauri/src/workspace.rs",
+      "path": "app/src-tauri/src/workspace.rs",
+      "lang": "rust",
+      "hash": "blake3:02c8dc4f0db1944095231aae457dfacc8afdfcfcd921549130770d73ee22bfba",
+      "loc": 754,
+      "symbols": [
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#AccessObserver",
+          "name": "AccessObserver",
+          "kind": "trait",
+          "exported": true,
+          "range": [
+            205,
+            207
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#AccessOperation",
+          "name": "AccessOperation",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            199,
+            204
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#AssociationResult",
+          "name": "AssociationResult",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            94,
+            105
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#AssociationStatus",
+          "name": "AssociationStatus",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            58,
+            62
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#Layout",
+          "name": "Layout",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            52,
+            55
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#LegacyTokenMap",
+          "name": "LegacyTokenMap",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            145,
+            145
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#ObjectFormat",
+          "name": "ObjectFormat",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            65,
+            68
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#ProductIdentity",
+          "name": "ProductIdentity",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            86,
+            91
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#RepositoryRole",
+          "name": "RepositoryRole",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            24,
+            27
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#ResolutionRule",
+          "name": "ResolutionRule",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            148,
+            151
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#ResourceLocation",
+          "name": "ResourceLocation",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            162,
+            173
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#ResourceRequest",
+          "name": "ResourceRequest",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            140,
+            144
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#Result",
+          "name": "Result",
+          "kind": "type",
+          "exported": false,
+          "range": [
+            193,
+            193
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#WORKSPACE_ASSOCIATION_REL_PATH",
+          "name": "WORKSPACE_ASSOCIATION_REL_PATH",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            14,
+            14
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#WORKSPACE_BINDING_REL_PATH",
+          "name": "WORKSPACE_BINDING_REL_PATH",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            13,
+            13
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#WORKSPACE_LIMITATIONS",
+          "name": "WORKSPACE_LIMITATIONS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            15,
+            20
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#Workspace",
+          "name": "Workspace",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            110,
+            118
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#WorkspaceFinding",
+          "name": "WorkspaceFinding",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            177,
+            180
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#WorkspaceMode",
+          "name": "WorkspaceMode",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            45,
+            49
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#WorkspaceResolver",
+          "name": "WorkspaceResolver",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            211,
+            214
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#fields",
+          "name": "fields",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            610,
+            621
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#finding",
+          "name": "finding",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            187,
+            192
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#has_control_segment",
+          "name": "has_control_segment",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            724,
+            728
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#impl ObjectFormat",
+          "name": "impl ObjectFormat",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            69,
+            83
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#impl RepositoryRole",
+          "name": "impl RepositoryRole",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            28,
+            42
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#impl ResolutionRule",
+          "name": "impl ResolutionRule",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            152,
+            159
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#impl Workspace",
+          "name": "impl Workspace",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            119,
+            138
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#impl WorkspaceResolver<'a>",
+          "name": "impl WorkspaceResolver<'a>",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            220,
+            609
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#impl WorkspaceResolver<'static>",
+          "name": "impl WorkspaceResolver<'static>",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            215,
+            219
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#impl fmt::Display for WorkspaceFinding",
+          "name": "impl fmt::Display for WorkspaceFinding",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            181,
+            185
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#impl std::error::Error for WorkspaceFinding",
+          "name": "impl std::error::Error for WorkspaceFinding",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            186,
+            186
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#normalize_roots",
+          "name": "normalize_roots",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            644,
+            661
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#project_identifier",
+          "name": "project_identifier",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            628,
+            643
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#safe_relative",
+          "name": "safe_relative",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            729,
+            754
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#validate_association",
+          "name": "validate_association",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            663,
+            723
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/workspace.rs#version",
+          "name": "version",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            622,
+            627
           ]
         }
       ]
@@ -11643,6 +12052,265 @@
           "range": [
             132,
             145
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src-tauri/tests/workspace.rs",
+      "path": "app/src-tauri/tests/workspace.rs",
+      "lang": "rust",
+      "hash": "blake3:78171910cb46c116588d14770f172f814a8458f18130082ffed6b9f6f710e5ec",
+      "loc": 1280,
+      "symbols": [
+        {
+          "id": "s:app/src-tauri/tests/workspace.rs#Audit",
+          "name": "Audit",
+          "kind": "struct",
+          "exported": false,
+          "range": [
+            421,
+            425
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/workspace.rs#Fixture",
+          "name": "Fixture",
+          "kind": "struct",
+          "exported": false,
+          "range": [
+            60,
+            64
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/workspace.rs#NEXT",
+          "name": "NEXT",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            12,
+            12
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/workspace.rs#actual_git_common_storage_and_runtime_aliases_are_excluded",
+          "name": "actual_git_common_storage_and_runtime_aliases_are_excluded",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            920,
+            1005
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/workspace.rs#development",
+          "name": "development",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            124,
+            127
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/workspace.rs#error",
+          "name": "error",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            144,
+            146
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/workspace.rs#explicit_binding_and_association_never_fall_back",
+          "name": "explicit_binding_and_association_never_fall_back",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            226,
+            419
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/workspace.rs#git",
+          "name": "git",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            13,
+            44
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/workspace.rs#impl AccessObserver for Audit",
+          "name": "impl AccessObserver for Audit",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            426,
+            440
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/workspace.rs#impl Drop for Fixture",
+          "name": "impl Drop for Fixture",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            116,
+            120
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/workspace.rs#impl Fixture",
+          "name": "impl Fixture",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            65,
+            115
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/workspace.rs#legacy_modes_and_runtime_are_checkout_local",
+          "name": "legacy_modes_and_runtime_are_checkout_local",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            153,
+            223
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/workspace.rs#native_and_node_semantics_agree_without_filesystem_or_ref_effects",
+          "name": "native_and_node_semantics_agree_without_filesystem_or_ref_effects",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1138,
+            1245
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/workspace.rs#node",
+          "name": "node",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1081,
+            1102
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/workspace.rs#product_only_attempts_zero_private_operations_with_live_controls",
+          "name": "product_only_attempts_zero_private_operations_with_live_controls",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            442,
+            611
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/workspace.rs#replacement_refs_cannot_rewrite_selected_product_roots",
+          "name": "replacement_refs_cannot_rewrite_selected_product_roots",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1248,
+            1280
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/workspace.rs#repository",
+          "name": "repository",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            45,
+            59
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/workspace.rs#resolver",
+          "name": "resolver",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            121,
+            123
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/workspace.rs#resource",
+          "name": "resource",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            128,
+            143
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/workspace.rs#resources_require_roles_sources_and_safe_physical_locations",
+          "name": "resources_require_roles_sources_and_safe_physical_locations",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            776,
+            916
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/workspace.rs#selected_complete_history_ignores_other_refs_and_replacements",
+          "name": "selected_complete_history_ignores_other_refs_and_replacements",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            614,
+            734
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/workspace.rs#snapshot",
+          "name": "snapshot",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1103,
+            1136
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/workspace.rs#supported_object_formats_and_trailing_newline_roots_preserve_identity",
+          "name": "supported_object_formats_and_trailing_newline_roots_preserve_identity",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            737,
+            773
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/workspace.rs#symlink",
+          "name": "symlink",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            148,
+            150
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/workspace.rs#trusted_query_environment_is_shared_with_churn",
+          "name": "trusted_query_environment_is_shared_with_churn",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            1008,
+            1079
           ]
         }
       ]
@@ -20012,8 +20680,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:badb37c14f21c716c5c5121370a1d783a43f38e42c8e5ab415f3b9fee4f7787d",
-      "loc": 2688,
+      "hash": "blake3:8c808c9a33b71f48dfd73bd6482596092d5e451159d96973f86be04bceb47853",
+      "loc": 2703,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -23015,8 +23683,8 @@
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:9b2244f527a7259f3aaab017a0f6d84e999a49b822d28666b418874ee438c2b9",
-      "loc": 813,
+      "hash": "blake3:7d0215a41a6bebd4f7696943eb6a9563840a09d244d95256abe7fbc822acf674",
+      "loc": 816,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -30397,6 +31065,11 @@
     },
     {
       "from": "f:app/src-tauri/src/lib.rs",
+      "to": "f:app/src-tauri/src/workspace.rs",
+      "kind": "import"
+    },
+    {
+      "from": "f:app/src-tauri/src/lib.rs",
       "to": "p:cargo:std",
       "kind": "import",
       "symbols": [
@@ -30423,6 +31096,48 @@
       "kind": "import",
       "symbols": [
         "DialogExt"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/src/workspace.rs",
+      "to": "f:app/src-tauri/src/churn.rs",
+      "kind": "import",
+      "symbols": [
+        "ResolvedGit",
+        "WorkspaceGitQuery",
+        "resolve_git"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/src/workspace.rs",
+      "to": "p:cargo:serde",
+      "kind": "import",
+      "symbols": [
+        "Deserialize",
+        "Serialize"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/src/workspace.rs",
+      "to": "p:cargo:serde_json",
+      "kind": "import",
+      "symbols": [
+        "Value"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/src/workspace.rs",
+      "to": "p:cargo:std",
+      "kind": "import",
+      "symbols": [
+        "BTreeMap",
+        "BTreeSet",
+        "Metadata",
+        "Path",
+        "PathBuf",
+        "fmt",
+        "fs",
+        "io"
       ]
     },
     {
@@ -30526,6 +31241,39 @@
         "Path",
         "PathBuf",
         "fs"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/tests/workspace.rs",
+      "to": "f:app/src-tauri/src/workspace.rs",
+      "kind": "import",
+      "symbols": [
+        "*"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/tests/workspace.rs",
+      "to": "p:cargo:serde_json",
+      "kind": "import",
+      "symbols": [
+        "Value",
+        "json"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/tests/workspace.rs",
+      "to": "p:cargo:std",
+      "kind": "import",
+      "symbols": [
+        "AtomicU64",
+        "BTreeMap",
+        "Command",
+        "Ordering",
+        "Path",
+        "PathBuf",
+        "RefCell",
+        "fs",
+        "io"
       ]
     },
     {
@@ -47098,8 +47846,8 @@
     }
   ],
   "stats": {
-    "files": 203,
-    "symbols": 2659,
-    "edges": 2563
+    "files": 205,
+    "symbols": 2724,
+    "edges": 2571
   }
 }

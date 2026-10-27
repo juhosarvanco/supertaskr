@@ -79,7 +79,7 @@ const node = (id: string): HTMLElement => {
 };
 
 describe("the supertaskr repo on its own map", () => {
-  it("renders all fifteen declared components in full mode, and the bucket is GONE again", () => {
+  it("renders fifteen declared components and the explicit native workspace bucket in full mode", () => {
     // Ten since T-024 declared C-13 (genesis pane); ELEVEN since T-025
     // declared C-14 (agent runner). See the reconciliation blocks in
     // architecture-dogfood.test.ts for both enumerated deltas.
@@ -139,8 +139,9 @@ describe("the supertaskr repo on its own map", () => {
     // bucket must still be ABSENT, and a re-partition that stranded a file
     // would show up THERE rather than in this total, which is the
     // distinction T-139 and T-141 taught this body.
-    expect(container.querySelectorAll("[data-testid=map-node]")).toHaveLength(15);
-    expect(container.querySelector('[data-component-id="unmapped"]')).toBeNull();
+    // T-347-s1 integration, 2026-10-27: native workspace source/test are unclaimed.
+    expect(container.querySelectorAll("[data-testid=map-node]")).toHaveLength(16);
+    expect(container.querySelector('[data-component-id="unmapped"]')).not.toBeNull();
     expect(container.querySelector('[data-component-id="C-16"]')).not.toBeNull();
     // The two new nodes asserted by IDENTITY, for the same reason C-16 is:
     // "fifteen nodes" must not be reachable by a synthesised bucket
@@ -328,7 +329,7 @@ describe("the supertaskr repo on its own map", () => {
     expect(node("C-12").className).toContain(`bg-status-${status}`);
   });
 
-  it("draws the full 46-edge relation table, with TWO undeclared rows left — the bucket’s two are gone", () => {
+  it("draws the full 48-edge relation table, including both native workspace bucket relations", () => {
     // 23 + C-13's two declared edges (T-024) + the undeclared
     // C-05→C-13 the merge regen surfaced + C-14→C-10, T-025's one
     // declared edge (planned: no TS import can confirm a Rust-side
@@ -430,18 +431,20 @@ describe("the supertaskr repo on its own map", () => {
     // makes this a broken cycle and not a hidden one. Derived from `arch`'s
     // own edge listing at the edited registry before the suite was re-run,
     // because a red on this count hides the two assertions below it.
-    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(46);
+    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(48);
     const undeclared = container.querySelectorAll(
       '[data-testid=map-edge][data-relation="undeclared"]',
     );
-    expect(undeclared).toHaveLength(2);
+    expect(undeclared).toHaveLength(4);
     // asserted by IDENTITY, not only by count: "two undeclared edges" must
     // not be reachable by some other row surviving in their place — and
     // that guard is what says the two that LEFT are the bucket's two,
     // rather than any two rows leaving and the count coming out right.
     expect([...undeclared].map((e) => e.getAttribute("data-edge"))).toEqual([
       edgeKey({ from: "C-05", to: "C-15" }),
+      edgeKey({ from: "C-05", to: "unmapped" }),
       edgeKey({ from: "C-10", to: "C-14" }),
+      edgeKey({ from: "unmapped", to: "C-05" }),
     ]);
   });
 
@@ -807,7 +810,7 @@ describe("the supertaskr repo on its own map", () => {
       // board-root.test.tsx under C-18, mapped, findings unmoved.
       // 201 -> 203 at the T-317 merge regen (2026-09-13) - the process
       // settings reader and its test under C-06, mapped, findings unmoved.
-      "committed graph · 203 files",
+      "committed graph · 205 files",
     );
   });
 });
