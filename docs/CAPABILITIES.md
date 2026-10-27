@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1427 at least behaviours** — 1425 extracted sentences + 2 at least named-not-extracted (listed at the end) — across 51 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least named-not-extracted (listed at the end) — across 52 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -1317,6 +1317,20 @@ Census: **1427 at least behaviours** — 1425 extracted sentences + 2 at least n
 - private preflight keeps first Archived grant history private across plain and closing ATX headings
 - private preflight keeps first Repair ledger private across plain and closing ATX headings
 - private preflight preserves the complete active contract around inert literal private headings
+
+## qualified-native
+
+- qualified public executor lifecycle has no product card, unions colocated aliases, inspects both roots and collects exact pairs
+- qualified admission translates implementation and refuses unknown scope, private missing approved bytes, pause, revocation and decisive drift before reservation
+- qualified complete acquisition rolls back dirty second root and exposes reservation-before-record failures by exact attempt
+- qualified private input controls refuse blank approval, absent current card, invalid receipt and wrong project without launch authority
+- qualified collection recovers partial final publication only against its original complete set
+- qualified cold public CLI preserves ordinary split refusal, validates malformed explicit authority and starts the private route with scoped ignored policies
+- qualified action checks unmentioned root, ignored output, type, mode and both rename endpoints
+- qualified continuation and replacement retain original bases and complete identity after commits and require exact new turn binding
+- qualified expansion unknown callbacks and actual completion with live jobs retain complete ownership while independent stop releases it
+- qualified final collection refuses stale per-root pairs and late changes; completed exact retry leaves a later owner untouched
+- qualified scope cannot fall back through unknown fields or legacy verifier and transaction recovery consumers
 
 ## qualified-reservation
 

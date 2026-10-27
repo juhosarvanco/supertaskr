@@ -109,6 +109,7 @@ function git(resource, args) {
 }
 /** @param {string} root @param {any} rec */
 function origins(root, rec) {
+  if (rec.native?.qualified !== undefined) refuse("QUALIFIED_UNSUPPORTED", "legacy transaction disposition cannot mutate a qualified owned set");
   if (typeof rec.resource !== "string" || !path.isAbsolute(rec.resource) || realpathSync(rec.resource) !== rec.resource ||
       rec.assignment.resource !== rec.resource || rec.assignment.cwd !== rec.resource ||
       realpathSync(git(rec.resource, ["rev-parse", "--show-toplevel"])) !== rec.resource) refuse("ORIGINS", "resource origins disagree");

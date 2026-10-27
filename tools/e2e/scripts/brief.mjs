@@ -240,6 +240,27 @@ const EARLY_RESULT = await earlyView(process.argv.slice(2));
 async function legacyModule(load) {
   return EARLY_RESULT === undefined ? load() : /** @type {T} */ ({});
 }
+/** This is only a route hint, never assignment or retained-authority validation.
+ * Missing/ordinary inputs must refuse before loading legacy consumers. An
+ * explicit marker, including null, instead reaches the normal strict reader.
+ * @param {string[]} argv @param {string} root @returns {boolean} */
+function qualifiedRunRouteHint(argv, root) {
+  const verb = argv[argv.indexOf("--run") + 1];
+  const assignmentAt = argv.indexOf("--assignment"), attemptAt = argv.indexOf("--attempt");
+  let file;
+  if (verb === "start" && assignmentAt >= 0) file = argv[assignmentAt + 1];
+  else if (attemptAt >= 0) {
+    const attempt = argv[attemptAt + 1];
+    const match = /^([A-Za-z0-9][A-Za-z0-9._-]{0,127})-a\d+$/.exec(attempt ?? "");
+    if (match) file = path.join(root, ".supertaskr/runs", /** @type {string} */ (match[1]), `${attempt}.json`);
+  }
+  if (!file) return false;
+  let parsed;
+  try { parsed = JSON.parse(readFileSync(file, "utf8")); }
+  catch { return false; }
+  const selected = verb === "start" ? parsed : parsed?.native;
+  return selected !== null && typeof selected === "object" && Object.hasOwn(selected, "qualified");
+}
 /** @param {string[]} argv @returns {Promise<number|undefined>} */
 async function earlyView(argv) {
   try {
@@ -337,6 +358,9 @@ async function earlyView(argv) {
       const selectedRoot = (rootAt < 0 ? undefined : argv[rootAt + 1]) ?? findCheckoutRoot(process.cwd()) ?? process.cwd();
       if (workspaceBindingPresent(selectedRoot)) {
         resolveWorkspace({ productRoot: selectedRoot });
+        // Only the explicit qualified executor consumer is adapted. Later
+        // plan and authority validation still refuse unknown/malformed inputs.
+        if (argv.includes("--run") && qualifiedRunRouteHint(argv, selectedRoot)) return undefined;
         const route = argv.find((a) => a.startsWith("--") && a !== "--root") ?? "legacy context";
         console.error(`brief: workspace-split-unsupported: route ${route} has not been adapted to split roots; use --workspace [--product-only] or --records list|<T-NNN> --records-revision <revision> [--product-base <revision>].`);
         return 3;
@@ -1228,13 +1252,15 @@ async function main(argv) {
       let satisfied = true;
       if (plan.verb === "start") {
         const assignment = readAssignment(/** @type {string} */ (plan.assignment));
-        const started = startRun(runRoot, { assignment, at, host });
+        const started = await startRun(runRoot, { assignment, at, host });
         record = started.record;
         extra = [
           `written: ${started.file}`,
           started.reservation === null
             ? "reservation: none — a read-only participant runs beside the writer it serves"
-            : `reservation: ${started.reservation.resource} taken atomically at ${started.reservation.takenAt}`,
+            : started.reservation.kind === "qualified-writer-set"
+              ? `reservation: complete qualified set ${started.reservation.identity} taken atomically at ${started.reservation.takenAt}`
+              : `reservation: ${started.reservation.resource} taken atomically at ${started.reservation.takenAt}`,
           ...(started.record.native === undefined
             ? [
                 "next: spawn the child, then bind it with --run bind --attempt " +
@@ -1329,7 +1355,7 @@ async function main(argv) {
           extra.push(`prepared detached-verifier: task ${prepared.manifest.taskId}; resource ${prepared.manifest.worktree}; candidate ${prepared.manifest.ref}; executor ${plan.attempt}; digest ${prepared.manifest.preparation.digest}`);
         }
       } else if (plan.verb === "continue") {
-        const carried = continueRun(runRoot, {
+        const carried = await continueRun(runRoot, {
           attempt: plan.attempt,
           ...(plan.replace === true ? { replace: true } : {}),
           ...(plan.evidence === undefined ? {} : { evidence: plan.evidence }),
