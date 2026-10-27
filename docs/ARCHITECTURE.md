@@ -92,12 +92,17 @@ ADR-014/015).
   retained incident evidence and current scope before atomic per-file disposition;
   historical use requires its own owner authorization.
   Complete qualified writer-set reservations (T-351) use that shared transaction;
-  split native execution remains refused.
+  T-353 carries one private admission through the qualified native executor
+  lifecycle, with frozen raw authority excluded from worker display. Qualified
+  verification, delivery and full consumer activation remain migration work.
   CLI adapters remain a separate route; cross-harness work is deferred.
 - Workspace inspection: workspace.mjs resolves product, records and runtime
   locations, validates association against product lineage and confines
-  qualified resources physically. Product-only inspection opens no private
-  records; configured split orchestration refuses before legacy context.
+  qualified resources physically. The packaged native workspace API
+  (T-347-s1) supplies matching typed read-only locations without a frontend
+  path-authority command. Product-only inspection opens no private
+  records; qualified execution uses explicit role roots, while legacy split
+  routes refuse before legacy context.
   records.mjs reads an exact committed association/card with a separate
   product base; receipts are immutable data, never dispatch approval.
   The parser models qualified fences with supplied physical-root facts;
