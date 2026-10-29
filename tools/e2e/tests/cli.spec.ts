@@ -127,7 +127,6 @@ const {
 import * as fixtureSubjectDefinition6 from "../scripts/docs-scan.mjs";
 void fixtureSubjectDefinition6;
 const {
-  conventionsText,
   docsReaders,
 } = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/docs-scan.mjs")).href) as typeof fixtureSubjectDefinition6;
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
@@ -169,10 +168,9 @@ import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 /** The scratch trees this file builds, removed in a teardown that cannot red a body. */
 const FIXTURE = "cli.spec.ts";
 
-/** This project's conventions — the index spliced with its chapters (T-290) — read off
- *  this checkout at body time. */
-function conventions(): string {
-  return conventionsText(repoRoot);
+/** Product package command parity belongs to the public source contract. */
+function contributorContract(): string {
+  return readFileSync(path.join(repoRoot,"CONTRIBUTING.md"),"utf8");
 }
 
 /** The `run from <dir>/:` markers the "Build & test" section carries, in order. */
@@ -329,8 +327,8 @@ test("the verb set covers the seat's own arms and NAMES the C-02 verbs nothing f
 // Actual selected project command-source provenance: dogfood/private-project.spec.ts.
 
 
-test("the front reads every command bullet docs/CONVENTIONS.md carries, and reads it verbatim", () => {
-  const md = conventions();
+test("the front reads every product command bullet CONTRIBUTING.md carries, and reads it verbatim", () => {
+  const md = contributorContract();
   const dirs = commandBulletDirs(md);
   expect(dirs, "the four packages the document carries a command bullet for").toEqual([
     "lib/parser",
