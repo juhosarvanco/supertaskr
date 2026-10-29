@@ -547,8 +547,9 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
     // serde refuses a third spelling for. The project root stays
     // `WatchState`'s, so ADR-012 is applied rather than reopened and
     // `acl_pin.rs` is a 0-file diff at its 92-grant `core:default` set.
-    // The ordinary editor adds four finite doors. Tokens identify native
-    // offers/buffers; no webview root, path or program selector is added.
+    // Record editing and optional backup use finite receipt/buffer doors.
+    // The reviewed backup commands accept native receipt tokens and exact
+    // displayed commits, with no webview root, path or program selector.
     expect(frontendCommands()).toEqual([
       "arch_detail",
       "arch_rollup",
@@ -564,6 +565,8 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
       "genesis_transcript",
       "index_repo",
       "record_acknowledge",
+      "record_backup",
+      "record_backup_recoveries",
       "record_cancel",
       "record_edit",
       "record_files",
@@ -621,6 +624,8 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
       "pick_genesis_folder",
       "pick_project_folder",
       "record_acknowledge",
+      "record_backup",
+      "record_backup_recoveries",
       "record_cancel",
       "record_edit",
       "record_files",
