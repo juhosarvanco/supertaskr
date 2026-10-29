@@ -66,13 +66,14 @@ const ipc = vi.hoisted(() => ({
   outcomes: new Map<string, unknown>(),
 }));
 
-vi.mock("@tauri-apps/api/core", () => ({
-  invoke: (command: string) => {
+vi.mock("@tauri-apps/api/core", async () => {
+  const {setupFixtureReply} = await import("./fixtures/setup-ipc");
+  return {invoke: (command: string, args?: unknown) => {
     ipc.invoke(command);
     const outcome = ipc.outcomes.get(command);
-    return outcome instanceof Error ? Promise.reject(outcome) : Promise.resolve(outcome);
-  },
-}));
+    return outcome instanceof Error ? Promise.reject(outcome) : Promise.resolve(outcome).then(value => setupFixtureReply(command,args,value));
+  }};
+});
 /**
  * T-027 RECONCILE — THE MOCK IS NOW CHANNEL-AWARE, AND THAT IS A
  * STRENGTHENING RATHER THAN AN ACCOMMODATION.

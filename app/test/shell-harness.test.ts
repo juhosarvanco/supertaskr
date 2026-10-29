@@ -100,7 +100,7 @@ describe("the gate, runtime half: a Tauri runtime never defines the harness", ()
     // Every other entry point the store has: none of them installs it.
     await store.pickProjectFolder();
     await store.pickGenesisFolder();
-    await store.startGenesisHere();
+    await store.startGenesisHere(store.createSetupHereView(store.getShellState()));
     await store.runIndexRepo();
     store.keepCurrentProject();
     expect(window.__supertaskrShellHarness).toBe(undefined);

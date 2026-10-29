@@ -11,6 +11,8 @@ import { cancelTurn, startInterviewSource, useGenesisCancelView } from "@/genesi
 import { modelIssueRows, skipReasonPhrase, type ModelIssueRow } from "@/lib/docs-model";
 import {
   CONVENTION_HINT,
+  createSetupHereView,
+  dismissSetupNotice,
   getShellState,
   isTauriRuntime,
   indexSelectionToken,
@@ -191,6 +193,7 @@ export function EmptyState({
   notice,
   picking,
   canKeepCurrent,
+  canStartInterviewHere = true,
   onPick,
   onStartInterview,
   onStartInterviewHere,
@@ -199,6 +202,7 @@ export function EmptyState({
   notice: FrontDoorNotice;
   picking: boolean;
   canKeepCurrent: boolean;
+  canStartInterviewHere?: boolean;
   onPick: () => void;
   onStartInterview: () => void;
   onStartInterviewHere: () => void;
@@ -273,7 +277,7 @@ export function EmptyState({
             <div className="flex flex-wrap items-center gap-2.25">
               <Button
                 data-testid="start-interview-here"
-                disabled={picking}
+                disabled={picking || !canStartInterviewHere}
                 onClick={onStartInterviewHere}
               >
                 Start an interview here
@@ -538,6 +542,7 @@ function App() {
   // contain its needle. `MapView.tsx` carries the sentence naming what
   // still reports a graph that could not fully arrive.
   const screen = selectScreen(shell);
+  const setupHere = createSetupHereView(shell);
 
   // T-049 gave the app ONE keydown listener at the root so ⌘O and ⌘N
   // reach the same commands from every screen — the board, the map, the
@@ -720,6 +725,15 @@ function App() {
         </div>
       </header>
       <RecordEditor />
+      {shell.setupNotice != null && (
+        <aside data-testid="setup-notice" role="status" className="flex items-center gap-3 border-b border-border px-6 py-3 text-sm">
+          <div className="min-w-0 flex-1">
+            {shell.setupNotice.productDir !== "" && <p className="break-all font-mono text-xs">{shell.setupNotice.productDir}</p>}
+            <p>{shell.setupNotice.message}</p>
+          </div>
+          <Button variant="ghost" onClick={() => dismissSetupNotice(shell.setupNotice!.token)}>Dismiss</Button>
+        </aside>
+      )}
 
       {/* T-050: waiting AND failed are the same screen — one that always
           carries a way out. The header's own "Open folder…" pair is
@@ -750,7 +764,8 @@ function App() {
           canKeepCurrent={screen.canKeepCurrent}
           onPick={() => void pickProjectFolder()}
           onStartInterview={() => void pickGenesisFolder()}
-          onStartInterviewHere={() => void startGenesisHere()}
+          canStartInterviewHere={setupHere !== null}
+          onStartInterviewHere={() => void startGenesisHere(setupHere)}
           onKeepCurrent={keepCurrentProject}
         />
       )}

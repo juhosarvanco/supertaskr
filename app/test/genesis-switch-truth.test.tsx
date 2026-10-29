@@ -47,12 +47,13 @@ const ipc = vi.hoisted(() => ({
   echoes: [] as Record<string, unknown>[],
 }));
 
-vi.mock("@tauri-apps/api/core", () => ({
-  invoke: (command: string) => {
+vi.mock("@tauri-apps/api/core", async () => {
+  const {setupFixtureReply} = await import("./fixtures/setup-ipc");
+  return {invoke: (command: string, args?: unknown) => {
     ipc.invoke(command);
-    return Promise.resolve(ipc.outcomes.get(command));
-  },
-}));
+    return Promise.resolve(ipc.outcomes.get(command)).then(value => setupFixtureReply(command,args,value));
+  }};
+});
 vi.mock("@tauri-apps/api/event", () => ({
   emit: (name: string, payload: unknown) => {
     if (name === "model-updated") ipc.echoes.push(payload as Record<string, unknown>);

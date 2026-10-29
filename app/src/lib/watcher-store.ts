@@ -79,7 +79,12 @@ export interface MessageScope {
   contextSequence: number;
   records?: DocsSnapshotPayload["records"] | null;
 }
-type ScopedPayload<T> = T & { scope?: MessageScope };
+type ScopedPayload<T> = T & { scope?: MessageScope; genesisOffer?: string | null; attempt?: number | null; setupNotice?: SetupNotice | null };
+export interface SetupNotice { token: string; productDir: string; status: "unknown" | "refused" | "initialized"; code?: string | null; message: string }
+export interface SetupHereView {
+  expectedContext: {selectionSequence: number; contextSequence: number};
+  target: {kind: "selected"} | {kind: "offered"; token: string};
+}
 
 /** Mirror of Rust's `PickOutcome` (src-tauri/src/docs_watch.rs). */
 export type PickOutcomePayload =
@@ -314,12 +319,16 @@ export interface RejectedPick {
   path: string;
   message: string | null;
   probe: PlanProbePayload | null;
+  genesisOffer?: string;
+  offerContext?: SetupHereView["expectedContext"];
 }
 
 export interface ShellState {
   phase: ShellPhase;
   /** Launch-resolved project root when phase === "noDocs". */
   resolvedDir: string | null;
+  resolvedContext?: SetupHereView["expectedContext"];
+  setupNotice?: SetupNotice | null;
   /** What the launch-resolved root was probed for (T-026), when known. */
   resolvedProbe: PlanProbePayload | null;
   /** The genesis project's root when phase === "genesis" (T-026). */
@@ -736,7 +745,11 @@ export function reducePickOutcome(
       // nothing changed.
       return prev;
     case "noDocs":
-      return { ...prev, rejectedPick: { path: outcome.path, message: null, probe: outcome.probe } };
+      return { ...prev, rejectedPick: { path: outcome.path, message: null, probe: outcome.probe,
+        ...(outcome.scope !== undefined && validOffer(outcome.genesisOffer) ? {
+          genesisOffer: outcome.genesisOffer, offerContext: contextPair(outcome.scope),
+        } : {}),
+      } };
     case "error":
       return {
         ...prev,
@@ -1140,7 +1153,7 @@ function applyDocsPayload(payload: DocsSnapshotPayload): void {
   setShell({
     docs: next,
     phase: shell.phase === "genesis" ? "genesis" : legacyNoDocs ? "noDocs" : "open",
-    ...(legacyNoDocs ? { resolvedDir: next.projectDir, resolvedProbe: EMPTY_PROBE } : {}),
+    ...(legacyNoDocs ? { resolvedDir: next.projectDir, resolvedProbe: EMPTY_PROBE, resolvedContext: contextPair(next.records!) } : {}),
   });
   sendEcho(next);
 }
@@ -1207,6 +1220,7 @@ function applyProjectStatus(status: ScopedPayload<ProjectStatusPayload>): void {
         phase: "noDocs",
         resolvedDir: status.projectDir,
         resolvedProbe: status.probe,
+        resolvedContext: status.scope === undefined ? undefined : contextPair(status.scope),
       });
       break;
     case "noProject":
@@ -1478,91 +1492,81 @@ export async function pickProjectFolder(): Promise<void> {
   await runPicker("pick_project_folder");
 }
 
-/**
- * T-026: "Start an interview" (⌘N) — the genesis variant of the picker.
- * Zero arguments again: Rust opens the dialog, validates the choice, and
- * decides what it MEANS (a folder with no plan opens for genesis; one
- * that already has a plan opens as the normal project it is — there is
- * no overwrite path in this app).
- */
+/** New setup chooses its folders in native dialogs and creates explicit local history. */
 export async function pickGenesisFolder(): Promise<void> {
   await runPicker("pick_genesis_folder");
 }
 
-/**
- * T-026: "Start an interview here" — genesis in the folder the front door
- * is already naming, with no dialog. Still zero arguments: Rust knows
- * which folder that is (the user's own last dialog choice, or the open
- * project), so the path never crosses the boundary in either direction.
- */
-export async function startGenesisHere(): Promise<void> {
-  await runPicker("start_genesis_here");
+function contextPair(value: {selectionSequence: number; contextSequence: number}): SetupHereView["expectedContext"] {
+  return {selectionSequence: value.selectionSequence, contextSequence: value.contextSequence};
+}
+function validOffer(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0 && value.length <= 256 && !/[\x00-\x20\x7f]/.test(value);
+}
+function validPair(value: SetupHereView["expectedContext"] | undefined): value is SetupHereView["expectedContext"] {
+  return value !== undefined && Number.isSafeInteger(value.selectionSequence) && value.selectionSequence >= 0 &&
+    Number.isSafeInteger(value.contextSequence) && value.contextSequence >= value.selectionSequence;
+}
+/** Capture the rendered offer. Neither the path nor a later selection chooses the target. */
+export function createSetupHereView(value: ShellState): SetupHereView | null {
+  if (value.rejectedPick !== null) {
+    const pick = value.rejectedPick;
+    return pick.message === null && validOffer(pick.genesisOffer) && validPair(pick.offerContext)
+      ? {expectedContext: contextPair(pick.offerContext), target: {kind: "offered", token: pick.genesisOffer}}
+      : null;
+  }
+  return value.phase === "noDocs" && value.resolvedDir !== null && validPair(value.resolvedContext)
+    ? {expectedContext: contextPair(value.resolvedContext), target: {kind: "selected"}} : null;
+}
+export async function startGenesisHere(view: SetupHereView | null): Promise<void> {
+  if (view === null) return;
+  await runPicker("start_genesis_here", view);
+}
+export function dismissSetupNotice(token: string): void {
+  if (shell.setupNotice?.token === token) setShell({setupNotice: null});
+}
+function setupNotice(value: unknown): SetupNotice | null {
+  if (value === null || typeof value !== "object") return null;
+  const item = value as Partial<SetupNotice>;
+  return validOffer(item.token) && typeof item.productDir === "string" && item.productDir.length <= 32768 &&
+    typeof item.message === "string" && item.message.length > 0 && item.message.length <= 16384 &&
+    (item.code == null || typeof item.code === "string" && /^[A-Za-z0-9_.:-]{1,256}$/.test(item.code)) &&
+    (item.status === "unknown" || item.status === "refused" || item.status === "initialized")
+    ? {token: item.token, productDir: item.productDir, status: item.status, code: item.code, message: item.message} : null;
 }
 
-/**
- * The one picker pipeline behind all three commands: single-flight
- * webview-side (the Rust latch is the real gate — T-021), invoke, then
- * the pure `reducePickOutcome`. A snapshot that lands this way is echoed
- * exactly like a watcher push (T-003's round-trip contract) — and only a
- * snapshot is: a genesis switch onto a folder with no docs/ yet carries
- * no tree, so there is nothing for it to report and it echoes nothing.
- * One onto a folder that DOES have a docs/ carries that tree and echoes
- * it like any other snapshot (T-042 criterion 3; the echo is emitted by
- * `commitPickOutcome`, which is this function minus the `invoke`).
- */
 let pickerAttempt: object | null = null;
-async function runPicker(command: string): Promise<void> {
-  // T-192: DELIBERATELY NOT BOUNDED, and the reason is recorded here
-  // because the sibling latch a few functions down IS bounded and the
-  // next reader will otherwise take this for the oversight it looks like.
-  //
-  // **THIS ONE `await` IS THREE RUST COMMANDS, AND THEY ARE NOT ALIKE.**
-  // `pick_project_folder` and `pick_genesis_folder` open a native dialog
-  // and await `rx.recv()`. **`start_genesis_here` OPENS NO DIALOG** — its
-  // own doc comment in `src-tauri/src/lib.rs` says so; it claims the
-  // flight guard, reads `genesis_target()` out of Rust's own memory, and
-  // awaits `spawn_blocking(apply_genesis_folder)`. That is `index_repo`'s
-  // shape wearing this latch, with nobody being asked anything.
-  //
-  // SO THE HUMAN-AT-A-DIALOG ARGUMENT COVERS TWO OF THE THREE AND MUST
-  // NOT BE STATED AS COVERING ALL THREE. It is true and it is not the
-  // load-bearing reason. **THE REASON THAT COVERS ALL THREE IS LATCH
-  // PARITY**: every one of them claims the SAME Rust latch —
-  // `begin_pick()` at three sites in `lib.rs` — and Rust's `PickInFlight`
-  // is the real gate (T-021), this flag only its webview mirror. A bound
-  // HERE releases the mirror while Rust still holds the original, so the
-  // next press reaches `begin_pick`, gets `Busy`, and `reducePickOutcome`
-  // maps `busy` to `prev` BY IDENTITY: a button that silently does
-  // nothing — the T-171/T-183 family this card exists to close. Bounding
-  // the webview half of a two-latch pair does not shorten the wait, it
-  // only desynchronises the pair.
-  //
-  // THE RESIDUAL, STATED RATHER THAN LEFT TO BE FOUND: because
-  // `start_genesis_here` really can never answer, its latch really can
-  // strand. That is an ACCEPTED residual, not a closed case — the repair
-  // available at this seat is worse than the defect, and the repair that
-  // is not (a Rust-side bound that releases `PickInFlight` with it) is a
-  // different change in a different language. Routed in the notes.
-  //
-  // AND HOW THE THIRD COMMAND WAS MISSED, because the next sweep should
-  // not repeat it: this card's own thesis is that the defect is decided
-  // per RUST COMMAND, and the first class sweep used the `await invoke(`
-  // CALL SITE as its unit — so all three counted once and the odd one
-  // hid behind the shared `await`. **A sweep whose unit is coarser than
-  // its thesis reports a closure it has not measured.**
+// Correlation only. Native replies confirm this finite attempt; it grants no path authority.
+let setupAttemptSequence = 0;
+const setupAttemptPrefix = typeof crypto !== "undefined" ? crypto.getRandomValues(new Uint32Array(1))[0]! * 1048576 : 0;
+async function runPicker(command: "pick_project_folder" | "pick_genesis_folder" | "start_genesis_here", view?: SetupHereView): Promise<void> {
+  // Native dialogs wait for the user. The same native pick lease also covers
+  // bounded Init child cleanup; releasing only the UI half early would hide Busy.
   if (!isTauri || shell.picking) return;
+  if (command === "start_genesis_here" && (view === undefined || !validPair(view.expectedContext) ||
+      (view.target.kind === "offered" && !validOffer(view.target.token)))) return;
   const attempt = {};
+  const correlation = setupAttemptPrefix + ++setupAttemptSequence;
+  if (!Number.isSafeInteger(correlation)) return;
+  const args = command === "pick_project_folder" ? undefined : command === "pick_genesis_folder" ? {attempt: correlation}
+    : {request: {...view!, expectedContext: contextPair(view!.expectedContext), attempt: correlation}};
   pickerAttempt = attempt;
   setShell({ picking: true });
   try {
-    const outcome = await invoke<ScopedPayload<PickOutcomePayload>>(command);
-    if (pickerAttempt === attempt) commitPickOutcome(outcome);
+    const outcome = await invoke<ScopedPayload<PickOutcomePayload>>(command, args);
+    if (pickerAttempt !== attempt) return;
+    if (command !== "pick_project_folder" && outcome.attempt !== correlation) {
+      throw new Error("setup response did not match the original attempt");
+    }
+    commitPickOutcome(outcome);
+    // This is an original setup receipt/uncertainty notice, separate from
+    // watcher scope and current readiness. It never advances docs seq or time.
+    const notice = setupNotice(outcome.setupNotice);
+    if (notice !== null && pickerAttempt === attempt) setShell({setupNotice: notice});
   } catch (err) {
     if (pickerAttempt === attempt) {
-      // A transport failure does not establish whether native selection
-      // committed. Reconcile through the authoritative dispatcher first.
       try { applyProjectStatus(await invoke<ScopedPayload<ProjectStatusPayload>>("docs_snapshot")); }
-      catch { /* The notice reports unavailable reconciliation honestly. */ }
+      catch { /* Keep unavailable reconciliation visible below. */ }
       if (pickerAttempt === attempt) setShell({ rejectedPick: { path: "", message: `selection response unavailable: ${String(err)}`, probe: null } });
     }
   } finally {

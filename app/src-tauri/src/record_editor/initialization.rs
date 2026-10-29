@@ -39,7 +39,7 @@ impl SelectedInitializationDirectory {
     pub(crate) fn path(&self) -> &Path {
         &self.path
     }
-    pub(super) fn descriptor(&self) -> Value {
+    pub(crate) fn descriptor(&self) -> Value {
         json!({"path":self.path,"device":self.device,"inode":self.inode})
     }
     pub(crate) fn verify(&self) -> std::result::Result<(), String> {

@@ -41,18 +41,19 @@ const ipc = vi.hoisted(() => ({
   release: null as null | ((value: unknown) => void),
 }));
 
-vi.mock("@tauri-apps/api/core", () => ({
-  invoke: (command: string) => {
+vi.mock("@tauri-apps/api/core", async () => {
+  const {setupFixtureReply} = await import("./fixtures/setup-ipc");
+  return {invoke: (command: string, args?: unknown) => {
     ipc.invoke(command);
     if (ipc.holdNext) {
       ipc.holdNext = false;
       return new Promise<unknown>((resolve) => {
-        ipc.release = resolve;
+        ipc.release = value => resolve(setupFixtureReply(command,args,value));
       });
     }
-    return Promise.resolve(ipc.outcomes.get(command));
-  },
-}));
+    return Promise.resolve(ipc.outcomes.get(command)).then(value => setupFixtureReply(command,args,value));
+  }};
+});
 vi.mock("@tauri-apps/api/event", () => ({
   emit: () => Promise.resolve(),
   listen: (name: string, handler: (event: { payload: unknown }) => void) => {

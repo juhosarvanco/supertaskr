@@ -862,3 +862,29 @@ fn backup_ipc_registers_receipt_only_commands_without_opening_a_dialog_for_unkno
     }
     app.state::<crate::record_editor::RecordEditorState>().stop();
 }
+
+
+#[test]
+fn new_setup_ipc_requires_finite_attempt_and_rendered_here_target_without_expanding_grants() {
+    use tauri::Manager;
+    let mut context=mock_context(noop_assets());
+    *context.runtime_authority_mut()=tauri::runtime_authority!(shipped_manifests(),resolve_shipped());
+    let (ctl,_receiver)=mpsc::channel();
+    let app=mock_builder().manage(WatchState::new(None,Arc::new(AtomicU64::new(0)),ctl))
+        .manage(crate::genesis_setup::SetupState::default()).manage(crate::record_editor::RecordEditorState::default())
+        .invoke_handler(tauri::generate_handler![crate::pick_genesis_folder,crate::start_genesis_here])
+        .build(context).unwrap();
+    let webview=tauri::WebviewWindowBuilder::new(&app,"main",Default::default()).build().unwrap();
+    for (command,key,body) in [
+        ("pick_genesis_folder","attempt",json!({"attempt":0})),
+        ("start_genesis_here","request",json!({"request":{"attempt":1,"expectedContext":{"selectionSequence":0,"contextSequence":0},"target":{"kind":"selected"}}})),
+    ] {
+        let missing=get_ipc_response(&webview,invoke_request(command,local_origin(),InvokeBody::default())).expect_err("old zero-argument setup cannot select or scaffold").to_string();assert!(missing.contains(key),"{missing}");
+        let value=get_ipc_response(&webview,invoke_request(command,local_origin(),InvokeBody::Json(body.clone()))).expect("local finite validation runs before any dialog").deserialize::<serde_json::Value>().unwrap();
+        assert_eq!(value["kind"],"error");assert_eq!(value["scope"]["projectDir"],serde_json::Value::Null);
+        assert_eq!(value["attempt"],if command=="pick_genesis_folder" {0}else{1});
+        let remote=get_ipc_response(&webview,invoke_request(command,REMOTE_ORIGIN,InvokeBody::Json(body))).expect_err("remote cannot invoke setup").to_string();assert!(remote.contains("not allowed"),"{remote}");
+    }
+    let authority=get_ipc_response(&webview,invoke_request("start_genesis_here",local_origin(),InvokeBody::Json(json!({"request":{"attempt":2,"expectedContext":{"selectionSequence":0,"contextSequence":0},"target":{"kind":"selected"},"productRoot":"/untrusted"}})))).expect_err("no webview root authority").to_string();assert!(authority.contains("productRoot"));
+    assert!(app.state::<WatchState>().project_dir().is_none());drop(webview);drop(app);
+}
