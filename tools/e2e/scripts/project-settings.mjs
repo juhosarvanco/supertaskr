@@ -124,6 +124,17 @@ export function requireProjectSection(loaded, section) {
 }
 
 /** @typedef {{status:"ready",selection:{role:string,requested:string,harness:"claude",model:string,vehicle:string|null,sessionPolicy:{default:string,warnAfterTurns:number}},provenance:{configurationDigest:string,productRevision:string,toolManifestDigest:string}}|{status:"cannot-run",code:3,reason:string,diagnostics:string[]}} ProjectRoleResult */
+/** @typedef {{status:"ready",selection:{requested:string,model:string,vehicle:string|null}}|{status:"cannot-run",code:3,reason:string,diagnostics:string[]}} ProjectRoleModelResult */
+/** One executable model[@vehicle] spelling, using canonical stamp parsers.
+ * This normalizes data; the effect's actual harness adapter still qualifies it.
+ * @param {unknown} requested @returns {ProjectRoleModelResult} */
+export function normalizeProjectRoleModel(requested) {
+  const cannot = () => freezeSettings({ status: /** @type {const} */ ("cannot-run"), code: /** @type {const} */ (3), reason: "project-role-selection-unsupported", diagnostics: ["A role effect requires one bounded unambiguous model[@vehicle] selection; historical or compound prose is not an executable default"] });
+  if (typeof requested !== "string") return cannot();
+  const parsed = parseModelSession(requested), models = stampModels(requested), compact = requested.trim().replace(/\s*@\s*/g, "@");
+  if (requested.length > 1024 || models.length !== 1 || models[0] !== parsed.model || compact !== parsed.model + (parsed.session === undefined ? "" : `@${parsed.session}`) || parsed.session !== undefined && (parsed.session.length > 128 || !/^[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(parsed.session))) return cannot();
+  return freezeSettings({ status: "ready", selection: { requested, model: parsed.model, vehicle: parsed.session ?? null } });
+}
 /** Normalize one canonical committed role observation for the fixed supported
  * CLI adapter. This grants no dispatch and claims no model availability. The
  * record parser retains prose stamps; an effect cannot choose one model from
@@ -135,13 +146,13 @@ export function resolveProjectRole(loaded, role) {
   if (loaded.status !== "ready") return cannot(loaded.code, loaded.diagnostics);
   if (loaded.provenance.kind !== "committed") return cannot("project-role-committed-required", ["Role effects require canonical committed PRODUCT settings"]);
   if (!Object.hasOwn(loaded.settings.roles, role)) return cannot("project-role-unconfigured", [`No explicit role selection for ${role}`]);
-  const requested = /** @type {string} */ (loaded.settings.roles[role]), parsed = parseModelSession(requested), models = stampModels(requested);
-  const compact = requested.trim().replace(/\s*@\s*/g, "@");
-  if (requested.length > 1024 || models.length !== 1 || models[0] !== parsed.model || compact !== parsed.model + (parsed.session === undefined ? "" : `@${parsed.session}`) || parsed.session !== undefined && (parsed.session.length > 128 || !/^[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(parsed.session))) return cannot("project-role-selection-unsupported", ["A role effect requires one bounded unambiguous model[@vehicle] selection; historical or compound prose is not an executable default"]);
-  const qualified = /^claude\/([A-Za-z0-9][A-Za-z0-9._-]*)$/.exec(parsed.model);
-  const model = qualified?.[1] ?? (/^claude-[A-Za-z0-9][A-Za-z0-9._-]*$/.test(parsed.model) ? parsed.model : null);
+  const normalized = normalizeProjectRoleModel(loaded.settings.roles[role]);
+  if (normalized.status !== "ready") return normalized;
+  const { requested, model: selected, vehicle } = normalized.selection;
+  const qualified = /^claude\/([A-Za-z0-9][A-Za-z0-9._-]*)$/.exec(selected);
+  const model = qualified?.[1] ?? (/^claude-[A-Za-z0-9][A-Za-z0-9._-]*$/.test(selected) ? selected : null);
   if (model === null || model.length > 256 || ["default", "auto", "latest"].includes(model.toLowerCase())) return cannot("project-role-harness-unsupported", ["The current native adapter requires an explicit Claude model (claude-<model> or claude/<model>); no account or harness-only fallback is selected"]);
-  return freezeSettings({ status: "ready", selection: { role, requested, harness: "claude", model, vehicle: parsed.session ?? null,
+  return freezeSettings({ status: "ready", selection: { role, requested, harness: "claude", model, vehicle,
     sessionPolicy: { default: loaded.settings.session_policy.default, warnAfterTurns: loaded.settings.session_policy.warn_after_turns } },
     provenance: { configurationDigest: loaded.provenance.configDigest, productRevision: loaded.provenance.productRevision, toolManifestDigest: loaded.provenance.tool.manifestDigest } });
 }

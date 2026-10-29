@@ -2,7 +2,7 @@ import { readFileSync, rmSync } from "node:fs";
 import path from "node:path";
 import { expect,test } from "@playwright/test";
 import { loadInstalledRecordTool } from "../scripts/records-check.mjs";
-import { loadProjectSettings,loadWorkingProjectSettings,resolveProjectRole,seedProjectSettings } from "../scripts/project-settings.mjs";
+import { loadProjectSettings,loadWorkingProjectSettings,normalizeProjectRoleModel,resolveProjectRole,seedProjectSettings } from "../scripts/project-settings.mjs";
 import { GENERIC_RECORD_PROFILE } from "../scripts/records-validation.mjs";
 import { privateRecordFixture,privateGit,putPrivate } from "./private-record-fixture";
 
@@ -15,6 +15,15 @@ function fixture(){
   const load=(revision:string)=>loadProjectSettings({productRoot:f.product,productRevision:revision,tool});
   return {...f,toolRoot:f.tool,tool,seed,settings,commit,load};
 }
+test("shared role normalization preserves one exact model/vehicle without selecting an effect harness",()=>{
+  for(const [requested,model,vehicle] of [["gpt-6.1-sol","gpt-6.1-sol",null],[" codex/gpt-6.1-sol @S3 ","codex/gpt-6.1-sol","S3"],["claude-opus-5@fresh","claude-opus-5","fresh"]]){
+    const result=normalizeProjectRoleModel(requested);expect(result).toEqual({status:"ready",selection:{requested,model,vehicle}});expect(Object.isFrozen(result)).toBe(true);
+    if(result.status!=="ready")throw Error(JSON.stringify(result));expect(Object.isFrozen(result.selection)).toBe(true);expect(result.selection).not.toHaveProperty("harness");
+  }
+  for(const requested of [undefined,null,{},"","gpt-6.1-sol@","gpt-6.1-sol@fresh + claude-opus-5@S3","gpt-6.1-sol@fresh (annotation)","gpt-6.1-sol@human","x".repeat(1025)]){
+    expect(normalizeProjectRoleModel(requested)).toMatchObject({status:"cannot-run",code:3,reason:"project-role-selection-unsupported"});
+  }
+});
 test("canonical committed planner selection names exact requested CLI model, vehicle and session defaults",()=>{
   const f=fixture();try{
     for(const [requested,vehicle] of [["claude-opus-5@subagent","subagent"],["claude/claude-opus-5@fresh","fresh"],["claude-opus-5",null],[" claude-opus-5 @fresh ","fresh"],["claude-opus-5@S3","S3"]]){
