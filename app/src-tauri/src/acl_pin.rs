@@ -498,7 +498,9 @@ fn t021_real_invokes_dialog_fs_opener_denied_app_allowed_remote_denied() {
     .expect("docs_snapshot must be allowed from the local origin")
     .deserialize::<serde_json::Value>()
     .expect("docs_snapshot answers JSON");
-    assert_eq!(status, json!({ "kind": "noProject" }));
+    assert_eq!(status, json!({ "kind": "noProject", "scope": {
+        "seq":0,"projectDir":null,"selectionSequence":0,"contextSequence":0,"records":null
+    } }));
 
     // (b) a core:default plugin command passes the ACL gate (any failure
     // is at worst an argument error, never a denial).
@@ -591,10 +593,9 @@ fn t021_real_invokes_dialog_fs_opener_denied_app_allowed_remote_denied() {
 /// un-gated locally and denied remotely" a demonstrated fact for THESE
 /// commands rather than an argument by analogy.
 ///
-/// Headless and spawn-free by construction: `WatchState` holds no
-/// project, so `genesis_start` returns `noProject` before it resolves a
-/// binary or materializes anything, and `genesis_send_turn` returns
-/// `noSession`. No child process exists in this test.
+/// Headless and spawn-free: no selected project or offered activation exists.
+/// Current managed commands return their scoped refusal before resolving a
+/// binary, repairing runtime files or materializing anything.
 #[test]
 fn t025_genesis_commands_are_locally_invokable_and_remotely_denied() {
     let mut context = mock_context(noop_assets());
@@ -603,7 +604,7 @@ fn t025_genesis_commands_are_locally_invokable_and_remotely_denied() {
 
     let (ctl, _ctl_rx) = mpsc::channel();
     let watch = WatchState::new(None, Arc::new(AtomicU64::new(0)), ctl);
-    let agent = crate::agent::AgentState::new(
+    let agent = crate::agent::AgentState::new_managed(
         crate::agent::runner::RunnerConfig::default(),
         |_event| {},
     );
@@ -618,6 +619,7 @@ fn t025_genesis_commands_are_locally_invokable_and_remotely_denied() {
         ])
         .manage(watch)
         .manage(agent)
+        .manage(crate::record_editor::RecordEditorState::default())
         .build(context)
         .expect("mock app builds with the shipped authority");
     let webview = tauri::WebviewWindowBuilder::new(&app, "main", Default::default())
@@ -631,20 +633,27 @@ fn t025_genesis_commands_are_locally_invokable_and_remotely_denied() {
             .expect("typed JSON payload")
     };
 
-    // Zero-argument, and the typed outcome comes back through the real
-    // handler and the real managed state.
-    assert_eq!(call("genesis_cancel", InvokeBody::default()), json!({ "kind": "idle" }));
-    assert_eq!(call("genesis_start", InvokeBody::default()), json!({ "kind": "noProject" }));
-    // The one command that takes a datum takes exactly one: the user's
-    // own text. No path, no binary, no flag, no adapter selector.
-    assert_eq!(
-        call("genesis_send_turn", InvokeBody::Json(json!({ "text": "hello" }))),
-        json!({ "kind": "noSession" })
-    );
-    let status = call("genesis_status", InvokeBody::default());
-    assert_eq!(status["phase"], json!("idle"));
-    assert_eq!(status["turn"], json!(0));
-    assert_eq!(status["methodVersion"], json!(crate::agent::kit::METHOD_SNAPSHOT_VERSION));
+    let context=json!({"selectionSequence":0,"contextSequence":0});
+    let identity=json!({"activation":1,"token":"not-offered","sessionId":"not-offered",
+        "originDigest":format!("sha256:{}","a".repeat(64)),"initiatingAttempt":1});
+    let inputs=[
+        ("genesis_cancel",json!({"request":{"expectedContext":context,"attempt":1,"identity":identity}}),"genesis-activation-changed"),
+        ("genesis_start",json!({"request":{"expectedContext":context,"attempt":2}}),"genesis-no-project"),
+        ("genesis_send_turn",json!({"request":{"expectedContext":context,"attempt":3,"identity":identity},"text":"hello"}),"genesis-no-project"),
+        ("genesis_status",json!({"request":{"expectedContext":context,"attempt":4}}),"genesis-no-project"),
+    ];
+    let mut sequence=0;let mut status=json!(null);
+    for (command,input,reason) in &inputs {
+        let response=call(command,InvokeBody::Json(input.clone()));
+        assert_eq!(response["selectionSequence"],0);assert_eq!(response["contextSequence"],0);
+        assert_eq!(response["attempt"],input["request"]["attempt"]);
+        assert_eq!(response["result"],json!({"kind":"error","message":reason}));
+        assert_eq!(response["identity"],if *command=="genesis_cancel" {identity.clone()} else {json!(null)});
+        let next=response["seq"].as_u64().expect("typed native sequence");assert!(next>sequence);sequence=next;
+        if *command=="genesis_status" {status=response;}
+        let legacy=get_ipc_response(&webview,invoke_request(command,local_origin(),InvokeBody::default())).expect_err("scope-less legacy IPC is no longer registered");
+        assert!(legacy.to_string().contains("request"));
+    }
     // The adapter table is unreachable: no command returns it, and the
     // status payload names no binary, argv, flag or permission mode.
     let rendered = status.to_string();
@@ -656,8 +665,8 @@ fn t025_genesis_commands_are_locally_invokable_and_remotely_denied() {
     }
 
     // And every one of them is denied from a remote origin.
-    for cmd in ["genesis_start", "genesis_send_turn", "genesis_status", "genesis_cancel"] {
-        let err = get_ipc_response(&webview, invoke_request(cmd, REMOTE_ORIGIN, InvokeBody::default()))
+    for (cmd,input,_) in &inputs {
+        let err = get_ipc_response(&webview, invoke_request(cmd, REMOTE_ORIGIN, InvokeBody::Json(input.clone())))
             .expect_err(&format!("{cmd} must be DENIED from a remote origin"));
         let msg = err.as_str().map(str::to_string).unwrap_or_else(|| err.to_string());
         assert!(
