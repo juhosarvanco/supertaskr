@@ -43,7 +43,7 @@ function projectionFixture(from: string) {
   }
   return { repo, base, authority, worker, raw, cleanup: () => removeGitFixture(dir, "ordinary projection T-355") };
 }
-function fixture(colocated = false, change = "mixed",context:{review?:string,settings?:string,foundation?:boolean}={}) {
+function fixture(colocated = false, change = "mixed",context:{review?:string,settings?:string,foundation?:boolean,productFiles?:Record<string,string>,recordsFiles?:Record<string,string>}={}) {
   const dir = realpathSync(mkdtempSync(path.join(os.tmpdir(), "verification-T-355-")));
   const product = path.join(dir, "product"), records = colocated ? product : path.join(dir, "records");
   for (const root of new Set([product, records])) {
@@ -55,7 +55,9 @@ function fixture(colocated = false, change = "mixed",context:{review?:string,set
   put(product, "method/roles/verifier.md", readFileSync(path.join(SOURCE, "method/roles/verifier.md"), "utf8"));
   put(product, "method/runtime/process-schema.yaml", readFileSync(path.join(SOURCE, "method/runtime/process-schema.yaml"), "utf8")); commit(product);
   if(context.settings){put(product,"supertaskr.yaml",context.settings);commit(product);}
+  if(context.productFiles){for(const [file,text] of Object.entries(context.productFiles))put(product,file,text);commit(product);}
   if(context.foundation)for(const name of ["NORTH_STAR","ROADMAP","ARCHITECTURE","CONVENTIONS","STATE"])put(records,`docs/${name}.md`,readFileSync(path.join(SOURCE,"method/docs-templates",`${name}.md`),"utf8"));
+  if(context.recordsFiles)for(const [file,text] of Object.entries(context.recordsFiles))put(records,file,text);
   if (!colocated) put(product, WORKSPACE_BINDING_REL_PATH, JSON.stringify({ version: 1, projectId: "qualified-fixture", productRoot: product, recordsRoot: records }));
   const identity = measureProductIdentity(product);
   put(records, WORKSPACE_ASSOCIATION_REL_PATH, JSON.stringify({ version: 1, projectId: "qualified-fixture", product: { objectFormat: identity.objectFormat, rootCommits: identity.rootCommits } }));
@@ -106,7 +108,7 @@ function fixture(colocated = false, change = "mixed",context:{review?:string,set
     cleanup: () => removeGitFixture(dir, "qualified native T-355") };
 }
 
-export async function reviewed(colocated = false, change = "mixed",context:{review?:string,settings?:string,foundation?:boolean}={}) {
+export async function reviewed(colocated = false, change = "mixed",context:{review?:string,settings?:string,foundation?:boolean,productFiles?:Record<string,string>,recordsFiles?:Record<string,string>}={}) {
   const fx = fixture(colocated, change,context);
   const started: any = await startRun(fx.product, { assignment: fx.selected() });
   fx.bind(started.record.attempt);

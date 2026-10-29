@@ -529,6 +529,8 @@ export function refusalLines(v) {
  * @property {string} [stdin]    the proposed updates, verbatim
  * @property {boolean} [stdinReadable] whether that input could be READ at all
  * @property {string} [remote]   the remote's name or URL, as git's argv gave it
+ * @property {string} [remoteName] exact Git argv remote name
+ * @property {string} [remoteUrl] exact Git argv URL
  */
 
 /**
@@ -650,6 +652,12 @@ function decideWith(request, seams, notices, configured = undefined) {
         "every ref is already up to date. The push is allowed and nothing here has measured " +
         "anything.",
     );
+  }
+
+  if(configured!==undefined&&"token" in readToken(root)){
+    const protectedDecision=configured.publication(root,{mode:"pre-push",remoteName:request.remoteName??null,remoteUrl:request.remoteUrl??null,
+      updates:parsed.updates.map(({localRef,localOid,remoteRef,remoteOid})=>({localRef,localOid,remoteRef,remoteOid}))});
+    if(protectedDecision!==undefined)return protectedDecision;
   }
 
   // ── WHO HOLDS THIS CHECKOUT? (T-238's arm, asked here too) ────────

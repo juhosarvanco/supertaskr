@@ -4,6 +4,7 @@ import {createHash} from "node:crypto";
 import path from "node:path";
 import {operationContent,operationDigest,operationPayload,operationWork} from "./operation-record.mjs";
 import {validQualifiedCompletionProgress} from "./qualified-completion-record.mjs";
+import {validQualifiedPublicationProgress} from "./qualified-publication-record.mjs";
 import {normalizeProjectPublication} from "../../../lib/parser/dist/pure.js";
 /** @param {any} v @param {string[]} fields */
 function shape(v,fields){return v && typeof v === "object" && !Array.isArray(v) && Object.keys(v).sort().join("\0") === [...fields].sort().join("\0");}
@@ -119,7 +120,7 @@ function validRecord(rec){
  !shape(rec.reservation,["file","takenAt","releasedAt"]) || !date(rec.reservation.takenAt) || rec.reservation.releasedAt !== null&&!date(rec.reservation.releasedAt) ||
  !Array.isArray(rec.events) || rec.events.some((/** @type {any} */ e)=>!shape(e,["at","op"]) || !date(e.at) || typeof e.op !== "string"))return false;
  const op=rec.operation;
- if(!shape(op,["version","id","kind","request","digest","owner","createdAt","claims","progress","localAcceptance",...(Object.hasOwn(op,"completion")?["completion"]:[])]) || op.version !== 1 || op.kind !== "qualified-delivery" ||
+ if(!shape(op,["version","id","kind","request","digest","owner","createdAt","claims","progress","localAcceptance",...(Object.hasOwn(op,"completion")?["completion"]:[]),...(Object.hasOwn(op,"publication")?["publication"]:[])]) || op.version !== 1 || op.kind !== "qualified-delivery" ||
  !validQualifiedDeliveryRequest(op.request) || op.id !== op.request.operationId || op.digest !== operationDigest(op.request) || rec.assignment.id !== operationWork(op.id) || rec.attempt !== `${operationWork(op.id)}-a1` ||
  !date(op.createdAt) || !shape(op.owner,["pid","identity","token"]) || !Number.isInteger(op.owner.pid) || op.owner.pid<1 || typeof op.owner.identity !== "string" || !op.owner.identity || typeof op.owner.token !== "string" ||
  !Array.isArray(op.claims) || op.claims.length !== op.request.landings.length || !Array.isArray(op.progress) || op.progress.length !== op.claims.length)return false;
@@ -133,6 +134,7 @@ function validRecord(rec){
  }
  const primary=op.claims[0];if(rec.resource !== primary.resource || rec.reservation.file !== primary.file || rec.reservation.takenAt !== primary.takenAt)return false;
  if(op.localAcceptance !== null&&!(op.progress.every((/** @type {any} */ p)=>p.acceptance !== null)&&operationContent(op.localAcceptance)===operationContent(op.progress.map((/** @type {any} */ p)=>({key:p.key,...p.acceptance})))))return false;
+ if(op.publication!==undefined&&(!validQualifiedPublicationProgress(op.publication,op.request)||op.localAcceptance===null))return false;
  if(op.completion!==undefined&&(!validQualifiedCompletionProgress(op.completion,op.request,op.digest)||op.localAcceptance===null))return false;
  const accepted=op.completion?.acceptance!==null&&op.completion?.acceptance!==undefined;
  if(!accepted&&(rec.reservation.releasedAt!==null||op.claims.some((/** @type {any} */ c)=>c.releasedAt!==null)||rec.state==="finished"))return false;

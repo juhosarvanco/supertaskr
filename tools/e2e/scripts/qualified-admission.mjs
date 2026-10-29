@@ -7,6 +7,7 @@ import path from "node:path";
 import { captureCommittedInputs, captureTaskSnapshot } from "./records.mjs";
 import { normalizeContextRequest } from "./records-context.mjs";
 import { resolveWorkspace } from "./workspace.mjs";
+import {validatePublicationProcessProof} from "./qualified-publication-process.mjs";
 
 export class AdmissionPreflightFinding extends Error {
   /** @param {string} code */
@@ -207,12 +208,16 @@ export async function loadQualifiedDeliveryPolicy(){
  * Only its exact owned physical row may be pending; ordinary preflight retains
  * its existing refusal of every pending operation. Current grant/pause/drift
  * remains the same canonical integrator re-entry policy over retained bytes.
- * @param {string} root @param {any} source @param {any} [ownOperation] */
-export function qualifiedDeliveryPhasePolicy(root,source,ownOperation=null){
+ * A fixed publication child may redeem actual in-process OS ancestry proof;
+ * the canonical row/claims/policy are unchanged and ownership is never adopted.
+ * @param {string} root @param {any} source @param {any} [ownOperation] @param {any} [childProof] */
+export function qualifiedDeliveryPhasePolicy(root,source,ownOperation=null,childProof=null){
  if(!consumers)refuse("preflight-consumers-not-loaded");const {runs,native}=consumers;
  if(ownOperation !== null){
-  if(!runs.validOperationRecord(ownOperation) || ownOperation.operation.kind !== "qualified-delivery" || ownOperation.operation.request.coordinator.root !== realpathSync(root) ||
-    ownOperation.operation.owner.pid !== process.pid || ownOperation.operation.owner.identity !== runs.defaultRunIo().identity(process.pid))refuse("preflight-operation-owner");
+  if(!runs.validOperationRecord(ownOperation) || ownOperation.operation.kind !== "qualified-delivery" || ownOperation.operation.request.coordinator.root !== realpathSync(root))refuse("preflight-operation-owner");
+  if(childProof===null){
+   if(ownOperation.operation.owner.pid !== process.pid || ownOperation.operation.owner.identity !== runs.defaultRunIo().identity(process.pid))refuse("preflight-operation-owner");
+  }else validatePublicationProcessProof(childProof,ownOperation);
   for(const claim of ownOperation.operation.claims){
    if(claim.file !== runs.reservationPath(root,claim.resource) || runs.readReservation(root,claim.resource)?.attempt !== ownOperation.attempt)refuse("preflight-operation-owner");
    runs.assertOperationOwnership(root,{resource:claim.resource,attempt:ownOperation.attempt});

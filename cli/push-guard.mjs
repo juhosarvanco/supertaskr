@@ -3709,6 +3709,10 @@ function decideWith(request, check, cheap, gh, holder, notices, configured = und
   if (root === undefined) {
     return allow("not-a-repository", `${pushCwd} sits in no git checkout`);
   }
+  if(configured!==undefined&&"token" in readToken(root)){
+    const protectedDecision=configured.publication(root,{mode:"pre-tool",command});
+    if(protectedDecision!==undefined)return protectedDecision;
+  }
   // IS THIS OUR REPOSITORY — AND *COULD NOT LOOK* IS NOT *NO* (T-238-s1,
   // taking T-216-s8's attribution). `existsSync` here was one of the two
   // errno-swallowing probes that could turn a held seat into a silent

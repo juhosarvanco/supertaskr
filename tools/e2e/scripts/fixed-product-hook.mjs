@@ -38,7 +38,7 @@ export function renderFixedProductPrePush(options){
  if(!options||Object.keys(options).sort().join(",")!=="productRoot,tool"||typeof options.productRoot!=="string")refuse("FIXED_HOOK_REQUEST");
  checkOperationEnvironment();const root=realpathSync(options.productRoot);
  const closure=requireInstalledRuntimeAssets(options.tool,["tools/e2e/scripts/fixed-product-hook.mjs","tools/e2e/scripts/product-hook.mjs",...[
-  "push-guard","pre-push-guard","configured-gate-reader","landing-gate","gate-token"].map(n=>`cli/${n}.mjs`)]);
+  "push-guard","pre-push-guard","configured-gate-reader","hook-git-context","landing-gate","gate-token"].map(n=>`cli/${n}.mjs`)]);
  const node=realpathSync(process.execPath),entry=installedRecordAsset(options.tool,"tools/e2e/scripts/product-hook.mjs");physical(node,"file");physical(entry,"file");
  const bytes=`#!/bin/sh\nexec ${quote(node)} ${quote(entry)} --root ${quote(root)} --mode pre-push -- "$@"\n`;
  return freeze({version:1,productRoot:root,node,entry,bytes,sha256:hash(bytes),closure});

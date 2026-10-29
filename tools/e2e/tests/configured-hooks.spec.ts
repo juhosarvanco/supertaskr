@@ -13,7 +13,7 @@ test("the fixed copied hook entry allows non-push and refuses ungraded pushes wi
   const parent = mkdtempSync(path.join(tmpdir(), "cold-configured-hook-")), cold = path.join(parent, "tool"), product = path.join(parent, "product  ");
   const copy = (file: string) => { mkdirSync(path.dirname(path.join(cold, file)), { recursive: true }); copyFileSync(path.join(source, file), path.join(cold, file)); };
   try {
-    for (const owner of ["lane-fence", "gate-token", "expand-fence", "hook-install", "pre-push-guard", "push-guard", "landing-gate", "configured-gate-reader", "is-main"]) copy(`cli/${owner}.mjs`);
+    for (const owner of ["lane-fence", "gate-token", "expand-fence", "hook-install", "pre-push-guard", "push-guard", "landing-gate", "configured-gate-reader", "hook-git-context", "is-main"]) copy(`cli/${owner}.mjs`);
     for (const file of ["tools/e2e/scripts/checkout-currency.mjs", "tools/e2e/scripts/product-hook.mjs", "lib/parser/src/fence.ts"]) copy(file);
     const toolAlias = path.join(parent, "tool-alias"); symlinkSync(cold, toolAlias, "dir");
     mkdirSync(product); privateGit(product, ["init", "-q", "--initial-branch=main"]); privateGit(product, ["config", "user.name", "Cold hook"]); privateGit(product, ["config", "user.email", "fixture@example.invalid"]);

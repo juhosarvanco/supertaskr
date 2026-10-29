@@ -108,8 +108,8 @@ function effectPolicy(root,rec,landing,configuration){
 /** Current canonical policy for a later effect of this exact stored operation.
  * This grants no target/write selection; each phase must check its own frozen
  * expected transition. No caller-supplied authority or pending exemption exists.
- * @param {string} root @param {any} rec @param {any} [configuration] */
-export function assertQualifiedDeliveryContinuation(root,rec,configuration){
+ * @param {string} root @param {any} rec @param {any} [configuration] @param {any} [childProof] */
+export function assertQualifiedDeliveryContinuation(root,rec,configuration,childProof=null){
  const stored=readAcceptedOperation(root,rec.operation.id);
  if(stored?.operation.kind !== "qualified-delivery" || !same(stored,rec))refuse("QUALIFIED_DELIVERY_CHANGED");
  const req=rec.operation.request;
@@ -119,7 +119,7 @@ export function assertQualifiedDeliveryContinuation(root,rec,configuration){
  if(!same(captured.receipt,req.authority.frozenAuthority.receipt) || !same(captured.fence,scope.fence))refuse("QUALIFIED_DELIVERY_CONTEXT_CHANGED");
  const card=safeOperationWorkingPath(captured.receipt.recordsRoot,req.authority.frozenAuthority.preparation.card.path);
  if(!runs.qualifiedProtocolDrift(req.authority.frozenAuthority.preparation.card.text,new TextDecoder("utf-8",{fatal:true}).decode(readFileSync(card))))refuse("QUALIFIED_DELIVERY_CONTRACT_CHANGED");
- retainedAuthority(root,req);qualifiedDeliveryPhasePolicy(root,req.policySource,rec);
+ retainedAuthority(root,req);qualifiedDeliveryPhasePolicy(root,req.policySource,rec,childProof);
  return true;
 }
 /** Full-route capture alone may redeem the actual opaque fixed hook proof.

@@ -73,9 +73,10 @@ export function loadInstalledRecordTool(manifestPath = fileURLToPath(new URL("..
     if (hash(JSON.stringify(methodFiles)) !== manifest.method.packHash) refuse("records-tool-method-changed");
     const runtimeFiles = [...manifest.runtime.files].sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
     if (hash(JSON.stringify(runtimeFiles)) !== manifest.runtime.buildHash) refuse("records-tool-runtime-mismatch");
-    for (const owner of ["records-check", "records-save", "record-write", "records", "records-validation", "records-stdio", "records-backup", "records-backup-operation", "records-backup-settings", "workspace", "native-codex", "docs-scan", "durable-operation", "operation-record", "project-init-operation", "project-init-record", "operation-ref", "qualified-delivery-record", "qualified-delivery-operation", "qualified-publication-context", "qualified-completion-record", "qualified-completion-operation", "fixed-product-hook", "private-backup-record", "project-settings", "dispatch-brief", "health-bands", "rename-scan", "run-record"]) {
+    for (const owner of ["records-check", "records-save", "record-write", "records", "records-validation", "records-stdio", "records-backup", "records-backup-operation", "records-backup-settings", "workspace", "native-codex", "docs-scan", "durable-operation", "operation-record", "project-init-operation", "project-init-record", "operation-ref", "qualified-delivery-record", "qualified-delivery-operation", "qualified-publication-context", "qualified-publication-record", "qualified-publication-process", "qualified-completion-record", "qualified-completion-operation", "fixed-product-hook", "private-backup-record", "project-settings", "dispatch-brief", "health-bands", "rename-scan", "run-record"]) {
       if (!manifest.runtime.files.some((/** @type {any} */ entry) => entry.path === `tools/e2e/scripts/${owner}.mjs`)) refuse("records-tool-runtime-mismatch");
     }
+    if(!manifest.runtime.files.some((/** @type {any} */ entry)=>entry.path==="cli/hook-git-context.mjs"))refuse("records-tool-runtime-mismatch");
     for (const entry of manifest.runtime.files) {
       // Native data is verified at its installation above and selected from
       // that exact manifest by installedRecordAsset; it is not a JS import.

@@ -28,7 +28,7 @@ if (!process.argv.includes("--clean")) {
   for (const file of readdirSync(path.join(source, "tools/e2e/scripts"))) {
     if (file.endsWith(".mjs")) copy(`tools/e2e/scripts/${file}`, `tools/e2e/scripts/${file}`);
   }
-  for (const name of ["lane-fence", "gate-token", "expand-fence", "hook-install", "pre-push-guard", "push-guard", "landing-gate", "configured-gate-reader", "is-main"]) {
+  for (const name of ["lane-fence", "gate-token", "expand-fence", "hook-install", "pre-push-guard", "push-guard", "landing-gate", "configured-gate-reader", "hook-git-context", "is-main"]) {
     copy(`cli/${name}.mjs`, `cli/${name}.mjs`);
   }
   // Hooks load the parser's dependency-free TypeScript source in a fresh

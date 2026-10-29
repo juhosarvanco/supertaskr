@@ -129,7 +129,7 @@ test("ordinary TOOL validation requires the operation reader's unconditional ini
     putPrivate(f.tool,"dist/tool-manifest.json",original);expect(loadInstalledRecordTool(f.manifestPath).package.name).toBe("supertaskr");
   }finally{f.cleanup();}
 });
-for (const [owner,importer] of [["operation-ref","durable-operation"],["qualified-delivery-record","operation-record"],["qualified-delivery-operation","qualified-completion-operation"],["qualified-publication-context","qualified-delivery-operation"],["qualified-completion-record","qualified-delivery-record"],["fixed-product-hook","durable-operation"],["private-backup-record","operation-record"],["records-backup-operation","records-stdio"],["records-backup","records-backup-operation"],["records-backup-settings","records-stdio"],["workspace","records-backup"],["native-codex","records-backup-settings"],["project-init-operation","records-backup-operation"],["project-settings","records-save"],["dispatch-brief","records-save"],["health-bands","project-settings"],["rename-scan","project-settings"]]) {
+for (const [owner,importer] of [["operation-ref","durable-operation"],["qualified-delivery-record","operation-record"],["qualified-delivery-operation","qualified-completion-operation"],["qualified-publication-context","qualified-delivery-operation"],["qualified-publication-record","qualified-delivery-record"],["qualified-publication-process","qualified-admission"],["qualified-completion-record","qualified-delivery-record"],["fixed-product-hook","durable-operation"],["private-backup-record","operation-record"],["records-backup-operation","records-stdio"],["records-backup","records-backup-operation"],["records-backup-settings","records-stdio"],["workspace","records-backup"],["native-codex","records-backup-settings"],["project-init-operation","records-backup-operation"],["project-settings","records-save"],["dispatch-brief","records-save"],["health-bands","project-settings"],["rename-scan","project-settings"]]) {
   test(`ordinary TOOL validation requires its loaded ${owner} owner even when the omitted file remains present`,()=>{
     const f=privateRecordFixture();try{
       const original=readFileSync(f.manifestPath,"utf8"),member=`tools/e2e/scripts/${owner}.mjs`;
@@ -143,6 +143,15 @@ for (const [owner,importer] of [["operation-ref","durable-operation"],["qualifie
     }finally{f.cleanup();}
   });
 }
+test("ordinary TOOL validation requires the actually imported hook routing audit when its omitted file remains present",()=>{
+ const f=privateRecordFixture();try{
+  const original=readFileSync(f.manifestPath,"utf8"),member="cli/hook-git-context.mjs",manifest=JSON.parse(original);
+  expect(loadInstalledRecordTool(f.manifestPath).package.name).toBe("supertaskr");expect(readFileSync(path.join(f.tool,"dist/cli/configured-gate-reader.mjs"),"utf8")).toContain('from "./hook-git-context.mjs"');
+  manifest.runtime.files=manifest.runtime.files.filter((entry:any)=>entry.path!==member);manifest.runtime.buildHash=sha(JSON.stringify(manifest.runtime.files));putPrivate(f.tool,"dist/tool-manifest.json",JSON.stringify(manifest));
+  expect(readFileSync(path.join(f.tool,"dist",member),"utf8").length).toBeGreaterThan(0);expect(()=>loadInstalledRecordTool(f.manifestPath)).toThrow(/records-tool-runtime-mismatch/);
+  putPrivate(f.tool,"dist/tool-manifest.json",original);expect(loadInstalledRecordTool(f.manifestPath).package.name).toBe("supertaskr");
+ }finally{f.cleanup();}
+});
 test("ordinary TOOL validation retains the critical standalone completion writer even when its omitted file remains present",()=>{
  const f=privateRecordFixture();try{
   const original=readFileSync(f.manifestPath,"utf8"),member="tools/e2e/scripts/qualified-completion-operation.mjs",manifest=JSON.parse(original);

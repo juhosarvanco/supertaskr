@@ -26,7 +26,7 @@ export function main(argv) {
       });
     } else {
       decision = createConfiguredPrePushGuard(options).decide({ cwd: process.cwd(), stdin, stdinReadable: readable,
-        remote: `${argv[5]} (${argv[6]})` });
+        remote: `${argv[5]} (${argv[6]})`,remoteName:/** @type {string} */(argv[5]),remoteUrl:/** @type {string} */(argv[6]) });
     }
     for (const notice of decision.notices ?? []) process.stderr.write(`${notice}\n`);
     if (decision.verdict === "block") { process.stderr.write(`${decision.code}: ${decision.reason}\n`); return mode === "pre-push" ? 1 : 2; }

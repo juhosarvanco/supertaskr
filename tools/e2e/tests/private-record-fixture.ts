@@ -52,6 +52,9 @@ export function privateRecordFixture() {
   const packageBytes = readFileSync(path.join(SOURCE, "cli/package.json")), toolVersion = JSON.parse(packageBytes.toString("utf8")).version;
   const entryBytes = readFileSync(path.join(SOURCE, "cli/supertaskr.mjs"));
   putPrivate(tool, "package.json", packageBytes); putPrivate(tool, "supertaskr.mjs", entryBytes);
+  // Actual staged child entries need the package's declared dependency too;
+  // pure in-process checker fixtures previously resolved it from this harness.
+  cpSync(path.join(SOURCE,"tools/e2e/node_modules/yaml"),path.join(tool,"node_modules/yaml"),{recursive:true});
   cpSync(path.join(SOURCE, "lib/parser/dist"), path.join(dist, "lib/parser/dist"), { recursive: true });
   putPrivate(dist, "lib/parser/package.json", readFileSync(path.join(SOURCE, "lib/parser/package.json")));
   const parserFiles: { path: string; sha256: string }[] = [];
@@ -71,7 +74,7 @@ export function privateRecordFixture() {
   const methodVersion = /METHOD_SNAPSHOT_VERSION[^=]*=\s*"([^"]+)"/.exec(readFileSync(path.join(SOURCE, "app/src-tauri/src/agent/kit.rs"), "utf8"))?.[1];
   if (!methodVersion) throw Error("fixture requires the actual method version");
   const runtimePaths = readdirSync(path.join(SOURCE, "tools/e2e/scripts")).filter((file) => file.endsWith(".mjs")).map((file) => `tools/e2e/scripts/${file}`);
-  runtimePaths.push(...["lane-fence", "gate-token", "expand-fence", "hook-install", "pre-push-guard", "push-guard", "landing-gate", "configured-gate-reader", "is-main"].map((name) => `cli/${name}.mjs`), "tools/e2e/package.json");
+  runtimePaths.push(...["lane-fence", "gate-token", "expand-fence", "hook-install", "pre-push-guard", "push-guard", "landing-gate", "configured-gate-reader", "hook-git-context", "is-main"].map((name) => `cli/${name}.mjs`), "tools/e2e/package.json");
   const runtimeFiles = runtimePaths.sort().map((file) => { const bytes = readFileSync(path.join(SOURCE, file)); putPrivate(dist, file, bytes); return { path: file, sha256: sha(bytes) }; });
   const manifest = { version: 2, package: { name: "supertaskr", version: toolVersion, sha256: sha(packageBytes), entrySha256: sha(entryBytes) }, parser: { version: parserPackage.version, files: parserFiles },
     method: { version: methodVersion, packHash: sha(JSON.stringify(methodFiles)), files: methodFiles },

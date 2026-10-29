@@ -5,8 +5,10 @@ import { realpathSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validGateContext } from "./gate-token.mjs";
+import {auditHookGitContext} from "./hook-git-context.mjs";
 
 const POLICY_ENTRY = fileURLToPath(new URL("../tools/e2e/scripts/gate-policy.mjs", import.meta.url));
+const PUBLICATION_ENTRY = fileURLToPath(new URL("../tools/e2e/scripts/qualified-publication-hook.mjs", import.meta.url));
 /** @param {string} root */
 export function configuredHeadRevision(root) {
   const result = spawnSync("git", ["-C", root, "rev-parse", "--verify", "HEAD^{commit}"], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
@@ -17,8 +19,8 @@ export function configuredHeadRevision(root) {
 const refused = (code, detail) => ({ status: "refused", code, detail });
 /** Git paths end in one protocol newline. Spaces belong to the path.
  * @param {string} cwd @param {string[]} argv */
-function gitPath(cwd, argv) {
-  const result = spawnSync("git", ["-C", cwd, "rev-parse", ...argv], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+function gitPath(cwd, argv, env=process.env) {
+  const result = spawnSync("git", ["-C", cwd, "rev-parse", ...argv], { env, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
   if (result.error || result.status !== 0 || !result.stdout.endsWith("\n")) throw new Error("Git could not identify the selected checkout");
   return realpathSync(result.stdout.slice(0, -1));
 }
@@ -45,19 +47,21 @@ export function createConfiguredGateReader(options) {
   /** @param {string} cwd @returns {{status:"refused",code:string,detail:string}|{status:"outside"}|{status:"selected",root:string}} */
   function scope(cwd) {
     try {
-      const root = realpathSync(expected), top = gitPath(root, ["--show-toplevel"]), common = gitPath(root, ["--path-format=absolute", "--git-common-dir"]), gitDir = gitPath(root, ["--absolute-git-dir"]);
+      const audited=auditHookGitContext(expected,cwd,"pre-push");if(audited.status==="outside")return {status:"outside"};
+      const env=audited.env;
+      const root = realpathSync(expected), top = gitPath(root, ["--show-toplevel"],env), common = gitPath(root, ["--path-format=absolute", "--git-common-dir"],env), gitDir = gitPath(root, ["--absolute-git-dir"],env);
       if (top !== root) return refused("hook-product-root-invalid", "The bound PRODUCT must be the exact Git worktree root");
       const objects = realpathSync(path.join(common, "objects"));
       const now = { root, common, gitDir, objects, rootIdentity: identity(root), commonIdentity: identity(common), gitDirIdentity: identity(gitDir), objectIdentity: identity(objects) }, snapshot = JSON.stringify(now);
       if (captured !== undefined && captured !== snapshot) return refused("hook-product-origin-changed", "The bound PRODUCT repository incarnation changed");
       captured ??= snapshot;
       let actual;
-      try { actual = gitPath(cwd, ["--show-toplevel"]); }
+      try { actual = gitPath(cwd, ["--show-toplevel"],env); }
       catch {
         const current = realpathSync(cwd);
         return within(root, current) ? refused("hook-product-scope-unavailable", "Git could not identify a checkout inside the bound PRODUCT") : { status: "outside" };
       }
-      const actualCommon = gitPath(actual, ["--path-format=absolute", "--git-common-dir"]);
+      const actualCommon = gitPath(actual, ["--path-format=absolute", "--git-common-dir"],env);
       if (identity(actualCommon) !== now.commonIdentity) return { status: "outside" };
       if (identity(actual) !== now.rootIdentity) return refused("hook-related-worktree-unadapted", "This related worktree needs its original coordinator and paired authority; this hook stage supports the bound PRODUCT root only");
       return { status: "selected", root: actual };
@@ -73,7 +77,7 @@ export function createConfiguredGateReader(options) {
     if (selected.status !== "selected" || selected.root !== root) return selected.status === "refused" ? selected : refused("hook-product-outside", "This token does not belong to the bound PRODUCT family");
     try {
       const result = spawnSync(process.execPath, [POLICY_ENTRY, "--root", root, "--at", revision, ...(range === undefined ? [] : ["--range", range])], {
-        cwd: root, encoding: "utf8", timeout: 30_000, maxBuffer: 32 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"],
+        cwd: root, env:auditHookGitContext(expected,root,"pre-push").env, encoding: "utf8", timeout: 30_000, maxBuffer: 32 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"],
       });
       if (result.error || result.signal) return refused("hook-gate-policy-unavailable", result.error?.message ?? "The fixed TOOL helper did not finish");
       const value = JSON.parse(result.stdout);
@@ -100,5 +104,20 @@ export function createConfiguredGateReader(options) {
       return refused("hook-gate-policy-unavailable", error instanceof Error ? error.message : String(error));
     }
   }
-  return Object.freeze({ scope, read });
+  /** Original paired publication authority is a separate fixed TOOL reader.
+   * A normal route returns ordinary and follows every existing guard below.
+   * @param {string} root @param {any} request */
+  function publication(root,request){
+    try{
+      const audited=auditHookGitContext(expected,root,request.mode);
+      if(audited.status!=="selected"||audited.root!==root)return {verdict:"block",code:"hook-product-outside",reason:"The publication reader has no selected PRODUCT"};
+      const result=spawnSync(process.execPath,[PUBLICATION_ENTRY,"--root",root,"--mode",request.mode],{cwd:root,env:audited.env,input:JSON.stringify(request),encoding:"utf8",timeout:60_000,maxBuffer:1024*1024,stdio:["pipe","pipe","pipe"]});
+      if(result.error||result.signal||result.status!==0)throw new Error("The fixed publication reader did not finish");
+      const value=JSON.parse(result.stdout);
+      if(value?.status==="ordinary"&&Object.keys(value).join(",")==="status")return undefined;
+      if(!value||Object.keys(value).sort().join(",")!=="code,reason,status,verdict"||value.status!=="decision"||!["allow","block"].includes(value.verdict)||typeof value.code!=="string"||typeof value.reason!=="string")throw new Error("The fixed publication reader returned invalid metadata");
+      return {verdict:value.verdict,code:value.code,reason:value.reason};
+    }catch(error){return {verdict:"block",code:/** @type {any} */(error)?.code??"hook-publication-unavailable",reason:error instanceof Error?error.message:String(error)};}
+  }
+  return Object.freeze({ scope, read, publication });
 }

@@ -48,7 +48,7 @@ function transport(root,remote){
  const selected=rows.filter(row=>row.key.startsWith(`remote.${remote.toLowerCase()}.`)||/^(?:url\.|push\.|protocol\.|http\.|https\.|credential\.|ssh\.|core\.(?:sshcommand|gitproxy)$)/.test(row.key));
  if(selected.some(row=>row.key==="push.recursesubmodules"&&!["false","no","off","0"].includes(row.value.toLowerCase())||
   row.key===`remote.${remote.toLowerCase()}.mirror`&&!["false","no","off","0"].includes(row.value.toLowerCase())||
-  /^(?:remote\..*\.(?:receivepack|uploadpack|vcs|proxy)|push\.pushoption|core\.(?:sshcommand|gitproxy))$/.test(row.key)))refuse("QUALIFIED_PUBLICATION_TRANSPORT_UNSUPPORTED");
+  /^(?:remote\..*\.(?:receivepack|uploadpack|vcs|proxy)|push\.pushoption|core\.(?:sshcommand|gitproxy)|url\..*\.(?:insteadof|pushinsteadof))$/.test(row.key)))refuse("QUALIFIED_PUBLICATION_TRANSPORT_UNSUPPORTED");
  return operationDigest(selected);
 }
 /** Only declared supported routing. Local receivers establish Git mechanics;
@@ -123,3 +123,24 @@ export function qualifiedPublicationContextProof(context){const captured=context
  * the effect owner before calling this function for missing work.
  * @param {any} original @param {any} current */
 export function assertSameQualifiedPublicationContext(original,current){if(operationContent(original)!==operationContent(current))refuse("QUALIFIED_PUBLICATION_CONTEXT_CHANGED");return true;}
+
+/** Original destination observation precedes successor TOOL/binding/policy.
+ * Actual inherited routing and transport programs are still audited before
+ * any receiver query; the stored URL is never replaced by a current remote.
+ * @param {string} root @param {any} original */
+export function observeFrozenPublicationRefs(root,original){
+ checkOperationEnvironment();
+ if(original.destination.endpoint.kind==="local"){
+  const e=original.destination.endpoint;
+  for(const identity of e.identities){const s=lstatSync(identity.path,{bigint:true});if(!s.isDirectory()||s.isSymbolicLink()||realpathSync(identity.path)!==identity.path||String(s.dev)!==identity.device||String(s.ino)!==identity.inode)refuse("QUALIFIED_PUBLICATION_RECEIVER_CHANGED");}
+  // A historical local witness needs no transport program or current server
+  // hook. Read exact refs directly in the original physical bare Git store.
+  const text=git(e.path,["--git-dir",e.path,"for-each-ref","--format=%(objectname)%09%(refname)",original.destination.ref,original.correlationRef]);
+  const refs=new Map();for(const row of text?text.split("\n"):[]){const m=/^([0-9a-f]{40})\t([^\r\n]+)$/.exec(row);if(!m||![original.destination.ref,original.correlationRef].includes(m[2])||refs.has(m[2]))refuse("QUALIFIED_PUBLICATION_REMOTE_OBSERVATION");refs.set(m[2],m[1]);}
+  return {tip:refs.get(original.destination.ref)??null,witness:refs.get(original.correlationRef)??null};
+ }
+ transport(root,original.destination.name);
+ const actual=endpoint(original.destination.url,original.ci.repository);
+ if(operationContent(actual)!==operationContent(original.destination.endpoint))refuse("QUALIFIED_PUBLICATION_RECEIVER_CHANGED");
+ return destination(root,{remote:original.destination.url,destinationRef:original.destination.ref,correlationRef:original.correlationRef});
+}
