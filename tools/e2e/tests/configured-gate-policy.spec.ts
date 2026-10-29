@@ -7,7 +7,7 @@ import { expect, test } from "@playwright/test";
 import { testToolRuntime } from "../fixtures/tool-runtime";
 import { privateGit, putPrivate } from "./private-record-fixture";
 
-async function fixture() {
+async function fixture(createdInputControl = false) {
   const installed = testToolRuntime(), url = (name: string) => pathToFileURL(path.join(installed.runtimeRoot, "tools/e2e/scripts", `${name}.mjs`)).href;
   const gates = await import(url("gate-run")), checker = await import(url("records-check")), settings = await import(url("project-settings")), profiles = await import(url("records-validation"));
   const tokenApi = await import(pathToFileURL(path.join(installed.runtimeRoot, "cli/gate-token.mjs")).href);
@@ -19,7 +19,8 @@ async function fixture() {
   privateGit(coordinator, ["config", "user.name", "Original policy fixture"]); privateGit(coordinator, ["config", "user.email", "fixture@example.invalid"]);
   putPrivate(coordinator, ".gitignore", ".supertaskr/\n__pycache__/\nobserved-count\n");
   putPrivate(coordinator, "pyproject.toml", "[project]\nname='original-policy-example'\nversion='0.0.0'\n");
-  putPrivate(coordinator, "checks/test_original.py", "import pathlib, unittest\nclass Original(unittest.TestCase):\n    def test_one(self):\n        p=pathlib.Path('observed-count'); p.write_text(str(int(p.read_text())+1) if p.exists() else '1')\n        self.assertEqual(2+2,4)\n    def test_two(self): self.assertEqual(3+3,6)\n");
+  const outputControl = createdInputControl ? "        if pathlib.Path('.supertaskr/write-nonignored').exists(): pathlib.Path('generated_input.py').write_text('GENERATED_INPUT = True\\n')\n" : "";
+  putPrivate(coordinator, "checks/test_original.py", `import pathlib, unittest\nclass Original(unittest.TestCase):\n    def test_one(self):\n        p=pathlib.Path('observed-count'); p.write_text(str(int(p.read_text())+1) if p.exists() else '1')\n${outputControl}        self.assertEqual(2+2,4)\n    def test_two(self): self.assertEqual(3+3,6)\n`);
   putPrivate(coordinator, "extra/test_extra.py", "import unittest\nclass Extra(unittest.TestCase):\n    def test_extra(self): self.assertTrue(True)\n");
   putPrivate(coordinator, "cheap/test_cheap.py", "import unittest\nclass Cheap(unittest.TestCase):\n    def test_cheap(self): self.assertTrue(True)\n");
   const data = structuredClone(seed.settings); data.languages = ["python"];
@@ -102,5 +103,28 @@ test("original policy retains both physical repositories, clean exact candidate 
     expect(() => f.gates.createConfiguredGateRunner({ productRoot: f.candidate, productRevision: unrelated, policy: f.policy })).toThrow(/descend from the original/);
     privateGit(f.candidate, ["checkout", "-q", "--detach", later]);
     expect(f.gates.createConfiguredGateRunner({ productRoot: f.candidate, productRevision: later, policy: f.policy }).run(f.policy.required).capture.complete).toBe(true);
+  } finally { f.cleanup(); }
+});
+
+test("original-policy grading refuses nonignored untracked inputs before a suite and files it creates afterward", async () => {
+  test.setTimeout(180_000); const f = await fixture(true);
+  try {
+    const runner = f.gates.createConfiguredGateRunner({ productRoot: f.candidate, productRevision: f.policyRevision, policy: f.policy });
+    const count = () => readFileSync(path.join(f.candidate, "observed-count"), "utf8"), token = () => readFileSync(path.join(f.candidate, ".supertaskr/gate-verdict.json"));
+    expect(runner.run(f.policy.required).capture.complete).toBe(true); expect(count()).toBe("1");
+    const before = token();
+    putPrivate(f.candidate, "checks/test_untracked.py", "raise AssertionError('Untracked discovered input must not run')\n");
+    expect(() => runner.run(f.policy.required)).toThrow(/exact clean candidate/);
+    expect(count()).toBe("1"); expect(token()).toEqual(before);
+    rmSync(path.join(f.candidate, "checks/test_untracked.py"));
+    expect(runner.run(f.policy.required).capture.complete).toBe(true); expect(count()).toBe("2");
+    const restored = token();
+    putPrivate(f.candidate, ".supertaskr/write-nonignored", "Authored suite output control\n");
+    expect(() => runner.run(["python"])).toThrow(/exact clean candidate/);
+    expect(count()).toBe("3"); expect(readFileSync(path.join(f.candidate, "generated_input.py"), "utf8")).toBe("GENERATED_INPUT = True\n");
+    expect(token()).toEqual(restored);
+    rmSync(path.join(f.candidate, "generated_input.py")); rmSync(path.join(f.candidate, ".supertaskr/write-nonignored"));
+    const final = runner.run(f.policy.required); expect(final.capture.complete).toBe(true); expect(count()).toBe("4");
+    expect(f.tokenApi.judgeToken({ token: JSON.parse(token().toString()), tree: final.capture.candidate.tree, context: final.configuration }).state).toBe("fresh");
   } finally { f.cleanup(); }
 });

@@ -2698,10 +2698,17 @@ export function createConfiguredGateRunner(options) {
   const policy = gateParents.get(configuration), metadata = configuredGatePolicyMetadata(policy ?? configuration);
   const treeRead = spawnSync("git", ["--no-replace-objects", "-C", root, "rev-parse", "--verify", `${productRevision}^{tree}`], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
   const candidateTree = treeRead.status === 0 ? treeRead.stdout.replace(/\n$/, "") : "";
+  // Untracked nonignored source/test inputs can affect an actual suite too.
+  // Legacy runs retain trackedDirt semantics; this is the original-policy route.
+  function candidateHasChanges() {
+    const status = spawnSync("git", ["--no-replace-objects", "-C", root, "status", "--porcelain=v1", "-z", "--untracked-files=all"], { stdio: ["ignore", "pipe", "pipe"] });
+    if (status.status !== 0 || status.error) configuredFinding("gate-candidate-status-unavailable", "The candidate's full nonignored Git status is unavailable");
+    return status.stdout.length > 0;
+  }
   function assertCandidate() {
     assertConfiguredGateOrigin(configuration);
     if (currentRef(root) !== productRevision || currentTree(root) !== candidateTree || !candidateTree) configuredFinding("gate-product-context-changed", "The selected candidate HEAD/tree is unavailable or changed before grading");
-    if (policy && trackedDirt(root)) configuredFinding("gate-candidate-dirty", "Original-policy grading requires the exact clean candidate before and after each suite");
+    if (policy && candidateHasChanges()) configuredFinding("gate-candidate-dirty", "Original-policy grading requires the exact clean candidate before and after each suite");
   }
   function assertAfterSuite() { if (policy) assertCandidate(); else assertConfiguredGateOrigin(configuration); }
   /** @param {Suite} definition @param {{verdict:Verdict,output:string}} result */
@@ -2715,7 +2722,7 @@ export function createConfiguredGateRunner(options) {
       required: context.required, selected, whole, suites: captures,
       complete: whole && selected.length === context.required.length && context.required.every(id => selected.includes(id)) &&
         captures.length === selected.length && captures.every(row => row.verdict.verdict === "GREEN" && row.verdict.ref === productRevision && row.verdict.tree === candidateTree && row.verdict.dirty === false) &&
-        currentRef(root) === productRevision && currentTree(root) === candidateTree && !trackedDirt(root) });
+        currentRef(root) === productRevision && currentTree(root) === candidateTree && !(policy ? candidateHasChanges() : trackedDirt(root)) });
   }
   /** @param {readonly string[]} names @param {ReturnType<typeof configuredOwedForRange>} [owed] */
   function run(names, owed) {
