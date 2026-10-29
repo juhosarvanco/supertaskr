@@ -167,7 +167,7 @@ export function createGitHubDeliveryCiReader(configuration){
    const jobs=await list(`${runPath}/attempts/${requirement.run.attempt}/jobs`,"jobs",token,receipts),checks=[];
    for(const job of jobs){const checkId=gitHubDeliveryCheckId(job?.check_run_url,selection.repository);checks.push(normalizeGitHubDeliveryCheck(job,await get(`${base}/check-runs/${checkId}`,token,receipts),requirement,attempt));}
    const final=normalizeGitHubDeliveryRun(await get(runPath,token,receipts),selection,initial);
-   if(final.status!==initial.status||final.conclusion!==initial.conclusion)refuse("CI_RUN_OBSERVATION_CHANGED");
+   if(final.status!==initial.status||final.conclusion!==initial.conclusion||attempt.status!==final.status||attempt.conclusion!==final.conclusion)refuse("CI_RUN_OBSERVATION_CHANGED");
    const evidence=freeze({version:1,provider:selection.provider,host:selection.host,repository:selection.repository,headRepository:selection.repository,workflow:selection.workflow,event:selection.event,ref:selection.ref,headCommit:selection.headCommit,
     run:{id:final.id,attempt:final.attempt,checkSuiteId:attempt.checkSuiteId,status:final.status,conclusion:final.conclusion},totalChecks:jobs.length,checks});
    const result=qualifyExactDeliveryCi(requirement,evidence),observed=freeze({status:"observed",requirement,evidence,result,observedAt:new Date().toISOString(),receipts});

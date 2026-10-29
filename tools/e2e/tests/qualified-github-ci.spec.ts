@@ -68,6 +68,17 @@ test("synthetic newer canonical attempt cannot be hidden by an older successful 
  }finally{f.cleanup();}
 });
 
+test("synthetic contradictory exact attempt header refuses a stable latest success and restores only consistent observations",async()=>{
+ const f=privateRecordFixture();try{
+  const reader=createGitHubDeliveryCiReader({tool:loadInstalledRecordTool(f.manifestPath),selection}),selected=reader.restore(requirement);
+  await replies([{path:header,data:run()},{path:attempt,data:run({conclusion:"failure"})},{path:jobs,data:{total_count:1,jobs:[job()]}},{path:checkPath,data:check()},{path:header,data:run()}],async()=>{
+   await expect(reader.read(selected)).rejects.toThrow(/CI_RUN_OBSERVATION_CHANGED/);
+  });
+  const restored=await replies([{path:header,data:run()},{path:attempt,data:run()},{path:jobs,data:{total_count:1,jobs:[job()]}},{path:checkPath,data:check()},{path:header,data:run()}],()=>reader.read(selected));
+  expect(restored.result.status).toBe("validated");
+ }finally{f.cleanup();}
+});
+
 test("synthetic complete job pagination retains every page and never substitutes job IDs for check IDs",async()=>{
  const f=privateRecordFixture();try{
   const reader=createGitHubDeliveryCiReader({tool:loadInstalledRecordTool(f.manifestPath),selection}),selected=reader.restore(requirement);
