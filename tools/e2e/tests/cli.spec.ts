@@ -265,15 +265,18 @@ test("an unknown verb is refused with the whole verb list, and nothing is spawne
   for (const entry of VERBS) expect(said.join("\n")).toContain(entry.verb);
 });
 
-test("every verb that hands its target --root fronts a script whose own flags carry it", () => {
+test("every verb that hands its target --root reaches a script whose flags carry it", () => {
   for (const entry of VERBS) {
     if (entry.target.kind === "cargo") continue;
-    const source = readFileSync(
-      entry.target.kind === "project"
-        ? path.join(repoRoot, entry.target.file)
-        : path.join(packageRoot, "scripts", entry.target.file),
-      "utf8",
-    );
+    const target = entry.target.kind === "project"
+      ? path.join(repoRoot, entry.target.file)
+      : path.join(packageRoot, "scripts", entry.target.file);
+    let source = readFileSync(target, "utf8");
+    if (entry.verb === "health") {
+      // Follow the actual exported entry and unchanged argv into its parser.
+      expect(source).toMatch(/export\s+async\s+function\s+main\(argv\)\s*\{\s*return\s+\(await\s+import\("\.\/configured-health\.mjs"\)\)\.main\(argv\);\s*\}/);
+      source = readFileSync(path.join(path.dirname(target), "configured-health.mjs"), "utf8");
+    }
     const takesRoot = /"--root"/.test(source);
     expect(
       entry.rootFlag,
@@ -385,7 +388,7 @@ test("a verb with missing TOOL dependencies names the package to restore and run
       bareDependencies(path.join(packageRoot, "scripts", "health-bands-run.mjs")),
       "and the requirement is DERIVED from the script's own imports",
     ).toContain("yaml");
-    expect(deps?.build, "the missing files belong to TOOL, not this project's setup").toContain("restore or reinstall this Supertaskr package's declared runtime dependencies");
+    expect(deps?.build, "the missing files belong to TOOL, not this project's setup").toContain("restore or reinstall this supertaskr package's declared runtime dependencies");
     expect(deps?.build).toContain(emptyPackage);
     expect(deps?.build).not.toContain("docs/CONVENTIONS.md");
 
@@ -592,7 +595,7 @@ test("npx supertaskr runs out of an isolated standalone tarball with no checkout
     const recovered = run(["status", "--root", project]); expect(recovered.status, recovered.stderr).toBe(0);
     // The finite records bridge binds its PRODUCT through its protocol rather
     // than a root flag. This control targets genuinely unadapted script verbs.
-    const rootless = VERBS.filter((v) => !v.rootFlag && !v.stdioContext && v.target.kind === "script");
+    const rootless = VERBS.filter((v) => !v.rootFlag && !v.stdioContext && !v.projectless && v.target.kind === "script");
     expect(rootless.length).toBeGreaterThan(0);
     const refused = run([rootless[0]!.verb]);
     expect(refused.status).toBe(3); expect(refused.stderr).toContain("REFUSED"); expect(refused.stderr).toContain(project);
