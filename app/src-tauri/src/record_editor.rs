@@ -23,6 +23,8 @@ pub use recovery::{acknowledge, discover, recover};
 mod backup;
 pub use backup::{backup_saved, discover_backups, BackupOutcome};
 mod initialization;
+#[cfg(all(test, unix))]
+mod init_actor_env_tests;
 pub(crate) use initialization::{invoke_initialization_operation, InitializationFailure, InitializationOperation, SelectedInitializationDirectory};
 
 const MAX_DOCUMENT: usize = 1_048_576;
@@ -33,6 +35,10 @@ const SAVE_TIME: Duration = Duration::from_secs(30);
 const STOP_GRACE: Duration = Duration::from_secs(2);
 const LOGIN_PROBE: &str =
     "command -v supertaskr && printf '\\nSUPERTASKR_RECORDS_PATH=%s\\n' \"$PATH\"";
+// Attribution data only. Routing/configuration variables remain excluded;
+// the canonical Init constructor validates and freezes the actual actor.
+const INIT_ACTOR_ENV: &[&str] = &["GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL", "GIT_AUTHOR_DATE",
+    "GIT_COMMITTER_NAME", "GIT_COMMITTER_EMAIL", "GIT_COMMITTER_DATE", "EMAIL"];
 
 #[derive(Clone, Debug)]
 struct BridgeError {
@@ -524,6 +530,11 @@ fn invoke_command(
     let mut command = Command::new(&tool.program);
     command.args([consumer.verb(), "--stdio"]).current_dir(product);
     child_environment(&mut command, Some(&tool.child_path));
+    if matches!(consumer, InstalledCommand::Init) {
+        for key in INIT_ACTOR_ENV {
+            if let Some(value)=std::env::var_os(key) {command.env(key,value);}
+        }
+    }
     let output = run_child(command, input, deadline, MAX_PROTOCOL, cancel)?;
     let envelope: Value = serde_json::from_slice(&output.stdout).map_err(|_| {
         BridgeError::after_launch(
