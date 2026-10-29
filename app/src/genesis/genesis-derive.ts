@@ -48,7 +48,7 @@ export const BANKING_MAP: readonly BankingStage[] = [
     // — T-264 held it at the pre-rename spelling for exactly that reason,
     // and this lane moves both in one commit (ADR-022 decision 2).
     banks:
-      "docs/ tree copied verbatim from docs-templates/ + empty docs/decisions/ docs/tasks/ docs/rooms/ + adapter files at project root + .gitignore carrying `.supertaskr/` + git init if absent + docs/STATE.md stamped (Updated, In progress = next stage)",
+      "initialized separated driver: explicit local initial PRODUCT and RECORDS commits, verified association, committed project settings, PRODUCT adapters/blank kit, RECORDS docs/ templates and empty docs/decisions/ docs/tasks/ docs/rooms/; planner stamps docs/STATE.md (Updated, In progress = next stage). Legacy colocated mode: docs/ tree copied verbatim from docs-templates/ + empty directories + root adapters + .gitignore carrying `.supertaskr/` + git init if absent",
   },
   { stage: 1, step: "Q1 problem & person", banks: "docs/NORTH_STAR.md § Vision + § Users" },
   { stage: 2, step: "Q2 success", banks: "docs/NORTH_STAR.md § Success criteria" },
