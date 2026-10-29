@@ -169,13 +169,16 @@ export const REQUIRED_SUITES = Object.freeze(["app", "e2e", "parser", "rust"]);
 /** The one verdict word a suite entry may carry and still be green. */
 export const GREEN = "GREEN";
 
-/** @typedef {{configurationDigest:string,toolManifestDigest:string,required:readonly string[]}} GateContext */
+/** @typedef {{configurationDigest:string,toolManifestDigest:string,required:readonly string[],policyRevision?:string,policyDigest?:string}} GateContext */
 /** Required membership comes from the reader's committed configuration,
  * never from the token's own claim. @param {unknown} value @returns {value is GateContext} */
 export function validGateContext(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const context = /** @type {Record<string,unknown>} */ (value);
-  return Object.keys(context).sort().join(",") === "configurationDigest,required,toolManifestDigest" &&
+  const originalPolicy = Object.hasOwn(context, "policyRevision") || Object.hasOwn(context, "policyDigest");
+  return Object.keys(context).sort().join(",") === (originalPolicy ? "configurationDigest,policyDigest,policyRevision,required,toolManifestDigest" : "configurationDigest,required,toolManifestDigest") &&
+    (!originalPolicy || typeof context.policyRevision === "string" && /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/.test(context.policyRevision) &&
+      typeof context.policyDigest === "string" && /^sha256:[0-9a-f]{64}$/.test(context.policyDigest)) &&
     typeof context.configurationDigest === "string" && /^sha256:[0-9a-f]{64}$/.test(context.configurationDigest) &&
     typeof context.toolManifestDigest === "string" && /^[0-9a-f]{64}$/.test(context.toolManifestDigest) &&
     Array.isArray(context.required) && context.required.length > 0 &&
@@ -675,6 +678,7 @@ export function judgeToken({ token, problem, tree, required, owed, treeOwner = "
     const mismatched = need.filter((id) => {
       const claimed = token.suites[id]?.context;
       return !validGateContext(claimed) || claimed.configurationDigest !== context.configurationDigest ||
+        claimed.policyRevision !== context.policyRevision || claimed.policyDigest !== context.policyDigest ||
         claimed.toolManifestDigest !== context.toolManifestDigest || [...claimed.required].sort().join(",") !== [...context.required].sort().join(",");
     });
     if (mismatched.length) return { state: "unkeyed", code: "token-configuration", detail: `The verdict token does not grade this committed configuration and TOOL build: ${mismatched.join(", ")}` };

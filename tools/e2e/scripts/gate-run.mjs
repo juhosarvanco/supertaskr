@@ -2562,11 +2562,30 @@ export function recordVerdicts(verdicts, root = repoRoot, owed = undefined, cont
   }
 }
 
-/** @typedef {{root:string,productRevision:string,registry:Readonly<Record<string,Suite>>,context:import("../../../cli/gate-token.mjs").GateContext,settings:any}} GateConfiguration */
+/** @typedef {{root:string,productRevision:string,policyRevision:string,registry:Readonly<Record<string,Suite>>,context:import("../../../cli/gate-token.mjs").GateContext,settings:any}} GateConfiguration */
 /** Original repository facts are private constructor state, never a mutable
  * property a caller can replace on the public configuration datum.
  * @type {WeakMap<GateConfiguration,string>} */
 const gateOrigins = new WeakMap();
+/** @type {WeakMap<GateConfiguration,any>} */
+const gateTools = new WeakMap();
+/** @type {WeakMap<GateConfiguration,GateConfiguration>} */
+const gateParents = new WeakMap();
+/** @typedef {{version:1,productRoot:string,policyRevision:string,configurationDigest:string,toolManifestDigest:string,required:readonly string[],registryDigest:string,suites:readonly Suite[],digest:string}} ConfiguredGatePolicy */
+/** The public metadata cannot be passed back as an authentic policy handle.
+ * @type {WeakMap<ConfiguredGatePolicy,GateConfiguration>} */
+const gatePolicies = new WeakMap();
+/** @param {any} value @returns {string} */
+function gateDigest(value) { return `sha256:${createHash("sha256").update(operationContent(value)).digest("hex")}`; }
+/** @param {string} value */
+function gateOutputDigest(value) { return createHash("sha256").update(value, "utf8").digest("hex"); }
+/** @template T @param {T} value @returns {T} */
+function frozenGateData(value) {
+  const copy = structuredClone(value);
+  /** @param {any} item */
+  function freeze(item) { if (item && typeof item === "object") { Object.values(item).forEach(freeze); Object.freeze(item); } }
+  freeze(copy); return copy;
+}
 /** @param {string} code @param {string} detail @returns {never} */
 function configuredFinding(code, detail) { throw Object.assign(new Error(detail), { code }); }
 /** @param {GateConfiguration} configuration */
@@ -2577,6 +2596,9 @@ function assertConfiguredGateOrigin(configuration) {
   } catch (error) {
     configuredFinding("gate-product-origin-changed", `The original PRODUCT repository is unavailable or replaced: ${error instanceof Error ? error.message : String(error)}`);
   }
+  requireInstalledRuntimeAssets(gateTools.get(configuration), ["tools/e2e/scripts/gate-run.mjs", "cli/gate-token.mjs"]);
+  const parent = gateParents.get(configuration);
+  if (parent) assertConfiguredGateOrigin(parent);
 }
 /** Read-only canonical selection; historical pushed revisions need not be HEAD.
  * @param {{productRoot:string,productRevision:string,tool?:any}} options @returns {GateConfiguration} */
@@ -2592,12 +2614,44 @@ export function loadConfiguredGateConfiguration(options) {
   const registry = /** @type {Readonly<Record<string,Suite>>} */ (Object.fromEntries(loaded.settings.suites.map((suite) => [suite.id, suite])));
   const problems = validateRegistry(registry);
   if (problems.length) configuredFinding("gate-suite-unsupported", problems.join("; "));
-  const configuration = Object.freeze({ root: loaded.provenance.productRoot, productRevision: options.productRevision, settings: loaded.settings,
+  const configuration = Object.freeze({ root: loaded.provenance.productRoot, productRevision: options.productRevision, policyRevision: options.productRevision, settings: loaded.settings,
     registry: Object.freeze(registry), context: Object.freeze({ configurationDigest: loaded.provenance.configDigest,
       toolManifestDigest: tool.manifestDigest, required: Object.freeze(Object.keys(registry).sort()) }) });
   gateOrigins.set(configuration, operationContent(original));
+  gateTools.set(configuration, tool);
   assertConfiguredGateOrigin(configuration);
   return configuration;
+}
+/** Detached metadata is correspondence, not proof of machine execution.
+ * @param {GateConfiguration} configuration @returns {ConfiguredGatePolicy} */
+function configuredGatePolicyMetadata(configuration) {
+  const suites = configuration.context.required.map(id => /** @type {Suite} */ (configuration.registry[id]));
+  const data = { version: /** @type {const} */ (1), productRoot: configuration.root, policyRevision: configuration.policyRevision,
+    configurationDigest: configuration.context.configurationDigest, toolManifestDigest: configuration.context.toolManifestDigest,
+    required: configuration.context.required, registryDigest: gateDigest(suites), suites };
+  return frozenGateData({ ...data, digest: gateDigest(data) });
+}
+/** Backend-only original policy capture. No wire or per-run policy override.
+ * Coordinator HEAD may advance: only this exact committed policy is retained.
+ * @param {{productRoot:string,productRevision:string,tool?:any}} options */
+export function captureConfiguredGatePolicy(options) {
+  const configuration = loadConfiguredGateConfiguration(options), policy = configuredGatePolicyMetadata(configuration);
+  gatePolicies.set(policy, configuration); return policy;
+}
+/** @param {{productRoot:string,productRevision:string,tool?:any,policy?:ConfiguredGatePolicy}} options */
+function configuredCandidate(options) {
+  if (options?.policy === undefined) return loadConfiguredGateConfiguration(options);
+  if (Object.keys(options).some(key => !["productRoot", "productRevision", "policy"].includes(key))) configuredFinding("gate-policy-request", "Original policy already binds TOOL; only the candidate root/revision are request data");
+  const parent = gatePolicies.get(options.policy);
+  if (!parent) configuredFinding("gate-policy-unrecognized", "Original policy must be captured by the installed backend constructor");
+  assertConfiguredGateOrigin(parent);
+  const original = captureOperationRepository(options.productRoot, options.productRevision, { forEffect: false });
+  const ancestor = spawnSync("git", ["--no-replace-objects", "-C", original.root, "merge-base", "--is-ancestor", parent.productRevision, options.productRevision], { stdio: ["ignore", "pipe", "pipe"] });
+  if (ancestor.status !== 0 || ancestor.error) configuredFinding("gate-policy-ancestry", "Candidate must descend from the original committed PRODUCT policy");
+  const configuration = Object.freeze({ root: original.root, productRevision: options.productRevision, policyRevision: parent.productRevision,
+    registry: parent.registry, settings: parent.settings, context: Object.freeze({ ...parent.context, policyRevision: parent.productRevision, policyDigest: options.policy.digest }) });
+  gateOrigins.set(configuration, operationContent(original)); gateTools.set(configuration, gateTools.get(parent)); gateParents.set(configuration, parent);
+  assertConfiguredGateOrigin(configuration); return configuration;
 }
 /** Physical containment is checked before a command or sentinel is used.
  * @param {string} root @param {Suite} suite */
@@ -2637,34 +2691,59 @@ export function configuredOwedForRange(configuration, range) {
   return why === undefined ? derived : { ...derived, suites: [...configuration.context.required], e2e: { whole: true, specs: [] }, failClosed: why };
 }
 /** Constructor-bound effect API. Requests cannot replace commands, roots,
- * membership, policy or TOOL metadata. @param {{productRoot:string,productRevision:string,tool?:any}} options */
+ * membership, policy or TOOL metadata. @param {{productRoot:string,productRevision:string,tool?:any,policy?:ConfiguredGatePolicy}} options */
 export function createConfiguredGateRunner(options) {
-  const configuration = loadConfiguredGateConfiguration(options);
+  const configuration = configuredCandidate(options);
   const { root, productRevision, registry, context } = configuration;
+  const policy = gateParents.get(configuration), metadata = configuredGatePolicyMetadata(policy ?? configuration);
+  const treeRead = spawnSync("git", ["--no-replace-objects", "-C", root, "rev-parse", "--verify", `${productRevision}^{tree}`], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  const candidateTree = treeRead.status === 0 ? treeRead.stdout.replace(/\n$/, "") : "";
+  function assertCandidate() {
+    assertConfiguredGateOrigin(configuration);
+    if (currentRef(root) !== productRevision || currentTree(root) !== candidateTree || !candidateTree) configuredFinding("gate-product-context-changed", "The selected candidate HEAD/tree is unavailable or changed before grading");
+    if (policy && trackedDirt(root)) configuredFinding("gate-candidate-dirty", "Original-policy grading requires the exact clean candidate before and after each suite");
+  }
+  function assertAfterSuite() { if (policy) assertCandidate(); else assertConfiguredGateOrigin(configuration); }
+  /** @param {Suite} definition @param {{verdict:Verdict,output:string}} result */
+  function capture(definition, result) {
+    const output = result.output, transcript = `${output}${output.endsWith("\n") || !output ? "" : "\n"}${formatVerdict(result.verdict)}\n`;
+    return { definition, definitionDigest: gateDigest(definition), verdict: result.verdict, output, outputDigest: gateOutputDigest(output), transcript, transcriptDigest: gateOutputDigest(transcript) };
+  }
+  /** @param {ReturnType<typeof capture>[]} captures @param {readonly string[]} selected @param {boolean} whole */
+  function evidence(captures, selected, whole) {
+    return frozenGateData({ version: 1, policy: metadata, context, candidate: { productRoot: root, commit: productRevision, tree: candidateTree },
+      required: context.required, selected, whole, suites: captures,
+      complete: whole && selected.length === context.required.length && context.required.every(id => selected.includes(id)) &&
+        captures.length === selected.length && captures.every(row => row.verdict.verdict === "GREEN" && row.verdict.ref === productRevision && row.verdict.tree === candidateTree && row.verdict.dirty === false) &&
+        currentRef(root) === productRevision && currentTree(root) === candidateTree && !trackedDirt(root) });
+  }
   /** @param {readonly string[]} names @param {ReturnType<typeof configuredOwedForRange>} [owed] */
   function run(names, owed) {
     if (!names.length || new Set(names).size !== names.length || names.some((id) => registry[id] === undefined)) configuredFinding("gate-suite-selection", `unknown suite(s), duplicate or empty selection in the committed registry: ${names.join(", ")}`);
     if (owed !== undefined && "problem" in owed) configuredFinding("gate-range-unavailable", owed.problem);
     /** @type {Verdict[]} */ const verdicts = [];
+    /** @type {ReturnType<typeof capture>[]} */ const captures = [];
     for (const name of names) {
-      assertConfiguredGateOrigin(configuration);
-      if (currentRef(root) !== productRevision || currentTree(root) === "") configuredFinding("gate-product-context-changed", "The selected PRODUCT revision/tree is unavailable or changed before grading");
+      assertCandidate();
       const suite = /** @type {Suite} */ (registry[name]);
       try { configuredSuitePath(root, suite); }
       catch (error) {
-        verdicts.push({ suite: name, exit: -1, bodies: 0, targets: 0, ref: currentRef(root), tree: currentTree(root), dirty: trackedDirt(root), verdict: "REFUSED", reason: `configured-path: ${error instanceof Error ? error.message : String(error)}` });
+        const verdict = /** @type {Verdict} */ ({ suite: name, exit: -1, bodies: 0, targets: 0, ref: currentRef(root), tree: currentTree(root), dirty: trackedDirt(root), verdict: "REFUSED", reason: `configured-path: ${error instanceof Error ? error.message : String(error)}` });
+        verdicts.push(verdict); captures.push(capture(suite, { verdict, output: "" }));
         continue;
       }
       const selected = owed !== undefined && name === SCOPED_SUITE && !owed.e2e.whole && owed.e2e.specs.length ? scopedSuite(owed.e2e.specs, suite) : suite;
       const result = runSuite(selected, { root });
-      assertConfiguredGateOrigin(configuration);
-      verdicts.push(owed !== undefined && name === SCOPED_SUITE && !owed.e2e.whole && owed.e2e.specs.length ? { ...result.verdict, scope: owed.e2e.specs.join(",") } : result.verdict);
+      assertAfterSuite();
+      const verdict = owed !== undefined && name === SCOPED_SUITE && !owed.e2e.whole && owed.e2e.specs.length ? { ...result.verdict, scope: owed.e2e.specs.join(",") } : result.verdict;
+      verdicts.push(verdict); captures.push(capture(selected, { ...result, verdict }));
       if (result.outputPath) process.stderr.write(`gate-run: ${name} output at ${result.outputPath}\n`);
     }
-    assertConfiguredGateOrigin(configuration);
+    assertAfterSuite();
     const recorded = recordVerdicts(verdicts, root, owed === undefined ? undefined : { range: owed.range, suites: owed.suites, e2e: owed.e2e, inputs: owed.inputs, ...(owed.failClosed === undefined ? {} : { failClosed: owed.failClosed }) }, context);
     return { code: !recorded.written || verdicts.some((v) => v.verdict === "REFUSED") ? EXIT.REFUSED : verdicts.some((v) => v.verdict === "RED") ? EXIT.RED : EXIT.GREEN,
-      verdicts, configuration: context, tokenWritten: recorded.written };
+      verdicts, configuration: context, tokenWritten: recorded.written,
+      capture: evidence(captures, names, owed === undefined || owed.e2e.whole || !names.includes(SCOPED_SUITE)) };
   }
   /** The existing source-layout scoped adapter is retained explicitly. Other
    * layouts still run whole suites and cannot claim a narrower qualification.
@@ -2680,12 +2759,13 @@ export function createConfiguredGateRunner(options) {
     const plan = deriveOwning(changed, root, roots);
     if (plan.generatedUnplaceable.length) configuredFinding("gate-usage", `The import graph reaches a GENERATED file this derivation cannot map back to the sources: ${plan.generatedUnplaceable.map((item) => item.path).join(", ")}; THE FULL ${SCOPED_SUITE} LEG IS OWED`);
     if (plan.unresolved.length || plan.unplaceable.length || !plan.specs.length) configuredFinding("gate-usage", `The scoped reader cannot place ${plan.unplaceable.map((item) => item.path).join(", ") || changed.join(", ")}; ${plan.unresolved.join(", ")}; THE FULL ${SCOPED_SUITE} LEG IS OWED`);
-    if (currentRef(root) !== productRevision || currentTree(root) === "") configuredFinding("gate-product-context-changed", "PRODUCT changed before the scoped run");
+    assertCandidate();
     configuredSuitePath(root, suite);
-    const result = runSuite(scopedSuite(plan.specs, suite), { root }), verdict = scopeVerdict(result.verdict, { specs: plan.specs, changed: plan.changed });
-    assertConfiguredGateOrigin(configuration);
+    const selected = scopedSuite(plan.specs, suite), result = runSuite(selected, { root }), verdict = scopeVerdict(result.verdict, { specs: plan.specs, changed: plan.changed });
+    assertAfterSuite();
     const recorded = recordVerdicts([verdict], root, undefined, context);
-    return { code: !recorded.written || verdict.verdict === "REFUSED" ? EXIT.REFUSED : verdict.verdict === `${SCOPED_PREFIX}RED` ? EXIT.RED : EXIT.GREEN, verdicts: [verdict], configuration: context, tokenWritten: recorded.written };
+    return { code: !recorded.written || verdict.verdict === "REFUSED" ? EXIT.REFUSED : verdict.verdict === `${SCOPED_PREFIX}RED` ? EXIT.RED : EXIT.GREEN, verdicts: [verdict], configuration: context, tokenWritten: recorded.written,
+      capture: evidence([capture(selected, { ...result, verdict })], [suiteId], false) };
   }
   return Object.freeze({ configuration, run, owning,
     /** @param {string} range */ owed: (range) => configuredOwedForRange(configuration, range) });
