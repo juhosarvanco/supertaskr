@@ -1599,3 +1599,22 @@ describe("a pull the overtake guard DROPS emits no `model-updated` (T-018-s7)", 
     });
   });
 });
+
+describe("native controller unavailable before selection", () => {
+  it("shows a retryable failure and accepts a healthy later status without inventing a selected origin", async () => {
+    const store = await freshStore();
+    ipc.status = {
+      kind: "unavailable", message: "watcher observation unavailable before selection completed",
+      scope: { seq: 0, projectDir: null, selectionSequence: 0, contextSequence: 0, records: null },
+    };
+    await store.startDocsWatcher();
+    expect(store.selectScreen(store.getShellState()).screen).toBe("startupFailed");
+    expect(store.getShellState().startupFailure?.message).toContain("before selection completed");
+    expect(store.getShellState().docs.records).toBeUndefined();
+    ipc.status = { kind: "open", snapshot: SNAPSHOT };
+    await store.startDocsWatcher();
+    expect(store.selectScreen(store.getShellState()).screen).toBe("board");
+    expect(store.getShellState().docs.projectDir).toBe(SNAPSHOT.projectDir);
+    expect(ipc.liveSubscriptions).toBe(1);
+  });
+});

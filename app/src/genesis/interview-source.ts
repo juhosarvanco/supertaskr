@@ -17,6 +17,7 @@ import {
   subscribeGenesis,
   type GenesisEvent,
   type GenesisState,
+  type GenesisView,
   type GenesisStatusPayload,
   type KickoffOutcomePayload,
   type SendOutcomePayload,
@@ -242,9 +243,31 @@ function recordUserHalf(turn: number, text: string): void {
 const subscribeState = isTauri ? subscribeGenesis : subscribeTwin;
 const getState = isTauri ? getGenesisState : (): GenesisState => twinState;
 
+let uiContext: string | null = null;
+let uiSession: string | null = null;
+let uiTicket: symbol | null = null;
+function currentUiContext(): string | null { return getState().contextKey ?? null; }
+function syncUiContext(): void {
+  const context = currentUiContext(), session = getState().sessionId ?? null;
+  if (context !== uiContext || context !== null && session !== uiSession) {
+    uiContext = context; uiSession = session; uiTicket = null; uiState = EMPTY_UI;
+    for (const callback of uiListeners) callback();
+  }
+}
+if (isTauri) subscribeGenesis(syncUiContext);
+function autoStartKey(projectDir: string): string { return `${currentUiContext() ?? "legacy"}\0${projectDir}`; }
+function ownsUiReply(context: string | null, ticket: symbol): boolean {
+  return currentUiContext() === context && (uiTicket === ticket || uiTicket === null);
+}
+
 /** The store's state (or, in a served DEV bundle, the twin's). */
 export function useGenesisState(): GenesisState {
   return useSyncExternalStore(subscribeState, getState, getState);
+}
+
+/** Stable projection changes on native context/activation, not text deltas. */
+export function useGenesisCancelView(): GenesisView | null {
+  return useSyncExternalStore(subscribeState, () => getState().cancelView ?? getState().view ?? null, () => null);
 }
 
 /** The half of the state this module owns. */
@@ -320,12 +343,15 @@ export function interviewLocked(genesis: GenesisState, ui: InterviewUiState): bo
  * `busy` / `noSession` / `staleProject` / `cliNotFound` / `error` record
  * nothing and render as an inline notice instead.
  */
-export async function sendAnswer(text: string): Promise<SendOutcomePayload | null> {
+export async function sendAnswer(text: string, view?: GenesisView | null): Promise<SendOutcomePayload | null> {
+  syncUiContext();
   if (uiState.busy) return null;
+  const context = currentUiContext(), session = getState().sessionId, ticket = Symbol(); uiTicket = ticket;
   sendLedger.push(text);
   setUi({ busy: true, notice: null });
   try {
-    const outcome = await sendGenesisTurn(text);
+    const outcome = await sendGenesisTurn(text, view);
+    if (!ownsUiReply(context, ticket) || session !== getState().sessionId) return null;
     if (outcome === null) {
       // No command answered at all. Under Tauri that is the store's own
       // in-flight guard and nothing was sent. In a served DEV bundle
@@ -347,7 +373,7 @@ export async function sendAnswer(text: string): Promise<SendOutcomePayload | nul
     } else setUi({ notice: outcome });
     return outcome;
   } finally {
-    setUi({ busy: false });
+    if (uiTicket === ticket) { uiTicket = null; setUi({ busy: false }); }
   }
 }
 
@@ -369,22 +395,26 @@ function nextTurnNumber(): number {
  */
 export async function startInterview(
   projectDir: string,
-  options: { force?: boolean } = {},
+  options: { force?: boolean } = {}, view?: GenesisView | null,
 ): Promise<StartOutcomePayload | null> {
+  syncUiContext();
   if (uiState.busy) return null;
-  if (!options.force && autoStarted.has(projectDir)) return null;
+  const context = currentUiContext(), ticket = Symbol(), key = autoStartKey(projectDir);
+  if (!options.force && autoStarted.has(key)) return null;
+  uiTicket = ticket;
   setUi({ busy: true, notice: null });
   try {
-    const outcome = await startGenesis();
+    const outcome = await startGenesis(view);
+    if (!ownsUiReply(context, ticket)) return null;
     if (outcome === null) return null;
     // A TYPED outcome — including a failure — is an attempt that
     // happened. Anything else leaves the latch open for a retry.
-    autoStarted.add(projectDir);
+    autoStarted.add(key);
     if (outcome.kind !== "started") setUi({ notice: outcome });
     else setUi({ awaiting: outcome.turn });
     return outcome;
   } finally {
-    setUi({ busy: false });
+    if (uiTicket === ticket) { uiTicket = null; setUi({ busy: false }); }
   }
 }
 
@@ -395,29 +425,32 @@ export async function startInterview(
  * the auto-start cannot fire on top of a resume the user just took.
  */
 export async function resumeInterview(
-  projectDir: string,
+  projectDir: string, view?: GenesisView | null,
 ): Promise<StartOutcomePayload | null> {
-  return takeStart(projectDir, resumeGenesis);
+  return takeStart(projectDir, () => resumeGenesis(view));
 }
 
 /** T-029 criterion 3: continue with a fresh session — degraded, never
  * dead. The banked docs are the record; only the conversation restarts. */
 export async function freshInterview(
-  projectDir: string,
+  projectDir: string, view?: GenesisView | null,
 ): Promise<StartOutcomePayload | null> {
-  return takeStart(projectDir, freshGenesis);
+  return takeStart(projectDir, () => freshGenesis(view));
 }
 
 async function takeStart(
   projectDir: string,
   command: () => Promise<StartOutcomePayload | null>,
 ): Promise<StartOutcomePayload | null> {
+  syncUiContext();
   if (uiState.busy) return null;
+  const context = currentUiContext(), ticket = Symbol(), key = autoStartKey(projectDir); uiTicket = ticket;
   setUi({ busy: true, notice: null });
   try {
     const outcome = await command();
+    if (!ownsUiReply(context, ticket)) return null;
     if (outcome === null) return null;
-    autoStarted.add(projectDir);
+    autoStarted.add(key);
     if (outcome.kind !== "started") setUi({ notice: outcome });
     else {
       setUi({ awaiting: outcome.turn });
@@ -425,7 +458,7 @@ async function takeStart(
     }
     return outcome;
   } finally {
-    setUi({ busy: false });
+    if (uiTicket === ticket) { uiTicket = null; setUi({ busy: false }); }
   }
 }
 
@@ -441,25 +474,26 @@ export async function rehydrateInterview(): Promise<void> {
 }
 
 /** T-029 criterion 4: the hand-driven mode's assembled prompt. */
-export async function loadKickoff(): Promise<KickoffOutcomePayload | null> {
-  return genesisKickoff();
+export async function loadKickoff(view?: GenesisView | null): Promise<KickoffOutcomePayload | null> {
+  return genesisKickoff(view);
 }
 
 /** Retry the command that produced a failure, with the same argument. */
 export async function retryTurn(
   projectDir: string,
-  turn: number,
+  turn: number, view?: GenesisView | null,
 ): Promise<StartOutcomePayload | SendOutcomePayload | null> {
-  if (turn <= 1) return startInterview(projectDir, { force: true });
+  syncUiContext();
+  if (turn <= 1) return startInterview(projectDir, { force: true }, view);
   const stored = uiState.userHalves.get(turn);
   if (stored === undefined) return null;
-  return sendAnswer(stored);
+  return sendAnswer(stored, view);
 }
 
 /** Stop the turn in flight. The NATIVE session survives — the kill is of
  * the turn, not the conversation. */
-export function cancelTurn(): void {
-  void cancelGenesis();
+export function cancelTurn(view?: GenesisView | null): void {
+  void cancelGenesis(view);
 }
 
 // ---- the local genesis clock (T-028, criteria 2 and 3) ------------------
@@ -513,8 +547,9 @@ function notifyClock(): void {
  * and only a different project moves it.
  */
 export function startGenesisClock(projectDir: string, atMs: number): void {
-  if (clockStartedAtMs !== null && clockProject === projectDir) return;
-  clockProject = projectDir;
+  const key = autoStartKey(projectDir);
+  if (clockStartedAtMs !== null && clockProject === key) return;
+  clockProject = key;
   clockStartedAtMs = atMs;
   clockNowMs = atMs;
   notifyClock();
@@ -553,7 +588,7 @@ export function useGenesisElapsedMs(): number | null {
 export function __resetInterviewSourceForTests(): void {
   twinState = emptyGenesisState();
   twinListeners.clear();
-  uiState = EMPTY_UI;
+  uiState = EMPTY_UI; uiContext = null; uiSession = null; uiTicket = null;
   uiListeners.clear();
   sendLedger.length = 0;
   autoStarted.clear();

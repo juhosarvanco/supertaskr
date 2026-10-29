@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
-import { captureRecordCandidateInputs, evaluateRecordCandidate, RECORD_INDEX_INPUTS } from "../scripts/records-validation.mjs";
+import { captureRecordCandidateInputs, evaluateRecordCandidate, recordCandidateProjection, RECORD_INDEX_INPUTS } from "../scripts/records-validation.mjs";
 import { captureRawCommittedInputs, captureCommittedInputs, readCommittedBoard } from "../scripts/records.mjs";
 import { INDEXED_DOCS, INDEX_RULING, renderDocsIndex, renderDocsIndexFromSource } from "../scripts/docs-scan.mjs";
 import { measureProductIdentity, WORKSPACE_ASSOCIATION_REL_PATH, WORKSPACE_BINDING_REL_PATH } from "../scripts/workspace.mjs";
@@ -84,6 +84,37 @@ test("frozen candidates evaluate exact explicit role revisions with detached ide
     expect(() => { (captured.identity.paths.records as any).push("decoy"); }).toThrow();
     overlay[0]!.bytes.fill(0); expect(evaluateRecordCandidate(captured, [edit("docs/ARCHITECTURE.md", doc("Private candidate architecture"))]).digest).toBe(first.digest);
   } finally { removeGitFixture(fx.dir, "candidate frozen T-350-s1"); }
+});
+
+test("finite private text creation and complete rename destinations use the canonical frozen evaluator", () => {
+  const fx = fixture();
+  try {
+    const captured = accepted(fx);
+    const paths = ["docs/rooms/new-room.md", "docs/decisions/099-draft.md", "docs/plans/new-plan.md", "docs/reviews/new-review.md", "docs/checkpoints/new-checkpoint.md"];
+    const created = evaluateRecordCandidate(captured, paths.map((file) => edit(file, doc("Private draft"), "add")));
+    expect(created.accepted).toBe(true); expect(created.identity.applied).toHaveLength(paths.length);
+    expect(evaluateRecordCandidate(captured, [edit("docs/assets/arbitrary.md", doc("Unsupported"), "add")]).accepted).toBe(false);
+    put(fx.records, paths[0]!, doc("Original room"));
+    fx.options.recordsRevision = commit(fx.records, "existing room baseline");
+    const selected = captureRecordCandidateInputs(fx.options);
+    const moved = evaluateRecordCandidate(selected, [{ operation: "delete", path: paths[0]! }, edit("docs/rooms/moved-room.md", doc("Original room"), "add")]);
+    expect(moved.accepted).toBe(true); expect(moved.identity.applied).toHaveLength(2);
+    expect(recordCandidateProjection(selected).inputs.find((input) => input.path === paths[0])?.content).toContain("Original room");
+  } finally { removeGitFixture(fx.dir, "finite private text T355 consumer"); }
+});
+
+test("selected PRODUCT supplemental source paths are safe relative inputs and remain detached from live bytes", () => {
+  const fx = fixture();
+  try {
+    put(fx.product, "lib/parser/src/types.ts", "export const TASK_STATUSES = ['planned'] as const;\n");
+    fx.options.productRevision = commit(fx.product, "selected source vocabulary");
+    const capture = captureRecordCandidateInputs({ ...fx.options, requiredInputs: [{ role: "product", path: "lib/parser/src/types.ts" }] });
+    const projection = recordCandidateProjection(capture), source = projection.inputs.find((input) => input.role === "product" && input.path === "lib/parser/src/types.ts");
+    expect(source?.content).toContain("['planned']"); source?.bytes.fill(0);
+    put(fx.product, "lib/parser/src/types.ts", "live changed vocabulary");
+    expect(recordCandidateProjection(capture).inputs.find((input) => input.path === "lib/parser/src/types.ts")?.content).toContain("['planned']");
+    expect(() => captureRecordCandidateInputs({ ...fx.options, requiredInputs: [{ role: "product", path: "../escape" }] })).toThrow(/records-candidate-path-unsafe/);
+  } finally { removeGitFixture(fx.dir, "selected supplemental T355 consumer"); }
 });
 
 test("raw historical malformed debt survives canonical comparison while repair succeeds and new malformed duplicate or unusable dependencies refuse", () => {

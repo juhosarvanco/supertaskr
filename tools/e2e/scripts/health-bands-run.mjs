@@ -34,6 +34,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { execFileSync } from "node:child_process";
+import { isMain } from "../../../cli/is-main.mjs";
 import { parse as parseYaml } from "yaml";
 import { DOC_BUDGETS, repoRoot, trackedFiles } from "./docs-scan.mjs";
 import { allBands } from "./health-bands.config.mjs";
@@ -66,7 +67,7 @@ const USAGE =
  * @param {string[]} argv
  * @returns {Promise<number>}
  */
-async function main(argv) {
+export async function sourceHealthMain(argv) {
   /** @type {string[]} */
   const readingFiles = [];
   /** @type {string | null} */
@@ -179,13 +180,9 @@ async function main(argv) {
   return code;
 }
 
-let code;
-try {
-  code = await main(process.argv.slice(2));
-} catch (err) {
-  console.error("health-bands: THE BANDS COULD NOT BE READ");
-  console.error(`  ${err instanceof Error ? err.message : String(err)}`);
-  console.error("  This run is not a claim about the method's health — it is a claim about this command.");
-  code = EXIT.CANNOT_RUN;
-}
-process.exit(code);
+/** Product entry; the source-band adapter is explicit fixture compatibility.
+ * @param {string[]} argv */
+export async function main(argv) { return (await import("./configured-health.mjs")).main(argv); }
+if (isMain(import.meta)) main(process.argv.slice(2)).then(code => { process.exitCode = code; }, error => {
+  console.error(`health-bands: cannot-run: ${error instanceof Error ? error.message : String(error)}`); process.exitCode = EXIT.CANNOT_RUN;
+});

@@ -56,6 +56,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
 // THE INDEX AND ITS CHAPTERS ARE ONE TEXT (T-290). This front derives its
 // commands from docs/CONVENTIONS.md, and since that document became an
 // index over docs/conventions/ the splice is the ONE implementation of
@@ -104,6 +105,8 @@ export const EXIT = Object.freeze({ CLEAN: 0, FOUND: 1, USAGE: 2, CANNOT_RUN: 3 
  * repository has.
  */
 export const ROOT_MARKERS = Object.freeze(["docs", "method"]);
+/** Discovery marker only; the canonical loader validates its committed data. */
+export const ROOT_SETTINGS_MARKER = "supertaskr.yaml";
 
 /**
  * Walk up from `start` for the project root.
@@ -114,6 +117,7 @@ export const ROOT_MARKERS = Object.freeze(["docs", "method"]);
 export function findProjectRoot(start) {
   let dir = path.resolve(start);
   for (;;) {
+    if (existsSync(path.join(dir, ROOT_SETTINGS_MARKER))) return dir;
     const hasDocs = existsSync(path.join(dir, "docs"));
     if (hasDocs && ROOT_MARKERS.every((m) => existsSync(path.join(dir, m)))) return dir;
     if (hasDocs && existsSync(path.join(dir, ".git"))) return dir;
@@ -164,6 +168,12 @@ export function bareDependencies(entry, seen = new Set()) {
       if (spec.startsWith(".") || spec.startsWith("/")) walk(path.resolve(path.dirname(abs), spec));
       else bare.add(spec);
     }
+    for (const m of src.matchAll(/\b(?:import|require|requireQualified)\s*\(\s*["']([^"']+)["']\s*\)/g)) {
+      const spec = /** @type {string} */ (m[1]);
+      if (spec.startsWith("node:")) continue;
+      if (spec.startsWith(".") || spec.startsWith("/")) walk(path.resolve(path.dirname(abs), spec));
+      else bare.add(spec);
+    }
   };
   walk(entry);
   return [...bare].sort();
@@ -196,7 +206,9 @@ export function packageEscapes(entry, pkgRoot, seen = new Set()) {
     seen.add(abs);
     if (!existsSync(abs)) return;
     const src = readFileSync(abs, "utf8");
-    for (const m of src.matchAll(/from\s*["'](\.[^"']*)["']/g)) {
+    const relative = [...src.matchAll(/from\s*["'](\.[^"']*)["']/g),
+      ...src.matchAll(/\b(?:import|require|requireQualified)\s*\(\s*["'](\.[^"']*)["']\s*\)/g)];
+    for (const m of relative) {
       const target = path.resolve(path.dirname(abs), /** @type {string} */ (m[1]));
       if (path.relative(pkgRoot, target).startsWith("..")) escapes.add(target);
       else walk(target);
@@ -236,13 +248,16 @@ export function requirementsFor(entry, projectRoot, pkgRoot = packageRoot) {
   if (entry.target.kind === "script") {
     const file = path.join(pkgRoot, "scripts", entry.target.file);
     const bare = bareDependencies(file);
-    if (bare.length > 0 && !existsSync(path.join(pkgRoot, "node_modules"))) {
+    const resolve = createRequire(file);
+    const unavailable = bare.filter((specifier) => {
+      try { resolve.resolve(specifier); return false; } catch { return true; }
+    });
+    if (unavailable.length > 0) {
       missing.push({
         id: "package-deps",
         what:
-          `${entry.target.file} imports ${bare.join(", ")} and this package has no ` +
-          "node_modules",
-        build: buildCommandFor("tools/e2e", projectRoot),
+          `${entry.target.file} imports unavailable dependencies: ${unavailable.join(", ")}`,
+        build: `restore or reinstall this supertaskr package's declared runtime dependencies at ${pkgRoot}; the selected project's setup does not install TOOL dependencies`,
       });
     }
     const absent = packageEscapes(file, pkgRoot).filter((p) => !existsSync(p));
@@ -558,6 +573,8 @@ export function skillSourceRoot(projectRoot, carriedRoot = CARRIED_SKILLS_ROOT) 
  * @property {string[]} [alsoNeeds]
  * @property {string} [usage]
  * @property {string} [positionalFlag]  the flag a LEADING positional becomes
+ * @property {boolean} [stdioContext] fixed protocol supplies validated backend context on stdin
+ * @property {boolean} [projectless] fixed TOOL command consumes explicit file arguments without project discovery
  */
 
 /**
@@ -578,6 +595,27 @@ export function skillSourceRoot(projectRoot, carriedRoot = CARRIED_SKILLS_ROOT) 
  * @type {readonly VerbEntry[]}
  */
 export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
+  Object.freeze({
+    verb: "init", summary: "initialize local code and private histories or recover original setup through the fixed JSON protocol",
+    target: { kind: "script", file: "genesis-init-command.mjs", args: [] }, rootFlag: false, stdioContext: true,
+    usage: "supertaskr init --stdio", source: "Finite local initialization service: native selected folders and durable original setup recovery",
+  }),
+  Object.freeze({
+    verb: "workspace", summary: "inspect the selected product, records association and local runtime",
+    target: { kind: "script", file: "workspace-command.mjs", args: [] }, rootFlag: true,
+    usage: "supertaskr workspace [--root PRODUCT] [--product-only] [--at FULL_COMMIT]", source: "Canonical read-only workspace resolver",
+  }),
+  Object.freeze({
+    verb: "records", summary: "read, check, save or recover private records through the fixed JSON protocol",
+    target: { kind: "script", file: "records-stdio.mjs", args: [] }, rootFlag: false, stdioContext: true,
+    usage: "supertaskr records --stdio", source: "Private record service: explicit configured project context and durable ordinary saving",
+  }),
+  Object.freeze({
+    verb: "backup", summary: "inspect a portable private backup or restore it into a new records directory",
+    target: { kind: "script", file: "records-backup-command.mjs", args: [] }, rootFlag: false, projectless: true,
+    usage: "supertaskr backup inspect FILE | backup restore FILE --to NEW_RECORDS",
+    source: "Portable private backup inspection and restore; original authority is not imported",
+  }),
   Object.freeze({
     verb: "status",
     summary: "the board census — every card, its status and its blockers",
@@ -652,11 +690,34 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
     verb: "gate",
     summary: "run a graded suite the blessed way, reading the body count and not the code",
     target: { kind: "script", file: "gate-run.mjs", args: [] },
-    rootFlag: false,
-    usage: "supertaskr gate parser|app|rust|e2e|--all",
+    rootFlag: true,
+    usage: "supertaskr gate <configured-suite>...|--all|--list [--at <revision>]",
     source:
-      "docs/conventions/gates-and-the-push.md THE BLESSED GATE-RUNNER: " +
-      "`node tools/e2e/scripts/gate-run.mjs parser|app|rust|e2e`",
+      "`supertaskr.yaml` suites, selected at an exact committed PRODUCT revision",
+  }),
+  Object.freeze({
+    verb: "smoke",
+    summary: "run the selected project's committed smoke command",
+    target: { kind: "script", file: "project-command.mjs", args: ["smoke"] },
+    rootFlag: true,
+    usage: "supertaskr smoke [--at <exact commit>]",
+    source: "supertaskr.yaml smoke, selected at an exact committed PRODUCT revision",
+  }),
+  Object.freeze({
+    verb: "guard-class",
+    summary: "classify PRODUCT paths against the committed guard map",
+    target: { kind: "script", file: "project-command.mjs", args: ["guard-class"] },
+    rootFlag: true,
+    usage: "supertaskr guard-class <PRODUCT path>... [--at <exact commit>]",
+    source: "supertaskr.yaml guard_class and the installed METHOD class declaration",
+  }),
+  Object.freeze({
+    verb: "names",
+    summary: "check the committed PRODUCT name policy against its selected source corpus",
+    target: { kind: "script", file: "project-command.mjs", args: ["names"] },
+    rootFlag: true,
+    usage: "supertaskr names [--at <exact commit>]",
+    source: "supertaskr.yaml names literal classes and committed PRODUCT source selection",
   }),
   Object.freeze({
     verb: "docs-gate",
@@ -693,21 +754,21 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
   }),
   Object.freeze({
     verb: "settings",
-    summary: "the process as settings — the profile, every switch with its cost, and the template edit",
+    summary: "committed project roles and process settings, with an explicit working editor",
     target: { kind: "script", file: "settings.mjs", args: [] },
     rootFlag: true,
     usage:
-      "supertaskr settings [set <switch> <value> | reference [--write | --check]]",
+      "supertaskr settings [--working | role <role> | set <switch> <value> | reference [--write | --check]] [--at <exact commit>]",
     source:
-      "docs/conventions/records-and-rooms.md THE PROCESS IS SETTINGS, AND EVERY SWITCH IS DECLARED ONCE: " +
-      "`method/runtime/process-schema.yaml` is the ONE source (ADR-024 decision 6)",
+      "committed supertaskr.yaml and verified TOOL method/runtime/process-schema.yaml",
   }),
   Object.freeze({
     verb: "health",
     summary: "the method's own health bands, compared rather than eyeballed",
     target: { kind: "script", file: "health-bands-run.mjs", args: [] },
-    rootFlag: false,
-    source: "docs/conventions/merging.md, the health bands: `npm run health`",
+    rootFlag: true,
+    usage: "supertaskr health [--list | --readings <captured output>...] [--file] [--at <exact commit>]",
+    source: "supertaskr.yaml bands at an exact committed PRODUCT revision; --file uses selected records save",
   }),
   Object.freeze({
     verb: "tokens",
@@ -740,14 +801,9 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
   }),
   Object.freeze({
     verb: "index",
-    summary: "is the committed graph current against the tree",
-    target: {
-      kind: "cargo",
-      package: "supertaskr-index",
-      cwd: path.join("app", "src-tauri"),
-      args: ["index", "--check", "--root", "../.."],
-    },
-    rootFlag: false,
+    summary: "check or durably refresh the selected private source graph",
+    target: { kind: "script", file: "index-command.mjs", args: ["index"] },
+    rootFlag: true,
     source:
       "docs/conventions/commands.md app/src-tauri bullet: " +
       "`cargo run -p supertaskr-index -- index --check --root ../..`",
@@ -755,13 +811,8 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
   Object.freeze({
     verb: "arch",
     summary: "components, observed edges, drift flags, cycles and blast radius",
-    target: {
-      kind: "cargo",
-      package: "supertaskr-index",
-      cwd: path.join("app", "src-tauri"),
-      args: ["arch"],
-    },
-    rootFlag: false,
+    target: { kind: "script", file: "index-command.mjs", args: ["arch"] },
+    rootFlag: true,
     usage: "supertaskr arch [cycles | blast <path|slug> | drift]",
     source:
       "docs/conventions/commands.md app/src-tauri bullet: " +
@@ -812,7 +863,7 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
  * that quietly exposes three of five is a front nobody can audit.
  */
 export const ARCHITECTURE_VERBS = Object.freeze({
-  init: "NOT FRONTED — genesis is the app's spawned planner (ADR-017); no script exists to front",
+  init: "init",
   next: "next",
   verify: "NOT FRONTED — verification is the two-spawn bench (orchestrator 5d), not a script",
   merge: "merge",
@@ -884,6 +935,8 @@ export function planFor(input) {
  * @returns {string | null}
  */
 export function rootMismatch(entry, projectRoot) {
+  if (entry.stdioContext) return null;
+  if (entry.projectless) return null;
   if (entry.rootFlag) return null;
   if (entry.target.kind === "cargo" || entry.target.kind === "project") return null;
   if (path.resolve(projectRoot) === path.resolve(packageRepoRoot)) return null;
@@ -972,12 +1025,24 @@ export function main(argv, io = {}) {
     );
     return EXIT.USAGE;
   }
+  if (entry.stdioContext) {
+    if (rootOverride !== undefined || rest.length !== 1 || !["--stdio", "--help"].includes(/** @type {string} */ (rest[0]))) {
+      err(entry.usage ?? "supertaskr records --stdio"); return EXIT.USAGE;
+    }
+    if (rest[0] === "--help") { out(entry.usage ?? "supertaskr records --stdio"); return EXIT.CLEAN; }
+    const file = path.join(packageRoot, "scripts", entry.target.kind === "script" ? entry.target.file : "");
+    const child = spawn(process.execPath, [file, "--stdio"], { cwd, stdio: "inherit" });
+    if (child.error || child.signal) return EXIT.CANNOT_RUN;
+    return child.status ?? EXIT.CANNOT_RUN;
+  }
 
-  const projectRoot = rootOverride === undefined ? findProjectRoot(cwd) : path.resolve(rootOverride);
+  if(entry.projectless && rootOverride!==undefined) {err(entry.usage??`supertaskr ${entry.verb}`);return EXIT.USAGE;}
+
+  const projectRoot = entry.projectless ? cwd : rootOverride === undefined ? findProjectRoot(cwd) : path.resolve(rootOverride);
   if (projectRoot === null) {
     err(
       `supertaskr ${verb}: no supertaskr project above ${cwd} — a project root carries ` +
-        `${ROOT_MARKERS.join("/ and ")}/, or docs/ beside a .git. Pass --root <path> to name one.`,
+        `${ROOT_SETTINGS_MARKER}, ${ROOT_MARKERS.join("/ and ")}/, or docs/ beside a .git. Pass --root <path> to name one.`,
     );
     return EXIT.CANNOT_RUN;
   }

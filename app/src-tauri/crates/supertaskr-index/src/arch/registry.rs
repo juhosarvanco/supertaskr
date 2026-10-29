@@ -470,9 +470,13 @@ Prose below the block is not read.\n";
         // Content-independent: the registry is live and grows, so assert
         // its SHAPE (every id well-formed, sorted, paths non-empty for
         // the umbrella) rather than a count that a sibling task moves.
-        let root = crate::testutil::repo_root();
-        let components = read_registry(&root).expect("the live registry must read");
-        assert!(components.len() >= 5, "dogfood registry has >= 5 components");
+        let root = crate::testutil::TempTree::new("authored-registry");
+        for id in ["C-10", "C-02", "C-07", "C-01", "C-05"] {
+            let paths = if id == "C-07" { "crates/supertaskr-index/**" } else { "example/**" };
+            root.write(&format!("{REGISTRY_REL_DIR}/{id}-example.md"), &format!("---\nid: {id}\nname: {id} example\npaths: [{paths}]\n---\n"));
+        }
+        let components = read_registry(root.root()).expect("the authored registry must read");
+        assert_eq!(components.len(), 5, "every authored component is present");
         let ids: Vec<&str> = components.iter().map(|c| c.id.as_str()).collect();
         let mut sorted = ids.clone();
         sorted.sort_by(|a, b| compare_component_ids(a, b));

@@ -101,7 +101,7 @@ export function GenesisScreen({
           shell-frame.test.tsx can name it. Both scroll regions below —
           the chat's transcript and the lens's own — descend through it. */}
       <div data-testid="genesis-split" className="flex min-h-0 min-w-0 flex-1">
-        <InterviewChat projectDir={projectDir} docs={docs} />
+        <InterviewChat key={docs.records ? `${docs.records.selectionSequence}:${docs.records.contextSequence}` : projectDir} projectDir={projectDir} docs={docs} />
 
         {/* ---- T-024's lens, mounted (T-037), now the right half ------- */}
         {/* THE SPLIT'S BREAKPOINT, and the one consequence worth reading

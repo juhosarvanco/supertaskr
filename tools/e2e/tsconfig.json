@@ -24,7 +24,8 @@
     "checkJs": true
   },
   "include": [
-    "playwright.config.ts",
+    "playwright*.config.ts",
+    "dogfood/**/*.ts",
     "preflight.ts",
     "fixtures/**/*.ts",
     "tests/**/*.ts",

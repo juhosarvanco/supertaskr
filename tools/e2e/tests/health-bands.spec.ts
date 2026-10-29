@@ -1,15 +1,36 @@
+const repoRoot = fixtureFor(import.meta.url);
+import { pathToFileURL } from "node:url";
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { parse as parseYaml } from "yaml";
-import { repoRoot } from "../preflight";
-import { DOC_BUDGETS, taskStatuses } from "../scripts/docs-scan.mjs";
-import { STANDING_BANDS, allBands, docHeadroomBands } from "../scripts/health-bands.config.mjs";
+import { fixtureFor } from "../fixtures/test-project";
+import {
+  DOC_BUDGETS,
+} from "../scripts/docs-scan.mjs";
+import * as fixtureSubjectDefinition0 from "../scripts/docs-scan.mjs";
+void fixtureSubjectDefinition0;
+const {
+  taskStatuses,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/docs-scan.mjs")).href) as typeof fixtureSubjectDefinition0;
+import {
+  STANDING_BANDS,
+} from "../scripts/health-bands.config.mjs";
+import * as fixtureSubjectDefinition1 from "../scripts/health-bands.config.mjs";
+void fixtureSubjectDefinition1;
+const {
+  allBands,
+  docHeadroomBands,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/health-bands.config.mjs")).href) as typeof fixtureSubjectDefinition1;
 import {
   EXIT,
   TIER_BUDGETS,
+} from "../scripts/health-bands.mjs";
+import * as fixtureSubjectDefinition2 from "../scripts/health-bands.mjs";
+void fixtureSubjectDefinition2;
+const {
   cardMeters,
   evaluate,
   evaluateBand,
@@ -27,7 +48,7 @@ import {
   softVerifierFlags,
   tierWindows,
   validateBands,
-} from "../scripts/health-bands.mjs";
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/health-bands.mjs")).href) as typeof fixtureSubjectDefinition2;
 
 /**
  * THE METHOD'S OWN HEALTH BANDS (T-156) — no browser.
@@ -60,9 +81,14 @@ const runCmd = path.join(repoRoot, "tools/e2e/scripts/health-bands-run.mjs");
 
 /** @returns the command's exit code, stdout and stderr, run from the repo root. */
 function runHealth(args: string[]): { code: number; out: string; err: string } {
-  const r = spawnSync(process.execPath, [runCmd, ...args], {
+  // Preserve the explicit source-band fixture contract. Installed configured
+  // command behavior is covered separately without source/board fallbacks.
+  const code = "const {pathToFileURL}=await import('node:url'); const {sourceHealthMain}=await import(pathToFileURL(process.argv[1])); try{process.exitCode=await sourceHealthMain(process.argv.slice(2));}catch(e){console.error(e.message);process.exitCode=3;}";
+  const env = { ...process.env }; delete env.FORCE_COLOR;
+  const r = spawnSync(process.execPath, ["--input-type=module", "-e", code, runCmd, ...args], {
     cwd: repoRoot,
     encoding: "utf8",
+    env,
   });
   return { code: r.status ?? -1, out: r.stdout ?? "", err: r.stderr ?? "" };
 }
@@ -340,9 +366,9 @@ test("DOC_BUDGETS HAS ONE HOME — the gate and the bands read the same table", 
   // that file executes at import, so a second reader could not import
   // it, and the obvious workaround is a copy. A copy of a budget table
   // disagrees with the original exactly when a budget is re-landed.
-  const gate = readFileSync(path.join(repoRoot, "tools/e2e/scripts/docs-gate.mjs"), "utf8");
-  expect(gate).toContain("DOC_BUDGETS");
-  expect(gate).not.toMatch(/const DOC_BUDGETS\s*=/);
+  const consumer = readFileSync(path.join(repoRoot, "tools/e2e/scripts/health-bands-run.mjs"), "utf8");
+  expect(consumer).toContain("DOC_BUDGETS");
+  expect(consumer).not.toMatch(/const DOC_BUDGETS\s*=/);
   const scan = readFileSync(path.join(repoRoot, "tools/e2e/scripts/docs-scan.mjs"), "utf8");
   expect(scan).toMatch(/export const DOC_BUDGETS\s*=/);
 });
@@ -871,23 +897,8 @@ test("THE SOFT-VERIFIER READING fires on the CONJUNCTION only — seen on a plan
   );
 });
 
-test("TIER_BUDGETS TRANSCRIBES ADR-024 DECISION 1 — pinned to the ruling that produced it", () => {
-  // The §AUTHORITIES discipline pointed at a RULING instead of a tool.
-  // These six numbers are the owner's, and the failure they are pinned
-  // against is the quiet one: a budget edited beside the parse while the
-  // decision record still reads the old pair, after which every band
-  // reports against a limit nobody ruled.
-  const adr = readFileSync(path.join(repoRoot, "docs/decisions/024-the-proportionate-loop.md"), "utf8");
-  expect(adr).toContain("Budgets: 20 min/80K, 75 min/310K, 100 min/450K");
-  expect(TIER_BUDGETS).toEqual({
-    bounded: { minutes: 20, tokens: 80000 },
-    standard: { minutes: 75, tokens: 310000 },
-    guarded: { minutes: 100, tokens: 450000 },
-  });
-  // The order is the ADR's own tier sentence, bounded then standard then
-  // guarded, and the table keeps it so the two can be read side by side.
-  expect(Object.keys(TIER_BUDGETS)).toEqual(["bounded", "standard", "guarded"]);
-});
+// Actual private ruling/template provenance: dogfood/private-project.spec.ts.
+
 
 test("the loop bands reach the command's own band set, and each of the three tiers renders", () => {
   // Criterion 1's second half. A band reaches `npm run health` only
@@ -985,27 +996,4 @@ test("A LINE THE READER COULD NOT UNDERSTAND TAKES THE LOOP BANDS DARK — the p
   expect(loopReadings({ cards, sinceSec: null, problems: [] }).size).toBe(2);
 });
 
-test("THE CHECKPOINT TEMPLATE QUOTES BOTH LOOP BANDS BY ID, WITH THE COMMAND THAT DERIVES THEM", () => {
-  // Criterion 2's first half lives entirely in DATA — two lines of prose
-  // in docs/checkpoints/TEMPLATE.md — and at 3294c349 nothing in the
-  // tree kept it: `Cycle band:` and `Token band:` appeared in exactly
-  // one file each, the template itself, and no body, gate or generator
-  // read them. A criterion whose whole delivery is an unkept paragraph
-  // is satisfied by good intentions until somebody edits the paragraph.
-  // This is the project's own standing hazard — a second copy of a list
-  // drifting from the first — so the pin is on the BAND IDS, which is
-  // what actually drifts when a band is renamed.
-  const template = readFileSync(path.join(repoRoot, "docs/checkpoints/TEMPLATE.md"), "utf8");
-  expect(template).toContain("`Cycle band:`");
-  expect(template).toContain("`Token band:`");
-  for (const id of ["loop/cycle-budget-used", "loop/token-budget-used"]) {
-    expect(template, `the checkpoint template must name ${id}`).toContain(id);
-    expect(allBands(DOC_BUDGETS).map((b) => b.id)).toContain(id);
-  }
-  // THE DERIVE COMMAND IS QUOTED, and it is the one that actually
-  // prints these bands. RUN VERBATIM at 3294c349 from tools/e2e/, it
-  // emitted `loop/cycle-budget-used: 160.27 % of the tier's budget` with
-  // its derivation — a figure a checkpoint can paste.
-  expect(template).toContain("npm run health");
-  expect(runHealth(["--list"]).out).toContain("loop/token-budget-used");
-});
+// Actual private ruling/template provenance: dogfood/private-project.spec.ts.

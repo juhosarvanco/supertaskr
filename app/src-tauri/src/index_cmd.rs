@@ -2,16 +2,18 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::Instant;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use supertaskr_index::{index, stable_json, write_graph, IndexOptions, GRAPH_REL_PATH};
 
-use crate::docs_watch::{has_plain_docs_dir, now_ms, WatchState};
+use crate::docs_watch::{has_plain_docs_dir, now_ms, ScopedOutcome, WatchState};
+use crate::record_editor::RecordEditorState;
+use crate::workspace::WorkspaceResolver;
 
 /// The `index_repo` seam (T-012): everything the Tauri command does,
 /// minus the Tauri runtime, so cargo tests drive it directly (the
-/// T-007 pattern). Zero arguments cross the IPC boundary — the project
-/// root comes from `WatchState`, the cache dir from the app's own cache
+/// T-007 pattern). Only native-issued selection/context numbers cross IPC;
+/// the project root comes from `WatchState`, the cache dir from the app's own cache
 /// path — and the outcome carries counts and timestamps only.
 ///
 /// Volatile stats (duration, indexed-at, byte size) live HERE, in the
@@ -37,19 +39,92 @@ pub enum IndexOutcome {
         graph_bytes: usize,
         duration_ms: u64,
         indexed_at_ms: u64,
+        recovered: bool,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        cleanup_warning: Option<String>,
     },
     /// IndexError (or a refused write target), Display'd — never a panic.
     Error { message: String },
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PrivateIndexResult {
+    status: String, changed: bool, files: usize, symbols: usize, edges: usize,
+    truncated: bool, graph_bytes: usize, #[serde(default)] duration_ms: u64,
+    #[serde(default)] recovered: bool,
+    #[serde(default)] cleanup_warning: Option<String>,
+}
+
+/// Native-issued correlation, never a caller-selected root or write grant.
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct IndexSelectionToken {
+    pub selection_sequence: u64,
+    pub context_sequence: u64,
+}
+pub(crate) fn capture_index_scope(state: &WatchState, expected: Option<&IndexSelectionToken>) -> Result<crate::docs_watch::MessageScope, ScopedOutcome<IndexOutcome>> {
+    let scope = state.message_scope();
+    let matched = match (&scope.records, expected) {
+        (Some(_), Some(token)) => token.selection_sequence == scope.selection_sequence && token.context_sequence == scope.context_sequence,
+        (None, None) => true,
+        _ => false,
+    };
+    if !matched {
+        return Err(ScopedOutcome {scope, outcome: IndexOutcome::Error {message:"The selected records context changed before the index request arrived.".into()}});
+    }
+    Ok(scope)
+}
+
+/// Production bound projects publish through the installed, owned exact-write
+/// producer. Only independently established binding absence retains the legacy
+/// standalone folder utility below; an invalid binding never falls back.
+#[cfg(test)]
+pub fn run_index_scoped(state: &WatchState, editor: &RecordEditorState, cache_dir: Option<PathBuf>) -> ScopedOutcome<IndexOutcome> {
+    run_index_for_scope(state, editor, cache_dir, state.message_scope())
+}
+/// The command captures this scope before scheduling its blocking work. Neither
+/// a queued job nor the installed bridge may select a successor project.
+pub fn run_index_for_scope(state: &WatchState, editor: &RecordEditorState, cache_dir: Option<PathBuf>, scope: crate::docs_watch::MessageScope) -> ScopedOutcome<IndexOutcome> {
+    let failed = |outcome| ScopedOutcome {outcome, scope: scope.clone()};
+    let Some(product) = scope.project_dir.as_ref().map(PathBuf::from) else { return failed(IndexOutcome::NoProject); };
+    let current = state.message_scope();
+    if current.project_dir != scope.project_dir || current.selection_sequence != scope.selection_sequence
+        || current.context_sequence != scope.context_sequence || current.records != scope.records {
+        return failed(IndexOutcome::Error {message:"The selected product changed before indexing.".into()});
+    }
+    let present = match WorkspaceResolver::new().and_then(|r| r.workspace_binding_present(&product)) {
+        Ok(value) => value,
+        Err(error) => return failed(IndexOutcome::Error { message: error.to_string() }),
+    };
+    if !present { return failed(index_root(product, cache_dir)); }
+    match crate::record_editor::index_selected_records(state, editor, cache_dir, &scope) {
+        Ok((value, scope)) => ScopedOutcome {scope, outcome: match serde_json::from_value::<PrivateIndexResult>(value) {
+            Ok(result) if result.status == "indexed" => IndexOutcome::Indexed {
+                changed: result.changed, files: result.files, symbols: result.symbols, edges: result.edges,
+                truncated: result.truncated, graph_bytes: result.graph_bytes, duration_ms: result.duration_ms,
+                indexed_at_ms: now_ms(),
+                recovered: result.recovered,
+                cleanup_warning: result.cleanup_warning.map(|_| "The graph is saved. Recovery cleanup is still pending.".into()),
+            },
+            _ => IndexOutcome::Error { message: "The source graph service returned an invalid result.".into() },
+        }},
+        Err(code) => failed(IndexOutcome::Error { message: format!("Source graph unavailable ({code}).") }),
+    }
 }
 
 /// Run the indexer over the open project and write the committed graph.
 ///
 /// `cache_dir` is the caller's choice (the app passes its cache dir,
 /// tests pass None — the crate degrades to a full parse either way).
+#[cfg(test)]
 pub fn run_index(state: &WatchState, cache_dir: Option<PathBuf>) -> IndexOutcome {
     let Some(root) = state.project_dir() else {
         return IndexOutcome::NoProject;
     };
+    index_root(root, cache_dir)
+}
+fn index_root(root: PathBuf, cache_dir: Option<PathBuf>) -> IndexOutcome {
     if !has_plain_docs_dir(&root) {
         return IndexOutcome::NoDocs {
             project_dir: root.display().to_string(),
@@ -105,6 +180,8 @@ pub fn run_index(state: &WatchState, cache_dir: Option<PathBuf>) -> IndexOutcome
         graph_bytes,
         duration_ms: started.elapsed().as_millis() as u64,
         indexed_at_ms: now_ms(),
+        recovered: false,
+        cleanup_warning: None,
     }
 }
 
@@ -181,6 +258,19 @@ mod tests {
             other => panic!("expected NoDocs, got {other:?}"),
         }
         assert!(!t.root().join("docs").exists(), "the app never creates docs/");
+    }
+
+    #[test]
+    fn invalid_explicit_binding_never_uses_the_legacy_product_graph_writer() {
+        let t = TempTree::new("invalid-bound");
+        t.write("src/a.ts", "export const a = 1;\n");
+        t.write(".supertaskr/workspace.json", "invalid explicit association");
+        let state = detached_state(Some(t.root().to_path_buf()));
+        let editor = RecordEditorState::default();
+        assert!(matches!(run_index_scoped(&state, &editor, None).outcome, IndexOutcome::Error {..}));
+        assert!(!t.root().join("docs/architecture").exists());
+        assert!(!t.root().join(".supertaskr/runs").exists());
+        editor.stop();
     }
 
     #[test]

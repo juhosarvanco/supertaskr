@@ -1,9 +1,15 @@
+import { configureGateFixture } from "../fixtures/configured-project";
+import { testToolRuntime } from "../fixtures/tool-runtime";
+const repoRoot = fixtureFor(import.meta.url);
+configureGateFixture(repoRoot);
+import { pathToFileURL } from "node:url";
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
-import { repoRoot } from "../preflight";
+import { fixtureFor } from "../fixtures/test-project";
+import { sourceOnlyCheckout } from "../fixtures/source-only";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 // THE CI SIDE OF THE SAME DERIVATION (T-294). `ci-owed.mjs` is what the
 // runner runs: it turns an event into a RANGE, asks this module's own
@@ -14,16 +20,20 @@ import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import {
   DEFAULT_SHARD_COUNT,
   SHARD_COUNT_ENV,
+  BOOT_SUITES,
+} from "../scripts/ci-owed.mjs";
+import * as fixtureSubjectDefinition0 from "../scripts/ci-owed.mjs";
+void fixtureSubjectDefinition0;
+const {
   askOwedSet,
   ciPlan,
   outputLines,
   owedSetArgv,
   rangeForEvent,
-  BOOT_SUITES,
   shardCountFromEnv,
   shardSpecs,
   specsFromLegDir,
-} from "../scripts/ci-owed.mjs";
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/ci-owed.mjs")).href) as typeof fixtureSubjectDefinition0;
 import {
   ALL_SUITES,
   EXIT,
@@ -32,14 +42,19 @@ import {
   PACKAGE_ROOTS,
   RANGE_FLAG,
   REQUIRED_VERDICT_FIELDS,
+  SCOPED_SUITE,
+  TREE_FLAG,
+  VERDICT_TOKEN,
+  SETTINGS_DIR,
+} from "../scripts/gate-run.mjs";
+import * as fixtureSubjectDefinition1 from "../scripts/gate-run.mjs";
+void fixtureSubjectDefinition1;
+const {
   buildConfigsIn,
   generatedEntries,
   generatedSources,
   packageBuilds,
   resolveTsconfig,
-  SCOPED_SUITE,
-  TREE_FLAG,
-  VERDICT_TOKEN,
   acquireSolo,
   countBodies,
   countCargo,
@@ -61,7 +76,6 @@ import {
   runSuite,
   scopeVerdict,
   scopedSuite,
-  SETTINGS_DIR,
   settingsReaders,
   settingsReadersIn,
   specFiles,
@@ -70,19 +84,31 @@ import {
   suiteOfPath,
   validateRegistry,
   validateSuite,
-} from "../scripts/gate-run.mjs";
-import { conventionsText, docsGate, docsReaders } from "../scripts/docs-scan.mjs";
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/gate-run.mjs")).href) as typeof fixtureSubjectDefinition1;
+import * as fixtureSubjectDefinition2 from "../scripts/docs-scan.mjs";
+void fixtureSubjectDefinition2;
+const {
+  conventionsText,
+  docsGate,
+  docsReaders,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/docs-scan.mjs")).href) as typeof fixtureSubjectDefinition2;
 import {
   GREEN,
   REQUIRED_SUITES,
   SCOPABLE_SUITE,
   TOKEN_REL_PATH,
   TOKEN_VERSION,
+} from "../../../.claude/hooks/gate-token.mjs";
+import * as fixtureSubjectDefinition3 from "../../../.claude/hooks/gate-token.mjs";
+void fixtureSubjectDefinition3;
+const {
   headTree,
   judgeToken,
   readToken,
-} from "../../../.claude/hooks/gate-token.mjs";
-import { OWED_SET_FLAGS, OWED_SET_PATH } from "../../../.claude/hooks/push-guard.mjs";
+} = await import(pathToFileURL(path.join(repoRoot, ".claude/hooks/gate-token.mjs")).href) as typeof fixtureSubjectDefinition3;
+import * as fixtureSubjectDefinition4 from "../../../.claude/hooks/push-guard.mjs";
+void fixtureSubjectDefinition4;
+const { OWED_SET_FLAGS, OWED_SET_PATH } = await import(pathToFileURL(path.join(repoRoot, ".claude/hooks/push-guard.mjs")).href) as typeof fixtureSubjectDefinition4;
 
 /**
  * THE BLESSED GATE-RUNNER'S POSITIVE CONTROL (T-202) — no browser.
@@ -743,8 +769,8 @@ test("the runner answers in this repository's four gate codes, with REFUSED dist
 });
 
 test("the CLI refuses an unknown suite name at the usage code rather than running nothing and exiting clean", () => {
-  const cli = path.join(repoRoot, "tools/e2e/scripts/gate-run.mjs");
-  const r = spawnSync(process.execPath, [cli, "no-such-suite-T-202"], {
+  const cli = path.join(testToolRuntime().runtimeRoot, "tools/e2e/scripts/gate-run.mjs");
+  const r = spawnSync(process.execPath, [cli, "--root", repoRoot, "no-such-suite-T-202"], {
     cwd: repoRoot,
     encoding: "utf8",
   });
@@ -753,14 +779,14 @@ test("the CLI refuses an unknown suite name at the usage code rather than runnin
 });
 
 test("the CLI called with no arguments exits at the usage code, so an empty invocation is never a clean run", () => {
-  const cli = path.join(repoRoot, "tools/e2e/scripts/gate-run.mjs");
+  const cli = path.join(testToolRuntime().runtimeRoot, "tools/e2e/scripts/gate-run.mjs");
   const r = spawnSync(process.execPath, [cli], { cwd: repoRoot, encoding: "utf8" });
   expect(r.status).toBe(EXIT.USAGE);
 });
 
 test("the CLI lists every graded suite with the directory it must run in", () => {
-  const cli = path.join(repoRoot, "tools/e2e/scripts/gate-run.mjs");
-  const r = spawnSync(process.execPath, [cli, "--list"], { cwd: repoRoot, encoding: "utf8" });
+  const cli = path.join(testToolRuntime().runtimeRoot, "tools/e2e/scripts/gate-run.mjs");
+  const r = spawnSync(process.execPath, [cli, "--root", repoRoot, "--list"], { cwd: repoRoot, encoding: "utf8" });
   expect(r.status).toBe(EXIT.GREEN);
   for (const s of Object.values(GRADED_SUITES)) {
     expect(`${r.stdout}`).toContain(s.id);
@@ -1491,9 +1517,9 @@ test("a changed path the derivation cannot place REFUSES the scoped run at the u
   // a seat meets it. It refuses BEFORE it spawns anything and before it
   // writes a token, which is why this body may drive `main` at all where
   // the §THE VERDICT TOKEN bodies deliberately may not.
-  const cli = path.join(repoRoot, "tools/e2e/scripts/gate-run.mjs");
+  const cli = path.join(testToolRuntime().runtimeRoot, "tools/e2e/scripts/gate-run.mjs");
   const unplaceable = "app/src/main.tsx";
-  const r = spawnSync(process.execPath, [cli, "e2e", "--owning", unplaceable], {
+  const r = spawnSync(process.execPath, [cli, "--root", repoRoot, "e2e", "--owning", unplaceable], {
     cwd: repoRoot,
     encoding: "utf8",
   });
@@ -1507,14 +1533,14 @@ test("a changed path the derivation cannot place REFUSES the scoped run at the u
 });
 
 test("the scoped form belongs to the e2e leg alone, and an empty path list is refused rather than graded as nothing", () => {
-  const cli = path.join(repoRoot, "tools/e2e/scripts/gate-run.mjs");
-  const wrongLeg = spawnSync(process.execPath, [cli, "parser", "--owning", "lib/parser/src/fence.ts"], {
+  const cli = path.join(testToolRuntime().runtimeRoot, "tools/e2e/scripts/gate-run.mjs");
+  const wrongLeg = spawnSync(process.execPath, [cli, "--root", repoRoot, "parser", "--owning", "lib/parser/src/fence.ts"], {
     cwd: repoRoot,
     encoding: "utf8",
   });
   expect(wrongLeg.status).toBe(EXIT.USAGE);
   expect(`${wrongLeg.stderr}`).toContain(CRITERION_4_SENTENCE);
-  const empty = spawnSync(process.execPath, [cli, "e2e", "--owning"], {
+  const empty = spawnSync(process.execPath, [cli, "--root", repoRoot, "e2e", "--owning"], {
     cwd: repoRoot,
     encoding: "utf8",
   });
@@ -1574,8 +1600,11 @@ test("the live reader map really places this document, and the subset it owes is
   // bodies, so it exercises the composition and not only the direct arm.
   const derived = deriveOwning(["docs/CONVENTIONS.md"]);
   expect(derived.unplaceable).toEqual([]);
-  expect(derived.specs).toContain("tools/e2e/tests/docs-input-gate.spec.ts");
   expect(derived.specs).toContain("tools/e2e/tests/cli.spec.ts");
+  const publicInput = deriveOwning(["docs/reference/15-settings.md"]);
+  expect(publicInput.unplaceable).toEqual([]);
+  expect(publicInput.specs).toContain("tools/e2e/tests/cli.spec.ts");
+  expect(derived.specs).not.toContain("tools/e2e/tests/docs-input-gate.spec.ts");
   expect(derived.specs.length, "a subset, and a proper one").toBeLessThan(specFiles().length);
   // This lane's own change, the narrowest case there is.
   const mine = deriveOwning(["tools/e2e/scripts/gate-run.mjs"]);
@@ -1624,7 +1653,8 @@ test("every relative import in this lane's own tree resolves, because a dropped 
  *  checkout answered three suites and twelve specs. Two commits on
  *  main, named as hashes because "the last push" is a different pair
  *  for every reader and a different one an hour later. */
-const T331_RANGE = "e1a0c98d..2cad6497";
+// The ordinary cold/prepared control below creates its own source range.
+// Historical T331 refs are not a source-only contribution prerequisite.
 
 /**
  * A tree identical to this checkout except that the named files are
@@ -1692,11 +1722,21 @@ function generatedInputsReached(root: string = repoRoot): string[] {
   return [...reached].filter((f) => !tracked.has(f)).sort();
 }
 
-test("a fresh runner's tree answers the WHOLE battery for a range this checkout narrows, and the difference is exactly the generated files the walk reaches", () => {
+test("a fresh runner's tree answers the whole battery until the actual reached generated inputs are restored", () => {
+  const rangeRoot = sourceOnlyCheckout();
+  const git = (...args: string[]) => execFileSync("git", ["-C", rangeRoot, ...NO_BACKGROUND_MAINTENANCE, "-c", "user.name=source fixture", "-c", "user.email=fixture@example.invalid", ...args], { encoding: "utf8" }).trim();
+  try {
+    git("commit", "-qm", "authored source baseline");
+    const base = git("rev-parse", "HEAD");
+    const changedSource = path.join(rangeRoot, "tools/e2e/scripts/gate-run.mjs");
+    writeFileSync(changedSource, readFileSync(changedSource, "utf8") + "\n// Authored source-range control.\n");
+    git("add", "tools/e2e/scripts/gate-run.mjs");
+    git("commit", "-qm", "authored source change");
+    const range = `${base}..HEAD`;
   // THE INTEGRATION CHECKOUT'S OWN ANSWER, taken through the arm CI
   // spawns and the push guard re-derives — not a re-composition of it.
-  const live = owedForRange(T331_RANGE, repoRoot);
-  expect("problem" in live, `${T331_RANGE} must be a range this checkout can diff`).toBe(false);
+  const live = owedForRange(range, rangeRoot);
+  expect("problem" in live, `${range} must be a range this checkout can diff`).toBe(false);
   const here = live as Exclude<typeof live, { problem: string }>;
   expect(here.failClosed, "this checkout derives the range rather than falling back").toBeUndefined();
 
@@ -1707,9 +1747,9 @@ test("a fresh runner's tree answers the WHOLE battery for a range this checkout 
   expect(here.suites.length, "a proper subset of the battery").toBeLessThan(ALL_SUITES.length);
   expect(here.e2e.whole, "and the leg is narrowed").toBe(false);
   expect(here.e2e.specs.length).toBeGreaterThan(0);
-  expect(here.e2e.specs.length, "to fewer specs than the leg has").toBeLessThan(specFiles().length);
+  expect(here.e2e.specs.length, "to fewer specs than the leg has").toBeLessThan(specFiles(rangeRoot).length);
 
-  const generated = generatedInputsReached();
+  const generated = generatedInputsReached(rangeRoot);
   expect(
     generated.length,
     "the walk reaches files a fresh checkout does not carry — an empty set makes both " +
@@ -1722,7 +1762,7 @@ test("a fresh runner's tree answers the WHOLE battery for a range this checkout 
   // it, so withholding one cannot move this map, and a second scan
   // would be three seconds spent proving that a file git never listed
   // is still not listed.
-  const readers = docsReaders(repoRoot);
+  const readers = docsReaders(rangeRoot);
   const gate = docsGate(here.changed, readers);
   const docsReadersByPath: Record<string, string[]> = {};
   for (const entry of gate.byPath) docsReadersByPath[entry.path] = entry.readers;
@@ -1741,7 +1781,7 @@ test("a fresh runner's tree answers the WHOLE battery for a range this checkout 
     };
   };
 
-  const fresh = treeWithout(generated);
+  const fresh = treeWithout(generated, rangeRoot);
   try {
     // ARM ONE — THE RUNNER AS IT STOOD. The edges land nowhere, the
     // answer is the whole battery, and it NAMES the input it could not
@@ -1769,7 +1809,7 @@ test("a fresh runner's tree answers the WHOLE battery for a range this checkout 
     // RUNS. Restoring the build's product and NOTHING else brings the
     // answer back to this checkout's, which is what makes arm one
     // attributable to the withholding and to nothing about the mirror.
-    const prepared = treeWithout([]);
+    const prepared = treeWithout([], rangeRoot);
     try {
       const after = armAt(prepared.dir);
       expect(after.unresolved, "every edge lands once the build's product is there").toEqual([]);
@@ -1785,6 +1825,7 @@ test("a fresh runner's tree answers the WHOLE battery for a range this checkout 
   } finally {
     fresh.cleanup();
   }
+  } finally { removeGitFixture(rangeRoot, "authored generated-input source"); }
 });
 
 test("the fail-closed sentence is a DISCRIMINATION: one unresolved edge is enough, and a tree with none derives the range", () => {
@@ -1854,18 +1895,10 @@ test("a fixture program written as a STRING is not this file's own import list",
  * IT CANNOT BE DRIVEN AT THIS CHECKOUT'S ROOT, WHICH IS WHY NOBODY DID:
  * `--owning` takes the e2e leg's SOLO LOCK — held by the leg running this
  * body — and would write THIS checkout's token. So the fixture is a
- * repository of its own holding a COPY of the runner and its import
- * closure, copied AT RUN TIME so that a mutant planted in the real file
- * travels into it.
+ * repository of its own, using an immutable TOOL snapshot built from
+ * current working source. The managed project contains its own authored
+ * source/tests and explicit committed suite settings, not copied TOOL code.
  */
-const ARM_CLOSURE = [
-  "tools/e2e/scripts/gate-run.mjs",
-  "tools/e2e/scripts/docs-scan.mjs",
-  "tools/e2e/scripts/token-scan.mjs",
-  ".claude/hooks/gate-token.mjs",
-  ".claude/hooks/lane-fence.mjs",
-];
-
 function makeArmFixture(answer: string): { root: string; cleanup: () => void } {
   // REALPATH, AND IT IS LOAD-BEARING: macOS resolves /var/folders to
   // /private/var, and this runner only runs `main` when `import.meta.url`
@@ -1876,9 +1909,7 @@ function makeArmFixture(answer: string): { root: string; cleanup: () => void } {
   mkdirSync(path.join(root, "tools", "e2e", "scripts"), { recursive: true });
   mkdirSync(path.join(root, "tools", "e2e", "tests"), { recursive: true });
   mkdirSync(path.join(root, ".claude", "hooks"), { recursive: true });
-  for (const rel of ARM_CLOSURE) {
-    writeFileSync(path.join(root, rel), readFileSync(path.join(repoRoot, rel), "utf8"));
-  }
+  mkdirSync(path.join(root, "cli"), { recursive: true });
   symlinkSync(
     path.join(repoRoot, "tools/e2e/node_modules"),
     path.join(root, "tools/e2e/node_modules"),
@@ -1908,6 +1939,7 @@ function makeArmFixture(answer: string): { root: string; cleanup: () => void } {
   git("init", "-q", "-b", "main");
   git("add", "-A");
   git("-c", "user.email=t271@example.invalid", "-c", "user.name=t271", "commit", "-qm", "base");
+  configureGateFixture(root);
   return { root, cleanup: () => rmSync(root, { recursive: true, force: true }) };
 }
 
@@ -1915,7 +1947,7 @@ function makeArmFixture(answer: string): { root: string; cleanup: () => void } {
 function runArm(root: string): { status: number | null; line: string; token: string; bodies: number } {
   const r = spawnSync(
     process.execPath,
-    [path.join(root, "tools/e2e/scripts/gate-run.mjs"), "e2e", "--owning", "tools/e2e/scripts/subject.mjs"],
+    [path.join(testToolRuntime().runtimeRoot, "tools/e2e/scripts/gate-run.mjs"), "--root", root, "e2e", "--owning", "tools/e2e/scripts/subject.mjs"],
     { cwd: root, encoding: "utf8" },
   );
   const line =
@@ -2779,14 +2811,22 @@ test("a generated file no build configuration can place makes the owed set the W
 
   // AND THE SCOPED ARM REFUSES ON THE SAME GROUND, because a subset
   // chosen while a source-to-entry relationship is unreadable is SHORT.
-  const refusal = spawnSync(
-    process.execPath,
-    [path.join(repoRoot, "tools/e2e/scripts/gate-run.mjs"), SCOPED_SUITE, "--owning", "lib/parser/src/pure.ts"],
-    { cwd: repoRoot, encoding: "utf8", env: { ...process.env, PATH: "/nonexistent" } },
-  );
+  // Keep Git/origin measurement armed. Only the copied fixture's actual emit
+  // relationship is unreadable; the canonical source checkout is untouched.
+  const buildFile = path.join(repoRoot,"lib/parser/tsconfig.build.json"), originalBuild = readFileSync(buildFile);
+  let refusal;
+  try {
+    writeFileSync(buildFile,"{ unreadable authored fixture build configuration\n");
+    refusal = spawnSync(
+      process.execPath,
+      ["--input-type=module", "-e", `const gate=await import(process.argv[1]);const runner=gate.createConfiguredGateRunner({productRoot:process.argv[2],productRevision:process.argv[3]});try{runner.owning('e2e',['lib/parser/src/pure.ts']);process.exitCode=0;}catch(error){process.stderr.write(String(error.message));process.exitCode=error.code==='gate-usage'?2:3;}`,
+        pathToFileURL(path.join(testToolRuntime().runtimeRoot,"tools/e2e/scripts/gate-run.mjs")).href,repoRoot,execFileSync("git",["-C",repoRoot,"rev-parse","HEAD"],{encoding:"utf8"}).trim()],
+      { cwd: repoRoot, encoding: "utf8" },
+    );
+  } finally { writeFileSync(buildFile,originalBuild); }
   expect(
     `${refusal.stderr ?? ""}`,
-    "with git unreachable the scoped arm cannot tell a generated file from a tracked one, so it " +
+    "with the emit relationship unreadable the scoped arm cannot place a generated file, so it " +
       "refuses on THIS arm rather than grading a subset that would be short",
   ).toContain("GENERATED file this derivation cannot map back to the");
   expect(`${refusal.stderr ?? ""}`).toContain("THE FULL e2e LEG IS OWED");
@@ -3063,7 +3103,7 @@ test("the ASK arm answers the owed set as JSON without running anything, and ans
     const ask = spawnSync(
       process.execPath,
       [
-        path.join(root, "tools/e2e/scripts/gate-run.mjs"),
+        path.join(testToolRuntime().runtimeRoot, "tools/e2e/scripts/source-ci-owed.mjs"),
         OWED_SET_FLAG,
         RANGE_FLAG,
         `${base}..${tip}`,
@@ -3088,7 +3128,7 @@ test("the ASK arm answers the owed set as JSON without running anything, and ans
 
     const bad = spawnSync(
       process.execPath,
-      [path.join(root, "tools/e2e/scripts/gate-run.mjs"), OWED_SET_FLAG, RANGE_FLAG, "not-a-range"],
+      [path.join(testToolRuntime().runtimeRoot, "tools/e2e/scripts/source-ci-owed.mjs"), OWED_SET_FLAG, RANGE_FLAG, "not-a-range"],
       { cwd: root, encoding: "utf8" },
     );
     expect(bad.status).toBe(EXIT.USAGE);
@@ -3121,7 +3161,7 @@ test("the RANGE arm grades the owed set, records the set and its range in the to
 
     const run = spawnSync(
       process.execPath,
-      [path.join(root, "tools/e2e/scripts/gate-run.mjs"), RANGE_FLAG, `${base}..${tip}`],
+      [path.join(testToolRuntime().runtimeRoot, "tools/e2e/scripts/gate-run.mjs"), "--root", root, RANGE_FLAG, `${base}..${tip}`],
       { cwd: root, encoding: "utf8" },
     );
     expect(run.status, run.stderr).toBe(EXIT.GREEN);
@@ -3151,7 +3191,7 @@ test("the RANGE arm grades the owed set, records the set and its range in the to
     // red.
     const whole = spawnSync(
       process.execPath,
-      [path.join(root, "tools/e2e/scripts/gate-run.mjs"), "e2e"],
+      [path.join(testToolRuntime().runtimeRoot, "tools/e2e/scripts/gate-run.mjs"), "--root", root, "e2e"],
       { cwd: root, encoding: "utf8" },
     );
     expect(whole.status, "the leg really reaches the stranger").toBe(EXIT.RED);
@@ -3277,7 +3317,7 @@ test("the argv the runner sends is the criterion's own spelling, built once", ()
   // paste, and the flags come off this module's own constants — a
   // retyped `--owed-set` is a second spelling waiting to drift.
   const argv = owedSetArgv("BASE..TIP", "/some/tree");
-  expect(argv[0]).toMatch(/(^|\/)gate-run\.mjs$/);
+  expect(argv[0]).toMatch(/(^|\/)source-ci-owed\.mjs$/);
   expect(argv.slice(1)).toEqual([OWED_SET_FLAG, RANGE_FLAG, "BASE..TIP", TREE_FLAG, "/some/tree"]);
 });
 

@@ -30,7 +30,9 @@
     "session:check": "node scripts/checkout-currency.mjs",
     "boot:check": "node scripts/tauri-boot-check.mjs",
     "boot:orphan-drill": "node scripts/orphan-drill.mjs",
-    "cli": "node bin/supertaskr.mjs"
+    "cli": "node bin/supertaskr.mjs",
+    "dogfood": "node scripts/private-dogfood.mjs",
+    "test:dogfood": "playwright test --config playwright.dogfood.config.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.62.1",

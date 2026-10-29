@@ -113,7 +113,7 @@ import { deriveOwning } from "./gate-run.mjs";
 // lives beside T-238's holder record, and a second spelling of that
 // directory here would be the duplication every other reader of it
 // avoids by importing this constant.
-import { RUNTIME_DIR, RUNTIME_DIR_IGNORE } from "../../../.claude/hooks/lane-fence.mjs";
+import { RUNTIME_DIR, RUNTIME_DIR_IGNORE } from "../../../cli/lane-fence.mjs";
 
 /* ────────────────────────────────────────────────────────────────────
  * THE PROCESS SETTINGS READER, IMPORTED FROM THE PARSER LIBRARY (T-317).
@@ -3321,7 +3321,7 @@ function deriveCorrection(ctx, row) {
  * PreToolUse-adjacent hooks that refuse a write, a push and a merge, and
  * the scripts the gate bullets themselves name.
  */
-export const GATE_SOURCE_DIRS = Object.freeze([".claude/hooks/", "tools/e2e/scripts/"]);
+export const GATE_SOURCE_DIRS = Object.freeze([".claude/hooks/", "cli/", "tools/e2e/scripts/"]);
 
 /**
  * The size at which a bullet stops being TRANSCRIBED and starts being
@@ -5264,7 +5264,7 @@ export function laneScratchStem(taskId, sp) {
  * ──────────────────────────────────────────────────────────────────── */
 
 /** The three tiers, in the order the method's own table gives them. */
-export const TIERS = Object.freeze(["bounded", "standard", "guarded"]);
+export const TIERS = /** @type {readonly string[]} */ (processPure.VERIFICATION_TIERS);
 
 /** The bullet that publishes this project's ONE spelling of a graded reading. */
 export const BLESSED_RUNNER_PHRASE = "THE BLESSED GATE-RUNNER (T-202):";
@@ -5685,8 +5685,8 @@ export function reviewerContract(cardText) {
     }
     const heading = /^ {0,3}##\s+(.+?)\s*#*\s*$/.exec(line);
     if (heading) {
-      if (/^(?:Implementation notes|Verdicts|(?:Executor |Build |Post-build )?(?:notes|reasoning|reports?))\b/i.test(heading[1] ?? "")) privateSection = true;
-      if (privateSection) contract = heading[1] === "Acceptance criteria";
+      if (/^(?:Implementation notes|Verdicts|History|Reports|Approval history|Archived grant history|Repair ledger|(?:Executor |Build |Post-build )?(?:notes|reasoning|reports?))\b/i.test(heading[1] ?? "")) privateSection = true;
+      if (privateSection) contract = ["Specification", "Acceptance criteria"].includes(heading[1] ?? "");
     }
     if (contract) out.push(line);
   }
@@ -6025,6 +6025,42 @@ export function renderPhase2(input) {
     "```markdown",
     reviewerContract(input.cardText),
     "```",
+    "",
+  ].join("\n");
+}
+
+/** Whole-set orientation reuses the ordinary contract renderer. Raw authority
+ * remains private; ranges and policy are qualified by repository role.
+ * @param {{authority: any, preparationDigest: string, sealDigest: string, seal: any}} input */
+export function renderQualifiedPhase2(input) {
+  const a = input.authority;
+  return [
+    `# QUALIFIED VERIFIER, PHASE 2 — ${a.taskId}, tier ${a.tier}`,
+    "Fresh independent phase two. Read the complete qualified diff before executor notes.",
+    "Validate frozen raw authority privately. The native reading restriction is procedural; no OS read isolation is claimed.",
+    "First run exactly /usr/bin/printenv CODEX_THREAD_ID, report identity and canonical task name, then await explicit binding.",
+    `preparation: ${input.preparationDigest}`,
+    `seal: ${input.sealDigest}`,
+    "", "## Sealed inputs", "", input.seal.document, "", input.seal.inputs.attack.text,
+    ...input.seal.inputs.grounds.map((/** @type {any} */ g) => `${g.role} at original committed input ${g.base}\n${g.document}`),
+    input.seal.inputs.measurements, "",
+    "Every supported shell action starts with the exact owning root prefix; patches name confined absolute destinations.",
+    ...a.workers.map((/** @type {any} */ w) => `${w.role}: ${w.checkout}; original range ${w.base}..${w.candidate}; candidate ${w.candidate}`),
+    a.tier === "guarded" ? "GUARDED: whole suites, rubric and the seat's phase-one measurements remain required." : "STANDARD: apply the role's standard mode.",
+    "Write one verdict over every active criterion and every candidate. Keep the original seal unchanged.",
+    "Commit assigned correction bodies and mutant blocks with their owning role, exact RED/GREEN refs and trees.",
+    "Retain mandatory integration conditions. T-355 owns corrected integration and its grades; this verdict supplies no partial landing authority.",
+    "", "## Active contract", "", reviewerContract(a.card.text),
+    "", "## Verifier role", "", a.role.text,
+    "", "The committed verdict includes one qualified-verdict JSON block binding preparationDigest, sealDigest, candidates,",
+    "criteria (number and evidence), independent frame (agentId, taskName, sessionId, requestedModel, requestedEffort, observed, limitations),",
+    "grades and corrections. Every grade names role, commit, tree, projectionDigest, exit, bodies, command, output and outputDigest.",
+    "Every correction names correction, role, blockDigest, bodyCommit, bodyHash, red and green readings. Existing mutant block layout still applies.",
+    "An explicitly stated wording-only correction uses wordingOnly=true, the canonical correction name, owning role/file and why; it claims no body or mutant readings.",
+    "Record protocol artifacts separately from implementation projections. Existing gates remain owed for record-only writes.",
+    "After all verifier commits, grade every actual output at its exact commit/tree. Your actual native final carries one qualified-output-grades JSON block",
+    "with preparationDigest, sealDigest, complete refs and grades in the same reading layout. Candidate/projection grades never waive own-write gates.",
+    "A committed assigned body may retain its actual RED reading only under its explicit mandatory integration condition; never label a temporary corrected tree as this output.",
     "",
   ].join("\n");
 }

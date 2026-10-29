@@ -38,7 +38,10 @@
 //! routing card is `T-175-s1`.
 
 pub mod adapter;
+pub mod context;
 pub mod kit;
+pub mod managed;
+pub mod planner;
 pub mod runner;
 pub mod sessions;
 pub mod skills;
@@ -257,6 +260,7 @@ struct Inner {
     registry_id: Option<String>,
     last_error: Option<TurnError>,
     last_event_at_ms: Option<u64>,
+    managed: Option<managed::Activation>,
 }
 
 impl Default for Phase {
@@ -286,6 +290,8 @@ pub struct AgentState {
     /// Set to true by cancel/exit so the relay loop stops promptly.
     cancel: Arc<AtomicBool>,
     emitter: Emitter,
+    activation_sequence: AtomicU64,
+    managed_sink: Option<Arc<dyn Fn(managed::Event) + Send + Sync>>,
     /// T-175: the cold-start test's state, and it is a SECOND cell rather
     /// than four more fields on [`Inner`]. The separation is the ruling:
     /// `Inner` is the interview's, every field of it feeds
@@ -326,8 +332,19 @@ impl AgentState {
             child: Arc::new(Mutex::new(None)),
             cancel: Arc::new(AtomicBool::new(false)),
             emitter: Emitter::new(wrapped, Arc::new(AtomicU64::new(0))),
+            activation_sequence: AtomicU64::new(0),
+            managed_sink: None,
             cold: Arc::new(Mutex::new(ColdInner::default())),
         }
+    }
+
+    /// Managed IPC has a path-free original-context envelope. Direct legacy
+    /// embeddings keep `new`; the production command set uses this sink only
+    /// once its renderer admits the managed protocol.
+    pub fn new_managed(cfg: RunnerConfig, sink: impl Fn(managed::Event) + Send + Sync + 'static) -> Self {
+        let mut state = Self::new(cfg, |_| {});
+        state.managed_sink = Some(Arc::new(sink));
+        state
     }
 
     fn begin_turn(&self) -> Option<TurnInFlight> {
@@ -533,6 +550,7 @@ pub fn start_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
         roles: vec!["planner".to_string()],
         status: "running".to_string(),
         skills: found.packs.clone(),
+        genesis: None,
     };
     if let Err(err) = sessions::upsert(&project_dir, entry) {
         return StartOutcome::Error {
@@ -563,6 +581,7 @@ pub fn start_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
             text: prompt.clone(),
             at_ms: now_ms(),
             machine: true,
+            genesis: None,
         },
     );
 
@@ -712,6 +731,7 @@ pub fn resume_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
             text: prompt.clone(),
             at_ms: now_ms(),
             machine: true,
+            genesis: None,
         },
     );
     spawn_turn(
@@ -802,6 +822,7 @@ pub fn fresh_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
         roles: vec!["planner".to_string()],
         status: "running".to_string(),
         skills: found.packs.clone(),
+        genesis: None,
     };
     if let Err(err) = sessions::upsert(&project_dir, entry) {
         return StartOutcome::Error {
@@ -830,6 +851,7 @@ pub fn fresh_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
             text: prompt.clone(),
             at_ms: now_ms(),
             machine: true,
+            genesis: None,
         },
     );
     spawn_turn(agent, cli, TurnRequest { project_dir, prompt, resume: None, turn: 1 }, flight);
@@ -1020,6 +1042,7 @@ pub fn send_turn(watch: &WatchState, agent: &AgentState, text: String) -> SendOu
             at_ms: now_ms(),
             // The human typed this one.
             machine: false,
+            genesis: None,
         },
     );
 
@@ -1303,6 +1326,7 @@ fn spawn_turn(agent: &AgentState, cli: ResolvedCli, req: TurnRequest, flight: Tu
                     text: text.clone(),
                     at_ms: now_ms(),
                     machine: false,
+                    genesis: None,
                 },
             );
         }
@@ -1339,6 +1363,7 @@ fn spawn_turn(agent: &AgentState, cli: ResolvedCli, req: TurnRequest, flight: Tu
                 roles: vec!["planner".to_string()],
                 status: "idle".to_string(),
                 skills,
+                genesis: None,
             };
             drop(guard);
             if let Err(err) = sessions::upsert(&project_dir, entry) {
@@ -1491,11 +1516,8 @@ mod tests {
     /// attribute alone, because `lib.rs` carries a `#[cfg(test)] mod
     /// acl_pin;` at line 15 and cutting there would hide the file.
     fn production_half(source: &str) -> &str {
-        let marker = "\n#[cfg(test)]\nmod tests {";
-        match source.find(marker) {
-            Some(at) => &source[..at],
-            None => source,
-        }
+        ["\n#[cfg(test)]\nmod tests {", "\n#[cfg(all(test, unix))]\nmod tests {"]
+            .iter().filter_map(|marker| source.find(marker)).min().map_or(source, |at| &source[..at])
     }
 
     /// Every `.rs` file under this crate's `src/`, production half only,
@@ -1582,16 +1604,28 @@ mod tests {
         let lib = production_half(include_str!("../lib.rs"));
         let module = production_half(include_str!("mod.rs"));
         let sessions = production_half(include_str!("sessions.rs"));
-        assert!(lib.contains("fn genesis_transcript("), "lib.rs was cut too short");
+        assert!(lib.contains("fn genesis_transcript<"), "lib.rs was cut too short");
         assert!(module.contains("pub fn transcript("), "mod.rs was cut too short");
         assert!(sessions.contains("fn tail_lines"), "sessions.rs was cut too short");
 
-        // HOP 0 — the IPC command. It delegates and does nothing else.
-        assert_eq!(
-            callees(&body_of(lib, "fn genesis_transcript(")),
-            vec!["agent::transcript"],
-            "the rehydration command reaches the file through something new"
-        );
+        // HOP 0 now captures native context before scheduling the managed
+        // cache reader. No unscoped registry/transcript helper is reachable.
+        assert_eq!(callees(&body_of(lib, "fn genesis_transcript<")), vec![
+            "Err", "Ok", "agent::managed::prepare", "agent::managed::read_failed",
+            "agent::managed::transcript_prepared", "clone", "into",
+            "tauri::async_runtime::spawn_blocking", "unwrap_or_else",
+        ]);
+        let managed = production_half(include_str!("managed.rs"));
+        let scoped_arrival = body_of(managed, "pub fn transcript_prepared(");
+        assert_eq!(callees(&scoped_arrival), vec!["Err", "Ok", "Some", "and_then", "as_ref", "collect", "expected", "filter", "into", "into_iter", "map", "map_err", "read_reply", "runtime_record", "sessions::genesis_record_for_context", "sessions::read_transcript_tail", "sessions::truncate_utf8", "split", "verify"]);
+        assert!(scoped_arrival.split_whitespace().collect::<String>().contains("sessions::read_transcript_tail(&prepared.context.product,super::MAX_REHYDRATED_LINES)"));
+        // The physical guard names the finite cache target only for metadata
+        // checks and guarded directory creation, never a content opener.
+        let context = production_half(include_str!("context.rs"));
+        assert_eq!(callees(&body_of(context, "pub fn runtime_record(")), vec!["Err", "Ok", "cfg", "clone", "collect", "enumerate", "file_type", "into", "is_dir", "is_file", "is_symlink", "iter", "kind", "len", "map_err", "nlink", "push", "split", "std::fs::create_dir", "std::fs::symlink_metadata", "verify_original"]);
+        assert_eq!(context.matches("TRANSCRIPT_REL").count(), 1);
+        assert!(!context.contains("transcript_path"));
+        assert!(!context.contains("genesis/transcript.jsonl"));
 
         // HOP 1 — the arrival read. Its whole vocabulary, and the bounded
         // reader is in it.
@@ -1719,7 +1753,11 @@ mod tests {
                 )
             });
         for (name, text) in &sources {
-            if name == "agent/sessions.rs" {
+            if name == "agent/sessions.rs" || name == "agent/context.rs" {
+                continue;
+            }
+            if name == "acl_pin.rs" {
+                assert!(lib.contains("#[cfg(test)]\nmod acl_pin;"), "ACL fixture must remain wholly test-only");
                 continue;
             }
             for spelling in ["transcript_path", "TRANSCRIPT_REL", "genesis/transcript.jsonl"] {

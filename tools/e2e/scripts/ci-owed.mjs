@@ -61,7 +61,7 @@ import {
 const here = path.dirname(fileURLToPath(import.meta.url));
 
 /** The program that owns the derivation, as this file spawns it. */
-export const GATE_RUN_PATH = path.join(here, "gate-run.mjs");
+export const GATE_RUN_PATH = path.join(here, "source-ci-owed.mjs");
 
 /** How many runner jobs the end-to-end leg is split across by default. */
 export const DEFAULT_SHARD_COUNT = 4;

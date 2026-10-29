@@ -6,6 +6,7 @@
 //! `unresolved`. The closed reason taxonomy: `not_found`, `outside_root`,
 //! `unsupported`, `asset`.
 
+pub(crate) mod python;
 pub(crate) mod rust;
 pub(crate) mod ts;
 pub(crate) mod tsconfig;
@@ -393,6 +394,11 @@ pub(crate) fn resolve_all(
         .collect();
     let rust_world = (!rust_files.is_empty())
         .then(|| RustWorld::build(canon_root, &rust_files, records));
+    let python_files: BTreeSet<&str> = langs
+        .iter()
+        .filter(|(_, lang)| **lang == Lang::Python)
+        .map(|(rel, _)| rel.as_str())
+        .collect();
 
     // Exported symbol names per file, for candidate gating rule (b).
     let exported: BTreeMap<&str, BTreeSet<&str>> = records
@@ -418,6 +424,23 @@ pub(crate) fn resolve_all(
     for (rel, record) in records {
         let from_id = file_id(rel);
         let dir = parent_dir_of(rel);
+
+        if python_files.contains(rel.as_str()) {
+            let resolved = python::resolve_file(rel, record, &python_files, records);
+            for (target, import) in resolved.imports {
+                accumulate(
+                    &mut import_edges,
+                    from_id.clone(),
+                    file_id(&target),
+                    &import,
+                );
+            }
+            candidate_edges.extend(resolved.candidates);
+            for (specifier, reason) in resolved.unresolved {
+                unresolved.insert((from_id.clone(), specifier, reason.to_string()));
+            }
+            continue;
+        }
 
         if let Some(world) = rust_world.as_ref().filter(|_| rust_files.contains(rel.as_str())) {
             // Rust: import edges, packages and unresolved only — no

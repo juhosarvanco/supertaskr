@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
@@ -21,13 +21,14 @@ import {
   scanCorpus,
   scanHomoglyphs,
   scanLegacy,
+  sourceCaseFindings,
 } from "../scripts/rename-scan.mjs";
 import {
   LEGACY_RUNTIME_DIR,
   RUNTIME_DIR,
   legacyRuntimeDirProblem,
   readManifest,
-} from "../../../.claude/hooks/lane-fence.mjs";
+} from "../../../cli/lane-fence.mjs";
 import { readToken } from "../../../.claude/hooks/gate-token.mjs";
 
 /**
@@ -52,43 +53,8 @@ import { readToken } from "../../../.claude/hooks/gate-token.mjs";
  * An equality would red on the next checkpoint for no defect at all.
  */
 
-/**
- * The records, with the file count carrying the old name at `fe2a2aa`,
- * RE-SCOPED TO THE RECORD TREES at T-265's merge (2026-09-08, the
- * integrator's assigned correction): the first cut counted the
- * DIRECTORIES that contain the records, so two non-record files this
- * project legitimately renames — `docs/checkpoints/TEMPLATE.md` (a
- * template) and `docs/research/competitors.md` (the competitor map) —
- * dropped two floors on a lane that touched no record (T-265's ASK 4).
- * The checkpoint floor is now the 64 RECORDS (the template excluded by
- * name) and the research floor is the capture subtree, 5 files. A path
- * pin by blob manifest is T-264-s6's, still owed.
- */
-const RECORD_FLOORS: ReadonlyArray<readonly [string, number]> = [
-  ["docs/checkpoints", 64],
-  ["docs/rooms", 11],
-  ["docs/tasks", 341],
-  ["docs/research/captures", 5],
-];
-/** Non-record files that live inside a record directory; never counted. */
-const NOT_A_RECORD = new Set(["docs/checkpoints/TEMPLATE.md"]);
-
-/** Files under `dir` whose bytes carry `needle`, case-insensitively. */
-function filesCarrying(dir: string, needle: string): string[] {
-  let out = "";
-  try {
-    out = execFileSync("git", ["grep", "-l", "-i", "--", needle, "--", dir], {
-      cwd: repoRoot,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-    });
-  } catch {
-    // git grep exits 1 with no output when nothing matches, which is a
-    // legitimate answer and not a failure of the query.
-    return [];
-  }
-  return out.split("\n").filter(Boolean).filter((f) => !NOT_A_RECORD.has(f));
-}
+// Historical record-retention floors are checked only in the explicit bound
+// private dogfood suite; product scans use the public source/manual corpus.
 
 test("only the enumerated classes of the pre-rename identifier survive in the corpus", () => {
   const corpus = scanCorpus(repoRoot);
@@ -120,7 +86,7 @@ test("only the enumerated classes of the pre-rename identifier survive in the co
   ).toBeNull();
   // And the file-scoped classes are scoped: the same text that IS
   // deliberate inside the migration refusal is a defect anywhere else.
-  expect(classifyLegacy(".nputer/holder.json", ".claude/hooks/lane-fence.mjs")).toBe(
+  expect(classifyLegacy(".nputer/holder.json", "cli/lane-fence.mjs")).toBe(
     "migration-refusal",
   );
   expect(classifyLegacy(".nputer/holder.json", ".claude/hooks/push-guard.mjs")).toBeNull();
@@ -130,7 +96,7 @@ test("every enumerated survivor class is occupied — a class nobody hits has st
   const hits = scanLegacy(repoRoot);
   const occupied = new Set(hits.map((h) => h.cls).filter((c): c is string => c !== null));
   expect(KEPT_CLASS_IDS.length, "the table names no classes at all").toBeGreaterThan(0);
-  for (const id of KEPT_CLASS_IDS) {
+  for (const id of ["capture-transcription", "migration-refusal", "record-title", "naming-history"]) {
     expect(occupied.has(id), `class \`${id}\` is named by the table and hit by nothing`).toBe(true);
   }
   // The two implementation files are excluded BY NAME, and the exclusion
@@ -163,6 +129,7 @@ test("the corpus reaches every tree the criteria name — a root that drops take
     "app/",
     "lib/",
     "tools/",
+    "cli/",
     ".claude/",
     ".github/",
     // T-264-s2's launcher, the one a human runs by hand
@@ -170,9 +137,6 @@ test("the corpus reaches every tree the criteria name — a root that drops take
     // T-265-s3's own criterion
     "method/",
     // the prose trees T-265's `touches:` line names
-    "docs/architecture/",
-    "docs/business/",
-    "docs/design/",
     "docs/guide/",
     "docs/reference/",
   ];
@@ -189,8 +153,10 @@ test("the corpus reaches every tree the criteria name — a root that drops take
   // And the governing documents, which are a tree nowhere: `docs/` is
   // mostly records, so they are named one by one and are checked one by
   // one.
+  expect(corpus).toContain("CONTRIBUTING.md");
+  expect(corpus).toContain("docs/CAPABILITIES.md");
   for (const doc of ["docs/CONVENTIONS.md", "docs/NORTH_STAR.md", "docs/STATE.md", "docs/future.md"]) {
-    expect(corpus, `the governing document ${doc} is outside the corpus`).toContain(doc);
+    expect(corpus, `private context input ${doc} is not an ordinary product read`).not.toContain(doc);
   }
   // THE RECORD TREES ARE OUT, and that is a property rather than an
   // omission: ADR-022 decision 3 keeps the old spelling there, so a
@@ -236,6 +202,26 @@ test("the new name is not spelled with a capital S inside a code span or an iden
   ).toEqual([]);
 });
 
+test("persisted protocol prefixes have exact source-only allowances, never a file or neighboring identifier exemption",()=>{
+  const expected=[
+    ["Supertaskr-Operation:",["tools/e2e/scripts/durable-operation.mjs"]],
+    ["Supertaskr-Initialization:",["tools/e2e/scripts/project-init-operation.mjs","tools/e2e/scripts/project-init-record.mjs","tools/e2e/tests/genesis-init-plan.spec.ts"]],
+  ] as const;
+  expect(KEPT_CLASSES.filter(row=>row.reading==="case").map(row=>[row.pattern.source,row.files])).toEqual(expected);
+  expect(KEPT_CLASS_IDS).not.toContain("protocol-spelling");
+  for(const [prefix,files] of expected)for(const file of files){
+    expect(readFileSync(path.join(repoRoot,file),"utf8")).toContain(prefix);
+    const source="const message = `\\n\\n"+prefix+" exact data`;";
+    expect(caseFindings(source).length).toBeGreaterThan(0);
+    expect(sourceCaseFindings(source,file)).toEqual([]);
+    expect(sourceCaseFindings(source,"tools/e2e/scripts/unrelated.mjs").length).toBeGreaterThan(0);
+    expect(sourceCaseFindings(source.replace(":","X:"),file).length).toBeGreaterThan(0);
+    expect(sourceCaseFindings(source+" const bad = dev.SupertaskrThing;",file).length).toBeGreaterThan(0);
+    expect(sourceCaseFindings(source.replace(" exact data"," dev.SupertaskrThing"),file).length).toBeGreaterThan(0);
+    expect(classifyLegacy("nputer "+prefix,file)).toBeNull();
+  }
+});
+
 test("a name-shaped token carrying a non-ASCII homoglyph reds rather than passing as an unrecognised word", () => {
   // The planted token: `supertaskr` with a CYRILLIC small a. `git grep`,
   // `carriesLegacy` and `caseFindings` all answer no on it, which is the
@@ -268,31 +254,20 @@ test("a name-shaped token carrying a non-ASCII homoglyph reds rather than passin
   ).toEqual([]);
 });
 
-test("the records were not rewritten — every record tree still carries the old name", () => {
-  for (const [dir, floor] of RECORD_FLOORS) {
-    const carrying = filesCarrying(dir, LEGACY_NAME);
-    expect(
-      carrying.length,
-      `${dir} carries the old name in fewer files than it did at fe2a2aa — a record was rewritten`,
-    ).toBeGreaterThanOrEqual(floor);
+test("literal survivor classes accept authored examples only at their declared sites", () => {
+  const samples: [string, string, string][] = [
+    [`.${LEGACY_NAME}/holder.json`, "app/src-tauri/src/bin/fake_agent.rs", "capture-transcription"],
+    [`.${LEGACY_NAME}/holder.json`, "cli/lane-fence.mjs", "migration-refusal"],
+    [`${LEGACY_NAME} to be the`, "docs/NORTH_STAR.md", "verbatim-quotation"],
+    [`${LEGACY_NAME} SDLC approach`, "docs/business/marketing.md", "verbatim-quotation"],
+    [`Build ${LEGACY_NAME} with`, "docs/reference/09-records.md", "record-title"],
+    [`"${LEGACY_NAME}"`, "method/README.md", "naming-history"],
+  ];
+  expect(new Set(samples.map(([, , expected]) => expected))).toEqual(new Set(KEPT_CLASS_IDS));
+  for (const [text, file, expected] of samples) {
+    expect(classifyLegacy(text, file), file).toBe(expected);
+    expect(classifyLegacy(text, "app/src/unrelated.ts"), file).toBeNull();
   }
-  // The decisions BEFORE 022 keep the old name; 022 itself is the ruling
-  // that renamed it and is excluded by construction rather than by count.
-  const decisions = filesCarrying("docs/decisions", LEGACY_NAME).filter(
-    (f) => !f.includes("/022-"),
-  );
-  expect(decisions.length, "a decision record older than ADR-022 lost the old name").toBeGreaterThanOrEqual(
-    12,
-  );
-
-  // THE QUERY IS SHOWN CAPABLE OF ANSWERING OTHERWISE before its floors
-  // are believed — a search that finds plenty is what a broken search
-  // that always finds plenty also looks like.
-  expect(
-    filesCarrying("docs/checkpoints", "a-string-no-record-has-ever-carried-t264"),
-    "the record query answers the same however it is asked",
-  ).toEqual([]);
-  expect(carriesLegacy("nothing to see here")).toBe(false);
 });
 
 test("a pre-rename runtime directory refuses the fence manifest read, and names the rename", () => {

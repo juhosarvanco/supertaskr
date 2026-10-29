@@ -1,5 +1,5 @@
 # T-020: the repo's one CI workflow — a thin invoker of the CONVENTIONS-
-# verbatim per-package commands (docs/CONVENTIONS.md "Build & test" is
+# verbatim per-package commands (CONTRIBUTING.md "Build & test" is
 # the one source of truth; tools/e2e/tests/workflow-parity.spec.ts pins
 # validity, command parity, SHA pins, and the xvfb boot step, so drift
 # between this file and CONVENTIONS fails the lane).
@@ -511,17 +511,8 @@ jobs:
       - name: disk after the cargo suite's target
         run: |
           df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
-      # THE GRAPH-CURRENCY GATE (T-054), placed immediately after the
-      # cargo suite: the suite is what builds the crate, and a stale
-      # graph is news before the audit spends a minute installing a
-      # tool. The `--root ../..` is part of the documented command, not a
-      # CI adaptation: without it the default root is the current
-      # directory and the check reports the graph MISSING and exits 1,
-      # which is a FALSE RED that reads exactly like staleness.
-      - name: graph currency (supertaskr-index index --check)
-        if: needs.owed.outputs.run-rust == 'true'
-        working-directory: app/src-tauri
-        run: cargo run -p supertaskr-index -- index --check --root ../..
+      # Committed private graph currency is an explicit bound dogfood check.
+      # Ordinary source-index determinism and fixture behavior run in cargo test.
       - name: install cargo-audit
         if: needs.owed.outputs.run-rust == 'true'
         working-directory: app/src-tauri

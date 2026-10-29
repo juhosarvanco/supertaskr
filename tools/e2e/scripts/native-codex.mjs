@@ -165,7 +165,16 @@ function exactGitRoot(root) {
     throw new NativeCodexFinding("NATIVE_RESOURCE_NOT_ABSOLUTE", `native-codex: resource is not absolute: ${root}`);
   }
   const real = realpathSync(root);
-  const top = git(real, ["rev-parse", "--show-toplevel"]).stdout.toString("utf8").trim();
+  const raw = git(real, ["rev-parse", "--show-toplevel"]).stdout;
+  let top;
+  try {
+    const text = new TextDecoder("utf-8", { fatal: true }).decode(raw);
+    if (!text.endsWith("\n") || /[\x00-\x1f\x7f]/.test(text.slice(0, -1))) throw new Error("invalid Git path protocol");
+    top = text.slice(0, -1);
+    if (!path.isAbsolute(top)) throw new Error("nonabsolute Git root");
+  } catch {
+    throw new NativeCodexFinding("NATIVE_RESOURCE_PATH", "native-codex: Git returned an unavailable root path.");
+  }
   if (realpathSync(top) !== real) {
     throw new NativeCodexFinding(
       "NATIVE_RESOURCE_NOT_ROOT",
@@ -351,8 +360,8 @@ function readFence(root, manifest) {
   if (!isObject(parsed) || !Array.isArray(parsed.paths) || !Array.isArray(parsed.alwaysWritable)) {
     throw new NativeCodexFinding("NATIVE_FENCE_UNREADABLE", "native-codex: fence manifest lacks paths or alwaysWritable arrays.");
   }
-  const worktree = string(parsed.worktree);
-  if (worktree === null || !existsSync(worktree) || realpathSync(worktree) !== root) {
+  const worktree = parsed.worktree;
+  if (typeof worktree !== "string" || !path.isAbsolute(worktree) || /[\x00-\x1f\x7f]/.test(worktree) || !existsSync(worktree) || realpathSync(worktree) !== root) {
     throw new NativeCodexFinding("NATIVE_FENCE_RESOURCE", "native-codex: fence worktree is not the assigned resource.");
   }
   const paths = [...parsed.paths, ...parsed.alwaysWritable].map(nativeDomain);
@@ -1505,6 +1514,7 @@ function clearReconciledHolds(rec, at, why, stoppedRelease = false) {
         "packet-tool-refused",
         "duplicate-probe",
         "qualified-stale-turn",
+        "qualified-review-late-callback",
       ].includes(hold.code)
     ) {
       continue;
@@ -1762,6 +1772,17 @@ function handleNativeEventUnlocked(root, event, opts = {}) {
   }
   const rec = /** @type {Record<string, any>} */ (routed[0]);
   const native = nativeState(rec);
+
+  if (native.qualified?.verification !== undefined && native.qualified.collection?.phase === "final") {
+    return { output: eventName === "PreToolUse" ? { hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny",
+      permissionDecisionReason: "completed qualified review is historical and authorizes no later action" } } : null, disposition: "historical-qualified-event" };
+  }
+  if (native.qualified?.verification !== undefined && eventName === "PostToolUse" &&
+      (["finished", "failed", "stopped"].includes(rec.state) || native.qualified.collection?.phase === "ready")) {
+    addNativeHold(rec, { key: `qualified-review-late:${String(event.tool_use_id)}`, code: "qualified-review-late-callback", recordedAt: at, event: eventMeta(event) });
+    writeNativeRecord(root, rec);
+    return { output: { decision: "block", reason: "late completion prevents qualified review publication" }, disposition: "post-held" };
+  }
 
   if (sessionId !== native.launch.sessionId) {
     addNativeHold(rec, {

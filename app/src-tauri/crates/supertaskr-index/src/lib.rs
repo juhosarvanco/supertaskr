@@ -1,6 +1,6 @@
 //! supertaskr-index (C-07): code -> docs/architecture/graph.json.
 //!
-//! Deterministic tree-sitter TS/JS indexer — same tree, byte-identical
+//! Deterministic tree-sitter TS/JS/Rust/Python indexer — same tree, byte-identical
 //! output on any machine (ADR-014). No tauri dependency (ADR-015): used
 //! by a thin Tauri command in T-012 and its own binary in T-014.
 //!
@@ -49,6 +49,30 @@ use extract::Extractor;
 
 /// The one seam T-012 (in-app command) and T-014 (binary) share.
 pub const GRAPH_REL_PATH: &str = "docs/architecture/graph.json";
+
+/// Read the selected RECORDS graph without following descendants out of that
+/// home. The utility is read-only and does not resolve an association itself.
+pub fn read_graph_bytes(records_root: &Path) -> std::io::Result<Vec<u8>> {
+    let root = records_root.canonicalize()?;
+    let mut current = root;
+    for (position, name) in ["docs", "architecture", "graph.json"].iter().enumerate() {
+        current.push(name);
+        let metadata = std::fs::symlink_metadata(&current)?;
+        if metadata.file_type().is_symlink()
+            || (position < 2 && !metadata.is_dir())
+            || (position == 2 && !metadata.is_file())
+        {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!(
+                    "{} is not a plain graph path; refusing to follow it",
+                    current.display()
+                ),
+            ));
+        }
+    }
+    std::fs::read(current)
+}
 
 /// Per-file parse cap (availability control against pathological repos):
 /// larger files are skipped and counted in `stats.skipped`.
@@ -290,10 +314,7 @@ pub(crate) fn index_with_drops(opts: &IndexOptions) -> Result<(Graph, Vec<String
         .cache_dir
         .as_ref()
         .map(|dir| cache::cache_file_path(dir, &canon_root));
-    let old_cache = cache_path
-        .as_deref()
-        .map(cache::load)
-        .unwrap_or_default();
+    let old_cache = cache_path.as_deref().map(cache::load).unwrap_or_default();
 
     let mut skipped: usize = 0;
     let mut new_cache: BTreeMap<String, cache::CacheEntry> = BTreeMap::new();
@@ -338,6 +359,9 @@ pub(crate) fn index_with_drops(opts: &IndexOptions) -> Result<(Graph, Vec<String
                     // has its own (T-010).
                     Some(tree) => match dialect {
                         parse::Dialect::Rust => extract::rust::RustExtractor.extract(source, &tree),
+                        parse::Dialect::Python => {
+                            extract::python::PythonExtractor.extract(source, &tree)
+                        }
                         _ => extract::ts::TsExtractor.extract(source, &tree),
                     },
                     None => extract::ExtractRecord::default(), // degrade, never fail
@@ -388,8 +412,10 @@ pub(crate) fn index_with_drops(opts: &IndexOptions) -> Result<(Graph, Vec<String
         })
         .collect();
 
-    let languages: BTreeSet<&'static str> =
-        prepared.iter().map(|(_, lang, _, _)| lang.as_str()).collect();
+    let languages: BTreeSet<&'static str> = prepared
+        .iter()
+        .map(|(_, lang, _, _)| lang.as_str())
+        .collect();
     let symbols_total = files.iter().map(|f| f.symbols.len()).sum();
     // Derived from the file entries the same way `symbols` is derived
     // from the symbol arrays (T-129) — the headline count of files whose

@@ -1,6 +1,9 @@
+import { HONEST_LIMITS_MARKER, hookHeader, headerLimitNumbers, limitsParagraph, declineCodesInSource, publishedLimitNumbers, limitsDrift } from "../fixtures/lane-contract.mjs";
+const repoRoot = fixtureFor(import.meta.url);
 import { execFileSync, spawnSync } from "node:child_process";
 import {
   copyFileSync,
+  cpSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -29,6 +32,10 @@ import {
   SECRET_READ_CODES,
   SECRET_SET,
   WRITE_TOOL_PATH_FIELDS,
+} from "../../../.claude/hooks/lane-fence.mjs";
+import * as fixtureSubjectDefinition0 from "../../../.claude/hooks/lane-fence.mjs";
+void fixtureSubjectDefinition0;
+const {
   carveOutFor,
   decide,
   findCheckoutRoot,
@@ -37,20 +44,37 @@ import {
   readHeadRef,
   touchesLineOf,
   within,
-} from "../../../.claude/hooks/lane-fence.mjs";
+} = await import(pathToFileURL(path.join(repoRoot, ".claude/hooks/lane-fence.mjs")).href) as typeof fixtureSubjectDefinition0;
 import * as laneFenceHook from "../../../.claude/hooks/lane-fence.mjs";
-import { repoRoot } from "../preflight";
+import { INDEX_CRATE_MANIFEST_REL_PATH } from "../../../cli/push-guard.mjs";
+import { fixtureFor } from "../fixtures/test-project";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
-import { conventionsBullet, conventionsFiles, conventionsText, liveTaskCards } from "../scripts/docs-scan.mjs";
-import { laneSpellings, normaliseTaskId } from "../scripts/dispatch-brief.mjs";
+import * as fixtureSubjectDefinition1 from "../scripts/docs-scan.mjs";
+void fixtureSubjectDefinition1;
+const {
+  conventionsBullet,
+  conventionsFiles,
+  conventionsText,
+  liveTaskCards,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/docs-scan.mjs")).href) as typeof fixtureSubjectDefinition1;
+import * as fixtureSubjectDefinition2 from "../scripts/dispatch-brief.mjs";
+void fixtureSubjectDefinition2;
+const {
+  laneSpellings,
+  normaliseTaskId,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/dispatch-brief.mjs")).href) as typeof fixtureSubjectDefinition2;
 import {
   MANIFEST_DIR_IGNORE,
+} from "../scripts/lane-fence.mjs";
+import * as fixtureSubjectDefinition3 from "../scripts/lane-fence.mjs";
+void fixtureSubjectDefinition3;
+const {
   buildLaneFence,
   disjointnessRefusal,
   laneDisjointness,
   laneIdOf,
   writeLaneFence,
-} from "../scripts/lane-fence.mjs";
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/lane-fence.mjs")).href) as typeof fixtureSubjectDefinition3;
 
 /**
  * THE FENCE AT THE MOMENT OF THE WRITE (T-154) — no browser.
@@ -690,7 +714,7 @@ test("a path in NO git checkout is not judged, and the narrowed limit is declare
   // The guard is still armed in the same call — the discriminating half.
   expect(ask(fx.lane, path.join(fx.lane, "app/src/main.tsx")).code).toBe("outside-the-fence");
   // The limit is not merely true, it is WRITTEN where the next reader is.
-  const header = readFileSync(path.join(repoRoot, ".claude/hooks/lane-fence.mjs"), "utf8");
+  const header = readFileSync(path.join(repoRoot, "cli/lane-fence.mjs"), "utf8");
   expect(header, "the narrowed limit 2 is no longer declared in the hook's header").toContain(
     "A PATH IN NO GIT CHECKOUT AT ALL IS NOT JUDGED",
   );
@@ -833,7 +857,7 @@ test("the writer puts the manifest exactly where the reader opens it, at one ver
     /^export const MANIFEST_(REL_PATH|VERSION)\b/m,
   );
   expect(writer, "the writer stopped importing the reader's constants").toMatch(
-    /MANIFEST_REL_PATH,[\s\S]{0,200}from "\.\.\/\.\.\/\.\.\/\.claude\/hooks\/lane-fence\.mjs"/,
+    /MANIFEST_REL_PATH,[\s\S]{0,200}from "\.\.\/\.\.\/\.\.\/cli\/lane-fence\.mjs"/,
   );
 });
 
@@ -886,7 +910,7 @@ test("containment is the path rule, and a name that merely starts the same is no
  * THE WIRING, AND THE BOOTSTRAP PROPERTY THE WHOLE DESIGN RESTS ON
  * ──────────────────────────────────────────────────────────────────── */
 
-const HOOK_FILES = [".claude/hooks/lane-fence.mjs", ".claude/hooks/lane-fence-hook.mjs"] as const;
+const HOOK_FILES = ["cli/lane-fence.mjs", ".claude/hooks/lane-fence.mjs", ".claude/hooks/lane-fence-hook.mjs"] as const;
 
 test("the hook depends on NOTHING a fresh worktree lacks", () => {
   let specifiers = 0;
@@ -906,12 +930,49 @@ test("the hook depends on NOTHING a fresh worktree lacks", () => {
       // none: the bootstrap contradiction this card was redesigned to
       // remove would be back.
       expect(
-        spec.startsWith("node:") || spec === "./lane-fence.mjs",
+        spec.startsWith("node:") || spec === "./lane-fence.mjs" || spec === "../../cli/lane-fence.mjs",
         `${rel} imports ${spec}, which a freshly cut worktree may not have`,
       ).toBe(true);
     }
   }
   expect(specifiers, "the scan matched nothing in either file").toBeGreaterThan(2);
+});
+
+test("checkout hook adapters allow and refuse in a copied tree with no installation or build", async () => {
+  const fx = makeFixture();
+  await arm(fx);
+  const cold = scratchRoot();
+  cpSync(path.join(repoRoot, ".claude/hooks"), path.join(cold, ".claude/hooks"), { recursive: true });
+  mkdirSync(path.join(cold, "cli"), { recursive: true });
+  for (const name of ["lane-fence", "gate-token", "expand-fence", "hook-install", "pre-push-guard", "push-guard", "landing-gate", "configured-gate-reader"]) {
+    copyFileSync(path.join(repoRoot, "cli", `${name}.mjs`), path.join(cold, "cli", `${name}.mjs`));
+  }
+  mkdirSync(path.join(cold, "tools/e2e/scripts"), { recursive: true });
+  copyFileSync(path.join(repoRoot, "tools/e2e/scripts/checkout-currency.mjs"), path.join(cold, "tools/e2e/scripts/checkout-currency.mjs"));
+  mkdirSync(path.join(cold, "lib/parser/src"), { recursive: true });
+  copyFileSync(path.join(repoRoot, "lib/parser/src/fence.ts"), path.join(cold, "lib/parser/src/fence.ts"));
+  const env = { ...process.env, NODE_PATH: "" };
+  const call = (name: string, request: object) => spawnSync(process.execPath, [path.join(cold, `.claude/hooks/${name}.mjs`)], {
+    input: JSON.stringify(request), encoding: "utf8", env,
+  });
+  expect(existsSync(path.join(cold, "node_modules"))).toBe(false);
+  expect(existsSync(path.join(cold, "lib/parser/dist"))).toBe(false);
+  const write = (rel: string) => ({ hook_event_name: "PreToolUse", tool_name: "Write", cwd: fx.lane, tool_input: { file_path: path.join(fx.lane, rel) } });
+  const allowed = call("lane-fence-hook", write("tools/e2e/tests/fixture.spec.ts"));
+  expect(allowed.status, allowed.stderr).toBe(0);
+  const denied = call("lane-fence-hook", write("app/src/main.tsx"));
+  expect(denied.status, denied.stderr).toBe(2); expect(denied.stderr).toContain("LANE FENCE");
+  const common = call("push-guard-hook", { tool_name: "Bash", cwd: fx.repo, tool_input: { command: "echo ordinary action" } });
+  expect(common.status, common.stderr).toBe(0);
+  // The product guard intentionally stands aside in projects without its
+  // indexer. Establish its own arming marker before asserting a refusal.
+  writeFixtureFile(fx.repo, INDEX_CRATE_MANIFEST_REL_PATH, "[package]\nname = \"cold-fixture\"\nversion = \"0.0.0\"\n");
+  git(fx.repo, ["add", INDEX_CRATE_MANIFEST_REL_PATH]); git(fx.repo, ["commit", "-qm", "arm product push guard"]);
+  const ungraded = call("push-guard-hook", { tool_name: "Bash", cwd: fx.repo, tool_input: { command: "git push origin main" } });
+  expect(ungraded.status, ungraded.stderr).toBe(2); expect(ungraded.stderr).toContain("PUSH REFUSED");
+  expect(ungraded.stderr).not.toContain("ERR_MODULE_NOT_FOUND");
+  const expanded = call("expand-fence", { touches: ["src/"], id: "T-901" });
+  expect(expanded.status, expanded.stderr).toBe(0); expect(JSON.parse(expanded.stdout).paths).toContain("src");
 });
 
 test("the PreToolUse hook is wired for the file-writing tools, and leaves room for a second source", () => {
@@ -1199,27 +1260,8 @@ test("the carve-outs each free a DIFFERENT write, and the fence still holds arou
   expect(ask(fx.lane, path.join(fx.lane, "docs/STATE.md")).code).toBe("inside-the-fence");
 });
 
-test("the carve-out set this hook holds is the one docs/CONVENTIONS.md publishes", () => {
-  // UNNESTED, for the reason the branch-spelling body gives: a nested
-  // `f(g(root))` hides this file from the DOCS GATE's reader derivation
-  // while it really does read the document.
-  const conventions = conventionsText(repoRoot);
-  const bullet = String(conventionsBullet(conventions, "THE LANE PROTOCOL"));
-  const sentence = /never a lane's to veto — exactly (.*?), no more/.exec(bullet);
-  expect(sentence, "the lane bullet no longer publishes this seat's standing writes").not.toBeNull();
-  const published = [...((sentence as RegExpExecArray)[1] ?? "").matchAll(/`([^`]+)`/g)].map(
-    (m) => m[1] as string,
-  );
+// Actual selected project publication is checked in dogfood/private-project.spec.ts.
 
-  // The constant and the page are two copies the design could not avoid
-  // — the hook cannot parse a document on every keystroke — so they are
-  // COMPARED rather than trusted, exactly as the lane-branch spelling is.
-  // A red here names both sides and says which is which, not which is right.
-  expect(published, "the hook's carve-outs and the page's have drifted").toEqual([
-    ...INTEGRATION_SEAT_PATHS,
-  ]);
-  expect(INTEGRATION_SEAT_PATHS.length, "the published set is empty, so this proves nothing").toBe(2);
-});
 
 /* ────────────────────────────────────────────────────────────────────
  * WHICH ARM ANSWERS A CARD FILE (T-215-s6)
@@ -1400,151 +1442,20 @@ test("THE POSITIVE CONTROL: the own-file arm re-added byte-identically answers i
   ]);
 });
 
-/* ────────────────────────────────────────────────────────────────────
- * THE THIRD COPY — THE LIMITS (T-215-s1)
- *
- * The lane-branch spelling and the carve-out set are each COMPARED
- * against the page above. The LIMITS were the third pair of the same
- * shape and the only one nobody checked: `T-215` rewrote the paragraph
- * from the hook's header BY HAND after `T-199` moved the hook and left
- * the page behind, and a mutant paragraph carrying the exact falsehood
- * that card exists to delete reddened nothing.
- *
- * WHAT IS COMPARED IS THE DECLARED KEYS, NEVER THE PROSE. Both sides
- * are paragraphs, and a body asserting that two paragraphs match reds
- * on every re-wording — a gate this project would learn to ignore.
- * What is greppable on both sides is the NUMBERING and the declining
- * verdict CODES, so those are what travel.
- * ──────────────────────────────────────────────────────────────────── */
-
-/** The hook's own limits block, by the rule the block opens with. */
-const HONEST_LIMITS_MARKER = "── THE HONEST LIMITS";
-/** The lane bullet's limits paragraph, by the phrase it opens with. */
-const LIMITS_PARAGRAPH_MARKER = "**THE LIMITS —";
-/** Enough of them to spell any count this header will ever carry. */
-const COUNT_WORDS = [
-  "zero",
-  "one",
-  "two",
-  "three",
-  "four",
-  "five",
-  "six",
-  "seven",
-  "eight",
-  "nine",
-  "ten",
-  "eleven",
-  "twelve",
-] as const;
-
-/** The hook's leading block comment — the header, and nothing after it. */
-function hookHeader(hookSource: string): string {
-  const end = hookSource.indexOf("\n */");
-  return end === -1 ? "" : hookSource.slice(0, end);
-}
-
-/**
- * The numbers the hook's HONEST LIMITS block gives its own limits, in
- * the order the block gives them.
- *
- * READ OFF THE TEXT rather than off an export, because the header is
- * what a reader of the hook meets and the header is the half that
- * drifts. A continuation line is indented past the number, so only a
- * limit's opening line matches.
- */
-function headerLimitNumbers(hookSource: string): number[] {
-  const header = hookHeader(hookSource);
-  const from = header.indexOf(HONEST_LIMITS_MARKER);
-  if (from === -1) return [];
-  return [...header.slice(from).matchAll(/^ \* (\d+)\. /gm)].map((m) => Number(m[1]));
-}
-
-/** The lane bullet's limits paragraph, whitespace already collapsed. */
-function limitsParagraph(bullet: string): string {
-  const from = bullet.indexOf(LIMITS_PARAGRAPH_MARKER);
-  return from === -1 ? "" : bullet.slice(from);
-}
-
-/**
- * The declining codes as the hook's own SOURCE spells them.
- *
- * THE AUTHORITY IS THE EXPORTED FROZEN `DECLINE_CODES`, which this file
- * already imports, and the body below asserts these two agree. This
- * reader exists so the positive control can hand `limitsDrift` a
- * PLANTED file and have the codes come from THAT file — a control whose
- * code list arrives from the live module could never see a rename.
- */
-function declineCodesInSource(hookSource: string): string[] {
-  const block = /export const DECLINE_CODES = Object\.freeze\(\[([\s\S]*?)\]\)/.exec(hookSource);
-  if (block === null) return [];
-  return [...String(block[1]).matchAll(/"([^"]+)"/g)].map((m) => String(m[1]));
-}
-
-/** The numbers that paragraph publishes, in the order it publishes them. */
-function publishedLimitNumbers(bullet: string): number[] {
-  return [...limitsParagraph(bullet).matchAll(/\((\d+)\)/g)].map((m) => Number(m[1]));
-}
-
-/**
- * Every way the hook's declared limits and the page's published ones
- * have come apart, each naming BOTH sides and neither saying which is
- * right — the treatment the two pairs above already give their own
- * copies.
- *
- * A LIST RATHER THAN AN ASSERTION, so the positive control can run the
- * SAME comparison over a planted header and read what it says. A
- * control decided by different code from its subject decides nothing.
- */
-function limitsDrift(hookSource: string, bullet: string): string[] {
-  const complaints: string[] = [];
-  const declared = headerLimitNumbers(hookSource);
-  const published = publishedLimitNumbers(bullet);
-  if (declared.length === 0) {
-    complaints.push(`the hook declares no numbered limits under ${HONEST_LIMITS_MARKER}`);
-  }
-  if (published.length === 0) {
-    complaints.push(`the lane bullet has no limits paragraph opening ${LIMITS_PARAGRAPH_MARKER}`);
-  }
-  if (declared.join("/") !== published.join("/")) {
-    complaints.push(
-      `the header numbers its limits ${declared.join("/")} and the lane bullet publishes ` +
-        `${published.join("/")}`,
-    );
-  }
-  const word = /— (\w+), numbered in/.exec(limitsParagraph(bullet))?.[1];
-  if (word === undefined) {
-    complaints.push("the limits paragraph no longer opens with its count in words");
-  } else if (word !== COUNT_WORDS[declared.length]) {
-    complaints.push(`the paragraph counts them "${word}" and the header numbers ${declared.length}`);
-  }
-  // THE BULLET ARRIVES WHITESPACE-COLLAPSED, so a code the document
-  // wrapped across two lines reads as two words here and matches
-  // nothing. That is the failure this loop is likeliest to meet, so the
-  // complaint says so rather than leaving the next reader to find it.
-  for (const code of declineCodesInSource(hookSource)) {
-    if (!bullet.includes(`\`${code}\``)) {
-      complaints.push(
-        `the declining code \`${code}\` is not published in the lane bullet — and a code the ` +
-          "document wrapped across two lines does not survive the collapse",
-      );
-    }
-  }
-  return complaints;
-}
+// The shared pure comparison reads hook source and an authored publication.
+// Actual selected-project publication remains an explicit private assertion.
 
 /** The hook, read as TEXT — the same read `:542` makes of the same file. */
 function hookSourceText(): string {
-  return readFileSync(path.join(repoRoot, ".claude/hooks/lane-fence.mjs"), "utf8");
+  return readFileSync(path.join(repoRoot, "cli/lane-fence.mjs"), "utf8");
 }
 
 /** The lane bullet, UNNESTED for the DOCS GATE's reader derivation. */
 function laneBulletText(): string {
-  const conventions = conventionsText(repoRoot);
-  return String(conventionsBullet(conventions, "THE LANE PROTOCOL"));
+  return readFileSync(path.join(repoRoot, "tools/e2e/fixtures/lane-limits.md"), "utf8").replace(/\s+/g, " ");
 }
 
-test("the limits this hook declares are the limits docs/CONVENTIONS.md publishes", () => {
+test("the public hook limit keys agree with an authored publication contract", () => {
   // UNNESTED ON PURPOSE, for the reason the two bodies above give: a
   // nested `f(g(root))` would hide this file from the DOCS GATE's
   // reader derivation while it really does read the document.
@@ -2319,7 +2230,7 @@ test("the push guard's import list from this module is a contract, and it still 
   // side and a use on the other perfectly cleanly, and the push guard
   // then breaks at a push instead of here — so the list is asserted by
   // NAME against the live exports.
-  const src = readFileSync(path.join(repoRoot, ".claude/hooks/push-guard.mjs"), "utf8");
+  const src = readFileSync(path.join(repoRoot, "cli/push-guard.mjs"), "utf8");
   const found = /import\s*\{([^}]*)\}\s*from\s*"\.\/lane-fence\.mjs"/.exec(src);
   expect(found, "push-guard.mjs no longer imports from lane-fence.mjs at all").not.toBeNull();
   const imported = (found?.[1] ?? "")

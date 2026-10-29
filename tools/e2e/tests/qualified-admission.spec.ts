@@ -14,6 +14,7 @@ import { bindRun, collectRun, observeRun, readAssignment, startRun, stopRun } fr
 import { activeNativeHolds, handleNativeEvent, NATIVE_CODEX_HARNESS, NATIVE_IDENTITY_PROBE, readNativeRecord } from "../scripts/native-codex.mjs";
 import { measureProductIdentity, WORKSPACE_ASSOCIATION_REL_PATH, WORKSPACE_BINDING_REL_PATH } from "../scripts/workspace.mjs";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
+import { acceptedOperationPath, executeAcceptedOperation } from "../scripts/durable-operation.mjs";
 
 const SOURCE = path.resolve(import.meta.dirname, "../../..");
 const CARD = "docs/tasks/T-999-private.md";
@@ -91,6 +92,37 @@ function tree(root: string): unknown[] {
   }
   visit(root); return out;
 }
+
+test("private preflight strictly enumerates first-class ordinary operations and refuses pending or corrupt progress", async () => {
+  const f = fixture();
+  try {
+    const input = { operationId: "ordinary-preflight", kind: "records-save", repositoryRoot: f.records,
+      targetRef: "refs/heads/main", expectedRevision: f.recordsBase,
+      acceptedTree: git(f.records, ["rev-parse", `${f.recordsBase}^{tree}`]), payloadDigest: `sha256:${sha("ordinary producer fixture")}`,
+      message: "Ordinary operation fixture" };
+    const denied = {...input,operationId:"denied-before-effects"};
+    expect(() => executeAcceptedOperation(f.product,denied,{authorize() {return false;}})).toThrow(/OPERATION_POLICY_REFUSED/);
+    expect((await admissionPreflight(f.request())).permitted).toBe(true);
+    const deniedPath=acceptedOperationPath(f.product,denied.operationId), deniedBytes=readFileSync(deniedPath,"utf8");
+    const invalidFailed=JSON.parse(deniedBytes);invalidFailed.events.splice(2,0,{at:invalidFailed.operation.createdAt,op:"objects-start"});
+    writeFileSync(deniedPath,JSON.stringify(invalidFailed));
+    await expect(admissionPreflight(f.request())).rejects.toMatchObject({code:"preflight-ledger-unavailable"});
+    writeFileSync(deniedPath,deniedBytes);
+    expect(() => executeAcceptedOperation(f.product, input, { authorize() { return true; }, onBoundary(at) { if (at === "intent-persisted") throw Error("pending intent fixture"); } })).toThrow(/pending intent fixture/);
+    await expect(admissionPreflight(f.request())).rejects.toMatchObject({ code: "preflight-operation-pending" });
+    executeAcceptedOperation(f.product, input, { authorize() { return true; } });
+    expect((await admissionPreflight(f.request())).permitted).toBe(true);
+    const file = acceptedOperationPath(f.product, input.operationId), original = readFileSync(file, "utf8");
+    for (const corrupt of [original.replace('"recordKind": "operation"', '"recordKind": "unknown"'),
+      original.replace('"admission": null', '"admission": {"kind":"explicit"}'),
+      original.replace('"operation": {', '"unexpected": true, "operation": {')]) {
+      writeFileSync(file, corrupt);
+      await expect(admissionPreflight(f.request())).rejects.toMatchObject({ code: "preflight-ledger-unavailable" });
+    }
+    writeFileSync(file, original);
+    expect((await admissionPreflight(f.request())).permitted).toBe(true);
+  } finally { f.cleanup(); }
+});
 /** Intercept mutation/job/remote surfaces as well as comparing every fixture
  * file (including .git, runtime authority, refs and directory clocks).
  * Git reads are observed independently; generated consumers cannot hide a job.

@@ -17,7 +17,11 @@ line with no interior newlines.
   "role": "user",
   "text": "You are the planner. KIT ROOT: /…",
   "atMs": 1755000000000,
-  "machine": true
+  "machine": true,
+  "genesis": {
+    "sessionId": "genesis-example",
+    "originDigest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  }
 }
 ```
 
@@ -50,10 +54,18 @@ line with no interior newlines.
   property of the OBJECT and not of the directory, a reader cannot infer
   it from having read the other file, and each object's own page is where
   it has to be written down.
-- **WHICH KEY A LINE MAY LACK, because the example shows a full one and
-  says nothing about the ordinary partial ones.** Exactly one: `machine`
+- `genesis` correlates a line with its original native session ID and the
+  SHA-256 of that session's stable physical origin, recorded in sessions.json.
+  It carries no private control-directory paths to the renderer and grants no
+  write authority. Native read/hydration checks the original origin before
+  returning a line for a selected private home; older unprovenanced lines
+  cannot be relabeled as a selected split association. A captured typed answer
+  means the actual message bytes, not the model's interpretation of them.
+- **WHICH KEYS A LINE MAY LACK, because the example shows a full one and
+  says nothing about the ordinary partial ones.** `genesis` is absent on
+  legacy unprovenanced lines. `machine`
   is OMITTED when it is false, so an ordinary typed half-turn carries the
-  other four keys and no fifth. **Absent means *not machine-assembled* —
+  other ordinary keys. **Absent machine means *not machine-assembled* —
   never *unknown*** — and a reader compares against `true` rather than
   testing presence. That is also why a transcript written before the flag
   existed reads back correctly rather than ambiguously. **Every other key

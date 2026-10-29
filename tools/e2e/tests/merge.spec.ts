@@ -1,3 +1,5 @@
+const repoRoot = fixtureFor(import.meta.url);
+import { pathToFileURL } from "node:url";
 /**
  * THE ARM THAT MERGES (T-295) — the bodies for the half of the ritual
  * `brief.mjs --merge <id>` performs and the seat used to perform by
@@ -38,6 +40,10 @@ import {
   BUMPED_TIER,
   DEFAULT_TIER,
   XS_CHANGED_LINE_BOUND,
+} from "../scripts/merge.mjs";
+import * as fixtureSubjectDefinition0 from "../scripts/merge.mjs";
+void fixtureSubjectDefinition0;
+const {
   bumpOne,
   cardTier,
   bumpSteps,
@@ -88,11 +94,15 @@ import {
   verdictState,
   widenTouches,
   xsBoundBump,
-  main as mergeMain,
-} from "../scripts/merge.mjs";
+  main: mergeMain,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/merge.mjs")).href) as typeof fixtureSubjectDefinition0;
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
-import { conventionsText } from "../scripts/docs-scan.mjs";
-import { repoRoot } from "../preflight";
+import * as fixtureSubjectDefinition1 from "../scripts/docs-scan.mjs";
+void fixtureSubjectDefinition1;
+const {
+  conventionsText,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/docs-scan.mjs")).href) as typeof fixtureSubjectDefinition1;
+import { fixtureFor } from "../fixtures/test-project";
 
 /** The name this fixture reports its own teardown findings under. */
 const FIXTURE = "merge.spec.ts";
@@ -355,7 +365,7 @@ test("a mutant that reds MORE than its own body is a refusal that names the othe
 
 // ── the method bump ──────────────────────────────────────────────────
 
-test("method text that moved owes the three stamp files, the pin test, the half-bump drill and the eval gate", () => {
+test("method text that moved owes the product stamp files, the pin test, the half-bump drill and the eval gate", () => {
   expect(movesMethodText(["method/roles/integrator.md"])).toBe(true);
   expect(movesMethodText(["docs/CONVENTIONS.md", "app/src/a.ts"]), "and nothing else does").toBe(false);
   // WITHOUT A VERSION the verb REFUSES rather than inventing one: which
@@ -379,19 +389,20 @@ test("method text that moved owes the three stamp files, the pin test, the half-
 });
 
 test("a method stamp is bumped at exactly one anchor per file, and a stamp that is not there refuses", () => {
-  const conventions = METHOD_STAMP_FILES[0];
-  expect(conventions?.path).toBe("docs/CONVENTIONS.md");
-  const text = `blah\n${conventions?.anchor("0.1.18") ?? ""}\nblah\n`;
-  const bumped = bumpOne({ text, path: "docs/CONVENTIONS.md", from: "0.1.18", to: "0.1.19" });
-  expect("text" in bumped).toBe(true);
-  if (!("text" in bumped)) return;
-  expect(bumped.text).toContain("currently v0.1.19");
-  // THE NEGATIVE CONTROL: the same call on a tree that does not carry
-  // the stamp is a refusal naming the count, never a silent no-op.
-  const missing = bumpOne({ text: "nothing here\n", path: "docs/CONVENTIONS.md", from: "0.1.18", to: "0.1.19" });
-  expect("problem" in missing).toBe(true);
-  if (!("problem" in missing)) return;
-  expect(missing.problem).toContain("0 time(s)");
+  expect(METHOD_STAMP_FILES.map(f => f.path)).toEqual([
+    "method/interview/plan-interview.md", "app/src-tauri/src/agent/kit.rs",
+  ]);
+  for (const stamp of METHOD_STAMP_FILES) {
+    const text = `before\n${stamp.anchor("0.1.18")}\nafter\n`;
+    const bumped = bumpOne({ text, path: stamp.path, from: "0.1.18", to: "0.1.19" });
+    expect(bumped).toEqual({ text: text.replace(stamp.anchor("0.1.18"), stamp.anchor("0.1.19")) });
+    for (const [candidate, count] of [["nothing here\n", 0], [text + text, 2]] as const) {
+      const missing = bumpOne({ text: candidate, path: stamp.path, from: "0.1.18", to: "0.1.19" });
+      expect("problem" in missing && missing.problem).toContain(`${count} time(s)`);
+    }
+  }
+  expect("problem" in bumpOne({ text: "private adoption", path: "docs/CONVENTIONS.md", from: "0.1.18", to: "0.1.19" })).toBe(true);
+
 });
 
 // ── the four cheap keepers ───────────────────────────────────────────
@@ -1731,48 +1742,10 @@ test("a same-file end-of-file append is resolved by keeping both sides, and any 
   }
 });
 
-test("the bound, the floor and the readings path this file computes are the ones docs/CONVENTIONS.md publishes", () => {
-  // T-057's discipline, applied to the three figures T-295 INVENTED: a
-  // rule with two statements is two chances to disagree, and every one
-  // of these is stated twice by construction — once as a constant a
-  // program enforces and once as a sentence a seat reads. The XS bound
-  // is a number the tier work (T-296) will read out of the document, the
-  // readings path is what T-297's bands will open, and the
-  // pinned-sentence floor is what a seat has to know to predict a
-  // refusal. This body is the only thing that compares them.
-  //
-  // IT IS ALSO WHAT MAKES THIS FILE A DERIVED READER OF docs/ TO THE
-  // DOCS GATE, which is not a side effect but the point: a spec that
-  // asserts a document's sentence is a spec the docs gate must run when
-  // that document moves.
-  const conventions = conventionsText(repoRoot);
-  expect(conventions, "the verb is spelled in the document").toContain(
-    "node tools/e2e/scripts/brief.mjs --merge <T-NNN>",
-  );
-  expect(conventions, "the XS bound is STATED, in words, as this file computes it").toContain(
-    "exceeds FORTY changed lines",
-  );
-  expect(XS_CHANGED_LINE_BOUND, "and forty is what the program enforces").toBe(40);
-  expect(conventions, "the readings file is named where T-297 will look for it").toContain(
-    READINGS_PATH,
-  );
-  expect(conventions, "and the pinned-sentence floor is stated too").toContain(
-    "thirty\n  characters is the floor",
-  );
-  expect(PINNED_SENTENCE_FLOOR, "as the program spells it").toBe(30);
-  // AND THE FIXTURE CLASSIFIER'S RECOGNITION RULE IS STATED THERE TOO
-  // (T-295-s4), because the way through a keeper is the half of it a
-  // seat has to be able to read before it plants anything. The document
-  // names the table by the name the program exports, and the program
-  // names the table's own file — a sentence and a symbol, twice stated.
-  expect(conventions, "the recognition rule is stated, and it is BOTH halves").toContain(
-    "names BOTH the value",
-  );
-  expect(conventions, "and the exception's scope with it").toContain("PER\n  MATCHED VALUE AND PER CLASS");
-  expect(conventions, "under the name the program exports").toContain("`FIXTURE_CLASSES`");
-  expect(FIXTURE_CLASSES.length, "which is a table the program carries").toBeGreaterThan(0);
-  // AND THE INTEGRATOR'S ROLE FILE STATES THE WIDENING AS A STEP OF THE
-  // MERGE, beside the re-drill (T-281-s10's third criterion).
+test("merge thresholds and fixture classes retain the public method's widening instruction", () => {
+  expect(XS_CHANGED_LINE_BOUND).toBe(40);
+  expect(PINNED_SENTENCE_FLOOR).toBe(30);
+  expect(FIXTURE_CLASSES.length).toBeGreaterThan(0);
   const integrator = readFileSync(path.join(repoRoot, "method", "roles", "integrator.md"), "utf8");
   expect(integrator).toContain("THE WIDENING IS A STEP OF THIS MERGE, BESIDE THE DRILL");
   expect(integrator, "and it says WHY it comes before the merge").toContain("FIRST PARENT");

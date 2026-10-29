@@ -170,8 +170,49 @@ function captureInputs(options, strict, onTrees) {
       blobId: entry.oid, mode: entry.mode, content: utf8(retained, `${role}:${relativePath}`),
       get bytes() { return Buffer.from(retained); } });
   }
+  /** Exact selected entries, with binary length framing rather than splitting
+   * document lines. A bounded chunk supports the retained ~20MB corpus without
+   * the old per-call 16MB ceiling becoming a whole-batch truncation.
+   * @param {"product"|"records"} role @param {readonly string[]} relativePaths */
+  function readMany(role, relativePaths) {
+    if (role !== "product" && role !== "records") refuse("records-input-role-invalid", String(role));
+    if (!Array.isArray(relativePaths) || relativePaths.some((file) => typeof file !== "string")) refuse("records-input-paths-invalid", "name an explicit path array");
+    const selected = relativePaths.map((relativePath) => {
+      const entry = trees[role].find((e) => e.relativePath === relativePath);
+      if (!entry) refuse("records-input-missing", `${role}:${relativePath} at ${commits[role]}`);
+      if (entry.type !== "blob" || !["100644", "100755"].includes(entry.mode)) refuse("records-entry-not-regular", `${relativePath}: mode ${entry.mode}, type ${entry.type}`);
+      return entry;
+    });
+    const result = [];
+    for (let start = 0; start < selected.length; start += 128) {
+      const chunk = selected.slice(start, start + 128);
+      let batch;
+      try {
+        batch = execFileSync("git", ["--no-replace-objects", "-C", roots[role], "cat-file", "--batch"], {
+          input: chunk.map((entry) => `${entry.oid}\n`).join(""), stdio: ["pipe", "pipe", "pipe"], maxBuffer: 64 * 1024 * 1024,
+          env: { ...process.env, GIT_NO_LAZY_FETCH: "1", GIT_OPTIONAL_LOCKS: "0" },
+        });
+      } catch { refuse("records-blob-unavailable", `${role}: selected batch unavailable`); }
+      let offset = 0;
+      for (const entry of chunk) {
+        const newline = batch.indexOf(10, offset);
+        if (newline < offset) refuse("records-batch-invalid", entry.relativePath);
+        if (batch.subarray(offset, newline).some((byte) => byte > 127)) refuse("records-batch-invalid", entry.relativePath);
+        const header = batch.subarray(offset, newline).toString("ascii"), parsed = /^([0-9a-f]{40}|[0-9a-f]{64}) blob ([0-9]+)$/.exec(header);
+        if (!parsed || parsed[1] !== entry.oid || !Number.isSafeInteger(Number(parsed[2]))) refuse("records-batch-invalid", entry.relativePath);
+        const size = Number(parsed[2]), beginning = newline + 1, end = beginning + size;
+        if (end >= batch.length || batch[end] !== 10) refuse("records-batch-invalid", entry.relativePath);
+        const retained = Buffer.from(batch.subarray(beginning, end)); offset = end + 1;
+        const content = utf8(retained, `${role}:${entry.relativePath}`);
+        result.push(Object.freeze({ role, repository: roots[role], commit: commits[role], path: entry.relativePath,
+          blobId: entry.oid, mode: entry.mode, content, get bytes() { return Buffer.from(retained); } }));
+      }
+      if (offset !== batch.length) refuse("records-batch-invalid", "unexpected trailing batch bytes");
+    }
+    return Object.freeze(result);
+  }
   return Object.freeze({ receipt: immutable({ ...receipt, repositories }), tasks: Object.freeze(tasks),
-    repositories, read,
+    repositories, read, readMany,
     /** @param {"product"|"records"} role */
     paths(role) {
       if (role !== "product" && role !== "records") refuse("records-input-role-invalid", String(role));
@@ -205,7 +246,7 @@ export function captureRawCommittedInputs(options) {
       if (role !== "product" && role !== "records") refuse("records-input-role-invalid", String(role));
       return immutable(retainedEntries[role]);
     }, receipt: captured.receipt, repositories: captured.repositories,
-    read: captured.read, paths: captured.paths });
+    read: captured.read, readMany: captured.readMany, paths: captured.paths });
 }
 
 /** Read all tracked cards and the committed association without parser build.

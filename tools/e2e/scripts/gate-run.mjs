@@ -210,6 +210,8 @@ import {
   openSync,
   readFileSync,
   readdirSync,
+  realpathSync,
+  lstatSync,
   rmSync,
   statSync,
   writeFileSync,
@@ -222,8 +224,13 @@ import {
   headTree,
   trackedDirt,
   writeToken,
-} from "../../../.claude/hooks/gate-token.mjs";
+} from "../../../cli/gate-token.mjs";
 import { docsGate, docsReaders, sourceCorpus, stripComments, trackedFiles } from "./docs-scan.mjs";
+import { loadInstalledRecordTool, requireInstalledRuntimeAssets } from "./records-check.mjs";
+import { loadProjectSettings, requireProjectSection, PROJECT_SETTINGS } from "./project-settings.mjs";
+import { captureOperationRepository } from "./durable-operation.mjs";
+import { operationContent } from "./operation-record.mjs";
+import { isMain } from "../../../cli/is-main.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 /** Repo root: tools/e2e/scripts -> tools/e2e -> tools -> root. */
@@ -277,7 +284,7 @@ const SHELL_METACHARACTERS = /[|&;<>()$`\\"'*?\[\]{}~\n\r]/;
  * @property {string} cwd       Relative to repoRoot; resolved absolute.
  * @property {string} sentinel  Must exist in cwd, or the run is REFUSED.
  * @property {string[]} argv    Never a shell string.
- * @property {"cargo"|"playwright"|"vitest"} family
+ * @property {"cargo"|"playwright"|"vitest"|"unittest"} family
  * @property {boolean} solo
  * @property {string} why       Why this spelling, in a reader's words.
  */
@@ -287,52 +294,10 @@ const SHELL_METACHARACTERS = /[|&;<>()$`\\"'*?\[\]{}~\n\r]/;
 // `{...GRADED_SUITES.rust}` into a bag of optional properties, while a
 // bare inference widens `family` to `string`. `@satisfies` checks the
 // shape AND keeps the literal types the counters switch on.
-/** @satisfies {Readonly<Record<string, Suite>>} */
-export const GRADED_SUITES = Object.freeze({
-  parser: {
-    id: "parser",
-    cwd: "lib/parser",
-    sentinel: "package.json",
-    argv: ["npx", "vitest", "run"],
-    family: "vitest",
-    solo: false,
-    why: "C-06's suite; its smoke test parses this repo's live docs/ tree.",
-  },
-  app: {
-    id: "app",
-    cwd: "app",
-    sentinel: "package.json",
-    argv: ["npm", "test"],
-    family: "vitest",
-    solo: false,
-    why: "C-05's model-store unit tests (T-003).",
-  },
-  rust: {
-    id: "rust",
-    cwd: "app/src-tauri",
-    sentinel: "Cargo.toml",
-    argv: ["cargo", "test", "--no-fail-fast"],
-    family: "cargo",
-    solo: true,
-    why:
-      "Both workspace crates via default-members. --no-fail-fast is NOT " +
-      "optional here: without it a crate-scope count silently describes " +
-      "one target (instance 4, and the exit code is 101 either way). " +
-      "solo: T-088-s4's cache cliff reds startup_arm under contention.",
-  },
-  e2e: {
-    id: "e2e",
-    cwd: "tools/e2e",
-    sentinel: "playwright.config.ts",
-    argv: ["npx", "playwright", "test"],
-    family: "playwright",
-    solo: true,
-    why:
-      "The real-input lane; workers 1, retries 0, no skips. solo: its " +
-      "wall time is a health band (suite/e2e-seconds), so a run beside " +
-      "another is a reading of the contention, not of the suite.",
-  },
-});
+// Compatibility export for existing pure/source-CI analysis only.
+// Configured effect paths bind their own canonical project registry.
+export { SOURCE_CI_SUITES as GRADED_SUITES } from "./source-ci-contract.mjs";
+import { SOURCE_CI_SUITES as GRADED_SUITES } from "./source-ci-contract.mjs";
 
 // ── VALIDATION: a bad entry is refused before anything runs ───────────
 
@@ -377,10 +342,14 @@ export function validateSuite(input) {
     );
   }
   if (typeof s.solo !== "boolean") bad.push("solo must be a boolean");
+  if (!["cargo", "playwright", "vitest", "unittest"].includes(String(s.family))) bad.push("unsupported suite family");
+  if (s.family === "unittest" && Array.isArray(s.argv) && !s.argv.some((arg) => arg === "-v" || arg === "--verbose")) {
+    bad.push("a unittest suite must explicitly request -v or --verbose so its per-body records can be checked against Ran N tests");
+  }
   return bad;
 }
 
-/** Validate the whole registry. @returns {string[]} */
+/** Validate the whole registry. @param {Readonly<Record<string,Suite>>} [reg] @returns {string[]} */
 export function validateRegistry(reg = GRADED_SUITES) {
   const bad = [];
   for (const [key, s] of Object.entries(reg)) {
@@ -425,6 +394,7 @@ export function stripAnsi(text) {
  * @property {number|null} baseline  What the tool ITSELF said it would run.
  * @property {boolean} sums     parts === baseline.
  * @property {string} how       The derivation, in a reader's words.
+ * @property {boolean} [reportedFailure] The tool explicitly printed a failed summary.
  */
 
 /**
@@ -541,8 +511,32 @@ export function countVitest(raw) {
   };
 }
 
+/** Verbose unittest provides independent per-test identities and Ran N total.
+ * Subtests are indented and do not become extra test-method bodies. A quiet
+ * summary alone is insufficient evidence, even when its exit code is zero.
+ * @param {string} raw @returns {Count} */
+export function countUnittest(raw) {
+  const text = stripAnsi(raw), summaries = [...text.matchAll(/^Ran (\d+) tests? in [^\r\n]+$/gm)];
+  const baseline = summaries.length === 1 ? Number(summaries[0]?.[1]) : null;
+  const boundary = text.search(/^(?:={5,}|-{5,})/m);
+  const progress = boundary < 0 ? "" : text.slice(0, boundary);
+  const records = [...progress.matchAll(/^\S[^\r\n]*\([^\r\n]+\)(?:[ \t]+\.\.\.[^\r\n]*|[ \t]*)$/gm)];
+  let skipped = 0;
+  for (let at = 0; at < records.length; at++) {
+    const from = records[at]?.index ?? 0, to = records[at + 1]?.index ?? progress.length;
+    if (/\.\.\. skipped(?:\s|$)/.test(progress.slice(from, to))) skipped++;
+  }
+  const tail = summaries.length === 1 ? text.slice((summaries[0]?.index ?? 0) + (summaries[0]?.[0].length ?? 0)) : "";
+  const terminals = [...tail.matchAll(/^[ \t]*(OK(?:[ \t]*\([^\r\n]*\))?|FAILED(?:[ \t]*\([^\r\n]*\))?)[ \t]*$/gm)];
+  const terminal = terminals.length === 1 ? terminals[0] : undefined;
+  return { bodies: records.length - skipped, targets: terminal ? 1 : 0, baseline,
+    sums: baseline !== null && Number.isSafeInteger(baseline) && baseline >= 0 && records.length === baseline && terminal !== undefined,
+    reportedFailure: terminal?.[1]?.startsWith("FAILED") ?? false,
+    how: `${records.length} verbose method record(s), ${skipped} skipped, against ${baseline ?? "NO UNIQUE BASELINE"} from unittest's Ran N summary` };
+}
+
 /**
- * @param {"cargo"|"playwright"|"vitest"} family
+ * @param {"cargo"|"playwright"|"vitest"|"unittest"} family
  * @param {string} text
  * @returns {Count}
  */
@@ -550,6 +544,7 @@ export function countBodies(family, text) {
   if (family === "cargo") return countCargo(text);
   if (family === "playwright") return countPlaywright(text);
   if (family === "vitest") return countVitest(text);
+  if (family === "unittest") return countUnittest(text);
   throw new Error(`unknown suite family ${JSON.stringify(family)}`);
 }
 
@@ -669,6 +664,7 @@ export function judge({ status, count, ref, suite, tree, dirty }) {
   if (!count.sums) {
     return { ...base, verdict: "REFUSED", reason: "parts-do-not-sum-to-baseline" };
   }
+  if (status === 0 && count.reportedFailure === true) return { ...base, verdict: "REFUSED", reason: "summary-contradicts-exit" };
   return {
     ...base,
     verdict: status === 0 ? "GREEN" : "RED",
@@ -1275,9 +1271,10 @@ export function owningSpecs({
  *
  * @param {string[]} rawChanged
  * @param {string} [root]
+ * @param {Readonly<Record<string,string>>} [roots]
  * @returns {OwningDerivation & { changed: string[], unresolved: string[], generatedUnplaceable: { path: string, why: string }[] }}
  */
-export function deriveOwning(rawChanged, root = repoRoot) {
+export function deriveOwning(rawChanged, root = repoRoot, roots = PACKAGE_ROOTS) {
   const changed = rawChanged.map((p) => normaliseChanged(p, root));
   const { reach, unresolved } = specReach(root);
   /** @type {Record<string, string[]>} */
@@ -1292,7 +1289,7 @@ export function deriveOwning(rawChanged, root = repoRoot) {
   if (settingsPaths.length > 0) {
     Object.assign(settingsReadersByPath, settingsReaders(settingsPaths, root).byPath);
   }
-  const generated = generatedSources(changed, reach, root);
+  const generated = generatedSources(changed, reach, root, roots);
   return {
     changed,
     unresolved,
@@ -1593,7 +1590,7 @@ export function suiteOfPath(rel, roots = PACKAGE_ROOTS) {
   /** @type {string | undefined} */
   let best;
   for (const [id, dir] of Object.entries(roots)) {
-    if (rel !== dir && !rel.startsWith(`${dir}/`)) continue;
+    if (dir !== "." && rel !== dir && !rel.startsWith(`${dir}/`)) continue;
     if (best === undefined || dir.length > (roots[best] ?? "").length) best = id;
   }
   return best;
@@ -2313,7 +2310,7 @@ export function deriveOwed({
   }
   if (failClosed !== undefined) {
     return {
-      suites: [...ALL_SUITES],
+      suites: Object.keys(roots).sort(),
       e2e: { whole: true, specs: [] },
       byPath,
       unplaceable,
@@ -2376,7 +2373,7 @@ export function rangeChanged(range, root = repoRoot) {
         "OTHER side's work in reverse — docs/CONVENTIONS.md, THE RANGE RULE",
     };
   }
-  const out = spawnSync("git", ["-C", root, "diff", "--name-only", base, tip, "--"], {
+  const out = spawnSync("git", ["-C", root, "diff", "--name-only", "-z", base, tip, "--"], {
     encoding: "utf8",
     maxBuffer: 32 * 1024 * 1024,
     stdio: ["ignore", "pipe", "pipe"],
@@ -2392,8 +2389,7 @@ export function rangeChanged(range, root = repoRoot) {
     base,
     tip,
     paths: String(out.stdout ?? "")
-      .split("\n")
-      .map((l) => l.trim())
+      .split("\0")
       .filter((l) => l !== ""),
   };
 }
@@ -2408,14 +2404,16 @@ export function rangeChanged(range, root = repoRoot) {
  *
  * @param {string} range
  * @param {string} [root]
+ * @param {Readonly<Record<string,Suite>>} [registry]
  * @returns {(OwedDerivation & { range: string, changed: string[], inputs: Record<string, unknown> }) | { problem: string }}
  */
-export function owedForRange(range, root = repoRoot) {
+export function owedForRange(range, root = repoRoot, registry = GRADED_SUITES) {
+  const roots = Object.fromEntries(Object.values(registry).map((suite) => [suite.id, suite.cwd]));
   const diff = rangeChanged(range, root);
   if ("problem" in diff) return diff;
   const changed = diff.paths.map((p) => normaliseChanged(p, root));
   const { reach, unresolved } = specReach(root);
-  const dependents = packageDependents(root);
+  const dependents = packageDependents(root, roots);
   /** @type {Record<string, string[]>} */
   const docsReadersByPath = {};
   /** @type {string[]} */
@@ -2442,9 +2440,10 @@ export function owedForRange(range, root = repoRoot) {
   // is a fact about the graph rather than about the range, so a range
   // that moved nothing near a package's sources must still answer for a
   // generated file in the graph that nothing can place.
-  const generated = generatedSources(changed, reach, root);
+  const generated = generatedSources(changed, reach, root, roots);
   const derived = deriveOwed({
     changed,
+    roots,
     reach,
     dependents,
     docsReadersByPath,
@@ -2467,7 +2466,7 @@ export function owedForRange(range, root = repoRoot) {
       base: diff.base,
       tip: diff.tip,
       root,
-      packageRoots: { ...PACKAGE_ROOTS },
+      packageRoots: { ...roots },
       packageDependents: dependents,
       specFiles: Object.keys(reach).length,
       unresolvedImports: unresolved,
@@ -2495,11 +2494,10 @@ export function owedForRange(range, root = repoRoot) {
  * @param {OwedDerivation} owed
  * @returns {Suite[]}
  */
-export function owedSuites(owed) {
-  const registry = /** @type {Record<string, Suite>} */ (GRADED_SUITES);
+export function owedSuites(owed, registry = /** @type {Readonly<Record<string,Suite>>} */ (GRADED_SUITES)) {
   /** @type {Suite[]} */
   const out = [];
-  for (const id of Object.keys(GRADED_SUITES)) {
+  for (const id of Object.keys(registry)) {
     if (!owed.suites.includes(id)) continue;
     const entry = registry[id];
     if (entry === undefined) continue;
@@ -2543,12 +2541,13 @@ export function owedSuites(owed) {
  *
  * @param {Verdict[]} verdicts
  * @param {string} [root]
- * @param {import("../../../.claude/hooks/gate-token.mjs").OwedRecord} [owed]
+ * @param {import("../../../cli/gate-token.mjs").OwedRecord} [owed]
+ * @param {import("../../../cli/gate-token.mjs").GateContext} [context]
  * @returns {{ written: boolean, message: string }}
  */
-export function recordVerdicts(verdicts, root = repoRoot, owed = undefined) {
+export function recordVerdicts(verdicts, root = repoRoot, owed = undefined, context = undefined) {
   try {
-    const { path: tokenFile } = writeToken(root, verdicts, owed === undefined ? {} : { owed });
+    const { path: tokenFile } = writeToken(root, verdicts, { ...(owed === undefined ? {} : { owed }), ...(context === undefined ? {} : { context }) });
     const message = `gate-run: verdict token written to ${tokenFile}\n`;
     process.stderr.write(message);
     return { written: true, message };
@@ -2563,6 +2562,135 @@ export function recordVerdicts(verdicts, root = repoRoot, owed = undefined) {
   }
 }
 
+/** @typedef {{root:string,productRevision:string,registry:Readonly<Record<string,Suite>>,context:import("../../../cli/gate-token.mjs").GateContext,settings:any}} GateConfiguration */
+/** Original repository facts are private constructor state, never a mutable
+ * property a caller can replace on the public configuration datum.
+ * @type {WeakMap<GateConfiguration,string>} */
+const gateOrigins = new WeakMap();
+/** @param {string} code @param {string} detail @returns {never} */
+function configuredFinding(code, detail) { throw Object.assign(new Error(detail), { code }); }
+/** @param {GateConfiguration} configuration */
+function assertConfiguredGateOrigin(configuration) {
+  const original = gateOrigins.get(configuration);
+  try {
+    if (original === undefined || operationContent(captureOperationRepository(configuration.root, configuration.productRevision, { forEffect: false })) !== original) throw new Error("original PRODUCT root/Git directory/common directory/object store identity differs");
+  } catch (error) {
+    configuredFinding("gate-product-origin-changed", `The original PRODUCT repository is unavailable or replaced: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+/** Read-only canonical selection; historical pushed revisions need not be HEAD.
+ * @param {{productRoot:string,productRevision:string,tool?:any}} options @returns {GateConfiguration} */
+export function loadConfiguredGateConfiguration(options) {
+  if (!options || Object.keys(options).some((key) => !["productRoot", "productRevision", "tool"].includes(key))) configuredFinding("gate-configuration-request", "Only PRODUCT root/revision and constructor TOOL context are accepted");
+  const tool = options.tool ?? loadInstalledRecordTool();
+  requireInstalledRuntimeAssets(tool, ["tools/e2e/scripts/gate-run.mjs", "tools/e2e/scripts/gate-policy.mjs", "tools/e2e/scripts/source-ci-contract.mjs", "tools/e2e/scripts/durable-operation.mjs", "cli/gate-token.mjs", "cli/is-main.mjs"]);
+  const original = captureOperationRepository(options.productRoot, options.productRevision, { forEffect: false });
+  const loaded = loadProjectSettings({ productRoot: options.productRoot, productRevision: options.productRevision, tool });
+  if (loaded.status !== "ready") configuredFinding(loaded.code, loaded.diagnostics.join("; "));
+  const required = requireProjectSection(loaded, "suites");
+  if (required.status !== "configured") configuredFinding("gate-suites-unconfigured", required.diagnostics.join("; "));
+  const registry = /** @type {Readonly<Record<string,Suite>>} */ (Object.fromEntries(loaded.settings.suites.map((suite) => [suite.id, suite])));
+  const problems = validateRegistry(registry);
+  if (problems.length) configuredFinding("gate-suite-unsupported", problems.join("; "));
+  const configuration = Object.freeze({ root: loaded.provenance.productRoot, productRevision: options.productRevision, settings: loaded.settings,
+    registry: Object.freeze(registry), context: Object.freeze({ configurationDigest: loaded.provenance.configDigest,
+      toolManifestDigest: tool.manifestDigest, required: Object.freeze(Object.keys(registry).sort()) }) });
+  gateOrigins.set(configuration, operationContent(original));
+  assertConfiguredGateOrigin(configuration);
+  return configuration;
+}
+/** Physical containment is checked before a command or sentinel is used.
+ * @param {string} root @param {Suite} suite */
+function configuredSuitePath(root, suite) {
+  const cwd = realpathSync(path.resolve(root, suite.cwd)), relative = path.relative(root, cwd);
+  if (relative === ".." || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative) || !lstatSync(cwd).isDirectory()) configuredFinding("gate-cwd-escape", `${suite.id}: cwd is outside the selected PRODUCT`);
+  const file = path.join(cwd, suite.sentinel), state = lstatSync(file);
+  if (!state.isFile() || state.isSymbolicLink() || realpathSync(file) !== file) configuredFinding("gate-sentinel-kind", `${suite.id}: sentinel is not one plain PRODUCT file`);
+}
+/** Same derivation, explicit configured membership. Unsupported discovery and
+ * ambiguous ownership conservatively require the entire configured battery.
+ * @param {GateConfiguration} configuration @param {string} range */
+export function configuredOwedForRange(configuration, range) {
+  assertConfiguredGateOrigin(configuration);
+  const raw = rangeChanged(range, configuration.root);
+  if ("problem" in raw) return raw;
+  const resolved = spawnSync("git", ["-C", configuration.root, "rev-parse", "--verify", "--end-of-options", `${raw.tip}^{commit}`], { encoding: "utf8" });
+  if (resolved.status !== 0 || resolved.stdout.trim() !== configuration.productRevision) return { problem: "the range tip differs from the exact PRODUCT configuration revision" };
+  assertConfiguredGateOrigin(configuration);
+  if (raw.paths.some((file) => file.trim() !== file || /[\r\n]/.test(file))) {
+    return { range, changed: raw.paths, suites: [...configuration.context.required], e2e: { whole: true, specs: [] },
+      byPath: [], unplaceable: [], generatedUnplaceable: [], failClosed: "this path spelling has no qualified narrow discovery adapter",
+      inputs: { base: raw.base, tip: raw.tip, root: configuration.root, completeConfiguredRegistry: [...configuration.context.required] } };
+  }
+  const derived = owedForRange(range, configuration.root, configuration.registry);
+  if ("problem" in derived) return derived;
+  const roots = Object.values(configuration.registry).map((suite) => suite.cwd);
+  const unsupportedScope = Object.values(configuration.registry).some((suite) =>
+    suite.family === "playwright" && (suite.id !== SCOPED_SUITE || suite.cwd !== "tools/e2e") ||
+    suite.id === SCOPED_SUITE && suite.family !== "playwright");
+  const why = derived.changed.includes(PROJECT_SETTINGS) ? "project settings changed; every configured suite is owed" :
+    roots.some((cwd, at) => roots.indexOf(cwd) !== at) ? "several suites share a cwd; their ownership cannot safely be narrowed" :
+    unsupportedScope ? "this Playwright layout has no qualified scoped discovery adapter" :
+    derived.suites.some((id) => configuration.registry[id] === undefined) ? "a discovery adapter named a suite outside the configured registry" :
+    derived.changed.some((file) => file.trim() !== file || /[\r\n]/.test(file)) ? "this path spelling has no qualified narrow discovery adapter" : undefined;
+  assertConfiguredGateOrigin(configuration);
+  return why === undefined ? derived : { ...derived, suites: [...configuration.context.required], e2e: { whole: true, specs: [] }, failClosed: why };
+}
+/** Constructor-bound effect API. Requests cannot replace commands, roots,
+ * membership, policy or TOOL metadata. @param {{productRoot:string,productRevision:string,tool?:any}} options */
+export function createConfiguredGateRunner(options) {
+  const configuration = loadConfiguredGateConfiguration(options);
+  const { root, productRevision, registry, context } = configuration;
+  /** @param {readonly string[]} names @param {ReturnType<typeof configuredOwedForRange>} [owed] */
+  function run(names, owed) {
+    if (!names.length || new Set(names).size !== names.length || names.some((id) => registry[id] === undefined)) configuredFinding("gate-suite-selection", `unknown suite(s), duplicate or empty selection in the committed registry: ${names.join(", ")}`);
+    if (owed !== undefined && "problem" in owed) configuredFinding("gate-range-unavailable", owed.problem);
+    /** @type {Verdict[]} */ const verdicts = [];
+    for (const name of names) {
+      assertConfiguredGateOrigin(configuration);
+      if (currentRef(root) !== productRevision || currentTree(root) === "") configuredFinding("gate-product-context-changed", "The selected PRODUCT revision/tree is unavailable or changed before grading");
+      const suite = /** @type {Suite} */ (registry[name]);
+      try { configuredSuitePath(root, suite); }
+      catch (error) {
+        verdicts.push({ suite: name, exit: -1, bodies: 0, targets: 0, ref: currentRef(root), tree: currentTree(root), dirty: trackedDirt(root), verdict: "REFUSED", reason: `configured-path: ${error instanceof Error ? error.message : String(error)}` });
+        continue;
+      }
+      const selected = owed !== undefined && name === SCOPED_SUITE && !owed.e2e.whole && owed.e2e.specs.length ? scopedSuite(owed.e2e.specs, suite) : suite;
+      const result = runSuite(selected, { root });
+      assertConfiguredGateOrigin(configuration);
+      verdicts.push(owed !== undefined && name === SCOPED_SUITE && !owed.e2e.whole && owed.e2e.specs.length ? { ...result.verdict, scope: owed.e2e.specs.join(",") } : result.verdict);
+      if (result.outputPath) process.stderr.write(`gate-run: ${name} output at ${result.outputPath}\n`);
+    }
+    assertConfiguredGateOrigin(configuration);
+    const recorded = recordVerdicts(verdicts, root, owed === undefined ? undefined : { range: owed.range, suites: owed.suites, e2e: owed.e2e, inputs: owed.inputs, ...(owed.failClosed === undefined ? {} : { failClosed: owed.failClosed }) }, context);
+    return { code: !recorded.written || verdicts.some((v) => v.verdict === "REFUSED") ? EXIT.REFUSED : verdicts.some((v) => v.verdict === "RED") ? EXIT.RED : EXIT.GREEN,
+      verdicts, configuration: context, tokenWritten: recorded.written };
+  }
+  /** The existing source-layout scoped adapter is retained explicitly. Other
+   * layouts still run whole suites and cannot claim a narrower qualification.
+   * @param {string} suiteId @param {string[]} changed */
+  function owning(suiteId, changed) {
+    assertConfiguredGateOrigin(configuration);
+    const suite = registry[suiteId];
+    if (!suite || suite.family !== "playwright") configuredFinding("gate-usage", `The scoped form needs its Playwright leg; THE FULL ${SCOPED_SUITE} LEG IS OWED`);
+    if (suite.id !== SCOPED_SUITE || suite.cwd !== "tools/e2e") configuredFinding("gate-scoped-unadapted", "This configured suite has no qualified scoped discovery adapter; run the whole configured suite");
+    if (!changed.length) configuredFinding("gate-usage", `no changed paths were named; THE FULL ${SCOPED_SUITE} LEG IS OWED`);
+    if (changed.some((file) => file.trim() !== file)) configuredFinding("gate-usage", "Exact changed-path spellings are required");
+    const roots = Object.fromEntries(Object.values(registry).map((entry) => [entry.id, entry.cwd]));
+    const plan = deriveOwning(changed, root, roots);
+    if (plan.generatedUnplaceable.length) configuredFinding("gate-usage", `The import graph reaches a GENERATED file this derivation cannot map back to the sources: ${plan.generatedUnplaceable.map((item) => item.path).join(", ")}; THE FULL ${SCOPED_SUITE} LEG IS OWED`);
+    if (plan.unresolved.length || plan.unplaceable.length || !plan.specs.length) configuredFinding("gate-usage", `The scoped reader cannot place ${plan.unplaceable.map((item) => item.path).join(", ") || changed.join(", ")}; ${plan.unresolved.join(", ")}; THE FULL ${SCOPED_SUITE} LEG IS OWED`);
+    if (currentRef(root) !== productRevision || currentTree(root) === "") configuredFinding("gate-product-context-changed", "PRODUCT changed before the scoped run");
+    configuredSuitePath(root, suite);
+    const result = runSuite(scopedSuite(plan.specs, suite), { root }), verdict = scopeVerdict(result.verdict, { specs: plan.specs, changed: plan.changed });
+    assertConfiguredGateOrigin(configuration);
+    const recorded = recordVerdicts([verdict], root, undefined, context);
+    return { code: !recorded.written || verdict.verdict === "REFUSED" ? EXIT.REFUSED : verdict.verdict === `${SCOPED_PREFIX}RED` ? EXIT.RED : EXIT.GREEN, verdicts: [verdict], configuration: context, tokenWritten: recorded.written };
+  }
+  return Object.freeze({ configuration, run, owning,
+    /** @param {string} range */ owed: (range) => configuredOwedForRange(configuration, range) });
+}
+
 // ── CLI ──────────────────────────────────────────────────────────────
 
 /** The one suite whose scoped form exists, and the flag that asks for it. */
@@ -2573,287 +2701,60 @@ export const SCOPED_SUITE = "e2e";
 export const RANGE_FLAG = "--range";
 export const OWED_SET_FLAG = "--owed-set";
 
-/**
- * The tree the DERIVATION reads, for a caller judging a checkout that is
- * not the one this module was loaded from — the push guard's case.
- *
- * `--tree` AND DELIBERATELY NOT `--root`, WHICH IS THIS REPOSITORY'S
- * USUAL SPELLING. `--root` means "the project root the target OPERATES
- * ON"; the `supertaskr` front hands it, and `cli.spec.ts` pins the two
- * directions to each other. This runner does not operate on the tree
- * this flag names — it reads the derivation's inputs there and still
- * runs every suite from the registry's own directories — so `--root`
- * would promise a relocation that does not happen, and would falsify
- * that pin for a flag the front cannot hand. Measured rather than
- * guessed: the first spelling was `--root`, and the battery redded that
- * body by name.
- */
+/** Source-CI read-only derivation root; configured effects use --root. */
 export const TREE_FLAG = "--tree";
 
-const USAGE = `gate-run.mjs — the one sanctioned way to run a graded suite (T-202)
-
-  node tools/e2e/scripts/gate-run.mjs <suite>...   run the named suites
-  node tools/e2e/scripts/gate-run.mjs --list       the registry
-  node tools/e2e/scripts/gate-run.mjs --all        every graded suite
-  node tools/e2e/scripts/gate-run.mjs ${SCOPED_SUITE} ${OWNING_FLAG} <changed path>...
-                                                  the EXECUTOR's scoped
-      reading: only the spec files that OWN those paths (T-271). The
-      verifier's one run and the integrator's run before the push stay
-      the full four legs, and this form's ${SCOPED_PREFIX}* verdict cannot
-      mint the push token. A path the derivation cannot place is exit 2.
-  node tools/e2e/scripts/gate-run.mjs ${RANGE_FLAG} <base>..<tip>
-                                                  the OWED SET (T-280):
-      the suites that range's own paths owe, with the end-to-end leg
-      narrowed to the spec files they own. A path the derivation cannot
-      place makes the owed set the whole battery, and the token says why.
-  node tools/e2e/scripts/gate-run.mjs ${OWED_SET_FLAG} ${RANGE_FLAG} <base>..<tip> [${TREE_FLAG} <dir>]
-                                                  the same derivation as
-      JSON, running NOTHING. This is what the push guard asks, so that
-      the set it requires and the set a run grades are ONE function.
-
-suites: ${Object.keys(GRADED_SUITES).join(", ")}
-
-Every run also writes its verdicts to ${TOKEN_REL_PATH}, keyed by the tree
-they ran against; the pre-push guard reads that token (T-203).
-
-exit: 0 every suite GREEN · 1 a suite is RED · 2 called wrong ·
-      3 REFUSED — no verdict this runner would stand behind`;
-
-/**
- * The scoped arm (T-271): `e2e --owning <changed path>…`.
- *
- * IT REFUSES BEFORE IT SPAWNS, always. Every way this can be wrong —
- * the wrong leg, an empty path list, an unresolvable import edge, a path
- * nothing owns, a derivation that came back with no spec — ends at exit
- * 2 with the reason and the sentence THE FULL LEG IS OWED, because the
- * only failure this feature may not have is grading a subset that is
- * short. It can be wrong by running too much; it must never be wrong by
- * running too little.
- *
- * @param {string[]} argv
- * @returns {number}
- */
-function mainOwning(argv) {
-  const at = argv.indexOf(OWNING_FLAG);
-  const names = argv.slice(0, at);
-  const changed = argv.slice(at + 1).filter((a) => a !== "");
-  /** @param {string} why @returns {number} */
-  const refuse = (why) => {
-    process.stderr.write(
-      `gate-run: REFUSING the scoped reading — ${why}. THE FULL ${SCOPED_SUITE} LEG IS OWED: ` +
-        `run this command again with no ${OWNING_FLAG}.\n`,
-    );
-    return EXIT.USAGE;
-  };
-  if (names.length !== 1 || names[0] !== SCOPED_SUITE) {
-    return refuse(
-      `${OWNING_FLAG} is the ${SCOPED_SUITE} leg's form and only its own — it was given ` +
-        `${names.length === 0 ? "no suite" : names.join(", ")}`,
-    );
-  }
-  if (changed.length === 0) {
-    return refuse(`${OWNING_FLAG} was given no changed paths, and a run over nothing grades nothing`);
-  }
-  const derived = deriveOwning(changed);
-  if (derived.unresolved.length > 0) {
-    return refuse(
-      "the static import graph has an edge it could not land on a file, so the subset would be " +
-        `SHORT: ${derived.unresolved.join("; ")}`,
-    );
-  }
-  if (derived.generatedUnplaceable.length > 0) {
-    return refuse(
-      "the static import graph reaches a GENERATED file this derivation cannot map back to the " +
-        "sources that build it, so a source change would select no spec and the subset would be " +
-        `SHORT: ${derived.generatedUnplaceable.map((u) => `${u.path} (${u.why})`).join("; ")}`,
-    );
-  }
-  if (derived.unplaceable.length > 0) {
-    return refuse(
-      `the derivation cannot place ${derived.unplaceable
-        .map((u) => `${u.path} (${u.why})`)
-        .join("; ")}`,
-    );
-  }
-  if (derived.specs.length === 0) {
-    return refuse("the derivation named no spec at all, and this runner never grades nothing");
-  }
-  for (const entry of derived.byPath) {
-    process.stderr.write(`gate-run: ${entry.path} is owned by\n  ${entry.via.join("\n  ")}\n`);
-  }
-  const { verdict, outputPath } = runSuite(scopedSuite(derived.specs));
-  const scoped = scopeVerdict(verdict, { specs: derived.specs, changed: derived.changed });
-  if (outputPath) process.stderr.write(`gate-run: ${SCOPED_SUITE} output at ${outputPath}\n`);
-  recordVerdicts([scoped]);
-  process.stdout.write(`${formatVerdict(scoped)}\n`);
-  if (scoped.verdict === "REFUSED") return EXIT.REFUSED;
-  return scoped.verdict === `${SCOPED_PREFIX}GREEN` ? EXIT.GREEN : EXIT.RED;
-}
-
-/**
- * The value of a `--flag <value>` pair, or undefined.
- * @param {string[]} argv @param {string} flag @returns {string | undefined}
- */
-function flagValue(argv, flag) {
-  const at = argv.indexOf(flag);
-  if (at < 0) return undefined;
-  const next = argv[at + 1];
-  return next === undefined || next.startsWith("--") ? undefined : next;
-}
-
-/**
- * The ASK arm (T-280): derive the owed set and print it as JSON, running
- * nothing at all.
- *
- * THE PUSH GUARD IS THIS ARM'S CALLER, and that is why it exists as a
- * separate spelling rather than as a flag on a run. The guard may not
- * import this module — it loads on every Bash call in a session and this
- * file walks a corpus — so it asks the same question by spawning the
- * program that owns the answer, exactly as it asks the graph and the
- * cheap checks. One function, two callers, no second copy of the rule.
- *
- * IT ALWAYS PRINTS JSON, INCLUDING WHEN IT REFUSES. A caller that had to
- * parse a refusal out of English would be a caller that fails open by
- * accident; `{ "problem": … }` at exit 2 is a machine-readable inability.
- *
- * @param {string[]} argv
- * @returns {number}
- */
-function mainOwedSet(argv) {
-  const range = flagValue(argv, RANGE_FLAG);
-  const root = flagValue(argv, TREE_FLAG) ?? repoRoot;
-  if (range === undefined) {
-    process.stdout.write(
-      `${JSON.stringify({ problem: `${OWED_SET_FLAG} needs ${RANGE_FLAG} <base>..<tip>` })}\n`,
-    );
-    return EXIT.USAGE;
-  }
-  const owed = owedForRange(range, root);
-  process.stdout.write(`${JSON.stringify(owed, null, 2)}\n`);
-  return "problem" in owed ? EXIT.USAGE : EXIT.GREEN;
-}
-
-/**
- * The RANGE arm (T-280): grade exactly the set the range owes.
- *
- * ── WHY THIS VERDICT IS MINTABLE AND `--owning`'S IS NOT ─────────────
- * The subset here is not a seat's opinion about what changed; it is a
- * function of two commit ids, and the push guard recomputes it from the
- * same two before it accepts anything. So the end-to-end leg's verdict
- * keeps the word it earned — GREEN or RED — and carries `scope=` naming
- * the spec files it graded, which is what the guard's coverage check
- * reads. A hand-typed `--owning` list has no such second reader, which
- * is exactly why it wears `SCOPED-` and can mint nothing.
- *
- * A REFUSAL IS NOT A NARROWER RUN. Every way the derivation can fail
- * lands on the whole battery with the reason recorded, never on a
- * shorter set — so this arm's failure mode is a longer run.
- *
- * @param {string[]} argv
- * @returns {number}
- */
-function mainRange(argv) {
-  const range = flagValue(argv, RANGE_FLAG);
-  if (range === undefined) {
-    process.stderr.write(`gate-run: ${RANGE_FLAG} needs a <base>..<tip> argument\n${USAGE}\n`);
-    return EXIT.USAGE;
-  }
-  const owed = owedForRange(range);
-  if ("problem" in owed) {
-    process.stderr.write(
-      `gate-run: the owed set for ${range} could not be derived — ${owed.problem}. ` +
-        "NOTHING WAS GRADED: run the whole battery with --all.\n",
-    );
-    return EXIT.USAGE;
-  }
-  if (owed.failClosed !== undefined) {
-    process.stderr.write(
-      `gate-run: THE WHOLE BATTERY IS OWED — ${owed.failClosed}\n`,
-    );
-  }
-  for (const entry of owed.byPath) {
-    process.stderr.write(`gate-run: ${entry.path} owes\n  ${entry.why.join("\n  ")}\n`);
-  }
-  process.stderr.write(
-    `gate-run: ${range} moved ${owed.changed.length} path(s) and owes ` +
-      `${owed.suites.join(", ")}${
-        owed.e2e.whole || owed.e2e.specs.length === 0
-          ? ""
-          : ` (${SCOPED_SUITE} over ${owed.e2e.specs.length} spec file(s))`
-      }\n`,
-  );
-  /** @type {Verdict[]} */
-  const verdicts = [];
-  for (const suite of owedSuites(owed)) {
-    const { verdict, outputPath } = runSuite(suite);
-    verdicts.push(
-      suite.id === SCOPED_SUITE && !owed.e2e.whole && owed.e2e.specs.length > 0
-        ? { ...verdict, scope: owed.e2e.specs.join(",") }
-        : verdict,
-    );
-    if (outputPath) process.stderr.write(`gate-run: ${suite.id} output at ${outputPath}\n`);
-  }
-  recordVerdicts(verdicts, repoRoot, {
-    range,
-    suites: owed.suites,
-    e2e: owed.e2e,
-    ...(owed.failClosed === undefined ? {} : { failClosed: owed.failClosed }),
-    inputs: owed.inputs,
-  });
-  for (const v of verdicts) process.stdout.write(`${formatVerdict(v)}\n`);
-  if (verdicts.some((v) => v.verdict === "REFUSED")) return EXIT.REFUSED;
-  if (verdicts.some((v) => v.verdict === "RED")) return EXIT.RED;
-  return EXIT.GREEN;
-}
-
-/** @param {string[]} argv @returns {number} */
-function main(argv) {
-  const bad = validateRegistry();
-  if (bad.length > 0) {
-    process.stderr.write(`gate-run: the registry itself is invalid:\n  ${bad.join("\n  ")}\n`);
-    return EXIT.REFUSED;
-  }
-  if (argv.length === 0 || argv.includes("--help")) {
-    process.stdout.write(`${USAGE}\n`);
-    return argv.length === 0 ? EXIT.USAGE : EXIT.GREEN;
-  }
-  if (argv.includes("--list")) {
-    for (const s of Object.values(GRADED_SUITES)) {
-      process.stdout.write(
-        `${s.id.padEnd(8)} ${s.cwd.padEnd(14)} ${s.argv.join(" ")}${s.solo ? "  [solo]" : ""}\n`,
-      );
+/** Configured project CLI; source CI calls its separate read-only entry.
+ * @param {string[]} argv @returns {number} */
+export function main(argv) {
+  const usage = "gate-run.mjs --root <PRODUCT> [--at <exact revision>] <configured-suite>...|--all|--list\n  --range <base>..<tip> [--owed-set] grades/reads the configured owed set\n  <suite> --owning <paths>... is an explicitly scoped reading where supported";
+  if (argv.includes("--help") || argv.length === 0) { process.stdout.write(usage + "\n"); return argv.length ? 0 : 2; }
+  try {
+    let root = process.cwd(), revision, range;
+    const rest = [...argv];
+    for (const flag of ["--root", "--at", "--range"]) {
+      const at = rest.indexOf(flag);
+      if (at < 0) continue;
+      if (rest.lastIndexOf(flag) !== at || rest[at + 1] === undefined || rest[at + 1]?.startsWith("--")) configuredFinding("gate-usage", `${flag} requires exactly one value`);
+      const value = rest[at + 1]; rest.splice(at, 2);
+      if (flag === "--root") root = /** @type {string} */ (value); else if (flag === "--at") revision = value; else range = value;
     }
-    return EXIT.GREEN;
+    if (rest.some((arg) => arg.startsWith("--") && !["--all", "--list", "--owed-set", "--owning"].includes(arg))) configuredFinding("gate-usage", "Unknown gate option");
+    const productRevision = revision ?? currentRef(root);
+    const runner = createConfiguredGateRunner({ productRoot: root, productRevision }), configuration = runner.configuration;
+    if (rest.includes("--owed-set")) {
+      if (!range || rest.length !== 1) configuredFinding("gate-usage", "--owed-set requires --range and no suite selection");
+      const owed = configuredOwedForRange(configuration, range);
+      process.stdout.write(JSON.stringify(owed) + "\n"); return "problem" in owed ? 3 : 0;
+    }
+    if (rest.includes("--list")) {
+      if (rest.length !== 1 || range) configuredFinding("gate-usage", "--list takes no suite selection or range");
+      for (const suite of Object.values(configuration.registry)) process.stdout.write(`${suite.id} ${suite.cwd} ${suite.argv.join(" ")}${suite.solo ? " [solo]" : ""}\n`);
+      return 0;
+    }
+    if (rest.includes("--owning")) {
+      if (rest.indexOf("--owning") !== 1 || range) configuredFinding("gate-usage", "Use <suite> --owning <changed paths> without a range");
+      const result = runner.owning(/** @type {string} */ (rest[0]), rest.slice(2));
+      for (const verdict of result.verdicts) process.stdout.write(formatVerdict(verdict) + "\n"); return result.code;
+    }
+    if (range) {
+      if (rest.length) configuredFinding("gate-usage", "--range takes no independent suite selection");
+      const owed = runner.owed(range);
+      if ("problem" in owed) configuredFinding("gate-range-unavailable", owed.problem);
+      if (!owed.suites.length) { process.stdout.write("gate-run: this range owes no product suites; nothing graded and no token written\n"); return 0; }
+      const result = runner.run(owed.suites, owed); for (const verdict of result.verdicts) process.stdout.write(formatVerdict(verdict) + "\n"); return result.code;
+    }
+    if (rest.includes("--all") && rest.length !== 1) configuredFinding("gate-usage", "--all takes no independent suite selection");
+    const result = runner.run(rest[0] === "--all" ? configuration.context.required : rest);
+    for (const verdict of result.verdicts) process.stdout.write(formatVerdict(verdict) + "\n");
+    return result.code;
+  } catch (error) {
+    const finding = /** @type {any} */ (error);
+    process.stderr.write(`gate-run: CANNOT RUN ${finding?.code ?? "gate-unavailable"}: ${error instanceof Error ? error.message : String(error)}\n`);
+    return finding?.code === "gate-usage" || finding?.code === "gate-suite-selection" ? 2 : 3;
   }
-  if (argv.includes(OWED_SET_FLAG)) return mainOwedSet(argv);
-  if (argv.includes(RANGE_FLAG)) return mainRange(argv);
-  if (argv.includes(OWNING_FLAG)) return mainOwning(argv);
-  /** @type {string[]} */
-  const names = argv.includes("--all") ? Object.keys(GRADED_SUITES) : argv;
-  const registry = /** @type {Record<string, Suite>} */ (GRADED_SUITES);
-  const unknown = names.filter((n) => registry[n] === undefined);
-  if (unknown.length > 0) {
-    process.stderr.write(`gate-run: unknown suite(s): ${unknown.join(", ")}\n${USAGE}\n`);
-    return EXIT.USAGE;
-  }
-  /** @type {Verdict[]} */
-  const verdicts = [];
-  for (const n of names) {
-    const entry = registry[n];
-    if (entry === undefined) continue; // unreachable: filtered above
-    const { verdict, outputPath } = runSuite(entry);
-    verdicts.push(verdict);
-    if (outputPath) process.stderr.write(`gate-run: ${n} output at ${outputPath}\n`);
-  }
-  recordVerdicts(verdicts);
-  // THE VERDICT LINES ARE PRINTED LAST, so the last thing a reader sees
-  // is the thing they should trust.
-  for (const v of verdicts) process.stdout.write(`${formatVerdict(v)}\n`);
-  if (verdicts.some((v) => v.verdict === "REFUSED")) return EXIT.REFUSED;
-  if (verdicts.some((v) => v.verdict === "RED")) return EXIT.RED;
-  return EXIT.GREEN;
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (isMain(import.meta)) {
   process.exit(main(process.argv.slice(2)));
 }

@@ -25,7 +25,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:dogfood": "vitest run --config vitest.dogfood.config.ts"
   },
   "dependencies": {
     "yaml": "^2.8.0"

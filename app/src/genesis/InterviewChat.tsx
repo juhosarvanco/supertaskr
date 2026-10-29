@@ -69,6 +69,7 @@ export function InterviewChat({
   docs: DocsModelState;
 }) {
   const genesis = useGenesisState();
+  const view = genesis.view;
   const ui = useInterviewUi();
   // T-171: TWO QUESTIONS, NOT ONE, and conflating them is the defect this
   // card exists for. `busy` is the FACT — is a turn in flight — and it
@@ -170,8 +171,8 @@ export function InterviewChat({
     // the defect, made worse by doing it without being asked. The
     // explicit affordance below still works, so the user can force it.
     if (genesis.listenerFailed) return;
-    void startInterview(projectDir);
-  }, [statusKnown, notStarted, projectDir, genesis.listenerFailed]);
+    void startInterview(projectDir, {}, view);
+  }, [statusKnown, notStarted, projectDir, genesis.listenerFailed, view]);
 
   // ---- the elapsed slot (T-028 criterion 3) ---------------------------
   //
@@ -192,7 +193,7 @@ export function InterviewChat({
   // deviation; the number and its phrasing are the design's.
   useEffect(() => {
     startGenesisClock(projectDir, Date.now());
-  }, [projectDir]);
+  }, [projectDir, genesis.contextKey]);
   const elapsed = elapsedLabel(useGenesisElapsedMs());
 
   // ---- the transcript, and who scrolls -------------------------------
@@ -217,7 +218,7 @@ export function InterviewChat({
   // OPEN project, and at startup there may not be one.
   useEffect(() => {
     void rehydrateInterview();
-  }, [projectDir]);
+  }, [projectDir, genesis.contextKey]);
   const joined = mergeRehydrated(genesis.rehydrated, genesis.turns, ui.userHalves);
   const transcript = assembleTranscript(joined.turns, joined.userHalves, chipsByTurn);
   const log = useRef<HTMLDivElement | null>(null);
@@ -273,7 +274,7 @@ export function InterviewChat({
     // rather than discovered: `max-h-40` (160px) in the class list below.
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight}px`;
-  }, [draft]);
+  }, [draft, view]);
 
   const submit = useCallback(() => {
     // The flag is re-read HERE rather than trusted from the render that
@@ -284,8 +285,10 @@ export function InterviewChat({
     heldFocusAtSubmit.current = box.current !== null && document.activeElement === box.current;
     const text = draft;
     setDraft("");
-    void sendAnswer(text);
-  }, [draft]);
+    void sendAnswer(text, view).then((outcome) => {
+      if (outcome?.kind !== "accepted") setDraft((current) => current === "" ? text : current);
+    });
+  }, [draft, view]);
 
   /**
    * Give the focus back when the turn leaves flight — and only then, and
@@ -321,9 +324,9 @@ export function InterviewChat({
 
   const onRetry = useCallback(
     (turn: number) => {
-      void retryTurn(projectDir, turn);
+      void retryTurn(projectDir, turn, view);
     },
-    [projectDir],
+    [projectDir, view],
   );
 
   // ---- the hand-driven mode (criterion 4) -----------------------------
@@ -341,12 +344,12 @@ export function InterviewChat({
   // deciding the user has given up.
   const [handDriven, setHandDriven] = useState<KickoffOutcomePayload | null>(null);
   const onHandDriven = useCallback(() => {
-    void loadKickoff().then((outcome) => {
+    void loadKickoff(view).then((outcome) => {
       // `null` is the served-bundle case (no Tauri to answer). Nothing to
       // show, and nothing pretended.
       if (outcome !== null) setHandDriven(outcome);
     });
-  }, []);
+  }, [view]);
 
   return (
     <section
@@ -472,7 +475,7 @@ export function InterviewChat({
               <Button
                 data-testid="interview-resume"
                 disabled={locked}
-                onClick={() => void resumeInterview(projectDir)}
+                onClick={() => void resumeInterview(projectDir, view)}
               >
                 Pick up where it stopped
               </Button>
@@ -480,7 +483,7 @@ export function InterviewChat({
                 data-testid="interview-fresh"
                 variant="outline"
                 disabled={locked}
-                onClick={() => void freshInterview(projectDir)}
+                onClick={() => void freshInterview(projectDir, view)}
               >
                 Start a fresh session
               </Button>
@@ -515,7 +518,7 @@ export function InterviewChat({
               <Button
                 data-testid="interview-fresh"
                 disabled={locked}
-                onClick={() => void freshInterview(projectDir)}
+                onClick={() => void freshInterview(projectDir, view)}
               >
                 Start a fresh session
               </Button>
@@ -538,7 +541,7 @@ export function InterviewChat({
               <Button
                 data-testid="interview-start"
                 disabled={locked}
-                onClick={() => void startInterview(projectDir, { force: true })}
+                onClick={() => void startInterview(projectDir, { force: true }, view)}
               >
                 Start the interview
               </Button>

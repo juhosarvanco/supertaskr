@@ -96,15 +96,17 @@ function git(root, args) {
 /** allRecords intentionally skips unreadable records. Check every physical
  * work-record input first, then derive the existing ledger without replacing it.
  * No native inventory helper that persists holds or takes locks is called.
- * @param {string} root @param {any} runs @param {any} native @param {string} taskId */
-function completeRecords(root, runs, native, taskId) {
+ * @param {string} root @param {any} runs @param {any} native @param {string} taskId @param {any} [ownOperation] */
+function completeRecords(root, runs, native, taskId,ownOperation=null) {
   const home = path.join(root, runs.RUNS_REL_PATH);
   const records = runs.allRecords(root);
   let count = 0;
   if (existsSync(home)) for (const work of readdirSync(home)) {
     const dir = path.join(home, work);
     if (!lstatSync(dir).isDirectory() || lstatSync(dir).isSymbolicLink()) refuse("preflight-ledger-unavailable");
-    for (const name of readdirSync(dir)) {
+    const files=readdirSync(dir);
+    if(work.startsWith("OP-") && (!/^OP-[0-9a-f]{64}$/.test(work) || files.length !== 1 || files[0] !== `${work}-a1.json`))refuse("preflight-ledger-unavailable");
+    for (const name of files) {
       if (work === "reservations" && !/^reservations-a\d+\.json$/.test(name)) continue;
       if (!name.endsWith(".json")) continue;
       let rec;
@@ -113,6 +115,22 @@ function completeRecords(root, runs, native, taskId) {
         if (!lstatSync(file).isFile() || lstatSync(file).isSymbolicLink()) refuse("preflight-ledger-unavailable");
         rec = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(readFileSync(file)));
       } catch { refuse("preflight-ledger-unavailable"); }
+      // Coordinator effects share canonical progress storage, but confer no
+      // worker or implementation admission. Every physical operation must pass
+      // its strict schema and exact filename; unknown inputs still refuse.
+      if (rec.recordKind === "operation" || rec.assignment?.kind === "operation") {
+        if (!runs.validOperationRecord(rec) || work !== rec.assignment.id || name !== `${rec.attempt}.json`) refuse("preflight-ledger-unavailable");
+        if (["failed","stopped"].includes(rec.state)) {
+          const ref = `refs/supertaskr/operations/${rec.assignment.id.slice(3)}`;
+          try { if (git(rec.resource, ["for-each-ref", "--format=%(refname)", ref]) !== "") refuse("preflight-ledger-unavailable"); }
+          catch { refuse("preflight-ledger-unavailable"); }
+        }
+        if (!runs.TERMINAL_STATES.includes(rec.state) && !(ownOperation !== null && rec.operation.kind === "qualified-delivery" &&
+            rec.attempt === ownOperation.attempt && rec.operation.digest === ownOperation.operation.digest &&
+            consumers.qualifier.qualifiedContent(rec) === consumers.qualifier.qualifiedContent(ownOperation))) refuse("preflight-operation-pending");
+        count += 1;
+        continue;
+      }
       if (rec.version !== runs.RECORD_VERSION || rec.attempt !== `${work}${name.slice(work.length, -5)}` ||
           !new RegExp(`^${work.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}-a[0-9]+\\.json$`).test(name) ||
           !runs.STATES.includes(rec.state) || rec.assignment?.id !== work || !["card", "consultation"].includes(rec.assignment.kind) ||
@@ -167,6 +185,12 @@ let consumers;
  * @param {any} input */
 export async function admissionPreflight(input) {
   const request = normalizeAdmissionPreflight(input);
+  await loadQualifiedDeliveryPolicy();
+  return captureAdmission(request);
+}
+/** Load existing policy consumers before a synchronous delivery transaction.
+ * This does not admit an operation or change any admission boundary. */
+export async function loadQualifiedDeliveryPolicy(){
   let qualifier, parser, inert, policy, runs, native;
   try {
     qualifier = await import("./qualified-reservation.mjs");
@@ -177,7 +201,25 @@ export async function admissionPreflight(input) {
   try { policy = await import("./dispatch-brief.mjs"); runs = await import("./run-record.mjs"); native = await import("./native-codex.mjs"); }
   catch { refuse("preflight-policy-unavailable"); }
   consumers = { qualifier, parser, inert, policy, runs, native };
-  return captureAdmission(request);
+}
+
+/** Strict original-ledger reading for the currently held qualified operation.
+ * Only its exact owned physical row may be pending; ordinary preflight retains
+ * its existing refusal of every pending operation. Current grant/pause/drift
+ * remains the same canonical integrator re-entry policy over retained bytes.
+ * @param {string} root @param {any} source @param {any} [ownOperation] */
+export function qualifiedDeliveryPhasePolicy(root,source,ownOperation=null){
+ if(!consumers)refuse("preflight-consumers-not-loaded");const {runs,native}=consumers;
+ if(ownOperation !== null){
+  if(!runs.validOperationRecord(ownOperation) || ownOperation.operation.kind !== "qualified-delivery" || ownOperation.operation.request.coordinator.root !== realpathSync(root) ||
+    ownOperation.operation.owner.pid !== process.pid || ownOperation.operation.owner.identity !== runs.defaultRunIo().identity(process.pid))refuse("preflight-operation-owner");
+  for(const claim of ownOperation.operation.claims){
+   if(claim.file !== runs.reservationPath(root,claim.resource) || runs.readReservation(root,claim.resource)?.attempt !== ownOperation.attempt)refuse("preflight-operation-owner");
+   runs.assertOperationOwnership(root,{resource:claim.resource,attempt:ownOperation.attempt});
+  }
+ }
+ completeRecords(root,runs,native,source.assignment.id,ownOperation);
+ return runs.qualifiedPhasePolicy(root,source,"integrator","re-entry");
 }
 
 /** Synchronous recapture using already loaded dependencies. The native

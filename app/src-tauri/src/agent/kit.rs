@@ -31,10 +31,10 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use super::skills;
 
 /// The method version this snapshot was taken at. Cross-checked against
-/// the live stamps in `method/interview/plan-interview.md` and
-/// `docs/CONVENTIONS.md` by [`tests::snapshot_version_matches_the_live_method_stamps`],
+/// the live product interview version in `method/interview/plan-interview.md`
+/// by [`tests::snapshot_version_matches_the_live_method_stamps`],
 /// so a method bump that forgets this const is red.
-pub const METHOD_SNAPSHOT_VERSION: &str = "0.1.38";
+pub const METHOD_SNAPSHOT_VERSION: &str = "0.1.40";
 
 /// Where the kit is written inside a project (relative, POSIX).
 pub const KIT_REL_DIR: &str = ".supertaskr/genesis/kit";
@@ -77,6 +77,10 @@ pub const KIT_FILES: &[KitFile] = &[
     KitFile {
         rel: "interview/decomposition.md",
         content: include_str!("../../../../method/interview/decomposition.md"),
+    },
+    KitFile {
+        rel: "interview/genesis-product-proposal.md",
+        content: include_str!("../../../../method/interview/genesis-product-proposal.md"),
     },
     KitFile {
         rel: "docs-templates/NORTH_STAR.md",
@@ -427,11 +431,10 @@ pub const COLD_START_GAPS_HEADING: &str = "GAPS:";
 /// THE COLD-START PROMPT (T-175) — and it takes NO ARGUMENTS, which is
 /// the point rather than a convenience.
 ///
-/// `method/interview/plan-interview.md` ends: *"Then: cold-start test. A
-/// fresh session reads only docs/ and explains the project back. Gaps in
-/// its answer are gaps in the docs — fix and repeat."* Verified against
-/// the repo before being built on, the habit T-028's missing "completion
-/// signal" earned: that sentence is the last line of that file.
+/// `method/interview/plan-interview.md` ends with an optional offer of a
+/// fresh RECORDS-only reader. Once accepted, its gaps require fixes and
+/// repetition until a cold session passes. The canonical sentence is checked
+/// below rather than inferred from an older snapshot of the method.
 ///
 /// **EVERY OTHER PROMPT IN THIS MODULE NAMES TWO ABSOLUTE PATHS — the kit
 /// root and the project directory — AND THIS ONE NAMES NONE.** A path
@@ -1161,11 +1164,11 @@ mod tests {
         // bytes made this body red over a newline the first time it ran.
         let flat = interview.split_whitespace().collect::<Vec<_>>().join(" ");
         assert!(
-            flat.contains("A fresh session reads only docs/ and explains the project back."),
+            flat.contains("A fresh session reads only RECORDS docs/ and explains the project back."),
             "the method's cold-start sentence has moved; T-175's spawn is built on it verbatim"
         );
         assert!(
-            flat.contains("Gaps in its answer are gaps in the docs"),
+            flat.contains("gaps in its answer are gaps in the docs") && flat.contains("fix and repeat until a cold session passes"),
             "the GAPS half is what the prompt asks for as output; it must still be the method's"
         );
         // The CONTROL that keeps the two lines above from being green over
@@ -1249,7 +1252,7 @@ mod tests {
         );
     }
 
-    /// PARITY (c): the const cross-checks the two live stamps, so bumping
+    /// PARITY (c): the const cross-checks the product method stamp, so bumping
     /// the method without touching this file is red.
     ///
     /// Both stamps are pinned on the ONE LINE that carries them, via
@@ -1275,19 +1278,9 @@ mod tests {
             "plan-interview.md's Output heading no longer stamps v{METHOD_SNAPSHOT_VERSION} - \
              bump METHOD_SNAPSHOT_VERSION with the method"
         );
-        let conventions = fs::read_to_string(repo_root().join("docs/CONVENTIONS.md"))
-            .expect("docs/CONVENTIONS.md readable");
-        let version_bump_clause = the_one_line_carrying(
-            &conventions,
-            "formats are version-bumped",
-            "docs/CONVENTIONS.md",
-        );
-        assert!(
-            version_bump_clause.contains(&format!("currently v{METHOD_SNAPSHOT_VERSION}")),
-            "docs/CONVENTIONS.md's first gotcha no longer says \
-             'currently v{METHOD_SNAPSHOT_VERSION}' - \
-             bump METHOD_SNAPSHOT_VERSION with the method"
-        );
+        // Private CONVENTIONS adoption is a later records-service observation,
+        // never a source version anchor or an ordinary build prerequisite.
+
     }
 
     #[test]
@@ -1314,7 +1307,7 @@ mod tests {
         assert_eq!(on_disk.app_version, env!("CARGO_PKG_VERSION"));
 
         // Nothing was created under docs/ - the app is not the docs writer.
-        assert!(!project.join("docs").exists(), "the runner never touches docs/");
+        assert_no_fixture_docs(&project);
 
         // Idempotent: a second materialize over hand-edited content
         // restores the snapshot (runtime data, losable by charter).
@@ -1332,6 +1325,10 @@ mod tests {
             .filter(|n| n.contains(".tmp"))
             .collect();
         assert!(leftovers.is_empty(), "atomic writes leave no temp files: {leftovers:?}");
+    }
+
+    fn assert_no_fixture_docs(project: &Path) {
+        assert!(!project.join("docs").exists(), "the runner never touches docs/");
     }
 
     #[test]

@@ -1,3 +1,5 @@
+const repoRoot = fixtureFor(import.meta.url);
+import { pathToFileURL } from "node:url";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import {
   copyFileSync,
@@ -12,7 +14,7 @@ import {
 import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
-import { repoRoot } from "../preflight";
+import { fixtureFor } from "../fixtures/test-project";
 import {
   type HarnessRun,
   fakeHarness as harnessLinkIn,
@@ -23,15 +25,19 @@ import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import {
   CLAIM_CLASSES,
   REPORT_BUDGET,
+  NOT_A_CLAIM_CLASS,
+  MIN_QUOTE_CHARS,
+} from "../scripts/card-preflight.mjs";
+import * as fixtureSubjectDefinition0 from "../scripts/card-preflight.mjs";
+void fixtureSubjectDefinition0;
+const {
   cardClaims,
   checkClaim,
   collapse,
   dischargedBy,
   frontmatterScalars,
-  NOT_A_CLAIM_CLASS,
   componentOwners,
   markerEnd,
-  MIN_QUOTE_CHARS,
   newFileReservation,
   ownersOf,
   pathOracle,
@@ -41,21 +47,52 @@ import {
   unmarkedQuotes,
   unseenMarkers,
   unwrapScalar,
-} from "../scripts/card-preflight.mjs";
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/card-preflight.mjs")).href) as typeof fixtureSubjectDefinition0;
 import { DATED_INSTANCES, NEAR_MISS, T203_CASE, TRUE_CLAIM } from "../fixtures/card-claims";
 // T-320 — THE COMPACT CARD'S COMPOSER, whose whole output this reader has
 // to be able to re-derive: a card a command wrote and this arm refuses is
 // a dispatch that stops at its own fourth step.
-import { compactCard, readDoc } from "../scripts/dispatch-brief.mjs";
-import { DECOMPOSITION_FILE, earsKeywords, isEars } from "../scripts/session-economics.mjs";
-import { context, render } from "../scripts/dispatch-brief.mjs";
-import { buildLaneFence, writeLaneFence } from "../scripts/lane-fence.mjs";
-import { conventionsFiles } from "../scripts/docs-scan.mjs";
+import * as fixtureSubjectDefinition1 from "../scripts/dispatch-brief.mjs";
+void fixtureSubjectDefinition1;
+const {
+  compactCard,
+  readDoc,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/dispatch-brief.mjs")).href) as typeof fixtureSubjectDefinition1;
+import {
+  DECOMPOSITION_FILE,
+} from "../scripts/session-economics.mjs";
+import * as fixtureSubjectDefinition2 from "../scripts/session-economics.mjs";
+void fixtureSubjectDefinition2;
+const {
+  earsKeywords,
+  isEars,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/session-economics.mjs")).href) as typeof fixtureSubjectDefinition2;
+import * as fixtureSubjectDefinition3 from "../scripts/dispatch-brief.mjs";
+void fixtureSubjectDefinition3;
+const {
+  context,
+  render,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/dispatch-brief.mjs")).href) as typeof fixtureSubjectDefinition3;
+import * as fixtureSubjectDefinition4 from "../scripts/lane-fence.mjs";
+void fixtureSubjectDefinition4;
+const {
+  buildLaneFence,
+  writeLaneFence,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/lane-fence.mjs")).href) as typeof fixtureSubjectDefinition4;
+import * as fixtureSubjectDefinition5 from "../scripts/docs-scan.mjs";
+void fixtureSubjectDefinition5;
+const {
+  conventionsFiles,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/docs-scan.mjs")).href) as typeof fixtureSubjectDefinition5;
 // THE WRITE-TIME HALF IS THE HOOK'S OWN MODULE AND NOT A STAND-IN (T-287).
 // A reservation is only worth anything if the guard that reads the manifest
 // holds the exact name, so the body below drives `decide` itself — the
 // program the harness runs — the way `lane-fence.spec.ts` drives it.
-import { decide } from "../../../.claude/hooks/lane-fence.mjs";
+import * as fixtureSubjectDefinition6 from "../../../.claude/hooks/lane-fence.mjs";
+void fixtureSubjectDefinition6;
+const {
+  decide,
+} = await import(pathToFileURL(path.join(repoRoot, ".claude/hooks/lane-fence.mjs")).href) as typeof fixtureSubjectDefinition6;
 
 /**
  * THE CARD PREFLIGHT (T-160) — no browser.

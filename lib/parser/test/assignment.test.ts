@@ -14,18 +14,19 @@ import type { AssignmentReading, ParseIssue, TaskRecord } from '../src/types.js'
  * course the models the human assigns to different tasks do those tasks
  * as assigned". Where a spawn path cannot force the model, supertaskr checks.
  *
- * The live board is the fixture wherever it can be (the fence.test.ts
+ * The representative board is the fixture wherever it can be (the fence.test.ts
  * discipline, T-111-s3): the six stamps that motivated the comparison
- * rule are real cards, read by id off the live tree, so the rule's
+ * rule are real cards, read by id off the representative tree, so the rule's
  * measured reason cannot rot into a synthetic fixture that agrees with
  * it forever.
  */
-const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
+import { createExampleProject } from '../../../tools/e2e/fixtures/example-project.mjs';
+const repoRoot = createExampleProject(fileURLToPath(new URL('../../../', import.meta.url)));
 const project = parseProject(repoRoot);
 const board = new Map<string, TaskRecord>();
 for (const task of project.tasks) if (task.id !== undefined) board.set(task.id, task);
 
-/** A card off the live board, by id — never by filename glob. */
+/** A card off the representative board, by id — never by filename glob. */
 function card(id: string): TaskRecord {
   const found = board.get(id);
   if (found === undefined) throw new Error(`no live card declares id ${id}`);
@@ -234,7 +235,7 @@ describe('THE LIVE BOARD CENSUS at this lane’s ref — derived, never assumed'
   const readings = project.tasks.flatMap((task) => readAssignment(task));
   const constrained = readings.filter((r) => r.verdict !== 'unconstrained');
 
-  it('censuses CLEAN: zero assignment violations on the live board', () => {
+  it('censuses CLEAN: zero assignment violations on the representative board', () => {
     const found = readings.filter((r) => r.verdict === 'violated');
     // The enumeration IS the census: a failure prints every violation by
     // card and by pair, both values shown, so the reader never has to run
@@ -244,8 +245,8 @@ describe('THE LIVE BOARD CENSUS at this lane’s ref — derived, never assumed'
     ).toEqual([]);
   });
 
-  it('and the census is NOT vacuous — the live board really does constrain pairs', () => {
-    expect(constrained.length).toBeGreaterThan(100);
+  it('and the census is NOT vacuous — the representative board really does constrain pairs', () => {
+    expect(constrained.length).toBe(16); // six compound assignments plus the fixture's simple stamped pairs
     expect(constrained.every((r) => r.verdict === 'honoured')).toBe(true);
   });
 

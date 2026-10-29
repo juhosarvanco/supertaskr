@@ -1,20 +1,27 @@
+const repoRoot = fixtureFor(import.meta.url);
+import { pathToFileURL } from "node:url";
+type RunRecordFinding = InstanceType<typeof fixtureSubjectDefinition1.RunRecordFinding>;
 import { spawnSync, spawn } from "node:child_process";
 import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
-import { repoRoot } from "../preflight";
+import { fixtureFor } from "../fixtures/test-project";
 import {
   GRANT_JOURNAL_REL_PATH,
   GRANT_STORE_REL_PATH,
   GRANT_SUPERSEDED_REL_PATH,
+} from "../scripts/dispatch-brief.mjs";
+import * as fixtureSubjectDefinition0 from "../scripts/dispatch-brief.mjs";
+void fixtureSubjectDefinition0;
+const {
   composeGrantSnapshot,
   dispatchBlock,
   dueRetries,
   expressInstants,
   expressMeasurements,
   parseProcessSchema,
-} from "../scripts/dispatch-brief.mjs";
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/dispatch-brief.mjs")).href) as typeof fixtureSubjectDefinition0;
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import {
   ACK_TOKEN,
@@ -23,12 +30,16 @@ import {
   OBSERVED_KEYS,
   OBSERVED_TOKEN,
   OBSERVED_UNKNOWN,
+  OPERATIONS,
+  TERMINAL_STATES,
+} from "../scripts/run-record.mjs";
+import * as fixtureSubjectDefinition1 from "../scripts/run-record.mjs";
+void fixtureSubjectDefinition1;
+const {
   launchReceipt,
   parseInstantDial,
   readInstants,
-  OPERATIONS,
   RunRecordFinding,
-  TERMINAL_STATES,
   allRecords,
   bindRun,
   collectRun,
@@ -48,9 +59,13 @@ import {
   stopRun,
   takeReservation,
   waitRun,
-} from "../scripts/run-record.mjs";
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/run-record.mjs")).href) as typeof fixtureSubjectDefinition1;
 import type { Assignment, RunIo, RunRecord } from "../scripts/run-record.mjs";
-import { conventionsText } from "../scripts/docs-scan.mjs";
+import * as fixtureSubjectDefinition2 from "../scripts/docs-scan.mjs";
+void fixtureSubjectDefinition2;
+const {
+  conventionsText,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/docs-scan.mjs")).href) as typeof fixtureSubjectDefinition2;
 
 test("ordinary reservation lifecycle loads no qualified capture and unknown assignment roots grant no permission", () => {
   const b = bench("qualified-absence-T-351");

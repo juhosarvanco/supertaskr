@@ -207,3 +207,74 @@ describe("the quiet truncation note (T-018 criterion 3)", () => {
     expect(q("[data-testid=docs-model]")!.getAttribute("data-truncated")).toBe("false");
   });
 });
+
+describe("selected private records disclosure and status admission", () => {
+  it("shows the private home, rejects foreign snapshot-less statuses, and retains honest unavailable provenance", () => {
+    const first = payload(BASE_FILES, { projectDir: "/selected-product" });
+    first.records = {
+      selectionSequence: first.seq, contextSequence: first.seq, layout: "split",
+      recordsDir: "/private/selected-records", associationId: "selected-project",
+      rootIncarnation: "1:1", docsIncarnation: "1:2", availability: "available",
+      finding: null, contentRevision: `working-tree-observation:${first.seq}`,
+    };
+    mountAndApply(first);
+    expect(container.querySelector('[data-testid="records-home"]')?.textContent).toContain("/private/selected-records");
+    const original = window.__supertaskrDocsHarness?.getState();
+    act(() => {
+      window.__supertaskrShellHarness?.applyProjectStatus({
+        kind: "noProject",
+        scope: { seq: 999999, projectDir: null, selectionSequence: 0, contextSequence: 0 },
+      });
+      window.__supertaskrShellHarness?.applyProjectStatus({
+        kind: "noDocs", projectDir: "/foreign", probe: { roadmap: false, tasks: false, architecture: false, git: false },
+        scope: { seq: 999999, projectDir: "/foreign", selectionSequence: first.seq, contextSequence: first.seq, records: first.records },
+      });
+    });
+    expect(window.__supertaskrDocsHarness?.getState()).toBe(original);
+    expect(container.querySelector('[data-testid="records-home"]')).not.toBeNull();
+    const unavailable = payload([], { projectDir: first.projectDir });
+    unavailable.records = { ...first.records, contextSequence: unavailable.seq, availability: "unavailable", finding: "private root is missing", contentRevision: null };
+    apply(unavailable);
+    expect(container.querySelector('[data-testid="records-unavailable"]')?.textContent).toContain("private root is missing");
+    expect(container.querySelector('[data-testid="records-unavailable"]')?.textContent).toContain("last observed records");
+    expect(window.__supertaskrDocsHarness?.getState().contentOrigin?.contextSequence).toBe(first.seq);
+    expect(window.__supertaskrDocsHarness?.getState().seq).toBe(unavailable.seq);
+  });
+});
+
+describe("controller timeout response and healthy recovery", () => {
+  it("discloses the failed reading in its committed context and admits healthy status and file-event successors", () => {
+    const first = payload(BASE_FILES, { projectDir: "/controller-timeout-product" });
+    first.records = {
+      selectionSequence: first.seq, contextSequence: first.seq, layout: "split",
+      recordsDir: "/private/controller-timeout-records", associationId: "controller-timeout",
+      rootIncarnation: "2:1", docsIncarnation: "2:2", availability: "available",
+      finding: null, contentRevision: `working-tree-observation:${first.seq}`,
+    };
+    mountAndApply(first);
+    const failed = payload([], { projectDir: first.projectDir });
+    failed.records = { ...first.records, availability: "unavailable", finding: "watcher observation unavailable", contentRevision: null };
+    const status = (snapshot: DocsSnapshotPayload) => ({
+      kind: "open" as const, snapshot,
+      scope: {
+        seq: snapshot.seq, projectDir: snapshot.projectDir,
+        selectionSequence: snapshot.records!.selectionSequence, contextSequence: snapshot.records!.contextSequence,
+        records: snapshot.records,
+      },
+    });
+    act(() => window.__supertaskrShellHarness?.applyProjectStatus(status(failed)));
+    expect(q('[data-testid="records-unavailable"]')?.textContent).toContain("watcher observation unavailable");
+    expect(window.__supertaskrDocsHarness?.getState().seq).toBe(failed.seq);
+    expect(window.__supertaskrDocsHarness?.getState().records?.selectionSequence).toBe(first.records.selectionSequence);
+    const healthy = payload(BASE_FILES, { projectDir: first.projectDir });
+    healthy.records = { ...first.records, contentRevision: `working-tree-observation:${healthy.seq}` };
+    act(() => window.__supertaskrShellHarness?.applyProjectStatus(status(healthy)));
+    expect(q('[data-testid="records-unavailable"]')).toBeNull();
+    expect(window.__supertaskrDocsHarness?.getState().seq).toBe(healthy.seq);
+    const changed = payload(BASE_FILES.map(file => ({ ...file, content: file.content.replace("Survivor task", "After controller recovery") })), { projectDir: first.projectDir });
+    changed.records = { ...first.records, contentRevision: `working-tree-observation:${changed.seq}` };
+    apply(changed);
+    expect(window.__supertaskrDocsHarness?.getState().seq).toBe(changed.seq);
+    expect(container.textContent).toContain("After controller recovery");
+  });
+});

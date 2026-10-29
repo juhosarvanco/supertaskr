@@ -3,6 +3,8 @@ import { emit, listen } from "@tauri-apps/api/event";
 import {
   applySnapshot,
   emptyState,
+  observationAdmitted,
+  sameObservationContext,
   type DocsModelState,
   type DocsSnapshotPayload,
 } from "./docs-model";
@@ -67,7 +69,17 @@ export const EMPTY_PROBE: PlanProbePayload = {
 export type ProjectStatusPayload =
   | { kind: "noProject" }
   | { kind: "noDocs"; projectDir: string; probe: PlanProbePayload }
+  | { kind: "unavailable"; message: string }
   | { kind: "open"; snapshot: DocsSnapshotPayload };
+
+export interface MessageScope {
+  seq: number;
+  projectDir: string | null;
+  selectionSequence: number;
+  contextSequence: number;
+  records?: DocsSnapshotPayload["records"] | null;
+}
+type ScopedPayload<T> = T & { scope?: MessageScope };
 
 /** Mirror of Rust's `PickOutcome` (src-tauri/src/docs_watch.rs). */
 export type PickOutcomePayload =
@@ -110,7 +122,8 @@ export type PickOutcomePayload =
     };
 
 /** Mirror of Rust's `IndexOutcome` (src-tauri/src/index_cmd.rs) —
- * T-012's zero-argument index_repo command. Volatile stats live here,
+ * The path-free index_repo command. Managed views send only the native-issued
+ * selection/context pair; neither token selects a filesystem location. Volatile stats live here,
  * in session state, never in the committed graph (ADR-014). */
 export type IndexOutcomePayload =
   | { kind: "noProject" }
@@ -125,6 +138,8 @@ export type IndexOutcomePayload =
       graphBytes: number;
       durationMs: number;
       indexedAtMs: number;
+      recovered?: boolean;
+      cleanupWarning?: string;
     }
   | { kind: "error"; message: string };
 
@@ -383,6 +398,7 @@ interface SnapshotReading {
   projectDir: string;
   seq: number;
   generatedAtMs: number | null;
+  records?: DocsSnapshotPayload["records"];
 }
 
 /**
@@ -453,6 +469,7 @@ interface SnapshotReading {
  */
 function readingIsOvertaken(prev: DocsModelState, reading: SnapshotReading): boolean {
   if (prev.projectDir !== reading.projectDir) return false;
+  if (!sameObservationContext(prev.records, reading.records)) return false;
   if (reading.seq <= prev.seq) return true;
   if (reading.generatedAtMs === null || reading.generatedAtMs === 0) return false;
   return reading.generatedAtMs < prev.generatedAtMs;
@@ -468,6 +485,7 @@ export function reduceDocs(
   prev: DocsModelState,
   payload: DocsSnapshotPayload,
 ): DocsModelState {
+  if (!observationAdmitted(prev, payload)) return prev;
   if (payload.seq <= prev.seq) return prev; // stale/duplicate: identity
   // T-018-s6: AND A HIGHER SEQ IS NOT BY ITSELF A LATER READING. The
   // line above is the T-007 stale-drop invariant and it stays FIRST and
@@ -496,7 +514,7 @@ export function reduceDocs(
  * verbatim from T-007 — the "No plan in <folder>" card carries it as its
  * footnote, so redesigning the state lost none of what it said. */
 export const CONVENTION_HINT =
-  "an supertaskr project keeps its board in docs/tasks/, decisions in docs/decisions/";
+  "select a product to open its configured records home; legacy projects keep records in docs/tasks/ and docs/decisions/";
 
 /** One row of the "No plan in <folder>" checklist (T-026): a path the
  * front door looked for, and whether it is there. */
@@ -668,7 +686,7 @@ export function selectScreen(shell: ShellState): ScreenModel {
  */
 export function switchIsOvertaken(
   prev: DocsModelState,
-  outcome: Extract<PickOutcomePayload, { kind: "picked" } | { kind: "genesis" }>,
+  outcome: ScopedPayload<Extract<PickOutcomePayload, { kind: "picked" } | { kind: "genesis" }>>,
 ): boolean {
   // THE READING IS THE SNAPSHOT'S WHEN THERE IS ONE. Rust stamps a
   // carried snapshot with the switch's own seq, so the two are the same
@@ -682,11 +700,13 @@ export function switchIsOvertaken(
           projectDir: outcome.snapshot.projectDir,
           seq: outcome.snapshot.seq,
           generatedAtMs: outcome.snapshot.generatedAtMs,
+          records: outcome.snapshot.records,
         }
       : {
           projectDir: outcome.projectDir,
           seq: outcome.snapshot?.seq ?? outcome.seq,
           generatedAtMs: outcome.snapshot?.generatedAtMs ?? null,
+          records: outcome.snapshot?.records ?? outcome.scope?.records ?? undefined,
         };
   return readingIsOvertaken(prev, reading);
 }
@@ -700,8 +720,13 @@ export function switchIsOvertaken(
  */
 export function reducePickOutcome(
   prev: ShellState,
-  outcome: PickOutcomePayload,
+  outcome: ScopedPayload<PickOutcomePayload>,
 ): ShellState {
+  if (!scopeAdmitted(prev.docs, outcome.scope, outcome.kind === "picked" || outcome.kind === "genesis")) return prev;
+  if (outcome.kind === "genesis" && outcome.scope !== undefined &&
+      (outcome.scope.projectDir !== outcome.projectDir || outcome.scope.seq !== outcome.seq)) return prev;
+  if ((outcome.kind === "picked" || outcome.kind === "genesis") && outcome.snapshot?.records !== undefined &&
+      !observationAdmitted(prev.docs, outcome.snapshot)) return prev;
   switch (outcome.kind) {
     case "cancelled":
       return prev; // criterion 6: nothing changed, nothing to show
@@ -768,7 +793,9 @@ export function reducePickOutcome(
         // carries that tree. Rust stamps the snapshot with the switch's
         // own seq, so applying it advances the watermark to exactly the
         // value the other branch sets by hand — one stamp either way.
-        const snapshot = outcome.snapshot ?? null;
+        const snapshot = outcome.snapshot ?? (outcome.scope?.records == null ? null : {
+          seq: outcome.seq, projectDir: outcome.projectDir, generatedAtMs: 0, files: [], records: outcome.scope.records,
+        });
         docs =
           snapshot === null
             ? // T-064: `Math.max`, not an ASSIGNMENT. The watermark is
@@ -915,8 +942,8 @@ declare global {
      * and absent from the bundle (DEV).
      */
     __supertaskrShellHarness?: {
-      applyProjectStatus: (status: ProjectStatusPayload) => void;
-      applyPickOutcome: (outcome: PickOutcomePayload) => void;
+      applyProjectStatus: (status: ScopedPayload<ProjectStatusPayload>) => void;
+      applyPickOutcome: (outcome: ScopedPayload<PickOutcomePayload>) => void;
       /** T-050: `recordStartupFailure` itself — what the store's own
        * catch calls when `listen` or `invoke` rejects. Without it the
        * served bundle cannot reach a state the shipped app CAN reach
@@ -1025,8 +1052,34 @@ export function isTauriRuntime(): boolean {
 }
 
 function setShell(patch: Partial<ShellState>): void {
-  shell = { ...shell, ...patch };
+  commitShell({ ...shell, ...patch });
+}
+let indexAttempt = 0;
+function commitShell(next: ShellState): void {
+  if (recordsContextKey(next.docs) !== recordsContextKey(shell.docs)) {
+    indexAttempt += 1;
+    next = {...next, indexing: false, indexOutcome: null};
+  }
+  shell = next;
   for (const callback of listeners) callback();
+}
+
+/** Content revisions do not change the selected graph home. Selection,
+ * association and physical incarnation changes do, even for one PRODUCT. */
+export function recordsContextKey(docs: DocsModelState): string {
+  const records = docs.records;
+  return JSON.stringify([docs.projectDir, records?.selectionSequence, records?.contextSequence,
+    records?.recordsDir, records?.associationId, records?.rootIncarnation,
+    records?.docsIncarnation, records?.availability]);
+}
+
+export function consumerScopeAdmitted(value: unknown): boolean {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const scope = (value as {scope?: MessageScope}).scope;
+  try {
+    return scopeAdmitted(shell.docs, scope) && (scope === undefined ||
+      (scope.projectDir ?? "") === shell.docs.projectDir);
+  } catch { return false; }
 }
 
 /**
@@ -1083,7 +1136,12 @@ function applyDocsPayload(payload: DocsSnapshotPayload): void {
   // updates underneath (that IS the pipeline lighting up — criteria 3
   // and 4), while the screen stays where the interview is; the front
   // door's stale "no docs/ found" claim is what an emit replaces.
-  setShell({ docs: next, phase: shell.phase === "genesis" ? "genesis" : "open" });
+  const legacyNoDocs = next.records?.availability === "noDocs" && next.records.layout === "colocated";
+  setShell({
+    docs: next,
+    phase: shell.phase === "genesis" ? "genesis" : legacyNoDocs ? "noDocs" : "open",
+    ...(legacyNoDocs ? { resolvedDir: next.projectDir, resolvedProbe: EMPTY_PROBE } : {}),
+  });
   sendEcho(next);
 }
 
@@ -1100,7 +1158,34 @@ function sendEcho(next: DocsModelState): void {
   }
 }
 
-function applyProjectStatus(status: ProjectStatusPayload): void {
+function scopeAdmitted(prev: DocsModelState, scope?: MessageScope, allowAdvance = false): boolean {
+  if (scope === undefined) return prev.records === undefined;
+  if (!Number.isSafeInteger(scope.seq) || scope.seq < 0 ||
+      !Number.isSafeInteger(scope.selectionSequence) || !Number.isSafeInteger(scope.contextSequence) ||
+      scope.selectionSequence < 0 || scope.contextSequence < scope.selectionSequence || scope.contextSequence > scope.seq) return false;
+  const current = prev.records;
+  if (scope.records != null) {
+    if (scope.records.selectionSequence !== scope.selectionSequence || scope.records.contextSequence !== scope.contextSequence ||
+        scope.projectDir === null || !observationAdmitted(prev, {
+          seq: scope.seq, projectDir: scope.projectDir, generatedAtMs: 0, files: [], records: scope.records,
+        })) return false;
+  } else if (current !== undefined) return false;
+  if (current === undefined) return true;
+  if (!allowAdvance && (scope.selectionSequence !== current.selectionSequence || scope.contextSequence !== current.contextSequence)) return false;
+  return scope.selectionSequence >= current.selectionSequence &&
+    (scope.selectionSequence !== current.selectionSequence ||
+      (scope.projectDir === prev.projectDir && scope.contextSequence >= current.contextSequence));
+}
+
+function applyProjectStatus(status: ScopedPayload<ProjectStatusPayload>): void {
+  if (!scopeAdmitted(shell.docs, status.scope, status.kind === "open")) return;
+  if (status.scope !== undefined) {
+    if (status.kind === "noProject" && (status.scope.projectDir !== null || status.scope.records != null)) return;
+    if (status.kind === "noDocs" && status.scope.projectDir !== status.projectDir) return;
+    if (status.kind === "open" &&
+        (status.scope.projectDir !== status.snapshot.projectDir ||
+         !sameObservationContext(status.scope.records ?? undefined, status.snapshot.records))) return;
+  }
   // T-063: A STATUS PULL MUST NOT YANK AN INTERVIEW AWAY, and until this
   // card nothing had to say so, because `docs_snapshot` was only ever
   // pulled at startup — when the phase is `loading` or `browser` and
@@ -1126,6 +1211,9 @@ function applyProjectStatus(status: ProjectStatusPayload): void {
       break;
     case "noProject":
       setShell({ phase: "noProject" });
+      break;
+    case "unavailable":
+      recordStartupFailure("snapshot", status.message);
       break;
   }
 }
@@ -1228,7 +1316,7 @@ async function runHandshake(attempt: number): Promise<void> {
 
   let status: ProjectStatusPayload;
   try {
-    status = await invoke<ProjectStatusPayload>("docs_snapshot");
+    status = await invoke<ScopedPayload<ProjectStatusPayload>>("docs_snapshot");
   } catch (err) {
     if (attempt === startupToken) recordStartupFailure("snapshot", err);
     return;
@@ -1422,6 +1510,7 @@ export async function startGenesisHere(): Promise<void> {
  * it like any other snapshot (T-042 criterion 3; the echo is emitted by
  * `commitPickOutcome`, which is this function minus the `invoke`).
  */
+let pickerAttempt: object | null = null;
 async function runPicker(command: string): Promise<void> {
   // T-192: DELIBERATELY NOT BOUNDED, and the reason is recorded here
   // because the sibling latch a few functions down IS bounded and the
@@ -1462,13 +1551,22 @@ async function runPicker(command: string): Promise<void> {
   // hid behind the shared `await`. **A sweep whose unit is coarser than
   // its thesis reports a closure it has not measured.**
   if (!isTauri || shell.picking) return;
+  const attempt = {};
+  pickerAttempt = attempt;
   setShell({ picking: true });
   try {
-    commitPickOutcome(await invoke<PickOutcomePayload>(command));
+    const outcome = await invoke<ScopedPayload<PickOutcomePayload>>(command);
+    if (pickerAttempt === attempt) commitPickOutcome(outcome);
   } catch (err) {
-    setShell({ rejectedPick: { path: "", message: String(err), probe: null } });
+    if (pickerAttempt === attempt) {
+      // A transport failure does not establish whether native selection
+      // committed. Reconcile through the authoritative dispatcher first.
+      try { applyProjectStatus(await invoke<ScopedPayload<ProjectStatusPayload>>("docs_snapshot")); }
+      catch { /* The notice reports unavailable reconciliation honestly. */ }
+      if (pickerAttempt === attempt) setShell({ rejectedPick: { path: "", message: `selection response unavailable: ${String(err)}`, probe: null } });
+    }
   } finally {
-    setShell({ picking: false });
+    if (pickerAttempt === attempt) { pickerAttempt = null; setShell({ picking: false }); }
   }
 }
 
@@ -1479,12 +1577,11 @@ async function runPicker(command: string): Promise<void> {
  * after `invoke` answers, and nothing before it. A harness with its own
  * copy of this would prove nothing about the shipped shell.
  */
-function commitPickOutcome(outcome: PickOutcomePayload): void {
+function commitPickOutcome(outcome: ScopedPayload<PickOutcomePayload>): void {
   const before = shell;
   const next = reducePickOutcome(before, outcome);
   if (next === before) return;
-  shell = next;
-  for (const callback of listeners) callback();
+  commitShell(next);
   // T-042 criterion 3: the echo reports what the frontend parsed out of a
   // snapshot, so it fires for a payload A REAL SNAPSHOT PRODUCED — read
   // from the outcome's own provenance, never from the seq. The seq guard
@@ -1545,8 +1642,7 @@ function commitPickOutcome(outcome: PickOutcomePayload): void {
 export function openGenesisBoard(): void {
   const next = openBoardFromGenesis(shell);
   if (next === shell) return;
-  shell = next;
-  for (const callback of listeners) callback();
+  commitShell(next);
 }
 
 /** Dismiss a rejected pick and return to whatever was open before. */
@@ -1565,8 +1661,15 @@ export function keepCurrentProject(): void {
  * loop-termination brake), which is why the outcome — not the file —
  * feeds the header hint.
  */
-export async function runIndexRepo(): Promise<void> {
+export interface IndexSelectionToken { selectionSequence: number; contextSequence: number }
+export function indexSelectionToken(docs: DocsModelState): IndexSelectionToken | undefined {
+  return docs.records === undefined ? undefined : {selectionSequence:docs.records.selectionSequence,contextSequence:docs.records.contextSequence};
+}
+export async function runIndexRepo(expectedSelection?: IndexSelectionToken): Promise<void> {
   if (!isTauri || shell.indexing) return;
+  const current = indexSelectionToken(shell.docs);
+  if (current?.selectionSequence !== expectedSelection?.selectionSequence || current?.contextSequence !== expectedSelection?.contextSequence) return;
+  const attempt = ++indexAttempt;
   setShell({ indexing: true });
   // T-192: THE BOUND. The race is written out here rather than imported,
   // and that is a component-boundary answer rather than a preference —
@@ -1587,7 +1690,7 @@ export async function runIndexRepo(): Promise<void> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     const outcome = await Promise.race([
-      invoke<IndexOutcomePayload>("index_repo"),
+      invoke<ScopedPayload<IndexOutcomePayload>>("index_repo", expectedSelection === undefined ? undefined : {expectedSelection}),
       new Promise<IndexOutcomePayload>((resolve) => {
         timer = setTimeout(
           () => resolve({ kind: "error", message: UNANSWERED_INDEX_MESSAGE }),
@@ -1595,17 +1698,17 @@ export async function runIndexRepo(): Promise<void> {
         );
       }),
     ]);
-    setShell({ indexOutcome: outcome });
+    if (attempt === indexAttempt && consumerScopeAdmitted(outcome)) setShell({ indexOutcome: outcome });
   } catch (err) {
     // A REJECTION IS NOT AN ABSENCE and still lands here unchanged, so a
     // refused index keeps reporting the refusal rather than the bound.
-    setShell({ indexOutcome: { kind: "error", message: String(err) } });
+    if (attempt === indexAttempt) setShell({ indexOutcome: { kind: "error", message: String(err) } });
   } finally {
     // Cleared on every exit — answered, unanswered or thrown. A dangling
     // fifteen-second timer per press would make the bound observable in a
     // way it should not be; the pending-timer count is asserted back to
     // its pre-call value in `startup-recovery.test.ts`.
     if (timer !== undefined) clearTimeout(timer);
-    setShell({ indexing: false });
+    if (attempt === indexAttempt) setShell({ indexing: false });
   }
 }

@@ -5,6 +5,15 @@
 
 <One sentence: what this repo is.>
 
+For a PRODUCT with `.supertaskr/workspace.json`, first run
+`supertaskr workspace --root .` from PRODUCT. Every docs/ reference below
+then names a path relative to the verified RECORDS root in that result.
+An unavailable or refused association stops the records read; never fall
+back to PRODUCT/docs. The reported path grants no filesystem permission:
+the actual driver must supply the permitted records input or access.
+Only an affirmatively unbound legacy colocated project reads docs/ from
+its own root. Keep machine-local root locations out of this adapter.
+
 Before any work: read docs/STATE.md, then — once this project generates
 it — docs/INDEX.md. Those two are the whole standing read. Confirm your
 understanding of your task in one paragraph before touching anything.

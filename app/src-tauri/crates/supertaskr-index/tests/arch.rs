@@ -1,5 +1,5 @@
-//! The reality-side join, driven over THIS repo's live registry and
-//! committed graph.
+//! The reality-side join, driven over THIS repo's representative registry and
+//! fixture graph.
 //!
 //! Content-INDEPENDENT on purpose. `docs/CONVENTIONS.md` already warns
 //! that declaring a component moves three live-registry fixtures; making
@@ -7,7 +7,7 @@
 //! merge for a property `app/test/architecture-dogfood.test.ts` already
 //! guards. So nothing here pins a count that a sibling task can move.
 //! What it pins instead cannot go stale: the join is TOTAL over the
-//! committed graph, DETERMINISTIC, INDEPENDENT of registry order, and it
+//! fixture graph, DETERMINISTIC, INDEPENDENT of registry order, and it
 //! consumes the T-009 §6.6 package.path seam.
 //!
 //! The exact cross-engine agreement (mapping counts, the relation table
@@ -23,21 +23,21 @@ use std::collections::BTreeSet;
 use supertaskr_index::arch::registry::{compare_component_ids, read_registry, RegistryError};
 use supertaskr_index::arch::cycles;
 use supertaskr_index::arch::{self, Finding, Severity, UNMAPPED_ID};
-use supertaskr_index::{Graph, GRAPH_REL_PATH};
+use supertaskr_index::Graph;
 
+fn example() -> common::TempTree { common::materialize_fixture("architecture-project") }
 fn live_graph() -> Graph {
-    let raw = std::fs::read(common::repo_root().join(GRAPH_REL_PATH))
-        .expect("this repo commits its graph (ADR-014)");
-    serde_json::from_slice(&raw).expect("the committed graph is schema-1 readable")
+    let tree = example();
+    supertaskr_index::index(&supertaskr_index::IndexOptions { root: tree.root().to_path_buf(), ..Default::default() }).expect("index authored project")
 }
-
 fn live_model() -> arch::ArchModel {
-    arch::model(&common::repo_root(), &live_graph()).expect("the live registry must read")
+    let tree = example();
+    arch::model(tree.root(), &live_graph()).expect("the representative registry must read")
 }
 
 #[test]
 fn the_live_registry_reads_without_refusing_anything() {
-    let components = read_registry(&common::repo_root()).expect("registry");
+    let components = read_registry(example().root()).expect("registry");
     assert!(components.len() >= 5, "the dogfood registry has >= 5 components");
     for component in &components {
         assert!(component.id.starts_with("C-"), "{}", component.id);
@@ -97,7 +97,7 @@ fn the_join_is_deterministic_and_independent_of_registry_order() {
     let two = arch::render_arch(&live_model());
     assert_eq!(one, two, "same inputs, same bytes");
 
-    let mut reversed = read_registry(&common::repo_root()).expect("registry");
+    let mut reversed = read_registry(example().root()).expect("registry");
     reversed.reverse();
     let shuffled = arch::join(reversed, &graph);
     assert_eq!(
@@ -202,7 +202,7 @@ fn drift_flags_land_only_on_ids_the_findings_name() {
 /// **The lifted arm of this body terminates in REPO CONTENT rather than a
 /// fixture**: the link aims at this repository's own
 /// `docs/architecture/components`, so a two-side lift makes the reader
-/// read the live registry. It is a read-only read and nothing writes
+/// read the representative registry. It is a read-only read and nothing writes
 /// through it, but `docs/CONVENTIONS.md`'s LIFTING A SAFETY GUARD TO
 /// DISCRIMINATE calls that a property to CHECK rather than assume, so it
 /// is checked and stated here rather than discovered later. The
@@ -215,8 +215,9 @@ fn a_registry_directory_that_is_a_symlink_is_refused_not_followed() {
         use std::os::unix::fs::symlink;
         let holder = common::TempTree::new("arch-symlink-registry");
         std::fs::create_dir_all(holder.root().join("docs/architecture")).unwrap();
+        let target = example();
         symlink(
-            common::repo_root().join("docs/architecture/components"),
+            target.root().join("docs/architecture/components"),
             holder.root().join("docs/architecture/components"),
         )
         .unwrap();
@@ -265,11 +266,11 @@ const KNOWN_DECLARED_CYCLES: &[&str] = &[];
 
 #[test]
 fn the_live_registry_declares_exactly_the_cycles_this_crate_still_allows() {
-    let components = read_registry(&common::repo_root()).expect("registry");
+    let components = read_registry(example().root()).expect("registry");
     let report = cycles::cycles(&components);
     assert!(
         !report.truncated,
-        "the live registry must be small enough to enumerate whole"
+        "the representative registry must be small enough to enumerate whole"
     );
     assert_eq!(
         report.paths(),
@@ -288,9 +289,9 @@ fn the_live_registry_minus_one_hop_per_reported_cycle_is_acyclic() {
     // or "no cycles" is a sentence it can never say. Dropping the closing
     // hop of every reported cycle in memory must leave nothing behind —
     // and on the day the last cycle is fixed the removal set is empty and
-    // this body asserts the live tree itself, so it does not go vacuous
+    // this body asserts the representative tree itself, so it does not go vacuous
     // when the red goes away.
-    let mut components = read_registry(&common::repo_root()).expect("registry");
+    let mut components = read_registry(example().root()).expect("registry");
     let before = cycles::cycles(&components);
     let mut dropped = 0usize;
     for cycle in &before.cycles {
@@ -322,7 +323,7 @@ fn a_cycle_reintroduced_into_the_live_registry_is_caught_and_named_today() {
     // declares nothing, so one added line closes a walk that does not
     // exist in this tree — the cheapest mistake a future `depends_on:`
     // edit could make.
-    let mut components = read_registry(&common::repo_root()).expect("registry");
+    let mut components = read_registry(example().root()).expect("registry");
     let before = cycles::cycles(&components);
     assert!(
         components

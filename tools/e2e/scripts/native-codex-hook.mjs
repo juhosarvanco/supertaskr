@@ -8,7 +8,7 @@
 
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import { findCheckoutRoot } from "../../../.claude/hooks/lane-fence.mjs";
+import { findCheckoutRoot } from "../../../cli/lane-fence.mjs";
 import { handleNativeEvent } from "./native-codex.mjs";
 
 /** @param {any} event @param {string} reason */

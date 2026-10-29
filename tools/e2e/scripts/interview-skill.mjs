@@ -65,9 +65,10 @@
  * regeneration is a 0-byte diff.
  */
 
-import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync, existsSync } from "node:fs";
+import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync, existsSync, lstatSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { workspaceBindingPresent, WORKSPACE_ASSOCIATION_REL_PATH } from "./workspace.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const e2eRoot = path.resolve(here, "..");
@@ -245,6 +246,7 @@ export function sources(repoRoot) {
   return {
     kitRel: kitRelDir(repoRoot),
     planInterview: read("method/interview/plan-interview.md"),
+    productProposal: read("method/interview/genesis-product-proposal.md"),
     decomposition: read("method/interview/decomposition.md"),
     planner: read("method/roles/planner.md"),
     cardTemplate: read("method/tasks/T-000-template.md"),
@@ -394,6 +396,12 @@ export function assertSeedPathInside(rel) {
  * @returns {{ written: string[], dirs: string[] }}
  */
 export function materialize(text, targetDir) {
+  let associationPresent = false;
+  try { lstatSync(path.join(targetDir, WORKSPACE_ASSOCIATION_REL_PATH)); associationPresent = true; }
+  catch (error) { if (/** @type {NodeJS.ErrnoException} */ (error).code !== "ENOENT") throw error; }
+  if (workspaceBindingPresent(targetDir) || associationPresent) {
+    throw new Error("interview-seed-separated-workspace: use the initialized scoped setup driver; the legacy seed cannot choose PRODUCT or RECORDS writes");
+  }
   /** @type {string[]} */
   const written = [];
   for (const block of blocks(text)) {
@@ -501,6 +509,14 @@ export function renderSkill(repoRoot = defaultRepoRoot) {
     "",
     "## 0. The scaffold - before any question",
     "",
+    "The standalone seed below is the LEGACY COLOCATED route. If this",
+    "folder carries a PRODUCT workspace binding or a RECORDS association,",
+    "do not apply these seed destinations. Use the initialized scoped",
+    "setup driver: it owns the initial local commits, PRODUCT adapters,",
+    "committed settings and finite PRODUCT banks; the planner edits only",
+    "RECORDS. The machine bank contract is carried below as source. A path",
+    "or proposal does not grant access to another writable root.",
+    "",
     "Write the seed files this file carries. A seed block opens with a",
     `line of ${String(FENCE.length)} backticks followed by \`${SEED_INFO}\` and the path that`,
     "block lands at, relative to this folder, and ends at the next line",
@@ -549,6 +565,11 @@ export function renderSkill(repoRoot = defaultRepoRoot) {
     "in the interview installs, moves or deletes anything under it.",
     "",
     "## 2. The interview - the banks",
+    "",
+    "Initialized separated drivers also supply this finite PRODUCT bank",
+    "contract. It is read-only method source, not a RECORDS seed:",
+    "",
+    fenced(`${SOURCE_INFO} method/interview/genesis-product-proposal.md`, src.productProposal),
     "",
     "The block below is `method/interview/plan-interview.md` - the same",
     "bytes the app's own runner compiles in for exactly this, which is what",

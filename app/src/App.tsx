@@ -4,13 +4,16 @@ import { Board } from "@/components/board/Board";
 import { GenesisScreen } from "@/components/shell/GenesisScreen";
 import { PaneRail, type PaneId } from "@/components/shell/PaneRail";
 import { Button } from "@/components/ui/button";
+import { RecordEditor } from "@/components/records/RecordEditor";
+import { getRecordEditor, showRecordEditor, subscribeRecordEditor } from "@/lib/record-editor-store";
 import { acceleratorsFor, useAccelerators } from "@/components/shell/accelerators";
-import { cancelTurn, startInterviewSource } from "@/genesis/interview-source";
+import { cancelTurn, startInterviewSource, useGenesisCancelView } from "@/genesis/interview-source";
 import { modelIssueRows, skipReasonPhrase, type ModelIssueRow } from "@/lib/docs-model";
 import {
   CONVENTION_HINT,
   getShellState,
   isTauriRuntime,
+  indexSelectionToken,
   keepCurrentProject,
   openGenesisBoard,
   pickGenesisFolder,
@@ -28,13 +31,14 @@ import {
   type StartupStep,
 } from "@/lib/watcher-store";
 
-// A live, read-only lens over the project's docs/ tree: T-003's watcher
+// A live lens over the selected records tree: T-003's watcher
 // feeds the store; T-004's story map board renders it (home pane); T-007
 // decides WHICH project is open (launch resolution + folder picker) and
 // shows a friendly empty state when there is no board to show. T-006
 // brings the design language. T-012 adds the pane rail (board | map) and
 // the architecture map. Everything styles itself via tokens.css
-// utilities.
+// utilities. Ordinary record edits delegate to the installed service through
+// native-selected file tokens; source and records identities stay separate.
 
 /** Non-blocking parse-error chip (criterion 3; T-006 look — the
  * terracotta chip from the board mockup). Renders only while at least
@@ -489,7 +493,9 @@ function milestoneLine(model: ReturnType<typeof getShellState>["docs"]["model"])
 }
 
 function App() {
+  const genesisCommandView = useGenesisCancelView();
   const shell = useSyncExternalStore(subscribeShell, getShellState);
+  const recordBusy = useSyncExternalStore(subscribeRecordEditor, () => getRecordEditor().pending !== null);
 
   // T-050: still `void`, and now that is SAFE rather than silent —
   // `startDocsWatcher` no longer rejects. A failed attempt is recorded in
@@ -548,7 +554,7 @@ function App() {
     acceleratorsFor(screen.screen, {
       openFolder: () => void pickProjectFolder(),
       startInterview: () => void pickGenesisFolder(),
-      cancelTurn,
+      cancelTurn: () => cancelTurn(genesisCommandView),
     }),
   );
   const milestone = milestoneLine(model);
@@ -626,7 +632,12 @@ function App() {
         <div className="flex items-baseline gap-3.5">
           <h1 className="font-mono text-3xl font-bold tracking-wordmark">supertaskr</h1>
           {screen.screen === "board" && (
-            <p className="font-mono text-sm text-muted-foreground">{shell.docs.projectDir}</p>
+            <div className="font-mono text-sm text-muted-foreground">
+              <p>{shell.docs.projectDir}</p>
+              {shell.docs.records?.layout === "split" && (
+                <p data-testid="records-home">Records: {shell.docs.records.recordsDir ?? "unavailable"}</p>
+              )}
+            </div>
           )}
           {/* T-027 criterion 1 — "the app's own header names the new
               project". The genesis screen used to carry an <h2> saying
@@ -682,7 +693,7 @@ function App() {
               <Button
                 variant="outline"
                 data-testid="open-folder"
-                disabled={shell.picking}
+                disabled={shell.picking || recordBusy}
                 onClick={() => void pickProjectFolder()}
               >
                 Open folder…
@@ -690,10 +701,13 @@ function App() {
               <Button
                 variant="outline"
                 data-testid="header-start-interview"
-                disabled={shell.picking}
+                disabled={shell.picking || recordBusy}
                 onClick={() => void pickGenesisFolder()}
               >
                 Start an interview
+              </Button>
+              <Button variant="outline" data-testid="edit-records" disabled={shell.picking || recordBusy} onClick={() => void showRecordEditor()}>
+                Edit records…
               </Button>
             </>
           )}
@@ -705,6 +719,7 @@ function App() {
           </Button>
         </div>
       </header>
+      <RecordEditor />
 
       {/* T-050: waiting AND failed are the same screen — one that always
           carries a way out. The header's own "Open folder…" pair is
@@ -757,6 +772,17 @@ function App() {
 
       {screen.screen === "board" && pane === "board" && (
         <>
+          {shell.docs.records?.availability === "unavailable" && (
+            <p role="status" data-testid="records-unavailable" className="mx-6 mb-3.5 rounded-lg border border-status-rejected-border bg-status-rejected p-3 text-sm text-status-rejected-foreground">
+              Records unavailable: {shell.docs.records.finding ?? "the selected records home cannot be observed"}.
+              {shell.docs.contentOrigin !== undefined && " Showing the last observed records; their origin is unchanged."}
+            </p>
+          )}
+          {shell.docs.records?.layout === "split" && shell.docs.records.availability === "noDocs" && (
+            <p role="status" className="mx-6 mb-3.5 text-sm text-muted-foreground">
+              No records found in {shell.docs.records.recordsDir}. Configure records in the private home for this product.
+            </p>
+          )}
           <div className="flex items-baseline justify-between gap-4 px-6 pt-2.75 pb-3.5">
             <p className="text-sm text-muted-foreground" data-testid="model-counts">
               {model.tasks.length} tasks · {model.features.length} features ·{" "}
@@ -828,7 +854,7 @@ function App() {
             : {})}
           indexing={shell.indexing}
           indexOutcome={shell.indexOutcome}
-          onRunIndex={() => void runIndexRepo()}
+          onRunIndex={() => void runIndexRepo(indexSelectionToken(shell.docs))}
         />
       )}
       </div>

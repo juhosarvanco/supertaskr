@@ -195,11 +195,32 @@ pub const CLAUDE_V1: AgentAdapter = AgentAdapter {
 /// inherits the ban automatically.
 pub const ADAPTERS: &[&AgentAdapter] = &[&CLAUDE_V1];
 
-/// The adapter the planner role runs under. v1 hard-codes the single
-/// entry — reading a role→agent map out of `.supertaskr/supertaskr.yaml` is named
-/// growth (§9), not this task.
+/// The legacy embedding adapter. Managed split sessions use the same supported
+/// Claude harness with a canonical committed role selection and fixed model slot.
 pub fn planner_adapter() -> &'static AgentAdapter {
     &CLAUDE_V1
+}
+
+/// Separated planning uses actual RECORDS cwd and the SDK's acceptEdits
+/// boundary. Setup, Git banking and PRODUCT writes belong to the backend, so
+/// no legacy shell-prefix auto-grant rides this surface. This is SDK policy,
+/// not OS confinement or a claim about every user-installed CLI setting.
+pub const CLAUDE_SEPARATED_PLANNER_V1: AgentAdapter = AgentAdapter {
+    spawn_args: &[
+        "-p", "--output-format", "stream-json", "--include-partial-messages", "--verbose",
+        "--permission-mode", "acceptEdits", "--disallowedTools",
+        "Bash", "NotebookEdit", "Task", "WebFetch", "WebSearch",
+    ],
+    resume_args: &[
+        "-p", "--output-format", "stream-json", "--include-partial-messages", "--verbose",
+        "--permission-mode", "acceptEdits", "--disallowedTools",
+        "Bash", "NotebookEdit", "Task", "WebFetch", "WebSearch", "--resume", SESSION_ID_SLOT,
+    ],
+    ..CLAUDE_V1
+};
+
+pub fn separated_planner_adapter() -> &'static AgentAdapter {
+    &CLAUDE_SEPARATED_PLANNER_V1
 }
 
 /// THE COLD-START READER (T-175) — the same agent CLI, a different world.
@@ -302,8 +323,8 @@ pub const CLAUDE_COLD_START_V1: AgentAdapter = AgentAdapter {
 };
 
 /// EVERY argv template this build can put on a command line — the agent
-/// set ([`ADAPTERS`], ADR-017 clause 6) plus [`CLAUDE_COLD_START_V1`],
-/// which is a second surface over the same agent rather than a new one.
+/// set ([`ADAPTERS`], ADR-017 clause 6) plus the cold-reader and separated
+/// planner surfaces over that same agent.
 ///
 /// **THE SECURITY SWEEPS ITERATE THIS AND NOT `ADAPTERS`** (T-175). A pin
 /// keyed to the agent SET answers a question about which CLIs are
@@ -311,7 +332,7 @@ pub const CLAUDE_COLD_START_V1: AgentAdapter = AgentAdapter {
 /// data-borne-flag check are questions about which BYTES reach an
 /// `execve`, and those two sets stopped being the same the moment a second
 /// template existed.
-pub const SPAWNABLE: &[&AgentAdapter] = &[&CLAUDE_V1, &CLAUDE_COLD_START_V1];
+pub const SPAWNABLE: &[&AgentAdapter] = &[&CLAUDE_V1, &CLAUDE_COLD_START_V1, &CLAUDE_SEPARATED_PLANNER_V1];
 
 /// The adapter the cold-start reader runs under (T-175).
 pub fn cold_start_adapter() -> &'static AgentAdapter {
@@ -877,9 +898,11 @@ impl std::fmt::Display for ModelRejection {
 /// that be justified.** The id's class is `[A-Za-z0-9._-]` because an id
 /// becomes an ARGV ELEMENT: every character in it has to be inert to an
 /// argument parser, which is what rules out `=`, `/`, `:` and `@`. A model
-/// name is never argv (we never pass `--model` — ADR-003: the user's CLI
-/// default IS the model) and never a path; it is a RECORDED FACT about
-/// what ran. Reusing the id's class would therefore refuse real provider
+/// name is a recorded fact about what ran. Legacy embeddings retain the
+/// user's CLI default (ADR-003). Managed configured requests additionally
+/// consume the canonical role owner's normalized model through the complete
+/// assembled-argv check; this display validator chooses no model or program.
+/// Reusing the id's class would refuse real provider
 /// spellings for no security gain — Bedrock's
 /// `us.anthropic.claude-…-v1:0` carries `:`, Vertex's `claude-…@20240620`
 /// carries `@`, and a router-style `vendor/model` carries `/`.
@@ -1147,6 +1170,17 @@ pub fn check_no_data_borne_flag(
     Ok(())
 }
 
+/// Bound the already-normalized canonical model as one argv datum. Provider
+/// choice remains with the settings owner; observed display names retain their
+/// separate historical 128-byte gate.
+pub(crate) fn validate_configured_model(model: &str) -> Result<(), String> {
+    if model.is_empty() || model.len() > 256 || !model.as_bytes()[0].is_ascii_alphanumeric()
+        || !model.bytes().all(|b| b.is_ascii_alphanumeric() || b"._-".contains(&b)) {
+        return Err("configured planner model argument unavailable".into());
+    }
+    Ok(())
+}
+
 impl AgentAdapter {
     /// The argv AFTER the binary for one turn. `resume` = `None` spawns a
     /// fresh session; `Some(id)` resumes, with the id substituted as ONE
@@ -1173,6 +1207,18 @@ impl AgentAdapter {
             })
             .collect();
         check_no_data_borne_flag(template, &assembled)?;
+        Ok(assembled)
+    }
+
+    /// A configured model is one inert value after a backend-owned literal
+    /// flag. Preserve the complete assembled-argv check for every slot.
+    pub fn argv_for_model(&self, resume: Option<&str>, model: &str) -> Result<Vec<String>, String> {
+        validate_configured_model(model)?;
+        let mut assembled = self.argv(resume).map_err(|why| why.to_string())?;
+        let mut template = if resume.is_some() { self.resume_args.to_vec() } else { self.spawn_args.to_vec() };
+        template.extend(["--model", "{configured_model}"]);
+        assembled.extend(["--model".into(), model.into()]);
+        check_no_data_borne_flag(&template, &assembled).map_err(|why| why.to_string())?;
         Ok(assembled)
     }
 
@@ -1928,6 +1974,23 @@ mod tests {
     /// reader cannot "tidy" one into the other in either direction — and
     /// it is the body that reds if a third template is added and forgotten
     /// by `SPAWNABLE`.
+    #[test]
+    fn separated_planning_subtracts_shell_authority_without_changing_the_legacy_surface() {
+        for resume in [None, Some("controlled-native-session")] {
+            let argv = separated_planner_adapter().argv(resume).unwrap();
+            let denied = argv.iter().position(|arg| arg == "--disallowedTools").unwrap() + 1;
+            let until = argv.iter().position(|arg| arg == "--resume").unwrap_or(argv.len());
+            assert_eq!(&argv[denied..until], ["Bash", "NotebookEdit", "Task", "WebFetch", "WebSearch"]);
+            assert!(argv.windows(2).any(|pair| pair == ["--permission-mode", "acceptEdits"]));
+            assert!(!argv.iter().any(|arg| arg == "--allowedTools" || arg.starts_with("Bash(") || arg == "--add-dir" || arg == "--model"));
+            assert_eq!(argv.iter().filter(|arg| arg.as_str() == "--resume").count(), usize::from(resume.is_some()));
+        }
+        assert!(CLAUDE_V1.spawn_args.contains(&"Bash(git commit:*)"));
+        assert!(CLAUDE_V1.spawn_args.contains(&"Bash(cp:*)"));
+        assert!(SPAWNABLE.iter().any(|adapter| adapter.spawn_args == CLAUDE_SEPARATED_PLANNER_V1.spawn_args));
+        assert_eq!(ADAPTERS.len(), 1);
+    }
+
     #[test]
     fn every_spawnable_template_is_swept_and_the_agent_set_is_still_one() {
         // The agent set's own SIZE is pinned by

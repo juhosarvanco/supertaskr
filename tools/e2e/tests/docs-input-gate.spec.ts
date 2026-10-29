@@ -1,3 +1,6 @@
+const repoRoot = fixtureFor(import.meta.url);
+import { pathToFileURL, fileURLToPath } from "node:url";
+const productRoot = fileURLToPath(new URL("../../../", import.meta.url));
 import { execFileSync } from "node:child_process";
 import {
   existsSync,
@@ -12,7 +15,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { parse as parseYaml } from "yaml";
-import { repoRoot } from "../preflight";
+import { fixtureFor } from "../fixtures/test-project";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import {
   BYTES_PER_TOKEN,
@@ -31,9 +34,14 @@ import {
   ROOT_ANCHOR_LEDGER,
   ROOT_FORMS,
   SITE_SAMPLES,
+  SOURCE_PROVENANCE_CONTROLS,
   STATE_DOC,
   SUITES,
   TASK_STATUS_SOURCE,
+} from "../scripts/docs-scan.mjs";
+import * as fixtureSubjectDefinition0 from "../scripts/docs-scan.mjs";
+void fixtureSubjectDefinition0;
+const {
   adapterNamedDocs,
   callSelftest,
   conventionsBullet,
@@ -69,7 +77,7 @@ import {
   unlinkedFiles,
   unlinkedSites,
   writeDocsIndex,
-} from "../scripts/docs-scan.mjs";
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/docs-scan.mjs")).href) as typeof fixtureSubjectDefinition0;
 // T-248. THE PATTERN SET IS READ FROM THE GATE, NOT RESTATED HERE — the
 // card's ONE file, and T-057's rule applied to a table with controls in
 // it. This import is also the property it depends on: until T-248 the
@@ -77,50 +85,30 @@ import {
 // the foot of that file is what makes this line possible at all.
 import {
   INJECTION_PATTERNS,
+} from "../scripts/docs-gate.mjs";
+import * as fixtureSubjectDefinition1 from "../scripts/docs-gate.mjs";
+void fixtureSubjectDefinition1;
+const {
   injectionLine,
   injectionSelftest,
   renderInvisible,
   reportInjectionScan,
   scanInjection,
-} from "../scripts/docs-gate.mjs";
-import { XARGS_DIALECTS, dialectsDiverge, probeXargs } from "../scripts/xargs-dialect.mjs";
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/docs-gate.mjs")).href) as typeof fixtureSubjectDefinition1;
+import {
+  XARGS_DIALECTS,
+} from "../scripts/xargs-dialect.mjs";
+import * as fixtureSubjectDefinition2 from "../scripts/xargs-dialect.mjs";
+void fixtureSubjectDefinition2;
+const {
+  dialectsDiverge,
+  probeXargs,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/xargs-dialect.mjs")).href) as typeof fixtureSubjectDefinition2;
 
-/**
- * THE DOCS GATE (T-084) — no browser.
- *
- * `docs/` is an INPUT to this repo's code suites, and neither standing
- * gate trigger knows it: GRAPH REGEN fires on `.ts/.tsx/.js/.jsx`
- * OUTSIDE docs/, BOOT GATE on `app/src/**`, `app/src-tauri/**` or a
- * manifest. A commit whose whole diff is `docs/tasks/*.md` matches
- * neither, and twice it has turned a suite red anyway — both times
- * discovered three layers from the cause by somebody who was not
- * looking for it.
- *
- * This spec holds three properties, and the first is the one the card
- * is really about:
- *
- *   1. THE READER SET IS DERIVED FROM THE TREE, NOT LISTED. A hand list
- *      is the defect T-058 and T-080 each spent a card on. `docsReaders`
- *      finds every tracked source file that forms a `docs`-first path
- *      off a base that EVALUATES TO THE REPOSITORY ROOT, and the tests
- *      below pin the discriminator from both sides — a fixture tree
- *      computed from `import.meta.url` is not this repo's docs/, and a
- *      repo-root join whose first segment is `app` is not either.
- *   2. THE DOCUMENTED TRIGGER AGREES WITH THE DERIVATION. CONVENTIONS'
- *      DOCS GATE bullet is checked against `docsReaders` in BOTH
- *      directions, the shape workflow-parity.spec.ts established on the
- *      same file: a command the doc gains that the tree does not
- *      produce reds, and so does one the tree produces that the doc
- *      stops naming.
- *   3. AN ILLEGAL CARD FAILS LOUDLY AND NAMES THE FILE. The vocabulary
- *      is READ OUT OF lib/parser/src/types.ts rather than restated, so
- *      there is exactly one status vocabulary in this tree (T-057).
- *
- * The lane cannot IMPORT the parser (ADR-011). It can READ first-party
- * source, which is the same licence shell-frame.spec.ts already takes
- * to read `docs/` itself — and reading the vocabulary is what keeps
- * this gate from becoming a second implementation of it.
- */
+/** Product source-reader accounting and gate behavior on authored projects.
+ * Historical ruling, corpus and retained-record provenance runs only through
+ * the explicit bound private dogfood entrypoint. Pure parsers/derivations keep
+ * their accepted/refused fixture controls here. */
 
 const READERS = docsReaders();
 const STATUSES = taskStatuses();
@@ -135,59 +123,74 @@ function card(front: string): string {
 
 // ── 1. the enumeration ────────────────────────────────────────────────
 
-test("every package with a suite has at least one derived docs reader", () => {
-  // A FLOOR, not a count: the set grows when a reader is added and this
-  // stays true. What it catches is a suite quietly dropping out of the
-  // answer — which is exactly what the card assumed had already
-  // happened, since it names one suite and the tree has four.
-  const bySuite = new Map<string, string[]>();
-  for (const r of READERS) {
-    if (r.suite === undefined) continue;
-    bySuite.set(r.suite, [...(bySuite.get(r.suite) ?? []), r.file]);
-  }
-  for (const suite of SUITES) {
-    expect(bySuite.get(suite.dir) ?? [], `${suite.dir} has a docs reader`).not.toEqual([]);
-  }
-  expect(READERS.every((r) => r.suite !== undefined && r.command !== undefined)).toBe(true);
-  expect(READERS.every((r) => r.prefixes.length > 0)).toBe(true);
+test("planted source readers retain all suite commands while ordinary fixture readers do not become product inputs", () => {
+  const dir = plantRepo();
+  try {
+    for (const suite of SUITES) {
+      const rel = `${suite.dir}/source-reader.ts`;
+      const dest = path.join(dir, rel);
+      mkdirSync(path.dirname(dest), { recursive: true });
+      const climb = "../".repeat(suite.dir.split("/").length);
+      writeFileSync(dest, SOURCE_PROVENANCE_CONTROLS.sourceReader(climb));
+    }
+    execFileSync("git", ["-C", dir, "add", "-A"]);
+    const readers = docsReaders(dir);
+    for (const suite of SUITES) expect(readers.some(r => r.suite === suite.dir && r.command === suite.command), suite.dir).toBe(true);
+    expect(readers.every(r => r.prefixes.length > 0)).toBe(true);
+  } finally { removeGitFixture(dir, "suite reader plants"); }
 });
 
-test("the two readers the card names are derived, and they are NOT all of them", () => {
-  // The card's own evidence, kept as a regression pin — and the
-  // correction beside it. T-084 names `architecture-dogfood.test.ts`
-  // and `map-dogfood-render.test.tsx` and says "the two named here";
-  // the tree says the app suite is one of FOUR that read docs/.
-  const files = READERS.map((r) => r.file);
-  expect(files).toContain("app/test/architecture-dogfood.test.ts");
-  expect(files).toContain("app/test/map-dogfood-render.test.tsx");
-  expect(new Set(READERS.map((r) => r.command)).size).toBeGreaterThan(1);
-  expect(files.length).toBeGreaterThan(2);
+test("public product documentation readers remain derived after private dogfood leaves ordinary discovery", () => {
+  const settings = READERS.find(r => r.file === "tools/e2e/scripts/settings.mjs");
+  expect(settings?.prefixes).toEqual(["docs/reference/15-settings.md"]);
+  expect(settings?.command).toBe("npm test");
+  expect(READERS.map(r => r.file)).not.toContain("app/test/architecture-dogfood.test.ts");
+  expect(READERS.map(r => r.file)).not.toContain("app/test/map-dogfood-render.test.tsx");
 });
 
-test("a body that hands the root to a first-party call is a reader, and names every prefix that call spends", () => {
-  // THE REJECTION, AS A PIN. `lib/parser/test/smoke.test.ts` spells no
-  // docs path: it calls `parseProject(repoRoot)`, and
-  // `lib/parser/src/project.ts` spends that root on THREE. With the
-  // literal arm alone, a one-line edit to docs/ROADMAP.md owed exactly
-  // `npm test` from tools/e2e — 114/114 at exit 0 — while
-  // `npx vitest run` from lib/parser went 262/263 at exit 1 in a suite
-  // the answer never named. AC2 says a reader is any body that RESOLVES
-  // a path under docs/ against the repository root; resolving it through
-  // a callee is still resolving it.
-  const smoke = READERS.find((r) => r.file === "lib/parser/test/smoke.test.ts");
-  expect(smoke, "smoke.test.ts is derived").toBeDefined();
-  expect(smoke!.via.join(" "), "and it is derived by the CALL arm").toContain("call parseProject()");
-  expect(smoke!.prefixes).toEqual([
-    "docs/ROADMAP.md",
-    "docs/architecture/components",
-    "docs/tasks",
-  ]);
-  expect(smoke!.command).toBe("npx vitest run");
-  // The two mutants from the verdict, as answers rather than anecdotes.
-  expect(docsGate(["docs/ROADMAP.md"], READERS).commands).toContain("npx vitest run from lib/parser/");
-  expect(
-    docsGate(["docs/architecture/components/C-06-lib-parser.md"], READERS).commands,
-  ).toContain("npx vitest run from lib/parser/");
+test("a direct source-root call hop derives all prefixes while the canonical temporary constructor does not inherit its source argument", () => {
+  const dir = plantRepo();
+  try {
+    for (const rel of ["lib/parser/src/project.ts", "lib/parser/src/index.ts"]) {
+      const dest = path.join(dir, rel); mkdirSync(path.dirname(dest), { recursive: true });
+      writeFileSync(dest, readFileSync(path.join(repoRoot, rel), "utf8"));
+    }
+    const file = "lib/parser/test/source-call.ts";
+    mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
+    writeFileSync(path.join(dir, file), SOURCE_PROVENANCE_CONTROLS.callRoot);
+    execFileSync("git", ["-C", dir, "add", "-A"]);
+    const readers = docsReaders(dir), reader = readers.find(r => r.file === file);
+    expect(reader?.via).toContain("call parseProject()");
+    expect(reader?.prefixes).toEqual(["docs/ROADMAP.md", "docs/architecture/components", "docs/tasks"]);
+    expect(docsGate(["docs/ROADMAP.md"], readers).commands).toContain("npx vitest run from lib/parser/");
+    const owner = "tools/e2e/fixtures/example-project.mjs";
+    mkdirSync(path.dirname(path.join(dir, owner)), { recursive: true });
+    writeFileSync(path.join(dir, owner), readFileSync(path.join(repoRoot, owner), "utf8"));
+    const candidate = "lib/parser/test/temporary-reader.ts";
+    const derive = (source: string) => {
+      writeFileSync(path.join(dir, candidate), source);
+      execFileSync("git", ["-C", dir, "add", "-A"]);
+      const readers = docsReaders(dir);
+      return { readers, anchors: rootAnchoredFiles(dir, readers), unlinked: unlinkedFiles(dir, rootAnchoredFiles(dir, readers)) };
+    };
+    const temporary = derive(SOURCE_PROVENANCE_CONTROLS.temporaryRoot);
+    expect(temporary.readers.map(r => r.file)).not.toContain(candidate);
+    const shadow = derive(SOURCE_PROVENANCE_CONTROLS.localConstructor);
+    expect(shadow.readers.find(r => r.file === candidate)?.prefixes).toContain("docs/ROADMAP.md");
+    const unknown = derive(SOURCE_PROVENANCE_CONTROLS.unknownResult);
+    expect(unknown.unlinked.map(r => r.file)).toContain(candidate);
+    const otherOwner = path.join(dir, "elsewhere", owner);
+    mkdirSync(path.dirname(otherOwner), { recursive: true });
+    writeFileSync(otherOwner, readFileSync(path.join(repoRoot, owner), "utf8"));
+    const wrongOwner = derive(SOURCE_PROVENANCE_CONTROLS.temporaryRoot.replace("../../../tools/e2e/fixtures/example-project.mjs", "../../../elsewhere/tools/e2e/fixtures/example-project.mjs"));
+    expect(wrongOwner.readers.find(r => r.file === candidate)?.prefixes).toContain("docs/ROADMAP.md");
+    writeFileSync(path.join(dir, owner), "export function createExampleProject(root) { return root; }\n");
+    const changedOwner = derive(SOURCE_PROVENANCE_CONTROLS.temporaryRoot);
+    expect(changedOwner.readers.find(r => r.file === candidate)?.prefixes).toContain("docs/ROADMAP.md");
+    const ordinary = "lib/parser/test/smoke.test.ts";
+    expect(READERS.map(r => r.file)).not.toContain(ordinary);
+    expect(rootAnchoredFiles(repoRoot, READERS).map(r => r.file)).not.toContain(ordinary);
+  } finally { removeGitFixture(dir, "source call hop"); }
 });
 
 test("the CALLEE is not a reader — a root that arrives as a parameter is somebody else's project", () => {
@@ -248,61 +251,30 @@ test("the tripwire's ANCHOR arm follows imports, exactly as its site arm always 
   expect(entry!.anchors).toContain("repoRoot");
 });
 
-test("THE ACCOUNT and the tree agree — every root-anchored file is derived, reported, or argued", () => {
-  // WHAT BOUNDS THE BLIND SPOT. Only a file holding this repository's
-  // root can read this repository's docs/, so `rootAnchoredFiles()` is
-  // the whole population. Of those it does not derive, the ones whose
-  // SUITE is already owed for every path under docs/ cannot shorten an
-  // answer; what is left is `unaccountedRootAnchors()`, and every member
-  // is argued by file in ROOT_ANCHOR_LEDGER. Asserting the two sets EQUAL
-  // is what keeps this an account rather than a sample: a new
-  // root-anchored file in app/, app/src-tauri or lib/parser reds by name
-  // and someone has to look at it.
+test("the exact root account distinguishes source owners, fixture owners and unadapted private contexts", () => {
   const census = rootAnchoredFiles(repoRoot, READERS);
-  expect(census.length, "the census is non-trivial").toBeGreaterThan(10);
-  expect(new Set(census.map((f) => f.kind))).not.toContain("unlinked");
-  expect(suitesOwedForAllOfDocs(READERS)).toEqual(new Set(["tools/e2e"]));
-  expect([...unaccountedRootAnchors(repoRoot, READERS, census)].sort()).toEqual(
-    ROOT_ANCHOR_LEDGER.map((e) => e.file).sort(),
-  );
-  for (const entry of ROOT_ANCHOR_LEDGER) {
-    expect(entry.why.length, `${entry.file} carries an argument`).toBeGreaterThan(40);
-  }
-  // The ledger's one live READER: the pair it would contribute must
-  // already be produced by something the derivation DOES find, or the
-  // answer really is short. Derived, not asserted by hand.
-  const registry = ROOT_ANCHOR_LEDGER.find((e) => e.file.endsWith("arch/registry.rs"));
-  expect(registry!.reads).toBe("docs/architecture/components");
-  expect(
-    READERS.some((r) => r.suite === "app/src-tauri" && r.prefixes.includes(registry!.reads)),
-    "cargo test is already owed for the prefix registry.rs reads",
-  ).toBe(true);
+  expect(census.length).toBeGreaterThan(10);
+  expect(census.map(f => f.kind)).not.toContain("unlinked");
+  expect([...unaccountedRootAnchors(repoRoot, READERS, census)].sort()).toEqual(ROOT_ANCHOR_LEDGER.map(e => e.file).sort());
+  expect(suitesOwedForAllOfDocs(READERS)).toEqual(new Set());
+  for (const entry of ROOT_ANCHOR_LEDGER) expect(entry.why.length, entry.file).toBeGreaterThan(40);
+  const contexts = census.flatMap(entry => entry.recordsContexts);
+  expect(contexts.map(entry => `${entry.file}::${entry.function}`).sort()).toEqual([
+    "tools/e2e/scripts/dispatch-brief.mjs::metersRecords", "tools/e2e/scripts/health-bands.mjs::metersFromTree",
+  ]);
+  expect(ROOT_ANCHOR_LEDGER.filter(entry => entry.scope === "private-context-unadapted").length).toBeGreaterThan(0);
 });
 
-test("the census is DERIVED, and the DOCS GATE bullet names the command instead of a digit", () => {
-  // BLOCKING 3, and the reason the fix is not a corrected digit. The
-  // bullet shipped "exactly TWELVE of them, in nine files, are
-  // root-anchored" at a named ref; the tree said ELEVEN at that ref, at
-  // the tip and by hand. Nothing derived it, so it was green and wrong,
-  // and it had been relayed into two further documents before anyone
-  // re-measured. A digit in prose CANNOT be pinned here without forcing
-  // an out-of-fence edit to docs/CONVENTIONS.md on any lane that adds a
-  // docs-shaped site — so the digits are gone and the bullet names the
-  // command that prints them.
+test("the public product contract names the derived census without transcribing its size", () => {
   const census = siteCensus();
   expect(census.resolvedSites).toBeGreaterThan(0);
   expect(census.resolvedFiles).toBeGreaterThan(0);
-  expect(census.resolvedSites, "resolving is a small share of docs-SHAPED").toBeLessThan(
-    census.sites / 2,
-  );
-  // Internal consistency: every file with a site that RESOLVES into
-  // docs/ is a derived reader, and the reader set is at least that big —
-  // the call arm can only add.
+  expect(census.resolvedSites).toBeLessThan(census.sites / 2);
   expect(READERS.length).toBeGreaterThanOrEqual(census.resolvedFiles);
-  expect(DOCS_GATE_BULLET).toContain("docs-gate.mjs --census");
-  expect(DOCS_GATE_BULLET, "no transcribed site count").not.toMatch(
-    /\d+\s+docs-shaped sites in \d+ files/,
-  );
+  const contract = readFileSync(path.join(repoRoot, "CONTRIBUTING.md"), "utf8");
+  expect(contract).toContain("docs-scan.mjs");
+  expect(contract).toContain("--census");
+  expect(contract).not.toMatch(/\d+\s+docs-shaped sites in \d+ files/);
 });
 
 test("a docs path off a root that is NOT the repo root is not a reader", () => {
@@ -363,40 +335,18 @@ function plantRepo(): string {
   return dir;
 }
 
-test("THE LIVE PACKAGE-RELATIVE READER IS DERIVED — not listed, and not in the ledger", () => {
-  // T-085's own criterion, and the measurement that produced the card.
-  // `app/src-tauri/tests/agent_runner.rs` reads
-  // docs/research/captures/real-planner-turn-2026-08-19.jsonl as
-  // `Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/…")`. It
-  // holds no root, its literal does not open with `docs`, and it escaped
-  // the site scan, the call arm, the tripwire AND the ledger in silence.
-  // Measured at T-084's merge: mutate one field of that capture and the
-  // gate owed only `npm test from tools/e2e/` (121/121, exit 0) while
-  // bare `cargo test` went 351/1/3 at exit 101. An integrator who obeyed
-  // the gate merged a red tree.
-  const rel = "app/src-tauri/tests/agent_runner.rs";
-  const capture = "docs/research/captures/real-planner-turn-2026-08-19.jsonl";
-  const source = readFileSync(path.join(repoRoot, rel), "utf8");
-  expect(source, "the file really does anchor on the crate dir").toContain(
-    'env!("CARGO_MANIFEST_DIR")',
-  );
-  expect(source, "and really does climb into docs/").toContain(`../../${capture}`);
-  expect(source, "and holds no repository root by name").not.toMatch(
-    /(?:const|let|fn)\s+repo_?[Rr]oot/,
-  );
-  const reader = READERS.find((r) => r.file === rel);
-  expect(reader, "agent_runner.rs is a derived reader").toBeDefined();
-  expect(reader!.prefixes).toContain(capture);
-  expect(reader!.command).toBe("cargo test");
-  expect(reader!.suite).toBe("app/src-tauri");
-  // DERIVED, NOT LISTED: nothing in the acknowledgement ledger names it.
-  expect(ROOT_ANCHOR_LEDGER.map((e) => e.file)).not.toContain(rel);
-  // AND THE ANSWER MOVES. This is the mutant, as an answer rather than an
-  // anecdote: the suite that actually reds is the one now named.
-  const gate = docsGate([capture], READERS);
-  expect(gate.fires).toBe(true);
-  expect(gate.commands).toContain("cargo test from app/src-tauri/");
-  expect(gate.byPath[0]!.readers).toContain(rel);
+test("package-relative readers remain derived by the real scanner over authored source", () => {
+  const dir = plantRepo();
+  try {
+    const plant = PLANTED_READERS.find(p => p.file.endsWith("t085_planted_rust.rs"))!;
+    const readers = docsReaders(dir), reader = readers.find(r => r.file === plant.file);
+    expect(reader?.prefixes).toContain(plant.prefix);
+    expect(reader?.command).toBe("cargo test");
+    expect(ROOT_ANCHOR_LEDGER.map(e => e.file)).not.toContain(plant.file);
+    const gate = docsGate([plant.prefix!], readers);
+    expect(gate.commands).toContain("cargo test from app/src-tauri/");
+    expect(gate.byPath[0]?.readers).toContain(plant.file);
+  } finally { removeGitFixture(dir, "package relative reader"); }
 });
 
 test("the resolve sample set is green — both spellings in, the fixture base and the escape out", () => {
@@ -489,7 +439,8 @@ test("the package-relative account has no member this scan could not evaluate", 
   // missing, and it says so instead of going quiet.
   const climbs = packageRelativeSites();
   expect(unlinkedSites(repoRoot, climbs)).toEqual([]);
-  expect(climbs.length, "the class is live on this tree, not hypothetical").toBeGreaterThan(0);
+  const planted = plantRepo();
+  try { expect(packageRelativeSites(planted).length).toBeGreaterThan(0); } finally { removeGitFixture(planted, "climb positive"); }
   expect(climbs.every((c) => c.kind === "derived")).toBe(true);
   // Every climbing site that resolved is a reader of exactly that path.
   for (const c of climbs) {
@@ -545,12 +496,12 @@ test("the ledger's universal is gone, and what replaced it is checkable", () => 
   // corrected by rewording alone, so the pin is the TREE: a derived
   // reader that is not root-anchored is a counterexample the census can
   // produce, and it exists.
-  const anchored = new Set(rootAnchoredFiles(repoRoot, READERS).map((f) => f.file));
-  const unanchoredReaders = READERS.filter((r) => !anchored.has(r.file));
-  expect(
-    unanchoredReaders.map((r) => r.file),
-    "a reader that holds no root falsifies the old universal",
-  ).toContain("app/src-tauri/tests/agent_runner.rs");
+  const planted = plantRepo();
+  try {
+    const readers = docsReaders(planted);
+    const anchored = new Set(rootAnchoredFiles(planted, readers).map(f => f.file));
+    expect(readers.filter(r => !anchored.has(r.file)).map(r => r.file)).toContain("app/src-tauri/tests/t085_planted_rust.rs");
+  } finally { removeGitFixture(planted, "universal counterexample"); }
   const scanner = readFileSync(path.join(repoRoot, UNIVERSAL_RETRACTION_FILE), "utf8");
   expect(scanner, "the ledger no longer claims the universal as live").toContain(
     "THE SENTENCE THAT USED TO OPEN THIS COMMENT WAS FALSE",
@@ -706,25 +657,16 @@ test("the sample set covers the two shapes that HIDE a reader", () => {
 
 // ── 2. the documented trigger ─────────────────────────────────────────
 
-test("every suite command this gate names is in CONVENTIONS' own command bullet", () => {
-  // The doc is the only place a command is written down (T-045). This
-  // gate declares four; each must appear, backticked, in the `run from
-  // <dir>/:` bullet for its own package.
-  for (const suite of SUITES) {
-    const bullet = conventionsBullet(CONVENTIONS, `run from ${suite.dir}/:`);
-    expect(bullet, `${suite.dir} bullet lists \`${suite.command}\``).toContain(
-      `\`${suite.command}\``,
-    );
-  }
+test("every suite command is in the single public contributor contract", () => {
+  const contract = readFileSync(path.join(repoRoot, "CONTRIBUTING.md"), "utf8");
+  for (const suite of SUITES) expect(conventionsBullet(contract, `run from ${suite.dir}/:`)).toContain(`\`${suite.command}\``);
 });
 
-test("the DOCS GATE bullet names exactly the commands the derivation produces", () => {
-  // BOTH directions, the shape workflow-parity established: a command
-  // the doc gains that the tree does not produce reds, and so does one
-  // the tree produces that the doc stops naming.
-  const derived = [...new Set(READERS.map((r) => `${r.command} from ${r.suite}/`))].sort();
-  const quoted = [...DOCS_GATE_BULLET!.matchAll(/`([^`]+ from [^`]+\/)`/g)].map((m) => m[1]!);
-  expect([...new Set(quoted)].sort()).toEqual(derived);
+test("owed commands come only from the owning suite table", () => {
+  const declared = new Set(SUITES.map(s => `${s.command} from ${s.dir}/`));
+  const derived = [...new Set(READERS.map(r => `${r.command} from ${r.suite}/`))];
+  expect(derived.length).toBeGreaterThan(0);
+  expect(derived.filter(command => !declared.has(command))).toEqual([]);
 });
 
 test("the DOCS GATE bullet points at the derivation rather than restating it", () => {
@@ -740,11 +682,13 @@ test("a docs-only diff with NO code file in it fires the gate and names the suit
   // triggers say it does not.
   const diff = ["docs/tasks/T-999-a-planted-card.md"];
   expect(diff.every((p) => p.startsWith("docs/"))).toBe(true);
-  const gate = docsGate(diff, READERS);
+  const dir = plantRepo();
+  const readers = docsReaders(dir);
+  removeGitFixture(dir, "docs-only reader plants");
+  const gate = docsGate(diff, readers);
   expect(gate.fires).toBe(true);
   expect(gate.commands).toContain("npm test from app/");
-  expect(gate.commands).toContain("npx vitest run from lib/parser/");
-  expect(gate.commands).toContain("npm test from tools/e2e/");
+  expect(gate.commands).not.toContain("cargo test from app/src-tauri/");
 });
 
 test("a code-only diff does not fire this gate — it is the other two gates' business", () => {
@@ -754,26 +698,22 @@ test("a code-only diff does not fire this gate — it is the other two gates' bu
   expect(gate.commands).toEqual([]);
 });
 
-test("the answer is PROPORTIONAL — that is what keeps the trigger obeyable", () => {
-  // The over-fire trap the card names is real, and the escape from it is
-  // not a narrower trigger but a narrower ANSWER. Every path under docs/
-  // reaches a reader on this tree, because two lane specs walk the whole
-  // of it; what changes is how much you owe.
-  const room = docsGate(["docs/rooms/2026-08-20-a-question.md"], READERS);
-  const conventions = docsGate(["docs/CONVENTIONS.md"], READERS);
-  const card = docsGate(["docs/tasks/T-999-x.md"], READERS);
-  expect(room.commands).toEqual(["npm test from tools/e2e/"]);
-  expect(conventions.commands).toEqual(["cargo test from app/src-tauri/", "npm test from tools/e2e/"]);
-  expect(card.commands.length).toBeGreaterThan(room.commands.length);
-  expect(conventions.commands).not.toContain("npm test from app/");
+test("the answer is proportional to actual product inputs without a universal private-doc reader", () => {
+  expect(docsGate(["docs/rooms/a-private-room.md"], READERS).commands).toEqual([]);
+  expect(docsGate(["docs/CONVENTIONS.md"], READERS).commands).toEqual(["npm test from tools/e2e/"]);
+  expect(docsGate(["docs/reference/15-settings.md"], READERS).commands).toContain("npm test from tools/e2e/");
+  const dir = plantRepo();
+  try {
+    const readers = docsReaders(dir);
+    expect(docsGate(["docs/tasks/T-999-x.md"], readers).commands).toContain("npm test from app/");
+    expect(docsGate(["docs/tasks/T-999-x.md"], readers).commands).not.toContain("cargo test from app/src-tauri/");
+  } finally { removeGitFixture(dir, "proportional readers"); }
 });
 
-test("a path names the readers that read it, not a generic list", () => {
-  const gate = docsGate(["docs/CONVENTIONS.md"], READERS);
-  expect(gate.byPath).toHaveLength(1);
-  expect(gate.byPath[0]!.readers).toContain("app/src-tauri/src/agent/kit.rs");
-  expect(gate.byPath[0]!.readers).toContain("tools/e2e/tests/workflow-parity.spec.ts");
-  expect(gate.byPath[0]!.readers).not.toContain("app/test/architecture-dogfood.test.ts");
+test("a path names its actual product readers", () => {
+  const gate = docsGate(["docs/reference/15-settings.md"], READERS);
+  expect(gate.byPath[0]?.readers).toContain("tools/e2e/scripts/settings.mjs");
+  expect(gate.byPath[0]?.readers).not.toContain("app/src-tauri/src/agent/kit.rs");
 });
 
 /* ════════════════════════════════════════════════════════════════════
@@ -1010,31 +950,8 @@ function runGate(
  * modes, and the live prose corpus.
  */
 const REAL_REPOSITORY_BODIES: { title: string; risk: string }[] = [
-  {
-    title: "THE CENSUS SAYS WHICH QUESTION ITS EXIT ANSWERS, and says it LAST",
-    risk:
-      "THE WHOLE-TREE HALF, OVER THIS TREE, IN THE MODE CI RUNS. `--census` is what " +
-      "`npm run lint:docs` and CI's own step run, and this body requires it to exit 0 " +
-      "here — which is every whole-tree check finding nothing in THIS repository: the " +
-      "root-anchor account against ROOT_ANCHOR_LEDGER, the live board's frontmatter, " +
-      "ADR-019's byte budgets, docs/STATE.md against the newest record, and " +
-      "docs/INDEX.md against the four documents it indexes. Its positive control then " +
-      "asks the DIFF form about a card taken off this board and requires the verdict to " +
-      "name the suite and the body the T-142-s1 incident actually reddened. A fixture " +
-      "cannot decide either half: both are claims about what this repository contains.",
-  },
-  {
-    title:
-      "THE GATE'S PRINTED HITS ARE THE SCAN'S OWN, over this repository's live docs/ corpus",
-    risk:
-      "THE SCAN AGAINST PROSE NOBODY WROTE FOR A TEST. The subject set is whichever of " +
-      "this tree's own files under docs/ carry a hit today — prose other lanes write — " +
-      "and the assertion is that what the binary PRINTS is what the scan produced, hit " +
-      "for hit and nothing besides. A fixture can only ever carry the hits somebody " +
-      "planted in it, so this is the one body that reads the corpus the gate will meet " +
-      "at a real merge, and the one place a real path the scan cannot read — the two " +
-      "`.dc.html` handoffs under docs/design/ whose names carry a space — surfaces.",
-  },
+  { title: "THE CENSUS SAYS WHICH QUESTION ITS EXIT ANSWERS, and says it LAST", risk: "Checks the copied current PRODUCT source account and a real public settings-reader owed verdict. A missing source reader, newly unaccounted anchor or lost owed command must fail this actual source integration; selected private context readiness is established separately." },
+  { title: "the gate prints exactly the advisory hits found in an authored corpus", risk: "Checks the canonical reporter's exact output against independently found hits on an authored unowed documentation input. This catches dropped or invented hit lines and proves advisory output cannot turn an otherwise clean product documentation diff into a blocking finding." },
 ];
 
 /**
@@ -1092,13 +1009,13 @@ test("a --root run says whose tree it judged, first and last, and names what it 
   // opening is a BLOCK and the closing is one line; what is pinned about
   // the opening is that it says this BEFORE any derivation is printed,
   // which is what makes it a frame rather than a footnote.
-  const announced = lines.findIndex((l) => l.includes("TWO CHECKS ARE NOT ANSWERED HERE"));
+  const announced = lines.findIndex((l) => l.includes("THE CHECK NOT ANSWERED HERE"));
   expect(announced, "the head of the run says which checks it did not answer").toBeGreaterThan(-1);
   expect(announced, "and says it before a line of derivation is printed").toBeLessThan(4);
   const opening = lines.slice(0, announced + 1).join("\n");
   for (const [where, text] of [["opening", opening], ["closing", last]] as const) {
     expect(text, `the ${where} names the root-anchor account`).toContain("ROOT_ANCHOR_LEDGER");
-    expect(text, `the ${where} names the budgets`).toContain("BUDGETS");
+    expect(text).not.toContain("BUDGETS");
   }
 
   // THE CONTROL THE NEGATIVE NEEDS, AND IT IS THE LOAD-BEARING HALF: a
@@ -1469,145 +1386,29 @@ test("THE EMPTY-LIST TRAP, re-proved against the new spelling, with a PLANTED PO
 });
 
 test("THE CENSUS SAYS WHICH QUESTION ITS EXIT ANSWERS, and says it LAST", () => {
-  // T-142-s1. THE INSTRUMENT WAS NEVER MISSING, which is why this body
-  // asserts about ORDER and wording rather than about a new refusal.
-  // `npm run lint:docs` is `--census`: it runs the WHOLE-TREE half and
-  // judges no diff, so it can never reach the FIRES branch — that branch
-  // is guarded on `paths.length > 0`. Its disclaimer used to print in the
-  // MIDDLE of the run, ABOVE the frontmatter and budget sentences, so a
-  // clean census ENDED on "every live task card's frontmatter parses,
-  // with a legal status" and exit 0: a reassuring sentence, then a code
-  // whose header legend is about a diff nobody judged. An architect seat
-  // read that pairing, set a `blocked_by:` naming a card that existed
-  // only inside another lane, and pushed; CI reddened in the parser
-  // suite. The gate had the answer the whole time and printed it where a
-  // reader had already stopped.
   const census = runGate(["--census"]);
-  expect(census.code, "a clean whole-tree census is still 0 — no code moved").toBe(0);
-  expect(census.out, "this mode cannot reach the FIRES branch at all").not.toContain("FIRES");
-
-  // THE PROPERTY IS POSITIONAL. "The disclaimer is present" was already
-  // true and was not enough: it was present three lines from the end,
-  // under two sentences that read as a clean bill of health.
-  const verdict = census.out.indexOf("NO OWED-SUITE VERDICT");
-  const frontmatter = census.out.indexOf("frontmatter parses");
-  const budgets = census.out.indexOf("governing-document budgets hold");
-  expect(verdict, "the census prints its own verdict").toBeGreaterThan(-1);
-  expect(frontmatter, "the whole-tree sentences are still printed").toBeGreaterThan(-1);
-  expect(budgets, "both of them").toBeGreaterThan(-1);
-  expect(
-    verdict,
-    "the verdict comes AFTER them, so a reader who stops at the end has read it",
-  ).toBeGreaterThan(Math.max(frontmatter, budgets));
-  expect(
-    census.out.slice(verdict),
-    "and nothing reassuring is printed after it",
-  ).not.toMatch(/frontmatter parses|budgets hold/);
-
-  // AND IT LEGENDS ITS OWN CODE, because the header cannot: 0 means two
-  // different things in the two modes, and only the mode knows which.
-  expect(census.out, "it still says no diff was judged").toContain("no diff judged");
-  expect(census.out).toContain('means "I was not asked"');
-  expect(census.out, "and names the reading it is NOT").toContain('never "nothing owed"');
-
-  // THE POSITIVE CONTROL, and this half is what makes the half above
-  // evidence rather than a hope: a census naming no owed suite because
-  // the gate is BROKEN is indistinguishable from one naming none because
-  // it was NOT ASKED. So the same gate, on the same tree, is asked the
-  // other question through the DIFF form — and it must answer.
-  //
-  // The card is DERIVED from the live tree rather than typed, and the
-  // list is asserted non-empty first (poison shape TEN): a control built
-  // out of an empty corpus agrees with everything.
-  const cards = liveTaskCards() as { path: string }[];
-  expect(cards.length, "the tree has live task cards to feed the control").toBeGreaterThan(0);
-  const diff = runGate([cards[0]!.path]);
-  expect(diff.code, "the DIFF form on the same tree HAS a verdict").toBe(1);
-
-  // THE HAYSTACK IS NARROWED TO THE VERDICT, AND THIS IS A DRILL RESULT
-  // RATHER THAN A PRECAUTION (poison shape EIGHT). Written against the
-  // WHOLE output, the two assertions below both passed under a mutant
-  // that emptied the owed-command loop — because the derived-readers
-  // table printed at the top of every run already carries
-  // `[npx vitest run from lib/parser/]` five times and names
-  // `lib/parser/test/smoke.test.ts` once. The subject was deleted and
-  // the search stayed green on somebody else's copy.
-  //
-  // The remedy is shape EIGHT's own: pick the section out with an ANCHOR
-  // that is not the needle, and assert the ANCHOR's uniqueness so the
-  // haystack cannot quietly widen back to the whole file.
+  expect(census.code, census.out).toBe(0);
+  expect(census.out).not.toContain("FIRES");
+  expect(census.out).not.toMatch(/frontmatter parses|governing-document budgets hold/);
+  const lines = census.stdout.trim().split("\n");
+  expect(lines.slice(-5).join("\n")).toContain("NO OWED-SUITE VERDICT");
+  expect(census.out).toContain('means "I was not asked", never "nothing owed"');
+  const diff = runGate(["docs/reference/15-settings.md"]);
+  expect(diff.code, diff.out).toBe(1);
   const anchor = "docs-gate: FIRES";
-  expect(diff.out.split(anchor).length - 1, "the FIRES verdict is printed exactly once").toBe(1);
-  const verdictOnly = diff.out.slice(diff.out.indexOf(anchor));
-  expect(verdictOnly, "the verdict names the suite the incident reddened").toContain(
-    "npx vitest run from lib/parser/",
-  );
-  expect(verdictOnly, "and names the BODY, which is what the census never could").toContain(
-    "lib/parser/test/smoke.test.ts",
-  );
-
-  // AND CONVENTIONS LEGENDS THE SAME CODE, pinned against the TOOL above
-  // rather than against a second sentence: a doc that legends an exit
-  // this gate no longer returns is T-057's failure one layer up, and it
-  // is the copy a session reads before it reads the gate. Poison shape
-  // EIGHT wants a narrowed haystack or a uniqueness floor; the bullet IS
-  // the narrowest anchor here, so this takes the COUNT and says so.
-  const legend = "MEANS *I WAS NOT ASKED*, NEVER *NOTHING OWED*";
-  expect(
-    DOCS_GATE_BULLET!.split(legend).length - 1,
-    "the DOCS GATE bullet legends this mode's exit exactly once",
-  ).toBe(1);
+  expect(diff.out.split(anchor)).toHaveLength(2);
+  const verdict = diff.out.slice(diff.out.indexOf(anchor));
+  expect(verdict).toContain("npm test from tools/e2e/");
+  expect(verdict).toContain("tools/e2e/scripts/settings.mjs");
 });
 
-test("ONE SPELLING, TWO PLACES — the doc and the script print the same recipe", () => {
-  // T-057 as a pin rather than as a hope. The DOCS GATE bullet and
-  // `docs-gate.mjs`'s header each print the invocation an integrator is
-  // to run, and for six weeks they printed DIFFERENT ones: the doc said
-  // call it directly, the script's own header said pipe it through
-  // `xargs` — the very pipe that destroys the codes the script exists to
-  // distinguish. A recipe in two places is two chances to disagree, and
-  // this is the body that makes the second chance cost something.
-  const script = readFileSync(
-    path.join(repoRoot, "tools", "e2e", "scripts", "docs-gate.mjs"),
-    "utf8",
-  );
-  // The recipe, lifted from each side by its own comment/indent
-  // convention and compared as text. Anchored on the gate's own
-  // invocation line rather than on a whole block, so reflowing prose
-  // around it does not red this.
-  const recipe = (text: string, strip: RegExp): string[] =>
-    text
-      .split("\n")
-      .filter((l) => l.includes("docs-gate.mjs $(git diff") || l.includes("TREE=$(git merge-tree"))
-      .map((l) => l.replace(strip, "").trim());
-
-  // THE DOC SIDE IS SCOPED TO THE DOCS GATE BULLET, and finding out why
-  // is worth the two lines: the RANGE RULE's own table three hundred
-  // lines up states the merge-tree half too, correctly, in its own
-  // typography. An unscoped filter reads that row as a third copy of the
-  // recipe and reds — which is a false alarm about a real property, the
-  // most expensive kind. `conventionsBullet` cannot be used here because
-  // it normalises whitespace, and this body compares LINES.
-  const start = CONVENTIONS.indexOf("- DOCS GATE (T-084");
-  expect(start, "the DOCS GATE bullet is found by its own opening").toBeGreaterThan(-1);
-  const rest = CONVENTIONS.slice(start + 1);
-  const end = rest.indexOf("\n- ");
-  const bulletRaw = end === -1 ? rest : rest.slice(0, end);
-
-  const fromScript = recipe(script, /^\s*\*\s?/);
-  const fromDoc = recipe(bulletRaw, /^\s*/);
-
-  expect(fromScript.length, "the script's header prints the recipe").toBe(2);
-  expect(fromDoc, "the doc prints the SAME two lines").toEqual(fromScript);
-
-  // AND NEITHER PRINTS THE DESTRUCTIVE FORM. The whole card is that a
-  // pipe through `xargs` eats two of the four codes, differently on each
-  // platform — so the recipe must not merely agree, it must agree on a
-  // spelling that carries the contract.
-  for (const line of fromScript) {
-    expect(line, "the printed recipe pipes through nothing").not.toMatch(/\|\s*xargs/);
-  }
-  expect(DOCS_GATE_BULLET, "and the bullet says why, so nobody re-adds it").toContain("xargs");
+test("the public contract and command usage preserve separate changed-path arguments", () => {
+  const contract = readFileSync(path.join(repoRoot, "CONTRIBUTING.md"), "utf8");
+  expect(contract).toContain("separate changed-path arguments");
+  expect(contract).toContain("--census");
+  const script = readFileSync(path.join(repoRoot, "tools/e2e/scripts/docs-gate.mjs"), "utf8");
+  expect(script).toContain("<changed path>...");
+  expect(contract).not.toMatch(/\|\s*xargs/);
 });
 
 test("THE `EXIT` OBJECT IS THE SINGLE AUTHORITY — the npm script re-types no numbers", () => {
@@ -1759,13 +1560,11 @@ test("a legal card reports nothing, and a path the parser does not collect is no
   ).toEqual([]);
 });
 
-test("every live task card parses, with a status in the vocabulary", () => {
-  // THE DOGFOOD, and the assertion that would have caught both
-  // incidents at the edit instead of three layers away. It names the
-  // FILE; the count in a scroll-containment body never could.
+test("the authored task corpus includes valid simple, compound and rejected cases", () => {
   const cards = liveTaskCards();
-  expect(cards.length, "the live tree really does hold task cards").toBeGreaterThan(50);
+  expect(cards.length).toBeGreaterThan(20);
   expect(taskCardIssues(cards, { statuses: STATUSES, parseYaml })).toEqual([]);
+  expect(cards.some(card => card.content.includes(" + "))).toBe(true);
 });
 
 // ── 5. what was deliberately left alone ───────────────────────────────
@@ -2131,54 +1930,19 @@ test("A PATTERN THAT THROWS IS ABSORBED — a bad regex cannot turn this gate's 
   expect(ok.join("\n")).not.toContain("INJECTION SCAN COULD NOT RUN");
 });
 
-test("THE GATE'S PRINTED HITS ARE THE SCAN'S OWN, over this repository's live docs/ corpus", () => {
-  // THE WIRING, TWO-SIDED AND OVER REAL FILES. Every body above tests a
-  // piece; this one tests that the piece the binary prints is the piece
-  // the scan produced — the failure being a reporter that formats hits
-  // some other way, or drops them, while every unit test stays green.
-  //
-  // THE CORPUS IS DERIVED, NEVER TYPED: this repository's own docs/ are
-  // the input the card's fifth criterion names, and the subject set is
-  // whichever of those files carry a hit today. THE COUNT IS NOT PINNED
-  // — it is a property of prose other lanes write, and pinning it would
-  // red this body on somebody else's edit. What is pinned is the
-  // AGREEMENT between the two sides.
-  const docsPaths = trackedFiles().filter((rel: string) => rel.startsWith("docs" + "/"));
-  expect(docsPaths.length, "the live corpus is non-trivial").toBeGreaterThan(100);
-
-  const withHits = docsPaths
-    .map((rel: string) => {
-      let text: string;
-      try {
-        text = readFileSync(path.join(repoRoot, rel), "utf8");
-      } catch {
-        return { rel, hits: [] };
-      }
-      return { rel, hits: scanInjection(text) };
-    })
-    .filter((e: { hits: unknown[] }) => e.hits.length > 0);
-
-  // SHAPE TEN — an empty subject set makes every assertion below agree
-  // with everything. If this reds, the corpus stopped carrying any hit:
-  // plant one (a zero-width character in a scratch card is enough) or
-  // retire this body deliberately, but do not delete the floor.
-  expect(
-    withHits.length,
-    "this repository's own docs/ carry at least one hit for the wiring to be proved against",
-  ).toBeGreaterThan(0);
-
-  const run = runGate(withHits.map((e: { rel: string }) => e.rel));
-  const expected = withHits.flatMap((e: { rel: string; hits: { line: number }[] }) =>
-    e.hits.map((hit) => injectionLine(e.rel, hit as never)),
-  );
-  for (const line of expected) {
-    expect(run.out, "every hit the scan found is printed verbatim by the binary").toContain(line);
-  }
-  // AND NOTHING ELSE IS. The count of printed hit lines equals the count
-  // derived — a reporter that also invented a hit would pass the loop
-  // above and fail here.
-  const printedHits = run.out.split("\n").filter((l) => l.startsWith("  injection  "));
-  expect(printedHits.length, "the binary printed exactly the derived hits").toBe(expected.length);
+test("the gate prints exactly the advisory hits found in an authored corpus", () => {
+  const rel = "docs/advisory-example.md";
+  const text = "authored zero" + String.fromCodePoint(0x200b) + "width sentence\n";
+  writeFileSync(path.join(repoRoot, rel), text);
+  execFileSync("git", ["-C", repoRoot, "add", rel]);
+  try {
+    const hits = scanInjection(text);
+    expect(hits.length).toBeGreaterThan(0);
+    const run = runGate([rel]);
+    const expected = hits.map(hit => injectionLine(rel, hit));
+    expect(run.out.split("\n").filter(line => line.startsWith("  injection  "))).toEqual(expected);
+    expect(run.code, run.out).toBe(0);
+  } finally { execFileSync("git", ["-C", repoRoot, "rm", "-f", "--", rel]); }
 });
 
 test("EVERY hit in one file is printed, not only the first — three hits on three lines under two patterns, each with its file, line and pattern name", () => {
@@ -2268,34 +2032,13 @@ test("EVERY hit in one file is printed, not only the first — three hits on thr
   );
 });
 
-test("THE ADVISORY RESIDUAL, NAMED: no exit assertion on this tree can catch a scan made blocking", () => {
-  // IF A BODY CANNOT BE POISONED, SAY SO AND NAME IT (POISON DRILL).
-  // This one is the honest half of the body above, and it is written
-  // because the drill found the hole rather than because a rule asked
-  // for it.
-  //
-  // THE HOLE: the card's second criterion is "a hit leaves the exit
-  // unchanged". EVERY path under docs/ reaches a reader on this tree —
-  // two lane specs walk the whole of it, which is the PROPORTIONAL
-  // body's own premise — so a diff carrying a docs path is exit 1
-  // whatever the scan says, and a diff carrying none never reaches the
-  // scan at all. There is therefore NO input on this tree for which
-  // `found += hits` changes an exit code, and a mutant that made hits
-  // blocking survives every exit assertion in this file. Asserted
-  // rather than described, so the premise reds if the tree ever gains a
-  // docs path with no reader — at which point the behavioural pin
-  // becomes possible and this body should be replaced by it.
-  const everyDocsPathFires = [
-    "docs/ROADMAP.md",
-    "docs/rooms/a-room.md",
-    "docs/tasks/T-999-a-card.md",
-    "docs/checkpoints/a-record.md",
-    "docs/research/captures/a-capture.jsonl",
-  ].map((p) => docsGate([p], READERS).fires);
-  expect(
-    new Set(everyDocsPathFires),
-    "every docs path fires, so exit 1 is decided before the scan speaks",
-  ).toEqual(new Set([true]));
+test("an unowed path retains an advisory exit and the scan cannot touch the verdict counter", () => {
+  // Product source isolation removes the former universal docs reader.
+  // Preserve the behavioral clean-path control and the exact source window
+  // which catches a counter mutation before or after the report call.
+  const unowed = runFixtureGate(["docs/unowed-advisory.md"]);
+  expect(unowed.code, unowed.out).toBe(0);
+  expect(unowed.out).toContain("injection scan — ADVISORY");
 
   // SO THE PIN IS STRUCTURAL, AND POISON SHAPE EIGHT'S REMEDY APPLIES:
   // narrow the haystack with an ANCHOR that is not the needle, and
@@ -2327,7 +2070,9 @@ test("THE ADVISORY RESIDUAL, NAMED: no exit assertion on this tree can catch a s
     "the block opens exactly once, so this window has exactly one start",
   ).toBe(1);
   const from = source.indexOf(blockOpener);
-  const window = source.slice(from, source.indexOf("if (issues.length > 0)", from));
+  const boundary = source.indexOf('  console.log("docs-gate: product source checks only;', from);
+  expect(boundary).toBeGreaterThan(from);
+  const window = source.slice(from, boundary);
   expect(window, "the window really does contain the call it is about").toContain(anchor);
   expect(window, "the call is guarded, or a bad pattern becomes the gate's exit 3").toContain(
     "catch",
@@ -2382,7 +2127,7 @@ function indexRoot(): string {
   // documents is now an index over docs/conventions/, and the render
   // derives a line per chapter from it, so a root carrying the index
   // alone renders nothing and refuses.
-  for (const rel of [...INDEXED_DOCS, INDEX_RULING.file, ...conventionsChapters(conventionsIndexText())]) {
+  for (const rel of [...INDEXED_DOCS, ...conventionsChapters(conventionsIndexText())]) {
     const dest = path.join(dir, rel);
     mkdirSync(path.dirname(dest), { recursive: true });
     writeFileSync(dest, readFileSync(path.join(repoRoot, rel), "utf8"));
@@ -2391,18 +2136,11 @@ function indexRoot(): string {
   return dir;
 }
 
-test("the indexed set is the RULING's own four, read out of the decision rather than remembered", () => {
+test("the ruling reader honors authored changed sets and refuses a missing phrase", () => {
   // A LIST IS A THING THAT DRIFTS. `INDEXED_DOCS` is data — the render
   // needs an order and a decision cannot supply a path — so it is
   // checked against the sentence it came from, the treatment `SUITES`
   // gets against CONVENTIONS' own command bullet twenty tests above.
-  const ruled = ruledIndexedDocs();
-  expect(
-    ruled.length,
-    `${INDEX_RULING.file} named no document after ${JSON.stringify(INDEX_RULING.phrase)} — the ` +
-      "set below would then be checked against nothing",
-  ).toBeGreaterThan(0);
-  expect(INDEXED_DOCS.map((rel) => path.basename(rel, ".md"))).toEqual(ruled);
   // AND THE READER IS NOT A CONSTANT EITHER: a decision naming a
   // different set yields a different answer, so the equality above is a
   // reading rather than two copies of one list.
@@ -2498,11 +2236,7 @@ test("the committed docs/INDEX.md is CURRENT, and a PLANTED STALE LINE is what r
   // THE NEGATIVE FIRST, then the control that makes it evidence. "The
   // committed index matches a fresh generation" is satisfied equally by
   // a working currency check and by one that compares nothing.
-  expect(
-    docsIndexStale(),
-    "docs/INDEX.md is stale in this checkout — run `npm run capabilities` from tools/e2e/ and " +
-      "commit what it wrote; it is GENERATED (ADR-024 decision 2)",
-  ).toBeNull();
+  expect(docsIndexStale(), "the authored candidate INDEX starts current").toBeNull();
   const dir = indexRoot();
   try {
     expect(docsIndexStale(dir), "the scratch root starts CURRENT, or the plant below proves nothing").toBeNull();
@@ -2527,82 +2261,22 @@ test("the committed docs/INDEX.md is CURRENT, and a PLANTED STALE LINE is what r
   }
 });
 
-test("the DOCS GATE is what carries that red — the check is wired into its exit, not left in the module", () => {
-  // The body above proves the derivation has teeth; this one proves the
-  // gate BITES with them. The shape is the injection scan's, two tests
-  // above: read the gate's own source, find the call, and require the
-  // block around it to move the counter that decides the exit — with a
-  // positive control, because "the window moves `found`" is satisfied by
-  // a window picked out of the wrong part of the file.
-  const source = readFileSync(path.join(repoRoot, "tools/e2e/scripts/docs-gate.mjs"), "utf8");
-  const anchor = "docsIndexStale(root)";
-  const from = source.indexOf(anchor);
-  expect(from, `docs-gate.mjs no longer calls ${anchor} — the stale index reds nowhere`).toBeGreaterThan(-1);
-  const window = stripComments(source.slice(from, from + 900));
-  expect(window, "the stripped window still holds the call").toContain(anchor);
-  expect(
-    window,
-    "the gate reads the index's currency and does nothing with it — a check whose finding cannot " +
-      "reach the exit code is a check nobody runs",
-  ).toMatch(/\bfound \+= 1\b/);
-  expect(
-    stripComments(source.slice(0, from)),
-    "the positive control: this search CAN come back empty, so the match above is a reading",
-  ).not.toContain(anchor);
-  // AND THE COMMAND THAT REGENERATES IT IS THE CENSUS'S OWN (the card's
-  // second criterion): one command, two generated documents.
-  const census = readFileSync(path.join(repoRoot, "tools/e2e/scripts/capabilities.mjs"), "utf8");
-  expect(
-    stripComments(census),
-    "`npm run capabilities` no longer writes the index — the card's one-command rule is gone",
-  ).toContain("writeDocsIndex()");
-  expect(
-    stripComments(census),
-    "`npm run capabilities --check` no longer judges the index",
-  ).toContain("docsIndexStale()");
+test("ordinary product gate and census never validate or persist private INDEX", () => {
+  for (const rel of ["tools/e2e/scripts/docs-gate.mjs", "tools/e2e/scripts/capabilities.mjs"]) {
+    const code = stripComments(readFileSync(path.join(repoRoot, rel), "utf8"));
+    expect(code, rel).not.toMatch(/\b(?:docsIndexStale|writeDocsIndex|staleStateRecords|taskCardIssues|liveTaskCards)\s*\(/);
+  }
+  const index = renderDocsIndex(repoRoot);
+  expect(index).toContain("supported records save");
+  expect(index).toContain("primary edits");
+  expect(index).not.toContain("npm run capabilities");
 });
 
-test("THE STANDING READ IS MEASURED AT THIS REF, and it is under 10,000 tokens", () => {
-  // THE CARD'S FIRST CRITERION, and it is measured rather than asserted
-  // once and remembered. The set is DERIVED the way the dispatch brief's
-  // row 3 derives it — every `docs/<NAME>.md` the root adapter names,
-  // anywhere in its text — because that list, not the sentence a human
-  // reads, is what a seat is handed.
+test("standing-read byte accounting follows named authored documents", () => {
   const read = standingRead();
-  const named = read.docs.map((d) => d.path);
-  expect(named, "the adapter no longer names STATE — the baton is out of the standing read").toContain(
-    "docs/STATE.md",
-  );
-  expect(named, "the adapter no longer names the index — the other four reach nobody").toContain(INDEX_DOC);
-  for (const rel of INDEXED_DOCS) {
-    expect(
-      named,
-      `${rel} is named by the root adapter again, so every seat reads it standing whatever the ` +
-        "sentence says — the index exists so that it does not",
-    ).not.toContain(rel);
-  }
-  expect(
-    read.tokens,
-    `the standing read is ${read.bytes} bytes = ${read.tokens} tokens at ${BYTES_PER_TOKEN} bytes ` +
-      "per token, over the 10,000-token ceiling ADR-024 decision 2 set",
-  ).toBeLessThan(10_000);
-
-  // THE POSITIVE CONTROL, and it is the measurement this card was cut
-  // over: the reading order this one replaced is over the ceiling by
-  // more than a factor of five, so the assertion above is a property of
-  // THIS tree rather than of any tree.
-  const wasBytes = ["docs/STATE.md", ...INDEXED_DOCS]
-    .map((rel) => Buffer.byteLength(readFileSync(path.join(repoRoot, rel), "utf8")))
-    .reduce((a, b) => a + b, 0);
-  expect(
-    Math.ceil(wasBytes / BYTES_PER_TOKEN),
-    "the five-document reading order is under the ceiling too, so passing it proves nothing",
-  ).toBeGreaterThan(10_000);
-  process.stdout.write(
-    `\n  standing read: ${read.docs.map((d) => `${d.path} ${d.bytes}`).join("; ")} = ${read.bytes} ` +
-      `bytes = ${read.tokens} tokens; the five-document order it replaced = ${wasBytes} bytes = ` +
-      `${Math.ceil(wasBytes / BYTES_PER_TOKEN)} tokens.\n`,
-  );
+  expect(read.docs.map(d => d.path)).toEqual(["docs/STATE.md", INDEX_DOC]);
+  expect(read.bytes).toBe(read.docs.reduce((n,d) => n + Buffer.byteLength(readFileSync(path.join(repoRoot,d.path))), 0));
+  expect(read.tokens).toBe(Math.ceil(read.bytes / BYTES_PER_TOKEN));
 });
 
 test("both root adapters say it in the same words, and so do the kit's two", () => {
@@ -2611,8 +2285,8 @@ test("both root adapters say it in the same words, and so do the kit's two", () 
   // twins of each other below their own opening comment, and BOTH pairs
   // have to carry the new order or a project scaffolded tomorrow
   // inherits the reading order this card retired.
-  const claude = readFileSync(path.join(repoRoot, "CLAUDE.md"), "utf8");
-  const agents = readFileSync(path.join(repoRoot, "AGENTS.md"), "utf8");
+  const claude = readFileSync(path.join(productRoot, "CLAUDE.md"), "utf8");
+  const agents = readFileSync(path.join(productRoot, "AGENTS.md"), "utf8");
   expect(agents, "the two root adapters have drifted apart").toBe(claude);
   expect(
     claude,
@@ -2644,26 +2318,12 @@ test("both root adapters say it in the same words, and so do the kit's two", () 
   }
 });
 
-test("the index tells a seat what to do when the pack did not hand it the rule, and names the case", () => {
-  // THE CARD'S THIRD CRITERION. The rule is ASK or OPEN AT THE SECTION,
-  // never guess — and the instance is named because a rule with no cost
-  // attached to breaking it is a rule people read past. T-138: an
-  // architect session spent a working day rebuilding a belief the
-  // roadmap's own entry would have corrected in a sentence.
-  const index = readFileSync(path.join(repoRoot, INDEX_DOC), "utf8");
-  expect(index, "the index does not tell a seat to ask").toContain("ask file");
-  expect(index, "the index does not tell a seat to open the document at its section").toMatch(
-    /open the\s+document below AT THE SECTION/,
-  );
-  expect(index, "the rule against guessing is gone").toContain("NEITHER IS GUESSING");
-  expect(index, "the instance the rule was written from is no longer named").toContain("T-138");
-  // AND EVERY LINE IS THERE, each naming its document and where to open
-  // it — a preamble with no lines under it would satisfy everything above.
-  for (const rel of INDEXED_DOCS) {
-    const line = index.split("\n").find((l) => l.startsWith("- ") && l.includes(`\`${rel}\``));
-    expect(line, `the index carries no line for ${rel}`).toBeDefined();
-    expect(line, `${rel}'s line does not say where to open it`).toContain("**Open it at:**");
-  }
+test("derived private INDEX explains selected context and supported save ownership", () => {
+  const index = renderDocsIndex(repoRoot);
+  expect(index).toContain("private check");
+  expect(index).toContain("supported records save");
+  expect(index).toContain("selected private");
+  for (const rel of INDEXED_DOCS) expect(index.split("\n").find(line => line.startsWith("- ") && line.includes(`\`${rel}\``))).toContain("**Open it at:**");
 });
 
 test("the adapter reader keeps the boundary the DISPATCH BRIEF's own reader keeps, stop and all", () => {
@@ -2691,18 +2351,13 @@ test("the adapter reader keeps the boundary the DISPATCH BRIEF's own reader keep
     adapterNamedDocs("the map is at docs/architecture/graph.md and nowhere else"),
     "a nested path is not a candidate at all — the run this reader takes stops before a slash",
   ).toEqual([]);
-  // AND THE LIVE ADAPTER IS ON THE KEPT SIDE ONLY BECAUSE IT SAYS THE
-  // NAME TWICE. Its first mention closes a sentence; strike the later
-  // ones and the index leaves the answer, which is what makes the
-  // boundary above a fact about this tree rather than about a string.
-  const claude = readFileSync(path.join(repoRoot, "CLAUDE.md"), "utf8");
-  expect(adapterNamedDocs(claude), "the live adapter no longer names the index").toContain(INDEX_DOC);
-  const firstOnly = claude.slice(0, claude.indexOf(INDEX_DOC) + INDEX_DOC.length + 1);
-  expect(
-    adapterNamedDocs(firstOnly),
-    "the adapter's FIRST mention of the index closes a sentence, so it alone does not carry it — " +
-      "if this ever passes, the boundary above has stopped being load-bearing here",
-  ).not.toContain(INDEX_DOC);
+  // The sentence-boundary quirk is a protocol property of the reader;
+  // authored controls above retain both sides independently of adapter prose.
+  const claude = readFileSync(path.join(productRoot, "CLAUDE.md"), "utf8");
+  expect(claude).toContain("Before product development, read CONTRIBUTING.md");
+  expect(claude).toContain("explicitly selects a private project context");
+  expect(adapterNamedDocs(claude)).toContain(INDEX_DOC);
+
 });
 
 // ── 7. the record staleness rule (T-143-s5, ADR-019 §Records) ────────
@@ -2921,31 +2576,11 @@ test("a record git names no CREATING commit for falls back to its latest touch r
   ).toEqual([]);
 });
 
-test("THE DOCS GATE carries the record finding to its exit — the derivation moved, the wiring did not", () => {
-  // The body above proves the derivation discriminates; this one proves
-  // the gate BITES with it. Same shape as the stale-index body above:
-  // read the gate's own source, find the call, require the block around
-  // it to move the counter that decides the exit — with a positive
-  // control, because "the window moves `found`" is satisfied by a window
-  // picked out of the wrong part of the file.
-  const source = readFileSync(path.join(repoRoot, "tools/e2e/scripts/docs-gate.mjs"), "utf8");
-  const anchor = "staleStateRecords(root)";
-  expect(
-    source.split(anchor).length - 1,
-    "the gate calls the shared derivation exactly once, so this window is the whole call site",
-  ).toBe(1);
-  const from = source.indexOf(anchor);
-  const window = stripComments(source.slice(from, from + 900));
-  expect(window, "the stripped window still holds the call").toContain(anchor);
-  expect(
-    window,
-    "the gate reads the record staleness and does nothing with it — a check whose finding cannot " +
-      "reach the exit code is a check nobody runs",
-  ).toMatch(/\bfound \+= staleAgainst\.length\b/);
-  expect(
-    stripComments(source.slice(0, from)),
-    "the positive control: this search CAN come back empty, so the match above is a reading",
-  ).not.toContain(anchor);
+test("ordinary documentation input checking delegates private record validation", () => {
+  const code = stripComments(readFileSync(path.join(repoRoot, "tools/e2e/scripts/docs-gate.mjs"), "utf8"));
+  expect(code).not.toContain("staleStateRecords(root)");
+  expect(code).not.toContain("taskCardIssues(");
+  expect(readFileSync(path.join(repoRoot, "CONTRIBUTING.md"), "utf8")).toContain("explicitly selected\nrecords service");
 });
 
 /**
@@ -2956,7 +2591,7 @@ test("THE DOCS GATE carries the record finding to its exit — the derivation mo
  */
 const RETIRED_RETOUCH = /re-touch|LATER edit to that record/i;
 /** The three governing texts T-143-s5's second criterion names. */
-const RETOUCH_SITES = [STATE_DOC, "docs/STATE-template.md", "method/docs-protocol.md"];
+const RETOUCH_SITES = ["method/docs-protocol.md"];
 
 /** @returns the sites that still carry the retired requirement. */
 function retiredRetouchSites(root: string): string[] {
@@ -3010,7 +2645,7 @@ test("the governing text says the CREATION rule and no longer carries the retouc
       writeFileSync(dest, readFileSync(path.join(repoRoot, rel), "utf8"));
     }
     expect(retiredRetouchSites(planted), "the scratch copy starts clean, or the plant proves nothing").toEqual([]);
-    const state = path.join(planted, STATE_DOC);
+    const state = path.join(planted, "method/docs-protocol.md");
     writeFileSync(
       state,
       `${readFileSync(state, "utf8")}\na LATER edit to that record re-touches this file.\n`,
@@ -3018,7 +2653,7 @@ test("the governing text says the CREATION rule and no longer carries the retouc
     expect(
       retiredRetouchSites(planted),
       "a planted retouch requirement did NOT red — this reader has no teeth",
-    ).toEqual([STATE_DOC]);
+    ).toEqual(["method/docs-protocol.md"]);
   } finally {
     rmSync(planted, { recursive: true, force: true });
   }
@@ -3159,68 +2794,13 @@ test("the index and its chapters are pinned BOTH WAYS — a pointer with no file
  * here: a leg that cannot see a reader cannot report it.
  * ════════════════════════════════════════════════════════════════════ */
 
-test("the model-free eval suite's fixture root plants every file this project's conventions are made of", async () => {
-  const { LIVE_COPY_SET } = await import("../../method-evals/lib/fixture-root.mjs");
-  const wanted = [CONVENTIONS_DOC, ...conventionsChapters(conventionsIndexText())];
-  expect(wanted.length, "the index points at no chapter, so this body measures nothing").toBeGreaterThan(1);
+// Model-eval private policy provenance and configured host-command resolution
+// live in dogfood/private-project.spec.ts. Their selected context is not an
+// ordinary product contribution prerequisite.
 
-  // THE CONTROL IS THE INDEX ITSELF: it is copied today and always was,
-  // so a body that only checked the index would pass against the very
-  // fixture that carries a table of contents and no rules.
-  const covered = (rel: string): boolean =>
-    (LIVE_COPY_SET as readonly string[]).some((e) => e === rel || rel.startsWith(`${e}/`));
-  expect(covered(String(wanted[0])), "the eval fixture copies no conventions at all").toBe(true);
-  for (const rel of wanted.slice(1)) {
-    expect(
-      covered(rel),
-      `the eval fixture copies nothing that carries ${rel}, so its materialized root is an ` +
-        "index with no chapters and the assembler refuses it",
-    ).toBe(true);
-  }
-});
-
-test("the model-free eval suite reads this project's conventions as the index AND its chapters", async () => {
-  const { conventionsPaths } = await import("../../method-evals/lib/corpus.mjs");
-  const { CITATION } = await import("../../method-evals/evals/mf-09-attack-set-digest-refusal.mjs");
-  const spells = (text: string): boolean =>
-    (CITATION as RegExp).test(text.replace(/\s+/g, " ").replace(/<hex>/g, "0".repeat(64)));
-
-  // THE CONTROL: the index alone does NOT spell the grammar — the bullet
-  // that does moved into a chapter. Without this half, a suite that read
-  // the index alone would satisfy the assertion below.
-  expect(
-    spells(conventionsIndexText()),
-    "the index alone spells the citation grammar, so this body cannot separate the two reads",
-  ).toBe(false);
-
-  const paths = (conventionsPaths as () => string[])();
-  expect(paths, "the eval corpus does not name the index").toContain(CONVENTIONS_DOC);
-  expect(
-    paths.map((rel) => readFileSync(path.join(repoRoot, rel), "utf8")).some(spells),
-    "no file the model-free evals read spells the attack-set citation grammar, so the eval " +
-      "that holds that contract reports it as a grammar nobody documents",
-  ).toBe(true);
-});
-
-test("the seat pack's host-command check resolves every command it publishes against this project's conventions", () => {
+test("the shipped host-command checker preserves its authored accepted and refused controls without private policy", () => {
   const script = path.join(repoRoot, "method/skills/supertaskr-seat/scripts/host-command-check.mjs");
-  expect(existsSync(script), "the pack's host-command check is not where this body looks").toBe(true);
-
-  // ITS OWN SELFTEST FIRST — the check's positive control, so a check
-  // that had been softened into always answering 0 fails here rather
-  // than passing the run below.
-  execFileSync(process.execPath, [script, "--selftest"], { stdio: "pipe" });
-
-  let out = "";
-  try {
-    out = execFileSync(process.execPath, [script, "--repo", repoRoot], { encoding: "utf8" });
-  } catch (err) {
-    const e = err as { stdout?: string; stderr?: string };
-    expect(
-      `${e.stdout ?? ""}${e.stderr ?? ""}`,
-      "the pack publishes a command this project's conventions no longer name",
-    ).toBe("");
-  }
-  expect(out, "the check compared no commands, and an exit 0 over zero of them is not a pass")
-    .toMatch(/HOST> commands (\d+) · resolved \1\b/);
+  const output = execFileSync(process.execPath, [script, "--selftest"], { encoding: "utf8" });
+  expect(output).toContain("degradations: 7 · caught 7 · missed 0");
+  expect(output).toContain("baseline findings: 0");
 });

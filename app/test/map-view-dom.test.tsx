@@ -612,7 +612,7 @@ describe("the header hint (volatile stats from the outcome, never the file)", ()
       tasks: model.tasks,
       ...(parsed.graph !== undefined ? { graph: parsed.graph } : {}),
     });
-    expect(indexHint(null, derived, 0)).toBe("committed graph · 10 files");
+    expect(indexHint(null, derived, 0)).toBe("stored graph · 10 files");
     expect(
       indexHint(
         {
@@ -630,6 +630,9 @@ describe("the header hint (volatile stats from the outcome, never the file)", ()
         30_000,
       ),
     ).toBe("indexed just now · 12 files");
+    expect(indexHint({kind:"indexed",changed:true,files:12,symbols:3,edges:4,truncated:false,
+      graphBytes:1000,durationMs:5,indexedAtMs:0,recovered:true},derived,30_000))
+      .toBe("recovered earlier graph · 12 files · re-index to refresh");
     // T-140-s4 — the `· over the snapshot cap` arm is RETIRED with
     // `COLLECTOR_CAP_BYTES`, and this is the assertion that keeps it
     // retired rather than merely deleted: a graph FAR past the old 1 MiB

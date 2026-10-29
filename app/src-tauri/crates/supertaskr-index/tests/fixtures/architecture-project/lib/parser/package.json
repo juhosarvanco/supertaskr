@@ -1,0 +1,5 @@
+{
+  "name": "@example/parser",
+  "type": "module",
+  "exports": "./index.ts"
+}

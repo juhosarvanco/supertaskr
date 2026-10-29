@@ -7,7 +7,9 @@ use supertaskr_index::arch;
 use supertaskr_index::rollup::{detail, rollup, Detail, Rollup};
 use supertaskr_index::{Graph, GRAPH_REL_PATH};
 
-use crate::docs_watch::{has_plain_docs_dir, WatchState};
+use crate::docs_watch::{has_plain_docs_dir, MessageScope, ScopedOutcome, WatchState};
+use crate::record_editor::{selected_records_context, SelectedRecordsContext};
+use crate::workspace::WorkspaceResolver;
 
 /// T-140-s1 — THE CHANNEL. The seam behind `arch_rollup` and
 /// `arch_detail`: everything the two commands do, minus the Tauri
@@ -103,6 +105,31 @@ fn load(state: &WatchState) -> Loaded {
     let Some(root) = state.project_dir() else {
         return Loaded::NoProject;
     };
+    let present = match WorkspaceResolver::new().and_then(|r| r.workspace_binding_present(&root)) {
+        Ok(value) => value,
+        Err(error) => return Loaded::Unreadable(error.to_string()),
+    };
+    if present {
+        return match selected_records_context(state) {
+            Ok(selected) => load_selected(state, &selected),
+            Err(error) => Loaded::Unreadable(error),
+        };
+    }
+    load_root(&root)
+}
+
+fn load_selected(state: &WatchState, selected: &SelectedRecordsContext) -> Loaded {
+    let loaded = load_root(&selected.records);
+    match selected_records_context(state) {
+        Ok(current) if current.product == selected.product && current.records == selected.records
+            && current.product_revision == selected.product_revision && current.expected_origin == selected.expected_origin
+            && current.scope.selection_sequence == selected.scope.selection_sequence
+            && current.scope.context_sequence == selected.scope.context_sequence => loaded,
+        _ => Loaded::Unreadable("The selected records context changed while reading the graph.".into()),
+    }
+}
+
+fn load_root(root: &std::path::Path) -> Loaded {
     if !has_plain_docs_dir(&root) {
         return Loaded::NoDocs(root.display().to_string());
     }
@@ -130,17 +157,17 @@ fn load(state: &WatchState) -> Loaded {
             ));
         }
     }
-    let bytes = match fs::read(&graph_path) {
+    let bytes = match supertaskr_index::read_graph_bytes(root) {
         Ok(bytes) => bytes,
         Err(err) if err.kind() == std::io::ErrorKind::NotFound => return Loaded::NoGraph,
-        Err(err) => return Loaded::Unreadable(format!("could not read the committed graph: {err}")),
+        Err(err) => return Loaded::Unreadable(format!("could not read the stored graph: {err}")),
     };
     let graph_bytes = bytes.len();
     let graph: Graph = match serde_json::from_slice(&bytes) {
         Ok(graph) => graph,
         Err(err) => {
             return Loaded::Unreadable(format!(
-                "the committed graph is not readable ({err}); re-indexing regenerates it"
+                "the stored graph is not readable ({err}); re-indexing regenerates it"
             ))
         }
     };
@@ -153,7 +180,10 @@ fn load(state: &WatchState) -> Loaded {
 
 /// The map's resting payload for the open project.
 pub fn run_rollup(state: &WatchState) -> RollupOutcome {
-    match load(state) {
+    rollup_outcome(load(state))
+}
+fn rollup_outcome(loaded: Loaded) -> RollupOutcome {
+    match loaded {
         Loaded::NoProject => RollupOutcome::NoProject,
         Loaded::NoDocs(dir) => RollupOutcome::NoDocs { project_dir: dir },
         Loaded::NoGraph => RollupOutcome::NoGraph,
@@ -170,7 +200,10 @@ pub fn run_rollup(state: &WatchState) -> RollupOutcome {
 
 /// File-level detail for ONE named target — the pull.
 pub fn run_detail(state: &WatchState, target: &str) -> DetailOutcome {
-    match load(state) {
+    detail_outcome(load(state), target)
+}
+fn detail_outcome(loaded: Loaded, target: &str) -> DetailOutcome {
+    match loaded {
         Loaded::NoProject => DetailOutcome::NoProject,
         Loaded::NoDocs(dir) => DetailOutcome::NoDocs { project_dir: dir },
         Loaded::NoGraph => DetailOutcome::NoGraph,
@@ -182,6 +215,28 @@ pub fn run_detail(state: &WatchState, target: &str) -> DetailOutcome {
             }
         }
     }
+}
+
+fn scoped_load(state: &WatchState) -> (Loaded, MessageScope) {
+    let scope = state.message_scope();
+    let Some(product) = state.project_dir() else { return (Loaded::NoProject, scope); };
+    match WorkspaceResolver::new().and_then(|r| r.workspace_binding_present(&product)) {
+        Ok(true) => match selected_records_context(state) {
+            Ok(selected) => (load_selected(state, &selected), selected.scope),
+            Err(error) => (Loaded::Unreadable(error), scope),
+        },
+        Ok(false) => (load_root(&product), scope),
+        Err(error) => (Loaded::Unreadable(error.to_string()), scope),
+    }
+}
+
+pub fn run_rollup_scoped(state: &WatchState) -> ScopedOutcome<RollupOutcome> {
+    let (loaded, scope) = scoped_load(state);
+    ScopedOutcome { outcome: rollup_outcome(loaded), scope }
+}
+pub fn run_detail_scoped(state: &WatchState, target: &str) -> ScopedOutcome<DetailOutcome> {
+    let (loaded, scope) = scoped_load(state);
+    ScopedOutcome { outcome: detail_outcome(loaded, target), scope }
 }
 
 /// The pull's argument, bounded before it is used as a key.
@@ -272,6 +327,68 @@ mod tests {
     fn detached_state(initial: Option<PathBuf>) -> WatchState {
         let (ctl, _rx) = mpsc::channel::<WatchCtl>();
         WatchState::new(initial, Arc::new(AtomicU64::new(0)), ctl)
+    }
+
+    #[test]
+    fn split_map_reads_private_graph_and_registry_and_refuses_a_rebound_inflight_origin() {
+        use crate::docs_watch::{apply_picked_folder, PickOutcome};
+        use crate::workspace::{WorkspaceResolver, WORKSPACE_ASSOCIATION_REL_PATH, WORKSPACE_BINDING_REL_PATH};
+        use std::process::Command;
+        let product = TempTree::new("split-product");
+        let records = TempTree::new("split-records");
+        let other = TempTree::new("split-other");
+        let git = |root: &Path, args: &[&str]| {
+            let output = Command::new("git").arg("-C").arg(root).args(args).output().expect("Git fixture");
+            assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+        };
+        for root in [product.root(), records.root(), other.root()] {
+            git(root, &["init", "-q", "--initial-branch=main"]);
+            git(root, &["config", "user.name", "Graph fixture"]);
+            git(root, &["config", "user.email", "fixture@example.invalid"]);
+        }
+        product.write("app/main.ts", "export const actual_product = 1;\n");
+        product.write(GRAPH_REL_PATH, "invalid PRODUCT graph decoy");
+        product.write("docs/architecture/components/C-99.md", "---\nid: C-99\nname: Decoy\npaths: ['**']\ndepends_on: []\n---\n");
+        git(product.root(), &["add", "."]); git(product.root(), &["commit", "-qm", "Product fixture"]);
+        let p = product.root().canonicalize().unwrap();
+        let identity = WorkspaceResolver::new().unwrap().measure_product_identity(&p, "HEAD").unwrap();
+        let graph = index(&IndexOptions {root: p.clone(), ..Default::default()}).unwrap();
+        for (tree, name, id) in [(&records, "Private original", "C-01"), (&other, "Private replacement", "C-02")] {
+            tree.write(&format!("docs/architecture/components/{id}.md"), &format!("---\nid: {id}\nname: {name}\npaths: [app/**]\ndepends_on: []\n---\n"));
+            tree.write("private.ts", "export const private_source_decoy = 1;\n");
+            write_graph(&graph, &tree.root().join(GRAPH_REL_PATH)).unwrap();
+            tree.write(WORKSPACE_ASSOCIATION_REL_PATH, &serde_json::json!({"version":1,"projectId":"graph-project",
+                "product":{"objectFormat":identity.object_format,"rootCommits":identity.root_commits}}).to_string());
+            git(tree.root(), &["add", "."]); git(tree.root(), &["commit", "-qm", "Private graph fixture"]);
+        }
+        let bind = |tree: &TempTree| product.write(WORKSPACE_BINDING_REL_PATH,
+            &serde_json::json!({"version":1,"projectId":"graph-project","productRoot":p,
+                "recordsRoot":tree.root().canonicalize().unwrap()}).to_string());
+        bind(&records);
+        let state = WatchState::start(None, |_| {});
+        assert!(matches!(apply_picked_folder(&state, &p, state.begin_pick().unwrap()), PickOutcome::Picked {..}));
+        let original = selected_records_context(&state).unwrap();
+        let first = run_rollup_scoped(&state);
+        match first.outcome {
+            RollupOutcome::Ready {rollup, ..} => {
+                assert_eq!(rollup.stats.files, 1);
+                assert!(rollup.components.iter().any(|component| component.id == "C-01"));
+                assert!(!rollup.components.iter().any(|component| component.id == "C-99"));
+            }, other => panic!("expected selected private map: {other:?}"),
+        }
+        assert_eq!(first.scope.records.unwrap().records_dir, Some(records.root().canonicalize().unwrap().display().to_string()));
+        bind(&other);
+        assert!(matches!(load_selected(&state, &original), Loaded::Unreadable(_)), "an earlier origin cannot read or publish a replacement picture");
+        assert!(matches!(apply_picked_folder(&state, &p, state.begin_pick().unwrap()), PickOutcome::Picked {..}));
+        let replacement = run_rollup_scoped(&state);
+        assert!(replacement.scope.context_sequence > original.scope.context_sequence);
+        match replacement.outcome {
+            RollupOutcome::Ready {rollup, ..} => assert!(rollup.components.iter().any(|component| component.id == "C-02")),
+            other => panic!("expected legitimate replacement map: {other:?}"),
+        }
+        assert!(matches!(run_detail_scoped(&state, "c:C-02").outcome, DetailOutcome::Answered {..}));
+        assert_eq!(fs::read_to_string(product.root().join(GRAPH_REL_PATH)).unwrap(), "invalid PRODUCT graph decoy");
+        state.stop_for_test();
     }
 
     #[test]

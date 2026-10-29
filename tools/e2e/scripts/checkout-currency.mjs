@@ -124,8 +124,8 @@ import { fileURLToPath } from "node:url";
 // chance to disagree, which is the staleness every guard here exists to
 // detect. Both modules import nothing but node builtins, so a lane
 // worktree ninety seconds old can still load this file.
-import { RUNTIME_DIR, armRuntimeDir } from "../../../.claude/hooks/gate-token.mjs";
-import { readHeadRef } from "../../../.claude/hooks/lane-fence.mjs";
+import { RUNTIME_DIR, armRuntimeDir } from "../../../cli/gate-token.mjs";
+import { readHeadRef } from "../../../cli/lane-fence.mjs";
 
 /**
  * The house exit contract — the SINGLE authority for these numbers, the

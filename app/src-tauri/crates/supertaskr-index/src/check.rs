@@ -128,6 +128,15 @@ impl CheckReport {
 /// is a REPORT, never an error, because the caller must be able to tell
 /// "the gate says no" from "the gate could not run".
 pub fn check(opts: &IndexOptions) -> Result<CheckReport, crate::IndexError> {
+    check_at(opts, &opts.root)
+}
+
+/// Compare PRODUCT working source with the graph in the caller's selected
+/// RECORDS home. This is read-only; choosing a path grants no write authority.
+pub fn check_at(
+    opts: &IndexOptions,
+    records_root: &std::path::Path,
+) -> Result<CheckReport, crate::IndexError> {
     // T-167-s13: the fresh index AND the emitter's transient record of
     // what it emptied to produce it. `index()` would have been the whole
     // of what this gate needs until the report had to name the files —
@@ -138,8 +147,16 @@ pub fn check(opts: &IndexOptions) -> Result<CheckReport, crate::IndexError> {
     // T-140: the part of a fresh index truncation can never reclaim.
     // Measured through the emitter itself, never re-derived here.
     let floor_bytes = crate::emit::floor_len(&fresh)?;
-    let graph_path = opts.root.join(GRAPH_REL_PATH);
-    let committed_bytes = std::fs::read(&graph_path);
+    let graph_path = records_root.join(GRAPH_REL_PATH);
+    let committed_bytes = crate::read_graph_bytes(records_root);
+    if let Err(source) = &committed_bytes {
+        if source.kind() != std::io::ErrorKind::NotFound {
+            return Err(crate::IndexError::Read {
+                path: graph_path,
+                source: std::io::Error::new(source.kind(), source.to_string()),
+            });
+        }
+    }
 
     let fresh_stats = (fresh.stats.files, fresh.stats.symbols, fresh.stats.edges);
     // T-167-s5: the emitter's own record of what it dropped, read once
@@ -697,19 +714,13 @@ fn render_delta(out: &mut String, delta: &GraphDiff) {
     section(
         out,
         "files",
-        &[
-            ("+", &delta.files_added),
-            ("-", &delta.files_removed),
-        ],
+        &[("+", &delta.files_added), ("-", &delta.files_removed)],
         Some(&delta.files_changed),
     );
     section(
         out,
         "packages",
-        &[
-            ("+", &delta.packages_added),
-            ("-", &delta.packages_removed),
-        ],
+        &[("+", &delta.packages_added), ("-", &delta.packages_removed)],
         None,
     );
     section(
@@ -836,8 +847,14 @@ mod tests {
         assert_eq!(report.stale, Some(Staleness::Missing));
         let text = render(&report, ".");
         assert!(text.contains("STALE"), "{text}");
-        assert!(text.contains("MISSING at docs/architecture/graph.json"), "{text}");
-        assert!(text.contains("regenerate: supertaskr-index index --root ."), "{text}");
+        assert!(
+            text.contains("MISSING at docs/architecture/graph.json"),
+            "{text}"
+        );
+        assert!(
+            text.contains("regenerate: supertaskr-index index --root ."),
+            "{text}"
+        );
     }
 
     #[test]
@@ -863,12 +880,18 @@ mod tests {
         crate::write_graph(&graph, &t.root().join(GRAPH_REL_PATH)).unwrap();
 
         // Plant staleness: a new file that the old graph cannot know.
-        t.write("src/b.ts", "import { a } from \"./a\";\nexport const b = a;\n");
+        t.write(
+            "src/b.ts",
+            "import { a } from \"./a\";\nexport const b = a;\n",
+        );
 
         let report = check(&opts(t.root())).unwrap();
         assert!(report.is_stale());
         let text = render(&report, ".");
-        assert!(text.contains("| + src/b.ts"), "names the added file:\n{text}");
+        assert!(
+            text.contains("| + src/b.ts"),
+            "names the added file:\n{text}"
+        );
         assert!(
             text.contains("| + f:src/b.ts -> f:src/a.ts (import) symbols=[a]"),
             "names the added edge:\n{text}"
@@ -989,7 +1012,9 @@ mod tests {
         for i in 0..12 {
             let imports: String = (0..12)
                 .filter(|j| *j != i)
-                .map(|j| format!("import {{ alpha as a{j:02}, beta as b{j:02} }} from \"./f{j:02}\";\n"))
+                .map(|j| {
+                    format!("import {{ alpha as a{j:02}, beta as b{j:02} }} from \"./f{j:02}\";\n")
+                })
                 .collect();
             dense.write(
                 &format!("src/f{i:02}.ts"),
@@ -1004,7 +1029,10 @@ mod tests {
 
         // The fixtures are the control for each other: same file count,
         // and the dense one really did produce the import edges.
-        assert_eq!(sparse_report.fresh_stats.0, dense_report.fresh_stats.0, "same file count");
+        assert_eq!(
+            sparse_report.fresh_stats.0, dense_report.fresh_stats.0,
+            "same file count"
+        );
         assert!(
             dense_report.fresh_stats.2 > sparse_report.fresh_stats.2,
             "the dense fixture must actually carry more edges: {} vs {}",
@@ -1123,7 +1151,10 @@ mod tests {
 
         // SILENT: the default budget leaves about a megabyte of room.
         let roomy = check(&opts(t.root())).unwrap();
-        assert!(!roomy.is_stale(), "the silent half must be the green path: {roomy:?}");
+        assert!(
+            !roomy.is_stale(),
+            "the silent half must be the green path: {roomy:?}"
+        );
         assert!(
             roomy.budget_bytes - roomy.fresh_bytes > WARN_HEADROOM_BYTES,
             "the control must really be above the threshold: {roomy:?}"
@@ -1140,14 +1171,23 @@ mod tests {
             ..opts(t.root())
         };
         let armed = check(&tight).unwrap();
-        assert!(!armed.is_stale(), "the armed half must be the green path too: {armed:?}");
+        assert!(
+            !armed.is_stale(),
+            "the armed half must be the green path too: {armed:?}"
+        );
         assert_eq!(
             armed.fresh_bytes, roomy.fresh_bytes,
             "only the budget moved: the emitted document is the same one"
         );
         let loud = render(&armed, ".");
-        assert!(loud.contains("GRAPH HEADROOM ALARM"), "the tripwire must fire:\n{loud}");
-        assert!(loud.contains("10 bytes left"), "it names the room it measured:\n{loud}");
+        assert!(
+            loud.contains("GRAPH HEADROOM ALARM"),
+            "the tripwire must fire:\n{loud}"
+        );
+        assert!(
+            loud.contains("10 bytes left"),
+            "it names the room it measured:\n{loud}"
+        );
         assert!(
             loud.contains(&format!("under the {WARN_HEADROOM_BYTES}-byte tripwire")),
             "and the threshold it measured that against:\n{loud}"
@@ -1627,7 +1667,9 @@ mod tests {
             "the fixture must really reach the STALE arm: {stale:?}"
         );
         assert!(
-            stale.fresh_truncated_paths.contains(&"src/fat.ts".to_string()),
+            stale
+                .fresh_truncated_paths
+                .contains(&"src/fat.ts".to_string()),
             "the record must survive the STALE arm: {stale:?}"
         );
         assert!(
@@ -1728,7 +1770,10 @@ mod tests {
             ..opts(t.root())
         };
         let report = check(&armed).unwrap();
-        assert_eq!(report.fresh_bytes, fresh_bytes, "only the committed side moved");
+        assert_eq!(
+            report.fresh_bytes, fresh_bytes,
+            "only the committed side moved"
+        );
         let text = render(&report, ".");
         assert!(
             text.contains("GRAPH HEADROOM ALARM"),
@@ -1880,7 +1925,10 @@ mod tests {
         let current = index(&armed).unwrap();
         crate::write_graph(&current, &path).unwrap();
         let green = check(&armed).unwrap();
-        assert!(!green.is_stale(), "the third half must be the green path: {green:?}");
+        assert!(
+            !green.is_stale(),
+            "the third half must be the green path: {green:?}"
+        );
         let text = render(&green, ".");
         assert!(
             text.contains("GRAPH HEADROOM ALARM"),

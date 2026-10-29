@@ -9,6 +9,17 @@ use notify_debouncer_mini::{
 };
 use serde::Serialize;
 
+mod observation;
+use observation::{ManagedSelection, SelectionGate, SharedSelection};
+pub use observation::{MessageScope, RecordsObservation, ScopedOutcome};
+
+/// Invalidation only: readers revalidate their original selected context and
+/// pull counts/detail. No graph content or caller-selected path crosses IPC.
+#[derive(Clone, Debug, Serialize)]
+pub struct ArchitectureChange {
+    pub scope: MessageScope,
+}
+
 // T-123: the routing question's SECOND input. The fact itself stays in
 // C-14 — this module names the type and calls the accessor, and never
 // learns to read `.supertaskr/` for itself (T-057).
@@ -222,6 +233,10 @@ pub struct DocsSnapshot {
     pub skipped_total: usize,
     /// T-018: the 2000-file cap clipped this snapshot.
     pub truncated: bool,
+    /// Native-selected records context. Absent only on the retained legacy
+    /// constructor used by older embeddings; production always supplies it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub records: Option<RecordsObservation>,
 }
 
 /// What the frontend's startup pull (`docs_snapshot` command) reports
@@ -242,6 +257,8 @@ pub enum ProjectStatus {
     },
     /// Project open: here is the current docs tree.
     Open { snapshot: DocsSnapshot },
+    /// The controller did not answer before any selection was committed.
+    Unavailable { message: String },
 }
 
 /// Typed result of the folder picker (T-007). The webview receives ONLY
@@ -305,6 +322,18 @@ pub enum PickOutcome {
 
 /// Messages processed by the watcher control thread.
 pub enum WatchCtl {
+    /// Prepare a native-selected observation, acknowledge installation and
+    /// collection, then wait for the caller's commit decision. Fs messages
+    /// remain queued until that decision; candidates never publish.
+    Select {
+        product: PathBuf,
+        gate: Arc<SelectionGate>,
+        prepared: mpsc::Sender<Result<(), String>>,
+        completed: mpsc::Sender<DocsSnapshot>,
+    },
+    Read {
+        ack: mpsc::Sender<ProjectStatus>,
+    },
     /// A debounced batch of fs events from notify.
     Fs(DebounceEventResult),
     /// Switch the watch to `<root>/docs` (T-007 picker). `ack` reports
@@ -350,7 +379,18 @@ pub enum WatchCtl {
     /// the product. The rendezvous is a property of the loop's ordering,
     /// which is identical in both builds.
     #[cfg(test)]
-    Ping { ack: mpsc::Sender<()> },
+    Ping {
+        ack: mpsc::Sender<()>,
+    },
+    #[cfg(test)]
+    Stop {
+        ack: mpsc::Sender<()>,
+    },
+    #[cfg(test)]
+    Pause {
+        ready: mpsc::Sender<()>,
+        release: mpsc::Receiver<()>,
+    },
 }
 
 /// Managed state: the current project dir (None until one resolves or is
@@ -362,7 +402,8 @@ pub enum WatchCtl {
 /// project provably stale), and the control-channel sender to the watcher
 /// thread.
 pub struct WatchState {
-    project: Mutex<Option<PathBuf>>,
+    project: Arc<Mutex<Option<PathBuf>>>,
+    selected: Option<SharedSelection>,
     seq: Arc<AtomicU64>,
     ctl: mpsc::Sender<WatchCtl>,
     /// T-021 single-flight latch for the picker (absorbs T-007-s3):
@@ -402,12 +443,109 @@ impl WatchState {
         ctl: mpsc::Sender<WatchCtl>,
     ) -> Self {
         Self {
-            project: Mutex::new(project),
+            project: Arc::new(Mutex::new(project)),
+            selected: None,
             seq,
             ctl,
             picking: Arc::new(AtomicBool::new(false)),
             last_rejected: Mutex::new(None),
         }
+    }
+
+    /// Production constructor: one controller owns installation, commit and
+    /// every observation. The old constructor remains for finite legacy
+    /// embeddings; no frontend path is accepted by either constructor.
+    pub fn start(initial: Option<PathBuf>, sink: impl Fn(&DocsSnapshot) + Send + 'static) -> Self {
+        Self::start_with_architecture(initial, sink, |_| {})
+    }
+
+    pub fn start_with_architecture(
+        initial: Option<PathBuf>,
+        sink: impl Fn(&DocsSnapshot) + Send + 'static,
+        architecture_sink: impl Fn(&ArchitectureChange) + Send + 'static,
+    ) -> Self {
+        let seq = Arc::new(AtomicU64::new(0));
+        let project = Arc::new(Mutex::new(initial.clone()));
+        let selected = SharedSelection::new(project.clone());
+        let (ctl, rx) = mpsc::channel();
+        let fs_tx = ctl.clone();
+        let thread_seq = seq.clone();
+        let thread_selected = selected.clone();
+        std::thread::spawn(move || {
+            run_watcher(thread_seq, rx, fs_tx, initial, Some(thread_selected), sink, architecture_sink)
+        });
+        Self {
+            project,
+            selected: Some(selected),
+            seq,
+            ctl,
+            picking: Arc::new(AtomicBool::new(false)),
+            last_rejected: Mutex::new(None),
+        }
+    }
+
+    pub fn scoped_status(&self, outcome: ProjectStatus) -> ScopedOutcome<ProjectStatus> {
+        // A completed response owns its observation context. Selection may
+        // move again before this wrapper is serialized to the webview.
+        let scope = match &outcome {
+            ProjectStatus::Open { snapshot } => {
+                MessageScope::from_snapshot(snapshot).unwrap_or_else(|| self.message_scope())
+            }
+            ProjectStatus::NoProject => MessageScope::legacy(None, self.seq.load(Ordering::SeqCst)),
+            _ => self.message_scope(),
+        };
+        ScopedOutcome {
+            outcome,
+            scope,
+        }
+    }
+
+    pub fn scoped_pick(
+        &self,
+        outcome: PickOutcome,
+        initial: MessageScope,
+    ) -> ScopedOutcome<PickOutcome> {
+        let snapshot = match &outcome {
+            PickOutcome::Picked { snapshot } => Some(snapshot),
+            PickOutcome::Genesis { snapshot, .. } => snapshot.as_ref(),
+            _ => None,
+        };
+        let scope = snapshot
+            .and_then(MessageScope::from_snapshot)
+            .unwrap_or_else(|| match &outcome {
+                PickOutcome::Genesis { seq, .. } => {
+                    let mut scope = self.message_scope();
+                    scope.seq = *seq;
+                    scope
+                }
+                _ => initial,
+            });
+        ScopedOutcome { outcome, scope }
+    }
+
+    pub fn message_scope(&self) -> MessageScope {
+        self.selected.as_ref().map_or_else(
+            || MessageScope::legacy(self.project_dir(), self.seq.load(Ordering::SeqCst)),
+            |selected| selected.scope(self.seq.load(Ordering::SeqCst)),
+        )
+    }
+
+    fn commit_legacy(&self, product: &Path, seq: u64) {
+        *self.project.lock().expect("project mutex poisoned") = Some(product.to_path_buf());
+        if let Some(selected) = &self.selected {
+            selected.set(ManagedSelection::legacy(product.to_path_buf(), seq));
+        }
+    }
+
+    fn decorate(&self, mut snapshot: DocsSnapshot) -> DocsSnapshot {
+        if let Some(selected) = &self.selected {
+            if let Some(current) = selected.get() {
+                if current.product == Path::new(&snapshot.project_dir) {
+                    snapshot.records = Some(current.envelope(snapshot.seq));
+                }
+            }
+        }
+        snapshot
     }
 
     /// Claim the picker (T-021 single-flight). `None` means a pick is
@@ -430,6 +568,32 @@ impl WatchState {
     /// Current project root, if any.
     pub fn project_dir(&self) -> Option<PathBuf> {
         self.project.lock().expect("project mutex poisoned").clone()
+    }
+
+    /// Location/selection metadata for native consumers. This is not a new
+    /// content reading, write grant or frontend path-authority surface.
+    pub(crate) fn selected_records(&self) -> Option<(PathBuf, RecordsObservation)> {
+        let current = self.selected.as_ref()?.get()?;
+        let mut records = current.envelope(self.seq.load(Ordering::SeqCst));
+        records.content_revision = None;
+        Some((current.product, records))
+    }
+
+    #[cfg(test)]
+    pub(crate) fn pause_for_test(&self) -> mpsc::Sender<()> {
+        let (ready, paused) = mpsc::channel();
+        let (release, resume) = mpsc::channel();
+        self.ctl.send(WatchCtl::Pause { ready, release: resume }).expect("owned watcher pause queued");
+        paused.recv_timeout(Duration::from_secs(2)).expect("owned watcher reached FIFO pause");
+        release
+    }
+
+    #[cfg(test)]
+    pub(crate) fn stop_for_test(&self) {
+        let (ack, stopped) = mpsc::channel();
+        if self.ctl.send(WatchCtl::Stop { ack }).is_ok() {
+            stopped.recv_timeout(Duration::from_secs(2)).expect("owned watcher stopped");
+        }
     }
 
     /// T-026: remember a user-chosen folder that had no `docs/` as the
@@ -961,6 +1125,7 @@ fn snapshot_from(root: &Path, seq: u64, outcome: CollectOutcome) -> DocsSnapshot
         skipped: outcome.skipped,
         skipped_total: outcome.skipped_total,
         truncated: outcome.truncated,
+        records: None,
     }
 }
 
@@ -972,6 +1137,24 @@ fn build_snapshot(root: &Path, seq: u64) -> DocsSnapshot {
 /// The `docs_snapshot` command's answer (T-007 shape): what project is
 /// open, and its docs tree when there is one to show.
 pub fn project_status(state: &WatchState) -> ProjectStatus {
+    if state.selected.is_some() {
+        let (ack, rx) = mpsc::channel();
+        if state.ctl.send(WatchCtl::Read { ack }).is_ok() {
+            if let Ok(status) = rx.recv_timeout(REARM_TIMEOUT) {
+                return status;
+            }
+        }
+        // Failure is a visible observation of the selected product, never a
+        // fresh product/docs read masquerading as private records.
+        if let Some(snapshot) = state.selected.as_ref().and_then(|selected| {
+            selected.unavailable_snapshot(&state.seq, "watcher observation unavailable")
+        }) {
+            return ProjectStatus::Open { snapshot };
+        }
+        return ProjectStatus::Unavailable {
+            message: "watcher observation unavailable before selection completed".into(),
+        };
+    }
     match state.project_dir() {
         None => ProjectStatus::NoProject,
         Some(root) => {
@@ -1028,6 +1211,9 @@ pub fn apply_picked_folder(state: &WatchState, picked: &Path, flight: PickInFlig
 /// criterion 5's "routes to opening it as a normal project" is a call,
 /// not a re-implementation).
 fn open_as_project(state: &WatchState, canon: &Path) -> PickOutcome {
+    if state.selected.is_some() {
+        return observation::open(state, canon);
+    }
     let canon = canon.to_path_buf();
     if !has_plain_docs_dir(&canon) {
         // T-026: the front door is about to offer genesis for exactly
@@ -1088,8 +1274,8 @@ fn open_as_project(state: &WatchState, canon: &Path) -> PickOutcome {
     }
 
     // The commit — the only mutation, and now the only lock window.
-    *state.project.lock().expect("project mutex poisoned") = Some(canon.clone());
     let seq = state.next_seq();
+    state.commit_legacy(&canon, seq);
     state.clear_rejected(); // a project opened: no candidate is pending
     println!("[supertaskr] project folder picked: {}", canon.display());
     PickOutcome::Picked {
@@ -1161,6 +1347,13 @@ pub fn apply_genesis_folder(
         };
     }
 
+    // Split genesis is a separately contracted producer. An explicit binding
+    // cannot enter the legacy writer route, including when that binding is
+    // broken. Opening it uses the ordinary selected-product observation.
+    if state.selected.is_some() && !observation::binding_absent(&canon) {
+        return observation::open(state, &canon);
+    }
+
     let probe = probe_plan(&canon);
     // T-123: THE SECOND INPUT. Asked through C-14's own accessor and never
     // by statting `.supertaskr/` or re-parsing that JSON here — the shell does
@@ -1202,6 +1395,10 @@ pub fn apply_genesis_folder(
         );
     }
 
+    if state.selected.is_some() {
+        return observation::open_genesis(state, &canon, reach, probe.git);
+    }
+
     let (ack_tx, ack_rx) = mpsc::channel();
     if state
         .ctl
@@ -1239,11 +1436,11 @@ pub fn apply_genesis_folder(
     };
 
     // The commit — the only mutation, and the only lock window.
-    *state.project.lock().expect("project mutex poisoned") = Some(canon.clone());
     // The switch's ordering stamp: every emit still in flight from the
     // PREVIOUS project carries a lower seq and drops as stale on the
     // frontend — the T-007 invariant, held whether or not a tree rides.
     let seq = state.next_seq();
+    state.commit_legacy(&canon, seq);
     state.clear_rejected();
     // T-042 criterion 1. Collected AFTER the ack, exactly as
     // `open_as_project` does and for the same load-bearing reason: the
@@ -1252,7 +1449,7 @@ pub fn apply_genesis_folder(
     // baseline and a file written in between would never diff — it would
     // be suppressed forever. Reading the tree after the ack costs one
     // extra collect and makes the snapshot never older than the baseline.
-    let snapshot = match docs_armed.then(|| build_snapshot(&canon, seq)) {
+    let snapshot = match docs_armed.then(|| state.decorate(build_snapshot(&canon, seq))) {
         // T-064 CRITERION 3: ONE PREDICATE, TWO INPUTS, THE LATER
         // READING WINS. `probe` above answered before the rendezvous,
         // because its answer is what decides whether genesis may be
@@ -1347,7 +1544,7 @@ pub fn spawn_watcher_thread(
 ) -> mpsc::Sender<WatchCtl> {
     let (tx, rx) = mpsc::channel::<WatchCtl>();
     let fs_tx = tx.clone();
-    std::thread::spawn(move || run_watcher(seq, rx, fs_tx, initial_root, sink));
+    std::thread::spawn(move || run_watcher(seq, rx, fs_tx, initial_root, None, sink, |_| {}));
     tx
 }
 
@@ -1370,6 +1567,9 @@ struct WatchTarget {
     sentinel: Option<PathBuf>,
     /// Emit-suppression baseline: the WHOLE outcome, skips included.
     last: CollectOutcome,
+    managed: Option<ManagedSelection>,
+    /// Non-recursive wakeups only; no sibling contents are inspected.
+    auxiliary: Vec<PathBuf>,
 }
 
 /// Directory identity for replacement detection: (dev, ino) on unix.
@@ -1578,7 +1778,9 @@ fn run_watcher(
     rx: mpsc::Receiver<WatchCtl>,
     fs_tx: mpsc::Sender<WatchCtl>,
     initial_root: Option<PathBuf>,
+    selected: Option<SharedSelection>,
     sink: impl Fn(&DocsSnapshot),
+    architecture_sink: impl Fn(&ArchitectureChange),
 ) {
     let mut debouncer = match new_debouncer(DEBOUNCE, move |res: DebounceEventResult| {
         let _ = fs_tx.send(WatchCtl::Fs(res));
@@ -1596,9 +1798,18 @@ fn run_watcher(
         docs_id: None,
         sentinel: None,
         last: CollectOutcome::default(),
+        managed: None,
+        auxiliary: Vec::new(),
     };
 
-    match initial_root {
+    if let Some(shared) = &selected {
+        if let Some(product) = initial_root.clone() {
+            let selection_seq = next_seq(&seq);
+            observation::initialize(&mut debouncer, &mut target, shared, product, selection_seq);
+        }
+    }
+
+    match initial_root.filter(|_| selected.is_none()) {
         Some(root) => {
             if let Err(msg) = rearm(&mut debouncer, &mut target, root.clone()) {
                 println!(
@@ -1613,23 +1824,83 @@ fn run_watcher(
                 arm_sentinel(&mut debouncer, &mut target, &root);
             }
         }
-        None => {
+        None if selected.is_none() => {
             println!("[supertaskr] watch: no project resolved - watcher idle until a project folder is picked");
         }
+        None => {}
     }
 
+    let mut architecture = ArchitectureBaseline::measure(&target);
+    #[cfg(test)]
+    let mut stopped = None;
     for msg in rx {
         match msg {
+            WatchCtl::Select {
+                product,
+                gate,
+                prepared,
+                completed,
+            } => {
+                if let Some(shared) = &selected {
+                    observation::select(
+                        &mut debouncer,
+                        &mut target,
+                        shared,
+                        &seq,
+                        product,
+                        gate,
+                        prepared,
+                        completed,
+                    );
+                    architecture = ArchitectureBaseline::measure(&target);
+                } else {
+                    let _ = prepared.send(Err("workspace observation is not initialized".into()));
+                }
+            }
+            WatchCtl::Read { ack } => {
+                let status = if let Some(shared) = &selected {
+                    observation::read(&mut debouncer, &mut target, shared, &seq)
+                } else {
+                    ProjectStatus::NoProject
+                };
+                let _ = ack.send(status);
+            }
             WatchCtl::Fs(Ok(events)) => {
-                handle_fs_batch(&mut debouncer, &mut target, &seq, &events, &sink);
+                if let Some(shared) = &selected {
+                    observation::handle_batch(
+                        &mut debouncer,
+                        &mut target,
+                        shared,
+                        &seq,
+                        &events,
+                        &sink,
+                    );
+                    let next = ArchitectureBaseline::measure(&target);
+                    if architecture.changed_within_context(&next) {
+                        architecture_sink(&ArchitectureChange { scope: shared.scope(next_seq(&seq)) });
+                    }
+                    architecture = next;
+                } else {
+                    handle_fs_batch(&mut debouncer, &mut target, &seq, &events, &sink);
+                }
             }
             WatchCtl::Fs(Err(err)) => eprintln!("[supertaskr] watch: watcher error: {err}"),
             WatchCtl::Rearm { root, ack } => {
-                let _ = ack.send(rearm(&mut debouncer, &mut target, root));
+                let result = if selected.is_some() {
+                    Err("managed selections require the transactional selection gate".into())
+                } else {
+                    rearm(&mut debouncer, &mut target, root)
+                };
+                let _ = ack.send(result);
             }
             // T-026: same rendezvous contract, genesis arming rules.
             WatchCtl::ArmGenesis { root, ack } => {
-                let _ = ack.send(arm_genesis(&mut debouncer, &mut target, root));
+                let result = if selected.is_some() {
+                    Err("managed genesis requires the transactional selection gate".into())
+                } else {
+                    arm_genesis(&mut debouncer, &mut target, root)
+                };
+                let _ = ack.send(result);
             }
             // T-088-s4: the barrier. Answering it IS the whole handler —
             // what it proves is the FIFO position, not the work.
@@ -1637,10 +1908,53 @@ fn run_watcher(
             WatchCtl::Ping { ack } => {
                 let _ = ack.send(());
             }
+            #[cfg(test)]
+            WatchCtl::Stop { ack } => {
+                stopped = Some(ack);
+                break;
+            }
+            #[cfg(test)]
+            WatchCtl::Pause { ready, release } => {
+                let _ = ready.send(());
+                let _ = release.recv();
+            }
         }
     }
     // Keep the debouncer alive for the loop's whole lifetime.
     drop(debouncer);
+    #[cfg(test)]
+    if let Some(ack) = stopped {
+        let _ = ack.send(());
+    }
+}
+
+#[derive(PartialEq, Eq)]
+struct ArchitectureBaseline {
+    context: Option<(PathBuf, u64, u64)>,
+    // Metadata only; symlink descendants are never followed. Directory stamps
+    // are omitted so an unrelated note/temp file cannot invalidate the map.
+    graph: Option<(u8, Option<(u64, u64)>, u64, Option<SystemTime>)>,
+}
+impl ArchitectureBaseline {
+    fn measure(target: &WatchTarget) -> Self {
+        let selection = target.managed.as_ref().filter(|s| s.envelope(0).availability == "available");
+        let context = selection.map(|s| (s.product.clone(), s.envelope(0).selection_sequence, s.envelope(0).context_sequence));
+        let graph = context.as_ref().and_then(|_| target.root.as_ref()).map(|root| {
+            let architecture = root.join("docs/architecture");
+            let graph = architecture.join("graph.json");
+            // Refused/missing parents are a stamp too, so loss and recovery
+            // both invalidate without reading an untrusted destination.
+            if !has_plain_docs_dir(root) || !is_plain_dir(&architecture) { return (0, None, 0, None); }
+            match fs::symlink_metadata(&graph) {
+                Ok(meta) => (if meta.is_file() { 1 } else { 2 }, dir_identity(&graph), meta.len(), meta.modified().ok()),
+                Err(_) => (0, None, 0, None),
+            }
+        });
+        Self { context, graph }
+    }
+    fn changed_within_context(&self, next: &Self) -> bool {
+        self.context.is_some() && self.context == next.context && self.graph != next.graph
+    }
 }
 
 /// (Re)arm the watch on `<new_root>/docs`. Arms the NEW watch before
@@ -3300,6 +3614,8 @@ mod tests {
             docs_id: None,
             sentinel: None,
             last: CollectOutcome::default(),
+            managed: None,
+            auxiliary: Vec::new(),
         };
         rearm(&mut debouncer, &mut target, t.root().to_path_buf()).expect("arm");
         // Simulate the sentinel having failed to arm.
@@ -3350,6 +3666,8 @@ mod tests {
             docs_id: None,
             sentinel: None,
             last: CollectOutcome::default(),
+            managed: None,
+            auxiliary: Vec::new(),
         };
         rearm(&mut debouncer, &mut target, t.root().to_path_buf()).expect("arm");
 
@@ -3795,7 +4113,9 @@ mod tests {
         let (state, _emits) = live_state(None);
         match apply_genesis_pick(&state, inflight.root()) {
             PickOutcome::Genesis { .. } => {}
-            other => panic!("a docs-less folder is genesis whatever the registry says, got {other:?}"),
+            other => {
+                panic!("a docs-less folder is genesis whatever the registry says, got {other:?}")
+            }
         }
     }
 
@@ -3813,6 +4133,8 @@ mod tests {
             docs_id: None,
             sentinel: None,
             last: CollectOutcome::default(),
+            managed: None,
+            auxiliary: Vec::new(),
         };
         arm_genesis(&mut debouncer, &mut target, t.root().to_path_buf()).expect("genesis arm");
         assert!(target.docs.is_none(), "nothing to watch recursively yet");
@@ -3889,6 +4211,8 @@ mod tests {
             docs_id: None,
             sentinel: None,
             last: CollectOutcome::default(),
+            managed: None,
+            auxiliary: Vec::new(),
         };
         arm_genesis(&mut debouncer, &mut target, t.root().to_path_buf()).expect("genesis arm");
 
@@ -3990,6 +4314,8 @@ mod tests {
             docs_id: None,
             sentinel: None,
             last: CollectOutcome::default(),
+            managed: None,
+            auxiliary: Vec::new(),
         };
         rearm(&mut debouncer, &mut target, t.root().to_path_buf()).expect("arm");
 
@@ -4148,6 +4474,8 @@ mod tests {
             docs_id: None,
             sentinel: None,
             last: CollectOutcome::default(),
+            managed: None,
+            auxiliary: Vec::new(),
         };
         rearm(&mut debouncer, &mut target, open.root().to_path_buf()).expect("arm the real one");
         let armed_docs = target.docs.clone();
@@ -4223,9 +4551,11 @@ mod tests {
             other => panic!("expected Genesis, got {other:?}"),
         }
         t.write("docs/NORTH_STAR.md", "written into an existing docs/");
-        recv_until(&emits, "the first file into an armed docs/ is collected", |snap| {
-            snap.files.iter().any(|f| f.path == "docs/NORTH_STAR.md")
-        });
+        recv_until(
+            &emits,
+            "the first file into an armed docs/ is collected",
+            |snap| snap.files.iter().any(|f| f.path == "docs/NORTH_STAR.md"),
+        );
     }
 
     #[test]
@@ -4585,6 +4915,7 @@ mod tests {
     #[test]
     fn from_docs_snapshot_reads_the_plan_rule_off_the_tree() {
         let snap = |paths: &[&str], skipped: &[&str]| DocsSnapshot {
+            records: None,
             seq: 1,
             project_dir: "/tmp/sketchpad".into(),
             generated_at_ms: 1,
@@ -4680,6 +5011,7 @@ mod tests {
             project_dir: "/tmp/sketchpad".into(),
             seq: 7,
             snapshot: Some(DocsSnapshot {
+                records: None,
                 seq: 7,
                 project_dir: "/tmp/sketchpad".into(),
                 generated_at_ms: 1_700_000_000_000,

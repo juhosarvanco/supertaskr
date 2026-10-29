@@ -1,3 +1,5 @@
+const repoRoot = fixtureFor(import.meta.url);
+import { pathToFileURL } from "node:url";
 import { execFileSync, spawnSync } from "node:child_process";
 import {
   closeSync,
@@ -14,8 +16,15 @@ import {
 import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
-import { repoRoot } from "../preflight";
-import { EXIT, unstampedLines } from "../scripts/dispatch-brief.mjs";
+import { fixtureFor } from "../fixtures/test-project";
+import {
+  EXIT,
+} from "../scripts/dispatch-brief.mjs";
+import * as fixtureSubjectDefinition0 from "../scripts/dispatch-brief.mjs";
+void fixtureSubjectDefinition0;
+const {
+  unstampedLines,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/dispatch-brief.mjs")).href) as typeof fixtureSubjectDefinition0;
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 
 /**
@@ -636,6 +645,7 @@ const LIVE_ARMS: ReadonlyArray<{ label: string; args: string[]; format?: "worksp
   { label: "--task T-133 --state", args: ["--task", "T-133", "--state"] },
   { label: "--task T-133", args: ["--task", "T-133"] },
   { label: "--task T-133 --preflight", args: ["--task", "T-133", "--preflight"] },
+  { label: "--task T-133 --preflight --full", args: ["--task", "T-133", "--preflight", "--full"] },
   { label: "--state", args: ["--state"] },
   { label: "--card T-133", args: ["--card", "T-133"] },
   // Workspace inspection is a standalone read arm whose answer is JSON,

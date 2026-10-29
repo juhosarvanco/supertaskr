@@ -41,12 +41,18 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = [] }
 serde = { workspace = true }
 serde_json = { workspace = true }
+base64 = "0.22"
+sha2 = "0.10"
 notify-debouncer-mini = "0.7.0"
 tauri-plugin-dialog = "2"
 # T-012: the app's first dependency edge on the indexer crate (C-05→C-07
 # at the Rust level) — exactly the seam T-009's plan reserved. Path dep,
 # zero new external packages.
 supertaskr-index = { path = "crates/supertaskr-index" }
+
+[target.'cfg(unix)'.dependencies]
+# Interruptible owned pipe writes use platform-provided nonblocking flags.
+libc = "0.2"
 
 [dev-dependencies]
 # T-021: the ACL-surface pin (src/acl_pin.rs) drives real InvokeRequests
@@ -55,3 +61,7 @@ supertaskr-index = { path = "crates/supertaskr-index" }
 # Cargo.lock diff. Same version spec as the main dependency above; cargo
 # unifies them, so this line only flips the feature for test builds.
 tauri = { version = "2", features = ["test"] }
+
+[features]
+# Test-only historical private provenance; never enabled by ordinary CI.
+private-dogfood = []

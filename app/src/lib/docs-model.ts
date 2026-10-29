@@ -78,6 +78,49 @@ export interface DocsSnapshotPayload {
   skippedTotal?: number;
   /** The 2000-file cap clipped this snapshot. */
   truncated?: boolean;
+  records?: RecordsObservation;
+}
+
+/** Backend-authored observation data. Display locations are never accepted
+ * back as native path authority. Revision names collected working bytes,
+ * independently of Git commits and persistence receipts. */
+export interface RecordsObservation {
+  selectionSequence: number;
+  contextSequence: number;
+  layout: string;
+  recordsDir: string | null;
+  associationId: string | null;
+  rootIncarnation: string | null;
+  docsIncarnation: string | null;
+  availability: "available" | "noDocs" | "unavailable";
+  finding: string | null;
+  contentRevision: string | null;
+}
+
+export function sameObservationContext(a?: RecordsObservation, b?: RecordsObservation): boolean {
+  if (a === undefined || b === undefined) return a === b;
+  return a.selectionSequence === b.selectionSequence && a.contextSequence === b.contextSequence &&
+    a.layout === b.layout && a.recordsDir === b.recordsDir && a.associationId === b.associationId &&
+    a.rootIncarnation === b.rootIncarnation && a.docsIncarnation === b.docsIncarnation;
+}
+
+/** Admit the complete native context before touching a watermark or content.
+ * A later selected context may arrive via its authoritative watch event before
+ * the command response. A candidate has no committed selection sequence. */
+export function observationAdmitted(prev: DocsModelState, payload: DocsSnapshotPayload): boolean {
+  const next = payload.records;
+  const current = prev.records;
+  if (next === undefined) return current === undefined;
+  if (!Number.isSafeInteger(next.selectionSequence) || next.selectionSequence <= 0 ||
+      !Number.isSafeInteger(next.contextSequence) || next.contextSequence < next.selectionSequence ||
+      next.contextSequence > payload.seq) return false;
+  if (current === undefined) return true;
+  if (next.selectionSequence < current.selectionSequence) return false;
+  if (next.selectionSequence === current.selectionSequence) {
+    if (payload.projectDir !== prev.projectDir || next.contextSequence < current.contextSequence) return false;
+    if (next.contextSequence === current.contextSequence && !sameObservationContext(current, next)) return false;
+  }
+  return true;
 }
 
 /** A model-input file whose CURRENT content fails to parse. */
@@ -258,6 +301,12 @@ export interface DocsModelState {
   seq: number;
   projectDir: string;
   generatedAtMs: number;
+  /** Requested observation and the origin of retained content are distinct. */
+  records?: RecordsObservation;
+  contentOrigin?: RecordsObservation;
+  /** Per-file origins preserve the revision of last-good parse fallbacks. */
+  lastGoodOrigins?: ReadonlyMap<string, RecordsObservation>;
+  effectiveOrigins?: ReadonlyMap<string, RecordsObservation>;
   /** Last content per path that parsed cleanly enough to render. */
   lastGood: ReadonlyMap<string, string>;
   /**
@@ -367,9 +416,20 @@ function isModelInput(path: string): boolean {
  * no-duplicate-events guarantee.
  */
 export function applySnapshot(prev: DocsModelState, payload: DocsSnapshotPayload): DocsModelState {
+  if (!observationAdmitted(prev, payload)) return prev;
   if (payload.seq <= prev.seq) return prev;
 
+  if (payload.records?.availability === "unavailable") {
+    const retained = prev.projectDir === payload.projectDir ? prev : emptyState();
+    return { ...retained, seq: payload.seq, projectDir: payload.projectDir, records: payload.records };
+  }
+  if (payload.projectDir !== prev.projectDir || !sameObservationContext(prev.records, payload.records)) {
+    prev = { ...emptyState(), seq: prev.seq };
+  }
+
   const lastGood = new Map(prev.lastGood);
+  const lastGoodOrigins = new Map(prev.lastGoodOrigins);
+  const effectiveOrigins = new Map<string, RecordsObservation>();
   const effective = new Map<string, string>();
   const failures: ParseFailure[] = [];
   const present = new Set<string>();
@@ -385,22 +445,30 @@ export function applySnapshot(prev: DocsModelState, payload: DocsSnapshotPayload
       // Not parsed, but rendered by the genesis lens (T-024): retain the
       // delivered text so `effective` carries every docs file's content.
       effective.set(path, content);
+      if (payload.records !== undefined) effectiveOrigins.set(path, payload.records);
       continue;
     }
     const issues = failingIssues(path, content);
     if (issues === undefined) {
       lastGood.set(path, content);
       effective.set(path, content);
+      if (payload.records !== undefined) {
+        lastGoodOrigins.set(path, payload.records);
+        effectiveOrigins.set(path, payload.records);
+      }
       continue;
     }
     const good = lastGood.get(path);
     if (good !== undefined) {
       // Criterion 3: render the last valid state, badge the failure.
       effective.set(path, good);
+      const origin = lastGoodOrigins.get(path);
+      if (origin !== undefined) effectiveOrigins.set(path, origin);
       failures.push({ path, issues, showingLastGood: true });
     } else {
       // Never had a good parse: let its issues surface in the model.
       effective.set(path, content);
+      if (payload.records !== undefined) effectiveOrigins.set(path, payload.records);
       failures.push({ path, issues, showingLastGood: false });
     }
   }
@@ -417,6 +485,8 @@ export function applySnapshot(prev: DocsModelState, payload: DocsSnapshotPayload
     const good = isModelInput(path) ? lastGood.get(path) : undefined;
     if (good !== undefined) {
       effective.set(path, good);
+      const origin = lastGoodOrigins.get(path);
+      if (origin !== undefined) effectiveOrigins.set(path, origin);
       skipped.push({ path, reason, showingLastGood: true });
     } else {
       skipped.push({ path, reason, showingLastGood: false });
@@ -426,7 +496,7 @@ export function applySnapshot(prev: DocsModelState, payload: DocsSnapshotPayload
   // Deleted files: forget them; their records leave the model. Deletion is
   // not a parse failure — the file is gone, the model follows the files.
   for (const path of lastGood.keys()) {
-    if (!present.has(path)) lastGood.delete(path);
+    if (!present.has(path)) { lastGood.delete(path); lastGoodOrigins.delete(path); }
   }
 
   const next: DocsModelState = {
@@ -442,6 +512,12 @@ export function applySnapshot(prev: DocsModelState, payload: DocsSnapshotPayload
     truncated: payload.truncated ?? false,
     fileCount: payload.files.length,
   };
+  if (payload.records !== undefined) {
+    next.records = payload.records;
+    next.contentOrigin = payload.records;
+    next.lastGoodOrigins = lastGoodOrigins;
+    next.effectiveOrigins = effectiveOrigins;
+  }
   if (graphContent !== undefined) next.graphContent = graphContent;
   return next;
 }

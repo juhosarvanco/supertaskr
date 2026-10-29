@@ -8,7 +8,7 @@ import {
   RUNTIME_DIR_IGNORE,
   readManifest,
   touchesLineOf,
-} from "../../../.claude/hooks/lane-fence.mjs";
+} from "../../../cli/lane-fence.mjs";
 import { conventionsText, repoRoot } from "./docs-scan.mjs";
 import {
   git,

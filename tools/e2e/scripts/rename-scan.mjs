@@ -18,7 +18,7 @@
  *                         `docs/research/captures/real-planner-turn-2026-08-19.jsonl`.
  *                         ADR-022 decision 3 does not rewrite a record.
  *   migration-refusal     `LEGACY_RUNTIME_DIR` and its account in
- *                         `.claude/hooks/lane-fence.mjs` — the one place
+ *                         `cli/lane-fence.mjs` — the one place
  *                         the old name is the SUBJECT rather than a
  *                         leftover.
  *   verbatim-quotation    @human's own dated words, quoted: the bar in
@@ -95,6 +95,7 @@ export const CURRENT_NAME = "supertaskr";
  * first acceptance criterion asks its notes for, made mechanical, so a
  * NEW deliberate survivor cannot arrive without this table moving.
  */
+/** @type {readonly {id:string,pattern:RegExp,files:readonly string[]|null,reading?:"case"}[]} */
 export const KEPT_CLASSES = Object.freeze([
   // The fake agent's denial fixture is TRANSCRIBED, byte for byte, from
   // `docs/research/captures/real-planner-turn-2026-08-19.jsonl` — a
@@ -112,7 +113,7 @@ export const KEPT_CLASSES = Object.freeze([
   Object.freeze({
     id: "migration-refusal",
     pattern: /\.nputer/,
-    files: Object.freeze([".claude/hooks/lane-fence.mjs"]),
+    files: Object.freeze(["cli/lane-fence.mjs"]),
   }),
   // @HUMAN'S OWN DATED WORDS, QUOTED. The patterns are the QUOTED
   // FRAGMENTS rather than the bare name, so a NEW leftover in the same
@@ -146,55 +147,52 @@ export const KEPT_CLASSES = Object.freeze([
     pattern: /"nputer"/,
     files: Object.freeze(["method/README.md", "docs/design/design-handoff.md"]),
   }),
+  // Persisted Git trailer syntax retains these exact bytes. This is a case
+  // allowance for the literal prefix at these source sites, never a file-wide
+  // allowance and never a legacy-name class.
+  Object.freeze({ id: "protocol-spelling", reading: "case", pattern: /Supertaskr-Operation:/,
+    files: Object.freeze(["tools/e2e/scripts/durable-operation.mjs"]) }),
+  Object.freeze({ id: "protocol-spelling", reading: "case", pattern: /Supertaskr-Initialization:/,
+    files: Object.freeze(["tools/e2e/scripts/project-init-operation.mjs", "tools/e2e/scripts/project-init-record.mjs", "tools/e2e/tests/genesis-init-plan.spec.ts"]) }),
 ]);
 
 /** The class ids, deduplicated, for a caller that wants the set alone. */
-export const KEPT_CLASS_IDS = Object.freeze([...new Set(KEPT_CLASSES.map((c) => c.id))]);
+export const KEPT_CLASS_IDS = Object.freeze([...new Set(KEPT_CLASSES.filter(c => c.reading !== "case").map((c) => c.id))]);
 
-/**
- * The corpus roots — the trees T-264's first acceptance criterion names,
- * plus `bin/` and, since `T-265-s3`, `method/` and the prose trees
- * `T-265`'s own `touches:` line names. A rename that moved a tree the
- * scan does not walk is a rename nothing keeps: every one of these was
- * renamed by a lane whose only witness was the seat that ran it.
- */
+/** Ordinary PRODUCT source and public manuals. Selected private prose is
+ * checked separately through the explicit bound dogfood entrypoint. */
 export const SCAN_ROOTS = Object.freeze([
   "app/",
   "lib/",
   "tools/",
+  "cli/",
   ".claude/",
   ".github/",
   "bin/",
   "method/",
-  "docs/architecture/",
-  "docs/business/",
-  "docs/design/",
   "docs/guide/",
   "docs/reference/",
 ]);
 
-/**
- * The tracked INDIVIDUAL files the criteria name: the root files T-264's
- * criterion names, and the governing documents, which are a tree nowhere
- * — `docs/` itself is mostly RECORDS, and walking it would count the
- * checkpoints, rooms, cards, decisions and captures that ADR-022
- * decision 3 keeps in the old spelling on purpose.
- */
+/** Individual public PRODUCT inputs outside the source/manual trees. */
 export const SCAN_ROOT_FILES = Object.freeze([
   ".gitignore",
   ".supertaskrignore",
   "AGENTS.md",
   "CLAUDE.md",
   "README.md",
-  "docs/ARCHITECTURE.md",
+  "CONTRIBUTING.md",
   "docs/CAPABILITIES.md",
-  "docs/CONVENTIONS.md",
-  "docs/NORTH_STAR.md",
-  "docs/ROADMAP.md",
-  "docs/STATE-template.md",
-  "docs/STATE.md",
-  "docs/VERSIONS.md",
-  "docs/future.md",
+]);
+
+// Selected private prose retains its rename obligation. Only the explicit
+// bound dogfood entrypoint supplies that records root; ordinary scans never
+// discover these files through the product checkout.
+export const PRIVATE_SCAN_ROOTS = Object.freeze(["docs/architecture/", "docs/business/", "docs/design/"]);
+export const PRIVATE_SCAN_ROOT_FILES = Object.freeze([
+  "docs/ARCHITECTURE.md", "docs/CONVENTIONS.md", "docs/NORTH_STAR.md", "docs/ROADMAP.md",
+  "docs/STATE-template.md", "docs/STATE.md", "docs/VERSIONS.md", "docs/future.md",
+  "docs/reference/14-versions.md",
 ]);
 
 /**
@@ -227,20 +225,22 @@ const BINARY_EXTENSIONS = Object.freeze([
  * @param {string} [file]  the repository-relative path the text came from
  * @returns {string | null}
  */
-export function classifyLegacy(text, file = "") {
+export function classifyLegacy(text, file = "", classes = /** @type {readonly {id:string,pattern:string|RegExp,files:readonly string[]|null,reading?:"case"}[]} */ (KEPT_CLASSES)) {
   // FILE-SCOPED CLASSES ARE TRIED FIRST, and the order is load-bearing
   // rather than tidy: a survivor inside a named file is there for that
   // file's own reason, and a broad class that happened to match its text
   // would relabel it — the fake agent's transcribed denial carries
   // `runtime/nputer.yaml` inside a captured shell line and is not a
   // method-source survivor at all.
-  for (const c of KEPT_CLASSES) {
+  for (const c of classes) {
+    if (c.reading === "case") continue;
     if (c.files === null) continue;
-    if (c.files.includes(file) && c.pattern.test(text)) return c.id;
+    if (c.files.includes(file) && new RegExp(c.pattern).test(text)) return c.id;
   }
-  for (const c of KEPT_CLASSES) {
+  for (const c of classes) {
+    if (c.reading === "case") continue;
     if (c.files !== null) continue;
-    if (c.pattern.test(text)) return c.id;
+    if (new RegExp(c.pattern).test(text)) return c.id;
   }
   return null;
 }
@@ -251,8 +251,8 @@ export function classifyLegacy(text, file = "") {
  * @param {string} text
  * @returns {boolean}
  */
-export function carriesLegacy(text) {
-  return text.toLowerCase().includes(LEGACY_NAME);
+export function carriesLegacy(text, legacy = LEGACY_NAME) {
+  return text.toLowerCase().includes(legacy.toLowerCase());
 }
 
 /**
@@ -263,7 +263,7 @@ export function carriesLegacy(text) {
  * @param {string} root
  * @returns {string[]}
  */
-export function scanCorpus(root) {
+export function scanCorpus(root, roots = SCAN_ROOTS, rootFiles = SCAN_ROOT_FILES) {
   const listed = execFileSync("git", ["ls-files", "-z"], {
     cwd: root,
     encoding: "buffer",
@@ -275,7 +275,7 @@ export function scanCorpus(root) {
   return listed
     .filter(
       (p) =>
-        (SCAN_ROOTS.some((r) => p.startsWith(r)) || SCAN_ROOT_FILES.includes(p)) &&
+        (rootFiles.includes(p) || roots.some((r) => p.startsWith(r)) && !PRIVATE_SCAN_ROOT_FILES.includes(p)) &&
         !SCAN_EXCLUDED_FILES.includes(p) &&
         !BINARY_EXTENSIONS.includes(path.extname(p).toLowerCase()),
     )
@@ -301,10 +301,10 @@ export function scanCorpus(root) {
  * @param {string} root
  * @returns {LegacyHit[]}
  */
-export function scanLegacy(root) {
+export function scanLegacy(root, corpus = scanCorpus(root)) {
   /** @type {LegacyHit[]} */
   const hits = [];
-  for (const file of scanCorpus(root)) {
+  for (const file of corpus) {
     if (carriesLegacy(file)) {
       hits.push({ file, line: 0, text: file, cls: classifyLegacy(file, file) });
     }
@@ -396,24 +396,24 @@ export function foldHomoglyphs(token) {
  * @param {string} text
  * @returns {string[]}  one reason per finding, empty when the text is clean
  */
-export function caseFindings(text) {
+export function caseFindings(text, prose = PROSE_NAME) {
   /** @type {string[]} */
   const out = [];
   for (const span of text.matchAll(/`[^`\n]*`/g)) {
     const run = /** @type {string} */ (span[0]);
-    if (run.includes(PROSE_NAME)) {
-      out.push(`the prose spelling ${PROSE_NAME} inside the code span ${run}`);
+    if (run.includes(prose)) {
+      out.push(`the prose spelling ${prose} inside the code span ${run}`);
     }
   }
-  for (const m of text.matchAll(new RegExp(PROSE_NAME, "g"))) {
+  for (const m of text.matchAll(new RegExp(prose.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"))) {
     const at = /** @type {number} */ (m.index);
     const before = at > 0 ? (text[at - 1] ?? "") : "";
-    const rest = text.slice(at + PROSE_NAME.length);
+    const rest = text.slice(at + prose.length);
     const glued =
       /[A-Za-z0-9_@/.]/.test(before) ||
       /^[A-Za-z0-9_@/]/.test(rest) ||
       /^\.[A-Za-z0-9]/.test(rest);
-    if (glued) out.push(`the prose spelling ${PROSE_NAME} glued into an identifier: ${text.trim()}`);
+    if (glued) out.push(`the prose spelling ${prose} glued into an identifier: ${text.trim()}`);
   }
   return out;
 }
@@ -429,18 +429,66 @@ export function caseFindings(text) {
  * @param {string} text
  * @returns {string[]}
  */
-export function homoglyphFindings(text) {
+export function homoglyphFindings(text, current = CURRENT_NAME, legacy = LEGACY_NAME) {
   /** @type {string[]} */
   const out = [];
   for (const m of text.matchAll(/[\p{L}\p{N}_]+/gu)) {
     const raw = /** @type {string} */ (m[0]);
     if (!/[^\x00-\x7F]/.test(raw)) continue;
     const folded = foldHomoglyphs(raw).toLowerCase();
-    if (folded.includes(CURRENT_NAME) || folded.includes(LEGACY_NAME)) {
+    if (folded.includes(current.toLowerCase()) || folded.includes(legacy.toLowerCase())) {
       out.push(`the token ${JSON.stringify(raw)} folds to ${JSON.stringify(folded)}`);
     }
   }
   return out;
+}
+
+/** Only the exact allowed source token is normalized for this reading. A new
+ * uppercase identifier beside it still reaches the unchanged classifier.
+ * Generic configured projects use caseFindings directly, with no source policy.
+ * @param {string} text @param {string} file */
+export function sourceCaseFindings(text, file) {
+  return caseFindingsWithClasses(text, file, PROSE_NAME, CURRENT_NAME, KEPT_CLASSES);
+}
+/** One literal-prefix allowance engine for both explicit project policy and
+ * the exact source table. It masks no neighboring uppercase occurrence.
+ * @param {string} text @param {string} file @param {string} prose @param {string} identifier
+ * @param {readonly {id:string,pattern:string|RegExp,files:readonly string[]|null,reading?:"case"}[]} classes */
+export function caseFindingsWithClasses(text, file, prose, identifier, classes) {
+  let inspected = text;
+  for (const allowance of classes) {
+    if (allowance.reading !== "case" || !allowance.files?.includes(file)) continue;
+    const literal = typeof allowance.pattern === "string" ? allowance.pattern : allowance.pattern.source;
+    inspected = inspected.split(literal).join(literal.replaceAll(prose, identifier));
+  }
+  return caseFindings(inspected,prose);
+}
+
+/** @typedef {{version:1,identifier:string,prose:string,legacy:string,kept:{id:string,pattern:string,files:string[]|null,reading?:"case"}[],roots:string[],files:string[],excludedFiles:string[],binaryExtensions:string[]}} NamePolicy */
+/** Validate the existing literal class/corpus policy as explicit project data.
+ * No source table, path exclusion or retained quotation is inferred.
+ * @param {unknown} input @returns {NamePolicy} */
+export function normalizeNamePolicy(input) {
+  /** @param {string} code @param {string} detail @returns {never} */
+  const fail = (code, detail) => { throw Object.assign(new Error(detail), { code }); };
+  const value = /** @type {any} */ (input);
+  const keys = ["version","identifier","prose","legacy","kept","roots","files","excludedFiles","binaryExtensions"];
+  if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).sort().join(",") !== keys.sort().join(",") || value.version !== 1) fail("project-settings-names-unsupported", "names requires the explicit version1 literal class/corpus policy");
+  if (![value.identifier,value.legacy].every(name => typeof name === "string" && /^[a-z][a-z0-9_-]{0,63}$/.test(name)) || value.identifier === value.legacy || typeof value.prose !== "string" || value.prose === value.identifier || value.prose.toLowerCase() !== value.identifier) fail("project-settings-names-invalid", "names requires distinct lowercase identifier/legacy and its literal prose casing");
+  /** @param {unknown} item */
+  const safe = item => typeof item === "string" && item !== "" && !/^(?:[A-Za-z]:|\/)/.test(item) && !/[\\\x00-\x1f\x7f]/.test(item) && item.split("/").every(part => part && ![".","..",".git",".supertaskr"].includes(part));
+  /** @param {any} entries @param {boolean} roots */
+  const paths = (entries, roots) => Array.isArray(entries) && new Set(entries).size === entries.length && entries.every(item => typeof item === "string" && (roots ? item.endsWith("/") && safe(item.slice(0,-1)) : safe(item)));
+  if (!paths(value.roots,true) || !paths(value.files,false) || !paths(value.excludedFiles,false) || value.roots.length + value.files.length === 0 || !Array.isArray(value.binaryExtensions) || new Set(value.binaryExtensions).size !== value.binaryExtensions.length || value.binaryExtensions.some((/** @type {any} */ item) => typeof item !== "string" || !/^\.[a-z0-9][a-z0-9.-]*$/.test(item))) fail("project-settings-names-invalid", "names must declare safe literal corpus paths, exclusions and binary extensions");
+  if (!Array.isArray(value.kept)) fail("project-settings-names-invalid", "names.kept must be an explicit class array");
+  for (const row of value.kept) {
+    if (!row || typeof row !== "object" || Object.keys(row).sort().join(",") !== (Object.hasOwn(row,"reading") ? "files,id,pattern,reading" : "files,id,pattern") || Object.hasOwn(row,"reading") && row.reading !== "case" || typeof row.id !== "string" || !/^[a-z][a-z0-9-]*$/.test(row.id) || typeof row.pattern !== "string" || !row.pattern.length || row.pattern.length > 2048 || row.files !== null && (!paths(row.files,false) || !row.files.length)) fail("project-settings-names-invalid", "Each kept class requires an id, bounded pattern and explicit file scope or null");
+    if (row.reading === "case" && (row.files === null || !row.pattern.startsWith(value.prose+"-") || !/^[A-Za-z0-9_-]+:$/.test(row.pattern))) fail("project-settings-names-invalid", "Case classes require an exact literal protocol prefix and explicit files, never a pattern or whole-file exception");
+    try { new RegExp(row.pattern); } catch { fail("project-settings-names-invalid", "A kept class pattern is not a valid regular expression"); }
+  }
+  const detached = JSON.parse(JSON.stringify(value));
+  /** @param {any} item */ const freeze = item => { if (item && typeof item === "object") { Object.values(item).forEach(freeze); Object.freeze(item); } return item; };
+  return freeze(detached);
 }
 
 /**
@@ -450,14 +498,14 @@ export function homoglyphFindings(text) {
  * `the corpus reaches every tree the criteria name` exists to catch.
  *
  * @param {string} root
- * @param {(text: string) => string[]} reading
+ * @param {(text: string,file:string) => string[]} reading
  * @returns {LegacyHit[]}
  */
-function scanReading(root, reading) {
+function scanReading(root, reading, corpus = scanCorpus(root)) {
   /** @type {LegacyHit[]} */
   const hits = [];
-  for (const file of scanCorpus(root)) {
-    for (const reason of reading(file)) hits.push({ file, line: 0, text: file, cls: reason });
+  for (const file of corpus) {
+    for (const reason of reading(file,file)) hits.push({ file, line: 0, text: file, cls: reason });
     let text;
     try {
       text = readFileSync(path.join(root, file), "utf8");
@@ -465,7 +513,7 @@ function scanReading(root, reading) {
       continue;
     }
     text.split("\n").forEach((raw, i) => {
-      for (const reason of reading(raw)) hits.push({ file, line: i + 1, text: raw, cls: reason });
+      for (const reason of reading(raw,file)) hits.push({ file, line: i + 1, text: raw, cls: reason });
     });
   }
   return hits;
@@ -478,8 +526,8 @@ function scanReading(root, reading) {
  * @param {string} root
  * @returns {LegacyHit[]}
  */
-export function scanCase(root) {
-  return scanReading(root, caseFindings);
+export function scanCase(root, corpus = scanCorpus(root)) {
+  return scanReading(root, sourceCaseFindings, corpus);
 }
 
 /**
@@ -488,6 +536,6 @@ export function scanCase(root) {
  * @param {string} root
  * @returns {LegacyHit[]}
  */
-export function scanHomoglyphs(root) {
-  return scanReading(root, homoglyphFindings);
+export function scanHomoglyphs(root, corpus = scanCorpus(root)) {
+  return scanReading(root, text => homoglyphFindings(text), corpus);
 }

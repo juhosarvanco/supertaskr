@@ -1,3 +1,5 @@
+const repoRoot = fixtureFor(import.meta.url);
+import { pathToFileURL } from "node:url";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import {
   existsSync,
@@ -17,6 +19,10 @@ import {
   MANIFEST_KINDS,
   MAX_DEPENDENCIES_PROBED,
   REGISTRIES,
+} from "../../../.claude/hooks/landing-gate.mjs";
+import * as fixtureSubjectDefinition0 from "../../../.claude/hooks/landing-gate.mjs";
+void fixtureSubjectDefinition0;
+const {
   addedDependencies,
   cardSuggestedDate,
   cargoManifestDeps,
@@ -26,15 +32,42 @@ import {
   laneCardIds,
   manifestKindOf,
   npmManifestDeps,
-  integrationRefCandidates as hookCandidates,
+  integrationRefCandidates: hookCandidates,
   touchesTokens,
-} from "../../../.claude/hooks/landing-gate.mjs";
-import { frontmatterLineOf, touchesLineOf, within } from "../../../.claude/hooks/lane-fence.mjs";
-import { GREEN, REQUIRED_SUITES, writeToken } from "../../../.claude/hooks/gate-token.mjs";
-import { integrationRefCandidates, laneSpellings } from "../scripts/dispatch-brief.mjs";
-import { conventionsText } from "../scripts/docs-scan.mjs";
-import { loadParser } from "../scripts/dispatch-order.mjs";
-import { repoRoot } from "../preflight";
+} = await import(pathToFileURL(path.join(repoRoot, ".claude/hooks/landing-gate.mjs")).href) as typeof fixtureSubjectDefinition0;
+import * as fixtureSubjectDefinition1 from "../../../.claude/hooks/lane-fence.mjs";
+void fixtureSubjectDefinition1;
+const {
+  frontmatterLineOf,
+  touchesLineOf,
+  within,
+} = await import(pathToFileURL(path.join(repoRoot, ".claude/hooks/lane-fence.mjs")).href) as typeof fixtureSubjectDefinition1;
+import {
+  GREEN,
+  REQUIRED_SUITES,
+} from "../../../.claude/hooks/gate-token.mjs";
+import * as fixtureSubjectDefinition2 from "../../../.claude/hooks/gate-token.mjs";
+void fixtureSubjectDefinition2;
+const {
+  writeToken,
+} = await import(pathToFileURL(path.join(repoRoot, ".claude/hooks/gate-token.mjs")).href) as typeof fixtureSubjectDefinition2;
+import * as fixtureSubjectDefinition3 from "../scripts/dispatch-brief.mjs";
+void fixtureSubjectDefinition3;
+const {
+  integrationRefCandidates,
+  laneSpellings,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/dispatch-brief.mjs")).href) as typeof fixtureSubjectDefinition3;
+import * as fixtureSubjectDefinition4 from "../scripts/docs-scan.mjs";
+void fixtureSubjectDefinition4;
+const {
+  conventionsText,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/docs-scan.mjs")).href) as typeof fixtureSubjectDefinition4;
+import * as fixtureSubjectDefinition5 from "../scripts/dispatch-order.mjs";
+void fixtureSubjectDefinition5;
+const {
+  loadParser,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/dispatch-order.mjs")).href) as typeof fixtureSubjectDefinition5;
+import { fixtureFor } from "../fixtures/test-project";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 
 /**
@@ -461,7 +494,7 @@ test("the integration-ref candidates are dispatch-brief's, spelling for spelling
   expect(hookCandidates("trunk")).toEqual(integrationRefCandidates("trunk"));
 });
 
-test("locating a card by its FILENAME agrees with its frontmatter id, over the whole board", () => {
+test("locating a card by its FILENAME agrees with its frontmatter id, over the authored board", () => {
   const dir = path.join(repoRoot, "docs", "tasks");
   let cards = 0;
   const disagreed: string[] = [];
@@ -473,11 +506,11 @@ test("locating a card by its FILENAME agrees with its frontmatter id, over the w
     const named = CARD_FILE_RE.exec(`docs/tasks/${name}`)?.[1];
     if (declared !== named) disagreed.push(`${name}: id=${declared} filename=${String(named)}`);
   }
-  expect(cards, "no cards under docs/tasks/ — this body measured nothing").toBeGreaterThan(200);
+  expect(cards, "no cards under docs/tasks/ — this body measured nothing").toBeGreaterThan(20);
   expect(disagreed, "a card's filename no longer carries its id, so this gate would fence the wrong card").toEqual([]);
 });
 
-test("every live card's `touches:` line is the one shape this gate reads", () => {
+test("every authored card's `touches:` line is the one shape this gate reads", () => {
   const dir = path.join(repoRoot, "docs", "tasks");
   let declared = 0;
   const unreadable: string[] = [];
@@ -488,7 +521,7 @@ test("every live card's `touches:` line is the one shape this gate reads", () =>
     declared += 1;
     if ("problem" in touchesTokens(line)) unreadable.push(`${name}: ${line}`);
   }
-  expect(declared, "no card declares a `touches:` line").toBeGreaterThan(100);
+  expect(declared, "no card declares a `touches:` line").toBeGreaterThan(20);
   // The day a card is written as a block sequence this reds, and the
   // reader is extended DELIBERATELY rather than guessing at the shape.
   expect(unreadable, "a live card's `touches:` is not the flow sequence this gate reads").toEqual([]);

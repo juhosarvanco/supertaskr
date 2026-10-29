@@ -1,3 +1,5 @@
+const repoRoot = fixtureFor(import.meta.url);
+import { pathToFileURL } from "node:url";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import {
   chmodSync,
@@ -19,16 +21,39 @@ import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { parse as parseYaml } from "yaml";
-import { repoRoot } from "../preflight";
+import { fixtureFor } from "../fixtures/test-project";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
-import { measureProductIdentity, WORKSPACE_ASSOCIATION_REL_PATH, WORKSPACE_BINDING_REL_PATH } from "../scripts/workspace.mjs";
+import {
+  WORKSPACE_ASSOCIATION_REL_PATH,
+  WORKSPACE_BINDING_REL_PATH,
+} from "../scripts/workspace.mjs";
+import * as fixtureSubjectDefinition0 from "../scripts/workspace.mjs";
+void fixtureSubjectDefinition0;
+const {
+  measureProductIdentity,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/workspace.mjs")).href) as typeof fixtureSubjectDefinition0;
 import { TOKEN_REL_PATH } from "../../../.claude/hooks/gate-token.mjs";
-import { conventionsText, liveTaskCards, taskStatuses, trackedFiles } from "../scripts/docs-scan.mjs";
+import * as fixtureSubjectDefinition1 from "../scripts/docs-scan.mjs";
+void fixtureSubjectDefinition1;
+const {
+  conventionsText,
+  liveTaskCards,
+  taskStatuses,
+  trackedFiles,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/docs-scan.mjs")).href) as typeof fixtureSubjectDefinition1;
 // THE EARS PATTERNS ARE THE METHOD'S AND THEIR READER IS session-economics's
 // (T-320): `dispatch-brief.mjs` cannot import it — that module imports THIS
 // one's subject — so the express arm takes the reading as an argument and
 // the bodies below hand in the same one `brief.mjs` does.
-import { DECOMPOSITION_FILE, earsKeywords, isEars } from "../scripts/session-economics.mjs";
+import {
+  DECOMPOSITION_FILE,
+} from "../scripts/session-economics.mjs";
+import * as fixtureSubjectDefinition2 from "../scripts/session-economics.mjs";
+void fixtureSubjectDefinition2;
+const {
+  earsKeywords,
+  isEars,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/session-economics.mjs")).href) as typeof fixtureSubjectDefinition2;
 // THE PARSER LIBRARY'S BUILT BROWSER ENTRY — the one `dispatch-brief.mjs`
 // imports since T-317, read here so a body can compare the arm's reading
 // of the settings with the library's rather than take the move on trust.
@@ -38,9 +63,46 @@ import * as parserPure from "../../../lib/parser/dist/pure.js";
 // name, and a named import cannot answer that question (T-344).
 import * as armModule from "../scripts/dispatch-brief.mjs";
 import {
-  AdmissionFinding,
   REPAIR_LEDGER_HEADING,
   RETRY_CAP_MS,
+  BASE_TOKEN,
+  DERIVERS,
+  GRANT_JOURNAL_REL_PATH,
+  GRANT_STORE_CODES,
+  GRANT_STORE_REL_PATH,
+  GRANT_SUPERSEDED_REL_PATH,
+  DISPATCH_STEPS,
+  EXIT,
+  GATE_SOURCE_DIRS,
+  GROUND_ADDENDUM_HEADING,
+  NO_GROUND,
+  PACK_TRANSCRIPTION_LIMIT,
+  PHASE1_SPAWN_NOTE,
+  PARKED_STATUS,
+  PIPE_BUFFER_BYTES,
+  PROCESS_SCHEMA,
+  PROCESS_SECTION,
+  SWITCH_FIELDS,
+  SWITCH_TYPES,
+  PROSE_WAKE_PATTERN,
+  ROLE_TEMPLATE_KEYS,
+  RUNTIME_TEMPLATE,
+  SPAWNSYNC_DEFAULT_MAXBUFFER,
+  TRIAGE_STATUSES,
+  WAKE_FENCE,
+  WOKEN_BY_STATUS,
+  EFFORT_NOT_CONFIGURED,
+  EXPRESS_CODES,
+  EXPRESS_REQUIREMENTS,
+  EXPRESS_STEPS,
+  ACTIVE_STATUSES,
+  ROLE_SPECIFIC_PHRASE,
+  BENCH_PASS_PHRASE,
+} from "../scripts/dispatch-brief.mjs";
+import * as fixtureSubjectDefinition3 from "../scripts/dispatch-brief.mjs";
+void fixtureSubjectDefinition3;
+const {
+  AdmissionFinding,
   UnattendedFinding,
   attribute,
   classifyRefusal,
@@ -57,18 +119,12 @@ import {
   repairLedger,
   retryInstant,
   sharedHealth,
-  BASE_TOKEN,
-  DERIVERS,
   admit,
   cardDrift,
   dispatchBlock,
   dispatchReadSites,
   grantInheritance,
   grantState,
-  GRANT_JOURNAL_REL_PATH,
-  GRANT_STORE_CODES,
-  GRANT_STORE_REL_PATH,
-  GRANT_SUPERSEDED_REL_PATH,
   GrantStoreFinding,
   blobShaOf,
   composeGrantSnapshot,
@@ -81,37 +137,12 @@ import {
   strayTemplateGrant,
   updateGrantStore,
   withGrantStoreLock,
-  DISPATCH_STEPS,
   AwaitFinding,
   defaultAwaitIo,
   DispatchLaneFinding,
-  EXIT,
   ModelFinding,
-  GATE_SOURCE_DIRS,
-  GROUND_ADDENDUM_HEADING,
-  NO_GROUND,
-  PACK_TRANSCRIPTION_LIMIT,
-  PHASE1_SPAWN_NOTE,
-  PARKED_STATUS,
-  PIPE_BUFFER_BYTES,
-  PROCESS_SCHEMA,
-  PROCESS_SECTION,
   ProcessFinding,
-  SWITCH_FIELDS,
-  SWITCH_TYPES,
-  PROSE_WAKE_PATTERN,
-  ROLE_TEMPLATE_KEYS,
-  RUNTIME_TEMPLATE,
-  SPAWNSYNC_DEFAULT_MAXBUFFER,
-  TRIAGE_STATUSES,
-  WAKE_FENCE,
-  WOKEN_BY_STATUS,
-  EFFORT_NOT_CONFIGURED,
-  EXPRESS_CODES,
-  EXPRESS_REQUIREMENTS,
-  EXPRESS_STEPS,
   ExpressFinding,
-  ACTIVE_STATUSES,
   compactCard,
   expressEligibility,
   expressLabel,
@@ -145,8 +176,6 @@ import {
   contractSource,
   exitStampStep,
   roleSpecificRows,
-  ROLE_SPECIFIC_PHRASE,
-  BENCH_PASS_PHRASE,
   benchPlan,
   runBench,
   conventionHeadings,
@@ -239,13 +268,19 @@ import {
   wakeRecs,
   withMargin,
   worktreePorcelain,
-} from "../scripts/dispatch-brief.mjs";
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/dispatch-brief.mjs")).href) as typeof fixtureSubjectDefinition3;
 // T-299 — THE MERGE SIDE OF THE PROCESS SETTINGS. These three live in
 // `merge.mjs` because they are the merge's own behaviour, and the bodies
 // for them are HERE because this card's fence names this spec and not
 // `merge.spec.ts`. Said out loud rather than left to be discovered, and
 // filed as T-299-s1.
-import { keeperSteps, regenPlace, tailPlan } from "../scripts/merge.mjs";
+import * as fixtureSubjectDefinition4 from "../scripts/merge.mjs";
+void fixtureSubjectDefinition4;
+const {
+  keeperSteps,
+  regenPlace,
+  tailPlan,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/merge.mjs")).href) as typeof fixtureSubjectDefinition4;
 // The band ids a switch may name, read from the bands themselves so that
 // "which band measures it" cannot be a band that does not exist.
 import { STANDING_BANDS } from "../scripts/health-bands.config.mjs";
@@ -319,7 +354,7 @@ function committedRecordsCliFixture() {
   const codeRoot = path.join(fx.dir, "source-only");
   for (const rel of ["tools/e2e/scripts/brief.mjs", "tools/e2e/scripts/records.mjs", "tools/e2e/scripts/workspace.mjs",
     "tools/e2e/scripts/records-context.mjs", "tools/e2e/scripts/qualified-admission.mjs", "tools/e2e/scripts/qualified-reservation.mjs",
-    "tools/e2e/scripts/docs-scan.mjs", "tools/e2e/scripts/token-scan.mjs", ".claude/hooks/lane-fence.mjs"]) {
+    "tools/e2e/scripts/docs-scan.mjs", "tools/e2e/scripts/token-scan.mjs", "cli/lane-fence.mjs"]) {
     const target = path.join(codeRoot, rel); mkdirSync(path.dirname(target), { recursive: true });
     writeFileSync(target, readFileSync(path.join(repoRoot, rel)));
   }
@@ -1370,6 +1405,9 @@ test("THE VERIFIER'S BRIEF ASSEMBLES — exit 0, thirteen rows, and a pack deriv
       cwd: fx.root, encoding: "utf8", maxBuffer: 64 * 1024 * 1024,
     });
     expect(armed.status, `collision fixture did not arm: ${armed.stderr}`).toBe(0);
+    const fence = JSON.parse(readFileSync(path.join(lane, ".supertaskr/lane-fence.json"), "utf8"));
+    expect(fence.taskId).toBe(FIXTURE_CARD_ID);
+    expect(fence.paths).toContain("method/roles/verifier.md");
     const refused = spawnSync(process.execPath, [CLI, "--task", "T-205-s5", "--role", "verifier", "--root", fx.root], {
       cwd: fx.root, encoding: "utf8", maxBuffer: 64 * 1024 * 1024,
     });
@@ -2747,7 +2785,11 @@ test("...and the OVER arm says what each named caller actually does past the lin
       "pausing",
       `${shq(process.execPath)} ${shq(pausingReader(dir))}`,
     );
-    const oneRead = readViaPipeline(argv, dir, "one-read", `dd bs=${PIPE_BUFFER_BYTES} count=1`);
+    const fixedReadSubjectBytes = Math.max(actual, PIPE_BUFFER_BYTES + 1);
+    // A small authored board need not exceed a pipe buffer. This caller's
+    // claim is conditional on exceeding it, so instantiate that condition
+    // with the same known-size writer already used for the default limit.
+    const oneRead = readViaPipeline(writesExactly(dir, fixedReadSubjectBytes), dir, "one-read", `dd bs=${PIPE_BUFFER_BYTES} count=1`);
 
     /**
      * WHAT WAS MEASURED, ASSERTED BEFORE IT IS COMPARED TO ANYTHING —
@@ -2857,13 +2899,13 @@ test("...and the OVER arm says what each named caller actually does past the lin
       {
         key: `past it, a reader taking ONE fixed read of that size (dd bs=${PIPE_BUFFER_BYTES} count=1):`,
         needles: [
-          oneRead.bytes < actual ? "a PREFIX of at most one buffer" : "at most one buffer",
+          oneRead.bytes < fixedReadSubjectBytes ? "a PREFIX of at most one buffer" : "at most one buffer",
           oneRead.readerStatus === EXIT.CLEAN
             ? "NO error on the reader's side at all"
             : "an error on the reader's side",
         ],
         absent: [
-          oneRead.bytes < actual ? "the whole answer" : "a PREFIX",
+          oneRead.bytes < fixedReadSubjectBytes ? "the whole answer" : "a PREFIX",
           oneRead.readerStatus === EXIT.CLEAN ? "an error on the reader's side" : "NO error",
         ],
       },
@@ -4451,7 +4493,9 @@ test("THE ARM LEAVES EXACTLY WHAT THE HAND STEPS LEAVE, file for file, plus the 
     const s = laneSpellings(conventions());
     const home = path.dirname(hand.root);
     const laneWt = path.join(home, s.worktreePattern.replace("T-NNN", FIXTURE_CARD_ID).replace("../", ""));
-    const benchWt = path.join(home, `supertaskr-V-${FIXTURE_CARD_ID}`);
+    const benchLabel = /bench worktree `([^`]+)`/.exec(conventions());
+    expect(benchLabel, "the authored policy must declare its bench path").not.toBeNull();
+    const benchWt = path.resolve(hand.root, benchLabel![1]!.replace("T-NNN", FIXTURE_CARD_ID));
     const branch = s.branchPattern.replace("T-NNN", FIXTURE_CARD_ID).replace("<slug>", FIXTURE_SLUG);
     const cardPath = path.join(hand.root, FIXTURE_CARD_FILE);
 
@@ -4521,7 +4565,7 @@ test("THE ARM LEAVES EXACTLY WHAT THE HAND STEPS LEAVE, file for file, plus the 
     // ── THE COMPARISON, FILE FOR FILE ──────────────────────────────────
     const armHome = path.dirname(arm.root);
     const armLane = path.join(armHome, `supertaskr-${FIXTURE_CARD_ID}`);
-    const armBench = path.join(armHome, `supertaskr-V-${FIXTURE_CARD_ID}`);
+    const armBench = path.resolve(arm.root, benchLabel![1]!.replace("T-NNN", FIXTURE_CARD_ID));
 
     // The worktree administration first: same entries, same branches, same
     // detached-ness. A bench cut on a branch would be a second lane.
@@ -7844,6 +7888,7 @@ test("T-315-s2 reviewer packets omit private card sections while raw sealing ret
   // sections from broad deletion of their vocabulary or the whole card.
   const raw = [
     "---", "id: T-999", "touches: [README.md]", "---", "",
+    "## Approval history", "PRIVATE-GRANT-HISTORY", "## Archived grant history", "PRIVATE-ARCHIVED-GRANT",
     "## Specification", "SPEC-CONTROL: an implementation report is the subject of this task.",
     "## Acceptance criteria", "- THE report SHALL preserve CONTRACT-CONTROL.",
     "```markdown", "## Implementation notes", "QUOTED-CONTRACT-CONTROL", "```",
@@ -7861,7 +7906,7 @@ test("T-315-s2 reviewer packets omit private card sections while raw sealing ret
   for (const packet of packets) {
     for (const kept of ["id: T-999", "touches: [README.md]", "SPEC-CONTROL", "CONTRACT-CONTROL", "QUOTED-CONTRACT-CONTROL"])
       expect(packet, `missing contract control ${kept}`).toContain(kept);
-    for (const hidden of ["PRIVATE-NOTES", "PRIVATE-REASONING", "PRIVATE-REPORT", "PRIVATE-VERDICT"])
+    for (const hidden of ["PRIVATE-GRANT-HISTORY", "PRIVATE-ARCHIVED-GRANT", "PRIVATE-NOTES", "PRIVATE-REASONING", "PRIVATE-REPORT", "PRIVATE-VERDICT"])
       expect(packet, `leaked ${hidden}`).not.toContain(hidden);
   }
   expect(sha256(raw)).toBe(digest);
@@ -8812,52 +8857,8 @@ test("THE TYPED SWITCH LIST AND THE SHIPPED SCHEMA AGREE EXACTLY, so a switch wi
   expect(declared.length, "the counts disagree").toBe(PROCESS_SWITCH_IDS.length);
 });
 
-test("THE SCHEMA CARRIES EVERY ROW OF THE ROOM'S SWITCH INVENTORY AND EVERY ID ITS FLOOR NAMES", () => {
-  // KILLED BY: a row of the room's table the schema never declared, a
-  // floor id the schema declares as switchable, and a schema switch that
-  // is neither a row of that table, a floor entry, nor named by another
-  // switch's own constraint — which is the direction that catches a
-  // switch invented here rather than ruled there.
-  const room = readFileSync(path.join(repoRoot, "docs", "rooms", "loop-cost-and-speed.md"), "utf8");
-  const at = room.indexOf("## The switch inventory");
-  expect(at, "the room no longer carries a switch inventory heading").toBeGreaterThan(-1);
-  const body = room.slice(at);
-  const rowIds = [...body.matchAll(/^\|\s*([a-z0-9_]+\.[a-z0-9_]+)\s*\|/gm)].map((m) => m[1] as string);
-  expect(rowIds.length, "the room's table parsed to too few rows to be the inventory").toBeGreaterThan(30);
-  const schema = shippedSchema();
-  expect(
-    rowIds.filter((id) => !schema.switches.has(id)),
-    "the room ruled switch(es) the schema does not declare",
-  ).toEqual([]);
-  // THE FLOOR the room names in code spans, each declared and each floor.
-  const floorAt = body.indexOf("The floor (no profile turns these off)");
-  expect(floorAt, "the room no longer carries its floor sentence").toBeGreaterThan(-1);
-  const floorSentence = body.slice(floorAt, body.indexOf("\n\n", floorAt));
-  const floorIds = [...floorSentence.matchAll(/`([a-z0-9_]+\.[a-z0-9_]+)`/g)].map((m) => m[1] as string);
-  expect(floorIds.length, "the floor sentence names no id at all").toBeGreaterThan(0);
-  for (const id of floorIds) {
-    const sw = schema.switches.get(id);
-    expect(sw, `the floor names ${id} and the schema does not declare it`).toBeDefined();
-    expect((sw as { floor: boolean }).floor, `${id} is floor in the room and switchable in the schema`).toBe(true);
-  }
-  // AND NOTHING WAS INVENTED. Every switch that is not floor is either a
-  // row of that table or is named by another switch's constraint — the
-  // second case is real: a constraint may name a setting the table
-  // referred to without giving it a row of its own.
-  const constrained = new Set<string>();
-  for (const sw of schema.switches.values()) {
-    for (const need of sw.needs) {
-      const m = /=>\s*([a-z0-9_]+\.[a-z0-9_]+)\s*=/.exec(need);
-      if (m?.[1] !== undefined) constrained.add(m[1]);
-    }
-  }
-  expect(
-    [...schema.switches.values()]
-      .filter((sw) => !sw.floor && !rowIds.includes(sw.id) && !constrained.has(sw.id))
-      .map((sw) => sw.id),
-    "the schema declares switchable option(s) neither the room nor a constraint names",
-  ).toEqual([]);
-});
+// Actual private ruling/template provenance: dogfood/private-project.spec.ts.
+
 
 test("THE ARM'S HAND PARSER AND A REAL YAML PARSER READ THE SAME SCHEMA, field for field", () => {
   // KILLED BY: a hand parser that drops a field, one that keeps a value's
@@ -9723,42 +9724,8 @@ test("THE ARM'S PHASE-1 STEP READS `verify.phase1` — the brief is written or i
   ).toContain(plan.phase1File);
 });
 
-test("THE SCHEMA'S TWO COLUMNS MOVE EXACTLY WHERE THE ROOM'S OLD AND RULED COLUMNS MOVE", () => {
-  // CORRECTION 2. The room's rows were compared to the schema's by ID in
-  // both directions and their VALUES by nothing — and this project RUNS
-  // the standard column, so a row transcribed into the wrong column is
-  // this project's loop quietly differing from what the decision ruled,
-  // with every other body green.
-  //
-  // NEITHER SIDE IS TYPED HERE, and no mapping between the room's prose
-  // values and the schema's enum values is needed: the room's own table
-  // says whether a row MOVED between its two columns, the schema's own
-  // table says the same thing, and the two answers are compared as sets.
-  const room = readFileSync(path.join(repoRoot, "docs", "rooms", "loop-cost-and-speed.md"), "utf8");
-  const table = room.slice(room.indexOf("## The switch inventory"));
-  const rows = [...table.matchAll(/^\|\s*([a-z0-9_]+\.[a-z0-9_]+)\s*\|([^|]*)\|([^|]*)\|([^|]*)\|/gm)].map(
-    (m) => ({ id: m[1] as string, old: (m[3] as string).trim(), ruled: (m[4] as string).trim() }),
-  );
-  expect(rows.length, "the room's table parsed to too few rows to be the inventory").toBeGreaterThan(30);
-  const schema = shippedSchema();
-  const roomMoved: string[] = [];
-  const schemaMoved: string[] = [];
-  for (const row of rows) {
-    const sw = schema.switches.get(row.id);
-    if (sw === undefined) continue;
-    if (row.old !== row.ruled) roomMoved.push(row.id);
-    if (sw.profiles.get("guarded-everything") !== sw.profiles.get("standard")) schemaMoved.push(row.id);
-  }
-  expect(roomMoved.length, "no row of the room moved at all, so this body compares nothing").toBeGreaterThan(0);
-  expect(
-    roomMoved.filter((id) => !schemaMoved.includes(id)),
-    "the room ruled these switch(es) changed and the schema gives them one value in both columns",
-  ).toEqual([]);
-  expect(
-    schemaMoved.filter((id) => !roomMoved.includes(id)),
-    "the schema moves these switch(es) between its two columns and the room ruled no such change",
-  ).toEqual([]);
-});
+// Actual private ruling/template provenance: dogfood/private-project.spec.ts.
+
 
 /*
  * ONE BODY PER SWITCH, AND ITS MUTANT IS EXECUTED RATHER THAN DESCRIBED.
@@ -10574,36 +10541,8 @@ test("THE ORCHESTRATOR'S STEP 5 KEEPS ITS TWO SENTENCES AND EXTENDS THEM — a d
   expect(step5, "the role file took a project's own command spelling").not.toContain("tools/e2e/scripts");
 });
 
-test("THE CONVENTIONS CARRY THE ADMISSION RULE ONCE, AT THE LOOP'S OWN SECTION", () => {
-  // THE CARD'S SEVENTH CRITERION, the conventions half: ONCE, and at the
-  // loop's section rather than in a bullet of its own — the dispatch
-  // block is already declared in the settings bullet, and a second bullet
-  // about the same block is the duplication this project's compaction
-  // rule exists against.
-  //
-  // KILLED BY: the rule written twice, the rule written in a bullet that
-  // is not the loop's, and a pause whose shape and location the document
-  // does not state.
-  const text = conventionsText(repoRoot);
-  const anchor = "THE PROCESS IS SETTINGS, AND EVERY SWITCH IS DECLARED ONCE";
-  expect(text.split(anchor).length - 1, "the loop's settings bullet is written more than once").toBe(1);
-  const marker = "EVERY ADMISSION THE ARM MAKES IS BOUND TO THE GRANT'S";
-  expect(text.split(marker).length - 1, "the admission rule is written more than once").toBe(1);
-  const bullet = text.slice(text.indexOf(anchor));
-  const nextBullet = bullet.indexOf("\n- ");
-  const section = nextBullet === -1 ? bullet : bullet.slice(0, nextBullet);
-  expect(section.includes(marker), "the admission rule does not sit in the loop's own section").toBe(true);
-  for (const owed of [
-    "ADMISSION COMES BEFORE THE",
-    "THE LEDGER IS THE RUN RECORDS AND THERE IS",
-    "A\n  PAUSE IS A RECORD IN THE RUNTIME DIRECTORY",
-    ".supertaskr/pause.json",
-    "new-work",
-    "SUCCESSOR COORDINATOR INHERITS THE GRANT FROM THE\n  BLOCK",
-  ]) {
-    expect(section, `the loop's section does not carry: ${owed}`).toContain(owed);
-  }
-});
+// Actual project policy provenance: dogfood/private-project.spec.ts.
+
 
 /* ════════════════════════════════════════════════════════════════════
  * THE UNATTENDED LOOP (T-322) — attribution before action, a repair that
@@ -11399,38 +11338,8 @@ test("T-322 C6 — ONE END-TO-END FIXTURE: a question parked, its dependent card
   }
 });
 
-test("T-322 C7 — THE CONVENTIONS CARRY THE HOST KEEP-AWAKE RULE ONCE, AT THE LOOP'S OWN SECTION, WITH ITS DERIVE COMMAND", () => {
-  // THE CARD'S SEVENTH CRITERION, the conventions half. ONCE and at the
-  // loop's section, on T-324's own argument one card later: the loop is
-  // declared there and a second bullet about the same loop is the
-  // duplication this project's compaction rule exists against.
-  //
-  // KILLED BY: the rule written twice; the rule written in a bullet that
-  // is not the loop's; a keep-awake sentence with no DERIVE command,
-  // which is a rule nobody can check; and the two command spellings
-  // living in the role file instead, where a product-agnostic document
-  // would carry a project's own path.
-  const text = conventionsText(repoRoot);
-  const anchor = "THE PROCESS IS SETTINGS, AND EVERY SWITCH IS DECLARED ONCE";
-  const marker = "THE HOST MUST STAY AWAKE OR THERE IS NO LOOP";
-  expect(text.split(marker).length - 1, "the keep-awake rule is written more than once").toBe(1);
-  const bullet = text.slice(text.indexOf(anchor));
-  const nextBullet = bullet.indexOf("\n- ");
-  const section = nextBullet === -1 ? bullet : bullet.slice(0, nextBullet);
-  expect(section.includes(marker), "the keep-awake rule does not sit in the loop's own section").toBe(
-    true,
-  );
-  for (const owed of [
-    "caffeinate -i -t",
-    "DERIVE\n  WHETHER IT IS HELD",
-    "pmset -g assertions",
-    "brief.mjs --since",
-    "brief.mjs --await-until",
-    "## Repair ledger",
-  ]) {
-    expect(section, `the loop's section does not carry: ${owed}`).toContain(owed);
-  }
-});
+// Actual project policy provenance: dogfood/private-project.spec.ts.
+
 
 test("T-322 C7 — THE ORCHESTRATOR'S STOP LIST NAMES ONLY THE STOPS THE GRANT RESERVES, and 5g says what each failure produces instead", () => {
   // THE CARD'S SEVENTH CRITERION, the role-file half. The stop list is

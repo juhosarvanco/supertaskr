@@ -6,7 +6,7 @@
 import { execFileSync } from "node:child_process";
 import { lstatSync, readFileSync, realpathSync } from "node:fs";
 import path from "node:path";
-import { RUNTIME_DIR } from "../../../.claude/hooks/lane-fence.mjs";
+import { RUNTIME_DIR } from "../../../cli/lane-fence.mjs";
 
 /** @typedef {{objectFormat: string, rootCommits: string[], selectedCommit?: string}} ProductIdentity */
 /** @typedef {{version: number, projectId: string, product: ProductIdentity}} PortableAssociation */

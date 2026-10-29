@@ -2106,6 +2106,42 @@ fn a_denial_missing_its_fields_still_reaches_the_screen_bounded_and_stripped() {
     assert!(status.last_error.is_none());
 }
 
+
+// The three historical provenance checks compile only for an explicit
+// private-dogfood run. Ordinary fake-agent behavior uses authored examples.
+#[cfg(feature = "private-dogfood")]
+#[path = "support/private_dogfood.rs"]
+mod private_dogfood;
+#[cfg(feature = "private-dogfood")]
+fn private_planner_capture() -> PathBuf {
+    private_dogfood::records_root().join("docs/research/captures/real-planner-turn-2026-08-19.jsonl")
+}
+
+#[test]
+fn authored_denial_protocol_and_declared_grant_examples_remain_ordinary() {
+    use supertaskr_lib::agent::adapter::{CLAUDE_V1, EFFECTIVE_GRANT_TABLES};
+    let out = std::process::Command::new(fake_agent_bin()).env("SUPERTASKR_FAKE_SCENARIO", "denied-then-completed").stdin(std::process::Stdio::null()).output().expect("owned fake agent");
+    assert!(out.status.success());
+    let rows: Vec<serde_json::Value> = String::from_utf8_lossy(&out.stdout).lines().filter(|line| !line.trim().is_empty()).map(|line| serde_json::from_str(line).expect("authored protocol JSON")).collect();
+    let denials: Vec<_> = rows.iter().filter(|row| row["subtype"] == "permission_denied").collect();
+    assert_eq!(denials.len(), 2);
+    assert_eq!(denials.iter().map(|row| row["decision_reason_type"].as_str().unwrap()).collect::<Vec<_>>(), ["subcommandResults", "other"]);
+    assert!(denials.iter().all(|row| row["tool_name"] == "Bash" && row["tool_use_id"].is_string() && row["message"].is_string()));
+    assert!(denials[0].get("decision_reason").is_none());
+    assert!(denials[1]["decision_reason"].is_string());
+    let result = rows.iter().find(|row| row["type"] == "result").expect("completed result");
+    assert_eq!(result["is_error"], false);
+    assert_eq!(result["terminal_reason"], "completed");
+    assert_eq!(result["permission_denials"].as_array().unwrap().len(), 2);
+    let defaults = EFFECTIVE_GRANT_TABLES.iter().find(|table| table.name.contains("CLI's own")).expect("declared defaults table");
+    for example in ["Bash", "Read", "Edit", "Write"] { assert!(defaults.observed.contains(&example), "public tool example {example}"); }
+    assert!(!defaults.observed.contains(&"WebFetch"));
+    let argv = CLAUDE_V1.argv(None).unwrap();
+    let at = argv.iter().position(|arg| arg == "--disallowedTools").expect("denylist");
+    assert!(argv[at + 1..].iter().any(|arg| arg == "WebFetch"));
+    assert!(CLAUDE_V1.allowed_tools().iter().all(|pattern| !defaults.observed.contains(pattern)));
+}
+
 /// **THE FIXTURE IS A TRANSCRIPTION, AND THIS IS WHAT MAKES THAT
 /// CHECKABLE RATHER THAN CLAIMED** (criterion 5).
 ///
@@ -2126,10 +2162,10 @@ fn a_denial_missing_its_fields_still_reaches_the_screen_bounded_and_stripped() {
 /// `session_id` and `uuid` are deliberately NOT compared: they are the
 /// identity of one run, not the shape of the protocol, and the fixture
 /// binds `session_id` to whatever session it is playing.
+#[cfg(feature = "private-dogfood")]
 #[test]
-fn the_tool_denied_fixture_is_a_transcription_not_a_construction() {
-    let capture = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../docs/research/captures/real-planner-turn-2026-08-19.jsonl");
+fn private_provenance_the_tool_denied_fixture_is_a_transcription_not_a_construction() {
+    let capture = private_planner_capture();
     let raw = fs::read_to_string(&capture)
         .unwrap_or_else(|err| panic!("{} is the source of the fixture: {err}", capture.display()));
     // The file is PRETTY-PRINTED JSON, one object per line. A substring
@@ -2235,14 +2271,14 @@ fn the_tool_denied_fixture_is_a_transcription_not_a_construction() {
 /// The precedent is the body directly above: a cargo test reading a docs
 /// file, after `snapshot_version_matches_the_live_method_stamps`. This
 /// adds NO new reader — it is the same capture that body already reads.
+#[cfg(feature = "private-dogfood")]
 #[test]
-fn the_2026_08_24_transcription_agrees_with_the_2026_08_19_capture() {
+fn private_provenance_the_2026_08_24_transcription_agrees_with_the_2026_08_19_capture() {
     use supertaskr_lib::agent::adapter::{
         RefusalMechanism, OBSERVED_PLANNER_REFUSALS,
     };
 
-    let capture = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../docs/research/captures/real-planner-turn-2026-08-19.jsonl");
+    let capture = private_planner_capture();
     let raw = fs::read_to_string(&capture)
         .unwrap_or_else(|err| panic!("{} corroborates the transcription: {err}", capture.display()));
     let captured_messages: Vec<String> = raw
@@ -2324,12 +2360,12 @@ fn the_2026_08_24_transcription_agrees_with_the_2026_08_19_capture() {
 ///
 /// This adds NO new docs reader: it is the same capture the two bodies
 /// above already read (CONVENTIONS, THE FOUR WALKS).
+#[cfg(feature = "private-dogfood")]
 #[test]
-fn the_cli_default_tool_table_is_read_off_the_2026_08_19_capture() {
+fn private_provenance_the_cli_default_tool_table_is_read_off_the_2026_08_19_capture() {
     use supertaskr_lib::agent::adapter::{CLAUDE_V1, EFFECTIVE_GRANT_TABLES};
 
-    let capture = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../docs/research/captures/real-planner-turn-2026-08-19.jsonl");
+    let capture = private_planner_capture();
     let raw = fs::read_to_string(&capture).unwrap_or_else(|err| {
         panic!("{} is the source of table two: {err}", capture.display())
     });
@@ -3494,6 +3530,7 @@ fn the_runners_write_set_is_snapshot_silent_and_the_agents_docs_write_is_not() {
             // T-167 added the field; this body's subject is the WATCHER's
             // silence over `.supertaskr/**` and no assertion in it moved.
             skills: vec![],
+            genesis: None,
         },
     )
     .expect("registry");
@@ -3506,6 +3543,7 @@ fn the_runners_write_set_is_snapshot_silent_and_the_agents_docs_write_is_not() {
                 text: format!("churn {turn}"),
                 at_ms: 0,
                 machine: false,
+                genesis: None,
             },
         )
         .expect("transcript");

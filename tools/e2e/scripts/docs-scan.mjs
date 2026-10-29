@@ -221,7 +221,7 @@
  *    the safe direction here, exactly as it is for GRAPH REGEN.
  */
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, realpathSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { regexEnd } from "./token-scan.mjs";
@@ -268,7 +268,7 @@ export const SKIP_DIRS = new Set([
 ]);
 
 /**
- * The four packages CONVENTIONS' "Build & test" section carries a
+ * The four packages CONTRIBUTING's "Build & test" section carries a
  * `run from <dir>/:` bullet for, each with the ONE command that runs
  * that package's suite — the answer a docs-only diff needs.
  *
@@ -330,8 +330,8 @@ const BACKTICK = String.fromCharCode(96);
  * per call site. They describe what the code already builds; nothing
  * below changed to satisfy them.
  *
- * @typedef {{ name: string, params: (string | null)[], defaults: (string | null)[], body: string, byParam?: Map<number, Set<string>> }} FnDef
- * @typedef {{ filePath: string, fileDir: string, pkgDir: string, crateDir: string | undefined, stripped: string, functionDefs: Map<string, FnDef>, bindings: Map<string, string>, resolveImport?: (name: string) => { expr: string, ctx: ScanCtx } | null }} ScanCtx
+ * @typedef {{ name: string, params: (string | null)[], defaults: (string | null)[], body: string, start: number, end: number, byParam?: Map<number, Set<string>> }} FnDef
+ * @typedef {{ sourceRoot: string, filePath: string, fileDir: string, pkgDir: string, crateDir: string | undefined, stripped: string, functionDefs: Map<string, FnDef>, bindings: Map<string, string>, resolveImport?: (name: string) => { expr: string, ctx: ScanCtx } | null }} ScanCtx
  * @typedef {{ file: string, suite: string | undefined, command: string | undefined, prefixes: string[], via: string[] }} Reader
  * @typedef {{ def: FnDef, ctx?: ScanCtx, rel?: string, stripped?: string }} CalleeHit
  */
@@ -452,6 +452,10 @@ export function stripComments(src) {
  *  branch existed. Rust's method form has always allowed it, which is
  *  how `common::repo_root().join(…)` was found in the first place. */
 const JS_SITE = /(?:^|[^\w$.])(?:[\w$]+\.)?(?:join|resolve)\s*\(\s*((?:[\w$.]+\s*\(\s*\)|[^,()'"`]+?))\s*,\s*(?=['"`])/g;
+// A literal constant is still a source path, as settings' REFERENCE_DOC
+// demonstrates. Follow only a same-file, noninterpolated literal; unknown
+// values remain unknown rather than becoming guessed documentation inputs.
+const JS_CONSTANT_SITE = /(?:^|[^\w$.])(?:[\w$]+\.)?(?:join|resolve)\s*\(\s*((?:[\w$.]+\s*\(\s*\)|[^,()'"`]+?))\s*,\s*([A-Za-z_$][\w$]*)\s*(?=[,)])/g;
 
 /** `resolve('<path>'…)` / `path.join('<path>'…)` — the same call with NO
  *  base written down. Its implicit base is the PACKAGE DIRECTORY the
@@ -560,6 +564,8 @@ function docsShaped(raw) {
 export const SITE_SAMPLES = Object.freeze([
   // ── positives: every spelling the tree actually uses ────────────────
   { text: 'const dir = join(ROOT, "docs/tasks");', sites: [["ROOT", "docs/tasks"]] },
+  { text: 'const DOC = "docs/reference/example.md"; path.join(ROOT, DOC);', sites: [["ROOT", "docs/reference/example.md"]] },
+  { text: 'const DOC = unknownInput(); path.join(ROOT, DOC);', sites: [] },
   {
     text: 'const f = path.join(repoRoot, "docs", "CONVENTIONS.md");',
     sites: [["repoRoot", "docs/CONVENTIONS.md"]],
@@ -694,6 +700,7 @@ const SAMPLE_ROOT = path.resolve(path.sep, "supertaskr-call-sample-root");
  */
 function sampleContext(stripped) {
   return {
+    sourceRoot: SAMPLE_ROOT,
     filePath: path.join(SAMPLE_ROOT, "pkg", "sample.ts"),
     fileDir: path.join(SAMPLE_ROOT, "pkg"),
     pkgDir: SAMPLE_ROOT,
@@ -813,6 +820,7 @@ const SAMPLE_PKG = path.join(SAMPLE_ROOT, "pkg");
  */
 function resolveContext(stripped) {
   return {
+    sourceRoot: SAMPLE_ROOT,
     filePath: path.join(SAMPLE_PKG, "tests", "sample.rs"),
     fileDir: path.join(SAMPLE_PKG, "tests"),
     pkgDir: SAMPLE_PKG,
@@ -1002,6 +1010,17 @@ export const PLANTED_READERS = Object.freeze([
   }),
 ]);
 
+/** Scanner control programs belong beside its other source specimens so a
+ * quoted specimen in the ordinary spec does not become a discovered reader. */
+export const SOURCE_PROVENANCE_CONTROLS = Object.freeze({
+  /** @param {string} climb */
+  sourceReader: climb => `import path from 'node:path'; import {fileURLToPath} from 'node:url'; const root=fileURLToPath(new URL('${climb}',import.meta.url)); path.join(root,'docs','CAPABILITIES.md');`,
+  callRoot: "import {fileURLToPath} from 'node:url'; import {parseProject} from '../src/index.js'; const root=fileURLToPath(new URL('../../../',import.meta.url)); parseProject(root);\n",
+  temporaryRoot: "import path from 'node:path'; import {fileURLToPath} from 'node:url'; import {createExampleProject} from '../../../tools/e2e/fixtures/example-project.mjs'; const root=createExampleProject(fileURLToPath(new URL('../../../',import.meta.url))); path.join(root,'docs','ROADMAP.md');\n",
+  localConstructor: "import path from 'node:path'; import {fileURLToPath} from 'node:url'; function createExampleProject(source){ return source; } const root=createExampleProject(fileURLToPath(new URL('../../../',import.meta.url))); path.join(root,'docs','ROADMAP.md');\n",
+  unknownResult: "import path from 'node:path'; import {fileURLToPath} from 'node:url'; const source=fileURLToPath(new URL('../../../',import.meta.url)); const project=unknownConstructor(source); path.join(project,'docs','ROADMAP.md');\n",
+});
+
 
 /**
  * Every DOCS-SHAPED site in one already-stripped source text: a
@@ -1020,7 +1039,12 @@ export const PLANTED_READERS = Object.freeze([
  * @returns {{ line: number, base: string, raw: string }[]}
  */
 export function docsSites(stripped) {
-  /** @type {{ line: number, base: string, raw: string }[]} */
+  return indexedDocsSites(stripped).map(({ line, base, raw }) => ({ line, base, raw }));
+}
+
+/** @param {string} stripped */
+function indexedDocsSites(stripped) {
+  /** @type {{ line: number, base: string, raw: string, offset: number }[]} */
   const sites = [];
   /** @param {number} index @returns {number} */
   const lineOf = (index) => stripped.slice(0, index).split("\n").length;
@@ -1040,10 +1064,18 @@ export function docsSites(stripped) {
       if (!docsShaped(raw)) continue;
       sites.push({
         line: lineOf(m.index),
+        offset: m.index + m[0].length,
         base: hasBase ? /** @type {string} */ (m[1]).trim() : "",
         raw,
       });
     }
+  }
+  const local = bindings(stripped);
+  for (const match of stripped.matchAll(JS_CONSTANT_SITE)) {
+    const literal = /^(['"`])([^'"`$\\]*)\1$/.exec(local.get(match[2] ?? "") ?? "");
+    const raw = literal?.[2];
+    if (raw === undefined || !docsShaped(raw)) continue;
+    sites.push({ line: lineOf(match.index), offset: match.index + match[0].length, base: (match[1] ?? "").trim(), raw });
   }
   return sites.sort((a, b) => a.line - b.line || a.raw.localeCompare(b.raw));
 }
@@ -1167,6 +1199,25 @@ export function evalBase(expr, ctx, depth = 0) {
     let dir = ctx.crateDir;
     for (let k = rustClimb(text); k > 0; k -= 1) dir = path.dirname(dir);
     return dir;
+  }
+  // The canonical example constructor allocates a fresh temporary project.
+  // Its source argument does not become the returned project root. Resolve
+  // the actual imported owner, rather than granting this property by name.
+  const exampleCall = /^createExampleProject\s*\(/.test(text);
+  if (exampleCall && !ctx.functionDefs.has("createExampleProject") && !ctx.bindings.has("createExampleProject")) {
+    const spec = importSourceOf(ctx.stripped, "createExampleProject");
+    const owner = spec === null ? null : path.resolve(ctx.fileDir, spec);
+    const canonicalOwner = path.join(ctx.sourceRoot, "tools/e2e/fixtures/example-project.mjs");
+    let exactOwner = false;
+    try { exactOwner = owner === canonicalOwner && realpathSync(owner) === path.join(realpathSync(ctx.sourceRoot), "tools/e2e/fixtures/example-project.mjs"); } catch {}
+    if (exactOwner && owner !== null) {
+      const source = readIfFile(owner);
+      const definition = source === null ? undefined : functionDefs(stripComments(source)).get("createExampleProject");
+      if (definition !== undefined &&
+          /const\s+root\s*=\s*mkdtempSync\(/.test(definition.body) &&
+          /return\s+root\s*;/.test(definition.body) &&
+          !/\broot\s*=(?!=)/.test(definition.body.replace(/const\s+root\s*=\s*mkdtempSync\([^;]*;/, ""))) return null;
+    }
   }
   // The file's own URL, with an optional relative step and dirname.
   if (text.includes("import.meta.url")) {
@@ -1298,6 +1349,8 @@ export function sourceCorpus(root = repoRoot) {
  * @returns {{ dir: string, command: string } | undefined}
  */
 export function suiteFor(rel) {
+  // Shared CLI implementations retain their existing e2e test owner.
+  if (rel === "cli" || rel.startsWith("cli/")) return SUITES.find((s) => s.dir === "tools/e2e");
   let best;
   for (const s of SUITES) {
     if (rel === s.dir || rel.startsWith(`${s.dir}/`)) {
@@ -1574,12 +1627,15 @@ export function functionDefs(stripped) {
     if (defs.has(name)) return;
     const body = bodyAfter(stripped, bodyFrom);
     if (body === null) return;
+    const start = stripped.indexOf(body, bodyFrom);
     const parts = splitArgs(paramText).map(paramParts);
     defs.set(name, {
       name,
       params: parts.map((p) => p.name),
       defaults: parts.map((p) => p.fallback),
       body,
+      start,
+      end: start + body.length,
     });
   };
   for (const m of stripped.matchAll(/(?:^|[^\w$.])(?:function|fn)\s+([\w$]+)\s*(?:<[^<>{}]*>)?\s*\(/g)) {
@@ -1790,6 +1846,7 @@ function contextFor(rel, stripped, root) {
   const crateDir = rel.endsWith(".rs") ? crateDirFor(filePath, root) : undefined;
   /** @type {ScanCtx} */
   const ctx = {
+    sourceRoot: root,
     filePath,
     fileDir: path.dirname(filePath),
     pkgDir: suite === undefined ? root : path.join(root, suite.dir),
@@ -1918,6 +1975,13 @@ export function docsReaders(root = repoRoot) {
  * @param {string} [root]
  * @param {Reader[]} [derivedReaders]
  */
+// Exact unresolved RECORDS inputs. This account does not qualify these callers
+// for separated operation: their source-root defaults still require adaptation.
+export const RECORDS_CONTEXT_SITES = Object.freeze([
+  Object.freeze({ file: "tools/e2e/scripts/dispatch-brief.mjs", function: "metersRecords", parameter: "root", default: "repoRoot", path: "docs/checkpoints/meters.jsonl" }),
+  Object.freeze({ file: "tools/e2e/scripts/health-bands.mjs", function: "metersFromTree", parameter: "root", default: "repoRoot", path: "docs/checkpoints/meters.jsonl" }),
+]);
+
 export function rootAnchoredFiles(root = repoRoot, derivedReaders = docsReaders(root)) {
   const readers = new Map(derivedReaders.map((r) => [r.file, r]));
   const out = [];
@@ -1927,7 +1991,30 @@ export function rootAnchoredFiles(root = repoRoot, derivedReaders = docsReaders(
     const anchors = rootAnchors(ctx, root);
     if (anchors.length === 0) continue;
     const reader = readers.get(rel);
-    const sites = docsSites(stripped);
+    // A project parameter belongs to its caller. A file can also hold the
+    // source root for an unrelated method/source check without making every
+    // parameter-owned docs destination an unexplained source-root read.
+    // Actual calls with this root remain derived by the existing CALL arm.
+    /** @type {(typeof RECORDS_CONTEXT_SITES)[number][]} */
+    const recordsContexts = [];
+    const sites = indexedDocsSites(stripped).filter((site) => {
+      const containing = [...ctx.functionDefs.values()]
+        .filter((def) => site.offset >= def.start && site.offset < def.end)
+        .sort((a, b) => (a.end - a.start) - (b.end - b.start));
+      const def = containing[0];
+      if (def === undefined || !/^[\w$]+$/.test(site.base)) return true;
+      const at = def.params.indexOf(site.base);
+      const context = RECORDS_CONTEXT_SITES.find(entry => entry.file === rel && entry.function === def.name &&
+        entry.parameter === site.base && entry.default === def.defaults[at] && entry.path === site.raw);
+      if (context !== undefined) {
+        recordsContexts.push(context);
+        return false;
+      }
+      if (at < 0 || def.defaults[at] !== null) return true;
+      // An assigned parameter may now hold the source root. Keep the
+      // conservative tripwire whenever its original identity was changed.
+      return new RegExp(`\\b${site.base}\\s*(?:[+|&?]?=)(?!=)`).test(def.body);
+    });
     // LINKED means the site produced a docs prefix, not that its base
     // was the root — a root-anchored file may reach docs/ off its crate
     // directory instead, and calling that "unlinked" would report a file
@@ -1941,11 +2028,21 @@ export function rootAnchoredFiles(root = repoRoot, derivedReaders = docsReaders(
           ? "derived"
           : sites.length > 0 && linked.length === 0
             ? "unlinked"
-            : "unclassified",
+            : recordsContexts.length > 0 ? "records-context-unadapted" : "unclassified",
       prefixes: reader?.prefixes ?? [],
+      recordsContexts,
     });
   }
   return out.sort((a, b) => a.file.localeCompare(b.file));
+}
+
+/** Precise known private sites are obligations, not a source-wide exemption.
+ * A changed default/path/function must revise this account explicitly.
+ * @param {ReturnType<typeof rootAnchoredFiles>} anchored */
+export function recordsContextSiteProblems(anchored) {
+  const seen = anchored.flatMap(entry => entry.recordsContexts);
+  return RECORDS_CONTEXT_SITES.filter(entry => !seen.includes(entry))
+    .map(entry => `${entry.file}::${entry.function} no longer matches its exact unadapted records-context descriptor`);
 }
 
 /**
@@ -2153,9 +2250,9 @@ export function suitesOwedForAllOfDocs(readers) {
  * WHAT IS TRUE, and all this ledger claims: a file that holds this
  * repository's ROOT is the only kind of file that can name docs/ by an
  * ABSOLUTE anchor, and `rootAnchoredFiles()` is the whole of THAT class.
- * Most of them do not read docs/, and of the ones that do, most sit in a
- * suite that is already owed for every path under docs/ (tools/e2e), so
- * a miss there cannot change an answer. What is
+ * Most do not read docs/. A suite is universal only when actual derived
+ * readers owe it for all of docs/; ordinary fixture isolation removed the
+ * former universal tools/e2e reader. What is
  * left — a root-anchored file in a suite that is NOT universally owed,
  * which the derivation could not link — is the exact set of places
  * THIS CLASS's answer could still be short, and it is small enough to be
@@ -2167,52 +2264,42 @@ export function suitesOwedForAllOfDocs(readers) {
  * stops being true cannot linger.
  */
 export const ROOT_ANCHOR_LEDGER = Object.freeze([
-  Object.freeze({
-    file: "app/src-tauri/crates/supertaskr-index/src/arch/registry.rs",
-    reads: "docs/architecture/components",
-    why:
-      "A REAL READER THIS SCAN CANNOT SEE, and the sharpest entry here. " +
-      "`reads_this_repos_live_registry_and_finds_the_known_shape` calls " +
-      "`read_registry(&crate::testutil::repo_root())`, and read_registry forms its " +
-      "path as `root.join(REGISTRY_REL_DIR)` — a docs path behind a `const &str` " +
-      "(T-084-s1) reached through a Rust call hop. NO ANSWER MOVES: the pair it " +
-      "would contribute (cargo test, docs/architecture/components) is already " +
-      "contributed by tests/arch.rs:192, and the spec asserts that rather than " +
-      "asserting it here.",
-  }),
-  Object.freeze({
-    file: "app/src-tauri/crates/supertaskr-index/src/testutil.rs",
-    reads: "",
-    why: "Defines `repo_root()`. It forms no path under docs/ at all.",
-  }),
-  Object.freeze({
-    file: "app/src-tauri/crates/supertaskr-index/tests/common/mod.rs",
-    reads: "",
-    why: "Defines `repo_root()` for the crate's integration tests. Forms no docs path.",
-  }),
-  Object.freeze({
-    file: "app/src-tauri/crates/supertaskr-index/tests/perf.rs",
-    reads: "",
-    why:
-      "`copy_repo_to` copies the whole tree, docs/ included — but its only caller " +
-      "is `perf_cold_and_incremental_within_ceilings`, which is `#[ignore]`d " +
-      "(\"perf harness: run on a release build\"), so bare `cargo test` never runs it.",
-  }),
-  Object.freeze({
-    file: "app/src-tauri/crates/supertaskr-index/tests/self_graph.rs",
-    reads: "",
-    why:
-      "Indexes the live repo off `common::repo_root()`. The one body that reads a " +
-      "path under docs/ — `self_graph_is_current`, `root.join(GRAPH_REL_PATH)` — is " +
-      "`#[ignore]`d. The two that DO run assert docs/ is ABSENT from the graph " +
-      "(the root .supertaskrignore), which is the opposite of reading it.",
-  }),
-  Object.freeze({
-    file: "app/test/genesis-derive.test.ts",
-    reads: "",
-    why: "Joins the root with `method/interview/plan-interview.md`. Not docs/.",
-  }),
-]);
+  { file: "app/src-tauri/crates/supertaskr-index/tests/common/mod.rs", scope: "source", reads: "", why: "Defines the integration-test source root; forms no docs path." },
+  { file: "app/src-tauri/crates/supertaskr-index/tests/perf.rs", scope: "private-context-unadapted", reads: "whole-tree copy", why: "The ignored release performance harness copies the checkout including any docs present. It is outside ordinary Cargo discovery and is not qualified for separated private contexts." },
+  { file: "app/src-tauri/crates/supertaskr-index/tests/self_graph.rs", scope: "private-context-unadapted", reads: "docs/code-graph.json (ignored currency case)", why: "Ordinary cases index source and assert docs nodes absent. The ignored committed-graph currency case still needs the separated bound producer/check route; moving it out of ordinary CI does not satisfy that obligation." },
+  { file: "app/src-tauri/src/agent/kit.rs", scope: "source", reads: "", why: "Compares reusable method bytes and the compiled/interview version anchors. Caller-owned kit destinations are not the source checkout; private adoption is a records-service observation." },
+  { file: "app/src-tauri/src/dispatch/fixtures.rs", scope: "test-fixture", reads: "", why: "Copies authored example bytes and reusable method from the source root. ExampleFiles supplies a distinct temporary project for all brief test records; no private project records are read." },
+  { file: "app/src-tauri/tests/support/private_dogfood.rs", scope: "bound-dogfood", reads: "", why: "Validates the explicit split binding and exact source revision before returning the selected records root. It does not read records through the source root." },
+  { file: "app/test/genesis-derive.test.ts", scope: "source", reads: "", why: "Reads the reusable method/interview source, not docs." },
+  { file: "tools/e2e/fixtures/shell.ts", scope: "test-fixture", reads: "", why: "The source anchor locates the authored shell fixture under tools/e2e/fixtures; its docs destination belongs to that fixture." },
+  { file: "tools/e2e/fixtures/source-only.ts", scope: "test-fixture", reads: "public manuals and CAPABILITIES", why: "Copies current product working bytes with an explicit product-document filter. Private records and runtime binding are excluded; the observer separately calibrates attempted private reads." },
+  { file: "tools/e2e/fixtures/tool-runtime.ts", scope: "test-fixture", reads: "", why: "Builds one immutable TOOL from the current source-only fixture. The source anchor locates the shared Cargo build cache; no selected private record is an input or package member." },
+  { file: "tools/e2e/preflight.ts", scope: "source", reads: "", why: "Locates the app and built parser and starts the isolated product server. No docs input is opened." },
+  { file: "tools/e2e/scripts/ci-owed.mjs", scope: "source", reads: "", why: "Runs owed-set against source Git ranges. Documentation dependency discovery is delegated to the scanner, whose linked sites retain the actual prefixes." },
+  { file: "tools/e2e/scripts/source-ci-owed.mjs", scope: "source", reads: "", why: "Reads source Git ranges using the explicit source-CI suite contract. Documentation dependencies remain scanner-derived; this entry neither runs configured user gates nor selects private records." },
+  { file: "tools/e2e/scripts/dispatch-brief.mjs", scope: "private-context-unadapted", reads: "selected board/policy and exact meters context site", why: "Brief readers accept a project root but still default to the source checkout. Caller-owned roots are not source-doc proofs; this module's separated command/context adaptation remains T303 work." },
+  { file: "tools/e2e/scripts/dispatch-order.mjs", scope: "private-context-unadapted", reads: "selected board/policy", why: "Uses the source anchor for parser artifacts and defaults project readers to that root. Synthetic ordinary tests exercise its behavior; those defaults are not qualified for separated operation." },
+  { file: "tools/e2e/scripts/docs-gate.mjs", scope: "source", reads: "", why: "Scans source reader sites and asks the owed/path questions. Private record validation and derived INDEX persistence belong to the explicit records service." },
+  { file: "tools/e2e/scripts/gate-run.mjs", scope: "source", reads: "", why: "Locates suites, source imports, settings readers and Git ranges. Documentation dependencies come from the scanner; product-command generalization is not established by this account." },
+  { file: "tools/e2e/scripts/health-bands-run.mjs", scope: "private-context-unadapted", reads: "selected cards/checkpoints/meters", why: "Explicit sourceHealthMain fixture compatibility retains source-root record readers and the old suggestion writer; these legacy calls remain unqualified T303 consumers. The installed configured-health route uses committed PRODUCT bands, explicit output captures or configured-tree-health committed RECORDS facts and selected tier_budgets, with filing delegated to records save. Missing selectors/policy and unsupported merge history refuse; source fixtures do not qualify the installed route or those unsupported scopes." },
+  { file: "tools/e2e/scripts/health-bands.mjs", scope: "private-context-unadapted", reads: "selected cards/checkpoints and exact meters context site", why: "Legacy root-parameter filesystem/history readers, including readingsFromTree and metersFromTree, remain source-fixture compatibility and are not separated-context-qualified. Pure comparison/math also serves configured-tree-health, whose explicit committed RECORDS capture owns installed tree observations; sharing math does not qualify these remaining default-root reader call sites." },
+  { file: "tools/e2e/scripts/interview-skill.mjs", scope: "source", reads: "", why: "Reads reusable method/adapters/templates and compiled kit source. Generated docs paths name blank-kit destinations, not filled source records." },
+  { file: "tools/e2e/scripts/lane-fence.mjs", scope: "private-context-unadapted", reads: "selected policy/cards", why: "The project policy parser still defaults to source-root conventions and cards. Ordinary controls use a copied authored project; that does not qualify the command's default binding." },
+  { file: "tools/e2e/scripts/private-dogfood.mjs", scope: "bound-dogfood", reads: "", why: "Validates the explicit product origin, exact revision and split workspace binding before starting opt-in private assertions. It rejects missing context instead of consulting product docs." },
+  { file: "tools/e2e/scripts/push-checks.mjs", scope: "private-context-unadapted", reads: "selected STATE/checkpoint records", why: "Push policy accepts an explicit tree but its default source-root record context is not yet separated. Product development does not install this optional policy automatically." },
+  { file: "tools/e2e/scripts/range-rule.mjs", scope: "private-context-unadapted", reads: "selected conventions and historical policy revision", why: "Range evidence readers still default to the source-root policy history. Authored ordinary policy cases preserve behavior; selected private command adaptation remains required." },
+  { file: "tools/e2e/scripts/tauri-boot-check.mjs", scope: "source", reads: "", why: "Reads source app build configuration and starts the boot probe. It has no private docs input." },
+  { file: "tools/e2e/scripts/token-scan.mjs", scope: "source", reads: "", why: "Locates its source inventory. Its output roots may include docs, but the ordinary lexing pass reads configured source files; public/manual and private-record scans must retain their declared context." },
+  { file: "tools/e2e/tests/boot-check-guard.spec.ts", scope: "source", reads: "", why: "Reads committed product build configuration and executes authored boot controls, not private records." },
+  { file: "tools/e2e/tests/git-fixture.spec.ts", scope: "test-fixture", reads: "", why: "Uses the source anchor for byte comparisons with product fixtures. Temporary Git histories and docs are authored by the fixture." },
+  { file: "tools/e2e/tests/genesis-method-contract.spec.ts", scope: "source", reads: "", why: "Reads canonical reusable method role/interview and blank-template bytes from the product. Scaffold docs belong only to its independently allocated temporary legacy projects; no selected private board is read." },
+  { file: "tools/e2e/tests/docs-input-gate.spec.ts", scope: "source", reads: "", why: "Reads the actual product AGENTS/CLAUDE source contract for parity. Private derivation controls use an independent authored project and actual private provenance lives in explicit dogfood." },
+  { file: "tools/e2e/tests/identifier-rename.spec.ts", scope: "source", reads: "", why: "Scans only product source/public manuals and authored classifier controls. Exact record-retention floors and selected private prose scans run through the bound dogfood entrypoint." },
+  { file: "tools/e2e/tests/interview-skill.spec.ts", scope: "source", reads: "", why: "Compares generated skill/blank-kit output with reusable product method inputs, not filled project records." },
+  { file: "tools/e2e/tests/native-codex.spec.ts", scope: "source", reads: "", why: "Checks product adapter, optional hook and parser packaging surfaces. It forms no private documentation read." },
+  { file: "tools/e2e/tests/workflow-parity.spec.ts", scope: "source", reads: "", why: "Compares product CI against the single public CONTRIBUTING command contract; private CONVENTIONS adoption is service-owned." },
+  { file: "tools/e2e/tests/workflow-permissions.spec.ts", scope: "source", reads: "", why: "Reads workflow YAML permissions and event shapes only." },
+].map(entry => Object.freeze(entry)));
 
 /**
  * Root-anchored files the derivation could not link WHOSE SUITE IS NOT
@@ -2469,6 +2556,12 @@ export function taskStatuses(root = repoRoot) {
   } catch (err) {
     throw new Error(`docs-scan: cannot read the status vocabulary from ${TASK_STATUS_SOURCE}: ${String(err)}`);
   }
+  return taskStatusesFromSource(text);
+}
+
+/** The same vocabulary extractor for selected committed PRODUCT bytes.
+ * @param {string} text */
+export function taskStatusesFromSource(text) {
   const decl = /export const TASK_STATUSES\s*=\s*\[([\s\S]*?)\]\s*as const/.exec(text);
   if (decl === null) {
     throw new Error(
@@ -3316,29 +3409,22 @@ export function renderDocsIndexFromSource(source) {
   const out = [
     "# Index",
     "",
-    "<!-- GENERATED — do not edit by hand (T-293, ADR-024 decision 2).",
-    "     Regenerate:  npm run capabilities   (from tools/e2e/ — the same",
-    "                  command that regenerates the behaviour census)",
-    "     Currency:    npm run lint:docs      (the docs gate reds while the",
-    "                  committed index is stale against the documents below)",
-    "     Source: each document's own first heading, the sentence its",
-    "     opening paragraph uses to say what it is, and its section",
-    "     headings. No line here is typed by hand, so a line is false only",
-    "     while this file is stale — and stale is what the gate refuses. -->",
+    "<!-- GENERATED — do not edit by hand. Private records INDEX.",
+    "     Explicit private checking derives this document from the complete",
+    "     candidate. Supported records save persists these exact derived bytes",
+    "     together with accepted primary edits. Product capability generation",
+    "     is separate and never checks or writes this private INDEX.",
+    "     Source: each document's own first heading, opening contract sentence",
+    "     and section headings. Currency is checked by the selected records",
+    "     validation policy; a stale INDEX requires a supported records save. -->",
     "",
-    "The standing read is docs/STATE.md and this file. Everything else",
-    "reaches a seat through its brief's context pack.",
+    "For this explicitly selected private project, the standing read is",
+    "docs/STATE.md and this file. Open other governing inputs at the sections",
+    "named below when the task needs their rules. Report missing or invalid",
+    "selected records; never substitute stale product docs or another board.",
     "",
-    "**WHEN THE PACK DID NOT HAND YOU THE RULE, YOU HAVE TWO MOVES AND",
-    "NEITHER IS GUESSING.** Write the ask file your lane names",
-    "(`<scratch>/ask-<card id>.md`), park it and keep building; or open the",
-    "document below AT THE SECTION its line names and read that section.",
-    "An architect session once spent a working day rebuilding a belief",
-    "about `blocked_by` that the roadmap's own F-06 entry would have",
-    "corrected in a sentence (T-138).",
-    "",
-    "What opening one COSTS is a measurement, not a figure kept here:",
-    "`wc -c` the paths below.",
+    "The entries and sections below are deterministic derivations of the",
+    "selected candidate's document bytes, not a product capability census.",
     "",
   ];
   for (const rel of INDEXED_DOCS) {

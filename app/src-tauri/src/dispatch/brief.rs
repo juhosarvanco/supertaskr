@@ -2201,18 +2201,8 @@ mod tests {
         }
     }
 
-    /// The real repository root, for the two live-tree bodies.
-    fn repo_root() -> PathBuf {
-        Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("..")
-            .join("..")
-            .canonicalize()
-            .expect("the repository root is two directories above app/src-tauri")
-    }
-
-    fn live_files() -> DiskFiles {
-        DiskFiles::new(&repo_root())
-    }
+    type FixtureFiles = fixtures::ExampleFiles;
+    fn live_files() -> FixtureFiles { fixtures::example_project() }
 
     /// THIS PROJECT'S RULES AS ONE TEXT, off the real tree — the index
     /// spliced with the chapters it points at (T-290). Every body below
@@ -2489,7 +2479,7 @@ mod tests {
         // brief. Both dispositions are asserted, so the body is not
         // satisfied by "nothing was produced".
         let live = live_files();
-        let whole = DiskFiles::new(&repo_root());
+        let whole = live_files();
         assert!(
             matches!(
                 assemble(&whole, &a_card(), Role::Executor, &no_lanes()),
@@ -2527,7 +2517,7 @@ mod tests {
     /// A source that answers one path with substituted text and
     /// delegates every other to disk.
     struct OverlayFiles {
-        inner: DiskFiles,
+        inner: FixtureFiles,
         path: String,
         text: String,
     }
@@ -2545,7 +2535,7 @@ mod tests {
 
     /// A source that refuses exactly one path.
     struct RefusingFiles {
-        inner: DiskFiles,
+        inner: FixtureFiles,
         refuse: String,
     }
     impl FileSource for RefusingFiles {
@@ -2986,7 +2976,7 @@ mod tests {
             "the control is not vacuous: the POSITIONAL reading answers the planted path"
         );
         let files = OverlayFiles {
-            inner: DiskFiles::new(&repo_root()),
+            inner: live_files(),
             path: CONVENTIONS.to_string(),
             text: planted,
         };
@@ -3033,7 +3023,7 @@ mod tests {
         );
 
         let overlaid = |text: String| OverlayFiles {
-            inner: DiskFiles::new(&repo_root()),
+            inner: live_files(),
             path: CONVENTIONS.to_string(),
             text,
         };
@@ -3140,7 +3130,7 @@ mod tests {
         // THE PROPERTY: the row keys on the LABEL, so the decoy is not
         // what it answers — and the decoy is spent nowhere else in row 4.
         let files = OverlayFiles {
-            inner: DiskFiles::new(&repo_root()),
+            inner: live_files(),
             path: CONVENTIONS.to_string(),
             text: planted,
         };
@@ -3279,7 +3269,7 @@ mod tests {
     fn a_dispatch_bullet_that_names_no_checkpoint_marker_is_a_refusal_never_a_default() {
         let live_text = live_conventions();
         let overlaid = |text: String| OverlayFiles {
-            inner: DiskFiles::new(&repo_root()),
+            inner: live_files(),
             path: CONVENTIONS.to_string(),
             text,
         };
@@ -3686,7 +3676,8 @@ mod tests {
         // The method and docs sources the brief reads, copied from this
         // repository so the fixture's brief is assembled from the SAME
         // documents a real dispatch would use.
-        let here = repo_root();
+        let example = live_files();
+        let here = example.root();
         for rel in [
             "CLAUDE.md",
             "docs/CONVENTIONS.md",

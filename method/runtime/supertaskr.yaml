@@ -1,14 +1,15 @@
-# .supertaskr/supertaskr.yaml — role defaults and thresholds
-# Task-file fields override these per task.
+# Reusable TOOL seed defaults, not a configured project's settings.
+# The canonical seed constructor copies approved sections into committed
+# PRODUCT supertaskr.yaml. Task-file fields override project defaults per task.
 
-# THE MODEL PER ROLE IS READ FROM HERE, AND FROM NOWHERE ELSE (ADR-024
-# decision 5). The arm resolves each dispatched seat's model out of this
-# block, prints it in the brief and REFUSES the dispatch when a role it
+# The arm resolves each dispatched seat's model from the configured PROJECT
+# roles block (ADR-024 decision 5), prints it in the brief and REFUSES when a role it
 # is filling has no default — it never falls back to whatever model the
 # dispatching session happens to be running on, because a dispatch with
 # no named model put all twenty-six reviewers of one measured run on the
-# top tier. Opus 5 is the default for every role and these values are the
-# user's to change: change them here and every dispatch after it changes.
+# top tier. The reusable seed below starts every role at Opus 5. Change the
+# committed project's settings to change its later dispatches; keep this
+# TOOL template reusable. Missing project configuration is never a fallback.
 roles:
   planner: claude-opus-5@subagent
   builder: claude-opus-5@subagent

@@ -622,6 +622,8 @@ export function failureHeadline(error: TurnErrorPayload): string {
   switch (error.kind) {
     case "spawnFailed":
       return "the planner could not be started";
+    case "promptInputFailed":
+      return "the planner did not receive the complete message";
     case "startTimeout":
       return "the planner did not answer in time";
     case "stall":
@@ -728,7 +730,7 @@ export function listOf(names: readonly string[]): string {
  * none. Never interpreted — only bounded. */
 export function failureDetail(error: TurnErrorPayload): string | null {
   const raw =
-    error.kind === "spawnFailed"
+    error.kind === "spawnFailed" || error.kind === "promptInputFailed"
       ? error.os
       : error.kind === "exitNonZero"
         ? error.stderrTail
