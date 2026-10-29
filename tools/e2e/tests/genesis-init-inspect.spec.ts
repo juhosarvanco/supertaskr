@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { discoverProjectInitializations, inspectProjectInitialization } from "../scripts/genesis-init-inspect.mjs";
@@ -68,6 +68,7 @@ test("current setup inspection preserves the original receipt across later commi
     const { receipt } = initialized(f);
     expect(discoverProjectInitializations(f.product).initializations[0]).toMatchObject({ state: "initialized", originStatus: "matched", receipt });
     const first = inspect(f); expect(first.receipt).toEqual(receipt);
+    expect(first.planning.pristineSeed).toBe(true);
     expect(first.planner).toMatchObject({status:"ready",selection:{role:"planner",harness:"claude",model:"claude-opus-5",vehicle:"subagent"},provenance:{
       configurationDigest:first.settingsProvenance.configDigest,productRevision:first.current.productRevision,toolManifestDigest:first.settingsProvenance.tool.manifestDigest}});
     expect(first.planner.provenance.toolManifestDigest).toMatch(/^[0-9a-f]{64}$/);
@@ -80,11 +81,31 @@ test("current setup inspection preserves the original receipt across later commi
     expect(current.receipt).toEqual(receipt); expect(current.current.productRevision).toBe(p); expect(current.current.recordsRevision).toBe(r);
     expect(current.settingsProvenance).toMatchObject({ kind: "committed", productRoot: f.product, productRevision: p });
     expect(current.settings.languages).toEqual([]); expect(Object.isFrozen(current)).toBe(true);
+    expect(current.planning.pristineSeed).toBe(false);
     const nextSettings = structuredClone(current.settings); nextSettings.roles.planner = "codex/gpt-6.1-sol@fresh";
     putPrivate(f.product,"supertaskr.yaml",JSON.stringify(nextSettings)); const unsupported = commit(f.product,"supertaskr.yaml");
     const refusedPlanner = inspect(f); expect(refusedPlanner.current.productRevision).toBe(unsupported);
     expect(refusedPlanner.planner).toMatchObject({status:"cannot-run",code:3,reason:"project-role-harness-unsupported"});
     expect(refusedPlanner.receipt).toEqual(receipt);
+  } finally { f.cleanup(); }
+});
+
+test("only the exact accepted initial docs and index qualify a pristine first-start seed", () => {
+  const f = genesisFixture();
+  try {
+    initialized(f); const file=path.join(f.records,"docs/ROADMAP.md"), original=readFileSync(file), mode=statSync(file).mode&0o777;
+    expect(inspect(f).planning.pristineSeed).toBe(true);
+    writeFileSync(file,Buffer.concat([original,Buffer.from("\nOwner's new plan\n")])); expect(inspect(f).planning.pristineSeed).toBe(false);
+    writeFileSync(file,original); expect(inspect(f).planning.pristineSeed).toBe(true);
+    const extra=path.join(f.records,"docs/tasks/extra.md");writeFileSync(extra,"# Existing owner work\n"); expect(inspect(f).planning.pristineSeed).toBe(false);
+    unlinkSync(extra); expect(inspect(f).planning.pristineSeed).toBe(true);
+    chmodSync(file,0o700); expect(inspect(f).planning.pristineSeed).toBe(false); chmodSync(file,mode);expect(inspect(f).planning.pristineSeed).toBe(true);
+    writeFileSync(file,Buffer.concat([original,Buffer.from("\nStaged owner plan\n")]));privateGit(f.records,["add","--","docs/ROADMAP.md"]);writeFileSync(file,original);
+    expect(inspect(f).planning.pristineSeed).toBe(false);privateGit(f.records,["restore","--staged","--","docs/ROADMAP.md"]);expect(inspect(f).planning.pristineSeed).toBe(true);
+    privateGit(f.records,["update-index","--assume-unchanged","--","docs/ROADMAP.md"]);expect(inspect(f).planning.pristineSeed).toBe(false);
+    privateGit(f.records,["update-index","--no-assume-unchanged","--","docs/ROADMAP.md"]);expect(inspect(f).planning.pristineSeed).toBe(true);
+    const held=path.join(f.dir,"held-seed.md");renameSync(file,held);symlinkSync(held,file);expect(inspect(f).planning.pristineSeed).toBe(false);
+    unlinkSync(file);renameSync(held,file);expect(inspect(f).planning.pristineSeed).toBe(true);
   } finally { f.cleanup(); }
 });
 

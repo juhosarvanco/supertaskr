@@ -274,7 +274,9 @@ pub struct SelectionGate {
     decision: Mutex<Decision>,
     changed: Condvar,
     genesis: bool,
+    expectation: Option<SelectionExpectation>,
 }
+pub(super) type SelectionExpectation = Arc<dyn Fn(&Path, &RecordsObservation) -> Result<(), String> + Send + Sync>;
 impl SelectionGate {
     #[cfg(test)]
     fn new() -> Self {
@@ -285,6 +287,7 @@ impl SelectionGate {
             decision: Mutex::new(Decision::Pending),
             changed: Condvar::new(),
             genesis,
+            expectation: None,
         }
     }
     fn cancel_or_committed(&self) -> Option<DocsSnapshot> {
@@ -335,7 +338,15 @@ pub(super) fn open_genesis(
 }
 
 fn open_selected(state: &WatchState, product: &Path, genesis: bool) -> PickOutcome {
-    let gate = Arc::new(SelectionGate::for_genesis(genesis));
+    open_expected(state, product, genesis, None)
+}
+pub(super) fn open_initialized(state: &WatchState, product: &Path, expectation: SelectionExpectation) -> PickOutcome {
+    open_expected(state, product, false, Some(expectation))
+}
+fn open_expected(state: &WatchState, product: &Path, genesis: bool, expectation: Option<SelectionExpectation>) -> PickOutcome {
+    let mut gate = SelectionGate::for_genesis(genesis);
+    gate.expectation = expectation;
+    let gate = Arc::new(gate);
     let (prepared, prepared_rx) = mpsc::channel();
     let (completed, completed_rx) = mpsc::channel();
     let error = |message: String| PickOutcome::Error {
@@ -520,6 +531,18 @@ pub(super) fn select<T: notify_debouncer_mini::notify::Watcher>(
         return;
     }
     let candidate = prepare(debouncer, resolve(product.clone(), 0));
+    let expected = |target: &WatchTarget| -> Result<(), String> {
+        if let Some(expectation) = &gate.expectation {
+            let selection = target.managed.as_ref().ok_or("initialized selection unavailable")?;
+            expectation(&selection.product, &selection.envelope(0))?;
+        }
+        Ok(())
+    };
+    if let Err(message) = expected(&candidate) {
+        retire(debouncer, &candidate, target);
+        let _ = prepared.send(Err(message));
+        return;
+    }
     let genesis_ready = |target: &WatchTarget| {
         target.managed.as_ref().is_some_and(|selection| {
             selection.layout == "colocated" && selection.availability != "unavailable"
@@ -549,6 +572,12 @@ pub(super) fn select<T: notify_debouncer_mini::notify::Watcher>(
     // Revalidate after acknowledgement and collect again. Candidate events
     // queued during the rendezvous are subsequently diffed against these bytes.
     let mut committed = prepare(debouncer, resolve(product, 0));
+    if expected(&committed).is_err() {
+        retire(debouncer, &candidate, target);
+        retire(debouncer, &committed, target);
+        gate.cancel_or_committed();
+        return;
+    }
     if gate.genesis && !genesis_ready(&committed) {
         retire(debouncer, &candidate, target);
         retire(debouncer, &committed, target);
@@ -566,6 +595,12 @@ pub(super) fn select<T: notify_debouncer_mini::notify::Watcher>(
         committed.managed = Some(selection.clone());
     }
     if gate.genesis && !genesis_ready(&committed) {
+        retire(debouncer, &candidate, target);
+        retire(debouncer, &committed, target);
+        gate.cancel_or_committed();
+        return;
+    }
+    if expected(&committed).is_err() {
         retire(debouncer, &candidate, target);
         retire(debouncer, &committed, target);
         gate.cancel_or_committed();
@@ -888,6 +923,28 @@ mod tests {
             .iter()
             .find(|f| f.path == "docs/record.md")
             .map(|f| f.content.as_str())
+    }
+
+    #[test]
+    fn initialized_expectation_refusal_at_each_rendezvous_keeps_original_watch_and_allows_later_selection() {
+        let a=Fixture::new();let b=Fixture::new();let live=Live::new(None);let original=live.pick(&a.product);
+        for fail_at in 1..=3 {
+            let target=b.product.clone();let records=b.records.display().to_string();let seen=Arc::new(AtomicU64::new(0));let count=seen.clone();
+            let expectation:SelectionExpectation=Arc::new(move |product,observed| {
+                assert_eq!(product,target);assert_eq!(observed.records_dir.as_deref(),Some(records.as_str()));
+                if count.fetch_add(1,Ordering::SeqCst)+1==fail_at {Err("original inspected setup changed".into())} else {Ok(())}
+            });
+            let flight=live.state.begin_pick().unwrap();let result=select_initialized_folder(&live.state,&b.product,expectation);drop(flight);
+            assert!(matches!(result,PickOutcome::Error {..}),"{result:?}");assert_eq!(seen.load(Ordering::SeqCst),fail_at);
+            assert_eq!(live.state.project_dir(),Some(a.product.clone()));
+            assert_eq!(live.read().records.as_ref().unwrap().selection_sequence,original.records.as_ref().unwrap().selection_sequence);
+            let marker=format!("original file event after refused stage {fail_at}");fs::write(a.records.join("docs/record.md"),&marker).unwrap();
+            live.until(|snapshot|text(snapshot)==Some(marker.as_str()));
+        }
+        let flight=live.state.begin_pick().unwrap();let accepted=select_initialized_folder(&live.state,&b.product,Arc::new(|_,_|Ok(())));drop(flight);
+        let accepted=match accepted {PickOutcome::Picked {snapshot}=>snapshot,other=>panic!("{other:?}")};
+        assert!(accepted.seq>original.seq);assert_eq!(accepted.records.as_ref().unwrap().records_dir.as_deref(),Some(b.records.to_str().unwrap()));
+        fs::write(b.records.join("docs/record.md"),"positive initialized watch event").unwrap();live.until(|snapshot|text(snapshot)==Some("positive initialized watch event"));
     }
 
     #[test]

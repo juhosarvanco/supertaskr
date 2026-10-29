@@ -81,6 +81,63 @@ pub(crate) struct InitializedSetup {
     pub records_revision: String,
     pub settings: serde_json::Value,
     pub planner: super::planner::Decision,
+    pub pristine_seed: bool,
+}
+/// A native-picked, inspected workspace before selection. It has no watcher
+/// sequence, activation or webview authority. Final Select supplies those.
+#[derive(Clone, Debug)]
+pub(crate) struct InitializedCandidate {
+    product: PathBuf,
+    records: PathBuf,
+    origin: SessionOrigin,
+    pub setup: InitializedSetup,
+}
+fn current_split_origin(product: &Path) -> Result<(PathBuf, PathBuf, SessionOrigin), String> {
+    let resolver = WorkspaceResolver::new().map_err(|error| error.to_string())?;
+    let workspace = resolver.resolve_workspace(product, WorkspaceMode::Development, "HEAD").map_err(|error| error.to_string())?;
+    if workspace.layout() != Layout::Split { return Err("genesis-initialized-split-required".into()); }
+    let product = workspace.product_root().to_path_buf();
+    let records = workspace.records_root().to_path_buf();
+    let origin = SessionOrigin { version:1, layout:"split".into(), association_id:workspace.association().project_id.clone(),
+        product:repository(&resolver,&product,true)?, records:repository(&resolver,&records,true)?,
+        docs:Some(directory(&records.join("docs"))?), runtime:Some(directory(&product.join(".supertaskr"))?) };
+    Ok((product, records, origin))
+}
+impl InitializedCandidate {
+    pub(crate) fn capture(product: &Path, value: &serde_json::Value) -> Result<Self, String> {
+        let (product, records, origin) = current_split_origin(product)?;
+        let setup = admit_initialization(&product, &records, &origin, value)?;
+        let candidate = Self { product, records, origin, setup };
+        candidate.verify()?;
+        Ok(candidate)
+    }
+    pub(crate) fn product(&self) -> &Path { &self.product }
+    pub(crate) fn verify(&self) -> Result<(), String> {
+        let (product, records, origin) = current_split_origin(&self.product)?;
+        if product != self.product || records != self.records || origin != self.origin {
+            return Err("genesis-initialization-origin-changed".into());
+        }
+        let resolver = WorkspaceResolver::new().map_err(|error| error.to_string())?;
+        if resolver.measure_product_identity(&product,"HEAD").map_err(|error| error.to_string())?.selected_commit.as_deref() != Some(self.setup.product_revision.as_str())
+            || resolver.measure_product_identity(&records,"HEAD").map_err(|error| error.to_string())?.selected_commit.as_deref() != Some(self.setup.records_revision.as_str()) {
+            return Err("genesis-initialization-current-changed".into());
+        }
+        if current_split_origin(&self.product)? != (product, records, origin) {
+            return Err("genesis-initialization-origin-changed".into());
+        }
+        Ok(())
+    }
+    pub(crate) fn verify_observation(&self, product: &Path, observed: &crate::docs_watch::RecordsObservation) -> Result<(), String> {
+        let incarnation = |identity: &DirectoryIdentity| format!("{}:{}",identity.device,identity.inode);
+        if product != self.product || observed.layout != "split" || observed.availability != "available"
+            || observed.records_dir.as_deref() != Some(self.records.to_string_lossy().as_ref())
+            || observed.association_id != self.origin.association_id
+            || observed.root_incarnation.as_deref() != Some(incarnation(&self.origin.records.root).as_str())
+            || observed.docs_incarnation != self.origin.docs.as_ref().map(incarnation) {
+            return Err("genesis-initialization-origin-changed".into());
+        }
+        self.verify()
+    }
 }
 #[derive(Clone, Copy)]
 pub enum RuntimeRecord {
@@ -222,6 +279,85 @@ fn selected_same(a: &MessageScope, b: &MessageScope) -> bool {
         })
 }
 
+fn admit_initialization(product: &Path, records: &Path, origin: &SessionOrigin, value: &serde_json::Value) -> Result<InitializedSetup, String> {
+    verify_original_paths(product, records, origin)?;
+    let current = &value["current"];
+    let as_value = |identity: &DirectoryIdentity| serde_json::to_value(identity).ok();
+    let repository_matches = |expected: &RepositoryIdentity, observed: &serde_json::Value| {
+        let identities = observed["identities"].as_array();
+        let Some(identities) = identities.filter(|rows| rows.len() == 4) else { return false; };
+        let (Some(git), Some(common)) = (&expected.git_directory, &expected.common_directory) else { return false; };
+        observed["root"].as_str().map(Path::new) == Some(expected.root.path.as_path())
+            && observed["gitDir"].as_str().map(Path::new) == Some(git.path.as_path())
+            && observed["commonDir"].as_str().map(Path::new) == Some(common.path.as_path())
+            && as_value(&expected.root).as_ref() == Some(&identities[0])
+            && as_value(git).as_ref() == Some(&identities[1])
+            && as_value(common).as_ref() == Some(&identities[2])
+            && directory(&common.path.join("objects")).ok().and_then(|fact| as_value(&fact)).as_ref() == Some(&identities[3])
+    };
+    if origin.layout != "split"
+        || value["status"] != "current"
+        || value["installation"]["runtimeKit"] != "verified"
+        || !repository_matches(&origin.product, &current["product"])
+        || !repository_matches(&origin.records, &current["records"])
+        || origin.docs.as_ref().and_then(as_value).as_ref() != Some(&current["docs"])
+        || origin.runtime.as_ref().and_then(as_value).as_ref() != Some(&current["runtime"])
+        || current["association"]["projectId"].as_str() != origin.association_id.as_deref()
+    {
+        return Err("genesis-initialization-origin-changed".into());
+    }
+    let string = |at: &serde_json::Value| at.as_str().map(str::to_owned).ok_or_else(|| "genesis-initialization-response-unavailable".to_string());
+    let setup_id = string(&value["receipt"]["operationId"])?;
+    let request_digest = string(&value["receipt"]["requestDigest"])?;
+    let receipt_digest = string(&value["receipt"]["receiptDigest"])?;
+    let product_revision = string(&current["productRevision"])?;
+    let records_revision = string(&current["recordsRevision"])?;
+    let digest = |text: &str| text.strip_prefix("sha256:").is_some_and(|hex| hex.len() == 64 && hex.bytes().all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase()));
+    let oid = |text: &str| [40, 64].contains(&text.len()) && text.bytes().all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase());
+    if !session_id_valid(&setup_id) || !digest(&request_digest) || !digest(&receipt_digest)
+        || !oid(&product_revision) || !oid(&records_revision)
+        || value["receipt"]["status"] != "initialized"
+        || value["receipt"]["projectId"].as_str() != origin.association_id.as_deref()
+        || value["receipt"]["product"]["root"].as_str().map(Path::new) != Some(product)
+        || value["receipt"]["records"]["root"].as_str().map(Path::new) != Some(records)
+        || !value["settings"].is_object()
+        || value["settingsProvenance"]["kind"] != "committed"
+        || value["settingsProvenance"]["productRoot"].as_str().map(Path::new) != Some(product)
+        || value["settingsProvenance"]["productRevision"].as_str() != Some(product_revision.as_str())
+    {
+        return Err("genesis-initialization-response-unavailable".into());
+    }
+    if value["settingsProvenance"]["tool"]["methodVersion"].as_str() != Some(super::kit::METHOD_SNAPSHOT_VERSION) {
+        return Err("genesis-method-update-required".into());
+    }
+    verify_original_paths(product, records, origin)?;
+    let planner = super::planner::Decision::from_observation(value)?;
+    let pristine_seed = value["planning"]["pristineSeed"].as_bool().ok_or("genesis-initialization-response-unavailable")?;
+    Ok(InitializedSetup { setup_id, request_digest, receipt_digest, product_revision, records_revision, settings: value["settings"].clone(), planner, pristine_seed })
+}
+
+fn verify_original_paths(product: &Path, records: &Path, origin: &SessionOrigin) -> Result<(), String> {
+    let resolver = WorkspaceResolver::new().map_err(|error| error.to_string())?;
+    if repository(&resolver, product, origin.layout == "split")? != origin.product
+        || repository(&resolver, records, origin.layout == "split")? != origin.records
+        || origin
+            .docs
+            .as_ref()
+            .map(|identity| directory(&identity.path))
+            .transpose()?
+            != origin.docs
+        || origin
+            .runtime
+            .as_ref()
+            .map(|identity| directory(&identity.path))
+            .transpose()?
+            != origin.runtime
+    {
+        return Err("genesis-original-home-changed".into());
+    }
+    Ok(())
+}
+
 impl GenesisContext {
     /// Caller must acquire the existing picker latch before this capture and
     /// retain it until its finite writes and actual spawn boundary are complete.
@@ -335,63 +471,8 @@ impl GenesisContext {
     }
     /// Admit the installed service's current read against this original native
     /// observation. Backend paths stay here; they never become webview routing.
-    pub(crate) fn initialization_observation(
-        &self,
-        value: &serde_json::Value,
-    ) -> Result<InitializedSetup, String> {
-        self.verify_original()?;
-        let current = &value["current"];
-        let as_value = |identity: &DirectoryIdentity| serde_json::to_value(identity).ok();
-        let repository_matches = |expected: &RepositoryIdentity, observed: &serde_json::Value| {
-            let identities = observed["identities"].as_array();
-            let Some(identities) = identities.filter(|rows| rows.len() == 4) else { return false; };
-            let (Some(git), Some(common)) = (&expected.git_directory, &expected.common_directory) else { return false; };
-            observed["root"].as_str().map(Path::new) == Some(expected.root.path.as_path())
-                && observed["gitDir"].as_str().map(Path::new) == Some(git.path.as_path())
-                && observed["commonDir"].as_str().map(Path::new) == Some(common.path.as_path())
-                && as_value(&expected.root).as_ref() == Some(&identities[0])
-                && as_value(git).as_ref() == Some(&identities[1])
-                && as_value(common).as_ref() == Some(&identities[2])
-                && directory(&common.path.join("objects")).ok().and_then(|fact| as_value(&fact)).as_ref() == Some(&identities[3])
-        };
-        if !self.split()
-            || value["status"] != "current"
-            || value["installation"]["runtimeKit"] != "verified"
-            || !repository_matches(&self.origin.product, &current["product"])
-            || !repository_matches(&self.origin.records, &current["records"])
-            || self.origin.docs.as_ref().and_then(as_value).as_ref() != Some(&current["docs"])
-            || self.origin.runtime.as_ref().and_then(as_value).as_ref() != Some(&current["runtime"])
-            || current["association"]["projectId"].as_str() != self.origin.association_id.as_deref()
-        {
-            return Err("genesis-initialization-origin-changed".into());
-        }
-        let string = |at: &serde_json::Value| at.as_str().map(str::to_owned).ok_or_else(|| "genesis-initialization-response-unavailable".to_string());
-        let setup_id = string(&value["receipt"]["operationId"])?;
-        let request_digest = string(&value["receipt"]["requestDigest"])?;
-        let receipt_digest = string(&value["receipt"]["receiptDigest"])?;
-        let product_revision = string(&current["productRevision"])?;
-        let records_revision = string(&current["recordsRevision"])?;
-        let digest = |text: &str| text.strip_prefix("sha256:").is_some_and(|hex| hex.len() == 64 && hex.bytes().all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase()));
-        let oid = |text: &str| [40, 64].contains(&text.len()) && text.bytes().all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase());
-        if !session_id_valid(&setup_id) || !digest(&request_digest) || !digest(&receipt_digest)
-            || !oid(&product_revision) || !oid(&records_revision)
-            || value["receipt"]["status"] != "initialized"
-            || value["receipt"]["projectId"].as_str() != self.origin.association_id.as_deref()
-            || value["receipt"]["product"]["root"].as_str().map(Path::new) != Some(self.product.as_path())
-            || value["receipt"]["records"]["root"].as_str().map(Path::new) != Some(self.records.as_path())
-            || !value["settings"].is_object()
-            || value["settingsProvenance"]["kind"] != "committed"
-            || value["settingsProvenance"]["productRoot"].as_str().map(Path::new) != Some(self.product.as_path())
-            || value["settingsProvenance"]["productRevision"].as_str() != Some(product_revision.as_str())
-        {
-            return Err("genesis-initialization-response-unavailable".into());
-        }
-        if value["settingsProvenance"]["tool"]["methodVersion"].as_str() != Some(super::kit::METHOD_SNAPSHOT_VERSION) {
-            return Err("genesis-method-update-required".into());
-        }
-        self.verify_original()?;
-        let planner = super::planner::Decision::from_observation(value)?;
-        Ok(InitializedSetup { setup_id, request_digest, receipt_digest, product_revision, records_revision, settings: value["settings"].clone(), planner })
+    pub(crate) fn initialization_observation(&self, value: &serde_json::Value) -> Result<InitializedSetup, String> {
+        admit_initialization(&self.product, &self.records, &self.origin, value)
     }
     pub fn fingerprint(&self) -> String {
         self.origin.fingerprint()
@@ -399,27 +480,7 @@ impl GenesisContext {
     /// Original callbacks may settle their own runtime record after navigation.
     /// They revalidate the captured physical homes, not a successor binding.
     pub fn verify_original(&self) -> Result<(), String> {
-        let resolver = WorkspaceResolver::new().map_err(|error| error.to_string())?;
-        if repository(&resolver, &self.product, self.split())? != self.origin.product
-            || repository(&resolver, &self.records, self.split())? != self.origin.records
-            || self
-                .origin
-                .docs
-                .as_ref()
-                .map(|identity| directory(&identity.path))
-                .transpose()?
-                != self.origin.docs
-            || self
-                .origin
-                .runtime
-                .as_ref()
-                .map(|identity| directory(&identity.path))
-                .transpose()?
-                != self.origin.runtime
-        {
-            return Err("genesis-original-home-changed".into());
-        }
-        Ok(())
+        verify_original_paths(&self.product, &self.records, &self.origin)
     }
     /// Only the two existing native runtime records are named here. No caller
     /// path crosses IPC, and this does not grant PRODUCT configuration writes.
@@ -578,9 +639,12 @@ mod tests {
     }
 
     fn controlled_initialization_observation(context: &GenesisContext) -> serde_json::Value {
+        controlled_initialization_observation_parts(&context.product, &context.records, &context.origin)
+    }
+    fn controlled_initialization_observation_parts(product_root: &Path, records_root: &Path, origin: &SessionOrigin) -> serde_json::Value {
         let resolver = WorkspaceResolver::new().unwrap();
-        let product = resolver.measure_product_identity(&context.product, "HEAD").unwrap();
-        let records = resolver.measure_product_identity(&context.records, "HEAD").unwrap();
+        let product = resolver.measure_product_identity(&product_root, "HEAD").unwrap();
+        let records = resolver.measure_product_identity(&records_root, "HEAD").unwrap();
         let repository = |origin: &RepositoryIdentity, measured: &crate::workspace::ProductIdentity| {
             let git = origin.git_directory.as_ref().unwrap();
             let common = origin.common_directory.as_ref().unwrap();
@@ -590,14 +654,14 @@ mod tests {
         };
         // Controlled service-wire receipt. Original acceptance itself is owned
         // and tested by the actual Node service; this tests native admission.
-        serde_json::json!({"status":"current","installation":{"runtimeKit":"verified"},
-            "receipt":{"status":"initialized","operationId":"init-controlled-wire","projectId":context.origin.association_id,
+        serde_json::json!({"status":"current","installation":{"runtimeKit":"verified"},"planning":{"pristineSeed":false},
+            "receipt":{"status":"initialized","operationId":"init-controlled-wire","projectId":origin.association_id,
                 "requestDigest":format!("sha256:{}","a".repeat(64)),"receiptDigest":format!("sha256:{}","b".repeat(64)),
-                "product":{"root":context.product},"records":{"root":context.records}},
+                "product":{"root":product_root},"records":{"root":records_root}},
             "current":{"productRevision":product.selected_commit,"recordsRevision":records.selected_commit,
-                "product":repository(&context.origin.product,&product),"records":repository(&context.origin.records,&records),
-                "association":{"projectId":context.origin.association_id},"docs":context.origin.docs,"runtime":context.origin.runtime},
-            "settings":{"version":1,"languages":[]},"settingsProvenance":{"kind":"committed","productRoot":context.product,
+                "product":repository(&origin.product,&product),"records":repository(&origin.records,&records),
+                "association":{"projectId":origin.association_id},"docs":origin.docs,"runtime":origin.runtime},
+            "settings":{"version":1,"languages":[]},"settingsProvenance":{"kind":"committed","productRoot":product_root,
                 "configDigest":format!("sha256:{}","c".repeat(64)),"productRevision":product.selected_commit,
                 "tool":{"methodVersion":super::super::kit::METHOD_SNAPSHOT_VERSION,"manifestDigest":"d".repeat(64)}},
             "planner":{"status":"ready","selection":{"role":"planner","requested":"claude-opus-5@subagent","harness":"claude","model":"claude-opus-5","vehicle":"subagent",
@@ -659,6 +723,26 @@ mod tests {
         let successor = GenesisContext::capture(&fixture.watch, None).unwrap();
         assert_eq!(successor.initialization_observation(&wire).unwrap_err(), "genesis-initialization-origin-changed");
         assert!(successor.initialization_observation(&controlled_initialization_observation(&successor)).is_ok());
+    }
+
+    #[test]
+    fn initialized_candidate_uses_current_physical_roots_and_exact_cuts_without_minting_a_selection() {
+        let fixture=Fixture::new();let original=GenesisContext::capture(&fixture.watch,None).unwrap();
+        let initial_scope=fixture.watch.message_scope();let wire=controlled_initialization_observation(&original);
+        let candidate=InitializedCandidate::capture(&fixture.product,&wire).unwrap();
+        candidate.verify_observation(&fixture.product,initial_scope.records.as_ref().unwrap()).unwrap();
+        assert_eq!(fixture.watch.message_scope().selection_sequence,initial_scope.selection_sequence);
+        let mut future=wire.clone();future["current"]["productRevision"]="0".repeat(40).into();future["settingsProvenance"]["productRevision"]="0".repeat(40).into();future["planner"]["provenance"]["productRevision"]="0".repeat(40).into();
+        assert_eq!(InitializedCandidate::capture(&fixture.product,&future).unwrap_err(),"genesis-initialization-current-changed");
+        fixture.bind(&fixture.other);
+        assert!(candidate.verify().is_err());
+        let (product,records,origin)=current_split_origin(&fixture.product).unwrap();
+        let next_wire=controlled_initialization_observation_parts(&product,&records,&origin);
+        let next=InitializedCandidate::capture(&fixture.product,&next_wire).unwrap();
+        assert!(next.verify_observation(&fixture.product,initial_scope.records.as_ref().unwrap()).is_err());
+        assert_eq!(fixture.watch.message_scope().selection_sequence,initial_scope.selection_sequence);
+        fixture.pick();next.verify_observation(&fixture.product,fixture.watch.message_scope().records.as_ref().unwrap()).unwrap();
+        assert!(fixture.watch.message_scope().selection_sequence>initial_scope.selection_sequence);
     }
 
     #[test]

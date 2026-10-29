@@ -2,7 +2,8 @@
  * not admit a current planner, install an update or grant filesystem access.
  */
 import { execFileSync } from "node:child_process";
-import { lstatSync, readFileSync, readdirSync, realpathSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { closeSync, constants, fstatSync, lstatSync, openSync, readFileSync, readSync, readdirSync, realpathSync } from "node:fs";
 import path from "node:path";
 import { listAcceptedOperations, captureOperationRepository } from "./durable-operation.mjs";
 import { observeProjectInitialization } from "./project-init-operation.mjs";
@@ -109,6 +110,54 @@ function verifyRuntimeKit(rec, current) {
   walk(""); if (seen.size !== expected.size) refuse("genesis-init-kit-changed");
 }
 
+/** This is exact original producer data, never a plan-content heuristic. A
+ * dirty/extra/linked seed is ordinary existing work and cannot bootstrap Start.
+ * The caller still rechecks origin/current policy before any planner effect.
+ * @param {any} rec @param {any} current @param {any} receipt */
+function pristineInitializationSeed(rec, current, receipt) {
+  if (current.recordsRevision !== receipt.records.commit || constants.O_NOFOLLOW === undefined || constants.O_NONBLOCK === undefined) return false;
+  const plan = rec.operation.request.plans.records, files = plan.files.filter((/** @type {any} */ file) => file.path.startsWith("docs/"));
+  if (!files.length) return false;
+  const expected = new Map(files.map((/** @type {any} */ file) => [file.path, file])), directories = new Set(["docs"]), seen = new Set();
+  for (const file of files) { let parent = path.dirname(file.path); while (parent !== ".") { directories.add(parent); parent = path.dirname(parent); } }
+  for (const row of rec.operation.request.directories) if (row.role === "records" && row.path.startsWith("docs/")) directories.add(row.path);
+  const index = () => git(current.records.root, ["ls-files", "--stage", "-z", "--", "docs"]);
+  const flags = () => git(current.records.root, ["ls-files", "-v", "-z", "--", "docs"]);
+  try {
+    const staged = index(), marked = flags(), entries = staged.split("\0").filter(Boolean);
+    if (entries.length !== files.length || marked.split("\0").filter(Boolean).some(row => !row.startsWith("H "))) return false;
+    for (const row of entries) {
+      const tab = row.indexOf("\t"), [mode, oid, stage] = row.slice(0, tab).split(" "), file = expected.get(row.slice(tab + 1));
+      if (!file || stage !== "0" || mode !== file.mode) return false;
+      const bytes = Buffer.from(file.base64, "base64"), hash = createHash(plan.objectFormat).update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
+      if (oid !== hash) return false;
+    }
+    /** @param {string} relative */
+    function walk(relative) {
+      for (const name of readdirSync(path.join(current.records.root, relative))) {
+        const member = `${relative}/${name}`, absolute = path.join(current.records.root, member), stat = lstatSync(absolute);
+        if (stat.isSymbolicLink()) return false;
+        if (stat.isDirectory()) { if (!directories.has(member) || !walk(member)) return false; continue; }
+        const file = expected.get(member);
+        if (!file || !stat.isFile() || stat.nlink !== 1 || (stat.mode & 0o111 ? "100755" : "100644") !== file.mode) return false;
+        const bytes = Buffer.from(file.base64, "base64"); if (stat.size !== bytes.length) return false;
+        const fd = openSync(absolute, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+        try {
+          const opened = fstatSync(fd); if (!opened.isFile() || opened.dev !== stat.dev || opened.ino !== stat.ino || opened.size !== bytes.length || opened.mode !== stat.mode || opened.nlink !== 1) return false;
+          const actual = Buffer.alloc(bytes.length + 1); let count = 0;
+          while (count < actual.length) { const read = readSync(fd, actual, count, actual.length - count, count); if (read === 0) break; count += read; }
+          const after = fstatSync(fd), named = lstatSync(absolute);
+          if (count !== bytes.length || !actual.subarray(0, count).equals(bytes) || after.size !== opened.size || after.mode !== opened.mode || after.nlink !== 1 || after.mtimeMs !== opened.mtimeMs || after.ctimeMs !== opened.ctimeMs ||
+              named.isSymbolicLink() || named.dev !== opened.dev || named.ino !== opened.ino || named.mode !== opened.mode || named.nlink !== 1) return false;
+        } finally { closeSync(fd); }
+        seen.add(member);
+      }
+      return true;
+    }
+    return walk("docs") && seen.size === expected.size && index() === staged && flags() === marked;
+  } catch { return false; }
+}
+
 /** Backend-only current data, not a session/write grant. Unique exact original
  * acceptance, physical homes, current association/config and original kit must
  * all agree. The native caller must still bind its own selected context and
@@ -129,8 +178,9 @@ export function inspectProjectInitialization(input) {
   const settings = loadProjectSettings({ productRoot: current.product.root, productRevision: current.productRevision, tool: input.tool });
   if (settings.status !== "ready") refuse(settings.code);
   verifyRuntimeKit(rec, current); verifyInstalledRecordTool(input.tool);
+  const pristineSeed = pristineInitializationSeed(rec, current, observed.receipt);
   if (!same(currentContext(current.product.root), current)) refuse("genesis-init-current-changed");
   return freeze({ status: "current", receipt: structuredClone(observed.receipt), current,
-    settings: settings.settings, settingsProvenance: settings.provenance, planner: resolveProjectRole(settings, "planner"),
+    settings: settings.settings, settingsProvenance: settings.provenance, planner: resolveProjectRole(settings, "planner"), planning: { pristineSeed },
     installation: { runtimeKit: "verified", skills: "not-installed", hooks: "not-installed" } });
 }

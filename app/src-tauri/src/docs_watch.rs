@@ -1205,6 +1205,17 @@ pub fn apply_picked_folder(state: &WatchState, picked: &Path, flight: PickInFlig
     open_as_project(state, &canon)
 }
 
+/// The finite setup caller already inspected this native-picked workspace.
+/// This only narrows normal transactional selection; no bootstrap writes or
+/// frontend root authority are introduced. The caller retains its picker claim.
+pub(crate) fn select_initialized_folder(
+    state: &WatchState,
+    product: &Path,
+    expectation: Arc<dyn Fn(&Path, &RecordsObservation) -> Result<(), String> + Send + Sync>,
+) -> PickOutcome {
+    observation::open_initialized(state, product, expectation)
+}
+
 /// The ordinary open, from a path that is already canonical (T-026 split
 /// it out of `apply_picked_folder` so the genesis pick can ROUTE to it
 /// outcome-for-outcome when the chosen folder turns out to hold a plan —

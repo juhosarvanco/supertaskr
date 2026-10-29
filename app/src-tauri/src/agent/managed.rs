@@ -468,8 +468,10 @@ pub fn start_prepared(
             Err(_) => return Err("genesis-registry-unavailable".into()),
         };
         let probe = docs_watch::probe_plan(&context.records);
+        let own_initial_seed = matches!(action, StartAction::Start) && context.split()
+            && setup.as_ref().is_some_and(|setup| setup.pristine_seed);
         if matches!(action, StartAction::Fresh) && probe.has_plan()
-            || !docs_watch::routes_to_genesis(&probe, sessions::reachability_of(record.as_ref()))
+            || !docs_watch::routes_to_genesis(&probe, sessions::reachability_of(record.as_ref())) && !own_initial_seed
         {
             return Ok(StartOutcome::AlreadyPlanned {
                 path: context.product.display().to_string(),
@@ -632,6 +634,22 @@ pub fn start_prepared(
         } else {
             kit::assemble_kickoff_for_with(&context.product, &packs)
         };
+        if own_initial_seed {
+            // Version resolution and executable capture may take time. The
+            // pristine bootstrap exception must still be true at the final
+            // admission before installing a session or launching its planner.
+            let observed=crate::record_editor::inspect_initialized_project(watch,editor,&prepared)?;
+            let current=context.initialization_observation(&observed)?;
+            let original=active.setup.as_ref().ok_or("genesis-initialization-changed")?;
+            let (selection,_)=current.planner.ready()?;
+            if active.session.planner.as_ref().is_none_or(|planner| &planner.selection!=selection) {
+                return Err("genesis-original-planner-changed".into());
+            }
+            if !current.pristine_seed { return Ok(StartOutcome::AlreadyPlanned {path:context.product.display().to_string()}); }
+            if current.setup_id!=original.setup_id || current.receipt_digest!=original.receipt_digest
+                || current.request_digest!=original.request_digest || current.product_revision!=original.product_revision
+                || current.records_revision!=original.records_revision { return Err("genesis-initialization-current-changed".into()); }
+        }
         context.verify(watch)?;
         context.runtime_record(RuntimeRecord::Sessions, true)?;
         sessions::install_current_genesis(&context, &registry, entry.clone())
@@ -1129,7 +1147,13 @@ mod tests {
             }
             let script = home.join("agent.sh");
             fs::write(&script, r##"#!/bin/sh
-if [ "$1" = '--version' ]; then echo '2.1.226 (Claude Code)'; exit 0; fi
+if [ "$1" = '--version' ]; then
+  if [ -f "$SUPERTASKR_MANAGED_DUMP/hold-version" ]; then
+    : > "$SUPERTASKR_MANAGED_DUMP/version-ready"
+    while [ -f "$SUPERTASKR_MANAGED_DUMP/hold-version" ]; do /bin/sleep 0.01; done
+  fi
+  echo '2.1.226 (Claude Code)'; exit 0
+fi
 printf '%s\n' "$@" > "$SUPERTASKR_MANAGED_DUMP/args"
 /bin/cat > "$SUPERTASKR_MANAGED_DUMP/prompt"
 if [ -f "$SUPERTASKR_MANAGED_DUMP/fail-first" ]; then /bin/rm "$SUPERTASKR_MANAGED_DUMP/fail-first"; exit 17; fi
@@ -1240,6 +1264,8 @@ echo '{"type":"result","subtype":"success","is_error":false,"num_turns":1,"resul
         use crate::workspace::WorkspaceResolver;
         use std::os::unix::fs::MetadataExt;
         let mut fx = Fixture::new();
+        let roadmap=kit::KIT_FILES.iter().find(|file|file.rel=="docs-templates/ROADMAP.md").unwrap().content;
+        fs::write(fx.b.join("docs/ROADMAP.md"),roadmap).unwrap();
         let git = |root: &std::path::Path, args: &[&str]| {
             let out = std::process::Command::new("git").args(["-c","user.name=Fixture","-c","user.email=fixture@example.invalid","-C"])
                 .arg(root).args(args).output().unwrap();
@@ -1271,7 +1297,7 @@ echo '{"type":"result","subtype":"success","is_error":false,"num_turns":1,"resul
                     "identities":[entry["root"],entry["gitDirectory"],entry["commonDirectory"],directory(PathBuf::from(common).join("objects"))]})
             };
             let revision=git(&fx.a,&["rev-parse","HEAD"]);
-            serde_json::json!({"status":"current","installation":{"runtimeKit":"verified"},
+            serde_json::json!({"status":"current","installation":{"runtimeKit":"verified"},"planning":{"pristineSeed":true},
                 "receipt":{"status":"initialized","operationId":"init-controlled-model","projectId":"configured-planner-fixture",
                     "requestDigest":format!("sha256:{}","a".repeat(64)),"receiptDigest":format!("sha256:{}","b".repeat(64)),
                     "product":{"root":fx.a},"records":{"root":fx.b}},
@@ -1292,8 +1318,27 @@ echo '{"type":"result","subtype":"success","is_error":false,"num_turns":1,"resul
         assert!(matches!(fx.start(1,StartAction::Start).result,StartOutcome::Error {ref message} if message=="genesis-planner-unavailable:project-role-harness-unsupported"));
         assert!(!fx.home.join("args").exists());assert!(!fx.a.join(sessions::SESSIONS_REL).exists());
         assert_eq!(fx.watch.project_dir().as_deref(),Some(fx.a.as_path()));
+        fs::write(fx.b.join("docs/ROADMAP.md"),"Existing owner's changed plan\n").unwrap();
+        let mut edited=wire();edited["planning"]["pristineSeed"]=false.into();fs::write(&observation,edited.to_string()).unwrap();
+        assert!(matches!(fx.start(2,StartAction::Start).result,StartOutcome::AlreadyPlanned {..}));
+        fs::write(fx.b.join("docs/ROADMAP.md"),roadmap).unwrap();
         fs::write(&observation,wire().to_string()).unwrap();
-        let started=fx.start(2,StartAction::Start); assert!(matches!(started.result,StartOutcome::Started {..}),"{started:?}"); fx.idle();
+        assert!(matches!(fx.start(3,StartAction::Fresh).result,StartOutcome::AlreadyPlanned {..}),"Fresh keeps its bare plan guard even for owned seed");
+        assert!(!fx.home.join("args").exists());assert!(!fx.a.join(sessions::SESSIONS_REL).exists());
+        fs::write(fx.home.join("hold-version"),"ordinary resolution barrier").unwrap();
+        let request=fx.request(4);let prepared=prepare(&fx.watch,&request).unwrap();
+        let changed_during_resolution=std::thread::scope(|scope| {
+            let watch=&fx.watch;let agent=&fx.agent;let editor=&fx.editor;
+            let task=scope.spawn(move ||start_prepared(watch,agent,editor,request,prepared,StartAction::Start));
+            fx.wait(||fx.home.join("version-ready").exists());
+            fs::write(fx.b.join("docs/ROADMAP.md"),"Owner plan changed while resolving the CLI\n").unwrap();
+            let mut changed=wire();changed["planning"]["pristineSeed"]=false.into();fs::write(&observation,changed.to_string()).unwrap();
+            fs::remove_file(fx.home.join("hold-version")).unwrap();task.join().unwrap()
+        });
+        assert!(matches!(changed_during_resolution.result,StartOutcome::AlreadyPlanned {..}));
+        assert!(!fx.home.join("args").exists());assert!(!fx.a.join(sessions::SESSIONS_REL).exists());
+        fs::write(fx.b.join("docs/ROADMAP.md"),roadmap).unwrap();fs::write(&observation,wire().to_string()).unwrap();
+        let started=fx.start(5,StartAction::Start); assert!(matches!(started.result,StartOutcome::Started {..}),"{started:?}"); fx.idle();
         let first=sessions::genesis_record_for_context(&context).unwrap().unwrap();
         let planner=first.genesis.as_ref().unwrap().planner.as_ref().unwrap();
         assert_eq!(planner.selection.model,"claude-opus-5"); assert_eq!(first.model.as_deref(),Some("fixture-model"));
@@ -1305,7 +1350,7 @@ echo '{"type":"result","subtype":"success","is_error":false,"num_turns":1,"resul
         fs::write(fx.a.join("later.txt"),"Later ordinary PRODUCT fixture cut\n").unwrap();git(&fx.a,&["add","later.txt"]);git(&fx.a,&["commit","-qm","Later product input"]);
         fs::write(fx.b.join("later.txt"),"Later ordinary RECORDS fixture cut\n").unwrap();git(&fx.b,&["add","later.txt"]);git(&fx.b,&["commit","-qm","Later records input"]);
         fs::write(&observation,wire().to_string()).unwrap();
-        let expected=fx.request(3); let request=SessionRequest {expected_context:expected.expected_context,attempt:expected.attempt,identity:started.identity.unwrap()};
+        let expected=fx.request(6); let request=SessionRequest {expected_context:expected.expected_context,attempt:expected.attempt,identity:started.identity.unwrap()};
         let sent=send_prepared(&fx.watch,&fx.agent,&fx.editor,request.clone(),prepare(&fx.watch,&expected).unwrap(),"Original typed answer\n".into());
         assert!(matches!(sent.result,super::super::SendOutcome::Accepted {..}),"{sent:?}");fx.idle();
         let prompt=fs::read_to_string(fx.home.join("prompt")).unwrap();assert!(prompt.contains(&git(&fx.a,&["rev-parse","HEAD"])));assert!(prompt.contains(&git(&fx.b,&["rev-parse","HEAD"])));
@@ -1313,21 +1358,21 @@ echo '{"type":"result","subtype":"success","is_error":false,"num_turns":1,"resul
 
         let cold=AgentState::new_managed(fx.agent.cfg.clone(),|_|{});
         let resume=|attempt| {let request=fx.request(attempt);let prepared=prepare(&fx.watch,&request).unwrap();start_prepared(&fx.watch,&cold,&fx.editor,request,prepared,StartAction::Resume)};
-        let resumed=resume(4);assert!(matches!(resumed.result,StartOutcome::Started {..}),"{resumed:?}");fx.wait(||!cold.running.load(Ordering::SeqCst));
+        let resumed=resume(7);assert!(matches!(resumed.result,StartOutcome::Started {..}),"{resumed:?}");fx.wait(||!cold.running.load(Ordering::SeqCst));
         let args=fs::read_to_string(fx.home.join("args")).unwrap();assert!(args.contains("--resume\nmanaged-session\n"));assert!(args.contains("--model\nclaude-opus-5\n"));assert!(!args.lines().any(|s|s=="subagent"));
         let current=sessions::genesis_record_for_context(&context).unwrap().unwrap();assert_eq!(current.genesis.as_ref().unwrap().planner.as_ref().unwrap(),planner);
         let registry=fx.a.join(sessions::SESSIONS_REL);let transcript=fx.a.join(sessions::TRANSCRIPT_REL);let stable_registry=fs::read(&registry).unwrap();let stable_transcript=fs::read(&transcript).unwrap();let stable_prompt=fs::read(fx.home.join("prompt")).unwrap();
         let mut changed=wire();changed["planner"]["selection"]["model"]="claude-sonnet-5".into();changed["planner"]["selection"]["requested"]="claude-sonnet-5@subagent".into();fs::write(&observation,changed.to_string()).unwrap();
-        assert!(matches!(resume(5).result,StartOutcome::Error {ref message} if message=="genesis-original-planner-changed"));
+        assert!(matches!(resume(8).result,StartOutcome::Error {ref message} if message=="genesis-original-planner-changed"));
         fs::write(&observation,wire().to_string()).unwrap();
         let program=fx.agent.cfg.binary_override.as_ref().unwrap();let held=fx.home.join("original-agent");fs::rename(program,&held).unwrap();fs::copy(&held,program).unwrap();
-        assert!(matches!(resume(6).result,StartOutcome::Error {ref message} if message=="genesis-original-planner-changed"));
+        assert!(matches!(resume(9).result,StartOutcome::Error {ref message} if message=="genesis-original-planner-changed"));
         fs::remove_file(program).unwrap();fs::rename(&held,program).unwrap();
         assert_eq!(fs::read(&registry).unwrap(),stable_registry);assert_eq!(fs::read(&transcript).unwrap(),stable_transcript);assert_eq!(fs::read(fx.home.join("prompt")).unwrap(),stable_prompt);
         let mut old:serde_json::Value=serde_json::from_slice(&stable_registry).unwrap();old["sessions"][0]["genesis"].as_object_mut().unwrap().remove("planner");fs::write(&registry,old.to_string()).unwrap();
-        assert!(matches!(resume(7).result,StartOutcome::Error {ref message} if message=="genesis-planner-provenance-required"));
+        assert!(matches!(resume(10).result,StartOutcome::Error {ref message} if message=="genesis-planner-provenance-required"));
         fs::write(&registry,&stable_registry).unwrap();
-        assert!(matches!(resume(8).result,StartOutcome::Started {..}));fx.wait(||!cold.running.load(Ordering::SeqCst));cold.reap_for_exit();
+        assert!(matches!(resume(11).result,StartOutcome::Started {..}));fx.wait(||!cold.running.load(Ordering::SeqCst));cold.reap_for_exit();
     }
 
     #[test]
