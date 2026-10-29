@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1677 at least behaviours** — 1643 extracted sentences + 34 at least named-not-extracted (listed at the end) — across 91 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1735 at least behaviours** — 1693 extracted sentences + 42 at least named-not-extracted (listed at the end) — across 98 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -468,9 +468,9 @@ Census: **1677 at least behaviours** — 1643 extracted sentences + 34 at least 
 - npx supertaskr dispatches every verb to a target this tree already carries, resolved on disk
 - the front relabels no exit code — the child's status is the command's status
 - an unknown verb is refused with the whole verb list, and nothing is spawned
-- every verb that hands its target --root fronts a script whose own flags carry it
+- every verb that hands its target --root reaches a script whose flags carry it
 - the verb set covers the seat's own arms and NAMES the C-02 verbs nothing fronts
-- the front reads every command bullet docs/CONVENTIONS.md carries, and reads it verbatim
+- the front reads every product command bullet CONTRIBUTING.md carries, and reads it verbatim
 - a verb with missing TOOL dependencies names the package to restore and runs nothing
 - a verb whose script resolves its own repository root is refused from an installed copy
 - the project root is found by walking up, and its absence is said rather than guessed
@@ -542,10 +542,21 @@ Census: **1677 at least behaviours** — 1643 extracted sentences + 34 at least 
 - pre-lock exact replay preserves later state and acquisition receipt races fail even when exact lock release also fails
 - atomic publication and explicit retry classify before rename after rename directory sync release and response loss honestly
 
+## configured-dispatch
+
+- configured dispatch retains original P/R/TOOL, committed card role overrides and actual original suite execution
+- configured dispatch refuses copied handles, mismatched start correspondence, absent configuration/binding and replaced records
+
 ## configured-gate-origin
 
 - a retained runner refuses same-history replacement before whole, scoped or range reads and accepts its restored original
 - configured and source-CI executable entries still run through a directory alias
+
+## configured-gate-policy
+
+- original configured commands and full membership grade a candidate that weakens its same-ID settings
+- original policy retains both physical repositories, clean exact candidate and ancestry without accepting copied metadata
+- original-policy grading refuses nonignored untracked inputs before a suite and files it creates afterward
 
 ## configured-gates
 
@@ -569,6 +580,14 @@ Census: **1677 at least behaviours** — 1643 extracted sentences + 34 at least 
 - configured hook membership cannot be narrowed and pre-push reads the pushed candidate configuration independently of HEAD
 - a related checkout or lane needing original paired authority refuses explicitly while unrelated repositories stay outside scope
 
+## configured-loop-health
+
+- configured loop shares use actual selected denominators and exact R history, never self-project budgets
+- missing loop share policy is unconfigured while denominator-free quality remains observable
+- unknown record tiers and unreadable or empty loop windows never yield zero healthy shares
+- incomplete quality captures and nonfinite arithmetic remain unread instead of becoming healthy
+- installed health executes committed loop readers and refuses an absent share policy without product effects
+
 ## configured-names
 
 - installed name keeper uses explicit names and exact retained quotations in committed PRODUCT source
@@ -583,6 +602,15 @@ Census: **1677 at least behaviours** — 1643 extracted sentences + 34 at least 
 - settings preserves canonical floor/declarative/constraint refusals and current committed context
 - settings refuses foreign linked editor leaves and leaves their bytes intact, with plain write positive
 - installed settings reference detects staleness and uses schema generation without selected private records
+
+## configured-tree-health
+
+- committed selected tree facts ignore poisoned working and PRODUCT documents and preserve canonical math
+- generic flow inspects suggestion status at deletion and never counts a ready card as a suggestion
+- tree selectors require explicit budgets and binding and never substitute a ROOT board
+- tree history refuses incomplete cuts and a held physical-origin verifier rejects copied-history replacement
+- tree reader membership is required even when the omitted runtime file remains present
+- installed health executes selected committed tree readers and keeps private prose edits out of product effects
 
 ## crescendo
 
@@ -830,6 +858,7 @@ Census: **1677 at least behaviours** — 1643 extracted sentences + 34 at least 
 - cold setup discovery is read-only before Git/settings and never skips malformed owned operations
 - a durably captured setup is discoverable before its first Git/file effect without changing its record
 - current setup inspection preserves the original receipt across later commits and ignores dirty working settings
+- only the exact accepted initial docs and index qualify a pristine first-start seed
 - equal-history replacement RECORDS cannot acquire the original current setup receipt
 - missing original homes retain only unavailable metadata, and kit changes refuse until restored
 
@@ -908,6 +937,10 @@ Census: **1677 at least behaviours** — 1643 extracted sentences + 34 at least 
 - the loop bands reach the command's own band set, and each of the three tiers renders
 - A CYCLE THAT ENDED BEFORE IT BEGAN IS NOT A MEASUREMENT — a re-dispatched card takes the band dark
 - A LINE THE READER COULD NOT UNDERSTAND TAKES THE LOOP BANDS DARK — the problems reach the reading
+
+## hook-git-context
+
+- hook routing preserves a fresh legal trailing-space root and leaves an independent checkout outside
 
 ## identifier-rename
 
@@ -1168,6 +1201,7 @@ Census: **1677 at least behaviours** — 1643 extracted sentences + 34 at least 
 ## native-codex
 
 - the project hook is portable and synchronously covers the native identity, tool, stop and interrupt events
+- native admission preserves a legal trailing-space Git root and refuses a nested resource
 - exact callback plus completed identity probe bind one attempt, and parent session/cwd/task labels cannot route a worker event
 - an unbound child may perform only the exact identity probe and every other supported operation persists a registration hold
 - T-311 refuses a conflicting native writer reservation before spawn
@@ -1291,6 +1325,7 @@ Census: **1677 at least behaviours** — 1643 extracted sentences + 34 at least 
 
 ## project-role
 
+- shared role normalization preserves one exact model/vehicle without selecting an effect harness
 - canonical committed planner selection names exact requested CLI model, vehicle and session defaults
 - role effects refuse missing, working and seed inputs without account defaults or private context
 - unsupported harnesses, account selectors and historical compound prose never become an executable role
@@ -1303,6 +1338,7 @@ Census: **1677 at least behaviours** — 1643 extracted sentences + 34 at least 
 - configured operations distinguish empty sections, unsupported maps and failed actual commands
 - retained project runtime refuses copied-history replacement and outside command paths, then accepts its original
 - installed CLI actually routes smoke and guard-class in a docs-free Python PRODUCT
+- committed configured directory and terminal-prefix guards reach the canonical classifier unchanged
 
 ## project-settings
 
@@ -1315,6 +1351,7 @@ Census: **1677 at least behaviours** — 1643 extracted sentences + 34 at least 
 - band metadata uses the existing canonical threshold rule, and committed settings symlinks refuse
 - runtime closure requires actual captured manifest members even when omitted files remain present
 - ordinary TOOL validation requires the operation reader's unconditional initialization schema owner
+- ordinary TOOL validation requires the actually imported hook routing audit when its omitted file remains present
 - ordinary TOOL validation retains the critical standalone completion writer even when its omitted file remains present
 - publication selection is explicit committed data, absent/null cannot run, and dirty editor bytes cannot retarget it
 
@@ -1511,6 +1548,17 @@ Census: **1677 at least behaviours** — 1643 extracted sentences + 34 at least 
 - delivery authority refuses legacy-finished, changed collected candidates and foreign actual-output grade links
 - delivery authority retains real accepted RED output and every correction as owed rather than grading a future corrected integration
 
+## qualified-github-ci
+
+- provider metadata preserves separate actual job and check IDs and refuses foreign URLs and newer run attempts
+- synthetic provider requests bind discovery attempt pages check IDs and canonical header bookends without a public response seam
+- synthetic newer canonical attempt cannot be hidden by an older successful attempt and complete jobs
+- synthetic contradictory exact attempt header refuses a stable latest success and restores only consistent observations
+- synthetic complete job pagination retains every page and never substitutes job IDs for check IDs
+- synthetic incomplete job pagination and access refusal remain unavailable without following metadata URLs
+- missing backend credentials gives explicit cannot-run before any provider request
+- provider constructor requires its actual installed owner and offers no caller response or program override
+
 ## qualified-native
 
 - qualified public executor lifecycle has no product card, unions colocated aliases, inspects both roots and collects exact pairs
@@ -1528,6 +1576,14 @@ Census: **1677 at least behaviours** — 1643 extracted sentences + 34 at least 
 ## qualified-publication-context
 
 - full publication context freezes actual reviewed output existing destination exact CI and installed guard without writing
+- full route is immutable before local effects and changed publication policy refuses file publish without upgrading the original
+- an existing legacy local delivery cannot acquire publication selection after its effects
+- owned full publication runs actual configured checks and mandatory guards before exact atomic branch and correlation acceptance
+- actual advertised branch change cannot acquire correlation and the same original capture resumes after its expected tip is restored
+- revocation after durable launch capture prevents the child effect and restoration resumes without rerunning accepted checks
+- cold publication recovery observes exact original acceptance after later receiver advance before successor policy or TOOL
+- coordinator loss stops its actual running check group and a new process resumes the original pending operation
+- cold local replay preserves the Git-start marker before transport and reuses actual completed checks
 
 ## qualified-reservation
 
@@ -1583,6 +1639,11 @@ Census: **1677 at least behaviours** — 1643 extracted sentences + 34 at least 
 
 - known unaccepted object/intent work can stop after original product source advances while preserving objects and immutable intent
 - failed stop-evidence persistence keeps the original hold and strict terminal evidence refuses inconsistent fields
+
+## records-backup-command
+
+- backup front permits finite help and refuses scope authority or duplicate destination arguments
+- packed backup commands inspect and restore original history without its old records home or selecting a binding
 
 ## records-backup-operation
 
@@ -1649,6 +1710,13 @@ Census: **1677 at least behaviours** — 1643 extracted sentences + 34 at least 
 
 ## records-graph
 
+- installed graph refresh and committed currency support graphs above one MiB
+- installed Python indexing and currency checks use committed languages and meaningful local edges
+- missing invalid empty unknown and unmatched language choices refuse without graph or private commit
+- a retained producer allows new code commits but refuses changed committed policy and copied-history roots
+- currency never greens a second working source cut over the retained committed graph
+- the actual native producer owners are required even when omitted manifest files remain present
+- accepted legacy graph receipts remain historical while pending legacy work cannot gain new configuration
 - writes only the private graph from PRODUCT source and then makes a true filesystem/ref no-op
 - refuses changed source and binding before any graph parent/file/ref/index effect
 - graph policy refuses mid-prepare successor docs or binding and resumes only its original captured context
@@ -1662,6 +1730,8 @@ Census: **1677 at least behaviours** — 1643 extracted sentences + 34 at least 
 
 ## records-save
 
+- exact private planning retains a committed preimage above one MiB without changing repository objects or accepting unrelated work
+- ordinary v1 save disposition retains strict preimages and stops only untouched original work
 - cold exact save preserves a foreign replacement temporary and resumes only with the known original bytes
 - cleanup of this call's temporary preserves a replacement inode and exact original capture remains resumable
 - ordinary save rechecks the original binding after tree preparation before writing a commit object
@@ -1801,6 +1871,7 @@ Census: **1677 at least behaviours** — 1643 extracted sentences + 34 at least 
 
 - fixed init front forwards only its protocol and preserves the real child status without project discovery
 - workspace front selects the canonical explicit-root reader and preserves exact revision arguments
+- backup front uses only explicit file arguments and needs no project or binding discovery
 
 ## shell-frame
 
@@ -1931,6 +2002,6 @@ visibly goes stale (T-138-s1). These behaviours run in the suite
 and are not sentence-expanded here:
 
 - `native-transaction-recovery.spec.ts:2049` — an unknown number of behaviour(s) from `test(\`${legacy ? "legacy authorized" : "attributable"} public recovery refuses consumed each approvals in the reserved-work policy ledger\`)`: the iterable `[false, true]` did not resolve.
-- `project-settings.spec.ts:133` — 30 behaviour(s) from `test(\`ordinary TOOL validation requires its loaded ${owner} owner even when the omitted file remains present\`)`: `${owner}` did not resolve against the iterable's literal entries.
+- `project-settings.spec.ts:133` — 38 behaviour(s) from `test(\`ordinary TOOL validation requires its loaded ${owner} owner even when the omitted file remains present\`)`: `${owner}` did not resolve against the iterable's literal entries.
 - `token-runtime.spec.ts:41` — 2 behaviour(s) from `test(\`${kind} ${leaf} refuses before bookkeeping or token writes and preserves its external canary\`)`: `${leaf}` did not resolve against the iterable's literal entries.
 - `window-contract.spec.ts:443` — 2 behaviour(s) from `test(\`every screen is usable at ${label} (${size.width}x${size.height})\`)`: `MINIMUM` is not a literal object — its fields are computed at run time.
