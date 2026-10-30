@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { isMain } from "../../../cli/is-main.mjs";
 import { validConfiguredDispatchCapsule } from "../../../cli/configured-native-reader.mjs";
 import { captureConfiguredDispatch } from "./configured-dispatch.mjs";
+import { loadInstalledRecordTool, requireInstalledRuntimeAssets } from "./records-check.mjs";
 import { configuredAdmissionPreflight, readAdmissionPreflightRequest } from "./qualified-admission.mjs";
 import { readAssignment, readRecord, runPlan, startConfiguredRun, VERB_DIALS } from "./run-record.mjs";
 
@@ -17,6 +18,11 @@ const USAGE = ["supertaskr dispatch [--root <PRODUCT>] --run <operation> <run fl
   "  next/brief/lane creation and named resume vehicles remain unsupported by this configured route"].join("\n");
 /** @param {string} code @param {string} message @returns {never} */
 function refuse(code, message) { throw Object.assign(new Error(message), { code }); }
+function commandTool() {
+  const tool = loadInstalledRecordTool();
+  requireInstalledRuntimeAssets(tool, ["tools/e2e/scripts/configured-dispatch-command.mjs"]);
+  return tool;
+}
 /** Same canonical lifecycle dials, strict finite tokenization. Parsing never
  * adds a program/policy path or guesses a missing selector. @param {string[]} argv */
 function parse(argv) {
@@ -41,14 +47,15 @@ export async function main(argv) {
     const { options, replace } = parse(argv), root = realpathSync(options.root ?? process.cwd());
     if (options["admission-preflight"] !== undefined) {
       if (replace || Object.keys(options).some(key => !["root", "admission-preflight"].includes(key))) refuse("configured-dispatch-usage", "Preflight accepts only --root and its request file");
-      const request = readAdmissionPreflightRequest(options["admission-preflight"]);
+      const tool = commandTool(), request = readAdmissionPreflightRequest(options["admission-preflight"]);
       if (realpathSync(request.authorityRoot) !== root) refuse("configured-dispatch-root", "Preflight must name the selected PRODUCT root");
-      const handle = captureConfiguredDispatch({ authorityRoot: root, projectId: request.projectId, revisions: request.revisions, taskId: request.taskId, legacyTokenMap: request.legacyTokenMap });
+      const handle = captureConfiguredDispatch({ authorityRoot: root, projectId: request.projectId, revisions: request.revisions, taskId: request.taskId, legacyTokenMap: request.legacyTokenMap, tool });
       const preview = await configuredAdmissionPreflight(request, handle);
       process.stdout.write(JSON.stringify(preview) + "\n"); return preview.permitted ? 0 : 3;
     }
     const plan = runPlan(options, replace);
     if (plan.verb === "start") {
+      commandTool();
       const assignment = readAssignment(/** @type {string} */ (plan.assignment));
       const started = await startConfiguredRun(root, { assignment }), capsule = started.record.native.qualified.origins.configuredDispatch;
       process.stdout.write(JSON.stringify({ attempt: started.record.attempt, state: started.record.state, started: false,
@@ -58,6 +65,7 @@ export async function main(argv) {
     const rec = readRecord(root, plan.attempt), capsule = rec.native?.qualified?.origins?.configuredDispatch;
     const historical = plan.verb === "collect" && rec.native?.qualified?.collection?.phase === "final";
     if (!historical && !validConfiguredDispatchCapsule(capsule)) refuse("configured-dispatch-record-required", "This effect requires an original configured run; legacy source records remain explicit compatibility");
+    if (!historical) commandTool();
     // Fixed existing lifecycle owner; data argv is never executable source.
     const result = spawnSync(process.execPath, [BRIEF_ENTRY, ...argv, ...(options.root === undefined ? ["--root", root] : [])], { cwd: root, stdio: "inherit" });
     return result.error || result.signal ? 3 : result.status ?? 3;

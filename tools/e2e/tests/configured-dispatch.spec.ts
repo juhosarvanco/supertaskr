@@ -8,7 +8,7 @@ import { loadInstalledRecordTool, readInstalledMethodAsset } from "../scripts/re
 import { seedProjectSettings } from "../scripts/project-settings.mjs";
 import { GENERIC_RECORD_PROFILE } from "../scripts/records-validation.mjs";
 import { captureQualifiedInputs } from "../scripts/qualified-reservation.mjs";
-import { privateGit, privateRecordFixture, putPrivate } from "./private-record-fixture";
+import { privateGit, privateRecordFixture, putPrivate, sha } from "./private-record-fixture";
 import { testToolRuntime } from "../fixtures/tool-runtime";
 import { guardClassIds } from "../scripts/dispatch-brief.mjs";
 
@@ -161,5 +161,22 @@ test("the finite native role adapter keeps a plain demo model and refuses a lost
     putPrivate(f.product, "supertaskr.yaml", JSON.stringify(settings)); privateGit(f.product, ["add", "supertaskr.yaml"]); privateGit(f.product, ["commit", "-qm", "Explicit resume default without a selected session"]);
     const resumed = captureConfiguredDispatch({ ...selected, revisions: { ...selected.revisions, product: privateGit(f.product, ["rev-parse", "HEAD"]) }, tool: f.tool });
     expect(() => configuredDispatchEffectContext(resumed, { role: "executor", model: "gpt-6-luna" })).toThrow(/original resume\/session request/);
+  } finally { f.cleanup(); }
+});
+
+test("the actual installed configured producer refuses its omitted but present command and accepts the restored manifest", () => {
+  const f = fixture();
+  try {
+    const request = path.join(f.dir, "view-request.json"), original = readFileSync(f.manifestPath, "utf8");
+    putPrivate(f.dir, "view-request.json", JSON.stringify({ version: 1, ...f.selection, roles: ["product", "records"],
+      admission: { boundary: "lane-cut", role: "executor", kind: "explicit", parent: "", evidence: "", scope: "product-change", attempt: null } }));
+    const run = () => spawnSync(process.execPath, [path.join(f.toolRoot, "supertaskr.mjs"), "dispatch", "--root", f.product, "--admission-preflight", request], { cwd: f.product, encoding: "utf8", env: { ...process.env, NODE_PATH: "" } });
+    const before = run(); expect(before.status, before.stdout + before.stderr).toBe(0); expect(JSON.parse(before.stdout)).toMatchObject({ admitted: false, reserved: false, started: false });
+    const manifest = JSON.parse(original), member = "tools/e2e/scripts/configured-dispatch-command.mjs";
+    manifest.runtime.files = manifest.runtime.files.filter((entry: any) => entry.path !== member); manifest.runtime.buildHash = sha(JSON.stringify(manifest.runtime.files)); putPrivate(f.toolRoot, "dist/tool-manifest.json", JSON.stringify(manifest));
+    expect(existsSync(path.join(f.toolRoot, "dist", member))).toBe(true);
+    const refused = run(); expect(refused.status).toBe(3); expect(refused.stderr).toContain("records-tool-runtime-member-required");
+    putPrivate(f.toolRoot, "dist/tool-manifest.json", original);
+    const restored = run(); expect(restored.status, restored.stdout + restored.stderr).toBe(0); expect(JSON.parse(restored.stdout)).toMatchObject({ admitted: false, reserved: false, started: false });
   } finally { f.cleanup(); }
 });
