@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1735 at least behaviours** — 1693 extracted sentences + 42 at least named-not-extracted (listed at the end) — across 98 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1717 at least behaviours** — 1713 extracted sentences + 4 at least named-not-extracted (listed at the end) — across 99 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -311,6 +311,10 @@ Census: **1735 at least behaviours** — 1693 extracted sentences + 42 at least 
 - A FIXTURE IS DECIDED BY ITS OWN AUTHORIZATION AND NEVER BY A REAL GRANT IN A DESIGNATED STORE, AND EVERY CALL SITE NAMES ITS ROOT
 - THE ARM'S EXTENSION POINT NAMES A FUNCTION THIS FILE ACTUALLY EXPORTS
 - THE STORE REUSES THIS TREE'S VALIDATION AND TAKES ITS LOCKING WITHOUT CLOSING A CYCLE — and the blob sha it computes is git's own
+
+## capabilities
+
+- capability generation counts each inline or named string pair as one behavior without executing the spec
 
 ## card-figures
 
@@ -1351,6 +1355,25 @@ Census: **1735 at least behaviours** — 1693 extracted sentences + 42 at least 
 - band metadata uses the existing canonical threshold rule, and committed settings symlinks refuse
 - runtime closure requires actual captured manifest members even when omitted files remain present
 - ordinary TOOL validation requires the operation reader's unconditional initialization schema owner
+- ordinary TOOL validation requires its loaded operation-ref owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded qualified-delivery-record owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded qualified-delivery-operation owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded qualified-publication-context owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded qualified-publication-record owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded qualified-publication-process owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded qualified-completion-record owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded fixed-product-hook owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded private-backup-record owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded records-backup-operation owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded records-backup owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded records-backup-settings owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded workspace owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded native-codex owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded project-init-operation owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded project-settings owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded dispatch-brief owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded health-bands owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded rename-scan owner even when the omitted file remains present
 - ordinary TOOL validation requires the actually imported hook routing audit when its omitted file remains present
 - ordinary TOOL validation retains the critical standalone completion writer even when its omitted file remains present
 - publication selection is explicit committed data, absent/null cannot run, and dirty editor bytes cannot retarget it
@@ -2002,6 +2025,5 @@ visibly goes stale (T-138-s1). These behaviours run in the suite
 and are not sentence-expanded here:
 
 - `native-transaction-recovery.spec.ts:2049` — an unknown number of behaviour(s) from `test(\`${legacy ? "legacy authorized" : "attributable"} public recovery refuses consumed each approvals in the reserved-work policy ledger\`)`: the iterable `[false, true]` did not resolve.
-- `project-settings.spec.ts:133` — 38 behaviour(s) from `test(\`ordinary TOOL validation requires its loaded ${owner} owner even when the omitted file remains present\`)`: `${owner}` did not resolve against the iterable's literal entries.
 - `token-runtime.spec.ts:41` — 2 behaviour(s) from `test(\`${kind} ${leaf} refuses before bookkeeping or token writes and preserves its external canary\`)`: `${leaf}` did not resolve against the iterable's literal entries.
 - `window-contract.spec.ts:443` — 2 behaviour(s) from `test(\`every screen is usable at ${label} (${size.width}x${size.height})\`)`: `MINIMUM` is not a literal object — its fields are computed at run time.

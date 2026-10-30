@@ -46,14 +46,20 @@ const testsDir = path.join(e2eRoot, "tests");
 const outPath = path.join(repoRoot, "docs", "CAPABILITIES.md");
 
 /** @typedef {{ file: string, line: number, raw: string, reason: string, count: number | null }} Omission */
-/** @typedef {string | Record<string, string | number>} Entry */
+/** @typedef {string | Record<string, string | number> | [string, string]} Entry */
 
 /**
- * Parse one array-literal body into entries (strings or flat objects).
+ * Parse one array-literal body into entries (strings, flat objects or
+ * complete two-string tuples). A tuple is one iteration, never two strings.
  * @param {string} body
  * @returns {Entry[]}
  */
 function parseArrayLiteral(body) {
+  const pairs = /\[\s*("(?:[^"\\]|\\.)*")\s*,\s*("(?:[^"\\]|\\.)*")\s*\]/g;
+  const tuples = [...body.matchAll(pairs)];
+  if (tuples.length > 0 && body.replace(pairs, "").replace(/[\s,]/g, "") === "") {
+    return tuples.map(tuple => /** @type {[string, string]} */ ([JSON.parse(tuple[1] ?? "null"), JSON.parse(tuple[2] ?? "null")]));
+  }
   /** @type {Entry[]} */
   const entries = [];
   const stringOnly = body.replace(/\{[^}]*\}/g, "");
