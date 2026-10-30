@@ -41,7 +41,8 @@ export function normalizeGitHubDeliveryRun(run,selection,expected){
  const branch=selection.ref.slice("refs/heads/".length);
  if(!run||![run.id,run.run_attempt,run.workflow_id,run.check_suite_id].every(id)||run.head_sha!==selection.headCommit||run.head_branch!==branch||run.event!==selection.event||
   typeof run.repository?.full_name!=="string"||run.repository.full_name.toLowerCase()!==selection.repository||typeof run.head_repository?.full_name!=="string"||run.head_repository.full_name.toLowerCase()!==selection.repository||
-  ![selection.workflow,`${selection.workflow}@${selection.ref}`].includes(run.path)||typeof run.status!=="string"||!Object.hasOwn(run,"conclusion"))refuse("CI_RUN_IDENTITY_INVALID");
+  ![selection.workflow,`${selection.workflow}@${selection.ref}`].includes(run.path)||typeof run.status!=="string"||run.status.length>64||/[\x00-\x1f\x7f]/.test(run.status)||
+  !(run.conclusion===null||typeof run.conclusion==="string"&&run.conclusion.length<=64&&!/[\x00-\x1f\x7f]/.test(run.conclusion)))refuse("CI_RUN_IDENTITY_INVALID");
  const normalized={id:run.id,attempt:run.run_attempt,workflowId:run.workflow_id,checkSuiteId:run.check_suite_id,status:run.status,conclusion:run.conclusion};
  if(expected&&(normalized.id!==expected.id||normalized.attempt!==expected.attempt||expected.workflowId!==undefined&&normalized.workflowId!==expected.workflowId||expected.checkSuiteId!==undefined&&normalized.checkSuiteId!==expected.checkSuiteId))refuse("CI_RUN_ATTEMPT_CHANGED");
  return freeze(normalized);
@@ -112,11 +113,12 @@ export function createGitHubDeliveryCiReader(configuration){
  const tool=configuration.tool,selection=normalizeGitHubDeliverySelection(configuration.selection),handles=new WeakMap();
  const assets=()=>requireInstalledRuntimeAssets(tool,["tools/e2e/scripts/qualified-github-ci.mjs","tools/e2e/scripts/qualified-delivery-ci.mjs","cli/hook-git-context.mjs"]);
  assets();
- /** @param {any} requirement */
- function handle(requirement){
+ /** @param {any} requirement @param {any} [providerRun] */
+ function handle(requirement,providerRun=null){
   const exact=normalizeExactDeliveryCiRequirement(requirement),{version,run,...rest}=exact;
   if(operationContent(rest)!==operationContent(selection))refuse("CI_SELECTION_CHANGED");
-  const result=Object.freeze({version:1,kind:"exact-github-ci-selection"});handles.set(result,exact);return result;
+  if(providerRun!==null&&(!shape(providerRun,["id","attempt","workflowId","checkSuiteId","status","conclusion"])||providerRun.id!==run.id||providerRun.attempt!==run.attempt||![providerRun.workflowId,providerRun.checkSuiteId].every(id)))refuse("CI_SELECTION_CHANGED");
+  const result=Object.freeze({version:1,kind:"exact-github-ci-selection"});handles.set(result,{requirement:exact,providerRun:providerRun===null?null:freeze(operationPayload(providerRun))});return result;
  }
  /** @param {string} apiPath @param {string} token @param {any[]} receipts */
  async function get(apiPath,token,receipts){verifyInstalledRecordTool(tool);const response=/** @type {any} */(await requestJson(apiPath,token));receipts.push(response.receipt);return response.data;}
@@ -135,8 +137,8 @@ export function createGitHubDeliveryCiReader(configuration){
  return Object.freeze({selection,
   /** Only a strict delivery controller's retained exact selection may restore
    * an input handle after restart; this API itself grants no delivery effect.
-   * @param {any} requirement */
-  restore(requirement){assets();return handle(requirement);},
+   * @param {any} requirement @param {any} [providerRun] */
+  restore(requirement,providerRun=null){assets();return handle(requirement,providerRun);},
   async discover(){
    assets();const token=credential();
    /** @type {any[]} */
@@ -152,17 +154,17 @@ export function createGitHubDeliveryCiReader(configuration){
    if(matches.length!==1)refuse("CI_RUN_AMBIGUOUS");
    const selected=matches[0],latest=normalizeGitHubDeliveryRun(await get(`${base}/actions/runs/${selected.id}`,token,receipts),selection,selected);
    const requirement=normalizeExactDeliveryCiRequirement({version:1,...selection,run:{id:latest.id,attempt:latest.attempt}});
-   return freeze({status:"selected",requirement,observedAt:new Date().toISOString(),receipts,handle:handle(requirement)});
+   return freeze({status:"selected",requirement,providerRun:latest,observedAt:new Date().toISOString(),receipts,handle:handle(requirement,latest)});
   },
   /** Fetch exact attempt pages/checks, then bookend the canonical current run.
    * A concurrently newer attempt cannot hide behind an older green endpoint.
    * @param {any} selected */
   async read(selected){
-   assets();const requirement=handles.get(selected);if(!requirement)refuse("CI_SELECTION_HANDLE_REQUIRED");
+   assets();const captured=handles.get(selected);if(!captured)refuse("CI_SELECTION_HANDLE_REQUIRED");const requirement=captured.requirement;
    const token=credential();
    /** @type {any[]} */
    const receipts=[];
-   const runPath=`${base}/actions/runs/${requirement.run.id}`,initial=normalizeGitHubDeliveryRun(await get(runPath,token,receipts),selection,requirement.run);
+   const runPath=`${base}/actions/runs/${requirement.run.id}`,initial=normalizeGitHubDeliveryRun(await get(runPath,token,receipts),selection,captured.providerRun??requirement.run);
    const attempt=normalizeGitHubDeliveryRun(await get(`${runPath}/attempts/${requirement.run.attempt}`,token,receipts),selection,initial);
    const jobs=await list(`${runPath}/attempts/${requirement.run.attempt}/jobs`,"jobs",token,receipts),checks=[];
    for(const job of jobs){const checkId=gitHubDeliveryCheckId(job?.check_run_url,selection.repository);checks.push(normalizeGitHubDeliveryCheck(job,await get(`${base}/check-runs/${checkId}`,token,receipts),requirement,attempt));}
@@ -170,8 +172,9 @@ export function createGitHubDeliveryCiReader(configuration){
    if(final.status!==initial.status||final.conclusion!==initial.conclusion||attempt.status!==final.status||attempt.conclusion!==final.conclusion)refuse("CI_RUN_OBSERVATION_CHANGED");
    const evidence=freeze({version:1,provider:selection.provider,host:selection.host,repository:selection.repository,headRepository:selection.repository,workflow:selection.workflow,event:selection.event,ref:selection.ref,headCommit:selection.headCommit,
     run:{id:final.id,attempt:final.attempt,checkSuiteId:attempt.checkSuiteId,status:final.status,conclusion:final.conclusion},totalChecks:jobs.length,checks});
-   const result=qualifyExactDeliveryCi(requirement,evidence),observed=freeze({status:"observed",requirement,evidence,result,observedAt:new Date().toISOString(),receipts});
-   observations.set(observed,{tool,selection,requirement,evidence,result,receipts:structuredClone(receipts),observedAt:observed.observedAt});return observed;
+   const headers=freeze({initial,attempt,final}),providerRun=captured.providerRun??initial;
+   const result=qualifyExactDeliveryCi(requirement,evidence),observed=freeze({status:"observed",requirement,providerRun,headers,evidence,result,observedAt:new Date().toISOString(),receipts});
+   observations.set(observed,{tool,selection,requirement,providerRun,headers,evidence,result,receipts:structuredClone(receipts),observedAt:observed.observedAt});return observed;
   },
  });
 }
@@ -181,5 +184,5 @@ export function createGitHubDeliveryCiReader(configuration){
 export function actualGitHubDeliveryCiObservation(observed,requirement){
  const facts=observations.get(observed);if(!facts||operationContent(facts.requirement)!==operationContent(normalizeExactDeliveryCiRequirement(requirement)))refuse("CI_OBSERVATION_HANDLE_REQUIRED");
  verifyInstalledRecordTool(facts.tool);
- return freeze(operationPayload({requirement:facts.requirement,evidence:facts.evidence,result:facts.result,observedAt:facts.observedAt,receipts:facts.receipts,selectionDigest:operationDigest(facts.selection),tool:facts.tool}));
+ return freeze(operationPayload({requirement:facts.requirement,providerRun:facts.providerRun,headers:facts.headers,evidence:facts.evidence,result:facts.result,observedAt:facts.observedAt,receipts:facts.receipts,selectionDigest:operationDigest(facts.selection),tool:facts.tool}));
 }

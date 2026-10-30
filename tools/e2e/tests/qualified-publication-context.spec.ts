@@ -18,6 +18,7 @@ import {privateRecordFixture,fixtureProjectSettings} from "./private-record-fixt
 import {reviewed,writeVerdict,git} from "./qualified-delivery-fixture";
 import {publishQualifiedDelivery,observeQualifiedPublication} from "../scripts/qualified-publication-operation.mjs";
 import {publicationLaunchAlive} from "../scripts/qualified-publication-process.mjs";
+import {reconcileQualifiedDeliveryCi} from "../scripts/qualified-ci-operation.mjs";
 
 async function fixture(installHook=true,actualSuite=false){
  const installation=privateRecordFixture(),settings=parse(fixtureProjectSettings(installation));
@@ -178,5 +179,15 @@ test("cold local replay preserves the Git-start marker before transport and reus
   expect(await publishQualifiedDelivery(f.product,request.operationId,{tool:f.tool})).toMatchObject({status:"published",ci:"pending"});
   const accepted=readAcceptedOperation(f.product,request.operationId);expect(accepted.operation.publication.launches[1].result.kind).toBe("observed-dead");expect(accepted.operation.publication.launches[1].gitStarted).toBe(true);expect(accepted.operation.publication.launches.at(-1).gitStarted).toBe(true);
   expect(JSON.stringify(accepted.operation.request)).toBe(JSON.stringify(pending.operation.request));expect(readFileSync(path.join(f.product,".supertaskr/publication-suite-count"),"utf8")).toBe("1");
+ }finally{f.cleanup();}
+});
+test("actual local Git acceptance cannot become GitHub CI authority or mutate validation progress",async()=>{
+ const f=await fixture(true,true);try{
+  const request=input(f,"local-is-not-provider");await executeQualifiedPublicationLocalDelivery(f.product,request,{tool:f.tool});
+  await publishQualifiedDelivery(f.product,request.operationId,{tool:f.tool});
+  const original=readAcceptedOperation(f.product,request.operationId),bytes=JSON.stringify(original),p=git(f.product,["for-each-ref","--format=%(refname) %(objectname)"]),r=git(f.records,["for-each-ref","--format=%(refname) %(objectname)"]);
+  await expect(reconcileQualifiedDeliveryCi(f.product,request.operationId,{tool:f.tool})).rejects.toThrow(/CI_PROVIDER_ORIGIN_UNAVAILABLE/);
+  expect(JSON.stringify(readAcceptedOperation(f.product,request.operationId))).toBe(bytes);expect(original.operation.validation).toBeUndefined();expect(validOperationRecord(original)).toBe(true);
+  expect(git(f.product,["for-each-ref","--format=%(refname) %(objectname)"])).toBe(p);expect(git(f.records,["for-each-ref","--format=%(refname) %(objectname)"])).toBe(r);
  }finally{f.cleanup();}
 });

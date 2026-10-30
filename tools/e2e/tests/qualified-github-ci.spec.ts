@@ -9,6 +9,9 @@ import {expect,test} from "@playwright/test";
 import {createGitHubDeliveryCiReader,normalizeGitHubDeliveryRun,gitHubDeliveryCheckId,normalizeGitHubDeliveryCheck,actualGitHubDeliveryCiObservation} from "../scripts/qualified-github-ci.mjs";
 import {loadInstalledRecordTool} from "../scripts/records-check.mjs";
 import {normalizeExactDeliveryCiRequirement} from "../scripts/qualified-delivery-ci.mjs";
+import {operationDigest} from "../scripts/operation-record.mjs";
+import {validQualifiedDeliveryRequest} from "../scripts/qualified-delivery-record.mjs";
+import {validQualifiedCiProgress,qualifiedDeliveryCiAcceptance} from "../scripts/qualified-ci-record.mjs";
 import {privateRecordFixture,putPrivate,sha} from "./private-record-fixture";
 
 const selection={provider:"github-actions",host:"github.com",repository:"fixture/project",workflow:".github/workflows/ci.yml",event:"push",checks:["Build / Linux"],ref:"refs/heads/main",headCommit:"1".repeat(40)};
@@ -118,5 +121,26 @@ test("provider constructor requires its actual installed owner and offers no cal
   putPrivate(f.tool,"dist/tool-manifest.json",original);const tool=loadInstalledRecordTool(f.manifestPath);
   expect(()=>createGitHubDeliveryCiReader({tool,selection,request:()=>({status:"validated"})} as any)).toThrow(/CI_READER_CONFIGURATION/);
   expect(createGitHubDeliveryCiReader({tool,selection}).selection).toEqual(selection);
+ }finally{f.cleanup();}
+});
+
+test("synthetic CI progress shape retains all headers and complete receipts but supplies no qualified writer authority",async()=>{
+ const f=privateRecordFixture();try{
+  const tool=loadInstalledRecordTool(f.manifestPath),reader=createGitHubDeliveryCiReader({tool,selection});
+  const selected=await replies([{path:`${base}/actions/runs?event=push&head_sha=${selection.headCommit}&branch=main&per_page=100&page=1`,data:{total_count:1,workflow_runs:[run()]}},{path:header,data:run()}],()=>reader.discover());
+  const observed=await replies([{path:header,data:run()},{path:attempt,data:run()},{path:jobs,data:{total_count:1,jobs:[job()]}},{path:checkPath,data:check()},{path:header,data:run()}],()=>reader.read(selected.handle));
+  const facts=actualGitHubDeliveryCiObservation(observed,requirement),{ref,headCommit,...ci}=selection;
+  // Format-only parent data, deliberately NOT a valid qualified request or
+  // authority. No operation/writer API is invoked with this synthetic input.
+  const requestData:any={route:{name:"protected-atomic-push-v1",publication:{ci,destination:{ref,endpoint:{kind:"github"}},commit:headCommit,tool,digest:`sha256:${"a".repeat(64)}`}}};
+  const publicationData={acceptance:{metadataFixtureOnly:true}};
+  expect(validQualifiedDeliveryRequest(requestData)).toBe(false);
+  const value:any={version:1,phase:"validated",selection,selectionDigest:operationDigest(selection),requirement,providerRun:selected.providerRun,selectedAt:selected.observedAt,
+   discovery:{status:"selected",observedAt:selected.observedAt,receipts:selected.receipts},observation:facts,error:null,acceptance:qualifiedDeliveryCiAcceptance(requestData,facts)};
+  expect(validQualifiedCiProgress(value,requestData,publicationData)).toBe(true);
+  const conflict=structuredClone(value);conflict.observation.headers.attempt.conclusion="failure";expect(validQualifiedCiProgress(conflict,requestData,publicationData)).toBe(false);
+  const incomplete=structuredClone(value);incomplete.observation.receipts.splice(3,1);expect(validQualifiedCiProgress(incomplete,requestData,publicationData)).toBe(false);
+  const later=structuredClone(value);later.providerRun.attempt=3;expect(validQualifiedCiProgress(later,requestData,publicationData)).toBe(false);
+  requestData.route.publication.destination.endpoint.kind="local";expect(validQualifiedCiProgress(value,requestData,publicationData)).toBe(false);
  }finally{f.cleanup();}
 });
