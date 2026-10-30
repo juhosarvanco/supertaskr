@@ -10,6 +10,7 @@
  * and task-detail already imports from board-model, so the shared family
  * lives here to keep the dependency graph acyclic.
  */
+import { blankInertSpans } from "@supertaskr/parser/pure";
 
 /** One verdict-history entry, VERBATIM, with a derived tint. */
 export interface VerdictEntry {
@@ -19,7 +20,7 @@ export interface VerdictEntry {
   text: string;
 }
 
-const VERDICT_DATE = /^\d{4}-\d{2}-\d{2}/;
+const VERDICT_DATE = /^(?:#{1,6}[ \t]+)?\d{4}-\d{2}-\d{2}\b/;
 
 /**
  * Split raw `## Verdicts` markdown into entries at date-headed
@@ -31,29 +32,31 @@ const VERDICT_DATE = /^\d{4}-\d{2}-\d{2}/;
  * longer reproduces` — the earlier word is the honest read; testing
  * REJECTED categorically first mislabeled that entry. Text stays
  * verbatim — the panel is a reading surface, never a summary (T-005).
- * Unheaded text folds into a neutral entry, so arbitrary content still
- * renders.
+ * Unheaded text and inert Markdown fold into neutral entries. Plain or
+ * Markdown date headings can start a real verdict; raw text still renders.
  */
 export function verdictEntries(raw: string): VerdictEntry[] {
-  const blocks: string[][] = [];
-  let current: string[] | undefined;
-  for (const line of raw.split("\n")) {
-    if (VERDICT_DATE.test(line.trim()) || current === undefined) {
-      current = [line];
+  const blocks: { raw: string[]; visible: string[] }[] = [];
+  const visible = blankInertSpans(raw).content.split("\n");
+  let current: { raw: string[]; visible: string[] } | undefined;
+  for (const [index, line] of raw.split("\n").entries()) {
+    const structural = visible[index] ?? "";
+    if (VERDICT_DATE.test(structural.trim()) || current === undefined) {
+      current = { raw: [], visible: [] };
       blocks.push(current);
-    } else {
-      current.push(line);
     }
+    current.raw.push(line);
+    current.visible.push(structural);
   }
   return blocks
-    .map((lines) => lines.join("\n").trim())
-    .filter((text) => text !== "")
-    .map((text) => {
-      const firstParagraph = text.split(/\n\s*\n/, 1)[0] ?? "";
+    .map((block) => ({ text: block.raw.join("\n").trim(), structural: block.visible.join("\n").trim() }))
+    .filter(({ text }) => text !== "")
+    .map(({ text, structural }) => {
+      const firstParagraph = structural.split(/\n\s*\n/, 1)[0] ?? "";
       const rejected = firstParagraph.search(/\bREJECTED\b/);
       const approved = firstParagraph.search(/\bAPPROVED\b/);
       const kind =
-        rejected === -1 && approved === -1
+        !VERDICT_DATE.test(firstParagraph) || rejected === -1 && approved === -1
           ? ("note" as const)
           : approved === -1 || (rejected !== -1 && rejected < approved)
             ? ("rejected" as const)
