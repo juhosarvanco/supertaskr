@@ -11,7 +11,7 @@ import {loadInstalledRecordTool} from "../scripts/records-check.mjs";
 import {normalizeExactDeliveryCiRequirement} from "../scripts/qualified-delivery-ci.mjs";
 import {operationDigest} from "../scripts/operation-record.mjs";
 import {validQualifiedDeliveryRequest} from "../scripts/qualified-delivery-record.mjs";
-import {validQualifiedCiProgress,qualifiedDeliveryCiAcceptance} from "../scripts/qualified-ci-record.mjs";
+import {validQualifiedCiProgress,qualifiedDeliveryCiAcceptance,retainQualifiedCiHistory} from "../scripts/qualified-ci-record.mjs";
 import {privateRecordFixture,putPrivate,sha} from "./private-record-fixture";
 
 const selection={provider:"github-actions",host:"github.com",repository:"fixture/project",workflow:".github/workflows/ci.yml",event:"push",checks:["Build / Linux"],ref:"refs/heads/main",headCommit:"1".repeat(40)};
@@ -141,6 +141,15 @@ test("synthetic CI progress shape retains all headers and complete receipts but 
   const conflict=structuredClone(value);conflict.observation.headers.attempt.conclusion="failure";expect(validQualifiedCiProgress(conflict,requestData,publicationData)).toBe(false);
   const incomplete=structuredClone(value);incomplete.observation.receipts.splice(3,1);expect(validQualifiedCiProgress(incomplete,requestData,publicationData)).toBe(false);
   const later=structuredClone(value);later.providerRun.attempt=3;expect(validQualifiedCiProgress(later,requestData,publicationData)).toBe(false);
+  expect(()=>retainQualifiedCiHistory(value)).toThrow(/CI_ALREADY_ACCEPTED/);
+  const failed=await replies([{path:header,data:run({conclusion:"failure"})},{path:attempt,data:run({conclusion:"failure"})},{path:jobs,data:{total_count:1,jobs:[job({conclusion:"failure"})]}},{path:checkPath,data:check({conclusion:"failure"})},{path:header,data:run({conclusion:"failure"})}],()=>reader.read(selected.handle));
+  const old={...value,phase:"observed",observation:actualGitHubDeliveryCiObservation(failed,requirement),acceptance:null};
+  expect(validQualifiedCiProgress(old,requestData,publicationData)).toBe(true);expect(old.observation.result.status).toBe("validation-failed");const oldBytes=JSON.stringify(old);
+  const next=await replies([{path:`${base}/actions/runs?event=push&head_sha=${selection.headCommit}&branch=main&per_page=100&page=1`,data:{total_count:1,workflow_runs:[run({run_attempt:3})]}},{path:header,data:run({run_attempt:3})}],()=>reader.discover());
+  const nextAttempt=`${header}/attempts/3`,nextObserved=await replies([{path:header,data:run({run_attempt:3})},{path:nextAttempt,data:run({run_attempt:3})},{path:`${nextAttempt}/jobs?per_page=100&page=1`,data:{total_count:1,jobs:[job()]}},{path:checkPath,data:check()},{path:header,data:run({run_attempt:3})}],()=>reader.read(next.handle));
+  const nextFacts=actualGitHubDeliveryCiObservation(nextObserved,next.requirement),progress={...value,requirement:next.requirement,providerRun:next.providerRun,selectedAt:next.observedAt,discovery:{status:"selected",observedAt:next.observedAt,receipts:next.receipts},observation:nextFacts,acceptance:qualifiedDeliveryCiAcceptance(requestData,nextFacts),history:retainQualifiedCiHistory(old)};
+  expect(validQualifiedCiProgress(progress,requestData,publicationData)).toBe(true);expect(progress.history[0].progress.observation.result.status).toBe("validation-failed");expect(progress.requirement.run.attempt).toBe(3);expect(JSON.stringify(old)).toBe(oldBytes);
+  const edited=structuredClone(progress);edited.history[0].progress.observation.result.status="validated";expect(validQualifiedCiProgress(edited,requestData,publicationData)).toBe(false);
   requestData.route.publication.destination.endpoint.kind="local";expect(validQualifiedCiProgress(value,requestData,publicationData)).toBe(false);
  }finally{f.cleanup();}
 });

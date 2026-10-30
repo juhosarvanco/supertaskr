@@ -6,11 +6,11 @@ import * as runs from "./run-record.mjs";
 import {operationContent,operationDigest,operationPayload,validOperationRecord} from "./operation-record.mjs";
 import {acceptedOperationPath,captureOperationRepository,operationOwnerAlive,readAcceptedOperation} from "./durable-operation.mjs";
 import {atomicJson,withNativeTransaction} from "./native-codex.mjs";
-import {assertQualifiedDeliveryContinuation} from "./qualified-delivery-operation.mjs";
+import {assertQualifiedDeliveryContinuation,assertQualifiedDeliveryRecovery} from "./qualified-delivery-operation.mjs";
 import {observeQualifiedPublication} from "./qualified-publication-operation.mjs";
 import {publicationLaunchAlive} from "./qualified-publication-process.mjs";
 import {loadQualifiedDeliveryPolicy} from "./qualified-admission.mjs";
-import {qualifiedDeliveryCiSelection,qualifiedDeliveryCiAcceptance,validQualifiedCiProgress} from "./qualified-ci-record.mjs";
+import {qualifiedDeliveryCiSelection,qualifiedDeliveryCiAcceptance,validQualifiedCiProgress,retainQualifiedCiHistory} from "./qualified-ci-record.mjs";
 import {createGitHubDeliveryCiReader,actualGitHubDeliveryCiObservation} from "./qualified-github-ci.mjs";
 import {requireInstalledRuntimeAssets} from "./records-check.mjs";
 const active=new Set();
@@ -67,10 +67,11 @@ function policy(root,rec,tool){
  if(!same(tool,rec.operation.request.route.publication.tool))refuse("CI_OPERATION_TOOL_CHANGED");return true;
 }
 /** @param {any} rec @param {string} code */
-function pending(rec,code){const v=rec.operation.validation;return freeze({status:v?.error?(["CI_CREDENTIALS_MISSING","CI_PROVIDER_ACCESS_UNAVAILABLE"].includes(code)?"cannot-run":"validation-unknown"):v?.observation?.result.status??"validation-pending",
+function pending(rec,code){const v=rec.operation.validation;return freeze({status:code==="CI_RUN_MISSING"?"validation-pending":v?.error?(["CI_CREDENTIALS_MISSING","CI_PROVIDER_ACCESS_UNAVAILABLE"].includes(code)?"cannot-run":"validation-unknown"):v?.observation?.result.status??"validation-pending",
  code,operationId:rec.operation.id,requestDigest:rec.operation.digest,requirement:v?.requirement??null,recordsCompletion:"pending"});}
 /** Original full-route ID and opaque TOOL only. Discovery is durably retained
- * before attempt-specific reads; no request can pick a weaker/newer run.
+ * before attempt-specific reads. Only actual newer attempts of the same run
+ * may continue, retaining every earlier observation and the original checks.
  * @param {string} coordinatorRoot @param {string} operationId @param {{tool:any}} [configuration]
  * @param {{onBoundary?:(boundary:string,record:any)=>void}} [diagnostics] */
 export async function reconcileQualifiedDeliveryCi(coordinatorRoot,operationId,configuration,diagnostics={}){
@@ -84,21 +85,27 @@ export async function reconcileQualifiedDeliveryCi(coordinatorRoot,operationId,c
   requireInstalledRuntimeAssets(tool,["qualified-ci-operation","qualified-ci-record","qualified-github-ci","qualified-delivery-ci"].map(n=>`tools/e2e/scripts/${n}.mjs`));
   if(!same(tool,published.record.operation.request.route.publication.tool))refuse("CI_OPERATION_TOOL_CHANGED");
   let rec=withNativeTransaction(root,{operation:"qualified-ci-capture"},()=>{
-   const current=own(root,selected(root,operationId));
+   const original=selected(root,operationId),current=own(root,structuredClone(original));
+   assertQualifiedDeliveryRecovery(root,original,{tool});
    if(!current.operation.publication.acceptance){current.operation.publication.acceptance=published.receipt.publication;current.operation.publication.phase="published";}
    persist(root,current);policy(root,current,tool);
-   if(current.operation.validation===undefined){const selection=qualifiedDeliveryCiSelection(current.operation.request);current.operation.validation={version:1,phase:"waiting-run",selection,selectionDigest:operationDigest(selection),requirement:null,providerRun:null,selectedAt:null,discovery:null,observation:null,error:null,acceptance:null};persist(root,current);}
+   if(current.operation.validation===undefined){const selection=qualifiedDeliveryCiSelection(current.operation.request);current.operation.validation={version:1,phase:"waiting-run",selection,selectionDigest:operationDigest(selection),requirement:null,providerRun:null,selectedAt:null,discovery:null,observation:null,error:null,acceptance:null,history:[]};persist(root,current);}
    return current;
   });
   const reader=createGitHubDeliveryCiReader({tool,selection:rec.operation.validation.selection});
   try{
-   if(rec.operation.validation.requirement===null){
-    const discovered=await reader.discover();
+   {
+    const discovered=await reader.discover(),before=rec.operation.validation;
+    const discovery={status:discovered.status,observedAt:discovered.observedAt,receipts:operationPayload(discovered.receipts),requirement:discovered.status==="selected"?operationPayload(discovered.requirement):null,providerRun:discovered.status==="selected"?operationPayload(discovered.providerRun):null};
+    if(before.requirement!==null&&(discovered.status==="missing"||discovered.requirement.run.id!==before.requirement.run.id||discovered.requirement.run.attempt<before.requirement.run.attempt||discovered.providerRun.workflowId!==before.providerRun.workflowId)){
+     throw Object.assign(Error("CI_RUN_SELECTION_UNAVAILABLE"),{code:discovered.status==="missing"?"CI_RUN_MISSING":"CI_RUN_ATTEMPT_CHANGED",providerDiscovery:discovery});
+    }
     rec=withNativeTransaction(root,{operation:"qualified-ci-selection"},()=>{
      const current=selected(root,operationId);if(!same(current,rec))refuse("CI_OPERATION_CHANGED");policy(root,current,tool);
-     const v=current.operation.validation;v.error=null;
+     const v=current.operation.validation;v.history=retainQualifiedCiHistory(v);v.error=null;
      if(discovered.status==="selected"){
       v.requirement=operationPayload(discovered.requirement);v.providerRun=operationPayload(discovered.providerRun);v.selectedAt=discovered.observedAt;v.phase="selected";
+      v.observation=null;v.acceptance=null;
       v.discovery={status:"selected",observedAt:discovered.observedAt,receipts:operationPayload(discovered.receipts)};
      }else v.discovery={status:"missing",observedAt:discovered.observedAt,receipts:operationPayload(discovered.receipts)};
      persist(root,current);diagnostics.onBoundary?.("ci:selection-retained",structuredClone(current));return current;
@@ -108,7 +115,7 @@ export async function reconcileQualifiedDeliveryCi(coordinatorRoot,operationId,c
    const v=rec.operation.validation,handle=reader.restore(v.requirement,v.providerRun),observed=await reader.read(handle),facts=actualGitHubDeliveryCiObservation(observed,v.requirement);
    rec=withNativeTransaction(root,{operation:"qualified-ci-observation"},()=>{
     const current=selected(root,operationId);if(!same(current,rec))refuse("CI_OPERATION_CHANGED");policy(root,current,tool);
-    const ci=current.operation.validation;ci.observation=operationPayload(facts);ci.error=null;ci.acceptance=qualifiedDeliveryCiAcceptance(current.operation.request,ci.observation);ci.phase=ci.acceptance===null?"observed":"validated";
+    const ci=current.operation.validation;ci.history=retainQualifiedCiHistory(ci);ci.observation=operationPayload(facts);ci.error=null;ci.acceptance=qualifiedDeliveryCiAcceptance(current.operation.request,ci.observation);ci.phase=ci.acceptance===null?"observed":"validated";
     persist(root,current);diagnostics.onBoundary?.("ci:observation-retained",structuredClone(current));return current;
    });
    return rec.operation.validation.acceptance?receipt(rec,false):pending(rec,rec.operation.validation.observation.result.code);
@@ -116,7 +123,7 @@ export async function reconcileQualifiedDeliveryCi(coordinatorRoot,operationId,c
    const e=/** @type {any} */(error);if(typeof e?.code!=="string"||!/^CI_[A-Z0-9_]+$/.test(e.code))throw error;
    rec=withNativeTransaction(root,{operation:"qualified-ci-unavailable"},()=>{
     const current=selected(root,operationId);if(!same(current,rec))throw error;policy(root,current,tool);
-    current.operation.validation.error={code:e.code,at:new Date().toISOString(),providerReceipt:e.providerReceipt?operationPayload(e.providerReceipt):null};persist(root,current);return current;
+    const ci=current.operation.validation;ci.history=retainQualifiedCiHistory(ci);ci.error={code:e.code,at:new Date().toISOString(),providerReceipt:e.providerReceipt?operationPayload(e.providerReceipt):null,...(e.providerDiscovery?{discovery:operationPayload(e.providerDiscovery)}:{})};persist(root,current);return current;
    });return pending(rec,e.code);
   }
  }finally{active.delete(key);}

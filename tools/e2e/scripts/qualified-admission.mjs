@@ -191,16 +191,16 @@ export async function admissionPreflight(input) {
 /** Load existing policy consumers before a synchronous delivery transaction.
  * This does not admit an operation or change any admission boundary. */
 export async function loadQualifiedDeliveryPolicy(){
-  let qualifier, parser, inert, policy, runs, native, publication;
+  let qualifier, parser, inert, policy, runs, native, publication, durable;
   try {
     qualifier = await import("./qualified-reservation.mjs");
     parser = await import("../../../lib/parser/dist/pure.js");
     inert = await import("../../../lib/parser/dist/inert-spans.js");
   }
   catch { refuse("preflight-qualifier-unavailable"); }
-  try { policy = await import("./dispatch-brief.mjs"); runs = await import("./run-record.mjs"); native = await import("./native-codex.mjs"); publication = await import("./qualified-publication-process.mjs"); }
+  try { policy = await import("./dispatch-brief.mjs"); runs = await import("./run-record.mjs"); native = await import("./native-codex.mjs"); publication = await import("./qualified-publication-process.mjs"); durable = await import("./durable-operation.mjs"); }
   catch { refuse("preflight-policy-unavailable"); }
-  consumers = { qualifier, parser, inert, policy, runs, native, publication };
+  consumers = { qualifier, parser, inert, policy, runs, native, publication, durable };
 }
 
 /** Strict original-ledger reading for the currently held qualified operation.
@@ -211,12 +211,29 @@ export async function loadQualifiedDeliveryPolicy(){
  * the canonical row/claims/policy are unchanged and ownership is never adopted.
  * @param {string} root @param {any} source @param {any} [ownOperation] @param {any} [childProof] */
 export function qualifiedDeliveryPhasePolicy(root,source,ownOperation=null,childProof=null){
+ return deliveryPhasePolicy(root,source,ownOperation,childProof);
+}
+/** Read-only predecessor checks before a recovery transaction may publish a
+ * new owner. The exact stored row/claims and the same canonical current policy
+ * are required; a live or unobservable predecessor is never adopted here.
+ * @param {string} root @param {any} source @param {any} ownOperation */
+export function qualifiedDeliveryRecoveryPolicy(root,source,ownOperation){
+ if(!consumers)refuse("preflight-consumers-not-loaded");
+ const {runs,durable}=consumers,io=runs.defaultRunIo(),owner=ownOperation?.operation?.owner;
+ if(!runs.validOperationRecord(ownOperation)||consumers.qualifier.qualifiedContent(durable.readAcceptedOperation(root,ownOperation.operation.id))!==consumers.qualifier.qualifiedContent(ownOperation))refuse("preflight-operation-owner");
+ if(!(owner.pid===process.pid&&owner.identity===io.identity(process.pid))&&durable.operationOwnerAlive(owner,io))refuse("preflight-operation-owner");
+ return deliveryPhasePolicy(root,source,ownOperation,null,true);
+}
+/** The recovery entry above is read only and owns its own exact dead-owner
+ * proof. This private argument is never an exported admission option.
+ * @param {string} root @param {any} source @param {any} ownOperation @param {any} childProof @param {boolean} [recovery] */
+function deliveryPhasePolicy(root,source,ownOperation,childProof,recovery=false){
  if(!consumers)refuse("preflight-consumers-not-loaded");const {runs,native}=consumers;
  if(ownOperation !== null){
   if(!runs.validOperationRecord(ownOperation) || ownOperation.operation.kind !== "qualified-delivery" || ownOperation.operation.request.coordinator.root !== realpathSync(root))refuse("preflight-operation-owner");
-  if(childProof===null){
+  if(childProof===null&&!recovery){
    if(ownOperation.operation.owner.pid !== process.pid || ownOperation.operation.owner.identity !== runs.defaultRunIo().identity(process.pid))refuse("preflight-operation-owner");
-  }else consumers.publication.validatePublicationProcessProof(childProof,ownOperation);
+  }else if(childProof!==null)consumers.publication.validatePublicationProcessProof(childProof,ownOperation);
   for(const claim of ownOperation.operation.claims){
    if(claim.file !== runs.reservationPath(root,claim.resource) || runs.readReservation(root,claim.resource)?.attempt !== ownOperation.attempt)refuse("preflight-operation-owner");
    runs.assertOperationOwnership(root,{resource:claim.resource,attempt:ownOperation.attempt});

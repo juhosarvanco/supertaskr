@@ -2,9 +2,9 @@ import {readFileSync,writeFileSync,existsSync,statSync,renameSync,readdirSync} f
 import {spawnSync} from "node:child_process";
 import path from "node:path";
 import {test,expect} from "@playwright/test";
-import {executeQualifiedLocalDelivery,replayQualifiedLocalDelivery} from "../scripts/qualified-delivery-operation.mjs";
+import {executeQualifiedLocalDelivery,replayQualifiedLocalDelivery,assertQualifiedDeliveryRecovery} from "../scripts/qualified-delivery-operation.mjs";
 import {startRun,collectRun,readReservation,allRecords,takeReservation,releaseReservation,readRecord,recordPath} from "../scripts/run-record.mjs";
-import {qualifiedDeliveryPhasePolicy} from "../scripts/qualified-admission.mjs";
+import {qualifiedDeliveryPhasePolicy,loadQualifiedDeliveryPolicy} from "../scripts/qualified-admission.mjs";
 import {acceptedOperationPath,readAcceptedOperation} from "../scripts/durable-operation.mjs";
 import {validOperationRecord} from "../scripts/operation-record.mjs";
 import {validQualifiedDeliveryRequest} from "../scripts/qualified-delivery-record.mjs";
@@ -71,6 +71,24 @@ function cold(f:Awaited<ReturnType<typeof completed>>){
  const child=spawnSync(process.execPath,["--input-type=module","-e",`import {replayQualifiedLocalDelivery} from ${JSON.stringify(subject)};try{process.stdout.write(JSON.stringify(await replayQualifiedLocalDelivery(${JSON.stringify(f.product)},'delivery-fixture')));}catch(e){process.stdout.write(JSON.stringify({code:e.code}));process.exit(1);}`],{encoding:"utf8",env:FIXTURE_ENV,maxBuffer:4*1024*1024});
  return {child,result:JSON.parse(child.stdout||"null")};
 }
+test("read-only recovery policy checks actual dead owner and current admission before any owner publication",async()=>{
+ const f=await completed();try{
+  crash(f,"captured");await loadQualifiedDeliveryPolicy();
+  const rec=readAcceptedOperation(f.product,f.input.operationId),file=acceptedOperationPath(f.product,f.input.operationId),before=readFileSync(file),p=git(f.product,["rev-parse","HEAD"]),r=git(f.records,["rev-parse","HEAD"]);
+  expect(rec.operation.owner.pid).not.toBe(process.pid);expect(assertQualifiedDeliveryRecovery(f.product,rec)).toBe(true);
+  expect(readFileSync(file)).toEqual(before);expect(git(f.product,["rev-parse","HEAD"])).toBe(p);expect(git(f.records,["rev-parse","HEAD"])).toBe(r);
+  const foreign=structuredClone(rec);foreign.operation.owner.token+="-foreign";expect(()=>assertQualifiedDeliveryRecovery(f.product,foreign)).toThrow(/QUALIFIED_DELIVERY_CHANGED/);
+  f.grant(undefined,true,4);expect(()=>assertQualifiedDeliveryRecovery(f.product,rec)).toThrow(/QUALIFIED_POLICY_/);expect(readFileSync(file)).toEqual(before);
+  f.grant(undefined,false,5);expect(assertQualifiedDeliveryRecovery(f.product,rec)).toBe(true);expect(readFileSync(file)).toEqual(before);
+  expect(cold(f).result.status).toBe("local-integrated");
+ }finally{f.cleanup();}
+ const live=await completed();try{
+  await executeQualifiedLocalDelivery(live.product,live.input);const before=readFileSync(acceptedOperationPath(live.product,live.input.operationId));
+  const code=`const [{assertQualifiedDeliveryRecovery},{loadQualifiedDeliveryPolicy},{readAcceptedOperation}]=await Promise.all([import(process.argv[1]),import(process.argv[2]),import(process.argv[3])]);await loadQualifiedDeliveryPolicy();try{assertQualifiedDeliveryRecovery(process.argv[4],readAcceptedOperation(process.argv[4],process.argv[5]));process.exitCode=2;}catch(e){process.stdout.write(JSON.stringify({code:e.code}));}`;
+  const child=spawnSync(process.execPath,["--input-type=module","-e",code,new URL("../scripts/qualified-delivery-operation.mjs",import.meta.url).href,new URL("../scripts/qualified-admission.mjs",import.meta.url).href,new URL("../scripts/durable-operation.mjs",import.meta.url).href,live.product,live.input.operationId],{env:FIXTURE_ENV,encoding:"utf8"});
+  expect(child.status,child.stderr).toBe(0);expect(JSON.parse(child.stdout).code).toBe("preflight-operation-owner");expect(readFileSync(acceptedOperationPath(live.product,live.input.operationId))).toEqual(before);
+ }finally{live.cleanup();}
+});
 for(const boundary of ["captured","product:ref-accepted","records:ref-accepted"])test(`cold local delivery reconciles original exact effects after ${boundary}`,async()=>{
  const f=await completed();try{
   crash(f,boundary);const original=readAcceptedOperation(f.product,f.input.operationId),captured=JSON.stringify(original.operation.request);

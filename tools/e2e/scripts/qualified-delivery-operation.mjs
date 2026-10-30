@@ -8,7 +8,7 @@ import * as runs from "./run-record.mjs";
 import {captureQualifiedDeliveryAuthority,QualifiedDeliveryFinding} from "./qualified-delivery.mjs";
 import {captureQualifiedInputs} from "./qualified-reservation.mjs";
 import {collectQualifiedNativeRun} from "./qualified-native.mjs";
-import {loadQualifiedDeliveryPolicy,qualifiedDeliveryPhasePolicy} from "./qualified-admission.mjs";
+import {loadQualifiedDeliveryPolicy,qualifiedDeliveryPhasePolicy,qualifiedDeliveryRecoveryPolicy} from "./qualified-admission.mjs";
 import {atomicJson,parseNativeRawDiff,nativePathAllowed,withNativeTransaction,syncNativeFileNamespace} from "./native-codex.mjs";
 import {operationContent,operationDigest,operationPayload,operationWork,validOperationRecord} from "./operation-record.mjs";
 import {validQualifiedDeliveryRequest} from "./qualified-delivery-record.mjs";
@@ -110,6 +110,17 @@ function effectPolicy(root,rec,landing,configuration){
  * expected transition. No caller-supplied authority or pending exemption exists.
  * @param {string} root @param {any} rec @param {any} [configuration] @param {any} [childProof] */
 export function assertQualifiedDeliveryContinuation(root,rec,configuration,childProof=null){
+ return continuation(root,rec,configuration,()=>qualifiedDeliveryPhasePolicy(root,rec.operation.request.policySource,rec,childProof));
+}
+/** Read-only exact current policy before durable owner recovery. This grants
+ * no effect or takeover: the canonical admission reader independently requires
+ * the actual stored row, claims and a same-process or proven-dead predecessor.
+ * @param {string} root @param {any} rec @param {any} [configuration] */
+export function assertQualifiedDeliveryRecovery(root,rec,configuration){
+ return continuation(root,rec,configuration,()=>qualifiedDeliveryRecoveryPolicy(root,rec.operation.request.policySource,rec));
+}
+/** @param {string} root @param {any} rec @param {any} configuration @param {()=>any} currentPolicy */
+function continuation(root,rec,configuration,currentPolicy){
  const stored=readAcceptedOperation(root,rec.operation.id);
  if(stored?.operation.kind !== "qualified-delivery" || !same(stored,rec))refuse("QUALIFIED_DELIVERY_CHANGED");
  const req=rec.operation.request;
@@ -119,7 +130,7 @@ export function assertQualifiedDeliveryContinuation(root,rec,configuration,child
  if(!same(captured.receipt,req.authority.frozenAuthority.receipt) || !same(captured.fence,scope.fence))refuse("QUALIFIED_DELIVERY_CONTEXT_CHANGED");
  const card=safeOperationWorkingPath(captured.receipt.recordsRoot,req.authority.frozenAuthority.preparation.card.path);
  if(!runs.qualifiedProtocolDrift(req.authority.frozenAuthority.preparation.card.text,new TextDecoder("utf-8",{fatal:true}).decode(readFileSync(card))))refuse("QUALIFIED_DELIVERY_CONTRACT_CHANGED");
- retainedAuthority(root,req);qualifiedDeliveryPhasePolicy(root,req.policySource,rec,childProof);
+ retainedAuthority(root,req);currentPolicy();
  return true;
 }
 /** Full-route capture alone may redeem the actual opaque fixed hook proof.
