@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1827 at least behaviours** — 1823 extracted sentences + 4 at least named-not-extracted (listed at the end) — across 122 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1832 at least behaviours** — 1828 extracted sentences + 4 at least named-not-extracted (listed at the end) — across 125 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -189,7 +189,7 @@ Census: **1827 at least behaviours** — 1823 extracted sentences + 4 at least n
 - the tier line is CREATED where a card has none, and no other field may be created by a stamp
 - THE BENCH ARM TAKES THE GROUND, SEALS THREE INPUTS AND RENDERS PHASE 2, against a real dispatch
 - the arm renders phase 1 from the card AS THE COMMIT CARRIES IT, never off the working tree
-- THE SHIPPED TEMPLATE NAMES A MODEL FOR EVERY ROLE, and every one of them is Opus 5
+- THE SHIPPED TEMPLATE NAMES A MODEL FOR EVERY ROLE, with the configured Codex planner default
 - THE BRIEF PRINTS THE MODEL IN ROW 1, read from the runtime template and named as such
 - A ROLE THE TEMPLATE NAMES NO MODEL FOR REFUSES THE DISPATCH, before a card is stamped or a worktree is cut
 - THE DISPATCH STAMPS AND PRINTS THE MODEL PER SEAT, and a dial that overrides one says so
@@ -577,6 +577,10 @@ Census: **1827 at least behaviours** — 1823 extracted sentences + 4 at least n
 - installed grading measures the actual held PRODUCT worker, retains original suites and captures without changing ignored-output policy
 - current pause and exact worker changes refuse; a pause from the first real suite prevents the next child and any accepted result
 - the original reporter/judge aggregates actual partial captures and refuses missing, duplicate, changed or relabeled membership
+
+## configured-dispatch-operation
+
+- actual captured dispatch OP retains real metadata claims and only its opaque same-owner context can re-enter current approval
 
 ## configured-dispatch-view
 
@@ -1327,6 +1331,11 @@ Census: **1827 at least behaviours** — 1823 extracted sentences + 4 at least n
 - native record and public launch disclose every callback registered by the unchanged portable hook for both profiles
 - native reserved-work records remain bindable listed and covered by durable unknown refusal absorption beside reservation metadata
 
+## native-product-hook
+
+- fixed installed hook binds original coordinator TOOL and canonical native coverage without claiming registration or trust
+- fixed hook refuses its physically present omitted producer member and restores a real installed transport positive
+
 ## native-transaction-recovery
 
 - plain owned atomic publication detects each actual persistence operation without native fixture bootstrap writes
@@ -1504,6 +1513,7 @@ Census: **1827 at least behaviours** — 1823 extracted sentences + 4 at least n
 - ordinary TOOL validation requires its loaded health-bands owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded rename-scan owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded project-bank-record owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded configured-dispatch-record owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded genesis-bank-proposal owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded genesis-proposal owner even when the omitted file remains present
 - ordinary TOOL validation requires the actually imported hook routing audit when its omitted file remains present
@@ -1735,6 +1745,10 @@ Census: **1827 at least behaviours** — 1823 extracted sentences + 4 at least n
 - a real retained wording-only condition stays pending without guessed replacement bytes or target effects
 - pure mechanical correction preserves the exact verifier body and accepted RED while its resulting whole-tree grade stays owed
 - private-only integration performs canonical record checking and invents no PRODUCT commit or suite obligation
+
+## qualified-integration-progress
+
+- unaccepted artifact observation data belongs only to its original known-dead launch
 
 ## qualified-native
 

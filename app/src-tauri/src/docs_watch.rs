@@ -1866,8 +1866,8 @@ fn run_watcher(
                         gate,
                         prepared,
                         completed,
+                        &mut |target| architecture.before_publication(target),
                     );
-                    architecture = ArchitectureBaseline::measure(&target);
                 } else {
                     let _ = prepared.send(Err("workspace observation is not initialized".into()));
                 }
@@ -1878,6 +1878,7 @@ fn run_watcher(
                 } else {
                     ProjectStatus::NoProject
                 };
+                architecture.before_publication(&target);
                 let _ = ack.send(status);
             }
             WatchCtl::Fs(Ok(events)) => {
@@ -1889,6 +1890,7 @@ fn run_watcher(
                         &seq,
                         &events,
                         &sink,
+                        &mut |target| architecture.before_publication(target),
                     );
                     let next = ArchitectureBaseline::measure(&target);
                     if architecture.changed_within_context(&next) {
@@ -1951,6 +1953,16 @@ struct ArchitectureBaseline {
     graph: Option<(u8, Option<(u64, u64)>, u64, Option<SystemTime>)>,
 }
 impl ArchitectureBaseline {
+    // A reader may write immediately after receiving its new context. Capture
+    // that context's baseline before any snapshot/selection acknowledgement is
+    // published, so the write cannot become an unannounced initial baseline.
+    // Same-context reads leave the old graph stamp available for fs diffing.
+    fn before_publication(&mut self, target: &WatchTarget) {
+        let next = Self::measure(target);
+        if self.context != next.context {
+            *self = next;
+        }
+    }
     fn measure(target: &WatchTarget) -> Self {
         let selection = target.managed.as_ref().filter(|s| s.envelope(0).availability == "available");
         let context = selection.map(|s| (s.product.clone(), s.envelope(0).selection_sequence, s.envelope(0).context_sequence));

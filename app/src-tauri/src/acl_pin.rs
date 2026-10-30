@@ -615,6 +615,7 @@ fn t025_genesis_commands_are_locally_invokable_and_remotely_denied() {
             crate::genesis_start,
             crate::genesis_send_turn,
             crate::genesis_status,
+            crate::genesis_bank_replay,
             crate::genesis_cancel
         ])
         .manage(watch)
@@ -641,6 +642,7 @@ fn t025_genesis_commands_are_locally_invokable_and_remotely_denied() {
         ("genesis_start",json!({"request":{"expectedContext":context,"attempt":2}}),"genesis-no-project"),
         ("genesis_send_turn",json!({"request":{"expectedContext":context,"attempt":3,"identity":identity},"text":"hello"}),"genesis-no-project"),
         ("genesis_status",json!({"request":{"expectedContext":context,"attempt":4}}),"genesis-no-project"),
+        ("genesis_bank_replay",json!({"request":{"expectedContext":context,"attempt":5,"identity":identity},"token":"unoffered"}),"genesis-no-project"),
     ];
     let mut sequence=0;let mut status=json!(null);
     for (command,input,reason) in &inputs {
@@ -794,7 +796,7 @@ fn managed_genesis_ipc_requires_context_and_activation_before_legacy_split_acces
     let state = agent::AgentState::new_managed(RunnerConfig::default(), move |event| { let _ = sink.send(event); });
     let app = mock_builder().manage(watch).manage(state).manage(crate::record_editor::RecordEditorState::default())
         .invoke_handler(tauri::generate_handler![crate::genesis_start,crate::genesis_resume,crate::genesis_fresh,
-            crate::genesis_send_turn,crate::genesis_status,crate::genesis_transcript,crate::genesis_cancel,crate::genesis_kickoff])
+            crate::genesis_send_turn,crate::genesis_status,crate::genesis_transcript,crate::genesis_cancel,crate::genesis_kickoff,crate::genesis_bank_replay])
         .build(mock_context(noop_assets())).unwrap();
     let webview = tauri::WebviewWindowBuilder::new(&app, "main", Default::default()).build().unwrap();
     fn files(at: &Path) -> BTreeMap<String, Vec<u8>> {
@@ -812,7 +814,7 @@ fn managed_genesis_ipc_requires_context_and_activation_before_legacy_split_acces
         json!({"version":1,"projectId":"ipc-fixture","productRoot":product,"recordsRoot":records}).to_string()] {
         fs::write(product.join(".supertaskr/workspace.json"), marker).unwrap();
         let before_p = files(&product); let before_r = files(&records);
-        for command in ["genesis_start","genesis_resume","genesis_fresh","genesis_send_turn","genesis_status","genesis_transcript","genesis_cancel","genesis_kickoff"] {
+        for command in ["genesis_start","genesis_resume","genesis_fresh","genesis_send_turn","genesis_status","genesis_transcript","genesis_cancel","genesis_kickoff","genesis_bank_replay"] {
             let refused = get_ipc_response(&webview, invoke_request(command, local_origin(), InvokeBody::Json(json!({"text":"must not be captured"}))));
             let error = refused.expect_err(command).to_string(); assert!(error.contains("request"), "{command}: {error}");
         }

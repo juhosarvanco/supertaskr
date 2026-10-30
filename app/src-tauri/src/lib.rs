@@ -818,6 +818,18 @@ async fn genesis_status<R: tauri::Runtime>(
     })
 }
 #[tauri::command]
+async fn genesis_bank_replay<R:tauri::Runtime>(
+    app:tauri::AppHandle<R>,request:agent::managed::SessionRequest,token:String,
+)->agent::managed::Reply<agent::managed::ReadOutcome<agent::banking::View>> {
+    let original=request.request();
+    let prepared=match agent::managed::prepare(&app.state::<WatchState>(),&original) {
+        Ok(prepared)=>prepared,Err(code)=>return agent::managed::read_failed(&app.state::<AgentState>(),&original,code),
+    };
+    let handle=app.clone();
+    tauri::async_runtime::spawn_blocking(move ||agent::managed::replay_bank_prepared(&handle.state::<WatchState>(),&handle.state::<AgentState>(),&handle.state::<record_editor::RecordEditorState>(),request,prepared,token))
+        .await.unwrap_or_else(|_|agent::managed::read_failed(&app.state::<AgentState>(),&original,"genesis-bank-worker-unavailable".into()))
+}
+#[tauri::command]
 fn genesis_cancel(
     agent: tauri::State<'_, AgentState>,
     request: agent::managed::SessionRequest,
@@ -914,11 +926,17 @@ pub fn run() {
             // shell to hand it. Resolution is a probe or a typed
             // not-found.
             let agent_emit = app.handle().clone();
+            let banking_app = app.handle().clone();
+            let banking_emit = app.handle().clone();
             let agent_cfg = agent::runner::RunnerConfig::default();
             app.manage(AgentState::new_managed(agent_cfg, move |event| {
                 if let Err(err) = agent_emit.emit(agent::GENESIS_EVENT, event) {
                     eprintln!("[supertaskr] agent: emit failed: {err}");
                 }
+            }).with_banking(move |turn| {
+                agent::banking::finish(&banking_app.state::<AgentState>(),&banking_app.state::<record_editor::RecordEditorState>(),turn);
+            },move |event| {
+                if let Err(err)=banking_emit.emit(agent::GENESIS_EVENT,event) {eprintln!("[supertaskr] bank: emit failed: {err}");}
             }));
 
             // T-003: the frontend echoes each applied snapshot as a
@@ -1006,6 +1024,7 @@ pub fn run() {
             genesis_start,
             genesis_send_turn,
             genesis_status,
+            genesis_bank_replay,
             genesis_cancel,
             genesis_resume,
             genesis_fresh,

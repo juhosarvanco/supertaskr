@@ -523,6 +523,7 @@ pub(super) fn select<T: notify_debouncer_mini::notify::Watcher>(
     gate: Arc<SelectionGate>,
     prepared: mpsc::Sender<Result<(), String>>,
     completed: mpsc::Sender<DocsSnapshot>,
+    before_publish: &mut impl FnMut(&WatchTarget),
 ) {
     if matches!(
         *gate.decision.lock().expect("selection gate poisoned"),
@@ -629,6 +630,7 @@ pub(super) fn select<T: notify_debouncer_mini::notify::Watcher>(
         truncated: snapshot.truncated,
     };
     *target = committed;
+    before_publish(target);
     *decision = Decision::Committed(snapshot.clone());
     drop(decision);
     let _ = completed.send(snapshot);
@@ -737,6 +739,7 @@ pub(super) fn handle_batch<T: notify_debouncer_mini::notify::Watcher>(
     seq: &AtomicU64,
     events: &[DebouncedEvent],
     sink: &impl Fn(&DocsSnapshot),
+    before_publish: &mut impl FnMut(&WatchTarget),
 ) {
     if events.is_empty() {
         return;
@@ -756,6 +759,7 @@ pub(super) fn handle_batch<T: notify_debouncer_mini::notify::Watcher>(
         return;
     }
     target.last = outcome;
+    before_publish(target);
     sink(&snapshot);
 }
 
@@ -856,9 +860,13 @@ mod tests {
     }
     impl Live {
         fn new(initial: Option<PathBuf>) -> Self {
+            Self::new_with_sink(initial, |_| {})
+        }
+        fn new_with_sink(initial: Option<PathBuf>, observer: impl Fn(&DocsSnapshot) + Send + 'static) -> Self {
             let (tx, events) = mpsc::channel();
             let (graph_tx, architecture) = mpsc::channel();
             let state = WatchState::start_with_architecture(initial, move |snapshot| {
+                observer(snapshot);
                 let _ = tx.send(snapshot.clone());
             }, move |change| {
                 let _ = graph_tx.send(change.clone());
@@ -990,7 +998,20 @@ mod tests {
         let graph_dir = fx.records.join("docs/architecture");
         fs::create_dir_all(&graph_dir).unwrap();
         fs::write(graph_dir.join("graph.json"), "original graph").unwrap();
-        let live = Live::new(Some(fx.product.clone()));
+        let second = fx.root.join("records-two");
+        let selected_root = second.display().to_string();
+        let selected_graph = second.join("docs/architecture/graph.json");
+        let wrote = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let wrote_in_sink = wrote.clone();
+        let live = Live::new_with_sink(Some(fx.product.clone()), move |snapshot| {
+            if snapshot.records.as_ref().and_then(|records| records.records_dir.as_deref()) == Some(selected_root.as_str()) &&
+                !wrote_in_sink.swap(true, Ordering::SeqCst) {
+                // A receiver can react as soon as its new context is published.
+                // Make that write synchronous so a post-publication baseline
+                // cannot silently absorb it on a faster watcher thread.
+                fs::write(&selected_graph, "new selected graph").unwrap();
+            }
+        });
         let first = live.read();
         fs::write(fx.records.join("docs/record.md"), "ordinary note change").unwrap();
         live.until(|s| text(s) == Some("ordinary note change"));
@@ -1006,14 +1027,13 @@ mod tests {
         assert!(!wire.contains("external graph payload") && !wire.contains("graph.json"));
         assert!(live.events.try_recv().is_err(), "graph-only writes never broadcast the docs tree");
 
-        let second = fx.root.join("records-two");
         repository(&second, "private-two.txt");
         fs::create_dir_all(second.join("docs/architecture")).unwrap();
         fs::write(second.join("docs/architecture/graph.json"), "second baseline").unwrap();
         fx.bind(&second);
         let selected = live.until(|s| s.records.as_ref().unwrap().records_dir.as_deref() == second.to_str());
+        assert!(wrote.load(Ordering::SeqCst), "the new-context receiver actually wrote its graph");
         fs::write(graph_dir.join("graph.json"), "old records poison").unwrap();
-        fs::write(second.join("docs/architecture/graph.json"), "new selected graph").unwrap();
         let current = live.architecture.recv_timeout(Duration::from_secs(8)).expect("new context positive graph notice");
         assert_eq!(current.scope.context_sequence, selected.records.as_ref().unwrap().context_sequence);
         assert_eq!(current.scope.records.unwrap().records_dir.as_deref(), second.to_str());

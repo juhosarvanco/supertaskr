@@ -1,6 +1,6 @@
 import { isTaskFilePath } from "@supertaskr/parser/pure";
 import type { DocsModelState } from "@/lib/docs-model";
-import type { GenesisTurn } from "@/lib/agent-store";
+import type { GenesisBankingView, GenesisTurn } from "@/lib/agent-store";
 
 /**
  * T-028's pure half: WHEN the interview's right pane stops being a lens
@@ -229,6 +229,8 @@ export function flightOf(
  * asserted everywhere: naming the blocker is what makes criterion 4
  * testable as a positive claim rather than as an absence. */
 export type CompletionBlocker =
+  | "bankUnconfirmed"
+  | "setupUninstalled"
   /** The planner has not spoken yet. */
   | "noTurns"
   /** A turn is running, or a send is latched from this side. */
@@ -271,6 +273,7 @@ export function completionOf(
   docs: DocsModelState,
   turns: readonly GenesisTurn[],
   inFlight: boolean,
+  banking?:GenesisBankingView|null,
 ): CompletionReading {
   if (turns.length === 0) return { complete: false, blocker: "noTurns" };
   if (inFlight) return { complete: false, blocker: "turnInFlight" };
@@ -280,6 +283,12 @@ export function completionOf(
     return { complete: false, blocker: "lastTurnUnsettled" };
   }
   if (!boardReadiness(docs).showBoard) return { complete: false, blocker: "noBoard" };
+  if(docs.records?.layout==="split") {
+    if(!banking?.current||banking.completedStage!==8)return {complete:false,blocker:"bankUnconfirmed"};
+    // Stage8's installation/adoption is a separate backend outcome. No
+    // working-file observation or bank receipt invents that missing receipt.
+    return {complete:false,blocker:"setupUninstalled"};
+  }
   return { complete: true, turns: turns.length };
 }
 
@@ -305,9 +314,10 @@ export function completionSafely(
   docs: DocsModelState,
   turns: readonly GenesisTurn[],
   inFlight: boolean,
+  banking?:GenesisBankingView|null,
 ): CompletionReading {
   try {
-    return completionOf(docs, turns, inFlight);
+    return completionOf(docs, turns, inFlight,banking);
   } catch {
     return { complete: false, blocker: "unreadable" };
   }
@@ -330,11 +340,12 @@ export function crescendo(
   docs: DocsModelState,
   turns: readonly GenesisTurn[],
   inFlight: boolean,
+  banking?:GenesisBankingView|null,
 ): CrescendoModel {
   const readiness = boardReadiness(docs);
   return {
     readiness,
-    completion: completionOf(docs, turns, inFlight),
+    completion: completionOf(docs, turns, inFlight,banking),
     half: readiness.showBoard ? "board" : "lens",
   };
 }

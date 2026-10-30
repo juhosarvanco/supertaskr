@@ -23,6 +23,16 @@ export function qualifiedConfiguredGradeCommand(capture){
  * once, including failed suites; RED is retained and cannot become complete.
  * @param {any} capture @param {any} policy @param {{commit:string,tree:string}} expected */
 export function validQualifiedConfiguredGateCapture(capture,policy,expected){
+ return validCapture(capture,policy,expected,policy?.required);
+}
+/** One actual original suite result is correspondence, never a whole grade.
+ * The same row/context checks serve immutable owned result artifacts.
+ * @param {any} capture @param {any} policy @param {{commit:string,tree:string}} expected @param {string} suite */
+export function validQualifiedConfiguredSuiteCapture(capture,policy,expected,suite){
+ return Array.isArray(policy?.required)&&policy.required.includes(suite)&&validCapture(capture,policy,expected,[suite]);
+}
+/** @param {any} capture @param {any} policy @param {{commit:string,tree:string}} expected @param {any} selected */
+function validCapture(capture,policy,expected,selected){
  try{
   if(!shape(capture,["version","policy","context","candidate","required","selected","whole","suites","complete"])||capture.version!==1||!same(capture.policy,policy)||
    !shape(capture.context,["configurationDigest","toolManifestDigest","required","policyRevision","policyDigest"])||
@@ -30,7 +40,7 @@ export function validQualifiedConfiguredGateCapture(capture,policy,expected){
    !shape(capture.candidate,["productRoot","commit","tree"])||typeof capture.candidate.productRoot!=="string"||!path.isAbsolute(capture.candidate.productRoot)||
    capture.candidate.commit!==expected.commit||capture.candidate.tree!==expected.tree||!Array.isArray(policy.required)||!policy.required.length||
    new Set(policy.required).size!==policy.required.length||!same(capture.required,policy.required)||!Array.isArray(capture.selected)||new Set(capture.selected).size!==capture.selected.length||
-   !same([...capture.selected].sort(),[...policy.required].sort())||capture.whole!==true||!Array.isArray(capture.suites)||capture.suites.length!==capture.selected.length||!Array.isArray(policy.suites))return false;
+   !Array.isArray(selected)||!same([...capture.selected].sort(),[...selected].sort())||capture.whole!==true||!Array.isArray(capture.suites)||capture.suites.length!==capture.selected.length||!Array.isArray(policy.suites))return false;
   const {digest,...body}=policy;if(digest!==operationDigest(body)||policy.registryDigest!==operationDigest(policy.suites)||!same(policy.suites.map((/** @type {any} */ s)=>s.id),policy.required))return false;
   for(const [at,row] of capture.suites.entries()){
    const id=capture.selected[at],definition=policy.suites.find((/** @type {any} */ suite)=>suite.id===id),v=row?.verdict;
@@ -39,7 +49,7 @@ export function validQualifiedConfiguredGateCapture(capture,policy,expected){
     !shape(v,["suite","exit","bodies","targets","ref","tree","dirty","verdict","reason"])||v.suite!==id||v.ref!==expected.commit||v.tree!==expected.tree||v.dirty!==false||
     !integer(v.exit,0)||v.exit>255||!integer(v.bodies,1)||!integer(v.targets,0)||v.verdict!==(v.exit===0?"GREEN":"RED")||v.reason!==(v.exit===0?"ok":"suite-reported-failure"))return false;
   }
-  return capture.complete===capture.suites.every((/** @type {any} */ row)=>row.verdict.verdict==="GREEN");
+  return capture.complete===(capture.selected.length===policy.required.length&&policy.required.every((/** @type {any} */ id)=>capture.selected.includes(id))&&capture.suites.every((/** @type {any} */ row)=>row.verdict.verdict==="GREEN"));
  }catch{return false;}
 }
 /** A retained outer reading must describe the same complete captured output.

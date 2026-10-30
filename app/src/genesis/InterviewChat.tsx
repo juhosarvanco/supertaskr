@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { DocsModelState } from "@/lib/docs-model";
 import type {
@@ -7,6 +7,7 @@ import type {
   SendOutcomePayload,
   StartOutcomePayload,
 } from "@/lib/agent-store";
+import { replayGenesisBank } from "@/lib/agent-store";
 import { completionSafely, elapsedLabel } from "./crescendo";
 import {
   activeTurn,
@@ -16,6 +17,9 @@ import {
   mergeRehydrated,
   noticeRoutesToHandDriven,
   observeBanking,
+  selectedBanking,
+  receiptChips,
+  receiptStage,
   shouldStickToBottom,
   stageOf,
   stageReadout,
@@ -83,6 +87,8 @@ export function InterviewChat({
   // path take an answer? Every `disabled` below reads THIS, because a
   // control has to agree with the guard that will actually answer it.
   const locked = interviewLocked(genesis, ui);
+  const separated=docs.records?.layout==="split";
+  const banking=selectedBanking(docs,genesis);
 
   // ---- banked chips: file evidence, and only file evidence -----------
   //
@@ -113,9 +119,12 @@ export function InterviewChat({
   // snapshot the second time, and that path returns the previous
   // observation by identity.
   const observed = useRef(EMPTY_BANKING_OBSERVATION);
-  const [chipsByTurn, setChipsByTurn] = useState(EMPTY_BANKING_OBSERVATION.chipsByTurn);
+  const [legacyChipsByTurn, setChipsByTurn] = useState(EMPTY_BANKING_OBSERVATION.chipsByTurn);
+  const acceptedChips=useMemo(()=>receiptChips(banking),[banking]);
+  const chipsByTurn=separated?acceptedChips:legacyChipsByTurn;
 
   useEffect(() => {
+    if(separated)return;
     const active = activeTurn(genesis.turns);
     const next = observeBanking(observed.current, docs, active);
     observed.current = next;
@@ -123,7 +132,7 @@ export function InterviewChat({
     // map on every path that adds no path to no turn, and React's eager
     // bail-out then schedules nothing at all.
     setChipsByTurn(next.chipsByTurn);
-  }, [docs, genesis.turns]);
+  }, [docs, genesis.turns,separated]);
 
   // ---- the first frame ------------------------------------------------
   //
@@ -204,7 +213,7 @@ export function InterviewChat({
   // and this screen adds no clock. It also cannot throw: see the note on
   // `stageOf`, which is the difference between a torn file breaking a
   // progress bar and a torn file taking the conversation down.
-  const stage = stageOf(docs);
+  const stage = separated?receiptStage(banking):stageOf(docs);
   // T-171: the SAME completion reading the board pane celebrates with —
   // T-028's `completionOf`, not a second rule — through the throw-safe
   // wrapper, because this half of the screen renders outside T-037's
@@ -212,7 +221,7 @@ export function InterviewChat({
   // second answer to "is the interview over": that question already has
   // one derivation, off typed state plus a parseable board on disk, and
   // ADR-017/T-028 forbid a model-emitted marker becoming a third.
-  const completion = completionSafely(docs, genesis.turns, busy);
+  const completion = completionSafely(docs, genesis.turns, busy,banking);
   // THE CONVERSATION IS WHERE YOU LEFT IT (criteria 1-2). Pulled on
   // arrival rather than at app startup: `genesis_transcript` reads the
   // OPEN project, and at startup there may not be one.
@@ -408,7 +417,7 @@ export function InterviewChat({
           entry.kind === "user" ? (
             <UserTurn key={`u${entry.turn}`} text={entry.text} />
           ) : entry.kind === "banked" ? (
-            <BankedChips key={`b${entry.turn}`} paths={entry.paths} />
+            <BankedChips key={`b${entry.turn}`} paths={entry.paths} historical={separated&&banking?.current!==true} />
           ) : (
             <PlannerTurn
               key={`p${entry.turn}`}
@@ -420,6 +429,14 @@ export function InterviewChat({
             />
           ),
         )}
+
+        {separated&&banking?.phase==="banking"&&<p role="status" data-testid="interview-banking">Saving this step to the original project…</p>}
+        {separated&&banking?.phase==="recovery"&&<div role="status" data-testid="interview-bank-recovery" className="flex flex-col gap-2">
+          <p>This save is unconfirmed. Keep the original project and draft, then recover the save before another answer.</p>
+          <Button disabled={busy||!banking.recoveryToken} onClick={()=>{if(banking.recoveryToken)void replayGenesisBank(banking.recoveryToken,view);}}>Recover this save</Button>
+        </div>}
+        {separated&&banking?.phase==="refused"&&<p role="status" data-testid="interview-bank-refused">{banking.code==="records-app-tool-unavailable"?"Restore the installed Supertaskr tool to save this bank. Your draft is still here.":"The bank was not saved. Its draft remains available. The planner can correct its proposal in the next turn."}</p>}
+        {separated&&(banking?.cleanupWarnings?.length??0)>0&&<p role="status" data-testid="interview-bank-cleanup">The bank was saved. Some local cleanup still needs attention; its receipt is preserved.</p>}
 
         {/* T-171: the ending, at the foot of the conversation and after
             the last turn — where the transcript actually stops, which is

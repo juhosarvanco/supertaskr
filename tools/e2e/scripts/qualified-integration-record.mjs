@@ -6,8 +6,8 @@ import {createHash} from "node:crypto";
 import path from "node:path";
 import {operationContent,operationDigest,operationPayload} from "./operation-record.mjs";
 import {validConfiguredDispatchCapsule} from "../../../cli/configured-native-reader.mjs";
-import {validQualifiedConfiguredGateCapture} from "./qualified-configured-grades.mjs";
-import {validQualifiedDeliveryPolicySource} from "./qualified-delivery-record.mjs";
+import {validQualifiedConfiguredGateCapture,validQualifiedConfiguredAuthorityGrades} from "./qualified-configured-grades.mjs";
+import {validQualifiedDeliveryPolicySource,validQualifiedPublicationOutputContext} from "./qualified-delivery-record.mjs";
 import {ordinaryRecordTextPath} from "./records-profile.mjs";
 /** @param {any} v @param {string[]} keys */
 const shape=(v,keys)=>v&&typeof v==="object"&&!Array.isArray(v)&&Object.keys(v).sort().join("\0")===[...keys].sort().join("\0");
@@ -132,6 +132,41 @@ export function validQualifiedPlannedDeliveryRequest(request){
    commit:records.commit,tree:records.tree,writes:records.writes,working:records.working}]);
  }catch{return false;}
 }
+/** Explicit both-root resource projection for the forthcoming PRODUCT route.
+ * Reserving a resource is not a grant to write it; effect landings are separate.
+ * @param {any} plan */
+export function qualifiedProductIntegrationResources(plan){
+ if(!validQualifiedIntegrationPlan(plan))throw Error("QUALIFIED_INTEGRATION_PLAN_REQUIRED");
+ return ["product","records"].map(role=>({key:role,repository:structuredClone(plan.roles.find((/** @type {any} */ r)=>r.role===role).repository)}));
+}
+/** Unregistered full planned request definition. This predicate cannot supply
+ * an authentic plan/publication handle, actual grades or effect authority.
+ * The existing public operation reader deliberately does not accept this route
+ * until its owned producer/progress/effect support is reviewed and registered.
+ * @param {any} request */
+export function validQualifiedProductPlannedDeliveryRequest(request){
+ try{
+  if(!shape(request,["version","operationId","kind","coordinator","docsDirectory","runtimeDirectory","authority","policySource","targets","route","landings","integration"])||request.version!==1||request.kind!=="qualified-delivery"||
+   !shape(request.integration,["plan","digest","execution","resources","executorPolicySource"]))return false;
+  const {plan,execution,executorPolicySource}=request.integration;
+  if(!validQualifiedIntegrationPlan(plan)||request.integration.digest!==operationDigest(plan)||request.operationId!==plan.operationId||!same(request.authority,plan.authority)||!same(request.targets,plan.targets)||
+   plan.recordsValidation.unmodeled.length!==0||plan.source.configuredDispatch===null||!validQualifiedIntegrationExecution(execution)||execution.version!==2||
+   !same(request.integration.resources,qualifiedProductIntegrationResources(plan)))return false;
+  const p=plan.roles.find((/** @type {any} */ r)=>r.role==="product"),r=plan.roles.find((/** @type {any} */ r)=>r.role==="records");
+  if(p.grade.status!=="owed"||p.identity===null||!same(request.coordinator,p.repository)||!same(request.docsDirectory,plan.origins.docs)||!same(request.runtimeDirectory,plan.origins.runtime)||
+   !shape(request.route,["name","publicationOwed","completionOwed","policyRevision","publication"])||request.route.name!=="protected-planned-output-v1"||request.route.publicationOwed!==true||request.route.completionOwed!==true||request.route.policyRevision!==p.commit)return false;
+  for(const [source,role] of [[request.policySource,"verifier"],[executorPolicySource,"executor"]])if(!validQualifiedDeliveryPolicySource(source,{...plan.authority[role],taskId:plan.authority.taskId,receipt:plan.authority.frozenAuthority.receipt})||
+   !same(source.native.qualified.origins.configuredDispatch,plan.source.configuredDispatch))return false;
+  if(!validQualifiedConfiguredAuthorityGrades(plan.authority,request.policySource))return false;
+  const publication=request.route.publication;
+  if(!validQualifiedPublicationOutputContext(publication,request,{commit:p.commit,tree:p.tree,expectedOld:p.expectedRevision})||!same(publication.tool,plan.tool)||
+   !same(execution.node,{path:publication.hook.node.path,sha256:publication.hook.nodeSha256})||
+   execution.entry.path!==path.join(path.dirname(publication.hook.entry),"qualified-integration-launch.mjs")||execution.worker.path!==path.join(path.dirname(publication.hook.entry),"qualified-integration-worker.mjs"))return false;
+  const landings=[p,r].filter(role=>role.identity!==null).map(role=>({key:role.role,roles:[role.role],repository:role.repository,expectedRevision:role.expectedRevision,ref:role.targetRef,commit:role.commit,tree:role.tree,writes:role.writes,working:role.working}));
+  if(!same(request.landings,landings))return false;
+  operationPayload(request);return true;
+ }catch{return false;}
+}
 /** Data-only exact whole-grade acceptance. The producer must obtain each row
  * from its actual owned launch/artifact; this validator cannot supply it.
  * @param {any} progress @param {any} plan */
@@ -152,15 +187,42 @@ const asset=v=>shape(v,["path","sha256"])&&absolute(v.path)&&sha(v.sha256);
 /** Fixed backend execution selection. These descriptors still need actual
  * installed membership and physical bytes checked at every launch/effect.
  * @param {any} value */
-export function validQualifiedIntegrationExecution(value){return shape(value,["version","node","entry"])&&value.version===1&&asset(value.node)&&asset(value.entry)&&path.basename(value.entry.path)==="qualified-integration-launch.mjs";}
+export function validQualifiedIntegrationExecution(value){return value&&[1,2].includes(value.version)&&shape(value,["version","node","entry",...(value.version===2?["worker"]:[])])&&asset(value.node)&&asset(value.entry)&&path.basename(value.entry.path)==="qualified-integration-launch.mjs"&&
+ (value.version===1||asset(value.worker)&&path.basename(value.worker.path)==="qualified-integration-worker.mjs");}
 /** Canonical exact marker bytes; a marker alone never establishes ownership.
  * @param {string} operationId @param {string} planDigest @param {string} token */
 export function qualifiedIntegrationWorkspaceMarker(operationId,planDigest,token){return operationContent({version:1,operationId,planDigest,token})+"\n";}
 /** @param {any} value */
 function artifact(value){return shape(value,["path","device","inode","fileMode","byteLength","sha256"])&&absolute(value.path)&&[value.device,value.inode].every(n=>typeof n==="string"&&/^\d+$/.test(n))&&
  value.fileMode===0o600&&Number.isSafeInteger(value.byteLength)&&value.byteLength>=0&&value.byteLength<=64*1024*1024&&sha(value.sha256);}
+/** Parent-retained actual fixed worker-thread ending, separate from wrapper
+ * retirement. Shape is not execution proof; the owner verifies the real
+ * thread ending, owned artifact and canonical row before retaining this.
+ * @param {any} result @param {any} workspace @param {number} sequence */
+export function validQualifiedIntegrationWorkerResult(result,workspace,sequence){
+ try{
+ return shape(result,["kind","threadId","exit","finishedAt","artifact","rowDigest"])&&result.kind==="thread-exited"&&Number.isSafeInteger(result.threadId)&&result.threadId>0&&
+  [0,1].includes(result.exit)&&instant(result.finishedAt)&&artifact(result.artifact)&&result.artifact.path===path.join(workspace.path,`result-${sequence}.json`)&&digest(result.rowDigest);
+ }catch{return false;}
+}
 /** @param {string} a @param {string} b */
 function disjoint(a,b){return [path.relative(a,b),path.relative(b,a)].every(r=>r===".."||r.startsWith(`..${path.sep}`)||path.isAbsolute(r));}
+/** Unaccepted physical observations never establish an actual exit or grade.
+ * At most one immutable observation belongs to each known-dead original
+ * launch. The producer still verifies actual path/identity/bytes/ownership.
+ * @param {any} observations @param {any[]} workspaces @param {any[]} launches */
+export function validQualifiedIntegrationObservations(observations,workspaces,launches){
+ try{
+  if(!Array.isArray(observations)||observations.length>256)return false;const retained=new Set();
+  for(const [at,o] of observations.entries()){
+   const launch=launches[o.launchSequence-1],workspace=launch&&workspaces[launch.workspaceSequence-1];
+   if(!shape(o,["sequence","launchSequence","observedAt","kind","artifact"])||o.sequence!==at+1||o.kind!=="unaccepted-artifact"||!instant(o.observedAt)||
+    !launch||!workspace||launch.result?.kind!=="observed-dead"||launch.workerResult!=null||!instant(launch.startedAt)||Date.parse(o.observedAt)<Date.parse(launch.startedAt)||retained.has(o.launchSequence)||
+    !artifact(o.artifact)||o.artifact.path!==path.join(workspace.path,`result-${launch.sequence}.json`))return false;
+   retained.add(o.launchSequence);
+  }return true;
+ }catch{return false;}
+}
 /** Full progress data shape. The modeled-private route has null execution
  * and no workspace/launch. The PRODUCT producer remains unregistered; its
  * future rows retain failed/interrupted attempts. A pure predicate cannot
@@ -168,7 +230,8 @@ function disjoint(a,b){return [path.relative(a,b),path.relative(b,a)].every(r=>r
  * @param {any} progress @param {any} plan @param {any} execution */
 export function validQualifiedIntegrationProgress(progress,plan,execution){
  try{
-  if(!validQualifiedIntegrationPlan(plan)||!shape(progress,["version","planDigest","phase","workspaces","launches","grades"])||progress.version!==1||
+  const observed=execution?.version===2;
+  if(!validQualifiedIntegrationPlan(plan)||!shape(progress,["version","planDigest","phase","workspaces","launches","grades",...(observed?["observations"]:[])])||progress.version!==(observed?2:1)||
    progress.planDigest!==operationDigest(plan)||!["captured","preparing","grading","ready"].includes(progress.phase)||!validQualifiedIntegrationGrades(progress.grades,plan)||
    !Array.isArray(progress.workspaces)||progress.workspaces.length>32||!Array.isArray(progress.launches)||progress.launches.length>256)return false;
   const product=plan.roles.find((/** @type {any} */ r)=>r.role==="product"),owed=product.grade.status==="owed",paths=new Set(),tokens=new Set();
@@ -188,22 +251,28 @@ export function validQualifiedIntegrationProgress(progress,plan,execution){
   }
   for(const [at,l] of progress.launches.entries()){
    const w=progress.workspaces[l.workspaceSequence-1],policy=plan.source.configuredDispatch?.gatePolicy;
-   if(!shape(l,["sequence","workspaceSequence","suite","token","owner","process","node","entry","startedAt","result"])||l.sequence!==at+1||!w||w.phase!=="ready"||!policy?.required.includes(l.suite)||
+   if(!shape(l,["sequence","workspaceSequence","suite","token","owner","process","node","entry","startedAt","result",...(observed?["workerResult"]:[])])||l.sequence!==at+1||!w||w.phase!=="ready"||!policy?.required.includes(l.suite)||
     typeof l.token!=="string"||!/^launch-[0-9a-f-]{36}$/.test(l.token)||tokens.has(l.token)||!same(l.node,execution.node)||!same(l.entry,execution.entry)||!instant(l.startedAt)||
     !shape(l.owner,["pid","identity","token"])||!Number.isSafeInteger(l.owner.pid)||l.owner.pid<1||typeof l.owner.identity!=="string"||!l.owner.identity||typeof l.owner.token!=="string"||!l.owner.token||
     !shape(l.process,["pid","identity","group"])||!Number.isSafeInteger(l.process.pid)||l.process.pid<1||l.process.group!==l.process.pid||typeof l.process.identity!=="string"||!l.process.identity)return false;
    tokens.add(l.token);
    if(l.result!==null){const r=l.result;
     if(r.kind==="observed-dead"){if(!shape(r,["kind","observedAt"])||!instant(r.observedAt))return false;}
-    else if(!shape(r,["kind","exit","signal","finishedAt","stdoutDigest","stderrDigest","artifact","rowDigest"])||r.kind!=="exited"||!instant(r.finishedAt)||
+    else if(!shape(r,["kind","exit","signal","finishedAt","stdoutDigest","stderrDigest",...(observed?[]:["artifact","rowDigest"])])||r.kind!=="exited"||!instant(r.finishedAt)||
      !(r.exit===null||Number.isSafeInteger(r.exit)&&r.exit>=0&&r.exit<=255)||!(r.signal===null||typeof r.signal==="string"&&/^SIG[A-Z0-9]+$/.test(r.signal))||![r.stdoutDigest,r.stderrDigest].every(digest)||
-     (r.artifact===null)!==(r.rowDigest===null)||r.artifact!==null&&(!artifact(r.artifact)||r.artifact.path!==path.join(w.path,`result-${l.sequence}.json`)||!digest(r.rowDigest)))return false;
+     !observed&&((r.artifact===null)!==(r.rowDigest===null)||r.artifact!==null&&(!artifact(r.artifact)||r.artifact.path!==path.join(w.path,`result-${l.sequence}.json`)||!digest(r.rowDigest))))return false;
    }
+   if(observed&&l.workerResult!==null&&(!validQualifiedIntegrationWorkerResult(l.workerResult,w,l.sequence)||Date.parse(l.workerResult.finishedAt)<Date.parse(l.startedAt)))return false;
    if(at<progress.launches.length-1&&l.result===null)return false;
   }
+  if(observed){
+   if(!validQualifiedIntegrationObservations(progress.observations,progress.workspaces,progress.launches))return false;
+   // Unaccepted observations cannot establish a suite result or acceptance.
+   if(progress.grades.product!==null&&Buffer.byteLength(operationContent(progress.grades.product))>32*1024*1024)return false;
+  }
   if(progress.grades.product!==null){const capture=progress.grades.product.capture,policy=plan.source.configuredDispatch.gatePolicy;
-   for(const row of capture.suites){const latest=progress.launches.filter((/** @type {any} */ l)=>l.suite===row.definition.id).at(-1),result=latest?.result;
-    if(!latest||result?.kind!=="exited"||result.artifact===null||result.rowDigest!==operationDigest(row)||result.signal!==null||
+   for(const row of capture.suites){const latest=progress.launches.filter((/** @type {any} */ l)=>l.suite===row.definition.id).at(-1),result=observed?latest?.workerResult:latest?.result;
+    if(!latest||result?.kind!==(observed?"thread-exited":"exited")||result.artifact===null||result.rowDigest!==operationDigest(row)||!observed&&result.signal!==null||
      result.exit!==(row.verdict.verdict==="GREEN"?0:1)||progress.workspaces[latest.workspaceSequence-1].repository.root!==capture.candidate.productRoot||!policy.required.includes(row.definition.id))return false;
    }
    if(progress.launches.at(-1)?.result===null)return false;

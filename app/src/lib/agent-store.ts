@@ -75,10 +75,24 @@ export interface GenesisDenial {
   message: string;
 }
 
+/** Native projection of actual accepted bank facts. Tokens correlate an
+ * offered recovery; no operation ID, path or executable is selected here. */
+export interface GenesisBankReceipt {
+  receiptDigest:string; stage:number; completedStage:number; recordsCommit:string;
+  productCommit:string|null; turn:number; paths:readonly string[];
+}
+export interface GenesisBankingView {
+  phase:"ready"|"banking"|"recovery"|"refused";
+  recoveryToken:string|null; code:string|null; current:boolean;
+  completedStage:number|null; receipts:readonly GenesisBankReceipt[];
+  cleanupWarnings?:readonly string[];
+}
+
 /** Mirror of Rust's `RunEvent` — the `genesis-turn` channel's payloads.
  * Every one carries `seq` from one runner-owned counter, so the store
  * stale-drops exactly like docs snapshots do. */
 export type GenesisEvent =
+  | {kind:"banking";seq:number;view:GenesisBankingView}
   | { kind: "started"; seq: number; turn: number }
   | { kind: "textDelta"; seq: number; turn: number; text: string }
   | { kind: "activity"; seq: number; turn: number; label: string }
@@ -273,6 +287,7 @@ export interface StaleFlightClaim {
 
 export type { GenesisView } from "./genesis-admission";
 export interface GenesisState {
+  banking?:GenesisBankingView|null;
   view?: GenesisView;
   /** A previously offered original activation, only for explicit cancellation. */
   cancelView?: GenesisView;
@@ -392,6 +407,9 @@ export function reduceGenesisEvent(
     lastEventAtMs: Date.now(),
   };
   switch (event.kind) {
+    case "banking":
+      return {...base,banking:event.view,
+        ...(event.view.phase!=="banking"?{preparing:false}:{} )};
     case "started":
       return {
         ...base,
@@ -592,7 +610,7 @@ export function reduceGenesisOutcome(
 
 /** Is a turn currently in flight (the send box's disabled state)? */
 export function isTurnInFlight(state: GenesisState): boolean {
-  return state.preparing === true || state.sending || state.phase === "running";
+  return state.preparing === true || state.sending || state.phase === "running" || state.banking?.phase==="banking";
 }
 
 // ---- store --------------------------------------------------------------
@@ -642,6 +660,9 @@ export async function startGenesisListener(): Promise<void> {
       if (selectedGenesisContext()) {
         const accepted = admission.event(event.payload as ScopedGenesisEvent);
         applyManagedEvents(accepted.events);
+        if (accepted.events.some(event=>event.kind==="banking"&&event.view.phase!=="banking")) {
+          void refreshGenesisStatus().then(()=>refreshGenesisTranscript());
+        }
         if (accepted.reconcile) reconcileManaged(accepted.newEvidence === true);
       } else if (!("identity" in event.payload)) setState(reduceGenesisEvent(state, event.payload));
     });
@@ -714,13 +735,13 @@ function reconcileManaged(newEvidence = false): void {
   }, 500);
 }
 type ManagedRead<T> = { kind: "ready"; value: T } | { kind: "error"; message: string };
-interface ManagedStatus { status: GenesisStatusPayload; record: GenesisRecordPayload | null; starting: boolean; eventAttempt: number | null; eventContext: GenesisContextToken | null }
+interface ManagedStatus { status: GenesisStatusPayload; record: GenesisRecordPayload | null; starting: boolean; eventAttempt: number | null; eventContext: GenesisContextToken | null; banking?:GenesisBankingView|null }
 async function managedTurn<T extends StartOutcomePayload | SendOutcomePayload>(
   run: (request: { expectedContext: GenesisContextToken; attempt: number; identity?: GenesisIdentity }) => Promise<GenesisReply<T>>,
   send = false, view?: GenesisView | null,
 ): Promise<T | null> {
   const context = selectedGenesisContext();
-  if (!context || !renderedViewCurrent(view) || isTurnInFlight(state) || admission.awaiting) return null;
+  if (!context || !renderedViewCurrent(view) || isTurnInFlight(state) || admission.awaiting || state.banking?.phase==="recovery") return null;
   const identity = send ? admission.identity : null;
   if (send && !identity) { const outcome = { kind: "noSession" } as T; setState(reduceGenesisOutcome(state, outcome)); return outcome; }
   const attempt = nextManagedAttempt();
@@ -738,6 +759,7 @@ async function managedTurn<T extends StartOutcomePayload | SendOutcomePayload>(
     offeredSession();
     setState(reduceGenesisOutcome({ ...state, preparing: false }, response.result));
     applyManagedEvents(accepted.events);
+    if(response.result.kind==="busy")void refreshGenesisStatus().then(()=>refreshGenesisTranscript());
     return response.result;
   } catch {
     admission.uncertain(attempt); reconcileManaged();
@@ -1073,6 +1095,26 @@ export async function genesisKickoff(view?: GenesisView | null): Promise<Kickoff
   }
 }
 
+/** An explicit original offer replays the same native operation. A lost reply
+ * reconciles scoped facts; it never submits another bank or planner turn. */
+export async function replayGenesisBank(token:string,view?:GenesisView|null):Promise<GenesisBankingView|null> {
+  if(!isTauri||!selectedGenesisContext()||!renderedViewCurrent(view)||!admission.context||!admission.identity||
+    isTurnInFlight(state)||admission.awaiting||state.banking?.phase!=="recovery"||state.banking.recoveryToken!==token)return null;
+  const context=admission.context,identity=admission.identity,attempt=nextManagedAttempt();
+  if(!admission.begin(attempt,identity))return null;
+  setState({...state,preparing:true});
+  try {
+    const response=await withAnswerBound(()=>invoke<GenesisReply<ManagedRead<GenesisBankingView>>>("genesis_bank_replay",{request:{expectedContext:context,attempt,identity},token}),()=>null);
+    if(response===null){admission.uncertain(attempt);reconcileManaged();return null;}
+    const accepted=admission.complete(response,attempt);
+    if(!accepted.admitted){if(accepted.reconcile)reconcileManaged();return null;}
+    offeredSession();applyManagedEvents(accepted.events);
+    if(response.result.kind!=="ready"){setState({...state,preparing:false,lastOutcome:{kind:"error",message:response.result.message}});return null;}
+    if(response.seq>=state.seq)setState({...state,seq:response.seq,preparing:false,banking:response.result.value});
+    return response.result.value;
+  }catch{admission.uncertain(attempt);reconcileManaged();return null;}
+}
+
 export async function refreshGenesisStatus(): Promise<GenesisStatusPayload | null> {
   if (!isTauri) return null;
   const context = selectedGenesisContext();
@@ -1085,7 +1127,7 @@ export async function refreshGenesisStatus(): Promise<GenesisStatusPayload | nul
       const accepted = admission.status(response, response.result.value.eventAttempt, response.result.value.eventContext);
       if (!accepted.admitted) { if (accepted.reconcile || admission.awaiting) reconcileManaged(); return null; }
       offeredSession(); applyManagedEvents(accepted.events);
-      if (response.seq >= state.seq) setState({ ...applyGenesisStatus(state, response.result.value.status), seq: response.seq, preparing: response.result.value.starting,
+      if (response.seq >= state.seq) setState({ ...applyGenesisStatus(state, response.result.value.status), seq: response.seq, preparing: response.result.value.starting,banking:response.result.value.banking??null,
         lastOutcome: response.result.value.record && !admission.identity ? (response.result.value.record.sessionIdRejected ? { kind: "sessionIdRejected", registryPath: ".supertaskr/sessions.json", why: response.result.value.record.sessionIdRejected } : response.result.value.record.nativeSessionId ? { kind: "resumeAvailable", nativeSessionId: response.result.value.record.nativeSessionId, turns: response.result.value.record.turns, model: response.result.value.record.model } : null) : null });
       reconcileTries = 0;
       if (accepted.reconcile) void refreshGenesisTranscript();

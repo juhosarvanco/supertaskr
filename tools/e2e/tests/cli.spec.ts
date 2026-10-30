@@ -512,7 +512,7 @@ test("the installer targets Claude Code and Codex, and a third harness is one ad
   const two = installPlan({ harnesses: HARNESSES, skills: ["seat"] });
   expect(two.map((s) => s.to)).toEqual([
     path.join(".claude", "skills", "seat", "SKILL.md"),
-    path.join(".codex", "prompts", "seat.md"),
+    path.join(".agents", "skills", "seat", "SKILL.md"),
   ]);
   for (const step of two) expect(step.from).toBe(path.join("method", "skills", "seat", "SKILL.md"));
 

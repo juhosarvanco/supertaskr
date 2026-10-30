@@ -1,10 +1,10 @@
 use super::*;
-use crate::agent::{managed, runner, AgentState, StartOutcome};
+use crate::agent::{self, banking, managed, runner, AgentState, StartOutcome};
 use std::os::unix::fs::PermissionsExt;
 use std::{
     fs,
     process::Command,
-    sync::mpsc,
+    sync::{mpsc,Arc,OnceLock,Weak},
     time::{Duration, Instant},
 };
 
@@ -21,12 +21,15 @@ fn actual_installed_init_selects_new_histories_and_first_start_requires_the_owne
             .parent()
             .unwrap();
         let script = r#"
-import {registerHooks,createRequire} from 'node:module';import path from 'node:path';import {pathToFileURL} from 'node:url';import {cpSync,mkdirSync,writeFileSync,chmodSync} from 'node:fs';
-registerHooks({resolve(s,c,n){if(s.startsWith('.')&&!path.extname(s))return n(s+'.ts',c);return n(s,c);}});
+import {registerHooks,createRequire} from 'node:module';import path from 'node:path';import {pathToFileURL} from 'node:url';import {cpSync,mkdirSync,writeFileSync,chmodSync,existsSync} from 'node:fs';
+registerHooks({resolve(s,c,n){if(s.startsWith('.')&&!path.extname(s)&&c.parentURL?.includes('/tools/e2e/tests/')&&existsSync(new URL(s+'.ts',c.parentURL)))return n(s+'.ts',c);return n(s,c);}});
 const source=process.argv[1],{genesisFixture}=await import(pathToFileURL(path.join(source,'tools/e2e/tests/genesis-init-fixture.ts')));const f=genesisFixture();
 const require=createRequire(path.join(source,'tools/e2e/package.json'));mkdirSync(path.join(f.tool,'node_modules'),{recursive:true});cpSync(path.dirname(require.resolve('yaml/package.json')),path.join(f.tool,'node_modules/yaml'),{recursive:true});
-const program=path.join(f.dir,'supertaskr');writeFileSync(program,'#!/bin/sh\nexec '+JSON.stringify(process.execPath)+' '+JSON.stringify(path.join(f.tool,'supertaskr.mjs'))+' "$@"\n');chmodSync(program,0o700);
-process.stdout.write(JSON.stringify({home:f.dir,product:f.product,records:f.records,program}));
+const entry=path.join(f.dir,'controlled-init.mjs'),stop=path.join(f.dir,'stop-first-bank');
+const script=name=>JSON.stringify(pathToFileURL(path.join(f.tool,'dist/tools/e2e/scripts',name+'.mjs')).href);
+writeFileSync(entry,`import{readFileSync,writeFileSync,existsSync}from'node:fs';import{executeInitializationProtocol}from ${script('genesis-init-command')};import{prepareGenesisBank}from ${script('genesis-bank-plan')};import{executeProjectBank}from ${script('project-bank-operation')};import{loadInstalledRecordTool}from ${script('records-check')};process.on('uncaughtException',error=>{writeFileSync(${JSON.stringify(stop+'.error')},error.stack??String(error));process.exit(73);});if(JSON.stringify(process.argv.slice(2))!==JSON.stringify(['init','--stdio']))throw Error('fixed init only');const input=JSON.parse(readFileSync(0,'utf8'));if(input.operation==='bank'&&existsSync(${JSON.stringify(stop)})){const{version,requestId,operation,...data}=input,tool=loadInstalledRecordTool(),{request}=prepareGenesisBank({...data,tool});executeProjectBank(input.productRoot,request,{tool,authorize(){return true;},onBoundary(at){if(at==='captured'){writeFileSync(${JSON.stringify(stop+'.captured')},request.operationId);process.exit(72);}}});}else{const result=executeInitializationProtocol(input);process.stdout.write(JSON.stringify(result)+'\\n');process.exitCode=result.ok?0:1;}`);
+const program=path.join(f.dir,'supertaskr');writeFileSync(program,'#!/bin/sh\nexec '+JSON.stringify(process.execPath)+' '+JSON.stringify(entry)+' "$@"\n');chmodSync(program,0o700);
+process.stdout.write(JSON.stringify({home:f.dir,product:f.product,records:f.records,program,stop}));
 "#;
         let fixture = Command::new("node")
             .args([
@@ -64,8 +67,8 @@ process.stdout.write(JSON.stringify({home:f.dir,product:f.product,records:f.reco
     let home = PathBuf::from(f["home"].as_str().unwrap());
     let product = PathBuf::from(f["product"].as_str().unwrap());
     let records = PathBuf::from(f["records"].as_str().unwrap());
-    let editor =
-        RecordEditorState::with_controlled_program(PathBuf::from(f["program"].as_str().unwrap()));
+    let editor = Arc::new(
+        RecordEditorState::with_controlled_program(PathBuf::from(f["program"].as_str().unwrap())));
     let watch = WatchState::start(None, |_| {});
     let state = SetupState::default();
     let selected = new_setup(
@@ -129,28 +132,33 @@ process.stdout.write(JSON.stringify({home:f.dir,product:f.product,records:f.reco
     let planner = home.join("planner");
     let prompt = home.join("prompt");
     let cwd = home.join("cwd");
-    fs::write(&planner,format!(r#"#!/bin/sh
-if [ "$1" = '--version' ];then echo '2.1.226 (Claude Code)';exit 0;fi
-/bin/cat > {}
-/bin/pwd > {}
-echo '{{"type":"system","subtype":"init","session_id":"new-project-first-planner","model":"controlled-model"}}'
-echo '{{"type":"result","subtype":"success","is_error":false,"num_turns":1,"result":"First planner response."}}'
-"#,serde_json::to_string(&prompt).unwrap(),serde_json::to_string(&cwd).unwrap())).unwrap();
+    let calls=home.join("planner-calls");
+    fs::write(&planner,format!(r#"#!/usr/bin/env node
+const fs=require('node:fs'),path=require('node:path');
+if(process.argv[2]==='--version'){{console.log('codex-cli 0.165.0-alpha.1.2');process.exit(0);}}
+const prompt=fs.readFileSync(0,'utf8');fs.writeFileSync({},prompt);fs.writeFileSync({},process.cwd());fs.appendFileSync({},'called\n');
+const match=/<supertaskr-bank-context-v1>\n([^]*?)\n<\/supertaskr-bank-context-v1>/.exec(prompt);if(!match)throw Error('exact structured bank context required');const c=JSON.parse(match[1]);
+fs.writeFileSync('docs/STATE.md','# State\n\nUpdated: 2026-10-30\n\n## In progress\nQ1 problem and person.\n');
+fs.mkdirSync('docs/plans',{{recursive:true}});fs.writeFileSync('docs/plans/genesis-bank-proposal.json',JSON.stringify({{version:1,setupId:c.setupId,sessionId:c.sessionId,originDigest:c.originDigest,expectedProductRevision:c.expectedProductRevision,expectedRecordsRevision:c.expectedRecordsRevision,proposalId:'native-stage-zero',stage:0,answerRefs:[],records:[{{path:'docs/STATE.md'}}]}}));
+console.log(JSON.stringify({{type:'thread.started',thread_id:'11111111-2222-4333-8444-555555555555'}}));console.log(JSON.stringify({{type:'item.completed',item:{{id:'controlled-answer',type:'agent_message',text:'First planner response.'}}}}));console.log(JSON.stringify({{type:'turn.completed',usage:{{input_tokens:1,cached_input_tokens:0,output_tokens:1}}}}));
+"#,serde_json::to_string(&prompt).unwrap(),serde_json::to_string(&cwd).unwrap(),serde_json::to_string(&calls).unwrap())).unwrap();
     fs::set_permissions(&planner, fs::Permissions::from_mode(0o700)).unwrap();
-    let (tx, events) = mpsc::channel();
-    let agent = AgentState::new_managed(
-        runner::RunnerConfig {
+    let cfg=runner::RunnerConfig {
             binary_override: Some(planner),
             probe_login_shell: false,
             start_timeout: Duration::from_secs(3),
             stall_timeout: Duration::from_secs(5),
             kill_grace: Duration::from_millis(100),
             ..Default::default()
-        },
-        move |event| {
-            let _ = tx.send(event);
-        },
-    );
+        };
+    let make_agent=|| {
+        let (tx,events)=mpsc::channel();let (bank_tx,banks)=mpsc::channel();
+        let owner:Arc<OnceLock<Weak<AgentState>>>=Arc::new(OnceLock::new());let original=owner.clone();let service=editor.clone();
+        let agent=Arc::new(AgentState::new_managed(cfg.clone(),move|event|{let _=tx.send(event);})
+            .with_banking(move|turn|{let agent=original.get().unwrap().upgrade().unwrap();banking::finish(&agent,&service,turn);},move|event|{let _=bank_tx.send(event);}));
+        owner.set(Arc::downgrade(&agent)).unwrap();(agent,events,banks)
+    };
+    let (agent,events,banks)=make_agent();
     let start = |attempt| {
         let request = managed::Request {
             expected_context: pair(&watch.message_scope()),
@@ -187,6 +195,10 @@ echo '{{"type":"result","subtype":"success","is_error":false,"num_turns":1,"resu
     ));
     assert!(!prompt.exists());
     fs::remove_file(extra).unwrap();
+    fs::write(f["stop"].as_str().unwrap(),"stop after durable bank capture").unwrap();
+    let product_index=fs::read(product.join(".git/index")).unwrap();
+    let product_refs=git(&product,&["for-each-ref","--format=%(refname) %(objectname)"]);
+    let product_objects=git(&product,&["cat-file","--batch-all-objects","--batch-check=%(objectname)"]);
     let first = start(4);
     assert!(
         matches!(first.result, StartOutcome::Started { .. }),
@@ -205,15 +217,66 @@ echo '{{"type":"result","subtype":"success","is_error":false,"num_turns":1,"resu
             _ => {}
         }
     }
+    let bank=banks.recv_timeout(Duration::from_secs(180)).expect("original bank callback started after model cessation/registry settlement");
+    assert_eq!(bank.identity,first.identity.clone().unwrap());
+    let banking::Notice::Banking {view,..}=bank.event;assert_eq!(view.phase,banking::Phase::Banking);
+    let transcript=fs::read(product.join(agent::sessions::TRANSCRIPT_REL)).unwrap();
+    let request=managed::SessionRequest {expected_context:pair(&watch.message_scope()),attempt:5,identity:first.identity.clone().unwrap()};
+    let prepared=managed::prepare(&watch,&request.request()).unwrap();
+    assert!(matches!(managed::send_prepared(&watch,&agent,&editor,request,prepared,"Must not overtake banking".into()).result,agent::SendOutcome::Busy));
+    assert_eq!(fs::read(product.join(agent::sessions::TRANSCRIPT_REL)).unwrap(),transcript);
+    let bank=banks.recv_timeout(Duration::from_secs(180)).expect("captured bank interruption is collected");
+    let banking::Notice::Banking {view,..}=bank.event;assert_eq!(view.phase,banking::Phase::Recovery);assert!(view.recovery_token.is_some());
+    assert!(Path::new(&format!("{}.captured",f["stop"].as_str().unwrap())).is_file(),"actual canonical capture required; native={view:?}; diagnostic={:?}",fs::read_to_string(format!("{}.error",f["stop"].as_str().unwrap())));
     assert_eq!(
         fs::read_to_string(cwd).unwrap().trim_end(),
         records.to_str().unwrap()
     );
     assert!(fs::read_to_string(prompt)
         .unwrap()
-        .contains("claude-opus-5"));
+        .contains("gpt-6.1-sol"));
     assert_eq!(git(&product, &["rev-parse", "HEAD"]), pcut);
     assert_eq!(git(&records, &["rev-parse", "HEAD"]), rcut);
+    assert_eq!(fs::read(&calls).unwrap(),b"called\n");
+    assert_eq!(fs::read(product.join(".git/index")).unwrap(),product_index);
+    assert_eq!(git(&product,&["for-each-ref","--format=%(refname) %(objectname)"]),product_refs);
+    assert_eq!(git(&product,&["cat-file","--batch-all-objects","--batch-check=%(objectname)"]),product_objects);
+    drop(agent);
+    fs::remove_file(f["stop"].as_str().unwrap()).unwrap();
+    let (cold,_events,_banks)=make_agent();
+    let request=managed::Request {expected_context:pair(&watch.message_scope()),attempt:6};
+    let prepared=managed::prepare(&watch,&request).unwrap();
+    let recovery=managed::start_prepared(&watch,&cold,&editor,request,prepared,managed::StartAction::Start);
+    assert!(matches!(recovery.result,StartOutcome::Error {ref message} if message=="genesis-bank-recovery-required"),"{:?}",recovery.result);
+    let identity=recovery.identity.expect("cold recovery offers exact original session with a new native activation");
+    assert_eq!(identity.session_id,first.identity.unwrap().session_id);
+    assert_eq!(fs::read(&calls).unwrap(),b"called\n");
+    assert_eq!(fs::read(product.join(agent::sessions::TRANSCRIPT_REL)).unwrap(),transcript);
+    let request=managed::Request {expected_context:pair(&watch.message_scope()),attempt:7};
+    let status=managed::status_prepared(&watch,&cold,request.clone(),managed::prepare(&watch,&request).unwrap());
+    let managed::ReadOutcome::Ready {value}=status.result else {panic!("scoped cold bank status");};
+    let pending=value.banking.unwrap();assert_eq!(pending.phase,banking::Phase::Recovery);let token=pending.recovery_token.unwrap();
+    let request=managed::SessionRequest {expected_context:pair(&watch.message_scope()),attempt:8,identity};
+    let wrong=managed::replay_bank_prepared(&watch,&cold,&editor,request.clone(),managed::prepare(&watch,&request.request()).unwrap(),"foreign-offer".into());
+    assert!(matches!(wrong.result,managed::ReadOutcome::Error {ref message} if message=="genesis-bank-offer-changed"));
+    assert_eq!(git(&records,&["rev-parse","HEAD"]),rcut);
+    let replay=managed::replay_bank_prepared(&watch,&cold,&editor,request.clone(),managed::prepare(&watch,&request.request()).unwrap(),token);
+    let managed::ReadOutcome::Ready {value}=replay.result else {panic!("exact original bank replay: {:?}",replay.result);};
+    assert_eq!(value.phase,banking::Phase::Ready);assert!(value.current);assert_eq!(value.completed_stage,Some(0));assert_eq!(value.receipts.len(),1);
+    assert!(value.receipts[0].paths.contains(&"docs/STATE.md".into()));assert!(value.receipts[0].paths.contains(&"docs/INDEX.md".into()));
+    assert_eq!(git(&records,&["rev-parse","HEAD"]).trim_end(),value.receipts[0].records_commit);
+    assert_eq!(fs::read(&calls).unwrap(),b"called\n");assert_eq!(fs::read(product.join(agent::sessions::TRANSCRIPT_REL)).unwrap(),transcript);
+    assert_eq!(git(&product,&["rev-parse","HEAD"]),pcut);assert_eq!(fs::read(product.join(".git/index")).unwrap(),product_index);
+    assert_eq!(git(&product,&["for-each-ref","--format=%(refname) %(objectname)"]),product_refs);
+    assert_eq!(git(&product,&["cat-file","--batch-all-objects","--batch-check=%(objectname)"]),product_objects);
     assert!(!product.join("docs").exists());
+    // An ordinary later private commit cannot turn the cached observation into
+    // fresh current qualification. Keep the original accepted receipt visible.
+    fs::write(records.join("docs/rooms/later.md"),"# Later ordinary private note\n").unwrap();
+    git(&records,&["add","docs/rooms/later.md"]);git(&records,&["-c","commit.gpgsign=false","commit","-qm","Later private note fixture"]);
+    let request=managed::Request {expected_context:pair(&watch.message_scope()),attempt:9};
+    let status=managed::status_prepared(&watch,&cold,request.clone(),managed::prepare(&watch,&request).unwrap());
+    let managed::ReadOutcome::Ready {value:status}=status.result else {panic!("scoped status after later private commit");};
+    let history=status.banking.unwrap();assert!(!history.current);assert_eq!(history.completed_stage,None);assert_eq!(history.receipts[0].receipt_digest,value.receipts[0].receipt_digest);
     watch.stop_for_test();
 }

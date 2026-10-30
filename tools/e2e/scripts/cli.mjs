@@ -456,10 +456,10 @@ export const HARNESSES = Object.freeze([
   Object.freeze({
     id: "codex",
     name: "Codex",
-    dir: path.join(".codex", "prompts"),
-    file: (/** @type {string} */ skill) => `${skill}.md`,
-    invoke: "/<skill> in the Codex CLI, which reads one markdown file per prompt",
-    source: "T-246 (Codex's skill form, measured on this machine before it was claimed)",
+    dir: path.join(".agents", "skills"),
+    file: (/** @type {string} */ skill) => path.join(skill, "SKILL.md"),
+    invoke: "$<skill> in Codex",
+    source: "T-246 (repository skill directories, verified through native Codex skill discovery)",
   }),
 ]);
 

@@ -493,7 +493,7 @@ export function ClosingBlock({ canAnswer }: { canAnswer: boolean }) {
  * Left-aligned in deliberate contrast to the right-aligned user bubble
  * above it — the design's own composition.
  */
-export function BankedChips({ paths }: { paths: readonly string[] }) {
+export function BankedChips({ paths,historical=false }: { paths: readonly string[];historical?:boolean }) {
   return (
     <div
       data-testid="interview-banked"
@@ -502,7 +502,7 @@ export function BankedChips({ paths }: { paths: readonly string[] }) {
     >
       <BankedMark />
       <span className="font-mono text-xs break-words text-status-done-foreground">
-        {chipLabel(paths)}
+        {historical?`earlier ${chipLabel(paths)}`:chipLabel(paths)}
       </span>
     </div>
   );

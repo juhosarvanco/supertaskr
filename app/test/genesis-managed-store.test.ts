@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import type { GenesisContextToken, GenesisIdentity, ScopedGenesisEvent } from "../src/lib/genesis-admission";
+import type {GenesisBankingView} from "../src/lib/agent-store";
 const ipc = vi.hoisted(() => ({ invoke: vi.fn(), event: null as null | ((value: {payload: unknown}) => void), shell: null as null | (() => void), context: {selectionSequence:1,contextSequence:2} }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke: (command:string,args:unknown) => ipc.invoke(command,args) }));
 vi.mock("@tauri-apps/api/event", () => ({ listen: (_name:string, handler:typeof ipc.event) => { ipc.event=handler; return Promise.resolve(() => {}); } }));
@@ -31,6 +32,42 @@ async function probeUi() {
   return {source,read:()=>value};
 }
 describe("actual store managed IPC composition",()=>{
+  it("a send overtaking terminal banking stays Busy and reconciles the original receipt through scoped status",async()=>{
+    let native!:GenesisIdentity,originalAttempt=0,release!:(value:unknown)=>void,sendRequest:any;
+    const ready:GenesisBankingView={phase:"ready",recoveryToken:null,code:null,current:true,completedStage:0,receipts:[{receiptDigest:`sha256:${"f".repeat(64)}`,stage:0,completedStage:0,recordsCommit:"e".repeat(40),productCommit:null,turn:1,paths:["docs/STATE.md"]}]};
+    ipc.invoke.mockImplementation((command,{request})=>{
+      if(command==="genesis_start"){native=identity(request.attempt);originalAttempt=request.attempt;emit(a,originalAttempt,native,{kind:"completed",seq:2,turn:1,text:"Draft prepared",truncatedRelay:false});return Promise.resolve(response(request,native,{kind:"started",turn:1},3));}
+      if(command==="genesis_send_turn"){sendRequest=request;return new Promise(resolve=>{release=resolve;});}
+      return Promise.resolve(response(request,command==="genesis_status"?native:null,command==="genesis_status"?{kind:"ready",value:{status:{...idle,turn:1},record:null,starting:false,eventAttempt:originalAttempt,eventContext:a,banking:ready}}:{kind:"ready",value:[]},10));
+    });
+    await store.startGenesis(store.getGenesisState().view);
+    const send=store.sendGenesisTurn("Keep this unsent answer",store.getGenesisState().view);
+    emit(a,originalAttempt,native,{kind:"banking",seq:4,view:ready});expect(store.getGenesisState().banking).toBeNull();
+    release(response(sendRequest,null,{kind:"busy"},5));expect(await send).toEqual({kind:"busy"});await Promise.resolve();await Promise.resolve();
+    expect(store.getGenesisState().banking).toEqual(ready);expect(store.getGenesisState().view?.identity).toEqual(native);
+    expect(ipc.invoke.mock.calls.filter(([command])=>command==="genesis_send_turn")).toHaveLength(1);expect(ipc.invoke.mock.calls.filter(([command])=>command==="genesis_start")).toHaveLength(1);
+  });
+  it("admits bank receipts only for the offered session and replays one opaque pending offer without another model turn",async()=>{
+    let native!:GenesisIdentity,attempt=0;
+    const recovery={phase:"recovery" as const,recoveryToken:"original-bank-offer",code:"records-app-timeout",current:false,completedStage:null,receipts:[]};
+    const ready={...recovery,phase:"ready" as const,recoveryToken:null,code:null,current:true,completedStage:0,receipts:[{receiptDigest:`sha256:${"d".repeat(64)}`,stage:0,completedStage:0,recordsCommit:"e".repeat(40),productCommit:null,turn:1,paths:["docs/STATE.md"]}]};
+    ipc.invoke.mockImplementation((command,{request,token})=>{
+      if(command==="genesis_start") {native=identity(request.attempt);attempt=request.attempt;emit(a,attempt,native,{kind:"completed",seq:2,turn:1,text:"Draft prepared",truncatedRelay:false});return Promise.resolve(response(request,native,{kind:"started",turn:1},3));}
+      if(command==="genesis_bank_replay") {expect(token).toBe("original-bank-offer");expect(Object.keys(request).sort()).toEqual(["attempt","expectedContext","identity"]);expect(request.expectedContext).toEqual(a);expect(request.identity).toEqual(native);attempt=request.attempt;emit(a,attempt,native,{kind:"banking",seq:8,view:ready});return Promise.resolve(response(request,native,{kind:"ready",value:ready},9));}
+      return Promise.resolve(response(request,command==="genesis_status"?native:null,command==="genesis_status"?{kind:"ready",value:{status:{...idle,turn:1},record:null,starting:false,eventAttempt:attempt,eventContext:a,banking:recovery}}:{kind:"ready",value:[]},6));
+    });
+    await store.startGenesis(store.getGenesisState().view);
+    emit(a,attempt,native,{kind:"banking",seq:4,view:{...recovery,phase:"banking"}});
+    expect(store.isTurnInFlight(store.getGenesisState())).toBe(true);
+    const calls=ipc.invoke.mock.calls.length;expect(await store.sendGenesisTurn("must wait",store.getGenesisState().view)).toBeNull();expect(ipc.invoke.mock.calls).toHaveLength(calls);
+    const before=store.getGenesisState();emit(b,attempt,native,{kind:"banking",seq:9999,view:ready});emit(a,attempt,{...native,token:"foreign"},{kind:"banking",seq:9999,view:ready});expect(store.getGenesisState()).toBe(before);
+    emit(a,attempt,native,{kind:"banking",seq:5,view:recovery});await Promise.resolve();await Promise.resolve();
+    expect(store.getGenesisState().banking?.phase).toBe("recovery");
+    const view=store.getGenesisState().view;const count=ipc.invoke.mock.calls.length;expect(await store.replayGenesisBank("invented",view)).toBeNull();expect(ipc.invoke.mock.calls).toHaveLength(count);
+    expect(await store.replayGenesisBank("original-bank-offer",view)).toEqual(ready);expect(store.getGenesisState().banking).toEqual(ready);
+    expect(ipc.invoke.mock.calls.filter(([command])=>command==="genesis_start")).toHaveLength(1);expect(ipc.invoke.mock.calls.filter(([command])=>command==="genesis_bank_replay")).toHaveLength(1);
+    select(b);expect(await store.replayGenesisBank("original-bank-offer",view)).toBeNull();
+  });
   it("confirms native activation before applying racing terminal events, without promoting reply sequence",async()=>{
     ipc.invoke.mockImplementationOnce((_command:string,{request})=>{
       const native=identity(request.attempt);
@@ -169,4 +206,35 @@ it("mounted chat retires same-P A draft and sends actual B controls with rendere
   expect(store.getGenesisState()).toBe(before);expect(host.textContent).not.toContain("A late result");
   await type("B human answer");await act(async()=>{input().dispatchEvent(new KeyboardEvent("keydown",{key:"Enter",bubbles:true}));});
   expect(sentB).toBe(true);expect(input().value).toBe("");expect(host.textContent).toContain("B second");host.remove();
+});
+
+it("mounted split chat keeps watched drafts unbanked, recovers the offered bank and refuses retired receipt badges",async()=>{
+  (globalThis as {IS_REACT_ACT_ENVIRONMENT?:boolean}).IS_REACT_ACT_ENVIRONMENT=true;
+  const {GenesisScreen}=await import("../src/components/shell/GenesisScreen");
+  const {emptyState,applySnapshot}=await import("../src/lib/docs-model");
+  let native!:GenesisIdentity,attempt=0,banking:any=null,seq=2,replays=0,startedContext:GenesisContextToken|null=null;
+  const recovery:GenesisBankingView={phase:"recovery",recoveryToken:"native-bank-offer",code:"records-app-timeout",current:false,completedStage:null,receipts:[]};
+  const ready=(suffix:string):GenesisBankingView=>({phase:"ready",recoveryToken:null,code:null,current:true,completedStage:1,receipts:[{receiptDigest:`sha256:${suffix.repeat(64)}`,stage:1,completedStage:1,recordsCommit:suffix.repeat(40),productCommit:null,turn:1,paths:["docs/NORTH_STAR.md"]}]});
+  ipc.invoke.mockImplementation((command,{request,token})=>{
+    if(command==="genesis_start"){startedContext=ipc.context;native=identity(request.attempt,ipc.context===a?"a":"b");attempt=request.attempt;emit(ipc.context,attempt,native,{kind:"completed",seq:seq++,turn:1,text:"A draft is ready",truncatedRelay:false});return Promise.resolve(response(request,native,{kind:"started",turn:1},seq++));}
+    if(command==="genesis_bank_replay"){replays++;expect(token).toBe("native-bank-offer");expect(request.expectedContext).toEqual(a);expect(request.identity).toEqual(native);attempt=request.attempt;banking=ready("a");emit(a,attempt,native,{kind:"banking",seq:seq++,view:banking});return Promise.resolve(response(request,native,{kind:"ready",value:banking},seq++));}
+    const current=startedContext===ipc.context;
+    return Promise.resolve(response(request,command==="genesis_status"&&current?native:null,command==="genesis_status"?{kind:"ready",value:{status:{...idle,turn:current?1:0},record:null,starting:false,eventAttempt:current?attempt:null,eventContext:current?ipc.context:null,banking}}:{kind:"ready",value:[]},seq++));
+  });
+  const docs=(context:GenesisContextToken,text:string)=>({...applySnapshot(emptyState(),{seq:1,projectDir:"/same/product",generatedAtMs:0,files:[{path:"docs/NORTH_STAR.md",content:text}]}),records:{...context,layout:"split",recordsDir:"/native/records",associationId:"fixture",rootIncarnation:"1:2",docsIncarnation:"1:3",availability:"available" as const,finding:null,contentRevision:null}});
+  const host=document.createElement("div");document.body.appendChild(host);uiRoot=createRoot(host);
+  const render=(context:GenesisContextToken,text:string)=>uiRoot!.render(createElement(GenesisScreen,{projectDir:"/same/product",docs:docs(context,text),onOpenBoard:()=>{}}));
+  await act(async()=>render(a,"# North star\n\n## Vision\nA watched draft."));
+  await act(async()=>render(a,"# North star\n\n## Vision\nA changed draft."));expect(host.querySelector("[data-testid=interview-banked]")).toBeNull();
+  const input=()=>host.querySelector<HTMLTextAreaElement>("[data-testid=interview-input]")!;
+  await act(async()=>{Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,"value")!.set!.call(input(),"Retain this unsent answer");input().dispatchEvent(new Event("input",{bubbles:true}));});
+  await act(async()=>{banking=recovery;emit(a,attempt,native,{kind:"banking",seq:seq++,view:recovery});});
+  expect(input().disabled).toBe(true);expect(input().value).toBe("Retain this unsent answer");expect(host.querySelector("[data-testid=interview-bank-recovery]")).not.toBeNull();
+  const recover=[...host.querySelectorAll<HTMLButtonElement>("button")].find(button=>button.textContent==="Recover this save")!;expect(recover.disabled).toBe(false);
+  await act(async()=>recover.click());expect(replays).toBe(1);expect(input().disabled).toBe(false);expect(input().value).toBe("Retain this unsent answer");expect(host.querySelector("[data-testid=interview-banked]")?.textContent).toContain("NORTH_STAR.md");
+  const old={native,attempt};await act(async()=>{banking=null;select(b);render(b,"# North star\n\n## Vision\nB draft.");await store.refreshGenesisStatus();});
+  expect(host.querySelector("[data-testid=interview-banked]")).toBeNull();
+  await act(async()=>emit(a,old.attempt,old.native,{kind:"banking",seq:99999,view:ready("a")}));expect(host.querySelector("[data-testid=interview-banked]")).toBeNull();
+  await act(async()=>{banking=ready("b");emit(b,attempt,native,{kind:"banking",seq:seq++,view:banking});});expect(host.querySelector("[data-testid=interview-banked]")?.textContent).toContain("NORTH_STAR.md");
+  expect(ipc.invoke.mock.calls.filter(([command])=>command==="genesis_send_turn")).toHaveLength(0);host.remove();
 });

@@ -1,13 +1,35 @@
 import type { DocsModelState } from "@/lib/docs-model";
 import type {
   GenesisDenial,
+  GenesisBankingView,
+  GenesisState,
   GenesisTurn,
   SendOutcomePayload,
   StartOutcomePayload,
   TranscriptLinePayload,
   TurnErrorPayload,
 } from "@/lib/agent-store";
-import { deriveGenesis, EMPTY_CHANGE_LOG } from "./genesis-derive";
+import { BANKING_MAP, deriveGenesis, EMPTY_CHANGE_LOG } from "./genesis-derive";
+
+/** Managed split progress comes only from exact admitted native receipts.
+ * The file-derived legacy observation remains an explicit embedding seam. */
+export function selectedBanking(docs:DocsModelState,genesis:GenesisState):GenesisBankingView|null {
+  const records=docs.records,context=genesis.view?.context;
+  return records?.layout==="split"&&context?.selectionSequence===records.selectionSequence&&context.contextSequence===records.contextSequence
+    ?genesis.banking??null:null;
+}
+export function receiptChips(view:GenesisBankingView|null):ReadonlyMap<number,readonly string[]> {
+  const chips=new Map<number,readonly string[]>(),seen=new Set<string>();
+  for(const receipt of view?.receipts??[]){
+    if(seen.has(receipt.receiptDigest))continue;seen.add(receipt.receiptDigest);
+    chips.set(receipt.turn,[...new Set([...(chips.get(receipt.turn)??[]),...receipt.paths])].sort());
+  }
+  return chips;
+}
+export function receiptStage(view:GenesisBankingView|null):{approxStage:number|null;stageStep:string|null;failed:boolean} {
+  const stage=view?.current?view.completedStage:null;
+  return {approxStage:stage??null,stageStep:stage==null?null:BANKING_MAP.find(row=>row.stage===stage)?.step??null,failed:false};
+}
 
 /**
  * T-027's pure half: everything the interview decides that does not need

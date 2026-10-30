@@ -60,7 +60,7 @@ function absentDestination(file) {
 /** Fixed supported pre-push is qualified by its original canonical engine;
  * unknown hooks/config/routing still refuse, without disabling any guard.
  * @param {string} root @param {string} revision @param {any} tool */
-function repository(root, revision, tool) {
+export function configuredArmRepository(root, revision, tool) {
   try { return captureOperationRepository(root, revision); }
   catch (error) {
     if (/** @type {any} */ (error).code !== "OPERATION_ACTIVE_HOOK") throw error;
@@ -131,7 +131,7 @@ export async function captureConfiguredArmPlan(productRoot, request, configurati
   if (git(root, ["status", "--porcelain=v1", "--untracked-files=all"]) !== "") refuse("configured-arm-product-dirty");
   const parents = git(root, ["rev-list", "--parents", "-n", "1", selected.revisions.product]).split(" ");
   if (parents.length > 2) refuse("configured-arm-merge-base");
-  const repositories = { product: repository(root, selected.revisions.product, tool), records: repository(capsule.receipt.recordsRoot, selected.revisions.records, tool) };
+  const repositories = { product: configuredArmRepository(root, selected.revisions.product, tool), records: configuredArmRepository(capsule.receipt.recordsRoot, selected.revisions.records, tool) };
   const targetRefs = { product: git(root, ["symbolic-ref", "-q", "HEAD"]), records: git(repositories.records.root, ["symbolic-ref", "-q", "HEAD"]) };
   const tier = context.verification.tier ?? context.verification.derivedTier;
   const fields = { status: "building", builder: JSON.stringify(executor.requested), verifier: JSON.stringify(verifier.requested), tier, review: "independent" };
@@ -176,4 +176,11 @@ export function configuredArmPlanData(proposal) {
   const state = plans.get(proposal); if (!state) refuse("configured-arm-plan-required");
   verifyConfiguredDispatch(state.handle); verifyConfiguredDispatchViewSelection(state.selected); verifyInstalledRecordTool(state.tool);
   return structuredClone(state.data);
+}
+
+/** Backend-only original constructor context. A copied proposal or another
+ * TOOL handle cannot select an effect request. @param {object} proposal @param {any} tool */
+export function preparedConfiguredArmContext(proposal,tool){
+ const state=plans.get(proposal);if(!state||state.tool!==tool)refuse("configured-arm-plan-required");
+ configuredArmPlanData(proposal);return {request:state.data,handle:state.handle};
 }

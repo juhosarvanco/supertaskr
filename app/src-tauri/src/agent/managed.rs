@@ -62,6 +62,8 @@ pub(super) struct Activation {
     pub identity: Identity,
     pub setup: Option<InitializedSetup>,
     pub event_attempt: u64,
+    pub bank_ack: Option<super::banking::Receipt>,
+    pub bank_problem: Option<String>,
 }
 
 fn reply<T: Serialize>(
@@ -128,12 +130,17 @@ fn activate(
         origin_digest: prepared.context.fingerprint(),
         initiating_attempt: attempt,
     };
+    let bank_ack=super::banking::view(agent,&prepared.context,&session)
+        .filter(|view|view.current).and_then(|view|view.receipts.first().cloned());
+    let bank_problem=super::banking::view(agent,&prepared.context,&session).and_then(|view|view.code);
     Activation {
         context: prepared.context.clone(),
         session,
         identity,
         setup,
         event_attempt: attempt,
+        bank_ack,
+        bank_problem,
     }
 }
 
@@ -159,6 +166,11 @@ pub fn preparation_failed(
     reply(agent, request, None, StartOutcome::Error { message: code })
 }
 
+/// Proposal answer refs use raw lowercase hex. The existing shared helper
+/// returns a prefixed digest, while session origins retain that prefix.
+pub(super) fn answer_digest(text:&str)->String {
+    super::skills::sha256_hex(text.as_bytes()).strip_prefix("sha256:").expect("shared SHA256 prefix").to_owned()
+}
 fn bank_context(active: &Activation, answer: Option<(u32, &str)>) -> String {
     let Some(setup) = &active.setup else { return String::new(); };
     let refs = answer.map(|(turn, digest)| serde_json::json!([{"turn":turn,"sha256":digest}]))
@@ -166,7 +178,7 @@ fn bank_context(active: &Activation, answer: Option<(u32, &str)>) -> String {
     let context = serde_json::json!({"version":1,"setupId":setup.setup_id,
         "sessionId":active.session.id,"originDigest":active.context.fingerprint(),
         "expectedProductRevision":setup.product_revision,"expectedRecordsRevision":setup.records_revision,
-        "settings":setup.settings,"answerRefs":refs});
+        "settings":setup.settings,"answerRefs":refs,"acceptedBank":active.bank_ack,"lastBankProblem":active.bank_problem});
     format!("\n<supertaskr-bank-context-v1>\n{context}\n</supertaskr-bank-context-v1>\n")
 }
 fn inline_prompt(active: &Activation, continuation: bool) -> String {
@@ -269,6 +281,7 @@ fn start_worker(
     let cfg = agent.cfg.clone();
     let child = agent.child.clone();
     let cancel = agent.cancel.clone();
+    let banking = agent.banking_callback.clone();
     let worker_startup = startup.clone();
     let failure_inner = inner.clone();
     let failure_identity = active.identity.clone();
@@ -301,7 +314,8 @@ fn start_worker(
             } else {
                 runner::run_turn(&cfg, adapter::planner_adapter(), &cli, &request, &events, &child, &cancel)
             };
-            settle_original(&active, entry, &outcome, turn);
+            let settled=settle_original(&active, entry, &outcome, turn);
+            let bank=settled && active.context.split() && !outcome.cancelled && outcome.error.is_none() && outcome.text.is_some();
             let mut state = inner.lock().expect("agent state poisoned");
             if state
                 .managed
@@ -320,6 +334,12 @@ fn start_worker(
                     Phase::Idle
                 };
                 state.last_error = outcome.error;
+            }
+            drop(state);
+            // The original child has ceased. Keep its flight/cancel ownership
+            // through transcript settlement and the finite banking callback.
+            if bank {
+                if let Some(finish)=banking { finish(super::banking::BankTurn {active,turn,cancel,flight});return; }
             }
             drop(flight);
         });
@@ -348,7 +368,7 @@ fn settle_original(
     mut entry: SessionEntry,
     outcome: &runner::TurnOutcome,
     turn: u32,
-) {
+) -> bool {
     let mut guarded = || -> Result<(), String> {
         active.context.verify_original()?;
         active
@@ -400,9 +420,7 @@ fn settle_original(
             .map_err(|_| "genesis-registry-unavailable")?;
         Ok(())
     };
-    if let Err(code) = guarded() {
-        eprintln!("[supertaskr] original genesis runtime settlement unavailable: {code}");
-    }
+    match guarded() { Ok(())=>true,Err(code)=>{eprintln!("[supertaskr] original genesis runtime settlement unavailable: {code}");false} }
 }
 
 fn guard_legacy_kit(context: &GenesisContext) -> Result<(), String> {
@@ -485,6 +503,24 @@ pub fn start_prepared(
             }
             Err(_) => return Err("genesis-registry-unavailable".into()),
         };
+        if let Some(setup)=setup.as_ref().filter(|_|agent.banking_callback.is_some()) {
+            let session=record.as_ref().and_then(|record|record.genesis.as_ref());
+            let banking=super::banking::before_turn(agent,editor,&context,session,setup)?;
+            context.verify(watch)?;
+            if banking.as_ref().is_some_and(|view|view.phase==super::banking::Phase::Recovery) {
+                let session=session.ok_or("genesis-bank-original-session-required")?;
+                if session.setup.as_ref()!=Some(&setup.original) || session.planner.is_none() {return Err("genesis-bank-original-session-required".into());}
+                let active=activate(agent,&prepared,session.clone(),Some(setup.clone()),request.attempt);
+                confirmed=Some(active.identity.clone());
+                let mut state=agent.inner.lock().expect("agent state poisoned");
+                state.project_dir=Some(context.product.clone());state.phase=Phase::Idle;
+                state.turn=record.as_ref().map_or(0,|row|row.turns.min(u64::from(u32::MAX)) as u32);
+                state.registry_id=record.as_ref().map(|row|row.registry_id.clone());
+                state.native_session_id=record.as_ref().and_then(|row|row.native_session_id.clone());
+                state.managed=Some(active);
+                return Err("genesis-bank-recovery-required".into());
+            }
+        }
         let probe = docs_watch::probe_plan(&context.records);
         let own_initial_seed = matches!(action, StartAction::Start) && context.split()
             && setup.as_ref().is_some_and(|setup| setup.pristine_seed);
@@ -769,6 +805,7 @@ pub struct Status {
     pub starting: bool,
     pub event_attempt: Option<u64>,
     pub event_context: Option<ExpectedContext>,
+    pub banking: Option<super::banking::View>,
 }
 fn read_reply<T: Serialize>(
     agent: &AgentState,
@@ -883,6 +920,13 @@ pub fn send_prepared(
             }
             active.setup = Some(setup);
         }
+        if let Some(setup)=active.setup.as_ref().filter(|_|agent.banking_callback.is_some()) {
+            let banking=super::banking::before_turn(agent,editor,&active.context,Some(&active.session),setup)?;
+            prepared.context.verify(watch)?;
+            if banking.as_ref().is_some_and(|view|view.phase==super::banking::Phase::Recovery) { return Err("genesis-bank-recovery-required".into()); }
+            active.bank_problem=banking.as_ref().and_then(|view|view.code.clone());
+            active.bank_ack=banking.and_then(|view|view.receipts.first().cloned()).or(active.bank_ack);
+        }
         let adapter = if active.context.split() {
             active.session.planner.as_ref().ok_or("genesis-planner-provenance-required")?.selection.adapter()?
         } else {
@@ -906,7 +950,7 @@ pub fn send_prepared(
         if session_entry(&active, &registry_id)? != entry {
             return Err("genesis-registry-changed".into());
         }
-        let digest = super::skills::sha256_hex(text.as_bytes());
+        let digest = answer_digest(&text);
         let prompt = if let Some(setup) = &active.setup {
             format!("Original setup: {}. Session: {}. Origin: {}. PRODUCT input: {}. RECORDS input: {}. Validated committed project settings: {}. Human answer reference: turn={}, sha256={}, bytes={}. This digest correlates actual captured text; it does not authenticate an interpretation.{}\n--- HUMAN ANSWER ---\n{}",
                 setup.setup_id, active.session.id, active.context.fingerprint(), setup.product_revision, setup.records_revision, setup.settings, turn, digest, text.len(), bank_context(&active, Some((turn, &digest))), text)
@@ -973,6 +1017,32 @@ pub fn send_prepared(
     reply(agent, &ordinary, confirmed, result)
 }
 
+/// Explicit recovery uses the native offered token and exact activation. No
+/// model/transcript write or fresh bank capture is permitted by this command.
+pub fn replay_bank_prepared(
+    watch:&WatchState,agent:&AgentState,editor:&RecordEditorState,
+    request:SessionRequest,prepared:PreparedContext,token:String,
+)->Reply<ReadOutcome<super::banking::View>> {
+    let ordinary=request.request();
+    let result=(||{
+        let flight=agent.begin_turn().ok_or("genesis-bank-busy")?;
+        prepared.context.verify(watch)?;
+        if prepared.context.expected()!=request.expected_context {return Err("genesis-selection-changed".into());}
+        let mut active=current_activation(agent,&request)?;
+        if active.context.origin!=prepared.context.origin || !super::banking::offered(agent,&active,&token) {return Err("genesis-bank-offer-changed".into());}
+        active.context.verify_original()?;
+        active.event_attempt=request.attempt;
+        let turn={
+            let mut state=agent.inner.lock().expect("agent state poisoned");
+            if state.managed.as_ref().is_none_or(|current|current.identity!=active.identity) {return Err("genesis-activation-changed".into());}
+            state.managed=Some(active.clone());agent.cancel.store(false,Ordering::SeqCst);state.turn
+        };
+        super::banking::finish(agent,editor,super::banking::BankTurn {active:active.clone(),turn,cancel:agent.cancel.clone(),flight});
+        super::banking::view(agent,&active.context,&active.session).ok_or_else(||"genesis-bank-response-unavailable".into())
+    })();
+    read_reply(agent,&ordinary,Some(request.identity),result)
+}
+
 pub fn status_prepared(
     watch: &WatchState,
     agent: &AgentState,
@@ -1026,6 +1096,8 @@ pub fn status_prepared(
                 None
             },
         };
+        let banking=active.and_then(|active|super::banking::view(agent,&active.context,&active.session))
+            .or_else(||record.as_ref().and_then(|record|record.genesis.as_ref()).and_then(|session|super::banking::view(agent,&prepared.context,session)));
         Ok(Status {
             status,
             record,
@@ -1034,6 +1106,7 @@ pub fn status_prepared(
                 && state.phase == Phase::Idle,
             event_attempt: active.map(|active| active.event_attempt),
             event_context: active.map(|active| active.context.expected()),
+            banking,
         })
     })();
     Reply {
@@ -1448,7 +1521,8 @@ process.stdout.write(JSON.stringify({{version:1,requestId:q.requestId,ok:true,re
         let answer_context = machine(&prompt);
         assert_eq!(answer_context["expectedProductRevision"],git(&fx.a,&["rev-parse","HEAD"]));
         assert_eq!(answer_context["expectedRecordsRevision"],git(&fx.b,&["rev-parse","HEAD"]));
-        assert_eq!(answer_context["answerRefs"],serde_json::json!([{"turn":2,"sha256":super::super::skills::sha256_hex(b"Original typed answer\n")} ]));
+        use sha2::Digest;
+        assert_eq!(answer_context["answerRefs"],serde_json::json!([{"turn":2,"sha256":format!("{:x}",sha2::Sha256::digest(b"Original typed answer\n"))} ]));
         assert!(fs::read_to_string(fx.home.join("args")).unwrap().contains(&format!("--model\n{model}\n")), "future Q5 choice never retargets the original provider/model");
 
         let cold=AgentState::new_managed(fx.agent.cfg.clone(),|_|{});

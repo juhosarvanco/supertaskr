@@ -8299,8 +8299,9 @@ test("the arm renders phase 1 from the card AS THE COMMIT CARRIES IT, never off 
  * file against the decision rather than against itself.
  */
 const OPUS_5_SEAT = "claude-opus-5@subagent";
+const CODEX_PLANNER_SEAT = "codex/gpt-6.1-sol@subagent";
 
-test("THE SHIPPED TEMPLATE NAMES A MODEL FOR EVERY ROLE, and every one of them is Opus 5", () => {
+test("THE SHIPPED TEMPLATE NAMES A MODEL FOR EVERY ROLE, with the configured Codex planner default", () => {
   // KILLED BY: a role default emptied, a role dropped from the block, and
   // a value that is not the model ADR-024 decision 5 fixes. It reads the
   // COMMITTED template rather than a fixture on purpose — the criterion
@@ -8310,13 +8311,13 @@ test("THE SHIPPED TEMPLATE NAMES A MODEL FOR EVERY ROLE, and every one of them i
   expect(models.size, "the roles block parsed to nothing at all").toBeGreaterThan(0);
   for (const [key, model] of models) {
     expect(model, `roles.${key} names no model`).not.toBe("");
-    expect(model, `roles.${key} is not Opus 5 (ADR-024 decision 5)`).toBe(OPUS_5_SEAT);
+    expect(model, `roles.${key} differs from its declared default`).toBe(key === "planner" ? CODEX_PLANNER_SEAT : OPUS_5_SEAT);
   }
   // AND EVERY ROLE THE ARM DISPATCHES RESOLVES, which is the half a
   // count of the block cannot see: a template with five roles none of
   // which the arm looks up would satisfy the loop above.
   for (const role of Object.keys(ROLE_TEMPLATE_KEYS)) {
-    expect(roleModel(models, role).model, `the ${role} seat resolves no model`).toBe(OPUS_5_SEAT);
+    expect(roleModel(models, role).model, `the ${role} seat resolves no model`).toBe(role === "planner" ? CODEX_PLANNER_SEAT : OPUS_5_SEAT);
   }
 });
 
@@ -8633,7 +8634,7 @@ test("EVERY ROLE THIS METHOD SHIPS RESOLVES A MODEL, and the checklist is the TR
   for (const role of roles) {
     if (role === STANDING) continue;
     expect(dispatched, `method/roles/${role}.md is a role this arm can name no model for`).toContain(role);
-    expect(roleModel(models, role).model, `the ${role} seat resolves no model`).toBe(OPUS_5_SEAT);
+    expect(roleModel(models, role).model, `the ${role} seat resolves no model`).toBe(role === "planner" ? CODEX_PLANNER_SEAT : OPUS_5_SEAT);
   }
 });
 

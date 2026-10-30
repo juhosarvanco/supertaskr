@@ -4,8 +4,9 @@
 import { createHash } from "node:crypto";
 import path from "node:path";
 import { VERIFICATION_TIERS, isDeliveryBranchRef } from "../../../lib/parser/dist/pure.js";
+import { validQualifiedConfiguredGateCapture } from "./qualified-configured-grades.mjs";
 import { validConfiguredDispatchCapsule } from "../../../cli/configured-native-reader.mjs";
-import { operationContent, operationDigest, operationPayload } from "./operation-record.mjs";
+import { operationContent, operationDigest, operationPayload, operationWork } from "./operation-record.mjs";
 
 /** @param {any} value @param {string[]} keys */
 const shape=(value,keys)=>value&&typeof value==="object"&&!Array.isArray(value)&&Object.keys(value).sort().join("\0")===[...keys].sort().join("\0");
@@ -115,5 +116,84 @@ export function validConfiguredArmRequest(input){
   !shape(r.validation,["captureDigest","candidateDigest","derivations"])||!digest(r.validation.captureDigest)||!sha(r.validation.candidateDigest)||
   !Array.isArray(r.validation.derivations)||r.validation.derivations.length>1||r.validation.derivations.some((/** @type {any} */ d)=>!shape(d,["path","mode","sha256"])||d.path!=="docs/INDEX.md"||d.mode!=="100644"||!sha(d.sha256)||!r.stamp.writes.some((/** @type {any} */ w)=>w.path===d.path&&w.mode===d.mode&&hash(Buffer.from(w.base64,"base64"))===d.sha256)))return false;
  return true;
+ }catch{return false;}
+}
+
+/** Exact allowed stamp-to-result snapshot correspondence. Current canonical
+ * admission still proves original granted-blob mechanical drift; this predicate
+ * cannot approve, rewrite a grant or reconstruct a capsule from caller data.
+ * @param {any} request @param {any} result */
+export function validConfiguredArmStampedSource(request,result){
+ try{
+  if(!validConfiguredArmRequest(request)||!validConfiguredDispatchCapsule(result))return false;
+  const original=request.capsule,card=request.stamp.writes.find((/** @type {any} */ w)=>w.path===original.task.path),bytes=Buffer.from(card.base64,"base64");
+  const blobId=createHash(request.repositories.records.objectFormat).update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
+  const receipt=structuredClone(original.receipt);receipt.recordsCommit=request.stamp.commit;receipt.cardBlobId=blobId;
+  receipt.association.validation.source=`${request.stamp.commit}:${receipt.association.relativePath}`;
+  const roles=structuredClone(original.roles);
+  for(const name of ["executor","verifier"])roles[name].source="committed-card";
+  const {digest:ignored,...source}=original;
+  const expected={...source,selection:{...original.selection,revisions:{...original.selection.revisions,records:request.stamp.commit}},receipt,roles,
+   task:{...original.task,blobId,declaredTier:request.stamp.fields.tier}};
+  return same(result,{...expected,digest:operationDigest(expected)});
+ }catch{return false;}
+}
+/** @param {any} value */
+const instant=value=>typeof value==="string"&&/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(value)&&Number.isFinite(Date.parse(value));
+/** @param {any} request */
+export function configuredArmStampIntent(request){return {commit:request.stamp.commit,tree:request.stamp.tree,ref:request.targetRefs.records,previousRevision:request.selection.revisions.records,
+ correlationRef:`refs/supertaskr/configured-dispatch/${operationWork(request.operationId).slice(3)}/records`};}
+/** Canonical OP record branch. Every pending/unknown stage remains discoverable
+ * and blocks ordinary foreign admission even after its own claims are handed
+ * to the existing qualified set acquisition. No child or grant lives here.
+ * @param {any} rec */
+export function validConfiguredDispatchRecord(rec){
+ try{
+  if(!shape(rec,["version","recordKind","attempt","state","assignment","assignmentDigest","writer","resource","reservation","execution","admission","operation","events"])||
+   rec.version!==1||rec.recordKind!=="operation"||!["starting","unknown","finished"].includes(rec.state)||rec.writer!==true||rec.execution!==null||rec.admission!==null||
+   !shape(rec.assignment,["kind","id","role","resource"])||rec.assignment.kind!=="operation"||rec.assignment.role!=="configured-dispatch"||rec.assignment.resource!==rec.resource||
+   rec.assignmentDigest!==`sha256:${hash(JSON.stringify(rec.assignment))}`||!shape(rec.reservation,["file","takenAt","releasedAt"])||!instant(rec.reservation.takenAt)||
+   !(rec.reservation.releasedAt===null||instant(rec.reservation.releasedAt))||!Array.isArray(rec.events)||rec.events.some((/** @type {any} */ e)=>!shape(e,["at","op"])||!instant(e.at)||typeof e.op!=="string"||!e.op))return false;
+  const op=rec.operation,r=op.request;
+  if(!shape(op,["version","id","kind","request","digest","owner","createdAt","claims","progress","acceptance"])||op.version!==1||op.kind!=="configured-dispatch"||
+   !validConfiguredArmRequest(r)||op.id!==r.operationId||op.digest!==operationDigest(r)||rec.assignment.id!==operationWork(op.id)||rec.attempt!==`${operationWork(op.id)}-a1`||rec.resource!==r.selection.authorityRoot||
+   !instant(op.createdAt)||!shape(op.owner,["pid","identity","token"])||!Number.isSafeInteger(op.owner.pid)||op.owner.pid<1||!nativeId(op.owner.identity)||
+   typeof op.owner.token!=="string"||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(op.owner.token)||
+   !Array.isArray(op.claims)||op.claims.length!==2||!same(op.claims.map((/** @type {any} */ c)=>c.role).sort(),["product","records"])||!shape(op.progress,["baseline","stamp","lanes","handoff"]))return false;
+  for(const claim of op.claims){const root=r.repositories[claim.role].root;
+   if(!shape(claim,["role","resource","file","takenAt","releasedAt"])||claim.resource!==root||
+    claim.file!==path.join(rec.resource,".supertaskr/runs/reservations",`${path.basename(root)}-${hash(root).slice(0,12)}.json`)||!instant(claim.takenAt)||!(claim.releasedAt===null||instant(claim.releasedAt)))return false;
+  }
+  const primary=op.claims.find((/** @type {any} */ c)=>c.role==="product");
+  if(rec.reservation.file!==primary.file||rec.reservation.takenAt!==primary.takenAt||rec.reservation.releasedAt!==primary.releasedAt)return false;
+  const p=op.progress,b=p.baseline,s=p.stamp,h=p.handoff;
+  if(!shape(b,["stage","capture"])||!["captured","running","complete"].includes(b.stage))return false;
+  if(r.baseline.kind==="initialized-code-empty"){
+   if(b.stage!=="complete"||b.capture!==null)return false;
+  }else if(b.stage==="complete"){
+   if(!b.capture||b.capture.candidate.productRoot!==rec.resource||!oid(b.capture.candidate.tree,r.repositories.product.objectFormat)||
+    !validQualifiedConfiguredGateCapture(b.capture,r.capsule.gatePolicy,{commit:r.selection.revisions.product,tree:b.capture.candidate.tree}))return false;
+  }else if(b.capture!==null)return false;
+  if(!shape(s,["stage","intent","acceptance"])||!["captured","objects-start","objects-prepared","consumer-prepare","files-prepared","ref-accepted"].includes(s.stage)||
+   (s.stage==="captured"?s.intent!==null:!same(s.intent,configuredArmStampIntent(r)))||
+   (s.acceptance!==null&&!same(s.acceptance,{commit:r.stamp.commit,tree:r.stamp.tree,ref:r.targetRefs.records,previousRevision:r.selection.revisions.records,attribution:"exact"}))||
+   (s.stage==="ref-accepted")!==(s.acceptance!==null)||s.stage!=="captured"&&!(b.stage==="complete"&&(b.capture===null||b.capture.complete===true)))return false;
+  if(!Array.isArray(p.lanes)||p.lanes.length!==r.lanes.length||p.lanes.some((/** @type {any} */ l,/** @type {number} */ at)=>{
+   const requested=r.lanes[at];if(!shape(l,["role","stage","identity"])||l.role!==requested.role||!["captured","creating","created"].includes(l.stage)||l.stage!=="captured"&&s.acceptance===null)return true;
+   if(l.stage!=="created")return l.identity!==null;
+   const i=l.identity;return !shape(i,["filesystemRoot","gitCommonDirectory","gitDirectory","device","inode"])||i.filesystemRoot!==requested.checkout||
+    i.gitCommonDirectory!==r.repositories[l.role].commonDir||!absolute(i.gitDirectory)||![i.device,i.inode].every(v=>typeof v==="string"&&/^[0-9]{1,64}$/.test(v));
+  }))return false;
+  if(!shape(h,["stage","source","native"])||!["held","releasing","ready","native-prepared"].includes(h.stage))return false;
+  if(h.stage==="held"){
+   if(h.source!==null||h.native!==null||op.claims.some((/** @type {any} */ c)=>c.releasedAt!==null))return false;
+  }else{
+   if(s.acceptance===null||p.lanes.some((/** @type {any} */ l)=>l.stage!=="created")||!validConfiguredArmStampedSource(r,h.source))return false;
+   if(["ready","native-prepared"].includes(h.stage)&&op.claims.some((/** @type {any} */ c)=>c.releasedAt===null))return false;
+   if(h.stage!=="native-prepared"){if(h.native!==null)return false;}
+   else if(!shape(h.native,["attempt","assignmentDigest","permissionDigest"])||h.native.attempt!==r.expectedAttempt||!digest(h.native.assignmentDigest)||!sha(h.native.permissionDigest))return false;
+  }
+  if(op.acceptance!==null&&!same(op.acceptance,{stamp:s.acceptance,lanes:p.lanes.map((/** @type {any} */ l)=>({role:l.role,identity:l.identity})),sourceDigest:h.source?.digest,native:h.native}))return false;
+  return rec.state==="finished"?op.acceptance!==null&&h.stage==="native-prepared":op.acceptance===null;
  }catch{return false;}
 }

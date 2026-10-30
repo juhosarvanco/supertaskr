@@ -332,7 +332,7 @@ export function interviewBusy(genesis: GenesisState, ui: InterviewUiState): bool
  * AND says the session is not taking another turn. Both are true.
  */
 export function interviewLocked(genesis: GenesisState, ui: InterviewUiState): boolean {
-  return ui.busy || isTurnInFlight(genesis);
+  return ui.busy || isTurnInFlight(genesis) || genesis.banking?.phase==="recovery";
 }
 
 /**

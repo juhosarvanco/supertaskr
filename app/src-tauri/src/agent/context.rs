@@ -209,12 +209,7 @@ impl GenesisSession {
 impl SessionOrigin {
     pub fn fingerprint(&self) -> String {
         let value = serde_json::to_value(self).expect("finite session origin");
-        format!(
-            "sha256:{}",
-            super::skills::sha256_hex(
-                &serde_json::to_vec(&value).expect("canonical session origin")
-            )
-        )
+        super::skills::sha256_hex(&serde_json::to_vec(&value).expect("canonical session origin"))
     }
 }
 impl TranscriptOrigin {
@@ -504,6 +499,17 @@ impl GenesisContext {
     pub fn verify_original(&self) -> Result<(), String> {
         verify_original_paths(&self.product, &self.records, &self.origin)
     }
+    /// Reuse the delivered read-only identity measurement to retire a cached
+    /// current qualification after either committed cut advances. This is
+    /// mismatch detection, never fresh history or effect authority.
+    pub(super) fn current_revisions_match(&self,product:&str,records:&str)->Result<bool,String> {
+        self.verify_original()?;
+        let resolver=WorkspaceResolver::new().map_err(|error|error.to_string())?;
+        let matches=resolver.measure_product_identity(&self.product,"HEAD").map_err(|error|error.to_string())?.selected_commit.as_deref()==Some(product)
+            && resolver.measure_product_identity(&self.records,"HEAD").map_err(|error|error.to_string())?.selected_commit.as_deref()==Some(records);
+        self.verify_original()?;
+        Ok(matches)
+    }
     /// Only the two existing native runtime records are named here. No caller
     /// path crosses IPC, and this does not grant PRODUCT configuration writes.
     pub fn runtime_record(
@@ -562,6 +568,16 @@ mod tests {
     use std::sync::atomic::{AtomicU64, Ordering};
 
     static NEXT: AtomicU64 = AtomicU64::new(0);
+    #[test]
+    fn origin_fingerprint_has_one_prefix_and_matches_independent_sha256() {
+        use sha2::Digest;
+        let fixture=Fixture::new();
+        let context=GenesisContext::capture(&fixture.watch,None).unwrap();
+        let encoded=serde_json::to_vec(&serde_json::to_value(&context.origin).unwrap()).unwrap();
+        let expected=format!("sha256:{:x}",sha2::Sha256::digest(encoded));
+        assert_eq!(context.fingerprint(),expected);
+        assert_eq!(context.fingerprint().len(),71);
+    }
     struct Fixture {
         home: PathBuf,
         product: PathBuf,

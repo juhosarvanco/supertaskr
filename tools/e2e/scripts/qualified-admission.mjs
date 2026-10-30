@@ -96,8 +96,8 @@ function git(root, args) {
 /** allRecords intentionally skips unreadable records. Check every physical
  * work-record input first, then derive the existing ledger without replacing it.
  * No native inventory helper that persists holds or takes locks is called.
- * @param {string} root @param {any} runs @param {any} native @param {string} taskId @param {any} [ownOperation] */
-function completeRecords(root, runs, native, taskId,ownOperation=null) {
+ * @param {string} root @param {any} runs @param {any} native @param {string} taskId @param {any} [ownOperation] @param {any} [ownDispatch] */
+function completeRecords(root, runs, native, taskId,ownOperation=null,ownDispatch=null) {
   const home = path.join(root, runs.RUNS_REL_PATH);
   const records = runs.allRecords(root);
   let count = 0;
@@ -127,7 +127,8 @@ function completeRecords(root, runs, native, taskId,ownOperation=null) {
         }
         if (!runs.TERMINAL_STATES.includes(rec.state) && !(ownOperation !== null && rec.operation.kind === "qualified-delivery" &&
             rec.attempt === ownOperation.attempt && rec.operation.digest === ownOperation.operation.digest &&
-            consumers.qualifier.qualifiedContent(rec) === consumers.qualifier.qualifiedContent(ownOperation))) refuse("preflight-operation-pending");
+            consumers.qualifier.qualifiedContent(rec) === consumers.qualifier.qualifiedContent(ownOperation)) &&
+            !(ownDispatch !== null && rec.operation.kind === "configured-dispatch" && consumers.qualifier.qualifiedContent(rec) === consumers.qualifier.qualifiedContent(ownDispatch))) refuse("preflight-operation-pending");
         count += 1;
         continue;
       }
@@ -245,8 +246,8 @@ function deliveryPhasePolicy(root,source,ownOperation,childProof,recovery=false)
 
 /** Synchronous recapture using already loaded dependencies. The native
  * consumer supplies reconciled worker evidence before selecting re-entry.
- * @param {any} input @param {boolean} [reconciled] @param {string|null} [resource] @param {object|null} [configured] */
-function captureAdmission(input, reconciled = false, resource = null, configured = null) {
+ * @param {any} input @param {boolean} [reconciled] @param {string|null} [resource] @param {object|null} [configured] @param {object|null} [ownContext] */
+function captureAdmission(input, reconciled = false, resource = null, configured = null, ownContext = null) {
   const request = normalizeAdmissionPreflight(input);
   if (!consumers) refuse("preflight-consumers-not-loaded");
   const { qualifier, parser, inert, policy, runs, native } = consumers;
@@ -273,7 +274,10 @@ function captureAdmission(input, reconciled = false, resource = null, configured
     if (configured !== null && configuredPolicy === undefined) refuse("preflight-configured-context-not-loaded");
     const schema = configured === null ? null : /** @type {NonNullable<typeof configuredPolicy>} */ (configuredPolicy).configuredDispatchSchema(configured);
     const state = policy.grantState(canonical.authorityRoot, schema === null ? {} : { schemaText: schema.text });
-    const records = completeRecords(canonical.authorityRoot, runs, native, request.taskId);
+    if (ownContext !== null && (configured === null || configuredOperation === undefined)) refuse("preflight-configured-operation-not-loaded");
+    const ownDispatch = ownContext === null ? null : /** @type {NonNullable<typeof configuredOperation>} */ (configuredOperation).configuredArmOperationForAdmission(ownContext, canonical.authorityRoot, request,
+      /** @type {NonNullable<typeof configuredPolicy>} */ (configuredPolicy).verifyConfiguredDispatch(/** @type {object} */ (configured)));
+    const records = completeRecords(canonical.authorityRoot, runs, native, request.taskId, null, ownDispatch);
     const ledger = policy.admissionLedger(records, runs.TERMINAL_STATES);
     const a = request.admission;
     // These boundaries also depend on reconciled execution and worker facts.
@@ -356,16 +360,19 @@ function decisiveAdmission(now, earlier) {
  * data cannot supply METHOD bytes or another schema/TOOL path.
  * @type {typeof import("./configured-dispatch.mjs")|undefined} */
 let configuredPolicy;
-/** @param {any} input @param {object} handle */
-export async function configuredAdmissionPreflight(input, handle) {
+/** @type {typeof import("./configured-dispatch-context.mjs")|undefined} */
+let configuredOperation;
+/** @param {any} input @param {object} handle @param {object|null} [ownContext] */
+export async function configuredAdmissionPreflight(input, handle, ownContext = null) {
   if (!handle) refuse("preflight-configured-context-required");
   const request = normalizeAdmissionPreflight(input);
   await loadQualifiedDeliveryPolicy(); configuredPolicy ??= await import("./configured-dispatch.mjs");
-  return captureAdmission(request, false, null, handle);
+  if (ownContext !== null) configuredOperation ??= await import("./configured-dispatch-context.mjs");
+  return captureAdmission(request, false, null, handle, ownContext);
 }
 /** Already preloaded, synchronous, and called inside the existing transaction.
- * @param {any} request @param {any} earlier @param {object} handle @param {boolean} [reconciled] @param {string|null} [resource] */
-export function decisiveConfiguredAdmission(request, earlier, handle, reconciled = false, resource = null) {
+ * @param {any} request @param {any} earlier @param {object} handle @param {boolean} [reconciled] @param {string|null} [resource] @param {object|null} [ownContext] */
+export function decisiveConfiguredAdmission(request, earlier, handle, reconciled = false, resource = null, ownContext = null) {
   if (!handle) refuse("preflight-configured-context-required");
-  return decisiveAdmission(captureAdmission(request, reconciled, resource, handle), earlier);
+  return decisiveAdmission(captureAdmission(request, reconciled, resource, handle, ownContext), earlier);
 }

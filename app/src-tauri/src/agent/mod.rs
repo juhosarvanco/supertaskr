@@ -8,6 +8,11 @@
 //! exactly `core:default` — `std::process` is not a plugin, so there is
 //! nothing to grant.
 //!
+//! Initialized split sessions now use a finite installed backend bank after
+//! the planner's draft turn. Exact accepted receipts, original session scope
+//! and same-operation recovery govern those commits; legacy embeddings retain
+//! their runtime-only helper behavior. No model text grants bank authority.
+//!
 //! EIGHT commands since T-029, seven of them zero-argument:
 //! `genesis_start` · `genesis_send_turn(text)` · `genesis_status` ·
 //! `genesis_cancel` · `genesis_resume` · `genesis_fresh` ·
@@ -38,7 +43,10 @@
 //! routing card is `T-175-s1`.
 
 pub mod adapter;
+pub mod banking;
 mod codex;
+#[cfg(test)]
+mod digest_contract_tests;
 #[cfg(test)]
 mod provider_tests;
 pub mod context;
@@ -295,6 +303,9 @@ pub struct AgentState {
     emitter: Emitter,
     activation_sequence: AtomicU64,
     managed_sink: Option<Arc<dyn Fn(managed::Event) + Send + Sync>>,
+    banking: Arc<Mutex<banking::State>>,
+    banking_callback: Option<Arc<dyn Fn(banking::BankTurn) + Send + Sync>>,
+    banking_sink: Option<Arc<dyn Fn(banking::Event) + Send + Sync>>,
     /// T-175: the cold-start test's state, and it is a SECOND cell rather
     /// than four more fields on [`Inner`]. The separation is the ruling:
     /// `Inner` is the interview's, every field of it feeds
@@ -337,6 +348,9 @@ impl AgentState {
             emitter: Emitter::new(wrapped, Arc::new(AtomicU64::new(0))),
             activation_sequence: AtomicU64::new(0),
             managed_sink: None,
+            banking: Arc::new(Mutex::new(banking::State::default())),
+            banking_callback: None,
+            banking_sink: None,
             cold: Arc::new(Mutex::new(ColdInner::default())),
         }
     }
@@ -348,6 +362,17 @@ impl AgentState {
         let mut state = Self::new(cfg, |_| {});
         state.managed_sink = Some(Arc::new(sink));
         state
+    }
+
+    /// The production shell supplies this finite callback. Direct legacy
+    /// embeddings do not gain a save service or another filesystem authority.
+    pub(crate) fn with_banking(mut self,
+        finish:impl Fn(banking::BankTurn)+Send+Sync+'static,
+        sink:impl Fn(banking::Event)+Send+Sync+'static,
+    )->Self {
+        self.banking_callback=Some(Arc::new(finish));
+        self.banking_sink=Some(Arc::new(sink));
+        self
     }
 
     fn begin_turn(&self) -> Option<TurnInFlight> {

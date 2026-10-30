@@ -53,13 +53,18 @@ export function validQualifiedDeliveryPolicySource(source,expected){
 }
 /** Finite original full-route selection; current qualification and owned
  * actual advertised-ref checks still belong to the effect owner.
- * @param {any} p @param {any} req @param {any} product */
-function publicationContext(p,req,product){
+ * Metadata correspondence only; an actual constructor proof remains required
+ * for effects. Legacy callers pass only their frozen actual-output identity.
+ * Planned callers pass their exact strict planned-output identity explicitly.
+ * @param {any} p @param {any} req @param {{commit:string,tree:string,expectedOld:string}} expected */
+export function validQualifiedPublicationOutputContext(p,req,expected){
+ try{
+ if(!shape(expected,["commit","tree","expectedOld"])||![expected.commit,expected.tree,expected.expectedOld].every(oid))return false;
  if(!shape(p,["version","kind","route","coordinatorRoot","operationId","authorityDigest","configuration","tool","hook","destination","transportDigest","commit","tree","correlationRef","ci","digest"])||
   p.version!==1||p.kind!=="qualified-publication-context"||p.route!=="normal-atomic-fast-forward"||p.coordinatorRoot!==req.coordinator.root||p.operationId!==req.operationId||p.authorityDigest!==req.authority.authorityDigest||
-  !shape(p.configuration,["revision","digest"])||p.configuration.revision!==product.actualOutput.commit||!digest(p.configuration.digest)||!digest(p.transportDigest)||
-  p.commit!==product.actualOutput.commit||p.tree!==product.actualOutput.tree||p.correlationRef!==`refs/supertaskr/deliveries/${operationWork(req.operationId).slice(3)}/publication`||
-  !shape(p.destination,["name","url","ref","expectedOld","endpoint"])||typeof p.destination.url!=="string"||!p.destination.url||/[\x00-\x1f\x7f]/.test(p.destination.url)||p.destination.expectedOld!==product.originalBase)return false;
+  !shape(p.configuration,["revision","digest"])||p.configuration.revision!==expected.commit||!digest(p.configuration.digest)||!digest(p.transportDigest)||
+  p.commit!==expected.commit||p.tree!==expected.tree||p.correlationRef!==`refs/supertaskr/deliveries/${operationWork(req.operationId).slice(3)}/publication`||
+  !shape(p.destination,["name","url","ref","expectedOld","endpoint"])||typeof p.destination.url!=="string"||!p.destination.url||/[\x00-\x1f\x7f]/.test(p.destination.url)||p.destination.expectedOld!==expected.expectedOld)return false;
  const selected=normalizeProjectPublication({remote:p.destination.name,destinationRef:p.destination.ref,ci:p.ci});if(operationContent(selected.ci)!==operationContent(p.ci))return false;
  const e=p.destination.endpoint;
  if(e?.kind==="github"){if(!shape(e,["kind","providerRepository"])||e.providerRepository!==p.ci.repository)return false;}
@@ -73,6 +78,7 @@ function publicationContext(p,req,product){
   !shape(h.closure,["manifestDigest","runtimeDigest","files"])||!Array.isArray(h.closure.files)||!h.closure.files.length||h.closure.manifestDigest!==p.tool?.manifestDigest||h.closure.runtimeDigest!==p.tool?.runtimeDigest||
   h.closure.files.some((/** @type {any} */ f)=>!shape(f,["path","sha256"])||typeof f.path!=="string"||typeof f.sha256!=="string"||!/^[0-9a-f]{64}$/.test(f.sha256)))return false;
  const {digest:claimed,...body}=p;return digest(claimed)&&claimed===operationDigest(body);
+ }catch{return false;}
 }
 /** @param {any} req */
 export function validQualifiedDeliveryRequest(req){
@@ -103,7 +109,7 @@ function validRequest(req){
  if(!validQualifiedDeliveryPolicySource(req.policySource,{...a.verifier,taskId:a.taskId,receipt:a.frozenAuthority.receipt})||!validQualifiedConfiguredAuthorityGrades(a,req.policySource))return false;
  const product=a.roles.find((/** @type {any} */ r)=>r.role === "product");
  if(req.route.publicationOwed !== (product.actualOutput.implementation.length>0) || req.route.policyRevision !== product.actualOutput.commit)return false;
- if(full&&(!req.route.publicationOwed||!publicationContext(req.route.publication,req,product)))return false;
+ if(full&&(!req.route.publicationOwed||!validQualifiedPublicationOutputContext(req.route.publication,req,{commit:product.actualOutput.commit,tree:product.actualOutput.tree,expectedOld:product.originalBase})))return false;
  const roots=new Set(),keys=new Set();
  for(const l of req.landings){
   if(!shape(l,["key","roles","repository","expectedRevision","ref","commit","tree","writes","working"]) || !Array.isArray(l.roles) || !l.roles.length ||
