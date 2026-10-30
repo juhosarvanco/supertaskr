@@ -46,6 +46,8 @@ export function genesisBankRecordPath(stage,file){
 const EMPTY_LIFECYCLE_PLACEHOLDERS=new Set([
  "<!-- empty -->","<!-- No entries yet. -->","<!-- Appended by the executor. -->",
  "<!-- Appended by the verifier. -->","<!-- Appended after implementation. -->",
+ "<!-- executor appends before finishing -->",
+ "<!-- verifier appends: date, model@session, APPROVED / REJECTED + failures -->",
 ]);
 /** Raw legacy verdict readers also see headings in fences/comments. New
  * planned cards therefore cannot carry a populated reserved section in either

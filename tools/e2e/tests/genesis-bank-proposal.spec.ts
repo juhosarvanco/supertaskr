@@ -1,5 +1,7 @@
 import {createHash} from "node:crypto";
 import {expect,test} from "@playwright/test";
+import {genesisFixture} from "./genesis-init-fixture";
+import {readInstalledMethodAsset} from "../scripts/records-check.mjs";
 import {captureGenesisBankProposal,parseGenesisBankProposal,sameGenesisBankProposal,GENESIS_BANK_CAPTURE_LIMIT} from "../scripts/genesis-bank-proposal.mjs";
 const hash=(value:string|Uint8Array)=>createHash("sha256").update(value).digest("hex");
 const context={setupId:"original-setup",sessionId:"original-native-session",originDigest:`sha256:${"a".repeat(64)}`,productRevision:"a".repeat(40),recordsRevision:"b".repeat(40)};
@@ -71,4 +73,21 @@ test("empty reserved template sections remain valid author data and restoring a 
   expect(capture(body).records.some((row:any)=>row.path===card.path)).toBe(true);
  expect(()=>capture("## Verdicts\n### 2026-10-30 — REJECTED\nClaimed prior failure.\n")).toThrow("genesis-bank-task-lifecycle-body");
  expect(capture("").records.some((row:any)=>row.path===card.path)).toBe(true);
+});
+
+
+test("a task instantiated from the actual verified installed METHOD template is valid planned author data",()=>{
+ const installed=genesisFixture();
+ try{
+  const template=readInstalledMethodAsset(installed.toolHandle,"method/tasks/T-000-template.md");
+  expect(template.text).toContain("<!-- executor appends before finishing -->");
+  expect(template.text).toContain("<!-- verifier appends: date, model@session, APPROVED / REJECTED + failures -->");
+  const task=template.text.replace("id: T-000","id: T-001").replace("<short imperative title>","Implement the first notes slice").replace("feature: F-0X","feature: F-01")
+   .replace("touches: []","touches: [product::src/first.ts]").replace("<trigger>","the user opens the app").replace("<behavior>","show the empty notes list").replace("<failure case>","storage is unavailable").replace("<response>","show the failed save without dropping the text");
+  expect(task).toContain("touches: [product::src/first.ts]");
+  const f=fixture(8),card=f.files.find(file=>file.path.startsWith("docs/tasks/"))!;card.bytes=Buffer.from(task);f.proposal.records.find(row=>row.path===card.path)!.sha256=hash(card.bytes);
+  const actual=captureGenesisBankProposal(encoded(f));expect(actual.records.find((row:any)=>row.path===card.path)?.base64).toBe(card.bytes.toString("base64"));
+  card.bytes=Buffer.from(task.replace("<!-- verifier appends: date, model@session, APPROVED / REJECTED + failures -->","### 2026-10-30 — verifier — APPROVED\nClaimed actual pass."));f.proposal.records.find(row=>row.path===card.path)!.sha256=hash(card.bytes);
+  expect(()=>captureGenesisBankProposal(encoded(f))).toThrow("genesis-bank-task-lifecycle-body");
+ }finally{installed.cleanup();}
 });
