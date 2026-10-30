@@ -59,6 +59,45 @@ function decode(bytes) {
 /** @param {any} value @param {number} limit */
 function singleLine(value, limit) { return typeof value === "string" && value.trim() !== "" && value.length <= limit && !/[\x00-\x1f\x7f]/.test(value); }
 
+/** Actual accepted user-message data, shared by finite PRODUCT and RECORDS
+ * proposals. This never obtains answer text from a model proposal.
+ * @param {any} context @param {readonly any[]} answers */
+function capturedAnswers(context, answers) {
+  if (!Array.isArray(answers) || answers.length > 1024) refuse("genesis-proposal-answers");
+  const captured = new Map(); let answerBytes = 0;
+  for (const answer of answers) {
+    if (!shape(answer, ["turn", "text", "setupId", "sessionId", "originDigest"]) || !Number.isSafeInteger(answer.turn) || answer.turn < 1 || captured.has(answer.turn) ||
+        typeof answer.text !== "string" || Buffer.byteLength(answer.text, "utf8") > ANSWER_LIMIT ||
+        answer.setupId !== context.setupId || answer.sessionId !== context.sessionId || answer.originDigest !== context.originDigest) refuse("genesis-proposal-answer-origin");
+    answerBytes += Buffer.byteLength(answer.text, "utf8");
+    if (answerBytes > ANSWER_CAPTURE_LIMIT) refuse("genesis-proposal-answer-size");
+    captured.set(answer.turn, {turn:answer.turn, text:answer.text, sha256:hash(Buffer.from(answer.text, "utf8"))});
+  }
+  return captured;
+}
+/** @param {Map<number,any>} captured @param {readonly any[]} refs @param {boolean} allowEmpty */
+function referencedAnswers(captured, refs, allowEmpty) {
+  if (!Array.isArray(refs) || (!allowEmpty && refs.length === 0) || refs.length > 1024) refuse("genesis-proposal-answer-refs");
+  const referenced = [], seen = new Set();
+  for (const ref of refs) {
+    if (!shape(ref, ["turn", "sha256"]) || !Number.isSafeInteger(ref.turn) || seen.has(ref.turn) || !/^[0-9a-f]{64}$/.test(ref.sha256)) refuse("genesis-proposal-answer-refs");
+    const actual = captured.get(ref.turn);
+    if (!actual || actual.sha256 !== ref.sha256) refuse("genesis-proposal-answer-mismatch");
+    seen.add(ref.turn); referenced.push({...actual});
+  }
+  return referenced;
+}
+/** Pure byte correlation, not semantic approval or a writer capability. The
+ * producer chooses allowEmpty only for its owned stage0 continuation.
+ * @param {{context:any,answers:readonly any[],refs:readonly any[],allowEmpty:boolean}} request */
+export function captureGenesisAnswerReferences(request) {
+  if (!shape(request,["context","answers","refs","allowEmpty"]) || typeof request.allowEmpty !== "boolean" ||
+      !shape(request.context,["setupId","sessionId","originDigest","productRevision","recordsRevision"]) ||
+      !identifier(request.context.setupId) || !identifier(request.context.sessionId) || !fingerprint(request.context.originDigest) ||
+      !revision(request.context.productRevision) || !revision(request.context.recordsRevision)) refuse("genesis-proposal-context");
+  return freeze(referencedAnswers(capturedAnswers(request.context,request.answers),request.refs,request.allowEmpty));
+}
+
 /** Bind the canonical project-settings validator at construction. No request
  * can choose another validator, profile, path or program. This is still only
  * detached candidate capture; the bank producer must independently revalidate
@@ -78,30 +117,14 @@ export function createGenesisProposalReader(configuration) {
       if (!shape(context, ["setupId", "sessionId", "originDigest", "productRevision", "recordsRevision"]) ||
           !identifier(context.setupId) || !identifier(context.sessionId) || !fingerprint(context.originDigest) ||
           !revision(context.productRevision) || !revision(context.recordsRevision)) refuse("genesis-proposal-context");
-      if (!Array.isArray(request.answers) || request.answers.length > 1024) refuse("genesis-proposal-answers");
-      const captured = new Map(); let answerBytes = 0;
-      for (const answer of request.answers) {
-        if (!shape(answer, ["turn", "text", "setupId", "sessionId", "originDigest"]) || !Number.isSafeInteger(answer.turn) || answer.turn < 1 || captured.has(answer.turn) ||
-            typeof answer.text !== "string" || Buffer.byteLength(answer.text, "utf8") > ANSWER_LIMIT ||
-            answer.setupId !== context.setupId || answer.sessionId !== context.sessionId || answer.originDigest !== context.originDigest) refuse("genesis-proposal-answer-origin");
-        answerBytes += Buffer.byteLength(answer.text, "utf8");
-        if (answerBytes > ANSWER_CAPTURE_LIMIT) refuse("genesis-proposal-answer-size");
-        captured.set(answer.turn, {turn:answer.turn, text:answer.text, sha256:hash(Buffer.from(answer.text, "utf8"))});
-      }
+      const captured = capturedAnswers(context, request.answers);
       const proposal = decode(request.bytes);
       const keys = ["version", "setupId", "sessionId", "originDigest", "proposalId", "bank", "expectedProductRevision", "expectedRecordsRevision", "answerRefs",
         ...(proposal?.bank === "identity" ? ["identity"] : ["settings"])];
       if (!shape(proposal, keys) || proposal.version !== 1 || !identifier(proposal.proposalId) || !["identity", "configuration"].includes(proposal.bank) ||
           proposal.setupId !== context.setupId || proposal.sessionId !== context.sessionId || proposal.originDigest !== context.originDigest ||
           proposal.expectedProductRevision !== context.productRevision || proposal.expectedRecordsRevision !== context.recordsRevision) refuse("genesis-proposal-context");
-      if (!Array.isArray(proposal.answerRefs) || proposal.answerRefs.length === 0 || proposal.answerRefs.length > 1024) refuse("genesis-proposal-answer-refs");
-      const referenced = [], seen = new Set();
-      for (const ref of proposal.answerRefs) {
-        if (!shape(ref, ["turn", "sha256"]) || !Number.isSafeInteger(ref.turn) || seen.has(ref.turn) || !/^[0-9a-f]{64}$/.test(ref.sha256)) refuse("genesis-proposal-answer-refs");
-        const actual = captured.get(ref.turn);
-        if (!actual || actual.sha256 !== ref.sha256) refuse("genesis-proposal-answer-mismatch");
-        seen.add(ref.turn); referenced.push({...actual});
-      }
+      const referenced = referencedAnswers(captured, proposal.answerRefs, false);
       if (proposal.bank === "identity") {
         if (!shape(proposal.identity, ["projectName", "oneLiner"]) || !singleLine(proposal.identity.projectName, 160) || !singleLine(proposal.identity.oneLiner, 512)) refuse("genesis-proposal-identity");
       } else {
