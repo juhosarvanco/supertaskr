@@ -11,6 +11,8 @@ card overrides, configured models, vehicles, process and suite policy.
 supertaskr dispatch --root <PRODUCT> --view
 supertaskr dispatch --root <PRODUCT> --view --task T-N --full
 supertaskr dispatch --root <PRODUCT> --brief --task T-N --lane-intent <intent.json>
+supertaskr dispatch --root <PRODUCT> --arm --operation <id> --task T-N --session <session-id> --turn <turn-id> --effort <dial> --deadline <ISO-UTC-or-none> --budget <tokens-or-none> --lane-intent <intent.json>
+supertaskr dispatch --root <PRODUCT> --continue --operation <id>
 supertaskr dispatch --root <PRODUCT> --admission-preflight <request.json>
 supertaskr dispatch --root <PRODUCT> --run start --assignment <assignment.json>
 supertaskr dispatch --root <PRODUCT> --run bind --attempt <attempt> --session <native-id>
@@ -72,8 +74,27 @@ The retained lifecycle supports bind, observe, send, wait, collect, continue
 and stop with the canonical run flags shown by `--help`. Effects recheck the
 original context and current approval/pause policy. Finalized collection
 retries return their original history. Unsupported actions refuse explicitly.
-Commit the canonical tier before starting; missing guard configuration,
+Assignment-file start requires the canonical tier stamp; missing guard configuration,
 understated tiers and unavailable generic XS keeper ownership cannot start.
+
+`--arm` captures the exact original committed context, approval and explicit
+execution limits in one durable operation. It runs the original baseline or
+rechecks the canonical completed-genesis datum, persists the permitted private
+lifecycle stamp and derived INDEX, creates only its captured absent qualified
+lanes, writes the actual thirteen-row brief and prepares the native assignment
+through the existing reservation owner. Non-independent review guarantees
+require separate approval; arm cannot silently promote them. Effort, deadline
+and budget have no implicit defaults. The committed role supplies the model,
+vehicle and session policy.
+
+`--continue` accepts only the original operation ID. New effects recheck current
+approval and original physical homes; unknown lane/brief outcomes refuse rather
+than overwriting another workspace. An already accepted native preparation is
+returned before successor configuration checks, with no fresh launch. Both
+commands report `started: false`: the host must separately qualify installation
+readiness and ordinary hook trust, launch the original selection and report the
+actual child identity. Wrapper/configuration files and controlled callback
+frames do not establish that readiness.
 
 `--grade` measures the unique PRODUCT worker held by the actual native-bound
 attempt and runs its original committed whole-suite definitions. It checks
@@ -90,8 +111,8 @@ The source compatibility commands next, brief, card, preflight, fence, seat,
 arm, push-check, undo and merge refuse configured or explicitly bound project
 contexts at the installed front. The sections below describe that legacy
 source adapter. The installed view replaces the legacy first-view spelling.
-Automatic lane creation and the remaining effect adapters are still required;
-the configured view/readonly brief/lifecycle does not establish the full loop.
+Full verifier bench/phase/seal orchestration and the remaining host effect
+adapters are still required; preparation alone does not establish the full loop.
 
 ## Legacy source adapter
 

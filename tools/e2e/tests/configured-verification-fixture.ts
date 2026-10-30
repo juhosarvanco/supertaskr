@@ -9,7 +9,7 @@ import { testToolRuntime } from "../fixtures/tool-runtime";
 
 /** New external-project consumer. Callback/transport frames are controlled;
  * no model, historical proof campaign or manufactured run record is used. */
-export async function configuredVerificationFixture(options:{review?:"independent"}={}) {
+export async function configuredVerificationFixture(options:{review?:"independent",finalize?:boolean}={}) {
   const f = privateRecordFixture();
   try {
   const installed = testToolRuntime();
@@ -65,7 +65,7 @@ export async function configuredVerificationFixture(options:{review?:"independen
   expect(native.handleNativeEvent(f.product, event("PostToolUse", "build", command)).disposition).toBe("post-clean");
   expect(runs.observeRun(f.product, { attempt, evidence: "Controlled actual transport completion.\nRUN-DONE ok" }).record.state).toBe("finished");
   const candidates = Object.fromEntries(["product", "records"].map(role => [role, privateGit(worker[role as keyof typeof worker], ["rev-parse", "HEAD"])]));
-  expect(runs.collectRun(f.product, { attempt, ref: JSON.stringify(candidates), report: "actual ordinary fixture output" }).record.native.qualified.collection.phase).toBe("final");
+  if(options.finalize!==false)expect(runs.collectRun(f.product, { attempt, ref: JSON.stringify(candidates), report: "actual ordinary fixture output" }).record.native.qualified.collection.phase).toBe("final");
   const bench = { product: path.join(f.dir, "product-bench"), records: path.join(f.dir, "records-bench") };
   for (const role of ["product", "records"] as const) privateGit(f[role], ["worktree", "add", "--detach", bench[role], candidates[role]!]);
   const verifier = structuredClone(assignment);

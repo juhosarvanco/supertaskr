@@ -15,6 +15,10 @@ import {readOperationRef as readRef,operationDestinationContains as destinationC
 import {validatedFixedProductPrePush} from "./fixed-product-hook.mjs";
 
 const activeOperations = new Set();
+/** Only a fixed synchronous read-only policy may open this scope. Generic
+ * captures are private detached data; qualified hook captures never enter it.
+ * @type {{entries:Map<string,{root:string,base:string,forEffect:boolean,value:any}>,invalid:boolean}|null} */
+let repositoryObservation = null;
 
 export class DurableOperationFinding extends Error {
   /** @param {string} code */
@@ -52,9 +56,35 @@ export function checkOperationEnvironment() {
  * The supported route is a normal SHA-1/SHA-256 worktree with its own object
  * store. Alternates, replacement/graft/shallow history and executable hooks
  * require separate qualification and are refused here.
- * @param {string} repositoryRoot @param {string} base @param {{forEffect?: boolean}} [options] */
+ * @param {string} repositoryRoot @param {string} base @param {{forEffect?: boolean}} [options] @returns {ReturnType<typeof captureRepository>} */
 export function captureOperationRepository(repositoryRoot, base, options = {}) {
-  return captureRepository(repositoryRoot,base,options);
+  const scope=repositoryObservation;
+  if(scope===null)return captureRepository(repositoryRoot,base,options);
+  checkOperationEnvironment();
+  const forEffect=options.forEffect!==false,key=JSON.stringify([repositoryRoot,base,forEffect]);
+  const prior=scope.entries.get(key);if(prior!==undefined)return structuredClone(prior.value);
+  if(scope.entries.size>=256)refuse("OPERATION_OBSERVATION_LIMIT");
+  const value=captureRepository(repositoryRoot,base,{forEffect});
+  scope.entries.set(key,{root:repositoryRoot,base,forEffect,value:structuredClone(value)});
+  return value;
+}
+/** Reuse identical repository reads only inside one fixed synchronous policy
+ * evaluation. Before any result escapes, an UNCACHED full audit of every key
+ * must agree. No current permission is cached and no scope survives an effect,
+ * Promise, nested scope or exception. Callers must perform no managed writes.
+ * @template T @param {()=>T} read @returns {T} */
+export function withOperationRepositoryObservation(read){
+  if(repositoryObservation!==null){repositoryObservation.invalid=true;refuse("OPERATION_OBSERVATION_NESTED");}
+  if(typeof read!=="function"||Object.getPrototypeOf(read)?.constructor?.name==="AsyncFunction")refuse("OPERATION_OBSERVATION_ASYNC");
+  const scope={entries:new Map(),invalid:false};repositoryObservation=scope;
+  try{
+    const value=read();
+    if(value!==null&&(typeof value==="object"||typeof value==="function")&&typeof /** @type {any} */(value).then==="function")refuse("OPERATION_OBSERVATION_ASYNC");
+    if(scope.invalid)refuse("OPERATION_OBSERVATION_NESTED");
+    repositoryObservation=null;
+    for(const entry of scope.entries.values())if(operationContent(captureRepository(entry.root,entry.base,{forEffect:entry.forEffect}))!==operationContent(entry.value))refuse("OPERATION_OBSERVATION_CHANGED");
+    return value;
+  }finally{repositoryObservation=null;}
 }
 /** Internal protected-route capture. The generic constructor remains strict;
  * only an actual already-installed TOOL wrapper's opaque proof can qualify
@@ -69,10 +99,16 @@ function captureRepository(repositoryRoot,base,options,qualified){
   checkOperationEnvironment();
   let root;
   try { root = realpathSync(repositoryRoot); } catch { refuse("OPERATION_REPOSITORY"); }
-  if (realpathSync(git(root, ["rev-parse", "--show-toplevel"])) !== root || git(root, ["rev-parse", "--is-bare-repository"]) !== "false") refuse("OPERATION_REPOSITORY");
-  const gitDir = realpathSync(git(root, ["rev-parse", "--absolute-git-dir"]));
-  const commonDir = realpathSync(git(root, ["rev-parse", "--path-format=absolute", "--git-common-dir"]));
-  const objectFormat = git(root, ["rev-parse", "--show-object-format"]);
+  // Basic metadata is one read. Embedded newlines retain the original
+  // individual-query path handling rather than becoming field delimiters.
+  // No index query moves ahead of the configuration audit below.
+  const fields=git(root,["rev-parse","--path-format=absolute","--is-bare-repository","--show-object-format","--show-toplevel","--absolute-git-dir","--git-common-dir"]).split("\n");
+  const metadata=fields.length===5?{bare:fields[0],format:fields[1],top:fields[2],git:fields[3],common:fields[4]}:
+   {bare:git(root,["rev-parse","--is-bare-repository"]),format:git(root,["rev-parse","--show-object-format"]),top:git(root,["rev-parse","--show-toplevel"]),git:git(root,["rev-parse","--absolute-git-dir"]),common:git(root,["rev-parse","--path-format=absolute","--git-common-dir"])};
+  if (realpathSync(/** @type {string} */(metadata.top)) !== root || metadata.bare !== "false") refuse("OPERATION_REPOSITORY");
+  const gitDir = realpathSync(/** @type {string} */(metadata.git));
+  const commonDir = realpathSync(/** @type {string} */(metadata.common));
+  const objectFormat = /** @type {string} */(metadata.format);
   if (!["sha1", "sha256"].includes(objectFormat)) refuse("OPERATION_OBJECT_FORMAT");
   const oid = new RegExp(`^[0-9a-f]{${objectFormat === "sha1" ? 40 : 64}}$`);
   if (!oid.test(base) || git(root, ["cat-file", "-t", base]) !== "commit") refuse("OPERATION_BASE");

@@ -144,6 +144,25 @@ function finalized(root, source, io) {
   if (!equal(done.candidates, Object.fromEntries(source.refs.map((/** @type {string} */ r) => r.split(":"))))) refuse("QUALIFIED_REVIEW_EXECUTOR_CANDIDATES");
   return q;
 }
+/** The canonical complete preparation contract owns the required bench roles;
+ * implementation-writer membership alone is not that contract.
+ * @param {any} source */
+function verifierBenchRoles(source){return Object.keys(source.native.qualified.reservation.scope.revisions).sort();}
+/** Read-only inputs for a fixed configured convenience constructor. This uses
+ * the same finalized evidence checks as preparation, never a caller verdict.
+ * The detached result is data, not a preparation or effect capability.
+ * @param {string} root @param {string} attempt */
+export async function readQualifiedVerifierInputs(root,attempt){
+  root=realpathSync(root);await load();
+  const source=/** @type {any} */(runs.readRecord(root,attempt)),q=finalized(root,source,runs.defaultRunIo());
+  const result={source:{attempt:source.attempt,assignmentDigest:source.assignmentDigest,permissionDigest:source.permission.digest,
+    originsDigest:qualifiedReviewDigest(q.origins),collectionDigest:qualifiedReviewDigest(q.collection)},
+    request:q.reservation.request,scope:q.reservation.scope,candidates:runs.qualifiedValidation().qualifiedImplementationCandidates(q.reservation.scope,q.collection.candidates),
+    requiredBenchRoles:verifierBenchRoles(source),ignoredOutputs:q.origins.launch.ignoredOutputs,
+    preparations:(source.native.qualifiedPreparations??[]).map((/** @type {any} */ entry)=>({digest:entry.digest,consumedBy:entry.consumedBy,sealDigest:entry.seal?.digest??null}))};
+  if(!equal(runs.readRecord(root,attempt),source))refuse("QUALIFIED_REVIEW_PREPARATION_DRIFT");
+  const detached=structuredClone(result),freeze=(/** @type {any} */ value)=>{if(value&&typeof value==="object"){Object.values(value).forEach(freeze);Object.freeze(value);}};freeze(detached);return detached;
+}
 /** Frozen implementation scope and the existing records protocol are separate
  * output classes. Protocol artifacts never enter an implementation projection.
  * @param {any} authority @param {string[]} roles */
@@ -170,7 +189,7 @@ export function qualifiedBenchAssignmentInputs(root, source, a, ref) {
   if (candidates === null || (ref !== undefined && !equal(complete(JSON.parse(ref)), candidates))) refuse("QUALIFIED_REVIEW_CANDIDATE_SET");
   const authority = { receipt: q.reservation.scope.receipt };
   reviewCommitSet(authority, q.reservation.scope.revisions); reviewCommitSet(authority, candidates);
-  const roles = Object.keys(q.reservation.scope.revisions).sort();
+  const roles = verifierBenchRoles(source);
   if (!Array.isArray(a.qualified.workers) || !equal(a.qualified.workers.map((/** @type {any} */ w) => w.role).sort(), roles)) refuse("QUALIFIED_REVIEW_COMPLETE_SET");
   for (const w of a.qualified.workers) {
     if (w.base !== q.reservation.request.revisions[w.role] || w.candidate !== candidates[w.role]) refuse("QUALIFIED_REVIEW_CANDIDATE_SET");

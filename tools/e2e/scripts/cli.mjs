@@ -622,7 +622,7 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
   Object.freeze({
     verb: "dispatch", summary: "configured board view, normative readonly brief, admission and native run lifecycle",
     target: { kind: "script", file: "configured-dispatch-command.mjs", args: [] }, rootFlag: true, packageHelp: true,
-    usage: "supertaskr dispatch --view [selection.json] [--task T-N] [--full] | --brief [selection.json] --task T-N [--role executor|verifier] [--lane-intent file] | --grade --attempt T-N-aN [--suite original-id] | --run <operation> <run flags> | --admission-preflight <request-file>",
+    usage: "supertaskr dispatch --view [selection.json] [--task T-N] [--full] | --brief [selection.json] --task T-N [--role executor|verifier] [--lane-intent file] | --arm --operation ID --task T-N --session ID --turn ID --effort DIAL --deadline ISO-UTC|none --budget TOKENS|none [--lane-intent file] | --continue --operation ID | --grade --attempt T-N-aN [--suite original-id] | --run <operation> <run flags> | --admission-preflight <request-file>",
     source: "Original committed PRODUCT/RECORDS/TOOL; fixed configured dispatch entry",
   }),
   Object.freeze({

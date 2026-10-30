@@ -8,7 +8,7 @@ import {privateGit} from "./private-record-fixture";
 test("actual installed asset plan carries full native skill packs and portable original-TOOL hook bytes without installing or trusting them",async()=>{
  test.setTimeout(180_000);const f=await configuredArmFixture();
  try{
-  const owner=await import(f.module("project-install-assets")),native=await import(f.module("native-product-hook"));
+  const owner=await import(f.module("project-install-assets")),native=await import(f.module("native-product-hook")),schema=await import(f.module("project-install-record"));
   const snapshot=()=>[f.product,f.records].map(root=>({head:privateGit(root,["rev-parse","HEAD"]),refs:privateGit(root,["show-ref"]),index:readFileSync(path.join(root,".git/index")).toString("base64"),status:privateGit(root,["status","--porcelain=v1","--untracked-files=all"])}));
   const before=snapshot(),plan=owner.captureProjectInstallAssets({productRoot:f.product,tool:f.tool});
   expect(plan.kind).toBe("project-install-assets");expect(plan.readiness).toEqual({installed:false,hostTrust:"unestablished",nativeCallbacks:"unestablished"});
@@ -17,6 +17,8 @@ test("actual installed asset plan carries full native skill packs and portable o
   expect(()=>owner.assertPreparedProjectInstallAssets(plan,structuredClone(f.tool))).toThrow("project-install-preparation-required");
   const paths=plan.product.map((row:any)=>row.path);expect(paths).toContain(".agents/skills/supertaskr-seat/references/host-commands.md");
   expect(paths).toContain(".agents/skills/supertaskr-seat/scripts/host-command-check.mjs");
+  expect(paths.every(schema.isProjectInstallationProductPath)).toBe(true);
+  for(const unsafe of [".codex/config.toml",".codex/hooks.json/extra",".agents/skills/foreign/SKILL.md",".agents/skills/supertaskr-seat/../outside",".agents/skills/supertaskr-seat//SKILL.md",".agents/skills/supertaskr-seat/./SKILL.md","src/first.py"])expect(schema.isProjectInstallationProductPath(unsafe)).toBe(false);
   for(const member of plan.membership){const target=plan.product.find((row:any)=>row.path===`.agents/skills/${member.path.slice("method/skills/".length)}`);expect(target).toBeDefined();expect(Buffer.from(target.base64,"base64").toString("utf8")).toBe(f.checks.readInstalledMethodAsset(f.tool,member.path).text);}
   const hooks=JSON.parse(Buffer.from(plan.product.find((row:any)=>row.path===".codex/hooks.json").base64,"base64").toString("utf8")).hooks;
   expect(Object.keys(hooks)).toEqual(native.nativeProductHookContract().callbacks);

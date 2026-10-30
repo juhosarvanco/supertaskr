@@ -9,7 +9,7 @@ import * as runs from "./run-record.mjs";
 import { NativeCodexFinding, activeNativeHolds, addNativeHold, collectNativeWorkspace, explicitResourceProblem,
   nativeFinalGate, nativeIgnoredSnapshot, nativePathAllowed, nativeSha256, readNativeRecord, withNativeTransaction } from "./native-codex.mjs";
 import { qualifiedVerifierAdmission, qualifiedReviewPolicy, validateQualifiedReview, collectQualifiedReviewEvidence, loadQualifiedReviewConsumers } from "./qualified-verification.mjs";
-import { validConfiguredDispatchCapsule } from "../../../cli/configured-native-reader.mjs";
+import { validConfiguredDispatchCapsule, validConfiguredArmOrigin } from "../../../cli/configured-native-reader.mjs";
 
 /** Loaded only for explicitly qualified calls.
  * @returns {typeof import("./qualified-reservation.mjs")} */
@@ -19,6 +19,9 @@ function validator() { return runs.qualifiedValidation(); }
 let qualifiedAdmission;
 /** @type {typeof import("./configured-dispatch.mjs")|undefined} */
 let configuredDispatch;
+/** Only the fixed own-operation path loads this heavy owner before its
+ * synchronous transaction. @type {typeof import("./configured-dispatch-context.mjs")|undefined} */
+let configuredArm;
 /** Exact backend-created unpublished record only; never serialized or supplied
  * through assignment/options metadata. @type {WeakMap<object,object>} */
 const configuredPreparations = new WeakMap();
@@ -86,12 +89,16 @@ function git(root, args) { return execFileSync("git", ["--no-replace-objects", "
  * @param {any} q */
 function commitment(q) { return nativeSha256(validator().qualifiedContent({ reservation: q.reservation, ignored: q.ignored, origins: q.origins,
   ...(q.verification === undefined ? {} : { verification: q.verification }) })); }
+/** Canonical retained commitment only; it proves no current physical/admission
+ * fact. Used by original-first acknowledgement readers. */
+export { commitment as qualifiedNativeCommitment };
 /** @param {string} root @param {any} rec @param {boolean} [requireHeld] */
 export function validateQualifiedNative(root, rec, requireHeld = true) {
   const q = rec.native.qualified;
   shape(q, ["reservation", "identity", "ignored", "origins"], ["collection", "verification"]);
   if (rec.assignmentDigest !== runs.sha256(JSON.stringify(rec.assignment)) || rec.permission.digest !== commitment(q)) refuse("QUALIFIED_RETAINED_AUTHORITY_CHANGED");
   if (Object.hasOwn(q.origins, "configuredDispatch") && !validConfiguredDispatchCapsule(q.origins.configuredDispatch)) refuse("QUALIFIED_CONFIGURED_CAPSULE_SHAPE");
+  if (Object.hasOwn(q.origins, "configuredArm") && (!Object.hasOwn(q.origins, "configuredDispatch") || !validConfiguredArmOrigin(q.origins.configuredArm))) refuse("QUALIFIED_CONFIGURED_ARM_SHAPE");
   if (rec.native.profile !== (q.verification === undefined ? "writer-resource" : "detached-verifier")) refuse("QUALIFIED_RETAINED_PHASE_CHANGED");
   if (!equal(q.origins.launch, rec.assignment.native) || rec.native.launch.taskName !== q.origins.launch.taskName ||
       rec.native.launch.sessionId !== q.origins.launch.sessionId || !rec.native.launch.coordinatorTurnIds.includes(q.origins.launch.coordinatorTurnId)) refuse("QUALIFIED_LAUNCH_AUTHORITY_CHANGED");
@@ -137,7 +144,9 @@ async function startQualifiedNativeRunImpl(root, opts) {
   await preloadAdmission();
   if (a.qualified.verification !== undefined) await loadQualifiedReviewConsumers();
   if (opts.configuredDispatch !== undefined) configuredDispatch ??= await import("./configured-dispatch.mjs");
-  const earlier = opts.configuredDispatch === undefined ? await admission().admissionPreflight(input) : await admission().configuredAdmissionPreflight(input, opts.configuredDispatch);
+  const ownContext=opts.configuredArmContext??null;
+  if(ownContext!==null){if(opts.configuredDispatch===undefined)refuse("QUALIFIED_CONFIGURED_ARM_REQUIRED");configuredArm??=await import("./configured-dispatch-context.mjs");}
+  const earlier = opts.configuredDispatch === undefined ? await admission().admissionPreflight(input) : await admission().configuredAdmissionPreflight(input, opts.configuredDispatch,ownContext);
   // Testable boundary: the actual transaction's acquisition hook can change
   // inputs here; the decisive recapture below must detect that change.
   return withNativeTransaction(root, { operation: "qualified-run-start", ...(opts.transaction ?? {}) }, () => {
@@ -149,7 +158,7 @@ async function startQualifiedNativeRunImpl(root, opts) {
       if (runs.qualifiedPhasePolicy(root, prior).consumed) refuse("QUALIFIED_REVIEW_ADMISSION_NOT_REUSED");
       return { record: prior, file: runs.recordPath(root, prior.attempt), reservation: prior.native?.qualified.reservation, repeated: true };
     }
-    const preview = opts.configuredDispatch === undefined ? admission().decisiveQualifiedAdmission(input, earlier, false, a.resource) : admission().decisiveConfiguredAdmission(input, earlier, opts.configuredDispatch, false, a.resource);
+    const preview = opts.configuredDispatch === undefined ? admission().decisiveQualifiedAdmission(input, earlier, false, a.resource) : admission().decisiveConfiguredAdmission(input, earlier, opts.configuredDispatch, false, a.resource,ownContext);
     if (prepared !== null && preview.admission().consumed) refuse("QUALIFIED_REVIEW_ADMISSION_NOT_REUSED");
     if (!equal(preview.receipt, a.qualified.receipt)) refuse("QUALIFIED_RECEIPT_CHANGED");
     if (!existsSync(a.brief)) refuse("QUALIFIED_BRIEF_ABSENT");
@@ -159,6 +168,7 @@ async function startQualifiedNativeRunImpl(root, opts) {
     const primary = scope.workers.find((worker) => worker.roles.includes("product")) ?? scope.workers[0];
     if (!primary || a.resource !== primary.identity.filesystemRoot || a.base !== (primary.initialHead ?? primary.base)) refuse("QUALIFIED_PRIMARY_WORKER");
     const capsule = opts.configuredDispatch === undefined ? null : /** @type {NonNullable<typeof configuredDispatch>} */ (configuredDispatch).configuredDispatchStartCapsule(opts.configuredDispatch, root, a, preview);
+    const armOrigin=ownContext===null?null:/** @type {NonNullable<typeof configuredArm>} */(configuredArm).configuredArmNativePreparation(ownContext,root,input,capsule,a,scope,attempt);
     const ignored = scope.workers.map((worker) => ({ root: worker.identity.filesystemRoot,
       policy: [...a.native.ignoredOutputs, ...(worker.identity.filesystemRoot === realpathSync(root) ? [".supertaskr"] : [])], baseline: [] }));
     for (const worker of scope.workers) {
@@ -170,6 +180,7 @@ async function startQualifiedNativeRunImpl(root, opts) {
     const q = { reservation: taken.reservation, identity: taken.reservation.identity, ignored, origins: {
       receipt: preview.receipt, grant: preview.grant, scope: preview.scope, admission: copy(input.admission), launch: copy(a.native), bases: copy(a.qualified.workers),
       ...(capsule === null ? {} : { configuredDispatch: capsule }),
+      ...(armOrigin===null?{}:{configuredArm:armOrigin}),
     }, ...(prepared === null ? {} : { verification: { authority: prepared.entry.authority, digest: prepared.entry.digest, seal: prepared.entry.seal } }) };
     const brief = { path: a.brief, digest: runs.sha256(readFileSync(a.brief, "utf8")) };
     const rec = /** @type {any} */ ({ version: runs.RECORD_VERSION, attempt, state: "reserved", assignment: a,

@@ -6,6 +6,7 @@ import path from "node:path";
 import { VERIFICATION_TIERS, isDeliveryBranchRef } from "../../../lib/parser/dist/pure.js";
 import { validQualifiedConfiguredGateCapture } from "./qualified-configured-grades.mjs";
 import { validConfiguredDispatchCapsule } from "../../../cli/configured-native-reader.mjs";
+import { isProjectInstallationProductPath } from "./project-install-record.mjs";
 import { operationContent, operationDigest, operationPayload, operationWork } from "./operation-record.mjs";
 
 /** @param {any} value @param {string[]} keys */
@@ -80,11 +81,21 @@ function validStamp(stamp,request){
  * @param {any} value @param {any} r */
 function validBaseline(value,r){
  if(value?.kind==="required-original-suites")return shape(value,["kind","policyDigest","required"])&&value.policyDigest===r.capsule.gatePolicy.digest&&same(value.required,r.capsule.gatePolicy.required);
- if(!shape(value,["kind","setup","bank8","latestBank","revisions","configuration","card","productFiles","qualifiedSuiteBaseline"])||value.kind!=="initialized-code-empty"||value.qualifiedSuiteBaseline!==false||
+ const fields=["kind","setup","bank8","latestBank","revisions","configuration","card","productFiles","qualifiedSuiteBaseline"],baseFiles=[".gitignore","AGENTS.md","CLAUDE.md","supertaskr.yaml"];
+ if(!(shape(value,fields)||shape(value,[...fields,"installation"]))||value.kind!=="initialized-code-empty"||value.qualifiedSuiteBaseline!==false||
   !same(value.revisions,r.selection.revisions)||!same(value.configuration,r.capsule.configuration)||
   !shape(value.card,["path","blobId","sha256"])||value.card.path!==r.capsule.task.path||value.card.blobId!==r.capsule.task.blobId||!sha(value.card.sha256)||
-  !Array.isArray(value.productFiles)||!same(value.productFiles.map((/** @type {any} */ f)=>f.path),[".gitignore","AGENTS.md","CLAUDE.md","supertaskr.yaml"])||
+  !Array.isArray(value.productFiles)||value.productFiles.length>132||
   value.productFiles.some((/** @type {any} */ f)=>!shape(f,["path","mode","sha256"])||!["100644","100755"].includes(f.mode)||!sha(f.sha256)))return false;
+ const paths=value.productFiles.map((/** @type {any} */ f)=>f.path);
+ if(!Object.hasOwn(value,"installation")){if(!same(paths,baseFiles))return false;}
+ else{
+  const installed=value.installation;
+  if(!shape(installed,["operationId","requestDigest","receiptDigest","productCommit","recordsCommit"])||typeof installed.operationId!=="string"||!/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(installed.operationId)||
+   ![installed.requestDigest,installed.receiptDigest].every(digest)||!oid(installed.productCommit,r.repositories.product.objectFormat)||!oid(installed.recordsCommit,r.repositories.records.objectFormat)||
+   paths.length<=baseFiles.length||new Set(paths).size!==paths.length||!same(paths,[...paths].sort())||baseFiles.some(file=>!paths.includes(file))||
+   value.productFiles.some((/** @type {any} */ f)=>!baseFiles.includes(f.path)&&(!isProjectInstallationProductPath(f.path)||f.mode!=="100644")))return false;
+ }
  const witness=(/** @type {any} */ w)=>shape(w,["operationId","requestDigest","receiptDigest","stage","completedStage","recordsCommit","productCommit"])&&nativeId(w.operationId)&&
   [w.requestDigest,w.receiptDigest].every(digest)&&Number.isInteger(w.stage)&&w.stage>=0&&w.stage<=8&&w.completedStage===8&&oid(w.recordsCommit,r.repositories.records.objectFormat)&&(w.productCommit===null||oid(w.productCommit,r.repositories.product.objectFormat));
  return shape(value.setup,["operationId","requestDigest","receiptDigest","projectId","productRevision","recordsRevision"])&&nativeId(value.setup.operationId)&&value.setup.projectId===r.selection.projectId&&
@@ -165,6 +176,19 @@ function validOwnedBrief(brief,request){
  const i=brief.identity;
  return shape(i,["path","device","inode","mode","byteLength","sha256"])&&i.path===brief.path&&[i.device,i.inode].every(v=>typeof v==="string"&&/^[0-9]{1,64}$/.test(v))&&
   i.mode===0o600&&i.byteLength===Buffer.byteLength(brief.text)&&i.sha256===brief.sha256;
+}
+/** Exact assignment data mapping only. It grants no start or own-OP context;
+ * the live backend must parse it canonically and join actual retained facts.
+ * @param {any} request @param {any} handoff */
+export function configuredArmAssignmentData(request,handoff){
+ if(!validConfiguredArmRequest(request)||!validConfiguredArmExecution(request.execution)||handoff?.brief?.stage!=="written"||!validOwnedBrief(handoff.brief,request)||!validConfiguredArmStampedSource(request,handoff.source))throw Error("configured-arm-assignment-data");
+ const r=request,primary=r.lanes.find((/** @type {any} */ lane)=>lane.role==="product")??r.lanes[0];
+ return {kind:"card",id:r.taskId,role:"executor",resource:primary.checkout,cwd:primary.checkout,base:primary.base,brief:handoff.brief.path,
+  harness:r.role.harness,model:r.role.model,...r.execution,ownedJobs:[],instants:{},
+  admission:{kind:"explicit",parent:"",evidence:"",scope:"product-change"},
+  native:{taskName:r.native.taskName,sessionId:r.native.sessionId,coordinatorTurnId:r.native.coordinatorTurnId,ignoredOutputs:[],profile:"writer-resource"},
+  qualified:{version:1,authorityRoot:r.selection.authorityRoot,projectId:r.selection.projectId,revisions:{...r.selection.revisions,records:r.stamp.commit},taskId:r.taskId,
+   legacyTokenMap:r.selection.legacyTokenMap,receipt:handoff.source.receipt,workers:r.lanes.map((/** @type {any} */ lane)=>({role:lane.role,checkout:lane.checkout,base:lane.base}))}};
 }
 /** Canonical OP record branch. Every pending/unknown stage remains discoverable
  * and blocks ordinary foreign admission even after its own claims are handed

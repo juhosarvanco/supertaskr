@@ -11,7 +11,7 @@ import { parseTaskFile, parseComponentFile, expandQualifiedFence, blankInertSpan
 import { idSlotKey } from "../../../lib/parser/dist/id-slot.js";
 import { inspectProjectInitialization } from "./genesis-init-inspect.mjs";
 import { observeProjectInitialization, captureOperationCommitIdentity } from "./project-init-operation.mjs";
-import { listAcceptedOperations, readAcceptedOperation, captureOperationRepository } from "./durable-operation.mjs";
+import { listAcceptedOperations, readAcceptedOperation, captureOperationRepository, withOperationRepositoryObservation } from "./durable-operation.mjs";
 import { operationContent, operationDigest, operationPayload, operationWork } from "./operation-record.mjs";
 import { validProjectBankRequest, validProjectBankRecord } from "./project-bank-record.mjs";
 import { parseGenesisBankProposal, captureGenesisBankProposal, assertGenesisPlannedTask, genesisBankRecordPath, GENESIS_BANK_PROPOSAL } from "./genesis-bank-proposal.mjs";
@@ -895,5 +895,5 @@ export function createGenesisBankPolicy(request,tool){
   }
   verifyInstalledRecordTool(tool);return true;
  };
- return Object.freeze({verify});
+ return Object.freeze({verify:(/** @type {{records:any,product:any}} */ effects)=>withOperationRepositoryObservation(()=>verify(effects))});
 }

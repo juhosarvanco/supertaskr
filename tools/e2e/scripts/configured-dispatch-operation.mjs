@@ -9,17 +9,17 @@ import path from "node:path";
 import { preparedConfiguredArmContext, configuredArmRepository } from "./configured-dispatch-arm.mjs";
 import { captureConfiguredDispatch, createConfiguredDispatchGateRunner } from "./configured-dispatch.mjs";
 import { captureCompletedGenesisForDispatch, captureOriginalCompletedGenesisForDispatch } from "./genesis-bank-plan.mjs";
-import { captureConfiguredArmOperationContext } from "./configured-dispatch-context.mjs";
-import { configuredArmStampIntent, configuredArmBriefPath, validConfiguredArmStampedSource } from "./configured-dispatch-record.mjs";
+import { captureConfiguredArmOperationContext, captureConfiguredArmRecoveryContext } from "./configured-dispatch-context.mjs";
+import { configuredArmStampIntent, configuredArmBriefPath, configuredArmAssignmentData, validConfiguredArmExecution, validConfiguredArmStampedSource } from "./configured-dispatch-record.mjs";
 import { measureQualifiedWorker } from "./qualified-reservation.mjs";
 import { readOperationRef, operationDestinationContains, acceptOperationRef } from "./operation-ref.mjs";
 import { configuredAdmissionPreflight, decisiveConfiguredAdmission } from "./qualified-admission.mjs";
 import { atomicJson, atomicNativeText, withNativeTransaction, syncNativeFileNamespace } from "./native-codex.mjs";
-import { assertOperationOwnership, readReservation, takeReservation, releaseReservation, defaultRunIo, sha256 } from "./run-record.mjs";
-import { acceptedOperationPath, readAcceptedOperation, captureOperationRepository } from "./durable-operation.mjs";
+import { assertOperationOwnership, readReservation, takeReservation, releaseReservation, defaultRunIo, sha256, parseAssignment, readRecord, recordPath, loadQualifiedReservations } from "./run-record.mjs";
+import { acceptedOperationPath, readAcceptedOperation, captureOperationRepository, operationOwnerAlive } from "./durable-operation.mjs";
 import { operationContent, operationDigest, operationWork, validOperationRecord } from "./operation-record.mjs";
 import { requireInstalledRuntimeAssets } from "./records-check.mjs";
-import { captureExactWritePlan, prepareExactWriteTree, materializeExactWrites, assertExactRecordTransformations, safeOperationWorkingPath, snapshotRecordFile, intendedRecordFile } from "./record-write.mjs";
+import { captureExactWritePlan, prepareExactWriteTree, materializeExactWrites, releaseDeadExactWriteLock, assertExactRecordTransformations, safeOperationWorkingPath, snapshotRecordFile, intendedRecordFile } from "./record-write.mjs";
 
 /** @param {string} code @returns {never} */
 function refuse(code){throw Object.assign(new Error(`${code}: configured lane operation is unavailable`),{code});}
@@ -209,6 +209,7 @@ export async function executeConfiguredArmStamp(root,operationId,configuration){
   if(!["consumer-prepare","files-prepared"].includes(p.stamp.stage))refuse("configured-arm-stamp-stage");
   let release;
   try{
+   releaseDeadExactWriteLock(stamp.working.index.path,r.operationId,stamp.working.index.lockToken,()=>permit("stamp-lock-recovery"));
    release=materializeExactWrites(root,{writes:stamp.writes,...stamp.working},{operationId:r.operationId,request:{repository:r.repositories.records}},phase=>permit(phase));
    if(p.stamp.stage!=="files-prepared")retain(root,rec,()=>{p.stamp.stage="files-prepared";});
    permit("stamp-ref");acceptOperationRef(r.repositories.records.root,p.stamp.intent);
@@ -301,6 +302,16 @@ function measuredBrief(root,plan){
   return identity;
  }finally{closeSync(fd);}
 }
+/** Actual retained brief fact only. No current grant, successor TOOL, worker
+ * launch or native admission is inferred from this original file observation.
+ * @param {string} root @param {string} operationId */
+export function observeConfiguredArmBrief(root,operationId){
+ root=realpathSync(root);const rec=readAcceptedOperation(root,operationId);
+ if(rec?.operation.kind!=="configured-dispatch"||rec.resource!==root||rec.operation.progress.handoff.brief?.stage!=="written"||observedStamp(rec)===null)refuse("configured-arm-brief-required");
+ const plan=rec.operation.progress.handoff.brief,identity=measuredBrief(root,plan);
+ if(!same(readAcceptedOperation(root,operationId),rec))refuse("configured-arm-operation-changed");
+ return {status:"brief-prepared",operationId,path:plan.path,sha256:plan.sha256,identity};
+}
 /** Retain the actual complete13-row brief and its fixed plain runtime file
  * before assignment. Caller text/path/readiness is never accepted. Unknown
  * unacknowledged publication refuses rather than overwriting a matching file.
@@ -337,4 +348,159 @@ export async function prepareConfiguredArmBrief(root,operationId,configuration){
   measuredBrief(root,plan);currentArm(rec,tool,handle,context);
   return {status:"brief-prepared",operationId,path:plan.path,sha256:plan.sha256,started:false};
  });
+}
+
+/** Actual expected prepared native row, never a supplied record. This reads
+ * immutable correspondence first; current writer/set/TOOL checks are separate.
+ * @param {string} root @param {any} rec @param {typeof import("./qualified-native.mjs")} native */
+function preparedNative(root,rec,native){
+ const r=rec.operation.request,h=rec.operation.progress.handoff,file=recordPath(root,r.expectedAttempt);
+ if(!existsSync(file))return null;
+ const source=readRecord(root,r.expectedAttempt),q=source.native?.qualified;
+ if(!["ready","native-prepared"].includes(h.stage)||!q||source.assignmentDigest!==sha256(JSON.stringify(source.assignment))||source.permission?.digest!==native.qualifiedNativeCommitment(q)||
+  !same(source.assignment,parseAssignment(configuredArmAssignmentData(r,h)))||!same(q.origins.configuredDispatch,h.source)||
+  !same(q.origins.configuredArm,{operationId:rec.operation.id,requestDigest:rec.operation.digest})||source.brief?.path!==h.brief.path||source.brief?.digest!==`sha256:${h.brief.sha256}`)refuse("configured-arm-native-record-changed");
+ const acknowledgement={attempt:source.attempt,assignmentDigest:source.assignmentDigest,permissionDigest:source.permission.digest};
+ if(h.native!==null&&!same(h.native,acknowledgement))refuse("configured-arm-native-record-changed");
+ return {source,acknowledgement};
+}
+/** Original-first accepted acknowledgement, no successor TOOL/current grant
+ * and no fresh launch instruction. Current worker readiness is not claimed.
+ * @param {string} root @param {string} operationId */
+export async function observeConfiguredArmNative(root,operationId){
+ root=realpathSync(root);const rec=readAcceptedOperation(root,operationId);
+ if(rec?.operation.kind!=="configured-dispatch"||rec.resource!==root)refuse("configured-arm-operation-missing");
+ if(rec.state!=="finished")return {status:"pending",operationId,started:false};
+ await loadQualifiedReservations();const native=await import("./qualified-native.mjs");
+ if(observedStamp(rec)===null)refuse("configured-arm-stamp-required");
+ const prepared=preparedNative(root,rec,native);if(prepared===null||!same(readAcceptedOperation(root,operationId),rec))refuse("configured-arm-native-record-changed");
+ return {status:"native-prepared",operationId,attempt:prepared.source.attempt,file:recordPath(root,prepared.source.attempt),repeated:true,started:false,launch:null};
+}
+/** Current policy before adopting only a proven-dead predecessor. A ready OP
+ * recovery context may preview lane-cut policy but can never admit a child.
+ * Native preparation that already exists must use exact past acknowledgement.
+ * @param {string} root @param {string} operationId @param {{tool:any}} configuration */
+export async function adoptConfiguredArmOperation(root,operationId,configuration){
+ if(!configuration||Object.keys(configuration).join()!=="tool")refuse("configured-arm-options");
+ root=realpathSync(root);const before=readAcceptedOperation(root,operationId);
+ if(before?.operation.kind!=="configured-dispatch"||before.resource!==root||before.state==="finished")refuse("configured-arm-operation-owner");
+ const io=defaultRunIo(),identity=io.identity(process.pid);if(identity===null)refuse("configured-arm-owner-unknown");
+ if(before.operation.owner.pid===process.pid&&before.operation.owner.identity===identity)return {status:"owned",operationId,adopted:false};
+ if(operationOwnerAlive(before.operation.owner,io))refuse("configured-arm-operation-owner-live");
+ const r=before.operation.request,tool=configuration.tool,stamped=before.operation.progress.stamp.acceptance!==null,input=admissionInput(r,stamped);
+ if(existsSync(recordPath(root,r.expectedAttempt)))refuse("configured-arm-native-ack-required");
+ const handle=captureConfiguredDispatch({...r.selection,revisions:input.revisions,taskId:r.taskId,tool}),context=captureConfiguredArmRecoveryContext(root,operationId,{tool});
+ const earlier=await configuredAdmissionPreflight(input,handle,context);
+ return withNativeTransaction(root,{operation:"configured-dispatch-adopt"},()=>{
+  const rec=readAcceptedOperation(root,operationId);if(rec?.operation.kind!=="configured-dispatch"||!same(rec.operation.request,r)||!same(rec.operation.owner,before.operation.owner)||rec.state==="finished"||existsSync(recordPath(root,r.expectedAttempt)))refuse("configured-arm-operation-changed");
+  if(operationOwnerAlive(rec.operation.owner,io))refuse("configured-arm-operation-owner-live");
+  decisiveConfiguredAdmission(input,earlier,handle,false,null,context);
+  retain(root,rec,()=>{rec.operation.owner={pid:process.pid,identity,token:randomUUID()};rec.events.push({at:new Date().toISOString(),op:"configured-backend-adopted"});});
+  return {status:"owned",operationId,adopted:true};
+ });
+}
+/** Acknowledgement of exact previously published private stamp only. Current
+ * source effects remain separately guarded; no baseline/suite is replayed.
+ * @param {string} root @param {string} operationId */
+function acknowledgeObservedStamp(root,operationId){
+ return withNativeTransaction(root,{operation:"configured-dispatch-stamp-ack"},()=>{
+  const rec=readAcceptedOperation(root,operationId);if(rec?.operation.kind!=="configured-dispatch"||rec.resource!==root)refuse("configured-arm-operation-missing");
+  const stamp=observedStamp(rec);if(stamp===null)return false;
+  const io=defaultRunIo(),owner=rec.operation.owner;if(!(owner.pid===process.pid&&owner.identity===io.identity(process.pid))&&operationOwnerAlive(owner,io))refuse("configured-arm-operation-owner-live");
+  const r=rec.operation.request;
+  releaseDeadExactWriteLock(r.stamp.working.index.path,r.operationId,r.stamp.working.index.lockToken,()=>{
+   const actual=readAcceptedOperation(root,operationId);
+   return same(actual,rec)&&observedStamp(actual)!==null&&operationDigest(readFileSync(r.stamp.working.index.path).toString("base64"))===r.stamp.working.index.resultDigest;
+  });
+  if(rec.operation.progress.stamp.acceptance!==null)return true;
+  retain(root,rec,()=>{rec.operation.progress.stamp.acceptance=stamp;rec.operation.progress.stamp.stage="ref-accepted";rec.events.push({at:new Date().toISOString(),op:"configured-stamp-acknowledged"});});
+  return true;
+ });
+}
+/** Metadata-only acknowledgement of an actual canonical prepared row. Different
+ * live backend ownership remains read-only; no launch is replayed here.
+ * @param {string} root @param {string} operationId @param {typeof import("./qualified-native.mjs")} native */
+function acknowledgePreparedNative(root,operationId,native){
+ return withNativeTransaction(root,{operation:"configured-dispatch-native-ack"},()=>{
+  const rec=readAcceptedOperation(root,operationId);if(rec?.operation.kind!=="configured-dispatch"||rec.resource!==root)refuse("configured-arm-operation-missing");
+  const prepared=preparedNative(root,rec,native);if(prepared===null)refuse("configured-arm-native-record-missing");
+  if(rec.state==="finished")return {...prepared,acknowledged:true};
+  const io=defaultRunIo(),owner=rec.operation.owner;
+  if(!(owner.pid===process.pid&&owner.identity===io.identity(process.pid))&&operationOwnerAlive(owner,io))return {...prepared,acknowledged:false};
+  if(rec.operation.progress.handoff.stage!=="ready"||rec.operation.claims.some((/** @type {any} */ claim)=>claim.releasedAt===null)||observedStamp(rec)===null)refuse("configured-arm-operation-handoff");
+  for(const claim of rec.operation.claims)if(readReservation(root,claim.resource)?.attempt===rec.attempt)refuse("configured-arm-operation-claim");
+  measuredBrief(root,rec.operation.progress.handoff.brief);native.validateQualifiedNative(root,prepared.source,true);
+  for(let i=0;i<rec.operation.request.lanes.length;i++)measuredLane(rec.operation.request,rec.operation.request.lanes[i],rec.operation.progress.lanes[i]);
+  retain(root,rec,()=>{const p=rec.operation.progress;p.handoff.native=prepared.acknowledgement;p.handoff.stage="native-prepared";
+   rec.operation.acceptance={stamp:p.stamp.acceptance,lanes:p.lanes.map((/** @type {any} */ lane)=>({role:lane.role,identity:lane.identity})),sourceDigest:p.handoff.source.digest,native:p.handoff.native};
+   rec.state="finished";rec.events.push({at:new Date().toISOString(),op:"configured-native-acknowledged"});});
+  return {...prepared,acknowledged:true};
+ });
+}
+/** Same original pipeline through durable claim handoff only. This fixed
+ * waypoint starts no native child and returns no serialized start authority.
+ * @param {string} root @param {string} operationId @param {{tool:any}} configuration */
+export async function prepareConfiguredArmHandoff(root,operationId,configuration){
+ if(!configuration||Object.keys(configuration).join()!=="tool")refuse("configured-arm-options");
+ root=realpathSync(root);const before=readAcceptedOperation(root,operationId);
+ if(before?.operation.kind!=="configured-dispatch"||before.resource!==root||before.state==="finished")refuse("configured-arm-operation-missing");
+ const r=before.operation.request,tool=configuration.tool;
+ if(!validConfiguredArmExecution(r.execution))refuse("configured-arm-execution-required");
+ if(existsSync(recordPath(root,r.expectedAttempt)))refuse("configured-arm-native-ack-required");
+ requireInstalledRuntimeAssets(tool,["configured-dispatch-operation","configured-dispatch-context","configured-dispatch-record","run-record"].map(n=>`tools/e2e/scripts/${n}.mjs`));
+ await adoptConfiguredArmOperation(root,operationId,{tool});
+ if(!acknowledgeObservedStamp(root,operationId))await executeConfiguredArmStamp(root,operationId,{tool});
+ const stage=readAcceptedOperation(root,operationId).operation.progress.handoff.stage;
+ if(stage==="held")await createConfiguredArmLanes(root,operationId,{tool});
+ if(readAcceptedOperation(root,operationId).operation.progress.handoff.brief?.stage!=="written")await prepareConfiguredArmBrief(root,operationId,{tool});
+ const input=admissionInput(r,true),handle=captureConfiguredDispatch({...r.selection,revisions:input.revisions,taskId:r.taskId,tool});
+ if(before.operation.progress.handoff.stage==="ready")input.admission.boundary="child-start";
+ let context=captureConfiguredArmOperationContext(root,operationId,{tool});
+ const earlier=await configuredAdmissionPreflight(input,handle,context);
+ withNativeTransaction(root,{operation:"configured-dispatch-handoff"},()=>{
+  const rec=readAcceptedOperation(root,operationId);if(rec?.operation.kind!=="configured-dispatch"||!same(rec.operation.request,r))refuse("configured-arm-operation-changed");
+  const h=rec.operation.progress.handoff;if(h.stage==="ready")return;
+  currentArm(rec,tool,handle,context,earlier);measuredBrief(root,h.brief);
+  if(h.stage==="held")retain(root,rec,()=>{h.stage="releasing";h.source=handle.capsule;rec.events.push({at:new Date().toISOString(),op:"configured-claim-handoff-start"});});
+  if(h.stage!=="releasing")refuse("configured-arm-operation-handoff");
+  for(const claim of rec.operation.claims){
+   if(claim.releasedAt!==null)continue;currentArm(rec,tool,handle,context);
+   const held=readReservation(root,claim.resource);if(held!==null){if(held.attempt!==rec.attempt)refuse("configured-arm-operation-claim");releaseReservation(root,{resource:claim.resource,attempt:rec.attempt});}
+   syncNativeFileNamespace(claim.file);retain(root,rec,()=>{claim.releasedAt=new Date().toISOString();if(claim.role==="product")rec.reservation.releasedAt=claim.releasedAt;});
+  }
+  currentArm(rec,tool,handle,context);retain(root,rec,()=>{h.stage="ready";rec.events.push({at:new Date().toISOString(),op:"configured-claim-handoff-ready"});});
+ });
+ return {status:"handoff-ready",operationId,attempt:r.expectedAttempt,started:false};
+}
+/** Same operation, original role/execution/brief/workers only. This prepares a
+ * native assignment through the existing canonical set-acquisition engine;
+ * the host still owns actual launch/callback readiness and current effects.
+ * @param {string} root @param {string} operationId @param {{tool:any}} configuration */
+export async function prepareConfiguredArmNative(root,operationId,configuration){
+ root=realpathSync(root);const observed=await observeConfiguredArmNative(root,operationId);if(observed.status==="native-prepared")return observed;
+ const before=readAcceptedOperation(root,operationId),r=before.operation.request;
+ await loadQualifiedReservations();const native=await import("./qualified-native.mjs");
+ if(preparedNative(root,before,native)!==null){const ack=acknowledgePreparedNative(root,operationId,native);
+  if(!ack.acknowledged)return {status:"native-prepared-unacknowledged",operationId,attempt:ack.source.attempt,repeated:true,started:false,launch:null};
+  return observeConfiguredArmNative(root,operationId);
+ }
+ if(!configuration||Object.keys(configuration).join()!=="tool")refuse("configured-arm-options");
+ const tool=configuration.tool;
+ if(!validConfiguredArmExecution(r.execution))refuse("configured-arm-execution-required");
+ requireInstalledRuntimeAssets(tool,["configured-dispatch-operation","configured-dispatch-context","qualified-native","run-record","configured-dispatch"].map(n=>`tools/e2e/scripts/${n}.mjs`));
+ await prepareConfiguredArmHandoff(root,operationId,{tool});
+ const ready=readAcceptedOperation(root,operationId),assignment=parseAssignment(configuredArmAssignmentData(r,ready.operation.progress.handoff));
+ const handle=captureConfiguredDispatch({...r.selection,revisions:{...r.selection.revisions,records:r.stamp.commit},taskId:r.taskId,tool});
+ const context=captureConfiguredArmOperationContext(root,operationId,{tool});
+ const started=await native.startQualifiedNativeRun(root,{assignment,configuredDispatch:handle,configuredArmContext:context});
+ const acknowledged=acknowledgePreparedNative(root,operationId,native);
+ if(!acknowledged.acknowledged)return {status:"native-prepared-unacknowledged",operationId,attempt:started.record.attempt,repeated:true,started:false,launch:null};
+ return {status:"native-prepared",operationId,attempt:started.record.attempt,file:started.file,repeated:false,started:false,
+  launch:{taskName:r.native.taskName,sessionId:r.native.sessionId,coordinatorTurnId:r.native.coordinatorTurnId,harness:r.role.harness,model:r.role.model,vehicle:r.role.vehicle,execution:structuredClone(r.execution),brief:assignment.brief}};
+}
+/** Original-ID automatic continuation. No caller program, grade, assignment,
+ * new cut/model or replacement destination can enter a captured operation.
+ * @param {string} root @param {string} operationId @param {{tool:any}} configuration */
+export async function continueConfiguredArmOperation(root,operationId,configuration){
+ return prepareConfiguredArmNative(root,operationId,configuration);
 }

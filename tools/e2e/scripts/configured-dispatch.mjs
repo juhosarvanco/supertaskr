@@ -21,6 +21,8 @@ const captured = new WeakMap();
  * is structural and never invokes this reader or the effect phase helper.
  * @type {typeof import("./qualified-native.mjs")|undefined} */
 let sourceValidator;
+/** Actual arm-origin sources only. @type {typeof import("./configured-dispatch-context.mjs")|undefined} */
+let armSourceValidator;
 /** @param {string} code @param {string} detail @returns {never} */
 function refuse(code, detail) { throw Object.assign(new Error(detail), { code }); }
 /** @param {any} value @param {string[]} required @param {string[]} [optional] */
@@ -88,6 +90,10 @@ export function verifyConfiguredDispatch(handle) {
   if (state.source !== undefined) {
     const source = retainedSource(state.source.root, state.source.attempt);
     if (source.permission.digest !== state.source.permissionDigest || operationDigest(source.native.qualified.origins) !== state.source.originsDigest) refuse("configured-dispatch-retained-changed", "The original retained source permission or origins differ");
+    if(Object.hasOwn(source.native.qualified.origins,"configuredArm")){
+      if(armSourceValidator===undefined)refuse("configured-arm-retained-source-not-loaded","Original arm source reader is unavailable");
+      armSourceValidator.validateConfiguredArmRun(state.source.root,source,state.tool);
+    }
   }
   const fresh = captureConfiguredDispatch({ ...state.selection, tool: state.tool });
   if (operationContent(fresh.capsule) !== operationContent(state.capsule)) refuse("configured-dispatch-origin-changed", "Original configured dispatch inputs or physical origins differ");
@@ -111,6 +117,9 @@ export async function captureConfiguredDispatchForRun(root, attempt, options = {
   const home = realpathSync(root), tool = options.tool ?? loadInstalledRecordTool();
   await loadQualifiedReservations(); sourceValidator ??= await import("./qualified-native.mjs");
   const rec = retainedSource(home, attempt), q = rec.assignment.qualified;
+  if(Object.hasOwn(rec.native.qualified.origins,"configuredArm")){
+    armSourceValidator??=await import("./configured-dispatch-context.mjs");armSourceValidator.validateConfiguredArmRun(home,rec,tool);
+  }
   const handle = captureConfiguredDispatch({ authorityRoot: home, projectId: q.projectId, revisions: q.revisions, taskId: q.taskId, legacyTokenMap: q.legacyTokenMap, tool });
   const context = configuredDispatchEffectContext(handle, rec.assignment);
   if (operationContent(context.capsule) !== operationContent(rec.native.qualified.origins.configuredDispatch)) refuse("configured-dispatch-original-changed", "Original configured source differs from its retained capsule");

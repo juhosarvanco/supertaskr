@@ -12,6 +12,12 @@ function shape(value, keys) { return !!value && typeof value === "object" && !Ar
 function oid(value) { return typeof value === "string" && /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/.test(value); }
 /** @param {any} value */
 function digest(value) { return typeof value === "string" && /^sha256:[0-9a-f]{64}$/.test(value); }
+/** Structural provenance only. Presence cannot redeem an own-OP context.
+ * @param {any} value */
+export function validConfiguredArmOrigin(value) {
+  return shape(value, ["operationId", "requestDigest"]) && typeof value.operationId === "string" &&
+    /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(value.operationId) && digest(value.requestDigest);
+}
 /** Structural validation only. Canonical committed reconstruction is the fixed
  * helper's job, at actual effects. No parser/build/process is loaded here.
  * @param {any} value */

@@ -3,9 +3,11 @@
  * current backend incarnation. It never replaces current grant admission. */
 import { realpathSync } from "node:fs";
 import { readAcceptedOperation, captureOperationRepository, operationOwnerAlive } from "./durable-operation.mjs";
-import { defaultRunIo, readReservation, assertOperationOwnership } from "./run-record.mjs";
+import { defaultRunIo, readReservation, assertOperationOwnership, parseAssignment, readRecord } from "./run-record.mjs";
 import { operationContent } from "./operation-record.mjs";
-import { validConfiguredDispatchRecord, validConfiguredArmStampedSource } from "./configured-dispatch-record.mjs";
+import { validConfiguredDispatchRecord, validConfiguredArmStampedSource, validConfiguredArmExecution, configuredArmAssignmentData } from "./configured-dispatch-record.mjs";
+import { validConfiguredArmOrigin } from "../../../cli/configured-native-reader.mjs";
+import { observeConfiguredArmBrief } from "./configured-dispatch-operation.mjs";
 import { requireInstalledRuntimeAssets } from "./records-check.mjs";
 
 /** @type {WeakMap<object,{root:string,id:string,digest:string,owner:any,tool:any,recovery:boolean}>} */
@@ -65,6 +67,44 @@ export function configuredArmOperationForAdmission(context,root,request,capsule)
   !["lane-cut","child-start"].includes(request.admission.boundary))refuse("configured-arm-operation-source");
  if(p.stamp.acceptance===null?!same(capsule,r.capsule):!validConfiguredArmStampedSource(r,capsule))refuse("configured-arm-operation-capsule");
  if(request.admission.boundary==="child-start"&&(p.handoff.stage!=="ready"||retained.recovery))refuse("configured-arm-operation-handoff");
- if(request.admission.boundary==="lane-cut"&&!["held","releasing"].includes(p.handoff.stage))refuse("configured-arm-operation-handoff");
+ if(request.admission.boundary==="lane-cut"&&!["held","releasing"].includes(p.handoff.stage)&&!(retained.recovery&&p.handoff.stage==="ready"))refuse("configured-arm-operation-handoff");
  return rec;
+}
+/** One exact assignment/brief/source join for preparing and retained reads.
+ * @param {any} op @param {any} assignment @param {string} attempt @param {any} capsule */
+function assignmentJoin(op,assignment,attempt,capsule){
+ const r=op.operation.request,h=op.operation.progress.handoff;
+ if(!validConfiguredArmExecution(r.execution))refuse("configured-arm-execution-required");
+ if(attempt!==r.expectedAttempt||!validConfiguredArmStampedSource(r,capsule)||!same(h.source,capsule)||!same(parseAssignment(configuredArmAssignmentData(r,h)),assignment))refuse("configured-arm-native-assignment");
+ const brief=observeConfiguredArmBrief(op.resource,op.operation.id);
+ if(brief.path!==h.brief.path||brief.sha256!==h.brief.sha256||!same(brief.identity,h.brief.identity))refuse("configured-arm-native-brief");
+}
+/** Current backend-only own-OP redemption inside canonical native start.
+ * JSON provenance is produced only AFTER the actual WeakMap/source join.
+ * @param {object} context @param {string} root @param {any} request @param {any} capsule
+ * @param {any} assignment @param {any} scope @param {string} attempt */
+export function configuredArmNativePreparation(context,root,request,capsule,assignment,scope,attempt){
+ const rec=configuredArmOperationForAdmission(context,root,request,capsule),r=rec.operation.request;
+ assignmentJoin(rec,assignment,attempt,capsule);
+ if(scope.workers.length!==r.lanes.length||r.lanes.some((/** @type {any} */ lane,/** @type {number} */ i)=>{
+  const worker=scope.workers.find((/** @type {any} */ row)=>row.roles.includes(lane.role));
+  return !worker||!same(worker.identity,rec.operation.progress.lanes[i].identity);
+ }))refuse("configured-arm-native-worker");
+ return {operationId:rec.operation.id,requestDigest:rec.operation.digest};
+}
+/** Fixed read-only retained-source check; no lock, PID adoption or admission.
+ * Original final/preparation facts join both directions before later effects.
+ * @param {string} root @param {any} source @param {any} tool */
+export function validateConfiguredArmRun(root,source,tool){
+ requireInstalledRuntimeAssets(tool,["configured-dispatch-context","configured-dispatch-operation","configured-dispatch-record"].map(name=>`tools/e2e/scripts/${name}.mjs`));
+ root=realpathSync(root);const origin=source.native?.qualified?.origins?.configuredArm;
+ if(!validConfiguredArmOrigin(origin)||!same(readRecord(root,source.attempt),source))refuse("configured-arm-retained-source");
+ const rec=readAcceptedOperation(root,origin.operationId),h=rec?.operation?.progress?.handoff;
+ if(!validConfiguredDispatchRecord(rec)||rec.resource!==root||rec.state!=="finished"||rec.operation.digest!==origin.requestDigest||rec.operation.acceptance===null||h?.stage!=="native-prepared"||
+  !same(rec.operation.request.tool,tool)||!same(h.native,{attempt:source.attempt,assignmentDigest:source.assignmentDigest,permissionDigest:source.permission?.digest}))refuse("configured-arm-retained-source");
+ const r=rec.operation.request;
+ for(const role of ["product","records"])if(!same(captureOperationRepository(r.repositories[role].root,r.selection.revisions[role],{forEffect:false}),r.repositories[role]))refuse("configured-arm-operation-origin");
+ assignmentJoin(rec,source.assignment,source.attempt,source.native.qualified.origins.configuredDispatch);
+ if(!same(readAcceptedOperation(root,origin.operationId),rec)||!same(readRecord(root,source.attempt),source))refuse("configured-arm-retained-source");
+ return origin;
 }

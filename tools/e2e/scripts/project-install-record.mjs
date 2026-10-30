@@ -30,6 +30,12 @@ const hash=value=>createHash("sha256").update(value).digest("hex");
 function bank(ref){return shape(ref,["operationId","requestDigest","receiptDigest","stage","completedStage","recordsCommit","productCommit"])&&id(ref.operationId)&&[ref.requestDigest,ref.receiptDigest].every(digest)&&Number.isInteger(ref.stage)&&ref.stage>=0&&ref.stage<=8&&ref.completedStage===8&&oid(ref.recordsCommit)&&(ref.productCommit===null||oid(ref.productCommit));}
 /** @param {any} value */
 function methodPath(value){return typeof value==="string"&&/^method\/skills\/(?:supertaskr-interview|supertaskr-seat)\/(?:[A-Za-z0-9_.-]+\/)*[A-Za-z0-9_.-]+$/.test(value)&&!value.split("/").some((/** @type {string} */ part)=>[".",".."].includes(part));}
+/** Structural path vocabulary only; actual accepted membership/bytes remain
+ * the finite installer and completed-genesis engine's responsibility.
+ * @param {any} value */
+export function isProjectInstallationProductPath(value){
+ return value===".codex/hooks.json"||typeof value==="string"&&value.startsWith(".agents/skills/")&&methodPath(`method/skills/${value.slice(".agents/skills/".length)}`);
+}
 /** @param {any} assets @param {any} r */
 function validAssets(assets,r){
  if(!shape(assets,["version","kind","productRoot","productRevision","repository","recordsRoot","association","tool","configuration","product","metadata","membership","readiness","digest"])||assets.version!==1||assets.kind!=="project-install-assets"||

@@ -66,3 +66,19 @@ test("arm planning requires its actual installed producer member and refuses una
     expect([f.product,f.records].map(root=>privateGit(root,["rev-parse","HEAD"]))).toEqual(heads);expect(existsSync(f.lane.lanes[0]!.checkout)).toBe(false);
   }finally{f.cleanup();}
 });
+
+test("actual approved non-independent review cannot be promoted by the dispatch stamp before private effects",async()=>{
+ test.setTimeout(240_000);const f=await fixture();
+ try{
+  const original=readFileSync(path.join(f.records,f.cardPath),"utf8"),snapshot=()=>[f.product,f.records].map(root=>({head:privateGit(root,["rev-parse","HEAD"]),refs:privateGit(root,["show-ref"]),index:readFileSync(path.join(root,".git/index")).toString("base64")}));
+  for(const review of ["same-model","self-verified"]){
+   putPrivate(f.records,f.cardPath,original.replace("review:\n",`review: ${review}\n`));privateGit(f.records,["add",f.cardPath]);privateGit(f.records,["commit","-qm",`Authored explicit ${review} review claim`]);f.approve();
+   const before=snapshot(),grant=readFileSync(path.join(f.product,".supertaskr/dispatch-grant.yaml"));
+   await expect(f.arm.captureConfiguredArmPlan(f.product,f.request,{tool:f.tool})).rejects.toMatchObject({code:"configured-arm-stamp-substantive"});
+   expect(snapshot()).toEqual(before);expect(readFileSync(path.join(f.product,".supertaskr/dispatch-grant.yaml"))).toEqual(grant);expect(readFileSync(path.join(f.records,f.cardPath),"utf8")).toBe(original.replace("review:\n",`review: ${review}\n`));expect(existsSync(f.lane.lanes[0]!.checkout)).toBe(false);
+  }
+  const independent=original.replace("review:\n",'review: "independent" # retain this exact authored guarantee\n');putPrivate(f.records,f.cardPath,independent);privateGit(f.records,["add",f.cardPath]);privateGit(f.records,["commit","-qm","Authored existing independent review"]);f.approve();
+  const before=snapshot(),proposal=await f.arm.captureConfiguredArmPlan(f.product,f.request,{tool:f.tool}),data=f.arm.configuredArmPlanData(proposal);
+  expect(Buffer.from(data.stamp.writes.find((write:any)=>write.path===f.cardPath).base64,"base64").toString("utf8")).toContain('review: "independent" # retain this exact authored guarantee');expect(snapshot()).toEqual(before);
+ }finally{f.cleanup();}
+});

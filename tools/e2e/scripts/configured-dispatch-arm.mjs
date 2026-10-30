@@ -12,7 +12,7 @@ import { configuredDispatchBrief, proposedLanes } from "./configured-dispatch-br
 import { configuredAdmissionPreflight } from "./qualified-admission.mjs";
 import { captureCommittedInputs, captureTaskSnapshot } from "./records.mjs";
 import { conventionsTextFromSource } from "./docs-scan.mjs";
-import { stampCard, laneSpellings, outcomeSlug, questionHolds, readQuestions } from "./dispatch-brief.mjs";
+import { stampCard, cardDrift, laneSpellings, outcomeSlug, questionHolds, readQuestions } from "./dispatch-brief.mjs";
 import { loadProjectSettings } from "./project-settings.mjs";
 import { captureOperationRepository, captureQualifiedOperationRepository } from "./durable-operation.mjs";
 import { operationContent, operationDigest } from "./operation-record.mjs";
@@ -57,6 +57,8 @@ function absentDestination(file) {
   catch (error) { if (/** @type {any} */ (error).code !== "ENOENT") throw error; }
   return { path: parent, device: String(stat.dev), inode: String(stat.ino) };
 }
+/** Shared measured absent destination, not a lane creation permission. */
+export { absentDestination as captureConfiguredLaneDestination };
 /** Fixed supported pre-push is qualified by its original canonical engine;
  * unknown hooks/config/routing still refuse, without disabling any guard.
  * @param {string} root @param {string} revision @param {any} tool */
@@ -137,8 +139,13 @@ export async function captureConfiguredArmPlan(productRoot, request, configurati
   const targetRefs = { product: git(root, ["symbolic-ref", "-q", "HEAD"]), records: git(repositories.records.root, ["symbolic-ref", "-q", "HEAD"]) };
   const tier = context.verification.tier ?? context.verification.derivedTier;
   const fields = { status: "building", builder: JSON.stringify(executor.requested), verifier: JSON.stringify(verifier.requested), tier, review: "independent" };
-  const after = stampCard(snapshot.content, fields, { insertAfter: { tier: "size" } }).text;
+  /** @type {Record<string,string>} */ const writeFields={...fields};
+  // Retain exact existing independent scalar bytes (quotes/comments included).
+  // Changing an existing different review guarantee still needs new approval.
+  if(extractFrontmatter(snapshot.content,snapshot.task.relativePath).data?.review==="independent")delete writeFields.review;
+  const after = stampCard(snapshot.content, writeFields, { insertAfter: { tier: "size" } }).text;
   if (extractFrontmatter(after, snapshot.task.relativePath).body !== extractFrontmatter(snapshot.content, snapshot.task.relativePath).body) refuse("configured-arm-card-contract");
+  if (!cardDrift(snapshot.content, after).mechanical) refuse("configured-arm-stamp-substantive");
   const loaded = loadProjectSettings({ productRoot: root, productRevision: selected.revisions.product, tool });
   if (loaded.status !== "ready") refuse(loaded.code);
   const checker = createRecordChecker({ profile: loaded.settings.records.validation, tool }), captured = checker.capture({ productRoot: root, productRevision: selected.revisions.product, recordsRevision: selected.revisions.records });

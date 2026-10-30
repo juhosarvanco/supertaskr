@@ -15,10 +15,13 @@ const USAGE = ["supertaskr dispatch [--root <PRODUCT>] --run <operation> <run fl
   "  --view [selection.json] [--task T-N] [--full] reads the committed selected board and installed METHOD",
   "  --brief [selection.json] --task T-N [--role executor|verifier] [--lane-intent file] assembles the full readonly normative brief",
   "  --grade --attempt T-N-aN [--suite original-id] captures actual held-worker PRODUCT suites without writing a worker token",
+  "  --arm --operation ID --task T-N --session ID --turn ID --effort low|medium|high|xhigh --deadline ISO-UTC|none --budget TOKENS|none [--lane-intent file] prepares original qualified lanes, brief and native assignment",
+  "  --continue --operation ID continues only that captured operation; accepted replay never launches a child",
+  "  native-prepared means started:false; actual host launch separately requires canonical installed readiness and ordinary trust",
   "  --run start --assignment <file> uses exact committed PRODUCT/RECORDS/TOOL",
   "  --admission-preflight <file> reads the same configured context without effects",
   ...Object.entries(VERB_DIALS).map(([verb, flags]) => `  --run ${verb} flags: ${flags.map(flag => `--${flag}`).join(" ")}`),
-  "  legacy next/brief/arm, automatic lane creation and named resume vehicles remain unsupported by this configured route"].join("\n");
+  "  legacy next/brief/arm and named resume vehicles remain unsupported by this configured route"].join("\n");
 /** @param {string} code @param {string} message @returns {never} */
 function refuse(code, message) { throw Object.assign(new Error(message), { code }); }
 function commandTool() {
@@ -29,7 +32,7 @@ function commandTool() {
 /** Same canonical lifecycle dials, strict finite tokenization. Parsing never
  * adds a program/policy path or guesses a missing selector. @param {string[]} argv */
 function parse(argv) {
-  const known = new Set(["root", "run", "view", "brief", "grade", "suite", "task", "role", "full", "lane-intent", "admission-preflight", ...Object.values(VERB_DIALS).flat()]);
+  const known = new Set(["root", "run", "view", "brief", "grade", "suite", "task", "role", "full", "lane-intent", "arm", "continue", "operation", "session", "turn", "effort", "deadline", "budget", "admission-preflight", ...Object.values(VERB_DIALS).flat()]);
   /** @type {Record<string,string>} */ const options = {};
   let replace = false, full = false;
   for (let i = 0; i < argv.length; i++) {
@@ -39,7 +42,7 @@ function parse(argv) {
     if (key === "replace") { if (replace) refuse("configured-dispatch-usage", "Duplicate --replace"); replace = true; continue; }
     if (key === "full") { if (full) refuse("configured-dispatch-usage", "Duplicate --full"); full = true; continue; }
     if (Object.hasOwn(options, key)) refuse("configured-dispatch-usage", `Duplicate --${key}`);
-    if (key === "grade") { options[key] = ""; continue; }
+    if (["grade","arm","continue"].includes(key)) { options[key] = ""; continue; }
     if (["view", "brief"].includes(key) && (argv[i + 1] === undefined || argv[i + 1]?.startsWith("--"))) { options[key] = ""; continue; }
     const value = argv[++i]; if (value === undefined || value.startsWith("--")) refuse("configured-dispatch-usage", `--${key} requires one value`);
     options[key] = value;
@@ -51,6 +54,29 @@ export async function main(argv) {
   if (argv.length === 1 && ["--help", "-h"].includes(/** @type {string} */ (argv[0]))) { process.stdout.write(USAGE + "\n"); return 0; }
   try {
     const { options, replace, full } = parse(argv), root = realpathSync(options.root ?? process.cwd());
+    if(options.arm!==undefined||options.continue!==undefined){
+      const continuing=options.continue!==undefined;
+      const allowed=continuing?["root","continue","operation"]:["root","arm","operation","task","session","turn","effort","deadline","budget","lane-intent"];
+      const required=continuing?["operation"]:["operation","task","session","turn","effort","deadline","budget"];
+      if(replace||full||Object.keys(options).some(key=>!allowed.includes(key))||required.some(key=>options[key]===undefined)||!/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(options.operation??""))refuse("configured-dispatch-usage","Arm requires its explicit original selectors and execution limits; continue accepts only the original --operation");
+      const owner=await import("./configured-dispatch-operation.mjs");
+      if(continuing){
+        // An actual accepted fact precedes successor TOOL/config qualification.
+        // This returns no current launch/readiness permission.
+        const observed=await owner.observeConfiguredArmNative(root,/** @type {string} */(options.operation));
+        if(observed.status==="native-prepared"){process.stdout.write(JSON.stringify(observed)+"\n");return 0;}
+        const result=await owner.continueConfiguredArmOperation(root,/** @type {string} */(options.operation),{tool:commandTool()});
+        process.stdout.write(JSON.stringify(result)+"\n");return result.status==="native-prepared"?0:3;
+      }
+      const tool=commandTool(),arm=await import("./configured-dispatch-arm.mjs"),brief=await import("./configured-dispatch-brief.mjs");
+      const proposal=await arm.captureConfiguredArmPlan(root,{operationId:/** @type {string} */(options.operation),taskId:/** @type {string} */(options.task),
+        native:{sessionId:/** @type {string} */(options.session),coordinatorTurnId:/** @type {string} */(options.turn)},
+        execution:{effort:/** @type {string} */(options.effort),deadline:/** @type {string} */(options.deadline),budget:/** @type {string} */(options.budget)},
+        ...(options["lane-intent"]===undefined?{}:{laneIntent:brief.readConfiguredLaneIntent(options["lane-intent"])})},{tool});
+      await owner.beginConfiguredArmOperation(proposal,{tool});
+      const result=await owner.prepareConfiguredArmNative(root,/** @type {string} */(options.operation),{tool});
+      process.stdout.write(JSON.stringify(result)+"\n");return result.status==="native-prepared"?0:3;
+    }
     if (options.grade !== undefined) {
       if(replace||full||options.attempt===undefined||Object.keys(options).some(key=>!["root","grade","attempt","suite"].includes(key))) refuse("configured-dispatch-usage", "Grade requires --attempt and accepts only --root and an optional original --suite");
       const tool=commandTool(),grades=await import("./configured-dispatch-grade.mjs");

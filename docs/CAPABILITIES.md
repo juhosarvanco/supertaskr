@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1844 at least behaviours** — 1840 extracted sentences + 4 at least named-not-extracted (listed at the end) — across 128 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1855 at least behaviours** — 1851 extracted sentences + 4 at least named-not-extracted (listed at the end) — across 130 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -565,6 +565,7 @@ Census: **1844 at least behaviours** — 1840 extracted sentences + 4 at least n
 
 - configured lane constructor freezes original private stamp, exact absent destinations and owed original baseline without product effects
 - arm planning requires its actual installed producer member and refuses unapproved contract drift before any private or lane effect
+- actual approved non-independent review cannot be promoted by the dispatch stamp before private effects
 
 ## configured-dispatch-brief
 
@@ -585,6 +586,8 @@ Census: **1844 at least behaviours** — 1840 extracted sentences + 4 at least n
 - canonical review initialization admits only an empty independent dispatch claim and rejects weaker or changed claims
 - actual configured lane creation preserves foreign destinations and reuses only its retained physical branch
 - actual owned brief persistence rejects a foreign namespace and retains exact fixed Markdown before assignment
+- installed configured arm releases only its claims and canonically prepares the exact original native assignment
+- cold configured continuation adopts only the actual dead backend after current approval and keeps original execution data
 
 ## configured-dispatch-view
 
@@ -673,6 +676,11 @@ Census: **1844 at least behaviours** — 1840 extracted sentences + 4 at least n
 
 - installed external configured preparation seals the original TOOL verifier role and cold strict start consumes it
 - configured dispatch requires both actual native preparation owners even when omitted files remain present
+
+## configured-verifier-plan
+
+- configured verifier constructor derives complete actual finalized source and original role without bench or preparation effects
+- configured verifier constructor refuses an actual observed executor before canonical final collection
 
 ## crescendo
 
@@ -2029,6 +2037,15 @@ Census: **1844 at least behaviours** — 1840 extracted sentences + 4 at least n
 - T-348 VC2 — active contract and selected CLI omit historical sections while retaining committed bytes and criteria
 - T-348 attacks — exact CRLF bytes subordinate ids noncommit refs and retained captures remain distinct
 - T-348 attacks — committed association schemas normalized roots shallow and missing parent histories refuse distinctly
+
+## repository-read-observation
+
+- a synchronous repository observation returns detached facts and cannot retain caller mutations
+- the uncached exit audit refuses a newly active hook before an observation can return
+- effect and observation modes remain distinct and failed generic captures create no allowance
+- async nested and exceptional reads leave no open repository observation
+- cached reads still immediately refuse inherited Git routing
+- repository metadata keeps exact linked-worktree paths containing a newline
 
 ## resume-fallback
 
