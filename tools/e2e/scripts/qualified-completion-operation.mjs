@@ -1,5 +1,5 @@
-/** Same-operation protected private completion for the supported records-only
- * exact-output route. PRODUCT publication/CI routes remain pending. */
+/** Same-operation protected private completion. A product-owed route requires
+ * its original accepted publication and exact CI proofs before new effects. */
 import {execFileSync} from "node:child_process";
 import {randomUUID} from "node:crypto";
 import {lstatSync,readFileSync,realpathSync} from "node:fs";
@@ -9,8 +9,9 @@ import {operationContent,operationDigest,operationPayload,operationWork,validOpe
 import {acceptedOperationPath,captureOperationRepository,operationOwnerAlive,readAcceptedOperation} from "./durable-operation.mjs";
 import {readOperationRef,operationDestinationContains,acceptOperationRef} from "./operation-ref.mjs";
 import {loadQualifiedDeliveryPolicy} from "./qualified-admission.mjs";
-import {observeQualifiedLocalDelivery,assertQualifiedDeliveryContinuation} from "./qualified-delivery-operation.mjs";
+import {observeQualifiedLocalDelivery,assertQualifiedDeliveryContinuation,assertQualifiedDeliveryRecovery} from "./qualified-delivery-operation.mjs";
 import {captureQualifiedCompletionProposal,qualifiedCompletionWriteSet,QualifiedCompletionFinding} from "./qualified-delivery-completion.mjs";
+import {qualifiedCompletionDeliveryFacts} from "./qualified-completion-record.mjs";
 import {requireInstalledRuntimeAssets,verifyInstalledRecordTool} from "./records-check.mjs";
 import {loadProjectSettings} from "./project-settings.mjs";
 import {assertExactRecordTransformations,prepareExactWriteTree,materializeExactWrites,releaseDeadExactWriteLock,
@@ -55,7 +56,7 @@ function observed(rec){
 /** @param {any} rec */
 function receipt(rec){const c=rec.operation.completion,p=c.plan;return freeze({status:"records-completed",operationId:rec.operation.id,taskId:rec.operation.request.authority.taskId,
  authorityDigest:rec.operation.request.authority.authorityDigest,requestDigest:rec.operation.digest,completionDigest:c.digest,...c.acceptance,
- receiptPath:p.receiptPath,publication:"not-owed",ci:"not-owed",validation:p.validation});}
+ receiptPath:p.receiptPath,publication:p.receipt.publication,ci:p.receipt.ci,validation:p.validation});}
 /** @param {string} root @param {any} rec */
 function cleanup(root,rec){const c=rec.operation.completion;try{return releaseDeadExactWriteLock(c.plan.index.path,rec.operation.id,c.plan.index.lockToken,()=>observed(rec));}
  catch{return {status:"unavailable",code:"QUALIFIED_COMPLETION_ACCEPTED_LOCK_UNAVAILABLE"};}}
@@ -78,7 +79,9 @@ function finish(root,rec,diagnostics){
 }
 /** @param {string} root @param {any} rec @param {any} tool */
 function policy(root,rec,tool){
- assertQualifiedDeliveryContinuation(root,rec);const c=rec.operation.completion,p=c.plan;
+ assertQualifiedDeliveryContinuation(root,rec,{tool});const c=rec.operation.completion,p=c.plan;
+ const delivery=qualifiedCompletionDeliveryFacts(rec.operation.request,rec.operation);
+ if(delivery===null||!same(delivery,{publication:p.receipt.publication,ci:p.receipt.ci}))refuse("QUALIFIED_COMPLETION_PROOFS_CHANGED");
  requireInstalledRuntimeAssets(tool,["qualified-completion-operation","qualified-completion-record","qualified-delivery-completion","project-init-operation"].map(n=>`tools/e2e/scripts/${n}.mjs`));
  verifyInstalledRecordTool(tool);if(!same(tool,p.tool))refuse("QUALIFIED_COMPLETION_TOOL_CHANGED");
  const config=loadProjectSettings({productRoot:root,productRevision:rec.operation.request.route.policyRevision,tool});
@@ -120,13 +123,18 @@ async function execute(root,id,configuration,diagnostics,replay=false){
   if(replay&&rec.operation.completion===undefined)refuse("QUALIFIED_COMPLETION_ABSENT");
   if(!configuration||Object.keys(configuration).join(",")!=="tool")refuse("QUALIFIED_COMPLETION_CONFIGURATION");
   requireInstalledRuntimeAssets(configuration.tool,["qualified-completion-operation","qualified-completion-record","qualified-delivery-completion","project-init-operation"].map(n=>`tools/e2e/scripts/${n}.mjs`));
+  if(rec.operation.completion===undefined&&rec.operation.request.route.publicationOwed){
+   if(!rec.operation.publication?.acceptance)refuse("QUALIFIED_COMPLETION_PUBLICATION_PENDING");
+   if(qualifiedCompletionDeliveryFacts(rec.operation.request,rec.operation)===null)refuse("QUALIFIED_COMPLETION_CI_PENDING");
+  }
   const io=runs.defaultRunIo(),identity=io.identity(process.pid);if(identity===null)refuse("QUALIFIED_COMPLETION_OWNER_UNKNOWN");
   if(rec.operation.owner.pid!==process.pid&&operationOwnerAlive(rec.operation.owner,io))refuse("QUALIFIED_COMPLETION_OWNER_LIVE");
+  assertQualifiedDeliveryRecovery(root,rec,configuration);
   rec.operation.owner={pid:process.pid,identity,token:randomUUID()};persist(root,rec);
   if(rec.operation.completion===undefined){
    const local=observeQualifiedLocalDelivery(root,id);if(local?.status!=="local-integrated")refuse("QUALIFIED_COMPLETION_LOCAL_PENDING");
    if(rec.operation.localAcceptance===null){rec=structuredClone(local.record);persist(root,rec);}
-   assertQualifiedDeliveryContinuation(root,rec);
+   assertQualifiedDeliveryContinuation(root,rec,configuration);
    for(const landing of rec.operation.request.landings){const lock=`${landing.working.index.path}.lock`;
     try{lstatSync(lock);}catch(error){if(/** @type {NodeJS.ErrnoException} */(error).code==="ENOENT")continue;throw error;}
     releaseDeadExactWriteLock(landing.working.index.path,id,landing.working.index.lockToken,()=>observeQualifiedLocalDelivery(root,id)?.status==="local-integrated");

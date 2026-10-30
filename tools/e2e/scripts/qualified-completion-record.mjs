@@ -3,6 +3,12 @@
 import {createHash} from "node:crypto";
 import path from "node:path";
 import {operationContent,operationDigest,operationPayload,operationWork} from "./operation-record.mjs";
+import {validQualifiedPublicationProgress} from "./qualified-publication-record.mjs";
+import {validQualifiedCiProgress} from "./qualified-ci-record.mjs";
+export const QUALIFIED_COMPLETION_TRAILER="supertaskr-delivery-completion:";
+// Exact historical protocol bytes are read only. New proposals use the
+// canonical lowercase trailer and expose no legacy-writing option.
+export const QUALIFIED_COMPLETION_LEGACY_TRAILER="Supertaskr-Delivery-Completion:";
 /** @param {any} v @param {string[]} fields */
 const shape=(v,fields)=>v&&typeof v==="object"&&!Array.isArray(v)&&Object.keys(v).sort().join("\0")===[...fields].sort().join("\0");
 /** @param {any} v */
@@ -13,11 +19,22 @@ const base64=v=>typeof v==="string"&&Buffer.from(v,"base64").toString("base64")=
 const same=(a,b)=>operationContent(a)===operationContent(b);
 /** @param {any} actor */
 function validActor(actor){return shape(actor,["name","email","date"])&&[actor.name,actor.email].every(v=>typeof v==="string"&&v.trim()&&!/[\r\n<>\0]/.test(v))&&typeof actor.date==="string"&&/^-?[0-9]+ [+-][0-9]{4}$/.test(actor.date);}
-/** @param {any} value @param {any} request @param {string} requestDigest */
-export function validQualifiedCompletionProgress(value,request,requestDigest){
+/** Pure projection of the original same-operation proofs, never caller
+ * authority or a new provider observation. A full route cannot be completed
+ * with a local receiver, missing publication or unaccepted CI evidence.
+ * @param {any} request @param {any} progress */
+export function qualifiedCompletionDeliveryFacts(request,progress){
+ if(!request.route.publicationOwed)return {publication:"not-owed",ci:"not-owed"};
+ if(!validQualifiedPublicationProgress(progress?.publication,request)||progress.publication.acceptance===null||
+  !validQualifiedCiProgress(progress.validation,request,progress.publication)||progress.validation.acceptance===null)return null;
+ return operationPayload({publication:progress.publication.acceptance,ci:progress.validation.acceptance});
+}
+/** @param {any} value @param {any} request @param {string} requestDigest @param {any} [progress] */
+export function validQualifiedCompletionProgress(value,request,requestDigest,progress){
  try{
+  const delivery=qualifiedCompletionDeliveryFacts(request,progress);
   if(!shape(value,["version","plan","digest","phase","intent","acceptance"])||value.version!==1||!digest(value.digest)||value.digest!==operationDigest(value.plan)||
-   !["captured","objects-start","objects-prepared","working-start","working-prepared","accepted"].includes(value.phase)||request.route.publicationOwed)return false;
+   !["captured","objects-start","objects-prepared","working-start","working-prepared","accepted"].includes(value.phase)||delivery===null)return false;
   const p=value.plan,l=request.landings.find((/** @type {any} */ l)=>l.roles.includes("records"));
   if(!l||l.repository.root===request.coordinator.root||l.repository.commonDir===request.coordinator.commonDir||
    !shape(p,["version","kind","operationId","deliveryRequestDigest","repository","expectedRevision","targetRef","tool","profile","configurationDigest","cardPath","receiptPath","receipt","writes","tree","preimages","index","identity","message","commit","commitBase64","validation"])||
@@ -25,7 +42,8 @@ export function validQualifiedCompletionProgress(value,request,requestDigest){
    p.expectedRevision!==l.commit||p.targetRef!==l.ref||p.cardPath!==request.authority.frozenAuthority.preparation.card.path||
    p.receiptPath!==`docs/checkpoints/delivery-${operationWork(request.operationId).slice(3)}.json`||!digest(p.configurationDigest)||
    !/^[0-9a-f]{40}$/.test(p.tree)||!/^[0-9a-f]{40}$/.test(p.commit)||!base64(p.commitBase64)||!shape(p.identity,["author","committer"])||!validActor(p.identity.author)||!validActor(p.identity.committer)||
-   p.message!==`Complete ${request.authority.taskId} private records\n\nSupertaskr-Delivery-Completion: ${request.operationId}\n`)return false;
+   ![QUALIFIED_COMPLETION_TRAILER,QUALIFIED_COMPLETION_LEGACY_TRAILER].some(trailer=>p.message===`Complete ${request.authority.taskId} private records\n\n${trailer} ${request.operationId}\n`)||
+   request.route.publicationOwed&&!same(p.tool,request.route.publication.tool))return false;
   const raw=Buffer.from(p.commitBase64,"base64"),actor=(/** @type {any} */ a)=>`${a.name} <${a.email}> ${a.date}`;
   if(!raw.equals(Buffer.from(`tree ${p.tree}\nparent ${p.expectedRevision}\nauthor ${actor(p.identity.author)}\ncommitter ${actor(p.identity.committer)}\n\n${p.message}`))||
    createHash("sha1").update(Buffer.from(`commit ${raw.length}\0`)).update(raw).digest("hex")!==p.commit)return false;
@@ -34,7 +52,7 @@ export function validQualifiedCompletionProgress(value,request,requestDigest){
   const receipt=p.writes.find((/** @type {any} */ w)=>w.path===p.receiptPath);
   if(!same(JSON.parse(Buffer.from(receipt.base64,"base64").toString("utf8")),p.receipt)||p.receipt.kind!=="qualified-delivery-receipt"||p.receipt.operationId!==request.operationId||
    p.receipt.taskId!==request.authority.taskId||p.receipt.authorityDigest!==request.authority.authorityDigest||p.receipt.requestDigest!==requestDigest||
-   p.receipt.publication!=="not-owed"||p.receipt.ci!=="not-owed"||p.receipt.completion?.expectedRevision!==p.expectedRevision||
+   !same(p.receipt.publication,delivery.publication)||!same(p.receipt.ci,delivery.ci)||p.receipt.completion?.expectedRevision!==p.expectedRevision||
    !same(p.receipt.source,{executor:request.authority.executor,verifier:request.authority.verifier,verdictDigest:request.authority.frozenAuthority.review.verdict.digest}))return false;
   const i=p.index;
   if(!Array.isArray(p.preimages)||p.preimages.length!==p.writes.length||new Set(p.preimages.map((/** @type {any} */ v)=>v.path)).size!==p.writes.length||

@@ -12,6 +12,7 @@ import {normalizeExactDeliveryCiRequirement} from "../scripts/qualified-delivery
 import {operationDigest} from "../scripts/operation-record.mjs";
 import {validQualifiedDeliveryRequest} from "../scripts/qualified-delivery-record.mjs";
 import {validQualifiedCiProgress,qualifiedDeliveryCiAcceptance,retainQualifiedCiHistory} from "../scripts/qualified-ci-record.mjs";
+import {qualifiedCompletionDeliveryFacts} from "../scripts/qualified-completion-record.mjs";
 import {privateRecordFixture,putPrivate,sha} from "./private-record-fixture";
 
 const selection={provider:"github-actions",host:"github.com",repository:"fixture/project",workflow:".github/workflows/ci.yml",event:"push",checks:["Build / Linux"],ref:"refs/heads/main",headCommit:"1".repeat(40)};
@@ -132,7 +133,7 @@ test("synthetic CI progress shape retains all headers and complete receipts but 
   const facts=actualGitHubDeliveryCiObservation(observed,requirement),{ref,headCommit,...ci}=selection;
   // Format-only parent data, deliberately NOT a valid qualified request or
   // authority. No operation/writer API is invoked with this synthetic input.
-  const requestData:any={route:{name:"protected-atomic-push-v1",publication:{ci,destination:{ref,endpoint:{kind:"github"}},commit:headCommit,tool,digest:`sha256:${"a".repeat(64)}`}}};
+  const requestData:any={route:{name:"protected-atomic-push-v1",publicationOwed:true,publication:{ci,destination:{ref,endpoint:{kind:"github"}},commit:headCommit,tool,digest:`sha256:${"a".repeat(64)}`}}};
   const publicationData={acceptance:{metadataFixtureOnly:true}};
   expect(validQualifiedDeliveryRequest(requestData)).toBe(false);
   const value:any={version:1,phase:"validated",selection,selectionDigest:operationDigest(selection),requirement,providerRun:selected.providerRun,selectedAt:selected.observedAt,
@@ -161,6 +162,13 @@ test("synthetic CI progress shape retains all headers and complete receipts but 
   }
   expect(history).toHaveLength(4);expect(JSON.stringify(history[0].progress)).toBe(oldBytes);
   expect(validQualifiedCiProgress({...progress,history},requestData,publicationData)).toBe(true);
+  const s=requestData.route.publication,asset=(path:string)=>({path,sha256:"b".repeat(64)}),at=selected.observedAt;
+  Object.assign(s,{tree:"c".repeat(40),correlationRef:"refs/supertaskr/fixture/publication",configuration:{digest:`sha256:${"d".repeat(64)}`},hook:{node:{path:"/format/node"},nodeSha256:"b".repeat(64),entry:"/format/hook.mjs"}});s.destination.expectedOld="e".repeat(40);
+  const exactPublication={version:1,phase:"published",launches:[{sequence:1,stage:"push",token:"launch-00000000-0000-0000-0000-000000000000",owner:{pid:1,identity:"format-only",token:"format-only"},process:{pid:2,identity:"format-only",group:2},node:asset("/format/node"),git:asset("/format/git"),entry:asset("/format/qualified-publication-launch.mjs"),startedAt:at,gitStarted:true,result:{kind:"observed-dead",observedAt:at}}],checks:{tokenDigest:`sha256:${"f".repeat(64)}`,context:{configurationDigest:s.configuration.digest,toolManifestDigest:tool.manifestDigest,required:["python"]},tree:s.tree,attribution:"observed-artifact"},acceptance:{contextDigest:s.digest,previousRevision:s.destination.expectedOld,ref:s.destination.ref,commit:s.commit,tree:s.tree,correlationRef:s.correlationRef,attribution:"exact"}};
+  expect(validQualifiedDeliveryRequest(requestData)).toBe(false);
+  expect(qualifiedCompletionDeliveryFacts(requestData,{publication:exactPublication,validation:progress})).toEqual({publication:exactPublication.acceptance,ci:progress.acceptance});
+  expect(qualifiedCompletionDeliveryFacts(requestData,{publication:publicationData,validation:progress})).toBeNull();
+  expect(qualifiedCompletionDeliveryFacts(requestData,{publication:exactPublication,validation:old})).toBeNull();
   requestData.route.publication.destination.endpoint.kind="local";expect(validQualifiedCiProgress(value,requestData,publicationData)).toBe(false);
  }finally{f.cleanup();}
 });

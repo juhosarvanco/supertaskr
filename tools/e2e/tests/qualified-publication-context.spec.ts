@@ -19,6 +19,8 @@ import {reviewed,writeVerdict,git} from "./qualified-delivery-fixture";
 import {publishQualifiedDelivery,observeQualifiedPublication} from "../scripts/qualified-publication-operation.mjs";
 import {publicationLaunchAlive} from "../scripts/qualified-publication-process.mjs";
 import {reconcileQualifiedDeliveryCi} from "../scripts/qualified-ci-operation.mjs";
+import {captureQualifiedCompletionProposal} from "../scripts/qualified-delivery-completion.mjs";
+import {completeQualifiedRecordsDelivery} from "../scripts/qualified-completion-operation.mjs";
 
 async function fixture(installHook=true,actualSuite=false){
  const installation=privateRecordFixture(),settings=parse(fixtureProjectSettings(installation));
@@ -188,6 +190,9 @@ test("actual local Git acceptance cannot become GitHub CI authority or mutate va
   const original=readAcceptedOperation(f.product,request.operationId),bytes=JSON.stringify(original),p=git(f.product,["for-each-ref","--format=%(refname) %(objectname)"]),r=git(f.records,["for-each-ref","--format=%(refname) %(objectname)"]);
   await expect(reconcileQualifiedDeliveryCi(f.product,request.operationId,{tool:f.tool})).rejects.toThrow(/CI_PROVIDER_ORIGIN_UNAVAILABLE/);
   expect(JSON.stringify(readAcceptedOperation(f.product,request.operationId))).toBe(bytes);expect(original.operation.validation).toBeUndefined();expect(validOperationRecord(original)).toBe(true);
+  expect(()=>captureQualifiedCompletionProposal(f.product,request.operationId,{tool:f.tool})).toThrow(/QUALIFIED_COMPLETION_CI_PENDING/);
+  await expect(completeQualifiedRecordsDelivery(f.product,request.operationId,{tool:f.tool})).rejects.toThrow(/QUALIFIED_COMPLETION_CI_PENDING/);
+  expect(JSON.stringify(readAcceptedOperation(f.product,request.operationId))).toBe(bytes);expect(original.operation.completion).toBeUndefined();
   expect(git(f.product,["for-each-ref","--format=%(refname) %(objectname)"])).toBe(p);expect(git(f.records,["for-each-ref","--format=%(refname) %(objectname)"])).toBe(r);
  }finally{f.cleanup();}
 });

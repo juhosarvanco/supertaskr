@@ -1,5 +1,5 @@
-/** Strict local integration and records-only coordinator completion progress
- * in one operation. Product publication and CI adapters remain pending. */
+/** Strict integration, publication, CI and finite private completion progress
+ * in one operation. Each effect owner must prove its actual retained result. */
 import {createHash} from "node:crypto";
 import path from "node:path";
 import {operationContent,operationDigest,operationPayload,operationWork} from "./operation-record.mjs";
@@ -137,7 +137,7 @@ function validRecord(rec){
  if(op.localAcceptance !== null&&!(op.progress.every((/** @type {any} */ p)=>p.acceptance !== null)&&operationContent(op.localAcceptance)===operationContent(op.progress.map((/** @type {any} */ p)=>({key:p.key,...p.acceptance})))))return false;
  if(op.publication!==undefined&&(!validQualifiedPublicationProgress(op.publication,op.request)||op.localAcceptance===null))return false;
  if(op.validation!==undefined&&!validQualifiedCiProgress(op.validation,op.request,op.publication))return false;
- if(op.completion!==undefined&&(!validQualifiedCompletionProgress(op.completion,op.request,op.digest)||op.localAcceptance===null))return false;
+ if(op.completion!==undefined&&(!validQualifiedCompletionProgress(op.completion,op.request,op.digest,op)||op.localAcceptance===null))return false;
  const accepted=op.completion?.acceptance!==null&&op.completion?.acceptance!==undefined;
  if(!accepted&&(rec.reservation.releasedAt!==null||op.claims.some((/** @type {any} */ c)=>c.releasedAt!==null)||rec.state==="finished"))return false;
  return rec.reservation.releasedAt===primary.releasedAt&&(rec.state==="finished")===(accepted&&op.claims.every((/** @type {any} */ c)=>date(c.releasedAt)));

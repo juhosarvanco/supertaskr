@@ -206,6 +206,7 @@ test("persisted protocol prefixes have exact source-only allowances, never a fil
   const expected=[
     ["Supertaskr-Operation:",["tools/e2e/scripts/durable-operation.mjs"]],
     ["Supertaskr-Initialization:",["tools/e2e/scripts/project-init-operation.mjs","tools/e2e/scripts/project-init-record.mjs","tools/e2e/tests/genesis-init-plan.spec.ts"]],
+    ["Supertaskr-Delivery-Completion:",["tools/e2e/scripts/qualified-completion-record.mjs"]],
   ] as const;
   expect(KEPT_CLASSES.filter(row=>row.reading==="case").map(row=>[row.pattern.source,row.files])).toEqual(expected);
   expect(KEPT_CLASS_IDS).not.toContain("protocol-spelling");

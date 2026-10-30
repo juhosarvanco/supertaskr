@@ -17,6 +17,7 @@ import {createRecordChecker,checkedRecordWriteSet,requireInstalledRuntimeAssets,
 import {loadProjectSettings} from "./project-settings.mjs";
 import {captureOperationCommitIdentity} from "./project-init-operation.mjs";
 import {captureExactCommitPlan,safeOperationWorkingPath,assertExactRecordTransformations} from "./record-write.mjs";
+import {qualifiedCompletionDeliveryFacts,QUALIFIED_COMPLETION_TRAILER} from "./qualified-completion-record.mjs";
 
 const proposals=new WeakMap();
 export class QualifiedCompletionFinding extends Error{
@@ -47,14 +48,17 @@ function attribution(root,retained){
 }
 /** Capture a finite task/receipt/derived-INDEX proposal against the accepted
  * substantive records output. No writable path or review claim comes from a
- * completion caller. Current product-owed routes stay explicitly pending.
+ * completion caller. Product-owed routes require original accepted publication
+ * and CI proofs in this same operation; no new provider request is made here.
  * @param {string} coordinatorRoot @param {string} operationId @param {{tool:any}} configuration */
 export function captureQualifiedCompletionProposal(coordinatorRoot,operationId,configuration){
  if(!configuration || Object.keys(configuration).join(",") !== "tool")refuse("QUALIFIED_COMPLETION_CONFIGURATION");
  const observed=observeQualifiedLocalDelivery(coordinatorRoot,operationId);
  if(observed?.status !== "local-integrated")refuse("QUALIFIED_COMPLETION_LOCAL_PENDING");
  const rec=observed.record,req=rec.operation.request,a=req.authority;
- if(req.route.publicationOwed)refuse("QUALIFIED_COMPLETION_PUBLICATION_PENDING");
+ if(req.route.publicationOwed&&!rec.operation.publication?.acceptance)refuse("QUALIFIED_COMPLETION_PUBLICATION_PENDING");
+ const delivery=qualifiedCompletionDeliveryFacts(req,rec.operation);
+ if(delivery===null)refuse("QUALIFIED_COMPLETION_CI_PENDING");
  const landing=req.landings.find((/** @type {any} */ l)=>l.roles.includes("records"));
  if(!landing || landing.repository.root === req.coordinator.root || landing.repository.commonDir === req.coordinator.commonDir)refuse("QUALIFIED_COMPLETION_SEPARATE_RECORDS_REQUIRED");
  if(readOperationRef(landing.repository.root,landing.ref) !== landing.commit)refuse("QUALIFIED_COMPLETION_RECORDS_CHANGED");
@@ -62,6 +66,7 @@ export function captureQualifiedCompletionProposal(coordinatorRoot,operationId,c
  if(!frozen.task || frozen.issues.length || !frozen.task.review)refuse("QUALIFIED_COMPLETION_REVIEW_REQUIRED");
  const tool=configuration.tool;requireInstalledRuntimeAssets(tool,["tools/e2e/scripts/qualified-delivery-completion.mjs","tools/e2e/scripts/qualified-delivery-operation.mjs",
   "tools/e2e/scripts/qualified-delivery-record.mjs","tools/e2e/scripts/operation-ref.mjs","tools/e2e/scripts/record-write.mjs"]);
+ if(req.route.publicationOwed&&!same(tool,req.route.publication.tool))refuse("QUALIFIED_COMPLETION_TOOL_CHANGED");
  const settings=loadProjectSettings({productRoot:req.coordinator.root,productRevision:req.route.policyRevision,tool});
  if(settings.status !== "ready")refuse(settings.status === "not-configured"?"QUALIFIED_COMPLETION_SETTINGS_UNCONFIGURED":settings.code);
  const changed=a.roles.flatMap((/** @type {any} */ r)=>r.implementationChanges.flatMap((/** @type {any} */ c)=>c.paths));
@@ -82,7 +87,7 @@ export function captureQualifiedCompletionProposal(coordinatorRoot,operationId,c
  try{lstatSync(physical);refuse("QUALIFIED_COMPLETION_RECEIPT_EXISTS");}catch(error){if(/** @type {NodeJS.ErrnoException} */(error).code !== "ENOENT")throw error;}
  const receipt={version:1,kind:"qualified-delivery-receipt",operationId,taskId:a.taskId,authorityDigest:a.authorityDigest,requestDigest:rec.operation.digest,
   localIntegration:rec.operation.localAcceptance,source:{executor:a.executor,verifier:a.verifier,verdictDigest:a.frozenAuthority.review.verdict.digest},
-  publication:"not-owed",ci:"not-owed",completion:{expectedRevision:landing.commit,fields:Object.keys(fields),review:frozen.task.review,attribution:{builder,verifier}}};
+  ...delivery,completion:{expectedRevision:landing.commit,fields:Object.keys(fields),review:frozen.task.review,attribution:{builder,verifier}}};
  const checker=createRecordChecker({profile:settings.settings.records.validation,tool}),options={productRoot:req.coordinator.root,productRevision:req.route.policyRevision,recordsRevision:landing.commit},capture=checker.capture(options);
  const result=checker.evaluate(capture,[{operation:"edit",path:file,type:"blob",mode:taskMode,bytes:Buffer.from(after)}]);
  if(!result.accepted)refuse("QUALIFIED_COMPLETION_CHECK_REFUSED");
@@ -91,7 +96,7 @@ export function captureQualifiedCompletionProposal(coordinatorRoot,operationId,c
  const repository=captureOperationRepository(landing.repository.root,landing.commit);
  if(!same(repository,landing.repository))refuse("QUALIFIED_COMPLETION_ORIGIN_CHANGED");
  assertExactRecordTransformations(repository.root,writes.map(w=>w.path));
- const identity=captureOperationCommitIdentity(repository.root),message=`Complete ${a.taskId} private records\n\nSupertaskr-Delivery-Completion: ${operationId}\n`;
+ const identity=captureOperationCommitIdentity(repository.root),message=`Complete ${a.taskId} private records\n\n${QUALIFIED_COMPLETION_TRAILER} ${operationId}\n`;
  const exact=captureExactCommitPlan(repository.root,landing.commit,writes,{identity,message});
  verifyInstalledRecordTool(tool);
  const plan=freeze({version:1,kind:"qualified-delivery-completion",operationId,deliveryRequestDigest:rec.operation.digest,repository,expectedRevision:landing.commit,targetRef:landing.ref,

@@ -154,6 +154,9 @@ export const KEPT_CLASSES = Object.freeze([
     files: Object.freeze(["tools/e2e/scripts/durable-operation.mjs"]) }),
   Object.freeze({ id: "protocol-spelling", reading: "case", pattern: /Supertaskr-Initialization:/,
     files: Object.freeze(["tools/e2e/scripts/project-init-operation.mjs", "tools/e2e/scripts/project-init-record.mjs", "tools/e2e/tests/genesis-init-plan.spec.ts"]) }),
+  // Strict compatibility reader only; new completion producers are lowercase.
+  Object.freeze({ id: "protocol-spelling", reading: "case", pattern: /Supertaskr-Delivery-Completion:/,
+    files: Object.freeze(["tools/e2e/scripts/qualified-completion-record.mjs"]) }),
 ]);
 
 /** The class ids, deduplicated, for a caller that wants the set alone. */

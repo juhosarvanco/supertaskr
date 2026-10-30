@@ -1,5 +1,6 @@
 import {readFileSync,writeFileSync,existsSync} from "node:fs";
 import {spawnSync} from "node:child_process";
+import {createHash} from "node:crypto";
 import path from "node:path";
 import {expect,test} from "@playwright/test";
 import {extractFrontmatter} from "../../../lib/parser/dist/pure.js";
@@ -8,7 +9,8 @@ import {completeQualifiedRecordsDelivery,replayQualifiedRecordsCompletion} from 
 import {executeQualifiedLocalDelivery,observeQualifiedLocalDelivery} from "../scripts/qualified-delivery-operation.mjs";
 import {startRun,collectRun,readReservation} from "../scripts/run-record.mjs";
 import {acceptedOperationPath,readAcceptedOperation} from "../scripts/durable-operation.mjs";
-import {validOperationRecord} from "../scripts/operation-record.mjs";
+import {validOperationRecord,operationDigest} from "../scripts/operation-record.mjs";
+import {QUALIFIED_COMPLETION_TRAILER,QUALIFIED_COMPLETION_LEGACY_TRAILER} from "../scripts/qualified-completion-record.mjs";
 import {loadInstalledRecordTool} from "../scripts/records-check.mjs";
 import {ordinaryRecordTextPath} from "../scripts/records-validation.mjs";
 import {handleNativeEvent} from "../scripts/native-codex.mjs";
@@ -91,6 +93,7 @@ test("protected records-only completion commits exact card receipt and INDEX thr
   writeFileSync(path.join(f.records,"unrelated-working.md"),"Unrelated working private work\n");
   const before=unchanged(f),result=await completeQualifiedRecordsDelivery(f.product,f.input.operationId,{tool:f.tool}),rec=readAcceptedOperation(f.product,f.input.operationId),p=rec.operation.completion.plan;
   expect(result).toMatchObject({status:"records-completed",publication:"not-owed",ci:"not-owed",commit:p.commit,tree:p.tree,attribution:"exact"});
+  expect(p.message).toContain(`\n${QUALIFIED_COMPLETION_TRAILER} ${f.input.operationId}\n`);
   expect(rec.state).toBe("finished");expect(validOperationRecord(rec)).toBe(true);expect(rec.operation.localAcceptance).toEqual(f.result.landings);
   expect(git(f.records,["rev-parse","HEAD"])).toBe(p.commit);expect(git(f.records,["rev-parse",p.commit+"^"])).toBe(p.expectedRevision);
   expect(git(f.records,["rev-parse",rec.operation.completion.intent.correlationRef])).toBe(p.commit);
@@ -100,6 +103,15 @@ test("protected records-only completion commits exact card receipt and INDEX thr
   expect(rec.operation.claims.every((c:any)=>c.releasedAt!==null)).toBe(true);
   expect(git(f.records,["diff","--cached","--name-only"])).toBe("unrelated-staged.md");expect(readFileSync(path.join(f.records,"unrelated-working.md"),"utf8")).toBe("Unrelated working private work\n");
   for(const change of [(r:any)=>{r.operation.completion.plan.tree="f".repeat(40);},(r:any)=>{r.operation.completion.intent.correlationRef+="-foreign";},(r:any)=>{r.operation.completion.acceptance=null;}]){const bad=structuredClone(rec);change(bad);expect(validOperationRecord(bad)).toBe(false);}
+  // Reader-format compatibility only: no synthetic legacy record is persisted
+  // or submitted to a writer. Exact original raw bytes/message/hash still bind.
+  const legacy=structuredClone(rec),c=legacy.operation.completion,oldMessage=c.plan.message;
+  c.plan.message=oldMessage.replace(QUALIFIED_COMPLETION_TRAILER,QUALIFIED_COMPLETION_LEGACY_TRAILER);
+  const original=Buffer.from(c.plan.commitBase64,"base64"),raw=Buffer.concat([original.subarray(0,original.length-Buffer.byteLength(oldMessage)),Buffer.from(c.plan.message)]);
+  c.plan.commitBase64=raw.toString("base64");c.plan.commit=createHash("sha1").update(Buffer.from(`commit ${raw.length}\0`)).update(raw).digest("hex");
+  c.digest=operationDigest(c.plan);c.intent.commit=c.plan.commit;c.acceptance.commit=c.plan.commit;
+  expect(validOperationRecord(legacy)).toBe(true);
+  const badLegacy=structuredClone(legacy);badLegacy.operation.completion.plan.commitBase64=original.toString("base64");badLegacy.operation.completion.digest=operationDigest(badLegacy.operation.completion.plan);expect(validOperationRecord(badLegacy)).toBe(false);
   const accepted=readFileSync(acceptedOperationPath(f.product,f.input.operationId));
   writeFileSync(path.join(f.records,"later.md"),"Later private owner\n");git(f.records,["add","later.md"]);git(f.records,["commit","-qm","Later private owner"]);const later=git(f.records,["rev-parse","HEAD"]);
   writeFileSync(path.join(f.product,".supertaskr/workspace.json"),"Invalid successor binding\n");f.grant(undefined,true,4);
