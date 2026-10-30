@@ -43,6 +43,29 @@ export function genesisBankRecordPath(stage,file){
  if(stage===8)return ["docs/ARCHITECTURE.md","docs/ROADMAP.md"].includes(file)||/^docs\/tasks\/T-[0-9]{3,9}-[a-z0-9][a-z0-9-]*\.md$/.test(file);
  return false;
 }
+const EMPTY_LIFECYCLE_PLACEHOLDERS=new Set([
+ "<!-- empty -->","<!-- No entries yet. -->","<!-- Appended by the executor. -->",
+ "<!-- Appended by the verifier. -->","<!-- Appended after implementation. -->",
+]);
+/** Raw legacy verdict readers also see headings in fences/comments. New
+ * planned cards therefore cannot carry a populated reserved section in either
+ * active Markdown or an inert-looking example. Only literal empty placeholders
+ * are supported here, not a heuristic classification of claimed evidence.
+ * @param {string} body */
+function authorBody(body){
+ let depth=0;
+ /** @type {string[]} */
+ let lines=[];
+ const flush=()=>{if(depth&&lines.some(line=>line.trim()!==""&&!EMPTY_LIFECYCLE_PLACEHOLDERS.has(line.trim())))refuse("genesis-bank-task-lifecycle-body");lines=[];};
+ for(const line of body.split(/\r?\n/)){
+  const heading=/^ {0,3}(#{1,6})[ \t]+(.+?)(?:[ \t]+#+)?[ \t]*$/.exec(line);
+  if(heading&&(!depth||(heading[1]??"").length<=depth)){
+   flush();const name=(heading[2]??"").replace(/[ \t]+/g," ").trim();
+   depth=/^(?:Implementation notes|Verdicts|History|Reports|Approval history|Archived grant history|Repair ledger|(?:Executor |Build |Post-build )?(?:notes|reasoning|reports?))\b/i.test(name)?(heading[1]??"").length:0;
+  }else if(depth)lines.push(line);
+ }
+ flush();
+}
 /** New task authoring retains author fields only. Dispatch/completion and
  * review/verdict stamps are never accepted as initial-genesis output.
  * @param {string} file @param {string} source */
@@ -56,6 +79,7 @@ function plannedTask(file,source){
  const stamps=["tier","built_by","verified_by","review","wake"];
  if(!fields||Array.isArray(fields)||typeof fields!=="object"||Object.keys(fields).some(key=>!allowed.includes(key)&&!(stamps.includes(key)&&(fields[key]===null||fields[key]==="")))||
     fields.status!=="planned"||fields.id!==taskId||Number(number)<1||String(Number(number)).padStart(3,"0")!==number)refuse("genesis-bank-task-planned");
+ authorBody(source.slice(front[0].length));
 }
 /** Validate the fixed proposal before a producer reads any listed path. This
  * is detached finite data only; no proposed path can become a root selector.
