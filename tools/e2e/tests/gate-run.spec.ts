@@ -2067,8 +2067,8 @@ test("the package roots the owed set is derived through are the registry's own d
   expect(OWED_SET_FLAGS.range).toBe(RANGE_FLAG);
   expect(OWED_SET_FLAGS.tree).toBe(TREE_FLAG);
   expect(SCOPABLE_SUITE, "the one leg a token entry may have graded in part").toBe(SCOPED_SUITE);
-  expect(OWED_SET_PATH, "the guard asks the runner that owns the rule").toBe(
-    path.join(repoRoot, "tools/e2e/scripts/gate-run.mjs"),
+  expect(OWED_SET_PATH, "the source guard asks the explicit source-CI adapter to the same owed-set derivation").toBe(
+    path.join(repoRoot, "tools/e2e/scripts/source-ci-owed.mjs"),
   );
 });
 
