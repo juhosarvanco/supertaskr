@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1717 at least behaviours** — 1713 extracted sentences + 4 at least named-not-extracted (listed at the end) — across 99 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1761 at least behaviours** — 1757 extracted sentences + 4 at least named-not-extracted (listed at the end) — across 107 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -36,6 +36,12 @@ Census: **1717 at least behaviours** — 1713 extracted sentences + 4 at least n
 - values that are not ports are refused, never silently defaulted
 - the real script refuses SUPERTASKR_BOOT_PORT=1420 with exit 3, probing nothing
 - a busy scratch port aborts with exit 2 and spawns nothing
+
+## brief-contract
+
+- the shared brief frame assembles the actual normative row set with every source and provenance intact
+- a renamed normative label has neither a positional fallback nor a silently orphaned deriver
+- role-specific substitution stays derived from the same actual METHOD table
 
 ## brief-flush
 
@@ -473,6 +479,8 @@ Census: **1717 at least behaviours** — 1713 extracted sentences + 4 at least n
 - the front relabels no exit code — the child's status is the command's status
 - an unknown verb is refused with the whole verb list, and nothing is spawned
 - every verb that hands its target --root reaches a script whose flags carry it
+- the delivery front preserves the shared selected-root prefix and its caller's positional action
+- legacy source fronts refuse configured and invalid selected contexts before child effects and label their help
 - the verb set covers the seat's own arms and NAMES the C-02 verbs nothing fronts
 - the front reads every product command bullet CONTRIBUTING.md carries, and reads it verbatim
 - a verb with missing TOOL dependencies names the package to restore and runs nothing
@@ -546,10 +554,18 @@ Census: **1717 at least behaviours** — 1713 extracted sentences + 4 at least n
 - pre-lock exact replay preserves later state and acquisition receipt races fail even when exact lock release also fails
 - atomic publication and explicit retry classify before rename after rename directory sync release and response loss honestly
 
+## configured-dispatch-view
+
+- ordinary installed dispatch view captures code-empty P/R cuts, actual holds and METHOD without PRODUCT-board fallback or effects
+- captured current cuts refuse later HEAD movement while explicit original views retain their exact snapshot and invalid contexts refuse
+
 ## configured-dispatch
 
 - configured dispatch retains original P/R/TOOL, committed card role overrides and actual original suite execution
 - configured dispatch refuses copied handles, mismatched start correspondence, absent configuration/binding and replaced records
+- the installed strict native entry binds original model vehicle and session policy and cold-checks the actual retained source without a child lock
+- the finite native role adapter keeps a plain demo model and refuses a lost resume policy
+- the actual installed configured producer refuses its omitted but present command and accepts the restored manifest
 
 ## configured-gate-origin
 
@@ -847,6 +863,18 @@ Census: **1717 at least behaviours** — 1713 extracted sentences + 4 at least n
 - the shard count comes from the workflow's own env, and a nonsense value is the default
 - a derivation that FAILED CLOSED arms the boot check too, because a path nobody could place is a path nobody can clear the app of
 - the seam between the derivation and the plan refuses every answer that is not a set
+
+## genesis-bank-proposal
+
+- finite bank capture preserves original human bytes and detaches files/proposal while changed same-ID spelling stays distinct
+- every approved stage has its finite positive and cannot omit STATE or its own required output
+- original context and independently captured answer references cannot be replaced with claimed proposal text
+- roots, runtime, derived index, verdict/evidence and source graph files never become bank outputs
+- decomposition captures only planned author data and rejects nonempty dispatch/completion/verdict stamps
+- exact file set/digest, literal JSON keys, UTF8 and byte caps refuse before any accepted capture
+- new planned cards cannot publish populated reserved lifecycle or evidence bodies, including raw inert-looking verdict examples
+- empty reserved template sections remain valid author data and restoring a populated body permits the original planned capture
+- a task instantiated from the actual verified installed METHOD template is valid planned author data
 
 ## genesis-init-command
 
@@ -1308,6 +1336,15 @@ Census: **1717 at least behaviours** — 1713 extracted sentences + 4 at least n
 - product census and interview freshness failures remain active without private records
 - the ordinary product docs gate keeps reader, owed-suite and root-anchor failures without reading private records
 
+## project-bank-record
+
+- real initialized/checker/external parented plan data fits the finite bank schema while no bank outcome is claimed
+- raw commit parent/tree/message/OID disagreement refuses rather than accepting an asserted exact plan
+- request data cannot add paths, weaken typed source provenance, impersonate successor roots or turn null PRODUCT into an effect
+- pure progress schema requires both claims, exact intents and R-first acceptance before release
+- Q1 data binds actual human captures and exact PRODUCT adapter commit to the planned RECORDS commit
+- stage-zero data keeps the original typed setup after a legitimate records advance and refuses missing or relabeled provenance
+
 ## project-init-operation
 
 - initial repository preparation captures actual user identity and exact zero-parent commit bytes without touching chosen roots
@@ -1355,12 +1392,16 @@ Census: **1717 at least behaviours** — 1713 extracted sentences + 4 at least n
 - band metadata uses the existing canonical threshold rule, and committed settings symlinks refuse
 - runtime closure requires actual captured manifest members even when omitted files remain present
 - ordinary TOOL validation requires the operation reader's unconditional initialization schema owner
+- ordinary TOOL validation requires its loaded source-suite-derivation owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded operation-ref owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded qualified-delivery-record owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded qualified-configured-grades owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded qualified-delivery-operation owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded qualified-publication-context owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded qualified-publication-record owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded qualified-publication-process owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded qualified-ci-record owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded qualified-delivery-ci owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded qualified-completion-record owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded fixed-product-hook owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded private-backup-record owner even when the omitted file remains present
@@ -1376,6 +1417,8 @@ Census: **1717 at least behaviours** — 1713 extracted sentences + 4 at least n
 - ordinary TOOL validation requires its loaded rename-scan owner even when the omitted file remains present
 - ordinary TOOL validation requires the actually imported hook routing audit when its omitted file remains present
 - ordinary TOOL validation retains the critical standalone completion writer even when its omitted file remains present
+- ordinary TOOL validation requires the actually imported cold configured reader even when an omitted file remains present
+- ordinary TOOL validation retains the standalone CI controller when its omitted file remains present
 - publication selection is explicit committed data, absent/null cannot run, and dirty editor bytes cannot retarget it
 
 ## push-checks
@@ -1538,6 +1581,11 @@ Census: **1717 at least behaviours** — 1713 extracted sentences + 4 at least n
 - private preflight keeps first Repair ledger private across plain and closing ATX headings
 - private preflight preserves the complete active contract around inert literal private headings
 
+## qualified-configured-grades
+
+- actual original whole-suite metadata cannot be replaced by current same-ID, partial, foreign-tree or changed command captures
+- actual RED stays failed and a byte-consistent contradictory reporter count cannot acquire canonical grade correspondence
+
 ## qualified-delivery-ci
 
 - pure exact-CI metadata classification binds the selected run attempt and returns detached evidence identities
@@ -1546,6 +1594,11 @@ Census: **1717 at least behaviours** — 1713 extracted sentences + 4 at least n
 - failed skipped unknown or still-running required CI cannot report exact successful validation
 - a frozen CI requirement has no empty defaults and malformed provider data remains unknown
 - committed selection normalization preserves literal check identities while exact observations still require a real run and valid ref
+
+## qualified-delivery-command
+
+- delivery help and finite syntax work in a cold entry copy without operation owners or TOOL and errors expose no paths
+- normally packed public delivery front guards private completion and replays accepted history before a missing current TOOL
 
 ## qualified-delivery-completion
 
@@ -1560,6 +1613,7 @@ Census: **1717 at least behaviours** — 1713 extracted sentences + 4 at least n
 ## qualified-delivery-operation
 
 - protected mixed local integration lands exact finalized whole outputs once and keeps actual publication/completion pending
+- read-only recovery policy checks actual dead owner and current admission before any owner publication
 - reachable output without exact operation correlation stays uncertain and never relands
 - a reserved second root leaves no orphan operation or repository effects and its released control lands
 - pending local delivery rechecks exact retained final evidence and current protected grant before missing effects
@@ -1581,6 +1635,15 @@ Census: **1717 at least behaviours** — 1713 extracted sentences + 4 at least n
 - synthetic incomplete job pagination and access refusal remain unavailable without following metadata URLs
 - missing backend credentials gives explicit cannot-run before any provider request
 - provider constructor requires its actual installed owner and offers no caller response or program override
+- synthetic CI progress shape retains all headers and complete receipts but supplies no qualified writer authority
+
+## qualified-integration-plan
+
+- standalone integration planning requires its actual installed owner before reading qualified authority
+- pure integration preserves unrelated advanced bases and exact original outputs without any target objects/index/ref writes
+- a real retained wording-only condition stays pending without guessed replacement bytes or target effects
+- pure mechanical correction preserves the exact verifier body and accepted RED while its resulting whole-tree grade stays owed
+- private-only integration performs canonical record checking and invents no PRODUCT commit or suite obligation
 
 ## qualified-native
 
@@ -1596,6 +1659,10 @@ Census: **1717 at least behaviours** — 1713 extracted sentences + 4 at least n
 - qualified final collection refuses stale per-root pairs and late changes; completed exact retry leaves a later owner untouched
 - qualified scope cannot fall back through unknown fields or legacy verifier and transaction recovery consumers
 
+## qualified-path-identity
+
+- actual installed qualified capture and worker measurement preserve real roots ending in two spaces
+
 ## qualified-publication-context
 
 - full publication context freezes actual reviewed output existing destination exact CI and installed guard without writing
@@ -1607,6 +1674,7 @@ Census: **1717 at least behaviours** — 1713 extracted sentences + 4 at least n
 - cold publication recovery observes exact original acceptance after later receiver advance before successor policy or TOOL
 - coordinator loss stops its actual running check group and a new process resumes the original pending operation
 - cold local replay preserves the Git-start marker before transport and reuses actual completed checks
+- actual local Git acceptance cannot become GitHub CI authority or mutate validation progress
 
 ## qualified-reservation
 
