@@ -6,6 +6,12 @@ prevent. The stages are numbered the way the checkpoint records and the
 role files refer to them; the cycle closes on itself because every
 stage's findings enter stage 1 as suggestion cards.
 
+For installed independent PRODUCT/RECORDS projects, chapter 05 owns the
+supported `supertaskr dispatch` command contract and its explicit limits.
+Source checkout command examples elsewhere in this reference describe the
+legacy adapter. The product's loop requirements continue to apply as its
+remaining configured producers are delivered.
+
 ## The invariants that cut across every stage
 
 1. **Derive, never quote.** A figure or a state is read from its

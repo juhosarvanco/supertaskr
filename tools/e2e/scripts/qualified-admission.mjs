@@ -245,8 +245,8 @@ function deliveryPhasePolicy(root,source,ownOperation,childProof,recovery=false)
 
 /** Synchronous recapture using already loaded dependencies. The native
  * consumer supplies reconciled worker evidence before selecting re-entry.
- * @param {any} input @param {boolean} [reconciled] @param {string|null} [resource] */
-function captureAdmission(input, reconciled = false, resource = null) {
+ * @param {any} input @param {boolean} [reconciled] @param {string|null} [resource] @param {object|null} [configured] */
+function captureAdmission(input, reconciled = false, resource = null, configured = null) {
   const request = normalizeAdmissionPreflight(input);
   if (!consumers) refuse("preflight-consumers-not-loaded");
   const { qualifier, parser, inert, policy, runs, native } = consumers;
@@ -270,7 +270,9 @@ function captureAdmission(input, reconciled = false, resource = null) {
     if (snapshot.bytes.length === 0 || !/^[0-9a-f]{40}$/.test(snapshot.task.blobId)) refuse("preflight-current-bytes-unavailable");
     if (canonical.fence.paths.some(/** @param {any} entry */ (entry) => !request.roles.includes(entry.role))) refuse("preflight-scope-role-missing");
     if (Object.hasOwn(request, "assertedFence") && qualifier.qualifiedContent(request.assertedFence) !== qualifier.qualifiedContent(canonical.fence)) refuse("preflight-scope-assertion-mismatch");
-    const state = policy.grantState(canonical.authorityRoot);
+    if (configured !== null && configuredPolicy === undefined) refuse("preflight-configured-context-not-loaded");
+    const schema = configured === null ? null : /** @type {NonNullable<typeof configuredPolicy>} */ (configuredPolicy).configuredDispatchSchema(configured);
+    const state = policy.grantState(canonical.authorityRoot, schema === null ? {} : { schemaText: schema.text });
     const records = completeRecords(canonical.authorityRoot, runs, native, request.taskId);
     const ledger = policy.admissionLedger(records, runs.TERMINAL_STATES);
     const a = request.admission;
@@ -340,9 +342,30 @@ function captureAdmission(input, reconciled = false, resource = null) {
  * @param {any} request @param {any} earlier @param {boolean} [reconciled] @param {string|null} [resource] */
 export function decisiveQualifiedAdmission(request, earlier, reconciled = false, resource = null) {
   const now = captureAdmission(request, reconciled, resource);
+  return decisiveAdmission(now, earlier);
+}
+/** @param {any} now @param {any} earlier */
+function decisiveAdmission(now, earlier) {
   if (earlier && consumers.qualifier.qualifiedContent({ grant: earlier.grant, receipt: earlier.receipt, scope: earlier.scope }) !==
       consumers.qualifier.qualifiedContent({ grant: now.grant, receipt: now.receipt, scope: now.scope })) refuse("preflight-decisive-drift");
   if (!now.permitted) refuse(now.refusals[0]?.code ?? "preflight-policy-refused");
   if (!now.grant.enforced || now.inputBytes("current").length === 0 || now.inputBytes("approved").length === 0) refuse("preflight-approved-bytes-unavailable");
   return now;
+}
+/** Only the strict configured entry preloads this dependency. The caller's
+ * data cannot supply METHOD bytes or another schema/TOOL path.
+ * @type {typeof import("./configured-dispatch.mjs")|undefined} */
+let configuredPolicy;
+/** @param {any} input @param {object} handle */
+export async function configuredAdmissionPreflight(input, handle) {
+  if (!handle) refuse("preflight-configured-context-required");
+  const request = normalizeAdmissionPreflight(input);
+  await loadQualifiedDeliveryPolicy(); configuredPolicy ??= await import("./configured-dispatch.mjs");
+  return captureAdmission(request, false, null, handle);
+}
+/** Already preloaded, synchronous, and called inside the existing transaction.
+ * @param {any} request @param {any} earlier @param {object} handle @param {boolean} [reconciled] @param {string|null} [resource] */
+export function decisiveConfiguredAdmission(request, earlier, handle, reconciled = false, resource = null) {
+  if (!handle) refuse("preflight-configured-context-required");
+  return decisiveAdmission(captureAdmission(request, reconciled, resource, handle), earlier);
 }

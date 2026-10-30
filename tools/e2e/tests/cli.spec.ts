@@ -14,12 +14,14 @@ import {
   readFileSync,
   readdirSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { parse as parseYaml } from "yaml";
+import { WORKSPACE_BINDING_REL_PATH } from "../scripts/workspace.mjs";
 // THE LIBRARY ITSELF, BY THE SAME BUILT ENTRY THE COMMAND READS — so the
 // body below compares the surface against the module rather than against
 // the arm's re-export of it (T-300-s6). `brief.spec.ts` loads it the same
@@ -284,6 +286,27 @@ test("every verb that hands its target --root reaches a script whose flags carry
         `${takesRoot ? "does" : "does not"} carry "--root"`,
     ).toBe(takesRoot);
   }
+});
+
+test("legacy source fronts refuse configured and invalid selected contexts before child effects and label their help", () => {
+  const root = mkdtempSync(path.join(tmpdir(), "legacy-front-context-"));
+  const legacy = VERBS.filter(entry => entry.sourceCompatibility);
+  try {
+    expect(legacy.map(entry => entry.verb)).toEqual(expect.arrayContaining(["next", "brief", "arm"]));
+    let spawned = 0;
+    const said: string[] = [], io = { cwd: root, stdout: (text: string) => said.push(text), stderr: (text: string) => said.push(text), spawn: (() => { spawned++; return { status: 0, signal: null, error: undefined }; }) as never };
+    writeFileSync(path.join(root, ROOT_SETTINGS_MARKER), "Explicit configuration marker\n");
+    for (const entry of legacy) {
+      expect(cliMain(["--root", root, entry.verb], io), entry.verb).toBe(3);
+      expect(said.pop()).toContain("legacy source compatibility"); expect(spawned).toBe(0);
+      expect(cliMain(["--root", root, entry.verb, "--help"], io)).toBe(0); expect(said.pop()).toContain("configured/bound projects use supertaskr dispatch");
+    }
+    rmSync(path.join(root, ROOT_SETTINGS_MARKER)); mkdirSync(path.dirname(path.join(root, WORKSPACE_BINDING_REL_PATH)), { recursive: true });
+    symlinkSync(path.join(root, "absent-records-binding"), path.join(root, WORKSPACE_BINDING_REL_PATH));
+    for (const entry of legacy) { expect(cliMain(["--root", root, entry.verb], io)).toBe(3); expect(said.pop()).toContain("legacy source compatibility"); expect(spawned).toBe(0); }
+    rmSync(path.join(root, WORKSPACE_BINDING_REL_PATH));
+    expect(cliMain(["--root", root, "next"], io)).toBe(0); expect(spawned).toBe(1);
+  } finally { removeGitFixture(root, "legacy front context"); }
 });
 
 test("the verb set covers the seat's own arms and NAMES the C-02 verbs nothing fronts", () => {

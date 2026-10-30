@@ -1,5 +1,40 @@
 # 05 — Dispatch
 
+## Installed independent projects
+
+Use `supertaskr dispatch` with the selected PRODUCT root. The fixed entry
+reads committed `supertaskr.yaml`, the explicitly bound RECORDS context and
+the installed TOOL. It preserves the original product/records revisions,
+card overrides, configured models, vehicles, process and suite policy.
+
+```
+supertaskr dispatch --root <PRODUCT> --admission-preflight <request.json>
+supertaskr dispatch --root <PRODUCT> --run start --assignment <assignment.json>
+supertaskr dispatch --root <PRODUCT> --run bind --attempt <attempt> --session <native-id>
+```
+
+Start prepares the existing qualified reservation and run record. The native
+launcher then supplies the real child identity; `started: false` remains
+explicit until that observation. This adapter supports fresh/subagent native
+Codex launches, preserving the requested spelling separately from the
+qualified launch model. Named resume vehicles and a resume default refuse
+until an actual session adapter is available.
+
+The retained lifecycle supports bind, observe, send, wait, collect, continue
+and stop with the canonical run flags shown by `--help`. Effects recheck the
+original context and current approval/pause policy. Finalized collection
+retries return their original history. Unsupported actions refuse explicitly.
+Commit the canonical tier before starting; missing guard configuration,
+understated tiers and unavailable generic XS keeper ownership cannot start.
+
+The source compatibility commands next, brief, card, preflight, fence, seat,
+arm, push-check, undo and merge refuse configured or explicitly bound project
+contexts at the installed front. The sections below describe that legacy
+source adapter. Generic next/brief/lane creation remains a required adapter;
+the configured lifecycle above does not establish the full project loop.
+
+## Legacy source adapter
+
 Dispatch is the act that turns a planned card into a lane with a
 session in it. Everything the session needs is derived from the sources
 that own it, by a program, at a named ref, and written down where a

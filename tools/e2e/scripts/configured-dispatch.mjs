@@ -10,9 +10,11 @@ import { loadInstalledRecordTool, readInstalledMethodAsset, requireInstalledRunt
 import { captureCommittedInputs, captureTaskSnapshot } from "./records.mjs";
 import { captureQualifiedInputs } from "./qualified-reservation.mjs";
 import { resolveWorkspace, workspaceBindingPresent } from "./workspace.mjs";
-import { ROLE_TEMPLATE_KEYS, modelChoice, roleModel } from "./dispatch-brief.mjs";
+import { ROLE_TEMPLATE_KEYS, classifyTier, modelChoice, roleModel } from "./dispatch-brief.mjs";
+import { allRecords } from "./run-record.mjs";
+import { createProjectRuntime } from "./project-runtime.mjs";
 
-/** @type {WeakMap<object,{selection:any,tool:any,policy:ReturnType<typeof captureConfiguredGatePolicy>,schema:{text:string,sha256:string},capsule:any}>} */
+/** @type {WeakMap<object,{selection:any,tool:any,policy:ReturnType<typeof captureConfiguredGatePolicy>,schema:{text:string,sha256:string},capsule:any,fence:any,productPaths:readonly string[],runtime?:ReturnType<typeof createProjectRuntime>}>} */
 const captured = new WeakMap();
 /** @param {string} code @param {string} detail @returns {never} */
 function refuse(code, detail) { throw Object.assign(new Error(detail), { code }); }
@@ -26,7 +28,7 @@ function data(value) { return freezeSettings(structuredClone(value)); }
 /** @param {any} tool */
 function verifyTool(tool) {
   requireInstalledRuntimeAssets(tool, ["tools/e2e/scripts/configured-dispatch.mjs", "tools/e2e/scripts/qualified-reservation.mjs",
-    "tools/e2e/scripts/records.mjs", "tools/e2e/scripts/workspace.mjs", "tools/e2e/scripts/gate-run.mjs", "tools/e2e/scripts/project-settings.mjs", "tools/e2e/scripts/dispatch-brief.mjs"]);
+    "tools/e2e/scripts/records.mjs", "tools/e2e/scripts/workspace.mjs", "tools/e2e/scripts/gate-run.mjs", "tools/e2e/scripts/project-settings.mjs", "tools/e2e/scripts/project-runtime.mjs", "tools/e2e/scripts/dispatch-brief.mjs"]);
 }
 /** Exact original P/R revisions and delivered binding only. Card model stamps
  * override configured defaults; transient requests cannot replace either.
@@ -60,6 +62,7 @@ export function captureConfiguredDispatch(options) {
   if (declaredTier !== null && !VERIFICATION_TIERS.some(tier => tier === declaredTier)) refuse("configured-dispatch-tier", "The committed task tier is unsupported");
   const base = { version: 1, selection, receipt: canonical.receipt, origins, configuration: loaded.provenance, gatePolicy: policy,
     scopeDigest: operationDigest(canonical.fence), roles, task: { id: selection.taskId, path: snapshot.task.relativePath, blobId: snapshot.task.blobId, size: snapshot.task.fields.size ?? null, declaredTier },
+    sessionPolicy: { default: loaded.settings.session_policy.default, warnAfterTurns: loaded.settings.session_policy.warn_after_turns },
     process: { configuration: loaded.settings.process, values: loaded.processValues, schemaDigest: schema.sha256 } };
   verifyTool(tool);
   for (const role of /** @type {const} */ (["product", "records"])) {
@@ -68,7 +71,7 @@ export function captureConfiguredDispatch(options) {
   }
   if (operationContent(captureQualifiedInputs(selection)) !== operationContent(canonical)) refuse("configured-dispatch-context-changed", "The selected original context changed during capture");
   const capsule = data({ ...base, digest: operationDigest(base) }), handle = Object.freeze({ capsule });
-  captured.set(handle, { selection, tool, policy, schema, capsule }); return handle;
+  captured.set(handle, { selection, tool, policy, schema, capsule, fence: canonical.fence, productPaths: inputs.paths("product") }); return handle;
 }
 /** Authentic constructor handle only, with original committed bytes/origins and
  * TOOL verified again. No current R HEAD or candidate policy can replace them.
@@ -97,9 +100,50 @@ export function configuredDispatchStartCapsule(handle, root, assignment, preview
     operationContent(q.revisions) !== operationContent(selected.revisions) || operationContent(q.legacyTokenMap) !== operationContent(selected.legacyTokenMap) ||
     operationContent(q.receipt) !== operationContent(capsule.receipt) || operationContent(preview.receipt) !== operationContent(capsule.receipt) ||
     operationDigest(preview.scope) !== capsule.scopeDigest) refuse("configured-dispatch-start-context", "The decisive native admission differs from the original configured dispatch context");
-  const role = capsule.roles[assignment.role];
-  if (!role || assignment.model !== role.model) refuse("configured-dispatch-start-model", "Requested model differs from the original committed role choice");
+  rolePolicy(capsule, assignment);
+  tierPolicy(/** @type {NonNullable<ReturnType<typeof captured.get>>} */ (captured.get(handle)), capsule);
+  if (!assignment.native?.taskName || !assignment.native?.sessionId || allRecords(root).some(rec => rec.native?.launch?.taskName === assignment.native.taskName && rec.native?.launch?.sessionId === assignment.native.sessionId)) {
+    refuse("configured-dispatch-fresh-launch", "Fresh configured dispatch requires a new native task identity, without reusing a retained launch");
+  }
   return capsule;
+}
+/** @param {any} capsule @param {any} assignment */
+function rolePolicy(capsule, assignment) {
+  const role = capsule.roles[assignment.role];
+  if (!role) refuse("configured-dispatch-start-model", "Original configured role is unavailable");
+  const qualified = /^codex\/(gpt-[A-Za-z0-9][A-Za-z0-9._-]*)$/.exec(role.model);
+  const model = qualified?.[1] ?? (/^gpt-[A-Za-z0-9][A-Za-z0-9._-]*$/.test(role.model) ? role.model : null);
+  if (model === null) refuse("configured-dispatch-harness-unsupported", "Native Codex requires one explicit gpt model or codex/gpt model spelling; no account or harness default is selected");
+  if (assignment.model !== model) refuse("configured-dispatch-start-model", "Requested model differs from the original committed role choice");
+  const vehicle = role.vehicle ?? capsule.sessionPolicy.default;
+  if (!["fresh", "subagent"].includes(vehicle)) refuse("configured-dispatch-vehicle-unsupported", "This native adapter supports fresh/subagent launches; an original resume/session request cannot select a new or newest child");
+  return data({ role: assignment.role, requested: role.requested, model, harness: "codex-desktop-native", vehicle, sessionPolicy: capsule.sessionPolicy });
+}
+/** Canonical classifier, actual configured guard owners and original source.
+ * No generic XS keeper answer is invented from a whole-suite green.
+ * @param {NonNullable<ReturnType<typeof captured.get>>} state @param {any} capsule */
+function tierPolicy(state, capsule) {
+  const runtime = state.runtime ??= createProjectRuntime({ productRoot: state.selection.authorityRoot, productRevision: state.selection.revisions.product, tool: state.tool });
+  const paths = state.fence.paths.filter((/** @type {any} */ entry) => entry.role === "product").map((/** @type {any} */ entry) => entry.domain);
+  const guards = paths.length ? runtime.section("guard_class") : {};
+  if (paths.length) runtime.classify(paths);
+  let derived;
+  try {
+    derived = classifyTier({ size: capsule.task.size ?? "", fencePaths: paths, unresolved: [],
+      untracked: paths.filter((/** @type {string} */ domain) => !state.productPaths.some(file => file === domain || file.startsWith(`${domain}/`))),
+      guardMap: new Map(Object.entries(guards)), process: runtime.process().settings,
+      keeper: { answered: false, pinned: false, why: "This configured layout has no qualified generic keeper-ownership adapter" } });
+  } catch { refuse("configured-dispatch-tier-unavailable", "Original tier cannot be derived; missing inputs or generic XS keeper ownership remain unavailable"); }
+  const declared = capsule.task.declaredTier;
+  if (declared === null) refuse("configured-dispatch-tier-required", "Commit the canonically classified tier on the original task before dispatch");
+  if (VERIFICATION_TIERS.indexOf(declared) < VERIFICATION_TIERS.indexOf(/** @type {any} */ (derived.tier))) refuse("configured-dispatch-tier-understated", "The committed tier is below its original configured process/guard classification");
+  return data({ tier: declared, derivedTier: derived.tier, reason: derived.reason });
+}
+/** One verified batch for the readonly fixed effect helper. No caller can
+ * choose another model, vehicle or METHOD asset. @param {object} handle @param {any} assignment */
+export function configuredDispatchEffectContext(handle, assignment) {
+  const capsule = verifyConfiguredDispatch(handle), state = /** @type {NonNullable<ReturnType<typeof captured.get>>} */ (captured.get(handle));
+  return data({ capsule, role: rolePolicy(capsule, assignment), verification: tierPolicy(state, capsule), schema: { text: state.schema.text, sha256: state.schema.sha256 } });
 }
 /** Fixed read-only helpers use this verified METHOD datum, never a schema path
  * supplied by record metadata. @param {object} handle */

@@ -126,10 +126,11 @@ import {
 import { buildDetachedBenchFence } from "./lane-fence.mjs";
 import { validOperationRecord } from "./operation-record.mjs";
 export { validOperationRecord } from "./operation-record.mjs";
-import { startQualifiedNativeRun, continueQualifiedNativeRun, collectQualifiedNativeRun,
+import { startQualifiedNativeRun, startConfiguredQualifiedNativeRun, configuredPreparationPolicy, continueQualifiedNativeRun, collectQualifiedNativeRun,
   qualifiedAssignment, qualifiedAdmissionAt, releaseQualifiedRun, qualifiedExpansionHold, prepareQualifiedNativeContinuation, validateQualifiedOperation } from "./qualified-native.mjs";
 import { qualifiedBenchAssignmentInputs, prepareQualifiedVerification, collectQualifiedVerifierRun } from "./qualified-verification.mjs";
 export { sealQualifiedVerification, qualifiedOutputIdentity, qualifiedReviewDigest } from "./qualified-verification.mjs";
+import { readConfiguredNativePolicy } from "../../../cli/configured-native-reader.mjs";
 
 /** The record format this reader knows. A document declaring another is refused, never guessed at. */
 export const RECORD_VERSION = 1;
@@ -836,9 +837,15 @@ export function qualifiedPhasePolicy(root, rec, role = rec.assignment.role, boun
     return got.stdout;
   };
   try {
+    const stored = existsSync(recordPath(root, rec.attempt)) ? readRecord(root, rec.attempt) : null, storedOrigins = stored?.native?.qualified?.origins;
+    const configuredSource = !!storedOrigins && Object.hasOwn(storedOrigins, "configuredDispatch");
+    const preparation = stored === null ? configuredPreparationPolicy(root, rec) : null;
+    if (stored === null && Object.hasOwn(q.origins, "configuredDispatch") && preparation === null) throw new NativeCodexFinding("CONFIGURED_RECORD_REQUIRED", "Configured effects require the actual retained record or backend-owned preparation");
+    if (stored !== null && configuredSource !== Object.hasOwn(q.origins, "configuredDispatch")) throw new NativeCodexFinding("CONFIGURED_SOURCE_OMITTED", "The actual retained source and supplied configured policy capsule differ");
+    const configured = preparation ?? (configuredSource ? readConfiguredNativePolicy(root, rec) : null);
     const ledger = admissionLedger(allRecords(root), TERMINAL_STATES).map((entry) =>
       entry.attempt === rec.attempt && rec.reservation.releasedAt === null ? { ...entry, terminal: false } : entry);
-    return admit(grantState(root), { boundary, kind: rec.assignment.admission?.kind ?? "explicit", work: "card",
+    return admit(grantState(root, configured === null ? {} : { schemaText: configured.schemaText }), { boundary, kind: rec.assignment.admission?.kind ?? "explicit", work: "card",
       card: rec.assignment.id, role, blob: receipt.cardBlobId, cardText: read(receipt.cardBlobId), approvedText: read,
       resource: rec.resource, ...(rec.assignment.admission?.kind === "derived" ? rec.assignment.admission : {}) }, ledger);
   } catch (error) {
@@ -1202,6 +1209,13 @@ export function defaultRunIo() {
 function transition(rec, at, op, to, why) {
   rec.events.push({ at, op, from: rec.state, to, why });
   rec.state = to;
+}
+
+/** Strict configured product start; no generic/source compatibility fallback.
+ * @param {string} root @param {{assignment:Assignment,at?:string,host?:string,io?:RunIo}} opts */
+export function startConfiguredRun(root, opts) {
+  if (opts.assignment.qualified === undefined) throw new RunRecordFinding("CONFIGURED_QUALIFIED_REQUIRED", "Configured dispatch requires an explicit qualified original P/R assignment");
+  return startConfiguredQualifiedNativeRun(root, opts);
 }
 
 /**

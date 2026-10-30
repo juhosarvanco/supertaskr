@@ -9,6 +9,7 @@ import * as runs from "./run-record.mjs";
 import { NativeCodexFinding, activeNativeHolds, addNativeHold, collectNativeWorkspace, explicitResourceProblem,
   nativeFinalGate, nativeIgnoredSnapshot, nativePathAllowed, nativeSha256, readNativeRecord, withNativeTransaction } from "./native-codex.mjs";
 import { qualifiedVerifierAdmission, qualifiedReviewPolicy, validateQualifiedReview, collectQualifiedReviewEvidence } from "./qualified-verification.mjs";
+import { validConfiguredDispatchCapsule } from "../../../cli/configured-native-reader.mjs";
 
 /** Loaded only for explicitly qualified calls.
  * @returns {typeof import("./qualified-reservation.mjs")} */
@@ -16,6 +17,20 @@ function validator() { return runs.qualifiedValidation(); }
 /** Ordinary run-record consumers must load no records/capture modules.
  * @type {typeof import("./qualified-admission.mjs") | undefined} */
 let qualifiedAdmission;
+/** @type {typeof import("./configured-dispatch.mjs")|undefined} */
+let configuredDispatch;
+/** Exact backend-created unpublished record only; never serialized or supplied
+ * through assignment/options metadata. @type {WeakMap<object,object>} */
+const configuredPreparations = new WeakMap();
+/** @param {string} root @param {any} rec */
+export function configuredPreparationPolicy(root, rec) {
+  const handle = configuredPreparations.get(rec);
+  if (handle === undefined) return null;
+  if (configuredDispatch === undefined) refuse("QUALIFIED_CONFIGURED_PREPARATION");
+  const capsule = configuredDispatch.verifyConfiguredDispatch(handle);
+  if (realpathSync(root) !== capsule.selection.authorityRoot || !equal(capsule, rec.native?.qualified?.origins?.configuredDispatch)) refuse("QUALIFIED_CONFIGURED_PREPARATION");
+  return { capsuleDigest: capsule.digest, schemaText: configuredDispatch.configuredDispatchSchema(handle).text };
+}
 async function preloadAdmission() {
   return qualifiedAdmission ??= await import("./qualified-admission.mjs");
 }
@@ -76,6 +91,7 @@ export function validateQualifiedNative(root, rec, requireHeld = true) {
   const q = rec.native.qualified;
   shape(q, ["reservation", "identity", "ignored", "origins"], ["collection", "verification"]);
   if (rec.assignmentDigest !== runs.sha256(JSON.stringify(rec.assignment)) || rec.permission.digest !== commitment(q)) refuse("QUALIFIED_RETAINED_AUTHORITY_CHANGED");
+  if (Object.hasOwn(q.origins, "configuredDispatch") && !validConfiguredDispatchCapsule(q.origins.configuredDispatch)) refuse("QUALIFIED_CONFIGURED_CAPSULE_SHAPE");
   if (rec.native.profile !== (q.verification === undefined ? "writer-resource" : "detached-verifier")) refuse("QUALIFIED_RETAINED_PHASE_CHANGED");
   if (!equal(q.origins.launch, rec.assignment.native) || rec.native.launch.taskName !== q.origins.launch.taskName ||
       rec.native.launch.sessionId !== q.origins.launch.sessionId || !rec.native.launch.coordinatorTurnIds.includes(q.origins.launch.coordinatorTurnId)) refuse("QUALIFIED_LAUNCH_AUTHORITY_CHANGED");
@@ -103,6 +119,15 @@ export async function startQualifiedNativeRun(root, opts) {
   catch (error) { const code = /** @type {any} */ (error).code ?? "QUALIFIED_START_REFUSED";
     throw new NativeCodexFinding(code, `${code}: qualified native start refused`); }
 }
+/** Strict product entry. Legacy direct start remains compatibility; missing
+ * PRODUCT settings/binding/TOOL cannot fall back through this constructor.
+ * @param {string} root @param {any} opts */
+export async function startConfiguredQualifiedNativeRun(root, opts) {
+  const a = copy(opts.assignment); request(a, "child-start");
+  configuredDispatch ??= await import("./configured-dispatch.mjs");
+  const q = a.qualified, handle = configuredDispatch.captureConfiguredDispatch({ authorityRoot: root, projectId: q.projectId, revisions: q.revisions, taskId: q.taskId, legacyTokenMap: q.legacyTokenMap });
+  return startQualifiedNativeRun(root, { ...opts, assignment: a, configuredDispatch: handle });
+}
 /** @param {string} root @param {any} opts */
 async function startQualifiedNativeRunImpl(root, opts) {
   const a = copy(opts.assignment);
@@ -110,7 +135,8 @@ async function startQualifiedNativeRunImpl(root, opts) {
   if (realpathSync(root) !== realpathSync(input.authorityRoot)) refuse("QUALIFIED_AUTHORITY_HOME");
   await runs.loadQualifiedReservations();
   await preloadAdmission();
-  const earlier = await admission().admissionPreflight(input);
+  if (opts.configuredDispatch !== undefined) configuredDispatch ??= await import("./configured-dispatch.mjs");
+  const earlier = opts.configuredDispatch === undefined ? await admission().admissionPreflight(input) : await admission().configuredAdmissionPreflight(input, opts.configuredDispatch);
   // Testable boundary: the actual transaction's acquisition hook can change
   // inputs here; the decisive recapture below must detect that change.
   return withNativeTransaction(root, { operation: "qualified-run-start", ...(opts.transaction ?? {}) }, () => {
@@ -122,7 +148,7 @@ async function startQualifiedNativeRunImpl(root, opts) {
       if (runs.qualifiedPhasePolicy(root, prior).consumed) refuse("QUALIFIED_REVIEW_ADMISSION_NOT_REUSED");
       return { record: prior, file: runs.recordPath(root, prior.attempt), reservation: prior.native?.qualified.reservation, repeated: true };
     }
-    const preview = admission().decisiveQualifiedAdmission(input, earlier, false, a.resource);
+    const preview = opts.configuredDispatch === undefined ? admission().decisiveQualifiedAdmission(input, earlier, false, a.resource) : admission().decisiveConfiguredAdmission(input, earlier, opts.configuredDispatch, false, a.resource);
     if (prepared !== null && preview.admission().consumed) refuse("QUALIFIED_REVIEW_ADMISSION_NOT_REUSED");
     if (!equal(preview.receipt, a.qualified.receipt)) refuse("QUALIFIED_RECEIPT_CHANGED");
     if (!existsSync(a.brief)) refuse("QUALIFIED_BRIEF_ABSENT");
@@ -131,6 +157,7 @@ async function startQualifiedNativeRunImpl(root, opts) {
     const scope = validator().deriveQualifiedScope(acquisition);
     const primary = scope.workers.find((worker) => worker.roles.includes("product")) ?? scope.workers[0];
     if (!primary || a.resource !== primary.identity.filesystemRoot || a.base !== (primary.initialHead ?? primary.base)) refuse("QUALIFIED_PRIMARY_WORKER");
+    const capsule = opts.configuredDispatch === undefined ? null : /** @type {NonNullable<typeof configuredDispatch>} */ (configuredDispatch).configuredDispatchStartCapsule(opts.configuredDispatch, root, a, preview);
     const ignored = scope.workers.map((worker) => ({ root: worker.identity.filesystemRoot,
       policy: [...a.native.ignoredOutputs, ...(worker.identity.filesystemRoot === realpathSync(root) ? [".supertaskr"] : [])], baseline: [] }));
     for (const worker of scope.workers) {
@@ -141,6 +168,7 @@ async function startQualifiedNativeRunImpl(root, opts) {
     if (taken.repeated) refuse("QUALIFIED_ORPHAN_REQUIRES_RECONCILIATION");
     const q = { reservation: taken.reservation, identity: taken.reservation.identity, ignored, origins: {
       receipt: preview.receipt, grant: preview.grant, scope: preview.scope, admission: copy(input.admission), launch: copy(a.native), bases: copy(a.qualified.workers),
+      ...(capsule === null ? {} : { configuredDispatch: capsule }),
     }, ...(prepared === null ? {} : { verification: { authority: prepared.entry.authority, digest: prepared.entry.digest, seal: prepared.entry.seal } }) };
     const brief = { path: a.brief, digest: runs.sha256(readFileSync(a.brief, "utf8")) };
     const rec = /** @type {any} */ ({ version: runs.RECORD_VERSION, attempt, state: "reserved", assignment: a,
@@ -156,6 +184,7 @@ async function startQualifiedNativeRunImpl(root, opts) {
         preparedAt: at, start: null, probes: [], binding: null, inflight: [], receipts: [], holds: [], stopObservations: [], interruptObservations: [], outputs: [],
         coverage: { tools: ["Bash", "apply_patch"], callbacks: ["SubagentStart", "PreToolUse", "PostToolUse", "SubagentStop", "UserPromptSubmit", "Interrupt"] },
         disclosure: "registered callbacks and Bash/apply_patch only; exact root prefixes and cumulative inspection of all owned checkouts; no OS/read isolation or arbitrary shell-write confinement" } });
+    if (opts.configuredDispatch !== undefined) configuredPreparations.set(rec, opts.configuredDispatch);
     try {
       if (prepared !== null) {
         prepared.entry.consumedBy = attempt;
@@ -170,7 +199,7 @@ async function startQualifiedNativeRunImpl(root, opts) {
       // retain the complete discoverable set rather than release a live record.
       if (!existsSync(runs.recordPath(root, attempt)) && !taken.repeated && prepared === null) runs.releaseQualifiedReservationSync(root, { attempt, expectedIdentity: q.identity });
       throw error;
-    }
+    } finally { configuredPreparations.delete(rec); }
   });
 }
 /** @param {any} rec @param {any} event */

@@ -75,7 +75,7 @@ export function privateRecordFixture() {
   const methodVersion = /METHOD_SNAPSHOT_VERSION[^=]*=\s*"([^"]+)"/.exec(readFileSync(path.join(SOURCE, "app/src-tauri/src/agent/kit.rs"), "utf8"))?.[1];
   if (!methodVersion) throw Error("fixture requires the actual method version");
   const runtimePaths = readdirSync(path.join(SOURCE, "tools/e2e/scripts")).filter((file) => file.endsWith(".mjs")).map((file) => `tools/e2e/scripts/${file}`);
-  runtimePaths.push(...["lane-fence", "gate-token", "expand-fence", "hook-install", "pre-push-guard", "push-guard", "landing-gate", "configured-gate-reader", "hook-git-context", "is-main"].map((name) => `cli/${name}.mjs`), "tools/e2e/package.json");
+  runtimePaths.push(...["lane-fence", "gate-token", "expand-fence", "hook-install", "pre-push-guard", "push-guard", "landing-gate", "configured-gate-reader", "configured-native-reader", "hook-git-context", "is-main"].map((name) => `cli/${name}.mjs`), "tools/e2e/package.json");
   const runtimeFiles = runtimePaths.sort().map((file) => { const bytes = readFileSync(path.join(SOURCE, file)); putPrivate(dist, file, bytes); return { path: file, sha256: sha(bytes) }; });
   const manifest = { version: 2, package: { name: "supertaskr", version: toolVersion, sha256: sha(packageBytes), entrySha256: sha(entryBytes) }, parser: { version: parserPackage.version, files: parserFiles },
     method: { version: methodVersion, packHash: sha(JSON.stringify(methodFiles)), files: methodFiles },

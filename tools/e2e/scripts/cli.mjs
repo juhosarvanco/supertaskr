@@ -53,10 +53,11 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
+import { WORKSPACE_BINDING_REL_PATH } from "./workspace.mjs";
 // THE INDEX AND ITS CHAPTERS ARE ONE TEXT (T-290). This front derives its
 // commands from docs/CONVENTIONS.md, and since that document became an
 // index over docs/conventions/ the splice is the ONE implementation of
@@ -575,6 +576,8 @@ export function skillSourceRoot(projectRoot, carriedRoot = CARRIED_SKILLS_ROOT) 
  * @property {string} [positionalFlag]  the flag a LEADING positional becomes
  * @property {boolean} [stdioContext] fixed protocol supplies validated backend context on stdin
  * @property {boolean} [projectless] fixed TOOL command consumes explicit file arguments without project discovery
+ * @property {boolean} [sourceCompatibility] legacy source route is unavailable for configured/bound projects
+ * @property {boolean} [packageHelp] target owns its help without project discovery
  */
 
 /**
@@ -617,6 +620,12 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
     source: "Portable private backup inspection and restore; original authority is not imported",
   }),
   Object.freeze({
+    verb: "dispatch", summary: "strict configured admission and retained native run lifecycle",
+    target: { kind: "script", file: "configured-dispatch-command.mjs", args: [] }, rootFlag: true, packageHelp: true,
+    usage: "supertaskr dispatch --run <operation> <run flags> | --admission-preflight <request-file>",
+    source: "Original committed PRODUCT/RECORDS/TOOL; fixed configured dispatch entry",
+  }),
+  Object.freeze({
     verb: "status",
     summary: "the board census — every card, its status and its blockers",
     target: { kind: "script", file: "brief.mjs", args: ["--state"] },
@@ -625,6 +634,7 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
   }),
   Object.freeze({
     verb: "next",
+    sourceCompatibility: true,
     summary: "the dispatch view — what is startable, and what each card would need",
     target: { kind: "script", file: "brief.mjs", args: ["--dispatch"] },
     rootFlag: true,
@@ -633,6 +643,7 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
   }),
   Object.freeze({
     verb: "brief",
+    sourceCompatibility: true,
     positionalFlag: "--task",
     summary: "the dispatch brief for one card, derived row by row from its own sources",
     target: { kind: "script", file: "brief.mjs", args: [] },
@@ -642,6 +653,7 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
   }),
   Object.freeze({
     verb: "card",
+    sourceCompatibility: true,
     positionalFlag: "--card",
     summary: "one card's figures, each with the ref it was measured at",
     target: { kind: "script", file: "brief.mjs", args: [] },
@@ -651,6 +663,7 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
   }),
   Object.freeze({
     verb: "preflight",
+    sourceCompatibility: true,
     positionalFlag: "--task",
     summary: "re-derive a card's claims against the tree it is about to be built on",
     target: { kind: "script", file: "brief.mjs", args: ["--preflight"] },
@@ -660,6 +673,7 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
   }),
   Object.freeze({
     verb: "fence",
+    sourceCompatibility: true,
     positionalFlag: "--task",
     summary: "write a lane's fence manifest into its worktree",
     target: { kind: "script", file: "brief.mjs", args: [] },
@@ -669,6 +683,7 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
   }),
   Object.freeze({
     verb: "seat",
+    sourceCompatibility: true,
     summary: "take or release the integration checkout's seat",
     target: { kind: "script", file: "brief.mjs", args: [] },
     rootFlag: true,
@@ -677,6 +692,7 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
   }),
   Object.freeze({
     verb: "arm",
+    sourceCompatibility: true,
     positionalFlag: "--dispatch-lane",
     summary: "cut, stamp and arm one lane in a single command",
     target: { kind: "script", file: "brief.mjs", args: [] },
@@ -739,6 +755,7 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
   }),
   Object.freeze({
     verb: "push-check",
+    sourceCompatibility: true,
     summary: "the cheap board checks a push pays for unconditionally",
     target: { kind: "script", file: "push-checks.mjs", args: [] },
     rootFlag: true,
@@ -830,6 +847,7 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
   }),
   Object.freeze({
     verb: "undo",
+    sourceCompatibility: true,
     summary: "revert one card's merge, after saying what has landed on its fence since",
     target: { kind: "script", file: "undo.mjs", args: [] },
     rootFlag: true,
@@ -839,6 +857,7 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
   }),
   Object.freeze({
     verb: "merge",
+    sourceCompatibility: true,
     summary: "the integrator's ritual, in its order, stopping with the merge staged",
     target: { kind: "script", file: "merge.mjs", args: [] },
     rootFlag: true,
@@ -960,7 +979,7 @@ export function usageText(verbs = VERBS) {
     "  Every verb is a FRONT for a command this project already has; the",
     "  child's exit code is this command's exit code, unchanged.",
     "",
-    ...verbs.map((v) => `  ${v.verb.padEnd(width)}  ${v.summary}`),
+    ...verbs.map((v) => `  ${v.verb.padEnd(width)}  ${v.sourceCompatibility ? "legacy source compatibility: " : ""}${v.summary}`),
     "",
     "  supertaskr <verb> --help prints that verb's own usage and its source.",
     `  exit codes: ${Object.entries(EXIT)
@@ -1038,6 +1057,11 @@ export function main(argv, io = {}) {
 
   if(entry.projectless && rootOverride!==undefined) {err(entry.usage??`supertaskr ${entry.verb}`);return EXIT.USAGE;}
 
+  if (entry.packageHelp && rest.length === 1 && rest[0] === "--help" && entry.target.kind === "script") {
+    const child = spawn(process.execPath, [path.join(packageRoot, "scripts", entry.target.file), "--help"], { cwd, stdio: "inherit" });
+    return child.error || child.signal ? EXIT.CANNOT_RUN : child.status ?? EXIT.CANNOT_RUN;
+  }
+
   const projectRoot = entry.projectless ? cwd : rootOverride === undefined ? findProjectRoot(cwd) : path.resolve(rootOverride);
   if (projectRoot === null) {
     err(
@@ -1056,11 +1080,20 @@ export function main(argv, io = {}) {
       [
         entry.usage ?? `supertaskr ${entry.verb}`,
         `  ${entry.summary}`,
+        ...(entry.sourceCompatibility ? ["  Legacy source compatibility only; configured/bound projects use supertaskr dispatch."] : []),
         `  fronts: ${planFor({ entry, args: [], projectRoot }).names}`,
         `  source: ${entry.source}`,
       ].join("\n"),
     );
     return EXIT.CLEAN;
+  }
+
+  if (entry.sourceCompatibility) {
+    const present = (/** @type {string} */ file) => { try { lstatSync(file); return true; } catch (error) { return /** @type {any} */ (error).code !== "ENOENT"; } };
+    if (present(path.join(projectRoot, ROOT_SETTINGS_MARKER)) || present(path.join(projectRoot, WORKSPACE_BINDING_REL_PATH))) {
+      err(`supertaskr ${verb}: REFUSED — legacy source compatibility; configured or selected RECORDS contexts use supertaskr dispatch. This action has no configured adapter.`);
+      return EXIT.CANNOT_RUN;
+    }
   }
 
   const mismatch = rootMismatch(entry, projectRoot);

@@ -161,6 +161,16 @@ test("ordinary TOOL validation retains the critical standalone completion writer
   putPrivate(f.tool,"dist/tool-manifest.json",original);expect(loadInstalledRecordTool(f.manifestPath).package.name).toBe("supertaskr");
  }finally{f.cleanup();}
 });
+test("ordinary TOOL validation requires the actually imported cold configured reader even when an omitted file remains present",()=>{
+ const f=privateRecordFixture();try{
+  const original=readFileSync(f.manifestPath,"utf8"),member="cli/configured-native-reader.mjs",manifest=JSON.parse(original);
+  expect(loadInstalledRecordTool(f.manifestPath).package.name).toBe("supertaskr");
+  expect(readFileSync(path.join(f.tool,"dist/tools/e2e/scripts/run-record.mjs"),"utf8")).toContain('from "../../../cli/configured-native-reader.mjs"');
+  manifest.runtime.files=manifest.runtime.files.filter((entry:any)=>entry.path!==member);manifest.runtime.buildHash=sha(JSON.stringify(manifest.runtime.files));putPrivate(f.tool,"dist/tool-manifest.json",JSON.stringify(manifest));
+  expect(readFileSync(path.join(f.tool,"dist",member),"utf8").length).toBeGreaterThan(0);expect(()=>loadInstalledRecordTool(f.manifestPath)).toThrow(/records-tool-runtime-mismatch/);
+  putPrivate(f.tool,"dist/tool-manifest.json",original);expect(loadInstalledRecordTool(f.manifestPath).manifestDigest).toBe(sha(original));
+ }finally{f.cleanup();}
+});
 test("ordinary TOOL validation retains the standalone CI controller when its omitted file remains present",()=>{
  const f=privateRecordFixture();try{
   const original=readFileSync(f.manifestPath,"utf8"),member="tools/e2e/scripts/qualified-ci-operation.mjs",manifest=JSON.parse(original);
