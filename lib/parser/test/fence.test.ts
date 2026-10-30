@@ -226,6 +226,36 @@ describe('T-349 qualified pure planning fences', () => {
     }
   });
 
+  it('preserves measured trailing-space identity bytes without aliasing a trimmed spelling', () => {
+    const roots: FenceRepositories = {
+      product: { filesystemRoot: '/workspace/new-code  ', gitCommonDirectory: '/objects/product.git  ' },
+      records: { filesystemRoot: '/workspace/new-notes  ', gitCommonDirectory: '/objects/records.git  ' },
+    };
+    const fence = qualified(['product::src/first.ts'], roots);
+    expect(fence.usable).toBe(true);
+    expect(fence.repositories).toEqual(roots);
+    expect(fence.paths[0]).toMatchObject({ filesystemRoot: roots.product.filesystemRoot, gitCommonDirectory: roots.product.gitCommonDirectory, domain: 'src/first.ts' });
+    expect(compareQualifiedFences(fence, qualified(['product::src/'], roots), roots).verdict).toBe('overlapping');
+    const changed = { ...roots, product: { ...roots.product, filesystemRoot: roots.product.filesystemRoot.trimEnd() } };
+    expect(compareQualifiedFences(fence, qualified(['product::src/first.ts'], changed), changed).verdict).toBe('unusable');
+    const nested = qualified(['product::src/first.ts'], { ...roots, records: { ...roots.records, filesystemRoot: `${roots.product.filesystemRoot}/private` } });
+    expect(issueCodes(nested)).toContain('nested-roots');
+  });
+
+  it('retains unsafe lexical identity refusals for each measured path field', () => {
+    const bad = ['relative/path', ' /absolute/path', '/workspace//code', '/workspace/./code', '/workspace/../code',
+      '/workspace/code/', '/workspace\\code', '/workspace/code\u0000', '/workspace/code\n', '/workspace/code\u0085'];
+    for (const field of ['filesystemRoot', 'gitCommonDirectory'] as const) {
+      for (const path of bad) {
+        const roots = { ...independentRoots, product: { ...independentRoots.product, [field]: path } };
+        const fence = qualified(['product::src/first.ts'], roots);
+        expect(fence.usable, `${field}: ${JSON.stringify(path)}`).toBe(false);
+        expect(issueCodes(fence)).toContain('noncanonical-identity');
+        expect(compareQualifiedFences(fence, fence, roots).verdict).toBe('unusable');
+      }
+    }
+  });
+
   it('freezes captured facts and refuses comparison facts inconsistent with either expansion', () => {
     const mutable = { product: { ...independentRoots.product }, records: { ...independentRoots.records } };
     const a = qualified(['product::src/a.ts'], mutable);

@@ -57,7 +57,7 @@ function parser() {
 function git(root, args) {
   try { return execFileSync("git", ["--no-replace-objects", "-C", root, ...args], {
     encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, GIT_NO_LAZY_FETCH: "1", GIT_OPTIONAL_LOCKS: "0" },
-  }).trim(); }
+  }).replace(/\n$/, ""); }
   catch (err) { refuse("qualified-worker-unavailable", `${root}: ${String(err)}`); }
 }
 /** @param {any} location @returns {string} */
