@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { cpSync, readFileSync, renameSync, symlinkSync, writeFileSync } from "node:fs";
+import { cpSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { executeRecordProtocol, RECORD_PROTOCOL_LIMIT } from "../scripts/records-stdio.mjs";
@@ -8,7 +8,7 @@ import { loadConfiguredPrivateRecordService } from "../scripts/records-save.mjs"
 import { acceptedOperationPath, readAcceptedOperation } from "../scripts/durable-operation.mjs";
 import { takeReservation, releaseReservation } from "../scripts/run-record.mjs";
 import { main } from "../scripts/cli.mjs";
-import { privateRecordFixture, putPrivate, commitPrivate, privateGit, FIXTURE_ENV, SOURCE, sha, fixtureProjectSettings } from "./private-record-fixture";
+import { privateRecordFixture, putPrivate, commitPrivate, privateGit, FIXTURE_ENV, sha, fixtureProjectSettings } from "./private-record-fixture";
 
 const SUBJECT = new URL("../scripts/records-stdio.mjs", import.meta.url);
 const FILE = "docs/rooms/note.md";
@@ -137,7 +137,8 @@ test("installed records protocol measures a representative thousand-card private
     const manifest = JSON.parse(readFileSync(f.manifestPath, "utf8"));
     manifest.runtime.files.find((entry: any) => entry.path === "cli/expand-fence.mjs").sha256 = sha(readFileSync(expansion));
     manifest.runtime.buildHash = sha(JSON.stringify(manifest.runtime.files)); writeFileSync(f.manifestPath, JSON.stringify(manifest));
-    symlinkSync(path.join(SOURCE, "tools/e2e/node_modules"), path.join(f.tool, "node_modules"));
+    // The canonical installed fixture supplies its declared YAML dependency.
+    // Keep this child independent of the source dependency directory.
     const invoke = (request: any) => {
       const start = performance.now();
       const child = spawnSync(process.execPath, [path.join(f.tool, "supertaskr.mjs"), "records", "--stdio"], {
