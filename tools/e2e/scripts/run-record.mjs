@@ -674,6 +674,13 @@ export function readAssignment(file) {
       `run-record: the assignment at ${file} did not parse as JSON: ${String(err)}`,
     );
   }
+  return parseAssignment(parsed, file);
+}
+
+/** Canonical parsed-value owner shared by file input and fixed backend
+ * constructors. Values are data; this neither starts work nor grants scope.
+ * @param {unknown} parsed @param {string} [file] @returns {Assignment} */
+export function parseAssignment(parsed, file = "backend-owned assignment") {
   if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
     throw new RunRecordFinding(
       "ASSIGNMENT_UNREADABLE",
@@ -700,6 +707,9 @@ export function readAssignment(file) {
         "field left out is a fact nobody decided, which is what the recovery day had to " +
         "reconstruct from worktrees.",
     );
+  }
+  for (const field of ["resource", "cwd", "brief"]) {
+    if (/[\x00-\x1f\x7f-\x9f]/.test(String(obj[field]))) throw new RunRecordFinding("ASSIGNMENT_PATH", "Assignment path contains a forbidden control character");
   }
   const kind = String(obj["kind"]);
   if (kind !== "card" && kind !== "consultation") {
@@ -761,13 +771,13 @@ export function readAssignment(file) {
     kind,
     id,
     role: String(obj["role"]).trim(),
-    resource: String(obj["resource"]).trim(),
+    resource: String(obj["resource"]),
     harness,
     model: String(obj["model"]).trim(),
     effort: String(obj["effort"]).trim(),
     base: String(obj["base"]).trim(),
-    brief: String(obj["brief"]).trim(),
-    cwd: String(obj["cwd"]).trim(),
+    brief: String(obj["brief"]),
+    cwd: String(obj["cwd"]),
     deadline: String(obj["deadline"]).trim(),
     budget: String(obj["budget"]).trim(),
     ownedJobs,

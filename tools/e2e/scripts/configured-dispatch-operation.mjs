@@ -2,19 +2,19 @@
  * exact strict request and real claims; later stages retain those same facts.
  * The initial capture and protected private stamp are separate retained stages;
  * measured worktree creation follows the stamp; native preparation is separate. */
-import { existsSync, lstatSync, readdirSync, rmdirSync, realpathSync, readFileSync } from "node:fs";
+import { existsSync, lstatSync, readdirSync, rmdirSync, realpathSync, readFileSync, mkdirSync, constants, openSync, closeSync, fstatSync, readSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { preparedConfiguredArmContext, configuredArmRepository } from "./configured-dispatch-arm.mjs";
 import { captureConfiguredDispatch, createConfiguredDispatchGateRunner } from "./configured-dispatch.mjs";
-import { captureCompletedGenesisForDispatch } from "./genesis-bank-plan.mjs";
+import { captureCompletedGenesisForDispatch, captureOriginalCompletedGenesisForDispatch } from "./genesis-bank-plan.mjs";
 import { captureConfiguredArmOperationContext } from "./configured-dispatch-context.mjs";
-import { configuredArmStampIntent, validConfiguredArmStampedSource } from "./configured-dispatch-record.mjs";
+import { configuredArmStampIntent, configuredArmBriefPath, validConfiguredArmStampedSource } from "./configured-dispatch-record.mjs";
 import { measureQualifiedWorker } from "./qualified-reservation.mjs";
 import { readOperationRef, operationDestinationContains, acceptOperationRef } from "./operation-ref.mjs";
 import { configuredAdmissionPreflight, decisiveConfiguredAdmission } from "./qualified-admission.mjs";
-import { atomicJson, withNativeTransaction, syncNativeFileNamespace } from "./native-codex.mjs";
+import { atomicJson, atomicNativeText, withNativeTransaction, syncNativeFileNamespace } from "./native-codex.mjs";
 import { assertOperationOwnership, readReservation, takeReservation, releaseReservation, defaultRunIo, sha256 } from "./run-record.mjs";
 import { acceptedOperationPath, readAcceptedOperation, captureOperationRepository } from "./durable-operation.mjs";
 import { operationContent, operationDigest, operationWork, validOperationRecord } from "./operation-record.mjs";
@@ -119,6 +119,35 @@ export function observeConfiguredArmStamp(root,operationId){
 /** @param {any} r @param {boolean} stamped */
 function admissionInput(r,stamped=false){return {version:1,...r.selection,revisions:{...r.selection.revisions,records:stamped?r.stamp.commit:r.selection.revisions.records},taskId:r.taskId,
  roles:[...new Set(r.scope.paths.map((/** @type {any} */ p)=>p.role))],admission:{boundary:"lane-cut",role:"executor",kind:"explicit",parent:"",evidence:"",scope:"product-change",attempt:null}};}
+/** One current original policy/origin/working/claim/worker check for the
+ * finite lane, brief and handoff producers. No caller policy callback.
+ * @param {any} rec @param {any} tool @param {object} handle @param {object} context @param {any} [earlier] */
+function currentArm(rec,tool,handle,context,earlier=null){
+ const r=rec.operation.request,p=rec.operation.progress,root=rec.resource,input=admissionInput(r,true);
+ if(p.handoff.stage==="ready")input.admission.boundary="child-start";
+   if(r.baseline.kind==="initialized-code-empty"&&!same(captureOriginalCompletedGenesisForDispatch({productRoot:root,operationId:r.operationId,tool}),r.baseline))refuse("configured-arm-initial-baseline-changed");
+   for(const role of ["product","records"]){const repository=r.repositories[role],revision=role==="records"?r.stamp.commit:r.selection.revisions.product;
+    if(!same(configuredArmRepository(repository.root,r.selection.revisions[role],tool),repository)||git(repository.root,["rev-parse","HEAD"])!==revision||git(repository.root,["symbolic-ref","HEAD"])!==r.targetRefs[role])refuse("configured-arm-original-changed");
+    assertOperationOwnership(root,{resource:repository.root,attempt:rec.attempt});
+    const claim=rec.operation.claims.find((/** @type {any} */ row)=>row.role===role),held=readReservation(root,repository.root);
+    if(claim.releasedAt===null?held?.attempt!==rec.attempt&&!(held===null&&p.handoff.stage==="releasing"):held?.attempt===rec.attempt)refuse("configured-arm-resource-held");
+   }
+   if(git(root,["status","--porcelain=v1","--untracked-files=all"])!=="")refuse("configured-arm-product-dirty");
+   if(operationDigest(readFileSync(r.stamp.working.index.path).toString("base64"))!==r.stamp.working.index.resultDigest)refuse("configured-arm-stamp-index-changed");
+   assertExactRecordTransformations(r.repositories.records.root,r.stamp.writes.map((/** @type {any} */ w)=>w.path));
+   for(const write of r.stamp.writes)if(!same(snapshotRecordFile(safeOperationWorkingPath(r.repositories.records.root,write.path)),intendedRecordFile(write)))refuse("configured-arm-stamp-working-changed");
+   for(let i=0;i<r.lanes.length;i++){
+    const lane=r.lanes[i],progress=p.lanes[i],stat=lstatSync(lane.parent.path,{bigint:true});
+    if(!stat.isDirectory()||stat.isSymbolicLink()||realpathSync(lane.parent.path)!==lane.parent.path||String(stat.dev)!==lane.parent.device||String(stat.ino)!==lane.parent.inode)refuse("configured-arm-parent-changed");
+    if(progress.stage==="created")measuredLane(r,lane,progress);
+    else if(progress.stage==="creating")refuse("configured-arm-lane-create-unknown");
+    else {
+     try{lstatSync(lane.checkout);refuse("configured-arm-destination-exists");}catch(error){if(/** @type {any} */(error).code!=="ENOENT")throw error;}
+     if(git(r.repositories[lane.role].root,["for-each-ref","--format=%(refname)",lane.branch])!=="")refuse("configured-arm-branch-exists");
+    }
+   }
+   decisiveConfiguredAdmission(input,earlier,handle,false,null,context);return true;
+}
 /** Protected private stamp only. Baseline execution is the original configured
  * registry and exact P cut, never a caller command/result. Unknown execution is
  * retained and is not automatically repeated. This does not create a lane.
@@ -218,38 +247,15 @@ export async function createConfiguredArmLanes(root,operationId,configuration){
  root=realpathSync(root);const before=readAcceptedOperation(root,operationId);
  if(before?.operation.kind!=="configured-dispatch"||before.resource!==root||before.operation.progress.stamp.acceptance===null)refuse("configured-arm-stamp-required");
  const r=before.operation.request,tool=configuration.tool;
- requireInstalledRuntimeAssets(tool,["configured-dispatch-operation","configured-dispatch-context","qualified-reservation"].map(n=>`tools/e2e/scripts/${n}.mjs`));
+ requireInstalledRuntimeAssets(tool,["configured-dispatch-operation","configured-dispatch-context","qualified-reservation","genesis-bank-plan"].map(n=>`tools/e2e/scripts/${n}.mjs`));
  const input=admissionInput(r,true),handle=captureConfiguredDispatch({...r.selection,revisions:input.revisions,taskId:r.taskId,tool});
  if(!validConfiguredArmStampedSource(r,handle.capsule))refuse("configured-arm-operation-capsule");
  const context=captureConfiguredArmOperationContext(root,operationId,{tool}),earlier=await configuredAdmissionPreflight(input,handle,context);
  return withNativeTransaction(root,{operation:"configured-dispatch-lanes"},()=>{
   const rec=readAcceptedOperation(root,operationId);if(rec?.operation.kind!=="configured-dispatch"||!same(rec.operation.request,r))refuse("configured-arm-operation-changed");
   const p=rec.operation.progress;if(p.handoff.stage!=="held"||observedStamp(rec)===null)refuse("configured-arm-lane-stage");
-  // The original-cut completed-genesis reader is being supplied by its one
-  // canonical owner. Until composed, do not infer it from a stored receipt.
-  if(r.baseline.kind==="initialized-code-empty")refuse("configured-arm-initial-baseline-recheck-unavailable");
   /** @param {boolean} [initial] */
-  const permit=(initial=false)=>{
-   for(const role of ["product","records"]){const repository=r.repositories[role],revision=role==="records"?r.stamp.commit:r.selection.revisions.product;
-    if(!same(configuredArmRepository(repository.root,r.selection.revisions[role],tool),repository)||git(repository.root,["rev-parse","HEAD"])!==revision||git(repository.root,["symbolic-ref","HEAD"])!==r.targetRefs[role])refuse("configured-arm-original-changed");
-    assertOperationOwnership(root,{resource:repository.root,attempt:rec.attempt});if(readReservation(root,repository.root)?.attempt!==rec.attempt)refuse("configured-arm-resource-held");
-   }
-   if(git(root,["status","--porcelain=v1","--untracked-files=all"])!=="")refuse("configured-arm-product-dirty");
-   if(operationDigest(readFileSync(r.stamp.working.index.path).toString("base64"))!==r.stamp.working.index.resultDigest)refuse("configured-arm-stamp-index-changed");
-   assertExactRecordTransformations(r.repositories.records.root,r.stamp.writes.map((/** @type {any} */ w)=>w.path));
-   for(const write of r.stamp.writes)if(!same(snapshotRecordFile(safeOperationWorkingPath(r.repositories.records.root,write.path)),intendedRecordFile(write)))refuse("configured-arm-stamp-working-changed");
-   for(let i=0;i<r.lanes.length;i++){
-    const lane=r.lanes[i],progress=p.lanes[i],stat=lstatSync(lane.parent.path,{bigint:true});
-    if(!stat.isDirectory()||stat.isSymbolicLink()||realpathSync(lane.parent.path)!==lane.parent.path||String(stat.dev)!==lane.parent.device||String(stat.ino)!==lane.parent.inode)refuse("configured-arm-parent-changed");
-    if(progress.stage==="created")measuredLane(r,lane,progress);
-    else if(progress.stage==="creating")refuse("configured-arm-lane-create-unknown");
-    else {
-     try{lstatSync(lane.checkout);refuse("configured-arm-destination-exists");}catch(error){if(/** @type {any} */(error).code!=="ENOENT")throw error;}
-     if(git(r.repositories[lane.role].root,["for-each-ref","--format=%(refname)",lane.branch])!=="")refuse("configured-arm-branch-exists");
-    }
-   }
-   decisiveConfiguredAdmission(input,initial?earlier:null,handle,false,null,context);return true;
-  };
+  const permit=(initial=false)=>currentArm(rec,tool,handle,context,initial?earlier:null);
   permit(true);
   for(let i=0;i<r.lanes.length;i++){
    const lane=r.lanes[i],progress=p.lanes[i];if(progress.stage==="created")continue;
@@ -262,5 +268,73 @@ export async function createConfiguredArmLanes(root,operationId,configuration){
    permit();
   }
   return {status:"lanes-created",operationId,lanes:p.lanes.map((/** @type {any} */ lane)=>({role:lane.role,identity:structuredClone(lane.identity)})),started:false};
+ });
+}
+
+/** Fixed plain coordinator namespace only. This never follows a selected
+ * records path or a caller-provided output path.
+ * @param {string} root @param {boolean} [create] */
+function briefNamespace(root,create=false){
+ const runtime=path.join(root,".supertaskr"),directory=path.join(runtime,"briefs"),identities=[];
+ for(const file of [runtime,directory]){
+  if(file===directory&&create&&!existsSync(file)){mkdirSync(file,{mode:0o700});syncNativeFileNamespace(file);}
+  const state=lstatSync(file,{bigint:true});
+  if(!state.isDirectory()||state.isSymbolicLink()||realpathSync(file)!==file)refuse("configured-arm-brief-namespace");
+  identities.push({path:file,device:String(state.dev),inode:String(state.ino)});
+ }
+ return identities;
+}
+/** Measure exact bounded literal Markdown through a no-follow descriptor.
+ * @param {string} root @param {any} plan */
+function measuredBrief(root,plan){
+ const parents=briefNamespace(root);if(constants.O_NOFOLLOW===undefined||constants.O_NONBLOCK===undefined)refuse("configured-arm-brief-platform");
+ const fd=openSync(plan.path,constants.O_RDONLY|constants.O_NOFOLLOW|constants.O_NONBLOCK);
+ try{
+  const before=fstatSync(fd,{bigint:true}),expected=Buffer.from(plan.text),bytes=Buffer.alloc(expected.length);
+  if(!before.isFile()||before.nlink!==1n||(before.mode&511n)!==384n||before.size!==BigInt(expected.length))refuse("configured-arm-brief-changed");
+  let count=0;while(count<bytes.length){const read=readSync(fd,bytes,count,bytes.length-count,null);if(!read)break;count+=read;}
+  if(count!==bytes.length||readSync(fd,Buffer.alloc(1),0,1,null)!==0||!bytes.equals(expected))refuse("configured-arm-brief-changed");
+  const after=fstatSync(fd,{bigint:true}),named=lstatSync(plan.path,{bigint:true});
+  if(!named.isFile()||named.isSymbolicLink()||named.nlink!==1n||[after,named].some(state=>state.dev!==before.dev||state.ino!==before.ino||state.mode!==before.mode||state.size!==before.size||state.mtimeNs!==before.mtimeNs||state.ctimeNs!==before.ctimeNs)||!same(briefNamespace(root),parents))refuse("configured-arm-brief-changed");
+  const identity={path:plan.path,device:String(before.dev),inode:String(before.ino),mode:0o600,byteLength:bytes.length,sha256:plan.sha256};
+  if(plan.identity!==null&&!same(plan.identity,identity))refuse("configured-arm-brief-changed");
+  return identity;
+ }finally{closeSync(fd);}
+}
+/** Retain the actual complete13-row brief and its fixed plain runtime file
+ * before assignment. Caller text/path/readiness is never accepted. Unknown
+ * unacknowledged publication refuses rather than overwriting a matching file.
+ * @param {string} root @param {string} operationId @param {{tool:any}} configuration */
+export async function prepareConfiguredArmBrief(root,operationId,configuration){
+ if(!configuration||Object.keys(configuration).join()!=="tool")refuse("configured-arm-options");
+ root=realpathSync(root);const before=readAcceptedOperation(root,operationId);
+ if(before?.operation.kind!=="configured-dispatch"||before.operation.progress.handoff.stage!=="held"||before.operation.progress.lanes.some((/** @type {any} */ lane)=>lane.stage!=="created"))refuse("configured-arm-lanes-required");
+ const tool=configuration.tool,r=before.operation.request;
+ requireInstalledRuntimeAssets(tool,["configured-dispatch-operation","configured-dispatch-brief","configured-dispatch-context","native-codex"].map(n=>`tools/e2e/scripts/${n}.mjs`));
+ const brief=await import("./configured-dispatch-brief.mjs"),derived=await brief.configuredDispatchOwnedBrief(root,operationId,{tool});
+ if(!derived.complete||derived.code!==0)refuse("configured-arm-brief-incomplete");
+ const input=admissionInput(r,true),handle=captureConfiguredDispatch({...r.selection,revisions:input.revisions,taskId:r.taskId,tool});
+ if(!validConfiguredArmStampedSource(r,handle.capsule))refuse("configured-arm-operation-capsule");
+ const context=captureConfiguredArmOperationContext(root,operationId,{tool}),earlier=await configuredAdmissionPreflight(input,handle,context);
+ return withNativeTransaction(root,{operation:"configured-dispatch-brief"},()=>{
+  const rec=readAcceptedOperation(root,operationId);if(rec?.operation.kind!=="configured-dispatch"||!same(rec.operation.request,r)||rec.operation.progress.handoff.stage!=="held"||rec.operation.progress.lanes.some((/** @type {any} */ lane)=>lane.stage!=="created"))refuse("configured-arm-operation-changed");
+  currentArm(rec,tool,handle,context,earlier);const h=rec.operation.progress.handoff;
+  if(h.brief==null){
+   briefNamespace(root,true);currentArm(rec,tool,handle,context);
+   const file=configuredArmBriefPath(r);try{lstatSync(file);refuse("configured-arm-brief-exists");}catch(error){if(/** @type {any} */(error).code!=="ENOENT")throw error;}
+   retain(root,rec,()=>{h.brief={stage:"captured",path:file,text:derived.text,sha256:sha256(derived.text).slice("sha256:".length),identity:null};rec.events.push({at:new Date().toISOString(),op:"configured-brief-captured"});});
+  }
+  const plan=h.brief;
+  if(plan.stage==="captured"){
+   try{lstatSync(plan.path);refuse("configured-arm-brief-write-unknown");}catch(error){if(/** @type {any} */(error).code!=="ENOENT")throw error;}
+   const parents=briefNamespace(root);currentArm(rec,tool,handle,context);
+   atomicNativeText(plan.path,plan.text,()=>{
+    currentArm(rec,tool,handle,context);if(!same(briefNamespace(root),parents))refuse("configured-arm-brief-namespace");
+    try{lstatSync(plan.path);refuse("configured-arm-brief-exists");}catch(error){if(/** @type {any} */(error).code!=="ENOENT")throw error;}
+   });
+   const identity=measuredBrief(root,plan);retain(root,rec,()=>{plan.stage="written";plan.identity=identity;rec.events.push({at:new Date().toISOString(),op:"configured-brief-written"});});
+  }
+  measuredBrief(root,plan);currentArm(rec,tool,handle,context);
+  return {status:"brief-prepared",operationId,path:plan.path,sha256:plan.sha256,started:false};
  });
 }

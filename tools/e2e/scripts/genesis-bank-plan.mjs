@@ -66,10 +66,10 @@ function json(bytes) {
         refuse("genesis-bank-json");
     }
 }
-/** @param {string} root @param {string[]} args */
-function git(root, args) {
+/** @param {string} root @param {string[]} args @param {Buffer|undefined} [input] */
+function git(root, args, input) {
     try {
-        return execFileSync("git", ["--no-replace-objects", "-C", root, ...args], { maxBuffer: 32 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, GIT_NO_LAZY_FETCH: "1", GIT_OPTIONAL_LOCKS: "0" } });
+        return execFileSync("git", ["--no-replace-objects", "-C", root, ...args], { input, maxBuffer: 32 * 1024 * 1024, stdio: [input === undefined ? "ignore" : "pipe", "pipe", "pipe"], env: { ...process.env, GIT_NO_LAZY_FETCH: "1", GIT_OPTIONAL_LOCKS: "0" } });
     }
     catch {
         refuse("genesis-bank-repository-unavailable");
@@ -213,11 +213,74 @@ function bankWitness(rec, current) {
         // Reuse its measured repository facts instead of re-measuring each old bank.
         if (!same(current[role], plan.repository))
             refuse("genesis-bank-history-origin");
-        const corr = `refs/supertaskr/project-banks/${operationWork(op.id).slice(3)}/${role}`;
-        if (scalar(root, ["rev-parse", "--verify", corr]) !== plan.commit || !git(root, ["cat-file", "commit", plan.commit]).equals(Buffer.from(plan.commitBase64, "base64")))
-            refuse("genesis-bank-history-witness");
     }
     return { operationId: op.id, requestDigest: op.digest, receiptDigest: acceptedBankReceipt(rec).receiptDigest, stage: op.request.bank.stage, completedStage: op.request.bank.completedStage, recordsCommit: op.acceptance.records.commit, productCommit: op.acceptance.product?.commit ?? null };
+}
+/** One fresh bounded Git traversal per root replaces repeated subprocesses for
+ * the same ancestry questions. No capture survives this history observation.
+ * Every queried revision is an explicit tip, including old bank input cuts.
+ * @param {string} root @param {string[]} revisions */
+function historyGraph(root, revisions) {
+    const tips = [...new Set(revisions)];
+    if (tips.some(revision => !/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/.test(revision)))
+        refuse("genesis-bank-history-invalid");
+    /** @type {Map<string,string[]>} */ const parents = new Map();
+    for (const line of scalar(root, ["rev-list", "--parents", ...tips, "--"]).split("\n")) {
+        const [commit, ...prior] = line.split(" ");
+        if (!commit || parents.has(commit) || [commit, ...prior].some(oid => !/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/.test(oid)))
+            refuse("genesis-bank-history-invalid");
+        parents.set(commit, prior);
+    }
+    if (tips.some(tip => !parents.has(tip))) refuse("genesis-bank-history-invalid");
+    return {
+        /** @param {string} descendant */
+        firstParent(descendant) {
+            const result = [], seen = new Set();
+            for (let commit = descendant; commit; commit = parents.get(commit)?.[0] ?? "") {
+                if (seen.has(commit) || !parents.has(commit)) refuse("genesis-bank-history-invalid");
+                seen.add(commit); result.push(commit);
+            }
+            return result;
+        },
+        /** @param {string} prior @param {string} descendant */
+        ancestor(prior, descendant) {
+            const pending = [descendant], seen = new Set();
+            while (pending.length) {
+                const commit = /** @type {string} */ (pending.pop());
+                if (commit === prior) return true;
+                if (seen.has(commit)) continue;
+                seen.add(commit); pending.push(...(parents.get(commit) ?? []));
+            }
+            return false;
+        }
+    };
+}
+/** Exact raw commit comparisons retain the same per-bank witnesses while using
+ * one bounded Git batch. Ref ownership is checked separately for the whole root.
+ * @param {string} root @param {any[]} plans */
+function verifyBankCommitBatch(root, plans) {
+    const limit = 32 * 1024 * 1024;
+    /** @type {Buffer[]} */ let chunks = [];
+    /** @type {string[]} */ let commits = [];
+    let length = 0;
+    const flush = () => {
+        if (!commits.length) return;
+        if (!git(root, ["cat-file", "--batch"], Buffer.from(commits.join("\n") + "\n")).equals(Buffer.concat(chunks, length)))
+            refuse("genesis-bank-history-witness");
+        chunks = []; commits = []; length = 0;
+    };
+    for (const plan of plans) {
+        const bytes = Buffer.from(plan.commitBase64, "base64");
+        const header = Buffer.from(`${plan.commit} commit ${bytes.length}\n`), wireLength = header.length + bytes.length + 1;
+        if (length + wireLength > limit) flush();
+        // Preserve the original single-object bound at the batch-header edge.
+        if (wireLength > limit) {
+            if (!git(root, ["cat-file", "commit", plan.commit]).equals(bytes)) refuse("genesis-bank-history-witness");
+            continue;
+        }
+        chunks.push(header, bytes, Buffer.from("\n")); commits.push(plan.commit); length += wireLength;
+    }
+    flush();
 }
 /** Packaging only, after the caller proves the existing exact bank witness.
  * @param {any} rec */
@@ -250,18 +313,32 @@ export function deriveGenesisBankHistoryState(input) {
 function previousBank(rows, session, setup, current, stage, ignoredOperationId = null) {
     const allBanks = rows.filter(row => row.operation.kind === "project-bank");
     const banks = allBanks.filter(row => row.operation.id !== ignoredOperationId);
+    /** @type {Record<string,Map<string,string>>} */ const refsByRole = {};
     for (const role of ["product", "records"]) {
         const known = new Set(allBanks.filter(row => row.operation.request.plans[role] !== null).map(row => `refs/supertaskr/project-banks/${operationWork(row.operation.id).slice(3)}/${role}`));
-        const refs = scalar(current[role].root, ["for-each-ref", "--format=%(refname)", "refs/supertaskr/project-banks/"]).split("\n").filter(Boolean);
-        if (refs.some(ref => !known.has(ref)))
+        const refs = new Map(scalar(current[role].root, ["for-each-ref", "--format=%(refname)%00%(objectname)", "refs/supertaskr/project-banks/"]).split("\n").filter(Boolean).map(line => /** @type {[string,string]} */(line.split("\0"))));
+        refsByRole[role] = refs;
+        if ([...refs.keys()].some(ref => !known.has(ref)))
             refuse("genesis-bank-history-unattributed");
     }
     if (banks.some(row => same(row.operation.request.setup, setup) && row.operation.acceptance === null))
         refuse("genesis-bank-pending-operation");
     const relevant = banks.filter(row => same(row.operation.request.setup, setup) && same(row.operation.request.session, session));
     const witnesses = relevant.map(row => bankWitness(row, current)), byId = new Map(witnesses.map(ref => [ref.operationId, ref]));
+    for (const role of ["product", "records"]) {
+        const plans = relevant.flatMap(row => {
+            const plan = row.operation.request.plans[role];
+            if (plan === null) return [];
+            const ref = `refs/supertaskr/project-banks/${operationWork(row.operation.id).slice(3)}/${role}`;
+            if (refsByRole[role]?.get(ref) !== plan.commit) refuse("genesis-bank-history-witness");
+            return [plan];
+        });
+        verifyBankCommitBatch(current[role].root, plans);
+    }
+    const recordsGraph = historyGraph(current.records.root, [current.recordsRevision, ...relevant.map(row => row.operation.request.input.recordsRevision)]);
+    const productGraph = historyGraph(current.product.root, [current.productRevision, ...relevant.map(row => row.operation.request.input.productRevision)]);
     for (const row of relevant) {
-        const request = row.operation.request, chain = scalar(current.records.root, ["rev-list", "--first-parent", request.input.recordsRevision]).split("\n");
+        const request = row.operation.request, chain = recordsGraph.firstParent(request.input.recordsRevision);
         const before = witnesses.filter(ref => chain.includes(ref.recordsCommit));
         const state = deriveGenesisBankHistoryState({ references: before, firstParentChain: chain, stage: request.bank.stage });
         for (const field of ["previousBank", "latestBank", "ownBank"]) {
@@ -271,11 +348,11 @@ function previousBank(rows, session, setup, current, stage, ignoredOperationId =
         }
         if (request.bank.mode !== state.mode || request.bank.completedStage !== state.completedStage)
             refuse("genesis-bank-history-progress");
-        if (before.some(ref => ref.productCommit !== null && !ancestor(current.product.root, ref.productCommit, request.input.productRevision)))
+        if (before.some(ref => ref.productCommit !== null && !productGraph.ancestor(ref.productCommit, request.input.productRevision)))
             refuse("genesis-bank-history-product-lineage");
     }
-    const chain = scalar(current.records.root, ["rev-list", "--first-parent", current.recordsRevision]).split("\n");
-    if (witnesses.some(ref => ref.productCommit !== null && !ancestor(current.product.root, ref.productCommit, current.productRevision)))
+    const chain = recordsGraph.firstParent(current.recordsRevision);
+    if (witnesses.some(ref => ref.productCommit !== null && !productGraph.ancestor(ref.productCommit, current.productRevision)))
         refuse("genesis-bank-history-product-lineage");
     const state = deriveGenesisBankHistoryState({ references: witnesses, firstParentChain: chain, stage });
     const ordered = [...relevant].sort((a, b) => chain.indexOf(a.operation.request.plans.records.commit) - chain.indexOf(b.operation.request.plans.records.commit));
@@ -749,8 +826,9 @@ export function captureOriginalCompletedGenesisForInstallation(input) {
     const verifyCut=()=>{
       for(const role of ["product","records"]){const repo=r.input[`${role}Repository`],plan=r.plans[role],progress=rec.operation.progress[role],effect=observation.effects[role];
         if(!same(captureOperationRepository(repo.root,r.input[`${role}Revision`],{forEffect:false}),repo)||scalar(repo.root,["symbolic-ref","HEAD"])!==plan.targetRef||scalar(repo.root,["rev-parse","HEAD"])!==(effect?.commit??r.input[`${role}Revision`]))refuse("genesis-install-original-cut-changed");
-        consumer(plan,{accepted:effect!==null,partial:["consumer-prepare","files-prepared"].includes(progress.stage)});
-        const owned=new Set(plan.writes.map((/** @type {any} */ write)=>write.path));
+        const checked=consumer(plan,{accepted:effect!==null,partial:["consumer-prepare","files-prepared"].includes(progress.stage)});
+        if(!Array.isArray(checked?.ownedWorkingPaths))refuse("genesis-install-original-consumer-unavailable");
+        const owned=new Set(checked.ownedWorkingPaths);
         for(const row of text(git(repo.root,["status","--porcelain=v1","-z","--untracked-files=all"])).split("\0").filter(Boolean))if(!/^[ MAD?]{2} /.test(row)||!owned.has(row.slice(3)))refuse("genesis-install-original-foreign-working");
       }
     };

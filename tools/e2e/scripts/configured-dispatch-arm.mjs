@@ -21,7 +21,7 @@ import { createRecordChecker, checkedRecordWriteSet, requireInstalledRuntimeAsse
 import { captureOperationCommitIdentity } from "./project-init-operation.mjs";
 import { captureExactCommitPlan, assertExactRecordTransformations } from "./record-write.mjs";
 import { captureCompletedGenesisForDispatch } from "./genesis-bank-plan.mjs";
-import { validConfiguredArmRequest } from "./configured-dispatch-record.mjs";
+import { validConfiguredArmRequest, validConfiguredArmExecution } from "./configured-dispatch-record.mjs";
 import { nextAttemptId, readQualifiedReservations, allRecords, TERMINAL_STATES } from "./run-record.mjs";
 
 const plans = new WeakMap();
@@ -95,12 +95,14 @@ function schedule(inputs, taskId) {
 /** Immutable finite selector data only. This constructor has no public effect
  * registration; its exact schema/provenance is reviewed before the producer.
  * @param {string} productRoot
- * @param {{operationId:string,taskId:string,native:{sessionId:string,coordinatorTurnId:string},laneIntent?:any}} request
+ * @param {{operationId:string,taskId:string,native:{sessionId:string,coordinatorTurnId:string},laneIntent?:any,execution?:{effort:string,deadline:string,budget:string}}} request
  * @param {{tool:any}} configuration */
 export async function captureConfiguredArmPlan(productRoot, request, configuration) {
-  if (!shape(configuration, ["tool"]) || !shape(request, ["operationId", "taskId", "native"], ["laneIntent"]) ||
+  if (!shape(configuration, ["tool"]) || !shape(request, ["operationId", "taskId", "native"], ["laneIntent","execution"]) ||
       !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(request.operationId) || !/^T-\d+(?:-s\d+)?$/.test(request.taskId) ||
       !shape(request.native, ["sessionId", "coordinatorTurnId"]) || Object.values(request.native).some(value => typeof value !== "string" || !value || value.trim() !== value || value.length > 256 || /[\x00-\x1f\x7f]/.test(value))) refuse("configured-arm-request");
+  if (request.execution !== undefined && !validConfiguredArmExecution(request.execution)) refuse("configured-arm-execution");
+  const execution = request.execution === undefined ? null : { ...request.execution };
   const tool = configuration.tool;
   requireInstalledRuntimeAssets(tool, ["configured-dispatch-arm", "configured-dispatch-record", "configured-dispatch", "configured-dispatch-brief", "qualified-native", "qualified-admission", "record-write", "genesis-bank-plan"]
     .map(name => `tools/e2e/scripts/${name}.mjs`));
@@ -162,7 +164,7 @@ export async function captureConfiguredArmPlan(productRoot, request, configurati
   const data = freeze({ version: 1, kind: "configured-dispatch", operationId: request.operationId, taskId: request.taskId,
     selection: selected, capsule, scope: context.scope, verification: context.verification, repositories, targetRefs, tool, admission: { grant: admission.grant, receipt: admission.receipt },
     lanes: lanes.map((/** @type {any} */ lane) => ({ ...lane, base: lane.role === "records" ? stamp.commit : lane.base })),
-    stamp, baseline, role: executor, expectedAttempt: nextAttemptId(root, request.taskId),
+    stamp, baseline, role: executor, execution, expectedAttempt: nextAttemptId(root, request.taskId),
     native: { ...request.native, taskName: `/root/configured_${createHash("sha256").update(request.operationId).digest("hex").slice(0, 24)}`, ignoredOutputs: [] },
     brief: { text: brief.text, sha256: createHash("sha256").update(brief.text).digest("hex") },
     validation: { captureDigest: checked.captureDigest, candidateDigest: checked.candidateDigest, derivations: checked.derivations } });

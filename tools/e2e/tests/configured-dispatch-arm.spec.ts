@@ -11,6 +11,9 @@ test("configured lane constructor freezes original private stamp, exact absent d
     const before=snapshot(),proposal=await f.arm.captureConfiguredArmPlan(f.product,f.request,{tool:f.tool}),data=f.arm.configuredArmPlanData(proposal);
     const schema=await import(f.module("configured-dispatch-record"));
     expect(schema.validConfiguredArmRequest(data)).toBe(true);
+    expect(data.execution).toBeNull();const legacy=structuredClone(data);delete legacy.execution;expect(schema.validConfiguredArmRequest(legacy)).toBe(true);
+    const execution={effort:"medium",deadline:"none",budget:"8000"},pending=f.arm.captureConfiguredArmPlan(f.product,{...f.request,execution},{tool:f.tool});execution.effort="xhigh";
+    const explicit=f.arm.configuredArmPlanData(await pending);expect(explicit.execution).toEqual({effort:"medium",deadline:"none",budget:"8000"});expect(explicit.role).toEqual(data.role);expect(schema.validConfiguredArmRequest(explicit)).toBe(true);
     const invalids=[
       (r:any)=>{r.program="caller-selected";},
       (r:any)=>{r.selection.revisions.records="0".repeat(40);},

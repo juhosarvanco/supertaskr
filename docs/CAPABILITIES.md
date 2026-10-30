@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1840 at least behaviours** — 1836 extracted sentences + 4 at least named-not-extracted (listed at the end) — across 127 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1844 at least behaviours** — 1840 extracted sentences + 4 at least named-not-extracted (listed at the end) — across 128 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -584,6 +584,7 @@ Census: **1840 at least behaviours** — 1836 extracted sentences + 4 at least n
 - protected actual private stamp retains the original approval and owns only canonical lifecycle plus INDEX bytes
 - canonical review initialization admits only an empty independent dispatch claim and rejects weaker or changed claims
 - actual configured lane creation preserves foreign destinations and reuses only its retained physical branch
+- actual owned brief persistence rejects a foreign namespace and retains exact fixed Markdown before assignment
 
 ## configured-dispatch-view
 
@@ -646,6 +647,11 @@ Census: **1840 at least behaviours** — 1836 extracted sentences + 4 at least n
 - name scan reads committed plain blobs and refuses unsupported kinds/encoding instead of skipping them
 - name policy has no missing/unknown/empty corpus fallback
 - configured protocol case allowance is literal and file scoped, with neighboring and changed-prefix controls
+
+## configured-native-assignment
+
+- canonical backend and file assignment parsing preserve actual trailing-space worker and brief identities
+- new native launch selectors require explicit finite effort deadline and token-budget data
 
 ## configured-settings
 
@@ -1762,6 +1768,7 @@ Census: **1840 at least behaviours** — 1836 extracted sentences + 4 at least n
 
 ## qualified-integration-progress
 
+- actual installed planned worker drains a named refusal before natural thread exit without creating an operation
 - unaccepted artifact observation data belongs only to its original known-dead launch
 
 ## qualified-native

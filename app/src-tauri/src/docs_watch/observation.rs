@@ -1004,7 +1004,7 @@ mod tests {
         let wrote = Arc::new(std::sync::atomic::AtomicBool::new(false));
         let wrote_in_sink = wrote.clone();
         let live = Live::new_with_sink(Some(fx.product.clone()), move |snapshot| {
-            if snapshot.records.as_ref().and_then(|records| records.records_dir.as_deref()) == Some(selected_root.as_str()) &&
+            if snapshot.records.as_ref().is_some_and(|records| records.availability == "available" && records.records_dir.as_deref() == Some(selected_root.as_str())) &&
                 !wrote_in_sink.swap(true, Ordering::SeqCst) {
                 // A receiver can react as soon as its new context is published.
                 // Make that write synchronous so a post-publication baseline
@@ -1031,10 +1031,10 @@ mod tests {
         fs::create_dir_all(second.join("docs/architecture")).unwrap();
         fs::write(second.join("docs/architecture/graph.json"), "second baseline").unwrap();
         fx.bind(&second);
-        let selected = live.until(|s| s.records.as_ref().unwrap().records_dir.as_deref() == second.to_str());
+        let selected = live.until(|s| s.records.as_ref().is_some_and(|records| records.availability == "available" && records.records_dir.as_deref() == second.to_str()));
         assert!(wrote.load(Ordering::SeqCst), "the new-context receiver actually wrote its graph");
         fs::write(graph_dir.join("graph.json"), "old records poison").unwrap();
-        let current = live.architecture.recv_timeout(Duration::from_secs(8)).expect("new context positive graph notice");
+        let current = live.architecture.recv_timeout(Duration::from_secs(8)).unwrap_or_else(|error| panic!("new available context positive graph notice: {error}; selected={:?}", selected.records));
         assert_eq!(current.scope.context_sequence, selected.records.as_ref().unwrap().context_sequence);
         assert_eq!(current.scope.records.unwrap().records_dir.as_deref(), second.to_str());
         assert!(live.architecture.try_recv().is_err(), "the retired home cannot send a selected graph notice");

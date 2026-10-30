@@ -10,7 +10,10 @@ try{
  const authority=await captureQualifiedIntegrationGradeAuthority(workerData.root,workerData.operationId,workerData.token,{tool});
  const result=runQualifiedIntegrationGrade(authority),written=writeQualifiedIntegrationGradeArtifact(authority);
  parentPort.postMessage({kind:"artifact",token:workerData.token,...written});
- // This exits only this fixed thread. The responsive wrapper owns IPC and
- // actual thread-exit retention/acknowledgement before retiring its process.
- process.exit(result.code===0?0:1);
-}catch(error){process.stderr.write(`${error instanceof Error?error.message:String(error)}\n`);process.exit(1);}
+ // Natural thread termination drains its output. The wrapper still waits for
+ // the actual exit event before durable result acknowledgement/retirement.
+ process.exitCode=result.code===0?0:1;
+}catch(error){
+ process.exitCode=1;
+ await new Promise(resolve=>process.stderr.write(`${error instanceof Error?error.message:String(error)}\n`,()=>resolve(null)));
+}finally{parentPort.close();}

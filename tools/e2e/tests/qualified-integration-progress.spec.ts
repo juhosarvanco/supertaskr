@@ -1,7 +1,20 @@
 import path from "node:path";
 import os from "node:os";
+import {readFileSync} from "node:fs";
+import {Worker} from "node:worker_threads";
 import {expect,test} from "@playwright/test";
 import {validQualifiedIntegrationObservations,validQualifiedIntegrationWorkerResult} from "../scripts/qualified-integration-record.mjs";
+import {privateRecordFixture,privateGit} from "./private-record-fixture";
+
+test("actual installed planned worker drains a named refusal before natural thread exit without creating an operation",async()=>{
+ const f=privateRecordFixture();try{
+  const before=()=>[f.product,f.records].map(root=>({refs:privateGit(root,["for-each-ref","--format=%(refname) %(objectname)"]),index:readFileSync(path.join(root,".git/index")).toString("base64"),objects:privateGit(root,["count-objects","-v"])})),original=before();
+  const worker=new Worker(path.join(f.tool,"dist/tools/e2e/scripts/qualified-integration-worker.mjs"),{execArgv:[],workerData:{version:1,root:f.product,operationId:"uncreated-worker-operation",token:"launch-00000000-0000-0000-0000-000000000001"},stdout:true,stderr:true});
+  let output="",errors="",messages=0;worker.stdout.on("data",bytes=>{output+=bytes.toString("utf8");});worker.stderr.on("data",bytes=>{errors+=bytes.toString("utf8");});worker.on("message",()=>{messages+=1;});
+  const exit=await new Promise<number>((resolve,reject)=>{worker.once("error",reject);worker.once("exit",resolve);});
+  expect(exit).toBe(1);expect(errors).toMatch(/^QUALIFIED_INTEGRATION_GRADE_REQUIRED: actual planned grading is unavailable\n$/);expect(output).toBe("");expect(messages).toBe(0);expect(before()).toEqual(original);
+ }finally{f.cleanup();}
+});
 
 test("unaccepted artifact observation data belongs only to its original known-dead launch",()=>{
  // Format-only data: no process, workspace, file, operation or grade exists.

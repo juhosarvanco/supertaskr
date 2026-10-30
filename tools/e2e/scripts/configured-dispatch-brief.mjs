@@ -15,6 +15,7 @@ import { captureConfiguredArmOperationContext } from "./configured-dispatch-cont
 import { observeConfiguredArmLanes } from "./configured-dispatch-operation.mjs";
 import { readAcceptedOperation } from "./durable-operation.mjs";
 import { operationContent } from "./operation-record.mjs";
+import { captureOriginalCompletedGenesisForDispatch } from "./genesis-bank-plan.mjs";
 import { allRecords, readQualifiedReservations, TERMINAL_STATES } from "./run-record.mjs";
 import { listInstalledMethodAssets, listInstalledRuntimeAssets, readInstalledMethodAssets, readInstalledRuntimeAssets, requireInstalledRuntimeAssets } from "./records-check.mjs";
 import { conventionsTextFromSource } from "./docs-scan.mjs";
@@ -82,12 +83,13 @@ export async function configuredDispatchOwnedBrief(root, operationId, configurat
   const rec = readAcceptedOperation(root, operationId);
   if (rec?.operation.kind !== "configured-dispatch" || rec.operation.progress.handoff.stage !== "held") refuse("configured-brief-operation", "A held configured dispatch operation is required");
   const request = rec.operation.request, progress = rec.operation.progress;
-  if (request.baseline.kind === "initialized-code-empty") refuse("configured-brief-initial-baseline-recheck-unavailable", "Original completed-genesis requalification is not yet composed");
+  if (request.baseline.kind === "initialized-code-empty" && operationContent(captureOriginalCompletedGenesisForDispatch({ productRoot: root, operationId, tool: configuration.tool })) !== operationContent(request.baseline)) refuse("configured-brief-initial-baseline-changed", "Original completed-genesis baseline changed");
   const context = captureConfiguredArmOperationContext(root, operationId, configuration), lanes = observeConfiguredArmLanes(root, operationId);
   if (progress.baseline.stage !== "complete" || request.baseline.kind === "required-original-suites" && progress.baseline.capture?.complete !== true) refuse("configured-brief-baseline", "Original baseline is not complete");
   const selected = { ...request.selection, revisions: { ...request.selection.revisions, records: request.stamp.commit } };
   const result = await assembleConfiguredBrief(selected, { tool: configuration.tool, taskId: request.taskId, role: "executor" }, { context, rec, lanes });
   observeConfiguredArmLanes(root, operationId);
+  if (request.baseline.kind === "initialized-code-empty" && operationContent(captureOriginalCompletedGenesisForDispatch({ productRoot: root, operationId, tool: configuration.tool })) !== operationContent(request.baseline)) refuse("configured-brief-initial-baseline-changed", "Original completed-genesis baseline changed");
   if (operationContent(readAcceptedOperation(root, operationId)) !== operationContent(rec)) refuse("configured-brief-operation-changed", "Owned operation changed during brief derivation");
   return result;
 }

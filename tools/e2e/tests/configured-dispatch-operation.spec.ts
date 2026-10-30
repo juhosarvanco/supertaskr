@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { readFileSync, cpSync, existsSync, rmSync } from "node:fs";
+import { readFileSync, cpSync, existsSync, rmSync, symlinkSync, lstatSync, renameSync } from "node:fs";
 import path from "node:path";
 import { cardDrift, MECHANICAL_FIELDS } from "../scripts/dispatch-brief.mjs";
 import { configuredArmFixture } from "./configured-dispatch-arm-fixture";
@@ -122,5 +122,32 @@ test("actual configured lane creation preserves foreign destinations and reuses 
   await expect(owner.createConfiguredArmLanes(f.product,f.request.operationId,{tool:f.tool})).rejects.toMatchObject({code:"configured-arm-lane-changed"});
   expect(readFileSync(path.join(lane.checkout,"untracked.py"),"utf8")).toContain("authored dirty lane");rmSync(path.join(lane.checkout,"untracked.py"));
   expect(await owner.createConfiguredArmLanes(f.product,f.request.operationId,{tool:f.tool})).toEqual(created);expect(product()).toEqual(before);
+ }finally{f.cleanup();}
+});
+
+test("actual owned brief persistence rejects a foreign namespace and retains exact fixed Markdown before assignment",async()=>{
+ test.setTimeout(600_000);const f=await configuredArmFixture();
+ try{
+  const owner=await import(f.module("configured-dispatch-operation")),durable=await import(f.module("durable-operation")),schema=await import(f.module("configured-dispatch-record"));
+  const proposal=await f.arm.captureConfiguredArmPlan(f.product,f.request,{tool:f.tool}),data=f.arm.configuredArmPlanData(proposal);
+  await owner.beginConfiguredArmOperation(proposal,{tool:f.tool});await owner.executeConfiguredArmStamp(f.product,f.request.operationId,{tool:f.tool});await owner.createConfiguredArmLanes(f.product,f.request.operationId,{tool:f.tool});
+  const opFile=durable.acceptedOperationPath(f.product,f.request.operationId),before=readFileSync(opFile),file=schema.configuredArmBriefPath(data),outside=path.join(f.dir,"foreign-briefs");
+  putPrivate(outside,"canary.txt","outside remains original\n");symlinkSync(outside,path.dirname(file),"dir");
+  await expect(owner.prepareConfiguredArmBrief(f.product,f.request.operationId,{tool:f.tool})).rejects.toMatchObject({code:"configured-arm-brief-namespace"});
+  expect(readFileSync(path.join(outside,"canary.txt"),"utf8")).toBe("outside remains original\n");expect(existsSync(path.join(outside,path.basename(file)))).toBe(false);expect(readFileSync(opFile)).toEqual(before);rmSync(path.dirname(file));
+  const prepared=await owner.prepareConfiguredArmBrief(f.product,f.request.operationId,{tool:f.tool}),rec=durable.readAcceptedOperation(f.product,f.request.operationId),brief=rec.operation.progress.handoff.brief;
+  expect(prepared).toEqual({status:"brief-prepared",operationId:data.operationId,path:file,sha256:brief.sha256,started:false});
+  expect(brief).toMatchObject({stage:"written",path:file,sha256:sha(brief.text),identity:{path:file,mode:0o600,byteLength:Buffer.byteLength(brief.text),sha256:sha(brief.text)}});
+  expect(readFileSync(file,"utf8")).toBe(brief.text);expect(brief.text.match(/^ROW /gm)).toHaveLength(13);expect(brief.text).toContain("ACTUAL RETAINED LANES");expect(lstatSync(file).mode&0o777).toBe(0o600);expect(schema.validConfiguredDispatchRecord(rec)).toBe(true);
+  const retained=readFileSync(opFile);expect(await owner.prepareConfiguredArmBrief(f.product,f.request.operationId,{tool:f.tool})).toEqual(prepared);expect(readFileSync(opFile)).toEqual(retained);
+  putPrivate(f.product,path.relative(f.product,file),brief.text+"unapproved extra line\n");
+  await expect(owner.prepareConfiguredArmBrief(f.product,f.request.operationId,{tool:f.tool})).rejects.toMatchObject({code:"configured-arm-brief-changed"});expect(readFileSync(file,"utf8")).toContain("unapproved extra line");putPrivate(f.product,path.relative(f.product,file),brief.text);
+  expect(await owner.prepareConfiguredArmBrief(f.product,f.request.operationId,{tool:f.tool})).toEqual(prepared);
+  // Actual repository incarnation, not copied history or the same pathname,
+  // anchors even the read-only past stamp observer. Restore each real fixture.
+  for(const root of [f.product,f.records]){const held=`${root}-held-original`;renameSync(root,held);cpSync(held,root,{recursive:true});
+   try{expect(()=>owner.observeConfiguredArmStamp(f.product,f.request.operationId)).toThrow(/configured-arm-original-changed/);}finally{rmSync(root,{recursive:true});renameSync(held,root);}
+  }
+  expect(owner.observeConfiguredArmStamp(f.product,f.request.operationId).status).toBe("stamped");expect(readFileSync(opFile)).toEqual(retained);expect(existsSync(path.join(data.lanes[0].checkout,".supertaskr/briefs"))).toBe(false);
  }finally{f.cleanup();}
 });

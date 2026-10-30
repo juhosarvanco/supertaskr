@@ -36,6 +36,16 @@ const directory=value=>shape(value,["path","device","inode"])&&absolute(value.pa
 const work=value=>shape(value,["present"])&&value.present===false||shape(value,["present","mode","base64"])&&value.present===true&&["100644","100755"].includes(value.mode)&&base64(value.base64);
 /** @param {any} value */
 const actor=value=>shape(value,["name","email","date"])&&[value.name,value.email].every(v=>typeof v==="string"&&v.trim()&&!/[\r\n<>\0]/.test(v))&&typeof value.date==="string"&&/^-?[0-9]+ [+-][0-9]{4}$/.test(value.date);
+/** Deliberately bounded native adapter dials, not a model/account default. */
+export const CONFIGURED_NATIVE_EFFORTS=Object.freeze(["low","medium","high","xhigh"]);
+/** Explicit original launch data only; no model/program/policy lives here.
+ * Deadline is an exact UTC instant or none; budget is token count or none.
+ * @param {any} execution */
+export function validConfiguredArmExecution(execution){
+ if(!shape(execution,["effort","deadline","budget"])||!CONFIGURED_NATIVE_EFFORTS.includes(execution.effort))return false;
+ if(execution.deadline!=="none"&&!(typeof execution.deadline==="string"&&/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(execution.deadline)&&Number.isFinite(Date.parse(execution.deadline))&&new Date(execution.deadline).toISOString()===execution.deadline))return false;
+ return execution.budget==="none"||typeof execution.budget==="string"&&/^[1-9][0-9]{0,8}$/.test(execution.budget)&&Number.isSafeInteger(Number(execution.budget));
+}
 
 /** Exact intended private lifecycle commit and its staged/working preimages.
  * The existing canonical writer proves actual object/ref/filesystem effects.
@@ -86,7 +96,8 @@ function validBaseline(value,r){
 export function validConfiguredArmRequest(input){
  try{
  const r=operationPayload(input),c=r.capsule;
- if(!shape(r,["version","kind","operationId","taskId","selection","capsule","scope","verification","repositories","targetRefs","tool","admission","lanes","stamp","baseline","role","expectedAttempt","native","brief","validation"])||
+ const fields=["version","kind","operationId","taskId","selection","capsule","scope","verification","repositories","targetRefs","tool","admission","lanes","stamp","baseline","role","expectedAttempt","native","brief","validation"];
+ if(!(shape(r,fields)||shape(r,[...fields,"execution"]))||Object.hasOwn(r,"execution")&&r.execution!==null&&!validConfiguredArmExecution(r.execution)||
   r.version!==1||r.kind!=="configured-dispatch"||typeof r.operationId!=="string"||!/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(r.operationId)||
   !validConfiguredDispatchCapsule(c)||r.taskId!==c.task.id||!same({...r.selection,taskId:r.taskId},c.selection)||operationDigest(r.scope)!==c.scopeDigest||
   !shape(r.verification,["tier","derivedTier","reason"])||!(r.verification.tier===null||VERIFICATION_TIERS.includes(r.verification.tier))||!VERIFICATION_TIERS.includes(r.verification.derivedTier)||

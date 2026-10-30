@@ -204,12 +204,16 @@ fn unread_host_query_times_out_and_oversized_output_is_collected_before_lease_re
     ] {
         let f = Fixture::new(mode);
         let state = RecordEditorState::default();
+        let query_time = Duration::from_millis(200);
         let began = Instant::now();
         assert_eq!(
-            f.observed(&state, Duration::from_millis(200)).unwrap_err(),
+            f.observed(&state, query_time).unwrap_err(),
             code
         );
-        assert!(began.elapsed() < Duration::from_secs(3));
+        // The complete observation first re-resolves/fingerprints the CLI.
+        // Its separately bounded version probe precedes the query clock;
+        // allow that stage while retaining the same query and cleanup budget.
+        assert!(began.elapsed() < f.config.probe_timeout + query_time + Duration::from_secs(3));
         assert!(state.active.lock().unwrap().is_none());
         f.ceased();
     }
