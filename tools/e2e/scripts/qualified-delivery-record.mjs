@@ -7,6 +7,7 @@ import {validQualifiedCompletionProgress} from "./qualified-completion-record.mj
 import {validQualifiedPublicationProgress} from "./qualified-publication-record.mjs";
 import {validQualifiedCiProgress} from "./qualified-ci-record.mjs";
 import {normalizeProjectPublication} from "../../../lib/parser/dist/pure.js";
+import {validConfiguredDispatchCapsule} from "../../../cli/configured-native-reader.mjs";
 /** @param {any} v @param {string[]} fields */
 function shape(v,fields){return v && typeof v === "object" && !Array.isArray(v) && Object.keys(v).sort().join("\0") === [...fields].sort().join("\0");}
 /** @param {any} v */
@@ -28,6 +29,26 @@ function snapshot(v){return shape(v,["present"]) && v.present === false || shape
  typeof v.base64 === "string" && Buffer.from(v.base64,"base64").toString("base64") === v.base64;}
 /** @param {any} v */
 function physical(v){return shape(v,["path","device","inode","mode"])&&typeof v.path==="string"&&path.isAbsolute(v.path)&&[v.device,v.inode].every(n=>typeof n==="string"&&/^[0-9]+$/.test(n))&&Number.isInteger(v.mode)&&v.mode>=0&&v.mode<=0o777;}
+/** Exact retained source projection. Configured provenance is a paired datum;
+ * only the actual retained-source constructor can establish it at new effects.
+ * Historical legacy projections remain readable, while current phase policy
+ * independently refuses omission from a genuinely configured stored attempt.
+ * @param {any} source @param {{attempt:string,assignmentDigest:string,permissionDigest:string,taskId:string,receipt:any}} expected */
+export function validQualifiedDeliveryPolicySource(source,expected){
+ try{
+  const configured=Object.hasOwn(source??{},"permission"),origins=source?.native?.qualified?.origins;
+  if(!shape(source,["attempt","assignment","resource","reservation","native",...(configured?["permission"]:[])])||source.attempt!==expected.attempt||
+   `sha256:${createHash("sha256").update(JSON.stringify(source.assignment)).digest("hex")}`!==expected.assignmentDigest||source.assignment.id!==expected.taskId||
+   !shape(source.native,["qualified"])||!shape(source.native.qualified,["origins"])||!shape(origins,["receipt",...(configured?["configuredDispatch"]:[])])||
+   operationContent(origins.receipt)!==operationContent(expected.receipt))return false;
+  if(!configured)return true;
+  const capsule=origins.configuredDispatch;
+  if(!shape(source.permission,["digest"])||typeof source.permission.digest!=="string"||!/^[0-9a-f]{64}$/.test(source.permission.digest)||source.permission.digest!==expected.permissionDigest||
+   !validConfiguredDispatchCapsule(capsule)||operationContent(capsule.receipt)!==operationContent(expected.receipt)||capsule.selection.taskId!==expected.taskId||
+   operationContent(capsule.selection.revisions)!==operationContent(source.assignment.qualified.revisions))return false;
+  const {digest:claimed,...body}=capsule;return claimed===operationDigest(body);
+ }catch{return false;}
+}
 /** Finite original full-route selection; current qualification and owned
  * actual advertised-ref checks still belong to the effect owner.
  * @param {any} p @param {any} req @param {any} product */
@@ -76,10 +97,7 @@ function validRequest(req){
  }
  for(const d of [req.docsDirectory,req.runtimeDirectory])if(!shape(d,["path","device","inode"]) || typeof d.path !== "string" || !path.isAbsolute(d.path) || typeof d.device !== "string" || !/^[0-9]+$/.test(d.device) || typeof d.inode !== "string" || !/^[0-9]+$/.test(d.inode))return false;
  if(req.docsDirectory.path !== path.join(a.frozenAuthority.receipt.recordsRoot,"docs") || req.runtimeDirectory.path !== path.join(req.coordinator.root,".supertaskr"))return false;
- const source=req.policySource;
- if(!shape(source,["attempt","assignment","resource","reservation","native"]) || source.attempt !== a.verifier.attempt ||
- `sha256:${createHash("sha256").update(JSON.stringify(source.assignment)).digest("hex")}` !== a.verifier.assignmentDigest || source.assignment.id !== a.taskId ||
- operationContent(source.native?.qualified?.origins?.receipt) !== operationContent(a.frozenAuthority.receipt))return false;
+ if(!validQualifiedDeliveryPolicySource(req.policySource,{...a.verifier,taskId:a.taskId,receipt:a.frozenAuthority.receipt}))return false;
  const product=a.roles.find((/** @type {any} */ r)=>r.role === "product");
  if(req.route.publicationOwed !== (product.actualOutput.implementation.length>0) || req.route.policyRevision !== product.actualOutput.commit)return false;
  if(full&&(!req.route.publicationOwed||!publicationContext(req.route.publication,req,product)))return false;

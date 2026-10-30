@@ -11,7 +11,7 @@ import {collectQualifiedNativeRun} from "./qualified-native.mjs";
 import {loadQualifiedDeliveryPolicy,qualifiedDeliveryPhasePolicy,qualifiedDeliveryRecoveryPolicy} from "./qualified-admission.mjs";
 import {atomicJson,parseNativeRawDiff,nativePathAllowed,withNativeTransaction,syncNativeFileNamespace} from "./native-codex.mjs";
 import {operationContent,operationDigest,operationPayload,operationWork,validOperationRecord} from "./operation-record.mjs";
-import {validQualifiedDeliveryRequest} from "./qualified-delivery-record.mjs";
+import {validQualifiedDeliveryRequest,validQualifiedDeliveryPolicySource} from "./qualified-delivery-record.mjs";
 import {acceptedOperationPath,captureOperationRepository,captureQualifiedOperationRepository,checkOperationEnvironment,operationOwnerAlive,readAcceptedOperation} from "./durable-operation.mjs";
 import {captureQualifiedPublicationContext,qualifiedPublicationContextProof,qualifyFrozenPublicationLocalContext} from "./qualified-publication-context.mjs";
 import {readOperationRef,operationDestinationContains,acceptOperationRef} from "./operation-ref.mjs";
@@ -146,6 +146,28 @@ function effectRepository(root,base,request,configuration){
 function inputShape(input){if(!shape(input,["operationId","executorAttempt","verifierAttempt","targets"]) ||
  typeof input.operationId !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(input.operationId) || !shape(input.targets,["product","records"]) ||
  ["product","records"].some(r=>!shape(input.targets[r],["ref","expectedRevision"]) || typeof input.targets[r].ref !== "string" || !/^refs\/heads\/[^\s]+$/.test(input.targets[r].ref) || !/^[0-9a-f]{40}$/.test(input.targets[r].expectedRevision)))refuse("QUALIFIED_DELIVERY_REQUEST");}
+/** Capture only the actual retained policy source. This does not establish
+ * finalized collection, a grade or permission to integrate; the delivery
+ * authority and current phase policy still independently establish those.
+ * @param {string} root @param {string} attempt @param {{tool:any}} [configuration] */
+export async function captureQualifiedDeliveryPolicySource(root,attempt,configuration){
+ const source=/** @type {any} */(runs.readRecord(root,attempt)),origins=source.native?.qualified?.origins;
+ if(!origins?.receipt)refuse("QUALIFIED_DELIVERY_POLICY_SOURCE");
+ let configured=null;
+ if(Object.hasOwn(origins,"configuredDispatch")){
+  if(!shape(configuration,["tool"]))refuse("QUALIFIED_DELIVERY_CONFIGURED_POLICY_REQUIRED");
+  const {captureConfiguredDispatchForRun}=await import("./configured-dispatch.mjs");
+  const retained=await captureConfiguredDispatchForRun(root,attempt,configuration);
+  if(retained.source.attempt!==source.attempt||retained.source.permissionDigest!==source.permission?.digest||
+   retained.source.capsuleDigest!==origins.configuredDispatch.digest||!same(retained.handle.capsule,origins.configuredDispatch))refuse("QUALIFIED_DELIVERY_POLICY_SOURCE_CHANGED");
+  configured=retained.handle.capsule;
+ }
+ const projected={attempt:source.attempt,assignment:source.assignment,resource:source.resource,reservation:source.reservation,
+  native:{qualified:{origins:{receipt:origins.receipt,...(configured===null?{}:{configuredDispatch:configured})}}},...(configured===null?{}:{permission:{digest:source.permission.digest}})};
+ if(!validQualifiedDeliveryPolicySource(projected,{attempt:source.attempt,assignmentDigest:source.assignmentDigest,permissionDigest:source.permission?.digest,taskId:source.assignment.id,receipt:origins.receipt})||
+  !same(runs.readRecord(root,attempt),source))refuse("QUALIFIED_DELIVERY_POLICY_SOURCE_CHANGED");
+ return freeze(operationPayload(projected));
+}
 /** First qualification is asynchronous and entirely read-only/scratch-only.
  * No caller may supply an accepted flag, authority object or grade.
  * @param {string} coordinatorRoot @param {any} input @param {{onBoundary?:(boundary:string,record:any)=>void}} [diagnostics] */
@@ -173,8 +195,8 @@ async function startDelivery(coordinatorRoot,input,diagnostics,configuration){
  const authority=await captureQualifiedDeliveryAuthority(coordinatorRoot,{executorAttempt:input.executorAttempt,verifierAttempt:input.verifierAttempt});
  if(authority.owedCorrections.length || authority.roles.some((/** @type {any} */ r)=>r.actualOutputGrades.some((/** @type {any} */ g)=>g.exit !== 0)))refuse("QUALIFIED_DELIVERY_CORRECTIONS_PENDING");
  await loadQualifiedDeliveryPolicy();
- const source=/** @type {any} */(runs.readRecord(coordinatorRoot,authority.verifier.attempt));
- const policySource={attempt:source.attempt,assignment:source.assignment,resource:source.resource,reservation:source.reservation,native:{qualified:{origins:{receipt:source.native.qualified.origins.receipt}}}};
+ const policySource=await captureQualifiedDeliveryPolicySource(coordinatorRoot,authority.verifier.attempt,configuration);
+ if(!validQualifiedDeliveryPolicySource(policySource,{...authority.verifier,taskId:authority.taskId,receipt:authority.frozenAuthority.receipt}))refuse("QUALIFIED_DELIVERY_POLICY_SOURCE_CHANGED");
  qualifiedDeliveryPhasePolicy(coordinatorRoot,policySource);
  const product=authority.roles.find((/** @type {any} */ r)=>r.role === "product"),landings=[];
  const full=configuration!==undefined&&product.actualOutput.implementation.length>0;

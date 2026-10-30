@@ -125,6 +125,19 @@ test("the installed strict native entry binds original model vehicle and session
     expect(retained.source).toEqual({ attempt: rec.attempt, permissionDigest: rec.permission.digest, capsuleDigest: capsule.digest });
     expect(configured.verifyConfiguredDispatch(retained.handle)).toEqual(capsule);
     await expect(configured.captureConfiguredDispatchForRun(f.product, "T-900-a99", { tool })).rejects.toThrow();
+    // This is an actual prepared source datum, not finalized delivery authority.
+    const delivery = await import(module("qualified-delivery-operation")), schema = await import(module("qualified-delivery-record"));
+    const source = await delivery.captureQualifiedDeliveryPolicySource(f.product, rec.attempt, { tool });
+    const expected = { attempt: rec.attempt, assignmentDigest: rec.assignmentDigest, permissionDigest: rec.permission.digest, taskId: rec.assignment.id, receipt: capsule.receipt };
+    expect(source.permission).toEqual({ digest: rec.permission.digest }); expect(source.native.qualified.origins.configuredDispatch).toEqual(capsule);
+    expect(Object.isFrozen(source.native.qualified.origins.configuredDispatch)).toBe(true);
+    expect(schema.validQualifiedDeliveryPolicySource(source, expected)).toBe(true);
+    expect(native.withNativeTransaction(f.product, { operation: "authored-delivery-policy-projection" }, () => runs.qualifiedPhasePolicy(f.product, source, "integrator"))).toMatchObject({ consumed: false });
+    await expect(delivery.captureQualifiedDeliveryPolicySource(f.product, rec.attempt)).rejects.toMatchObject({ code: "QUALIFIED_DELIVERY_CONFIGURED_POLICY_REQUIRED" });
+    const noPermission = structuredClone(source); delete noPermission.permission; expect(schema.validQualifiedDeliveryPolicySource(noPermission, expected)).toBe(false);
+    const noCapsule = structuredClone(source); delete noCapsule.native.qualified.origins.configuredDispatch; expect(schema.validQualifiedDeliveryPolicySource(noCapsule, expected)).toBe(false);
+    const wrongPermission = structuredClone(source); wrongPermission.permission.digest = "0".repeat(64); expect(schema.validQualifiedDeliveryPolicySource(wrongPermission, expected)).toBe(false);
+    const wrongCapsule = structuredClone(source); wrongCapsule.native.qualified.origins.configuredDispatch.roles.integrator.model = "gpt-6-luna"; expect(schema.validQualifiedDeliveryPolicySource(wrongCapsule, expected)).toBe(false);
     // Build the originally planned outputs, then grade a real candidate with
     // the actual retained attempt's original (not current) suite definition.
     putPrivate(f.product, "first/pyproject.toml", "[project]\nname='first-outputs'\nversion='0.0.0'\n");

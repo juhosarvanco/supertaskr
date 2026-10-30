@@ -7,7 +7,7 @@ import {startRun,collectRun,readReservation,allRecords,takeReservation,releaseRe
 import {qualifiedDeliveryPhasePolicy,loadQualifiedDeliveryPolicy} from "../scripts/qualified-admission.mjs";
 import {acceptedOperationPath,readAcceptedOperation} from "../scripts/durable-operation.mjs";
 import {validOperationRecord} from "../scripts/operation-record.mjs";
-import {validQualifiedDeliveryRequest} from "../scripts/qualified-delivery-record.mjs";
+import {validQualifiedDeliveryRequest,validQualifiedDeliveryPolicySource} from "../scripts/qualified-delivery-record.mjs";
 import {handleNativeEvent} from "../scripts/native-codex.mjs";
 import {reviewed,writeVerdict,git,put,commit} from "./qualified-delivery-fixture";
 import {FIXTURE_ENV} from "./private-record-fixture";
@@ -26,6 +26,8 @@ test("protected mixed local integration lands exact finalized whole outputs once
   put(f.product,"unrelated-working.txt","ordinary untracked work\n");
   const result=await executeQualifiedLocalDelivery(f.product,f.input);
   const rec=readAcceptedOperation(f.product,f.input.operationId);expect(validOperationRecord(rec)).toBe(true);expect(allRecords(f.product)).toContainEqual(rec);
+  expect(Object.hasOwn(rec.operation.request.policySource,"permission")).toBe(false);
+  expect(validQualifiedDeliveryPolicySource(rec.operation.request.policySource,{...rec.operation.request.authority.verifier,taskId:"T-999",receipt:rec.operation.request.authority.frozenAuthority.receipt})).toBe(true);
   const malformed=structuredClone(rec.operation.request);malformed.authority.roles[0]=null;expect(validQualifiedDeliveryRequest(malformed)).toBe(false);
   expect(()=>readRecord(f.product,rec.attempt)).toThrow(/RECORD_OPERATION/);
   expect(()=>qualifiedDeliveryPhasePolicy(f.product,rec.operation.request.policySource)).toThrow(/preflight-operation-pending/);
