@@ -13,6 +13,12 @@ const same=(a,b)=>operationContent(a)===operationContent(b);
 const hash=value=>createHash("sha256").update(value,"utf8").digest("hex");
 /** @param {any} v @param {number} min */
 const integer=(v,min)=>Number.isSafeInteger(v)&&v>=min;
+/** Canonical description of the actual configured commands. This is data,
+ * never a shell command or caller-selectable execution plan.
+ * @param {any} capture */
+export function qualifiedConfiguredGradeCommand(capture){
+ return JSON.stringify(capture.suites.map((/** @type {any} */ row)=>({cwd:row.definition.cwd,argv:row.definition.argv})));
+}
 /** Exact data correspondence only. Every selected original suite must occur
  * once, including failed suites; RED is retained and cannot become complete.
  * @param {any} capture @param {any} policy @param {{commit:string,tree:string}} expected */
@@ -43,7 +49,7 @@ export function validQualifiedConfiguredGrade(reading,policy){
  try{
   if(reading?.role!=="product"||!validQualifiedConfiguredGateCapture(reading.configuredGate,policy,reading))return false;
   const rows=reading.configuredGate.suites,output=rows.map((/** @type {any} */ row)=>row.transcript).join("");
-  return reading.output===output&&reading.outputDigest===hash(output)&&reading.bodies===rows.reduce((/** @type {number} */ sum,/** @type {any} */ row)=>sum+row.verdict.bodies,0)&&
+  return reading.command===qualifiedConfiguredGradeCommand(reading.configuredGate)&&reading.output===output&&reading.outputDigest===hash(output)&&reading.bodies===rows.reduce((/** @type {number} */ sum,/** @type {any} */ row)=>sum+row.verdict.bodies,0)&&
    reading.exit===(rows.every((/** @type {any} */ row)=>row.verdict.verdict==="GREEN")?0:1);
  }catch{return false;}
 }

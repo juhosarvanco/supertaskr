@@ -33,6 +33,8 @@ test("actual original whole-suite metadata cannot be replaced by current same-ID
   expect(grade.bodies).toBe(4);expect(result.capture.complete).toBe(true);
   expect(validQualifiedConfiguredGateCapture(result.capture,f.policy,grade)).toBe(true);expect(validQualifiedConfiguredGrade(grade,f.policy)).toBe(true);
   expect(await assertQualifiedConfiguredGrade(grade,f.policy,{tool:f.tool})).toMatchObject({policyDigest:f.policy.digest,commit:f.candidate,tree:grade.tree,exit:0});
+  const unrelatedCommand={...grade,command:"an unrelated command label"};expect(validQualifiedConfiguredGrade(unrelatedCommand,f.policy)).toBe(false);
+  await expect(assertQualifiedConfiguredGrade(unrelatedCommand,f.policy,{tool:f.tool})).rejects.toMatchObject({code:"QUALIFIED_CONFIGURED_GRADE_REQUIRED"});
   const partial=reading(runner.run(["python"]));expect(validQualifiedConfiguredGrade(partial,f.policy)).toBe(false);
   const current=reading(createConfiguredGateRunner({productRoot:f.product,productRevision:f.candidate,tool:f.tool}).run(f.policy.required));expect(current.bodies).toBe(3);expect(validQualifiedConfiguredGrade(current,f.policy)).toBe(false);
   const wrongTree=structuredClone(grade);wrongTree.tree="f".repeat(40);expect(validQualifiedConfiguredGrade(wrongTree,f.policy)).toBe(false);
