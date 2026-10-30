@@ -347,20 +347,20 @@ export async function sendAnswer(text: string, view?: GenesisView | null): Promi
   syncUiContext();
   if (uiState.busy) return null;
   const context = currentUiContext(), session = getState().sessionId, ticket = Symbol(); uiTicket = ticket;
+  const browserTurn = !isTauri && import.meta.env.DEV ? nextTurnNumber() : null;
   sendLedger.push(text);
   setUi({ busy: true, notice: null });
   try {
     const outcome = await sendGenesisTurn(text, view);
     if (!ownsUiReply(context, ticket) || session !== getState().sessionId) return null;
     if (outcome === null) {
-      // No command answered at all. Under Tauri that is the store's own
-      // in-flight guard and nothing was sent. In a served DEV bundle
-      // there is no Rust to answer, so the harness owns the transcript
-      // and the attempt is recorded at the turn it was aimed at — the
-      // one place the two runtimes differ, and it exists only because
-      // the browser has no command to accept or refuse.
-      if (!isTauri && import.meta.env.DEV) {
-        recordUserHalf(nextTurnNumber(), text);
+      // Native/production silence is not acceptance. The explicit browser
+      // DEV twin owns its local transcript and returns the same typed local
+      // receipt, so the component does not restore an already-recorded answer.
+      // Capture the aimed turn before awaiting; a pushed event may overtake it.
+      if (browserTurn !== null) {
+        recordUserHalf(browserTurn, text);
+        return {kind: "accepted", turn: browserTurn};
       }
       return null;
     }

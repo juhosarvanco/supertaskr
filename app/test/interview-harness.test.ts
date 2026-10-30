@@ -224,6 +224,22 @@ describe("the gate, positive half: the browser DEV path installs it", () => {
   });
 });
 
+describe("local browser send acknowledgement", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  it("returns the browser's local accepted receipt for its original aimed turn even when events overtake it", async () => {
+    const source=await loadSource("browser");await source.startInterviewSource();const harness=window.__supertaskrInterviewHarness!;
+    harness.push({kind:"started",seq:1,turn:1});harness.push({kind:"completed",seq:2,turn:1,text:"First question",truncatedRelay:false});
+    const reply=source.sendAnswer("Actual browser answer");
+    harness.push({kind:"started",seq:3,turn:2});harness.push({kind:"completed",seq:4,turn:2,text:"Next question",truncatedRelay:false});
+    expect(await reply).toEqual({kind:"accepted",turn:2});expect(harness.sent()).toEqual(["Actual browser answer"]);
+    expect(ipc.invoke).not.toHaveBeenCalled();expect(harness.get().turns[1]?.status).toBe("completed");
+  });
+  it("a production browser without the DEV twin cannot manufacture a local accepted receipt", async () => {
+    vi.stubEnv("DEV",false);const source=await loadSource("browser");await source.startInterviewSource();
+    expect(window.__supertaskrInterviewHarness).toBeUndefined();expect(await source.sendAnswer("Keep this unanswered draft")).toBeNull();expect(ipc.invoke).not.toHaveBeenCalled();
+  });
+});
+
 describe("the two gates are the same gate, written the same way", () => {
   /**
    * A second dev-gated window property is a second gate to audit, and
