@@ -11,11 +11,16 @@ import { captureCommittedInputs, captureTaskSnapshot } from "./records.mjs";
 import { captureQualifiedInputs } from "./qualified-reservation.mjs";
 import { resolveWorkspace, workspaceBindingPresent } from "./workspace.mjs";
 import { ROLE_TEMPLATE_KEYS, classifyTier, modelChoice, roleModel } from "./dispatch-brief.mjs";
-import { allRecords } from "./run-record.mjs";
+import { allRecords, loadQualifiedReservations, readRecord } from "./run-record.mjs";
+import { validConfiguredDispatchCapsule } from "../../../cli/configured-native-reader.mjs";
 import { createProjectRuntime } from "./project-runtime.mjs";
 
-/** @type {WeakMap<object,{selection:any,tool:any,policy:ReturnType<typeof captureConfiguredGatePolicy>,schema:{text:string,sha256:string},capsule:any,fence:any,productPaths:readonly string[],runtime?:ReturnType<typeof createProjectRuntime>}>} */
+/** @type {WeakMap<object,{selection:any,tool:any,policy:ReturnType<typeof captureConfiguredGatePolicy>,schema:{text:string,sha256:string},capsule:any,fence:any,productPaths:readonly string[],runtime?:ReturnType<typeof createProjectRuntime>,source?:{root:string,attempt:string,permissionDigest:string,originsDigest:string}}>} */
 const captured = new WeakMap();
+/** Loaded only by an actual retained-source constructor. The native validator
+ * is structural and never invokes this reader or the effect phase helper.
+ * @type {typeof import("./qualified-native.mjs")|undefined} */
+let sourceValidator;
 /** @param {string} code @param {string} detail @returns {never} */
 function refuse(code, detail) { throw Object.assign(new Error(detail), { code }); }
 /** @param {any} value @param {string[]} required @param {string[]} [optional] */
@@ -79,9 +84,39 @@ export function captureConfiguredDispatch(options) {
 export function verifyConfiguredDispatch(handle) {
   const state = captured.get(handle);
   if (!state) refuse("configured-dispatch-unrecognized", "Configured dispatch requires its original backend constructor handle");
+  if (state.source !== undefined) {
+    const source = retainedSource(state.source.root, state.source.attempt);
+    if (source.permission.digest !== state.source.permissionDigest || operationDigest(source.native.qualified.origins) !== state.source.originsDigest) refuse("configured-dispatch-retained-changed", "The original retained source permission or origins differ");
+  }
   const fresh = captureConfiguredDispatch({ ...state.selection, tool: state.tool });
   if (operationContent(fresh.capsule) !== operationContent(state.capsule)) refuse("configured-dispatch-origin-changed", "Original configured dispatch inputs or physical origins differ");
   return state.capsule;
+}
+/** Canonical validator establishes the qualified-only record shape.
+ * @param {string} root @param {string} attempt @returns {any} */
+function retainedSource(root, attempt) {
+  if (!sourceValidator) refuse("configured-dispatch-source-not-loaded", "The retained-source constructor must preload its canonical validator");
+  const rec = readRecord(root, attempt);
+  sourceValidator.validateQualifiedNative(root, rec, false);
+  if (!validConfiguredDispatchCapsule(rec.native?.qualified?.origins?.configuredDispatch)) refuse("configured-dispatch-required", "The actual retained source has no original configured dispatch capsule");
+  return rec;
+}
+/** Reconstruct only from the actual retained row and original committed inputs.
+ * Final collection/grade acceptance remains the delivery authority's job.
+ * This function acquires no lock and performs no phase/admission effect.
+ * @param {string} root @param {string} attempt @param {{tool?:any}} [options] */
+export async function captureConfiguredDispatchForRun(root, attempt, options = {}) {
+  shape(options, [], ["tool"]);
+  const home = realpathSync(root), tool = options.tool ?? loadInstalledRecordTool();
+  await loadQualifiedReservations(); sourceValidator ??= await import("./qualified-native.mjs");
+  const rec = retainedSource(home, attempt), q = rec.assignment.qualified;
+  const handle = captureConfiguredDispatch({ authorityRoot: home, projectId: q.projectId, revisions: q.revisions, taskId: q.taskId, legacyTokenMap: q.legacyTokenMap, tool });
+  const context = configuredDispatchEffectContext(handle, rec.assignment);
+  if (operationContent(context.capsule) !== operationContent(rec.native.qualified.origins.configuredDispatch)) refuse("configured-dispatch-original-changed", "Original configured source differs from its retained capsule");
+  const state = /** @type {NonNullable<ReturnType<typeof captured.get>>} */ (captured.get(handle));
+  state.source = { root: home, attempt, permissionDigest: rec.permission.digest, originsDigest: operationDigest(rec.native.qualified.origins) };
+  verifyConfiguredDispatch(handle);
+  return Object.freeze({ handle, source: data({ attempt, permissionDigest: rec.permission.digest, capsuleDigest: context.capsule.digest }) });
 }
 /** @param {object} handle @param {{productRoot:string,productRevision:string}} candidate */
 export function createConfiguredDispatchGateRunner(handle, candidate) {

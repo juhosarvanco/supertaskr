@@ -121,6 +121,19 @@ test("the installed strict native entry binds original model vehicle and session
     expect(capsule.roles.executor).toMatchObject({ model: "codex/gpt-6.1-sol", vehicle: "fresh" }); expect(capsule.sessionPolicy).toEqual({ default: f.settings.session_policy.default, warnAfterTurns: f.settings.session_policy.warn_after_turns });
     const policy = native.withNativeTransaction(f.product, { operation: "authored-configured-phase" }, () => runs.qualifiedPhasePolicy(f.product, rec));
     expect(policy.consumed).toBe(false); expect(existsSync(path.join(f.product, "method"))).toBe(false);
+    const configured = await import(module("configured-dispatch")), retained = await configured.captureConfiguredDispatchForRun(f.product, rec.attempt, { tool });
+    expect(retained.source).toEqual({ attempt: rec.attempt, permissionDigest: rec.permission.digest, capsuleDigest: capsule.digest });
+    expect(configured.verifyConfiguredDispatch(retained.handle)).toEqual(capsule);
+    await expect(configured.captureConfiguredDispatchForRun(f.product, "T-900-a99", { tool })).rejects.toThrow();
+    // Build the originally planned outputs, then grade a real candidate with
+    // the actual retained attempt's original (not current) suite definition.
+    putPrivate(f.product, "first/pyproject.toml", "[project]\nname='first-outputs'\nversion='0.0.0'\n");
+    putPrivate(f.product, "first/checks/test_first.py", "import unittest\nclass First(unittest.TestCase):\n    def test_first(self): self.assertEqual(2+2,4)\n    def test_second(self): self.assertTrue(True)\n");
+    const changed = structuredClone(f.settings); changed.suites[0]!.argv = ["python3", "-m", "unittest", "discover", "-s", "cheap", "-v"];
+    putPrivate(f.product, "supertaskr.yaml", JSON.stringify(changed)); privateGit(f.product, ["add", "first", "supertaskr.yaml"]); privateGit(f.product, ["commit", "-qm", "First actual suite outputs and a different current policy"]);
+    const graded = configured.createConfiguredDispatchGateRunner(retained.handle, { productRoot: f.product, productRevision: privateGit(f.product, ["rev-parse", "HEAD"]) }).run(["python"]);
+    expect(graded.capture.complete).toBe(true); expect(graded.verdicts[0]).toMatchObject({ verdict: "GREEN", bodies: 2 });
+    expect(graded.capture.suites[0].definition.argv).toContain("checks"); expect(graded.capture.context.policyRevision).toBe(selected.revisions.product);
     const omitted = { ...rec, permission: undefined, native: { qualified: { origins: { receipt: rec.native.qualified.origins.receipt } } } };
     expect(() => runs.qualifiedPhasePolicy(f.product, omitted)).toThrow(/CONFIGURED_SOURCE_OMITTED/);
     const legacy = spawnSync(process.execPath, [path.join(installed.packageRoot, "supertaskr.mjs"), "next", "--root", f.product], { encoding: "utf8" });
