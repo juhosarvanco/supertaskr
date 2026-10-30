@@ -7,12 +7,13 @@ import { expect, test } from "@playwright/test";
 import { acceptedOperationPath, captureOperationRepository, executeAcceptedOperation, readAcceptedOperation, replayAcceptedOperation, withAcceptedOperation } from "../scripts/durable-operation.mjs";
 import { allRecords, readRecord, readReservation } from "../scripts/run-record.mjs";
 import { operationDigest, validOperationRecord } from "../scripts/operation-record.mjs";
+import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 
 const SUBJECT = new URL("../scripts/durable-operation.mjs", import.meta.url).href;
 const ENV = { ...process.env, GIT_AUTHOR_NAME: "Operation fixture", GIT_AUTHOR_EMAIL: "fixture@example.invalid",
   GIT_COMMITTER_NAME: "Operation fixture", GIT_COMMITTER_EMAIL: "fixture@example.invalid" };
 function git(root: string, args: string[], input?: string) {
-  return execFileSync("git", ["-C", root, "-c", "maintenance.auto=false", "-c", "gc.auto=0", ...args],
+  return execFileSync("git", ["-C", root, ...NO_BACKGROUND_MAINTENANCE, "-c", "gc.auto=0", ...args],
     { encoding: "utf8", env: ENV, ...(input === undefined ? {} : { input }), stdio: [input === undefined ? "ignore" : "pipe", "pipe", "pipe"] }).trimEnd();
 }
 function fixture(suffix = "") {
@@ -33,7 +34,7 @@ function fixture(suffix = "") {
     return { operationId: id, kind: "records-save", repositoryRoot: records, targetRef: "refs/heads/main", expectedRevision,
       acceptedTree: tree(text), payloadDigest: `sha256:${createHash("sha256").update(text).digest("hex")}`, message: `Save ${id}` };
   }
-  return { dir, product, records, base, request, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
+  return { dir, product, records, base, request, cleanup: () => removeGitFixture(dir, "durable operation fixture") };
 }
 function runChild(root: string, input: any, boundary?: string) {
   return spawnSync(process.execPath, ["--input-type=module", "-e", `

@@ -1,12 +1,13 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { measureProductIdentity, WORKSPACE_ASSOCIATION_REL_PATH, WORKSPACE_BINDING_REL_PATH } from "../scripts/workspace.mjs";
 import { loadInstalledRecordTool } from "../scripts/records-check.mjs";
 import { seedProjectSettings } from "../scripts/project-settings.mjs";
 import { GENERIC_RECORD_PROFILE } from "../scripts/records-validation.mjs";
+import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 
 export const SOURCE = path.resolve(import.meta.dirname, "../../..");
 export const FIXTURE_ENV = { ...process.env, GIT_AUTHOR_NAME: "Private record fixture", GIT_AUTHOR_EMAIL: "fixture@example.invalid",
@@ -18,7 +19,7 @@ export function fixtureProjectSettings(fixture: {manifestPath:string}) {
   return seed.yaml;
 }
 export function privateGit(root: string, args: string[], input?: string) {
-  return execFileSync("git", ["-C", root, "-c", "maintenance.auto=false", "-c", "gc.auto=0", ...args],
+  return execFileSync("git", ["-C", root, ...NO_BACKGROUND_MAINTENANCE, "-c", "gc.auto=0", ...args],
     { encoding: "utf8", env: FIXTURE_ENV, ...(input === undefined ? {} : { input }), stdio: [input === undefined ? "ignore" : "pipe", "pipe", "pipe"] }).replace(/\n$/, "");
 }
 export function putPrivate(root: string, file: string, text: string | Uint8Array) {
@@ -26,7 +27,7 @@ export function putPrivate(root: string, file: string, text: string | Uint8Array
 }
 export function commitPrivate(root: string, at?: string) {
   privateGit(root, ["add", ".", ":(exclude).supertaskr"]);
-  execFileSync("git", ["-C", root, "commit", "-qm", "Private fixture snapshot"], { env: { ...FIXTURE_ENV,
+  execFileSync("git", ["-C", root, ...NO_BACKGROUND_MAINTENANCE, "-c", "gc.auto=0", "commit", "-qm", "Private fixture snapshot"], { env: { ...FIXTURE_ENV,
     ...(at === undefined ? {} : { GIT_AUTHOR_DATE: at, GIT_COMMITTER_DATE: at }) }, stdio: ["ignore", "pipe", "pipe"] });
   return privateGit(root, ["rev-parse", "HEAD"]);
 }
@@ -81,5 +82,5 @@ export function privateRecordFixture() {
     runtime: { buildHash: sha(JSON.stringify(runtimeFiles)), files: runtimeFiles } };
   const manifestPath = path.join(dist, "tool-manifest.json"); writeFileSync(manifestPath, JSON.stringify(manifest));
   return { dir, product, records, tool, manifestPath, options: { productRoot: product, productRevision, recordsRevision },
-    cleanup: () => rmSync(dir, { recursive: true, force: true }) };
+    cleanup: () => removeGitFixture(dir, "private record fixture") };
 }

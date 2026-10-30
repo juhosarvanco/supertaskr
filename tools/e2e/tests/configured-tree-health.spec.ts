@@ -1,4 +1,5 @@
 import { expect,test } from "@playwright/test";
+import { NO_BACKGROUND_MAINTENANCE } from "./git-fixture";
 import { spawnSync } from "node:child_process";
 import { cpSync,existsSync,readFileSync,renameSync,rmSync,writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
@@ -22,7 +23,7 @@ function fixture() {
   putPrivate(f.records,"docs/STATE.md","# Private fixture state\n\nCommitted state.\n");
   putPrivate(f.records,"docs/tasks/T-010-waiting.md",card("T-010"));putPrivate(f.records,"docs/tasks/archived/T-099-old.md",card("T-099"));
   commitPrivate(f.records,"2026-10-01T12:00:00Z");
-  const checkpoint=spawnSync("git",["-C",f.records,"commit","--allow-empty","-qm","Checkpoint: authored window"],{encoding:"utf8",
+  const checkpoint=spawnSync("git",["-C",f.records,...NO_BACKGROUND_MAINTENANCE,"commit","--allow-empty","-qm","Checkpoint: authored window"],{encoding:"utf8",
     env:{...FIXTURE_ENV,GIT_AUTHOR_DATE:"2026-10-05T12:00:00Z",GIT_COMMITTER_DATE:"2026-10-05T12:00:00Z"}});
   expect(checkpoint.status,checkpoint.stderr).toBe(0);
   putPrivate(f.records,"docs/tasks/T-020-arrival.md",card("T-020"));

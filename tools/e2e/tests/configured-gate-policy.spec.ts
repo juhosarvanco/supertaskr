@@ -6,6 +6,7 @@ import { pathToFileURL } from "node:url";
 import { expect, test } from "@playwright/test";
 import { testToolRuntime } from "../fixtures/tool-runtime";
 import { privateGit, putPrivate } from "./private-record-fixture";
+import { removeGitFixture } from "./git-fixture";
 
 async function fixture(createdInputControl = false) {
   const installed = testToolRuntime(), url = (name: string) => pathToFileURL(path.join(installed.runtimeRoot, "tools/e2e/scripts", `${name}.mjs`)).href;
@@ -33,7 +34,7 @@ async function fixture(createdInputControl = false) {
   privateGit(candidate, ["config", "user.name", "Candidate fixture"]); privateGit(candidate, ["config", "user.email", "fixture@example.invalid"]);
   return { dir, coordinator, candidate, gates, tokenApi, tool, data, suite, policyRevision, policy,
     commit() { privateGit(candidate, ["add", "."]); privateGit(candidate, ["commit", "-qm", "Candidate settings differ from original policy"]); return privateGit(candidate, ["rev-parse", "HEAD"]); },
-    cleanup() { rmSync(dir, { recursive: true, force: true }); } };
+    cleanup() { removeGitFixture(dir, "original gate policy fixture"); } };
 }
 
 test("original configured commands and full membership grade a candidate that weakens its same-ID settings", async () => {

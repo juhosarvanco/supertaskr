@@ -944,7 +944,7 @@ test("checkout hook adapters allow and refuse in a copied tree with no installat
   const cold = scratchRoot();
   cpSync(path.join(repoRoot, ".claude/hooks"), path.join(cold, ".claude/hooks"), { recursive: true });
   mkdirSync(path.join(cold, "cli"), { recursive: true });
-  for (const name of ["lane-fence", "gate-token", "expand-fence", "hook-install", "pre-push-guard", "push-guard", "landing-gate", "configured-gate-reader"]) {
+  for (const name of ["lane-fence", "gate-token", "expand-fence", "hook-install", "pre-push-guard", "push-guard", "landing-gate", "configured-gate-reader", "hook-git-context"]) {
     copyFileSync(path.join(repoRoot, "cli", `${name}.mjs`), path.join(cold, "cli", `${name}.mjs`));
   }
   mkdirSync(path.join(cold, "tools/e2e/scripts"), { recursive: true });

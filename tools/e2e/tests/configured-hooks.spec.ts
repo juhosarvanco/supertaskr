@@ -7,6 +7,7 @@ import { expect, test } from "@playwright/test";
 import { fixtureFor } from "../fixtures/test-project";
 import { testToolRuntime } from "../fixtures/tool-runtime";
 import { privateGit, putPrivate, commitPrivate } from "./private-record-fixture";
+import { removeGitFixture } from "./git-fixture";
 const source = fixtureFor(import.meta.url);
 
 test("the fixed copied hook entry allows non-push and refuses ungraded pushes without an install, build or policy helper", () => {
@@ -24,7 +25,7 @@ test("the fixed copied hook entry allows non-push and refuses ungraded pushes wi
     const push = call("pre-tool", JSON.stringify({ tool_name: "Bash", cwd: product, tool_input: { command: "git push origin main" } })); expect(push.status, push.stderr).toBe(2); expect(push.stderr).toContain("token-missing");
     const gitPush = call("pre-push", `refs/heads/main ${revision} refs/heads/main ${"0".repeat(40)}\n`); expect(gitPush.status, gitPush.stderr).toBe(1); expect(gitPush.stderr).toContain("token-missing");
     expect(push.stderr + gitPush.stderr).not.toContain("ERR_MODULE_NOT_FOUND");
-  } finally { rmSync(parent, { recursive: true, force: true }); }
+  } finally { removeGitFixture(parent, "copied cold hook fixture"); }
 });
 
 async function warmFixture() {
@@ -44,7 +45,7 @@ async function warmFixture() {
   const binding = JSON.stringify({ version: 1, projectId: "hook-example", productRoot: product, recordsRoot: records }); putPrivate(product, workspace.WORKSPACE_BINDING_REL_PATH, binding);
   const gate = (...names: string[]) => spawnSync(process.execPath, [path.join(installed.packageRoot, "supertaskr.mjs"), "--root", product, "gate", ...names], { cwd: parent, encoding: "utf8", env });
   const hook = (mode: "pre-tool"|"pre-push", input?: string, cwd = product, observedEnv = env) => spawnSync(process.execPath, [path.join(installed.runtimeRoot, "tools/e2e/scripts/product-hook.mjs"), "--root", product, "--mode", mode, ...(mode === "pre-push" ? ["--", "fixture", "file://unused"] : [])], { cwd, input: input ?? (mode === "pre-tool" ? JSON.stringify({ tool_name: "Bash", cwd, tool_input: { command: "git push origin main" }, productRoot: "/untrusted", required: [] }) : `refs/heads/main ${privateGit(product, ["rev-parse", "HEAD"])} refs/heads/main ${"0".repeat(40)}\n`), encoding: "utf8", env: observedEnv });
-  return { parent, product, records, installed, tool, data, binding, revision, recordsRevision, gate, hook, cleanup: () => rmSync(parent, { recursive: true, force: true }) };
+  return { parent, product, records, installed, tool, data, binding, revision, recordsRevision, gate, hook, cleanup: () => removeGitFixture(parent, "configured hook fixture") };
 }
 
 test("configured hooks consume actual Python token context and canonical committed private checks, with no product-doc fallback", async () => {

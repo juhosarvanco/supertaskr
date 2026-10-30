@@ -1,4 +1,5 @@
 import { expect,test } from "@playwright/test";
+import { NO_BACKGROUND_MAINTENANCE } from "./git-fixture";
 import { spawnSync } from "node:child_process";
 import { existsSync,readFileSync,writeFileSync } from "node:fs";
 import path from "node:path";
@@ -25,7 +26,7 @@ function fixture() {
     authority:{kind:"tree",name:"Explicit committed loop records",marker},measured:{at:"authored foreign project",reason:"Positive and refusal controls with explicitly selected denominators"}});
   settings.bands=[band("cycle","loop/cycle-budget-used",50,70),band("tokens","loop/token-budget-used",50,90),band("quality","loop/soft-verifier",0.5,0.75)];
   const commitEmpty=(message:string,at:string)=>{
-    const result=spawnSync("git",["-C",f.records,"commit","--allow-empty","-qm",message],{encoding:"utf8",env:{...FIXTURE_ENV,GIT_AUTHOR_DATE:at,GIT_COMMITTER_DATE:at}});
+    const result=spawnSync("git",["-C",f.records,...NO_BACKGROUND_MAINTENANCE,"commit","--allow-empty","-qm",message],{encoding:"utf8",env:{...FIXTURE_ENV,GIT_AUTHOR_DATE:at,GIT_COMMITTER_DATE:at}});
     expect(result.status,result.stderr).toBe(0);
   };
   commitEmpty("Checkpoint: earlier","2026-10-01T00:00:00Z");commitEmpty("T-001: dispatch stamp","2026-10-02T00:00:00Z");

@@ -14,6 +14,7 @@ import {allRecords,readRecord,readReservation,takeReservation,releaseReservation
 import {resolveWorkspace} from "../scripts/workspace.mjs";
 import {privateRecordFixture} from "./private-record-fixture";
 import {FIXTURE_ENV} from "./private-record-fixture";
+import {NO_BACKGROUND_MAINTENANCE,removeGitFixture} from "./git-fixture";
 function prepared(role:"product"|"records",files:any[],identity?:any){return prepareInitialRepository({operationId:"new-setup",role,initialRef:"refs/heads/main",files,message:`Local ${role} setup`,...(identity?{identity}:{})});}
 function file(path:string,text:string,mode="100644"){return {path,mode,base64:Buffer.from(text).toString("base64")};}
 test("initial repository preparation captures actual user identity and exact zero-parent commit bytes without touching chosen roots",()=>{
@@ -31,7 +32,7 @@ test("initial repository preparation captures actual user identity and exact zer
    const gitDir=path.join(dir,`${plan.role}-verify`);mkdirSync(gitDir);
    for(const directory of plan.gitDirectories)mkdirSync(path.join(gitDir,directory),{recursive:true});
    for(const entry of plan.gitFiles){const target=path.join(gitDir,entry.path);mkdirSync(path.dirname(target),{recursive:true});writeFileSync(target,Buffer.from(entry.base64,"base64"));}
-   const git=(args:string[])=>execFileSync("git",["--git-dir",gitDir,...args],{encoding:"utf8",env:FIXTURE_ENV}).replace(/\n$/,"");
+   const git=(args:string[])=>execFileSync("git",[...NO_BACKGROUND_MAINTENANCE,"--git-dir",gitDir,...args],{encoding:"utf8",env:FIXTURE_ENV}).replace(/\n$/,"");
    expect(git(["show","-s","--format=%T%n%P",plan.commit])).toBe(`${plan.tree}\n`);
    expect(git(["cat-file","commit",plan.commit])).toBe(Buffer.from(plan.commitBase64,"base64").toString().replace(/\n$/,""));
    expect(git(["show",`${plan.commit}:${plan.files[0].path}`])).toBe(Buffer.from(plan.files[0].base64,"base64").toString().replace(/\n$/,""));
@@ -41,7 +42,7 @@ test("initial repository preparation captures actual user identity and exact zer
   expect(()=>prepared("records",[file("docs/state.md","bad\n")],JSON.parse(JSON.stringify(p.identity)))).toThrow(/PROJECT_INIT_REQUEST/);
  } finally {
   for(const [key,value] of Object.entries(before)){if(value === undefined)delete process.env[key];else process.env[key]=value;}
-  rmSync(dir,{recursive:true,force:true});
+  removeGitFixture(dir,"initial repository preparation fixture");
  }
 });
 test("initial preparation refuses duplicate aliasing and reserved control paths before any Git plan",()=>{
@@ -81,7 +82,7 @@ function initializationFixture(){
  const request={version:1,operationId:"new-setup",kind:"project-init",tool,projectId:"initial-fixture",roots:{product:capturePlainProjectRoot(product),records:capturePlainProjectRoot(records)},plans:{product:p,records:r},runtimeWrites,
   directories:[{role:"records",path:"docs/tasks"},{role:"records",path:"docs/rooms"}],preimages:[...p.files.map((entry:any)=>({role:"product",path:entry.path,present:false})),...r.files.map((entry:any)=>({role:"records",path:entry.path,present:false})),...runtimeWrites.map(entry=>({role:entry.role,path:entry.path,present:false}))]};
  const authorize=()=>{verifyInstalledRecordTool(tool);return true;};
- const git=(root:string,args:string[])=>execFileSync("git",["--no-replace-objects","-C",root,...args],{encoding:"utf8",env:FIXTURE_ENV}).replace(/\n$/,"");
+ const git=(root:string,args:string[])=>execFileSync("git",[...NO_BACKGROUND_MAINTENANCE,"--no-replace-objects","-C",root,...args],{encoding:"utf8",env:FIXTURE_ENV}).replace(/\n$/,"");
  return {...f,product,records,request,authorize,git};
 }
 test("local initialization reserves both fresh roots and durably captures exact setup before any repository/file effect",()=>{
