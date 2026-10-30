@@ -104,10 +104,10 @@ import { rawBullet } from "./range-rule.mjs";
 // T-320 — THE OWNING-SPEC DERIVATION, borrowed rather than re-derived.
 // The express path's eligibility asks whether a keeper or an owning spec
 // already covers each fenced path, and `gate-run.mjs` answers exactly
-// that question from the static import graph WITHOUT running a suite. It
-// imports node builtins and `docs-scan.mjs` and nothing from here, so the
-// dependency runs one way; `merge.mjs` already reaches it the same way.
-import { deriveOwning } from "./gate-run.mjs";
+// that question through the canonical source-only derivation, without
+// loading configured record readers or running a suite. gate-run reexports
+// the same implementation for existing consumers.
+import { deriveOwning } from "./source-suite-derivation.mjs";
 // THE RUNTIME DIRECTORY'S NAME, FROM THE ONE FILE THAT DECLARES IT
 // (T-324). The admission arm reads an owner-written pause record that
 // lives beside T-238's holder record, and a second spelling of that
