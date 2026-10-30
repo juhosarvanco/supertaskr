@@ -22,6 +22,10 @@ import {reconcileQualifiedDeliveryCi} from "../scripts/qualified-ci-operation.mj
 import {captureQualifiedCompletionProposal} from "../scripts/qualified-delivery-completion.mjs";
 import {completeQualifiedRecordsDelivery} from "../scripts/qualified-completion-operation.mjs";
 
+// Real two-root finalized runs and owned check/push recovery exceed the
+// browser harness's 30s default; keep the existing focused acceptance budget.
+test.setTimeout(180_000);
+
 async function fixture(installHook=true,actualSuite=false){
  const installation=privateRecordFixture(),settings=parse(fixtureProjectSettings(installation));
  settings.publication={remote:"publish-existing",destinationRef:"refs/heads/main",ci:{provider:"github-actions",host:"github.com",repository:"Fixture/Project",workflow:".github/workflows/ci.yml",event:"push",checks:["Build / Python (Linux)"]}};
