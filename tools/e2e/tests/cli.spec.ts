@@ -288,6 +288,16 @@ test("every verb that hands its target --root reaches a script whose flags carry
   }
 });
 
+test("the delivery front preserves the shared selected-root prefix and its caller's positional action", () => {
+  const entry = VERBS.find(verb => verb.verb === "delivery"), args = ["local", "--operation", "exact-operation"];
+  expect(entry).toMatchObject({ rootFlag: true, packageHelp: true });
+  const plan = planFor({ entry: entry!, args, projectRoot: repoRoot });
+  expect(plan.argv.slice(1)).toEqual(["--root", repoRoot, ...args]);
+  let seen: string[] = [];
+  expect(cliMain(["delivery", ...args, "--root", repoRoot], { cwd: repoRoot, stdout: () => {}, stderr: () => {}, spawn: ((_file: string, argv: string[]) => { seen = argv; return { status: 0 }; }) as never })).toBe(0);
+  expect(seen.slice(1)).toEqual(["--root", repoRoot, ...args]);
+});
+
 test("legacy source fronts refuse configured and invalid selected contexts before child effects and label their help", () => {
   const root = mkdtempSync(path.join(tmpdir(), "legacy-front-context-"));
   const legacy = VERBS.filter(entry => entry.sourceCompatibility);

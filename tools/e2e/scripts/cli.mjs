@@ -626,6 +626,12 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
     source: "Original committed PRODUCT/RECORDS/TOOL; fixed configured dispatch entry",
   }),
   Object.freeze({
+    verb: "delivery", summary: "original-operation qualified integration, publication, CI and private completion",
+    target: { kind: "script", file: "qualified-delivery-command.mjs", args: [] }, rootFlag: true, packageHelp: true,
+    usage: "supertaskr delivery <start|local|publish|ci|complete|status> --operation <id> [start selectors]",
+    source: "Original configured native runs and same qualified delivery operation; finite fixed entry",
+  }),
+  Object.freeze({
     verb: "status",
     summary: "the board census — every card, its status and its blockers",
     target: { kind: "script", file: "brief.mjs", args: ["--state"] },

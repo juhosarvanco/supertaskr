@@ -21,6 +21,14 @@ function usage() {throw Object.assign(new Error("Invalid delivery command"), {co
 /** Validate all finite syntax before importing the operation owners or TOOL.
  * @param {string[]} argv */
 function parse(argv) {
+  // The shared installed front places its selected root before a positional
+  // action. Normalize that one pair; the same finite parser below still owns
+  // every value, duplicate and allowlist check before any operation loads.
+  if (argv[0] === "--root") {
+    const root = argv[1];
+    if (root === undefined || !root || root.startsWith("--") || /[\x00-\x1f\x7f]/.test(root)) usage();
+    argv = [...argv.slice(2), "--root", root];
+  }
   const action = argv[0]; if (!action || !ACTIONS.has(action)) usage();
   const allowed = new Set([...COMMON, ...(action === "start" ? START : [])]);
   /** @type {Record<string,string>} */ const flags = {};
