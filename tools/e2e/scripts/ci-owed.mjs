@@ -47,7 +47,6 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   ALL_SUITES,
-  GRADED_SUITES,
   OWED_SET_FLAG,
   RANGE_FLAG,
   SCOPED_SUITE,
@@ -56,7 +55,9 @@ import {
   scopedSuite,
   specFiles,
   suiteOfPath,
-} from "./gate-run.mjs";
+} from "./source-suite-derivation.mjs";
+
+import { SOURCE_CI_SUITES as GRADED_SUITES } from "./source-ci-contract.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 

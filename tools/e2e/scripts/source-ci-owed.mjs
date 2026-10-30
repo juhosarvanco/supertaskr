@@ -1,6 +1,6 @@
 /** Supertaskr's explicit source-CI derivation, outside configured user gates. */
 import { isMain } from "../../../cli/is-main.mjs";
-import { owedForRange, OWED_SET_FLAG, RANGE_FLAG, TREE_FLAG, repoRoot } from "./gate-run.mjs";
+import { owedForRange, OWED_SET_FLAG, RANGE_FLAG, TREE_FLAG, repoRoot } from "./source-suite-derivation.mjs";
 import { SOURCE_CI_SUITES } from "./source-ci-contract.mjs";
 /** @param {string[]} argv */
 export function main(argv) {

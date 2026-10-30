@@ -1,10 +1,73 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { tmpdir } from "node:os";
 import { expect, test } from "@playwright/test";
-import { removeGitFixture } from "./git-fixture";
+import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import { sourceOnlyCheckout, observed } from "../fixtures/source-only";
+
+test("source CI selector and its spawned adapter run with only the owed job's parser dependencies", () => {
+  test.setTimeout(120_000);
+  const root = sourceOnlyCheckout();
+  const git = (args: string[]) => execFileSync("git", [...NO_BACKGROUND_MAINTENANCE,
+    "-c", "user.name=Source CI fixture", "-c", "user.email=source-ci@example.invalid", ...args],
+    { cwd: root, encoding: "utf8" }).trim();
+  try {
+    // The real owed job builds lib/parser, but does not install app, cli or
+    // tools/e2e. Remove only this fixture's dependency links, never their targets.
+    for (const dir of ["app", "cli", "tools/e2e"]) {
+      const link = path.join(root, dir, "node_modules");
+      if (existsSync(link)) unlinkSync(link);
+    }
+    expect(existsSync(path.join(root, "lib/parser/node_modules"))).toBe(true);
+    git(["commit", "-qm", "source baseline"]);
+    const base = git(["rev-parse", "HEAD"]);
+    const parserSource = path.join(root, "lib/parser/src/index.ts");
+    writeFileSync(parserSource, readFileSync(parserSource, "utf8") + "\n// Source CI cold-runner fixture.\n");
+    git(["add", "--", "lib/parser/src/index.ts"]);
+    git(["commit", "-qm", "parser input"]);
+    const tip = git(["rev-parse", "HEAD"]), range = `${base}..${tip}`;
+    const adapterPath = path.join(root, "tools/e2e/scripts/source-ci-owed.mjs");
+    const run = (entry: string, args: string[], extraEnv: Record<string, string> = {}) => spawnSync(process.execPath, [entry, ...args], {
+      cwd: root, encoding: "utf8", timeout: 60_000, maxBuffer: 32 * 1024 * 1024,
+      env: { ...process.env, NODE_PATH: "", NODE_OPTIONS: "", ...extraEnv },
+    });
+    const adapter = run(adapterPath, ["--owed-set", "--range", range, "--tree", root]);
+    expect(adapter.status, adapter.stderr + adapter.stdout).toBe(0);
+    const owed = JSON.parse(adapter.stdout);
+    expect(owed.problem).toBeUndefined();
+    expect(owed.range).toBe(range);
+    expect(owed.suites).toContain("parser");
+    expect(owed.changed).toEqual(["lib/parser/src/index.ts"]);
+
+    const output = path.join(root, "ci-job-output.txt");
+    const sender = run(path.join(root, "tools/e2e/scripts/ci-owed.mjs"), [], {
+      CI_OWED_TREE: root, GITHUB_EVENT_NAME: "pull_request", CI_PR_BASE_SHA: base,
+      GITHUB_SHA: tip, GITHUB_OUTPUT: output,
+    });
+    expect(sender.status, sender.stderr + sender.stdout).toBe(0);
+    expect(sender.stderr).not.toContain("could not answer");
+    expect(sender.stdout).toContain(`range=${range}\n`);
+    expect(sender.stdout).toContain(`suites=${[...owed.suites].sort().join(",")}\n`);
+    expect(sender.stdout).toContain("run-parser=true\n");
+    expect(readFileSync(output, "utf8")).toBe(sender.stdout);
+
+    // A real refusal still owes all suites in the caller, rather than turning
+    // the now-light import graph into a false successful empty selection.
+    const missing = "f".repeat(40);
+    const refused = run(adapterPath, ["--owed-set", "--range", `${missing}..${tip}`, "--tree", root]);
+    expect(refused.status, refused.stderr + refused.stdout).toBe(2);
+    expect(JSON.parse(refused.stdout).problem).toBeTruthy();
+    const fallback = run(path.join(root, "tools/e2e/scripts/ci-owed.mjs"), [], {
+      CI_OWED_TREE: root, GITHUB_EVENT_NAME: "pull_request", CI_PR_BASE_SHA: missing,
+      GITHUB_SHA: tip, GITHUB_OUTPUT: "",
+    });
+    expect(fallback.status, fallback.stderr + fallback.stdout).toBe(0);
+    expect(fallback.stderr).toContain("could not answer");
+    expect(fallback.stdout).toContain("whole=true\n");
+    for (const suite of ["parser", "app", "rust", "e2e"]) expect(fallback.stdout).toContain(`run-${suite}=true\n`);
+  } finally { removeGitFixture(root, "source CI cold runner"); }
+});
 
 
 test("ordinary capability and skill entrypoints avoid private reads and writes with absent and defective private records", () => {

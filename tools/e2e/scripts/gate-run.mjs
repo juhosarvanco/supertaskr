@@ -906,29 +906,13 @@ export function runSuite(suite, opts = {}) {
 }
 
 import {
-  SCOPED_SUITE, SPEC_DIR, SPEC_SUFFIX, importSpecifiers, resolveImport, specFiles, specReach, normaliseChanged, owningSpecs, deriveOwning, SETTINGS_DIR, underSettings, settingsSiteRe, settingsReadersIn, settingsReaders, PACKAGE_ROOTS, ALL_SUITES, suiteOfPath, packageDependents, BUILD_SCRIPT, buildConfigsIn, resolveTsconfig, soleIncludeDir, packageBuilds, generatedEntries, generatedSources, deriveOwed, RANGE_RE, rangeChanged, owedForRange
+  OWNING_FLAG, RANGE_FLAG, OWED_SET_FLAG, TREE_FLAG, scopedSuite, SCOPED_SUITE, SPEC_DIR, SPEC_SUFFIX, importSpecifiers, resolveImport, specFiles, specReach, normaliseChanged, owningSpecs, deriveOwning, SETTINGS_DIR, underSettings, settingsSiteRe, settingsReadersIn, settingsReaders, PACKAGE_ROOTS, ALL_SUITES, suiteOfPath, packageDependents, BUILD_SCRIPT, buildConfigsIn, resolveTsconfig, soleIncludeDir, packageBuilds, generatedEntries, generatedSources, deriveOwed, RANGE_RE, rangeChanged, owedForRange
 } from "./source-suite-derivation.mjs";
 export {
-  SCOPED_SUITE, SPEC_DIR, SPEC_SUFFIX, importSpecifiers, resolveImport, specFiles, specReach, normaliseChanged, owningSpecs, deriveOwning, SETTINGS_DIR, underSettings, settingsSiteRe, settingsReadersIn, settingsReaders, PACKAGE_ROOTS, ALL_SUITES, suiteOfPath, packageDependents, BUILD_SCRIPT, buildConfigsIn, resolveTsconfig, soleIncludeDir, packageBuilds, generatedEntries, generatedSources, deriveOwed, RANGE_RE, rangeChanged, owedForRange
+  OWNING_FLAG, RANGE_FLAG, OWED_SET_FLAG, TREE_FLAG, scopedSuite, SCOPED_SUITE, SPEC_DIR, SPEC_SUFFIX, importSpecifiers, resolveImport, specFiles, specReach, normaliseChanged, owningSpecs, deriveOwning, SETTINGS_DIR, underSettings, settingsSiteRe, settingsReadersIn, settingsReaders, PACKAGE_ROOTS, ALL_SUITES, suiteOfPath, packageDependents, BUILD_SCRIPT, buildConfigsIn, resolveTsconfig, soleIncludeDir, packageBuilds, generatedEntries, generatedSources, deriveOwed, RANGE_RE, rangeChanged, owedForRange
 } from "./source-suite-derivation.mjs";
 /** @typedef {import("./source-suite-derivation.mjs").OwningDerivation} OwningDerivation */
 /** @typedef {import("./source-suite-derivation.mjs").OwedDerivation} OwedDerivation */
-
-/**
- * The subset as a runnable suite: the leg's own entry with the spec files
- * appended to its argv, spelled relative to the leg's own cwd because
- * that is where the runner will be standing.
- * @param {string[]} specs  repo-relative spec paths
- * @param {Suite} [leg]
- * @returns {Suite}
- */
-export function scopedSuite(specs, leg = GRADED_SUITES.e2e) {
-  const cwd = `${leg.cwd}/`;
-  return {
-    ...leg,
-    argv: [...leg.argv, ...specs.map((s) => (s.startsWith(cwd) ? s.slice(cwd.length) : s))],
-  };
-}
 
 /** The word a scoped verdict wears, so no reader has only the leg's name.
  *  It is deliberately NOT `GREEN`: `judgeToken` accepts exactly that one
@@ -1259,17 +1243,6 @@ export function createConfiguredGateRunner(options) {
 }
 
 // ── CLI ──────────────────────────────────────────────────────────────
-
-/** The one suite whose scoped form exists, and the flag that asks for it. */
-export const OWNING_FLAG = "--owning";
-
-
-/** The range form (T-280) and the flag that asks only for its answer. */
-export const RANGE_FLAG = "--range";
-export const OWED_SET_FLAG = "--owed-set";
-
-/** Source-CI read-only derivation root; configured effects use --root. */
-export const TREE_FLAG = "--tree";
 
 /** Configured project CLI; source CI calls its separate read-only entry.
  * @param {string[]} argv @returns {number} */

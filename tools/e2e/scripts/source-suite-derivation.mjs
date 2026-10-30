@@ -7,7 +7,7 @@ import path from "node:path";
 import {fileURLToPath} from "node:url";
 import {docsGate,docsReaders,sourceCorpus,stripComments,trackedFiles} from "./docs-scan.mjs";
 import {SOURCE_CI_SUITES as GRADED_SUITES} from "./source-ci-contract.mjs";
-const repoRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..","..","..");
+export const repoRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..","..","..");
 /** @typedef {import("./gate-run.mjs").Suite} Suite */
 export const SCOPED_SUITE = "e2e";
 // ── THE OWNING-SPEC DERIVATION (T-271) ───────────────────────────────
@@ -1538,4 +1538,25 @@ export function owedForRange(range, root = repoRoot, registry = GRADED_SUITES) {
     },
   };
 }
-
+/**
+ * The subset as a runnable suite: the leg's own entry with the spec files
+ * appended to its argv, spelled relative to the leg's own cwd because
+ * that is where the runner will be standing.
+ * @param {string[]} specs  repo-relative spec paths
+ * @param {Suite} [leg]
+ * @returns {Suite}
+ */
+export function scopedSuite(specs, leg = GRADED_SUITES.e2e) {
+  const cwd = `${leg.cwd}/`;
+  return {
+    ...leg,
+    argv: [...leg.argv, ...specs.map((s) => (s.startsWith(cwd) ? s.slice(cwd.length) : s))],
+  };
+}
+/** The one suite whose scoped form exists, and the flag that asks for it. */
+export const OWNING_FLAG = "--owning";
+/** The range form (T-280) and the flag that asks only for its answer. */
+export const RANGE_FLAG = "--range";
+export const OWED_SET_FLAG = "--owed-set";
+/** Source-CI read-only derivation root; configured effects use --root. */
+export const TREE_FLAG = "--tree";
