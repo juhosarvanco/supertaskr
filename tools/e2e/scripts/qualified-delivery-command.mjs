@@ -50,6 +50,8 @@ function receipt(value) {
   const identity = (/** @type {any} */ item) => Object.fromEntries(["ref", "previousRevision", "commit", "tree", "correlationRef", "attribution"].filter(key => typeof item?.[key] === "string").map(key => [key,item[key]]));
   if (Array.isArray(value?.landings)) result.landings = value.landings.map(identity);
   if (value?.publication && typeof value.publication === "object") result.publication = identity(value.publication);
+  if (Array.isArray(value?.cleanupWarnings) && value.cleanupWarnings.length) result.cleanupWarnings = value.cleanupWarnings.map((/** @type {any} */ warning) =>
+    ({code:warning?.code === "QUALIFIED_DELIVERY_ACCEPTED_LOCK_UNAVAILABLE" ? warning.code : "delivery-cleanup-unavailable"}));
   return result;
 }
 /** @param {string[]} argv */
