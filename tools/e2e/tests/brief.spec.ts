@@ -352,7 +352,7 @@ function committedRecordsCliFixture() {
     fixtureGit(root, ["commit", "-qm", "committed records CLI fixture"]);
   }
   const codeRoot = path.join(fx.dir, "source-only");
-  for (const rel of ["tools/e2e/scripts/brief.mjs", "tools/e2e/scripts/records.mjs", "tools/e2e/scripts/workspace.mjs",
+  for (const rel of ["tools/e2e/scripts/brief.mjs", "tools/e2e/scripts/records.mjs", "tools/e2e/scripts/records-finding.mjs", "tools/e2e/scripts/workspace.mjs",
     "tools/e2e/scripts/records-context.mjs", "tools/e2e/scripts/qualified-admission.mjs", "tools/e2e/scripts/qualified-reservation.mjs",
     "tools/e2e/scripts/docs-scan.mjs", "tools/e2e/scripts/token-scan.mjs", "cli/lane-fence.mjs"]) {
     const target = path.join(codeRoot, rel); mkdirSync(path.dirname(target), { recursive: true });

@@ -17,6 +17,16 @@ import { operationContent, operationDigest } from "./operation-record.mjs";
 /** @type {WeakMap<object, any>} */ const tools = new WeakMap();
 /** @type {WeakMap<object, any>} */ const captures = new WeakMap();
 /** @type {WeakMap<object, any>} */ const checked = new WeakMap();
+/** Actual static local module closure of the loaded parser/pure entry. The
+ * source contract test derives this set with the compiler AST; new imports
+ * cannot silently leave executed parser bytes outside the captured manifest.
+ * External declared package dependencies are not parser-owned modules. */
+export const INSTALLED_PARSER_MODULES = Object.freeze([
+  "assignment.js", "component.js", "fence.js", "files.js", "frontmatter.js",
+  "id-slot.js", "inert-spans.js", "lanes.js", "model-session.js",
+  "process-settings.js", "project-settings.js", "pure.js", "roadmap.js",
+  "task-waves.js", "task.js", "types.js", "validate.js",
+]);
 export class PrivateRecordCheckFinding extends Error {
   /** @param {string} code */
   constructor(code) { super(`${code}: private record check unavailable`); this.code = code; this.name = "PrivateRecordCheckFinding"; }
@@ -73,7 +83,7 @@ export function loadInstalledRecordTool(manifestPath = fileURLToPath(new URL("..
     if (hash(JSON.stringify(methodFiles)) !== manifest.method.packHash) refuse("records-tool-method-changed");
     const runtimeFiles = [...manifest.runtime.files].sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
     if (hash(JSON.stringify(runtimeFiles)) !== manifest.runtime.buildHash) refuse("records-tool-runtime-mismatch");
-    for (const owner of ["records-check", "records-save", "record-write", "records", "records-validation", "records-stdio", "records-backup", "records-backup-operation", "records-backup-settings", "workspace", "native-codex", "docs-scan", "durable-operation", "operation-record", "project-init-operation", "project-init-record", "operation-ref", "qualified-delivery-record", "qualified-configured-grades", "source-suite-derivation", "qualified-delivery-operation", "qualified-publication-context", "qualified-publication-record", "qualified-publication-process", "qualified-ci-record", "qualified-delivery-ci", "qualified-ci-operation", "qualified-completion-record", "qualified-completion-operation", "fixed-product-hook", "private-backup-record", "project-settings", "dispatch-brief", "health-bands", "rename-scan", "run-record"]) {
+    for (const owner of ["records-check","records-save","record-write","records","records-validation","records-profile","records-finding","records-stdio","records-backup","records-backup-operation","records-backup-settings","workspace","native-codex","docs-scan","durable-operation","operation-record","project-init-operation","project-init-record","operation-ref","qualified-delivery-record","qualified-integration-record","qualified-configured-grades","source-suite-derivation","qualified-delivery-operation","qualified-publication-context","qualified-publication-record","qualified-publication-process","qualified-ci-record","qualified-delivery-ci","qualified-ci-operation","qualified-completion-record","qualified-completion-operation","fixed-product-hook","private-backup-record","project-settings","dispatch-brief","health-bands","rename-scan","run-record","project-bank-record","genesis-bank-proposal","genesis-proposal","configured-dispatch-grade"]) {
       if (!manifest.runtime.files.some((/** @type {any} */ entry) => entry.path === `tools/e2e/scripts/${owner}.mjs`)) refuse("records-tool-runtime-mismatch");
     }
     for (const owner of ["cli/hook-git-context.mjs", "cli/configured-native-reader.mjs"]) {
@@ -87,7 +97,7 @@ export function loadInstalledRecordTool(manifestPath = fileURLToPath(new URL("..
     }
     const parserPackage = JSON.parse(readFileSync(path.join(root, "lib/parser/package.json"), "utf8"));
     if (parserPackage.version !== manifest.parser.version) refuse("records-tool-parser-changed");
-    for (const module of ["pure.js", "types.js", "project-settings.js", "process-settings.js", "model-session.js", "assignment.js"]) {
+    for (const module of INSTALLED_PARSER_MODULES) {
       const entry = manifest.parser.files.find((/** @type {any} */ item) => item.path === `lib/parser/dist/${module}`);
       if (!entry || hash(readFileSync(new URL(`../../../lib/parser/dist/${module}`, import.meta.url))) !== entry.sha256) refuse("records-tool-runtime-mismatch");
     }
@@ -131,13 +141,26 @@ export function readInstalledMethodAsset(tool, relative) {
  * @param {any} tool @param {readonly string[]} relatives
  * @returns {readonly Readonly<{path:string,sha256:string,text:string}>[]} */
 export function readInstalledMethodAssets(tool, relatives) {
+  return readInstalledTextAssets(tool, "method", relatives);
+}
+/** Read captured runtime source/data bytes for presentation, never select an
+ * executable or managed-project fallback. Binary members refuse UTF-8 decode.
+ * @param {any} tool @param {readonly string[]} relatives
+ * @returns {readonly Readonly<{path:string,sha256:string,text:string}>[]} */
+export function readInstalledRuntimeAssets(tool, relatives) {
+  return readInstalledTextAssets(tool, "runtime", relatives);
+}
+/** One byte/UTF-8 engine for both captured groups.
+ * @param {any} tool @param {"method"|"runtime"} group @param {readonly string[]} relatives
+ * @returns {readonly Readonly<{path:string,sha256:string,text:string}>[]} */
+function readInstalledTextAssets(tool, group, relatives) {
   verifyInstalledRecordTool(tool);
-  if (!Array.isArray(relatives) || relatives.length === 0 || new Set(relatives).size !== relatives.length) refuse("records-tool-method-members-required");
+  if (!Array.isArray(relatives) || relatives.length === 0 || new Set(relatives).size !== relatives.length) refuse(`records-tool-${group}-members-required`);
   const captured = tools.get(tool);
   try {
     return Object.freeze(relatives.map((relative) => {
-      const entry = captured.manifest.method.files.find((/** @type {any} */ item) => item.path === relative);
-      if (!entry || !assetPath(relative) || !relative.startsWith("method/")) refuse("records-tool-method-member-required");
+      const entry = captured.manifest[group].files.find((/** @type {any} */ item) => item.path === relative);
+      if (!entry || !assetPath(relative) || group === "method" && !relative.startsWith("method/")) refuse(`records-tool-${group}-member-required`);
       const bytes = verifiedAssetBytes(path.dirname(captured.manifestFile), entry);
       return Object.freeze({ path: relative, sha256: entry.sha256, text: new TextDecoder("utf-8", { fatal: true }).decode(bytes) });
     }));
@@ -147,8 +170,18 @@ export function readInstalledMethodAssets(tool, relatives) {
  * Each later byte read still verifies this TOOL context and exact member hash.
  * @param {any} tool @returns {readonly Readonly<{path:string,sha256:string}>[]} */
 export function listInstalledMethodAssets(tool) {
+  return listInstalledAssets(tool, "method");
+}
+/** Detached captured runtime membership; byte reads still reverify TOOL.
+ * @param {any} tool @returns {readonly Readonly<{path:string,sha256:string}>[]} */
+export function listInstalledRuntimeAssets(tool) {
+  return listInstalledAssets(tool, "runtime");
+}
+/** @param {any} tool @param {"method"|"runtime"} group
+ * @returns {readonly Readonly<{path:string,sha256:string}>[]} */
+function listInstalledAssets(tool, group) {
   verifyInstalledRecordTool(tool);
-  return Object.freeze(tools.get(tool).manifest.method.files.map((/** @type {{path:string,sha256:string}} */ entry) => Object.freeze({ path: entry.path, sha256: entry.sha256 })));
+  return Object.freeze(tools.get(tool).manifest[group].files.map((/** @type {{path:string,sha256:string}} */ entry) => Object.freeze({ path: entry.path, sha256: entry.sha256 })));
 }
 /** Bind a consumer's declared runtime closure to this captured TOOL build.
  * Returns membership metadata only, never an unbound executable/read path.

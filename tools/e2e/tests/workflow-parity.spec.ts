@@ -308,7 +308,7 @@ type Correspondence =
 
 /**
  * Every expected run step, in the order ci.yml runs them (plan §7: token
- * lint → parser → app → e2e dependency install → cargo test → cargo audit → e2e → xvfb boot).
+ * lint → parser → app → cli/e2e dependency install → cargo test → cargo audit → e2e → xvfb boot).
  * ORDER is a fact about the one CI job, so it lives here; the command
  * STRINGS are read out of CONVENTIONS.
  */
@@ -347,6 +347,8 @@ const CI_SEQUENCE: Correspondence[] = [
   { kind: "verbatim", dir: "app", cmd: "npm ci" },
   { kind: "verbatim", dir: "app", cmd: "npm run build" },
   { kind: "verbatim", dir: "app", cmd: "npm test" },
+  // Native/e2e package fixtures run the real CLI builder, including TypeScript.
+  { kind: "verbatim", dir: "cli", cmd: "npm ci" },
   // Native installed-service controls import the finite e2e fixture helpers.
   { kind: "verbatim", dir: "tools/e2e", cmd: "npm ci" },
   { kind: "verbatim", dir: "app/src-tauri", cmd: "cargo test" },
@@ -555,8 +557,8 @@ function docCommandMap(section: string): Map<string, { dir: string; cmd: string 
   return map;
 }
 
-/** The four per-package bullets the section must carry, in order. */
-const DOC_DIRS = ["lib/parser", "app", "app/src-tauri", "tools/e2e"];
+/** The per-package bullets the section must carry, in order. */
+const DOC_DIRS = ["lib/parser", "app", "cli", "app/src-tauri", "tools/e2e"];
 
 /**
  * The expected workflow steps, DERIVED from CONTRIBUTING.md, plus
@@ -586,9 +588,9 @@ export function deriveExpectedSteps(md: string): { steps: Step[]; problems: stri
   const dirs = commandBullets(section).map((b) => b.dir);
   if (JSON.stringify(dirs) !== JSON.stringify(DOC_DIRS)) {
     problems.push(
-      `CONTRIBUTING.md "Build & test" no longer carries exactly the four ` +
+      `CONTRIBUTING.md "Build & test" no longer carries exactly the expected ` +
         `\`run from <dir>/:\` command bullets ${JSON.stringify(DOC_DIRS)} — found ` +
-        `${JSON.stringify(dirs)}. The derivation reads those bullets; a fifth ` +
+        `${JSON.stringify(dirs)}. The derivation reads those bullets; a further ` +
         `package or a renamed one is a deliberate update to this spec.`,
     );
   }

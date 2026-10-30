@@ -9,7 +9,7 @@ import {isDeliveryBranchRef} from "../../../lib/parser/dist/pure.js";
 import {operationContent,operationDigest,operationPayload,operationWork} from "./operation-record.mjs";
 import {captureGenesisBankProposal,GENESIS_BANK_PROPOSAL} from "./genesis-bank-proposal.mjs";
 import {GENESIS_PRODUCT_PROPOSAL,captureGenesisAnswerReferences} from "./genesis-proposal.mjs";
-import {normalizeRecordProfile} from "./records-validation.mjs";
+import {normalizeRecordProfile} from "./records-profile.mjs";
 const ROLES=["product","records"];
 /** @param {any} value @param {string[]} fields */
 const shape=(value,fields)=>value&&typeof value==="object"&&!Array.isArray(value)&&Object.keys(value).sort().join("\0")===[...fields].sort().join("\0");
@@ -55,7 +55,7 @@ function origin(value){return shape(value,["version","layout","associationId","p
  * @param {any} value @param {any} request */
 function planner(value,request){
  if(!shape(value,["selection","provenance","executable"]))return false;const selected=value.selection,proof=value.provenance,exe=value.executable;
- return shape(selected,["role","requested","harness","model","vehicle","sessionPolicy"])&&selected.role==="planner"&&selected.harness==="claude"&&
+ return shape(selected,["role","requested","harness","model","vehicle","sessionPolicy"])&&selected.role==="planner"&&["claude","codex"].includes(selected.harness)&&
   [selected.requested,selected.model].every(v=>typeof v==="string"&&v.length>0&&v.length<=1024&&!/[\x00-\x1f\x7f]/.test(v))&&
   (selected.vehicle===null||typeof selected.vehicle==="string"&&selected.vehicle.length>0&&selected.vehicle.length<=128&&!/[\x00-\x1f\x7f]/.test(selected.vehicle))&&
   shape(selected.sessionPolicy,["default","warnAfterTurns"])&&["fresh","resume"].includes(selected.sessionPolicy.default)&&Number.isSafeInteger(selected.sessionPolicy.warnAfterTurns)&&selected.sessionPolicy.warnAfterTurns>0&&
@@ -120,7 +120,7 @@ export function validProjectBankRequest(request){
    ![r.setup.requestDigest,r.setup.receiptDigest].every(digest)||![r.setup.productRevision,r.setup.recordsRevision].every(v=>oid(v))||
    !shape(r.session,["registryId","sessionId","origin","originDigest","planner"])||!/^S[1-9][0-9]*$/.test(r.session.registryId)||!identifier(r.session.sessionId)||!origin(r.session.origin)||
    r.session.originDigest!==operationDigest(r.session.origin)||r.session.origin.associationId!==r.setup.projectId||!planner(r.session.planner,r)||
-   !shape(r.input,["productRevision","recordsRevision","productRepository","recordsRepository","docsIdentity","runtimeIdentity","settingsProvenance","registryCapture","transcriptCapture","previousBank"])||
+   !shape(r.input,["productRevision","recordsRevision","productRepository","recordsRepository","docsIdentity","runtimeIdentity","settingsProvenance","registryCapture","transcriptCapture","previousBank","latestBank","ownBank"])||
    !repository(r.input.productRepository)||!repository(r.input.recordsRepository)||!oid(r.input.productRevision,r.input.productRepository.objectFormat)||!oid(r.input.recordsRevision,r.input.recordsRepository.objectFormat)||
    !directory(r.input.docsIdentity)||!directory(r.input.runtimeIdentity)||!same(r.session.origin.docs,r.input.docsIdentity)||!same(r.session.origin.runtime,r.input.runtimeIdentity)||
    r.input.docsIdentity.path!==path.join(r.input.recordsRepository.root,"docs")||r.input.runtimeIdentity.path!==path.join(r.input.productRepository.root,".supertaskr")||!settingsProvenance(r.input.settingsProvenance,r))return false;
@@ -132,10 +132,10 @@ export function validProjectBankRequest(request){
   if(!runtimeCapture(r.input.registryCapture,path.join(p.root,".supertaskr/sessions.json"),false)||!runtimeCapture(r.input.transcriptCapture,path.join(p.root,".supertaskr/genesis/transcript.jsonl"),true))return false;
   const registry=json(Buffer.from(r.input.registryCapture.base64,"base64"));if(!shape(registry,["sessions"])||!Array.isArray(registry.sessions))return false;
   const rows=registry.sessions.filter((/** @type {any} */ row)=>row?.status!=="dead"&&Array.isArray(row?.roles)&&row.roles.includes("planner")&&same(row?.genesis?.origin,r.session.origin));
-  if(rows.length!==1||rows[0].id!==r.session.registryId||rows[0].agent!=="claude"||rows[0].status!=="idle"||!Number.isSafeInteger(rows[0].turns)||rows[0].turns<1||
+  if(rows.length!==1||rows[0].id!==r.session.registryId||rows[0].agent!==r.session.planner.selection.harness||rows[0].status!=="idle"||!Number.isSafeInteger(rows[0].turns)||rows[0].turns<1||
    !shape(rows[0].genesis,["id","origin","planner","setup"])||rows[0].genesis.id!==r.session.sessionId||!same(rows[0].genesis.planner,r.session.planner)||!same(rows[0].genesis.setup,r.setup))return false;
   const context={setupId:r.setup.operationId,sessionId:r.session.sessionId,originDigest:r.session.originDigest,productRevision:r.input.productRevision,recordsRevision:r.input.recordsRevision};
-  if(!shape(r.bank,["stage","proposalCapture","productProposalCapture","answers","validation"])||!Number.isInteger(r.bank.stage)||r.bank.stage<0||r.bank.stage>8||!Array.isArray(r.bank.answers))return false;
+  if(!shape(r.bank,["stage","mode","completedStage","proposalCapture","productProposalCapture","answers","validation"])||!Number.isInteger(r.bank.stage)||r.bank.stage<0||r.bank.stage>8||!Array.isArray(r.bank.answers)||!["initial","update"].includes(r.bank.mode)||!Number.isInteger(r.bank.completedStage)||r.bank.completedStage<r.bank.stage||r.bank.completedStage>8)return false;
   const captured=r.bank.proposalCapture;
   const actualAnswers=r.input.transcriptCapture.lines.map((/** @type {any} */ line)=>json(Buffer.from(line.base64,"base64")));
   if(actualAnswers.some((/** @type {any} */ line)=>!shape(line,["turn","role","text","atMs","genesis",...(Object.hasOwn(line,"machine")?["machine"]:[])])||line.role!=="user"||Object.hasOwn(line,"machine")&&line.machine!==false||!Number.isSafeInteger(line.atMs)||line.atMs<0||!same(line.genesis,{sessionId:r.session.sessionId,originDigest:r.session.originDigest})||!Number.isSafeInteger(line.turn)||line.turn<1||line.turn>0xffffffff||typeof line.text!=="string"||Buffer.byteLength(line.text)>256*1024)||
@@ -166,10 +166,16 @@ export function validProjectBankRequest(request){
   const writes=r.plans.records.writes,ordinary=writes.filter((/** @type {any} */ w)=>!w.derived);
   if(!same(ordinary.map((/** @type {any} */ w)=>({path:w.path,mode:w.mode,base64:w.base64})).sort((/** @type {any} */ a,/** @type {any} */ b)=>a.path<b.path?-1:1),expected.sort((/** @type {any} */ a,/** @type {any} */ b)=>a.path<b.path?-1:1))||
    writes.filter((/** @type {any} */ w)=>w.derived).some((/** @type {any} */ w)=>w.path!=="docs/INDEX.md"||w.mode!=="100644"))return false;
-  const prior=r.input.previousBank;
-  if(r.bank.stage===0){if(prior!==null)return false;} // Current lineage/stage authority is proved by the constructor, not commit equality.
-  else if(!shape(prior,["operationId","requestDigest","receiptDigest","stage","recordsCommit","productCommit"])||!identifier(prior.operationId)||prior.operationId===r.operationId||
-   ![prior.requestDigest,prior.receiptDigest].every(digest)||prior.stage!==r.bank.stage-1||!oid(prior.recordsCommit,notes.objectFormat)||!(prior.productCommit===null||oid(prior.productCommit,p.objectFormat)))return false;
+  const prior=r.input.previousBank,latest=r.input.latestBank,own=r.input.ownBank;
+  const reference=(/** @type {any} */ ref)=>shape(ref,["operationId","requestDigest","receiptDigest","stage","completedStage","recordsCommit","productCommit"])&&identifier(ref.operationId)&&ref.operationId!==r.operationId&&
+   [ref.requestDigest,ref.receiptDigest].every(digest)&&Number.isInteger(ref.stage)&&ref.stage>=0&&ref.stage<=8&&Number.isInteger(ref.completedStage)&&ref.completedStage>=ref.stage&&ref.completedStage<=8&&oid(ref.recordsCommit,notes.objectFormat)&&(ref.productCommit===null||oid(ref.productCommit,p.objectFormat));
+  if([prior,latest,own].some(ref=>ref!==null&&!reference(ref)))return false;
+  const references=[prior,latest,own].filter(ref=>ref!==null);
+  if(references.some(a=>references.some(b=>a.operationId===b.operationId&&!same(a,b)))||latest!==null&&references.some(ref=>ref.completedStage>latest.completedStage))return false;
+  if(r.bank.stage===0?prior!==null:prior===null||prior.stage!==r.bank.stage-1)return false;
+  if(r.bank.mode==="initial"){
+   if(own!==null||r.bank.completedStage!==r.bank.stage||(r.bank.stage===0?latest!==null:latest===null||latest.completedStage!==r.bank.stage-1))return false;
+  }else if(own===null||own.stage!==r.bank.stage||latest===null||latest.completedStage!==r.bank.completedStage)return false;
   const validation=r.bank.validation;if(!shape(validation,["current","prospective"])||validation.prospective!==null&&r.bank.stage!==5)return false;
   for(const proof of [validation.current,...(validation.prospective===null?[]:[validation.prospective])]){
    if(!shape(proof,["profile","captureDigest","candidateDigest","writeSetDigest"])||![proof.captureDigest,proof.writeSetDigest].every(digest)||!sha(proof.candidateDigest)||!proof.profile||typeof proof.profile!=="object"||!same(normalizeRecordProfile(proof.profile),proof.profile))return false;

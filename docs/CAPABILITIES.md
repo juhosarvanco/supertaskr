@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1762 at least behaviours** — 1758 extracted sentences + 4 at least named-not-extracted (listed at the end) — across 107 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1816 at least behaviours** — 1812 extracted sentences + 4 at least named-not-extracted (listed at the end) — across 118 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -52,6 +52,12 @@ Census: **1762 at least behaviours** — 1758 extracted sentences + 4 at least n
 - THE MARGIN GUARD: every live arm against a loss point DERIVED in this run, for a NAMED reader
 - the reader that STOPS after one read gets a silent PREFIX, and the writer's own exit behind it is a RACE this body measures and does not assert
 - THE SWEEP: brief.mjs no longer tears down its own stdout, and the siblings that still do are the argued set
+
+## brief-source-readers
+
+- captured METHOD contract lookup preserves own, unique fallback and ambiguous/missing refusals without source-root lookup
+- captured METHOD references reuse canonical grammar and actual membership without opening unlisted files
+- captured and filesystem CONVENTIONS share exact splice and all missing, reordered, unmentioned and leftover refusals
 
 ## brief
 
@@ -554,6 +560,18 @@ Census: **1762 at least behaviours** — 1758 extracted sentences + 4 at least n
 - pre-lock exact replay preserves later state and acquisition receipt races fail even when exact lock release also fails
 - atomic publication and explicit retry classify before rename after rename directory sync release and response loss honestly
 
+## configured-dispatch-brief
+
+- installed full brief derives actual thirteen METHOD rows from code-empty committed P/R and keeps executor reading scoped
+- unknown additional gates, divergent adapters, unsafe lane destinations and missing shipped brief ownership refuse without lane effects
+- declared generic gates reuse the legacy parser while the legacy nonempty trigger guard remains strict
+
+## configured-dispatch-grade
+
+- installed grading measures the actual held PRODUCT worker, retains original suites and captures without changing ignored-output policy
+- current pause and exact worker changes refuse; a pause from the first real suite prevents the next child and any accepted result
+- the original reporter/judge aggregates actual partial captures and refuses missing, duplicate, changed or relabeled membership
+
 ## configured-dispatch-view
 
 - ordinary installed dispatch view captures code-empty P/R cuts, actual holds and METHOD without PRODUCT-board fallback or effects
@@ -864,6 +882,24 @@ Census: **1762 at least behaviours** — 1758 extracted sentences + 4 at least n
 - a derivation that FAILED CLOSED arms the boot check too, because a path nobody could place is a path nobody can clear the app of
 - the seam between the derivation and the plan refuses every answer that is not a set
 
+## genesis-bank-command
+
+- fixed installed-layout bank stdin commits original configured Codex intent and returns historical receipt before current TOOL
+- pending bank discovery is read-only and fixed replay uses the same captured intent without new proposal capture
+- bank discovery never skips malformed owned namespace or rebinds missing original RECORDS
+- fixed bank execution requires each directly executed service owner in the installed manifest before preparation
+
+## genesis-bank-plan
+
+- actual initialized current descendants produce frozen exact scratch plans without managed Git/file/OP effects
+- current cut/session/setup/busy and typed capture mismatches refuse without a new managed effect
+- working byte changes, aliases and unattributed prior-bank witnesses stay unavailable with a restored positive
+- Q1 needs actual same-session human captures and a real accepted predecessor; authored proposal metadata grants neither
+- output rule uses actual initialized foundations and canonical role-qualified usable fences with no component registry
+- chronological current progress stays distinct from logical predecessor and an earlier bank's own receipt
+- own-field edits preserve other banks, optional Gotchas and append-only decision history
+- a scaffold path with later foreign committed bytes is not owned content at a newer current cut
+
 ## genesis-bank-proposal
 
 - finite bank capture preserves original human bytes and detaches files/proposal while changed same-ID spelling stays distinct
@@ -875,10 +911,12 @@ Census: **1762 at least behaviours** — 1758 extracted sentences + 4 at least n
 - new planned cards cannot publish populated reserved lifecycle or evidence bodies, including raw inert-looking verdict examples
 - empty reserved template sections remain valid author data and restoring a populated body permits the original planned capture
 - a task instantiated from the actual verified installed METHOD template is valid planned author data
+- optional Gotchas is finite CONVENTIONS author data at every stage while the constructor owns its field boundaries
 
 ## genesis-init-command
 
 - fixed initialization protocol produces real separate histories and returns original completion before current TOOL gates
+- installed original-planner read retains committed Codex selection after a real Q5 future-provider change
 - native captured incarnations and finite field schema refuse before any selected-folder effect
 - cold pending discovery precedes fresh admission and replay keeps the original immutable request
 - unattributed stage replay stays named unknown under the original setup identifier
@@ -986,6 +1024,12 @@ Census: **1762 at least behaviours** — 1758 extracted sentences + 4 at least n
 - a pre-rename runtime directory refuses the fence manifest read, and names the rename
 - a pre-rename runtime directory refuses the verdict token read, and names the rename
 - the legacy detector answers a FILE at the old path with no migration finding
+
+## installed-source-assets
+
+- runtime source batches return detached frozen exact verified bytes and require captured membership
+- runtime source reads repeat whole TOOL verification and refuse missing, changed or linked physical members
+- listed binary runtime bytes cannot be silently decoded as replacement UTF-8 text
 
 ## interview-skill
 
@@ -1330,6 +1374,11 @@ Census: **1762 at least behaviours** — 1758 extracted sentences + 4 at least n
 - real Enter on a focused card trigger opens its panel
 - real Space on a focused card trigger opens its panel
 
+## parser-tool-closure
+
+- mandatory owned parser members equal the actual compiled pure-barrel static closure
+- each executed owned parser module must remain a captured member even when its file is present
+
 ## product-isolation
 
 - source CI selector and its spawned adapter run with only the owed job's parser dependencies
@@ -1337,14 +1386,29 @@ Census: **1762 at least behaviours** — 1758 extracted sentences + 4 at least n
 - product census and interview freshness failures remain active without private records
 - the ordinary product docs gate keeps reader, owed-suite and root-anchor failures without reading private records
 
+## project-bank-operation
+
+- false and asynchronous admission leave no orphan bank or claims and the original prepared intent remains usable
+- actual records-only bank commits one exact original intent and historical replay ignores successor binding/tool
+- real later banks permit an owned Q1 update without lowering completion and Q5 commits canonical explicit settings
+- cold same-ID bank recovery continues a real dead owned index lock and preserves captured intent
+- cold Q1 recovery retains accepted R and finishes only its original pending PRODUCT commit
+- a foreign dead lock stays intact and ambiguous bank plans refuse without adopting its index authority
+- an equal-history successor binding at an effect boundary cannot retarget the captured bank
+- accepted cold history returns its exact receipt while preserving a later foreign index lock
+- R-only and Q1 banks preserve unrelated staged and working bytes in both repositories
+- real bank0 then Q1 commits exact R before its finite PRODUCT adapter commit with original session provenance
+
 ## project-bank-record
 
 - real initialized/checker/external parented plan data fits the finite bank schema while no bank outcome is claimed
+- bank data binds the frozen configured provider while requested and optional observed model stay separate
 - raw commit parent/tree/message/OID disagreement refuses rather than accepting an asserted exact plan
 - request data cannot add paths, weaken typed source provenance, impersonate successor roots or turn null PRODUCT into an effect
 - pure progress schema requires both claims, exact intents and R-first acceptance before release
 - Q1 data binds actual human captures and exact PRODUCT adapter commit to the planned RECORDS commit
 - stage-zero data keeps the original typed setup after a legitimate records advance and refuses missing or relabeled provenance
+- own-bank updates bind both chronological progress and logical predecessor without reducing completion
 
 ## project-init-operation
 
@@ -1370,6 +1434,7 @@ Census: **1762 at least behaviours** — 1758 extracted sentences + 4 at least n
 - shared role normalization preserves one exact model/vehicle without selecting an effect harness
 - canonical committed planner selection names exact requested CLI model, vehicle and session defaults
 - role effects refuse missing, working and seed inputs without account defaults or private context
+- canonical Codex planner selection preserves exact requested spelling and qualifies only the executable model
 - unsupported harnesses, account selectors and historical compound prose never become an executable role
 - canonical TOOL requires the loaded model-session.js parser owner even when an omitted file remains present
 - canonical TOOL requires the loaded assignment.js parser owner even when an omitted file remains present
@@ -1393,9 +1458,13 @@ Census: **1762 at least behaviours** — 1758 extracted sentences + 4 at least n
 - band metadata uses the existing canonical threshold rule, and committed settings symlinks refuse
 - runtime closure requires actual captured manifest members even when omitted files remain present
 - ordinary TOOL validation requires the operation reader's unconditional initialization schema owner
+- ordinary TOOL validation requires its loaded records-profile owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded records-finding owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded source-suite-derivation owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded configured-dispatch-grade owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded operation-ref owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded qualified-delivery-record owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded qualified-integration-record owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded qualified-configured-grades owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded qualified-delivery-operation owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded qualified-publication-context owner even when the omitted file remains present
@@ -1416,6 +1485,9 @@ Census: **1762 at least behaviours** — 1758 extracted sentences + 4 at least n
 - ordinary TOOL validation requires its loaded dispatch-brief owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded health-bands owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded rename-scan owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded project-bank-record owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded genesis-bank-proposal owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded genesis-proposal owner even when the omitted file remains present
 - ordinary TOOL validation requires the actually imported hook routing audit when its omitted file remains present
 - ordinary TOOL validation retains the critical standalone completion writer even when its omitted file remains present
 - ordinary TOOL validation requires the actually imported cold configured reader even when an omitted file remains present
@@ -1664,6 +1736,12 @@ Census: **1762 at least behaviours** — 1758 extracted sentences + 4 at least n
 
 - actual installed qualified capture and worker measurement preserve real roots ending in two spaces
 
+## qualified-planned-local
+
+- modeled private planned integration preserves an advanced base and unrelated index/work, then completes the same operation
+- unmodeled private and PRODUCT-owed work refuse before an operation, claim or selected-repository object effect
+- revoked current policy after private capture prevents actual objects and restores the same captured operation
+
 ## qualified-publication-context
 
 - full publication context freezes actual reviewed output existing destination exact CI and installed guard without writing
@@ -1787,6 +1865,7 @@ Census: **1762 at least behaviours** — 1758 extracted sentences + 4 at least n
 - private checks compose complete finite creation rename and exact derived writes while protecting generated inputs
 - candidate budgets and checkpoint freshness distinguish blocking edits retained debt and procedural amendments
 - checkpoint history stays at the selected records commit and reads creation rather than latest append
+- canonical numeric-slot and inert-span owners require paired manifest membership even when installed files exist
 
 ## records-context
 
@@ -1819,6 +1898,11 @@ Census: **1762 at least behaviours** — 1758 extracted sentences + 4 at least n
 - a cold original source cut can stop before materialization and admit a distinct current graph
 - an unchanged graph retires only its proven dead accepted lock and reports a foreign lock separately
 - an isolated installed watcher indexes PRODUCT, keeps ordinary private edits quiet, and refuses a replacement records home
+
+## records-profile
+
+- canonical pure profiles preserve existing eligibility normalization and error identity
+- cold profile classification loads no committed or qualified reader and shared finding loads no generated parser
 
 ## records-save
 

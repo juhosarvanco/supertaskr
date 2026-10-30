@@ -69,7 +69,7 @@ test("current setup inspection preserves the original receipt across later commi
     expect(discoverProjectInitializations(f.product).initializations[0]).toMatchObject({ state: "initialized", originStatus: "matched", receipt });
     const first = inspect(f); expect(first.receipt).toEqual(receipt);
     expect(first.planning.pristineSeed).toBe(true);
-    expect(first.planner).toMatchObject({status:"ready",selection:{role:"planner",harness:"claude",model:"claude-opus-5",vehicle:"subagent"},provenance:{
+    expect(first.planner).toMatchObject({status:"ready",selection:{role:"planner",harness:"codex",model:"gpt-6.1-sol",vehicle:"subagent"},provenance:{
       configurationDigest:first.settingsProvenance.configDigest,productRevision:first.current.productRevision,toolManifestDigest:first.settingsProvenance.tool.manifestDigest}});
     expect(first.planner.provenance.toolManifestDigest).toMatch(/^[0-9a-f]{64}$/);
     expect(first.installation).toEqual({ runtimeKit: "verified", skills: "not-installed", hooks: "not-installed" });
@@ -82,7 +82,7 @@ test("current setup inspection preserves the original receipt across later commi
     expect(current.settingsProvenance).toMatchObject({ kind: "committed", productRoot: f.product, productRevision: p });
     expect(current.settings.languages).toEqual([]); expect(Object.isFrozen(current)).toBe(true);
     expect(current.planning.pristineSeed).toBe(false);
-    const nextSettings = structuredClone(current.settings); nextSettings.roles.planner = "codex/gpt-6.1-sol@fresh";
+    const nextSettings = structuredClone(current.settings); nextSettings.roles.planner = "gemini/gpt-6.1-sol@fresh";
     putPrivate(f.product,"supertaskr.yaml",JSON.stringify(nextSettings)); const unsupported = commit(f.product,"supertaskr.yaml");
     const refusedPlanner = inspect(f); expect(refusedPlanner.current.productRevision).toBe(unsupported);
     expect(refusedPlanner.planner).toMatchObject({status:"cannot-run",code:3,reason:"project-role-harness-unsupported"});

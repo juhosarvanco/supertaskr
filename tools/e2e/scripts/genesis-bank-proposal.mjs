@@ -32,7 +32,7 @@ function json(source){try{const value=JSON.parse(source);if(parseDocument(source
  * also prove original setup ownership and new-file conditions at actual cuts.
  * @param {number} stage @param {string} file */
 export function genesisBankRecordPath(stage,file){
- if(file==="docs/STATE.md")return Number.isInteger(stage)&&stage>=0&&stage<=8;
+ if(["docs/STATE.md","docs/CONVENTIONS.md"].includes(file))return Number.isInteger(stage)&&stage>=0&&stage<=8;
  if([1,2,3,4,6].includes(stage))return file==="docs/NORTH_STAR.md";
  if(stage===5){
   if(file==="docs/CONVENTIONS.md"||file==="docs/decisions/001-stack.md")return true;
@@ -71,7 +71,7 @@ function authorBody(body){
 /** New task authoring retains author fields only. Dispatch/completion and
  * review/verdict stamps are never accepted as initial-genesis output.
  * @param {string} file @param {string} source */
-function plannedTask(file,source){
+export function assertGenesisPlannedTask(file,source){
  if(!file.startsWith("docs/tasks/"))return;
  const front=/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(source);if(!front)refuse("genesis-bank-task-planned");
  const doc=parseDocument(/** @type {string} */ (front[1]),{uniqueKeys:true});if(doc.errors.length)refuse("genesis-bank-task-planned");
@@ -123,7 +123,7 @@ export function captureGenesisBankProposal(input){
   total+=file.bytes.byteLength;if(total>GENESIS_BANK_CAPTURE_LIMIT)refuse("genesis-bank-capture-limit");
   const expected=proposal.records.find((/** @type {any} */ row)=>row.path===file.path);
   if(!expected||hash(file.bytes)!==expected.sha256)refuse("genesis-bank-file-changed");
-  const source=text(file.bytes);if(source.includes("\0"))refuse("genesis-bank-text");plannedTask(file.path,source);
+  const source=text(file.bytes);if(source.includes("\0"))refuse("genesis-bank-text");assertGenesisPlannedTask(file.path,source);
   files.set(file.path,{path:file.path,mode:file.mode,base64:Buffer.from(file.bytes).toString("base64"),sha256:expected.sha256});
  }
  const content={version:1,kind:"genesis-records-proposal",context:structuredClone(input.context),proposal,answers,

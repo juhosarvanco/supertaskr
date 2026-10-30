@@ -13,6 +13,14 @@ use super::{adapter, kit, AgentState, Phase, StartOutcome, TurnInFlight};
 use crate::docs_watch::{self, PickInFlight, WatchState};
 use crate::record_editor::RecordEditorState;
 
+fn original_planner_decision(
+    watch: &WatchState, editor: &RecordEditorState, prepared: &PreparedContext,
+    planner: &super::planner::PlannerSession,
+) -> Result<super::planner::Decision, String> {
+    let observed = crate::record_editor::inspect_original_planner(watch, editor, prepared, &planner.provenance.product_revision)?;
+    super::planner::Decision::from_observation(&observed)
+}
+
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Request {
@@ -258,11 +266,6 @@ fn start_worker(
                 resume,
                 turn,
             };
-            let adapter = if active.context.split() {
-                adapter::separated_planner_adapter()
-            } else {
-                adapter::planner_adapter()
-            };
             let outcome = if cancel.load(Ordering::SeqCst) {
                 worker_startup.finish(Startup::Cancelled);
                 runner::TurnOutcome {
@@ -271,8 +274,8 @@ fn start_worker(
                 }
             } else if active.context.split() {
                 match active.session.planner.as_ref().ok_or_else(|| "genesis-planner-provenance-required".to_string())
-                    .and_then(|planner| planner.verify_executable(&cli).map(|()| planner)) {
-                    Ok(planner) => runner::run_configured_turn(&cfg, adapter, &cli, &request, &events, &child, &cancel, &planner.selection.model),
+                    .and_then(|planner| planner.verify_executable(&cli).and_then(|()| planner.selection.adapter().map(|adapter| (planner, adapter)))) {
+                    Ok((planner, adapter)) => runner::run_configured_turn(&cfg, adapter, &cli, &request, &events, &child, &cancel, &planner.selection.model),
                     Err(code) => {
                         let error = TurnError::SpawnFailed { os: code };
                         events.failed(turn, error.clone());
@@ -280,7 +283,7 @@ fn start_worker(
                     }
                 }
             } else {
-                runner::run_turn(&cfg, adapter, &cli, &request, &events, &child, &cancel)
+                runner::run_turn(&cfg, adapter::planner_adapter(), &cli, &request, &events, &child, &cancel)
             };
             settle_original(&active, entry, &outcome, turn);
             let mut state = inner.lock().expect("agent state poisoned");
@@ -457,7 +460,6 @@ pub fn start_prepared(
         } else {
             None
         };
-        if let Some(setup) = &setup { setup.planner.ready()?; }
         let record = match sessions::genesis_record_for_context(&context) {
             Ok(record) => record,
             Err(_) if matches!(action, StartAction::Fresh) => {
@@ -507,8 +509,19 @@ pub fn start_prepared(
         {
             return Ok(StartOutcome::NothingToResume);
         }
+        let resuming = matches!(action, StartAction::Resume);
+        let retained = if context.split() && resuming {
+            Some(record.as_ref().and_then(|record| record.genesis.as_ref()).and_then(|session| session.planner.as_ref()).ok_or("genesis-planner-provenance-required")?)
+        } else { None };
+        let original = if let Some(planner) = retained { Some(original_planner_decision(watch, editor, &prepared, planner)?) } else { None };
         let adapter = if context.split() {
-            adapter::separated_planner_adapter()
+            let selection = if let Some(planner) = retained { &planner.selection } else {
+                setup.as_ref().ok_or("genesis-initialization-required")?.planner.ready()?.0
+            };
+            if !resuming && selection.harness == "codex" && !matches!(selection.vehicle.as_deref().unwrap_or(&selection.session_policy.default), "fresh" | "subagent") {
+                return Err("genesis-planner-vehicle-unavailable".into());
+            }
+            selection.adapter()?
         } else {
             adapter::planner_adapter()
         };
@@ -521,6 +534,7 @@ pub fn start_prepared(
                 return Ok(StartOutcome::UnsupportedVersion { found })
             }
         };
+        if let Some(planner) = retained { planner.verify(original.as_ref().ok_or("genesis-planner-provenance-required")?, &cli)?; }
         context.verify(watch)?;
         if !context.split() {
             guard_legacy_kit(&context)?;
@@ -545,7 +559,6 @@ pub fn start_prepared(
         } else if record.is_some() {
             return Err("genesis-registry-changed".into());
         }
-        let resuming = matches!(action, StartAction::Resume);
         let mut session = if resuming {
             record
                 .as_ref()
@@ -556,7 +569,9 @@ pub fn start_prepared(
         };
         if let Some(setup) = &setup {
             if resuming {
-                session.planner.as_ref().ok_or("genesis-planner-provenance-required")?.verify(&setup.planner, &cli)?;
+                let planner = session.planner.as_ref().ok_or("genesis-planner-provenance-required")?;
+                planner.verify(original.as_ref().ok_or("genesis-planner-provenance-required")?, &cli)?;
+                if existing.as_ref().is_none_or(|entry| entry.agent != planner.selection.harness) { return Err("genesis-original-planner-changed".into()); }
             } else {
                 session.planner = Some(super::planner::PlannerSession::capture(&setup.planner, &cli)?);
                 session.setup = Some(setup.original.clone());
@@ -853,7 +868,7 @@ pub fn send_prepared(
             active.setup = Some(setup);
         }
         let adapter = if active.context.split() {
-            adapter::separated_planner_adapter()
+            active.session.planner.as_ref().ok_or("genesis-planner-provenance-required")?.selection.adapter()?
         } else {
             adapter::planner_adapter()
         };
@@ -866,8 +881,10 @@ pub fn send_prepared(
                 return Err("genesis-cli-version-unsupported".into())
             }
         };
-        if let Some(setup) = &active.setup {
-            active.session.planner.as_ref().ok_or("genesis-planner-provenance-required")?.verify(&setup.planner, &cli)?;
+        if active.context.split() {
+            let planner = active.session.planner.as_ref().ok_or("genesis-planner-provenance-required")?;
+            planner.verify(&original_planner_decision(watch, editor, &prepared, planner)?, &cli)?;
+            if entry.agent != planner.selection.harness { return Err("genesis-original-planner-changed".into()); }
         }
         prepared.context.verify(watch)?;
         if session_entry(&active, &registry_id)? != entry {
@@ -1262,9 +1279,32 @@ echo '{"type":"result","subtype":"success","is_error":false,"num_turns":1,"resul
 
     #[test]
     fn managed_split_configured_planner_refreshes_current_cuts_and_resumes_only_original_model_and_executable() {
+        managed_split_configured_planner_contract(false);
+    }
+
+    #[test]
+    fn managed_split_codex_planner_cold_resume_keeps_original_provider_after_future_q5_choice() {
+        managed_split_configured_planner_contract(true);
+    }
+
+    fn managed_split_configured_planner_contract(codex: bool) {
         use crate::workspace::WorkspaceResolver;
         use std::os::unix::fs::MetadataExt;
         let mut fx = Fixture::new();
+        let model = if codex { "gpt-6.1-sol" } else { "claude-opus-5" };
+        let harness = if codex { "codex" } else { "claude" };
+        let requested = if codex { "codex/gpt-6.1-sol@subagent" } else { "claude-opus-5@subagent" };
+        let native_id = if codex { "0199a213-81c0-7800-8aa1-bbab2a035a53" } else { "managed-session" };
+        if codex {
+            let program = fx.agent.cfg.binary_override.as_ref().unwrap();
+            let source = fs::read_to_string(program).unwrap()
+                .replace("2.1.226 (Claude Code)", "codex-cli 0.165.0-alpha.1.2")
+                .replace(r#"{"type":"system","subtype":"init","session_id":"managed-session","model":"fixture-model"}"#,
+                    r#"{"type":"thread.started","thread_id":"0199a213-81c0-7800-8aa1-bbab2a035a53"}"#)
+                .replace(r#"echo '{"type":"result","subtype":"success","is_error":false,"num_turns":1,"result":"Original planner answer."}'"#,
+                    "echo '{\"type\":\"item.completed\",\"item\":{\"id\":\"answer\",\"type\":\"agent_message\",\"text\":\"Original planner answer.\"}}'\necho '{\"type\":\"turn.completed\",\"usage\":{\"input_tokens\":10,\"cached_input_tokens\":0,\"output_tokens\":5}}'");
+            fs::write(program, source).unwrap();
+        }
         let roadmap=kit::KIT_FILES.iter().find(|file|file.rel=="docs-templates/ROADMAP.md").unwrap().content;
         fs::write(fx.b.join("docs/ROADMAP.md"),roadmap).unwrap();
         let git = |root: &std::path::Path, args: &[&str]| {
@@ -1307,12 +1347,19 @@ echo '{"type":"result","subtype":"success","is_error":false,"num_turns":1,"resul
                     "association":{"projectId":"configured-planner-fixture"},"docs":origin["docs"],"runtime":origin["runtime"]},
                 "settings":{"version":1,"languages":[]},"settingsProvenance":{"kind":"committed","productRoot":fx.a,"productRevision":revision,
                     "configDigest":format!("sha256:{}","c".repeat(64)),"tool":{"methodVersion":kit::METHOD_SNAPSHOT_VERSION,"manifestDigest":"d".repeat(64)}},
-                "planner":{"status":"ready","selection":{"role":"planner","requested":"claude-opus-5@subagent","harness":"claude","model":"claude-opus-5","vehicle":"subagent",
+                "planner":{"status":"ready","selection":{"role":"planner","requested":requested,"harness":harness,"model":model,"vehicle":"subagent",
                     "sessionPolicy":{"default":"fresh","warnAfterTurns":30}},"provenance":{"configurationDigest":format!("sha256:{}","c".repeat(64)),"productRevision":revision,"toolManifestDigest":"d".repeat(64)}}})
         };
         let observation=fx.home.join("current.json"); fs::write(&observation,wire().to_string()).unwrap();
+        let original_observation=fx.home.join("original-planner.json"); fs::write(&original_observation,wire().to_string()).unwrap();
         let tool=fx.home.join("supertaskr");
-        fs::write(&tool,format!("#!/usr/bin/env node\nconst fs=require('node:fs');const q=JSON.parse(fs.readFileSync(0,'utf8'));if(JSON.stringify(process.argv.slice(2))!=='[\"init\",\"--stdio\"]'||q.operation!=='inspect'||q.productRoot!=={})process.exit(91);process.stdout.write(JSON.stringify({{version:1,requestId:q.requestId,ok:true,result:JSON.parse(fs.readFileSync({}))}}));\n",serde_json::to_string(&fx.a).unwrap(),serde_json::to_string(&observation).unwrap())).unwrap();
+        fs::write(&tool,format!(r#"#!/usr/bin/env node
+const fs=require('node:fs');const q=JSON.parse(fs.readFileSync(0,'utf8'));
+if(JSON.stringify(process.argv.slice(2))!=='["init","--stdio"]'||!['inspect','planner'].includes(q.operation)||q.productRoot!=={})process.exit(91);
+if(q.operation==='planner'&&q.productRevision!=={})process.exit(92);
+const file=q.operation==='planner'?{}:{};
+process.stdout.write(JSON.stringify({{version:1,requestId:q.requestId,ok:true,result:JSON.parse(fs.readFileSync(file))}}));
+"#,serde_json::to_string(&fx.a).unwrap(),serde_json::to_string(&initial_revision).unwrap(),serde_json::to_string(&original_observation).unwrap(),serde_json::to_string(&observation).unwrap())).unwrap();
         fs::set_permissions(&tool,fs::Permissions::from_mode(0o700)).unwrap();
         fx.editor=RecordEditorState::with_controlled_program(tool);
         let mut unsupported=wire();unsupported["planner"]=serde_json::json!({"status":"cannot-run","code":3,"reason":"project-role-harness-unsupported","diagnostics":["Explicit supported planner required"]});
@@ -1347,32 +1394,46 @@ echo '{"type":"result","subtype":"success","is_error":false,"num_turns":1,"resul
         assert_eq!(original_setup.operation_id,"init-controlled-model");
         assert_eq!(original_setup.product_revision,initial_revision);
         assert_eq!(original_setup.records_revision,initial_records_revision);
-        assert_eq!(planner.selection.model,"claude-opus-5"); assert_eq!(first.model.as_deref(),Some("fixture-model"));
+        assert_eq!(planner.selection.model,model);
+        let registry: sessions::SessionsFile = serde_json::from_slice(&fs::read(fx.a.join(sessions::SESSIONS_REL)).unwrap()).unwrap();
+        assert_eq!(registry.sessions.iter().find(|entry|entry.id==first.registry_id).unwrap().agent,harness);
+        assert_eq!(first.model.as_deref(),if codex { None } else { Some("fixture-model") });
+        assert_eq!(first.native_session_id.as_deref(),Some(native_id));
         assert_eq!(planner.provenance.product_revision,initial_revision);
         assert_eq!(fs::read_to_string(fx.home.join("cwd")).unwrap().trim(),fx.b.to_str().unwrap());
-        assert!(fs::read_to_string(fx.home.join("args")).unwrap().contains("--model\nclaude-opus-5\n"));
+        assert!(fs::read_to_string(fx.home.join("args")).unwrap().contains(&format!("--model\n{model}\n")));
         assert_eq!(fs::read_dir(fx.a.join("docs")).unwrap().count(),0,"no PRODUCT scaffold from split planner");
 
         fs::write(fx.a.join("later.txt"),"Later ordinary PRODUCT fixture cut\n").unwrap();git(&fx.a,&["add","later.txt"]);git(&fx.a,&["commit","-qm","Later product input"]);
         fs::write(fx.b.join("later.txt"),"Later ordinary RECORDS fixture cut\n").unwrap();git(&fx.b,&["add","later.txt"]);git(&fx.b,&["commit","-qm","Later records input"]);
-        fs::write(&observation,wire().to_string()).unwrap();
+        let mut future=wire();
+        future["planner"]["selection"]["harness"]=if codex { "claude" } else { "codex" }.into();
+        future["planner"]["selection"]["model"]=if codex { "claude-opus-5" } else { "gpt-6.1-sol" }.into();
+        future["planner"]["selection"]["requested"]=if codex { "claude-opus-5@subagent" } else { "codex/gpt-6.1-sol@subagent" }.into();
+        fs::write(&observation,future.to_string()).unwrap();
         let expected=fx.request(6); let request=SessionRequest {expected_context:expected.expected_context,attempt:expected.attempt,identity:started.identity.unwrap()};
         let sent=send_prepared(&fx.watch,&fx.agent,&fx.editor,request.clone(),prepare(&fx.watch,&expected).unwrap(),"Original typed answer\n".into());
         assert!(matches!(sent.result,super::super::SendOutcome::Accepted {..}),"{sent:?}");fx.idle();
         let prompt=fs::read_to_string(fx.home.join("prompt")).unwrap();assert!(prompt.contains(&git(&fx.a,&["rev-parse","HEAD"])));assert!(prompt.contains(&git(&fx.b,&["rev-parse","HEAD"])));
         assert!(prompt.ends_with("Original typed answer\n"));
+        assert!(fs::read_to_string(fx.home.join("args")).unwrap().contains(&format!("--model\n{model}\n")), "future Q5 choice never retargets the original provider/model");
 
         let cold=AgentState::new_managed(fx.agent.cfg.clone(),|_|{});
         let resume=|attempt| {let request=fx.request(attempt);let prepared=prepare(&fx.watch,&request).unwrap();start_prepared(&fx.watch,&cold,&fx.editor,request,prepared,StartAction::Resume)};
         let resumed=resume(7);assert!(matches!(resumed.result,StartOutcome::Started {..}),"{resumed:?}");fx.wait(||!cold.running.load(Ordering::SeqCst));
-        let args=fs::read_to_string(fx.home.join("args")).unwrap();assert!(args.contains("--resume\nmanaged-session\n"));assert!(args.contains("--model\nclaude-opus-5\n"));assert!(!args.lines().any(|s|s=="subagent"));
+        let args=fs::read_to_string(fx.home.join("args")).unwrap();
+        assert!(args.contains(&format!("{}\n{native_id}\n",if codex { "--json" } else { "--resume" })),"{args}");
+        assert_eq!(args.lines().filter(|arg|*arg==native_id).count(),1);
+        assert!(args.contains(&format!("--model\n{model}\n")));assert!(!args.lines().any(|s|s=="subagent"));
+        if codex { assert!(args.contains("exec\n--sandbox\nworkspace-write\nresume\n--json\n")); assert!(!args.lines().any(|arg|matches!(arg,"--last"|"--all"|"--ignore-rules"|"--ignore-user-config"))); }
         let current=sessions::genesis_record_for_context(&context).unwrap().unwrap();assert_eq!(current.genesis.as_ref().unwrap().planner.as_ref().unwrap(),planner);
         assert_eq!(current.genesis.as_ref().unwrap().setup.as_ref(),Some(original_setup),"cold resume retains original setup, not current later revisions");
         assert_ne!(original_setup.records_revision,git(&fx.b,&["rev-parse","HEAD"]));
         let registry=fx.a.join(sessions::SESSIONS_REL);let transcript=fx.a.join(sessions::TRANSCRIPT_REL);let stable_registry=fs::read(&registry).unwrap();let stable_transcript=fs::read(&transcript).unwrap();let stable_prompt=fs::read(fx.home.join("prompt")).unwrap();
-        let mut changed=wire();changed["planner"]["selection"]["model"]="claude-sonnet-5".into();changed["planner"]["selection"]["requested"]="claude-sonnet-5@subagent".into();fs::write(&observation,changed.to_string()).unwrap();
+        let original_wire=fs::read(&original_observation).unwrap();
+        let mut changed=wire();changed["planner"]["selection"]["model"]=if codex { "gpt-6-luna" } else { "claude-sonnet-5" }.into();changed["planner"]["selection"]["requested"]=if codex { "codex/gpt-6-luna@subagent" } else { "claude-sonnet-5@subagent" }.into();fs::write(&original_observation,changed.to_string()).unwrap();
         assert!(matches!(resume(8).result,StartOutcome::Error {ref message} if message=="genesis-original-planner-changed"));
-        fs::write(&observation,wire().to_string()).unwrap();
+        fs::write(&original_observation,original_wire).unwrap();
         let program=fx.agent.cfg.binary_override.as_ref().unwrap();let held=fx.home.join("original-agent");fs::rename(program,&held).unwrap();fs::copy(&held,program).unwrap();
         assert!(matches!(resume(9).result,StartOutcome::Error {ref message} if message=="genesis-original-planner-changed"));
         fs::remove_file(program).unwrap();fs::rename(&held,program).unwrap();

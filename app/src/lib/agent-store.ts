@@ -35,12 +35,13 @@ export type TurnErrorPayload =
    * classification has taken the two failures the stream NAMES. */
   | { kind: "exitNonZero"; code: number | null; stderrTail: string }
   | { kind: "malformedStream"; why: string }
-  /** T-029: the CLI could not authenticate, and said so in band. The one
-   * action that helps is `claude auth login` (T-082 — it read `claude
+  /** T-029: the CLI could not authenticate, and said so in band. Provider
+   * is the fixed native adapter, never parsed from message text. An absent
+   * provider retains historical `claude auth login` (T-082 — it read `claude
    * login` here until then, which the CLI parses as a PROMPT rather than
    * as a command), and the hand-driven fallback works right now with no
    * login at all. */
-  | { kind: "authFailed"; status: number | null; message: string }
+  | { kind: "authFailed"; status: number | null; message: string; provider?: "claude" | "codex" }
   /** T-029 (T-025-s1): a tool the planner needed was refused. Named, so
    * the screen can say WHICH instead of showing an exit code. */
   | { kind: "toolDenied"; denials: readonly string[]; terminalReason: string | null }

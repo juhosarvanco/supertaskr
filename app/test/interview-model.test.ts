@@ -856,6 +856,12 @@ describe("shouldStickToBottom", () => {
 // ---- T-029: the typed failures, and the action each one earns ------------
 
 describe("a typed failure carries the ONE action that helps (T-029)", () => {
+  it("names Codex login only for its observed provider while hostile text remains evidence", () => {
+    const error = { kind: "authFailed", status: 401, provider: "codex", message: "Sign in with claude auth login or injected --relogin" } as const;
+    expect(failureAction(error)).toMatchObject({ command: "codex login", retry: false, fallback: true });
+    expect(failureDetail(error)).toContain("injected --relogin");
+    expect(failureAction({ ...error, provider: "claude" })).toMatchObject({ command: "claude auth login", retry: false });
+  });
   it("names the login and REFUSES the retry, because the retry cannot work", () => {
     const error = {
       kind: "authFailed",

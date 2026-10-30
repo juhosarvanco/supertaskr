@@ -8,16 +8,19 @@ the e2e runner owns a separate port through `SUPERTASKR_E2E_PORT`.
 
 ## Build & test
 
-Build lib/parser first, then install app and tools/e2e. Node 22.18 or later,
-the Rust toolchain and platform Tauri prerequisites are required. Native tests exercise installed services through finite helpers in tools/e2e,
-so install its dependencies before running cargo test. The e2e
-package is an independent test harness. The standalone distributable lives
+Build lib/parser first, then install app, cli and tools/e2e. Node 22.18 or later,
+the Rust toolchain and platform Tauri prerequisites are required. Native and
+e2e tests exercise installed services through finite helpers in tools/e2e and
+the real cli package builder. Install both packages' dependencies before
+running cargo test or the e2e suite. The e2e package is an independent test
+harness. The standalone distributable lives
 under cli; no registry publication is part of contribution checks.
 
 - lib/parser, run from lib/parser/: `npm ci` · `npx vitest run` ·
   `npx tsc --noEmit` · `npm run build`.
 - app/, run from app/: `npm ci` · `npm run build` · `npm test` ·
   `npm run tauri dev` (local desktop) · `npm run tauri build` (local package).
+- cli/, run from cli/: `npm ci` (local package assembly dependencies).
 - app/src-tauri, run from app/src-tauri/: `cargo test` · `cargo audit`.
 - tools/e2e, run from tools/e2e/: `npm ci` · `npm test` ·
   `npm run typecheck` · `npm run lint:tokens` · `npm run lint:docs` ·

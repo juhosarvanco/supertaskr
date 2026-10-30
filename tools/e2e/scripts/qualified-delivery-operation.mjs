@@ -15,7 +15,9 @@ import {validQualifiedDeliveryRequest,validQualifiedDeliveryPolicySource} from "
 import {acceptedOperationPath,captureOperationRepository,captureQualifiedOperationRepository,checkOperationEnvironment,operationOwnerAlive,readAcceptedOperation} from "./durable-operation.mjs";
 import {captureQualifiedPublicationContext,qualifiedPublicationContextProof,qualifyFrozenPublicationLocalContext} from "./qualified-publication-context.mjs";
 import {readOperationRef,operationDestinationContains,acceptOperationRef} from "./operation-ref.mjs";
-import {assertExactRecordTransformations,captureExactWritePlan,materializeExactWrites,releaseDeadExactWriteLock,safeOperationWorkingPath} from "./record-write.mjs";
+import {assertExactRecordTransformations,captureExactWritePlan,prepareExactWriteTree,materializeExactWrites,releaseDeadExactWriteLock,safeOperationWorkingPath,snapshotRecordFile,intendedRecordFile} from "./record-write.mjs";
+import {createRecordChecker,requireInstalledRuntimeAssets,verifyInstalledRecordTool} from "./records-check.mjs";
+import {loadProjectSettings} from "./project-settings.mjs";
 
 const active=new Set();
 /** @param {string} code @returns {never} */
@@ -26,8 +28,8 @@ function shape(v,fields){return v && typeof v === "object" && !Array.isArray(v) 
 function freeze(v){if(v && typeof v === "object"){Object.values(v).forEach(freeze);Object.freeze(v);}return v;}
 /** @param {any} a @param {any} b */
 function same(a,b){return operationContent(a) === operationContent(b);}
-/** @param {string} root @param {string[]} args */
-function git(root,args){try{return execFileSync("git",["--no-replace-objects","-C",root,...args],{stdio:["ignore","pipe","pipe"],maxBuffer:64*1024*1024,
+/** @param {string} root @param {string[]} args @param {Buffer|undefined} [input] */
+function git(root,args,input){try{return execFileSync("git",["--no-replace-objects","-C",root,...args],{stdio:[input===undefined?"ignore":"pipe","pipe","pipe"],...(input===undefined?{}:{input}),maxBuffer:64*1024*1024,
  env:{...process.env,GIT_NO_LAZY_FETCH:"1",GIT_OPTIONAL_LOCKS:"0"}});}catch{refuse("QUALIFIED_DELIVERY_GIT");}}
 /** @param {string} root @param {string[]} args */
 function line(root,args){return git(root,args).toString("utf8").replace(/\n$/,"");}
@@ -38,6 +40,7 @@ function persist(root,rec){if(!validOperationRecord(rec))refuse("QUALIFIED_DELIV
 /** @param {any} request @param {any} landing */
 function validateOutput(request,landing){
  const root=landing.repository.root;
+ if(request.route.name==="local-planned-output-v1"&&!git(root,["cat-file","commit",landing.commit]).equals(Buffer.from(request.integration.plan.roles.find((/** @type {any} */ r)=>r.role==="records").commitBase64,"base64")))refuse("QUALIFIED_DELIVERY_OUTPUT_CHANGED");
  if(line(root,["cat-file","-t",landing.commit]) !== "commit" || line(root,["rev-parse",`${landing.commit}^{tree}`]) !== landing.tree ||
   !operationDestinationContains(root,landing.expectedRevision,landing.commit))refuse("QUALIFIED_DELIVERY_OUTPUT_CHANGED");
  const actual=parseNativeRawDiff(git(root,["diff","--raw","-z","--no-abbrev","--no-renames",landing.expectedRevision,landing.commit,"--"]));
@@ -59,10 +62,11 @@ function validateOutput(request,landing){
  * @param {any} rec @param {any} landing @param {any} progress */
 function observed(rec,landing,progress){
  if(!same(captureOperationRepository(landing.repository.root,landing.expectedRevision,{forEffect:false}),landing.repository))refuse("QUALIFIED_DELIVERY_ORIGIN_CHANGED");
- validateOutput(rec.operation.request,landing);
+ const planned=rec.operation.request.route.name==="local-planned-output-v1";
+ if(!planned)validateOutput(rec.operation.request,landing);
  const witness=readOperationRef(landing.repository.root,progress.intent.correlationRef),tip=readOperationRef(landing.repository.root,landing.ref);
  if(witness !== null && witness !== landing.commit)refuse("QUALIFIED_DELIVERY_CORRELATION_FOREIGN");
- if(witness === landing.commit){if(progress.acceptance !== null)return true;if(tip !== null && operationDestinationContains(landing.repository.root,landing.commit,tip))return true;refuse("QUALIFIED_DELIVERY_ACCEPTANCE_UNCERTAIN");}
+ if(witness === landing.commit){if(planned)validateOutput(rec.operation.request,landing);if(progress.acceptance !== null)return true;if(tip !== null && operationDestinationContains(landing.repository.root,landing.commit,tip))return true;refuse("QUALIFIED_DELIVERY_ACCEPTANCE_UNCERTAIN");}
  if(progress.acceptance !== null || tip !== landing.expectedRevision)refuse("QUALIFIED_DELIVERY_ACCEPTANCE_UNCERTAIN");return false;
 }
 /** @param {any} rec */
@@ -102,8 +106,36 @@ function effectPolicy(root,rec,landing,configuration){
  const witness=rec.operation.progress.find((/** @type {any} */ p)=>p.key === landing.key).intent.correlationRef;
  if(readOperationRef(landing.repository.root,witness) !== null)refuse("QUALIFIED_DELIVERY_CORRELATION_FOREIGN");
  assertExactRecordTransformations(landing.repository.root,landing.writes.map((/** @type {any} */ w)=>w.path));
+ if(rec.operation.request.route.name==="local-planned-output-v1"){
+  plannedRecordsGrade(root,rec.operation.request,configuration);
+  const progress=rec.operation.progress.find((/** @type {any} */ p)=>p.key===landing.key),started=["working-start","working-prepared"].includes(progress.phase),index=landing.working.index;
+  const currentIndex=operationDigest(readFileSync(index.path).toString("base64"));
+  if(currentIndex!==index.previousDigest&&(!started||currentIndex!==index.resultDigest))refuse("QUALIFIED_INTEGRATION_INDEX_CHANGED");
+  for(const w of landing.writes){const now=snapshotRecordFile(safeOperationWorkingPath(landing.repository.root,w.path)),before=landing.working.preimages.find((/** @type {any} */ p)=>p.path===w.path).work;
+   if(!same(now,before)&&(!started||!same(now,intendedRecordFile(w))))refuse("QUALIFIED_INTEGRATION_WORKING_CHANGED");
+  }
+  if(["captured","objects-start"].includes(progress.phase)){assertExactRecordTransformations(landing.repository.root,landing.writes.map((/** @type {any} */ w)=>w.path),landing.expectedRevision);return true;}
+ }
  assertExactRecordTransformations(landing.repository.root,landing.writes.map((/** @type {any} */ w)=>w.path),landing.commit);
  validateOutput(rec.operation.request,landing);return true;
+}
+/** Actual canonical lightweight RECORDS observation. The immutable proposed
+ * digests must agree, while current policy/origins and preimages are checked
+ * separately by the effect owner before every selected-repository write.
+ * @param {string} root @param {any} request @param {any} configuration */
+function plannedRecordsGrade(root,request,configuration){
+ if(!shape(configuration,["tool"]))refuse("QUALIFIED_INTEGRATION_CONFIGURATION_REQUIRED");
+ const tool=configuration.tool,plan=request.integration.plan;
+ requireInstalledRuntimeAssets(tool,["qualified-integration-plan","qualified-integration-record","qualified-delivery-operation","qualified-delivery-record","record-write"].map(n=>`tools/e2e/scripts/${n}.mjs`));
+ verifyInstalledRecordTool(tool);if(!same(tool,plan.tool))refuse("QUALIFIED_INTEGRATION_TOOL_CHANGED");
+ const settings=loadProjectSettings({productRoot:root,productRevision:request.route.policyRevision,tool});
+ if(settings.status!=="ready"||!same(settings.provenance,plan.configuration))refuse("QUALIFIED_INTEGRATION_CONFIGURATION_CHANGED");
+ const r=plan.roles.find((/** @type {any} */ r)=>r.role==="records"),checker=createRecordChecker({profile:settings.settings.records.validation,tool}),capture=checker.capture({productRoot:root,productRevision:request.route.policyRevision,recordsRevision:r.expectedRevision});
+ const paths=new Set(line(r.repository.root,["ls-tree","-r","--name-only",r.expectedRevision]).split("\n"));
+ const evaluation=checker.evaluate(capture,r.writes.filter((/** @type {any} */ w)=>plan.recordsValidation.modeled.includes(w.path)).map((/** @type {any} */ w)=>w.operation==="delete"?{operation:"delete",path:w.path}:{operation:paths.has(w.path)?"edit":"add",path:w.path,type:"blob",mode:w.mode,bytes:Buffer.from(w.base64,"base64")}));
+ const grade={tree:r.tree,captureDigest:evaluation.captureDigest,candidateDigest:evaluation.candidateDigest,retained:evaluation.retained,procedural:evaluation.procedural},v=plan.recordsValidation;
+ if(!evaluation.accepted||!same(grade,{tree:r.tree,captureDigest:v.captureDigest,candidateDigest:v.candidateDigest,retained:v.retained,procedural:v.procedural}))refuse("QUALIFIED_INTEGRATION_RECORD_GRADE_CHANGED");
+ return grade;
 }
 /** Current canonical policy for a later effect of this exact stored operation.
  * This grants no target/write selection; each phase must check its own frozen
@@ -137,6 +169,7 @@ function continuation(root,rec,configuration,currentPolicy){
  * The generic and local-only paths keep their strict hook audit unchanged.
  * @param {string} root @param {string} base @param {any} request @param {any} configuration */
 function effectRepository(root,base,request,configuration){
+ if(request.route.name==="local-planned-output-v1"&&root===request.coordinator.root)return captureOperationRepository(root,base,{forEffect:false});
  if(request.route.name!=="protected-atomic-push-v1"||root!==request.coordinator.root)return captureOperationRepository(root,base);
  if(!configuration||Object.keys(configuration).join(",")!=="tool")refuse("QUALIFIED_PUBLICATION_CONFIGURATION_REQUIRED");
  const proof=qualifyFrozenPublicationLocalContext(request.coordinator.root,request.route.publication,request.authority,configuration);
@@ -181,6 +214,37 @@ export async function executeQualifiedLocalDelivery(coordinatorRoot,input,diagno
 export async function executeQualifiedPublicationLocalDelivery(coordinatorRoot,input,configuration,diagnostics={}){
  if(!configuration||Object.keys(configuration).join(",")!=="tool")refuse("QUALIFIED_PUBLICATION_CONFIGURATION_REQUIRED");
  return startDelivery(coordinatorRoot,input,diagnostics,configuration);
+}
+/** Modeled-private planned output only. Actual authority/plan and lightweight
+ * grade are derived here; no authority, byte overlay or grade comes from input.
+ * PRODUCT-owed and unmodeled work remain pending before any operation capture.
+ * @param {string} coordinatorRoot @param {any} input @param {{tool:any}} configuration
+ * @param {{onBoundary?:(boundary:string,record:any)=>void}} [diagnostics] */
+export async function executeQualifiedPlannedLocalDelivery(coordinatorRoot,input,configuration,diagnostics={}){
+ try{input=freeze(operationPayload(input));}catch{refuse("QUALIFIED_DELIVERY_REQUEST");}
+ inputShape(input);coordinatorRoot=realpathSync(coordinatorRoot);checkOperationEnvironment();
+ const prior=readAcceptedOperation(coordinatorRoot,input.operationId);
+ if(prior!==null){
+  if(prior.operation.kind!=="qualified-delivery"||prior.operation.request.route.name!=="local-planned-output-v1"||
+   prior.operation.request.authority.executor.attempt!==input.executorAttempt||prior.operation.request.authority.verifier.attempt!==input.verifierAttempt||!same(prior.operation.request.targets,input.targets))refuse("QUALIFIED_DELIVERY_CHANGED");
+  return replayQualifiedPlannedLocalDelivery(coordinatorRoot,input.operationId,configuration,diagnostics);
+ }
+ if(!shape(configuration,["tool"]))refuse("QUALIFIED_INTEGRATION_CONFIGURATION_REQUIRED");
+ const original=await captureQualifiedDeliveryAuthority(coordinatorRoot,{executorAttempt:input.executorAttempt,verifierAttempt:input.verifierAttempt}),originalProduct=original.roles.find((/** @type {any} */ r)=>r.role==="product");
+ if(originalProduct.implementationChanges.length||originalProduct.outputChanges.length||original.owedCorrections.some((/** @type {any} */ c)=>c.role==="product"))refuse("QUALIFIED_INTEGRATION_PRODUCT_GRADE_PENDING");
+ const {captureQualifiedIntegrationPlan,qualifiedIntegrationPlanData}=await import("./qualified-integration-plan.mjs");
+ const plan=freeze(qualifiedIntegrationPlanData(await captureQualifiedIntegrationPlan(coordinatorRoot,input,configuration))),p=plan.roles.find((/** @type {any} */ r)=>r.role==="product"),r=plan.roles.find((/** @type {any} */ r)=>r.role==="records");
+ if(p.grade.status!=="not-owed")refuse("QUALIFIED_INTEGRATION_PRODUCT_GRADE_PENDING");
+ if(plan.recordsValidation.unmodeled.length)refuse("QUALIFIED_INTEGRATION_RECORDS_GRADE_PENDING");
+ if(r.working===null||!r.writes.length)refuse("QUALIFIED_INTEGRATION_NO_RECORD_EFFECT");
+ const policySource=await captureQualifiedDeliveryPolicySource(coordinatorRoot,plan.authority.verifier.attempt,configuration);
+ await loadQualifiedDeliveryPolicy();qualifiedDeliveryPhasePolicy(coordinatorRoot,policySource);
+ const request=freeze(operationPayload({version:1,operationId:input.operationId,kind:"qualified-delivery",coordinator:p.repository,docsDirectory:plan.origins.docs,runtimeDirectory:plan.origins.runtime,
+  authority:plan.authority,policySource,targets:plan.targets,route:{name:"local-planned-output-v1",publicationOwed:false,completionOwed:true,policyRevision:p.originalBase},
+  landings:[{key:"records",roles:["records"],repository:r.repository,expectedRevision:r.expectedRevision,ref:r.targetRef,commit:r.commit,tree:r.tree,writes:r.writes,working:r.working}],
+  integration:{plan,digest:operationDigest(plan),execution:null}}));
+ if(!validQualifiedDeliveryRequest(request))refuse("QUALIFIED_DELIVERY_REQUEST");
+ return executeCaptured(coordinatorRoot,request,diagnostics,configuration);
 }
 /** @param {string} coordinatorRoot @param {any} input @param {any} diagnostics @param {any} [configuration] */
 async function startDelivery(coordinatorRoot,input,diagnostics,configuration){
@@ -259,10 +323,12 @@ function executeCaptured(root,request,diagnostics,configuration){
   }
   const at=new Date().toISOString();
   if(!rec){
+   if(request.route.name==="local-planned-output-v1"){plannedRecordsGrade(root,request,configuration);qualifiedDeliveryPhasePolicy(root,request.policySource);}
    const work=operationWork(request.operationId),assignment={kind:"operation",id:work,role:"qualified-delivery",resource:request.landings[0].repository.root};
    rec={version:1,recordKind:"operation",attempt:`${work}-a1`,state:"starting",assignment,assignmentDigest:runs.sha256(JSON.stringify(assignment)),writer:true,resource:assignment.resource,
     reservation:{file:null,takenAt:at,releasedAt:null},execution:null,admission:null,operation:{version:1,id:request.operationId,kind:"qualified-delivery",request,digest:operationDigest(request),owner:{pid:process.pid,identity,token:randomUUID()},createdAt:at,claims:[],
      progress:request.landings.map((/** @type {any} */ l)=>({key:l.key,phase:"captured",intent:{ref:l.ref,previousRevision:l.expectedRevision,commit:l.commit,tree:l.tree,correlationRef:`refs/supertaskr/deliveries/${work.slice(3)}/${l.key}`},acceptance:null})),localAcceptance:null},events:[{at,op:"capture-before-effects"}]};
+   if(request.route.name==="local-planned-output-v1")rec.operation.integration={version:1,planDigest:request.integration.digest,phase:"captured",workspaces:[],launches:[],grades:{version:1,planDigest:request.integration.digest,product:null,records:null,acceptance:null}};
    const acquired=[];
    const recordDirectory=path.dirname(acceptedOperationPath(root,request.operationId)),directoryWasAbsent=!existsSync(recordDirectory);
    try{
@@ -278,10 +344,23 @@ function executeCaptured(root,request,diagnostics,configuration){
   }else{
    rec.operation.request=freeze(rec.operation.request);
    for(const c of rec.operation.claims)if(runs.readReservation(root,c.resource)?.attempt !== rec.attempt)refuse("QUALIFIED_DELIVERY_OWNERSHIP");
+   if(request.route.name==="local-planned-output-v1"){assertQualifiedDeliveryRecovery(root,rec,configuration);plannedRecordsGrade(root,request,configuration);}
    rec.operation.owner={pid:process.pid,identity,token:randomUUID()};persist(root,rec);
   }
   diagnostics.onBoundary?.("captured",structuredClone(rec));
+  if(request.route.name==="local-planned-output-v1"&&rec.operation.integration.phase!=="ready"){
+   assertQualifiedDeliveryContinuation(root,rec,configuration);const records=plannedRecordsGrade(root,request,configuration),g=rec.operation.integration.grades;
+   g.records=records;g.acceptance={planDigest:request.integration.digest,productGradeDigest:"not-owed",recordsGradeDigest:operationDigest(records),attribution:"exact-owned-grades"};
+   rec.operation.integration.phase="ready";persist(root,rec);diagnostics.onBoundary?.("integration:ready",structuredClone(rec));
+  }
   for(const landing of request.landings){const p=rec.operation.progress.find((/** @type {any} */ p)=>p.key === landing.key);if(p.acceptance !== null)continue;
+   if(request.route.name==="local-planned-output-v1"&&["captured","objects-start","objects-prepared"].includes(p.phase)){
+    effectPolicy(root,rec,landing,configuration);p.phase="objects-start";rec.state="unknown";persist(root,rec);diagnostics.onBoundary?.(`${landing.key}:objects-start`,structuredClone(rec));
+    prepareExactWriteTree(landing.repository.root,landing.expectedRevision,landing.writes,landing.tree,()=>{diagnostics.onBoundary?.(`${landing.key}:before-object`,structuredClone(rec));return effectPolicy(root,rec,landing,configuration);});
+    effectPolicy(root,rec,landing,configuration);const raw=Buffer.from(request.integration.plan.roles.find((/** @type {any} */ r)=>r.role==="records").commitBase64,"base64");
+    if(git(landing.repository.root,["hash-object","-w","-t","commit","--stdin"],raw).toString("ascii").replace(/\n$/,"")!==landing.commit)refuse("QUALIFIED_INTEGRATION_COMMIT_CHANGED");
+    validateOutput(request,landing);p.phase="objects-prepared";persist(root,rec);diagnostics.onBoundary?.(`${landing.key}:objects-prepared`,structuredClone(rec));
+   }
    effectPolicy(root,rec,landing,configuration);p.phase="working-start";rec.state="unknown";persist(root,rec);diagnostics.onBoundary?.(`${landing.key}:working-start`,structuredClone(rec));
    let release;
    try{
@@ -304,9 +383,22 @@ export async function replayQualifiedLocalDelivery(coordinatorRoot,operationId,d
  coordinatorRoot=realpathSync(coordinatorRoot);const rec=readAcceptedOperation(coordinatorRoot,operationId);
  if(rec?.operation.kind !== "qualified-delivery" || rec.operation.request.coordinator.root !== coordinatorRoot)refuse("QUALIFIED_DELIVERY_ABSENT");
  const complete=rec.operation.request.landings.every((/** @type {any} */ l)=>observed(rec,l,rec.operation.progress.find((/** @type {any} */ p)=>p.key === l.key)));
+ if(!complete&&rec.operation.request.route.name==="local-planned-output-v1")refuse("QUALIFIED_INTEGRATION_CONFIGURATION_REQUIRED");
  if(!complete&&rec.operation.request.route.name==="protected-atomic-push-v1")refuse("QUALIFIED_PUBLICATION_CONFIGURATION_REQUIRED");
  if(!complete)await loadQualifiedDeliveryPolicy();
  return executeCaptured(coordinatorRoot,freeze(rec.operation.request),diagnostics);
+}
+/** Original exact accepted local result precedes current TOOL/configuration.
+ * Missing work resumes only the same captured private plan under current policy.
+ * @param {string} coordinatorRoot @param {string} operationId @param {{tool:any}|undefined} [configuration]
+ * @param {{onBoundary?:(boundary:string,record:any)=>void}} [diagnostics] */
+export async function replayQualifiedPlannedLocalDelivery(coordinatorRoot,operationId,configuration,diagnostics={}){
+ if(typeof operationId!=="string"||!/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(operationId))refuse("QUALIFIED_DELIVERY_REQUEST");
+ coordinatorRoot=realpathSync(coordinatorRoot);const rec=readAcceptedOperation(coordinatorRoot,operationId);
+ if(rec?.operation.kind!=="qualified-delivery"||rec.operation.request.coordinator.root!==coordinatorRoot||rec.operation.request.route.name!=="local-planned-output-v1")refuse("QUALIFIED_DELIVERY_ABSENT");
+ const complete=rec.operation.request.landings.every((/** @type {any} */ l)=>observed(rec,l,rec.operation.progress.find((/** @type {any} */ p)=>p.key===l.key)));
+ if(!complete){if(!shape(configuration,["tool"]))refuse("QUALIFIED_INTEGRATION_CONFIGURATION_REQUIRED");await loadQualifiedDeliveryPolicy();}
+ return executeCaptured(coordinatorRoot,freeze(rec.operation.request),diagnostics,configuration);
 }
 /** Original full-route local evidence precedes current TOOL. Existing legacy
  * product-owed local rows never acquire a new mutable route.
@@ -317,6 +409,7 @@ export async function replayQualifiedPublicationLocalDelivery(coordinatorRoot,op
  coordinatorRoot=realpathSync(coordinatorRoot);const rec=readAcceptedOperation(coordinatorRoot,operationId);
  if(rec?.operation.kind!=="qualified-delivery"||rec.operation.request.coordinator.root!==coordinatorRoot)refuse("QUALIFIED_DELIVERY_ABSENT");
  if(rec.operation.request.route.name!=="protected-atomic-push-v1"){
+  if(rec.operation.request.route.name==="local-planned-output-v1")return replayQualifiedPlannedLocalDelivery(coordinatorRoot,operationId,configuration,diagnostics);
   if(rec.operation.request.route.publicationOwed)refuse("QUALIFIED_PUBLICATION_ROUTE_UNFROZEN");
   return replayQualifiedLocalDelivery(coordinatorRoot,operationId,diagnostics);
  }

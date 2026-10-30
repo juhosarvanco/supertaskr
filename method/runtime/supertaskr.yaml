@@ -11,7 +11,7 @@
 # committed project's settings to change its later dispatches; keep this
 # TOOL template reusable. Missing project configuration is never a fallback.
 roles:
-  planner: claude-opus-5@subagent
+  planner: codex/gpt-6.1-sol@subagent # new projects use the signed-in Codex CLI; committed existing projects keep their own choice
   builder: claude-opus-5@subagent
   verifier: claude-opus-5@subagent   # resolver default: independent of builder — a fresh SESSION, never a cheaper model
   integrator: claude-opus-5@subagent

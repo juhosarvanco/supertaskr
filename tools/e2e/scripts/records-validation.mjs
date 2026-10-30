@@ -3,8 +3,11 @@
  * This additive entry loads the canonical pure parser; strict records imports do not.
  */
 import { createHash } from "node:crypto";
-import { parseProjectFromFiles, isTaskFilePath, isComponentFilePath } from "../../../lib/parser/dist/pure.js";
-import { captureRawCommittedInputs, RecordReaderFinding } from "./records.mjs";
+import { parseProjectFromFiles } from "../../../lib/parser/dist/pure.js";
+import {ordinaryRecordTextPath,GENERIC_RECORD_PROFILE,normalizeRecordProfile} from "./records-profile.mjs";
+export {ordinaryRecordTextPath,GENERIC_RECORD_PROFILE,normalizeRecordProfile} from "./records-profile.mjs";
+import { captureRawCommittedInputs } from "./records.mjs";
+import {RecordReaderFinding} from "./records-finding.mjs";
 import { INDEXED_DOCS, INDEX_DOC, INDEX_RULING, CONVENTIONS_DOC, conventionsChapters,
   docSections, indexWhere, renderDocsIndexFromSource, ruledIndexedDocsFromText } from "./docs-scan.mjs";
 
@@ -46,38 +49,6 @@ function safePath(relativePath, role = "records") {
     refuse("records-candidate-path-unsafe", String(relativePath));
   }
   return relativePath;
-}
-/** @param {string} relativePath */
-function chapterPath(relativePath) { return /^docs\/conventions\/[a-z0-9-]+\.md$/.test(relativePath); }
-/** Explicit ordinary text classes; a safe path alone is never eligibility.
- * Templates and generated/private authority inputs retain their own exclusions.
- * @param {string} relativePath */
-export function ordinaryRecordTextPath(relativePath) {
-  if (relativePath === INDEX_DOC || relativePath === INDEX_RULING.file || relativePath === "docs/CAPABILITIES.md") return false;
-  return isTaskFilePath(relativePath) || isComponentFilePath(relativePath) || chapterPath(relativePath) ||
-    /^docs\/(?:NORTH_STAR|STATE|STATE-template|ROADMAP|ARCHITECTURE|CONVENTIONS|VERSIONS|future)\.md$/.test(relativePath) ||
-    /^docs\/(?:architecture|rooms|decisions|plans|reviews|checkpoints|design|guide|reference|research|business|benches)\/(?:[\p{L}\p{N}_][\p{L}\p{M}\p{N} ._-]*\/)*[\p{L}\p{N}_][\p{L}\p{M}\p{N} ._-]*\.md$/u.test(relativePath);
-}
-/** Explicit blank-method profile, selected by an installed service. It is not
- * inferred from an absent ruling or offered as a weaker per-save switch. */
-export const GENERIC_RECORD_PROFILE = freeze({ version: 1, kind: "generic", indexInputs:
-  ["docs/ROADMAP.md", "docs/ARCHITECTURE.md", "docs/CONVENTIONS.md"], budgets: {} });
-/** @param {any} profile */
-export function normalizeRecordProfile(profile) {
-  if (profile === undefined) return freeze({ version: 1, kind: "dogfood" });
-  if (!profile || typeof profile !== "object" || Array.isArray(profile)) refuse("records-profile-invalid", "explicit profile must be a mapping");
-  if (profile.version === 1 && profile.kind === "dogfood" && Object.keys(profile).sort().join(",") === "kind,version") return freeze({ ...profile });
-  if (Object.keys(profile).sort().join(",") !== "budgets,indexInputs,kind,version" || profile.version !== 1 || profile.kind !== "generic" ||
-      !Array.isArray(profile.indexInputs) || profile.indexInputs.length < 3 || new Set(profile.indexInputs).size !== profile.indexInputs.length ||
-      profile.indexInputs.some((/** @type {any} */ file) => typeof file !== "string" || !ordinaryRecordTextPath(file)) ||
-      GENERIC_RECORD_PROFILE.indexInputs.some((/** @type {string} */ file) => !profile.indexInputs.includes(file)) ||
-      !profile.budgets || typeof profile.budgets !== "object" || Array.isArray(profile.budgets)) refuse("records-profile-invalid", "generic profile declares its complete required records inputs and budgets");
-  for (const [file, budget] of Object.entries(profile.budgets)) {
-    const b = /** @type {any} */ (budget);
-    if (!ordinaryRecordTextPath(file) || !b || typeof b !== "object" || Object.keys(b).sort().join(",") !== "fail,warn" ||
-        !Number.isSafeInteger(b.warn) || !Number.isSafeInteger(b.fail) || b.warn < 0 || b.fail < b.warn) refuse("records-profile-invalid", "invalid candidate byte budget");
-  }
-  return freeze(JSON.parse(JSON.stringify(profile)));
 }
 /** @param {Role} role @param {string} relativePath */
 function key(role, relativePath) { return `${role}:${relativePath}`; }

@@ -2,6 +2,7 @@
  * These are coordinator effects, never child assignments or dispatch admission.
  */
 import { createHash } from "node:crypto";
+import {validProjectBankRecord} from "./project-bank-record.mjs";
 import {validProjectInitializationRecord} from "./project-init-record.mjs";
 import {validQualifiedDeliveryRecord} from "./qualified-delivery-record.mjs";
 import {validPrivateBackupRecord} from "./private-backup-record.mjs";
@@ -49,6 +50,7 @@ function instant(value) { return typeof value === "string" && Number.isFinite(Da
  * inconsistent progress remain unavailable input, never skipped metadata.
  * @param {any} rec @returns {boolean} */
 export function validOperationRecord(rec) {
+  if(rec?.operation?.kind === "project-bank") return validProjectBankRecord(rec);
   if(rec?.operation?.kind === "project-init") return validProjectInitializationRecord(rec);
   if(rec?.operation?.kind === "qualified-delivery") return validQualifiedDeliveryRecord(rec);
   if(rec?.operation?.kind === "private-backup") return validPrivateBackupRecord(rec);

@@ -61,6 +61,21 @@ pub(crate) enum InitializationOperation {
     Inspect {
         product: SelectedInitializationDirectory,
     },
+    Banks {
+        product: SelectedInitializationDirectory,
+    },
+    Bank {
+        product: SelectedInitializationDirectory,
+        operation_id: String,
+        session_id: String,
+        origin_digest: String,
+        expected_product_revision: String,
+        expected_records_revision: String,
+    },
+    BankReplay {
+        product: SelectedInitializationDirectory,
+        operation_id: String,
+    },
     Replay {
         product: SelectedInitializationDirectory,
         operation_id: String,
@@ -77,6 +92,9 @@ impl InitializationOperation {
         match self {
             Self::Discover { product }
             | Self::Inspect { product }
+            | Self::Banks { product }
+            | Self::Bank { product, .. }
+            | Self::BankReplay { product, .. }
             | Self::Replay { product, .. }
             | Self::Initialize { product, .. } => product,
         }
@@ -94,6 +112,26 @@ impl InitializationOperation {
         match self {
             Self::Discover { .. } => request["operation"] = json!("discover"),
             Self::Inspect { .. } => request["operation"] = json!("inspect"),
+            Self::Banks { .. } => request["operation"] = json!("banks"),
+            Self::BankReplay { operation_id, .. } => {
+                request["operation"] = json!("bank-replay");
+                request["operationId"] = json!(operation_id);
+            }
+            Self::Bank {
+                operation_id,
+                session_id,
+                origin_digest,
+                expected_product_revision,
+                expected_records_revision,
+                ..
+            } => {
+                request["operation"] = json!("bank");
+                request["operationId"] = json!(operation_id);
+                request["sessionId"] = json!(session_id);
+                request["originDigest"] = json!(origin_digest);
+                request["expectedProductRevision"] = json!(expected_product_revision);
+                request["expectedRecordsRevision"] = json!(expected_records_revision);
+            }
             Self::Replay { operation_id, .. } => {
                 request["operation"] = json!("replay");
                 request["operationId"] = json!(operation_id);
@@ -139,12 +177,59 @@ pub(crate) fn invoke_initialization_operation(
     operation: &InitializationOperation,
     validate_native_selection: &dyn Fn() -> std::result::Result<(), String>,
 ) -> std::result::Result<Value, InitializationFailure> {
+    invoke_initialization(state, operation, validate_native_selection, None)
+}
+
+/// The original managed turn retains this exact cancellation cell while its
+/// post-turn bank owns the same service lease. Only finite bank effects may
+/// borrow it; readonly discovery and initial setup keep their existing owners.
+pub(crate) fn invoke_owned_bank_operation(
+    state: &RecordEditorState,
+    operation: &InitializationOperation,
+    validate_original_activation: &dyn Fn() -> std::result::Result<(), String>,
+    cancel: Arc<AtomicBool>,
+) -> std::result::Result<Value, InitializationFailure> {
+    if !matches!(
+        operation,
+        InitializationOperation::Bank { .. } | InitializationOperation::BankReplay { .. }
+    ) {
+        return Err(InitializationFailure::selection(
+            "genesis-bank-operation-required".into(),
+            false,
+        ));
+    }
+    invoke_initialization(state, operation, validate_original_activation, Some(cancel))
+}
+
+fn invoke_initialization(
+    state: &RecordEditorState,
+    operation: &InitializationOperation,
+    validate_native_selection: &dyn Fn() -> std::result::Result<(), String>,
+    original_cancel: Option<Arc<AtomicBool>>,
+) -> std::result::Result<Value, InitializationFailure> {
     let validate = || operation.verify().and_then(|_| validate_native_selection());
-    let historical = matches!(operation, InitializationOperation::Replay { .. });
+    let historical = matches!(
+        operation,
+        InitializationOperation::Replay { .. } | InitializationOperation::BankReplay { .. }
+    );
     validate().map_err(|code| InitializationFailure::selection(code, historical))?;
     let attempt = state.next();
-    let lease = state
-        .begin("genesis-initialization", attempt)
+    let lease = original_cancel
+        .map_or_else(
+            || state.begin("genesis-initialization", attempt),
+            |cancel| {
+                let key = match operation {
+                    InitializationOperation::Bank { operation_id, .. }
+                    | InitializationOperation::BankReplay { operation_id, .. } => {
+                        format!("genesis-bank:{operation_id}")
+                    }
+                    _ => {
+                        unreachable!("only the finite bank wrapper supplies original cancellation")
+                    }
+                };
+                state.begin_with_cancel(&key, attempt, cancel)
+            },
+        )
         .map_err(|error| InitializationFailure {
             code: error.code,
             message: error.message,
@@ -252,12 +337,143 @@ process.stdout.write(JSON.stringify({{version:1,requestId:q.requestId,ok:true,re
             "a prelaunch refusal cannot erase original replay uncertainty"
         );
         assert_eq!(std::fs::read_to_string(&calls).unwrap(), first);
+        for (name, operation) in [
+            (
+                "banks",
+                InitializationOperation::Banks { product: p.clone() },
+            ),
+            (
+                "bank",
+                InitializationOperation::Bank {
+                    product: p.clone(),
+                    operation_id: "original-bank".into(),
+                    session_id: "original-session".into(),
+                    origin_digest: format!("sha256:{}", "a".repeat(64)),
+                    expected_product_revision: "b".repeat(40),
+                    expected_records_revision: "c".repeat(40),
+                },
+            ),
+            (
+                "bank-replay",
+                InitializationOperation::BankReplay {
+                    product: p.clone(),
+                    operation_id: "original-bank".into(),
+                },
+            ),
+        ] {
+            let answer = invoke_initialization_operation(&state, &operation, &|| Ok(())).unwrap();
+            assert_eq!(answer["operation"], name);
+        }
+        let first = std::fs::read_to_string(&calls).unwrap();
+        let requests: Vec<Value> = first
+            .lines()
+            .map(|line| serde_json::from_str(line).unwrap())
+            .collect();
+        assert_eq!(requests.len(), 4);
+        assert_eq!(requests[2]["sessionId"], "original-session");
+        assert_eq!(requests[2]["expectedProductRevision"], "b".repeat(40));
+        assert_eq!(requests[2]["expectedRecordsRevision"], "c".repeat(40));
+        for request in &requests[1..] {
+            assert_eq!(request["productRoot"], json!(p.path()));
+            assert!(request.get("recordsRoot").is_none());
+            for forbidden in ["program", "tool", "plans", "settings", "profile"] {
+                assert!(request.get(forbidden).is_none());
+            }
+        }
+        assert_eq!(
+            requests[3].as_object().unwrap().len(),
+            5,
+            "replay carries the original ID without fresh inputs"
+        );
+        let refusal = invoke_initialization_operation(
+            &state,
+            &InitializationOperation::BankReplay {
+                product: p.clone(),
+                operation_id: "original-bank".into(),
+            },
+            &|| Err("native-selection-changed".into()),
+        )
+        .unwrap_err();
+        assert!(
+            refusal.unknown,
+            "failed prevalidation must retain the original bank ID"
+        );
+        assert_eq!(std::fs::read_to_string(&calls).unwrap(), first);
         std::fs::rename(&records, home.join("original-records")).unwrap();
         std::fs::create_dir(&records).unwrap();
         let refusal = invoke_initialization_operation(&state, &operation, &|| Ok(())).unwrap_err();
         assert_eq!(refusal.code, "genesis-selected-folder-changed");
         assert!(!refusal.unknown);
         assert_eq!(std::fs::read_to_string(&calls).unwrap(), first);
+        std::fs::remove_dir_all(home).unwrap();
+    }
+    #[test]
+    fn original_turn_cancellation_stops_its_owned_bank_after_the_original_folder_moves() {
+        let home = std::env::temp_dir().join(format!(
+            "supertaskr-owned-bank-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let product = home.join("product");
+        std::fs::create_dir_all(&product).unwrap();
+        let program = home.join("supertaskr");
+        let calls = home.join("calls.json");
+        std::fs::write(&program, format!(r#"#!/usr/bin/env node
+const fs=require('node:fs');const q=JSON.parse(fs.readFileSync(0,'utf8'));
+if(JSON.stringify(process.argv.slice(2))!=='["init","--stdio"]'||q.operation!=='bank')process.exit(91);
+fs.writeFileSync({},JSON.stringify({{request:q,pid:process.pid}}));setInterval(()=>{{}},1000);
+"#,serde_json::to_string(&calls).unwrap())).unwrap();
+        std::fs::set_permissions(&program, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let state = RecordEditorState::with_controlled_program(program);
+        let operation = InitializationOperation::Bank {
+            product: SelectedInitializationDirectory::capture(&product).unwrap(),
+            operation_id: "original-owned-bank".into(),
+            session_id: "original-session".into(),
+            origin_digest: format!("sha256:{}", "a".repeat(64)),
+            expected_product_revision: "b".repeat(40),
+            expected_records_revision: "c".repeat(40),
+        };
+        let cancel = Arc::new(AtomicBool::new(false));
+        let result = std::thread::scope(|scope| {
+            let original_cancel = cancel.clone();
+            let running = scope.spawn(|| {
+                invoke_owned_bank_operation(&state, &operation, &|| Ok(()), original_cancel)
+            });
+            let deadline = Instant::now() + Duration::from_secs(5);
+            while !calls.exists() && Instant::now() < deadline {
+                std::thread::sleep(Duration::from_millis(10));
+            }
+            if !calls.exists() {
+                cancel.store(true, Ordering::SeqCst);
+                let stopped = running.join().unwrap();
+                panic!("controlled bank did not launch: {stopped:?}");
+            }
+            assert!(!state.cancel("unoffered-bank", 1));
+            std::fs::rename(&product, home.join("original-product")).unwrap();
+            std::fs::create_dir(&product).unwrap();
+            cancel.store(true, Ordering::SeqCst);
+            running.join().unwrap()
+        })
+        .unwrap_err();
+        assert!(result.unknown);
+        assert_eq!(result.code, "records-app-cancelled");
+        let observed: Value = serde_json::from_slice(&std::fs::read(calls).unwrap()).unwrap();
+        assert_eq!(observed["request"]["operationId"], "original-owned-bank");
+        let pid = observed["pid"].as_i64().unwrap() as i32;
+        assert_eq!(
+            unsafe { libc::kill(pid, 0) },
+            -1,
+            "owned bank child must be collected before its lease releases"
+        );
+        assert_eq!(
+            std::io::Error::last_os_error().raw_os_error(),
+            Some(libc::ESRCH)
+        );
+        assert!(state.active.lock().unwrap().is_none());
+        assert!(std::fs::read_dir(&product).unwrap().next().is_none());
         std::fs::remove_dir_all(home).unwrap();
     }
     use std::time::{SystemTime, UNIX_EPOCH};

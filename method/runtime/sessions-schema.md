@@ -76,6 +76,12 @@ loses nothing about the project.
 ```
 
 - `turns` drives the sediment warning (see supertaskr.yaml warn_after_turns).
+- `agent` retains the original provider, `claude` or `codex`. A configured
+  Codex planner uses saved Codex CLI authentication, explicit workspace-write
+  policy in the selected RECORDS cwd, and only its observed canonical thread
+  UUID for resume. It never selects the latest/global session. Its CLI may
+  omit an observed model; that leaves `model` absent while the original
+  requested/qualified model remains in `genesis.planner.selection`.
 - The dashboard sessions pane renders this file; the card selector lists
   `agent — fresh` plus every idle registered session with its history.
 - Killing a session = mark status dead; the project resumes from docs/.
@@ -106,7 +112,10 @@ loses nothing about the project.
   version and optional login-PATH digest. These nested keys are camelCase.
   The path is mismatch data and never an executable selector. The driver resolves
   the supported CLI independently on each start/resume/turn and compares it;
-  changed identity or selection refuses. The original requested model remains
+  changed identity or original selection/provenance refuses. The canonical
+  reader requalifies the original committed role separately from the current
+  settings for future banks, so a later planner default never retargets an
+  ongoing session. The original requested model remains
   separate from the enclosing `model` observed from the child's init line.
   `vehicle` is role metadata, never a native resume ID. Later accepted banks may
   advance the current configuration cut without rewriting original provenance.

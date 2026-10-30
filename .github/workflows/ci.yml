@@ -466,6 +466,7 @@ jobs:
             lib/parser/package-lock.json
             app/package-lock.json
             tools/e2e/package-lock.json
+            cli/package-lock.json
       - name: disk after the node toolchain and its npm cache
         run: |
           df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
@@ -504,6 +505,13 @@ jobs:
       - name: app build
         working-directory: app
         run: npm run build
+      # Package fixtures execute the real CLI builder and its declared dev deps.
+      - name: cli install
+        working-directory: cli
+        run: npm ci
+      - name: disk after the cli install
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
       # Native installed-service controls import these finite fixture helpers.
       - name: e2e install
         working-directory: tools/e2e
@@ -599,6 +607,7 @@ jobs:
             lib/parser/package-lock.json
             app/package-lock.json
             tools/e2e/package-lock.json
+            cli/package-lock.json
       - name: disk after the node toolchain and its npm cache
         run: |
           df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
@@ -629,6 +638,13 @@ jobs:
         working-directory: app
         run: npm ci
       - name: disk after the app install
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+      # Package fixtures execute the real CLI builder and its declared dev deps.
+      - name: cli install
+        working-directory: cli
+        run: npm ci
+      - name: disk after the cli install
         run: |
           df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
       - name: e2e install

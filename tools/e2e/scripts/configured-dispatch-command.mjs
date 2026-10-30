@@ -13,10 +13,12 @@ import { readAssignment, readRecord, runPlan, startConfiguredRun, VERB_DIALS } f
 const BRIEF_ENTRY = fileURLToPath(new URL("./brief.mjs", import.meta.url));
 const USAGE = ["supertaskr dispatch [--root <PRODUCT>] --run <operation> <run flags>",
   "  --view [selection.json] [--task T-N] [--full] reads the committed selected board and installed METHOD",
+  "  --brief [selection.json] --task T-N [--role executor|verifier] [--lane-intent file] assembles the full readonly normative brief",
+  "  --grade --attempt T-N-aN [--suite original-id] captures actual held-worker PRODUCT suites without writing a worker token",
   "  --run start --assignment <file> uses exact committed PRODUCT/RECORDS/TOOL",
   "  --admission-preflight <file> reads the same configured context without effects",
   ...Object.entries(VERB_DIALS).map(([verb, flags]) => `  --run ${verb} flags: ${flags.map(flag => `--${flag}`).join(" ")}`),
-  "  next/brief/lane creation and named resume vehicles remain unsupported by this configured route"].join("\n");
+  "  legacy next/brief/arm, automatic lane creation and named resume vehicles remain unsupported by this configured route"].join("\n");
 /** @param {string} code @param {string} message @returns {never} */
 function refuse(code, message) { throw Object.assign(new Error(message), { code }); }
 function commandTool() {
@@ -27,7 +29,7 @@ function commandTool() {
 /** Same canonical lifecycle dials, strict finite tokenization. Parsing never
  * adds a program/policy path or guesses a missing selector. @param {string[]} argv */
 function parse(argv) {
-  const known = new Set(["root", "run", "view", "task", "full", "admission-preflight", ...Object.values(VERB_DIALS).flat()]);
+  const known = new Set(["root", "run", "view", "brief", "grade", "suite", "task", "role", "full", "lane-intent", "admission-preflight", ...Object.values(VERB_DIALS).flat()]);
   /** @type {Record<string,string>} */ const options = {};
   let replace = false, full = false;
   for (let i = 0; i < argv.length; i++) {
@@ -37,7 +39,8 @@ function parse(argv) {
     if (key === "replace") { if (replace) refuse("configured-dispatch-usage", "Duplicate --replace"); replace = true; continue; }
     if (key === "full") { if (full) refuse("configured-dispatch-usage", "Duplicate --full"); full = true; continue; }
     if (Object.hasOwn(options, key)) refuse("configured-dispatch-usage", `Duplicate --${key}`);
-    if (key === "view" && (argv[i + 1] === undefined || argv[i + 1]?.startsWith("--"))) { options.view = ""; continue; }
+    if (key === "grade") { options[key] = ""; continue; }
+    if (["view", "brief"].includes(key) && (argv[i + 1] === undefined || argv[i + 1]?.startsWith("--"))) { options[key] = ""; continue; }
     const value = argv[++i]; if (value === undefined || value.startsWith("--")) refuse("configured-dispatch-usage", `--${key} requires one value`);
     options[key] = value;
   }
@@ -48,6 +51,21 @@ export async function main(argv) {
   if (argv.length === 1 && ["--help", "-h"].includes(/** @type {string} */ (argv[0]))) { process.stdout.write(USAGE + "\n"); return 0; }
   try {
     const { options, replace, full } = parse(argv), root = realpathSync(options.root ?? process.cwd());
+    if (options.grade !== undefined) {
+      if(replace||full||options.attempt===undefined||Object.keys(options).some(key=>!["root","grade","attempt","suite"].includes(key))) refuse("configured-dispatch-usage", "Grade requires --attempt and accepts only --root and an optional original --suite");
+      const tool=commandTool(),grades=await import("./configured-dispatch-grade.mjs");
+      const authority=await grades.captureConfiguredDispatchGradeAuthority(root,options.attempt,{tool});
+      const result=grades.runConfiguredDispatchGrade(authority,options.suite);process.stdout.write(JSON.stringify(result)+"\n");return result.code;
+    }
+    if(options.suite!==undefined) refuse("configured-dispatch-usage", "--suite requires --grade");
+    if (options.brief !== undefined) {
+      if (replace || full || options.task === undefined || Object.keys(options).some(key => !["root", "brief", "task", "role", "lane-intent"].includes(key))) refuse("configured-dispatch-usage", "Brief requires --task and accepts only --root, optional selection file, --role and --lane-intent");
+      const tool = commandTool(), view = await import("./configured-dispatch-view.mjs"), brief = await import("./configured-dispatch-brief.mjs");
+      const selected = options.brief === "" ? view.captureCurrentConfiguredDispatchViewSelection(root) : view.readConfiguredDispatchViewSelection(options.brief, root);
+      const result = await brief.configuredDispatchBrief(selected, { tool, taskId: options.task, ...(options.role === undefined ? {} : { role: options.role }), ...(options["lane-intent"] === undefined ? {} : { laneIntent: brief.readConfiguredLaneIntent(options["lane-intent"]) }) });
+      process.stdout.write(result.text); return result.code;
+    }
+    if (options["lane-intent"] !== undefined) refuse("configured-dispatch-usage", "--lane-intent requires --brief");
     if (options.view !== undefined) {
       if (replace || Object.keys(options).some(key => !["root", "view", "task"].includes(key))) refuse("configured-dispatch-usage", "View accepts only --root, optional selection file, --task and --full");
       const tool = commandTool(), view = await import("./configured-dispatch-view.mjs");

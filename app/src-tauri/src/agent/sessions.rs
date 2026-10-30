@@ -47,10 +47,11 @@ pub const TRANSCRIPT_TEXT_CAP: usize = 256 * 1024;
 pub struct SessionEntry {
     /// `"S1"`, `"S2"`, … — max existing + 1.
     pub id: String,
-    /// The adapter key (`"claude"`).
+    /// The original adapter key (`"claude"` or `"codex"`).
     pub agent: String,
     /// What the CLI's own init line reported. RECORDED TRUTH, not a
-    /// configured value — we never pass `--model`.
+    /// configured value; a configured planner's requested model lives in its
+    /// frozen genesis planner selection. Codex may report no observed model.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub model: Option<String>,
     /// The id the CLI's resume flag takes, captured from the stream.
@@ -115,7 +116,10 @@ impl SessionEntry {
     pub fn resume_id(&self) -> Result<Option<&str>, SessionIdRejection> {
         match self.native_session_id.as_deref() {
             None => Ok(None),
-            Some(id) => validate_session_id(id).map(|()| Some(id)),
+            Some(id) => match self.agent.as_str() {
+                "codex" => super::adapter::CODEX_SEPARATED_PLANNER_V1.validate_session_id(id).map(|()| Some(id)),
+                _ => validate_session_id(id).map(|()| Some(id)),
+            },
         }
     }
 

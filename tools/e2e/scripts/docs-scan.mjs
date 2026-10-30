@@ -2278,7 +2278,7 @@ export const ROOT_ANCHOR_LEDGER = Object.freeze([
   { file: "tools/e2e/scripts/ci-owed.mjs", scope: "source", reads: "", why: "Runs owed-set against source Git ranges. Documentation dependency discovery is delegated to the scanner, whose linked sites retain the actual prefixes." },
   { file: "tools/e2e/scripts/source-suite-derivation.mjs", scope: "source", reads: "", why: "Canonical source-only static ownership, settings/build dependency and owed-suite derivation, shared by gate-run and legacy brief eligibility. Source documentation dependencies remain delegated to docsGate/docsReaders; this module imports no configured private-record checker or selected-record reader." },
   { file: "tools/e2e/scripts/source-ci-owed.mjs", scope: "source", reads: "", why: "Reads source Git ranges using the explicit source-CI suite contract. Documentation dependencies remain scanner-derived; this entry neither runs configured user gates nor selects private records." },
-  { file: "tools/e2e/scripts/dispatch-brief.mjs", scope: "private-context-unadapted", reads: "selected board/policy and exact meters context site", why: "Brief readers accept a project root but still default to the source checkout. Caller-owned roots are not source-doc proofs; this module's separated command/context adaptation remains T303 work." },
+  { file: "tools/e2e/scripts/dispatch-brief.mjs", scope: "private-context-unadapted", reads: "selected board/policy and exact meters context site", why: "Legacy filesystem board/policy/meters readers still default to the source checkout and remain unqualified compatibility consumers. The installed configured-dispatch-brief uses committed selected P/R and verified TOOL through shared pure normative row/reference/reading/citation owners; that does not qualify this module's remaining default-root readers or automatic legacy arm effects." },
   { file: "tools/e2e/scripts/dispatch-order.mjs", scope: "private-context-unadapted", reads: "selected board/policy", why: "Uses the source anchor for parser artifacts and defaults project readers to that root. Synthetic ordinary tests exercise its behavior; those defaults are not qualified for separated operation. The separate installed configured-dispatch-view captures committed selected RECORDS and reuses canonical pure scheduling/qualified fences; that does not adapt this legacy module's default-root readers." },
   { file: "tools/e2e/scripts/docs-gate.mjs", scope: "source", reads: "", why: "Scans source reader sites and asks the owed/path questions. Private record validation and derived INDEX persistence belong to the explicit records service." },
   { file: "tools/e2e/scripts/gate-run.mjs", scope: "source", reads: "", why: "Locates suites, source imports, settings readers and Git ranges. Documentation dependencies come from the scanner; product-command generalization is not established by this account." },
@@ -2929,33 +2929,33 @@ export function conventionsChapters(indexMd) {
  * @returns {string}
  */
 export function conventionsText(root = repoRoot) {
-  // **THE TWO PATHS ARE SPELLED HERE AND NOT BORROWED, AND THE DOCS GATE
-  // IS WHY.** The reader derivation follows ONE call hop, so a function
-  // that reads its documents through a second one is invisible to it —
-  // measured on this very change: routing this read through
-  // `conventionsIndexText` took merge, run-record, lane-fence, gate-run
-  // and workflow-parity out of the gate's reader set in silence, and the
-  // gate's own unlinked-sites report is what said so. A rule that stops
-  // firing is worse than one that is wrong.
   const indexMd = readFileSync(path.join(root, "docs/CONVENTIONS.md"), "utf8");
+  return conventionsTextFromSource(indexMd, {
+    read(file) {
+      const at = path.join(root, "docs/conventions", path.basename(file));
+      if (!existsSync(at)) {
+        throw new Error(
+          `docs-scan: ${CONVENTIONS_DOC} points at ${file} and no file sits there. This project's ` +
+            "conventions are an INDEX and its chapters; a tree or a fixture carrying only the index " +
+            `carries a table of contents. Plant every path \`conventionsFiles()\` returns.`,
+        );
+      }
+      return readFileSync(at, "utf8");
+    },
+    paths() { return readdirSync(path.join(root, CONVENTIONS_DIR)).map(entry => `${CONVENTIONS_DIR}/${entry}`); },
+  });
+}
+
+/** The same canonical splice over a captured backend source. Only chapter
+ * paths named by the index are opened; extra/reordered/leftover chapters still
+ * refuse. There is no filesystem or source-root fallback in this owner.
+ * @param {string} indexMd @param {{read:(file:string)=>string,paths:()=>Iterable<string>}} source
+ * @returns {string} */
+export function conventionsTextFromSource(indexMd, source) {
   /** @type {Map<string, string[]>} */
   const queued = new Map();
   for (const file of conventionsChapters(indexMd)) {
-    const at = path.join(root, "docs/conventions", path.basename(file));
-    // **A CHAPTER THE INDEX POINTS AT AND NOBODY CAN OPEN IS NAMED**, not
-    // an ENOENT from inside a reader three call hops away. The failure
-    // this refusal is written from is a FIXTURE that planted the index
-    // and not its chapters (T-290): the raw error named a temporary
-    // directory and no reader of it could tell whether the tree or the
-    // fixture was wrong.
-    if (!existsSync(at)) {
-      throw new Error(
-        `docs-scan: ${CONVENTIONS_DOC} points at ${file} and no file sits there. This project's ` +
-          "conventions are an INDEX and its chapters; a tree or a fixture carrying only the index " +
-          `carries a table of contents. Plant every path \`conventionsFiles()\` returns.`,
-      );
-    }
-    const text = readFileSync(at, "utf8");
+    const text = source.read(file);
     queued.set(
       file,
       text
@@ -2996,7 +2996,9 @@ export function conventionsText(root = repoRoot) {
   // and in no reader's document. The index claims this is refused, so it
   // is refused here (T-290, the seat's amendment of 2026-09-14).
   const named = new Set(conventionsChapters(indexMd).map((f) => path.basename(f)));
-  for (const entry of readdirSync(path.join(root, CONVENTIONS_DIR))) {
+  for (const file of source.paths()) {
+    if (!/^docs\/conventions\/[^/]+$/.test(file)) continue;
+    const entry = path.basename(file);
     if (!entry.endsWith(".md") || entry === "README.md" || named.has(entry)) continue;
     throw new Error(
       `docs-scan: ${CONVENTIONS_DIR}/${entry} is a chapter ${CONVENTIONS_DOC} points at nowhere. ` +

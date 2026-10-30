@@ -10,7 +10,7 @@ import { operationContent } from "./operation-record.mjs";
 import { captureCommittedInputs } from "./records.mjs";
 import { normalizeContextRequest } from "./records-context.mjs";
 import { captureConfiguredGatePolicy } from "./gate-run.mjs";
-import { captureConfiguredDispatch, configuredDispatchViewContext, verifyConfiguredDispatch } from "./configured-dispatch.mjs";
+import { captureConfiguredDispatch, configuredDispatchBriefContext, verifyConfiguredDispatch } from "./configured-dispatch.mjs";
 import { configuredAdmissionPreflight } from "./qualified-admission.mjs";
 import { loadInstalledRecordTool, readInstalledMethodAssets, requireInstalledRuntimeAssets } from "./records-check.mjs";
 import { ROLE_TEMPLATE_KEYS, blank, liveProv, note, questionHolds, readQuestions, render, treeProv, value } from "./dispatch-brief.mjs";
@@ -51,6 +51,13 @@ export function captureCurrentConfiguredDispatchViewSelection(root) {
     revisions: Object.freeze({ product, records }), legacyTokenMap: Object.freeze({}) });
   const origins = { product: captureOperationRepository(authorityRoot, product, { forEffect: false }), records: captureOperationRepository(workspace.recordsRoot, records, { forEffect: false }) };
   assertCurrentCuts(selected, origins); currentCuts.set(selected, { origins }); return selected;
+}
+/** Bookend a backend-captured current selection; explicit old selections keep
+ * their immutable cuts and are verified by their constructor instead.
+ * @param {any} input */
+export function verifyConfiguredDispatchViewSelection(input) {
+  const captured = currentCuts.get(input);
+  if (captured) assertCurrentCuts(selection(input), captured.origins);
 }
 /** @param {any} input */
 function selection(input) {
@@ -126,9 +133,9 @@ export async function configuredDispatchView(input, options = {}) {
       const capsule = handle.capsule;
       for (const [role, choice] of Object.entries(capsule.roles)) rows.push(value(`${role}: ${choice.requested}; vehicle ${choice.vehicle ?? capsule.sessionPolicy.default}`, treeProv(choice.source === "committed-card" ? selected.revisions.records : selected.revisions.product, `${choice.source}; original card ${capsule.task.blobId}; supertaskr.yaml roles; session policy ${JSON.stringify(capsule.sessionPolicy)}`)));
       rows.push(value(`Process: ${JSON.stringify(capsule.process.values)}; schema ${capsule.process.schemaDigest}`, treeProv(selected.revisions.product, `committed process selection; verified METHOD ${tool.methodDigest}`)));
-      const context = configuredDispatchViewContext(handle), scopeRoles = [...new Set(context.scope.paths.map((/** @type {any} */ entry) => entry.role))];
+      const context = configuredDispatchBriefContext(handle), scopeRoles = [...new Set(context.scope.paths.map((/** @type {any} */ entry) => entry.role))];
       rows.push(value(`Scope ${capsule.scopeDigest}: ${context.scope.paths.map((/** @type {any} */ entry) => `${entry.role}::${entry.domain}`).join(", ")}`, recordProv),
-        value(`Tier ${context.verification.tier}; derived ${context.verification.derivedTier}: ${context.verification.reason}; guard hits ${JSON.stringify(context.guards)}`, treeProv(selected.revisions.records, `original card + PRODUCT ${selected.revisions.product} guard_class/process; verified METHOD TASK-FORMAT`)));
+        value(`${context.verification.tier === null ? `Tier PROPOSED ${context.verification.derivedTier}; original card UNSTAMPED; strict start still requires the private arm stamp` : `Tier ${context.verification.tier}`}; derived ${context.verification.derivedTier}: ${context.verification.reason}; guard hits ${JSON.stringify(context.guards)}`, treeProv(selected.revisions.records, `original card + PRODUCT ${selected.revisions.product} guard_class/process; verified METHOD TASK-FORMAT`)));
       const preview = await configuredAdmissionPreflight({ version: 1, ...selected, taskId: card.id, roles: scopeRoles,
         admission: { boundary: "lane-cut", role: "executor", kind: "explicit", parent: "", evidence: "", scope: "product-change", attempt: null } }, handle);
       const overlapping = claims.map(claim => ({ attempt: claim.reservation.attempt, comparison: compareQualifiedFences(context.scope, claim.scope.fence, context.scope.repositories) })).filter(claim => claim.comparison.verdict !== "disjoint");

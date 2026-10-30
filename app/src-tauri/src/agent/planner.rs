@@ -112,7 +112,7 @@ impl Selection {
     pub fn validate(&self) -> Result<(), String> {
         // This is a bounded wire/argv datum check, not another roles parser.
         if self.role != "planner"
-            || self.harness != "claude"
+            || !matches!(self.harness.as_str(), "claude" | "codex")
             || self.requested.is_empty()
             || self.requested.len() > 1024
             || self.model.len() > 256
@@ -127,7 +127,14 @@ impl Selection {
         }
         super::adapter::validate_configured_model(&self.model)
             .map_err(|_| "genesis-planner-selection-unavailable".to_string())?;
+        if self.harness == "codex" && !self.model.strip_prefix("gpt-").is_some_and(|rest| rest.as_bytes().first().is_some_and(u8::is_ascii_alphanumeric)) {
+            return Err("genesis-planner-selection-unavailable".into());
+        }
         Ok(())
+    }
+    pub fn adapter(&self) -> Result<&'static super::adapter::AgentAdapter, String> {
+        self.validate()?;
+        super::adapter::configured_planner_adapter(&self.harness).ok_or_else(|| "genesis-planner-provider-unavailable".into())
     }
 }
 
@@ -148,6 +155,9 @@ impl Executable {
     /// Hash one bounded original entry, including its symlink target. This
     /// neither authenticates a vendor nor measures the entry's dependencies.
     pub fn capture(cli: &ResolvedCli) -> Result<Self, String> {
+        Self::capture_for(cli, super::adapter::planner_adapter())
+    }
+    fn capture_for(cli: &ResolvedCli, adapter: &super::adapter::AgentAdapter) -> Result<Self, String> {
         #[cfg(not(unix))]
         {
             let _ = cli;
@@ -156,24 +166,24 @@ impl Executable {
         #[cfg(unix)]
         {
             use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
-            let fail = || "genesis-planner-executable-unavailable".to_string();
+            let fail = |stage: &str| format!("genesis-planner-executable-{stage}");
             let version = cli
                 .version
                 .clone()
-                .filter(|v| super::adapter::parse_major(v).is_some_and(|m| m >= 2))
-                .ok_or_else(fail)?;
-            let target = cli.path.canonicalize().map_err(|_| fail())?;
-            let before = std::fs::metadata(&target).map_err(|_| fail())?;
+                .filter(|v| adapter.version_supported(v) == Some(true))
+                .ok_or_else(|| fail("version-unavailable"))?;
+            let target = cli.path.canonicalize().map_err(|_| fail("path-unavailable"))?;
+            let before = std::fs::metadata(&target).map_err(|_| fail("metadata-unavailable"))?;
             if !before.is_file() || before.mode() & 0o111 == 0 || before.len() > 1_073_741_824 {
-                return Err(fail());
+                return Err(fail("kind-or-size"));
             }
             let mut file = std::fs::OpenOptions::new()
                 .read(true)
                 .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK)
                 .open(&target)
-                .map_err(|_| fail())?;
-            if !file.metadata().map_err(|_| fail())?.is_file() {
-                return Err(fail());
+                .map_err(|_| fail("open-unavailable"))?;
+            if !file.metadata().map_err(|_| fail("metadata-unavailable"))?.is_file() {
+                return Err(fail("file-kind"));
             }
             let mut hash = Sha256::new();
             let mut buffer = [0u8; 65_536];
@@ -181,19 +191,19 @@ impl Executable {
             let deadline = Instant::now() + Duration::from_secs(10);
             loop {
                 if Instant::now() >= deadline {
-                    return Err(fail());
+                    return Err(fail("read-deadline"));
                 }
-                let count = file.read(&mut buffer).map_err(|_| fail())?;
+                let count = file.read(&mut buffer).map_err(|_| fail("read-unavailable"))?;
                 if count == 0 {
                     break;
                 }
                 bytes += count as u64;
                 if bytes > 1_073_741_824 {
-                    return Err(fail());
+                    return Err(fail("size-limit"));
                 }
                 hash.update(&buffer[..count]);
             }
-            let after = file.metadata().map_err(|_| fail())?;
+            let after = file.metadata().map_err(|_| fail("metadata-unavailable"))?;
             let facts = |s: &std::fs::Metadata| {
                 (
                     s.dev(),
@@ -208,10 +218,10 @@ impl Executable {
             };
             if facts(&before) != facts(&after)
                 || bytes != after.len()
-                || cli.path.canonicalize().map_err(|_| fail())? != target
-                || facts(&std::fs::metadata(&target).map_err(|_| fail())?) != facts(&after)
+                || cli.path.canonicalize().map_err(|_| fail("path-unavailable"))? != target
+                || facts(&std::fs::metadata(&target).map_err(|_| fail("metadata-unavailable"))?) != facts(&after)
             {
-                return Err(fail());
+                return Err(fail("changed"));
             }
             Ok(Self {
                 path: cli.path.clone(),
@@ -244,18 +254,18 @@ impl PlannerSession {
         Ok(Self {
             selection: selection.clone(),
             provenance: provenance.clone(),
-            executable: Executable::capture(cli)?,
+            executable: Executable::capture_for(cli, selection.adapter()?)?,
         })
     }
     pub fn verify(&self, current: &Decision, cli: &ResolvedCli) -> Result<(), String> {
-        let (selection, _) = current.ready()?;
-        if selection != &self.selection || Executable::capture(cli)? != self.executable {
+        let (selection, provenance) = current.ready()?;
+        if selection != &self.selection || provenance != &self.provenance || Executable::capture_for(cli, self.selection.adapter()?)? != self.executable {
             return Err("genesis-original-planner-changed".into());
         }
         Ok(())
     }
     pub fn verify_executable(&self, cli: &ResolvedCli) -> Result<(), String> {
-        if Executable::capture(cli)? != self.executable {
+        if Executable::capture_for(cli, self.selection.adapter()?)? != self.executable {
             return Err("genesis-original-planner-changed".into());
         }
         Ok(())
@@ -333,7 +343,7 @@ echo '{"type":"result","subtype":"success","is_error":false,"num_turns":1,"resul
         }
     }
     #[test]
-    fn original_executable_and_model_remain_frozen_across_cold_session_data_and_current_cut_refresh(
+    fn original_executable_model_and_source_remain_frozen_across_cold_session_data(
     ) {
         let f = Fixture::new();
         let original = decision();
@@ -345,7 +355,9 @@ echo '{"type":"result","subtype":"success","is_error":false,"num_turns":1,"resul
             provenance.configuration_digest = format!("sha256:{}", "d".repeat(64));
             provenance.product_revision = "e".repeat(40);
         }
-        cold.verify(&newer, &f.cli).unwrap();
+        assert_eq!(cold.verify(&newer, &f.cli).unwrap_err(), "genesis-original-planner-changed",
+            "a later current configuration cannot be substituted for the original source requalification");
+        cold.verify(&original, &f.cli).unwrap();
         let mut changed = newer.clone();
         if let Decision::Ready { selection, .. } = &mut changed {
             selection.model = "claude-sonnet-5".into();

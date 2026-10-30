@@ -203,6 +203,7 @@
 
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
+import { assertConfiguredDispatchGradeAuthority } from "./configured-dispatch-grade.mjs";
 import {
   closeSync,
   existsSync,
@@ -1069,7 +1070,7 @@ function assertConfiguredGateOrigin(configuration) {
 export function loadConfiguredGateConfiguration(options) {
   if (!options || Object.keys(options).some((key) => !["productRoot", "productRevision", "tool"].includes(key))) configuredFinding("gate-configuration-request", "Only PRODUCT root/revision and constructor TOOL context are accepted");
   const tool = options.tool ?? loadInstalledRecordTool();
-  requireInstalledRuntimeAssets(tool, ["tools/e2e/scripts/gate-run.mjs", "tools/e2e/scripts/source-suite-derivation.mjs", "tools/e2e/scripts/gate-policy.mjs", "tools/e2e/scripts/source-ci-contract.mjs", "tools/e2e/scripts/durable-operation.mjs", "cli/gate-token.mjs", "cli/is-main.mjs"]);
+  requireInstalledRuntimeAssets(tool, ["tools/e2e/scripts/gate-run.mjs", "tools/e2e/scripts/configured-dispatch-grade.mjs", "tools/e2e/scripts/source-suite-derivation.mjs", "tools/e2e/scripts/gate-policy.mjs", "tools/e2e/scripts/source-ci-contract.mjs", "tools/e2e/scripts/durable-operation.mjs", "cli/gate-token.mjs", "cli/is-main.mjs"]);
   const original = captureOperationRepository(options.productRoot, options.productRevision, { forEffect: false });
   const loaded = loadProjectSettings({ productRoot: options.productRoot, productRevision: options.productRevision, tool });
   if (loaded.status !== "ready") configuredFinding(loaded.code, loaded.diagnostics.join("; "));
@@ -1155,8 +1156,11 @@ export function configuredOwedForRange(configuration, range) {
   return why === undefined ? derived : { ...derived, suites: [...configuration.context.required], e2e: { whole: true, specs: [] }, failClosed: why };
 }
 /** Constructor-bound effect API. Requests cannot replace commands, roots,
- * membership, policy or TOOL metadata. @param {{productRoot:string,productRevision:string,tool?:any,policy?:ConfiguredGatePolicy}} options */
-export function createConfiguredGateRunner(options) {
+ * membership, policy or TOOL metadata. The optional second argument is an
+ * opaque retained-source authority, redeemed only by its fixed backend.
+ * @param {{productRoot:string,productRevision:string,tool?:any,policy?:ConfiguredGatePolicy}} options
+ * @param {object|undefined} [executionAuthority] */
+export function createConfiguredGateRunner(options, executionAuthority) {
   const configuration = configuredCandidate(options);
   const { root, productRevision, registry, context } = configuration;
   const policy = gateParents.get(configuration), metadata = configuredGatePolicyMetadata(policy ?? configuration);
@@ -1170,6 +1174,7 @@ export function createConfiguredGateRunner(options) {
     return status.stdout.length > 0;
   }
   function assertCandidate() {
+    if (executionAuthority !== undefined) assertConfiguredDispatchGradeAuthority(executionAuthority, {productRoot:root,commit:productRevision,tree:candidateTree,policy:metadata});
     assertConfiguredGateOrigin(configuration);
     if (currentRef(root) !== productRevision || currentTree(root) !== candidateTree || !candidateTree) configuredFinding("gate-product-context-changed", "The selected candidate HEAD/tree is unavailable or changed before grading");
     if (policy && candidateHasChanges()) configuredFinding("gate-candidate-dirty", "Original-policy grading requires the exact clean candidate before and after each suite");
@@ -1211,8 +1216,10 @@ export function createConfiguredGateRunner(options) {
       if (result.outputPath) process.stderr.write(`gate-run: ${name} output at ${result.outputPath}\n`);
     }
     assertAfterSuite();
-    const recorded = recordVerdicts(verdicts, root, owed === undefined ? undefined : { range: owed.range, suites: owed.suites, e2e: owed.e2e, inputs: owed.inputs, ...(owed.failClosed === undefined ? {} : { failClosed: owed.failClosed }) }, context);
-    return { code: !recorded.written || verdicts.some((v) => v.verdict === "REFUSED") ? EXIT.REFUSED : verdicts.some((v) => v.verdict === "RED") ? EXIT.RED : EXIT.GREEN,
+    // Retained-source capture does not widen the worker's original ignored
+    // output policy by writing a token. Its actual result leaves via stdout.
+    const recorded = executionAuthority === undefined ? recordVerdicts(verdicts, root, owed === undefined ? undefined : { range: owed.range, suites: owed.suites, e2e: owed.e2e, inputs: owed.inputs, ...(owed.failClosed === undefined ? {} : { failClosed: owed.failClosed }) }, context) : {written:false};
+    return { code: executionAuthority === undefined && !recorded.written || verdicts.some((v) => v.verdict === "REFUSED") ? EXIT.REFUSED : verdicts.some((v) => v.verdict === "RED") ? EXIT.RED : EXIT.GREEN,
       verdicts, configuration: context, tokenWritten: recorded.written,
       capture: evidence(captures, names, owed === undefined || owed.e2e.whole || !names.includes(SCOPED_SUITE)) };
   }
@@ -1220,6 +1227,7 @@ export function createConfiguredGateRunner(options) {
    * layouts still run whole suites and cannot claim a narrower qualification.
    * @param {string} suiteId @param {string[]} changed */
   function owning(suiteId, changed) {
+    if (executionAuthority !== undefined) configuredFinding("gate-retained-scope-unsupported", "Retained grading captures whole original suites only");
     assertConfiguredGateOrigin(configuration);
     const suite = registry[suiteId];
     if (!suite || suite.family !== "playwright") configuredFinding("gate-usage", `The scoped form needs its Playwright leg; THE FULL ${SCOPED_SUITE} LEG IS OWED`);
@@ -1238,7 +1246,37 @@ export function createConfiguredGateRunner(options) {
     return { code: !recorded.written || verdict.verdict === "REFUSED" ? EXIT.REFUSED : verdict.verdict === `${SCOPED_PREFIX}RED` ? EXIT.RED : EXIT.GREEN, verdicts: [verdict], configuration: context, tokenWritten: recorded.written,
       capture: evidence([capture(selected, { ...result, verdict })], [suiteId], false) };
   }
-  return Object.freeze({ configuration, run, owning,
+  /** Canonical correspondence aggregation only. The integration effect owner
+   * must separately prove each row came from its actual owned launch/artifact.
+   * No claim about process ancestry follows from accepting serialized rows.
+   * @param {readonly any[]} parts */
+  function aggregate(parts) {
+    assertCandidate();
+    if(!Array.isArray(parts)||!parts.length||parts.length>context.required.length) configuredFinding("gate-capture-set", "No finite original suite capture set supplied");
+    /** @type {ReturnType<typeof capture>[]} */ const rows=[];
+    /** @type {string[]} */ const names=[];
+    for(const part of parts){
+      if(!part||typeof part!=="object"||Object.keys(part).sort().join(",")!=="candidate,complete,context,policy,required,selected,suites,version,whole"||part.version!==1||operationContent(part.policy)!==operationContent(metadata)||operationContent(part.context)!==operationContent(context)||
+        operationContent(part.candidate)!==operationContent({productRoot:root,commit:productRevision,tree:candidateTree})||
+        operationContent(part.required)!==operationContent(context.required)||part.whole!==true||!Array.isArray(part.selected)||!Array.isArray(part.suites)||
+        part.selected.length!==part.suites.length||!part.selected.length) configuredFinding("gate-capture-context", "Captured suite context differs from the original policy/candidate");
+      for(const [at,row] of part.suites.entries()){
+        const id=part.selected[at],definition=registry[id];
+        if(typeof id!=="string"||!definition||names.includes(id)||!row||typeof row!=="object"||operationContent(row.definition)!==operationContent(definition)) configuredFinding("gate-capture-membership", "Missing, duplicate or changed original suite definition");
+        if(typeof row.output!=="string"||Buffer.byteLength(row.output)>32*1024*1024) configuredFinding("gate-capture-output", "Captured output is unavailable or exceeds the supported bound");
+        const actual=judge({suite:id,status:row.verdict?.exit,count:countBodies(definition.family,row.output),ref:productRevision,tree:candidateTree,dirty:false});
+        if(operationContent(capture(definition,{verdict:actual,output:row.output}))!==operationContent(row)) configuredFinding("gate-capture-output", "Captured reporter output/verdict/digests disagree");
+        rows.push(row);names.push(id);
+      }
+      const expected=part.selected.length===context.required.length&&new Set(part.selected).size===context.required.length&&
+        context.required.every(id=>part.selected.includes(id))&&part.suites.every((/** @type {any} */ row)=>row.verdict.verdict==="GREEN");
+      if(part.complete!==expected) configuredFinding("gate-capture-completeness", "A subset or failed capture was relabeled complete");
+    }
+    if(names.length!==context.required.length||!context.required.every(id=>names.includes(id))) configuredFinding("gate-capture-membership", "Every required original suite must occur once");
+    const ordered=context.required.map(id=>/** @type {ReturnType<typeof capture>} */(rows.find(row=>row.definition.id===id)));
+    assertAfterSuite();return evidence(ordered,context.required,true);
+  }
+  return Object.freeze({ configuration, run, owning, aggregate,
     /** @param {string} range */ owed: (range) => configuredOwedForRange(configuration, range) });
 }
 

@@ -1,5 +1,5 @@
-//! T-025 §2: the adapter table — one declarative v1 entry, every flag
-//! justified, the bypass ban executable.
+//! Agent adapter surfaces: the historical Claude v1 entry and the configured
+//! Codex planner provider; every reachable argv retains the bypass ban.
 //!
 //! ADR-003's promise ("new agent support = one adapter entry") made
 //! concrete: this table is the ONLY place in the runner that names
@@ -21,6 +21,9 @@ pub enum ParseMode {
     /// `stream_event` deltas and `assistant` messages, then one `result`
     /// line carrying the turn's canonical text.
     StreamJsonV1,
+    /// Codex exec JSONL thread/item/turn events; provider state is separate
+    /// from the Claude stream parser and never infers a session from prose.
+    CodexExecJsonV1,
 }
 
 /// One agent CLI, declaratively. Adding an agent is adding one of these
@@ -190,10 +193,9 @@ pub const CLAUDE_V1: AgentAdapter = AgentAdapter {
     parse: ParseMode::StreamJsonV1,
 };
 
-/// Every adapter this build knows. Exactly one entry in v1 (ADR-017
-/// clause 6); the bypass pin below iterates this slice, so a second entry
-/// inherits the ban automatically.
-pub const ADAPTERS: &[&AgentAdapter] = &[&CLAUDE_V1];
+/// Supported providers. Historical v1 had only Claude; the explicitly added
+/// Codex planner inherits the same executable argv/bypass sweep.
+pub const ADAPTERS: &[&AgentAdapter] = &[&CLAUDE_V1, &CODEX_SEPARATED_PLANNER_V1];
 
 /// The legacy embedding adapter. Managed split sessions use the same supported
 /// Claude harness with a canonical committed role selection and fixed model slot.
@@ -221,6 +223,29 @@ pub const CLAUDE_SEPARATED_PLANNER_V1: AgentAdapter = AgentAdapter {
 
 pub fn separated_planner_adapter() -> &'static AgentAdapter {
     &CLAUDE_SEPARATED_PLANNER_V1
+}
+
+/// Codex 0.165 exec, verified against installed --help. The prompt stays on
+/// stdin; resume names exactly the UUID the original thread reported. The
+/// parent exec option binds workspace-write for both forms; no writable
+/// directory beyond the actual RECORDS cwd, policy-ignore or bypass flag.
+/// Saved CLI auth/config/rules/hooks remain the user's. This is the CLI's
+/// workspace policy, not a claim of universal read or OS confinement.
+pub const CODEX_SEPARATED_PLANNER_V1: AgentAdapter = AgentAdapter {
+    key: "codex", binary: "codex", min_major: 0,
+    spawn_args: &["exec", "--json", "--sandbox", "workspace-write", "-"],
+    resume_args: &["exec", "--sandbox", "workspace-write", "resume", "--json", SESSION_ID_SLOT, "-"],
+    parse: ParseMode::CodexExecJsonV1,
+};
+
+/// Only canonical committed provider data selects this finite table. Legacy
+/// embedding entrypoints keep planner_adapter and their original Claude CLI.
+pub fn configured_planner_adapter(harness: &str) -> Option<&'static AgentAdapter> {
+    match harness {
+        "claude" => Some(&CLAUDE_SEPARATED_PLANNER_V1),
+        "codex" => Some(&CODEX_SEPARATED_PLANNER_V1),
+        _ => None,
+    }
 }
 
 /// THE COLD-START READER (T-175) — the same agent CLI, a different world.
@@ -332,7 +357,7 @@ pub const CLAUDE_COLD_START_V1: AgentAdapter = AgentAdapter {
 /// data-borne-flag check are questions about which BYTES reach an
 /// `execve`, and those two sets stopped being the same the moment a second
 /// template existed.
-pub const SPAWNABLE: &[&AgentAdapter] = &[&CLAUDE_V1, &CLAUDE_COLD_START_V1, &CLAUDE_SEPARATED_PLANNER_V1];
+pub const SPAWNABLE: &[&AgentAdapter] = &[&CLAUDE_V1, &CLAUDE_COLD_START_V1, &CLAUDE_SEPARATED_PLANNER_V1, &CODEX_SEPARATED_PLANNER_V1];
 
 /// The adapter the cold-start reader runs under (T-175).
 pub fn cold_start_adapter() -> &'static AgentAdapter {
@@ -688,6 +713,9 @@ pub const SESSION_ID_MAX_LEN: usize = 128;
 pub enum SessionIdRejection {
     /// No id at all where one was required.
     Empty,
+    /// Codex resumes only its observed canonical UUID; names/latest/global
+    /// selectors are not an alternate route to an unrelated conversation.
+    NotThreadUuid,
     TooLong { len: usize },
     /// THE INJECTION CLASS THIS GATE CLOSES: an id that would parse as a
     /// flag rather than as `--resume`'s value.
@@ -764,6 +792,7 @@ impl std::fmt::Display for SessionIdRejection {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Empty => write!(f, "it is empty"),
+            Self::NotThreadUuid => write!(f, "Codex requires the original observed canonical thread UUID"),
             Self::TooLong { len } => write!(
                 f,
                 "it is {len} bytes, past the {SESSION_ID_MAX_LEN}-byte bound"
@@ -1182,6 +1211,29 @@ pub(crate) fn validate_configured_model(model: &str) -> Result<(), String> {
 }
 
 impl AgentAdapter {
+    /// Provider-specific refinement of the shared inert-data gate.
+    pub fn validate_session_id(&self, id: &str) -> Result<(), SessionIdRejection> {
+        validate_session_id(id)?;
+        if self.parse == ParseMode::CodexExecJsonV1 && (id.len() != 36 || !id.bytes().enumerate().all(|(at, byte)| {
+            if [8, 13, 18, 23].contains(&at) { byte == b'-' }
+            else { byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte) }
+        })) { return Err(SessionIdRejection::NotThreadUuid); }
+        Ok(())
+    }
+
+    /// Claude keeps its historical unknown-banner compatibility. Codex has
+    /// an explicit observed 0.165 floor and refuses an unqualified banner.
+    pub fn version_supported(&self, line: &str) -> Option<bool> {
+        if self.parse != ParseMode::CodexExecJsonV1 { return parse_major(line).map(|major| major >= self.min_major); }
+        let parsed = (|| {
+            let version = line.trim().strip_prefix("codex-cli ")?;
+            let core = version.split('-').next()?;
+            let parts = core.split('.').map(str::parse::<u32>).collect::<Result<Vec<_>, _>>().ok()?;
+            if parts.len() != 3 { return None; }
+            Some(parts[0] > 0 || parts[0] == 0 && parts[1] >= 165)
+        })();
+        Some(parsed.unwrap_or(false))
+    }
     /// The argv AFTER the binary for one turn. `resume` = `None` spawns a
     /// fresh session; `Some(id)` resumes, with the id substituted as ONE
     /// argv element (never interpolated into a string).
@@ -1195,7 +1247,7 @@ impl AgentAdapter {
         let (template, id) = match resume {
             None => (self.spawn_args, None),
             Some(id) => {
-                validate_session_id(id)?;
+                self.validate_session_id(id)?;
                 (self.resume_args, Some(id))
             }
         };
@@ -1309,6 +1361,9 @@ mod tests {
         "01JQ8ZC4M7Q9K2VYB3T5N6XW0R",
         "sess_2f8a.9c",
     ];
+    fn real_ids(adapter: &AgentAdapter) -> &'static [&'static str] {
+        if adapter.parse == ParseMode::CodexExecJsonV1 { &REAL_IDS[..1] } else { REAL_IDS }
+    }
 
     /// Every argv string any adapter can ever produce, spawn and resume.
     ///
@@ -1320,7 +1375,7 @@ mod tests {
         for adapter in SPAWNABLE {
             out.push(adapter.binary.to_string());
             out.extend(adapter.argv(None).expect("the spawn template assembles"));
-            for id in REAL_IDS {
+            for id in real_ids(adapter) {
                 out.extend(adapter.argv(Some(id)).expect("a real id assembles"));
             }
             out.extend(adapter.version_argv());
@@ -1354,6 +1409,10 @@ mod tests {
             "--dangerously-skip-permissions",
             "--allow-dangerously-skip-permissions",
             "bypassPermissions",
+            "--dangerously-bypass-approvals-and-sandbox",
+            "--dangerously-bypass-hook-trust",
+            "--ignore-user-config",
+            "--ignore-rules",
         ];
 
         // --- half one, unchanged: the three-spelling table search --------
@@ -1379,7 +1438,7 @@ mod tests {
                 (adapter.spawn_args, adapter.argv(None).expect("spawn assembles")),
             ]
             .into_iter()
-            .chain(REAL_IDS.iter().map(|id| {
+            .chain(real_ids(adapter).iter().map(|id| {
                 (adapter.resume_args, adapter.argv(Some(id)).expect("a real id assembles"))
             })) {
                 // T-047: THE LENGTH RULE IS DERIVED, NOT RESTATED. This
@@ -1730,7 +1789,7 @@ mod tests {
         // stops this from being a gate nobody can pass.
         for adapter in SPAWNABLE {
             adapter.argv(None).expect("the spawn template assembles");
-            for id in REAL_IDS {
+            for id in real_ids(adapter) {
                 adapter.argv(Some(id)).expect("a real id assembles");
             }
         }
@@ -1988,11 +2047,11 @@ mod tests {
         assert!(CLAUDE_V1.spawn_args.contains(&"Bash(git commit:*)"));
         assert!(CLAUDE_V1.spawn_args.contains(&"Bash(cp:*)"));
         assert!(SPAWNABLE.iter().any(|adapter| adapter.spawn_args == CLAUDE_SEPARATED_PLANNER_V1.spawn_args));
-        assert_eq!(ADAPTERS.len(), 1);
+        assert_eq!(ADAPTERS.iter().map(|adapter| adapter.key).collect::<Vec<_>>(), ["claude", "codex"]);
     }
 
     #[test]
-    fn every_spawnable_template_is_swept_and_the_agent_set_is_still_one() {
+    fn every_spawnable_template_is_swept_for_both_supported_providers() {
         // The agent set's own SIZE is pinned by
         // `the_table_is_one_entry_and_the_bypass_ban_is_executable`; this
         // body asserts the RELATIONSHIP between the two lists, which is
@@ -2340,8 +2399,8 @@ mod tests {
     }
 
     #[test]
-    fn exactly_one_v1_entry_and_the_runner_names_claude_only_here() {
-        assert_eq!(ADAPTERS.len(), 1, "ADR-017 clause 6: one declarative entry in v1");
+    fn both_supported_providers_keep_the_original_legacy_claude_entry() {
+        assert_eq!(ADAPTERS.iter().map(|adapter| adapter.key).collect::<Vec<_>>(), ["claude", "codex"]);
         assert_eq!(planner_adapter().key, "claude");
         assert_eq!(planner_adapter().binary, "claude");
         assert_eq!(planner_adapter().min_major, 2);

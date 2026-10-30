@@ -25,7 +25,7 @@ pub use backup::{backup_saved, discover_backups, BackupOutcome};
 mod initialization;
 #[cfg(all(test, unix))]
 mod init_actor_env_tests;
-pub(crate) use initialization::{invoke_initialization_operation, InitializationFailure, InitializationOperation, SelectedInitializationDirectory};
+pub(crate) use initialization::{invoke_initialization_operation, invoke_owned_bank_operation, InitializationFailure, InitializationOperation, SelectedInitializationDirectory};
 
 const MAX_DOCUMENT: usize = 1_048_576;
 const MAX_PROTOCOL: usize = 4 * 1_048_576;
@@ -133,6 +133,12 @@ impl RecordEditorState {
         self.serial.fetch_add(1, Ordering::SeqCst) + 1
     }
     fn begin(&self, key: &str, attempt: u64) -> Result<ProcessLease<'_>> {
+        self.begin_with_cancel(key, attempt, Arc::new(AtomicBool::new(false)))
+    }
+    // Native finite owners may retain their original turn cancellation through
+    // a subsequent fixed service call. The lease still owns this exact key and
+    // attempt; no process lookup or broader termination policy is introduced.
+    fn begin_with_cancel(&self, key: &str, attempt: u64, cancel: Arc<AtomicBool>) -> Result<ProcessLease<'_>> {
         let mut active = self.active.lock().expect("record operation mutex poisoned");
         if self.closing.load(Ordering::SeqCst) {
             return Err(BridgeError::new(
@@ -146,7 +152,6 @@ impl RecordEditorState {
                 "A record operation is still running.",
             ));
         }
-        let cancel = Arc::new(AtomicBool::new(false));
         *active = Some(ActiveProcess {
             key: key.into(),
             attempt,
@@ -718,6 +723,24 @@ pub(crate) fn inspect_initialized_project(
     state: &RecordEditorState,
     prepared: &crate::agent::context::PreparedContext,
 ) -> std::result::Result<Value, String> {
+    inspect_initialization_read(watch, state, prepared, None)
+}
+/// Original revision comes only from the retained native planner, never an IPC
+/// argument or a current/default provider choice. The fixed Init service owns
+/// canonical committed-role parsing and the current initialized origin checks.
+pub(crate) fn inspect_original_planner(
+    watch: &WatchState, state: &RecordEditorState,
+    prepared: &crate::agent::context::PreparedContext, product_revision: &str,
+) -> std::result::Result<Value, String> {
+    if ![40, 64].contains(&product_revision.len()) || !product_revision.bytes().all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase()) {
+        return Err("genesis-planner-provenance-unavailable".into());
+    }
+    inspect_initialization_read(watch, state, prepared, Some(product_revision))
+}
+fn inspect_initialization_read(
+    watch: &WatchState, state: &RecordEditorState,
+    prepared: &crate::agent::context::PreparedContext, original_revision: Option<&str>,
+) -> std::result::Result<Value, String> {
     let original = &prepared.context;
     original.verify(watch)?;
     let attempt = state.next();
@@ -725,8 +748,9 @@ pub(crate) fn inspect_initialized_project(
     let deadline = Instant::now() + CHECK_TIME;
     let tool = state.tool(deadline, &lease.cancel).map_err(|error| error.code)?;
     original.verify(watch)?;
-    let request = json!({"version":1,"requestId":format!("genesis-inspect-{attempt}"),
-        "operation":"inspect","productRoot":original.product});
+    let mut request = json!({"version":1,"requestId":format!("genesis-inspect-{attempt}"),
+        "operation":if original_revision.is_some() {"planner"} else {"inspect"},"productRoot":original.product});
+    if let Some(revision) = original_revision { request["productRevision"] = revision.into(); }
     let result = invoke_command(&tool, &original.product, &request, deadline, &lease.cancel, InstalledCommand::Init)
         .map_err(|error| error.code)?;
     original.verify(watch)?;

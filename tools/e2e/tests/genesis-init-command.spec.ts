@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, symlinkSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, symlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
@@ -40,6 +40,48 @@ test("fixed initialization protocol produces real separate histories and returns
     expect(call(f, { ...input, projectId: "another-project" })).toMatchObject({ ok: false,
       error: { code: "genesis-init-operation-changed", state: "unknown", operationId: input.operationId } });
     expect(readFileSync(acceptedOperationPath(f.product, input.operationId))).toEqual(before);
+  } finally { f.cleanup(); }
+});
+
+test("installed original-planner read retains committed Codex selection after a real Q5 future-provider change", () => {
+  const f = genesisFixture();
+  const installed = (input: any) => {
+    const reply = spawnSync(process.execPath, [path.join(f.tool, "supertaskr.mjs"), "init", "--stdio"],
+      { cwd: f.dir, input: JSON.stringify(input), encoding: "utf8", env: FIXTURE_ENV, maxBuffer: 4 * 1024 * 1024 });
+    expect(reply.error).toBeUndefined();
+    return { status: reply.status, body: JSON.parse(reply.stdout) };
+  };
+  const snapshot = () => [f.product, f.records].map(root => ({ head: privateGit(root, ["rev-parse", "HEAD"]),
+    refs: privateGit(root, ["show-ref"]), index: readFileSync(path.join(root, ".git/index")),
+    status: privateGit(root, ["--no-optional-locks", "status", "--porcelain=v1", "--untracked-files=all"]) }));
+  try {
+    const initialized = installed(request(f)); expect(initialized).toMatchObject({ status: 0, body: { ok: true, result: { status: "initialized" } } });
+    const originalRevision = initialized.body.result.product.commit;
+    const originalRequest = { version: 1, requestId: "original-planner", operation: "planner", productRoot: f.product, productRevision: originalRevision };
+    const original = installed(originalRequest);
+    expect(original).toMatchObject({ status: 0, body: { ok: true, result: { status: "original-planner",
+      planner: { status: "ready", selection: { requested: "codex/gpt-6.1-sol@subagent", harness: "codex", model: "gpt-6.1-sol" },
+        provenance: { productRevision: originalRevision } } } } });
+    const current = installed(query(f, "inspect")); expect(current.body.ok).toBe(true);
+    const settings = current.body.result.settings; settings.roles.planner = "claude-opus-5@fresh";
+    const config = path.join(f.product, "supertaskr.yaml");
+    // A real committed future role is independent of the original session's cut.
+    // JSON is valid YAML and is parsed by the same installed canonical loader.
+    writeFileSync(config, JSON.stringify(settings)); privateGit(f.product, ["add", "supertaskr.yaml"]); privateGit(f.product, ["commit", "-qm", "Choose future Claude planner at Q5"]);
+    const before = snapshot(), accepted = readFileSync(acceptedOperationPath(f.product, "init-plan-fixture"));
+    const future = installed(query(f, "inspect")); expect(future).toMatchObject({ status: 0, body: { ok: true,
+      result: { planner: { selection: { harness: "claude", model: "claude-opus-5" } } } } });
+    expect(future.body.result.current.productRevision).not.toBe(originalRevision);
+    const retained = installed(originalRequest); expect(retained.status).toBe(0);
+    expect(retained.body.result.planner).toEqual(original.body.result.planner);
+    expect(retained.body.result.settingsProvenance).toEqual(original.body.result.settingsProvenance);
+    expect(retained.body.result.current.productRevision).toBe(future.body.result.current.productRevision);
+    for (const invalid of [{ ...originalRequest, productRevision: "HEAD" }, { ...originalRequest, role: "builder" }]) {
+      expect(installed(invalid)).toMatchObject({ status: 1, body: { ok: false, error: { code: "genesis-init-protocol-request" } } });
+    }
+    expect(installed({ ...originalRequest, productRevision: "a".repeat(40) })).toMatchObject({ status: 1,
+      body: { ok: false, error: { code: "genesis-planner-original-history" } } });
+    expect(snapshot()).toEqual(before); expect(readFileSync(acceptedOperationPath(f.product, "init-plan-fixture"))).toEqual(accepted);
   } finally { f.cleanup(); }
 });
 

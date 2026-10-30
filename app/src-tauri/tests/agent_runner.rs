@@ -1587,7 +1587,7 @@ fn an_in_band_auth_failure_is_typed_authfailed_not_a_relayed_exit_code() {
     let h = harness("autherror", Options { scenario: "auth-error", ..Options::default() });
     agent::start_genesis(&h.watch, &h.agent);
     match wait_failed(&h.events) {
-        TurnError::AuthFailed { status, message } => {
+        TurnError::AuthFailed { status, message, .. } => {
             assert_eq!(status, Some(401), "the status the stream named, kept as a number");
             assert!(
                 message.contains("authenticate") && message.contains("401"),
@@ -2571,7 +2571,7 @@ fn a_diagnostic_auth_failure_with_no_result_line_at_all_is_still_authfailed() {
     );
     agent::start_genesis(&h.watch, &h.agent);
     match wait_failed(&h.events) {
-        TurnError::AuthFailed { status, message } => {
+        TurnError::AuthFailed { status, message, .. } => {
             assert_eq!(status, Some(403));
             // No result line means no sentence from the CLI, so the
             // runner's own fallback wording is what is rendered.
@@ -2937,7 +2937,7 @@ fn the_transcribed_auth_shape_carries_its_status_on_its_own_result_line() {
     );
     agent::start_genesis(&h.watch, &h.agent);
     match wait_failed(&h.events) {
-        TurnError::AuthFailed { status, message } => {
+        TurnError::AuthFailed { status, message, .. } => {
             assert_eq!(
                 status,
                 Some(401),
@@ -2977,7 +2977,7 @@ fn an_auth_failure_that_streamed_text_before_it_failed_is_still_typed() {
     );
     agent::start_genesis(&h.watch, &h.agent);
     match wait_failed(&h.events) {
-        TurnError::AuthFailed { status, message } => {
+        TurnError::AuthFailed { status, message, .. } => {
             assert_eq!(status, Some(401));
             assert!(message.contains("revoked"), "the CLI's own sentence: {message:?}");
         }
@@ -5480,7 +5480,7 @@ fn the_real_smokes_verdict_names_which_premise_was_missing() {
         RunEvent::Failed {
             seq: 2,
             turn: 1,
-            error: TurnError::AuthFailed { status: Some(401), message: "invalid".into() },
+            error: TurnError::AuthFailed { status: Some(401), message: "invalid".into(), provider: None },
         },
     ];
     assert_eq!(

@@ -43,9 +43,20 @@ test("role effects refuse missing, working and seed inputs without account defau
     expect(resolveProjectRole(f.load(privateGit(f.product,["rev-parse","HEAD"])),"unconfigured-role")).toMatchObject({status:"cannot-run",code:3,reason:"project-role-unconfigured"});
   }finally{f.cleanup();}
 });
+test("canonical Codex planner selection preserves exact requested spelling and qualifies only the executable model",()=>{
+  const f=fixture();try{
+    expect(f.seed.settings.roles.planner).toBe("codex/gpt-6.1-sol@subagent");
+    const original=f.commit("claude-opus-5@fresh"),old=resolveProjectRole(f.load(original),"planner");
+    for(const [requested,model,vehicle] of [["codex/gpt-6.1-sol@subagent","gpt-6.1-sol","subagent"],["gpt-6.1-sol@fresh","gpt-6.1-sol","fresh"],[" gpt-6-luna @S3 ","gpt-6-luna","S3"],["codex/gpt-6.1", "gpt-6.1",null]]){
+      const revision=f.commit(requested!),selected=resolveProjectRole(f.load(revision),"planner");
+      expect(selected).toMatchObject({status:"ready",selection:{role:"planner",requested,harness:"codex",model,vehicle},provenance:{productRevision:revision,toolManifestDigest:f.tool.manifestDigest}});
+      expect(resolveProjectRole(f.load(original),"planner")).toEqual(old);expect(old).toMatchObject({status:"ready",selection:{harness:"claude",model:"claude-opus-5"}});
+    }
+  }finally{f.cleanup();}
+});
 test("unsupported harnesses, account selectors and historical compound prose never become an executable role",()=>{
   const f=fixture();try{
-    for(const requested of ["claude","codex/gpt-6.1","gpt-6.1","claude/default","claude/DEFAULT","claude/auto","claude/latest","claude-opus-5@fresh + codex/gpt-6.1@fresh","claude-opus-5@fresh (annotation)","claude-opus-5@human","claude/"+"x".repeat(300)]){
+    for(const requested of ["claude","codex","codex/default","codex/claude-opus-5","claude/gpt-6.1-sol","codex/codex/gpt-6.1-sol","claude/codex/gpt-6.1-sol","gemini/gpt-6.1-sol","claude/default","claude/DEFAULT","claude/auto","claude/latest","claude-opus-5@fresh + codex/gpt-6.1@fresh","claude-opus-5@fresh (annotation)","claude-opus-5@human","claude/"+"x".repeat(300)]){
       const result=resolveProjectRole(f.load(f.commit(requested)),"planner");expect(result,requested).toMatchObject({status:"cannot-run",code:3});expect(result).not.toHaveProperty("selection");
     }
   }finally{f.cleanup();}

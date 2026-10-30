@@ -7,15 +7,18 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseDocument } from "yaml";
 import { prepareGenesisInitialization } from "./genesis-init-plan.mjs";
-import { discoverProjectInitializations, inspectProjectInitialization } from "./genesis-init-inspect.mjs";
+import { discoverProjectInitializations, inspectOriginalProjectPlanner, inspectProjectInitialization } from "./genesis-init-inspect.mjs";
 import { executeProjectInitialization, replayProjectInitialization } from "./project-init-operation.mjs";
+import {prepareGenesisBank} from "./genesis-bank-plan.mjs";
+import {executeProjectBank,replayProjectBank} from "./project-bank-operation.mjs";
+import {discoverGenesisBanks} from "./genesis-bank-inspect.mjs";
 import { readAcceptedOperation } from "./durable-operation.mjs";
 import { operationContent } from "./operation-record.mjs";
 import { loadInstalledRecordTool, requireInstalledRuntimeAssets, verifyInstalledRecordTool } from "./records-check.mjs";
 
 export const INITIALIZATION_INPUT_LIMIT = 64 * 1024;
 export const INITIALIZATION_OUTPUT_LIMIT = 4 * 1024 * 1024;
-const RUNTIME = ["genesis-init-command", "genesis-init-plan", "genesis-init-inspect", "project-init-operation", "project-init-record", "project-settings"].map(name => `tools/e2e/scripts/${name}.mjs`);
+const RUNTIME = ["genesis-init-command", "genesis-init-plan", "genesis-init-inspect", "project-init-operation", "project-init-record", "project-settings", "genesis-bank-plan", "project-bank-operation", "project-bank-record", "genesis-bank-inspect", "genesis-bank-proposal", "genesis-proposal", "records-profile"].map(name => `tools/e2e/scripts/${name}.mjs`);
 /** @param {string} code @returns {never} */
 function refuse(code) { throw Object.assign(new Error(code), { code }); }
 /** @param {any} value @param {string[]} fields */
@@ -26,16 +29,22 @@ function id(value) { return typeof value === "string" && /^[A-Za-z0-9][A-Za-z0-9
 function root(value) { return typeof value === "string" && value.length <= 16384 && !value.includes("\0") && path.isAbsolute(value); }
 /** @param {any} value */
 function identity(value) { return shape(value, ["device", "inode"]) && [value.device, value.inode].every(item => typeof item === "string" && /^[0-9]{1,64}$/.test(item)); }
+/** @param {any} value */
+function revision(value){return typeof value==="string"&&/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/.test(value);}
 /** @param {any} request */
 function normalize(request) {
   if (!request || request.version !== 1 || !id(request.requestId) || !root(request.productRoot) ||
-      !["initialize", "replay", "discover", "inspect"].includes(request.operation)) refuse("genesis-init-protocol-request");
+      !["initialize", "replay", "discover", "inspect", "planner", "bank", "bank-replay", "banks"].includes(request.operation)) refuse("genesis-init-protocol-request");
   const fields = ["version", "requestId", "operation", "productRoot",
-    ...(["initialize", "replay"].includes(request.operation) ? ["operationId"] : []),
-    ...(request.operation === "initialize" ? ["recordsRoot", "expectedRoots", "projectId"] : [])];
-  if (!shape(request, fields) || ["initialize", "replay"].includes(request.operation) && !id(request.operationId)) refuse("genesis-init-protocol-request");
+    ...(["initialize", "replay", "bank", "bank-replay"].includes(request.operation) ? ["operationId"] : []),
+    ...(request.operation === "initialize" ? ["recordsRoot", "expectedRoots", "projectId"] : []),
+    ...(request.operation === "bank" ? ["sessionId", "originDigest", "expectedProductRevision", "expectedRecordsRevision"] : []),
+    ...(request.operation === "planner" ? ["productRevision"] : [])];
+  if (!shape(request, fields) || ["initialize", "replay", "bank", "bank-replay"].includes(request.operation) && !id(request.operationId)) refuse("genesis-init-protocol-request");
   if (request.operation === "initialize" && (!root(request.recordsRoot) || !id(request.projectId) || !shape(request.expectedRoots, ["product", "records"]) ||
       !identity(request.expectedRoots.product) || !identity(request.expectedRoots.records))) refuse("genesis-init-protocol-request");
+  if(request.operation==="bank"&&(!id(request.sessionId)||typeof request.originDigest!=="string"||!/^sha256:[0-9a-f]{64}$/.test(request.originDigest)||!revision(request.expectedProductRevision)||!revision(request.expectedRecordsRevision)))refuse("genesis-init-protocol-request");
+  if(request.operation==="planner"&&!revision(request.productRevision))refuse("genesis-init-protocol-request");
   return request;
 }
 /** @param {any} request */
@@ -48,7 +57,10 @@ function expectedRoots(request) {
 function errorEnvelope(input, error) {
   let state = "refused";
   const operationId = id(input?.operationId) ? input.operationId : undefined;
-  if (["initialize", "replay"].includes(input?.operation) && operationId && root(input?.productRoot)) {
+  // A bank replay already names retained intent. Even absence or failed
+  // prevalidation cannot turn it into permission to recapture a new proposal.
+  if(input?.operation==="bank-replay"&&operationId)state="unknown";
+  if (["initialize", "replay", "bank", "bank-replay"].includes(input?.operation) && operationId && root(input?.productRoot)) {
     try { if (readAcceptedOperation(input.productRoot, operationId) !== null) state = "unknown"; } catch { state = "unknown"; }
   }
   const raw = /** @type {any} */ (error)?.code, code = typeof raw === "string" && /^[A-Za-z0-9_-]{1,128}$/.test(raw) ? raw : "genesis-init-unavailable";
@@ -78,8 +90,22 @@ export function executeInitializationProtocol(input, installation = {}) {
     // the original immutable plan against the currently installed exact TOOL.
     const authorize = (/** @type {any} */ context) => operationContent(currentTool()) === operationContent(context.request.tool);
     let result;
-    if (request.operation === "discover") result = discoverProjectInitializations(request.productRoot);
+    if(request.operation==="banks")result=discoverGenesisBanks(request.productRoot);
+    else if(request.operation==="bank-replay")result=replayProjectBank(request.productRoot,request.operationId,{get tool(){return currentTool();},authorize});
+    else if(request.operation==="bank"){
+      const prior=readAcceptedOperation(request.productRoot,request.operationId);
+      if(prior!==null){
+        const original=prior.operation.request;
+        if(prior.operation.kind!=="project-bank"||original.session.sessionId!==request.sessionId||original.session.originDigest!==request.originDigest||original.input.productRevision!==request.expectedProductRevision||original.input.recordsRevision!==request.expectedRecordsRevision)refuse("genesis-bank-operation-changed");
+        result=replayProjectBank(request.productRoot,request.operationId,{get tool(){return currentTool();},authorize});
+      }else{
+        const prepared=prepareGenesisBank({productRoot:request.productRoot,operationId:request.operationId,sessionId:request.sessionId,originDigest:request.originDigest,expectedProductRevision:request.expectedProductRevision,expectedRecordsRevision:request.expectedRecordsRevision,tool:currentTool()});
+        result=executeProjectBank(request.productRoot,prepared.request,{tool:currentTool(),authorize});
+      }
+    }
+    else if (request.operation === "discover") result = discoverProjectInitializations(request.productRoot);
     else if (request.operation === "inspect") result = inspectProjectInitialization({ productRoot: request.productRoot, tool: currentTool() });
+    else if (request.operation === "planner") result = inspectOriginalProjectPlanner({ productRoot: request.productRoot, productRevision: request.productRevision, tool: currentTool() });
     else if (request.operation === "replay") result = replayProjectInitialization(request.productRoot, request.operationId, { authorize });
     else {
       const prior = readAcceptedOperation(request.productRoot, request.operationId);

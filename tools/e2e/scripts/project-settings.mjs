@@ -123,7 +123,7 @@ export function requireProjectSection(loaded, section) {
   return missing ? freezeSettings({ status: "cannot-run", code: 3, diagnostics: [missing] }) : freezeSettings({ status: "configured", value: loaded.settings[section] });
 }
 
-/** @typedef {{status:"ready",selection:{role:string,requested:string,harness:"claude",model:string,vehicle:string|null,sessionPolicy:{default:string,warnAfterTurns:number}},provenance:{configurationDigest:string,productRevision:string,toolManifestDigest:string}}|{status:"cannot-run",code:3,reason:string,diagnostics:string[]}} ProjectRoleResult */
+/** @typedef {{status:"ready",selection:{role:string,requested:string,harness:"claude"|"codex",model:string,vehicle:string|null,sessionPolicy:{default:string,warnAfterTurns:number}},provenance:{configurationDigest:string,productRevision:string,toolManifestDigest:string}}|{status:"cannot-run",code:3,reason:string,diagnostics:string[]}} ProjectRoleResult */
 /** @typedef {{status:"ready",selection:{requested:string,model:string,vehicle:string|null}}|{status:"cannot-run",code:3,reason:string,diagnostics:string[]}} ProjectRoleModelResult */
 /** One executable model[@vehicle] spelling, using canonical stamp parsers.
  * This normalizes data; the effect's actual harness adapter still qualifies it.
@@ -149,10 +149,11 @@ export function resolveProjectRole(loaded, role) {
   const normalized = normalizeProjectRoleModel(loaded.settings.roles[role]);
   if (normalized.status !== "ready") return normalized;
   const { requested, model: selected, vehicle } = normalized.selection;
-  const qualified = /^claude\/([A-Za-z0-9][A-Za-z0-9._-]*)$/.exec(selected);
-  const model = qualified?.[1] ?? (/^claude-[A-Za-z0-9][A-Za-z0-9._-]*$/.test(selected) ? selected : null);
-  if (model === null || model.length > 256 || ["default", "auto", "latest"].includes(model.toLowerCase())) return cannot("project-role-harness-unsupported", ["The current native adapter requires an explicit Claude model (claude-<model> or claude/<model>); no account or harness-only fallback is selected"]);
-  return freezeSettings({ status: "ready", selection: { role, requested, harness: "claude", model, vehicle,
+  const claude = /^claude\/([A-Za-z0-9][A-Za-z0-9._-]*)$/.exec(selected)?.[1] ?? (/^claude-[A-Za-z0-9][A-Za-z0-9._-]*$/.test(selected) ? selected : null);
+  const codex = /^(?:codex\/)?(gpt-[A-Za-z0-9][A-Za-z0-9._-]*)$/.exec(selected)?.[1] ?? null;
+  const harness = codex !== null ? "codex" : "claude", model = codex ?? claude;
+  if (model === null || model.length > 256 || ["default", "auto", "latest"].includes(model.toLowerCase()) || harness === "claude" && /^(?:gpt-|codex)/i.test(model)) return cannot("project-role-harness-unsupported", ["The native planner requires an explicit Claude model (claude-<model> or claude/<model>) or Codex GPT model (gpt-<model> or codex/gpt-<model>); unknown or mixed providers and account defaults are unsupported"]);
+  return freezeSettings({ status: "ready", selection: { role, requested, harness, model, vehicle,
     sessionPolicy: { default: loaded.settings.session_policy.default, warnAfterTurns: loaded.settings.session_policy.warn_after_turns } },
     provenance: { configurationDigest: loaded.provenance.configDigest, productRevision: loaded.provenance.productRevision, toolManifestDigest: loaded.provenance.tool.manifestDigest } });
 }

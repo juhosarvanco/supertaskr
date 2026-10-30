@@ -184,3 +184,20 @@ export function inspectProjectInitialization(input) {
     settings: settings.settings, settingsProvenance: settings.provenance, planner: resolveProjectRole(settings, "planner"), planning: { pristineSeed },
     installation: { runtimeKit: "verified", skills: "not-installed", hooks: "not-installed" } });
 }
+
+/** Requalify a retained planner's original committed role while current setup
+ * and future-bank settings are observed independently. Revision is backend
+ * retained data; it selects no program, TOOL, profile or alternative role.
+ * @param {{productRoot:string,productRevision:string,tool:any}} input */
+export function inspectOriginalProjectPlanner(input) {
+  if (!input || Object.keys(input).sort().join(",") !== "productRevision,productRoot,tool" ||
+      typeof input.productRevision !== "string" || !/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/.test(input.productRevision)) refuse("genesis-planner-original-request");
+  const inspected = inspectProjectInitialization({ productRoot: input.productRoot, tool: input.tool });
+  try { git(inspected.current.product.root, ["merge-base", "--is-ancestor", input.productRevision, inspected.current.productRevision]); }
+  catch { refuse("genesis-planner-original-history"); }
+  const settings = loadProjectSettings({ productRoot: inspected.current.product.root, productRevision: input.productRevision, tool: input.tool });
+  if (settings.status !== "ready") refuse(settings.code);
+  verifyInstalledRecordTool(input.tool);
+  if (!same(currentContext(inspected.current.product.root), inspected.current)) refuse("genesis-init-current-changed");
+  return freeze({ status: "original-planner", current: inspected.current, settingsProvenance: settings.provenance, planner: resolveProjectRole(settings, "planner") });
+}

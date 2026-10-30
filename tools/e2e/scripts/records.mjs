@@ -10,10 +10,8 @@ import { frontmatterBlock, isTaskCardPath } from "./docs-scan.mjs";
 import { measureProductIdentity, resolveWorkspace, validateAssociation,
   WORKSPACE_ASSOCIATION_REL_PATH } from "./workspace.mjs";
 
-export class RecordReaderFinding extends Error {
-  /** @param {string} code @param {string} detail */
-  constructor(code, detail) { super(`${code}: ${detail}`); this.name = "RecordReaderFinding"; this.code = code; }
-}
+import {RecordReaderFinding} from "./records-finding.mjs";
+export {RecordReaderFinding} from "./records-finding.mjs";
 /** @param {string} code @param {string} detail @returns {never} */
 function refuse(code, detail) { throw new RecordReaderFinding(code, detail); }
 /** @param {unknown} err */

@@ -57,7 +57,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use serde::Serialize;
 
 use super::adapter::{
-    self, is_executable_file, parse_major, validate_model, validate_session_id, AgentAdapter,
+    self, is_executable_file, validate_model, AgentAdapter,
 };
 
 // ---- caps (T-003's cap discipline, §4) --------------------------------
@@ -175,6 +175,12 @@ pub fn now_ms() -> u64 {
 
 // ---- typed failures (§6) ----------------------------------------------
 
+/// The fixed adapter that actually produced an authentication failure.
+/// Absent on historical Claude payloads to preserve their wire shape.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum AuthProvider { Claude, Codex }
+
 /// Every way a turn can fail, typed. `Cancelled` is deliberately NOT
 /// here: a cancel is an outcome, not an error.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
@@ -218,7 +224,11 @@ pub enum TurnError {
     /// `result` line whose `subtype` still reads `"success"` while
     /// `is_error` is true and `api_error_status` is 401; the process
     /// exits 1 and writes nothing to stderr of its own.
-    AuthFailed { status: Option<u32>, message: String },
+    AuthFailed {
+        status: Option<u32>, message: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        provider: Option<AuthProvider>,
+    },
     /// T-029 (T-025-s1): the turn died because a tool it needed was
     /// REFUSED — `--allowedTools` too narrow, or a permission mode that
     /// declined. Named rather than relayed, so the screen can say which
@@ -903,11 +913,12 @@ fn finish(
     login_path: Option<String>,
     adapter: &AgentAdapter,
 ) -> Result<ResolvedCli, ResolveError> {
+    if adapter.parse == adapter::ParseMode::CodexExecJsonV1 && version.is_none() {
+        return Err(ResolveError::Unsupported { found: "Codex version unavailable".into() });
+    }
     if let Some(line) = &version {
-        if let Some(major) = parse_major(line) {
-            if major < adapter.min_major {
-                return Err(ResolveError::Unsupported { found: line.clone() });
-            }
+        if adapter.version_supported(line) == Some(false) {
+            return Err(ResolveError::Unsupported { found: line.clone() });
         }
         // No leading number: cannot tell. Proceeding beats refusing on a
         // cosmetic banner change (a real flag mismatch fails loudly at
@@ -935,7 +946,8 @@ fn login_shell_probe(cfg: &RunnerConfig, adapter: &AgentAdapter) -> Option<(Path
     // webview or the filesystem supplied.
     let script = match adapter.binary {
         "claude" => "command -v claude && echo SUPERTASKR_LOGIN_PATH=$PATH",
-        _ => return which_on_path(adapter).map(|p| (p, None)),
+        "codex" => "command -v codex && echo SUPERTASKR_LOGIN_PATH=$PATH",
+        _ => return fallback_cli(adapter).map(|p| (p, None)),
     };
     let mut command = Command::new(login_shell());
     command
@@ -947,7 +959,7 @@ fn login_shell_probe(cfg: &RunnerConfig, adapter: &AgentAdapter) -> Option<(Path
         .stderr(Stdio::null());
     let output = run_with_timeout(command, cfg.probe_timeout)?;
     if !output.status_ok {
-        return which_on_path(adapter).map(|p| (p, None));
+        return fallback_cli(adapter).map(|p| (p, None));
     }
     let mut found: Option<PathBuf> = None;
     let mut login_path: Option<String> = None;
@@ -964,8 +976,23 @@ fn login_shell_probe(cfg: &RunnerConfig, adapter: &AgentAdapter) -> Option<(Path
     }
     match found {
         Some(path) => Some((path, login_path)),
-        None => which_on_path(adapter).map(|p| (p, login_path)),
+        None => fallback_cli(adapter).map(|p| (p, login_path)),
     }
+}
+
+/// Desktop Codex can be present without a shell shim. This fixed discovery
+/// candidate is checked by the same basename/absolute/executable gate and is
+/// reached only behind the existing real-CLI test-arm refusal. Registry paths
+/// remain observations and never select argv0.
+fn fallback_cli(adapter: &AgentAdapter) -> Option<PathBuf> {
+    which_on_path(adapter).or_else(|| {
+        #[cfg(target_os = "macos")]
+        if adapter.key == "codex" {
+            let candidate = PathBuf::from("/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex");
+            if validate_resolved_binary(&candidate, adapter).is_ok() { return Some(candidate); }
+        }
+        None
+    })
 }
 
 /// Plain PATH lookup over the APP'S OWN inherited `PATH` — the fallback
@@ -1591,6 +1618,8 @@ pub enum StreamLine {
     /// Not JSON at all. Real CLIs emit warnings; tolerated into the
     /// diagnostic ring rather than failing the turn.
     NotJson,
+    /// A recognized provider event violates its finite single-turn protocol.
+    ProtocolError(String),
 }
 
 /// Classify one stream line (`ParseMode::StreamJsonV1`).
@@ -1748,7 +1777,7 @@ fn as_status_u32(value: &serde_json::Value) -> Option<u32> {
 /// denial channels cannot apply it two slightly different ways — and so
 /// that the JOIN between them compares ids that went through the same
 /// transform on both sides.
-fn bounded_stream_string(raw: &str, max: usize) -> String {
+pub(super) fn bounded_stream_string(raw: &str, max: usize) -> String {
     crate::docs_watch::sanitize_for_log(&super::sessions::truncate_utf8(raw, max))
 }
 
@@ -1879,6 +1908,18 @@ pub struct TurnOutcome {
     pub truncated_relay: bool,
     pub error: Option<TurnError>,
     pub cancelled: bool,
+    pub usage: Option<TurnUsage>,
+}
+
+/// Actual provider-reported usage, never a configured estimate or an invented
+/// zero when the CLI did not report it. Existing Claude outcomes remain None.
+#[derive(Clone, Debug, serde::Deserialize, PartialEq, Eq)]
+pub struct TurnUsage {
+    pub input_tokens: u64,
+    pub cached_input_tokens: u64,
+    pub output_tokens: u64,
+    #[serde(default)]
+    pub reasoning_output_tokens: Option<u64>,
 }
 
 /// Run one turn to completion, relaying its stream as events.
@@ -2110,6 +2151,7 @@ fn run_turn_with_model(
     let mut oversize = false;
     let mut last_line_at = Instant::now();
     let mut failure: Option<TurnError> = None;
+    let mut codex = super::codex::CodexStream::default();
 
     loop {
         if cancel.load(Ordering::SeqCst) {
@@ -2120,7 +2162,13 @@ fn run_turn_with_model(
             Ok(LineMsg::Line(line)) => {
                 last_line_at = Instant::now();
                 saw_any_line = true;
-                match classify_line(&line) {
+                let classified = match adapter.parse {
+                    adapter::ParseMode::StreamJsonV1 => classify_line(&line),
+                    adapter::ParseMode::CodexExecJsonV1 => codex.classify_line(&line),
+                };
+                out.usage = codex.usage.clone();
+                match classified {
+                    StreamLine::ProtocolError(why) => { failure = Some(TurnError::MalformedStream { why }); break; }
                     StreamLine::Init { session_id, model } => {
                         saw_json_anchor = true;
                         if let Some(id) = session_id {
@@ -2132,7 +2180,7 @@ fn run_turn_with_model(
                             // .native_session_id` stays None, the settle
                             // path writes no id to `.supertaskr/sessions.json`,
                             // and `send_turn` has nothing to resume from.
-                            if let Err(rejection) = validate_session_id(&id) {
+                            if let Err(rejection) = adapter.validate_session_id(&id) {
                                 // T-029 (T-039-s3): its OWN envelope, not
                                 // `MalformedStream`. The refusal string is
                                 // unchanged and already escaped; only what
@@ -2142,6 +2190,11 @@ fn run_turn_with_model(
                                         "the CLI's init line carried an unusable session id: {rejection}"
                                     ),
                                 });
+                                break;
+                            }
+                            if adapter.parse == adapter::ParseMode::CodexExecJsonV1 &&
+                                (req.resume.as_deref().is_some_and(|expected| expected != id) || out.native_session_id.as_deref().is_some_and(|prior| prior != id)) {
+                                failure = Some(TurnError::RejectedSessionId { why: "Codex reported a different thread from the exact original session".into() });
                                 break;
                             }
                             if out.native_session_id.as_deref() != Some(id.as_str()) {
@@ -2655,6 +2708,7 @@ fn run_turn_with_model(
                     .unwrap_or("the agent CLI could not authenticate");
                 return Some(TurnError::AuthFailed {
                     status: auth_status,
+                    provider: (adapter.parse == adapter::ParseMode::CodexExecJsonV1).then_some(AuthProvider::Codex),
                     message: crate::docs_watch::sanitize_for_log(&super::sessions::truncate_utf8(
                         message,
                         MAX_AUTH_MESSAGE_BYTES,
@@ -2702,7 +2756,7 @@ fn run_turn_with_model(
                     Some(TurnError::MalformedStream {
                         why: "no JSON stream lines at all".into(),
                     })
-                } else if req.resume.is_none() && out.native_session_id.is_none() {
+                } else if (req.resume.is_none() || adapter.parse == adapter::ParseMode::CodexExecJsonV1) && out.native_session_id.is_none() {
                     Some(TurnError::MalformedStream {
                         why: "no session init line in the stream".into(),
                     })

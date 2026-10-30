@@ -9,6 +9,7 @@ import {validQualifiedCiProgress} from "./qualified-ci-record.mjs";
 import {normalizeProjectPublication} from "../../../lib/parser/dist/pure.js";
 import {validConfiguredDispatchCapsule} from "../../../cli/configured-native-reader.mjs";
 import {validQualifiedConfiguredAuthorityGrades} from "./qualified-configured-grades.mjs";
+import {validQualifiedPlannedDeliveryRequest,validQualifiedIntegrationProgress} from "./qualified-integration-record.mjs";
 /** @param {any} v @param {string[]} fields */
 function shape(v,fields){return v && typeof v === "object" && !Array.isArray(v) && Object.keys(v).sort().join("\0") === [...fields].sort().join("\0");}
 /** @param {any} v */
@@ -79,6 +80,7 @@ export function validQualifiedDeliveryRequest(req){
 }
 /** @param {any} req */
 function validRequest(req){
+ if(req?.route?.name==="local-planned-output-v1")return validQualifiedPlannedDeliveryRequest(req);
  const full=req?.route?.name==="protected-atomic-push-v1";
  if(!shape(req,["version","operationId","kind","coordinator","docsDirectory","runtimeDirectory","authority","policySource","targets","route","landings"]) || req.version !== 1 || req.kind !== "qualified-delivery" ||
  typeof req.operationId !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(req.operationId) || !repository(req.coordinator) ||
@@ -140,17 +142,20 @@ function validRecord(rec){
  !shape(rec.reservation,["file","takenAt","releasedAt"]) || !date(rec.reservation.takenAt) || rec.reservation.releasedAt !== null&&!date(rec.reservation.releasedAt) ||
  !Array.isArray(rec.events) || rec.events.some((/** @type {any} */ e)=>!shape(e,["at","op"]) || !date(e.at) || typeof e.op !== "string"))return false;
  const op=rec.operation;
- if(!shape(op,["version","id","kind","request","digest","owner","createdAt","claims","progress","localAcceptance",...(Object.hasOwn(op,"completion")?["completion"]:[]),...(Object.hasOwn(op,"publication")?["publication"]:[]),...(Object.hasOwn(op,"validation")?["validation"]:[])]) || op.version !== 1 || op.kind !== "qualified-delivery" ||
+ const planned=op?.request?.route?.name==="local-planned-output-v1";
+ if(!shape(op,["version","id","kind","request","digest","owner","createdAt","claims","progress","localAcceptance",...(planned?["integration"]:[]),...(Object.hasOwn(op,"completion")?["completion"]:[]),...(Object.hasOwn(op,"publication")?["publication"]:[]),...(Object.hasOwn(op,"validation")?["validation"]:[])]) || op.version !== 1 || op.kind !== "qualified-delivery" ||
  !validQualifiedDeliveryRequest(op.request) || op.id !== op.request.operationId || op.digest !== operationDigest(op.request) || rec.assignment.id !== operationWork(op.id) || rec.attempt !== `${operationWork(op.id)}-a1` ||
  !date(op.createdAt) || !shape(op.owner,["pid","identity","token"]) || !Number.isInteger(op.owner.pid) || op.owner.pid<1 || typeof op.owner.identity !== "string" || !op.owner.identity || typeof op.owner.token !== "string" ||
  !Array.isArray(op.claims) || op.claims.length !== op.request.landings.length || !Array.isArray(op.progress) || op.progress.length !== op.claims.length)return false;
+ if(planned&&!validQualifiedIntegrationProgress(op.integration,op.request.integration.plan,op.request.integration.execution))return false;
  for(const l of op.request.landings){const cs=op.claims.filter((/** @type {any} */ c)=>c.key === l.key),ps=op.progress.filter((/** @type {any} */ p)=>p.key === l.key);
   if(cs.length !== 1 || ps.length !== 1)return false;const c=cs[0],p=ps[0];
   if(!shape(c,["key","resource","file","takenAt","releasedAt"]) || c.resource !== l.repository.root || c.file !== path.join(op.request.coordinator.root,".supertaskr/runs/reservations",`${path.basename(c.resource)}-${createHash("sha256").update(c.resource).digest("hex").slice(0,12)}.json`) || !date(c.takenAt) || c.releasedAt !== null&&!date(c.releasedAt) ||
-   !shape(p,["key","phase","intent","acceptance"]) || !["captured","working-start","working-prepared","accepted"].includes(p.phase) ||
+   !shape(p,["key","phase","intent","acceptance"]) || !["captured",...(planned?["objects-start","objects-prepared"]:[]),"working-start","working-prepared","accepted"].includes(p.phase) ||
    !shape(p.intent,["ref","previousRevision","commit","tree","correlationRef"]) || p.intent.ref !== l.ref || p.intent.previousRevision !== l.expectedRevision || p.intent.commit !== l.commit || p.intent.tree !== l.tree ||
    p.intent.correlationRef !== `refs/supertaskr/deliveries/${operationWork(op.id).slice(3)}/${l.key}` ||
    p.acceptance !== null && operationContent(p.acceptance) !== operationContent({...p.intent,attribution:"exact"}) || (p.phase === "accepted") !== (p.acceptance !== null))return false;
+  if(planned&&p.phase!=="captured"&&op.integration.phase!=="ready")return false;
  }
  const primary=op.claims[0];if(rec.resource !== primary.resource || rec.reservation.file !== primary.file || rec.reservation.takenAt !== primary.takenAt)return false;
  if(op.localAcceptance !== null&&!(op.progress.every((/** @type {any} */ p)=>p.acceptance !== null)&&operationContent(op.localAcceptance)===operationContent(op.progress.map((/** @type {any} */ p)=>({key:p.key,...p.acceptance})))))return false;

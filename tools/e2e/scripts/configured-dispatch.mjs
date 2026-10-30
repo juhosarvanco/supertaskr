@@ -118,10 +118,11 @@ export async function captureConfiguredDispatchForRun(root, attempt, options = {
   verifyConfiguredDispatch(handle);
   return Object.freeze({ handle, source: data({ attempt, permissionDigest: rec.permission.digest, capsuleDigest: context.capsule.digest }) });
 }
-/** @param {object} handle @param {{productRoot:string,productRevision:string}} candidate */
-export function createConfiguredDispatchGateRunner(handle, candidate) {
+/** @param {object} handle @param {{productRoot:string,productRevision:string}} candidate
+ * @param {object|undefined} [executionAuthority] Backend-only opaque grade authority. */
+export function createConfiguredDispatchGateRunner(handle, candidate, executionAuthority) {
   shape(candidate, ["productRoot", "productRevision"]); verifyConfiguredDispatch(handle);
-  return createConfiguredGateRunner({ ...candidate, policy: /** @type {NonNullable<ReturnType<typeof captured.get>>} */ (captured.get(handle)).policy });
+  return createConfiguredGateRunner({ ...candidate, policy: /** @type {NonNullable<ReturnType<typeof captured.get>>} */ (captured.get(handle)).policy },executionAuthority);
 }
 /** Pre-publication native transaction seam; the existing decisive preview is
  * independently produced by canonical admission and must be the same context.
@@ -157,7 +158,7 @@ function rolePolicy(capsule, assignment) {
 /** Canonical classifier, actual configured guard owners and original source.
  * No generic XS keeper answer is invented from a whole-suite green.
  * @param {NonNullable<ReturnType<typeof captured.get>>} state @param {any} capsule */
-function tierPolicy(state, capsule) {
+function deriveTier(state, capsule) {
   const runtime = state.runtime ??= createProjectRuntime({ productRoot: state.selection.authorityRoot, productRevision: state.selection.revisions.product, tool: state.tool });
   const paths = state.fence.paths.filter((/** @type {any} */ entry) => entry.role === "product").map((/** @type {any} */ entry) => entry.domain);
   const guards = paths.length ? runtime.section("guard_class") : {};
@@ -169,10 +170,15 @@ function tierPolicy(state, capsule) {
       guardMap: new Map(Object.entries(guards)), process: runtime.process().settings,
       keeper: { answered: false, pinned: false, why: "This configured layout has no qualified generic keeper-ownership adapter" } });
   } catch { refuse("configured-dispatch-tier-unavailable", "Original tier cannot be derived; missing inputs or generic XS keeper ownership remain unavailable"); }
-  const declared = capsule.task.declaredTier;
+  return data({ derivedTier: derived.tier, reason: derived.reason });
+}
+/** Strict effect tier: readonly derivation never supplies a missing stamp.
+ * @param {NonNullable<ReturnType<typeof captured.get>>} state @param {any} capsule */
+function tierPolicy(state, capsule) {
+  const derived = deriveTier(state, capsule), declared = capsule.task.declaredTier;
   if (declared === null) refuse("configured-dispatch-tier-required", "Commit the canonically classified tier on the original task before dispatch");
-  if (VERIFICATION_TIERS.indexOf(declared) < VERIFICATION_TIERS.indexOf(/** @type {any} */ (derived.tier))) refuse("configured-dispatch-tier-understated", "The committed tier is below its original configured process/guard classification");
-  return data({ tier: declared, derivedTier: derived.tier, reason: derived.reason });
+  if (VERIFICATION_TIERS.indexOf(declared) < VERIFICATION_TIERS.indexOf(/** @type {any} */ (derived.derivedTier))) refuse("configured-dispatch-tier-understated", "The committed tier is below its original configured process/guard classification");
+  return data({ tier: declared, ...derived });
 }
 /** One verified batch for the readonly fixed effect helper. No caller can
  * choose another model, vehicle or METHOD asset. @param {object} handle @param {any} assignment */
@@ -186,6 +192,16 @@ export function configuredDispatchEffectContext(handle, assignment) {
 export function configuredDispatchViewContext(handle) {
   const capsule = verifyConfiguredDispatch(handle), state = /** @type {NonNullable<ReturnType<typeof captured.get>>} */ (captured.get(handle));
   const verification = tierPolicy(state, capsule), paths = state.fence.paths.filter((/** @type {any} */ entry) => entry.role === "product").map((/** @type {any} */ entry) => entry.domain);
+  return data({ capsule, scope: state.fence, verification, guards: paths.length ? /** @type {NonNullable<typeof state.runtime>} */ (state.runtime).classify(paths) : [] });
+}
+/** First-card readonly derivation may precede arm's private tier stamp. This
+ * datum cannot pass strict start/effect tierPolicy and selects no vehicle.
+ * An existing understated stamp still refuses, using the same strict rule.
+ * @param {object} handle */
+export function configuredDispatchBriefContext(handle) {
+  const capsule = verifyConfiguredDispatch(handle), state = /** @type {NonNullable<ReturnType<typeof captured.get>>} */ (captured.get(handle));
+  const verification = capsule.task.declaredTier === null ? { tier: null, ...deriveTier(state, capsule) } : tierPolicy(state, capsule);
+  const paths = state.fence.paths.filter((/** @type {any} */ entry) => entry.role === "product").map((/** @type {any} */ entry) => entry.domain);
   return data({ capsule, scope: state.fence, verification, guards: paths.length ? /** @type {NonNullable<typeof state.runtime>} */ (state.runtime).classify(paths) : [] });
 }
 /** Fixed read-only helpers use this verified METHOD datum, never a schema path

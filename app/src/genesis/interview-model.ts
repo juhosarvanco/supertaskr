@@ -692,7 +692,9 @@ export function failureAction(error: TurnErrorPayload): FailureAction | null {
         // bodies in app/test/interview-model.test.ts and
         // app/test/interview-resume-dom.test.tsx, which drive an auth
         // failure whose own words name a different command entirely.
-        command: "claude auth login",
+        // The native fixed adapter supplies the finite provider. Missing is
+        // the historical Claude shape; the CLI's message never selects advice.
+        command: error.provider === "codex" ? "codex login" : "claude auth login",
         // Deterministic until the login changes. Offering a retry would
         // be offering the one thing that cannot work.
         retry: false,

@@ -38,6 +38,9 @@
 //! routing card is `T-175-s1`.
 
 pub mod adapter;
+mod codex;
+#[cfg(test)]
+mod provider_tests;
 pub mod context;
 pub mod kit;
 pub mod managed;
@@ -2209,6 +2212,7 @@ mod tests {
         let json = serde_json::to_value(TurnError::AuthFailed {
             status: Some(401),
             message: "Failed to authenticate.".into(),
+            provider: None,
         })
         .expect("serialize");
         assert_eq!(

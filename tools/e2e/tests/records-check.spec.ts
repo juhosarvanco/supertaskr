@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { createRecordChecker, checkedRecordWriteSet, loadInstalledRecordTool } from "../scripts/records-check.mjs";
@@ -115,4 +115,22 @@ test("checkpoint history stays at the selected records commit and reads creation
     const current = checker.evaluate(checker.capture({ ...f.options, recordsRevision: later }), [edit("docs/reviews/current.md", "# Review\n\nUnrelated draft.\n", "add")]);
     expect(current.accepted).toBe(true); expect(current.retained.some((entry: any) => entry.kind === "state-stale")).toBe(true);
   } finally { f.cleanup(); }
+});
+
+
+test("canonical numeric-slot and inert-span owners require paired manifest membership even when installed files exist",()=>{
+ const f=privateRecordFixture();
+ try{
+  const original=readFileSync(f.manifestPath);
+  expect(loadInstalledRecordTool(f.manifestPath).version).toBe(2);
+  for(const name of ["id-slot.js","inert-spans.js"]){
+   const module=path.join(f.tool,"dist/lib/parser/dist",name),bytes=readFileSync(module),missing=JSON.parse(original.toString());
+   missing.parser.files=missing.parser.files.filter((entry:any)=>entry.path!==`lib/parser/dist/${name}`);
+   writeFileSync(f.manifestPath,JSON.stringify(missing));expect(existsSync(module)).toBe(true);expect(readFileSync(module)).toEqual(bytes);
+   expect(()=>loadInstalledRecordTool(f.manifestPath),name).toThrow("records-tool-runtime-mismatch");
+   writeFileSync(f.manifestPath,original);expect(loadInstalledRecordTool(f.manifestPath).version).toBe(2);
+   writeFileSync(module,Buffer.concat([bytes,Buffer.from("\n// changed installed owner\n")]));expect(()=>loadInstalledRecordTool(f.manifestPath),name).toThrow(/records-tool-/);
+   writeFileSync(module,bytes);expect(loadInstalledRecordTool(f.manifestPath).version).toBe(2);
+  }
+ }finally{f.cleanup();}
 });

@@ -10,6 +10,16 @@ test("real initialized/checker/external parented plan data fits the finite bank 
  expect(validProjectBankRequest(f.request)).toBe(true);expect(validProjectBankPlan(f.request.plans.records,f.request,"records")).toBe(true);
  expect(validProjectBankRecord(authoredBankRow(f.request))).toBe(true);expect(f.request.plans.product).toBeNull();
 });
+test("bank data binds the frozen configured provider while requested and optional observed model stay separate",()=>{
+ const request=structuredClone(f.request),planner=request.session.planner;
+ planner.selection.harness="codex";planner.selection.requested="codex/gpt-6.1-sol@subagent";planner.selection.model="gpt-6.1-sol";
+ const registry=JSON.parse(Buffer.from(request.input.registryCapture.base64,"base64").toString()),row=registry.sessions[0];row.agent="codex";row.genesis.planner=structuredClone(planner);
+ const capture=()=>{const bytes=Buffer.from(JSON.stringify(registry));request.input.registryCapture.base64=bytes.toString("base64");request.input.registryCapture.byteLength=bytes.length;request.input.registryCapture.sha256=createHash("sha256").update(bytes).digest("hex");};
+ capture();expect(validProjectBankRequest(request),"pure finite provider data is not a canonical role or native launch proof").toBe(true);
+ row.model="separate optional observed model";capture();expect(validProjectBankRequest(request)).toBe(true);
+ row.agent="claude";capture();expect(validProjectBankRequest(request),"a stored original provider cannot be relabeled by its registry row").toBe(false);
+ row.agent="codex";planner.selection.harness="foreign";row.genesis.planner=structuredClone(planner);capture();expect(validProjectBankRequest(request)).toBe(false);
+});
 test("raw commit parent/tree/message/OID disagreement refuses rather than accepting an asserted exact plan",()=>{
  for(const field of ["tree","expectedRevision","commit"] as const){const request=structuredClone(f.request);request.plans.records[field]="f".repeat(40);expect(validProjectBankRequest(request),field).toBe(false);}
  const request=structuredClone(f.request),plan=request.plans.records;let raw=Buffer.from(plan.commitBase64!,"base64").toString("utf8");raw=raw.replace(`parent ${plan.expectedRevision}`,`parent ${"f".repeat(40)}`);
@@ -68,4 +78,16 @@ test("stage-zero data keeps the original typed setup after a legitimate records 
    expect(validProjectBankRequest(request)).toBe(false);
   }
  }finally{later.cleanup();}
+});
+
+
+test("own-bank updates bind both chronological progress and logical predecessor without reducing completion",()=>{
+ const request=q1BankSchemaRequest(f);
+ const own={operationId:"accepted-q1",requestDigest:`sha256:${"d".repeat(64)}`,receiptDigest:`sha256:${"e".repeat(64)}`,stage:1,completedStage:1,recordsCommit:"a".repeat(40),productCommit:"b".repeat(40)};
+ const latest={...own,operationId:"accepted-q2",stage:2,completedStage:2,recordsCommit:"c".repeat(40)};
+ request.input.ownBank=own;request.input.latestBank=latest;request.bank.mode="update";request.bank.completedStage=2;
+ expect(validProjectBankRequest(request),"authored update metadata is only schema data, not accepted history").toBe(true);
+ const regress=structuredClone(request);regress.bank.completedStage=1;expect(validProjectBankRequest(regress)).toBe(false);
+ const missing=structuredClone(request);missing.input.ownBank=null;expect(validProjectBankRequest(missing)).toBe(false);
+ const initial=structuredClone(request);initial.bank.mode="initial";expect(validProjectBankRequest(initial)).toBe(false);
 });

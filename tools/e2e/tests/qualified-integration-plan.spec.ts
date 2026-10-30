@@ -2,6 +2,8 @@ import {readFileSync,writeFileSync} from "node:fs";
 import path from "node:path";
 import {test,expect} from "@playwright/test";
 import {captureQualifiedIntegrationPlan,qualifiedIntegrationPlanData} from "../scripts/qualified-integration-plan.mjs";
+import {validQualifiedIntegrationPlan} from "../scripts/qualified-integration-record.mjs";
+import {operationDigest} from "../scripts/operation-record.mjs";
 import {startRun,collectRun,qualifiedReviewDigest} from "../scripts/run-record.mjs";
 import {readAcceptedOperation} from "../scripts/durable-operation.mjs";
 import {handleNativeEvent,nativeSha256} from "../scripts/native-codex.mjs";
@@ -10,6 +12,8 @@ import {loadInstalledRecordTool} from "../scripts/records-check.mjs";
 import {renderFixedProductPrePush} from "../scripts/fixed-product-hook.mjs";
 import {privateRecordFixture,fixtureProjectSettings,putPrivate,sha} from "./private-record-fixture";
 import {reviewed,writeVerdict,git,put,commit,reading} from "./qualified-delivery-fixture";
+// Real source collection and scratch proposals routinely exceed the 30s default.
+test.setTimeout(180_000);
 const base=Array.from({length:24},(_,at)=>`original line ${at+1}`).join("\n")+"\n",candidate=base.replace("original line 2\n","reviewed line 2\n");
 const baseSpec=Array.from({length:24},(_,at)=>`// original spec line ${at+1}`).join("\n")+"\n";
 async function fixture(change="mixed",correction:boolean|"wording"=false){
@@ -52,6 +56,7 @@ test("pure integration preserves unrelated advanced bases and exact original out
   put(f.product,"src/file",base.replace("original line 22\n","later owner line 22\n"));put(f.product,"unrelated-base.txt","Later unrelated committed content\n");f.input.targets.product.expectedRevision=commit(f.product);
   put(f.product,"unrelated-staged.txt","Unrelated staged content\n");git(f.product,["add","unrelated-staged.txt"]);put(f.records,"unrelated-working.md","Unrelated private work\n");
   const before=snapshot(f),proposal=await captureQualifiedIntegrationPlan(f.product,f.input,{tool:f.tool}),plan=qualifiedIntegrationPlanData(proposal),p=plan.roles.find((r:any)=>r.role==="product"),w=p.writes.find((w:any)=>w.path==="src/file");
+  expect(validQualifiedIntegrationPlan(plan)).toBe(true);
   expect(snapshot(f)).toEqual(before);expect(readAcceptedOperation(f.product,f.input.operationId)).toBeNull();
   expect(Buffer.from(w.base64,"base64").toString()).toBe(candidate.replace("original line 22\n","later owner line 22\n"));expect(p.writes.some((w:any)=>w.path==="unrelated-base.txt")).toBe(false);
   expect(p.originalBase).not.toBe(p.expectedRevision);expect(p.reviewedOutput.commit).not.toBe(p.commit);expect(p.grade).toMatchObject({status:"owed",commit:p.commit,tree:p.tree});
@@ -78,6 +83,10 @@ test("a real retained wording-only condition stays pending without guessed repla
 test("pure mechanical correction preserves the exact verifier body and accepted RED while its resulting whole-tree grade stays owed",async()=>{
  const f=await fixture("mixed",true);try{
   const before=snapshot(f),proposal=await captureQualifiedIntegrationPlan(f.product,f.input,{tool:f.tool}),plan=qualifiedIntegrationPlanData(proposal),p=plan.roles.find((r:any)=>r.role==="product");
+  expect(validQualifiedIntegrationPlan(plan)).toBe(true);
+  const dropped=structuredClone(plan);dropped.authority.owedCorrections=[];for(const role of dropped.roles)role.corrections=[];
+  const {authorityDigest,...droppedBody}=dropped.authority;dropped.authority.authorityDigest=operationDigest(droppedBody);
+  expect(validQualifiedIntegrationPlan(dropped)).toBe(false);
   expect(snapshot(f)).toEqual(before);expect(plan.authority.roles.find((r:any)=>r.role==="product").actualOutputGrades[0].exit).toBe(1);expect(plan.authority.owedCorrections).toHaveLength(1);
   expect(Buffer.from(p.writes.find((w:any)=>w.path==="src/file").base64,"base64").toString()).toBe(candidate.replace("reviewed line 2\n","corrected line 2\n"));
   const body=p.writes.find((w:any)=>w.path==="tests/check.cjs");expect(nativeSha256(Buffer.from(body.base64,"base64"))).toBe(plan.authority.owedCorrections[0].bodyHash);expect(p.grade.status).toBe("owed");expect(p.corrections[0]).toMatchObject({projection:"proposed-exact-anchor",grade:"owed"});

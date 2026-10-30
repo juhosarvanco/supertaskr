@@ -91,3 +91,12 @@ test("a task instantiated from the actual verified installed METHOD template is 
   expect(()=>captureGenesisBankProposal(encoded(f))).toThrow("genesis-bank-task-lifecycle-body");
  }finally{installed.cleanup();}
 });
+
+
+test("optional Gotchas is finite CONVENTIONS author data at every stage while the constructor owns its field boundaries",()=>{
+ for(const stage of [0,1,2,3,4,6,7,8]){
+  const f=fixture(stage),file={path:"docs/CONVENTIONS.md",mode:"100644",bytes:Buffer.from("# Conventions\n\n## Gotchas\nA newly captured gotcha.\n")};
+  f.files.push(file);f.proposal.records.push({path:file.path,sha256:hash(file.bytes)});
+  expect(captureGenesisBankProposal(encoded(f)).records.some((entry:any)=>entry.path===file.path)).toBe(true);
+ }
+});

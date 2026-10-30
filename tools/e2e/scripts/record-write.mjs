@@ -258,7 +258,16 @@ function materializeWrites(coordinatorRoot,payload,context,onBoundary,workingPat
     if (live) refuse("records-save-index-locked");
     const rec = readAcceptedOperation(coordinatorRoot, previous.operationId);
     const expectedIndex=path.join(context.request.repository.gitDir,"index"),completion=rec?.operation.completion?.plan;
-    const retained=rec?.operation.kind === "qualified-delivery" ? [completion?.repository.root===root&&completion.index.path===expectedIndex?completion.index:null,
+    const bankIndex=()=>{
+      const plans=rec.operation.request.plans;if(!shape(plans,["records","product"])||previous.operationId!==context.operationId)return null;
+      const matches=[];
+      for(const role of ["records","product"]){const plan=plans[role];if(plan===null)continue;
+        if(!plan||typeof plan!=="object"||!plan.repository||!plan.working?.index)return null;
+        if(plan.repository.root===root&&plan.working.index.path===expectedIndex)matches.push(plan.working.index);
+      }
+      return matches.length===1?matches[0]:null;
+    };
+    const retained=rec?.operation.kind === "project-bank" ? bankIndex() : rec?.operation.kind === "qualified-delivery" ? [completion?.repository.root===root&&completion.index.path===expectedIndex?completion.index:null,
       ...rec.operation.request.landings.map((/** @type {any} */ l)=>l.repository.root===root&&l.working.index.path===expectedIndex?l.working.index:null)].find(i=>i?.lockToken===previous.token)
       : rec?.operation.request.repository?.root===root?rec.operation.request.payload?.index:null;
     if (retained?.lockToken !== previous.token||retained.path!==expectedIndex||payload.index.path!==expectedIndex) refuse("records-save-index-locked");

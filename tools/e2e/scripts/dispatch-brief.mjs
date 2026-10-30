@@ -551,11 +551,24 @@ export function roleSpecificRows(contractMd) {
 export function contractSource(ctx) {
   const ownRel = `method/roles/${ctx.role}.md`;
   if (carriesContractTable(ctx.roleMd)) return { rel: ownRel, md: ctx.roleMd, own: true };
+  const files = trackedFiles(ctx.root).filter(rel => rel.startsWith("method/roles/") && rel.endsWith(".md") && rel !== ownRel)
+    .map(rel => ({ path: rel, content: readDoc(rel, ctx.root) }));
+  return contractSourceFromFiles(ctx.role, ctx.roleMd, files);
+}
+
+/** Resolve the same canonical contract from captured verified METHOD files.
+ * No source-root lookup or layout fallback occurs in this data-only owner.
+ * @param {string} role @param {string} roleMd @param {Iterable<{path:string,content:string}>} files
+ * @returns {ContractSource} */
+export function contractSourceFromFiles(role, roleMd, files) {
+  const ownRel = `method/roles/${role}.md`;
+  if (carriesContractTable(roleMd)) return { rel: ownRel, md: roleMd, own: true };
   /** @type {ContractSource[]} */
   const found = [];
-  for (const rel of trackedFiles(ctx.root)) {
+  for (const file of files) {
+    const rel = file.path;
     if (!rel.startsWith("method/roles/") || !rel.endsWith(".md") || rel === ownRel) continue;
-    const md = readDoc(rel, ctx.root);
+    const md = file.content;
     if (carriesContractTable(md)) found.push({ rel, md, own: false });
   }
   if (found.length === 1) return /** @type {ContractSource} */ (found[0]);
@@ -2958,6 +2971,22 @@ function deriveCommands(ctx) {
  * @returns {{ gates: GateBullet[], named: string[] }}
  */
 export function standingGates(conventionsMd) {
+  const result = declaredStandingGates(conventionsMd);
+  if (result.gates.length === 0) {
+    throw new Error(
+      "dispatch-brief: docs/CONVENTIONS.md declares no standing gate with a merge-diff trigger — " +
+        "row 8 enumerates those bullets, and an empty enumeration is a brief that skips gates in " +
+        "silence.",
+    );
+  }
+  return result;
+}
+
+/** Actual declarations, including an explicitly empty generic conventions
+ * document. PRODUCT configured suites are a separate authority; this parser
+ * neither supplies them nor declares a missing legacy gate satisfied.
+ * @param {string} conventionsMd @returns {{gates:GateBullet[],named:string[]}} */
+export function declaredStandingGates(conventionsMd) {
   const TRIGGER = "at any merge whose diff touches";
   /** @type {GateBullet[]} */
   const gates = [];
@@ -2980,13 +3009,6 @@ export function standingGates(conventionsMd) {
       .filter((i) => i > 0)
       .sort((a, b) => a - b)[0];
     gates.push({ name, trigger: (stop === undefined ? rest : rest.slice(0, stop)).trim() });
-  }
-  if (gates.length === 0) {
-    throw new Error(
-      "dispatch-brief: docs/CONVENTIONS.md declares no standing gate with a merge-diff trigger — " +
-        "row 8 enumerates those bullets, and an empty enumeration is a brief that skips gates in " +
-        "silence.",
-    );
   }
   return { gates, named };
 }
@@ -3413,7 +3435,15 @@ export function bulletByOpening(md, heading) {
  * @returns {string[]}
  */
 export function conventionHeadings(conventionsMd) {
-  const { gates, named } = standingGates(conventionsMd);
+  return headingsForDeclarations(conventionsMd, standingGates(conventionsMd));
+}
+
+/** @param {string} conventionsMd */
+export function declaredConventionHeadings(conventionsMd) {
+  return headingsForDeclarations(conventionsMd, declaredStandingGates(conventionsMd));
+}
+/** @param {string} conventionsMd @param {{gates:GateBullet[],named:string[]}} declarations */
+function headingsForDeclarations(conventionsMd, { gates, named }) {
   const skip = [...gates.map((g) => g.name), ...named];
   const enumerated = [
     ...gates.map((g) => g.name),
@@ -3469,9 +3499,19 @@ export function boldedOpeners(conventionsMd, enumerated) {
  * @returns {{ heading: string, raw: string, citedBy: string[] }[]}
  */
 export function citedConventionBullets(conventionsMd, sources) {
+  return citedBulletsForHeadings(conventionsMd, sources, conventionHeadings(conventionsMd));
+}
+/** Same citation engine for declared optional RECORDS additions, including
+ * zero declarations. Callers must separately carry the configured P checks.
+ * @param {string} conventionsMd @param {{rel:string,text:string}[]} sources */
+export function citedDeclaredConventionBullets(conventionsMd, sources) {
+  return citedBulletsForHeadings(conventionsMd, sources, declaredConventionHeadings(conventionsMd));
+}
+/** @param {string} conventionsMd @param {{rel:string,text:string}[]} sources @param {string[]} headings */
+function citedBulletsForHeadings(conventionsMd, sources, headings) {
   /** @type {Map<string, { heading: string, raw: string, citedBy: string[] }>} */
   const byBullet = new Map();
-  for (const heading of conventionHeadings(conventionsMd)) {
+  for (const heading of headings) {
     const citedBy = sources.filter((s) => s.text.includes(heading)).map((s) => s.rel);
     if (citedBy.length === 0) continue;
     const raw = bulletByOpening(conventionsMd, heading);
@@ -3512,18 +3552,27 @@ export const METHOD_REFERENCE_DIRS = "roles|tasks|interview|rooms|runtime|adapte
  * @returns {{ rel: string, spelling: string, bytes: number }[]}
  */
 export function methodNamed(roleMd, roleRel, root = repoRoot) {
-  const tracked = new Set(trackedFiles(root));
+  return methodReferences(roleMd, roleRel, trackedFiles(root)).map(entry =>
+    ({ ...entry, bytes: Buffer.byteLength(readDoc(entry.rel, root), "utf8") }));
+}
+
+/** Canonical reference grammar, over exact captured METHOD membership.
+ * This discovers names only and opens no file.
+ * @param {string} roleMd @param {string} roleRel @param {Iterable<string>} paths
+ * @returns {{rel:string,spelling:string}[]} */
+export function methodReferences(roleMd, roleRel, paths) {
+  const tracked = new Set(paths);
   const reference = new RegExp(
     String.raw`(?<![\w./-])((?:\.\./)?(?:method/)?(?:(?:${METHOD_REFERENCE_DIRS})/)?[\w.-]+\.md)(?![\w])`,
     "g",
   );
-  /** @type {{ rel: string, spelling: string, bytes: number }[]} */
+  /** @type {{ rel: string, spelling: string }[]} */
   const out = [];
   for (const m of roleMd.matchAll(reference)) {
     const spelling = /** @type {string} */ (m[1]);
     const rel = `method/${spelling.replace(/^\.\.\//, "").replace(/^method\//, "")}`;
     if (rel === roleRel || !tracked.has(rel) || out.some((e) => e.rel === rel)) continue;
-    out.push({ rel, spelling, bytes: Buffer.byteLength(readDoc(rel, root), "utf8") });
+    out.push({ rel, spelling });
   }
   return out.sort((a, b) => a.rel.localeCompare(b.rel));
 }

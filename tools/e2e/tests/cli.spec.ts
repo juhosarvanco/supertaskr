@@ -366,9 +366,10 @@ test("the verb set covers the seat's own arms and NAMES the C-02 verbs nothing f
 test("the front reads every product command bullet CONTRIBUTING.md carries, and reads it verbatim", () => {
   const md = contributorContract();
   const dirs = commandBulletDirs(md);
-  expect(dirs, "the four packages the document carries a command bullet for").toEqual([
+  expect(dirs, "the packages the document carries a command bullet for").toEqual([
     "lib/parser",
     "app",
+    "cli",
     "app/src-tauri",
     "tools/e2e",
   ]);

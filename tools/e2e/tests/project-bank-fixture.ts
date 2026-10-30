@@ -32,7 +32,7 @@ export function bankSchemaFixture(advanceRecordsBeforeBank=false){
   const executable=path.join(f.dir,"authored-planner");writeFileSync(executable,"Authored original executable metadata; this file is not launched.\n");const exe=statSync(executable);
   if(inspected.planner.status!=="ready")throw Error("fixture needs a qualified configured planner");
   const planner={selection:inspected.planner.selection,provenance:inspected.planner.provenance,executable:{path:executable,target:executable,device:String(exe.dev),inode:String(exe.ino),mode:exe.mode,bytes:exe.size,sha256:`sha256:${sha("Authored original executable metadata; this file is not launched.\n")}`,version:"2.1.226 (Claude Code)",loginPathDigest:null}};
-  const registry={sessions:[{id:"S1",agent:"claude",created:new Date().toISOString(),turns:1,tasks:[],roles:["planner"],status:"idle",genesis:{id:context.sessionId,origin,planner,setup}}]};
+  const registry={sessions:[{id:"S1",agent:inspected.planner.selection.harness,created:new Date().toISOString(),turns:1,tasks:[],roles:["planner"],status:"idle",genesis:{id:context.sessionId,origin,planner,setup}}]};
   const registryPath=path.join(f.product,".supertaskr/sessions.json"),transcriptPath=path.join(f.product,".supertaskr/genesis/transcript.jsonl");
   writeFileSync(registryPath,JSON.stringify(registry));writeFileSync(transcriptPath,"");
   const runtime=(file:string,source:string)=>{const stat=statSync(file);return {path:file,device:String(stat.dev),inode:String(stat.ino),fileMode:stat.mode&0o777,byteLength:Buffer.byteLength(source),sha256:sha(source)};};
@@ -54,8 +54,8 @@ export function bankSchemaFixture(advanceRecordsBeforeBank=false){
    setup,
    session:{registryId:"S1",sessionId:context.sessionId,origin,originDigest:context.originDigest,planner},
    input:{productRevision:context.productRevision,recordsRevision:context.recordsRevision,productRepository:current.product,recordsRepository:current.records,docsIdentity:current.docs,runtimeIdentity:current.runtime,settingsProvenance:inspected.settingsProvenance,
-    registryCapture:{...runtime(registryPath,JSON.stringify(registry)),base64:Buffer.from(JSON.stringify(registry)).toString("base64")},transcriptCapture:{...runtime(transcriptPath,""),lines:[]},previousBank:null},
-   bank:{stage:0,proposalCapture:captured,productProposalCapture:null,answers:[],validation:{current:{profile:checker.profile,captureDigest:baseline.digest,candidateDigest:checked.candidateDigest,writeSetDigest:operationDigest(derived)},prospective:null}},
+    registryCapture:{...runtime(registryPath,JSON.stringify(registry)),base64:Buffer.from(JSON.stringify(registry)).toString("base64")},transcriptCapture:{...runtime(transcriptPath,""),lines:[]},previousBank:null,latestBank:null,ownBank:null},
+   bank:{stage:0,mode:"initial",completedStage:0,proposalCapture:captured,productProposalCapture:null,answers:[],validation:{current:{profile:checker.profile,captureDigest:baseline.digest,candidateDigest:checked.candidateDigest,writeSetDigest:operationDigest(derived)},prospective:null}},
    plans:{records:{repository:current.records,targetRef:"refs/heads/main",expectedRevision:context.recordsRevision,writes,...plan,message},product:null}};
   return {...f,request,receipt};
  }catch(error){f.cleanup();throw error;}
@@ -98,10 +98,11 @@ export function q1BankSchemaRequest(f:ReturnType<typeof bankSchemaFixture>):any{
  const pWrites=["AGENTS.md","CLAUDE.md"].map(file=>({operation:"edit",path:file,mode:"100644",base64:readFileSync(path.join(f.product,file),"utf8").replace("<project name>",productProposal.identity.projectName).replace("<One sentence: what this repo is.>",text),derived:false})).map(file=>({...file,base64:Buffer.from(file.base64).toString("base64")}));
  const pMessage=`Configure project identity\nsupertaskr-records-bank: ${r.commit}\n\nsupertaskr-project-bank: ${operationId}/product\n`;
  const p=withGenesisIdentity(()=>captureExactCommitPlan(f.product,context.productRevision,pWrites,{identity:captureOperationCommitIdentity(f.product),message:pMessage}));
- request.operationId=operationId;request.bank={stage:1,proposalCapture:captured,productProposalCapture:productCapture,answers:captured.answers,validation:{current:{profile:checker.profile,captureDigest:baseline.digest,candidateDigest:checked.candidateDigest,writeSetDigest:operationDigest(derived)},prospective:null}} as any;
+ request.operationId=operationId;request.bank={stage:1,mode:"initial",completedStage:1,proposalCapture:captured,productProposalCapture:productCapture,answers:captured.answers,validation:{current:{profile:checker.profile,captureDigest:baseline.digest,candidateDigest:checked.candidateDigest,writeSetDigest:operationDigest(derived)},prospective:null}} as any;
  request.input.registryCapture={path:registryPath,device:String(rs.dev),inode:String(rs.ino),fileMode:rs.mode&0o777,byteLength:Buffer.byteLength(registryText),sha256:sha(registryText),base64:Buffer.from(registryText).toString("base64")};
  request.input.transcriptCapture={path:transcript,device:String(ts.dev),inode:String(ts.ino),fileMode:ts.mode&0o777,byteLength:Buffer.byteLength(line),sha256:sha(line),lines:[{offset:0,base64:Buffer.from(line).toString("base64"),sha256:sha(line)}]} as any;
- request.input.previousBank={operationId:before.operationId,requestDigest:operationDigest(before),receiptDigest:operationDigest({authored:"schema-only prior receipt"}),stage:0,recordsCommit:before.plans.records.commit,productCommit:null} as any;
+ request.input.previousBank={operationId:before.operationId,requestDigest:operationDigest(before),receiptDigest:operationDigest({authored:"schema-only prior receipt"}),stage:0,completedStage:0,recordsCommit:before.plans.records.commit,productCommit:null} as any;
+ request.input.latestBank=structuredClone(request.input.previousBank) as any;
  request.plans={records:{repository:before.input.recordsRepository,targetRef:"refs/heads/main",expectedRevision:context.recordsRevision,writes,...r,message},product:{repository:before.input.productRepository,targetRef:"refs/heads/main",expectedRevision:context.productRevision,writes:pWrites,...p,message:pMessage}} as any;
  return request;
 }

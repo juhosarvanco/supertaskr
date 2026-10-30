@@ -647,10 +647,11 @@ mod tests {
             .unwrap();
         }
         fn pick(&self) {
+            let outcome = apply_picked_folder(&self.watch, &self.product, self.watch.begin_pick().unwrap());
             assert!(matches!(
-                apply_picked_folder(&self.watch, &self.product, self.watch.begin_pick().unwrap()),
+                outcome,
                 PickOutcome::Picked { .. }
-            ));
+            ), "authored context fixture pick returned {outcome:?}");
         }
     }
     impl Drop for Fixture {
