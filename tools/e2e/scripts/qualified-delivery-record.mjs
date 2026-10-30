@@ -8,6 +8,7 @@ import {validQualifiedPublicationProgress} from "./qualified-publication-record.
 import {validQualifiedCiProgress} from "./qualified-ci-record.mjs";
 import {normalizeProjectPublication} from "../../../lib/parser/dist/pure.js";
 import {validConfiguredDispatchCapsule} from "../../../cli/configured-native-reader.mjs";
+import {validQualifiedConfiguredAuthorityGrades} from "./qualified-configured-grades.mjs";
 /** @param {any} v @param {string[]} fields */
 function shape(v,fields){return v && typeof v === "object" && !Array.isArray(v) && Object.keys(v).sort().join("\0") === [...fields].sort().join("\0");}
 /** @param {any} v */
@@ -97,7 +98,7 @@ function validRequest(req){
  }
  for(const d of [req.docsDirectory,req.runtimeDirectory])if(!shape(d,["path","device","inode"]) || typeof d.path !== "string" || !path.isAbsolute(d.path) || typeof d.device !== "string" || !/^[0-9]+$/.test(d.device) || typeof d.inode !== "string" || !/^[0-9]+$/.test(d.inode))return false;
  if(req.docsDirectory.path !== path.join(a.frozenAuthority.receipt.recordsRoot,"docs") || req.runtimeDirectory.path !== path.join(req.coordinator.root,".supertaskr"))return false;
- if(!validQualifiedDeliveryPolicySource(req.policySource,{...a.verifier,taskId:a.taskId,receipt:a.frozenAuthority.receipt}))return false;
+ if(!validQualifiedDeliveryPolicySource(req.policySource,{...a.verifier,taskId:a.taskId,receipt:a.frozenAuthority.receipt})||!validQualifiedConfiguredAuthorityGrades(a,req.policySource))return false;
  const product=a.roles.find((/** @type {any} */ r)=>r.role === "product");
  if(req.route.publicationOwed !== (product.actualOutput.implementation.length>0) || req.route.policyRevision !== product.actualOutput.commit)return false;
  if(full&&(!req.route.publicationOwed||!publicationContext(req.route.publication,req,product)))return false;

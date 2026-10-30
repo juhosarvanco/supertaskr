@@ -197,6 +197,10 @@ async function startDelivery(coordinatorRoot,input,diagnostics,configuration){
  await loadQualifiedDeliveryPolicy();
  const policySource=await captureQualifiedDeliveryPolicySource(coordinatorRoot,authority.verifier.attempt,configuration);
  if(!validQualifiedDeliveryPolicySource(policySource,{...authority.verifier,taskId:authority.taskId,receipt:authority.frozenAuthority.receipt}))refuse("QUALIFIED_DELIVERY_POLICY_SOURCE_CHANGED");
+ if(Object.hasOwn(policySource.native.qualified.origins,"configuredDispatch")){
+  const {assertQualifiedConfiguredAuthorityGrades}=await import("./qualified-configured-grades.mjs");
+  await assertQualifiedConfiguredAuthorityGrades(authority,policySource,configuration);
+ }
  qualifiedDeliveryPhasePolicy(coordinatorRoot,policySource);
  const product=authority.roles.find((/** @type {any} */ r)=>r.role === "product"),landings=[];
  const full=configuration!==undefined&&product.actualOutput.implementation.length>0;
