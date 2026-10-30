@@ -1493,6 +1493,8 @@ test("the reader that STOPS after one read gets a silent PREFIX, and the writer'
  * ── THE MEMBERS ──────────────────────────────────────────────────────
  * `brief.mjs` was the only one, and is fixed. It is asserted ABSENT from
  * the derived set, which is this card's regression pin.
+ * The configured health front now also sets process.exitCode and is
+ * absent; its former bounded-output exception no longer applies.
  *
  * ── THE NON-MEMBERS, EACH WITH THE SIZE IT WAS ARGUED ON ─────────────
  * All measured at `209e5d3` on this repository, stdout only, redirected
@@ -1513,7 +1515,6 @@ test("the reader that STOPS after one read gets a silent PREFIX, and the writer'
  *                        four. The suite's own output goes to a FILE
  *                        whose path is printed on stderr, which is what
  *                        keeps this bounded.
- *   health-bands-run.mjs 1,939 B (exit 3, bands awaiting keepers).
  *   lint-tokens.mjs        105 B clean, 125 B `--selftest`.
  *   token-scan.mjs       the two exits `lint-tokens.mjs` cannot
  *                        intercept, measured through that wrapper above.
@@ -1532,7 +1533,6 @@ const EXITS_AFTER_WRITING = [
   "capabilities.mjs",
   "docs-gate.mjs",
   "gate-run.mjs",
-  "health-bands-run.mjs",
   "lint-tokens.mjs",
   "orphan-drill.mjs",
   "tauri-boot-check.mjs",
