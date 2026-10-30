@@ -150,6 +150,17 @@ test("synthetic CI progress shape retains all headers and complete receipts but 
   const nextFacts=actualGitHubDeliveryCiObservation(nextObserved,next.requirement),progress={...value,requirement:next.requirement,providerRun:next.providerRun,selectedAt:next.observedAt,discovery:{status:"selected",observedAt:next.observedAt,receipts:next.receipts},observation:nextFacts,acceptance:qualifiedDeliveryCiAcceptance(requestData,nextFacts),history:retainQualifiedCiHistory(old)};
   expect(validQualifiedCiProgress(progress,requestData,publicationData)).toBe(true);expect(progress.history[0].progress.observation.result.status).toBe("validation-failed");expect(progress.requirement.run.attempt).toBe(3);expect(JSON.stringify(old)).toBe(oldBytes);
   const edited=structuredClone(progress);edited.history[0].progress.observation.result.status="validated";expect(validQualifiedCiProgress(edited,requestData,publicationData)).toBe(false);
+  const pendingObserved=await replies([{path:header,data:run({status:"in_progress",conclusion:null})},{path:attempt,data:run({status:"in_progress",conclusion:null})},{path:jobs,data:{total_count:1,jobs:[job({status:"in_progress",conclusion:null})]}},{path:checkPath,data:check({status:"in_progress",conclusion:null})},{path:header,data:run({status:"in_progress",conclusion:null})}],()=>reader.read(selected.handle));
+  const pendingFacts=actualGitHubDeliveryCiObservation(pendingObserved,requirement);let history=retainQualifiedCiHistory(old);
+  for(let poll=0;poll<100;poll++){
+   const at=new Date(Date.UTC(2026,10,1,0,0,poll)).toISOString(),selectedState={...old,phase:"selected",observation:null,error:null,history};
+   history=retainQualifiedCiHistory(selectedState);
+   const current={...old,observation:structuredClone(pendingFacts),error:null,history};current.observation.observedAt=at;current.observation.receipts.forEach((r:any)=>r.observedAt=at);
+   history=retainQualifiedCiHistory(current);
+   history=retainQualifiedCiHistory({...current,history,error:{code:"CI_CREDENTIALS_MISSING",at,providerReceipt:null}});
+  }
+  expect(history).toHaveLength(4);expect(JSON.stringify(history[0].progress)).toBe(oldBytes);
+  expect(validQualifiedCiProgress({...progress,history},requestData,publicationData)).toBe(true);
   requestData.route.publication.destination.endpoint.kind="local";expect(validQualifiedCiProgress(value,requestData,publicationData)).toBe(false);
  }finally{f.cleanup();}
 });

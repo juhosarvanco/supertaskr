@@ -43,6 +43,14 @@ export function qualifiedDeliveryCiAcceptance(request,observed){
  return {version:1,publicationContextDigest:request.route.publication.digest,requirementDigest:operationDigest(observed.requirement),headCommit:observed.requirement.headCommit,run:observed.requirement.run,
   evidenceDigest:observed.result.evidenceDigest,providerReceiptsDigest:operationDigest(observed.receipts),observedAt:observed.observedAt,attribution:"provider-exact"};
 }
+/** Receipt timestamps and provider error-body bytes are observation metadata,
+ * not a changed check result. Keep the first exact historical snapshot for
+ * each semantic state and the latest complete receipts in current progress.
+ * @param {any} p */
+function semantic(p){return operationDigest({selection:p.selection,requirement:p.requirement,providerRun:p.providerRun,discovery:p.discovery?.status??null,
+ observation:p.observation===null?null:{headers:p.observation.headers,evidence:p.observation.evidence,result:p.observation.result},
+ error:p.error===null?null:{code:p.error.code,providerReceipt:p.error.providerReceipt===null?null:{path:p.error.providerReceipt.path,status:p.error.providerReceipt.status},
+  discovery:p.error.discovery===undefined?null:{status:p.error.discovery.status,requirement:p.error.discovery.requirement,providerRun:p.error.discovery.providerRun}}});}
 /** Append-only metadata snapshots. This pure data helper conveys no provider
  * or writer authority; the controller calls it only on an exact stored row.
  * @param {any} progress */
@@ -50,6 +58,7 @@ export function retainQualifiedCiHistory(progress){
  const {history=[],...snapshot}=operationPayload(progress);
  if(snapshot.acceptance!==null)throw Object.assign(Error("CI_ALREADY_ACCEPTED"),{code:"CI_ALREADY_ACCEPTED"});
  if(snapshot.discovery===null&&snapshot.observation===null&&snapshot.error===null)return history;
+ if(history.some((/** @type {any} */ row)=>semantic(row.progress)===semantic(snapshot)))return history;
  if(history.length>=64)throw Object.assign(Error("CI_OBSERVATION_LIMIT"),{code:"CI_OBSERVATION_LIMIT"});
  return [...history,{sequence:history.length+1,digest:operationDigest(snapshot),progress:snapshot}];
 }
@@ -59,8 +68,12 @@ export function validQualifiedCiProgress(v,request,publication){
   const {history,...current}=v;
   if(history!==undefined){
    if(!Array.isArray(history)||history.length>64)return false;
-   for(const [at,row] of history.entries())if(!shape(row,["sequence","digest","progress"])||row.sequence!==at+1||row.digest!==operationDigest(row.progress)||
-    row.progress.acceptance!==null||row.progress.discovery===null&&row.progress.observation===null&&row.progress.error===null||!validProgress(row.progress,request,publication))return false;
+   const states=new Set();
+   for(const [at,row] of history.entries()){
+    if(!shape(row,["sequence","digest","progress"])||row.sequence!==at+1||row.digest!==operationDigest(row.progress)||
+     row.progress.acceptance!==null||row.progress.discovery===null&&row.progress.observation===null&&row.progress.error===null||!validProgress(row.progress,request,publication))return false;
+    const key=semantic(row.progress);if(states.has(key))return false;states.add(key);
+   }
    let previous=null;
    for(const p of [...history.map((/** @type {any} */ r)=>r.progress),current])if(p.requirement!==null){
     if(previous!==null&&(p.requirement.run.id!==previous.requirement.run.id||p.requirement.run.attempt<previous.requirement.run.attempt||p.providerRun.workflowId!==previous.providerRun.workflowId))return false;
