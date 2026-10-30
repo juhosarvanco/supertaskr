@@ -4,7 +4,7 @@
  */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { lstatSync, readdirSync, realpathSync } from "node:fs";
+import { lstatSync, readFileSync, readdirSync, realpathSync } from "node:fs";
 import path from "node:path";
 import * as publicParser from "../../../lib/parser/dist/pure.js";
 import { captureCommittedInputs, captureTaskSnapshot } from "./records.mjs";
@@ -14,16 +14,25 @@ export const QUALIFIED_RESERVATION_VERSION = 2;
 export const QUALIFIED_REQUEST_VERSION = 1;
 const ROLES = ["product", "records"];
 
+/** Canonical retained identities are full, lowercase object names, never refs.
+ * @param {unknown} value @param {string} [objectFormat] */
+export function isQualifiedCommitId(value, objectFormat) {
+  if (typeof value !== "string") return false;
+  if (objectFormat === undefined) return /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/.test(value);
+  return objectFormat === "sha1" ? /^[0-9a-f]{40}$/.test(value) :
+    objectFormat === "sha256" && /^[0-9a-f]{64}$/.test(value);
+}
+
 export class QualifiedReservationFinding extends Error {
   /** @param {string} code @param {string} detail */
   constructor(code, detail) { super(`${code}: ${detail}`); this.name = "QualifiedReservationFinding"; this.code = code; }
 }
 /** @param {string} code @param {string} detail @returns {never} */
 function refuse(code, detail) { throw new QualifiedReservationFinding(code, detail); }
-/** @param {any} value @param {string[]} keys @param {string} label */
-function shape(value, keys, label) {
+/** @param {any} value @param {string[]} keys @param {string} label @param {string[]} [optional] */
+function shape(value, keys, label, optional = []) {
   if (!value || typeof value !== "object" || Array.isArray(value) ||
-      Object.keys(value).sort().join("\0") !== [...keys].sort().join("\0")) refuse("qualified-schema", `${label}: expected exactly ${keys.join(", ")}`);
+      keys.some((key) => !Object.hasOwn(value, key)) || Object.keys(value).some((key) => ![...keys, ...optional].includes(key))) refuse("qualified-schema", `${label}: expected exactly ${keys.join(", ")}`);
 }
 /** Key order and process/time metadata are not ownership facts.
  * @param {any} value @returns {string} */
@@ -48,7 +57,7 @@ function parser() {
 function git(root, args) {
   try { return execFileSync("git", ["--no-replace-objects", "-C", root, ...args], {
     encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, GIT_NO_LAZY_FETCH: "1", GIT_OPTIONAL_LOCKS: "0" },
-  }).trim(); }
+  }).replace(/\n$/, ""); }
   catch (err) { refuse("qualified-worker-unavailable", `${root}: ${String(err)}`); }
 }
 /** @param {any} location @returns {string} */
@@ -94,7 +103,7 @@ function physicalDomain(root, domain) {
  */
 export function captureQualifiedInputs(options) {
   shape(options.revisions, ROLES, "revisions");
-  for (const role of ROLES) if (!/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/.test(options.revisions[/** @type {"product"|"records"} */ (role)])) refuse("qualified-revision", `full ${role} commit required`);
+  for (const role of ROLES) if (!isQualifiedCommitId(options.revisions[/** @type {"product"|"records"} */ (role)])) refuse("qualified-revision", `full ${role} commit required`);
   const authorityRoot = absolute(options.authorityRoot);
   const selection = normalizeContextRequest({ version: 1, legacyTokenMap: options.legacyTokenMap, inputs: [] });
   const capture = captureCommittedInputs({ productRoot: authorityRoot, productRevision: options.revisions.product, recordsRevision: options.revisions.records });
@@ -119,29 +128,35 @@ export function captureQualifiedInputs(options) {
  * object availability and physical identity without grading current HEAD.
  * @param {any} request @param {{retained?: boolean}} [options] */
 export function deriveQualifiedScope(request, { retained = false } = {}) {
-  shape(request, ["version", "authorityRoot", "attempt", "projectId", "revisions", "taskId", "legacyTokenMap", "receipt", "workers"], "request");
+  shape(request, ["version", "authorityRoot", "attempt", "projectId", "revisions", "taskId", "legacyTokenMap", "receipt", "workers"], "request", ["verification"]);
   if (request.version !== QUALIFIED_REQUEST_VERSION || typeof request.attempt !== "string" ||
       !new RegExp(`^${request.taskId}-a[0-9]+$`).test(request.attempt) || !/^T-\d+(?:-s\d+)?$/.test(request.taskId)) refuse("qualified-owner", "version 1 and an attempt of the selected task are required");
   const captured = captureQualifiedInputs(request);
   same(request.receipt, captured.receipt, "committed card/registry receipt or association changed");
+  const prepared = request.verification === undefined ? null : verificationReservationAuthority(request);
   if (!Array.isArray(request.workers) || request.workers.length === 0) refuse("qualified-workers", "participating role bindings required");
   const seen = new Set();
   /** @type {any[]} */
   const workers = [];
   for (const binding of request.workers) {
-    shape(binding, ["role", "checkout", "base"], "worker binding");
+    shape(binding, ["role", "checkout", "base"], "worker binding", prepared === null ? [] : ["candidate"]);
     if (!ROLES.includes(binding.role) || seen.has(binding.role)) refuse("qualified-worker-role", String(binding.role));
     seen.add(binding.role);
     if (binding.base !== request.revisions[binding.role]) refuse("qualified-worker-base", "worker base differs from captured role revision");
     const measured = measureQualifiedWorker(binding.checkout);
+    if (prepared !== null && !prepared.benches?.some((/** @type {any} */ bench) => qualifiedContent(bench.identity) === qualifiedContent(measured))) refuse("qualified-verification-root", "prepared physical root identity changed");
     const repository = captured.fence.repositories[binding.role];
     if (measured.gitCommonDirectory !== repository.gitCommonDirectory) refuse("qualified-worker-project", `${binding.role}: worker does not belong to captured project repository`);
     const prior = workers.find((worker) => worker.identity.filesystemRoot === measured.filesystemRoot);
-    if (prior && prior.base !== binding.base) refuse("qualified-worker-alias-base", "one physical worker cannot have different bases");
+    const initialHead = prepared === null ? binding.base : prepared.candidates[binding.role];
+    if (prepared !== null && binding.candidate !== initialHead) refuse("qualified-worker-candidate", "candidate differs from finalized executor");
+    if (prior && (prior.base !== binding.base || (prepared !== null && prior.initialHead !== initialHead))) refuse("qualified-worker-alias-base", "one physical worker cannot have different bases or candidates");
     if (git(measured.filesystemRoot, ["rev-parse", "--verify", `${binding.base}^{commit}`]) !== binding.base ||
-        (!retained && git(measured.filesystemRoot, ["rev-parse", "HEAD"]) !== binding.base)) refuse("qualified-worker-base", `${binding.role}: acquisition requires exact measured HEAD/base`);
+        (!retained && git(measured.filesystemRoot, ["rev-parse", "HEAD"]) !== initialHead)) refuse("qualified-worker-base", `${binding.role}: acquisition requires exact measured initial HEAD`);
+    if (prepared !== null && (git(measured.filesystemRoot, ["rev-parse", "--show-object-format"]) !== "sha1" ||
+        git(measured.filesystemRoot, ["merge-base", binding.base, initialHead]) !== binding.base)) refuse("qualified-worker-candidate", "unsupported object format or candidate ancestry");
     if (prior) prior.roles.push(binding.role);
-    else workers.push({ identity: measured, base: binding.base, roles: [binding.role] });
+    else workers.push({ identity: measured, base: binding.base, ...(prepared === null ? {} : { initialHead }), roles: [binding.role] });
   }
   for (const entry of captured.fence.paths) {
     const worker = workers.find((worker) => worker.roles.includes(entry.role));
@@ -153,6 +168,58 @@ export function deriveQualifiedScope(request, { retained = false } = {}) {
   workers.sort((a, b) => a.identity.filesystemRoot.localeCompare(b.identity.filesystemRoot));
   return { authorityRoot: captured.authorityRoot, attempt: request.attempt, projectId: request.projectId,
     revisions: { ...request.revisions }, receipt: captured.receipt, fence: captured.fence, workers };
+}
+
+/** A detached initial HEAD is authorized only by an independently finalized
+ * executor and one published whole-set preparation. Ordinary first acquisition
+ * still requires HEAD at the original base. No candidate card is recaptured.
+ * @param {any} request */
+export function verificationReservationAuthority(request) {
+  shape(request.verification, ["executorAttempt", "preparationDigest"], "verification");
+  const attempt = request.verification.executorAttempt;
+  if (typeof attempt !== "string" || !new RegExp(`^${request.taskId}-a[0-9]+$`).test(attempt)) refuse("qualified-verification-record", "exact executor attempt required");
+  // Read the existing run-record publication without importing its asynchronous
+  // graph into the cold, synchronous legacy conflict reader. This is not a
+  // second ledger: only the canonical published record is accepted.
+  let source;
+  try { source = JSON.parse(new TextDecoder("utf8", { fatal: true }).decode(readFileSync(path.join(request.authorityRoot, ".supertaskr", "runs", request.taskId, `${attempt}.json`)))); }
+  catch { refuse("qualified-verification-record", "published executor record unavailable"); }
+  const q = source.native?.qualified, completed = q?.collection;
+  if (source.assignment?.role !== "executor" || source.state !== "finished" || source.execution?.endedAt == null ||
+      source.reservation?.releasedAt == null || completed?.phase !== "final" || source.native?.collection?.eligible !== true ||
+      source.native.collection.actualIndependentCheck !== true || source.native.inflight.length !== 0 ||
+      source.native.holds.some((/** @type {any} */ h) => h.clearedAt == null) ||
+      source.assignmentDigest !== `sha256:${createHash("sha256").update(JSON.stringify(source.assignment)).digest("hex")}` ||
+      source.permission.digest !== createHash("sha256").update(qualifiedContent({ reservation: q.reservation, ignored: q.ignored, origins: q.origins })).digest("hex")) refuse("qualified-verification-source", "finalized frozen executor required");
+  if (q.reservation.request.verification !== undefined) refuse("qualified-verification-source", "verifier cannot replace executor authority");
+  let reported;
+  try { reported = JSON.parse(source.native.collection.ref); } catch { refuse("qualified-verification-source", "collected candidate set unreadable"); }
+  same(reported, completed.candidates, "collected candidate set changed");
+  same(source.native.collection.check, completed.final?.check, "independent candidate check changed");
+  if (source.native.collection.check?.clean !== true || completed.identity !== q.identity) refuse("qualified-verification-source", "independent collection identity changed");
+  validateQualifiedReservation(q.reservation, request.authorityRoot, source.attempt);
+  const entries = (source.native.qualifiedPreparations ?? []).filter((/** @type {any} */ p) => p.digest === request.verification.preparationDigest);
+  if (entries.length !== 1) refuse("qualified-verification-preparation", "exactly one preparation required");
+  const entry = entries[0], authority = entry.authority;
+  if (entry.digest !== createHash("sha256").update(qualifiedContent(authority)).digest("hex") ||
+      authority.executorAttempt !== source.attempt || authority.taskId !== request.taskId || authority.sourceIdentity !== q.identity ||
+      (entry.consumedBy !== null && entry.consumedBy !== request.attempt)) refuse("qualified-verification-preparation", "changed or consumed preparation");
+  same(authority.candidates, qualifiedImplementationCandidates(q.reservation.scope, completed.candidates), "finalized candidate set changed");
+  same(authority.workers, request.workers, "complete verifier root set changed");
+  for (const key of ["projectId", "revisions", "receipt", "legacyTokenMap"]) same(request[key], q.reservation.request[key], `frozen ${key} changed`);
+  return authority;
+}
+
+/** An unchanged independent role retains its original commit. Colocated roles
+ * name one physical implementation candidate, even if only one role wrote.
+ * @param {any} scope @param {any} changed */
+export function qualifiedImplementationCandidates(scope, changed) {
+  const result = { ...scope.revisions, ...changed };
+  if (scope.fence.repositories.product.filesystemRoot === scope.fence.repositories.records.filesystemRoot) {
+    if (scope.revisions.product !== scope.revisions.records || new Set(Object.values(changed)).size !== 1) refuse("qualified-verification-alias", "colocated roles require one original base and candidate");
+    result.product = result.records = Object.values(changed)[0];
+  }
+  return result;
 }
 /** @param {any} scope */
 export function qualifiedIdentity(scope) {

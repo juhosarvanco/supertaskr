@@ -11,7 +11,7 @@
 //! no card frontmatter records a count. If materialising it is ever
 //! needed for cost, THIS derivation is the pin.
 //!
-//! It reads the COMMITTED graph — the same bytes `arch` and `arch drift`
+//! It reads the STORED graph — the same bytes `arch` and `arch drift`
 //! read, and the same bytes the app renders — so the three reports cannot
 //! silently disagree, and staleness stays ONE gate (`index --check`,
 //! ADR-014). Every run says so on its last line.
@@ -388,7 +388,7 @@ fn incompleteness(graph: &Graph) -> Vec<String> {
 pub fn render(report: &BlastReport, root_label: &str, graph_label: &str, bytes: usize) -> String {
     let mut out = String::new();
     out.push_str(&format!(
-        "blast  source=committed graph  root={root_label}  graph={graph_label}  bytes={bytes}  inputs={}\n",
+        "blast  source=stored graph  root={root_label}  graph={graph_label}  bytes={bytes}  inputs={}\n",
         report.inputs.len(),
     ));
     for incomplete in &report.incomplete {
@@ -449,7 +449,7 @@ pub fn render(report: &BlastReport, root_label: &str, graph_label: &str, bytes: 
         "note  this command prints no ceremony rung - where the rungs sit is a ruling, and this is the measurement it reads\n",
     );
     out.push_str(
-        "note  computed from the COMMITTED graph; `supertaskr-index index --check` is what proves it current\n",
+        "note  computed from the STORED graph; `supertaskr-index index --check` is what proves it current\n",
     );
     out
 }
@@ -735,7 +735,7 @@ mod tests {
             );
         }
         assert!(text.contains("prints no ceremony rung"), "{text}");
-        assert!(text.contains("computed from the COMMITTED graph"), "{text}");
+        assert!(text.contains("computed from the STORED graph"), "{text}");
     }
 
     /// THE FLOOR RULE'S INPUT. Reverse reachability terminates at a

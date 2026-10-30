@@ -1,12 +1,26 @@
+import { cardAtDepth } from "../fixtures/criteria-contract";
+const repoRoot = fixtureFor(import.meta.url);
+import { pathToFileURL } from "node:url";
 import { execFileSync, spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
-import { repoRoot } from "../preflight";
-import { CRITERIA_HEADING as PREFLIGHT_RULE, cardLines } from "../scripts/card-preflight.mjs";
+import { fixtureFor } from "../fixtures/test-project";
+import {
+  CRITERIA_HEADING as PREFLIGHT_RULE,
+} from "../scripts/card-preflight.mjs";
+import * as fixtureSubjectDefinition0 from "../scripts/card-preflight.mjs";
+void fixtureSubjectDefinition0;
+const {
+  cardLines,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/card-preflight.mjs")).href) as typeof fixtureSubjectDefinition0;
 import {
   EXIT,
+} from "../scripts/dispatch-brief.mjs";
+import * as fixtureSubjectDefinition1 from "../scripts/dispatch-brief.mjs";
+void fixtureSubjectDefinition1;
+const {
   assembleBrief,
   ceremonyRows,
   context,
@@ -17,7 +31,7 @@ import {
   render,
   roleText,
   unstampedLines,
-} from "../scripts/dispatch-brief.mjs";
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/dispatch-brief.mjs")).href) as typeof fixtureSubjectDefinition1;
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import {
   CRITERIA_HEADING as ADVISORY_RULE,
@@ -26,6 +40,10 @@ import {
   KNOW,
   SEAT_PHRASE,
   TRY,
+} from "../scripts/session-economics.mjs";
+import * as fixtureSubjectDefinition2 from "../scripts/session-economics.mjs";
+void fixtureSubjectDefinition2;
+const {
   acceptanceCriteria,
   earsKeywords,
   hygieneSection,
@@ -34,7 +52,7 @@ import {
   optionalSection,
   seatRecs,
   seatVerdict,
-} from "../scripts/session-economics.mjs";
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/session-economics.mjs")).href) as typeof fixtureSubjectDefinition2;
 
 /**
  * SESSION ECONOMICS (T-157) — no browser.
@@ -777,26 +795,7 @@ test("the lightest ceremony tier is read off the table's first row rather than t
  */
 
 /** A fixture card whose criteria heading sits at the depth asked for. */
-function cardAtDepth(hashes: string): string {
-  return [
-    "---",
-    "id: T-900",
-    "title: A fixture card",
-    "---",
-    "",
-    "The summary paragraph.",
-    "",
-    `${hashes} Acceptance criteria`,
-    "",
-    "- WHEN a card is read THE reader SHALL find this criterion.",
-    "- WHEN it is read again THE reader SHALL find the second one too.",
-    "",
-    "## Implementation notes",
-    "",
-    "- this bullet is below the section and belongs to neither reader",
-    "",
-  ].join("\n");
-}
+// Shared authored card arrangement; no historical project data.
 
 test("the criteria heading is matched by the CARD PREFLIGHT'S OWN RULE, and the two readers answer one card the same way", () => {
   // IDENTITY, NOT EQUALITY. A copy of the pattern is a second rule that
@@ -830,10 +829,8 @@ test("the criteria heading is matched by the CARD PREFLIGHT'S OWN RULE, and the 
   }
 });
 
-test("the two readers agree about the criteria section on every live card", () => {
-  // THE CORPUS IS THE MEASUREMENT. The fixtures above prove the rule; the
-  // board is where a disagreement actually cost something, and it is the
-  // only input that can surprise this pair.
+test("the two readers agree about the criteria section on every authored card", () => {
+  // Authored examples retain both reader entrypoints and their exact agreement.
   const dir = path.join(repoRoot, "docs", "tasks");
   const disagreed: string[] = [];
   let read = 0;
@@ -847,7 +844,7 @@ test("the two readers agree about the criteria section on every live card", () =
       disagreed.push(`${name}: advisory=${String(advisory)} preflight=${String(preflight)}`);
     }
   }
-  expect(read, "no cards under docs/tasks/ — this body measured nothing").toBeGreaterThan(200);
+  expect(read, "no cards under docs/tasks/ — this body measured nothing").toBeGreaterThan(20);
   expect(
     disagreed,
     "a card whose criteria section one reader finds and the other does not — the two rules have " +
@@ -855,42 +852,8 @@ test("the two readers agree about the criteria section on every live card", () =
   ).toEqual([]);
 });
 
-/**
- * THE CARDS THAT SPELL THE CRITERIA HEADING AT ANOTHER DEPTH, measured
- * over `docs/tasks/` at `71b52a01125d` with the rule the body below
- * applies — the nine cards of one planning batch, which were drafted in
- * one document and inherited its depth, and one card whose only heading
- * of that name is a verifier's per-criterion table.
- *
- * **IT IS AN EXCLUSION, NOT AN EQUALITY.** A card named here is allowed
- * to be where it is, so a repair that takes one back to depth two leaves
- * this body green, while a card that is NOT named reds by name. The
- * owner ruled on 2026-09-13 that the cards still open here are repaired
- * on the integration branch with no criteria text changed, and a body
- * that required the reading to EQUAL this list would red on exactly that
- * repair — the list is a measurement of what was already written, never
- * a judgement about what should be.
- *
- * **AND IT IS NOT A LICENCE EITHER.** A pinned set that has stopped
- * pinning anything is a permission nobody notices, so the body below
- * requires at least one of these ids to still be on the board at another
- * depth: when the last one is repaired this reds, and what it asks for
- * is the deletion of the list rather than its extension.
- */
-const KNOWN_OFF_DEPTH = [
-  "T-229-s4",
-  "T-299-s6",
-  "T-300-s6",
-  "T-311",
-  "T-312",
-  "T-313",
-  "T-314",
-  "T-315",
-  "T-316",
-  "T-317",
-];
-
-test("the task format names ONE depth for a card's sections, and the board spells the criteria heading there", () => {
+// Historical measured depth exceptions are retained in explicit private dogfood.
+test("the task format names ONE depth for a card's sections, and the authored board spells the criteria heading there", () => {
   const md = readFileSync(path.join(repoRoot, "method", "tasks", "TASK-FORMAT.md"), "utf8");
 
   // THE DOCUMENT IS THE AUTHORITY AND THE NUMBER COMES OUT OF IT. A body
@@ -934,18 +897,11 @@ test("the task format names ONE depth for a card's sections, and the board spell
     read += 1;
     if (at !== depth) off.push(String(frontmatterFields(text).id ?? name));
   }
-  expect(read, "no card on this board carries a criteria heading — nothing was measured").toBeGreaterThan(200);
+  expect(read, "no card on this board carries a criteria heading — nothing was measured").toBeGreaterThan(20);
   expect(
-    off.filter((id) => !KNOWN_OFF_DEPTH.includes(id)).sort(),
-    "a card spells its criteria heading at a depth the task format does not name, and it is not one " +
-      "of the cards measured when that depth was written down — one reader will see its criteria and " +
-      "another will not",
+    off.sort(),
+    "an authored card spells its criteria heading at a depth the task format does not name",
   ).toEqual([]);
-  expect(
-    off.length,
-    "every card pinned above has been repaired, so this list now permits a depth nobody spells: " +
-      "delete it and the exclusion with it rather than leaving a licence behind",
-  ).toBeGreaterThan(0);
 });
 
 test("the two readers open the criteria section in the SAME PLACE, and not merely both somewhere", () => {
@@ -997,7 +953,7 @@ test("the two readers open the criteria section in the SAME PLACE, and not merel
   expect(
     seen,
     "no card on this board carries a criteria section — nothing was measured",
-  ).toBeGreaterThan(200);
+  ).toBeGreaterThan(20);
   expect(
     apart,
     "the two readers open the criteria section in different places on ONE card, so they collect " +

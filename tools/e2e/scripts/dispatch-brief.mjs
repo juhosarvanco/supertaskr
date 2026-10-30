@@ -104,16 +104,16 @@ import { rawBullet } from "./range-rule.mjs";
 // T-320 — THE OWNING-SPEC DERIVATION, borrowed rather than re-derived.
 // The express path's eligibility asks whether a keeper or an owning spec
 // already covers each fenced path, and `gate-run.mjs` answers exactly
-// that question from the static import graph WITHOUT running a suite. It
-// imports node builtins and `docs-scan.mjs` and nothing from here, so the
-// dependency runs one way; `merge.mjs` already reaches it the same way.
-import { deriveOwning } from "./gate-run.mjs";
+// that question through the canonical source-only derivation, without
+// loading configured record readers or running a suite. gate-run reexports
+// the same implementation for existing consumers.
+import { deriveOwning } from "./source-suite-derivation.mjs";
 // THE RUNTIME DIRECTORY'S NAME, FROM THE ONE FILE THAT DECLARES IT
 // (T-324). The admission arm reads an owner-written pause record that
 // lives beside T-238's holder record, and a second spelling of that
 // directory here would be the duplication every other reader of it
 // avoids by importing this constant.
-import { RUNTIME_DIR, RUNTIME_DIR_IGNORE } from "../../../.claude/hooks/lane-fence.mjs";
+import { RUNTIME_DIR, RUNTIME_DIR_IGNORE } from "../../../cli/lane-fence.mjs";
 
 /* ────────────────────────────────────────────────────────────────────
  * THE PROCESS SETTINGS READER, IMPORTED FROM THE PARSER LIBRARY (T-317).
@@ -551,11 +551,24 @@ export function roleSpecificRows(contractMd) {
 export function contractSource(ctx) {
   const ownRel = `method/roles/${ctx.role}.md`;
   if (carriesContractTable(ctx.roleMd)) return { rel: ownRel, md: ctx.roleMd, own: true };
+  const files = trackedFiles(ctx.root).filter(rel => rel.startsWith("method/roles/") && rel.endsWith(".md") && rel !== ownRel)
+    .map(rel => ({ path: rel, content: readDoc(rel, ctx.root) }));
+  return contractSourceFromFiles(ctx.role, ctx.roleMd, files);
+}
+
+/** Resolve the same canonical contract from captured verified METHOD files.
+ * No source-root lookup or layout fallback occurs in this data-only owner.
+ * @param {string} role @param {string} roleMd @param {Iterable<{path:string,content:string}>} files
+ * @returns {ContractSource} */
+export function contractSourceFromFiles(role, roleMd, files) {
+  const ownRel = `method/roles/${role}.md`;
+  if (carriesContractTable(roleMd)) return { rel: ownRel, md: roleMd, own: true };
   /** @type {ContractSource[]} */
   const found = [];
-  for (const rel of trackedFiles(ctx.root)) {
+  for (const file of files) {
+    const rel = file.path;
     if (!rel.startsWith("method/roles/") || !rel.endsWith(".md") || rel === ownRel) continue;
-    const md = readDoc(rel, ctx.root);
+    const md = file.content;
     if (carriesContractTable(md)) found.push({ rel, md, own: false });
   }
   if (found.length === 1) return /** @type {ContractSource} */ (found[0]);
@@ -2958,6 +2971,22 @@ function deriveCommands(ctx) {
  * @returns {{ gates: GateBullet[], named: string[] }}
  */
 export function standingGates(conventionsMd) {
+  const result = declaredStandingGates(conventionsMd);
+  if (result.gates.length === 0) {
+    throw new Error(
+      "dispatch-brief: docs/CONVENTIONS.md declares no standing gate with a merge-diff trigger — " +
+        "row 8 enumerates those bullets, and an empty enumeration is a brief that skips gates in " +
+        "silence.",
+    );
+  }
+  return result;
+}
+
+/** Actual declarations, including an explicitly empty generic conventions
+ * document. PRODUCT configured suites are a separate authority; this parser
+ * neither supplies them nor declares a missing legacy gate satisfied.
+ * @param {string} conventionsMd @returns {{gates:GateBullet[],named:string[]}} */
+export function declaredStandingGates(conventionsMd) {
   const TRIGGER = "at any merge whose diff touches";
   /** @type {GateBullet[]} */
   const gates = [];
@@ -2980,13 +3009,6 @@ export function standingGates(conventionsMd) {
       .filter((i) => i > 0)
       .sort((a, b) => a - b)[0];
     gates.push({ name, trigger: (stop === undefined ? rest : rest.slice(0, stop)).trim() });
-  }
-  if (gates.length === 0) {
-    throw new Error(
-      "dispatch-brief: docs/CONVENTIONS.md declares no standing gate with a merge-diff trigger — " +
-        "row 8 enumerates those bullets, and an empty enumeration is a brief that skips gates in " +
-        "silence.",
-    );
   }
   return { gates, named };
 }
@@ -3321,7 +3343,7 @@ function deriveCorrection(ctx, row) {
  * PreToolUse-adjacent hooks that refuse a write, a push and a merge, and
  * the scripts the gate bullets themselves name.
  */
-export const GATE_SOURCE_DIRS = Object.freeze([".claude/hooks/", "tools/e2e/scripts/"]);
+export const GATE_SOURCE_DIRS = Object.freeze([".claude/hooks/", "cli/", "tools/e2e/scripts/"]);
 
 /**
  * The size at which a bullet stops being TRANSCRIBED and starts being
@@ -3413,7 +3435,15 @@ export function bulletByOpening(md, heading) {
  * @returns {string[]}
  */
 export function conventionHeadings(conventionsMd) {
-  const { gates, named } = standingGates(conventionsMd);
+  return headingsForDeclarations(conventionsMd, standingGates(conventionsMd));
+}
+
+/** @param {string} conventionsMd */
+export function declaredConventionHeadings(conventionsMd) {
+  return headingsForDeclarations(conventionsMd, declaredStandingGates(conventionsMd));
+}
+/** @param {string} conventionsMd @param {{gates:GateBullet[],named:string[]}} declarations */
+function headingsForDeclarations(conventionsMd, { gates, named }) {
   const skip = [...gates.map((g) => g.name), ...named];
   const enumerated = [
     ...gates.map((g) => g.name),
@@ -3469,9 +3499,19 @@ export function boldedOpeners(conventionsMd, enumerated) {
  * @returns {{ heading: string, raw: string, citedBy: string[] }[]}
  */
 export function citedConventionBullets(conventionsMd, sources) {
+  return citedBulletsForHeadings(conventionsMd, sources, conventionHeadings(conventionsMd));
+}
+/** Same citation engine for declared optional RECORDS additions, including
+ * zero declarations. Callers must separately carry the configured P checks.
+ * @param {string} conventionsMd @param {{rel:string,text:string}[]} sources */
+export function citedDeclaredConventionBullets(conventionsMd, sources) {
+  return citedBulletsForHeadings(conventionsMd, sources, declaredConventionHeadings(conventionsMd));
+}
+/** @param {string} conventionsMd @param {{rel:string,text:string}[]} sources @param {string[]} headings */
+function citedBulletsForHeadings(conventionsMd, sources, headings) {
   /** @type {Map<string, { heading: string, raw: string, citedBy: string[] }>} */
   const byBullet = new Map();
-  for (const heading of conventionHeadings(conventionsMd)) {
+  for (const heading of headings) {
     const citedBy = sources.filter((s) => s.text.includes(heading)).map((s) => s.rel);
     if (citedBy.length === 0) continue;
     const raw = bulletByOpening(conventionsMd, heading);
@@ -3512,18 +3552,27 @@ export const METHOD_REFERENCE_DIRS = "roles|tasks|interview|rooms|runtime|adapte
  * @returns {{ rel: string, spelling: string, bytes: number }[]}
  */
 export function methodNamed(roleMd, roleRel, root = repoRoot) {
-  const tracked = new Set(trackedFiles(root));
+  return methodReferences(roleMd, roleRel, trackedFiles(root)).map(entry =>
+    ({ ...entry, bytes: Buffer.byteLength(readDoc(entry.rel, root), "utf8") }));
+}
+
+/** Canonical reference grammar, over exact captured METHOD membership.
+ * This discovers names only and opens no file.
+ * @param {string} roleMd @param {string} roleRel @param {Iterable<string>} paths
+ * @returns {{rel:string,spelling:string}[]} */
+export function methodReferences(roleMd, roleRel, paths) {
+  const tracked = new Set(paths);
   const reference = new RegExp(
     String.raw`(?<![\w./-])((?:\.\./)?(?:method/)?(?:(?:${METHOD_REFERENCE_DIRS})/)?[\w.-]+\.md)(?![\w])`,
     "g",
   );
-  /** @type {{ rel: string, spelling: string, bytes: number }[]} */
+  /** @type {{ rel: string, spelling: string }[]} */
   const out = [];
   for (const m of roleMd.matchAll(reference)) {
     const spelling = /** @type {string} */ (m[1]);
     const rel = `method/${spelling.replace(/^\.\.\//, "").replace(/^method\//, "")}`;
     if (rel === roleRel || !tracked.has(rel) || out.some((e) => e.rel === rel)) continue;
-    out.push({ rel, spelling, bytes: Buffer.byteLength(readDoc(rel, root), "utf8") });
+    out.push({ rel, spelling });
   }
   return out.sort((a, b) => a.rel.localeCompare(b.rel));
 }
@@ -3779,6 +3828,59 @@ function hostName() {
   return name === "" ? "unknown-host" : name;
 }
 
+/** Shared row assembly frame. Callers read rows with contractRows from their
+ * actual normative METHOD source, and provide program-owned derivers. This is
+ * pure presentation and confers no assignment, admission or effect authority.
+ * Missing and orphaned labels are both reported; no positional fallback.
+ * @param {{rows:ContractRow[],contract:ContractSource,roleRel:string,
+ * derivers:Map<string,(row:ContractRow)=>Rec[]>,provenance:(via:string)=>Prov,findings:string[]}} input
+ */
+export function assembleContractRowSet(input) {
+  const { rows, contract, roleRel: ownRel, derivers, provenance, findings } = input;
+  const substituted = contract.own ? [] : roleSpecificRows(contract.md);
+  /** @type {Rec[]} */ const recs = [];
+  for (const row of rows) {
+    recs.push(value(`ROW ${row.n} — ${row.label}`, provenance(`${contract.rel} contract row ${row.n}`)));
+    recs.push(
+      value(`  assembled from: ${row.source}`, provenance(`${contract.rel} row ${row.n}, column three`)),
+    );
+    if (substituted.includes(row.n)) {
+      recs.push(
+        value(
+          `  role-specific: this row is read against ${ownRel}, and every "this role file" in the ` +
+            "source above means that file",
+          provenance(`${contract.rel}, its ${JSON.stringify(ROLE_SPECIFIC_PHRASE)} sentence`),
+        ),
+      );
+    }
+    const deriver = derivers.get(row.key);
+    if (deriver === undefined) {
+      recs.push(
+        value(
+          `  NOT DERIVED — assemble this row by hand from the source above`,
+          provenance(`${contract.rel} row ${row.n}`),
+        ),
+      );
+      findings.push(
+        `contract row ${row.n} (${row.label}) has no deriver, so this command cannot assemble ` +
+          `the whole brief. Its source is: ${row.source}`,
+      );
+      recs.push(blank());
+      continue;
+    }
+    for (const rec of deriver(row)) {
+      recs.push(rec.kind === "value" ? value(`  ${rec.text}`, rec.prov) : rec);
+    }
+    recs.push(blank());
+  }
+  const labels = new Set(rows.map(row => row.key));
+  const orphaned = [...derivers.keys()].filter(key => !labels.has(key)).map(key =>
+    `this command derives a row labelled ${JSON.stringify(key)} and the contract table no ` +
+      "longer carries it — a deriver with no row is a second row set, which is the defect the " +
+      "row set is read for.");
+  return { recs, orphaned };
+}
+
 /**
  * ARM ONE — the brief's rows, each derived from the source its own row
  * names. The row set comes off the role file; this function binds
@@ -3814,40 +3916,10 @@ export function assembleBrief(ctx) {
     );
   }
   recs.push(blank());
-  for (const row of rows) {
-    recs.push(value(`ROW ${row.n} — ${row.label}`, tree(ctx, `${contract.rel} contract row ${row.n}`)));
-    recs.push(
-      value(`  assembled from: ${row.source}`, tree(ctx, `${contract.rel} row ${row.n}, column three`)),
-    );
-    if (substituted.includes(row.n)) {
-      recs.push(
-        value(
-          `  role-specific: this row is read against ${ownRel}, and every "this role file" in the ` +
-            "source above means that file",
-          tree(ctx, `${contract.rel}, its ${JSON.stringify(ROLE_SPECIFIC_PHRASE)} sentence`),
-        ),
-      );
-    }
-    const deriver = DERIVERS.get(row.key);
-    if (deriver === undefined) {
-      recs.push(
-        value(
-          `  NOT DERIVED — assemble this row by hand from the source above`,
-          tree(ctx, `${contract.rel} row ${row.n}`),
-        ),
-      );
-      ctx.findings.push(
-        `contract row ${row.n} (${row.label}) has no deriver, so this command cannot assemble ` +
-          `the whole brief. Its source is: ${row.source}`,
-      );
-      recs.push(blank());
-      continue;
-    }
-    for (const rec of deriver(ctx, row)) {
-      recs.push(rec.kind === "value" ? value(`  ${rec.text}`, rec.prov) : rec);
-    }
-    recs.push(blank());
-  }
+  const assembled = assembleContractRowSet({ rows, contract, roleRel: ownRel,
+    derivers: new Map([...DERIVERS].map(([key, derive]) => [key, row => derive(ctx, row)])),
+    provenance: via => tree(ctx, via), findings: ctx.findings });
+  recs.push(...assembled.recs);
   // THE PACK, AFTER THE ROWS AND OUTSIDE THEM (T-254). The contract table
   // is normative and a fourteenth row is a method version bump; the pack
   // is what the rows' own sources add up to for THIS card, so it sits
@@ -3858,15 +3930,7 @@ export function assembleBrief(ctx) {
   // row is a method version bump, while what the project's loop is SET
   // to is a fact about the project rather than a row of the contract.
   for (const rec of processRecs(ctx)) recs.push(rec);
-  const labels = new Set(rows.map((r) => r.key));
-  for (const key of DERIVERS.keys()) {
-    if (labels.has(key)) continue;
-    ctx.findings.push(
-      `this command derives a row labelled ${JSON.stringify(key)} and the contract table no ` +
-        "longer carries it — a deriver with no row is a second row set, which is the defect the " +
-        "row set is read for.",
-    );
-  }
+  ctx.findings.push(...assembled.orphaned);
   return { recs, findings: ctx.findings, rows };
 }
 
@@ -5264,7 +5328,7 @@ export function laneScratchStem(taskId, sp) {
  * ──────────────────────────────────────────────────────────────────── */
 
 /** The three tiers, in the order the method's own table gives them. */
-export const TIERS = Object.freeze(["bounded", "standard", "guarded"]);
+export const TIERS = /** @type {readonly string[]} */ (processPure.VERIFICATION_TIERS);
 
 /** The bullet that publishes this project's ONE spelling of a graded reading. */
 export const BLESSED_RUNNER_PHRASE = "THE BLESSED GATE-RUNNER (T-202):";
@@ -5685,8 +5749,8 @@ export function reviewerContract(cardText) {
     }
     const heading = /^ {0,3}##\s+(.+?)\s*#*\s*$/.exec(line);
     if (heading) {
-      if (/^(?:Implementation notes|Verdicts|(?:Executor |Build |Post-build )?(?:notes|reasoning|reports?))\b/i.test(heading[1] ?? "")) privateSection = true;
-      if (privateSection) contract = heading[1] === "Acceptance criteria";
+      if (/^(?:Implementation notes|Verdicts|History|Reports|Approval history|Archived grant history|Repair ledger|(?:Executor |Build |Post-build )?(?:notes|reasoning|reports?))\b/i.test(heading[1] ?? "")) privateSection = true;
+      if (privateSection) contract = ["Specification", "Acceptance criteria"].includes(heading[1] ?? "");
     }
     if (contract) out.push(line);
   }
@@ -6025,6 +6089,42 @@ export function renderPhase2(input) {
     "```markdown",
     reviewerContract(input.cardText),
     "```",
+    "",
+  ].join("\n");
+}
+
+/** Whole-set orientation reuses the ordinary contract renderer. Raw authority
+ * remains private; ranges and policy are qualified by repository role.
+ * @param {{authority: any, preparationDigest: string, sealDigest: string, seal: any}} input */
+export function renderQualifiedPhase2(input) {
+  const a = input.authority;
+  return [
+    `# QUALIFIED VERIFIER, PHASE 2 — ${a.taskId}, tier ${a.tier}`,
+    "Fresh independent phase two. Read the complete qualified diff before executor notes.",
+    "Validate frozen raw authority privately. The native reading restriction is procedural; no OS read isolation is claimed.",
+    "First run exactly /usr/bin/printenv CODEX_THREAD_ID, report identity and canonical task name, then await explicit binding.",
+    `preparation: ${input.preparationDigest}`,
+    `seal: ${input.sealDigest}`,
+    "", "## Sealed inputs", "", input.seal.document, "", input.seal.inputs.attack.text,
+    ...input.seal.inputs.grounds.map((/** @type {any} */ g) => `${g.role} at original committed input ${g.base}\n${g.document}`),
+    input.seal.inputs.measurements, "",
+    "Every supported shell action starts with the exact owning root prefix; patches name confined absolute destinations.",
+    ...a.workers.map((/** @type {any} */ w) => `${w.role}: ${w.checkout}; original range ${w.base}..${w.candidate}; candidate ${w.candidate}`),
+    a.tier === "guarded" ? "GUARDED: whole suites, rubric and the seat's phase-one measurements remain required." : "STANDARD: apply the role's standard mode.",
+    "Write one verdict over every active criterion and every candidate. Keep the original seal unchanged.",
+    "Commit assigned correction bodies and mutant blocks with their owning role, exact RED/GREEN refs and trees.",
+    "Retain mandatory integration conditions. T-355 owns corrected integration and its grades; this verdict supplies no partial landing authority.",
+    "", "## Active contract", "", reviewerContract(a.card.text),
+    "", "## Verifier role", "", a.role.text,
+    "", "The committed verdict includes one qualified-verdict JSON block binding preparationDigest, sealDigest, candidates,",
+    "criteria (number and evidence), independent frame (agentId, taskName, sessionId, requestedModel, requestedEffort, observed, limitations),",
+    "grades and corrections. Every grade names role, commit, tree, projectionDigest, exit, bodies, command, output and outputDigest.",
+    "Every correction names correction, role, blockDigest, bodyCommit, bodyHash, red and green readings. Existing mutant block layout still applies.",
+    "An explicitly stated wording-only correction uses wordingOnly=true, the canonical correction name, owning role/file and why; it claims no body or mutant readings.",
+    "Record protocol artifacts separately from implementation projections. Existing gates remain owed for record-only writes.",
+    "After all verifier commits, grade every actual output at its exact commit/tree. Your actual native final carries one qualified-output-grades JSON block",
+    "with preparationDigest, sealDigest, complete refs and grades in the same reading layout. Candidate/projection grades never waive own-write gates.",
+    "A committed assigned body may retain its actual RED reading only under its explicit mandatory integration condition; never label a temporary corrected tree as this output.",
     "",
   ].join("\n");
 }
@@ -10386,7 +10486,21 @@ export function cardDrift(approved, current) {
     // A KEY THE CEREMONY WRITES IS MECHANICAL WHETHER IT WAS THERE OR
     // NOT: `tier:` is written by the arm and left out by the author, so
     // the card the owner approved commonly has no line to change.
-    if (MECHANICAL_FIELDS.includes(key)) drift.push(line);
+    // TASK-FORMAT initializes independent review at dispatch. Use the
+    // canonical YAML scalar meaning; quoted "null" is not an empty value.
+    // Review stays outside MECHANICAL_FIELDS, so no existing claim may be
+    // removed, downgraded or otherwise replaced under this exception.
+    let initialIndependent = false;
+    if (key === "review") {
+      try {
+        const oldReview = processPure.extractFrontmatter(approved, "approved-card.md");
+        const newReview = processPure.extractFrontmatter(current, "current-card.md");
+        const oldValue = oldReview.data?.review;
+        initialIndependent = oldReview.issues.length === 0 && newReview.issues.length === 0 &&
+          (oldValue === undefined || oldValue === null || oldValue === "") && newReview.data?.review === "independent";
+      } catch { /* Unavailable or unreadable scalar evidence remains substantive. */ }
+    }
+    if (MECHANICAL_FIELDS.includes(key) || initialIndependent) drift.push(line);
     else substantive.push(line);
   }
   /** The card's prose, with the frontmatter block and its fence removed. */

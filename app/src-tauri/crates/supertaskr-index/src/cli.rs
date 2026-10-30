@@ -42,7 +42,7 @@ use std::time::Duration;
 use crate::arch::{self, Severity};
 use crate::check;
 use crate::watch;
-use crate::{index, stable_json, write_graph, IndexOptions, GRAPH_REL_PATH};
+use crate::{index, stable_json, write_graph, IndexOptions, Lang, GRAPH_REL_PATH};
 
 pub const EXIT_OK: i32 = 0;
 pub const EXIT_FINDINGS: i32 = 1;
@@ -68,7 +68,7 @@ USAGE
 
 COMMANDS
   index         Index the tree and write docs/architecture/graph.json.
-  index --check Compare the committed graph against a fresh index and
+  index --check Compare the stored graph against a fresh index and
                 print what moved. Writes nothing. Exit 1 when stale.
   index --watch Keep the graph current headless, debounced (default
                 250 ms - the app watcher's window). Runs until stopped.
@@ -85,7 +85,7 @@ COMMANDS
                 class, never a ceremony rung, and always exits 0 unless
                 it could not run.
 
-  arch, arch drift and arch blast READ the committed graph (ADR-014) -
+  arch, arch drift and arch blast READ the stored graph (ADR-014) -
   they never index and never write. `index --check` is the one staleness
   gate; chain it first if the answer must be about the working tree.
 
@@ -97,6 +97,14 @@ COMMANDS
 
 OPTIONS
   --root DIR         Repo root (default: the current directory).
+  --records-root DIR Read graph and registry here; source stays at --root.
+                     Read-only commands only. The installed `supertaskr`
+                     command resolves this from the workspace association.
+  --emit-json        Plain index only: emit a working-source graph to stdout,
+                     without graph publication. Used by the installed producer.
+  --languages LIST   Exact comma-separated language IDs for source indexing.
+                     Empty/unknown selections refuse; no inferred language.
+  --languages-json   Standalone internal supported-language registry query.
   --cache-dir DIR    Parse cache location. Default: none - `index` and
                      `--check` run cold on purpose, because a gate that
                      consults a cache is a gate with hidden state.
@@ -143,6 +151,7 @@ enum Command {
     Help,
     Version,
     Index,
+    Emit,
     Check,
     Watch,
     Arch,
@@ -156,11 +165,13 @@ struct Args {
     command: Command,
     root: PathBuf,
     root_label: String,
+    records_root: Option<PathBuf>,
     cache_dir: Option<PathBuf>,
     debounce: Duration,
     fail_on: Option<Severity>,
     /// `arch blast`'s positional inputs, in the order written.
     targets: Vec<String>,
+    languages: Option<String>,
 }
 
 /// Parse argv (without the program name). `Err` is a usage message.
@@ -168,11 +179,14 @@ fn parse(argv: &[String]) -> Result<Args, String> {
     let mut command: Option<Command> = None;
     let mut check_flag = false;
     let mut watch_flag = false;
+    let mut emit_flag = false;
+    let mut records_root = None;
     let mut root_label = ".".to_string();
     let mut cache_dir: Option<PathBuf> = None;
     let mut debounce = watch::DEBOUNCE;
     let mut fail_on: Option<Severity> = None;
     let mut targets: Vec<String> = Vec::new();
+    let mut languages = None;
 
     let mut it = argv.iter().enumerate().peekable();
     while let Some((position, arg)) = it.next() {
@@ -199,8 +213,16 @@ fn parse(argv: &[String]) -> Result<Args, String> {
             }
             "--check" => check_flag = true,
             "--watch" => watch_flag = true,
+            "--emit-json" => emit_flag = true,
             "--root" => root_label = value("--root")?,
+            "--records-root" => records_root = Some(PathBuf::from(value("--records-root")?)),
             "--cache-dir" => cache_dir = Some(PathBuf::from(value("--cache-dir")?)),
+            "--languages" => {
+                if languages.is_some() {
+                    return Err("--languages was repeated".into());
+                }
+                languages = Some(value("--languages")?);
+            }
             "--debounce-ms" => {
                 let raw = value("--debounce-ms")?;
                 let ms: u64 = raw
@@ -240,6 +262,26 @@ fn parse(argv: &[String]) -> Result<Args, String> {
         (Some(other), false, false) => other,
         (None, false, false) => Command::Help,
     };
+    let command = if emit_flag {
+        if command != Command::Index || check_flag || watch_flag {
+            return Err("--emit-json belongs to plain `index`".to_string());
+        }
+        Command::Emit
+    } else {
+        command
+    };
+    if records_root.is_some()
+        && !matches!(
+            command,
+            Command::Check
+                | Command::Arch
+                | Command::ArchDrift
+                | Command::ArchCycles
+                | Command::ArchBlast
+        )
+    {
+        return Err("--records-root belongs to read-only graph/registry commands; use `supertaskr index` for durable publication".to_string());
+    }
     if fail_on.is_some() && command != Command::ArchDrift {
         return Err("--fail-on belongs to `arch drift`".to_string());
     }
@@ -252,15 +294,25 @@ fn parse(argv: &[String]) -> Result<Args, String> {
             targets.first().expect("non-empty")
         ));
     }
+    if languages.is_some()
+        && !matches!(
+            command,
+            Command::Index | Command::Emit | Command::Check | Command::Watch
+        )
+    {
+        return Err("--languages belongs to source indexing, not stored graph readers".into());
+    }
 
     Ok(Args {
         root: PathBuf::from(&root_label),
         command,
         root_label,
+        records_root,
         cache_dir,
         debounce,
         fail_on,
         targets,
+        languages,
     })
 }
 
@@ -269,6 +321,7 @@ fn command_name(command: &Command) -> &'static str {
         Command::Help => "help",
         Command::Version => "version",
         Command::Index => "index",
+        Command::Emit => "index --emit-json",
         Command::Check => "index --check",
         Command::Watch => "index --watch",
         Command::Arch => "arch",
@@ -289,10 +342,12 @@ fn args_for(
         root: PathBuf::from(&root_label),
         command,
         root_label,
+        records_root: None,
         cache_dir,
         debounce,
         fail_on,
         targets: Vec::new(),
+        languages: None,
     }
 }
 
@@ -300,20 +355,58 @@ fn args_for(
 /// else, so tests drive it in-process and the integration suite drives
 /// the real binary for the same assertions.
 pub fn run(argv: &[String], out: &mut dyn Write, err: &mut dyn Write) -> i32 {
+    if argv.len() == 1 && argv[0] == "--languages-json" {
+        let _ = writeln!(
+            out,
+            "{}",
+            serde_json::json!({"version":1,"languages":Lang::SUPPORTED.map(|lang|lang.as_str())})
+        );
+        return EXIT_OK;
+    }
     let args = match parse(argv) {
         Ok(args) => args,
         Err(message) => {
             let _ = writeln!(err, "[supertaskr-index] usage: {message}");
-            let _ = writeln!(err, "[supertaskr-index] run `supertaskr-index --help` for the command surface");
+            let _ = writeln!(
+                err,
+                "[supertaskr-index] run `supertaskr-index --help` for the command surface"
+            );
             return EXIT_USAGE;
         }
     };
 
-    let options = IndexOptions {
+    let mut options = IndexOptions {
         root: args.root.clone(),
         cache_dir: args.cache_dir.clone(),
         ..Default::default()
     };
+    if let Some(selection) = &args.languages {
+        if selection.is_empty() {
+            return fail(
+                err,
+                "index-languages-unconfigured: choose a nonempty explicit language set",
+            );
+        }
+        let mut selected = std::collections::BTreeSet::new();
+        for name in selection.split(',') {
+            let Some(lang) = Lang::named(name) else {
+                return fail(err, &format!("index-language-unsupported: {name}; query --languages-json for installed support"));
+            };
+            if !selected.insert(lang) {
+                return fail(err, "index-languages-invalid: duplicate selected language");
+            }
+        }
+        options.languages = selected.into_iter().collect();
+    }
+
+    // Bound projects publish through the shared private-record producer. The
+    // raw utility must not quietly write a convincing PRODUCT-side decoy.
+    if matches!(args.command, Command::Index | Command::Watch)
+        && std::fs::symlink_metadata(args.root.join(".supertaskr/workspace.json")).is_ok()
+    {
+        return fail(err, "bound workspace: use `supertaskr index` (or `supertaskr index --watch`) for owned, recoverable private graph publication");
+    }
+    let records_root = args.records_root.as_deref().unwrap_or(&args.root);
 
     match args.command {
         Command::Help => {
@@ -324,6 +417,13 @@ pub fn run(argv: &[String], out: &mut dyn Write, err: &mut dyn Write) -> i32 {
             let _ = writeln!(out, "supertaskr-index {VERSION}");
             EXIT_OK
         }
+        Command::Emit => match index(&options) {
+            Ok(graph) => {
+                let _ = write!(out, "{}", stable_json(&graph));
+                EXIT_OK
+            }
+            Err(e) => fail(err, &e.to_string()),
+        },
         Command::Index => match index(&options) {
             Ok(graph) => {
                 let target = args.root.join(GRAPH_REL_PATH);
@@ -346,7 +446,7 @@ pub fn run(argv: &[String], out: &mut dyn Write, err: &mut dyn Write) -> i32 {
             }
             Err(e) => fail(err, &e.to_string()),
         },
-        Command::Check => match check::check(&options) {
+        Command::Check => match check::check_at(&options, records_root) {
             Ok(report) => {
                 let text = check::render(&report, &args.root_label);
                 if report.is_stale() {
@@ -377,7 +477,7 @@ pub fn run(argv: &[String], out: &mut dyn Write, err: &mut dyn Write) -> i32 {
             // registry question a second failure mode it does not have
             // (T-127). An unreadable registry is exit 3, never a cheerful
             // "acyclic" - silence would read as the green.
-            let components = match arch::registry::read_registry(&args.root) {
+            let components = match arch::registry::read_registry(records_root) {
                 Ok(components) => components,
                 Err(e) => return fail(err, &e.to_string()),
             };
@@ -392,7 +492,7 @@ pub fn run(argv: &[String], out: &mut dyn Write, err: &mut dyn Write) -> i32 {
             }
         }
         Command::Arch | Command::ArchDrift | Command::ArchBlast => {
-            // `arch` reads the COMMITTED graph rather than indexing
+            // `arch` reads the STORED graph rather than indexing
             // fresh (ADR-014: "`supertaskr arch` greps it"). Two reasons it
             // matters: the report then describes the same bytes the app
             // renders and the TypeScript engine derives from, so the two
@@ -400,14 +500,14 @@ pub fn run(argv: &[String], out: &mut dyn Write, err: &mut dyn Write) -> i32 {
             // gate — `index --check` — instead of being half-answered
             // here. A missing or unreadable graph is exit 3, never a
             // cheerful "no drift".
-            let target = args.root.join(GRAPH_REL_PATH);
-            let raw = match std::fs::read(&target) {
+            let target = records_root.join(GRAPH_REL_PATH);
+            let raw = match crate::read_graph_bytes(records_root) {
                 Ok(raw) => raw,
                 Err(e) => {
                     return fail(
                         err,
                         &format!(
-                            "no committed graph at {} ({e}) - run `supertaskr-index index --root {}` first",
+                            "no stored graph at {} ({e}) - run `supertaskr-index index --root {}` first",
                             display_target(&args.root_label, &target),
                             args.root_label
                         ),
@@ -431,31 +531,35 @@ pub fn run(argv: &[String], out: &mut dyn Write, err: &mut dyn Write) -> i32 {
                 // for the component column, and NOTHING else joins here —
                 // it is a reverse walk of the graph it just read, not a
                 // second model.
-                let components = match arch::registry::read_registry(&args.root) {
+                let components = match arch::registry::read_registry(records_root) {
                     Ok(components) => components,
                     Err(e) => return fail(err, &e.to_string()),
                 };
-                let report =
-                    match arch::blast::blast(Some(&args.root), &components, &graph, &args.targets) {
-                        Ok(report) => report,
-                        Err(unknown) => {
-                            let _ = writeln!(
+                let report = match arch::blast::blast(
+                    Some(&args.root),
+                    &components,
+                    &graph,
+                    &args.targets,
+                ) {
+                    Ok(report) => report,
+                    Err(unknown) => {
+                        let _ = writeln!(
                                 err,
                                 "[supertaskr-index] usage: {:?} is not a declared touch_slugs: value - the registry declares [{}]",
                                 unknown.slug,
                                 unknown.known.join(", ")
                             );
-                            let _ = writeln!(
+                        let _ = writeln!(
                                 err,
                                 "[supertaskr-index] a slug nobody declares would otherwise report a confident zero"
                             );
-                            let _ = writeln!(
+                        let _ = writeln!(
                                 err,
                                 "[supertaskr-index] a bare word is read as a SLUG; write a directory with a trailing `/` to mean a path"
                             );
-                            return EXIT_USAGE;
-                        }
-                    };
+                        return EXIT_USAGE;
+                    }
+                };
                 let _ = write!(
                     out,
                     "{}",
@@ -468,7 +572,7 @@ pub fn run(argv: &[String], out: &mut dyn Write, err: &mut dyn Write) -> i32 {
                 );
                 return EXIT_OK;
             }
-            let model = match arch::model(&args.root, &graph) {
+            let model = match arch::model(records_root, &graph) {
                 Ok(model) => model,
                 Err(e) => return fail(err, &e.to_string()),
             };
@@ -488,7 +592,7 @@ pub fn run(argv: &[String], out: &mut dyn Write, err: &mut dyn Write) -> i32 {
             let _ = write!(out, "{}", arch::render_drift(&model, args.fail_on));
             let _ = writeln!(
                 out,
-                "note  computed from the COMMITTED graph; `supertaskr-index index --check` is what proves it current"
+                "note  computed from the STORED graph; `supertaskr-index index --check` is what proves it current"
             );
             match args.fail_on {
                 Some(severity) if arch::fails(&model, severity) => EXIT_FINDINGS,
@@ -562,7 +666,10 @@ mod tests {
 
     #[test]
     fn the_four_exit_codes_are_the_documented_ones() {
-        assert_eq!((EXIT_OK, EXIT_FINDINGS, EXIT_USAGE, EXIT_FAILED), (0, 1, 2, 3));
+        assert_eq!(
+            (EXIT_OK, EXIT_FINDINGS, EXIT_USAGE, EXIT_FAILED),
+            (0, 1, 2, 3)
+        );
         // The contract is documented where a reader hits it: --help.
         assert!(HELP.contains("0  clean"));
         assert!(HELP.contains("1  finding"));
@@ -589,13 +696,19 @@ mod tests {
             (vec!["nonsense"], "unknown command"),
             (vec!["--nope"], "unknown flag"),
             (vec!["index", "--root"], "--root needs a value"),
-            (vec!["arch", "drift", "--fail-on", "all"], "undeclared|unmapped|any"),
+            (
+                vec!["arch", "drift", "--fail-on", "all"],
+                "undeclared|unmapped|any",
+            ),
             (vec!["arch", "--fail-on", "any"], "--fail-on belongs to"),
             (vec!["index", "--check", "--watch"], "mutually exclusive"),
             (vec!["arch", "--check"], "belong to `index`"),
             (vec!["index", "--debounce-ms", "soon"], "wants a number"),
             (vec!["arch", "blast"], "needs at least one PATH or SLUG"),
-            (vec!["arch", "blast", "--fail-on", "any"], "--fail-on belongs to"),
+            (
+                vec!["arch", "blast", "--fail-on", "any"],
+                "--fail-on belongs to",
+            ),
             // A positional word outside `arch blast` is still an unknown
             // command — the one command that takes them must not make
             // every other command tolerant of stray arguments.
@@ -625,14 +738,24 @@ mod tests {
 
     #[test]
     fn flags_accept_both_spellings_and_defaults_are_the_documented_ones() {
-        let spaced = parse(&argv(&["index", "--root", "/tmp/x", "--cache-dir", "/tmp/c"])).unwrap();
+        let spaced = parse(&argv(&[
+            "index",
+            "--root",
+            "/tmp/x",
+            "--cache-dir",
+            "/tmp/c",
+        ]))
+        .unwrap();
         let inline = parse(&argv(&["index", "--root=/tmp/x", "--cache-dir=/tmp/c"])).unwrap();
         assert_eq!(spaced.root, inline.root);
         assert_eq!(spaced.cache_dir, inline.cache_dir);
 
         let bare = parse(&argv(&["index"])).unwrap();
         assert_eq!(bare.root_label, ".");
-        assert_eq!(bare.cache_dir, None, "no cache by default - no hidden state");
+        assert_eq!(
+            bare.cache_dir, None,
+            "no cache by default - no hidden state"
+        );
         assert_eq!(bare.debounce, watch::DEBOUNCE);
         assert_eq!(bare.fail_on, None);
     }
@@ -673,8 +796,11 @@ mod tests {
         ] {
             let (code, out, err) = run_capture(&flags);
             assert_eq!(code, EXIT_FAILED, "{flags:?}: {out}{err}");
-            assert!(err.contains("no committed graph"), "{err}");
-            assert!(err.contains("run `supertaskr-index index"), "names the fix: {err}");
+            assert!(err.contains("no stored graph"), "{err}");
+            assert!(
+                err.contains("run `supertaskr-index index"),
+                "names the fix: {err}"
+            );
         }
     }
 
@@ -691,13 +817,16 @@ mod tests {
         let graph_path = t.root().join(GRAPH_REL_PATH);
         let before = std::fs::read(&graph_path).unwrap();
 
-        // A source file the COMMITTED graph cannot know about must not
+        // A source file the STORED graph cannot know about must not
         // move `arch` at all: it reads bytes, it does not index.
         t.write("src/late.ts", "export const late = 1;\n");
         let (code, out, err) = run_capture(&["arch", "--root", &root]);
         assert_eq!(code, EXIT_OK, "{err}");
         assert!(out.contains("component  C-05  App"), "{out}");
-        assert!(out.contains("files=1"), "one file, from the committed graph: {out}");
+        assert!(
+            out.contains("files=1"),
+            "one file, from the stored graph: {out}"
+        );
         assert_eq!(
             std::fs::read(&graph_path).unwrap(),
             before,
@@ -729,7 +858,10 @@ mod tests {
 
         // Re-index recovers.
         assert_eq!(run_capture(&["index", "--root", &root]).0, EXIT_OK);
-        assert_eq!(run_capture(&["index", "--check", "--root", &root]).0, EXIT_OK);
+        assert_eq!(
+            run_capture(&["index", "--check", "--root", &root]).0,
+            EXIT_OK
+        );
     }
 
     /// Two components, `deps` written into each in turn.
@@ -762,7 +894,9 @@ mod tests {
         let (code, out, err) = run_capture(&["arch", "cycles", "--root", &root]);
         assert_eq!(code, EXIT_OK, "{out}{err}");
         assert!(
-            out.contains("verdict  ACYCLIC  no declared cycle among 2 components and 1 declared edges"),
+            out.contains(
+                "verdict  ACYCLIC  no declared cycle among 2 components and 1 declared edges"
+            ),
             "{out}"
         );
         assert!(err.is_empty(), "{err}");
@@ -798,7 +932,10 @@ mod tests {
         t.write("src/a.ts", "export const a = 1;\n");
         let root = t.root().display().to_string();
         let (code, out, err) = run_capture(&["arch", "cycles", "--root", &root]);
-        assert_eq!(code, EXIT_FAILED, "silence would read as ACYCLIC: {out}{err}");
+        assert_eq!(
+            code, EXIT_FAILED,
+            "silence would read as ACYCLIC: {out}{err}"
+        );
         assert!(err.contains("no component registry"), "{err}");
         assert!(out.is_empty(), "{out}");
     }
@@ -811,14 +948,20 @@ mod tests {
     }
 
     /// `arch blast` end to end through the binary's own surface: a real
-    /// tree, a real registry, a real committed graph, and the three
+    /// tree, a real registry, a real stored graph, and the three
     /// answers it owes — the count, the slug resolution, and the refusal.
     #[test]
     fn arch_blast_reads_the_committed_graph_and_reports_rather_than_gating() {
         let t = TempTree::new("cli-blast");
         t.write("src/hub.ts", "export const hub = 1;\n");
-        t.write("src/a.ts", "import { hub } from './hub';\nexport const a = hub;\n");
-        t.write("src/b.ts", "import { hub } from './hub';\nexport const b = hub;\n");
+        t.write(
+            "src/a.ts",
+            "import { hub } from './hub';\nexport const a = hub;\n",
+        );
+        t.write(
+            "src/b.ts",
+            "import { hub } from './hub';\nexport const b = hub;\n",
+        );
         t.write(
             "docs/architecture/components/C-05-app.md",
             "---\nid: C-05\nname: App\npaths:\n  - src/**\ndepends_on: []\ntouch_slugs: [app-shell]\n---\n",
@@ -831,7 +974,7 @@ mod tests {
         let (code, out, err) = run_capture(&["arch", "blast", "src/hub.ts", "--root", &root]);
         assert_eq!(code, EXIT_OK, "a reporter is exit 0: {out}{err}");
         assert!(out.contains("dependents=2"), "{out}");
-        assert!(out.contains("computed from the COMMITTED graph"), "{out}");
+        assert!(out.contains("computed from the STORED graph"), "{out}");
         assert!(err.is_empty(), "{err}");
         assert_eq!(
             std::fs::read(&graph_path).unwrap(),
@@ -848,7 +991,10 @@ mod tests {
         let (code, out, err) = run_capture(&["arch", "blast", "app-shel", "--root", &root]);
         assert_eq!(code, EXIT_USAGE, "{out}");
         assert!(err.contains("not a declared touch_slugs:"), "{err}");
-        assert!(err.contains("app-shell"), "it names what IS declared: {err}");
+        assert!(
+            err.contains("app-shell"),
+            "it names what IS declared: {err}"
+        );
         assert!(out.is_empty(), "{out}");
 
         // A PATH with no graph entry is not an error: it is a class.
@@ -863,8 +1009,11 @@ mod tests {
         t.write("src/a.ts", "export const a = 1;\n");
         let root = t.root().display().to_string();
         let (code, out, err) = run_capture(&["arch", "blast", "src/a.ts", "--root", &root]);
-        assert_eq!(code, EXIT_FAILED, "silence would read as zero dependents: {out}{err}");
-        assert!(err.contains("no committed graph"), "{err}");
+        assert_eq!(
+            code, EXIT_FAILED,
+            "silence would read as zero dependents: {out}{err}"
+        );
+        assert!(err.contains("no stored graph"), "{err}");
     }
 
     #[test]
@@ -877,6 +1026,142 @@ mod tests {
         assert!(
             !t.root().join("docs").exists(),
             "--check must never create the graph it is checking"
+        );
+    }
+
+    #[test]
+    fn pure_emission_scans_product_without_creating_a_graph() {
+        let product = TempTree::new("emit-product");
+        product.write("src/a.ts", "export const product = 1;\n");
+        let root = product.root().display().to_string();
+        let (code, out, err) = run_capture(&["index", "--emit-json", "--root", &root]);
+        assert_eq!(code, EXIT_OK, "{err}");
+        let graph: crate::Graph = serde_json::from_str(&out).expect("the actual stable graph");
+        assert_eq!(graph.files.len(), 1);
+        assert_eq!(graph.files[0].path, "src/a.ts");
+        assert!(!product.root().join("docs").exists());
+        assert_eq!(
+            run_capture(&["index", "--watch", "--emit-json", "--root", &root]).0,
+            EXIT_USAGE
+        );
+    }
+
+    #[test]
+    fn separated_readers_share_records_graph_and_registry_but_keep_product_source() {
+        let product = TempTree::new("separated-product");
+        let records = TempTree::new("separated-records");
+        product.write("src/a.ts", "export const product = 1;\n");
+        records.write("private.ts", "export const private_decoy = 2;\n");
+        let root = product.root().display().to_string();
+        let records_root = records.root().display().to_string();
+        let (code, bytes, err) = run_capture(&["index", "--emit-json", "--root", &root]);
+        assert_eq!(code, EXIT_OK, "{err}");
+        records.write(GRAPH_REL_PATH, &bytes);
+        records.write("docs/architecture/components/C-01-product.md",
+            "---\nid: C-01\nname: Product source\npaths: [src/**]\ndepends_on: []\ntouch_slugs: [actual]\n---\n");
+        // Convincing PRODUCT-side decoys must not decide any selected answer.
+        product.write(GRAPH_REL_PATH, "invalid decoy graph");
+        product.write(
+            "docs/architecture/components/C-99-decoy.md",
+            "---\nid: C-99\nname: Decoy\npaths: ['**']\ndepends_on: [C-99]\n---\n",
+        );
+        for command in [
+            vec!["index", "--check"],
+            vec!["arch"],
+            vec!["arch", "drift"],
+            vec!["arch", "cycles"],
+            vec!["arch", "blast", "actual"],
+        ] {
+            let mut args = command.clone();
+            args.extend(["--root", &root, "--records-root", &records_root]);
+            let (code, out, err) = run_capture(&args);
+            assert_eq!(code, EXIT_OK, "{args:?}: {out}{err}");
+            assert!(!out.contains("Decoy"), "{out}");
+            if command == vec!["arch"] {
+                assert!(out.contains("Product source"), "{out}");
+            }
+        }
+        records.write("private.ts", "export const private_decoy = 99;\n");
+        assert_eq!(
+            run_capture(&[
+                "index",
+                "--check",
+                "--root",
+                &root,
+                "--records-root",
+                &records_root
+            ])
+            .0,
+            EXIT_OK
+        );
+        product.write("src/a.ts", "export const product = 3;\n");
+        assert_eq!(
+            run_capture(&[
+                "index",
+                "--check",
+                "--root",
+                &root,
+                "--records-root",
+                &records_root
+            ])
+            .0,
+            EXIT_FINDINGS
+        );
+        assert_eq!(
+            std::fs::read_to_string(records.root().join(GRAPH_REL_PATH)).unwrap(),
+            bytes,
+            "every reader is read-only"
+        );
+        assert_eq!(
+            std::fs::read_to_string(product.root().join(GRAPH_REL_PATH)).unwrap(),
+            "invalid decoy graph"
+        );
+    }
+
+    #[test]
+    fn bound_raw_writers_refuse_before_private_or_product_graph_effects() {
+        let product = TempTree::new("bound-writer");
+        product.write("src/a.ts", "export const product = 1;\n");
+        product.write(".supertaskr/workspace.json", "invalid explicit binding");
+        let root = product.root().display().to_string();
+        for command in [vec!["index"], vec!["index", "--watch"]] {
+            let mut args = command;
+            args.extend(["--root", &root]);
+            let (code, _, err) = run_capture(&args);
+            assert_eq!(code, EXIT_FAILED);
+            assert!(err.contains("owned, recoverable private graph"), "{err}");
+        }
+        assert!(!product.root().join("docs").exists());
+        assert_eq!(
+            run_capture(&["index", "--emit-json", "--root", &root]).0,
+            EXIT_OK,
+            "source-only emission remains usable and grants no private write"
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn separated_readers_refuse_symlinked_graph_ancestors() {
+        use std::os::unix::fs::symlink;
+        let product = TempTree::new("read-link-product");
+        let records = TempTree::new("read-link-records");
+        let outside = TempTree::new("read-link-outside");
+        product.write("src/a.ts", "export const product = 1;\n");
+        let root = product.root().display().to_string();
+        let records_root = records.root().display().to_string();
+        let (_, bytes, _) = run_capture(&["index", "--emit-json", "--root", &root]);
+        outside.write("architecture/graph.json", &bytes);
+        symlink(outside.root(), records.root().join("docs")).unwrap();
+        for command in [vec!["index", "--check"], vec!["arch"]] {
+            let mut args = command;
+            args.extend(["--root", &root, "--records-root", &records_root]);
+            let (code, _, err) = run_capture(&args);
+            assert_eq!(code, EXIT_FAILED, "{err}");
+            assert!(err.contains("refusing"), "{err}");
+        }
+        assert_eq!(
+            std::fs::read_to_string(outside.root().join("architecture/graph.json")).unwrap(),
+            bytes
         );
     }
 }

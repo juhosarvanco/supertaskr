@@ -297,6 +297,11 @@ impl<'a> WorkspaceResolver<'a> {
             self.canonical(&root.join(common), code)?,
         ])
     }
+    /// Read-only physical control locations for an already selected native
+    /// consumer. This is the existing resolver query, never write authority.
+    pub(crate) fn repository_control_roots(&self, root: &Path) -> Result<[PathBuf; 2]> {
+        self.control_roots(root, "workspace-control-unavailable")
+    }
     pub fn workspace_binding_present(&self, product: &Path) -> Result<bool> {
         Ok(self
             .stat(&product.join(WORKSPACE_BINDING_REL_PATH), "binding")?

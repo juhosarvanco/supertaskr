@@ -17,15 +17,19 @@ Each row says what makes it true: 6 are OPERATIONAL — the arm reads them and c
 
 ```
 usage: supertaskr settings                      list the profile and every switch
-       supertaskr settings set <switch> <value> write one departure into the template
+       supertaskr settings --working           inspect the explicit working editor view
+       supertaskr settings role <role>         inspect the committed role default
+       supertaskr settings set <switch> <value> edit one working root departure
        supertaskr settings reference            print the reference chapter
        supertaskr settings reference --write    write it to docs/reference/
        supertaskr settings reference --check    exit 1 while the committed page is stale
 
-  --root <path>  the project to read; defaults to the checkout this script sits in
+  --root <path>  select PRODUCT; --at <exact commit> selects committed observations
 
   Every switch is declared ONCE, in method/runtime/process-schema.yaml, and this
-  command renders that file rather than restating it. Every row carries its LABEL —
+  command renders that verified TOOL file rather than restating it. PRODUCT settings
+  live in committed supertaskr.yaml; set edits its working copy for a later commit.
+  Every row carries its LABEL —
   operational, manual or declarative — and a declarative row is a RECORD rather than
   a control, so `set` refuses one. exit codes: 0 clean · 1 found ·
   2 called wrong · 3 could not run.

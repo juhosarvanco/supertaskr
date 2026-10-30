@@ -203,7 +203,7 @@ finding  D3  D3:C-03  C-03  declared_only_component
 finding  D5  D5:C-03->C-99  C-03 -> C-99  dangling_depends_on
 summary  findings=4  undeclared=1  unmapped=1  declared_only=1  ambiguous=0  dangling=1
 verdict  REPORT  no --fail-on given; exit 0 regardless of findings
-note  computed from the COMMITTED graph; `supertaskr-index index --check` is what proves it current
+note  computed from the STORED graph; `supertaskr-index index --check` is what proves it current
 ",
         "actual:\n{}",
         out.stdout

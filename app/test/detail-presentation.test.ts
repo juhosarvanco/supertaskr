@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { criterionLines } from "../src/lib/task-detail";
 import { rejectedVerdictCount, verdictEntries } from "../src/lib/verdicts";
 
@@ -60,6 +62,29 @@ describe("verdictEntries", () => {
     expect(entries).toHaveLength(1);
     expect(entries[0]?.kind).toBe("note");
     expect(entries[0]?.text).toBe("free-form notes\nwith two lines");
+  });
+
+  it("keeps the actual new-task template instruction neutral instead of displaying an approval", () => {
+    const template = readFileSync(resolve("../method/tasks/T-000-template.md"), "utf8");
+    const raw = template.split("## Verdicts\n")[1]!.trim();
+    expect(raw).toContain("APPROVED / REJECTED");
+    expect(verdictEntries(raw)).toEqual([{ kind: "note", text: raw }]);
+    expect(rejectedVerdictCount(raw)).toBe(0);
+  });
+
+  it("keeps unheaded verdict words and comment or fenced examples neutral without rewriting them", () => {
+    for (const raw of ["APPROVED is the instruction", "REJECTED is quoted here", "<!--\n2026-08-14 — verifier: APPROVED\n-->", "```md\n### 2026-08-14 — verifier: REJECTED\n```", "~~~md\n2026-08-14 — verifier: REJECTED\n~~~"]) {
+      expect(verdictEntries(raw)).toEqual([{ kind: "note", text: raw }]);
+      expect(rejectedVerdictCount(raw)).toBe(0);
+    }
+  });
+
+  it("retains actual Markdown date headings and ignores inert verdict words in the active header", () => {
+    const raw = "### 2026-08-14 — verifier: `REJECTED example` APPROVED\n\nActual review.\n\n### 2026-08-15 — verifier: REJECTED\n\nActual later review.";
+    const entries = verdictEntries(raw);
+    expect(entries.map(entry => entry.kind)).toEqual(["approved", "rejected"]);
+    expect(entries[0]?.text).toContain("`REJECTED example` APPROVED");
+    expect(rejectedVerdictCount(raw)).toBe(1);
   });
 
   it("only the header paragraph decides the tint, not quoted body text", () => {

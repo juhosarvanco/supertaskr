@@ -88,7 +88,7 @@ import {
 } from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
-import { RUNTIME_DIR, armRuntimeDir } from "../../../.claude/hooks/gate-token.mjs";
+import { RUNTIME_DIR, armRuntimeDir } from "../../../cli/gate-token.mjs";
 import { isRecordablePid, processRow } from "./checkout-currency.mjs";
 import {
   AWAIT_INTERVAL_MS,
@@ -96,6 +96,7 @@ import {
   admit,
   approvedCardText,
   cardBlobSha,
+  cardDrift,
   cardFileOf,
   classifyRefusal,
   grantState,
@@ -123,8 +124,13 @@ import {
   withNativeTransaction,
 } from "./native-codex.mjs";
 import { buildDetachedBenchFence } from "./lane-fence.mjs";
-import { startQualifiedNativeRun, continueQualifiedNativeRun, collectQualifiedNativeRun,
+import { validOperationRecord } from "./operation-record.mjs";
+export { validOperationRecord } from "./operation-record.mjs";
+import { startQualifiedNativeRun, startConfiguredQualifiedNativeRun, configuredPreparationPolicy, continueQualifiedNativeRun, collectQualifiedNativeRun,
   qualifiedAssignment, qualifiedAdmissionAt, releaseQualifiedRun, qualifiedExpansionHold, prepareQualifiedNativeContinuation, validateQualifiedOperation } from "./qualified-native.mjs";
+import { qualifiedBenchAssignmentInputs, prepareQualifiedVerification, collectQualifiedVerifierRun } from "./qualified-verification.mjs";
+export { sealQualifiedVerification, qualifiedOutputIdentity, qualifiedReviewDigest } from "./qualified-verification.mjs";
+import { readConfiguredNativePolicy } from "../../../cli/configured-native-reader.mjs";
 
 /** The record format this reader knows. A document declaring another is refused, never guessed at. */
 export const RECORD_VERSION = 1;
@@ -186,6 +192,14 @@ function qualifiedReservations(root) {
       return { file, reservation, scope };
     } catch (err) { throw new RunRecordFinding("QUALIFIED_AUTHORITY_UNREADABLE", `QUALIFIED_AUTHORITY_UNREADABLE: ${file}: ${String(err)}`); }
   });
+}
+
+/** Read-only display snapshot of the same actual acquired sets acquisition
+ * validates. Orphan/malformed publications remain holds/refusals, not silence.
+ * @param {string} root */
+export async function readQualifiedReservations(root) {
+  await loadQualifiedReservations();
+  return structuredClone(qualifiedReservations(root));
 }
 
 /** Complete publication shares the native callback/start transaction. This
@@ -298,6 +312,18 @@ export function releaseQualifiedReservationSync(root, options) {
     syncNativeFileNamespace(held.file);
     return true;
   });
+}
+
+/** Interrupted terminal publication never reacquires ownership. A later
+ * owner makes that incomplete publication a reconciliation finding.
+ * @param {string} root @param {any} original */
+export function reconcileQualifiedReleasedSet(root, original) {
+  for (const set of qualifiedReservations(root)) {
+    if (qualifiedValidation().qualifiedSetsConflict(original.scope, set.scope)) throw new RunRecordFinding("QUALIFIED_LATER_OWNER", "qualified release retry found a later owner");
+  }
+  for (const worker of original.scope.workers) {
+    if (existsSync(reservationPath(root, worker.identity.filesystemRoot))) throw new RunRecordFinding("QUALIFIED_LATER_OWNER", "qualified release retry found a later or unreadable owner");
+  }
 }
 
 /**
@@ -648,6 +674,13 @@ export function readAssignment(file) {
       `run-record: the assignment at ${file} did not parse as JSON: ${String(err)}`,
     );
   }
+  return parseAssignment(parsed, file);
+}
+
+/** Canonical parsed-value owner shared by file input and fixed backend
+ * constructors. Values are data; this neither starts work nor grants scope.
+ * @param {unknown} parsed @param {string} [file] @returns {Assignment} */
+export function parseAssignment(parsed, file = "backend-owned assignment") {
   if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
     throw new RunRecordFinding(
       "ASSIGNMENT_UNREADABLE",
@@ -674,6 +707,9 @@ export function readAssignment(file) {
         "field left out is a fact nobody decided, which is what the recovery day had to " +
         "reconstruct from worktrees.",
     );
+  }
+  for (const field of ["resource", "cwd", "brief"]) {
+    if (/[\x00-\x1f\x7f-\x9f]/.test(String(obj[field]))) throw new RunRecordFinding("ASSIGNMENT_PATH", "Assignment path contains a forbidden control character");
   }
   const kind = String(obj["kind"]);
   if (kind !== "card" && kind !== "consultation") {
@@ -735,13 +771,13 @@ export function readAssignment(file) {
     kind,
     id,
     role: String(obj["role"]).trim(),
-    resource: String(obj["resource"]).trim(),
+    resource: String(obj["resource"]),
     harness,
     model: String(obj["model"]).trim(),
     effort: String(obj["effort"]).trim(),
     base: String(obj["base"]).trim(),
-    brief: String(obj["brief"]).trim(),
-    cwd: String(obj["cwd"]).trim(),
+    brief: String(obj["brief"]),
+    cwd: String(obj["cwd"]),
     deadline: String(obj["deadline"]).trim(),
     budget: String(obj["budget"]).trim(),
     ownedJobs,
@@ -807,6 +843,38 @@ export function admissionAt(root, a, boundary, opts = {}) {
   );
 }
 
+/** Existing admission policy over the retained private bytes, at the current
+ * phase. No live candidate card or registry can redefine permission.
+ * @param {string} root @param {any} rec @param {string} [role] @param {string} [boundary] */
+export function qualifiedPhasePolicy(root, rec, role = rec.assignment.role, boundary = "re-entry") {
+  const q = rec.native.qualified, receipt = q.origins.receipt;
+  const read = (/** @type {string} */ blob) => {
+    const got = spawnSync("git", ["--no-replace-objects", "-C", receipt.recordsRoot, "cat-file", "blob", blob], {
+      encoding: "utf8", env: { ...process.env, GIT_NO_LAZY_FETCH: "1", GIT_OPTIONAL_LOCKS: "0" }, stdio: ["ignore", "pipe", "pipe"] });
+    if (got.status !== 0 || !got.stdout) throw new NativeCodexFinding("QUALIFIED_PRIVATE_AUTHORITY", "qualified private authority unavailable");
+    return got.stdout;
+  };
+  try {
+    const stored = existsSync(recordPath(root, rec.attempt)) ? readRecord(root, rec.attempt) : null, storedOrigins = stored?.native?.qualified?.origins;
+    const configuredSource = !!storedOrigins && Object.hasOwn(storedOrigins, "configuredDispatch");
+    const preparation = stored === null ? configuredPreparationPolicy(root, rec) : null;
+    if (stored === null && Object.hasOwn(q.origins, "configuredDispatch") && preparation === null) throw new NativeCodexFinding("CONFIGURED_RECORD_REQUIRED", "Configured effects require the actual retained record or backend-owned preparation");
+    if (stored !== null && configuredSource !== Object.hasOwn(q.origins, "configuredDispatch")) throw new NativeCodexFinding("CONFIGURED_SOURCE_OMITTED", "The actual retained source and supplied configured policy capsule differ");
+    const configured = preparation ?? (configuredSource ? readConfiguredNativePolicy(root, rec) : null);
+    const ledger = admissionLedger(allRecords(root), TERMINAL_STATES).map((entry) =>
+      entry.attempt === rec.attempt && rec.reservation.releasedAt === null ? { ...entry, terminal: false } : entry);
+    return admit(grantState(root, configured === null ? {} : { schemaText: configured.schemaText }), { boundary, kind: rec.assignment.admission?.kind ?? "explicit", work: "card",
+      card: rec.assignment.id, role, blob: receipt.cardBlobId, cardText: read(receipt.cardBlobId), approvedText: read,
+      resource: rec.resource, ...(rec.assignment.admission?.kind === "derived" ? rec.assignment.admission : {}) }, ledger);
+  } catch (error) {
+    const code = `QUALIFIED_POLICY_${/** @type {any} */ (error).code ?? "REFUSED"}`;
+    throw new NativeCodexFinding(code, `${code}: qualified current phase policy refused`);
+  }
+}
+
+/** @param {string} before @param {string} after */
+export function qualifiedProtocolDrift(before, after) { return cardDrift(before, after).mechanical; }
+
 /**
  * THE PERMISSION BOUNDARY IS DERIVED FROM THE WORKING DIRECTORY, never
  * typed into the assignment: a boundary somebody wrote down is a claim
@@ -843,12 +911,12 @@ export function permissionBoundary(cwd) {
  * erased the run it continued would destroy exactly what the recovery
  * day needed.
  *
- * @param {string} root @param {RunRecord} rec @returns {string} the path written
+ * @param {string} root @param {RunRecord} rec @param {() => void} [beforePublish] @returns {string} the path written
  */
-export function writeRecord(root, rec) {
+export function writeRecord(root, rec, beforePublish) {
   armRuntimeDir(root);
   const file = recordPath(root, rec.attempt);
-  atomicJson(file, rec);
+  atomicJson(file, rec, beforePublish);
   return file;
 }
 
@@ -875,6 +943,9 @@ export function readRecord(root, attempt) {
     );
   }
   const rec = /** @type {RunRecord} */ (parsed);
+  if (parsed.recordKind === "operation" || parsed.assignment?.kind === "operation") {
+    throw new RunRecordFinding("RECORD_OPERATION", "run-record: RECORD_OPERATION coordinator operations do not accept child lifecycle verbs.");
+  }
   if (rec.version !== RECORD_VERSION) {
     throw new RunRecordFinding(
       "RECORD_VERSION",
@@ -907,7 +978,7 @@ export function allRecords(root) {
         const recordFile = path.join(workDir, file);
         const rec = /** @type {RunRecord} */ (JSON.parse(readFileSync(recordFile, "utf8")));
         if (work === "reservations" && nativeReservationMetadata(root, recordFile, rec)) continue;
-        if (rec.version === RECORD_VERSION) out.push(rec);
+        if (rec.version === RECORD_VERSION && (!("recordKind" in rec) || rec.recordKind !== "operation" || validOperationRecord(rec))) out.push(rec);
       } catch {
         // A record this reader cannot parse is REPORTED by whoever asked
         // for it by name (readRecord above) and skipped by the sweep: a
@@ -1006,6 +1077,60 @@ export function takeReservation(root, opts) {
   });
 }
 
+/** Whole-repository coordinator operations must also respect legacy owners of
+ * contained paths and aliases. This reads the same canonical reservation home;
+ * it grants no child/admission authority and changes no legacy writer policy.
+ * @param {string} root @param {{resource: string, attempt: string}} opts */
+export function assertOperationOwnership(root, opts) {
+  for (const set of qualifiedReservations(root)) {
+    if (qualifiedValidation().legacyQualifiedConflict(opts.resource, set.scope)) throw new RunRecordFinding("QUALIFIED_CONFLICT", "QUALIFIED_CONFLICT: operation intersects a qualified writer set");
+  }
+  const dir = path.join(root, RESERVATIONS_REL_PATH);
+  if (!existsSync(dir)) return;
+  const canonical = (/** @type {string} */ resource) => existsSync(resource) ? realpathSync(resource) : path.resolve(resource);
+  const requested = canonical(opts.resource), io = defaultRunIo();
+  const common = (/** @type {string} */ resource) => {
+    const value = io.git(resource, ["rev-parse", "--path-format=absolute", "--git-common-dir"]);
+    if (value === null) return null;
+    try { return realpathSync(value.replace(/\n$/, "")); } catch { return null; }
+  };
+  const requestedCommon = common(requested);
+  const overlaps = (/** @type {string} */ resource) => {
+    const held = canonical(resource), relative = path.relative(requested, held), reverse = path.relative(held, requested);
+    const inside = (/** @type {string} */ value) => value === "" || !path.isAbsolute(value) && value !== ".." && !value.startsWith(`..${path.sep}`);
+    return inside(relative) || inside(reverse) || requestedCommon !== null && common(held) === requestedCommon;
+  };
+  for (const name of readdirSync(dir)) {
+    if (name.startsWith("qualified-") || [".native-transaction.lock", ".native-transaction.lock.recovery", "native-transaction-refusals", "native-transaction-faults", "native-transaction-recoveries"].includes(name)) continue;
+    const file = path.join(dir, name);
+    let held;
+    try {
+      if (!name.endsWith(".json") || !statSync(file).isFile() || realpathSync(file) !== file) throw Error("unknown reservation authority");
+      held = readReservationAuthority(file);
+      if (/^reservations-a\d+\.json$/.test(name)) {
+        const rec = readRecord(root, name.slice(0, -5));
+        if (rec.attempt !== name.slice(0, -5) || rec.assignment?.id !== "reservations" ||
+            !STATES.includes(rec.state) || !["card", "consultation"].includes(rec.assignment.kind) ||
+            ASSIGNMENT_FIELDS.some((field) => typeof /** @type {any} */ (rec.assignment)[field] !== "string" || !/** @type {any} */ (rec.assignment)[field].trim()) ||
+            rec.assignmentDigest !== sha256(JSON.stringify(rec.assignment)) || typeof rec.writer !== "boolean" ||
+            rec.writer && (typeof rec.resource !== "string" || !path.isAbsolute(rec.resource)) ||
+            !rec.writer && (rec.resource !== null || rec.assignment.resource !== "none")) throw Error("invalid shared work record");
+        if (rec.writer && !TERMINAL_STATES.includes(rec.state) && rec.resource !== null && overlaps(rec.resource)) {
+          throw new RunRecordFinding("OPERATION_RESOURCE_RESERVED", "OPERATION_RESOURCE_RESERVED: active shared-home writer overlaps the operation");
+        }
+        continue;
+      }
+      if (held.version !== RECORD_VERSION || typeof held.resource !== "string" || !path.isAbsolute(held.resource) ||
+          typeof held.attempt !== "string" || held.work !== workOf(held.attempt) || held.kind !== undefined ||
+          file !== reservationPath(root, held.resource)) throw Error("invalid legacy reservation");
+    } catch (error) {
+      if (error instanceof RunRecordFinding && error.code === "OPERATION_RESOURCE_RESERVED") throw error;
+      throw new RunRecordFinding("RESERVATION_UNREADABLE", `RESERVATION_UNREADABLE: operation ownership cannot read ${file}`);
+    }
+    if (held.attempt !== opts.attempt && overlaps(held.resource)) throw new RunRecordFinding("OPERATION_RESOURCE_RESERVED", "OPERATION_RESOURCE_RESERVED: legacy writer overlaps the operation");
+  }
+}
+
 /**
  * `open(O_EXCL)`, held in its own function so the ONE line the whole
  * atomicity rests on is greppable, and a mutant to it is visible AS a
@@ -1102,6 +1227,13 @@ export function defaultRunIo() {
 function transition(rec, at, op, to, why) {
   rec.events.push({ at, op, from: rec.state, to, why });
   rec.state = to;
+}
+
+/** Strict configured product start; no generic/source compatibility fallback.
+ * @param {string} root @param {{assignment:Assignment,at?:string,host?:string,io?:RunIo}} opts */
+export function startConfiguredRun(root, opts) {
+  if (opts.assignment.qualified === undefined) throw new RunRecordFinding("CONFIGURED_QUALIFIED_REQUIRED", "Configured dispatch requires an explicit qualified original P/R assignment");
+  return startConfiguredQualifiedNativeRun(root, opts);
 }
 
 /**
@@ -1570,7 +1702,8 @@ export function observeRun(root, opts) {
   }
   if (evidence !== "") {
     signals.push("the harness's own output was handed to this observation and is retained");
-    if (rec.native?.profile === "packet-only") rec.native.outputs.push({ at, evidence });
+    if (rec.native?.profile === "packet-only" || rec.native?.qualified?.verification !== undefined) rec.native.outputs.push({ at, evidence,
+      ...(rec.native?.qualified?.verification === undefined ? {} : { agentId: rec.native.binding?.agentId, turnId: rec.native.binding?.startTurnId }) });
   }
 
   // ── THE RECEIPT'S OBSERVED HALF (T-320) ────────────────────────────
@@ -1956,6 +2089,7 @@ export async function waitRun(root, opts, clock) {
  * @returns {{ record: RunRecord, collected: { state: string, usage: string, refs: string[], report: string, evidence: Evidence[] } }}
  */
 export function collectRun(root, opts) {
+  if (readRecord(root, opts.attempt).native?.qualified?.verification !== undefined) return /** @type {any} */ (collectQualifiedVerifierRun(root, opts));
   return withNativeTransaction(root, { operation: "run-collect", ...(opts.at === undefined ? {} : { at: opts.at }) }, () => {
   const io = opts.io ?? defaultRunIo();
   const at = opts.at ?? io.now();
@@ -2046,7 +2180,7 @@ export function collectRun(root, opts) {
  */
 export function nativeBenchAssignmentInputs(root, opts) {
   const source = readRecord(root, opts.attempt);
-  if (source.native?.qualified !== undefined) throw new NativeCodexFinding("QUALIFIED_VERIFIER_UNSUPPORTED", "qualified paired verification is not yet supported");
+  if (source.native?.qualified !== undefined) return qualifiedBenchAssignmentInputs(root, source, opts.assignment, opts.ref);
   const a = opts.assignment;
   if (source.native === undefined || source.writer !== true || source.assignment.role !== "executor" ||
       a.kind !== source.assignment.kind || a.id !== source.assignment.id || a.role !== "verifier" ||
@@ -2065,9 +2199,10 @@ export function nativeBenchAssignmentInputs(root, opts) {
 /** Extend the existing collection arm with a frozen detached-bench preparation.
  * This issues no task-branch authority and uses no candidate card expansion.
  * @param {string} root
- * @param {{ attempt: string, resource: string, candidate: string, at?: string, io?: RunIo }} opts
+ * @param {{ attempt: string, resource: string, candidate: string, assignment?: any, at?: string, io?: RunIo }} opts
  */
 export function prepareNativeBenchRun(root, opts) {
+  if (readRecord(root, opts.attempt).native?.qualified !== undefined) return /** @type {any} */ (prepareQualifiedVerification(root, opts));
   return withNativeTransaction(root, { operation: "run-collect-prepare-bench" }, () => {
     const io = opts.io ?? defaultRunIo();
     const at = opts.at ?? io.now();

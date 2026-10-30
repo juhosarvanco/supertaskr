@@ -67,7 +67,7 @@
 
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -3310,15 +3310,11 @@ export function gradeCounts(input) {
 // ── THE METHOD BUMP (T-295 criterion 3) ──────────────────────────────
 
 /**
- * THE THREE FILES THAT CARRY THE METHOD STAMP, each with the anchor its
- * own spelling uses. A bump that moved two of them is a HALF BUMP, and
- * the pin test in `kit.rs` is what reds on one.
+ * The product method source and compiled kit carry the normative version.
+ * Private CONVENTIONS records adoption separately through records delivery.
+ * Moving only one product anchor is a half bump caught by the kit pin.
  */
 export const METHOD_STAMP_FILES = Object.freeze([
-  {
-    path: "docs/CONVENTIONS.md",
-    anchor: (/** @type {string} */ v) => `method/ formats are version-bumped (currently v${v}) and noted here.`,
-  },
   { path: "method/interview/plan-interview.md", anchor: (/** @type {string} */ v) => `(v${v};` },
   {
     path: "app/src-tauri/src/agent/kit.rs",
@@ -3360,14 +3356,14 @@ export function bumpSteps(input) {
           `THE METHOD STAMP IS OWED — this merge moves ${String(moved.length)} file(s) under ` +
           "method/ and no --bump <from>..<to> was named",
         why:
-          "docs/CONVENTIONS.md's method stamp: method/ formats are version-bumped and noted, in " +
-          "three files at once, with the note written under docs/reference/14-versions.md " +
-          "(T-290). WHICH number the release takes and what its note says are the " +
+          "The product method source and compiled kit version move together. " +
+          "Private adoption records follow a successfully accepted product revision separately. " +
+          "WHICH number the release takes and what its note says are the " +
           "seat's ruling, so this step refuses rather than inventing one. Re-run with " +
           "--bump <old>..<new>, or rule that this merge's method text is not a release",
         problem:
           `method text moved (${moved.slice(0, 4).join(", ")}${moved.length > 4 ? ", ..." : ""}) ` +
-          "and the three stamp files were not bumped",
+          "and the product stamp files were not bumped",
         run: null,
       },
     ];
@@ -3381,15 +3377,11 @@ export function bumpSteps(input) {
       kind: "regen",
       action: "method-bump",
       bump: { from, to },
-      title: `bump the three method stamp files ${from} to ${to}`,
+      title: `bump the product method stamp files ${from} to ${to}`,
       why:
-        "the seat's own bump script, as run at T-264-s3's and T-293's merges: CONVENTIONS' " +
-        "`currently v<x>` line, plan-interview.md's `(v<x>;` and kit.rs's " +
-        "METHOD_SNAPSHOT_VERSION, each anchored ONCE and refused where it is not. " +
-        "THE RELEASE NOTE ITSELF GOES TO docs/reference/14-versions.md (T-290): the stamp " +
-        "stays in docs/CONVENTIONS.md because programs read that sentence out of that path " +
-        "by name, and the changelog it used to sit above is a record, which the reference " +
-        "chapter owns",
+        "plan-interview.md's version heading and kit.rs's METHOD_SNAPSHOT_VERSION each " +
+        "have one required product anchor. Refuse missing/ambiguous old versions; private " +
+        "adoption and release observations are separate records-service delivery work",
       run: null,
     },
     {
@@ -3397,7 +3389,7 @@ export function bumpSteps(input) {
       kind: "suite",
       title: "the kit pin test on the bumped tree",
       why:
-        "the pin test is what says the three stamps agree; a bump whose own test is red is a " +
+        "the pin test is what says the product stamps agree; a bump whose own test is red is a " +
         "release nobody may make",
       run: {
         command: "cargo",
@@ -3444,7 +3436,7 @@ export function bumpSteps(input) {
 export function bumpOne(input) {
   const entry = METHOD_STAMP_FILES.find((f) => f.path === input.path);
   if (entry === undefined) {
-    return { problem: `${input.path} is not one of this project's three method stamp files` };
+    return { problem: `${input.path} is not one of this project's product method stamp files` };
   }
   const anchor = entry.anchor(input.from);
   const hits = occurrences(input.text, anchor);
@@ -3673,7 +3665,7 @@ export function usageText() {
     "  BEFORE every regeneration — counting BOTH anchors in the file as it will be committed",
     "  and REFUSING, with the two counts on the step's line, any block whose anchors name no",
     "  site or several (T-295-s9) — runs the four cheap keepers as steps with exits, bumps",
-    "  the three method stamp files when method text moved, grades the counts its own runs",
+    "  the product method stamp files when method text moved, grades the counts its own runs",
     "  read against the counts the verdict claims, writes the merge message FROM the",
     "  verdict's own sentences, and appends every `## Meters` block to the bands' readings.",
     "  IT NEVER PUSHES.",
@@ -4870,40 +4862,56 @@ export function personalNames(root) {
  * @param {{ out: (s: string) => void, err: (s: string) => void, projectRoot: string, state: MergeState }} io
  * @returns {number}
  */
-function methodBumpStep(step, io) {
+export function methodBumpStep(step, io) {
   const move = step.bump;
   if (move === undefined) {
     io.err("      the bump step carries no version move");
     return EXIT.CANNOT_RUN;
   }
-  /** @type {string[]} */
-  const written = [];
+  /** @type {{path:string,before:string,after:string}[]} */
+  const changes = [];
+  // Validate the whole finite write set before touching either worktree or
+  // index. A later missing/ambiguous anchor must not leave an earlier bump
+  // staged, including when the user already staged different text there.
   for (const entry of METHOD_STAMP_FILES) {
     const file = path.join(io.projectRoot, entry.path);
     if (!existsSync(file)) {
-      io.err(`      ${entry.path} is not in this project — the three stamps move together or not at all`);
+      io.err(`      ${entry.path} is not in this project — the product stamps move together or not at all`);
+      return EXIT.CANNOT_RUN;
+    }
+    if (!lstatSync(file).isFile() || realpathSync(file) !== path.join(realpathSync(io.projectRoot), entry.path)) {
+      io.err(`      ${entry.path} is not a plain product file`);
       return EXIT.CANNOT_RUN;
     }
     const before = readFileSync(file, "utf8");
     const bumped = bumpOne({ text: before, path: entry.path, from: move.from, to: move.to });
     if ("problem" in bumped) {
-      // THE FILES ALREADY WRITTEN ARE PUT BACK. A half-bump left on disk
-      // is exactly the state the drill below exists to catch, and
-      // leaving one behind on the way out would be this step planting it.
-      for (const done of written) {
-        writeFileSync(path.join(io.projectRoot, done), io.state.shas[`before:${done}`] ?? "");
-      }
       io.err(`      ${bumped.problem}`);
       return EXIT.FOUND;
     }
-    io.state.shas[`before:${entry.path}`] = before;
-    writeFileSync(file, bumped.text);
-    io.state.shas[entry.path] = sha256(bumped.text);
-    written.push(entry.path);
-    spawnSync("git", ["-C", io.projectRoot, "add", "--", entry.path], { encoding: "utf8" });
+    changes.push({path:entry.path,before,after:bumped.text});
   }
-  io.state.regenerated.push(`the method stamp ${move.from} to ${move.to}, in three files`);
-  io.out(`      bumped and staged: ${written.join(", ")}`);
+  /** @type {typeof changes} */
+  const written = [];
+  try {
+    for (const change of changes) {
+      written.push(change);
+      writeFileSync(path.join(io.projectRoot, change.path), change.after);
+    }
+    // Git publishes its index transaction once for the complete write set.
+    const staged = spawnSync("git", ["-C", io.projectRoot, "add", "--", ...changes.map(change => change.path)], { encoding: "utf8" });
+    if (staged.status !== 0) throw new Error(staged.stderr || staged.error?.message || "git add did not finish");
+  } catch (error) {
+    for (const change of written) writeFileSync(path.join(io.projectRoot, change.path), change.before);
+    io.err(`      method bump could not be staged: ${String(error)}`);
+    return EXIT.CANNOT_RUN;
+  }
+  for (const change of changes) {
+    io.state.shas[`before:${change.path}`] = change.before;
+    io.state.shas[change.path] = sha256(change.after);
+  }
+  io.state.regenerated.push(`the method stamp ${move.from} to ${move.to}, in ${String(METHOD_STAMP_FILES.length)} product files`);
+  io.out(`      bumped and staged: ${changes.map(change => change.path).join(", ")}`);
   return EXIT.CLEAN;
 }
 
@@ -4954,7 +4962,7 @@ function halfBumpDrillStep(step, io) {
   if ((r.status ?? 3) === 0) {
     io.err(
       "      THE HALF BUMP SURVIVED — the pin test is GREEN with the const alone moved back, so " +
-        "it does not pin the three stamps agreeing. The bump is refused",
+        "it does not pin the product stamps agreeing. The bump is refused",
     );
     return EXIT.FOUND;
   }

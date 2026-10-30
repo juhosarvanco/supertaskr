@@ -1,3 +1,5 @@
+const repoRoot = fixtureFor(import.meta.url);
+import { pathToFileURL } from "node:url";
 import { execFileSync, spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import os from "node:os";
@@ -7,14 +9,26 @@ import {
   EXIT,
   MINIMAL_STATUSES,
   PLACEMENT_FIELDS,
+} from "../scripts/push-checks.mjs";
+import * as fixtureSubjectDefinition0 from "../scripts/push-checks.mjs";
+void fixtureSubjectDefinition0;
+const {
   danglingBlockers,
   placementGaps,
   runChecks,
   staleState,
-} from "../scripts/push-checks.mjs";
-import { staleStateRecords } from "../scripts/docs-scan.mjs";
-import { cardIndex } from "../scripts/dispatch-brief.mjs";
-import { repoRoot } from "../preflight";
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/push-checks.mjs")).href) as typeof fixtureSubjectDefinition0;
+import * as fixtureSubjectDefinition1 from "../scripts/docs-scan.mjs";
+void fixtureSubjectDefinition1;
+const {
+  staleStateRecords,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/docs-scan.mjs")).href) as typeof fixtureSubjectDefinition1;
+import * as fixtureSubjectDefinition2 from "../scripts/dispatch-brief.mjs";
+void fixtureSubjectDefinition2;
+const {
+  cardIndex,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/dispatch-brief.mjs")).href) as typeof fixtureSubjectDefinition2;
+import { fixtureFor } from "../fixtures/test-project";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 
 /**
@@ -198,15 +212,13 @@ test("a checkpoint record committed after STATE is FOUND, and the same commit as
   expect(staleStateRecords(together), "record and STATE in one commit must tie and pass").toEqual([]);
 });
 
-test("the docs gate and the push checks ask ONE implementation, so they cannot disagree about the tie", () => {
-  // T-057. `staleStateRecords` moved into docs-scan.mjs at this card, and
-  // this body is what makes "one implementation" checkable rather than
-  // asserted: the finding the push checks report is derived from the same
-  // function the docs gate calls, over the same tree.
+test("push history uses the shared tie derivation while the product docs gate delegates private history", () => {
+  // Private history still has one derivation. Ordinary product checking
+  // leaves that selected-records obligation to the records service.
   const late = board("one-impl", { "T-901-a.md": wellFormedCard("T-901") }, { record: true });
   expect(staleState(late).length).toBe(staleStateRecords(late).length);
   const gate = readFileSync(path.join(repoRoot, "tools/e2e/scripts/docs-gate.mjs"), "utf8");
-  expect(gate, "docs-gate must call the shared derivation, not carry its own").toContain(
+  expect(gate, "ordinary product docs checking delegates private history to the selected records service").not.toContain(
     "staleStateRecords(root)",
   );
 });
@@ -413,29 +425,4 @@ test("a checkout that is not a git repository at all cannot run the checks, and 
 
 /* ───────────── the live tree ─────────────────────────────────────── */
 
-test("this repository's own board passes every cheap check, over a board proved non-empty first", () => {
-  // NOT A TAUTOLOGY, because every body above proves the checks can fail.
-  // This is the one that would red if a lane pushed a dangling blocker or
-  // an unregenerated STATE into the tree — the same claim the guard makes
-  // at a push.
-  //
-  // THE CORPUS IS COUNTED BEFORE IT IS JUDGED, which is this repository's
-  // instance 5 ("a comparison over an empty corpus reports agreement and
-  // measures nothing"). A `runChecks` that walked zero cards would return
-  // zero findings and read exactly like a clean board. These two reads
-  // are also what LINK this file into the docs gate's reader derivation:
-  // the checks really do read docs/tasks and docs/checkpoints off the
-  // live tree, so a change there really does owe this suite.
-  const cards = readdirSync(path.join(repoRoot, "docs/tasks")).filter(
-    (f) => f.startsWith("T-") && f.endsWith(".md"),
-  );
-  expect(cards.length, "the live board is empty, so the judgement below is vacuous").toBeGreaterThan(
-    20,
-  );
-  const records = readdirSync(path.join(repoRoot, "docs/checkpoints")).filter((f) =>
-    f.endsWith(".md"),
-  );
-  expect(records.length, "no checkpoint record, so the STATE half is vacuous").toBeGreaterThan(0);
-
-  expect(runChecks(repoRoot).map((f) => f.message)).toEqual([]);
-});
+// Actual private board/checkpoint provenance: dogfood/private-project.spec.ts.

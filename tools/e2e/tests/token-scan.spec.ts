@@ -1,3 +1,5 @@
+const repoRoot = fixtureFor(import.meta.url);
+import { pathToFileURL } from "node:url";
 import { createHash } from "node:crypto";
 import {
   chmodSync,
@@ -14,7 +16,7 @@ import os from "node:os";
 import path from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
 import { expect, test } from "@playwright/test";
-import { repoRoot } from "../preflight";
+import { fixtureFor } from "../fixtures/test-project";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 import {
   CONTROL_PATTERN,
@@ -24,12 +26,16 @@ import {
   MOTION_UTILITIES_OUT,
   TOKEN_EXCLUDED_FILES,
   TOKEN_PATTERNS,
+} from "../scripts/token-scan.mjs";
+import * as fixtureSubjectDefinition0 from "../scripts/token-scan.mjs";
+void fixtureSubjectDefinition0;
+const {
   corpus,
   declaredMotionUtilities,
   scanControlSource,
   suffixClass,
   trackedFiles,
-} from "../scripts/token-scan.mjs";
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/token-scan.mjs")).href) as typeof fixtureSubjectDefinition0;
 
 const wrapper = path.join(repoRoot, "tools", "e2e", "scripts", "lint-tokens.mjs");
 
@@ -373,7 +379,7 @@ test("TOKEN and CONTROL are explicit, disjoint policies over the same tree", () 
 test("one runtime-built control byte reds all seven first-party roots at exact byte offsets", () => {
   const targets = [
     "app/package.json",
-    "docs/NORTH_STAR.md",
+    "docs/CAPABILITIES.md",
     "lib/parser/package.json",
     "tools/e2e/package.json",
     "method/README.md",
@@ -720,7 +726,7 @@ test("the CONTROL corpus check for the kit's runtime template is named from the 
     "utf8",
   );
   expect(
-    scanner.includes(`"docs/ROADMAP.md",`),
+    scanner.includes(`"docs/guide/README.md",`),
     "the tracked-text-format list has changed shape, so the absence below proves nothing",
   ).toBe(true);
   expect(

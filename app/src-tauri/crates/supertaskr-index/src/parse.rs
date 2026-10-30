@@ -2,7 +2,7 @@
 //!
 //! Grammar selection: `.ts/.mts/.cts` -> TYPESCRIPT; `.tsx` -> TSX;
 //! `.js/.jsx` -> JAVASCRIPT (its grammar includes JSX); `.rs` -> RUST
-//! (T-010). Languages are loaded once at `index()` start; a load failure
+//! (T-010); `.py` -> PYTHON. Languages are loaded once at `index()` start; a load failure
 //! is `IndexError::Grammar` (fail fast, not per file).
 
 use tree_sitter::{Parser, Tree};
@@ -15,6 +15,7 @@ pub(crate) enum Dialect {
     Tsx,
     Js,
     Rust,
+    Python,
 }
 
 /// Dialect by file extension (rel path). Callers only pass allowlisted
@@ -26,6 +27,7 @@ pub(crate) fn dialect_for(rel: &str) -> Option<Dialect> {
         "tsx" => Some(Dialect::Tsx),
         "js" | "jsx" => Some(Dialect::Js),
         "rs" => Some(Dialect::Rust),
+        "py" => Some(Dialect::Python),
         _ => None,
     }
 }
@@ -36,6 +38,7 @@ pub(crate) struct Parsers {
     tsx: Parser,
     js: Parser,
     rust: Parser,
+    python: Parser,
 }
 
 impl Parsers {
@@ -52,7 +55,17 @@ impl Parsers {
         let mut rust = Parser::new();
         rust.set_language(&tree_sitter_rust::LANGUAGE.into())
             .map_err(|_| IndexError::Grammar("rust"))?;
-        Ok(Self { ts, tsx, js, rust })
+        let mut python = Parser::new();
+        python
+            .set_language(&tree_sitter_python::LANGUAGE.into())
+            .map_err(|_| IndexError::Grammar("python"))?;
+        Ok(Self {
+            ts,
+            tsx,
+            js,
+            rust,
+            python,
+        })
     }
 
     /// tree-sitter always yields a tree (error nodes included); `None`
@@ -64,6 +77,7 @@ impl Parsers {
             Dialect::Tsx => &mut self.tsx,
             Dialect::Js => &mut self.js,
             Dialect::Rust => &mut self.rust,
+            Dialect::Python => &mut self.python,
         };
         parser.parse(source, None)
     }
@@ -83,6 +97,7 @@ mod tests {
         assert_eq!(dialect_for("a/b.js"), Some(Dialect::Js));
         assert_eq!(dialect_for("a/b.jsx"), Some(Dialect::Js));
         assert_eq!(dialect_for("a/b.rs"), Some(Dialect::Rust));
+        assert_eq!(dialect_for("a/b.py"), Some(Dialect::Python));
         assert_eq!(dialect_for("a/b.md"), None);
     }
 
@@ -105,5 +120,10 @@ mod tests {
             .expect("parse rust");
         assert_eq!(rust.root_node().kind(), "source_file");
         assert!(!rust.root_node().has_error());
+        let python = parsers
+            .parse(Dialect::Python, "def main():\n    return 1\n")
+            .expect("parse python");
+        assert_eq!(python.root_node().kind(), "module");
+        assert!(!python.root_node().has_error());
     }
 }

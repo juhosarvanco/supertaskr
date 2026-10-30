@@ -1,5 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { getShellState, subscribeShell } from "./watcher-store";
+import { GenesisAdmission, sameGenesisContext, sameGenesisIdentity, type GenesisContextToken, type GenesisIdentity, type GenesisReply, type GenesisView, type ScopedGenesisEvent } from "./genesis-admission";
 
 /**
  * T-025 (C-14's TS half): typed mirrors of the agent runner's four
@@ -11,12 +13,10 @@ import { listen } from "@tauri-apps/api/event";
  * exported and unit-tested, thin `invoke` wrappers around them, and a
  * `subscribe`/`getState` pair for `useSyncExternalStore`.
  *
- * The boundary discipline, restated because this is the module the
- * webview talks to: three of the four commands take NO arguments at all,
- * and the fourth takes exactly one datum — the user's own typed answer.
- * No path, no binary, no flag, no adapter selector, and no model name
- * ever crosses from this side. The adapter table lives Rust-side as
- * const data (ADR-012/ADR-017).
+ * Native-issued selection/context and opaque session activation tokens
+ * correlate managed commands. They never select a path, binary, flag,
+ * adapter or model. User answer text remains stdin data. The adapter table
+ * and filesystem selection stay Rust-side (ADR-012/ADR-017).
  *
  * Model output is DATA: every text field below is untrusted content
  * produced by a model, to be rendered as text nodes and never as markup
@@ -28,18 +28,20 @@ import { listen } from "@tauri-apps/api/event";
 /** Mirror of Rust's `TurnError` (src-tauri/src/agent/runner.rs). */
 export type TurnErrorPayload =
   | { kind: "spawnFailed"; os: string }
+  | { kind: "promptInputFailed"; os: string }
   | { kind: "startTimeout" }
   | { kind: "stall" }
   /** The CLI's own stderr tail — the residual class, after T-029's
    * classification has taken the two failures the stream NAMES. */
   | { kind: "exitNonZero"; code: number | null; stderrTail: string }
   | { kind: "malformedStream"; why: string }
-  /** T-029: the CLI could not authenticate, and said so in band. The one
-   * action that helps is `claude auth login` (T-082 — it read `claude
+  /** T-029: the CLI could not authenticate, and said so in band. Provider
+   * is the fixed native adapter, never parsed from message text. An absent
+   * provider retains historical `claude auth login` (T-082 — it read `claude
    * login` here until then, which the CLI parses as a PROMPT rather than
    * as a command), and the hand-driven fallback works right now with no
    * login at all. */
-  | { kind: "authFailed"; status: number | null; message: string }
+  | { kind: "authFailed"; status: number | null; message: string; provider?: "claude" | "codex" }
   /** T-029 (T-025-s1): a tool the planner needed was refused. Named, so
    * the screen can say WHICH instead of showing an exit code. */
   | { kind: "toolDenied"; denials: readonly string[]; terminalReason: string | null }
@@ -73,10 +75,24 @@ export interface GenesisDenial {
   message: string;
 }
 
+/** Native projection of actual accepted bank facts. Tokens correlate an
+ * offered recovery; no operation ID, path or executable is selected here. */
+export interface GenesisBankReceipt {
+  receiptDigest:string; stage:number; completedStage:number; recordsCommit:string;
+  productCommit:string|null; turn:number; paths:readonly string[];
+}
+export interface GenesisBankingView {
+  phase:"ready"|"banking"|"recovery"|"refused";
+  recoveryToken:string|null; code:string|null; current:boolean;
+  completedStage:number|null; receipts:readonly GenesisBankReceipt[];
+  cleanupWarnings?:readonly string[];
+}
+
 /** Mirror of Rust's `RunEvent` — the `genesis-turn` channel's payloads.
  * Every one carries `seq` from one runner-owned counter, so the store
  * stale-drops exactly like docs snapshots do. */
 export type GenesisEvent =
+  | {kind:"banking";seq:number;view:GenesisBankingView}
   | { kind: "started"; seq: number; turn: number }
   | { kind: "textDelta"; seq: number; turn: number; text: string }
   | { kind: "activity"; seq: number; turn: number; label: string }
@@ -269,7 +285,16 @@ export interface StaleFlightClaim {
   from: "outcome" | "status";
 }
 
+export type { GenesisView } from "./genesis-admission";
 export interface GenesisState {
+  banking?:GenesisBankingView|null;
+  view?: GenesisView;
+  /** A previously offered original activation, only for explicit cancellation. */
+  cancelView?: GenesisView;
+  /** Correlation only; never a path or a replacement native context. */
+  contextKey?: string;
+  sessionId?: string | null;
+  preparing?: boolean;
   phase: GenesisPhase;
   /** Highest `seq` applied. Anything at or below it is stale. */
   seq: number;
@@ -382,6 +407,9 @@ export function reduceGenesisEvent(
     lastEventAtMs: Date.now(),
   };
   switch (event.kind) {
+    case "banking":
+      return {...base,banking:event.view,
+        ...(event.view.phase!=="banking"?{preparing:false}:{} )};
     case "started":
       return {
         ...base,
@@ -582,7 +610,7 @@ export function reduceGenesisOutcome(
 
 /** Is a turn currently in flight (the send box's disabled state)? */
 export function isTurnInFlight(state: GenesisState): boolean {
-  return state.sending || state.phase === "running";
+  return state.preparing === true || state.sending || state.phase === "running" || state.banking?.phase==="banking";
 }
 
 // ---- store --------------------------------------------------------------
@@ -628,9 +656,19 @@ export async function startGenesisListener(): Promise<void> {
   if (started || !isTauri) return;
   started = true;
   try {
-    await listen<GenesisEvent>("genesis-turn", (event) => {
-      setState(reduceGenesisEvent(state, event.payload));
+    await listen<GenesisEvent | ScopedGenesisEvent>("genesis-turn", (event) => {
+      if (selectedGenesisContext()) {
+        const accepted = admission.event(event.payload as ScopedGenesisEvent);
+        applyManagedEvents(accepted.events);
+        if (accepted.events.some(event=>event.kind==="banking"&&event.view.phase!=="banking")) {
+          void refreshGenesisStatus().then(()=>refreshGenesisTranscript());
+        }
+        if (accepted.reconcile) reconcileManaged(accepted.newEvidence === true);
+      } else if (!("identity" in event.payload)) setState(reduceGenesisEvent(state, event.payload));
     });
+    if (contextSubscription === null) {
+      contextSubscription = subscribeShell(() => { const before = admission.context; const current = selectedGenesisContext(); if (current && !sameGenesisContext(before, current)) reconcileManaged(); });
+    }
   } catch (err) {
     started = false;
     setState({ ...state, listenerFailed: true });
@@ -638,6 +676,96 @@ export async function startGenesisListener(): Promise<void> {
   }
   if (state.listenerFailed) setState({ ...state, listenerFailed: false });
   await refreshGenesisStatus();
+}
+
+// ---- managed selection/activation admission -----------------------------
+const admission = new GenesisAdmission();
+// Fresh page correlation cannot alias a preceding renderer's counter=1.
+const entropy = new Uint32Array(2);
+globalThis.crypto?.getRandomValues(entropy);
+let managedAttempt = (entropy[0] * 0x100000 + (entropy[1] & 0xfffff)) || 1;
+let retiredActivation: { context: GenesisContextToken; identity: GenesisIdentity } | null = null;
+let contextSubscription: (() => void) | null = null;
+let reconcileTimer: ReturnType<typeof setTimeout> | null = null;
+let reconcileTries = 0;
+function nextManagedAttempt(): number {
+  if (managedAttempt >= Number.MAX_SAFE_INTEGER) throw new Error("genesis-request-attempt-exhausted");
+  return ++managedAttempt;
+}
+function selectedGenesisContext(): GenesisContextToken | null {
+  const records = getShellState().docs.records;
+  const context = records ? { selectionSequence: records.selectionSequence, contextSequence: records.contextSequence } : null;
+  if (!sameGenesisContext(admission.context, context) && admission.context && admission.identity) {
+    retiredActivation = { context: admission.eventContext ?? admission.context, identity: admission.identity };
+  }
+  if (admission.select(context)) {
+    if (reconcileTimer !== null) clearTimeout(reconcileTimer);
+    reconcileTimer = null; reconcileTries = 0;
+    setState({ ...emptyGenesisState(), listenerFailed: state.listenerFailed,
+      ...(retiredActivation ? { cancelView: {context:retiredActivation.context, identity:retiredActivation.identity, eventContext:retiredActivation.context} } : {}),
+      ...(context ? { contextKey: `${context.selectionSequence}:${context.contextSequence}`, sessionId: null, view: { context, identity: null, eventContext: null } } : {}) });
+  }
+  return context;
+}
+function applyManagedEvents(events: readonly GenesisEvent[]): void {
+  for (const event of events) setState(reduceGenesisEvent(state, event));
+}
+function sameViewIdentity(a: GenesisIdentity | null, b: GenesisIdentity | null): boolean { return a === null && b === null || sameGenesisIdentity(a,b); }
+function renderedViewCurrent(view: GenesisView | null | undefined): boolean {
+  return !!view && sameGenesisContext(view.context, admission.context) && sameViewIdentity(view.identity, admission.identity) && (view.eventContext === null && admission.eventContext === null || sameGenesisContext(view.eventContext, admission.eventContext));
+}
+function offeredSession(): void {
+  if (!admission.context) return;
+  if (admission.identity) retiredActivation = null;
+  if (!state.view || !sameGenesisContext(state.view.context, admission.context) || !sameViewIdentity(state.view.identity, admission.identity) || !(state.view.eventContext === null && admission.eventContext === null || sameGenesisContext(state.view.eventContext, admission.eventContext))) {
+    const view = { context: admission.context, identity: admission.identity, eventContext: admission.eventContext };
+    setState({ ...state, sessionId: admission.identity?.sessionId ?? null, view,
+      ...(admission.identity ? {cancelView:view} : {}) });
+  }
+}
+function reconcileManaged(newEvidence = false): void {
+  // A late, correlated native event can arrive after a bounded poll burst.
+  // Renew that finite read budget only for new evidence; it cannot admit an
+  // event, retry a model/effect command or select another session by itself.
+  if (newEvidence) reconcileTries = 0;
+  if (reconcileTimer !== null || reconcileTries >= 120 || !admission.context) return;
+  reconcileTimer = setTimeout(() => {
+    reconcileTimer = null; reconcileTries++;
+    void refreshGenesisStatus().then(() => refreshGenesisTranscript());
+  }, 500);
+}
+type ManagedRead<T> = { kind: "ready"; value: T } | { kind: "error"; message: string };
+interface ManagedStatus { status: GenesisStatusPayload; record: GenesisRecordPayload | null; starting: boolean; eventAttempt: number | null; eventContext: GenesisContextToken | null; banking?:GenesisBankingView|null }
+async function managedTurn<T extends StartOutcomePayload | SendOutcomePayload>(
+  run: (request: { expectedContext: GenesisContextToken; attempt: number; identity?: GenesisIdentity }) => Promise<GenesisReply<T>>,
+  send = false, view?: GenesisView | null,
+): Promise<T | null> {
+  const context = selectedGenesisContext();
+  if (!context || !renderedViewCurrent(view) || isTurnInFlight(state) || admission.awaiting || state.banking?.phase==="recovery") return null;
+  const identity = send ? admission.identity : null;
+  if (send && !identity) { const outcome = { kind: "noSession" } as T; setState(reduceGenesisOutcome(state, outcome)); return outcome; }
+  const attempt = nextManagedAttempt();
+  if (!admission.begin(attempt, identity)) return null;
+  setState({ ...state, preparing: true });
+  try {
+    const response = await withAnswerBound(() => run({ expectedContext: context, attempt, ...(identity ? { identity } : {}) }), () => null);
+    if (response === null) {
+      admission.uncertain(attempt); reconcileManaged();
+      if (sameGenesisContext(admission.context, context)) setState({ ...state, lastOutcome: { kind: "error", message: "The planner has not confirmed this request. Checking its original session before another turn." } });
+      return null;
+    }
+    const accepted = admission.complete(response, attempt);
+    if (!accepted.admitted) { if (accepted.reconcile) reconcileManaged(); return null; }
+    offeredSession();
+    setState(reduceGenesisOutcome({ ...state, preparing: false }, response.result));
+    applyManagedEvents(accepted.events);
+    if(response.result.kind==="busy")void refreshGenesisStatus().then(()=>refreshGenesisTranscript());
+    return response.result;
+  } catch {
+    admission.uncertain(attempt); reconcileManaged();
+    if (sameGenesisContext(admission.context, context)) setState({ ...state, lastOutcome: { kind: "error", message: "The planner response is unavailable. Checking its original session." } });
+    return null;
+  }
 }
 
 // ---- the liveness bound (T-184) -----------------------------------------
@@ -659,17 +787,14 @@ export async function startGenesisListener(): Promise<void> {
  * only an absence, and the only honest repair is to stop waiting.
  *
  * WHERE THE NUMBER COMES FROM, so it is derived rather than picked.
- * These commands do not wait for the turn — the runner spawns it on a
- * thread and answers as soon as it is accepted. The one bounded blocking
- * step inside a command's own body is the login-shell CLI probe, which
- * `genesis_start`'s doc comment in `src-tauri/src/lib.rs` names and
- * which `AgentConfig`'s `probe_timeout` in `src-tauri/src/agent/
- * runner.rs` sets to ten seconds; everything else is in-memory state or
- * local filesystem work. Thirty seconds is three times that one bounded
- * step, and it is also the runner's own longest single deadline
- * (`start_timeout`) — so this side never gives up before the Rust side
- * has had its full budget for anything it bounds. A healthy command
- * answers in milliseconds and never comes near it.
+ * These commands answer after startup rather than the whole model turn.
+ * The original thirty-second value was three times the ten-second login-
+ * shell probe and matched the runner's startup deadline. Managed setup now
+ * also verifies installed services and original context before spawn; that
+ * work can outlast this renderer wait. Expiry therefore retains the original
+ * pending attempt and asks scoped status instead of declaring native failure
+ * or permitting another turn. A new matching native event may renew a finite
+ * status-read burst, without changing either deadline or retrying effects.
  *
  * IT IS DELIBERATELY GENEROUS. The failure it converts is INFINITE, so
  * the cost of being too slow is one waiting user and the cost of being
@@ -725,7 +850,9 @@ export async function withAnswerBound<T>(
 
 /** Zero arguments cross the boundary: Rust assembles the kickoff from the
  * compiled-in method snapshot and the open project. */
-export async function startGenesis(): Promise<StartOutcomePayload | null> {
+export async function startGenesis(view?: GenesisView | null): Promise<StartOutcomePayload | null> {
+  if (isTauri && selectedGenesisContext()) return managedTurn((request) => invoke<GenesisReply<StartOutcomePayload>>("genesis_start", { request }), false, view);
+  if (view) return null;
   if (!isTauri || isTurnInFlight(state)) return null;
   try {
     const outcome = await withAnswerBound<StartOutcomePayload>(
@@ -745,8 +872,10 @@ export async function startGenesis(): Promise<StartOutcomePayload | null> {
  * is passed as data and lands on the child's stdin; it is never part of a
  * command line. */
 export async function sendGenesisTurn(
-  text: string,
+  text: string, view?: GenesisView | null,
 ): Promise<SendOutcomePayload | null> {
+  if (isTauri && selectedGenesisContext()) return managedTurn((request) => invoke<GenesisReply<SendOutcomePayload>>("genesis_send_turn", { request, text }), true, view);
+  if (view) return null;
   if (!isTauri || isTurnInFlight(state)) return null;
   try {
     const outcome = await withAnswerBound<SendOutcomePayload>(
@@ -826,8 +955,22 @@ export function reduceGenesisCancel(
  * with the sign flipped. So the disarm applies only when no event has
  * landed since the ask; when one has, the events are the newer truth and
  * they are left standing. */
-export async function cancelGenesis(): Promise<CancelOutcomePayload | null> {
+export async function cancelGenesis(view?: GenesisView | null): Promise<CancelOutcomePayload | null> {
   if (!isTauri) return null;
+  selectedGenesisContext();
+  const scoped = view?.identity && (sameGenesisIdentity(view.identity,admission.identity) && sameGenesisContext(view.eventContext ?? view.context,admission.eventContext) || retiredActivation && sameGenesisContext(view.eventContext ?? view.context, retiredActivation.context) && sameGenesisIdentity(view.identity, retiredActivation.identity)) ? {context:view.eventContext ?? view.context,identity:view.identity} : null;
+  if (scoped) {
+    const askedAt = state.seq; const attempt = nextManagedAttempt();
+    try {
+      const response = await invoke<GenesisReply<ManagedRead<CancelOutcomePayload>>>("genesis_cancel", { request: { expectedContext: scoped.context, identity: scoped.identity, attempt } });
+      if (response.attempt !== attempt || !sameGenesisContext(scoped.context, response) || !sameGenesisIdentity(scoped.identity, response.identity) || response.result.kind !== "ready") return null;
+      if (sameGenesisContext(admission.eventContext ?? admission.context, scoped.context) && sameGenesisIdentity(admission.identity, scoped.identity) && (response.result.value.kind === "cancelled" || state.seq === askedAt)) {
+        setState(reduceGenesisCancel(state, response.result.value));
+      }
+      return response.result.value;
+    } catch { return null; }
+  }
+  if (admission.context || retiredActivation || view) return null;
   const askedAt = state.seq;
   try {
     const outcome = await invoke<CancelOutcomePayload>("genesis_cancel");
@@ -847,14 +990,18 @@ export async function cancelGenesis(): Promise<CancelOutcomePayload | null> {
  * direction. Same shape as `startGenesis`, deliberately: the two are one
  * choice on the same screen and their outcomes are the same type.
  */
-export async function resumeGenesis(): Promise<StartOutcomePayload | null> {
+export async function resumeGenesis(view?: GenesisView | null): Promise<StartOutcomePayload | null> {
+  if (isTauri && selectedGenesisContext()) return managedTurn((request) => invoke<GenesisReply<StartOutcomePayload>>("genesis_resume", { request }), false, view);
+  if (view) return null;
   return startLike(() => invoke<StartOutcomePayload>("genesis_resume"));
 }
 
 /** T-029 criterion 3: continue with a fresh session — degraded, never
  * dead. The recorded session is marked abandoned Rust-side and the new
  * kickoff carries the method's resume rule. */
-export async function freshGenesis(): Promise<StartOutcomePayload | null> {
+export async function freshGenesis(view?: GenesisView | null): Promise<StartOutcomePayload | null> {
+  if (isTauri && selectedGenesisContext()) return managedTurn((request) => invoke<GenesisReply<StartOutcomePayload>>("genesis_fresh", { request }), false, view);
+  if (view) return null;
   return startLike(() => invoke<StartOutcomePayload>("genesis_fresh"));
 }
 
@@ -902,6 +1049,15 @@ export async function refreshGenesisTranscript(): Promise<
   readonly TranscriptLinePayload[]
 > {
   if (!isTauri) return [];
+  const context = selectedGenesisContext();
+  if (context) {
+    const attempt = nextManagedAttempt(), askedAt = state.seq, identity = admission.identity;
+    try {
+      const response = await invoke<GenesisReply<ManagedRead<TranscriptLinePayload[]>>>("genesis_transcript", { request: { expectedContext: context, attempt } });
+      if (response.attempt !== attempt || !sameGenesisContext(admission.context, response) || !sameGenesisContext(context, response) || state.seq !== askedAt || identity !== admission.identity || response.result.kind !== "ready" || !Array.isArray(response.result.value)) return [];
+      setState({ ...state, rehydrated: response.result.value }); return response.result.value;
+    } catch { return []; }
+  }
   try {
     const lines = await invoke<TranscriptLinePayload[]>("genesis_transcript");
     // The boundary answered with something that is not a list. Same
@@ -920,8 +1076,18 @@ export async function refreshGenesisTranscript(): Promise<
 /** T-029 criterion 4: the hand-driven mode's assembled kickoff. Not
  * stored — it is read once, when the fallback renders, and it is a
  * prompt rather than interview state. */
-export async function genesisKickoff(): Promise<KickoffOutcomePayload | null> {
+export async function genesisKickoff(view?: GenesisView | null): Promise<KickoffOutcomePayload | null> {
   if (!isTauri) return null;
+  const context = selectedGenesisContext();
+  if (context) {
+    if (!renderedViewCurrent(view)) return null;
+    const attempt = nextManagedAttempt();
+    try {
+      const result = await invoke<KickoffOutcomePayload>("genesis_kickoff", { request: { expectedContext: context, attempt } });
+      return sameGenesisContext(admission.context, context) ? result : null;
+    } catch (error) { return sameGenesisContext(admission.context, context) ? { kind: "error", message: String(error) } : null; }
+  }
+  if (view) return null;
   try {
     return await invoke<KickoffOutcomePayload>("genesis_kickoff");
   } catch (err) {
@@ -929,8 +1095,45 @@ export async function genesisKickoff(): Promise<KickoffOutcomePayload | null> {
   }
 }
 
+/** An explicit original offer replays the same native operation. A lost reply
+ * reconciles scoped facts; it never submits another bank or planner turn. */
+export async function replayGenesisBank(token:string,view?:GenesisView|null):Promise<GenesisBankingView|null> {
+  if(!isTauri||!selectedGenesisContext()||!renderedViewCurrent(view)||!admission.context||!admission.identity||
+    isTurnInFlight(state)||admission.awaiting||state.banking?.phase!=="recovery"||state.banking.recoveryToken!==token)return null;
+  const context=admission.context,identity=admission.identity,attempt=nextManagedAttempt();
+  if(!admission.begin(attempt,identity))return null;
+  setState({...state,preparing:true});
+  try {
+    const response=await withAnswerBound(()=>invoke<GenesisReply<ManagedRead<GenesisBankingView>>>("genesis_bank_replay",{request:{expectedContext:context,attempt,identity},token}),()=>null);
+    if(response===null){admission.uncertain(attempt);reconcileManaged();return null;}
+    const accepted=admission.complete(response,attempt);
+    if(!accepted.admitted){if(accepted.reconcile)reconcileManaged();return null;}
+    offeredSession();applyManagedEvents(accepted.events);
+    if(response.result.kind!=="ready"){setState({...state,preparing:false,lastOutcome:{kind:"error",message:response.result.message}});return null;}
+    if(response.seq>=state.seq)setState({...state,seq:response.seq,preparing:false,banking:response.result.value});
+    return response.result.value;
+  }catch{admission.uncertain(attempt);reconcileManaged();return null;}
+}
+
 export async function refreshGenesisStatus(): Promise<GenesisStatusPayload | null> {
   if (!isTauri) return null;
+  const context = selectedGenesisContext();
+  if (context) {
+    const attempt = nextManagedAttempt();
+    try {
+      const response = await invoke<GenesisReply<ManagedRead<ManagedStatus>>>("genesis_status", { request: { expectedContext: context, attempt } });
+      if (response.attempt !== attempt || !sameGenesisContext(context, response) || !sameGenesisContext(admission.context, context) || response.seq < state.seq) return null;
+      if (response.result.kind !== "ready") { if (admission.awaiting || response.result.message === "genesis-selection-busy") reconcileManaged(); return null; }
+      const accepted = admission.status(response, response.result.value.eventAttempt, response.result.value.eventContext);
+      if (!accepted.admitted) { if (accepted.reconcile || admission.awaiting) reconcileManaged(); return null; }
+      offeredSession(); applyManagedEvents(accepted.events);
+      if (response.seq >= state.seq) setState({ ...applyGenesisStatus(state, response.result.value.status), seq: response.seq, preparing: response.result.value.starting,banking:response.result.value.banking??null,
+        lastOutcome: response.result.value.record && !admission.identity ? (response.result.value.record.sessionIdRejected ? { kind: "sessionIdRejected", registryPath: ".supertaskr/sessions.json", why: response.result.value.record.sessionIdRejected } : response.result.value.record.nativeSessionId ? { kind: "resumeAvailable", nativeSessionId: response.result.value.record.nativeSessionId, turns: response.result.value.record.turns, model: response.result.value.record.model } : null) : null });
+      reconcileTries = 0;
+      if (accepted.reconcile) void refreshGenesisTranscript();
+      return response.result.value.status;
+    } catch { if (admission.awaiting) reconcileManaged(); return null; }
+  }
   try {
     const status = await invoke<GenesisStatusPayload>("genesis_status");
     setState(applyGenesisStatus(state, status));
@@ -943,6 +1146,9 @@ export async function refreshGenesisStatus(): Promise<GenesisStatusPayload | nul
 /** Test-only reset (the store is a module singleton). */
 export function __resetGenesisStoreForTests(): void {
   state = emptyGenesisState();
+  admission.select(null); retiredActivation = null;
+  contextSubscription?.(); contextSubscription = null;
+  if (reconcileTimer !== null) clearTimeout(reconcileTimer); reconcileTimer = null; reconcileTries = 0;
   listeners.clear();
   started = false;
 }

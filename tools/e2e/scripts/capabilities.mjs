@@ -36,13 +36,8 @@
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-// T-293, ADR-024 decision 2. THE STANDING READ'S INDEX RIDES WITH THE
-// CENSUS, and this import is the whole of that: every line of the index
-// is derived in `docs-scan.mjs`, the side-effect-free module the docs
-// gate already reads its budgets and its reader map out of. Two
-// generated documents, ONE command — because a second command is a
-// second thing to forget, and the card that put the index here says so.
-import { docsIndexStale, writeDocsIndex } from "./docs-scan.mjs";
+// Private governing INDEX derivation/check/save belongs to the selected
+// records service. This command owns only the product capability census.
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const e2eRoot = path.resolve(here, "..");
@@ -51,14 +46,20 @@ const testsDir = path.join(e2eRoot, "tests");
 const outPath = path.join(repoRoot, "docs", "CAPABILITIES.md");
 
 /** @typedef {{ file: string, line: number, raw: string, reason: string, count: number | null }} Omission */
-/** @typedef {string | Record<string, string | number>} Entry */
+/** @typedef {string | Record<string, string | number> | [string, string]} Entry */
 
 /**
- * Parse one array-literal body into entries (strings or flat objects).
+ * Parse one array-literal body into entries (strings, flat objects or
+ * complete two-string tuples). A tuple is one iteration, never two strings.
  * @param {string} body
  * @returns {Entry[]}
  */
 function parseArrayLiteral(body) {
+  const pairs = /\[\s*("(?:[^"\\]|\\.)*")\s*,\s*("(?:[^"\\]|\\.)*")\s*\]/g;
+  const tuples = [...body.matchAll(pairs)];
+  if (tuples.length > 0 && body.replace(pairs, "").replace(/[\s,]/g, "") === "") {
+    return tuples.map(tuple => /** @type {[string, string]} */ ([JSON.parse(tuple[1] ?? "null"), JSON.parse(tuple[2] ?? "null")]));
+  }
   /** @type {Entry[]} */
   const entries = [];
   const stringOnly = body.replace(/\{[^}]*\}/g, "");
@@ -477,8 +478,6 @@ try {
     console.log(
       `capabilities: wrote ${path.relative(repoRoot, outPath)} (${Buffer.byteLength(fresh)} bytes)`,
     );
-    const index = writeDocsIndex();
-    console.log(`capabilities: wrote ${index.path} (${index.bytes} bytes) — the standing read's index`);
     process.exit(0);
   }
   /** @type {string | null} */
@@ -491,30 +490,14 @@ try {
     );
     process.exit(1);
   }
-  // THE INDEX IS THE SECOND HALF OF THE SAME QUESTION, and both halves
-  // are reported before the exit rather than the first one short-
-  // circuiting: a session told only that the census is stale regenerates
-  // and meets the index's red on the next command.
-  const indexStale = docsIndexStale();
-  if (committed === fresh && indexStale === null) {
-    console.log(
-      `capabilities: CURRENT (${Buffer.byteLength(fresh)} bytes), and docs/INDEX.md is CURRENT`,
-    );
+  if (committed === fresh) {
+    console.log(`capabilities: CURRENT (${Buffer.byteLength(fresh)} bytes)`);
     process.exit(0);
   }
-  if (committed !== fresh) {
-    console.error(
-      `capabilities: STALE — committed ${Buffer.byteLength(committed)} bytes, ` +
-        `a fresh generation is ${Buffer.byteLength(fresh)} bytes; run npm run capabilities`,
-    );
-  }
-  if (indexStale !== null) {
-    console.error(
-      "capabilities: docs/INDEX.md is STALE — " +
-        `committed ${indexStale.committed === null ? "MISSING" : `${Buffer.byteLength(indexStale.committed)} bytes`}, ` +
-        `a fresh generation is ${Buffer.byteLength(indexStale.fresh)} bytes; run npm run capabilities`,
-    );
-  }
+  console.error(
+    `capabilities: STALE — committed ${Buffer.byteLength(committed)} bytes, ` +
+      `a fresh generation is ${Buffer.byteLength(fresh)} bytes; run npm run capabilities`,
+  );
   process.exit(1);
 } catch (err) {
   console.error(

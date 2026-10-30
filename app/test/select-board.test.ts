@@ -1,3 +1,4 @@
+import { createExampleProject } from "../../tools/e2e/fixtures/example-project.mjs";
 import { readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -769,7 +770,7 @@ describe("soft issues join to their card by file (T-031, absorbing T-019-s1)", (
 //
 // Every body below drives `selectDispositions`, `normaliseTouchToken`,
 // `touchTokensOverlap`, `expandTouch` or `fenceClashes`. Half run on
-// synthetic models and half on THIS REPOSITORY'S OWN LIVE BOARD, which
+// synthetic models and half on THIS REPOSITORY'S OWN REPRESENTATIVE BOARD, which
 // the card asks for by name — a normalisation rule pinned against a
 // synthetic pair is pinned against the pair somebody invented, and the
 // collisions that actually exist here are not that pair.
@@ -790,7 +791,7 @@ describe("soft issues join to their card by file (T-031, absorbing T-019-s1)", (
 // integrator no reconciliation it can avoid owing (the `T-135-s3` class).
 // =====================================================================
 
-const REPO_ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
+const REPO_ROOT = createExampleProject(resolve(fileURLToPath(new URL(".", import.meta.url)), "../.."));
 
 const readRepo = (rel: string): string => readFileSync(join(REPO_ROOT, rel), "utf8");
 
@@ -798,7 +799,7 @@ const readRepo = (rel: string): string => readFileSync(join(REPO_ROOT, rel), "ut
 const NO_REASON_STATUSES = new Set<TaskStatus>(["done", "merging", "parked"]);
 
 /**
- * This repository's live board, through the real parser. Flat
+ * This repository's representative board, through the real parser. Flat
  * `docs/tasks/*.md` only — `rejected/` is excluded from the board by
  * design (CONVENTIONS' suggestion-triage bullet).
  *
@@ -816,7 +817,7 @@ const NO_REASON_STATUSES = new Set<TaskStatus>(["done", "merging", "parked"]);
  * `docs/tasks` + `docs/architecture/components` reader, which is the true
  * answer, and nothing has to be argued into a ledger outside this fence.
  */
-function liveBoard(): ProjectParseResult {
+function exampleBoard(): ProjectParseResult {
   const files: Array<{ path: string; content: string }> = [];
   for (const name of readdirSync(join(REPO_ROOT, "docs/tasks"))) {
     if (name.endsWith(".md")) {
@@ -835,7 +836,7 @@ function liveBoard(): ProjectParseResult {
   return parseProjectFromFiles(files);
 }
 
-/** The raw `touches:` tokens on the live board and the cards holding
+/** The raw `touches:` tokens on the representative board and the cards holding
  * each — the census criterion 3 says the normalisation pin must be driven
  * from. */
 function liveTouchTokens(model: ProjectParseResult): Map<string, string[]> {
@@ -934,11 +935,11 @@ describe("normalisation is ONE function and it states its own ceiling (criterion
   });
 
   it("the two spellings that collide on THIS board are both live, and they overlap", () => {
-    // Criterion 3 asks for a pin "driven from the live board's own tokens
+    // Criterion 3 asks for a pin "driven from the representative board's own tokens
     // rather than a synthetic pair", so the corpus is asserted before the
     // rule is: a normalisation pinned against a pair nobody writes is a
     // pin against nothing.
-    const tokens = liveTouchTokens(liveBoard());
+    const tokens = liveTouchTokens(exampleBoard());
     expect(tokens.has("tools/e2e")).toBe(true);
     expect(tokens.has("tools/e2e/")).toBe(true);
     expect(touchTokensOverlap("tools/e2e", "tools/e2e/")).toBe(true);
@@ -952,7 +953,7 @@ describe("normalisation is ONE function and it states its own ceiling (criterion
     // collisions; the two it misses are CONTAINMENTS, and one of them has
     // grown a whole family since that census — every `method/<file>` token
     // a card now carries sits under the bare `method/` other cards hold.
-    const tokens = liveTouchTokens(liveBoard());
+    const tokens = liveTouchTokens(exampleBoard());
     expect(tokens.has("docs")).toBe(true);
     expect(tokens.has("docs/CONVENTIONS.md")).toBe(true);
     expect(touchTokensOverlap("docs", "docs/CONVENTIONS.md")).toBe(true);
@@ -970,7 +971,7 @@ describe("normalisation is ONE function and it states its own ceiling (criterion
     // exists so the ceiling in the doc comment cannot drift away from the
     // behaviour: if somebody closes it with a special case, this reds and
     // they have to move the doc with it.
-    const tokens = liveTouchTokens(liveBoard());
+    const tokens = liveTouchTokens(exampleBoard());
     expect(tokens.has("ci")).toBe(true);
     expect(tokens.has(".github/")).toBe(true);
     expect(touchTokensOverlap("ci", ".github/")).toBe(false);
@@ -979,7 +980,7 @@ describe("normalisation is ONE function and it states its own ceiling (criterion
   it("T-054 is still the live fixture carrying three of the four at once", () => {
     // `T-111-s3` nominates it, so the nomination is CHECKED rather than
     // quoted: a fixture that has moved is not a fixture.
-    const t054 = liveBoard().tasks.find((t) => t.id === "T-054");
+    const t054 = exampleBoard().tasks.find((t) => t.id === "T-054");
     expect(t054?.touches).toEqual(["docs", "method", "tools/e2e", "ci"]);
   });
 });
@@ -998,7 +999,7 @@ describe("a fence is compared over EXPANDED components, never slug strings (T-11
     // board, so it is pinned on a synthetic registry in the clash body
     // below — a pin driven from a fact the tree no longer carries is a
     // pin against nothing, which is this section's own header rule.
-    const comps = liveBoard().components ?? [];
+    const comps = exampleBoard().components ?? [];
     const board = expandTouch("app-board", comps);
     const shell = expandTouch("app-shell", comps);
     expect(board.kind).toBe("slug");
@@ -1026,7 +1027,7 @@ describe("a fence is compared over EXPANDED components, never slug strings (T-11
   });
 
   it("a token naming no slug is a literal path and expands to itself", () => {
-    const comps = liveBoard().components ?? [];
+    const comps = exampleBoard().components ?? [];
     const e = expandTouch("docs/CONVENTIONS.md", comps);
     expect(e.kind).toBe("path");
     expect(e.componentIds).toEqual([]);
@@ -1066,7 +1067,7 @@ describe("a fence is compared over EXPANDED components, never slug strings (T-11
 
     // AND THE LIVE HALF, WHICH IS NOW T-163's OWN RESULT: the pair that
     // used to drive this body comes back with nothing.
-    const comps = liveBoard().components ?? [];
+    const comps = exampleBoard().components ?? [];
     expect(
       fenceClashes(
         { taskId: "T-111", touches: ["app-board"] },
@@ -1089,9 +1090,9 @@ describe("a fence is compared over EXPANDED components, never slug strings (T-11
     // parent tells a human that a lane holding one file has reserved a
     // whole directory tree, which is the coarseness this card exists to
     // make visible rather than to manufacture.
-    const model = liveBoard();
+    const model = exampleBoard();
     const comps = model.components ?? [];
-    // DRIVEN FROM THE LIVE BOARD'S OWN TOKENS, as criterion 3 requires:
+    // DRIVEN FROM THE REPRESENTATIVE BOARD'S OWN TOKENS, as criterion 3 requires:
     // one card holds a bare `docs` and twenty-odd hold a file under it.
     const holdersOf = (token: string): string[] =>
       model.tasks.filter((t) => t.touches.includes(token)).map((t) => t.id ?? t.file);
@@ -1125,7 +1126,7 @@ describe("a fence is compared over EXPANDED components, never slug strings (T-11
     // reversed registry is what makes the sort observable — and the
     // ordering is load-bearing, because `viaComponents` is rendered into
     // a reason a human reads and compares between runs.
-    const comps = liveBoard().components ?? [];
+    const comps = exampleBoard().components ?? [];
     const holders = (cs: typeof comps): string[] =>
       cs.filter((c) => c.touchSlugs.includes("app-board")).map((c) => c.id);
     const reversed = [...comps].reverse();
@@ -1178,7 +1179,7 @@ describe("a fence is compared over EXPANDED components, never slug strings (T-11
     // written — and a test title claiming a count would be false without
     // a byte of the tree changing. What is a function of the tree is what
     // these two CARDS declare, and that is all this body asserts.
-    const model = liveBoard();
+    const model = exampleBoard();
     const comps = model.components ?? [];
     const touchesOf = (id: string): string[] =>
       model.tasks.find((t) => t.id === id)?.touches ?? [];
@@ -2245,9 +2246,9 @@ describe("the rest of the six, and the reason is always TEXT (criteria 1, 4, 7)"
   });
 });
 
-describe("THE LIVE BOARD — the frontier run on this repository (verification line)", () => {
+describe("THE REPRESENTATIVE BOARD — the frontier run on this repository (verification line)", () => {
   it("every card gets one of the six, and every applicable one carries a reason", () => {
-    const model = liveBoard();
+    const model = exampleBoard();
     const d = selectDispositions(model, NO_LANES);
     if (d.kind !== "derived") throw new Error("unreachable");
     const ids = new Set(model.tasks.map((t) => t.id).filter((id) => id !== undefined));
@@ -2291,7 +2292,7 @@ describe("THE LIVE BOARD — the frontier run on this repository (verification l
     //     blockers on every one of those cards, correctly and
     //     permanently; the derived answer resolves each id instead of
     //     reading the field for a verdict it does not hold.
-    const model = liveBoard();
+    const model = exampleBoard();
     const statusOf = new Map(
       model.tasks.filter((t) => t.id !== undefined).map((t) => [t.id as string, t.status]),
     );
@@ -2311,12 +2312,12 @@ describe("THE LIVE BOARD — the frontier run on this repository (verification l
 
   it("no live card names a blocker that does not exist — so criterion 6 needs a fixture", () => {
     // Measured rather than assumed. `T-111-s2` item 6 claims this case
-    // "CANNOT be driven from the live board", and that claim is a
+    // "CANNOT be driven from the representative board", and that claim is a
     // function of a tree — so it is re-derived at whatever ref this runs
     // on, and it reds the day somebody drafts a card with a typo'd
     // blocker, which is the day the claim stops being true.
     expect(
-      liveBoard().issues.filter(
+      exampleBoard().issues.filter(
         (i) => i.kind === "dangling-reference" && i.field === "blocked_by",
       ),
     ).toEqual([]);
@@ -2401,12 +2402,12 @@ describe("selectBoard — the assignment flag (T-169, @human's D5 ruling)", () =
     expect(index.get(path("T-011"))).toBeUndefined();
   });
 
-  it("THE LIVE BOARD CENSUSES CLEAN — zero cards disagree with their own assignment", () => {
+  it("THE REPRESENTATIVE BOARD CENSUSES CLEAN — zero cards disagree with their own assignment", () => {
     // Criterion 3, derived at whatever ref this runs on and never
     // assumed. A failure prints the card and both values, so the reader
     // learns WHICH card and WHAT it says without a second command.
     const flagged: string[] = [];
-    for (const column of selectBoard(liveBoard()).columns) {
+    for (const column of selectBoard(exampleBoard()).columns) {
       for (const card of [...column.cards, ...column.ghosts, ...column.parked]) {
         for (const entry of card.assignment ?? []) {
           flagged.push(
@@ -2419,12 +2420,12 @@ describe("selectBoard — the assignment flag (T-169, @human's D5 ruling)", () =
     expect(flagged).toEqual([]);
   });
 
-  it("and that census is not vacuous — the live board really does stamp both halves", () => {
+  it("and that census is not vacuous — the representative board really does stamp both halves", () => {
     let constrained = 0;
-    for (const t of liveBoard().tasks) {
+    for (const t of exampleBoard().tasks) {
       if (t.builder !== undefined && t.builtBy !== undefined) constrained++;
       if (t.verifier !== undefined && t.verifiedBy !== undefined) constrained++;
     }
-    expect(constrained).toBeGreaterThan(100);
+    expect(constrained).toBe(16); // representative simple and compound stamped pairs
   });
 });

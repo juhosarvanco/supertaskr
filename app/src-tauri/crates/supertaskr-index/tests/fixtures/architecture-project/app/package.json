@@ -1,0 +1,7 @@
+{
+  "name": "example-app",
+  "type": "module",
+  "dependencies": {
+    "@example/parser": "file:../lib/parser"
+  }
+}

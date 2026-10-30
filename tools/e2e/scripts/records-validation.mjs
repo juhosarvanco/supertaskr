@@ -3,10 +3,13 @@
  * This additive entry loads the canonical pure parser; strict records imports do not.
  */
 import { createHash } from "node:crypto";
-import { parseProjectFromFiles, isTaskFilePath, isComponentFilePath } from "../../../lib/parser/dist/pure.js";
-import { captureRawCommittedInputs, RecordReaderFinding } from "./records.mjs";
+import { parseProjectFromFiles } from "../../../lib/parser/dist/pure.js";
+import {ordinaryRecordTextPath,GENERIC_RECORD_PROFILE,normalizeRecordProfile} from "./records-profile.mjs";
+export {ordinaryRecordTextPath,GENERIC_RECORD_PROFILE,normalizeRecordProfile} from "./records-profile.mjs";
+import { captureRawCommittedInputs } from "./records.mjs";
+import {RecordReaderFinding} from "./records-finding.mjs";
 import { INDEXED_DOCS, INDEX_DOC, INDEX_RULING, CONVENTIONS_DOC, conventionsChapters,
-  renderDocsIndexFromSource, ruledIndexedDocsFromText } from "./docs-scan.mjs";
+  docSections, indexWhere, renderDocsIndexFromSource, ruledIndexedDocsFromText } from "./docs-scan.mjs";
 
 /** Explicit input classification. CAPABILITIES remains product-owned, per ADR-024. */
 export const RECORD_INDEX_INPUTS = Object.freeze(INDEXED_DOCS.map((relativePath) => Object.freeze({
@@ -18,7 +21,7 @@ export const RECORD_INDEX_INPUTS = Object.freeze(INDEXED_DOCS.map((relativePath)
 /** @typedef {Record<string, any> & {kind: string, message: string}} Diagnostic */
 /** @typedef {{family: any, members: any[]}} CauseGroup */
 /** @typedef {{identity: any, diagnostic: Diagnostic, group?: CauseGroup}} Fact */
-/** @type {WeakMap<object, {receipt: any, paths: Record<Role, readonly string[]>, inputs: Map<string, Input>, identity: any}>} */
+/** @type {WeakMap<object, {receipt: any, paths: Record<Role, readonly string[]>, inputs: Map<string, Input>, identity: any, profile: any}>} */
 const materialized = new WeakMap();
 /** @param {string} code @param {string} detail @returns {never} */
 function refuse(code, detail) { throw new RecordReaderFinding(code, detail); }
@@ -40,15 +43,13 @@ function stable(value) {
 /** @param {string|Uint8Array} value */
 function digest(value) { return createHash("sha256").update(value).digest("hex"); }
 /** @param {unknown} relativePath @returns {string} */
-function safePath(relativePath) {
-  if (typeof relativePath !== "string" || !relativePath.startsWith("docs/") ||
-      /[\\\x00-\x1f\x7f]/.test(relativePath) || relativePath.split("/").some((p) => !p || p === "." || p === "..")) {
+function safePath(relativePath, role = "records") {
+  if (typeof relativePath !== "string" || relativePath.startsWith("/") || (role === "records" && !relativePath.startsWith("docs/")) ||
+      /[\\\x00-\x1f\x7f]/.test(relativePath) || relativePath.split("/").some((p) => !p || [".", "..", ".git", ".supertaskr"].includes(p))) {
     refuse("records-candidate-path-unsafe", String(relativePath));
   }
   return relativePath;
 }
-/** @param {string} relativePath */
-function chapterPath(relativePath) { return /^docs\/conventions\/[a-z0-9-]+\.md$/.test(relativePath); }
 /** @param {Role} role @param {string} relativePath */
 function key(role, relativePath) { return `${role}:${relativePath}`; }
 /** Locale-independent identity ordering. @param {{role: Role, path: string}} a @param {{role: Role, path: string}} b */
@@ -62,8 +63,17 @@ function read(inputs, role, relativePath) {
   if (!input) refuse("records-input-missing", `${role}:${relativePath} in materialized candidate`);
   return input.content;
 }
-/** @param {Map<string, Input>} inputs @param {readonly string[]} paths */
-function render(inputs, paths) {
+/** @param {Map<string, Input>} inputs @param {readonly string[]} paths @param {any} profile */
+function render(inputs, paths, profile) {
+  if (profile.kind === "generic") {
+    const lines = ["# Index", "", "<!-- GENERATED — supertaskr records --stdio checks and saves these exact heading/section bytes. -->", ""];
+    for (const file of profile.indexInputs) {
+      const text = read(inputs, "records", file), heading = /^#\s+(\S[^\r\n]*)/m.exec(text)?.[1];
+      if (!heading) refuse("records-index-heading-missing", file);
+      lines.push(`- **${heading.trim()}** (\`${file}\`) — **Open it at:** ${indexWhere(docSections(text))}`);
+    }
+    return `${lines.join("\n")}\n`;
+  }
   const ruled = ruledIndexedDocsFromText(read(inputs, "records", INDEX_RULING.file));
   if (stable(ruled) !== stable(INDEXED_DOCS.map((p) => p.slice(5, -3)))) refuse("records-index-ruling-mismatch", "captured ruling differs from the indexed set");
   return renderDocsIndexFromSource({
@@ -79,41 +89,68 @@ function render(inputs, paths) {
  * Extra literal inputs may be selected explicitly; they never replace a required input.
  * The returned handle owns no lazy reader. Deleting both repositories afterwards is safe.
  * @param {{productRoot: string, recordsRevision: string, productRevision: string,
- *   requiredInputs?: readonly {role: Role, path: string}[]}} options
+ *   requiredInputs?: readonly {role: Role, path: string}[], profile?: any}} options
  */
 export function captureRecordCandidateInputs(options) {
+  const profile = normalizeRecordProfile(options.profile);
   const captured = captureRawCommittedInputs(options);
   const paths = { product: captured.paths("product"), records: captured.paths("records") };
   const entries = { product: captured.entries("product"), records: captured.entries("records") };
   // An absent namespace is an explicit empty collection; a non-tree namespace
   // is unavailable context, never an empty board/registry/chapter collection.
-  for (const parent of ["docs/tasks", "docs/architecture", "docs/architecture/components", "docs/conventions"]) {
+  for (const parent of ["docs/tasks", "docs/architecture", "docs/architecture/components", "docs/conventions", "docs/rooms", "docs/decisions", "docs/plans", "docs/reviews", "docs/checkpoints", "docs/design", "docs/guide", "docs/reference", "docs/research", "docs/business", "docs/benches"]) {
     const entry = entries.records.find((e) => e.relativePath === parent);
     if (entry && entry.type !== "tree") refuse("records-entry-not-regular", `${parent}: expected a Git tree, got ${entry.mode} ${entry.type}`);
   }
   /** @type {Map<string, Input>} */
   const inputs = new Map();
+  /** @type {Map<Role, Set<string>>} */
+  const pending = new Map([["product", new Set()], ["records", new Set()]]);
   /** @param {Role} role @param {string} relativePath */
   function retain(role, relativePath) {
     if (role !== "product" && role !== "records") refuse("records-input-role-invalid", String(role));
-    safePath(relativePath);
-    const selected = captured.read(role, relativePath);
-    inputs.set(key(role, relativePath), { ...selected, content: selected.bytes.toString("utf8"), type: "blob", bytes: selected.bytes });
+    safePath(relativePath, role);
+    if (!inputs.has(key(role, relativePath))) pending.get(role)?.add(relativePath);
   }
-  for (const input of [...RECORD_INDEX_INPUTS, { role: /** @type {Role} */ ("records"), path: INDEX_RULING.file }, ...(options.requiredInputs ?? [])]) retain(input.role, input.path);
+  function materializePending() {
+    for (const [role, paths] of pending) {
+      for (const selected of captured.readMany(role, [...paths])) inputs.set(key(role, selected.path), {
+        ...selected, content: selected.bytes.toString("utf8"), type: "blob", bytes: selected.bytes });
+      paths.clear();
+    }
+  }
+  const required = profile.kind === "generic" ? [...new Set([...profile.indexInputs, ...Object.keys(profile.budgets)])].map((file) => ({ role: /** @type {Role} */ ("records"), path: file }))
+    : [...RECORD_INDEX_INPUTS, { role: /** @type {Role} */ ("records"), path: INDEX_RULING.file }];
+  for (const input of [...required, ...(options.requiredInputs ?? [])]) retain(input.role, input.path);
+  if (paths.records.includes(INDEX_DOC)) retain("records", INDEX_DOC);
   for (const relativePath of paths.records) {
-    if (isTaskFilePath(relativePath) || isComponentFilePath(relativePath) || chapterPath(relativePath)) retain("records", relativePath);
+    if (ordinaryRecordTextPath(relativePath)) retain("records", relativePath);
   }
+  materializePending();
   // Every pointer is required in the selected records tree. No product/chapter fallback.
   for (const chapter of conventionsChapters(read(inputs, "records", CONVENTIONS_DOC))) {
     if (!inputs.has(key("records", chapter))) retain("records", chapter);
   }
+  materializePending();
   const manifest = [...inputs.values()].map((i) => ({ role: i.role, path: i.path, mode: i.mode, type: i.type,
     blobId: i.blobId, sha256: digest(i.bytes) })).sort(compareInputs);
-  const identity = freeze({ receipt: captured.receipt, paths, entries, inputs: manifest });
+  const identity = freeze({ receipt: captured.receipt, paths, entries, inputs: manifest, ...(options.profile === undefined ? {} : { profile }) });
   const handle = Object.freeze({ receipt: captured.receipt, identity, digest: digest(stable(identity)) });
-  materialized.set(handle, { receipt: captured.receipt, paths, inputs, identity });
+  materialized.set(handle, { receipt: captured.receipt, paths, inputs, identity, profile });
   return handle;
+}
+
+/** Detached, eagerly retained inputs for supplemental consumers. No lazy Git
+ * reader or mutable baseline map escapes the opaque evaluator handle.
+ * @param {ReturnType<typeof captureRecordCandidateInputs>} captured */
+export function recordCandidateProjection(captured) {
+  const baseline = materialized.get(captured);
+  if (!baseline) refuse("records-candidate-not-materialized", "capture the exact baseline before requesting supplemental data");
+  return Object.freeze({ receipt: captured.receipt, paths: baseline.paths, profile: baseline.profile,
+    inputs: Object.freeze([...baseline.inputs.values()].map((input) => Object.freeze({
+      role: input.role, path: input.path, mode: input.mode, type: input.type, blobId: input.blobId,
+      content: input.content, get bytes() { return Buffer.from(input.bytes); },
+    }))) });
 }
 
 /** Canonical display is kept verbatim. Comparison facts describe typed causes:
@@ -362,11 +399,13 @@ export function evaluateRecordCandidate(captured, overlay) {
   /** @type {any} */
   let suppliedOverlay = null;
   /** @type {string|undefined} */
-  let beforeIndex, candidateIndex;
+  let beforeIndex;
+  /** @type {string|undefined} */
+  let candidateIndex;
   try {
     const reading = diagnostics(baseline.inputs);
     baselineDiagnostics = reading.diagnostics; baselineFacts = reading.facts;
-    beforeIndex = render(baseline.inputs, baseline.paths.records);
+    beforeIndex = render(baseline.inputs, baseline.paths.records, baseline.profile);
   } catch (err) {
     failures.push({ kind: "baseline-context-unavailable", message: message(err) });
   }
@@ -382,7 +421,7 @@ export function evaluateRecordCandidate(captured, overlay) {
       seen.add(relativePath);
       if (relativePath === INDEX_DOC || relativePath === INDEX_RULING.file ||
           RECORD_INDEX_INPUTS.some((i) => i.role === "product" && i.path === relativePath) ||
-          !(baseline.inputs.has(key("records", relativePath)) || isTaskFilePath(relativePath) || isComponentFilePath(relativePath) || chapterPath(relativePath))) {
+          !(baseline.inputs.has(key("records", relativePath)) || ordinaryRecordTextPath(relativePath))) {
         refuse("records-overlay-path-unselected", relativePath);
       }
       const present = paths.has(relativePath);
@@ -407,7 +446,7 @@ export function evaluateRecordCandidate(captured, overlay) {
     const reading = diagnostics(inputs);
     candidateDiagnostics = reading.diagnostics; candidateFacts = reading.facts;
     candidateDiagnosticsComplete = true;
-    candidateIndex = render(inputs, [...paths].sort());
+    candidateIndex = render(inputs, [...paths].sort(), baseline.profile);
   } catch (err) {
     failures.push({ kind: "candidate-input-invalid", code: err instanceof RecordReaderFinding ? err.code : "records-index-invalid", message: message(err) });
   }
@@ -425,5 +464,7 @@ export function evaluateRecordCandidate(captured, overlay) {
   return Object.freeze({ accepted, identity, digest: digest(stable(identity)), baseline: captured.identity,
     baselineDiagnostics: freeze(baselineDiagnostics), candidateDiagnostics: freeze(candidateDiagnostics),
     introducedDiagnostics: freeze(introducedDiagnostics), resolvedDiagnostics: freeze(resolvedDiagnostics), failures: freeze(failures), outputs,
+    baselineIndex: beforeIndex === undefined ? undefined : Object.freeze({ path: INDEX_DOC, get bytes() { return Buffer.from(/** @type {string} */ (beforeIndex)); } }),
+    derivedIndex: accepted ? Object.freeze({ path: INDEX_DOC, mode: "100644", get bytes() { return Buffer.from(/** @type {string} */ (candidateIndex)); } }) : undefined,
     authority: "candidate data only; no save, write or dispatch authority" });
 }

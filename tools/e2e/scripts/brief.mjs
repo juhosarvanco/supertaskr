@@ -156,7 +156,7 @@ import os from "node:os";
 import path from "node:path";
 import { readCommittedBoard, captureTaskSnapshot, activeTaskContract } from "./records.mjs";
 import { resolveWorkspace, workspaceBindingPresent, WorkspaceFinding } from "./workspace.mjs";
-import { findCheckoutRoot } from "../../../.claude/hooks/lane-fence.mjs";
+import { findCheckoutRoot } from "../../../cli/lane-fence.mjs";
 
 const FLAGS = Object.freeze([
   "--task",
@@ -488,7 +488,7 @@ const { NativeCodexFinding, nativeShellQuote } = await legacyModule(() => import
 // line above reaches its neighbour: the installer imports node builtins and
 // the hooks beside it and nothing else, so it loads in a lane worktree
 // ninety seconds old exactly as `lane-fence.mjs` does.
-const { hookStatus, installHook } = await legacyModule(() => import("../../../.claude/hooks/hook-install.mjs"));
+const { hookStatus, installHook } = await legacyModule(() => import("../../../cli/hook-install.mjs"));
 const { main: mergeMain, mergeDials } = await legacyModule(() => import("./merge.mjs"));
 const { LaneLockFinding, applyLaneLock } = await legacyModule(() => import("./lane-lock.mjs"));
 const { DECOMPOSITION_FILE, earsKeywords, isEars, seatRecs } = await legacyModule(() => import("./session-economics.mjs"));
@@ -1333,7 +1333,7 @@ async function main(argv) {
           attempt: plan.attempt, assignment: readAssignment(plan.assignment),
           ...(plan.ref === undefined ? {} : { ref: plan.ref }),
         });
-        const got = collectRun(runRoot, {
+        const got = await collectRun(runRoot, {
           attempt: plan.attempt,
           ...(plan.usage === undefined ? {} : { usage: plan.usage }),
           ...(bench === undefined ? (plan.ref === undefined ? {} : { ref: plan.ref }) : { ref: bench.candidate }),
@@ -1349,10 +1349,13 @@ async function main(argv) {
           `evidence entries retained: ${String(got.collected.evidence.length)}`,
         ];
         if (bench !== undefined) {
-          const prepared = prepareNativeBenchRun(runRoot, { attempt: plan.attempt, resource: bench.resource,
-            candidate: bench.candidate, at });
+          const prepared = await prepareNativeBenchRun(runRoot, { attempt: plan.attempt, resource: bench.resource,
+            candidate: bench.candidate, ...("assignment" in bench ? { assignment: bench.assignment } : {}), at });
           record = prepared.record;
-          extra.push(`prepared detached-verifier: task ${prepared.manifest.taskId}; resource ${prepared.manifest.worktree}; candidate ${prepared.manifest.ref}; executor ${plan.attempt}; digest ${prepared.manifest.preparation.digest}`);
+          if (prepared.preparation !== undefined) {
+            extra.push(`prepared complete qualified verifier: executor ${plan.attempt}; digest ${prepared.preparation.digest}; phase one follows`, prepared.phase1,
+              `Use the returned preparation digest in the verifier assignment; seal the saved phase-one return through sealQualifiedVerification before start.`);
+          } else extra.push(`prepared detached-verifier: task ${prepared.manifest.taskId}; resource ${prepared.manifest.worktree}; candidate ${prepared.manifest.ref}; executor ${plan.attempt}; digest ${prepared.manifest.preparation.digest}`);
         }
       } else if (plan.verb === "continue") {
         const carried = await continueRun(runRoot, {

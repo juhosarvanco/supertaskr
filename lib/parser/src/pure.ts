@@ -166,3 +166,7 @@ export {
   type DispatchLimits,
   type DispatchRevocation,
 } from './process-settings.js';
+export { PROJECT_SETTINGS, ProjectSettingsFinding, parseSettings, freezeSettings, missingSettings, settingsRelativePath,
+  normalizeDeliveryCiSelection, normalizeProjectPublication, isDeliveryBranchRef, VERIFICATION_TIERS, normalizeProjectTierBudgets,
+  type ProjectSettings, type ConfiguredCommand, type ConfiguredSuite, type ProjectPublication, type DeliveryCiSelection, type VerificationTier, type ProjectTierBudgets } from './project-settings.js';
+export { blankInertSpans, type InertSpanResult } from './inert-spans.js';

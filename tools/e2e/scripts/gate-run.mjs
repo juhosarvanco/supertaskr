@@ -203,6 +203,8 @@
 
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
+import { assertConfiguredDispatchGradeAuthority } from "./configured-dispatch-grade.mjs";
+import { assertQualifiedIntegrationGradeAuthority } from "./qualified-integration-grade.mjs";
 import {
   closeSync,
   existsSync,
@@ -210,6 +212,8 @@ import {
   openSync,
   readFileSync,
   readdirSync,
+  realpathSync,
+  lstatSync,
   rmSync,
   statSync,
   writeFileSync,
@@ -222,8 +226,13 @@ import {
   headTree,
   trackedDirt,
   writeToken,
-} from "../../../.claude/hooks/gate-token.mjs";
+} from "../../../cli/gate-token.mjs";
 import { docsGate, docsReaders, sourceCorpus, stripComments, trackedFiles } from "./docs-scan.mjs";
+import { loadInstalledRecordTool, requireInstalledRuntimeAssets } from "./records-check.mjs";
+import { loadProjectSettings, requireProjectSection, PROJECT_SETTINGS } from "./project-settings.mjs";
+import { captureOperationRepository } from "./durable-operation.mjs";
+import { operationContent } from "./operation-record.mjs";
+import { isMain } from "../../../cli/is-main.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 /** Repo root: tools/e2e/scripts -> tools/e2e -> tools -> root. */
@@ -277,7 +286,7 @@ const SHELL_METACHARACTERS = /[|&;<>()$`\\"'*?\[\]{}~\n\r]/;
  * @property {string} cwd       Relative to repoRoot; resolved absolute.
  * @property {string} sentinel  Must exist in cwd, or the run is REFUSED.
  * @property {string[]} argv    Never a shell string.
- * @property {"cargo"|"playwright"|"vitest"} family
+ * @property {"cargo"|"playwright"|"vitest"|"unittest"} family
  * @property {boolean} solo
  * @property {string} why       Why this spelling, in a reader's words.
  */
@@ -287,52 +296,10 @@ const SHELL_METACHARACTERS = /[|&;<>()$`\\"'*?\[\]{}~\n\r]/;
 // `{...GRADED_SUITES.rust}` into a bag of optional properties, while a
 // bare inference widens `family` to `string`. `@satisfies` checks the
 // shape AND keeps the literal types the counters switch on.
-/** @satisfies {Readonly<Record<string, Suite>>} */
-export const GRADED_SUITES = Object.freeze({
-  parser: {
-    id: "parser",
-    cwd: "lib/parser",
-    sentinel: "package.json",
-    argv: ["npx", "vitest", "run"],
-    family: "vitest",
-    solo: false,
-    why: "C-06's suite; its smoke test parses this repo's live docs/ tree.",
-  },
-  app: {
-    id: "app",
-    cwd: "app",
-    sentinel: "package.json",
-    argv: ["npm", "test"],
-    family: "vitest",
-    solo: false,
-    why: "C-05's model-store unit tests (T-003).",
-  },
-  rust: {
-    id: "rust",
-    cwd: "app/src-tauri",
-    sentinel: "Cargo.toml",
-    argv: ["cargo", "test", "--no-fail-fast"],
-    family: "cargo",
-    solo: true,
-    why:
-      "Both workspace crates via default-members. --no-fail-fast is NOT " +
-      "optional here: without it a crate-scope count silently describes " +
-      "one target (instance 4, and the exit code is 101 either way). " +
-      "solo: T-088-s4's cache cliff reds startup_arm under contention.",
-  },
-  e2e: {
-    id: "e2e",
-    cwd: "tools/e2e",
-    sentinel: "playwright.config.ts",
-    argv: ["npx", "playwright", "test"],
-    family: "playwright",
-    solo: true,
-    why:
-      "The real-input lane; workers 1, retries 0, no skips. solo: its " +
-      "wall time is a health band (suite/e2e-seconds), so a run beside " +
-      "another is a reading of the contention, not of the suite.",
-  },
-});
+// Compatibility export for existing pure/source-CI analysis only.
+// Configured effect paths bind their own canonical project registry.
+export { SOURCE_CI_SUITES as GRADED_SUITES } from "./source-ci-contract.mjs";
+import { SOURCE_CI_SUITES as GRADED_SUITES } from "./source-ci-contract.mjs";
 
 // ── VALIDATION: a bad entry is refused before anything runs ───────────
 
@@ -377,10 +344,14 @@ export function validateSuite(input) {
     );
   }
   if (typeof s.solo !== "boolean") bad.push("solo must be a boolean");
+  if (!["cargo", "playwright", "vitest", "unittest"].includes(String(s.family))) bad.push("unsupported suite family");
+  if (s.family === "unittest" && Array.isArray(s.argv) && !s.argv.some((arg) => arg === "-v" || arg === "--verbose")) {
+    bad.push("a unittest suite must explicitly request -v or --verbose so its per-body records can be checked against Ran N tests");
+  }
   return bad;
 }
 
-/** Validate the whole registry. @returns {string[]} */
+/** Validate the whole registry. @param {Readonly<Record<string,Suite>>} [reg] @returns {string[]} */
 export function validateRegistry(reg = GRADED_SUITES) {
   const bad = [];
   for (const [key, s] of Object.entries(reg)) {
@@ -425,6 +396,7 @@ export function stripAnsi(text) {
  * @property {number|null} baseline  What the tool ITSELF said it would run.
  * @property {boolean} sums     parts === baseline.
  * @property {string} how       The derivation, in a reader's words.
+ * @property {boolean} [reportedFailure] The tool explicitly printed a failed summary.
  */
 
 /**
@@ -541,8 +513,32 @@ export function countVitest(raw) {
   };
 }
 
+/** Verbose unittest provides independent per-test identities and Ran N total.
+ * Subtests are indented and do not become extra test-method bodies. A quiet
+ * summary alone is insufficient evidence, even when its exit code is zero.
+ * @param {string} raw @returns {Count} */
+export function countUnittest(raw) {
+  const text = stripAnsi(raw), summaries = [...text.matchAll(/^Ran (\d+) tests? in [^\r\n]+$/gm)];
+  const baseline = summaries.length === 1 ? Number(summaries[0]?.[1]) : null;
+  const boundary = text.search(/^(?:={5,}|-{5,})/m);
+  const progress = boundary < 0 ? "" : text.slice(0, boundary);
+  const records = [...progress.matchAll(/^\S[^\r\n]*\([^\r\n]+\)(?:[ \t]+\.\.\.[^\r\n]*|[ \t]*)$/gm)];
+  let skipped = 0;
+  for (let at = 0; at < records.length; at++) {
+    const from = records[at]?.index ?? 0, to = records[at + 1]?.index ?? progress.length;
+    if (/\.\.\. skipped(?:\s|$)/.test(progress.slice(from, to))) skipped++;
+  }
+  const tail = summaries.length === 1 ? text.slice((summaries[0]?.index ?? 0) + (summaries[0]?.[0].length ?? 0)) : "";
+  const terminals = [...tail.matchAll(/^[ \t]*(OK(?:[ \t]*\([^\r\n]*\))?|FAILED(?:[ \t]*\([^\r\n]*\))?)[ \t]*$/gm)];
+  const terminal = terminals.length === 1 ? terminals[0] : undefined;
+  return { bodies: records.length - skipped, targets: terminal ? 1 : 0, baseline,
+    sums: baseline !== null && Number.isSafeInteger(baseline) && baseline >= 0 && records.length === baseline && terminal !== undefined,
+    reportedFailure: terminal?.[1]?.startsWith("FAILED") ?? false,
+    how: `${records.length} verbose method record(s), ${skipped} skipped, against ${baseline ?? "NO UNIQUE BASELINE"} from unittest's Ran N summary` };
+}
+
 /**
- * @param {"cargo"|"playwright"|"vitest"} family
+ * @param {"cargo"|"playwright"|"vitest"|"unittest"} family
  * @param {string} text
  * @returns {Count}
  */
@@ -550,6 +546,7 @@ export function countBodies(family, text) {
   if (family === "cargo") return countCargo(text);
   if (family === "playwright") return countPlaywright(text);
   if (family === "vitest") return countVitest(text);
+  if (family === "unittest") return countUnittest(text);
   throw new Error(`unknown suite family ${JSON.stringify(family)}`);
 }
 
@@ -669,6 +666,7 @@ export function judge({ status, count, ref, suite, tree, dirty }) {
   if (!count.sums) {
     return { ...base, verdict: "REFUSED", reason: "parts-do-not-sum-to-baseline" };
   }
+  if (status === 0 && count.reportedFailure === true) return { ...base, verdict: "REFUSED", reason: "summary-contradicts-exit" };
   return {
     ...base,
     verdict: status === 0 ? "GREEN" : "RED",
@@ -909,422 +907,14 @@ export function runSuite(suite, opts = {}) {
   }
 }
 
-// ── THE OWNING-SPEC DERIVATION (T-271) ───────────────────────────────
-//
-// EVERY FUNCTION IN THIS SECTION IS A FUNCTION OF ITS ARGUMENTS AND THE
-// TREE, AND THE PURE ONE IS SEPARATED FROM THE READING ON PURPOSE.
-// `owningSpecs` takes the graph and the reader map as DATA — no disk, no
-// git, no clock — so a body can drive it over a fixture graph, and so
-// that the next card to want a DIFFERENT set of changed paths (T-280
-// wants the ones a diff names) supplies them without touching the rule.
-// `specFiles` and `specReach` are the readings that feed it.
-
-/** Playwright's `testDir` for this lane's suite, and what makes a file a
- *  spec in it. The directory is flat — every body lives directly in it —
- *  which is why the walk below is one `readdirSync`. */
-export const SPEC_DIR = "tools/e2e/tests";
-export const SPEC_SUFFIX = ".spec.ts";
-
-/**
- * The extensions a specifier may be missing, in the order a resolver
- * tries them. `""` FIRST because most of this tree writes the extension
- * out (`../scripts/gate-run.mjs`), and the extensionless TypeScript form
- * (`../preflight`, `./git-fixture`) is what the rest is for.
- */
-const IMPORT_EXTENSIONS = Object.freeze([
-  "",
-  ".ts",
-  ".tsx",
-  ".mts",
-  ".cts",
-  ".mjs",
-  ".cjs",
-  ".js",
-  ".jsx",
-]);
-
-/**
- * Every STATIC import specifier in one source text, in source order.
- *
- * ── A LINE SCANNER AND NOT ONE REGEX, AND THE REASON IS THIS CORPUS ──
- * A spec file in this lane writes whole fixture programs as STRING
- * LITERALS, and those strings contain the word `import` followed by a
- * quoted specifier. `stripComments` keeps strings (deliberately — a docs
- * site inside one is still a site), so a regex that matched `import …
- * from "…"` anywhere would read a fixture's imports as this file's. Real
- * import statements begin a LINE; a quoted one is preceded by its own
- * quote. So the scanner is anchored at the start of a line, and the
- * continuation rule below is what lets it still read the multi-line
- * braced form this tree uses everywhere.
- *
- * DYNAMIC `import()` IS OUT OF SCOPE AND SAID SO. It is a call, not a
- * statement, and its argument need not be a literal; the corpus has none
- * today (`grep` for `import(` over tools/e2e and .claude/hooks finds
- * nothing), and if one arrives the edge is simply absent — which the
- * refusal at the other end turns into "the full leg is owed" rather than
- * into a short subset.
- *
- * @param {string} source
- * @returns {string[]}
- */
-export function importSpecifiers(source) {
-  const lines = stripComments(String(source ?? "")).split("\n");
-  /** @type {string[]} */
-  const out = [];
-  for (let i = 0; i < lines.length; i += 1) {
-    const line = lines[i] ?? "";
-    if (!/^[ \t]*(?:import|export)\b/.test(line)) continue;
-    // THE CONTINUATION: keep appending lines until the statement can be
-    // decided. A braced list spans lines; a terminated statement never
-    // does. The cap is a guard against a file that opens a brace and
-    // never closes it — a scanner that ran to EOF would report the whole
-    // file's next specifier as this statement's.
-    let stmt = line;
-    let j = i;
-    while (
-      j + 1 < lines.length &&
-      stmt.length < 4000 &&
-      !/;\s*$/.test(stmt) &&
-      !/\bfrom\s*(["'])[^"'\n]+\1/.test(stmt)
-    ) {
-      j += 1;
-      stmt += `\n${lines[j] ?? ""}`;
-    }
-    i = j;
-    const named = stmt.match(/\bfrom\s*(["'])([^"'\n]+)\1/);
-    if (named?.[2] !== undefined) {
-      out.push(named[2]);
-      continue;
-    }
-    // The side-effect form, `import "…";`, which carries no `from`.
-    const bare = stmt.match(/^[ \t]*import\s*(["'])([^"'\n]+)\1/);
-    if (bare?.[2] !== undefined) out.push(bare[2]);
-  }
-  return out;
-}
-
-/**
- * @typedef {object} ResolvedImport
- * @property {"resolved"|"external"|"unresolved"} kind
- * @property {string | undefined} [rel] repo-relative POSIX path, when resolved.
- */
-
-/**
- * Resolve one specifier against the file that wrote it.
- *
- * A BARE SPECIFIER IS `external` AND NOT AN ERROR: `@playwright/test`
- * and `node:fs` are somebody else's tree and no change in this repository
- * moves them. A RELATIVE specifier that resolves to no file is
- * `unresolved` and is REPORTED — a dropped edge makes the subset SHORT,
- * which is the one direction this feature may not fail in, so the caller
- * turns it into a refusal rather than into a smaller graph.
- *
- * @param {string} fromRel   the importing file, repo-relative, POSIX
- * @param {string} spec      the specifier exactly as written
- * @param {(rel: string) => boolean} isFile  does this repo-relative path exist as a file?
- * @returns {ResolvedImport}
- */
-export function resolveImport(fromRel, spec, isFile) {
-  if (!spec.startsWith(".")) return { kind: "external" };
-  const base = path.posix.normalize(path.posix.join(path.posix.dirname(fromRel), spec));
-  // A CLIMB THAT LEAVES THE REPOSITORY is external, not unresolved: there
-  // is nothing here to grade and nothing here that could have moved it.
-  if (base === ".." || base.startsWith("../")) return { kind: "external" };
-  /** @type {string[]} */
-  const candidates = [];
-  for (const ext of IMPORT_EXTENSIONS) candidates.push(`${base}${ext}`);
-  // NodeNext's `.js` for a `.ts` source — the spelling TypeScript asks
-  // for when a module resolves at runtime and is authored in TS.
-  const swapped = base.replace(/\.(m|c)?js$/, (_m, p1) => `.${p1 ?? ""}ts`);
-  if (swapped !== base) candidates.push(swapped, `${swapped}x`);
-  for (const ext of IMPORT_EXTENSIONS) candidates.push(`${base}/index${ext}`);
-  for (const c of candidates) {
-    if (c !== "" && isFile(c)) return { kind: "resolved", rel: c };
-  }
-  return { kind: "unresolved" };
-}
-
-/**
- * The spec files this lane grades, repo-relative and sorted.
- * @param {string} [root]
- * @returns {string[]}
- */
-export function specFiles(root = repoRoot) {
-  const dir = path.join(root, SPEC_DIR);
-  if (!existsSync(dir)) return [];
-  return readdirSync(dir)
-    .filter((n) => n.endsWith(SPEC_SUFFIX))
-    .map((n) => `${SPEC_DIR}/${n}`)
-    .sort();
-}
-
-/**
- * @typedef {object} SpecReach
- * @property {Record<string, string[]>} reach  spec -> every repo file it
- *   reads through static imports, ITSELF INCLUDED. Sorted.
- * @property {string[]} unresolved  `<file> -> <specifier>` for every
- *   relative import this walk could not land on a file.
- */
-
-/**
- * Walk the static import graph out from each spec.
- *
- * ITSELF INCLUDED, deliberately: "which spec owns tests/gate-run.spec.ts"
- * has an answer, and it is that file. Treating the roots as outside their
- * own reach would have made a spec the only kind of file that cannot own
- * a change to itself.
- *
- * @param {string} [root]
- * @param {string[]} [specs]
- * @returns {SpecReach}
- */
-export function specReach(root = repoRoot, specs = specFiles(root)) {
-  /** @param {string} rel @returns {boolean} */
-  const isFile = (rel) => {
-    try {
-      return statSync(path.join(root, rel)).isFile();
-    } catch {
-      return false;
-    }
-  };
-  /** @type {Record<string, string[]>} */
-  const reach = {};
-  /** @type {Set<string>} */
-  const unresolved = new Set();
-  /** @type {Map<string, string[]>} */
-  const edges = new Map();
-  /** @param {string} rel @returns {string[]} */
-  const importsOf = (rel) => {
-    const cached = edges.get(rel);
-    if (cached !== undefined) return cached;
-    /** @type {string[]} */
-    const out = [];
-    let src = "";
-    try {
-      src = readFileSync(path.join(root, rel), "utf8");
-    } catch {
-      edges.set(rel, out);
-      return out;
-    }
-    for (const spec of importSpecifiers(src)) {
-      const r = resolveImport(rel, spec, isFile);
-      if (r.kind === "resolved" && r.rel !== undefined) out.push(r.rel);
-      else if (r.kind === "unresolved") unresolved.add(`${rel} -> ${spec}`);
-    }
-    edges.set(rel, out);
-    return out;
-  };
-  for (const spec of specs) {
-    /** @type {Set<string>} */
-    const seen = new Set([spec]);
-    const queue = [spec];
-    while (queue.length > 0) {
-      const cur = queue.shift();
-      if (cur === undefined) break;
-      for (const next of importsOf(cur)) {
-        if (seen.has(next)) continue;
-        seen.add(next);
-        queue.push(next);
-      }
-    }
-    reach[spec] = [...seen].sort();
-  }
-  return { reach, unresolved: [...unresolved].sort() };
-}
-
-/**
- * Normalise one changed path as a caller may have typed it: a `./`
- * prefix, a trailing slash, a Windows separator, an absolute path inside
- * this checkout. Anything that still escapes the repository is returned
- * unchanged and will be UNPLACEABLE, which is the honest end.
- * @param {string} raw
- * @param {string} [root]
- * @returns {string}
- */
-export function normaliseChanged(raw, root = repoRoot) {
-  let p = String(raw ?? "").trim().split(path.sep).join("/");
-  if (p.startsWith(`${root.split(path.sep).join("/")}/`)) {
-    p = p.slice(root.split(path.sep).join("/").length + 1);
-  }
-  p = p.replace(/^\.\//, "").replace(/\/+$/, "");
-  return path.posix.normalize(p);
-}
-
-/**
- * @typedef {object} OwningDerivation
- * @property {string[]} specs        the subset to grade, sorted.
- * @property {{ path: string, specs: string[], via: string[] }[]} byPath
- * @property {{ path: string, why: string }[]} unplaceable
- */
-
-/**
- * THE RULE, AND IT IS A PURE FUNCTION OF ITS THREE NAMED INPUTS.
- *
- * A spec OWNS a changed path when the path IS that spec, when the spec
- * reaches the path through static imports, or — for a path under docs/ —
- * when the DOCS GATE'S OWN reader map says some file reads it and this
- * spec is that file or reaches it. The docs arm composes with the import
- * arm rather than duplicating it: `docs/CONVENTIONS.md` is read by
- * `tools/e2e/scripts/cli.mjs`, which is not a spec, and the spec that
- * owns THAT is the one that imports it.
- *
- * NOTHING HERE READS A SPEC'S NAME. `gate-run.spec.ts` owning
- * `gate-run.mjs` is a fact about an import statement, and the two files
- * agreeing on a stem is a coincidence this rule must not lean on:
- * `helpers.ts` and `git-fixture.ts` are owned by a dozen specs that share
- * no stem with them at all.
- *
- * @param {object} input
- * @param {string[]} input.changed  repo-relative paths the lane changed
- * @param {Record<string, string[]>} input.reach  from `specReach`
- * @param {Record<string, string[]>} [input.docsReadersByPath]  docs path ->
- *   the repo-relative files the DOCS GATE's reader map says read it
- * @param {Record<string, string[]>} [input.settingsReadersByPath]  runtime
- *   settings path -> the repo-relative files that read it (T-330). It
- *   composes with the import arm the same way the docs map does, and for
- *   the same reason: the file that opens the runtime template is a
- *   SCRIPT, and the spec that owns that is the one importing it.
- * @param {Record<string, string[]>} [input.generatedByPath]  changed source
- *   path -> the GENERATED files a spec may reach on its behalf, from
- *   `generatedEntries` (T-335). This arm does not compose through a
- *   reader the way the two above do, and the asymmetry is the point: the
- *   spec's edge already lands on the generated file, so what was missing
- *   was never a reader but the fact that a changed SOURCE stands behind
- *   that file. Nothing here rewrites a path — the standing-behind is the
- *   owning package's own build configuration, read once by the caller.
- * @param {Record<string, string>} [input.generatedVia]  generated file ->
- *   the sentence naming the configuration that produces it, so a
- *   selection can say which declaration it came from.
- * @returns {OwningDerivation}
- */
-export function owningSpecs({
-  changed,
-  reach,
-  docsReadersByPath = {},
-  settingsReadersByPath = {},
-  generatedByPath = {},
-  generatedVia = {},
-}) {
-  const specs = Object.keys(reach).sort();
-  /** @type {Set<string>} */
-  const owed = new Set();
-  /** @type {{ path: string, specs: string[], via: string[] }[]} */
-  const byPath = [];
-  /** @type {{ path: string, why: string }[]} */
-  const unplaceable = [];
-  for (const p of changed) {
-    /** @type {Map<string, string>} */
-    const hits = new Map();
-    for (const s of specs) {
-      if (s === p) hits.set(s, "the changed path IS this spec");
-      else if ((reach[s] ?? []).includes(p)) hits.set(s, "imports it, directly or transitively");
-    }
-    for (const reader of docsReadersByPath[p] ?? []) {
-      for (const s of specs) {
-        if (hits.has(s)) continue;
-        if (s === reader) hits.set(s, `is the docs-walk body that reads ${p}`);
-        else if ((reach[s] ?? []).includes(reader)) {
-          hits.set(s, `imports ${reader}, which the docs gate says reads ${p}`);
-        }
-      }
-    }
-    for (const reader of settingsReadersByPath[p] ?? []) {
-      for (const s of specs) {
-        if (hits.has(s)) continue;
-        if (s === reader) hits.set(s, `is the body that reads the configuration at ${p}`);
-        else if ((reach[s] ?? []).includes(reader)) {
-          hits.set(s, `imports ${reader}, which reads the configuration at ${p}`);
-        }
-      }
-    }
-    for (const generated of generatedByPath[p] ?? []) {
-      for (const s of specs) {
-        if (hits.has(s)) continue;
-        if (!(reach[s] ?? []).includes(generated)) continue;
-        hits.set(
-          s,
-          `imports ${generated}, and ${generatedVia[generated] ?? "its owning package builds that from this path's source root"}`,
-        );
-      }
-    }
-    if (hits.size === 0) {
-      unplaceable.push({
-        path: p,
-        why: p.startsWith("docs/")
-          ? "the docs gate's reader map names no spec in this lane for it"
-          : underSettings(p)
-            ? "the runtime settings reader map names no spec in this lane for it"
-            : "no spec in this lane reaches it through a static import, and it is not a spec",
-      });
-      continue;
-    }
-    const owning = [...hits.keys()].sort();
-    for (const s of owning) owed.add(s);
-    byPath.push({ path: p, specs: owning, via: owning.map((s) => `${s} — ${hits.get(s)}`) });
-  }
-  return { specs: [...owed].sort(), byPath, unplaceable };
-}
-
-/**
- * The derivation as the CLI runs it: the readings taken, then the rule.
- * Kept separate from `owningSpecs` so the rule stays testable with no
- * tree at all, and so this function is the ONE place a reading happens.
- *
- * THE DOCS SCAN IS PAID FOR ONLY WHEN A DOCS PATH MOVED. It walks the
- * whole source corpus; a lane changing one script should not pay for it.
- *
- * @param {string[]} rawChanged
- * @param {string} [root]
- * @returns {OwningDerivation & { changed: string[], unresolved: string[], generatedUnplaceable: { path: string, why: string }[] }}
- */
-export function deriveOwning(rawChanged, root = repoRoot) {
-  const changed = rawChanged.map((p) => normaliseChanged(p, root));
-  const { reach, unresolved } = specReach(root);
-  /** @type {Record<string, string[]>} */
-  const docsReadersByPath = {};
-  if (changed.some((p) => p === "docs" || p.startsWith("docs/"))) {
-    const gate = docsGate(changed, docsReaders(root));
-    for (const entry of gate.byPath) docsReadersByPath[entry.path] = entry.readers;
-  }
-  /** @type {Record<string, string[]>} */
-  const settingsReadersByPath = {};
-  const settingsPaths = changed.filter((p) => underSettings(p));
-  if (settingsPaths.length > 0) {
-    Object.assign(settingsReadersByPath, settingsReaders(settingsPaths, root).byPath);
-  }
-  const generated = generatedSources(changed, reach, root);
-  return {
-    changed,
-    unresolved,
-    // T-335: reported rather than refused HERE, because this function is
-    // the rule's reader and `mainOwning` is the arm that owes a refusal.
-    generatedUnplaceable: generated.unplaceable,
-    ...owningSpecs({
-      changed,
-      reach,
-      docsReadersByPath,
-      settingsReadersByPath,
-      generatedByPath: generated.byPath,
-      generatedVia: generated.via,
-    }),
-  };
-}
-
-/**
- * The subset as a runnable suite: the leg's own entry with the spec files
- * appended to its argv, spelled relative to the leg's own cwd because
- * that is where the runner will be standing.
- * @param {string[]} specs  repo-relative spec paths
- * @param {Suite} [leg]
- * @returns {Suite}
- */
-export function scopedSuite(specs, leg = GRADED_SUITES.e2e) {
-  const cwd = `${leg.cwd}/`;
-  return {
-    ...leg,
-    argv: [...leg.argv, ...specs.map((s) => (s.startsWith(cwd) ? s.slice(cwd.length) : s))],
-  };
-}
+import {
+  OWNING_FLAG, RANGE_FLAG, OWED_SET_FLAG, TREE_FLAG, scopedSuite, SCOPED_SUITE, SPEC_DIR, SPEC_SUFFIX, importSpecifiers, resolveImport, specFiles, specReach, normaliseChanged, owningSpecs, deriveOwning, SETTINGS_DIR, underSettings, settingsSiteRe, settingsReadersIn, settingsReaders, PACKAGE_ROOTS, ALL_SUITES, suiteOfPath, packageDependents, BUILD_SCRIPT, buildConfigsIn, resolveTsconfig, soleIncludeDir, packageBuilds, generatedEntries, generatedSources, deriveOwed, RANGE_RE, rangeChanged, owedForRange
+} from "./source-suite-derivation.mjs";
+export {
+  OWNING_FLAG, RANGE_FLAG, OWED_SET_FLAG, TREE_FLAG, scopedSuite, SCOPED_SUITE, SPEC_DIR, SPEC_SUFFIX, importSpecifiers, resolveImport, specFiles, specReach, normaliseChanged, owningSpecs, deriveOwning, SETTINGS_DIR, underSettings, settingsSiteRe, settingsReadersIn, settingsReaders, PACKAGE_ROOTS, ALL_SUITES, suiteOfPath, packageDependents, BUILD_SCRIPT, buildConfigsIn, resolveTsconfig, soleIncludeDir, packageBuilds, generatedEntries, generatedSources, deriveOwed, RANGE_RE, rangeChanged, owedForRange
+} from "./source-suite-derivation.mjs";
+/** @typedef {import("./source-suite-derivation.mjs").OwningDerivation} OwningDerivation */
+/** @typedef {import("./source-suite-derivation.mjs").OwedDerivation} OwedDerivation */
 
 /** The word a scoped verdict wears, so no reader has only the leg's name.
  *  It is deliberately NOT `GREEN`: `judgeToken` accepts exactly that one
@@ -1359,1131 +949,6 @@ export function scopeVerdict(v, scope) {
   };
 }
 
-// ── THE RUNTIME SETTINGS THIS PROJECT IS CONFIGURED BY (T-330) ───────
-//
-// `method/runtime/` holds the runtime template and the schema beside it:
-// the file that says which model each role is dispatched on, which
-// process profile this project runs, and — since T-319 — whether an
-// owner's dispatch grant is recorded. It is CONFIGURATION: not code, and
-// not a document. It lies under no package root, no spec reaches it
-// through a static import, and the DOCS GATE's reader map does not cover
-// it because it is not under `docs/`. All three arms of the derivation
-// below answer "I cannot place this", so the whole battery is owed for a
-// two-line records change — the conservative answer for an unplaceable
-// input, and NOT a finding that every body reads the file. Measured at
-// T-330: recording the owner's approved dispatch grant, forty lines of
-// configuration, owed four legs.
-//
-// THE CONSUMERS ARE DERIVED FROM THE TREE AND NEVER LISTED. A file reads
-// a runtime settings path when its comment-stripped source SPELLS that
-// path — as one literal, or as the segments a `path.join` is given — or
-// when it names an identifier some speller BINDS to exactly that path.
-// THE SECOND ARM IS NOT AN EXTRA: the path this project's arm actually
-// opens is `RUNTIME_TEMPLATE`, exported by the parser library's settings
-// reader, so a literal-only scan finds the library and misses every one
-// of the arm's own readers and every body that drives them. Both arms
-// are TEXTUAL and deliberately generous — this derivation may be wrong
-// by owing too MUCH and must never be wrong by owing too little, so a
-// file that merely mentions the name counts as a reader.
-//
-// AND A SETTINGS PATH NOTHING READS IS UNPLACEABLE, which is where this
-// arm is deliberately less confident than the docs arm beside it. There,
-// "no code suite reads this document" is a POSITIVE answer over a map
-// derived from the whole source corpus. Here, a configuration file this
-// scan finds no reader for is a file whose consumers the scan did not
-// find: the arms are textual, and a reader that computed its path some
-// third way would look exactly like a file nobody reads. So it falls
-// through to the whole battery, naming the path it could not place.
-
-/** The directory this project's runtime configuration lives in. */
-export const SETTINGS_DIR = "method/runtime";
-
-/**
- * Is this repo-relative path one of the runtime settings files?
- * @param {string} rel
- * @returns {boolean}
- */
-export function underSettings(rel) {
-  return rel === SETTINGS_DIR || rel.startsWith(`${SETTINGS_DIR}/`);
-}
-
-/**
- * THE SITE FORM of one settings path: its segments in order, with the
- * quotes, commas, dots and slashes a source file may put between them,
- * so that `"method/runtime/x.yaml"` and `path.join(root, "method",
- * "runtime", "x.yaml")` are ONE pattern rather than two rules that can
- * disagree. Every segment is escaped — a `.` in a filename is a dot and
- * not a wildcard.
- * @param {string} rel
- * @returns {RegExp}
- */
-export function settingsSiteRe(rel) {
-  const parts = rel.split("/").map((seg) => seg.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-  return new RegExp(parts.join("[\"'`\\s,./]+"));
-}
-
-/** A `const NAME = "literal"` binding, in either dialect this tree writes
- *  (`export const` in TS/JS, `static NAME: &str` in Rust is matched by the
- *  same shape once `static` is allowed as the keyword). */
-const SETTINGS_BINDING_RE =
-  /\b(?:pub\s+)?(?:export\s+)?(?:const|let|var|static)\s+([A-Za-z_$][\w$]*)\s*(?::[^=\n]*)?=\s*["'`]([^"'`\n]+)["'`]/g;
-
-/**
- * @typedef {object} SettingsReaderMap
- * @property {string[]} asked  every settings path this map was ASKED
- *   about. A path missing from it was never put to the scan, and an
- *   empty reader list for it would be an unasked question in an answer's
- *   costume — the same distinction the DOCS GATE's map draws.
- * @property {Record<string, string[]>} byPath  settings path -> the
- *   repo-relative source files that read it, sorted.
- * @property {Record<string, string[]>} constants  settings path -> the
- *   identifiers a speller binds to it, sorted. Reported rather than kept
- *   private so that an answer can be checked against the tree.
- */
-
-/**
- * THE RULE, AND IT IS A PURE FUNCTION OF THE CORPUS IT IS GIVEN.
- *
- * @param {string[]} paths  the settings paths to place, repo-relative
- * @param {Record<string, string>} corpus  source file -> its
- *   comment-stripped text. Comments are stripped because a rule that
- *   counted a mention in prose would make every file that TALKS about
- *   the template a reader of it.
- * @returns {SettingsReaderMap}
- */
-export function settingsReadersIn(paths, corpus) {
-  const files = Object.keys(corpus).sort();
-  /** @type {Record<string, string[]>} */
-  const byPath = {};
-  /** @type {Record<string, string[]>} */
-  const constants = {};
-  for (const rel of paths) {
-    const site = settingsSiteRe(rel);
-    const spellers = files.filter((f) => site.test(corpus[f] ?? ""));
-    /** @type {Set<string>} */
-    const names = new Set();
-    for (const f of spellers) {
-      for (const m of (corpus[f] ?? "").matchAll(SETTINGS_BINDING_RE)) {
-        if (m[2] === rel && m[1] !== undefined) names.add(m[1]);
-      }
-    }
-    /** @type {Set<string>} */
-    const readers = new Set(spellers);
-    for (const name of names) {
-      const named = new RegExp(`\\b${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`);
-      for (const f of files) if (named.test(corpus[f] ?? "")) readers.add(f);
-    }
-    byPath[rel] = [...readers].sort();
-    constants[rel] = [...names].sort();
-  }
-  return { asked: [...new Set(paths)].sort(), byPath, constants };
-}
-
-/**
- * The rule as the CLI runs it: the reading taken, then the rule. Kept
- * separate so the rule stays testable with no tree at all, and so this
- * function is the ONE place a reading happens.
- *
- * THE WALK IS PAID FOR ONLY WHEN A SETTINGS PATH MOVED, which is why
- * every caller guards it — it reads the whole source corpus, and a lane
- * changing one script should not pay for it.
- *
- * @param {string[]} paths
- * @param {string} [root]
- * @returns {SettingsReaderMap}
- */
-export function settingsReaders(paths, root = repoRoot) {
-  /** @type {Record<string, string>} */
-  const corpus = {};
-  for (const rel of sourceCorpus(root)) {
-    try {
-      corpus[rel] = stripComments(readFileSync(path.join(root, rel), "utf8"));
-    } catch {
-      // A TRACKED FILE THIS WALK CANNOT READ CONTRIBUTES NO EDGE and is
-      // not an error: a path deleted in the working tree is still tracked.
-      corpus[rel] = "";
-    }
-  }
-  return settingsReadersIn(paths, corpus);
-}
-
-// ── THE OWED SET (T-280) ─────────────────────────────────────────────
-//
-// ── WHAT THIS IS, AND HOW IT DIFFERS FROM `--owning` ABOVE ───────────
-// `--owning` takes a path list a SEAT typed and answers one question:
-// which spec files own it. It is the executor's iteration form, its
-// verdict wears `SCOPED-` so it can never mint a push token, and it
-// grades the end-to-end leg and nothing else.
-//
-// THIS derives its own path list FROM A RANGE — the push range, or a
-// bench's `base..tip` — and answers the whole question: which of the
-// GRADED SUITES that range owes, and for the end-to-end leg, which SPEC
-// FILES. Nothing about the set is typed by anybody, which is what makes
-// a verdict over it mintable: the push guard re-derives the same set
-// from the same range with this same function and requires the token to
-// cover it.
-//
-// ── FIVE ARMS, COMPOSED, AND NOT ONE OF THEM IS A LIST ───────────────
-//   THE PACKAGE ROOTS come off the registry's own `cwd` fields
-//     (`PACKAGE_ROOTS`), so adding a graded suite moves this derivation
-//     with it and a hand-kept copy cannot drift from the runner.
-//   THE IMPORT GRAPH is T-271's, unchanged and CALLED rather than
-//     re-implemented: `owningSpecs` over `specReach`.
-//   THE DOCS GATE'S READER MAP is `docs-scan.mjs`'s, likewise called.
-//     A docs path's readers are FILES; each file is placed through the
-//     package roots, which is how a document read by the parser's census
-//     owes the parser suite without anybody writing that down.
-//   THE RUNTIME SETTINGS READER MAP is `settingsReaders` below, added by
-//     T-330 for the one input none of the three above can place: this
-//     project's own configuration. Its readers are FILES too, and are
-//     placed through the same package roots.
-//   THE GENERATED-ENTRY RELATIONSHIP is `generatedSources` below, added
-//     by T-335 for the edge the import arm reaches and no changed path
-//     can ever be: a spec imports a package's BUILT entry, and git does
-//     not track it. It is read off the owning package's own build
-//     configuration, so it is a DECLARATION rather than a rewritten
-//     path, and a generated file no configuration places is named and
-//     fails closed.
-//
-// ── AND THE `file:` EDGE, WHICH THE PACKAGE ROOTS ALONE WOULD MISS ───
-// `app/package.json` depends on the parser at `file:../lib/parser`, so a
-// change under `lib/parser/` can red the APP suite while lying under the
-// parser's root alone. The edge is READ from the manifests
-// (`packageDependents`) rather than asserted here, and closed
-// transitively, so a second `file:` dependency added tomorrow is carried
-// by this function on the day it lands.
-//
-// ── FAIL CLOSED, AND THE ONLY DIRECTION THIS MAY BE WRONG IN ─────────
-// A path under no package root that no spec reaches and that the docs
-// gate cannot place makes the owed set THE WHOLE BATTERY, and the reason
-// travels with it into the token. So does an unresolvable import edge,
-// which would make the spec subset SHORT. This derivation can be wrong
-// by owing too MUCH; it must never be wrong by owing too little.
-//
-// A DOCS PATH NOTHING READS IS PLACED, NOT UNPLACEABLE, and that is the
-// one asymmetry against `--owning` worth stating. There, the question is
-// "which spec owns this" and "none" is an inability. Here the question is
-// "what does this range owe" and the docs gate answering "no code suite
-// reads it" is a POSITIVE answer over a map derived from the whole source
-// corpus — it is the instrument the DOCS GATE itself is made of. Half
-// the batteries this card was written about were pushes of exactly those
-// paths.
-
-/**
- * The package root each graded suite owns, DERIVED from the registry's
- * own `cwd` and never written down a second time.
- * @type {Readonly<Record<string, string>>}
- */
-export const PACKAGE_ROOTS = Object.freeze(
-  Object.fromEntries(Object.values(GRADED_SUITES).map((s) => [s.id, s.cwd])),
-);
-
-/** Every graded suite, which is what "the whole battery" means here. */
-export const ALL_SUITES = Object.freeze(Object.keys(GRADED_SUITES).sort());
-
-/**
- * The suite whose package root contains this path — the LONGEST one,
- * because `app/src-tauri` lies inside `app` and a Rust file is the rust
- * suite's, not the app suite's.
- * @param {string} rel
- * @param {Readonly<Record<string, string>>} [roots]
- * @returns {string | undefined}
- */
-export function suiteOfPath(rel, roots = PACKAGE_ROOTS) {
-  /** @type {string | undefined} */
-  let best;
-  for (const [id, dir] of Object.entries(roots)) {
-    if (rel !== dir && !rel.startsWith(`${dir}/`)) continue;
-    if (best === undefined || dir.length > (roots[best] ?? "").length) best = id;
-  }
-  return best;
-}
-
-/**
- * suite -> every suite whose package DEPENDS on it, read off the
- * manifests' `file:` specifiers and closed transitively.
- *
- * A MANIFEST THIS CANNOT READ CONTRIBUTES NO EDGE AND IS NOT AN ERROR:
- * `app/src-tauri` is a Cargo workspace with no `package.json`, and both
- * its crates lie under one root, so there is no cross-root edge for this
- * function to find there.
- *
- * @param {string} [root]
- * @param {Readonly<Record<string, string>>} [roots]
- * @returns {Record<string, string[]>}
- */
-export function packageDependents(root = repoRoot, roots = PACKAGE_ROOTS) {
-  /** @type {Record<string, Set<string>>} */
-  const out = {};
-  for (const id of Object.keys(roots)) out[id] = new Set();
-  for (const [id, dir] of Object.entries(roots)) {
-    /** @type {unknown} */
-    let pkg;
-    try {
-      pkg = JSON.parse(readFileSync(path.join(root, dir, "package.json"), "utf8"));
-    } catch {
-      continue;
-    }
-    const obj = /** @type {Record<string, unknown>} */ (pkg ?? {});
-    /** @type {Record<string, unknown>} */
-    const deps = {
-      .../** @type {Record<string, unknown>} */ (obj["dependencies"] ?? {}),
-      .../** @type {Record<string, unknown>} */ (obj["devDependencies"] ?? {}),
-    };
-    for (const spec of Object.values(deps)) {
-      if (typeof spec !== "string" || !spec.startsWith("file:")) continue;
-      const target = path.posix.normalize(path.posix.join(dir, spec.slice("file:".length)));
-      for (const [otherId, otherDir] of Object.entries(roots)) {
-        if (otherDir === target && otherId !== id) {
-          /** @type {Set<string>} */ (out[otherId]).add(id);
-        }
-      }
-    }
-  }
-  // TRANSITIVE CLOSURE. One edge exists today; a chain of two would make
-  // a single-hop reading silently short, and the fixed point is cheap.
-  for (let moved = true; moved; ) {
-    moved = false;
-    for (const id of Object.keys(out)) {
-      const here = /** @type {Set<string>} */ (out[id]);
-      for (const dep of [...here]) {
-        for (const further of out[dep] ?? new Set()) {
-          if (further !== id && !here.has(further)) {
-            here.add(further);
-            moved = true;
-          }
-        }
-      }
-    }
-  }
-  return Object.fromEntries(Object.entries(out).map(([id, s]) => [id, [...s].sort()]));
-}
-
-// ── THE GENERATED ENTRY AND ITS OWNING SOURCES (T-335) ────────────────
-//
-// ── THE DEAD EDGE THIS ARM EXISTS FOR ────────────────────────────────
-// Two specs import `lib/parser/dist/pure.js`, an edge T-317 added, and
-// `lib/parser/.gitignore` excludes `dist/`. The walk above REACHES that
-// file and every generated file it imports, so the graph is not missing
-// the edge — it is missing the only thing that could ever use it. A
-// range's changed paths come from `git diff --name-only`, and git does
-// not name a file it does not track, so no changed path can ever BE one
-// of those generated files. The edge could contribute a selection
-// exactly never: measured at `f54e409f` with the parser built, a range
-// whose only changed path was `lib/parser/src/pure.ts` owed `app` and
-// `parser` with the end-to-end leg narrowed to ZERO spec files, and
-// neither importer was among them. Until T-331 narrowed the leg the
-// whole battery ran anyway and this cost nothing.
-//
-// ── WHAT IS READ, AND WHY IT IS NOT A REWRITTEN PATH ─────────────────
-// The relationship between `lib/parser/dist/pure.js` and the sources
-// that produce it is DECLARED, by the package that owns both: its own
-// manifest's `build` script names a TypeScript project, and that project
-// names `rootDir` and `outDir`. So this arm reads the owning package's
-// build configuration — the `extends` chain included, because this
-// repository writes the emit options in a second file that inherits the
-// first — and spells neither `dist` nor `src` itself. A package that
-// moves where it builds to moves this derivation with it on the day it
-// lands, and a package that builds some other way contributes no
-// relationship rather than a wrong one.
-//
-// ── THE COUPLING IS THE PACKAGE'S, NOT ONE FILE'S ────────────────────
-// `rootDir` -> `outDir` is a DIRECTORY relationship and this arm keeps
-// it one: any source under the root couples to every generated file
-// under the output root that the import graph reaches. Mapping
-// `dist/pure.js` back to `src/pure.ts` alone would be more precise and
-// would be wrong in the one direction this derivation may not be wrong
-// in — `src/index.ts` is an entry nothing in this lane imports, a
-// re-export moves an emit its own filename does not name, and a
-// per-file map would answer "no spec" for a source change that really
-// can move a spec's subject.
-//
-// ── AND WHERE THE RELATIONSHIP CANNOT BE READ ────────────────────────
-// A generated file in the graph that no package's build configuration
-// places is reported BY NAME and the caller turns it into the whole
-// battery — the same shape, and the same reason, as an import edge that
-// lands nowhere. That is not a placeholder waiting to be optimised
-// away: an unreadable relationship means this derivation cannot say
-// which sources move that file, and the only honest answer to "which
-// suites does this range owe" is then all of them.
-//
-// ── WHY THE T-330 SETTINGS CONSUMER MAP DOES NOT CARRY THIS ──────────
-// `settingsReadersIn` above answers "which files READ this path", over a
-// textual corpus, by path spellings and the identifiers bound to them.
-// This arm answers "which sources PRODUCE this path", and the answer is
-// not textual at all: no source under `lib/parser/src/` mentions
-// `lib/parser/dist/pure.js`, and the file that does mention it is the
-// spec doing the importing — the consumer, not the producer. Pointed at
-// a generated entry the settings scan would return its IMPORTERS, which
-// this derivation already has from the import graph, and never the
-// sources. The two are different relations over the same tree, so they
-// are two arms rather than one abstraction.
-
-/** The manifest script whose command declares how a package is built. */
-export const BUILD_SCRIPT = "build";
-
-/**
- * Every TypeScript project a build script runs, in the order it runs
- * them. A bare `tsc` contributes `tsconfig.json`, which is the file it
- * would read; `-p`/`--project` names another.
- *
- * THE SPLIT IS ON THE SHELL'S OWN SEPARATORS because this repository
- * writes `tsc && tsc -p tsconfig.test.json && vite build`, and a scanner
- * that read that as one command would hand the second project's flags to
- * the first. A segment with no `tsc` in it contributes nothing — a
- * bundler's output is not a relationship this function can read, and
- * saying so is what makes the fail-closed arm below fire honestly.
- *
- * @param {unknown} script
- * @returns {string[]}
- */
-export function buildConfigsIn(script) {
-  /** @type {string[]} */
-  const out = [];
-  for (const part of String(script ?? "").split(/&&|\|\||;/)) {
-    const words = part.trim().split(/\s+/).filter((w) => w !== "");
-    const at = words.findIndex((w) => w === "tsc" || w.endsWith("/tsc"));
-    if (at < 0) continue;
-    let file = "tsconfig.json";
-    const rest = words.slice(at + 1);
-    for (let i = 0; i < rest.length; i += 1) {
-      const w = rest[i] ?? "";
-      if ((w === "-p" || w === "--project") && rest[i + 1] !== undefined) {
-        file = /** @type {string} */ (rest[i + 1]);
-        break;
-      }
-      const inline = /^--project=(.+)$/.exec(w);
-      if (inline?.[1] !== undefined) {
-        file = inline[1];
-        break;
-      }
-    }
-    if (!out.includes(file)) out.push(file);
-  }
-  return out;
-}
-
-/**
- * @typedef {object} TsconfigReading
- * @property {Record<string, unknown>} compilerOptions  merged along the
- *   `extends` chain, nearest file winning.
- * @property {unknown} include  the nearest `include` found, likewise.
- * @property {string | undefined} [problem]  why nothing could be read.
- */
-
-/**
- * One TypeScript project, with its `extends` chain closed.
- *
- * TOLERANT OF THE DIALECT tsconfig IS ACTUALLY WRITTEN IN: comments and
- * a trailing comma are legal there and fatal to `JSON.parse`, and a
- * derivation that refused this repository's own configuration would fail
- * closed for a reason about punctuation. A BARE `extends` SPECIFIER
- * (a package, not a relative path) is left unfollowed and is not an
- * error on its own — what matters is whether an emit relationship comes
- * out at the end, and the caller says so if none does.
- *
- * @param {string} root
- * @param {string} dir   the directory `file` is spelled relative to, repo-relative
- * @param {string} file
- * @param {Set<string>} [seen]
- * @returns {TsconfigReading}
- */
-export function resolveTsconfig(root, dir, file, seen = new Set()) {
-  const withJson = file.endsWith(".json") ? file : `${file}.json`;
-  const rel = path.posix.normalize(path.posix.join(dir, withJson));
-  // T-335 correction 3. CONTAINED TO THE REPOSITORY, because every
-  // spelling that reaches here — a `-p` flag in a manifest's build
-  // script, an `extends` specifier — is REPOSITORY CONTENT, and a range
-  // may come from a branch nobody has reviewed. Without this an
-  // `extends` of "../../../../../etc/…" makes a CI PLANNING step open a
-  // file outside the tree, and the parse error carries a fragment of it
-  // into the fail-closed sentence this derivation prints into the log.
-  // Refused BY NAME rather than read, which is the same shape of answer
-  // an absent file already gets, so nothing downstream learns a new case.
-  if (rel === ".." || rel.startsWith("../") || path.posix.isAbsolute(rel)) {
-    return {
-      compilerOptions: {},
-      include: undefined,
-      problem: `${rel} lies outside the repository, so this derivation will not open it`,
-    };
-  }
-  if (seen.has(rel)) {
-    return { compilerOptions: {}, include: undefined, problem: `${rel} extends itself` };
-  }
-  seen.add(rel);
-  let raw = "";
-  try {
-    raw = readFileSync(path.join(root, rel), "utf8");
-  } catch {
-    return { compilerOptions: {}, include: undefined, problem: `${rel} could not be read` };
-  }
-  /** @type {unknown} */
-  let doc;
-  try {
-    doc = JSON.parse(stripComments(raw).replace(/,(\s*[}\]])/g, "$1"));
-  } catch (err) {
-    return {
-      compilerOptions: {},
-      include: undefined,
-      problem: `${rel} is not readable as JSON (${err instanceof Error ? err.message : String(err)})`,
-    };
-  }
-  const obj = /** @type {Record<string, unknown>} */ (doc ?? {});
-  /** @type {TsconfigReading} */
-  let inherited = { compilerOptions: {}, include: undefined };
-  const ext = obj["extends"];
-  if (typeof ext === "string" && ext.startsWith(".")) {
-    inherited = resolveTsconfig(root, path.posix.dirname(rel), ext, seen);
-  }
-  const own = /** @type {Record<string, unknown>} */ (obj["compilerOptions"] ?? {});
-  return {
-    compilerOptions: { ...inherited.compilerOptions, ...own },
-    include: obj["include"] ?? inherited.include,
-  };
-}
-
-/**
- * The ONE directory an `include` names, when it names one directory.
- * `["src"]` is this repository's shape and stands in for an unwritten
- * `rootDir`, which `tsc` would infer the same way. Anything with a glob,
- * an extension or a second entry is not a source root and is refused
- * rather than guessed at.
- * @param {unknown} include
- * @returns {string | undefined}
- */
-export function soleIncludeDir(include) {
-  if (!Array.isArray(include) || include.length !== 1) return undefined;
-  const only = include[0];
-  if (typeof only !== "string" || only === "") return undefined;
-  if (/[*?[\]]/.test(only) || /\.[A-Za-z]+$/.test(only)) return undefined;
-  return only;
-}
-
-/**
- * @typedef {object} PackageBuild
- * @property {string} config  the TypeScript project, repo-relative
- * @property {string} src     its source root, repo-relative, no trailing slash
- * @property {string} out     its output root, repo-relative, no trailing slash
- */
-
-/**
- * suite -> every emit relationship its package's own build declares,
- * read off the manifests and the projects they name.
- *
- * A PACKAGE THAT DECLARES NONE IS NOT AN ERROR HERE and the reason is
- * recorded rather than thrown: `tools/e2e` has no build at all, and
- * `app`'s two projects are `noEmit` because a bundler writes its output.
- * Neither is a problem until something in the import graph turns out to
- * be generated by one of them, and that is the question the rule below
- * asks — so this function REPORTS what it could not read and refuses
- * nothing.
- *
- * @param {string} [root]
- * @param {Readonly<Record<string, string>>} [roots]
- * @returns {{ byPackage: Record<string, PackageBuild[]>, notes: Record<string, string[]> }}
- */
-export function packageBuilds(root = repoRoot, roots = PACKAGE_ROOTS) {
-  /** @type {Record<string, PackageBuild[]>} */
-  const byPackage = {};
-  /** @type {Record<string, string[]>} */
-  const notes = {};
-  for (const [id, dir] of Object.entries(roots)) {
-    byPackage[id] = [];
-    notes[id] = [];
-    /** @type {unknown} */
-    let pkg;
-    try {
-      pkg = JSON.parse(readFileSync(path.join(root, dir, "package.json"), "utf8"));
-    } catch {
-      notes[id].push(`${dir}/package.json could not be read as a manifest`);
-      continue;
-    }
-    const scripts = /** @type {Record<string, unknown>} */ (
-      /** @type {Record<string, unknown>} */ (pkg ?? {})["scripts"] ?? {}
-    );
-    const script = scripts[BUILD_SCRIPT];
-    if (typeof script !== "string") {
-      notes[id].push(`${dir}/package.json declares no ${BUILD_SCRIPT} script`);
-      continue;
-    }
-    const configs = buildConfigsIn(script);
-    if (configs.length === 0) {
-      notes[id].push(
-        `the ${BUILD_SCRIPT} script of ${dir} runs no TypeScript project, so this derivation ` +
-          "cannot read where it emits",
-      );
-      continue;
-    }
-    for (const file of configs) {
-      const reading = resolveTsconfig(root, dir, file);
-      const rel = path.posix.normalize(path.posix.join(dir, file.endsWith(".json") ? file : `${file}.json`));
-      if (reading.problem !== undefined) {
-        notes[id].push(reading.problem);
-        continue;
-      }
-      const co = reading.compilerOptions;
-      const outDir = typeof co["outDir"] === "string" ? co["outDir"] : undefined;
-      if (outDir === undefined) {
-        notes[id].push(`${rel} declares no outDir, so it emits nothing this arm can place`);
-        continue;
-      }
-      const srcDir = typeof co["rootDir"] === "string" ? co["rootDir"] : soleIncludeDir(reading.include);
-      if (srcDir === undefined) {
-        notes[id].push(`${rel} declares neither a rootDir nor a single include directory`);
-        continue;
-      }
-      byPackage[id].push({
-        config: rel,
-        src: path.posix.normalize(path.posix.join(dir, srcDir)).replace(/\/+$/, ""),
-        out: path.posix.normalize(path.posix.join(dir, outDir)).replace(/\/+$/, ""),
-      });
-    }
-  }
-  return { byPackage, notes };
-}
-
-/**
- * @typedef {object} GeneratedPlacement
- * @property {Record<string, string[]>} byPath  changed path -> the generated
- *   files a spec may reach on its behalf, sorted.
- * @property {Record<string, string>} via  generated file -> the sentence
- *   naming the configuration that produces it and the sources it is
- *   produced from, so a selection can say where it came from.
- * @property {Record<string, string[]>} byPackage  suite -> the generated
- *   files the import graph reaches under that package's output roots.
- * @property {{ path: string, why: string }[]} unplaceable  every generated
- *   file in the graph no build configuration maps back onto sources.
- */
-
-/**
- * THE RULE, AND IT IS A PURE FUNCTION OF ITS NAMED INPUTS.
- *
- * A file in the import graph is GENERATED when git does not track it:
- * that is the property that makes the edge dead, and it is the same
- * reading `treeWithout`'s fixture in this lane's spec derives a fresh
- * runner from. A generated file is PLACED when some package's build
- * configuration says it lies under that package's output root; the
- * sources it couples to are that configuration's source root.
- *
- * @param {object} input
- * @param {string[]} input.changed   repo-relative paths the range moved
- * @param {string[]} input.reached   every file the spec walk reaches
- * @param {Set<string> | undefined} input.tracked  every path git tracks,
- *   or `undefined` when that reading itself failed
- * @param {Record<string, PackageBuild[]>} input.builds  from `packageBuilds`
- * @param {Record<string, string[]>} [input.notes]  from `packageBuilds`
- * @param {Readonly<Record<string, string>>} [input.roots]  the package roots a
- *   generated file nothing places is reported against
- * @returns {GeneratedPlacement}
- */
-export function generatedEntries({ changed, reached, tracked, builds, notes = {}, roots = PACKAGE_ROOTS }) {
-  /** @type {Record<string, string[]>} */
-  const byPackage = {};
-  /** @type {Record<string, string>} */
-  const via = {};
-  /** @type {{ path: string, why: string }[]} */
-  const unplaceable = [];
-  for (const id of Object.keys(builds)) byPackage[id] = [];
-  if (tracked === undefined) {
-    return {
-      byPath: {},
-      via,
-      byPackage,
-      unplaceable: [
-        {
-          path: ".",
-          why:
-            "git would not list the tracked corpus, so this derivation cannot tell which files " +
-            "in the import graph are generated and therefore unreachable by any changed path",
-        },
-      ],
-    };
-  }
-  for (const file of reached) {
-    /** @type {{ id: string, build: PackageBuild } | undefined} */
-    let placed;
-    for (const [id, entries] of Object.entries(builds)) {
-      for (const build of entries) {
-        if (file !== build.out && !file.startsWith(`${build.out}/`)) continue;
-        if (placed === undefined || build.out.length > placed.build.out.length) placed = { id, build };
-      }
-    }
-    if (placed !== undefined) {
-      /** @type {string[]} */ (byPackage[placed.id]).push(file);
-      via[file] =
-        `${placed.build.config} builds ${placed.build.out}/ from ${placed.build.src}/`;
-      continue;
-    }
-    if (tracked.has(file)) continue;
-    const ownerId = suiteOfPath(file, roots);
-    const reason =
-      ownerId === undefined
-        ? "it lies under no graded package root, so there is no manifest here to read a build from"
-        : (notes[ownerId] ?? []).join("; ") ||
-          `${ownerId}'s build declares no output root that contains it`;
-    unplaceable.push({
-      path: file,
-      why:
-        "git does not track it, so no changed path can ever be it, and no package's build " +
-        `configuration says which sources produce it — ${reason}`,
-    });
-  }
-  /** @type {Record<string, string[]>} */
-  const byPath = {};
-  for (const p of changed) {
-    /** @type {Set<string>} */
-    const hits = new Set();
-    for (const [id, entries] of Object.entries(builds)) {
-      for (const build of entries) {
-        if (p !== build.src && !p.startsWith(`${build.src}/`)) continue;
-        for (const g of byPackage[id] ?? []) hits.add(g);
-      }
-    }
-    if (hits.size > 0) byPath[p] = [...hits].sort();
-  }
-  return {
-    byPath,
-    via,
-    byPackage: Object.fromEntries(Object.entries(byPackage).map(([id, f]) => [id, f.sort()])),
-    unplaceable,
-  };
-}
-
-/**
- * The rule as the CLI runs it: the readings taken, then the rule. Kept
- * separate so the rule stays testable with no tree at all, and so this
- * function is the ONE place a reading happens.
- *
- * THIS ONE IS PAID FOR ON EVERY DERIVATION, unlike the docs and settings
- * scans beside it, and deliberately: its fail-closed arm is a fact about
- * the GRAPH rather than about the range, exactly as `unresolved` is, so
- * a range that moved nothing near a package's sources must still answer
- * for a generated file nothing can place. It costs one `git ls-files`
- * and a manifest and project read per graded package — no corpus walk.
- *
- * @param {string[]} changed
- * @param {Record<string, string[]>} reach  from `specReach`
- * @param {string} [root]
- * @param {Readonly<Record<string, string>>} [roots]
- * @returns {GeneratedPlacement & { builds: Record<string, PackageBuild[]> }}
- */
-export function generatedSources(changed, reach, root = repoRoot, roots = PACKAGE_ROOTS) {
-  /** @type {Set<string>} */
-  const reached = new Set();
-  for (const files of Object.values(reach)) for (const f of files) reached.add(f);
-  /** @type {Set<string> | undefined} */
-  let tracked;
-  try {
-    tracked = new Set(trackedFiles(root));
-  } catch {
-    tracked = undefined;
-  }
-  const { byPackage: builds, notes } = packageBuilds(root, roots);
-  return {
-    ...generatedEntries({ changed, reached: [...reached].sort(), tracked, builds, notes, roots }),
-    builds,
-  };
-}
-
-/**
- * @typedef {object} OwedDerivation
- * @property {string[]} suites   the graded suites this range owes, sorted.
- * @property {{ whole: boolean, specs: string[] }} e2e  the end-to-end
- *   leg's own scope: `whole` when the leg is owed by a path the import
- *   graph cannot narrow, otherwise exactly the spec files owed.
- * @property {{ path: string, suites: string[], specs: string[], why: string[] }[]} byPath
- * @property {{ path: string, why: string }[]} unplaceable
- * @property {{ path: string, why: string }[]} generatedUnplaceable  every
- *   GENERATED file in the import graph that no package's build
- *   configuration maps back onto sources (T-335). It is a fact about the
- *   graph rather than about the range, exactly as `unresolved` is.
- * @property {string | undefined} failClosed  the sentence that says WHY
- *   the whole battery is owed, or `undefined` when the set is derived.
- */
-
-/**
- * THE RULE, AND IT IS A PURE FUNCTION OF ITS NAMED INPUTS.
- *
- * @param {object} input
- * @param {string[]} input.changed  repo-relative paths the range moved
- * @param {Record<string, string[]>} input.reach  from `specReach`
- * @param {Readonly<Record<string, string>>} [input.roots]
- * @param {Record<string, string[]>} [input.dependents]  from `packageDependents`
- * @param {Record<string, string[]>} [input.docsReadersByPath]  docs path ->
- *   the repo-relative files the DOCS GATE's reader map says read it
- * @param {string[]} [input.docsAsked]  every docs path the gate was ASKED
- *   about. A docs path missing from this list was never put to the map,
- *   and an empty reader list for it would be an unasked question wearing
- *   an answer's costume.
- * @param {Record<string, string[]>} [input.settingsReadersByPath]  runtime
- *   settings path -> the repo-relative files that read it, from
- *   `settingsReaders` (T-330)
- * @param {string[]} [input.settingsAsked]  every settings path that scan
- *   was ASKED about, and the same distinction `docsAsked` draws: an
- *   unasked question is not an answer.
- * @param {Record<string, string[]>} [input.generatedByPath]  changed source
- *   path -> the generated files a spec may reach on its behalf, from
- *   `generatedEntries` (T-335)
- * @param {Record<string, string>} [input.generatedVia]  generated file ->
- *   the configuration sentence that produces it
- * @param {{ path: string, why: string }[]} [input.generatedUnplaceable]  the
- *   generated files in the graph that no build configuration places
- * @param {string[]} [input.unresolved]  from `specReach`
- * @returns {OwedDerivation}
- */
-export function deriveOwed({
-  changed,
-  reach,
-  roots = PACKAGE_ROOTS,
-  dependents = {},
-  docsReadersByPath = {},
-  docsAsked = [],
-  settingsReadersByPath = {},
-  settingsAsked = [],
-  generatedByPath = {},
-  generatedVia = {},
-  generatedUnplaceable = [],
-  unresolved = [],
-}) {
-  const asked = new Set(docsAsked);
-  const askedSettings = new Set(settingsAsked);
-  // T-271's rule, CALLED. Its `unplaceable` is deliberately not read:
-  // this function's placement question is wider than that one's, and the
-  // header above states the case where the two answers differ.
-  const owning = owningSpecs({
-    changed,
-    reach,
-    docsReadersByPath,
-    settingsReadersByPath,
-    generatedByPath,
-    generatedVia,
-  });
-  const specsFor = new Map(owning.byPath.map((e) => [e.path, e.specs]));
-  /** @type {Set<string>} */
-  const suites = new Set();
-  /** @type {Set<string>} */
-  const specs = new Set();
-  let whole = false;
-  /** @type {{ path: string, suites: string[], specs: string[], why: string[] }[]} */
-  const byPath = [];
-  /** @type {{ path: string, why: string }[]} */
-  const unplaceable = [];
-
-  for (const p of changed) {
-    /** @type {Set<string>} */
-    const mine = new Set();
-    /** @type {string[]} */
-    const why = [];
-    const ownedSpecs = specsFor.get(p) ?? [];
-    let placed = false;
-    /** @param {string} id @param {string} because */
-    const owe = (id, because) => {
-      mine.add(id);
-      why.push(`${id} — ${because}`);
-      for (const d of dependents[id] ?? []) {
-        mine.add(d);
-        why.push(`${d} — its package depends on ${id}'s through a file: specifier`);
-      }
-    };
-
-    const pkg = suiteOfPath(p, roots);
-    if (pkg !== undefined) {
-      placed = true;
-      owe(pkg, `lies under the ${roots[pkg]}/ package root, which that suite grades`);
-    }
-    if (ownedSpecs.length > 0) {
-      placed = true;
-      owe(SCOPED_SUITE, `${ownedSpecs.length} spec file(s) own it over the static import graph`);
-      for (const s of ownedSpecs) specs.add(s);
-    }
-    if (p === "docs" || p.startsWith("docs/")) {
-      if (!asked.has(p)) {
-        unplaceable.push({
-          path: p,
-          why:
-            "the DOCS GATE's reader map was never asked about it, and an unasked question is " +
-            "not an answer",
-        });
-        continue;
-      }
-      const readers = docsReadersByPath[p] ?? [];
-      if (readers.length === 0) {
-        placed = true;
-        why.push(
-          "no suite — the DOCS GATE's own reader map says no code suite reads this document",
-        );
-      }
-      let mapped = true;
-      for (const r of readers) {
-        const rs = suiteOfPath(r, roots);
-        if (rs === undefined) {
-          unplaceable.push({
-            path: p,
-            why:
-              `the DOCS GATE says ${r} reads it, and that reader lies under no package root — ` +
-              "so this derivation cannot say which suite would run it",
-          });
-          mapped = false;
-          break;
-        }
-        placed = true;
-        owe(rs, `the DOCS GATE says ${r} reads it, and ${r} lies under ${roots[rs]}/`);
-      }
-      if (!mapped) continue;
-    }
-    if (underSettings(p)) {
-      if (!askedSettings.has(p)) {
-        unplaceable.push({
-          path: p,
-          why:
-            "the runtime settings reader map was never asked about it, and an unasked question " +
-            "is not an answer",
-        });
-        continue;
-      }
-      const readers = settingsReadersByPath[p] ?? [];
-      if (readers.length === 0) {
-        unplaceable.push({
-          path: p,
-          why:
-            "no tracked source file in this tree reads it, and a configuration file whose readers " +
-            "this scan did not find is not a configuration file nobody reads",
-        });
-        continue;
-      }
-      let mapped = true;
-      for (const r of readers) {
-        const rs = suiteOfPath(r, roots);
-        if (rs === undefined) {
-          unplaceable.push({
-            path: p,
-            why:
-              `${r} reads this configuration, and that reader lies under no package root — so ` +
-              "this derivation cannot say which suite would run it",
-          });
-          mapped = false;
-          break;
-        }
-        placed = true;
-        owe(rs, `${r} reads this configuration, and ${r} lies under ${roots[rs]}/`);
-      }
-      if (!mapped) continue;
-    }
-    if (!placed) {
-      unplaceable.push({
-        path: p,
-        why:
-          "it lies under no package root, no spec reaches it through a static import, and it is " +
-          "not a document the DOCS GATE maps",
-      });
-      continue;
-    }
-    // THE END-TO-END LEG IS OWED WHOLE WHENEVER IT IS OWED BY A PATH THE
-    // IMPORT GRAPH NAMED NO SPEC FOR — `tools/e2e/package.json`, say, or
-    // a script nothing imports. A subset chosen for a path no spec owns
-    // would be a subset chosen for a different path.
-    if (mine.has(SCOPED_SUITE) && ownedSpecs.length === 0) whole = true;
-    for (const id of mine) suites.add(id);
-    byPath.push({ path: p, suites: [...mine].sort(), specs: ownedSpecs, why });
-  }
-
-  /** @type {string | undefined} */
-  let failClosed;
-  if (unresolved.length > 0) {
-    failClosed =
-      "the static import graph has an edge it could not land on a file, so any spec subset would " +
-      `be SHORT: ${unresolved.join("; ")}`;
-  } else if (generatedUnplaceable.length > 0) {
-    // T-335. THE SAME SHAPE AS THE EDGE ABOVE, AND FOR THE SAME REASON.
-    // A generated file in the graph that no build configuration maps
-    // back onto sources is an edge that lands on a file nothing can ever
-    // change, so every spec reaching it is unreachable from any source
-    // change and any subset would be SHORT — in a way the walk cannot
-    // report, because the edge resolved perfectly well.
-    failClosed =
-      "the static import graph reaches a GENERATED file this derivation cannot map back to the " +
-      "sources that build it, and no changed path can ever be that file, so a change under " +
-      `those sources would select no spec: ${generatedUnplaceable
-        .map((u) => `${u.path} (${u.why})`)
-        .join("; ")}`;
-  } else if (unplaceable.length > 0) {
-    failClosed = `the derivation cannot place ${unplaceable
-      .map((u) => `${u.path} (${u.why})`)
-      .join("; ")}`;
-  }
-  if (failClosed !== undefined) {
-    return {
-      suites: [...ALL_SUITES],
-      e2e: { whole: true, specs: [] },
-      byPath,
-      unplaceable,
-      generatedUnplaceable,
-      failClosed,
-    };
-  }
-  return {
-    suites: [...suites].sort(),
-    e2e: { whole, specs: whole ? [] : [...specs].sort() },
-    byPath,
-    unplaceable,
-    generatedUnplaceable,
-    failClosed,
-  };
-}
-
-/** The two-dot form this derivation takes, and the characters a revision
- *  may be spelled with. A range is handed to `git`, so it is validated
- *  before it goes anywhere near one. */
-export const RANGE_RE = /^([0-9A-Za-z._/@^~-]{1,200})\.\.([0-9A-Za-z._/@^~-]{1,200})$/;
-
-/**
- * The paths a range moved, with THE RANGE RULE's own pair enforced.
- *
- * TWO DOTS, AND THE LEFT ENDPOINT MUST BE AN ANCESTOR OF THE RIGHT.
- * docs/CONVENTIONS.md's RANGE RULE bans `<merge-base>..<tip>` and bans
- * `<main>..HEAD` between two DIVERGENT tips — `git diff A..B` is `git
- * diff A B`, so main's own newer work comes back reversed, and a
- * docs-only lane reads as having rewritten a crate. Both callers this
- * function has are the shape the rule permits: a push's upstream is an
- * ancestor of what is being pushed, and a lane's base is an ancestor of
- * its tip. So the ancestry is CHECKED rather than assumed, and a
- * divergence is a refusal instead of a wrong answer.
- *
- * @param {string} range
- * @param {string} [root]
- * @returns {{ paths: string[], base: string, tip: string } | { problem: string }}
- */
-export function rangeChanged(range, root = repoRoot) {
-  const m = RANGE_RE.exec(String(range ?? "").trim());
-  if (m === null) {
-    return {
-      problem:
-        `${JSON.stringify(range)} is not a two-dot range of two plain revisions — this ` +
-        "derivation takes <base>..<tip> and hands both to git",
-    };
-  }
-  const base = /** @type {string} */ (m[1]);
-  const tip = /** @type {string} */ (m[2]);
-  const ancestor = spawnSync("git", ["-C", root, "merge-base", "--is-ancestor", base, tip], {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-  if (ancestor.status !== 0) {
-    return {
-      problem:
-        `${base} is not an ancestor of ${tip} in ${root} (git exited ` +
-        `${String(ancestor.status)}), and a two-dot diff between divergent tips returns the ` +
-        "OTHER side's work in reverse — docs/CONVENTIONS.md, THE RANGE RULE",
-    };
-  }
-  const out = spawnSync("git", ["-C", root, "diff", "--name-only", base, tip, "--"], {
-    encoding: "utf8",
-    maxBuffer: 32 * 1024 * 1024,
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-  if (out.status !== 0) {
-    return {
-      problem: `git would not diff ${range} in ${root} (${
-        String(out.stderr ?? "").trim().split("\n")[0] || `exit ${String(out.status)}`
-      })`,
-    };
-  }
-  return {
-    base,
-    tip,
-    paths: String(out.stdout ?? "")
-      .split("\n")
-      .map((l) => l.trim())
-      .filter((l) => l !== ""),
-  };
-}
-
-/**
- * The derivation as a caller runs it: the readings taken, then the rule,
- * then the INPUTS said out loud so the token can carry them.
- *
- * THE DOCS SCAN IS PAID FOR ONLY WHEN A DOCS PATH MOVED, exactly as in
- * `deriveOwning`: it walks the whole source corpus, and a range that
- * moved one script should not pay for it.
- *
- * @param {string} range
- * @param {string} [root]
- * @returns {(OwedDerivation & { range: string, changed: string[], inputs: Record<string, unknown> }) | { problem: string }}
- */
-export function owedForRange(range, root = repoRoot) {
-  const diff = rangeChanged(range, root);
-  if ("problem" in diff) return diff;
-  const changed = diff.paths.map((p) => normaliseChanged(p, root));
-  const { reach, unresolved } = specReach(root);
-  const dependents = packageDependents(root);
-  /** @type {Record<string, string[]>} */
-  const docsReadersByPath = {};
-  /** @type {string[]} */
-  let docsAsked = [];
-  let readerCount = 0;
-  if (changed.some((p) => p === "docs" || p.startsWith("docs/"))) {
-    const readers = docsReaders(root);
-    readerCount = readers.length;
-    const gate = docsGate(changed, readers);
-    docsAsked = gate.docsPaths;
-    for (const entry of gate.byPath) docsReadersByPath[entry.path] = entry.readers;
-  }
-  /** @type {Record<string, string[]>} */
-  const settingsReadersByPath = {};
-  /** @type {string[]} */
-  let settingsAsked = [];
-  const settingsPaths = changed.filter((p) => underSettings(p));
-  if (settingsPaths.length > 0) {
-    const map = settingsReaders(settingsPaths, root);
-    settingsAsked = map.asked;
-    Object.assign(settingsReadersByPath, map.byPath);
-  }
-  // T-335. UNCONDITIONAL, unlike the two scans above: its fail-closed arm
-  // is a fact about the graph rather than about the range, so a range
-  // that moved nothing near a package's sources must still answer for a
-  // generated file in the graph that nothing can place.
-  const generated = generatedSources(changed, reach, root);
-  const derived = deriveOwed({
-    changed,
-    reach,
-    dependents,
-    docsReadersByPath,
-    docsAsked,
-    settingsReadersByPath,
-    settingsAsked,
-    generatedByPath: generated.byPath,
-    generatedVia: generated.via,
-    generatedUnplaceable: generated.unplaceable,
-    unresolved,
-  });
-  return {
-    ...derived,
-    range,
-    changed,
-    // THE INPUTS THE DERIVATION READ, so the token records not only the
-    // answer but what it was computed over — a set nobody can re-derive
-    // is a set nobody can check.
-    inputs: {
-      base: diff.base,
-      tip: diff.tip,
-      root,
-      packageRoots: { ...PACKAGE_ROOTS },
-      packageDependents: dependents,
-      specFiles: Object.keys(reach).length,
-      unresolvedImports: unresolved,
-      docsReaderMapConsulted: docsAsked.length > 0,
-      docsReaders: readerCount,
-      docsReadersByPath,
-      settingsReaderMapConsulted: settingsAsked.length > 0,
-      settingsReadersByPath,
-      packageBuilds: generated.builds,
-      generatedEntriesReached: generated.byPackage,
-      generatedByPath: generated.byPath,
-      generatedUnplaceable: generated.unplaceable,
-    },
-  };
-}
-
 /**
  * The owed set as runnable suites, in the registry's own order.
  *
@@ -2495,11 +960,10 @@ export function owedForRange(range, root = repoRoot) {
  * @param {OwedDerivation} owed
  * @returns {Suite[]}
  */
-export function owedSuites(owed) {
-  const registry = /** @type {Record<string, Suite>} */ (GRADED_SUITES);
+export function owedSuites(owed, registry = /** @type {Readonly<Record<string,Suite>>} */ (GRADED_SUITES)) {
   /** @type {Suite[]} */
   const out = [];
-  for (const id of Object.keys(GRADED_SUITES)) {
+  for (const id of Object.keys(registry)) {
     if (!owed.suites.includes(id)) continue;
     const entry = registry[id];
     if (entry === undefined) continue;
@@ -2543,12 +1007,13 @@ export function owedSuites(owed) {
  *
  * @param {Verdict[]} verdicts
  * @param {string} [root]
- * @param {import("../../../.claude/hooks/gate-token.mjs").OwedRecord} [owed]
+ * @param {import("../../../cli/gate-token.mjs").OwedRecord} [owed]
+ * @param {import("../../../cli/gate-token.mjs").GateContext} [context]
  * @returns {{ written: boolean, message: string }}
  */
-export function recordVerdicts(verdicts, root = repoRoot, owed = undefined) {
+export function recordVerdicts(verdicts, root = repoRoot, owed = undefined, context = undefined) {
   try {
-    const { path: tokenFile } = writeToken(root, verdicts, owed === undefined ? {} : { owed });
+    const { path: tokenFile } = writeToken(root, verdicts, { ...(owed === undefined ? {} : { owed }), ...(context === undefined ? {} : { context }) });
     const message = `gate-run: verdict token written to ${tokenFile}\n`;
     process.stderr.write(message);
     return { written: true, message };
@@ -2563,297 +1028,313 @@ export function recordVerdicts(verdicts, root = repoRoot, owed = undefined) {
   }
 }
 
+/** @typedef {{root:string,productRevision:string,policyRevision:string,registry:Readonly<Record<string,Suite>>,context:import("../../../cli/gate-token.mjs").GateContext,settings:any}} GateConfiguration */
+/** Original repository facts are private constructor state, never a mutable
+ * property a caller can replace on the public configuration datum.
+ * @type {WeakMap<GateConfiguration,string>} */
+const gateOrigins = new WeakMap();
+/** @type {WeakMap<GateConfiguration,any>} */
+const gateTools = new WeakMap();
+/** @type {WeakMap<GateConfiguration,GateConfiguration>} */
+const gateParents = new WeakMap();
+/** @typedef {{version:1,productRoot:string,policyRevision:string,configurationDigest:string,toolManifestDigest:string,required:readonly string[],registryDigest:string,suites:readonly Suite[],digest:string}} ConfiguredGatePolicy */
+/** The public metadata cannot be passed back as an authentic policy handle.
+ * @type {WeakMap<ConfiguredGatePolicy,GateConfiguration>} */
+const gatePolicies = new WeakMap();
+/** @param {any} value @returns {string} */
+function gateDigest(value) { return `sha256:${createHash("sha256").update(operationContent(value)).digest("hex")}`; }
+/** @param {string} value */
+function gateOutputDigest(value) { return createHash("sha256").update(value, "utf8").digest("hex"); }
+/** @template T @param {T} value @returns {T} */
+function frozenGateData(value) {
+  const copy = structuredClone(value);
+  /** @param {any} item */
+  function freeze(item) { if (item && typeof item === "object") { Object.values(item).forEach(freeze); Object.freeze(item); } }
+  freeze(copy); return copy;
+}
+/** @param {string} code @param {string} detail @returns {never} */
+function configuredFinding(code, detail) { throw Object.assign(new Error(detail), { code }); }
+/** @param {GateConfiguration} configuration */
+function assertConfiguredGateOrigin(configuration) {
+  const original = gateOrigins.get(configuration);
+  try {
+    if (original === undefined || operationContent(captureOperationRepository(configuration.root, configuration.productRevision, { forEffect: false })) !== original) throw new Error("original PRODUCT root/Git directory/common directory/object store identity differs");
+  } catch (error) {
+    configuredFinding("gate-product-origin-changed", `The original PRODUCT repository is unavailable or replaced: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  requireInstalledRuntimeAssets(gateTools.get(configuration), ["tools/e2e/scripts/gate-run.mjs", "cli/gate-token.mjs"]);
+  const parent = gateParents.get(configuration);
+  if (parent) assertConfiguredGateOrigin(parent);
+}
+/** Read-only canonical selection; historical pushed revisions need not be HEAD.
+ * @param {{productRoot:string,productRevision:string,tool?:any}} options @returns {GateConfiguration} */
+export function loadConfiguredGateConfiguration(options) {
+  if (!options || Object.keys(options).some((key) => !["productRoot", "productRevision", "tool"].includes(key))) configuredFinding("gate-configuration-request", "Only PRODUCT root/revision and constructor TOOL context are accepted");
+  const tool = options.tool ?? loadInstalledRecordTool();
+  requireInstalledRuntimeAssets(tool, ["tools/e2e/scripts/gate-run.mjs", "tools/e2e/scripts/configured-dispatch-grade.mjs", "tools/e2e/scripts/source-suite-derivation.mjs", "tools/e2e/scripts/gate-policy.mjs", "tools/e2e/scripts/source-ci-contract.mjs", "tools/e2e/scripts/durable-operation.mjs", "cli/gate-token.mjs", "cli/is-main.mjs"]);
+  const original = captureOperationRepository(options.productRoot, options.productRevision, { forEffect: false });
+  const loaded = loadProjectSettings({ productRoot: options.productRoot, productRevision: options.productRevision, tool });
+  if (loaded.status !== "ready") configuredFinding(loaded.code, loaded.diagnostics.join("; "));
+  const required = requireProjectSection(loaded, "suites");
+  if (required.status !== "configured") configuredFinding("gate-suites-unconfigured", required.diagnostics.join("; "));
+  const registry = /** @type {Readonly<Record<string,Suite>>} */ (Object.fromEntries(loaded.settings.suites.map((suite) => [suite.id, suite])));
+  const problems = validateRegistry(registry);
+  if (problems.length) configuredFinding("gate-suite-unsupported", problems.join("; "));
+  const configuration = Object.freeze({ root: loaded.provenance.productRoot, productRevision: options.productRevision, policyRevision: options.productRevision, settings: loaded.settings,
+    registry: Object.freeze(registry), context: Object.freeze({ configurationDigest: loaded.provenance.configDigest,
+      toolManifestDigest: tool.manifestDigest, required: Object.freeze(Object.keys(registry).sort()) }) });
+  gateOrigins.set(configuration, operationContent(original));
+  gateTools.set(configuration, tool);
+  assertConfiguredGateOrigin(configuration);
+  return configuration;
+}
+/** Detached metadata is correspondence, not proof of machine execution.
+ * @param {GateConfiguration} configuration @returns {ConfiguredGatePolicy} */
+function configuredGatePolicyMetadata(configuration) {
+  const suites = configuration.context.required.map(id => /** @type {Suite} */ (configuration.registry[id]));
+  const data = { version: /** @type {const} */ (1), productRoot: configuration.root, policyRevision: configuration.policyRevision,
+    configurationDigest: configuration.context.configurationDigest, toolManifestDigest: configuration.context.toolManifestDigest,
+    required: configuration.context.required, registryDigest: gateDigest(suites), suites };
+  return frozenGateData({ ...data, digest: gateDigest(data) });
+}
+/** Backend-only original policy capture. No wire or per-run policy override.
+ * Coordinator HEAD may advance: only this exact committed policy is retained.
+ * @param {{productRoot:string,productRevision:string,tool?:any}} options */
+export function captureConfiguredGatePolicy(options) {
+  const configuration = loadConfiguredGateConfiguration(options), policy = configuredGatePolicyMetadata(configuration);
+  gatePolicies.set(policy, configuration); return policy;
+}
+/** @param {{productRoot:string,productRevision:string,tool?:any,policy?:ConfiguredGatePolicy}} options */
+function configuredCandidate(options) {
+  if (options?.policy === undefined) return loadConfiguredGateConfiguration(options);
+  if (Object.keys(options).some(key => !["productRoot", "productRevision", "policy"].includes(key))) configuredFinding("gate-policy-request", "Original policy already binds TOOL; only the candidate root/revision are request data");
+  const parent = gatePolicies.get(options.policy);
+  if (!parent) configuredFinding("gate-policy-unrecognized", "Original policy must be captured by the installed backend constructor");
+  assertConfiguredGateOrigin(parent);
+  const original = captureOperationRepository(options.productRoot, options.productRevision, { forEffect: false });
+  const ancestor = spawnSync("git", ["--no-replace-objects", "-C", original.root, "merge-base", "--is-ancestor", parent.productRevision, options.productRevision], { stdio: ["ignore", "pipe", "pipe"] });
+  if (ancestor.status !== 0 || ancestor.error) configuredFinding("gate-policy-ancestry", "Candidate must descend from the original committed PRODUCT policy");
+  const configuration = Object.freeze({ root: original.root, productRevision: options.productRevision, policyRevision: parent.productRevision,
+    registry: parent.registry, settings: parent.settings, context: Object.freeze({ ...parent.context, policyRevision: parent.productRevision, policyDigest: options.policy.digest }) });
+  gateOrigins.set(configuration, operationContent(original)); gateTools.set(configuration, gateTools.get(parent)); gateParents.set(configuration, parent);
+  assertConfiguredGateOrigin(configuration); return configuration;
+}
+/** Physical containment is checked before a command or sentinel is used.
+ * @param {string} root @param {Suite} suite */
+function configuredSuitePath(root, suite) {
+  const cwd = realpathSync(path.resolve(root, suite.cwd)), relative = path.relative(root, cwd);
+  if (relative === ".." || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative) || !lstatSync(cwd).isDirectory()) configuredFinding("gate-cwd-escape", `${suite.id}: cwd is outside the selected PRODUCT`);
+  const file = path.join(cwd, suite.sentinel), state = lstatSync(file);
+  if (!state.isFile() || state.isSymbolicLink() || realpathSync(file) !== file) configuredFinding("gate-sentinel-kind", `${suite.id}: sentinel is not one plain PRODUCT file`);
+}
+/** Same derivation, explicit configured membership. Unsupported discovery and
+ * ambiguous ownership conservatively require the entire configured battery.
+ * @param {GateConfiguration} configuration @param {string} range */
+export function configuredOwedForRange(configuration, range) {
+  assertConfiguredGateOrigin(configuration);
+  const raw = rangeChanged(range, configuration.root);
+  if ("problem" in raw) return raw;
+  const resolved = spawnSync("git", ["-C", configuration.root, "rev-parse", "--verify", "--end-of-options", `${raw.tip}^{commit}`], { encoding: "utf8" });
+  if (resolved.status !== 0 || resolved.stdout.trim() !== configuration.productRevision) return { problem: "the range tip differs from the exact PRODUCT configuration revision" };
+  assertConfiguredGateOrigin(configuration);
+  if (raw.paths.some((file) => file.trim() !== file || /[\r\n]/.test(file))) {
+    return { range, changed: raw.paths, suites: [...configuration.context.required], e2e: { whole: true, specs: [] },
+      byPath: [], unplaceable: [], generatedUnplaceable: [], failClosed: "this path spelling has no qualified narrow discovery adapter",
+      inputs: { base: raw.base, tip: raw.tip, root: configuration.root, completeConfiguredRegistry: [...configuration.context.required] } };
+  }
+  const derived = owedForRange(range, configuration.root, configuration.registry);
+  if ("problem" in derived) return derived;
+  const roots = Object.values(configuration.registry).map((suite) => suite.cwd);
+  const unsupportedScope = Object.values(configuration.registry).some((suite) =>
+    suite.family === "playwright" && (suite.id !== SCOPED_SUITE || suite.cwd !== "tools/e2e") ||
+    suite.id === SCOPED_SUITE && suite.family !== "playwright");
+  const why = derived.changed.includes(PROJECT_SETTINGS) ? "project settings changed; every configured suite is owed" :
+    roots.some((cwd, at) => roots.indexOf(cwd) !== at) ? "several suites share a cwd; their ownership cannot safely be narrowed" :
+    unsupportedScope ? "this Playwright layout has no qualified scoped discovery adapter" :
+    derived.suites.some((id) => configuration.registry[id] === undefined) ? "a discovery adapter named a suite outside the configured registry" :
+    derived.changed.some((file) => file.trim() !== file || /[\r\n]/.test(file)) ? "this path spelling has no qualified narrow discovery adapter" : undefined;
+  assertConfiguredGateOrigin(configuration);
+  return why === undefined ? derived : { ...derived, suites: [...configuration.context.required], e2e: { whole: true, specs: [] }, failClosed: why };
+}
+/** Constructor-bound effect API. Requests cannot replace commands, roots,
+ * membership, policy or TOOL metadata. The optional second argument is an
+ * opaque retained-source authority, redeemed only by its fixed backend.
+ * @param {{productRoot:string,productRevision:string,tool?:any,policy?:ConfiguredGatePolicy}} options
+ * @param {object|undefined} [executionAuthority] */
+export function createConfiguredGateRunner(options, executionAuthority) {
+  const configuration = configuredCandidate(options);
+  const { root, productRevision, registry, context } = configuration;
+  const policy = gateParents.get(configuration), metadata = configuredGatePolicyMetadata(policy ?? configuration);
+  const treeRead = spawnSync("git", ["--no-replace-objects", "-C", root, "rev-parse", "--verify", `${productRevision}^{tree}`], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  const candidateTree = treeRead.status === 0 ? treeRead.stdout.replace(/\n$/, "") : "";
+  // Untracked nonignored source/test inputs can affect an actual suite too.
+  // Legacy runs retain trackedDirt semantics; this is the original-policy route.
+  function candidateHasChanges() {
+    const status = spawnSync("git", ["--no-replace-objects", "-C", root, "status", "--porcelain=v1", "-z", "--untracked-files=all"], { stdio: ["ignore", "pipe", "pipe"] });
+    if (status.status !== 0 || status.error) configuredFinding("gate-candidate-status-unavailable", "The candidate's full nonignored Git status is unavailable");
+    return status.stdout.length > 0;
+  }
+  function assertCandidate() {
+    if (/** @type {any} */ (executionAuthority)?.kind === "planned-integration-grade") assertQualifiedIntegrationGradeAuthority(/** @type {object} */ (executionAuthority), {productRoot:root,commit:productRevision,tree:candidateTree,policy:metadata});
+    else if (executionAuthority !== undefined) assertConfiguredDispatchGradeAuthority(executionAuthority, {productRoot:root,commit:productRevision,tree:candidateTree,policy:metadata});
+    assertConfiguredGateOrigin(configuration);
+    if (currentRef(root) !== productRevision || currentTree(root) !== candidateTree || !candidateTree) configuredFinding("gate-product-context-changed", "The selected candidate HEAD/tree is unavailable or changed before grading");
+    if (policy && candidateHasChanges()) configuredFinding("gate-candidate-dirty", "Original-policy grading requires the exact clean candidate before and after each suite");
+  }
+  function assertAfterSuite() { if (policy) assertCandidate(); else assertConfiguredGateOrigin(configuration); }
+  /** @param {Suite} definition @param {{verdict:Verdict,output:string}} result */
+  function capture(definition, result) {
+    const output = result.output, transcript = `${output}${output.endsWith("\n") || !output ? "" : "\n"}${formatVerdict(result.verdict)}\n`;
+    return { definition, definitionDigest: gateDigest(definition), verdict: result.verdict, output, outputDigest: gateOutputDigest(output), transcript, transcriptDigest: gateOutputDigest(transcript) };
+  }
+  /** @param {ReturnType<typeof capture>[]} captures @param {readonly string[]} selected @param {boolean} whole */
+  function evidence(captures, selected, whole) {
+    return frozenGateData({ version: 1, policy: metadata, context, candidate: { productRoot: root, commit: productRevision, tree: candidateTree },
+      required: context.required, selected, whole, suites: captures,
+      complete: whole && selected.length === context.required.length && context.required.every(id => selected.includes(id)) &&
+        captures.length === selected.length && captures.every(row => row.verdict.verdict === "GREEN" && row.verdict.ref === productRevision && row.verdict.tree === candidateTree && row.verdict.dirty === false) &&
+        currentRef(root) === productRevision && currentTree(root) === candidateTree && !(policy ? candidateHasChanges() : trackedDirt(root)) });
+  }
+  /** @param {readonly string[]} names @param {ReturnType<typeof configuredOwedForRange>} [owed] */
+  function run(names, owed) {
+    if (!names.length || new Set(names).size !== names.length || names.some((id) => registry[id] === undefined)) configuredFinding("gate-suite-selection", `unknown suite(s), duplicate or empty selection in the committed registry: ${names.join(", ")}`);
+    if (owed !== undefined && "problem" in owed) configuredFinding("gate-range-unavailable", owed.problem);
+    /** @type {Verdict[]} */ const verdicts = [];
+    /** @type {ReturnType<typeof capture>[]} */ const captures = [];
+    for (const name of names) {
+      assertCandidate();
+      const suite = /** @type {Suite} */ (registry[name]);
+      try { configuredSuitePath(root, suite); }
+      catch (error) {
+        const verdict = /** @type {Verdict} */ ({ suite: name, exit: -1, bodies: 0, targets: 0, ref: currentRef(root), tree: currentTree(root), dirty: trackedDirt(root), verdict: "REFUSED", reason: `configured-path: ${error instanceof Error ? error.message : String(error)}` });
+        verdicts.push(verdict); captures.push(capture(suite, { verdict, output: "" }));
+        continue;
+      }
+      const selected = owed !== undefined && name === SCOPED_SUITE && !owed.e2e.whole && owed.e2e.specs.length ? scopedSuite(owed.e2e.specs, suite) : suite;
+      const result = runSuite(selected, { root });
+      assertAfterSuite();
+      const verdict = owed !== undefined && name === SCOPED_SUITE && !owed.e2e.whole && owed.e2e.specs.length ? { ...result.verdict, scope: owed.e2e.specs.join(",") } : result.verdict;
+      verdicts.push(verdict); captures.push(capture(selected, { ...result, verdict }));
+      if (result.outputPath) process.stderr.write(`gate-run: ${name} output at ${result.outputPath}\n`);
+    }
+    assertAfterSuite();
+    // Retained-source capture does not widen the worker's original ignored
+    // output policy by writing a token. Its actual result leaves via stdout.
+    const recorded = executionAuthority === undefined ? recordVerdicts(verdicts, root, owed === undefined ? undefined : { range: owed.range, suites: owed.suites, e2e: owed.e2e, inputs: owed.inputs, ...(owed.failClosed === undefined ? {} : { failClosed: owed.failClosed }) }, context) : {written:false};
+    return { code: executionAuthority === undefined && !recorded.written || verdicts.some((v) => v.verdict === "REFUSED") ? EXIT.REFUSED : verdicts.some((v) => v.verdict === "RED") ? EXIT.RED : EXIT.GREEN,
+      verdicts, configuration: context, tokenWritten: recorded.written,
+      capture: evidence(captures, names, owed === undefined || owed.e2e.whole || !names.includes(SCOPED_SUITE)) };
+  }
+  /** The existing source-layout scoped adapter is retained explicitly. Other
+   * layouts still run whole suites and cannot claim a narrower qualification.
+   * @param {string} suiteId @param {string[]} changed */
+  function owning(suiteId, changed) {
+    if (executionAuthority !== undefined) configuredFinding("gate-retained-scope-unsupported", "Retained grading captures whole original suites only");
+    assertConfiguredGateOrigin(configuration);
+    const suite = registry[suiteId];
+    if (!suite || suite.family !== "playwright") configuredFinding("gate-usage", `The scoped form needs its Playwright leg; THE FULL ${SCOPED_SUITE} LEG IS OWED`);
+    if (suite.id !== SCOPED_SUITE || suite.cwd !== "tools/e2e") configuredFinding("gate-scoped-unadapted", "This configured suite has no qualified scoped discovery adapter; run the whole configured suite");
+    if (!changed.length) configuredFinding("gate-usage", `no changed paths were named; THE FULL ${SCOPED_SUITE} LEG IS OWED`);
+    if (changed.some((file) => file.trim() !== file)) configuredFinding("gate-usage", "Exact changed-path spellings are required");
+    const roots = Object.fromEntries(Object.values(registry).map((entry) => [entry.id, entry.cwd]));
+    const plan = deriveOwning(changed, root, roots);
+    if (plan.generatedUnplaceable.length) configuredFinding("gate-usage", `The import graph reaches a GENERATED file this derivation cannot map back to the sources: ${plan.generatedUnplaceable.map((item) => item.path).join(", ")}; THE FULL ${SCOPED_SUITE} LEG IS OWED`);
+    if (plan.unresolved.length || plan.unplaceable.length || !plan.specs.length) configuredFinding("gate-usage", `The scoped reader cannot place ${plan.unplaceable.map((item) => item.path).join(", ") || changed.join(", ")}; ${plan.unresolved.join(", ")}; THE FULL ${SCOPED_SUITE} LEG IS OWED`);
+    assertCandidate();
+    configuredSuitePath(root, suite);
+    const selected = scopedSuite(plan.specs, suite), result = runSuite(selected, { root }), verdict = scopeVerdict(result.verdict, { specs: plan.specs, changed: plan.changed });
+    assertAfterSuite();
+    const recorded = recordVerdicts([verdict], root, undefined, context);
+    return { code: !recorded.written || verdict.verdict === "REFUSED" ? EXIT.REFUSED : verdict.verdict === `${SCOPED_PREFIX}RED` ? EXIT.RED : EXIT.GREEN, verdicts: [verdict], configuration: context, tokenWritten: recorded.written,
+      capture: evidence([capture(selected, { ...result, verdict })], [suiteId], false) };
+  }
+  /** Canonical correspondence aggregation only. The integration effect owner
+   * must separately prove each row came from its actual owned launch/artifact.
+   * No claim about process ancestry follows from accepting serialized rows.
+   * @param {readonly any[]} parts */
+  function aggregate(parts) {
+    assertCandidate();
+    if(!Array.isArray(parts)||!parts.length||parts.length>context.required.length) configuredFinding("gate-capture-set", "No finite original suite capture set supplied");
+    /** @type {ReturnType<typeof capture>[]} */ const rows=[];
+    /** @type {string[]} */ const names=[];
+    for(const part of parts){
+      if(!part||typeof part!=="object"||Object.keys(part).sort().join(",")!=="candidate,complete,context,policy,required,selected,suites,version,whole"||part.version!==1||operationContent(part.policy)!==operationContent(metadata)||operationContent(part.context)!==operationContent(context)||
+        operationContent(part.candidate)!==operationContent({productRoot:root,commit:productRevision,tree:candidateTree})||
+        operationContent(part.required)!==operationContent(context.required)||part.whole!==true||!Array.isArray(part.selected)||!Array.isArray(part.suites)||
+        part.selected.length!==part.suites.length||!part.selected.length) configuredFinding("gate-capture-context", "Captured suite context differs from the original policy/candidate");
+      for(const [at,row] of part.suites.entries()){
+        const id=part.selected[at],definition=registry[id];
+        if(typeof id!=="string"||!definition||names.includes(id)||!row||typeof row!=="object"||operationContent(row.definition)!==operationContent(definition)) configuredFinding("gate-capture-membership", "Missing, duplicate or changed original suite definition");
+        if(typeof row.output!=="string"||Buffer.byteLength(row.output)>32*1024*1024) configuredFinding("gate-capture-output", "Captured output is unavailable or exceeds the supported bound");
+        const actual=judge({suite:id,status:row.verdict?.exit,count:countBodies(definition.family,row.output),ref:productRevision,tree:candidateTree,dirty:false});
+        if(operationContent(capture(definition,{verdict:actual,output:row.output}))!==operationContent(row)) configuredFinding("gate-capture-output", "Captured reporter output/verdict/digests disagree");
+        rows.push(row);names.push(id);
+      }
+      const expected=part.selected.length===context.required.length&&new Set(part.selected).size===context.required.length&&
+        context.required.every(id=>part.selected.includes(id))&&part.suites.every((/** @type {any} */ row)=>row.verdict.verdict==="GREEN");
+      if(part.complete!==expected) configuredFinding("gate-capture-completeness", "A subset or failed capture was relabeled complete");
+    }
+    if(names.length!==context.required.length||!context.required.every(id=>names.includes(id))) configuredFinding("gate-capture-membership", "Every required original suite must occur once");
+    const ordered=context.required.map(id=>/** @type {ReturnType<typeof capture>} */(rows.find(row=>row.definition.id===id)));
+    assertAfterSuite();return evidence(ordered,context.required,true);
+  }
+  return Object.freeze({ configuration, run, owning, aggregate,
+    /** @param {string} range */ owed: (range) => configuredOwedForRange(configuration, range) });
+}
+
 // ── CLI ──────────────────────────────────────────────────────────────
 
-/** The one suite whose scoped form exists, and the flag that asks for it. */
-export const OWNING_FLAG = "--owning";
-export const SCOPED_SUITE = "e2e";
-
-/** The range form (T-280) and the flag that asks only for its answer. */
-export const RANGE_FLAG = "--range";
-export const OWED_SET_FLAG = "--owed-set";
-
-/**
- * The tree the DERIVATION reads, for a caller judging a checkout that is
- * not the one this module was loaded from — the push guard's case.
- *
- * `--tree` AND DELIBERATELY NOT `--root`, WHICH IS THIS REPOSITORY'S
- * USUAL SPELLING. `--root` means "the project root the target OPERATES
- * ON"; the `supertaskr` front hands it, and `cli.spec.ts` pins the two
- * directions to each other. This runner does not operate on the tree
- * this flag names — it reads the derivation's inputs there and still
- * runs every suite from the registry's own directories — so `--root`
- * would promise a relocation that does not happen, and would falsify
- * that pin for a flag the front cannot hand. Measured rather than
- * guessed: the first spelling was `--root`, and the battery redded that
- * body by name.
- */
-export const TREE_FLAG = "--tree";
-
-const USAGE = `gate-run.mjs — the one sanctioned way to run a graded suite (T-202)
-
-  node tools/e2e/scripts/gate-run.mjs <suite>...   run the named suites
-  node tools/e2e/scripts/gate-run.mjs --list       the registry
-  node tools/e2e/scripts/gate-run.mjs --all        every graded suite
-  node tools/e2e/scripts/gate-run.mjs ${SCOPED_SUITE} ${OWNING_FLAG} <changed path>...
-                                                  the EXECUTOR's scoped
-      reading: only the spec files that OWN those paths (T-271). The
-      verifier's one run and the integrator's run before the push stay
-      the full four legs, and this form's ${SCOPED_PREFIX}* verdict cannot
-      mint the push token. A path the derivation cannot place is exit 2.
-  node tools/e2e/scripts/gate-run.mjs ${RANGE_FLAG} <base>..<tip>
-                                                  the OWED SET (T-280):
-      the suites that range's own paths owe, with the end-to-end leg
-      narrowed to the spec files they own. A path the derivation cannot
-      place makes the owed set the whole battery, and the token says why.
-  node tools/e2e/scripts/gate-run.mjs ${OWED_SET_FLAG} ${RANGE_FLAG} <base>..<tip> [${TREE_FLAG} <dir>]
-                                                  the same derivation as
-      JSON, running NOTHING. This is what the push guard asks, so that
-      the set it requires and the set a run grades are ONE function.
-
-suites: ${Object.keys(GRADED_SUITES).join(", ")}
-
-Every run also writes its verdicts to ${TOKEN_REL_PATH}, keyed by the tree
-they ran against; the pre-push guard reads that token (T-203).
-
-exit: 0 every suite GREEN · 1 a suite is RED · 2 called wrong ·
-      3 REFUSED — no verdict this runner would stand behind`;
-
-/**
- * The scoped arm (T-271): `e2e --owning <changed path>…`.
- *
- * IT REFUSES BEFORE IT SPAWNS, always. Every way this can be wrong —
- * the wrong leg, an empty path list, an unresolvable import edge, a path
- * nothing owns, a derivation that came back with no spec — ends at exit
- * 2 with the reason and the sentence THE FULL LEG IS OWED, because the
- * only failure this feature may not have is grading a subset that is
- * short. It can be wrong by running too much; it must never be wrong by
- * running too little.
- *
- * @param {string[]} argv
- * @returns {number}
- */
-function mainOwning(argv) {
-  const at = argv.indexOf(OWNING_FLAG);
-  const names = argv.slice(0, at);
-  const changed = argv.slice(at + 1).filter((a) => a !== "");
-  /** @param {string} why @returns {number} */
-  const refuse = (why) => {
-    process.stderr.write(
-      `gate-run: REFUSING the scoped reading — ${why}. THE FULL ${SCOPED_SUITE} LEG IS OWED: ` +
-        `run this command again with no ${OWNING_FLAG}.\n`,
-    );
-    return EXIT.USAGE;
-  };
-  if (names.length !== 1 || names[0] !== SCOPED_SUITE) {
-    return refuse(
-      `${OWNING_FLAG} is the ${SCOPED_SUITE} leg's form and only its own — it was given ` +
-        `${names.length === 0 ? "no suite" : names.join(", ")}`,
-    );
-  }
-  if (changed.length === 0) {
-    return refuse(`${OWNING_FLAG} was given no changed paths, and a run over nothing grades nothing`);
-  }
-  const derived = deriveOwning(changed);
-  if (derived.unresolved.length > 0) {
-    return refuse(
-      "the static import graph has an edge it could not land on a file, so the subset would be " +
-        `SHORT: ${derived.unresolved.join("; ")}`,
-    );
-  }
-  if (derived.generatedUnplaceable.length > 0) {
-    return refuse(
-      "the static import graph reaches a GENERATED file this derivation cannot map back to the " +
-        "sources that build it, so a source change would select no spec and the subset would be " +
-        `SHORT: ${derived.generatedUnplaceable.map((u) => `${u.path} (${u.why})`).join("; ")}`,
-    );
-  }
-  if (derived.unplaceable.length > 0) {
-    return refuse(
-      `the derivation cannot place ${derived.unplaceable
-        .map((u) => `${u.path} (${u.why})`)
-        .join("; ")}`,
-    );
-  }
-  if (derived.specs.length === 0) {
-    return refuse("the derivation named no spec at all, and this runner never grades nothing");
-  }
-  for (const entry of derived.byPath) {
-    process.stderr.write(`gate-run: ${entry.path} is owned by\n  ${entry.via.join("\n  ")}\n`);
-  }
-  const { verdict, outputPath } = runSuite(scopedSuite(derived.specs));
-  const scoped = scopeVerdict(verdict, { specs: derived.specs, changed: derived.changed });
-  if (outputPath) process.stderr.write(`gate-run: ${SCOPED_SUITE} output at ${outputPath}\n`);
-  recordVerdicts([scoped]);
-  process.stdout.write(`${formatVerdict(scoped)}\n`);
-  if (scoped.verdict === "REFUSED") return EXIT.REFUSED;
-  return scoped.verdict === `${SCOPED_PREFIX}GREEN` ? EXIT.GREEN : EXIT.RED;
-}
-
-/**
- * The value of a `--flag <value>` pair, or undefined.
- * @param {string[]} argv @param {string} flag @returns {string | undefined}
- */
-function flagValue(argv, flag) {
-  const at = argv.indexOf(flag);
-  if (at < 0) return undefined;
-  const next = argv[at + 1];
-  return next === undefined || next.startsWith("--") ? undefined : next;
-}
-
-/**
- * The ASK arm (T-280): derive the owed set and print it as JSON, running
- * nothing at all.
- *
- * THE PUSH GUARD IS THIS ARM'S CALLER, and that is why it exists as a
- * separate spelling rather than as a flag on a run. The guard may not
- * import this module — it loads on every Bash call in a session and this
- * file walks a corpus — so it asks the same question by spawning the
- * program that owns the answer, exactly as it asks the graph and the
- * cheap checks. One function, two callers, no second copy of the rule.
- *
- * IT ALWAYS PRINTS JSON, INCLUDING WHEN IT REFUSES. A caller that had to
- * parse a refusal out of English would be a caller that fails open by
- * accident; `{ "problem": … }` at exit 2 is a machine-readable inability.
- *
- * @param {string[]} argv
- * @returns {number}
- */
-function mainOwedSet(argv) {
-  const range = flagValue(argv, RANGE_FLAG);
-  const root = flagValue(argv, TREE_FLAG) ?? repoRoot;
-  if (range === undefined) {
-    process.stdout.write(
-      `${JSON.stringify({ problem: `${OWED_SET_FLAG} needs ${RANGE_FLAG} <base>..<tip>` })}\n`,
-    );
-    return EXIT.USAGE;
-  }
-  const owed = owedForRange(range, root);
-  process.stdout.write(`${JSON.stringify(owed, null, 2)}\n`);
-  return "problem" in owed ? EXIT.USAGE : EXIT.GREEN;
-}
-
-/**
- * The RANGE arm (T-280): grade exactly the set the range owes.
- *
- * ── WHY THIS VERDICT IS MINTABLE AND `--owning`'S IS NOT ─────────────
- * The subset here is not a seat's opinion about what changed; it is a
- * function of two commit ids, and the push guard recomputes it from the
- * same two before it accepts anything. So the end-to-end leg's verdict
- * keeps the word it earned — GREEN or RED — and carries `scope=` naming
- * the spec files it graded, which is what the guard's coverage check
- * reads. A hand-typed `--owning` list has no such second reader, which
- * is exactly why it wears `SCOPED-` and can mint nothing.
- *
- * A REFUSAL IS NOT A NARROWER RUN. Every way the derivation can fail
- * lands on the whole battery with the reason recorded, never on a
- * shorter set — so this arm's failure mode is a longer run.
- *
- * @param {string[]} argv
- * @returns {number}
- */
-function mainRange(argv) {
-  const range = flagValue(argv, RANGE_FLAG);
-  if (range === undefined) {
-    process.stderr.write(`gate-run: ${RANGE_FLAG} needs a <base>..<tip> argument\n${USAGE}\n`);
-    return EXIT.USAGE;
-  }
-  const owed = owedForRange(range);
-  if ("problem" in owed) {
-    process.stderr.write(
-      `gate-run: the owed set for ${range} could not be derived — ${owed.problem}. ` +
-        "NOTHING WAS GRADED: run the whole battery with --all.\n",
-    );
-    return EXIT.USAGE;
-  }
-  if (owed.failClosed !== undefined) {
-    process.stderr.write(
-      `gate-run: THE WHOLE BATTERY IS OWED — ${owed.failClosed}\n`,
-    );
-  }
-  for (const entry of owed.byPath) {
-    process.stderr.write(`gate-run: ${entry.path} owes\n  ${entry.why.join("\n  ")}\n`);
-  }
-  process.stderr.write(
-    `gate-run: ${range} moved ${owed.changed.length} path(s) and owes ` +
-      `${owed.suites.join(", ")}${
-        owed.e2e.whole || owed.e2e.specs.length === 0
-          ? ""
-          : ` (${SCOPED_SUITE} over ${owed.e2e.specs.length} spec file(s))`
-      }\n`,
-  );
-  /** @type {Verdict[]} */
-  const verdicts = [];
-  for (const suite of owedSuites(owed)) {
-    const { verdict, outputPath } = runSuite(suite);
-    verdicts.push(
-      suite.id === SCOPED_SUITE && !owed.e2e.whole && owed.e2e.specs.length > 0
-        ? { ...verdict, scope: owed.e2e.specs.join(",") }
-        : verdict,
-    );
-    if (outputPath) process.stderr.write(`gate-run: ${suite.id} output at ${outputPath}\n`);
-  }
-  recordVerdicts(verdicts, repoRoot, {
-    range,
-    suites: owed.suites,
-    e2e: owed.e2e,
-    ...(owed.failClosed === undefined ? {} : { failClosed: owed.failClosed }),
-    inputs: owed.inputs,
-  });
-  for (const v of verdicts) process.stdout.write(`${formatVerdict(v)}\n`);
-  if (verdicts.some((v) => v.verdict === "REFUSED")) return EXIT.REFUSED;
-  if (verdicts.some((v) => v.verdict === "RED")) return EXIT.RED;
-  return EXIT.GREEN;
-}
-
-/** @param {string[]} argv @returns {number} */
-function main(argv) {
-  const bad = validateRegistry();
-  if (bad.length > 0) {
-    process.stderr.write(`gate-run: the registry itself is invalid:\n  ${bad.join("\n  ")}\n`);
-    return EXIT.REFUSED;
-  }
-  if (argv.length === 0 || argv.includes("--help")) {
-    process.stdout.write(`${USAGE}\n`);
-    return argv.length === 0 ? EXIT.USAGE : EXIT.GREEN;
-  }
-  if (argv.includes("--list")) {
-    for (const s of Object.values(GRADED_SUITES)) {
-      process.stdout.write(
-        `${s.id.padEnd(8)} ${s.cwd.padEnd(14)} ${s.argv.join(" ")}${s.solo ? "  [solo]" : ""}\n`,
-      );
+/** Configured project CLI; source CI calls its separate read-only entry.
+ * @param {string[]} argv @returns {number} */
+export function main(argv) {
+  const usage = "gate-run.mjs --root <PRODUCT> [--at <exact revision>] <configured-suite>...|--all|--list\n  --range <base>..<tip> [--owed-set] grades/reads the configured owed set\n  <suite> --owning <paths>... is an explicitly scoped reading where supported";
+  if (argv.includes("--help") || argv.length === 0) { process.stdout.write(usage + "\n"); return argv.length ? 0 : 2; }
+  try {
+    let root = process.cwd(), revision, range;
+    const rest = [...argv];
+    for (const flag of ["--root", "--at", "--range"]) {
+      const at = rest.indexOf(flag);
+      if (at < 0) continue;
+      if (rest.lastIndexOf(flag) !== at || rest[at + 1] === undefined || rest[at + 1]?.startsWith("--")) configuredFinding("gate-usage", `${flag} requires exactly one value`);
+      const value = rest[at + 1]; rest.splice(at, 2);
+      if (flag === "--root") root = /** @type {string} */ (value); else if (flag === "--at") revision = value; else range = value;
     }
-    return EXIT.GREEN;
+    if (rest.some((arg) => arg.startsWith("--") && !["--all", "--list", "--owed-set", "--owning"].includes(arg))) configuredFinding("gate-usage", "Unknown gate option");
+    const productRevision = revision ?? currentRef(root);
+    const runner = createConfiguredGateRunner({ productRoot: root, productRevision }), configuration = runner.configuration;
+    if (rest.includes("--owed-set")) {
+      if (!range || rest.length !== 1) configuredFinding("gate-usage", "--owed-set requires --range and no suite selection");
+      const owed = configuredOwedForRange(configuration, range);
+      process.stdout.write(JSON.stringify(owed) + "\n"); return "problem" in owed ? 3 : 0;
+    }
+    if (rest.includes("--list")) {
+      if (rest.length !== 1 || range) configuredFinding("gate-usage", "--list takes no suite selection or range");
+      for (const suite of Object.values(configuration.registry)) process.stdout.write(`${suite.id} ${suite.cwd} ${suite.argv.join(" ")}${suite.solo ? " [solo]" : ""}\n`);
+      return 0;
+    }
+    if (rest.includes("--owning")) {
+      if (rest.indexOf("--owning") !== 1 || range) configuredFinding("gate-usage", "Use <suite> --owning <changed paths> without a range");
+      const result = runner.owning(/** @type {string} */ (rest[0]), rest.slice(2));
+      for (const verdict of result.verdicts) process.stdout.write(formatVerdict(verdict) + "\n"); return result.code;
+    }
+    if (range) {
+      if (rest.length) configuredFinding("gate-usage", "--range takes no independent suite selection");
+      const owed = runner.owed(range);
+      if ("problem" in owed) configuredFinding("gate-range-unavailable", owed.problem);
+      if (!owed.suites.length) { process.stdout.write("gate-run: this range owes no product suites; nothing graded and no token written\n"); return 0; }
+      const result = runner.run(owed.suites, owed); for (const verdict of result.verdicts) process.stdout.write(formatVerdict(verdict) + "\n"); return result.code;
+    }
+    if (rest.includes("--all") && rest.length !== 1) configuredFinding("gate-usage", "--all takes no independent suite selection");
+    const result = runner.run(rest[0] === "--all" ? configuration.context.required : rest);
+    for (const verdict of result.verdicts) process.stdout.write(formatVerdict(verdict) + "\n");
+    return result.code;
+  } catch (error) {
+    const finding = /** @type {any} */ (error);
+    process.stderr.write(`gate-run: CANNOT RUN ${finding?.code ?? "gate-unavailable"}: ${error instanceof Error ? error.message : String(error)}\n`);
+    return finding?.code === "gate-usage" || finding?.code === "gate-suite-selection" ? 2 : 3;
   }
-  if (argv.includes(OWED_SET_FLAG)) return mainOwedSet(argv);
-  if (argv.includes(RANGE_FLAG)) return mainRange(argv);
-  if (argv.includes(OWNING_FLAG)) return mainOwning(argv);
-  /** @type {string[]} */
-  const names = argv.includes("--all") ? Object.keys(GRADED_SUITES) : argv;
-  const registry = /** @type {Record<string, Suite>} */ (GRADED_SUITES);
-  const unknown = names.filter((n) => registry[n] === undefined);
-  if (unknown.length > 0) {
-    process.stderr.write(`gate-run: unknown suite(s): ${unknown.join(", ")}\n${USAGE}\n`);
-    return EXIT.USAGE;
-  }
-  /** @type {Verdict[]} */
-  const verdicts = [];
-  for (const n of names) {
-    const entry = registry[n];
-    if (entry === undefined) continue; // unreachable: filtered above
-    const { verdict, outputPath } = runSuite(entry);
-    verdicts.push(verdict);
-    if (outputPath) process.stderr.write(`gate-run: ${n} output at ${outputPath}\n`);
-  }
-  recordVerdicts(verdicts);
-  // THE VERDICT LINES ARE PRINTED LAST, so the last thing a reader sees
-  // is the thing they should trust.
-  for (const v of verdicts) process.stdout.write(`${formatVerdict(v)}\n`);
-  if (verdicts.some((v) => v.verdict === "REFUSED")) return EXIT.REFUSED;
-  if (verdicts.some((v) => v.verdict === "RED")) return EXIT.RED;
-  return EXIT.GREEN;
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (isMain(import.meta)) {
   process.exit(main(process.argv.slice(2)));
 }

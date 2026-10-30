@@ -47,7 +47,6 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   ALL_SUITES,
-  GRADED_SUITES,
   OWED_SET_FLAG,
   RANGE_FLAG,
   SCOPED_SUITE,
@@ -56,12 +55,14 @@ import {
   scopedSuite,
   specFiles,
   suiteOfPath,
-} from "./gate-run.mjs";
+} from "./source-suite-derivation.mjs";
+
+import { SOURCE_CI_SUITES as GRADED_SUITES } from "./source-ci-contract.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
 /** The program that owns the derivation, as this file spawns it. */
-export const GATE_RUN_PATH = path.join(here, "gate-run.mjs");
+export const GATE_RUN_PATH = path.join(here, "source-ci-owed.mjs");
 
 /** How many runner jobs the end-to-end leg is split across by default. */
 export const DEFAULT_SHARD_COUNT = 4;

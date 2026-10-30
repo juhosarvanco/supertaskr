@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least named-not-extracted (listed at the end) — across 52 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1861 at least behaviours** — 1857 extracted sentences + 4 at least named-not-extracted (listed at the end) — across 133 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -37,6 +37,12 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - the real script refuses SUPERTASKR_BOOT_PORT=1420 with exit 3, probing nothing
 - a busy scratch port aborts with exit 2 and spawns nothing
 
+## brief-contract
+
+- the shared brief frame assembles the actual normative row set with every source and provenance intact
+- a renamed normative label has neither a positional fallback nor a silently orphaned deriver
+- role-specific substitution stays derived from the same actual METHOD table
+
 ## brief-flush
 
 - the whole derivation reaches BOTH readers — one SYNTHESISED oversize invocation, byte for byte
@@ -46,6 +52,12 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - THE MARGIN GUARD: every live arm against a loss point DERIVED in this run, for a NAMED reader
 - the reader that STOPS after one read gets a silent PREFIX, and the writer's own exit behind it is a RACE this body measures and does not assert
 - THE SWEEP: brief.mjs no longer tears down its own stdout, and the siblings that still do are the argued set
+
+## brief-source-readers
+
+- captured METHOD contract lookup preserves own, unique fallback and ambiguous/missing refusals without source-root lookup
+- captured METHOD references reuse canonical grammar and actual membership without opening unlisted files
+- captured and filesystem CONVENTIONS share exact splice and all missing, reordered, unmentioned and leftover refusals
 
 ## brief
 
@@ -177,7 +189,7 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - the tier line is CREATED where a card has none, and no other field may be created by a stamp
 - THE BENCH ARM TAKES THE GROUND, SEALS THREE INPUTS AND RENDERS PHASE 2, against a real dispatch
 - the arm renders phase 1 from the card AS THE COMMIT CARRIES IT, never off the working tree
-- THE SHIPPED TEMPLATE NAMES A MODEL FOR EVERY ROLE, and every one of them is Opus 5
+- THE SHIPPED TEMPLATE NAMES A MODEL FOR EVERY ROLE, with the configured Codex planner default
 - THE BRIEF PRINTS THE MODEL IN ROW 1, read from the runtime template and named as such
 - A ROLE THE TEMPLATE NAMES NO MODEL FOR REFUSES THE DISPATCH, before a card is stamped or a worktree is cut
 - THE DISPATCH STAMPS AND PRINTS THE MODEL PER SEAT, and a dial that overrides one says so
@@ -190,7 +202,6 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - THE TRIAGE RULE CARRIES BOTH ITS HALVES — the test cycle AND the fresh reviewer's gate, and the split is an instruction
 - A TEMPLATE VALUE THAT IS ONLY A COMMENT IS AN ABSENT DEFAULT, and so is an empty quoted one
 - THE TYPED SWITCH LIST AND THE SHIPPED SCHEMA AGREE EXACTLY, so a switch with no body of its own reds by name
-- THE SCHEMA CARRIES EVERY ROW OF THE ROOM'S SWITCH INVENTORY AND EVERY ID ITS FLOOR NAMES
 - THE ARM'S HAND PARSER AND A REAL YAML PARSER READ THE SAME SCHEMA, field for field
 - THE ARM'S FIVE SYMBOLS ARE THE PARSER LIBRARY'S, and this file carries no second spelling of them
 - EVERY BAND A SWITCH NAMES IS A BAND THIS PROJECT ACTUALLY KEEPS
@@ -212,7 +223,6 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - EVERY `operational` ROW IS PROVED BY CHANGING ITS VALUE AND WATCHING THE ARM ANSWER DIFFERENTLY
 - A READ SITE IS NOT AN OPERATIONAL EFFECT — the arm reads `record.whole_suite_net` and nothing it DOES moves with it
 - THE ARM'S PHASE-1 STEP READS `verify.phase1` — the brief is written or it is not, and the skip names the switch
-- THE SCHEMA'S TWO COLUMNS MOVE EXACTLY WHERE THE ROOM'S OLD AND RULED COLUMNS MOVE
 - the process switch read.standing is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
 - the process switch dispatch.keeper_at_base is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
 - the process switch dispatch.model_per_role is declared whole, resolves under all three profiles, and the arm ignoring it refuses by name
@@ -265,7 +275,6 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - THE SCHEMA'S DISPATCH BLOCK NAMES A READ SITE FOR EVERY ROW, AND EVERY OPERATIONAL ROW'S SITE IS A SYMBOL THIS ARM EXPORTS
 - A CHECKOUT THAT HAS NEVER HELD A STORE IS THE EXPLICIT NO-GRANT STATE, the ceremony keeps working, and the arm says NOTHING WAS ENFORCED rather than pretending it was
 - THE ORCHESTRATOR'S STEP 5 KEEPS ITS TWO SENTENCES AND EXTENDS THEM — a dispatch inside the current grant is approved by the grant, and every other dispatch still waits for the owner
-- THE CONVENTIONS CARRY THE ADMISSION RULE ONCE, AT THE LOOP'S OWN SECTION
 - T-322 C1 — A RED IS ATTRIBUTED BEFORE ANYTHING ACTS ON IT, and the four answers route four different ways
 - T-322 C1 — THE BASELINE IS THE NEWEST EARLIER ANCESTOR RUN, and a body already failing there is NOT attributed to the merge
 - T-322 C2 — A REPAIR CONTINUES ON DEMONSTRATED PROGRESS AND PARKS ON A REPEATED INEFFECTIVE REMEDY, with a wake condition either way
@@ -276,7 +285,6 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - T-322 C4 — THE REFUSAL IS CLASSIFIED AND THE RETRY INSTANT IS THE PROVIDER'S OWN WHERE IT NAMES ONE
 - T-322 C5 — A QUESTION ENTRY IS MARKED AS A QUESTION AND ROUND-TRIPS THROUGH ITS OWN READER, and every shape that would make it a ruling is refused
 - T-322 C6 — ONE END-TO-END FIXTURE: a question parked, its dependent card REFUSED at the cut, an independent one admitted, the question resolved by an authorized entry, and the same state and the same brief recovered in a FRESH PROCESS
-- T-322 C7 — THE CONVENTIONS CARRY THE HOST KEEP-AWAKE RULE ONCE, AT THE LOOP'S OWN SECTION, WITH ITS DERIVE COMMAND
 - T-322 C7 — THE ORCHESTRATOR'S STOP LIST NAMES ONLY THE STOPS THE GRANT RESERVES, and 5g says what each failure produces instead
 - T-322 C5 — THE ROOM FORMAT RULES THE QUESTION ENTRY'S SHAPE, and the method eval holds it
 - T-322 VC1 — A QUESTION ENTRY MAY NOT CARRY A LINE BREAK INTO A ROOM, because a line break there forges a heading and the reader stops at it
@@ -316,6 +324,10 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - THE ARM'S EXTENSION POINT NAMES A FUNCTION THIS FILE ACTUALLY EXPORTS
 - THE STORE REUSES THIS TREE'S VALIDATION AND TAKES ITS LOCKING WITHOUT CLOSING A CYCLE — and the blob sha it computes is git's own
 
+## capabilities
+
+- capability generation counts each inline or named string pair as one behavior without executing the spec
+
 ## card-figures
 
 - the census claim fires on the sentence that cost T-141 a rejection
@@ -330,7 +342,7 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - a provenance arrow this gate cannot re-run is UNRUNNABLE rather than accepted
 - a figure attested as not-a-function-of-a-tree is ATTESTED and is NOT a finding
 - an unstamped bare number is NOT a finding — arm one is deliberately not rebuilt
-- the case for arm two is a RATIO and this body re-derives it
+- authored numeric prose and a scoped census claim remain distinct inputs
 - every line this command emits for a real card carries a stamp
 - a note may not carry a digit, and this command's own notes obey it
 - every declared deriver produces a text set, and the audit knows no key the map lacks
@@ -472,16 +484,18 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - npx supertaskr dispatches every verb to a target this tree already carries, resolved on disk
 - the front relabels no exit code — the child's status is the command's status
 - an unknown verb is refused with the whole verb list, and nothing is spawned
-- every verb that hands its target --root fronts a script whose own flags carry it
+- every verb that hands its target --root reaches a script whose flags carry it
+- the delivery front preserves the shared selected-root prefix and its caller's positional action
+- legacy source fronts refuse configured and invalid selected contexts before child effects and label their help
 - the verb set covers the seat's own arms and NAMES the C-02 verbs nothing fronts
-- each verb sourced from docs/CONVENTIONS.md quotes a command that document really carries
-- the front reads every command bullet docs/CONVENTIONS.md carries, and reads it verbatim
-- a verb needing an install says which command builds it, and runs nothing
+- the front reads every product command bullet CONTRIBUTING.md carries, and reads it verbatim
+- a verb with missing TOOL dependencies names the package to restore and runs nothing
 - a verb whose script resolves its own repository root is refused from an installed copy
 - the project root is found by walking up, and its absence is said rather than guessed
 - the installer targets Claude Code and Codex, and a third harness is one adapter entry
 - the docs gate sees the CLI package as a derived reader of docs/
-- npx supertaskr runs out of a packed tarball installed into a project that is not this repository
+- offline package installation refuses a missing runtime dependency declaration before provisioning
+- npx supertaskr runs out of an isolated standalone tarball with no checkout or dependency fallback
 - undo refuses while a later merge stands on the card's fence, and names it
 - undo names the revert it would run when nothing has landed on the fence since
 - a --force naming a commit that is not a later merge is a usage error, never a licence
@@ -499,7 +513,7 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - a graph-moving merge re-derives the pins into a dated line carrying the graph's own counts
 - the merge stamps done by the card's own status line, and fills only an empty seat
 - the installer refuses a destination it would clobber, and --force is the named choice
-- every command the skills' own cards name is a verb this package exposes
+- every shipped HOST command reaches an exact front target and arm
 - a fence with ANY unresolved token is refused, never called clear
 - a merge STAGES the census and the graph it regenerated, by the argv it runs
 - the done stamp fills only an empty built_by, not only an empty verified_by
@@ -547,6 +561,135 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - pre-lock exact replay preserves later state and acquisition receipt races fail even when exact lock release also fails
 - atomic publication and explicit retry classify before rename after rename directory sync release and response loss honestly
 
+## configured-dispatch-arm
+
+- configured lane constructor freezes original private stamp, exact absent destinations and owed original baseline without product effects
+- arm planning requires its actual installed producer member and refuses unapproved contract drift before any private or lane effect
+- actual approved non-independent review cannot be promoted by the dispatch stamp before private effects
+
+## configured-dispatch-brief
+
+- installed full brief derives actual thirteen METHOD rows from code-empty committed P/R and keeps executor reading scoped
+- unknown additional gates, divergent adapters, unsafe lane destinations and missing shipped brief ownership refuse without lane effects
+- declared generic gates reuse the legacy parser while the legacy nonempty trigger guard remains strict
+
+## configured-dispatch-grade
+
+- installed grading measures the actual held PRODUCT worker, retains original suites and captures without changing ignored-output policy
+- current pause and exact worker changes refuse; a pause from the first real suite prevents the next child and any accepted result
+- the original reporter/judge aggregates actual partial captures and refuses missing, duplicate, changed or relabeled membership
+
+## configured-dispatch-operation
+
+- actual captured dispatch OP retains real metadata claims and only its opaque same-owner context can re-enter current approval
+- protected actual private stamp retains the original approval and owns only canonical lifecycle plus INDEX bytes
+- canonical review initialization admits only an empty independent dispatch claim and rejects weaker or changed claims
+- actual configured lane creation preserves foreign destinations and reuses only its retained physical branch
+- actual owned brief persistence rejects a foreign namespace and retains exact fixed Markdown before assignment
+- installed configured arm releases only its claims and canonically prepares the exact original native assignment
+- cold configured continuation adopts only the actual dead backend after current approval and keeps original execution data
+
+## configured-dispatch-view
+
+- ordinary installed dispatch view captures code-empty P/R cuts, actual holds and METHOD without PRODUCT-board fallback or effects
+- captured current cuts refuse later HEAD movement while explicit original views retain their exact snapshot and invalid contexts refuse
+
+## configured-dispatch
+
+- configured dispatch retains original P/R/TOOL, committed card role overrides and actual original suite execution
+- configured dispatch refuses copied handles, mismatched start correspondence, absent configuration/binding and replaced records
+- the installed strict native entry binds original model vehicle and session policy and cold-checks the actual retained source without a child lock
+- the finite native role adapter keeps a plain demo model and refuses a lost resume policy
+- the actual installed configured producer refuses its omitted but present command and accepts the restored manifest
+
+## configured-gate-origin
+
+- a retained runner refuses same-history replacement before whole, scoped or range reads and accepts its restored original
+- configured and source-CI executable entries still run through a directory alias
+
+## configured-gate-policy
+
+- original configured commands and full membership grade a candidate that weakens its same-ID settings
+- original policy retains both physical repositories, clean exact candidate and ancestry without accepting copied metadata
+- original-policy grading refuses nonignored untracked inputs before a suite and files it creates afterward
+
+## configured-gates
+
+- real verbose unittest output accounts for independent methods, skipped bodies and failed summaries
+- configured token membership and build context cannot be narrowed or relabeled by a partial write
+- the actual staged CLI grades an independent Python project from its committed configuration
+- an offline isolated tarball grades Python without checkout, NODE_PATH or sibling dependency fallback
+
+## configured-health
+
+- installed health compares explicit generic bands against real Python output without private context
+- health names unsupported tree/output authorities and explicit empty configuration
+- health filing uses the selected records save service and derived INDEX, never PRODUCT docs or checks
+- health filing without explicit records binding refuses instead of reading a PRODUCT board
+- malformed nonfinite output cannot become a healthy configured reading
+
+## configured-hooks
+
+- the fixed copied hook entry allows non-push and refuses ungraded pushes without an install, build or policy helper
+- configured hooks consume actual Python token context and canonical committed private checks, with no product-doc fallback
+- configured hook membership cannot be narrowed and pre-push reads the pushed candidate configuration independently of HEAD
+- a related checkout or lane needing original paired authority refuses explicitly while unrelated repositories stay outside scope
+
+## configured-loop-health
+
+- configured loop shares use actual selected denominators and exact R history, never self-project budgets
+- missing loop share policy is unconfigured while denominator-free quality remains observable
+- unknown record tiers and unreadable or empty loop windows never yield zero healthy shares
+- incomplete quality captures and nonfinite arithmetic remain unread instead of becoming healthy
+- installed health executes committed loop readers and refuses an absent share policy without product effects
+
+## configured-names
+
+- installed name keeper uses explicit names and exact retained quotations in committed PRODUCT source
+- configured case, confusable and path readings preserve the same canonical classifier
+- name scan reads committed plain blobs and refuses unsupported kinds/encoding instead of skipping them
+- name policy has no missing/unknown/empty corpus fallback
+- configured protocol case allowance is literal and file scoped, with neighboring and changed-prefix controls
+
+## configured-native-assignment
+
+- canonical backend and file assignment parsing preserve actual trailing-space worker and brief identities
+- new native launch selectors require explicit finite effort deadline and token-budget data
+
+## configured-settings
+
+- installed settings reads committed roles/process and edits only an explicit working root configuration
+- settings preserves canonical floor/declarative/constraint refusals and current committed context
+- settings refuses foreign linked editor leaves and leaves their bytes intact, with plain write positive
+- installed settings reference detects staleness and uses schema generation without selected private records
+
+## configured-tree-health
+
+- committed selected tree facts ignore poisoned working and PRODUCT documents and preserve canonical math
+- generic flow inspects suggestion status at deletion and never counts a ready card as a suggestion
+- tree selectors require explicit budgets and binding and never substitute a ROOT board
+- tree history refuses incomplete cuts and a held physical-origin verifier rejects copied-history replacement
+- tree reader membership is required even when the omitted runtime file remains present
+- installed health executes selected committed tree readers and keeps private prose edits out of product effects
+
+## configured-verification
+
+- installed external configured preparation seals the original TOOL verifier role and cold strict start consumes it
+- configured dispatch requires both actual native preparation owners even when omitted files remain present
+
+## configured-verifier-benches
+
+- actual configured verifier creates only its detached complete benches and retains the canonical phase-one preparation
+
+## configured-verifier-operation
+
+- actual verifier OP owns only its captured claims and opaque exact source context preserves current approval
+
+## configured-verifier-plan
+
+- configured verifier constructor derives complete actual finalized source and original role without bench or preparation effects
+- configured verifier constructor refuses an actual observed executor before canonical final collection
+
 ## crescendo
 
 - the lens hands over to the real board when task files land
@@ -572,7 +715,7 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - A CARD IN FLIGHT WITH A DECLARED FENCE APPEARS IN THE REPORT — and is not sold as a hold
 - THE DISPATCHABLE-NOW FILTER: the default spells out what can START and COUNTS what cannot
 - THE POSITIVE CONTROL: the filter changes what is SPELLED OUT and never what is RULED ON
-- ...AND THE FILTER IS MEASURED ON THE REAL BOARD AT THIS REF, never on the fixture alone
+- the authored board compares identical data sections under the two view labels
 - the in-flight section's POPULATED arm, on an injected board that cannot evaporate
 - COMPLETE LITERAL LANE ADDRESSES distinguish prefixes and punctuation, and expose actual repeats
 - A LANE'S ADDRESS IS SPELLED ONCE, and the ruling still NAMES the lane and the shared path
@@ -584,18 +727,18 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 
 ## docs-input-gate
 
-- every package with a suite has at least one derived docs reader
-- the two readers the card names are derived, and they are NOT all of them
-- a body that hands the root to a first-party call is a reader, and names every prefix that call spends
+- planted source readers retain all suite commands while ordinary fixture readers do not become product inputs
+- public product documentation readers remain derived after private dogfood leaves ordinary discovery
+- a direct source-root call hop derives all prefixes while the canonical temporary constructor does not inherit its source argument
 - the CALLEE is not a reader — a root that arrives as a parameter is somebody else's project
 - the call sample set is green, with a Rust positive and a DEFAULTED-root positive
 - nothing forms a repo-root docs path that the derivation could not link
 - the tripwire's ANCHOR arm follows imports, exactly as its site arm always did
-- THE ACCOUNT and the tree agree — every root-anchored file is derived, reported, or argued
-- the census is DERIVED, and the DOCS GATE bullet names the command instead of a digit
+- the exact root account distinguishes source owners, fixture owners and unadapted private contexts
+- the public product contract names the derived census without transcribing its size
 - a docs path off a root that is NOT the repo root is not a reader
 - a repo-root join whose first segment is not `docs` is not a reader
-- THE LIVE PACKAGE-RELATIVE READER IS DERIVED — not listed, and not in the ledger
+- package-relative readers remain derived by the real scanner over authored source
 - the resolve sample set is green — both spellings in, the fixture base and the escape out
 - PLANTED READERS in BOTH spellings are derived by the real derivation, off a scratch repository
 - a planted climb that ESCAPES the repository is excluded, and the exclusion is asserted
@@ -605,13 +748,13 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - the one by-name exclusion is load-bearing, and the spec is NOT excluded
 - the site sample set is green, with positives, negatives and a Rust spelling
 - the sample set covers the two shapes that HIDE a reader
-- every suite command this gate names is in CONVENTIONS' own command bullet
-- the DOCS GATE bullet names exactly the commands the derivation produces
+- every suite command is in the single public contributor contract
+- owed commands come only from the owning suite table
 - the DOCS GATE bullet points at the derivation rather than restating it
 - a docs-only diff with NO code file in it fires the gate and names the suites
 - a code-only diff does not fire this gate — it is the other two gates' business
-- the answer is PROPORTIONAL — that is what keeps the trigger obeyable
-- a path names the readers that read it, not a generic list
+- the answer is proportional to actual product inputs without a universal private-doc reader
+- a path names its actual product readers
 - the hand-run gate's exit codes hold, and an EMPTY path list is 2 and not 0
 - a --root run says whose tree it judged, first and last, and names what it did not answer
 - the real repository is scanned by the named integration set and by nobody else
@@ -619,7 +762,7 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - THE EXIT MATRIX — all four codes survive the invocation the doc prints
 - THE EMPTY-LIST TRAP, re-proved against the new spelling, with a PLANTED POSITIVE
 - THE CENSUS SAYS WHICH QUESTION ITS EXIT ANSWERS, and says it LAST
-- ONE SPELLING, TWO PLACES — the doc and the script print the same recipe
+- the public contract and command usage preserve separate changed-path arguments
 - THE `EXIT` OBJECT IS THE SINGLE AUTHORITY — the npm script re-types no numbers
 - the status vocabulary is READ from the parser, never restated here
 - the frontmatter delimiters are transcribed from the parser and still match it
@@ -627,7 +770,7 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - a genuine typo gets a near miss; `closed` gets the ruling because it is not one
 - a title opening with a backtick is a named yaml-error, not a shorter board
 - a legal card reports nothing, and a path the parser does not collect is not judged
-- every live task card parses, with a status in the vocabulary
+- the authored task corpus includes valid simple, compound and rejected cases
 - .supertaskrignore still excludes docs/ — the indexer is not the gate that missed this
 - every injection pattern has a planted positive that FIRES and a planted negative that does NOT
 - THE PROOF OF TEETH IS DEMONSTRATED FAILING — three degradations, each caught by name
@@ -636,28 +779,51 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - THE SCAN IS ADVISORY — all four exit codes are unmoved, AND the scan is proven to have RUN
 - a path the scan cannot read SAYS SO on its own line — never a silent pass
 - A PATTERN THAT THROWS IS ABSORBED — a bad regex cannot turn this gate's answer into exit 3
-- THE GATE'S PRINTED HITS ARE THE SCAN'S OWN, over this repository's live docs/ corpus
+- the gate prints exactly the advisory hits found in an authored corpus
 - EVERY hit in one file is printed, not only the first — three hits on three lines under two patterns, each with its file, line and pattern name
-- THE ADVISORY RESIDUAL, NAMED: no exit assertion on this tree can catch a scan made blocking
-- the indexed set is the RULING's own four, read out of the decision rather than remembered
+- an unowed path retains an advisory exit and the scan cannot touch the verdict counter
+- the ruling reader honors authored changed sets and refuses a missing phrase
 - every index line is DERIVED from its own document — the heading, the contract sentence and the sections
 - the committed docs/INDEX.md is CURRENT, and a PLANTED STALE LINE is what reds
-- the DOCS GATE is what carries that red — the check is wired into its exit, not left in the module
-- THE STANDING READ IS MEASURED AT THIS REF, and it is under 10,000 tokens
+- ordinary product gate and census never validate or persist private INDEX
+- standing-read byte accounting follows named authored documents
 - both root adapters say it in the same words, and so do the kit's two
-- the index tells a seat what to do when the pack did not hand it the rule, and names the case
+- derived private INDEX explains selected context and supported save ownership
 - the adapter reader keeps the boundary the DISPATCH BRIEF's own reader keeps, stop and all
 - the record staleness rule reads the CREATING commit — an append passes, a creation without STATE reds
 - a record git names no CREATING commit for falls back to its latest touch rather than going silent
-- THE DOCS GATE carries the record finding to its exit — the derivation moved, the wiring did not
+- ordinary documentation input checking delegates private record validation
 - the governing text says the CREATION rule and no longer carries the retouch requirement it replaced
 - a rule that moved into a chapter is still found by its opener, and the index alone does not carry it
 - a chapter that stops carrying a bullet the index points at is a hard failure, never a rule that quietly left the document
 - docs/INDEX.md carries one generated line per chapter the index points at
 - the index and its chapters are pinned BOTH WAYS — a pointer with no file, and a chapter with no pointer
-- the model-free eval suite's fixture root plants every file this project's conventions are made of
-- the model-free eval suite reads this project's conventions as the index AND its chapters
-- the seat pack's host-command check resolves every command it publishes against this project's conventions
+- the shipped host-command checker preserves its authored accepted and refused controls without private policy
+
+## durable-operation
+
+- raw publication lookup rejects a real foreign failed operation before any Git read
+- ordinary accepted operation persists exact commit/ref correlation without a worker or product/index/worktree effect
+- accepted commit before result recovers in a new process after a later legitimate save advances the branch
+- durable intent alone has no acceptance and restart reuses the exact intended commit
+- reachable planned commit without its exact correlation witness remains uncertain and never repeats the ref effect
+- partial correlation without the intended destination update remains uncertain without repeating either ref
+- operation identity cannot change payload and current policy refusal prevents ref acceptance
+- ordinary preparation holds the same reservation through materialization and the checked ref effect
+- foreign, corrupt and stale operation inputs refuse without another ref effect
+- ordinary operation requires explicit synchronous policy acceptance before preparation and again before the ref effect
+- ordinary operation refuses inherited Git routing, active hooks and alternate object stores
+- historical accepted retry returns the original result before changed current hook policy
+- finite captured operation payload is detached, hash-bound and replayed without a second request ledger
+- ordinary operation preserves legal trailing root whitespace and refuses replacement directory identity at the effect
+- denied pre-effect policy retains a terminal immutable refusal and releases ownership for a corrected new save
+
+## fixed-product-hook
+
+- describing the fixed wrapper never installs a missing hook and missing qualification is named
+- only the actual opaque exact installed TOOL pre-push qualifies while generic effects remain strict
+- changed bytes or a successor same-byte hook incarnation cannot redeem an old qualification
+- qualifying the exact pre-push never permits another active user hook or unsupported index routing
 
 ## front-door
 
@@ -722,7 +888,7 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - a docs path is placed by the DOCS GATE's own reader map, composed with the import graph rather than re-derived
 - the live reader map really places this document, and the subset it owes is smaller than the leg
 - every relative import in this lane's own tree resolves, because a dropped edge would make a subset SHORT
-- a fresh runner's tree answers the WHOLE battery for a range this checkout narrows, and the difference is exactly the generated files the walk reaches
+- a fresh runner's tree answers the whole battery until the actual reached generated inputs are restored
 - the fail-closed sentence is a DISCRIMINATION: one unresolved edge is enough, and a tree with none derives the range
 - a fixture program written as a STRING is not this file's own import list
 - the scoped arm's own CLI path prints the subset's verdict, writes it to the token and answers with the subset's own exit code
@@ -756,6 +922,86 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - the shard count comes from the workflow's own env, and a nonsense value is the default
 - a derivation that FAILED CLOSED arms the boot check too, because a path nobody could place is a path nobody can clear the app of
 - the seam between the derivation and the plan refuses every answer that is not a set
+
+## genesis-bank-command
+
+- fixed installed-layout bank stdin commits original configured Codex intent and returns historical receipt before current TOOL
+- pending bank discovery is read-only and fixed replay uses the same captured intent without new proposal capture
+- bank discovery never skips malformed owned namespace or rebinds missing original RECORDS
+- fixed bank execution requires each directly executed service owner in the installed manifest before preparation
+
+## genesis-bank-plan
+
+- actual initialized current descendants produce frozen exact scratch plans without managed Git/file/OP effects
+- current cut/session/setup/busy and typed capture mismatches refuse without a new managed effect
+- working byte changes, aliases and unattributed prior-bank witnesses stay unavailable with a restored positive
+- Q1 needs actual same-session human captures and a real accepted predecessor; authored proposal metadata grants neither
+- output rule uses actual initialized foundations and canonical role-qualified usable fences with no component registry
+- chronological current progress stays distinct from logical predecessor and an earlier bank's own receipt
+- own-field edits preserve other banks, optional Gotchas and append-only decision history
+- a scaffold path with later foreign committed bytes is not owned content at a newer current cut
+
+## genesis-bank-proposal
+
+- finite bank capture preserves original human bytes and detaches files/proposal while changed same-ID spelling stays distinct
+- path-only declarations freeze backend-observed hashes without adding fields or weakening supplied hashes
+- every approved stage has its finite positive and cannot omit STATE or its own required output
+- original context and independently captured answer references cannot be replaced with claimed proposal text
+- roots, runtime, derived index, verdict/evidence and source graph files never become bank outputs
+- decomposition captures only planned author data and rejects nonempty dispatch/completion/verdict stamps
+- exact file set/digest, literal JSON keys, UTF8 and byte caps refuse before any accepted capture
+- new planned cards cannot publish populated reserved lifecycle or evidence bodies, including raw inert-looking verdict examples
+- empty reserved template sections remain valid author data and restoring a populated body permits the original planned capture
+- a task instantiated from the actual verified installed METHOD template is valid planned author data
+- optional Gotchas is finite CONVENTIONS author data at every stage while the constructor owns its field boundaries
+
+## genesis-completed-dispatch
+
+- actual sequential banks0 through8 establish an exact code-empty dispatch baseline without claiming suite GREEN
+
+## genesis-init-command
+
+- fixed initialization protocol produces real separate histories and returns original completion before current TOOL gates
+- installed original-planner read retains committed Codex selection after a real Q5 future-provider change
+- native captured incarnations and finite field schema refuse before any selected-folder effect
+- cold pending discovery precedes fresh admission and replay keeps the original immutable request
+- unattributed stage replay stays named unknown under the original setup identifier
+- one JSON stdin request enforces duplicate/input bounds while discovery needs no source manifest fallback
+- aliased cold entry judges stdin while canonical discovery succeeds and ordinary import stays inert
+
+## genesis-init-inspect
+
+- cold setup discovery is read-only before Git/settings and never skips malformed owned operations
+- a durably captured setup is discoverable before its first Git/file effect without changing its record
+- current setup inspection preserves the original receipt across later commits and ignores dirty working settings
+- only the exact accepted initial docs and index qualify a pristine first-start seed
+- equal-history replacement RECORDS cannot acquire the original current setup receipt
+- missing original homes retain only unavailable metadata, and kit changes refuse until restored
+
+## genesis-init-plan
+
+- complete setup planning uses the actual verified kit and canonical seed while both selected roots stay untouched
+- new-only planning refuses foreign contents, overlapping roots and request-supplied policy before managed effects
+- an unlisted required method asset never falls back to the live checkout
+- case aliases of one physical directory cannot become independent setup roots
+- planning reuses the core fresh-root rule for canonical zero-effect leftovers
+
+## genesis-method-contract
+
+- the optional cold-start offer preserves mandatory correction of accepted test gaps
+- the delivered interview carries its actual canonical finite PRODUCT bank contract as read-only source
+- legacy seed refuses explicit role markers before any scaffold effect and preserves affirmative-absence behavior
+
+## genesis-proposal
+
+- a finite identity proposal captures exact actual answer bytes without granting writes
+- same commit bytes under a successor origin cannot consume the original session proposal
+- references must identify existing captured messages with exact bytes, no model-provided substitute
+- settings are delegated once to the constructor-bound canonical validator and cannot select a policy
+- duplicate decoded JSON keys invalid UTF8 and excessive bytes are named refusals
+- same proposal ID with different source bytes or captured interpretation has a different immutable candidate
+- candidate capture detaches caller state and rejects path authority or multiline adapter slots
+- actual-answer capture is bounded in aggregate without silently truncating message bytes
 
 ## genesis-screen
 
@@ -804,11 +1050,14 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - a tier ADR-024 sets no budget for is not priced, and the band goes dark rather than inventing one
 - the window is the checkpoint's, and an EMPTY window is UNREAD rather than a green zero
 - THE SOFT-VERIFIER READING fires on the CONJUNCTION only — seen on a planted history
-- TIER_BUDGETS TRANSCRIBES ADR-024 DECISION 1 — pinned to the ruling that produced it
 - the loop bands reach the command's own band set, and each of the three tiers renders
 - A CYCLE THAT ENDED BEFORE IT BEGAN IS NOT A MEASUREMENT — a re-dispatched card takes the band dark
 - A LINE THE READER COULD NOT UNDERSTAND TAKES THE LOOP BANDS DARK — the problems reach the reading
-- THE CHECKPOINT TEMPLATE QUOTES BOTH LOOP BANDS BY ID, WITH THE COMMAND THAT DERIVES THEM
+
+## hook-git-context
+
+- hook routing preserves a fresh legal trailing-space root and leaves an independent checkout outside
+- command config and copied environment capabilities cannot bypass the ordinary hook routing audit
 
 ## identifier-rename
 
@@ -816,11 +1065,18 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - every enumerated survivor class is occupied — a class nobody hits has stopped meaning anything
 - the corpus reaches every tree the criteria name — a root that drops takes three readings with it
 - the new name is not spelled with a capital S inside a code span or an identifier
+- persisted protocol prefixes have exact source-only allowances, never a file or neighboring identifier exemption
 - a name-shaped token carrying a non-ASCII homoglyph reds rather than passing as an unrecognised word
-- the records were not rewritten — every record tree still carries the old name
+- literal survivor classes accept authored examples only at their declared sites
 - a pre-rename runtime directory refuses the fence manifest read, and names the rename
 - a pre-rename runtime directory refuses the verdict token read, and names the rename
 - the legacy detector answers a FILE at the old path with no migration finding
+
+## installed-source-assets
+
+- runtime source batches return detached frozen exact verified bytes and require captured membership
+- runtime source reads repeat whole TOOL verification and refuse missing, changed or linked physical members
+- listed binary runtime bytes cannot be silently decoded as replacement UTF-8 text
 
 ## interview-skill
 
@@ -857,8 +1113,8 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 
 - the integration branch this gate reads is docs/CONVENTIONS.md's, not this hook's
 - the integration-ref candidates are dispatch-brief's, spelling for spelling
-- locating a card by its FILENAME agrees with its frontmatter id, over the whole board
-- every live card's `touches:` line is the one shape this gate reads
+- locating a card by its FILENAME agrees with its frontmatter id, over the authored board
+- every authored card's `touches:` line is the one shape this gate reads
 - `touchesLineOf` is `frontmatterLineOf` bound to one field, over every live card
 - containment is `within`'s, including the case string equality gets wrong
 - the expansion is the parser's own `expandFence`, answer for answer
@@ -934,6 +1190,7 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - the frontmatter is where a fence lives — a body line is never read as one
 - containment is the path rule, and a name that merely starts the same is not inside
 - the hook depends on NOTHING a fresh worktree lacks
+- checkout hook adapters allow and refuse in a copied tree with no installation or build
 - the PreToolUse hook is wired for the file-writing tools, and leaves room for a second source
 - the runner answers in EXIT CODES — block is 2 with the reason on stderr, allow is a silent 0
 - an unreadable request costs an integrator nothing and buys an executor nothing
@@ -942,10 +1199,9 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - a DETACHED checkout is not judged, so the poison drill may mutate what a lane holds
 - the seat with no lane is seen from a LINKED worktree too, and the main checkout can be the lane
 - the carve-outs each free a DIFFERENT write, and the fence still holds around them
-- the carve-out set this hook holds is the one docs/CONVENTIONS.md publishes
 - a card file is carved out by the UNFENCEABLE arm, and a carve-out coming back is not that
 - THE POSITIVE CONTROL: the own-file arm re-added byte-identically answers instead, and the body above reds naming both halves
-- the limits this hook declares are the limits docs/CONVENTIONS.md publishes
+- the public hook limit keys agree with an authored publication contract
 - THE POSITIVE CONTROL: a planted header reds — one limit gained, one code renamed
 - the limit a decline CITES is the limit the block numbers, and the one the session reads
 - THE POSITIVE CONTROL: a planted header reds — the citation moved, and the runtime string moved
@@ -1011,7 +1267,7 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - the corrections are planned BEFORE every regeneration, and the keepers before the commit
 - the re-drill's scope is the FIX DIFF, through the owning-spec rule, and its own spec alone when nothing was fixed
 - a mutant that reds MORE than its own body is a refusal that names the other bodies
-- method text that moved owes the three stamp files, the pin test, the half-bump drill and the eval gate
+- method text that moved owes the product stamp files, the pin test, the half-bump drill and the eval gate
 - a method stamp is bumped at exactly one anchor per file, and a stamp that is not there refuses
 - the pinned-sentence keeper refuses a removed doc line a spec pins VERBATIM, and lets an addition through
 - the forbidden-spelling keeper refuses each class it names on a planted instance, and a clean diff on none
@@ -1038,7 +1294,7 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - the counter counts OVERLAPPING sites, so an anchor whose prefix is also its suffix names TWO sites and is refused
 - a single git diff against the bench tip answers EMPTY over a wrong STAGED line, which is why the standing comparison reads the index and the working tree separately
 - a same-file end-of-file append is resolved by keeping both sides, and any other conflict stops the verb as a fence finding
-- the bound, the floor and the readings path this file computes are the ones docs/CONVENTIONS.md publishes
+- merge thresholds and fixture classes retain the public method's widening instruction
 - the verb never pushes, and the keeper steps it plans are the four T-295 names plus the launch receipt T-320 adds
 - the card arm takes ITS OWN card and no other, so a SUGGESTED card of the same lane is a fence finding
 - a block whose OLD text also occurs elsewhere is REFUSED with both counts, never applied at the site its NEW text names
@@ -1058,9 +1314,21 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - T-320 — THE MERGE REFUSES A LAUNCH RECEIPT WHOSE OBSERVED MODEL CONTRADICTS THE REQUESTED ONE, by name, and an UNKNOWN observation is news rather than a refusal
 - T-320 — THE RECEIPT KEEPER IS FLOOR: turning the cheap keepers off leaves it planned
 
+## method-version
+
+- a later missing or invalid version anchor preserves exact pre-existing staged and working bytes
+- a failed Git index transaction restores version text and preserves the foreign lock and original index
+- the real version producer stages both valid anchors together and preserves unrelated staging and modes
+- a version anchor symlink refuses before writing either the product or the foreign target
+
+## native-atomic-text
+
+- native text publication retains exact Markdown bytes and the JSON publication boundary
+
 ## native-codex
 
 - the project hook is portable and synchronously covers the native identity, tool, stop and interrupt events
+- native admission preserves a legal trailing-space Git root and refuses a nested resource
 - exact callback plus completed identity probe bind one attempt, and parent session/cwd/task labels cannot route a worker event
 - an unbound child may perform only the exact identity probe and every other supported operation persists a registration hold
 - T-311 refuses a conflicting native writer reservation before spawn
@@ -1091,6 +1359,11 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - published writer admissions reconstruct detached preparation only from matching frozen fence bytes and the original-base card
 - native record and public launch disclose every callback registered by the unchanged portable hook for both profiles
 - native reserved-work records remain bindable listed and covered by durable unknown refusal absorption beside reservation metadata
+
+## native-product-hook
+
+- fixed installed hook binds original coordinator TOOL and canonical native coverage without claiming registration or trust
+- fixed hook refuses its physically present omitted producer member and restores a real installed transport positive
 
 ## native-transaction-recovery
 
@@ -1157,6 +1430,135 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - real Enter on a focused card trigger opens its panel
 - real Space on a focused card trigger opens its panel
 
+## parser-tool-closure
+
+- mandatory owned parser members equal the actual compiled pure-barrel static closure
+- each executed owned parser module must remain a captured member even when its file is present
+
+## product-isolation
+
+- source CI selector and its spawned adapter run with only the owed job's parser dependencies
+- ordinary capability and skill entrypoints avoid private reads and writes with absent and defective private records
+- product census and interview freshness failures remain active without private records
+- the ordinary product docs gate keeps reader, owed-suite and root-anchor failures without reading private records
+
+## project-bank-operation
+
+- false and asynchronous admission leave no orphan bank or claims and the original prepared intent remains usable
+- actual records-only bank commits one exact original intent and historical replay ignores successor binding/tool
+- real later banks permit an owned Q1 update without lowering completion and Q5 commits canonical explicit settings
+- cold same-ID bank recovery continues a real dead owned index lock and preserves captured intent
+- cold Q1 recovery retains accepted R and finishes only its original pending PRODUCT commit
+- a foreign dead lock stays intact and ambiguous bank plans refuse without adopting its index authority
+- an equal-history successor binding at an effect boundary cannot retarget the captured bank
+- accepted cold history returns its exact receipt while preserving a later foreign index lock
+- R-only and Q1 banks preserve unrelated staged and working bytes in both repositories
+- real bank0 then Q1 commits exact R before its finite PRODUCT adapter commit with original session provenance
+
+## project-bank-record
+
+- real initialized/checker/external parented plan data fits the finite bank schema while no bank outcome is claimed
+- bank data binds the frozen configured provider while requested and optional observed model stay separate
+- raw commit parent/tree/message/OID disagreement refuses rather than accepting an asserted exact plan
+- request data cannot add paths, weaken typed source provenance, impersonate successor roots or turn null PRODUCT into an effect
+- pure progress schema requires both claims, exact intents and R-first acceptance before release
+- Q1 data binds actual human captures and exact PRODUCT adapter commit to the planned RECORDS commit
+- stage-zero data keeps the original typed setup after a legitimate records advance and refuses missing or relabeled provenance
+- own-bank updates bind both chronological progress and logical predecessor without reducing completion
+
+## project-init-operation
+
+- initial repository preparation captures actual user identity and exact zero-parent commit bytes without touching chosen roots
+- initial preparation refuses duplicate aliasing and reserved control paths before any Git plan
+- initial preparation refuses synthesized OS identity and accepts actual configured user identity in an isolated home
+- local initialization reserves both fresh roots and durably captures exact setup before any repository/file effect
+- a held second root refuses initialization before OP publication and a released ordinary control initializes
+- the shared fresh initialization preflight permits canonical no-operation leftovers without changing selected roots
+- initialization requires physically distinct roots even when different case spellings pass lexical separation
+- plain initialization roots refuse malformed or inaccessible parent Git markers and allow a real plain directory
+- a crash after stage mkdir before incarnation publication stays unavailable without adopting or releasing the unknown stage
+- initialization refuses an identical foreign planned file before capture rather than adopting it
+- actual staged Gitdir byte changes refuse before adoption and preserve both original claims
+- completed initialization replay returns original results after later legitimate local commits and invalid current binding
+- accepted final binding witness recovers before changed current policy and a missing witness never fabricates completion
+- a foreign final binding witness refuses without repeating any setup effect
+- proven product acceptance is recorded before a current continuation policy can refuse private initialization
+- read-only initialization discovery proves the original receipt without persisting or releasing missing bookkeeping
+
+## project-install-assets
+
+- actual installed asset plan carries full native skill packs and portable original-TOOL hook bytes without installing or trusting them
+- asset preparation qualifies the actual native callback closure before offering installation
+
+## project-role
+
+- shared role normalization preserves one exact model/vehicle without selecting an effect harness
+- canonical committed planner selection names exact requested CLI model, vehicle and session defaults
+- role effects refuse missing, working and seed inputs without account defaults or private context
+- canonical Codex planner selection preserves exact requested spelling and qualifies only the executable model
+- unsupported harnesses, account selectors and historical compound prose never become an executable role
+- canonical TOOL requires the loaded model-session.js parser owner even when an omitted file remains present
+- canonical TOOL requires the loaded assignment.js parser owner even when an omitted file remains present
+
+## project-runtime
+
+- configured smoke, role and guard operations use exact committed PRODUCT data without private board reads
+- configured operations distinguish empty sections, unsupported maps and failed actual commands
+- retained project runtime refuses copied-history replacement and outside command paths, then accepts its original
+- installed CLI actually routes smoke and guard-class in a docs-free Python PRODUCT
+- committed configured directory and terminal-prefix guards reach the canonical classifier unchanged
+
+## project-settings
+
+- verified TOOL seed has approved defaults, provenance and explicit unconfigured PRODUCT sections
+- committed config ignores dirty poison and never discovers managed method defaults
+- canonical private policy and unsupported keeper configuration have distinct refusals
+- committed and editor settings preserve a PRODUCT root with trailing spaces
+- explicit Python suite data survives while unrelated empty sections still cannot run
+- method asset reader rejects unlisted, missing, changed and symlinked members
+- band metadata uses the existing canonical threshold rule, and committed settings symlinks refuse
+- runtime closure requires actual captured manifest members even when omitted files remain present
+- ordinary TOOL validation requires the operation reader's unconditional initialization schema owner
+- ordinary TOOL validation requires its loaded records-profile owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded records-finding owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded source-suite-derivation owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded configured-dispatch-grade owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded qualified-integration-grade owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded qualified-integration-process owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded operation-ref owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded qualified-delivery-record owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded qualified-integration-record owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded qualified-configured-grades owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded qualified-delivery-operation owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded qualified-publication-context owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded qualified-publication-record owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded qualified-publication-process owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded qualified-ci-record owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded qualified-delivery-ci owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded qualified-completion-record owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded fixed-product-hook owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded private-backup-record owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded records-backup-operation owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded records-backup owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded records-backup-settings owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded workspace owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded native-codex owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded project-init-operation owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded project-settings owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded dispatch-brief owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded health-bands owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded rename-scan owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded project-bank-record owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded configured-dispatch-record owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded configured-verifier-record owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded genesis-bank-proposal owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded genesis-proposal owner even when the omitted file remains present
+- ordinary TOOL validation requires the actually imported hook routing audit when its omitted file remains present
+- ordinary TOOL validation retains the critical standalone completion writer even when its omitted file remains present
+- ordinary TOOL validation requires the actually imported cold configured reader even when an omitted file remains present
+- ordinary TOOL validation retains the standalone CI controller when its omitted file remains present
+- publication selection is explicit committed data, absent/null cannot run, and dirty editor bytes cannot retarget it
+
 ## push-checks
 
 - the statuses these checks treat as minimal are the ones lib/parser/src/task.ts calls minimal
@@ -1164,7 +1566,7 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - a blocked_by naming no live card is FOUND, and one naming a live card is not
 - a card stamped out of suggested without its four placement fields is FOUND; a suggestion is not
 - a checkpoint record committed after STATE is FOUND, and the same commit as STATE is not
-- the docs gate and the push checks ask ONE implementation, so they cannot disagree about the tie
+- push history uses the shared tie derivation while the product docs gate delegates private history
 - an APPEND to a record checkpointed WITH its STATE regeneration is not a stale finding
 - an amended record passing does not quiet a NEW record that arrived without its STATE regeneration
 - the reading is COMMITTED HISTORY, and an uncommitted STATE does not repair a committed slip
@@ -1172,7 +1574,6 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - a --root that is not a directory is CALLED WRONG, never a clean board
 - an unknown argument is CALLED WRONG rather than silently ignored
 - a checkout that is not a git repository at all cannot run the checks, and says so
-- this repository's own board passes every cheap check, over a board proved non-empty first
 
 ## push-guard
 
@@ -1275,7 +1676,7 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - a whole battery for a range that owes ONE suite is allowed, and every leg beyond the set is named with the minutes the owed set would have taken
 - the SPEC axis: a whole browser leg where the range owed spec files is named as the whole leg, and a scope carrying specs the range does not owe names those
 - what an over-run is NOT: a leg graded against an EARLIER tree, and a leg the runner DECLINED to grade
-- the cost table is docs/CONVENTIONS.md's own two figures, and the notice's minutes are its arithmetic
+- the notice cost arithmetic retains whole-leg and narrowed-leg bounds
 - a leg this table cannot price is disclosed as a FLOOR, never counted as nothing
 - the whole browser leg's over-run minutes are the leg LESS the subset the range owed, and the owed figure is that subset's own
 - a leg beyond the owed set that ran NARROWED is priced by the scope it records, never by the leg it did not run
@@ -1289,7 +1690,6 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - the token must match the PUSHED tree in ADDITION to covering the owed set, never instead of it
 - the Claude PreToolUse guard is untouched, and the two nets are wired to two different mechanisms
 - standard input this hook could not READ is refused by name, and is NOT git's own empty input
-- docs/CONVENTIONS.md records the accepted bypass, the public check and T-310 — the fifth criterion, pinned
 - a hook git cannot EXECUTE is UNGUARDED with the path pointed straight at it — the state git answers by SKIPPING
 - the installer points git at the tracked hooks directory only when the key is unset or already ours
 - a hook already live in the checkout's own hooks directory is refused BY NAME, and a linked worktree's is the COMMON one
@@ -1303,6 +1703,7 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 
 ## qualified-admission
 
+- private preflight strictly enumerates first-class ordinary operations and refuses pending or corrupt progress
 - private preflight selects exact committed private bytes without a product card or worker and exposes immutable blinded origins
 - private preflight wires current membership recovery endpoint and complete spent or open run ledger policy
 - private preflight preserves collected historical native diagnostics while unresolved relevant attempts still refuse
@@ -1318,6 +1719,80 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - private preflight keeps first Repair ledger private across plain and closing ATX headings
 - private preflight preserves the complete active contract around inert literal private headings
 
+## qualified-configured-grades
+
+- actual original whole-suite metadata cannot be replaced by current same-ID, partial, foreign-tree or changed command captures
+- actual RED stays failed and a byte-consistent contradictory reporter count cannot acquire canonical grade correspondence
+
+## qualified-delivery-ci
+
+- pure exact-CI metadata classification binds the selected run attempt and returns detached evidence identities
+- wrong commit repository workflow event destination run or attempt can never substitute for exact required CI
+- partial missing or duplicate required CI remains unavailable and an unrelated green cannot fill it
+- failed skipped unknown or still-running required CI cannot report exact successful validation
+- a frozen CI requirement has no empty defaults and malformed provider data remains unknown
+- committed selection normalization preserves literal check identities while exact observations still require a real run and valid ref
+
+## qualified-delivery-command
+
+- delivery help and finite syntax work in a cold entry copy without operation owners or TOOL and errors expose no paths
+- normally packed public delivery front guards private completion and replays accepted history before a missing current TOOL
+
+## qualified-delivery-completion
+
+- coordinator completion proposal uses declared review and actual unknown-model provenance without any selected effect
+- protected completion refuses current revocation before objects and at file publication, then resumes the exact capture
+- missing original review provenance remains pending and a cloned caller cannot supply a completion declaration
+- a declared same-model review cannot complete a configured guard-class subject
+- protected records-only completion commits exact card receipt and INDEX through the original operation
+- completion requires exact correlation and never attributes a separately reachable planned commit
+- a still-live completion owner refuses a second process and product publication debt remains pending
+
+## qualified-delivery-operation
+
+- protected mixed local integration lands exact finalized whole outputs once and keeps actual publication/completion pending
+- read-only recovery policy checks actual dead owner and current admission before any owner publication
+- reachable output without exact operation correlation stays uncertain and never relands
+- a reserved second root leaves no orphan operation or repository effects and its released control lands
+- pending local delivery rechecks exact retained final evidence and current protected grant before missing effects
+- revocation after an owned file temporary still refuses its visible publish and the same captured owner can resume
+
+## qualified-delivery
+
+- delivery authority captures actual final whole-output facts and real changed roots without filesystem effects
+- delivery authority refuses legacy-finished, changed collected candidates and foreign actual-output grade links
+- delivery authority retains real accepted RED output and every correction as owed rather than grading a future corrected integration
+
+## qualified-external-path
+
+- external parent observation walks actual repository and Git-store ancestor identities without creating a namespace
+- a replaced external parent does not satisfy the original captured directory
+
+## qualified-github-ci
+
+- provider metadata preserves separate actual job and check IDs and refuses foreign URLs and newer run attempts
+- synthetic provider requests bind discovery attempt pages check IDs and canonical header bookends without a public response seam
+- synthetic newer canonical attempt cannot be hidden by an older successful attempt and complete jobs
+- synthetic contradictory exact attempt header refuses a stable latest success and restores only consistent observations
+- synthetic complete job pagination retains every page and never substitutes job IDs for check IDs
+- synthetic incomplete job pagination and access refusal remain unavailable without following metadata URLs
+- missing backend credentials gives explicit cannot-run before any provider request
+- provider constructor requires its actual installed owner and offers no caller response or program override
+- synthetic CI progress shape retains all headers and complete receipts but supplies no qualified writer authority
+
+## qualified-integration-plan
+
+- standalone integration planning requires its actual installed owner before reading qualified authority
+- pure integration preserves unrelated advanced bases and exact original outputs without any target objects/index/ref writes
+- a real retained wording-only condition stays pending without guessed replacement bytes or target effects
+- pure mechanical correction preserves the exact verifier body and accepted RED while its resulting whole-tree grade stays owed
+- private-only integration performs canonical record checking and invents no PRODUCT commit or suite obligation
+
+## qualified-integration-progress
+
+- actual installed planned worker drains a named refusal before natural thread exit without creating an operation
+- unaccepted artifact observation data belongs only to its original known-dead launch
+
 ## qualified-native
 
 - qualified public executor lifecycle has no product card, unions colocated aliases, inspects both roots and collects exact pairs
@@ -1332,8 +1807,37 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - qualified final collection refuses stale per-root pairs and late changes; completed exact retry leaves a later owner untouched
 - qualified scope cannot fall back through unknown fields or legacy verifier and transaction recovery consumers
 
+## qualified-path-identity
+
+- actual installed qualified capture and worker measurement preserve real roots ending in two spaces
+
+## qualified-planned-local
+
+- modeled private planned integration preserves an advanced base and unrelated index/work, then completes the same operation
+- unmodeled private and PRODUCT-owed work refuse before an operation, claim or selected-repository object effect
+- revoked current policy after private capture prevents actual objects and restores the same captured operation
+
+## qualified-product-integration
+
+- planned PRODUCT foundation uses actual finalized configured readings and preserves advanced target bytes without effects
+
+## qualified-publication-context
+
+- publication command configuration admits only the exact paired tracking exclusions
+- full publication context freezes actual reviewed output existing destination exact CI and installed guard without writing
+- full route is immutable before local effects and changed publication policy refuses file publish without upgrading the original
+- an existing legacy local delivery cannot acquire publication selection after its effects
+- owned full publication runs actual configured checks and mandatory guards before exact atomic branch and correlation acceptance
+- actual advertised branch change cannot acquire correlation and the same original capture resumes after its expected tip is restored
+- revocation after durable launch capture prevents the child effect and restoration resumes without rerunning accepted checks
+- cold publication recovery observes exact original acceptance after later receiver advance before successor policy or TOOL
+- coordinator loss stops its actual running check group and a new process resumes the original pending operation
+- cold local replay preserves the Git-start marker before transport and reuses actual completed checks
+- actual local Git acceptance cannot become GitHub CI authority or mutate validation progress
+
 ## qualified-reservation
 
+- qualified detached initial heads require a finalized whole-set verifier preparation and cannot weaken ordinary acquisition
 - qualified retained byte integrity refuses invalid UTF-8 through every public consumer
 - qualified legacy conflict scanning refuses invalid UTF-8 without partial publication
 - qualified acquisition freezes complete committed receipts and mixed containment across actual worker checkouts
@@ -1356,33 +1860,92 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - qualified writer history accepts physical coordinator aliases and preserves foreign recorded-path refusals
 - qualified recorded writer paths require the exact basename in the same resolvable physical parent
 
+## qualified-verification
+
+- qualified verification prepares, seals, admits and collects mixed, product-only, records-only and colocated complete sets
+- qualified verification refuses unfinalized authority, foreign benches, manifests, stale second candidates and changed preparation before acquisition
+- qualified verifier current phase policy, all-root callbacks, final jobs and ownership remain decisive
+- qualified assigned corrections retain committed bodies and real RED GREEN identities without grading future integration
+- qualified whole-set verdict refuses partial claims, changed seals, ungraded output and excluded protocol artifacts
+- qualified guarded measurements and interrupted final publication preserve exact evidence and refuse later ownership
+- qualified wording-only corrections preserve the canonical no-block condition without inventing body grades
+- qualified correction collection binds final spec bytes to the committed measured body
+- qualified preparation preserves a quoted guarded tier from the frozen contract
+- qualified ceremony uses canonical YAML formatting and refuses unreadable tier data
+- qualified review validates full commit types and shapes before normal output identity reads
+- qualified implementation projection refuses mixed-class renames and preserves same-class raw events
+- qualified implementation projection classifies real copies by their changed destination
+- qualified implementation projection retains implementation mode changes and omits protocol and excluded modes
+- qualified public collection requires matching grades for same-class rename and mode output
+
 ## range-rule
 
-- RANGE RULE — range-spelling-with-its-count
-- RANGE RULE — prescribed-table-is-the-recipe
-- RANGE RULE — t027-figures-at-their-own-ref
-- RANGE RULE — t078-figures-at-their-own-ref
-- RANGE RULE — t080-collapse-at-the-merge
-- RANGE RULE — scoreboard-path-for-path
-- RANGE RULE — scoreboard-byte-for-byte
-- RANGE RULE — scoreboard-third-metric
-- RANGE RULE — three-dots-two-scores-split
-- RANGE RULE — merge-tree-refusal-is-not-a-miss
-- RANGE RULE — merge-commit-ceiling
-- RANGE RULE — three-dot-identity-executed
-- RANGE RULE — flip-headline-counts
-- RANGE RULE — flip-lists-by-gate
-- RANGE RULE — flip-counts-carry-their-trigger
-- RANGE RULE — reverse-flip-universal
-- RANGE RULE — falsified-sentence-dating
-- RANGE RULE — judgement-half-present-not-valued
-- RANGE RULE — printed-recipe-exit-codes
-- RANGE RULE — docs-gate-recipe-exit-codes
-- RANGE RULE — every parsed claim is answered by some check
 - RANGE RULE — a parse failure throws instead of yielding an empty expectation
 - RANGE RULE — the expectation side is READ from the document, never pinned
-- RANGE RULE — the flip lists are checked BY GATE, and a merged set would miss the relabel
 - RANGE RULE — the DOCS GATE's printed spelling still carries no `xargs`
+- gate-specific flip labels retain an independent positive and relabel control
+
+## record-write-stop
+
+- known unaccepted object/intent work can stop after original product source advances while preserving objects and immutable intent
+- failed stop-evidence persistence keeps the original hold and strict terminal evidence refuses inconsistent fields
+
+## records-backup-command
+
+- backup front permits finite help and refuses scope authority or duplicate destination arguments
+- packed backup commands inspect and restore original history without its old records home or selecting a binding
+
+## records-backup-operation
+
+- unconfigured backup stays local-only, then the existing private receiver gets the exact old accepted revision without a new source commit
+- changed current backup policy stops a pending publish, preserves local success, and only the original immutable request resumes
+- receiver conflict never overwrites its owner and a pending backup does not prevent a later ordinary private save
+- nonprivate, unsupported and duplicate-key receiver configuration refuses before operation capture
+- a concurrent reentry cannot become a second backup owner or choose request-provided receiver policy
+- actual receiver write rejection preserves local success and the same operation retries without another source commit
+- a replaced single-link temporary is preserved and only the exact original witness can resume
+- an altered accepted artifact cannot become success from stored progress or overwrite its later owner
+
+## records-backup-settings
+
+- explicit local opt-in creates the fixed private folder and backs up exactly the accepted save without new source history
+- a stale settings observation preserves a new configuration without creating its proposed receiver
+- native selected parent identity must remain original and restored original selection permits configuration
+- Git destinations, linked settings and nonprivate existing children are refused intact
+- fixed records protocol carries only selected backup-setting data and refuses policy or receiver overrides
+
+## records-backup-stdio
+
+- fixed backup protocol keeps local success separate and cold accepted replay precedes current TOOL/config
+- backup request fields cannot choose a receiver and a zero-effect refusal invents no retry identity
+- cold backup discovery retains a rejected pending receiver under the original operation identifier
+
+## records-backup
+
+- backup source freezes the actual accepted revision after later saves and has no PRODUCT or private effects
+- portable export restores the original accepted save and exact independent history after its original home disappears
+- archive corruption, an extra unreachable object and an existing restore target refuse without selected effects
+- local export refuses linked or foreign destinations and never publishes inside a PRODUCT repository
+- a highly compressible oversized historical asset refuses source qualification before export or restore effects
+- a same-history replacement PRODUCT cannot turn a copied old save receipt into new backup authority
+- a clean saved tree cannot conceal runtime or PRODUCT files in its reachable private history
+- read-only backup keeps frozen rulings, rejected cards, readings and private design/capture assets without widening ordinary editing
+
+## records-batch
+
+- batch committed capture retains exact empty BOM Unicode multiline and duplicate object bytes
+- batch capture preserves named missing entry nonregular and invalid UTF8 refusals without fallback
+- batch capture reads a corpus above sixteen megabytes without omitting repeated blobs or newline content
+
+## records-check
+
+- generic private checks use an independent Python product and verified installed method context without dogfood files
+- generic configuration is complete and protected while installed missing or changed assets refuse
+- installed runtime owners and entry bytes are paired even when package versions are unchanged
+- private checks compose complete finite creation rename and exact derived writes while protecting generated inputs
+- candidate budgets and checkpoint freshness distinguish blocking edits retained debt and procedural amendments
+- checkpoint history stays at the selected records commit and reads creation rather than latest append
+- canonical numeric-slot and inert-span owners require paired manifest membership even when installed files exist
 
 ## records-context
 
@@ -1396,9 +1959,73 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - planning measures actual linked-worktree and nested-repository identities and refuses unsupported physical topology
 - planning import has no effects and capture admits actual Git reads while process and write controls remain discriminating
 
+## records-graph
+
+- installed graph refresh and committed currency support graphs above one MiB
+- installed Python indexing and currency checks use committed languages and meaningful local edges
+- missing invalid empty unknown and unmatched language choices refuse without graph or private commit
+- a retained producer allows new code commits but refuses changed committed policy and copied-history roots
+- currency never greens a second working source cut over the retained committed graph
+- the actual native producer owners are required even when omitted manifest files remain present
+- accepted legacy graph receipts remain historical while pending legacy work cannot gain new configuration
+- writes only the private graph from PRODUCT source and then makes a true filesystem/ref no-op
+- refuses changed source and binding before any graph parent/file/ref/index effect
+- graph policy refuses mid-prepare successor docs or binding and resumes only its original captured context
+- a cold accepted retry returns its original exact receipt after later private save and invalid successor binding
+- private cache paths and invalid explicit associations create no graph or cache directories
+- a native stale-origin request refuses before recovery, publication or private parent creation
+- equal generated working bytes still publish when their private committed baseline differs
+- a cold original source cut can stop before materialization and admit a distinct current graph
+- an unchanged graph retires only its proven dead accepted lock and reports a foreign lock separately
+- an isolated installed watcher indexes PRODUCT, keeps ordinary private edits quiet, and refuses a replacement records home
+
+## records-profile
+
+- canonical pure profiles preserve existing eligibility normalization and error identity
+- cold profile classification loads no committed or qualified reader and shared finding loads no generated parser
+
+## records-save
+
+- exact private planning retains a committed preimage above one MiB without changing repository objects or accepting unrelated work
+- ordinary v1 save disposition retains strict preimages and stops only untouched original work
+- cold exact save preserves a foreign replacement temporary and resumes only with the known original bytes
+- cleanup of this call's temporary preserves a replacement inode and exact original capture remains resumable
+- ordinary save rechecks the original binding after tree preparation before writing a commit object
+- ordinary save commits exact user and derived bytes while preserving unrelated staged work bytes and modes
+- ordinary save restart returns its original accepted revision after a later legitimate save
+- ordinary saving preserves private existing access permissions and creates private text files
+- ordinary prose cannot award task lifecycle verdict or dispatch stamps and checkpoint history stays append-only
+- configured public service distinguishes absent and invalid policy without guessing from missing dogfood files
+- reserved ordinary save has zero real object-store effects and its released positive control saves exact bytes
+- ordinary exact-byte saving honors disabled conversion attributes and refuses active EOL transformation before objects change
+- outer historical save replay precedes invalid current binding and missing validation selection
+- ordinary save respects a legacy owner of a contained records path before any object effect
+- ordinary save refuses preexisting split-index state before copying it and preserves the positive standalone route
+- ordinary creation rejects filesystem case or Unicode aliases and admits an exact-name untracked positive
+- cold accepted save replay retires its exact dead index lock so an ordinary Git commit works
+- accepted recovery reports unavailable for a dangling foreign index-lock symlink without following or removing it
+
+## records-stdio
+
+- fixed records protocol reads checks saves and exactly replays backend-authored context
+- protocol rejects a stale original buffer even if current file already equals intended bytes
+- opaque expected context detects same-product records rebinding even with identical commits and file bytes
+- opaque context detects an identical replacement docs directory within the same records root
+- resource refusal publishes no orphan operation and original owner can release before a fresh save
+- fixed stdio parser refuses duplicate context keys oversized input and caller installation overrides
+- records CLI dispatch uses only its fixed helper and stdin context without cwd project heuristics
+- installed records protocol measures a representative thousand-card private board with an unrelated Python product
+- known zero-effect capture returns refused with a fresh correction ID and never reopens its failed outcome
+- a cold client discovers the same captured pending save then replays and acknowledges it without an in-memory UUID
+- lost accepted results remain historical after a later save and can acknowledge before changed current configuration
+- recovery never retargets original captured bytes to a rebound records home and wider captures remain replayable
+- strict discovery refuses malformed owned operation filenames instead of silently skipping them
+
 ## records-validation
 
 - frozen candidates evaluate exact explicit role revisions with detached identity and renderer bytes after live roots disappear
+- finite private text creation and complete rename destinations use the canonical frozen evaluator
+- selected PRODUCT supplemental source paths are safe relative inputs and remain detached from live bytes
 - raw historical malformed debt survives canonical comparison while repair succeeds and new malformed duplicate or unusable dependencies refuse
 - failure identities retain incoming references duplicate participants occurrence debt aliases cycles and assignments
 - candidate input modes paths operations and missing selected context fail explicitly with no role fallback
@@ -1424,6 +2051,16 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - T-348 VC2 — active contract and selected CLI omit historical sections while retaining committed bytes and criteria
 - T-348 attacks — exact CRLF bytes subordinate ids noncommit refs and retained captures remain distinct
 - T-348 attacks — committed association schemas normalized roots shallow and missing parent histories refuse distinctly
+
+## repository-read-observation
+
+- a synchronous repository observation returns detached facts and cannot retain caller mutations
+- the uncached exit audit refuses a newly active hook before an observation can return
+- effect and observation modes remain distinct and failed generic captures create no allowance
+- strict facts may serve a read-only observation while the exit audit remains strict
+- async nested and exceptional reads leave no open repository observation
+- cached reads still immediately refuse inherited Git routing
+- repository metadata keeps exact linked-worktree paths containing a newline
 
 ## resume-fallback
 
@@ -1492,9 +2129,15 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - every line of the advisory block carries its provenance, and the detector is not vacuous here either
 - the lightest ceremony tier is read off the table's first row rather than typed into the tool
 - the criteria heading is matched by the CARD PREFLIGHT'S OWN RULE, and the two readers answer one card the same way
-- the two readers agree about the criteria section on every live card
-- the task format names ONE depth for a card's sections, and the board spells the criteria heading there
+- the two readers agree about the criteria section on every authored card
+- the task format names ONE depth for a card's sections, and the authored board spells the criteria heading there
 - the two readers open the criteria section in the SAME PLACE, and not merely both somewhere
+
+## setup-cli
+
+- fixed init front forwards only its protocol and preserves the real child status without project discovery
+- workspace front selects the canonical explicit-root reader and preserves exact revision arguments
+- backup front uses only explicit file arguments and needs no project or binding discovery
 
 ## shell-frame
 
@@ -1511,6 +2154,12 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - the failure card is styled by the real sheet, in both schemes
 - a hostile rejection message is text, in a real browser
 - the escape works: a real click on Try again leaves the failure state
+
+## token-runtime
+
+- plain runtime arming preserves existing ignore bytes and plain tokens still merge
+- a linked runtime directory refuses arming and token writing without changing external canaries
+- a dangling ignore link cannot create its external target
 
 ## token-scan
 
@@ -1549,7 +2198,7 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - the end-to-end leg is sharded by owning spec, and the free-disk floor holds on every shard
 - FIXTURE: three one-edit mutants of the shard job — the matrix hand-written, `fromJSON` dropped, the spec list unread — each red BY NAME
 - a red nightly prints the bisection that names the merge it belongs to
-- the expected commands derive cleanly from docs/CONVENTIONS.md
+- the expected commands derive cleanly from CONTRIBUTING.md
 - every CONVENTIONS command is a step, verbatim and in CI order within its job
 - the workflow runs nothing beyond the derived commands and its infrastructure
 - every `uses:` is pinned by a full 40-hex commit SHA
@@ -1589,6 +2238,15 @@ Census: **1438 at least behaviours** — 1436 extracted sentences + 2 at least n
 - FIXTURE: an exception row argues a grant — and a stale row is itself a failure
 - FIXTURE: an empty enumeration is a failure, never a green run
 
+## workspace-command
+
+- standalone helper reports the actual split roots and leaves their files, index and refs unchanged
+- product-only inspection does not need the unavailable private repository and development does
+- an exact earlier product commit selects its lineage instead of the incompatible current HEAD
+- malformed explicit bindings refuse even product-only and never become colocated
+- unknown, duplicated and moving revision arguments are usage refusals, while absence preserves the legacy view
+- physical alias entry judges invalid arguments beside canonical success and remains inert on import
+
 ## workspace
 
 - workspace import performs no command or write, with live instrumentation controls
@@ -1610,4 +2268,5 @@ visibly goes stale (T-138-s1). These behaviours run in the suite
 and are not sentence-expanded here:
 
 - `native-transaction-recovery.spec.ts:2049` — an unknown number of behaviour(s) from `test(\`${legacy ? "legacy authorized" : "attributable"} public recovery refuses consumed each approvals in the reserved-work policy ledger\`)`: the iterable `[false, true]` did not resolve.
-- `window-contract.spec.ts:442` — 2 behaviour(s) from `test(\`every screen is usable at ${label} (${size.width}x${size.height})\`)`: `MINIMUM` is not a literal object — its fields are computed at run time.
+- `token-runtime.spec.ts:41` — 2 behaviour(s) from `test(\`${kind} ${leaf} refuses before bookkeeping or token writes and preserves its external canary\`)`: `${leaf}` did not resolve against the iterable's literal entries.
+- `window-contract.spec.ts:443` — 2 behaviour(s) from `test(\`every screen is usable at ${label} (${size.width}x${size.height})\`)`: `MINIMUM` is not a literal object — its fields are computed at run time.

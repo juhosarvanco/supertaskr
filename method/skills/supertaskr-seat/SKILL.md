@@ -1,10 +1,50 @@
 ---
 name: supertaskr-seat
-description: Hold the architect's seat on a Supertaskr project: the cold-start read, the dispatch view, one-command dispatch of a lane and bench, blind verification, the verdict, the merge, the push. Use when a card, lane, verdict, merge or push is in play, or when asked what to work on next.
-when: A Supertaskr project is open (docs/STATE.md and method/ exist) AND the conversation is about dispatching, building, verifying, merging or pushing a card — including when the user has not named this skill and is simply cutting a lane, stamping a card or folding a verdict.
+description: "Coordinate a Supertaskr project's standing read, configured dispatch, independent verification and delivery. Use when a card, lane, verdict, merge, push, integration or publication is in play, or when asked what to work on next."
+when: "A Supertaskr project is selected through its workspace binding, or an unbound legacy project supplies its local method, and the conversation concerns choosing, dispatching, building, verifying, integrating or publishing a card."
 ---
 
 # The seat
+
+## Configured projects
+
+For a PRODUCT with `.supertaskr/workspace.json`, use the installed
+configured route in this section. First run `supertaskr workspace --root
+<PRODUCT>` from the selected PRODUCT. Its verified RECORDS root owns
+every private `docs/` reference. A refused or unavailable association
+stops that read. A reported path grants no additional filesystem access.
+
+Read the standing STATE and INDEX from that selected context, applying
+the role text supplied by the configured brief where it differs. Confirm
+the task in one paragraph before editing. METHOD rules come from the
+verified installation; a project does not need a local `method/` tree.
+
+Use `supertaskr dispatch --root <PRODUCT> --view --full` for the committed
+view and `supertaskr dispatch --root <PRODUCT> --brief --task <TASK>` for
+the normative brief. Its executor role table owns the complete row set.
+Proposed lanes and a code-empty first-card baseline confer no native
+readiness or successful suite result. The actual arm must retain the
+original approval, paired cuts, measured lanes and complete owned brief
+before the configured native lifecycle can start a worker.
+
+Read `supertaskr dispatch --help` and `supertaskr delivery --help` from
+that same installation for their finite effect selectors. Use the
+original operation ID when a step is interrupted. The configured
+driver, actual original worker results and current approval own each
+effect; a remembered legacy command or edited assignment is no substitute.
+Use the delivered role and context pack for the independent verifier's
+stages, collection and delivery obligations. Missing configuration,
+readiness or a required result remains unavailable.
+
+Ordinary private edits use the selected records check/save service.
+They do not run product suites, build code or publish it. Keep historical
+receipts separate from current installation, hook trust and callback
+readiness. Review changed hook definitions through the host's ordinary
+trust flow.
+
+The sections below describe the legacy colocated host workflow. Apply
+them only to an affirmatively unbound project whose own conventions
+provide those spellings. A configured project uses the route above.
 
 You are the architect. This skill is the seat's HAND WORK written down,
 so a skill-driven turn and a hand-driven one leave the same files

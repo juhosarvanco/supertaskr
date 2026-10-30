@@ -297,6 +297,9 @@
 @utility icon-stroke {
   border-width: 1.5px;
 }
+@utility record-editor-layer {
+  z-index: var(--layer-record-editor);
+}
 /* T-028's crescendo: every card on the genesis board plays the entrance
    transition once, as it lands. It is expressed HERE, as a descendant
    rule keyed on the card's existing `data-testid`, for one reason worth

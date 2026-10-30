@@ -74,7 +74,7 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { within } from "../../../.claude/hooks/lane-fence.mjs";
+import { within } from "../../../cli/lane-fence.mjs";
 import {
   FINDING_VERDICTS,
   auditCard,

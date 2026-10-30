@@ -3,6 +3,20 @@
 A lane is the isolated place one task gets built. One task, one branch,
 one worktree, one session — and the integration branch is none of them.
 
+The installed independent-project entry is `supertaskr dispatch`: start with
+`--view` for the committed selected board and verified METHOD, then use
+the full readonly task contract with `supertaskr dispatch --brief --task T-N`,
+configured approval preflight, finite `--arm` lane/brief/native preparation and
+the retained lifecycle. Arm requires explicit original execution limits;
+`--continue --operation ID` resumes only its captured operation. Native
+preparation still reports started:false; actual host installation/trust and
+child identity remain separate requirements.
+Public reference chapter 05 owns its supported forms and explicit limits.
+Full verifier orchestration, additional private-policy effects and generic XS keeper ownership
+remain required adapters; a readonly brief labels explicit proposed destinations
+and leaves unanswered rows as findings. Source checkout command forms describe legacy
+compatibility. These lane rules continue to constrain the supported route.
+
 **The names below are placeholders.** A project spells them once, in its
 own CONVENTIONS, and every role reads that spelling instead of inventing
 one: what the integration branch is called, the branch-name pattern, the

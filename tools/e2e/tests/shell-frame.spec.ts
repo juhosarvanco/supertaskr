@@ -1,7 +1,8 @@
+const repoRoot = fixtureFor(import.meta.url);
 import { expect, test, type Page } from "@playwright/test";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
-import { repoRoot } from "../preflight";
+import { fixtureFor } from "../fixtures/test-project";
 import type { DocsSnapshotPayload } from "../fixtures/board";
 import { ARCHITECTURE_AND_GIT, NOTHING_FOUND, streakMidInterview } from "../fixtures/shell";
 import { applyDocs, applyPick, applyStatus, expectPhase, openShell } from "./shell-harness";

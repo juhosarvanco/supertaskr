@@ -62,7 +62,7 @@
  *   `none`   — declared with NO keeper. Reported as unkept, never as
  *              holding, and it costs the run exit 3.
  * @property {string} name  The authority, named the way it is invoked or read.
- * @property {string} [marker]  For `readings`: the line this parses, in words.
+ * @property {string} [marker]  Explicit output or committed-tree reader selector.
  * @property {string} [keeper]  For `none`: what would give this metric a keeper.
  */
 

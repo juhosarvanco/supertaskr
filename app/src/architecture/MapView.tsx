@@ -19,6 +19,7 @@ import {
 } from "@/lib/architecture/rollup";
 import {
   getRollupState,
+  getRollupGeneration,
   loadDetail,
   loadRollup,
   subscribeRollup,
@@ -156,10 +157,12 @@ export function indexHint(
   nowMs: number,
 ): string {
   if (outcome?.kind === "indexed") {
+    if (outcome.cleanupWarning) return `stored graph · ${outcome.files} files · recovery cleanup pending`;
+    if (outcome.recovered) return `recovered earlier graph · ${outcome.files} files · re-index to refresh`;
     return `indexed ${relativeTime(outcome.indexedAtMs, nowMs)} · ${outcome.files} files`;
   }
   if (derived.indexNotRun) return "index not run";
-  return `committed graph · ${derived.indexedFileCount} files`;
+  return `stored graph · ${derived.indexedFileCount} files`;
 }
 
 /**
@@ -213,13 +216,7 @@ function indexErrorText(message: string): string {
   return `index failed: ${message}`;
 }
 
-export function MapView({
-  model,
-  graphContent,
-  indexing,
-  indexOutcome,
-  onRunIndex,
-}: {
+interface MapViewProps {
   model: ProjectParseResult;
   /**
    * The whole committed graph, when something handed it over.
@@ -244,7 +241,16 @@ export function MapView({
   indexing: boolean;
   indexOutcome: IndexOutcomePayload | null;
   onRunIndex: () => void;
-}) {
+}
+
+export function MapView(props: MapViewProps) {
+  const sourceEpoch = useSyncExternalStore(subscribeRollup, getRollupGeneration, getRollupGeneration);
+  // Local panels, zoom and already-pulled files must retire with their source,
+  // including before the first render of a replacement records context.
+  return <MapPane key={sourceEpoch} {...props} sourceEpoch={sourceEpoch} />;
+}
+
+function MapPane({model, graphContent, indexing, indexOutcome, onRunIndex, sourceEpoch}: MapViewProps & {sourceEpoch: number}) {
   // --- the map channel (T-140-s1): the RESTING picture, and the pulled
   // slices of the graph the user has opened ------------------------------
   //
@@ -261,8 +267,9 @@ export function MapView({
   }, []);
   const [pulled, setPulled] = useState<ReadonlyMap<string, ArchDetail>>(new Map());
   const pull = (target: string): void => {
+    if (sourceEpoch !== getRollupGeneration()) return;
     void loadDetail(target).then((answer) => {
-      if (answer.kind !== "answered") return;
+      if (sourceEpoch !== getRollupGeneration() || answer.kind !== "answered") return;
       setPulled((prev) => {
         if (prev.get(target) === answer.detail) return prev;
         const next = new Map(prev);

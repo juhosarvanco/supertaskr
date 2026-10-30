@@ -3,6 +3,7 @@ import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "n
 import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
+import ts from "typescript";
 import { repoRoot } from "../preflight";
 import {
   FIXTURE_RM_MAX_WAIT_MS,
@@ -209,6 +210,79 @@ test("the git fixture teardown's removal is BOUNDED, and the bound is the one wr
 function commitsIntoAFixtureItRemoves(source: string): boolean {
   return /"commit"/.test(source) && /\brmSync\(|\bremoveGitFixture\(/.test(source);
 }
+/** Resolved named helper import plus an actual call. Comments, unused imports,
+ * shadowed bindings and a different module cannot qualify a delegation. */
+function callsFixtureHelper(source: string, imported: string, module: string): boolean {
+  const tree = ts.createSourceFile("fixture.ts", source, ts.ScriptTarget.Latest, true);
+  let local: string | undefined, called = false, shadowed = false;
+  for (const statement of tree.statements) {
+    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier) || statement.moduleSpecifier.text !== module) continue;
+    const named = statement.importClause?.namedBindings;
+    if (named && ts.isNamedImports(named)) for (const binding of named.elements) if ((binding.propertyName ?? binding.name).text === imported) local = binding.name.text;
+  }
+  if (!local) return false;
+  const binds = (name: ts.BindingName): boolean => ts.isIdentifier(name) ? name.text === local : name.elements.some(element => ts.isBindingElement(element) && binds(element.name));
+  const visit = (node: ts.Node) => {
+    if ((ts.isVariableDeclaration(node) || ts.isFunctionDeclaration(node) || ts.isParameter(node)) && node.name && binds(node.name)) shadowed = true;
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === local) called = true;
+    ts.forEachChild(node, visit);
+  };
+  visit(tree); return called && !shadowed;
+}
+function hasRawGitCall(source: string): boolean {
+  const tree = ts.createSourceFile("fixture.ts", source, ts.ScriptTarget.Latest, true);
+  let found = false;
+  const visit = (node: ts.Node) => {
+    if (ts.isCallExpression(node) && node.arguments[0] && ts.isStringLiteral(node.arguments[0]) && node.arguments[0].text === "git") found = true;
+    ts.forEachChild(node, visit);
+  };
+  visit(tree); return found;
+}
+function quietGitBody(body: ts.Node): boolean {
+  const calls: ts.CallExpression[] = [];
+  const visit = (node: ts.Node) => {
+    if (ts.isCallExpression(node) && node.arguments[0] && ts.isStringLiteral(node.arguments[0]) && node.arguments[0].text === "git") calls.push(node);
+    ts.forEachChild(node, visit);
+  };
+  visit(body);
+  return calls.length > 0 && calls.every(call => {
+    const argv = call.arguments[1];
+    return argv && ts.isArrayLiteralExpression(argv) && argv.elements.some(element => ts.isSpreadElement(element) && ts.isIdentifier(element.expression) && element.expression.text === "NO_BACKGROUND_MAINTENANCE");
+  });
+}
+
+/** A named factory must actually create and return its protected parent.
+ * The returned object may add fields, but cannot replace inherited cleanup.
+ */
+function inheritsFixtureCleanup(source: string, factoryName: string, parentName: string, parentModule: string): boolean {
+  if (!callsFixtureHelper(source, parentName, parentModule)) return false;
+  const tree = ts.createSourceFile("factory.ts", source, ts.ScriptTarget.Latest, true);
+  const factory = tree.statements.find(node => ts.isFunctionDeclaration(node) && node.name?.text === factoryName) as ts.FunctionDeclaration | undefined;
+  if (!factory?.body) return false;
+  let parentLocal: string | undefined;
+  for (const statement of tree.statements) {
+    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier) || statement.moduleSpecifier.text !== parentModule) continue;
+    const bindings = statement.importClause?.namedBindings;
+    if (bindings && ts.isNamedImports(bindings)) for (const binding of bindings.elements) if ((binding.propertyName ?? binding.name).text === parentName) parentLocal = binding.name.text;
+  }
+  const bases: string[] = [], returns: ts.Expression[] = [];
+  const visit = (node: ts.Node) => {
+    if (ts.isFunctionLike(node)) return;
+    if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer) {
+      const initializer = ts.isAwaitExpression(node.initializer) ? node.initializer.expression : node.initializer;
+      if (ts.isCallExpression(initializer) && ts.isIdentifier(initializer.expression) && initializer.expression.text === parentLocal) bases.push(node.name.text);
+    }
+    if (ts.isReturnStatement(node) && node.expression) returns.push(node.expression);
+    ts.forEachChild(node, visit);
+  };
+  visit(factory.body);
+  if (bases.length !== 1 || returns.length === 0) return false;
+  return returns.every(value => ts.isObjectLiteralExpression(value) && value.properties.length > 0 && value.properties.every((property, index) => {
+    if (index === 0) return ts.isSpreadAssignment(property) && ts.isIdentifier(property.expression) && property.expression.text === bases[0];
+    if (!ts.isPropertyAssignment(property) && !ts.isShorthandPropertyAssignment(property)) return false;
+    return (ts.isIdentifier(property.name) || ts.isStringLiteral(property.name)) && property.name.text !== "cleanup";
+  }));
+}
 
 test("every spec that commits into a fixture it removes carries the protection, and the census saying so is DERIVED", () => {
   // KILLED BY: dropping the config or the teardown from any spec in the
@@ -235,6 +309,48 @@ test("every spec that commits into a fixture it removes carries the protection, 
   ).toBe(false);
 
   const inClass = specs.filter((s) => commitsIntoAFixtureItRemoves(s.source));
+  const helper = readFileSync(path.join(dir, "private-record-fixture.ts"), "utf8");
+  for (const name of ["privateGit", "commitPrivate"]) {
+    const tree = ts.createSourceFile("helper.ts", helper, ts.ScriptTarget.Latest, true);
+    const declaration = tree.statements.find(node => ts.isFunctionDeclaration(node) && node.name?.text === name) as ts.FunctionDeclaration | undefined;
+    expect(declaration, `canonical helper ${name} disappeared`).toBeDefined();
+    expect(quietGitBody(declaration!.body!), `${name} must spread the protection in every actual Git call`).toBe(true);
+  }
+  expect(callsFixtureHelper(helper, "removeGitFixture", "./git-fixture")).toBe(true);
+  const helperTree = ts.createSourceFile("helper.ts", helper, ts.ScriptTarget.Latest, true);
+  const factory = helperTree.statements.find(node => ts.isFunctionDeclaration(node) && node.name?.text === "privateRecordFixture") as ts.FunctionDeclaration;
+  const returned = factory.body!.statements.find(ts.isReturnStatement)?.expression;
+  expect(returned && ts.isObjectLiteralExpression(returned) && returned.properties.some(property => ts.isPropertyAssignment(property) && property.name.getText(helperTree) === "cleanup" &&
+    ts.isArrowFunction(property.initializer) && ts.isCallExpression(property.initializer.body) && property.initializer.body.expression.getText(helperTree) === "removeGitFixture")).toBe(true);
+  const imported = 'import {privateGit} from "./private-record-fixture";';
+  expect(callsFixtureHelper(imported + 'privateGit(root,["commit"]);', "privateGit", "./private-record-fixture")).toBe(true);
+  for (const text of [imported, imported + '// privateGit(root,["commit"]);', imported + 'function shadow(privateGit:Function){privateGit(root,["commit"]);}', imported + 'function shadow({privateGit}:any){privateGit(root,["commit"]);}', 'import {privateGit} from "./unrelated";privateGit(root,["commit"]);']) {
+    expect(callsFixtureHelper(text, "privateGit", "./private-record-fixture")).toBe(false);
+  }
+  expect(hasRawGitCall(imported + 'privateGit(root,["commit"]); execFileSync("git",["commit"]);')).toBe(true);
+  expect(quietGitBody(ts.createSourceFile("mixed.ts", 'execFileSync("git",[...NO_BACKGROUND_MAINTENANCE,"commit"]);execFileSync("git",["commit"]);', ts.ScriptTarget.Latest, true))).toBe(false);
+  expect(quietGitBody(ts.createSourceFile("comment.ts", '// ...NO_BACKGROUND_MAINTENANCE\nexecFileSync("git",["commit"]);', ts.ScriptTarget.Latest, true))).toBe(false);
+  const delegatedFactory = 'import {privateRecordFixture as parent} from "./private-record-fixture";export function fixture(){const base=parent();return {...base, extra:1};}';
+  expect(inheritsFixtureCleanup(delegatedFactory, "fixture", "privateRecordFixture", "./private-record-fixture")).toBe(true);
+  expect(inheritsFixtureCleanup(delegatedFactory.replace("function fixture", "async function fixture").replace("base=parent()", "base=await parent()"), "fixture", "privateRecordFixture", "./private-record-fixture")).toBe(true);
+  for (const changed of [
+    delegatedFactory.replace("extra:1", "cleanup:()=>{}"),
+    delegatedFactory.replace("extra:1", "...other"),
+    delegatedFactory.replace("extra:1", '["cleanup"]:()=>{}'),
+    delegatedFactory.replace("return {...base, extra:1}", "return {...other, extra:1}"),
+    delegatedFactory.replace("const base=parent()", "const base=unprotected()"),
+  ]) expect(inheritsFixtureCleanup(changed, "fixture", "privateRecordFixture", "./private-record-fixture")).toBe(false);
+  const inheritedFactories = [
+    { name: "genesisFixture", module: "./genesis-init-fixture", parent: "privateRecordFixture", parentModule: "./private-record-fixture" },
+    { name: "bankSchemaFixture", module: "./project-bank-fixture", parent: "genesisFixture", parentModule: "./genesis-init-fixture" },
+    { name: "completedGenesisFixture", module: "./genesis-completed-fixture", parent: "bankSchemaFixture", parentModule: "./project-bank-fixture" },
+    { name: "configuredVerificationFixture", module: "./configured-verification-fixture", parent: "privateRecordFixture", parentModule: "./private-record-fixture" },
+    { name: "configuredDeliveryFixture", module: "./configured-delivery-fixture", parent: "configuredVerificationFixture", parentModule: "./configured-verification-fixture" },
+  ];
+  for (const factory of inheritedFactories) {
+    const source = readFileSync(path.join(dir, factory.module + ".ts"), "utf8");
+    expect(inheritsFixtureCleanup(source, factory.name, factory.parent, factory.parentModule), `${factory.name} must return the actual protected parent without replacing cleanup`).toBe(true);
+  }
   expect(
     inClass.length,
     "the census is EMPTY, so every assertion below is vacuous — the walk found no " +
@@ -250,17 +366,19 @@ test("every spec that commits into a fixture it removes carries the protection, 
   // substring check while protecting nothing. A spread and a call cannot be
   // spelled by an unused import.
   for (const { file, source } of inClass) {
+    const delegatedGit = !hasRawGitCall(source) && (callsFixtureHelper(source, "privateGit", "./private-record-fixture") || callsFixtureHelper(source, "commitPrivate", "./private-record-fixture"));
     expect(
-      source,
+      delegatedGit || source.includes("...NO_BACKGROUND_MAINTENANCE"),
       `${file} commits into a fixture it removes and does not SPREAD ` +
         `NO_BACKGROUND_MAINTENANCE into its git calls, so its commits detach a ` +
         `writer into the tree its teardown is about to walk (T-178)`,
-    ).toContain("...NO_BACKGROUND_MAINTENANCE");
+    ).toBe(true);
+    const delegatedCleanup = source.includes(".cleanup()") && (callsFixtureHelper(source, "privateRecordFixture", "./private-record-fixture") || inheritedFactories.some(factory => callsFixtureHelper(source, factory.name, factory.module)));
     expect(
-      source,
+      delegatedCleanup || source.includes("removeGitFixture("),
       `${file} commits into a fixture it removes and never CALLS ` +
         `removeGitFixture, so a removal that cannot finish will red whichever body ` +
         `it happens to follow instead of reporting itself (T-178)`,
-    ).toContain("removeGitFixture(");
+    ).toBe(true);
   }
 });

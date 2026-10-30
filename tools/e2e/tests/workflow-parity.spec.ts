@@ -36,7 +36,6 @@ import {
 // ...and the argv the runner's own derivation step sends, so the
 // criterion's spelling is READ from the sender rather than retyped.
 import { owedSetArgv } from "../scripts/ci-owed.mjs";
-import { conventionsText } from "../scripts/docs-scan.mjs";
 import { repoRoot } from "../preflight";
 
 /**
@@ -52,7 +51,7 @@ import { repoRoot } from "../preflight";
  *
  * ── WHAT T-045 CHANGED ───────────────────────────────────────────────
  * The expected commands used to be a sixteen-entry array with a comment
- * saying it mirrored docs/CONVENTIONS.md "Build & test". A mirror agrees
+ * saying it mirrored CONTRIBUTING.md "Build & test". A mirror agrees
  * with whatever it was last copied from: the workflow and the spec could
  * agree with each other while both drifted from the doc that governs them
  * — and did (the doc listed `npm run typecheck` for tools/e2e, which no
@@ -108,7 +107,7 @@ import { repoRoot } from "../preflight";
  * up in the workflow's own `working-directory:` keys to tell the seat
  * which package the red run was testing and whether the tree being
  * pushed reaches it. Every body above pins a step's COMMAND against
- * docs/CONVENTIONS.md and none of them looks at a step's NAME — which is
+ * CONTRIBUTING.md and none of them looks at a step's NAME — which is
  * the key that map is keyed on — so the guard's most useful sentence
  * could degrade with this suite entirely green.
  *
@@ -168,13 +167,13 @@ interface Step {
 const stepKey = (s: Step): string => `[${s.dir ?? "(root)"}] ${s.run}`;
 const docKey = (dir: string, cmd: string): string => `[${dir}] ${cmd}`;
 
-// ── reading docs/CONVENTIONS.md ────────────────────────────────────────
+// ── reading CONTRIBUTING.md ────────────────────────────────────────
 
 export function readConventions(): string {
   // THE INDEX AND ITS CHAPTERS AS ONE TEXT (T-290): the command bullets
-  // live in docs/conventions/commands.md and docs/CONVENTIONS.md points
+  // live in docs/conventions/commands.md and CONTRIBUTING.md points
   // at them, so the parity census reads the spliced document.
-  return conventionsText(repoRoot);
+  return readFileSync(path.join(repoRoot, "CONTRIBUTING.md"), "utf8");
 }
 
 /**
@@ -189,7 +188,7 @@ export function buildAndTestSection(md: string): string {
     ?.replace(/^Build & test[^\n]*\n/, "");
   if (section === undefined || section.trim() === "") {
     throw new Error(
-      'docs/CONVENTIONS.md has no non-empty "## Build & test" section — the ' +
+      'CONTRIBUTING.md has no non-empty "## Build & test" section — the ' +
         "workflow parity spec derives every expected command from it, so a " +
         "renamed or emptied section is a hard failure, never an empty expectation.",
     );
@@ -258,7 +257,7 @@ export function commandBullets(section: string): { dir: string; commands: string
 export function structuralProblems(section: string): string[] {
   const problems: string[] = [];
   section.split("\n").forEach((line, i) => {
-    const where = `docs/CONVENTIONS.md "Build & test" line ${i + 1} (of the section)`;
+    const where = `CONTRIBUTING.md "Build & test" line ${i + 1} (of the section)`;
     if (/^[ \t]+- /.test(line)) {
       problems.push(
         `${where} is an INDENTED BULLET: ${JSON.stringify(line.trim().slice(0, 48))}. ` +
@@ -309,7 +308,7 @@ type Correspondence =
 
 /**
  * Every expected run step, in the order ci.yml runs them (plan §7: token
- * lint → parser → app → cargo test → cargo audit → e2e → xvfb boot).
+ * lint → parser → app → cli/e2e dependency install → cargo test → cargo audit → e2e → xvfb boot).
  * ORDER is a fact about the one CI job, so it lives here; the command
  * STRINGS are read out of CONVENTIONS.
  */
@@ -348,19 +347,11 @@ const CI_SEQUENCE: Correspondence[] = [
   { kind: "verbatim", dir: "app", cmd: "npm ci" },
   { kind: "verbatim", dir: "app", cmd: "npm run build" },
   { kind: "verbatim", dir: "app", cmd: "npm test" },
+  // Native/e2e package fixtures run the real CLI builder, including TypeScript.
+  { kind: "verbatim", dir: "cli", cmd: "npm ci" },
+  // Native installed-service controls import the finite e2e fixture helpers.
+  { kind: "verbatim", dir: "tools/e2e", cmd: "npm ci" },
   { kind: "verbatim", dir: "app/src-tauri", cmd: "cargo test" },
-  // THE GRAPH-CURRENCY GATE (T-054), placed immediately after the cargo
-  // suite: the suite is what builds the crate, and a stale graph is news
-  // before the audit spends a minute installing a tool. It is VERBATIM on
-  // purpose — the `--root ../..` is part of the documented command, not a
-  // CI adaptation, because without it the default root is the current
-  // directory and the check reports the graph MISSING and exits 1, which
-  // is a FALSE RED that reads exactly like staleness.
-  {
-    kind: "verbatim",
-    dir: "app/src-tauri",
-    cmd: "cargo run -p supertaskr-index -- index --check --root ../..",
-  },
   {
     kind: "ci-only",
     step: {
@@ -375,7 +366,6 @@ const CI_SEQUENCE: Correspondence[] = [
       "binary is the happy path. A dev tool, never a repo dep (T-009-s3).",
   },
   { kind: "verbatim", dir: "app/src-tauri", cmd: "cargo audit" },
-  { kind: "verbatim", dir: "tools/e2e", cmd: "npm ci" },
   // THE DOCS GATE (T-090), immediately after tools/e2e's install — the
   // earliest slot its own dependency allows. It CANNOT hold the token
   // lint's bare-checkout position: `token-scan.mjs` is zero-dependency
@@ -463,41 +453,10 @@ const LOCAL_ONLY: { dir: string; cmd: string; why: string }[] = [
     cmd: "npm run tauri build",
     why: "packages a bundle — minutes of work no gate reads (T-046-s3).",
   },
-  {
-    dir: "app/src-tauri",
-    cmd: "cargo run -p supertaskr-index -- index --watch --root ../..",
-    why:
-      "a watcher: it blocks until stopped, so a CI step invoking it would hang " +
-      "until the job timeout. `index --check` is the one-shot form and IS a " +
-      "step (T-054).",
-  },
-  {
-    dir: "app/src-tauri",
-    cmd: "cargo run -p supertaskr-index -- arch --root ../..",
-    why:
-      "a REPORTER, not a gate: it reads the COMMITTED graph and always exits 0 " +
-      "(ADR-014). Its gating form is `arch drift --fail-on <sev>`, deliberately " +
-      "unwired while the registry carries live undeclared edges — wiring it " +
-      "would red CI on drift the architect is holding open on purpose (T-054).",
-  },
-  {
-    dir: "app/src-tauri",
-    cmd: "cargo run -p supertaskr-index -- arch cycles --root ../..",
-    why:
-      "a REGISTRY-ONLY verdict whose red is DESIGNED to stand: the declared " +
-      "C-08 <-> C-09 cycle is held open until T-127-s1, so a CI step would " +
-      "red every run on a ruling deliberately kept open. The ENFORCING copy " +
-      "is cargo test's exact-set cycle census (T-127; documented at ADR-019 " +
-      "phase 5, discharging T-127-s5).",
-  },
-  {
-    dir: "app/src-tauri",
-    cmd: "cargo run -p supertaskr-index -- arch blast <path|slug> --root ../..",
-    why:
-      "a REPORTER like `arch`: derives dependents from the committed graph " +
-      "at read time and gates nothing (T-135 Half A; documented at ADR-019 " +
-      "phase 5).",
-  },
+
+
+
+
   {
     dir: "tools/e2e",
     cmd: "npm run capabilities",
@@ -598,11 +557,11 @@ function docCommandMap(section: string): Map<string, { dir: string; cmd: string 
   return map;
 }
 
-/** The four per-package bullets the section must carry, in order. */
-const DOC_DIRS = ["lib/parser", "app", "app/src-tauri", "tools/e2e"];
+/** The per-package bullets the section must carry, in order. */
+const DOC_DIRS = ["lib/parser", "app", "cli", "app/src-tauri", "tools/e2e"];
 
 /**
- * The expected workflow steps, DERIVED from docs/CONVENTIONS.md, plus
+ * The expected workflow steps, DERIVED from CONTRIBUTING.md, plus
  * every reason the derivation could not be trusted. `problems` empty is
  * the assertion; each entry names the side that moved and what to do.
  */
@@ -613,7 +572,7 @@ export function deriveExpectedSteps(md: string): { steps: Step[]; problems: stri
   const problems: string[] = [];
   if (ci === "") {
     problems.push(
-      'docs/CONVENTIONS.md "Build & test" has no `- CI (.github/workflows/' +
+      'CONTRIBUTING.md "Build & test" has no `- CI (.github/workflows/' +
         "ci.yml)` bullet — that bullet is where every divergence between the " +
         "documented commands and the workflow has to be written down.",
     );
@@ -629,16 +588,16 @@ export function deriveExpectedSteps(md: string): { steps: Step[]; problems: stri
   const dirs = commandBullets(section).map((b) => b.dir);
   if (JSON.stringify(dirs) !== JSON.stringify(DOC_DIRS)) {
     problems.push(
-      `docs/CONVENTIONS.md "Build & test" no longer carries exactly the four ` +
+      `CONTRIBUTING.md "Build & test" no longer carries exactly the expected ` +
         `\`run from <dir>/:\` command bullets ${JSON.stringify(DOC_DIRS)} — found ` +
-        `${JSON.stringify(dirs)}. The derivation reads those bullets; a fifth ` +
+        `${JSON.stringify(dirs)}. The derivation reads those bullets; a further ` +
         `package or a renamed one is a deliberate update to this spec.`,
     );
   }
   for (const { dir, commands } of commandBullets(section)) {
     if (commands.length === 0) {
       problems.push(
-        `docs/CONVENTIONS.md "Build & test" lists no commands for [${dir}] — the ` +
+        `CONTRIBUTING.md "Build & test" lists no commands for [${dir}] — the ` +
           "list ends at the first `·` segment that does not open with a backtick, " +
           "so a command that lost its backticks is invisible to CI parity.",
       );
@@ -657,7 +616,7 @@ export function deriveExpectedSteps(md: string): { steps: Step[]; problems: stri
   for (const key of doc.keys()) {
     if (!claimed.has(key)) {
       problems.push(
-        `docs/CONVENTIONS.md "Build & test" lists ${key}, which this spec has no ` +
+        `CONTRIBUTING.md "Build & test" lists ${key}, which this spec has no ` +
           "entry for — add it to CI_SEQUENCE (verbatim or mapped, with the " +
           "workflow step) or to LOCAL_ONLY with the reason CI does not run it.",
       );
@@ -666,7 +625,7 @@ export function deriveExpectedSteps(md: string): { steps: Step[]; problems: stri
   for (const key of claimed.keys()) {
     if (!doc.has(key)) {
       problems.push(
-        `this spec expects ${key}, which docs/CONVENTIONS.md "Build & test" no ` +
+        `this spec expects ${key}, which CONTRIBUTING.md "Build & test" no ` +
           "longer lists — the doc is the source of truth: a reworded or removed " +
           "command means the workflow and this spec both need the same edit.",
       );
@@ -683,7 +642,7 @@ export function deriveExpectedSteps(md: string): { steps: Step[]; problems: stri
     for (const step of steps) {
       if (!ci.includes(`\`${step.run}\``)) {
         problems.push(
-          `the workflow runs \`${step.run}\` but docs/CONVENTIONS.md "Build & ` +
+          `the workflow runs \`${step.run}\` but CONTRIBUTING.md "Build & ` +
             'test" never mentions it — an untracked divergence. Document it in ' +
             "the CI bullet (which enumerates them) so both sides say the same thing.",
         );
@@ -696,7 +655,7 @@ export function deriveExpectedSteps(md: string): { steps: Step[]; problems: stri
     if (!ci.includes(`\`${entry.cmd}\``)) {
       problems.push(
         `this spec says CI deliberately does not run \`${entry.cmd}\` (${entry.why}) ` +
-          'but docs/CONVENTIONS.md\'s CI bullet does not say so — an omission a ' +
+          'but CONTRIBUTING.md\'s CI bullet does not say so — an omission a ' +
           "reader cannot tell from a mistake.",
       );
     }
@@ -1451,7 +1410,7 @@ test("the owed set is derived ON THE RUNNER, and its answer is what gates every 
   expect(
     owedJobProblems(jobs.find((j) => j.id === OWED_JOB)),
     "T-294 criterion 1: the workflow derives the owed set from the pushed range with " +
-      "`gate-run.mjs --owed-set --range <base>..<tip>` and runs the suites it names",
+      "`source-ci-owed.mjs --owed-set --range <base>..<tip>` and runs the suites it names",
   ).toEqual([]);
 
   // AND THE SPELLING IS THE CRITERION'S, taken from the program that
@@ -1461,11 +1420,11 @@ test("the owed set is derived ON THE RUNNER, and its answer is what gates every 
   // took out of this file once, in the other direction.
   const argv = owedSetArgv("BASE..TIP", "/tree");
   expect(argv[0], "it asks the ONE program that owns the derivation").toMatch(
-    /(^|\/)gate-run\.mjs$/,
+    /(^|\/)source-ci-owed\.mjs$/,
   );
   expect(
     argv.slice(1),
-    "`gate-run.mjs --owed-set --range <base>..<tip>`, the criterion's own spelling",
+    "`source-ci-owed.mjs --owed-set --range <base>..<tip>`, the explicit source-CI adapter spelling",
   ).toEqual(["--owed-set", "--range", "BASE..TIP", "--tree", "/tree"]);
 });
 
@@ -1917,11 +1876,11 @@ test("a red nightly prints the bisection that names the merge it belongs to", ()
   ).toEqual([]);
 });
 
-test("the expected commands derive cleanly from docs/CONVENTIONS.md", () => {
+test("the expected commands derive cleanly from CONTRIBUTING.md", () => {
   const { steps, problems } = deriveExpectedSteps(readConventions());
   expect(
     problems,
-    "the workflow's expected commands are PARSED out of docs/CONVENTIONS.md " +
+    "the workflow's expected commands are PARSED out of CONTRIBUTING.md " +
       '"Build & test" — these are the ways the doc and this spec disagree',
   ).toEqual([]);
   // A FLOOR on the derivation itself, never a count — the doc gains
@@ -3164,8 +3123,8 @@ test("THE EXECUTING ARM: the free-disk step's own script measures, removes, refu
 test("FIXTURE: rewording a command in CONVENTIONS reds the lane, naming both sides", () => {
   const md = readConventions();
   const reworded = md.replace(
-    "`npx vitest run` (suite)",
-    "`npx vitest run --reporter=dot` (suite)",
+    "`npx vitest run`",
+    "`npx vitest run --reporter=dot`",
   );
   expect(reworded, "the fixture must actually change the doc").not.toBe(md);
 
@@ -3175,7 +3134,7 @@ test("FIXTURE: rewording a command in CONVENTIONS reds the lane, naming both sid
     "lists [lib/parser] npx vitest run --reporter=dot, which this spec has no entry for",
   );
   expect(said, "the OLD wording is no longer in the doc").toContain(
-    "this spec expects [lib/parser] npx vitest run, which docs/CONVENTIONS.md",
+    "this spec expects [lib/parser] npx vitest run, which CONTRIBUTING.md",
   );
   // And the derived expectation drops the stale command rather than
   // quietly keeping it — the mirror's exact failure mode.
@@ -3184,7 +3143,7 @@ test("FIXTURE: rewording a command in CONVENTIONS reds the lane, naming both sid
 
 test("FIXTURE: deleting a command from CONVENTIONS reds the lane", () => {
   const md = readConventions();
-  const shortened = md.replace("· `npm run typecheck` ", "");
+  const shortened = md.replace("`npm run typecheck` · ", "");
   expect(shortened, "the fixture must actually change the doc").not.toBe(md);
 
   const { problems } = deriveExpectedSteps(shortened);
@@ -3194,7 +3153,7 @@ test("FIXTURE: deleting a command from CONVENTIONS reds the lane", () => {
 test("FIXTURE: an undocumented divergence reds the lane", () => {
   const md = readConventions();
   const undocumented = md.replace(
-    "`npx playwright install\n  --with-deps chromium`",
+    "`npx playwright install --with-deps chromium`",
     "the browser install",
   );
   expect(undocumented, "the fixture must actually change the doc").not.toBe(md);
@@ -3202,7 +3161,7 @@ test("FIXTURE: an undocumented divergence reds the lane", () => {
   const { problems } = deriveExpectedSteps(undocumented);
   expect(problems.join("\n")).toContain(
     "the workflow runs `npx playwright install --with-deps chromium` but " +
-      'docs/CONVENTIONS.md "Build & test" never mentions it',
+      'CONTRIBUTING.md "Build & test" never mentions it',
   );
 });
 
@@ -3215,11 +3174,11 @@ test("FIXTURE: a restructured section fails loudly, never with an empty expectat
   ).toThrow(/no non-empty "## Build & test" section/);
 
   // The bullets still there, but no longer marked `run from <dir>/:`.
-  // (`\s+`, not a literal space: one of the four markers wraps across a
+  // (`\s+`, not a literal space: a marker can wrap across a
   // line in the raw file, which is why the parser normalizes first.)
   const unmarked = md.replace(/run from\s+([A-Za-z0-9._/-]+)\/:/g, "run in $1 like so —");
   const { steps, problems } = deriveExpectedSteps(unmarked);
-  expect(problems.join("\n")).toContain("no longer carries exactly the four");
+  expect(problems.join("\n")).toContain("no longer carries exactly the expected");
   // Every command the spec claims is now missing from the doc — one
   // complaint each, not silence — and nothing derived from a doc command
   // survives into the expectation. Asserted against the spec's OWN
@@ -3245,7 +3204,7 @@ test("FIXTURE: a restructured section fails loudly, never with an empty expectat
 // the lane now says so by NAME.
 
 /** Splice an attack in just after the app/src-tauri bullet. */
-const AUDIT_BULLET = "- AUDIT GATE POLICY";
+const AUDIT_BULLET = "- CI (.github/workflows/ci.yml)";
 const spliceIntoBuildAndTest = (md: string, attack: string): string =>
   md.replace(AUDIT_BULLET, attack + AUDIT_BULLET);
 
@@ -3326,7 +3285,7 @@ test("FIXTURE: a command the DOC gains that the spec does not claim reds BY NAME
   const md = readConventions();
   // Spliced into a bullet the derivation DOES read, in the doc's own
   // typography, so the command genuinely arrives in the command list.
-  const gained = md.replace("· `npm run typecheck` ", "· `npm run typecheck` · `npm run smuggled` ");
+  const gained = md.replace("`npm run typecheck` ·", "`npm run typecheck` · `npm run smuggled` ·");
   expect(gained, "the fixture must actually change the doc").not.toBe(md);
 
   const before = deriveExpectedSteps(md);
@@ -3355,8 +3314,8 @@ test("FIXTURE: the shape that IS silent — a command in a bullet with no `run f
   // loop in the derivation — by construction, because the marker is what
   // makes a bullet a command list.
   const attacked = md.replace(
-    "- AUDIT GATE POLICY",
-    "- AUDIT GATE POLICY: run `cargo audit --deny warnings` first.",
+    AUDIT_BULLET,
+    "- Extra policy: run `cargo audit --deny warnings` first.\n" + AUDIT_BULLET,
   );
   expect(attacked, "the fixture must actually change the doc").not.toBe(md);
 
@@ -3372,7 +3331,7 @@ test("FIXTURE: the shape that IS silent — a command in a bullet with no `run f
   // failed: the same command in a bullet the derivation DOES read is
   // loud. Without this, a typo in the replace above reads as silence.
   const control = deriveExpectedSteps(
-    md.replace("· `npm run typecheck` ", "· `npm run typecheck` · `cargo audit --deny warnings` "),
+    md.replace("`npm run typecheck` ·", "`npm run typecheck` · `cargo audit --deny warnings` ·"),
   );
   expect(control.problems.join("\n")).toContain(
     "lists [tools/e2e] cargo audit --deny warnings, which this spec has no entry for",
@@ -3388,8 +3347,8 @@ test("FIXTURE: a middle dot inside a parenthetical drops every command behind it
   // this asks the parser.
   const md = readConventions();
   const truncated = md.replace(
-    "(T-014's\n  GRAPH-CURRENCY GATE, and a CI step since T-054 — exit 0 current, 1",
-    "(T-014's\n  GRAPH-CURRENCY GATE, and a CI step since T-054 · exit 0 current, 1",
+    "`cargo test` · `cargo audit`",
+    "`cargo test` (fixture · truncation) · `cargo audit`",
   );
   expect(truncated, "the fixture must actually change the doc").not.toBe(md);
 
@@ -3397,19 +3356,13 @@ test("FIXTURE: a middle dot inside a parenthetical drops every command behind it
     commandBullets(buildAndTestSection(text)).reduce((n, b) => n + b.commands.length, 0);
   const exposed = count(md);
   const afterTruncation = count(truncated);
-  expect(exposed - afterTruncation, "five commands leave CI parity").toBe(5);
+  expect(exposed - afterTruncation, "the command behind the inner separator leaves CI parity").toBe(1);
   // WHICH five, by name — a delta of 5 could be any five, and the
   // five that vanish are the ones BEHIND the separator in that bullet.
   const names = (text: string): string[] =>
     commandBullets(buildAndTestSection(text)).flatMap((b) => b.commands.map((c) => docKey(b.dir, c)));
   const lost = names(md).filter((k) => !names(truncated).includes(k));
-  expect(lost).toEqual([
-    "[app/src-tauri] cargo audit",
-    "[app/src-tauri] cargo run -p supertaskr-index -- index --watch --root ../..",
-    "[app/src-tauri] cargo run -p supertaskr-index -- arch --root ../..",
-    "[app/src-tauri] cargo run -p supertaskr-index -- arch cycles --root ../..",
-    "[app/src-tauri] cargo run -p supertaskr-index -- arch blast <path|slug> --root ../..",
-  ]);
+  expect(lost).toEqual(["[app/src-tauri] cargo audit"]);
   // And it is LOUD in this direction, which is the half the retracted
   // sentence got right: every command the spec still claims reds by name.
   expect(deriveExpectedSteps(truncated).problems.join("\n")).toContain(
@@ -3425,7 +3378,7 @@ test("FIXTURE: a middle dot inside a parenthetical drops every command behind it
 // workflow's own `working-directory:` keys to answer *"which package was
 // it testing, and does this push change anything under it"*. The map is
 // READ out of the repository rather than typed into the hook — NEVER
-// TYPE A PATH YOU CAN DERIVE (docs/CONVENTIONS.md) — and that derivation
+// TYPE A PATH YOU CAN DERIVE (CONTRIBUTING.md) — and that derivation
 // is what creates the dependency this section keeps.
 //
 // EVERY BODY ABOVE PINS A COMMAND AND NONE OF THEM PINS A NAME, which is
@@ -3469,7 +3422,7 @@ interface StepSite {
  * directory — the same red by a different message. This section exists
  * because a reader of these files went unnoticed, so a census that found
  * nothing must be a hard failure rather than a loop that passes by
- * having nothing to iterate (docs/CONVENTIONS.md, A NEGATIVE ASSERTION
+ * having nothing to iterate (CONTRIBUTING.md, A NEGATIVE ASSERTION
  * NEEDS A POSITIVE CONTROL, and its census clause).
  */
 export function workflowFiles(): WorkflowFile[] {

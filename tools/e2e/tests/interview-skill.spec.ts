@@ -14,6 +14,8 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { repoRoot } from "../preflight";
+import { installOfflinePackage } from "../fixtures/offline-package";
+import { sourceOnlyCheckout } from "../fixtures/source-only";
 import {
   CARRIED_SKILLS_ROOT,
   EXIT as CLI_EXIT,
@@ -696,6 +698,7 @@ test("a fresh folder receives the entry from a packed tarball and materializes t
   test.setTimeout(300_000);
   const project = scratchProject();
   const packDir = mkdtempSync(path.join(tmpdir(), "supertaskr-skillpack-"));
+  const source = sourceOnlyCheckout(), env = { ...process.env, NODE_PATH: "", CARGO_TARGET_DIR: path.join(repoRoot, "app/src-tauri/target") };
   try {
     writeFileSync(
       path.join(project, "package.json"),
@@ -703,13 +706,9 @@ test("a fresh folder receives the entry from a packed tarball and materializes t
     );
     // NOTHING IS PUBLISHED — packaging is approved (the owner's ruling 4
     // of 2026-09-14) and publishing stays @human's (T-266).
-    const packed = execFileSync("npm", ["pack", "--pack-destination", packDir], {
-      cwd: packageRoot,
-      encoding: "utf8",
-    })
-      .trim()
-      .split("\n")
-      .at(-1);
+    const packed = JSON.parse(execFileSync("npm", ["pack", "--json", "--pack-destination", packDir], {
+      cwd: path.join(source, "cli"), encoding: "utf8", env,
+    }))[0].filename;
     expect(packed, "npm pack named a tarball").toBeTruthy();
 
     // THE TARBALL CARRIES THE GENERATED FILE (criterion 5).
@@ -718,12 +717,9 @@ test("a fresh folder receives the entry from a packed tarball and materializes t
     }).split("\n");
     const inside = `package/dist/${SKILL_REL}`;
     expect(listed, `the tarball must carry ${inside}`).toContain(inside);
+    expect(listed).toContain(`package/dist/tools/e2e/dist/${SKILL_REL}`);
 
-    execFileSync(
-      "npm",
-      ["install", "--no-audit", "--no-fund", "--offline", path.join(packDir, String(packed))],
-      { cwd: project, encoding: "utf8" },
-    );
+    installOfflinePackage({ packageTarball: path.join(packDir, String(packed)), packDirectory: packDir, project, env });
 
     // THE SOURCE IS NEVER BRIDGED. The card forbids it by name: nothing
     // fabricates a method/skills/ inside the fixture, and the scratch
@@ -736,6 +732,7 @@ test("a fresh folder receives the entry from a packed tarball and materializes t
     execFileSync("npx", ["supertaskr", "install", "--harness", "claude"], {
       cwd: project,
       encoding: "utf8",
+      env,
     });
     const delivered = path.join(project, ".claude/skills", SKILL_NAME, "SKILL.md");
     expect(existsSync(delivered), "the entry landed in the harness's own directory").toBe(true);
@@ -810,5 +807,6 @@ test("a fresh folder receives the entry from a packed tarball and materializes t
   } finally {
     removeGitFixture(project, FIXTURE);
     removeGitFixture(packDir, FIXTURE);
+    removeGitFixture(source, FIXTURE);
   }
 });

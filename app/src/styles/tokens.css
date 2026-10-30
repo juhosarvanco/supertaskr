@@ -380,6 +380,8 @@
   --tracking-tag: 0.09em; /* ghost provenance tag */
 
   --spacing-unit: 0.25rem;
+  /* Record drafts stay above the board detail/map controls while open. */
+  --layer-record-editor: 30;
   --radius: 0.625rem; /* 10px — cards, column headers, buttons */
   --radius-chip: 0.375rem; /* 6px  — size + model chips (addition) */
 

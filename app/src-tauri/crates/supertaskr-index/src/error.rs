@@ -16,6 +16,11 @@ pub enum IndexError {
     Grammar(&'static str),
     /// serde_json failure (structurally unreachable for these types).
     Serialize(String),
+    /// The selected graph cannot be read safely; distinct from a missing graph.
+    Read {
+        path: PathBuf,
+        source: std::io::Error,
+    },
     /// Writing the graph file failed (`write_graph` target only).
     Write {
         path: PathBuf,
@@ -37,6 +42,9 @@ impl fmt::Display for IndexError {
                 write!(f, "tree-sitter grammar failed to load: {which}")
             }
             IndexError::Serialize(msg) => write!(f, "graph serialization failed: {msg}"),
+            IndexError::Read { path, source } => {
+                write!(f, "cannot read graph at {}: {source}", path.display())
+            }
             IndexError::Write { path, source } => {
                 write!(f, "cannot write graph to {}: {source}", path.display())
             }
@@ -47,7 +55,7 @@ impl fmt::Display for IndexError {
 impl std::error::Error for IndexError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            IndexError::Write { source, .. } => Some(source),
+            IndexError::Write { source, .. } | IndexError::Read { source, .. } => Some(source),
             _ => None,
         }
     }

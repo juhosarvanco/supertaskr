@@ -1,5 +1,121 @@
 # 05 — Dispatch
 
+## Installed independent projects
+
+Use `supertaskr dispatch` with the selected PRODUCT root. The fixed entry
+reads committed `supertaskr.yaml`, the explicitly bound RECORDS context and
+the installed TOOL. It preserves the original product/records revisions,
+card overrides, configured models, vehicles, process and suite policy.
+
+```
+supertaskr dispatch --root <PRODUCT> --view
+supertaskr dispatch --root <PRODUCT> --view --task T-N --full
+supertaskr dispatch --root <PRODUCT> --brief --task T-N --lane-intent <intent.json>
+supertaskr dispatch --root <PRODUCT> --arm --operation <id> --task T-N --session <session-id> --turn <turn-id> --effort <dial> --deadline <ISO-UTC-or-none> --budget <tokens-or-none> --lane-intent <intent.json>
+supertaskr dispatch --root <PRODUCT> --continue --operation <id>
+supertaskr dispatch --root <PRODUCT> --admission-preflight <request.json>
+supertaskr dispatch --root <PRODUCT> --run start --assignment <assignment.json>
+supertaskr dispatch --root <PRODUCT> --run bind --attempt <attempt> --session <native-id>
+supertaskr dispatch --root <PRODUCT> --grade --attempt <attempt>
+```
+
+The first view captures the current exact committed PRODUCT and selected
+RECORDS cuts through the delivered binding, checks both cuts and origins
+again before returning, and prints them. Dirty editor bytes cannot replace
+those committed inputs. An optional `--view <selection.json>` reproduces
+explicit original cuts; the file carries `authorityRoot`, `projectId`,
+`revisions: { product, records }` and explicit `legacyTokenMap`.
+
+The view derives scheduling, missing blockers, pending room questions,
+qualified scope, configured guard classes/tier, roles and process from
+their canonical readers. Current acquired sets and approval/pause are
+separate live observations. A fresh project with no grant says awaiting
+approval. Unknown legacy writer scope and unavailable configuration refuse;
+no missing input becomes an empty green. Verified installed METHOD openings
+are carried by default; `--full` carries their full words with whitespace
+normalized. The view writes no lane, reservation, grant or product artifact.
+Completed cards are counted as board history, shown individually with `--full`
+or an explicit task selector, and never re-admitted against current models or tiers.
+
+`--brief` assembles the full thirteen-row contract from the verified METHOD,
+the committed PRODUCT root adapters/settings and selected committed RECORDS.
+It applies the role's read-first additions/subtractions and derives the context
+pack from the shipped rule sources' actual citations; an uncited rule does
+not authorize reading CONVENTIONS end to end. `--role verifier` applies that
+seat's own reading/report instructions to the same normative table, while
+reporting its unselected retained preparation/candidate bench/seal as an
+unanswered finding. It cannot stand in for an executable verifier brief. The
+optional selection file has the same shape as `--view`; without one the
+backend captures and bookends the current exact paired cuts.
+
+Lane intent is explicit data: `{ "version": 1, "taskId": "T-N", "lanes":
+[{ "role": "product", "branch": "refs/heads/<chosen-name>", "checkout":
+"<absolute-new-destination>" }] }`. Supply exactly the writer roles in the
+qualified task scope (`product` and/or `records`). The brief obtains each
+base hash from the original selected revision and labels the create argv
+PROPOSED ONLY. It creates no checkout or reservation. Missing intent/setup
+prose, divergent root adapters, unknown additional private gates and project
+port reservations without an observation adapter remain unanswered findings
+(exit 3). A complete readonly brief is not an admission or an armed lane.
+First-card source/test outputs may still be absent; no baseline GREEN is
+inferred from that absence. A first card may also lack arm's private tier
+stamp: the readonly brief labels its canonical derived tier PROPOSED/UNSTAMPED.
+Strict start/effect consumers still require the committed stamp and refuse
+an understated existing tier; readonly derivation cannot supply authority.
+
+Start prepares the existing qualified reservation and run record. The native
+launcher then supplies the real child identity; `started: false` remains
+explicit until that observation. This adapter supports fresh/subagent native
+Codex launches, preserving the requested spelling separately from the
+qualified launch model. Named resume vehicles and a resume default refuse
+until an actual session adapter is available.
+
+The retained lifecycle supports bind, observe, send, wait, collect, continue
+and stop with the canonical run flags shown by `--help`. Effects recheck the
+original context and current approval/pause policy. Finalized collection
+retries return their original history. Unsupported actions refuse explicitly.
+Assignment-file start requires the canonical tier stamp; missing guard configuration,
+understated tiers and unavailable generic XS keeper ownership cannot start.
+
+`--arm` captures the exact original committed context, approval and explicit
+execution limits in one durable operation. It runs the original baseline or
+rechecks the canonical completed-genesis datum, persists the permitted private
+lifecycle stamp and derived INDEX, creates only its captured absent qualified
+lanes, writes the actual thirteen-row brief and prepares the native assignment
+through the existing reservation owner. Non-independent review guarantees
+require separate approval; arm cannot silently promote them. Effort, deadline
+and budget have no implicit defaults. The committed role supplies the model,
+vehicle and session policy.
+
+`--continue` accepts only the original operation ID. New effects recheck current
+approval and original physical homes; unknown lane/brief outcomes refuse rather
+than overwriting another workspace. An already accepted native preparation is
+returned before successor configuration checks, with no fresh launch. Both
+commands report `started: false`: the host must separately qualify installation
+readiness and ordinary hook trust, launch the original selection and report the
+actual child identity. Wrapper/configuration files and controlled callback
+frames do not establish that readiness.
+
+`--grade` measures the unique PRODUCT worker held by the actual native-bound
+attempt and runs its original committed whole-suite definitions. It checks
+the original source, current approval/pause, held claim, exact worker candidate,
+fence and captured ignored-output policy before and after each suite. Results
+leave through stdout, with no worker verdict-token write or new ignored output.
+An optional `--suite <original-id>` captures one suite and remains incomplete
+when the original policy requires more. A complete verifier run derives its
+outer output reading from the canonical worker projection. Failed suites stay
+failed in the capture. Finalized delivery uses its separately owned integration
+workspace and launch/artifact authority; active-worker grading does not grant it.
+
+The source compatibility commands next, brief, card, preflight, fence, seat,
+arm, push-check, undo and merge refuse configured or explicitly bound project
+contexts at the installed front. The sections below describe that legacy
+source adapter. The installed view replaces the legacy first-view spelling.
+Full verifier bench/phase/seal orchestration and the remaining host effect
+adapters are still required; preparation alone does not establish the full loop.
+
+## Legacy source adapter
+
 Dispatch is the act that turns a planned card into a lane with a
 session in it. Everything the session needs is derived from the sources
 that own it, by a program, at a named ref, and written down where a

@@ -7,6 +7,15 @@ method/roles/planner.md; the interview is
 method/interview/plan-interview.md; decomposition is
 method/interview/decomposition.md; the kit is method/ itself.
 
+The managed planner uses the committed PRODUCT `supertaskr.yaml`
+`roles.planner` selection. New project seeds choose
+`codex/gpt-6.1-sol@subagent`; Codex uses the user's saved CLI login
+(`codex login`) and runs with workspace-write policy in the selected
+RECORDS directory. It resumes only the original observed thread UUID.
+Existing Claude sessions keep their original provider and CLI. A later
+planner choice at Q5 applies to future sessions; Send and Resume requalify
+the ongoing session's original committed selection and executable.
+
 ## The kit
 
 method/ is a versioned package (v0.1.10) a project copies in whole:

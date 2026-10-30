@@ -50,6 +50,8 @@ pub enum DepthSite {
     /// WHOLE tree — so this is the one whose depth is the file's own AST
     /// depth rather than the depth of one construct.
     TsCandidateScan,
+    /// Bounded Python AST/import/candidate walk.
+    PythonTraversal,
 }
 
 impl DepthSite {
@@ -63,18 +65,19 @@ impl DepthSite {
             DepthSite::TsModuleStatements => "ts-module-statements",
             DepthSite::TsBindingPattern => "ts-binding-pattern",
             DepthSite::TsCandidateScan => "ts-candidate-scan",
+            DepthSite::PythonTraversal => "python-traversal",
         }
     }
 }
 
-/// Languages the indexer can be asked to collect. T-010 registered the
-/// Rust extractor, so `Rust` maps to `.rs` and is collected by default —
-/// it was a schema-stability placeholder from T-009 until then.
+/// The supported registry for both library and executable. Raw legacy calls
+/// retain their TS/JS/Rust default; configured producers select explicitly.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Lang {
     Ts,
     Js,
     Rust,
+    Python,
 }
 
 impl Lang {
@@ -83,7 +86,16 @@ impl Lang {
             Lang::Ts => "ts",
             Lang::Js => "js",
             Lang::Rust => "rust",
+            Lang::Python => "python",
         }
+    }
+
+    pub const SUPPORTED: [Lang; 4] = [Lang::Ts, Lang::Js, Lang::Rust, Lang::Python];
+
+    pub fn named(name: &str) -> Option<Self> {
+        Self::SUPPORTED
+            .into_iter()
+            .find(|lang| lang.as_str() == name)
     }
 
     /// File-type allowlist (plan §3, the §5.1 list verbatim, plus `.rs`
@@ -94,6 +106,7 @@ impl Lang {
             "ts" | "tsx" | "mts" | "cts" => Some(Lang::Ts),
             "js" | "jsx" => Some(Lang::Js),
             "rs" => Some(Lang::Rust),
+            "py" => Some(Lang::Python),
             _ => None,
         }
     }
@@ -264,6 +277,7 @@ mod tests {
             ("js", Lang::Js),
             ("jsx", Lang::Js),
             ("rs", Lang::Rust),
+            ("py", Lang::Python),
         ] {
             assert_eq!(Lang::for_extension(ext), Some(lang), "{ext}");
         }

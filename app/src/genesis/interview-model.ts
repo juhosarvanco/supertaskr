@@ -1,13 +1,35 @@
 import type { DocsModelState } from "@/lib/docs-model";
 import type {
   GenesisDenial,
+  GenesisBankingView,
+  GenesisState,
   GenesisTurn,
   SendOutcomePayload,
   StartOutcomePayload,
   TranscriptLinePayload,
   TurnErrorPayload,
 } from "@/lib/agent-store";
-import { deriveGenesis, EMPTY_CHANGE_LOG } from "./genesis-derive";
+import { BANKING_MAP, deriveGenesis, EMPTY_CHANGE_LOG } from "./genesis-derive";
+
+/** Managed split progress comes only from exact admitted native receipts.
+ * The file-derived legacy observation remains an explicit embedding seam. */
+export function selectedBanking(docs:DocsModelState,genesis:GenesisState):GenesisBankingView|null {
+  const records=docs.records,context=genesis.view?.context;
+  return records?.layout==="split"&&context?.selectionSequence===records.selectionSequence&&context.contextSequence===records.contextSequence
+    ?genesis.banking??null:null;
+}
+export function receiptChips(view:GenesisBankingView|null):ReadonlyMap<number,readonly string[]> {
+  const chips=new Map<number,readonly string[]>(),seen=new Set<string>();
+  for(const receipt of view?.receipts??[]){
+    if(seen.has(receipt.receiptDigest))continue;seen.add(receipt.receiptDigest);
+    chips.set(receipt.turn,[...new Set([...(chips.get(receipt.turn)??[]),...receipt.paths])].sort());
+  }
+  return chips;
+}
+export function receiptStage(view:GenesisBankingView|null):{approxStage:number|null;stageStep:string|null;failed:boolean} {
+  const stage=view?.current?view.completedStage:null;
+  return {approxStage:stage??null,stageStep:stage==null?null:BANKING_MAP.find(row=>row.stage===stage)?.step??null,failed:false};
+}
 
 /**
  * T-027's pure half: everything the interview decides that does not need
@@ -622,6 +644,8 @@ export function failureHeadline(error: TurnErrorPayload): string {
   switch (error.kind) {
     case "spawnFailed":
       return "the planner could not be started";
+    case "promptInputFailed":
+      return "the planner did not receive the complete message";
     case "startTimeout":
       return "the planner did not answer in time";
     case "stall":
@@ -690,7 +714,9 @@ export function failureAction(error: TurnErrorPayload): FailureAction | null {
         // bodies in app/test/interview-model.test.ts and
         // app/test/interview-resume-dom.test.tsx, which drive an auth
         // failure whose own words name a different command entirely.
-        command: "claude auth login",
+        // The native fixed adapter supplies the finite provider. Missing is
+        // the historical Claude shape; the CLI's message never selects advice.
+        command: error.provider === "codex" ? "codex login" : "claude auth login",
         // Deterministic until the login changes. Offering a retry would
         // be offering the one thing that cannot work.
         retry: false,
@@ -728,7 +754,7 @@ export function listOf(names: readonly string[]): string {
  * none. Never interpreted — only bounded. */
 export function failureDetail(error: TurnErrorPayload): string | null {
   const raw =
-    error.kind === "spawnFailed"
+    error.kind === "spawnFailed" || error.kind === "promptInputFailed"
       ? error.os
       : error.kind === "exitNonZero"
         ? error.stderrTail

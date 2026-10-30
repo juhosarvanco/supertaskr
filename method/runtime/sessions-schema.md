@@ -8,13 +8,13 @@ loses nothing about the project.
   "sessions": [
     {
       "id": "S3",
-      "agent": "codex",
-      "model": "gpt-5.2",
+      "agent": "claude",
+      "model": "observed-provider-model",
       "native_session_id": "<id used for the CLI's resume flag>",
       "created": "2026-08-14T09:12:00+03:00",
       "turns": 41,
       "tasks": ["T-013", "T-017"],
-      "roles": ["executor"],
+      "roles": ["planner"],
       "status": "idle",
       "skills": [
         {
@@ -25,13 +25,63 @@ loses nothing about the project.
           "relPath": ".claude/skills/brand/SKILL.md",
           "hash": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
         }
-      ]
+      ],
+      "genesis": {
+        "id": "genesis-example",
+        "origin": {
+          "version": 1,
+          "layout": "split",
+          "associationId": "example-project",
+          "product": {
+            "root": {"path":"/example/code","device":"1","inode":"100"},
+            "gitDirectory": {"path":"/example/code/.git","device":"1","inode":"101"},
+            "commonDirectory": {"path":"/example/code/.git","device":"1","inode":"101"}
+          },
+          "records": {
+            "root": {"path":"/example/notes","device":"1","inode":"200"},
+            "gitDirectory": {"path":"/example/notes/.git","device":"1","inode":"201"},
+            "commonDirectory": {"path":"/example/notes/.git","device":"1","inode":"201"}
+          },
+          "docs": {"path":"/example/notes/docs","device":"1","inode":"202"},
+          "runtime": {"path":"/example/code/.supertaskr","device":"1","inode":"102"}
+        },
+        "planner": {
+          "selection": {
+            "role":"planner","requested":"claude-opus-5@subagent","harness":"claude","model":"claude-opus-5","vehicle":"subagent",
+            "sessionPolicy":{"default":"fresh","warnAfterTurns":30}
+          },
+          "provenance": {
+            "configurationDigest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "productRevision":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "toolManifestDigest":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+          },
+          "executable": {
+            "path":"/example/bin/claude","target":"/example/tool/claude","device":"1","inode":"300","mode":33261,"bytes":12345,
+            "sha256":"sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "version":"2.1.226 (Claude Code)","loginPathDigest":null
+          }
+        },
+        "setup": {
+          "operationId":"init-example",
+          "requestDigest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "receiptDigest":"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "projectId":"example-project",
+          "productRevision":"cccccccccccccccccccccccccccccccccccccccc",
+          "recordsRevision":"dddddddddddddddddddddddddddddddddddddddd"
+        }
+      }
     }
   ]
 }
 ```
 
 - `turns` drives the sediment warning (see supertaskr.yaml warn_after_turns).
+- `agent` retains the original provider, `claude` or `codex`. A configured
+  Codex planner uses saved Codex CLI authentication, explicit workspace-write
+  policy in the selected RECORDS cwd, and only its observed canonical thread
+  UUID for resume. It never selects the latest/global session. Its CLI may
+  omit an observed model; that leaves `model` absent while the original
+  requested/qualified model remains in `genesis.planner.selection`.
 - The dashboard sessions pane renders this file; the card selector lists
   `agent — fresh` plus every idle registered session with its history.
 - Killing a session = mark status dead; the project resumes from docs/.
@@ -46,12 +96,48 @@ loses nothing about the project.
   (`sha256:` followed by 64 lowercase hex over that file's RAW bytes).
   **The keys INSIDE a pack are camelCase — `relPath`, not `rel_path` —
   while the entry's own keys above are snake_case.**
+- `genesis` is optional original-session provenance. Its native-issued `id`
+  distinguishes sessions even if a losable registry later reuses `S1`. The
+  `origin` captures physical PRODUCT/RECORDS roots, Git/common directories,
+  RECORDS docs, PRODUCT runtime directory and association. It contains no current commit or transient
+  selection sequence: legitimate local banks may advance history. These
+  nested objects use camelCase; the enclosing registry remains snake_case.
+  Data is mismatch detection, never authentication, a root selector or write
+  permission. Native consumers compare it with independently resolved current
+  physical context before resuming; an older absent value never acquires the
+  currently selected private association by inference. It stays backend-only.
+- `genesis.planner` records the canonical original requested role selection and
+  its committed configuration/TOOL provenance, plus the fixed CLI resolver's
+  original executable path, physical target identity, mode, size, byte digest,
+  version and optional login-PATH digest. These nested keys are camelCase.
+  The path is mismatch data and never an executable selector. The driver resolves
+  the supported CLI independently on each start/resume/turn and compares it;
+  changed identity or original selection/provenance refuses. The canonical
+  reader requalifies the original committed role separately from the current
+  settings for future banks, so a later planner default never retargets an
+  ongoing session. The original requested model remains
+  separate from the enclosing `model` observed from the child's init line.
+  `vehicle` is role metadata, never a native resume ID. Later accepted banks may
+  advance the current configuration cut without rewriting original provenance.
+  The executable observation neither authenticates a vendor nor measures its
+  dependency closure. This optional value is absent in older records; a split
+  planner cannot resume one by assigning the current model. Legacy unbound
+  embedding records retain their existing behavior.
+- `genesis.setup` is the original typed accepted initialization receipt captured
+  by a qualified split Start: operation, request/receipt digests, project identity
+  and both initial commits. Later accepted banks or ordinary private saves update
+  current proposal bases separately; they never rewrite this original reference.
+  It is correlation data, not proof by itself: the bank constructor must observe
+  the actual canonical initialization operation and its exact acceptance. Older
+  sessions omit it and cannot acquire banking provenance from current selection.
+  Legacy unbound sessions may still omit it. Resume preserves the original value.
 - **WHICH KEYS AN ENTRY MAY LACK, because an example shows a full one
-  and says nothing about the ordinary partial ones.** Three, each absent
+  and says nothing about the ordinary partial ones.** Four, each absent
   for the same reason — there was nothing to record: `skills` when no
   packs were loaded, `model` and `native_session_id` before the agent
   CLI's own init line has reported them (the shape every entry has
-  between its first write and its first turn). An absent key means *not
+  between its first write and its first turn), and `genesis` for a legacy
+  entry without captured physical provenance. An absent key means *not
   recorded*, never *empty*, and a reader treats the two alike. **Every
   other key above is always written.** So an entry carrying the nine
   keys above and no tenth means *no packs*, and one written before

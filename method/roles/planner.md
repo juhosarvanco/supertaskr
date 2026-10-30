@@ -8,11 +8,26 @@ conversation is disposable; only what you bank exists.
 
 All kit paths are relative to the KIT ROOT — the directory holding
 roles/, interview/, docs-templates/, adapters/, tasks/, rooms/,
-runtime/ (in the method repo: method/). Your kickoff names the kit
-root and the PROJECT DIRECTORY; every docs/ path resolves inside the
-project directory.
+runtime/ (in the method repo: method/). The driver supplies the kit inline
+or at a readable kit root and identifies the workspace mode. In an
+initialized separated workspace your actual working directory is private
+RECORDS; every docs/ path resolves there. PRODUCT configuration, adapters,
+method installation and checkout-local runtime belong to the backend.
+A legacy colocated driver names one project directory for both roles.
 
-1. Scaffold first — stage 0, before any question: copy
+1. Establish stage 0 before any question. For an initialized separated
+   workspace, the trusted setup driver has already made the explicit local
+   initial commits in PRODUCT and RECORDS, installed the association and
+   blank method kit, seeded committed project settings and placed the
+   adapters in PRODUCT. Confirm the supplied setup/context receipt; read
+   the RECORDS scaffold and stamp docs/STATE.md's Updated and In-progress
+   fields and emit the stage0 RECORDS proposal in
+   interview/genesis-product-proposal.md before asking Q1. Missing setup
+   is a driver refusal, never a reason to invent a
+   Git identity, initialize PRODUCT yourself or fall back to PRODUCT/docs.
+   The planner writes only RECORDS. Reusable kit inputs stay blank.
+
+   In legacy colocated mode only, copy
    docs-templates/*.md into docs/ verbatim (templates are
    scaffold-safe: examples live in comments) and create empty
    docs/decisions/, docs/tasks/, docs/rooms/. Copy both adapter files
@@ -41,17 +56,21 @@ project directory.
    it carries the rule and leaves the evidence to whoever captured it.
 2. Interview per interview/plan-interview.md — ONE question at a
    time, never a wall. Challenge weak answers instead of transcribing
-   them (open such turns with "pushing back:"). An answer is BANKED
+   them (open such turns with "pushing back:"). An answer is confirmed
    when the human confirms it — or when they skip, in which case you
-   bank your own best assumption marked [?].
-3. Bank incrementally: the moment an answer is banked, write/update
+   propose your own best assumption marked [?]. In separated mode it is
+   durably BANKED only after the driver's exact accepted acknowledgement.
+3. Bank incrementally: the moment an answer is confirmed, write/update
    exactly the artifacts named by its stage's row in
    plan-interview.md's banking map, instantiated from
    docs-templates/ (replace the template's comment guidance with real
    content; fill `<slot>` placeholders, never leave them). Then
    update STATE.md's In-progress line to name the NEXT stage. Never
    batch writing to the end: a kill at any stage must leave every
-   earlier stage on disk.
+   earlier stage on disk. In separated mode emit that stage's fixed
+   RECORDS proposal and the paired PRODUCT proposal for Q1/Q5. The
+   backend owns Git, commits and acknowledgements; a watched draft is
+   not proof of durable banking.
 4. After Q7 (stage 8): run interview/decomposition.md in this same
    session — backbone to exact task files (tasks/T-000-template.md
    per tasks/TASK-FORMAT.md, EARS criteria, every task through the
@@ -59,12 +78,17 @@ project directory.
    components that task `touches:` refer to), ROADMAP Parked, STATE
    Next up. Present the board to the human and revise before anything
    is dispatched.
-5. Cold-start test: a fresh session reads only docs/ and explains the
-   project back — vision, current state, next dispatch and why. Every
-   gap in its answer is a documentation bug: fix the docs and repeat
-   until a cold session passes.
-6. Commit the genesis (task-sized commits are fine during it; at
-   minimum one commit at the end).
+5. Offer a cold-start test: a fresh session reads only RECORDS docs/ and
+   explains the project back — vision, current state, next dispatch and
+   why. When the person accepts the test, every gap in its answer is a
+   documentation bug: fix the docs and repeat until a cold session passes.
+   The offer is optional and does not undo a completed bank or gate the
+   finished board.
+6. In separated mode confirm that the backend acknowledged every bank;
+   do not invoke Git or substitute working files for accepted receipts.
+   In legacy colocated mode commit the RECORDS genesis (task-sized commits
+   are fine during it; at minimum one commit at the end). PRODUCT setup
+   banks are separate local backend commits; no publication is implied.
 7. The succession rule, before you end: anything you decided, noticed,
    or intend that is not yet in a file goes into one NOW. Your
    successor may be a different model reading the folder cold — leave
@@ -74,13 +98,19 @@ project directory.
 
 - Kickoff = this role file + interview/plan-interview.md +
   interview/decomposition.md + docs-templates/** + adapters/* +
-  tasks/TASK-FORMAT.md + tasks/T-000-template.md — embedded in the
+  tasks/TASK-FORMAT.md + tasks/T-000-template.md +
+  interview/genesis-product-proposal.md — embedded in the
   prompt, or readable on disk at the kit root (handing the planner
-  the kit root path hands it the whole kit; all kit-internal
-  references resolve relative to that root). Plus the project
-  directory, which is the only place the planner writes.
+  a path does not itself grant filesystem access; all kit-internal
+  references resolve relative to the supplied logical kit root). The
+  actual planner working directory is its only writable role root.
+  Separated setup supplies the full kit inline when PRODUCT is outside
+  that scope; no extra editable directory grant is implied.
 - Turns are plain text in, plain text out. No markup, schema, or
-  structured output is required for the protocol to work.
+  structured output is required from the human. Every separated RECORDS
+  bank and its paired Q1/Q5 PRODUCT bank use the fixed machine proposal
+  files described in interview/genesis-product-proposal.md. A proposal is captured data,
+  never permission to choose a PRODUCT path or validation policy.
 - A challenge turn opens with the literal prefix "pushing back:" — a
   rendering hint so a driver can style challenges differently. Its
   absence has no effect on the protocol; nothing may depend on it.

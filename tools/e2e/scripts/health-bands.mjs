@@ -175,6 +175,7 @@ export function parseGraphHeadroom(text) {
   const used = Number(m[1]);
   const budget = Number(m[2]);
   const left = m[4] !== undefined ? Number(m[4]) : -Number(m[5]);
+  if (![used, budget, left, Number(m[3])].every(Number.isFinite)) return null;
   return {
     value: left,
     derivation:
@@ -204,8 +205,10 @@ export function parseLibSuiteSeconds(text) {
     for (let j = i + 1; j < lines.length && j < i + 400; j += 1) {
       const result = /test result:.*finished in ([\d.]+)s/.exec(lines[j] ?? "");
       if (result === null) continue;
+      const seconds = Number(result[1]);
+      if (!Number.isFinite(seconds)) return null;
       return {
-        value: Number(result[1]),
+        value: seconds,
         derivation:
           `cargo's own summary for the \`Running unittests src/lib.rs\` binary ` +
           `(line ${i + 1}): ${(result[0] ?? "").trim()}`,
@@ -235,6 +238,7 @@ export function parseE2eSeconds(text) {
   const n = Number(m[2]);
   const unit = m[3];
   const seconds = unit === "ms" ? n / 1000 : unit === "m" ? n * 60 : n;
+  if (!Number.isFinite(seconds)) return null;
   return {
     value: seconds,
     derivation: `Playwright's own summary: ${m[1]} passed (${m[2]}${unit}) = ${seconds.toFixed(1)}s`,
@@ -260,6 +264,25 @@ export function readingsFromOutput(text) {
   if (e2e !== null) out.set("suite/e2e-seconds", e2e);
   return out;
 }
+
+/** Configured Python duration is an observation of one nonempty unittest
+ * summary, not a gate body-count or success qualification.
+ * @param {string} text @returns {Reading|null} */
+export function parseUnittestSeconds(text) {
+  const summaries = [...text.matchAll(/^Ran (\d+) tests? in (\d+(?:\.\d+)?)s\s*$/gm)];
+  if (summaries.length !== 1 || Number(summaries[0]?.[1]) < 1) return null;
+  const seconds = Number(summaries[0]?.[2]);
+  if (!Number.isFinite(seconds)) return null;
+  return { value: seconds, derivation: `unittest's own summary: ${summaries[0]?.[0]?.trim()}` };
+}
+/** The finite supported output readers, selected explicitly by a configured
+ * authority.marker. Unknown markers never guess a suite or a source table. */
+export const HEALTH_OUTPUT_READERS = Object.freeze({
+  "graph-headroom-bytes": parseGraphHeadroom,
+  "cargo-lib-seconds": parseLibSuiteSeconds,
+  "playwright-seconds": parseE2eSeconds,
+  "unittest-seconds": parseUnittestSeconds,
+});
 
 // ── THE READINGS DERIVED FROM THE TREE ───────────────────────────────
 
@@ -546,10 +569,10 @@ export function parseSeatTokens(metersText) {
  * the meter get written, and it fires today: T-296's executor block
  * states no token figure at all.
  *
- * @param {{ records: readonly MeterRecord[], dispatchedSec: (card: string) => number | null, budgets?: typeof TIER_BUDGETS }} opts
+ * @param {{ records: readonly MeterRecord[], dispatchedSec: (card: string) => number | null, budgets?: typeof TIER_BUDGETS, budgetAuthority?:string }} opts
  * @returns {CardMeter[]} newest merge first
  */
-export function cardMeters({ records, dispatchedSec, budgets = TIER_BUDGETS }) {
+export function cardMeters({ records, dispatchedSec, budgets = TIER_BUDGETS, budgetAuthority="ADR-024 decision 1" }) {
   /** @type {Map<string, MeterRecord[]>} */
   const byCard = new Map();
   for (const r of records) {
@@ -569,7 +592,7 @@ export function cardMeters({ records, dispatchedSec, budgets = TIER_BUDGETS }) {
       /** @type {Record<string, unknown>} */ (budgets)[first.tier]
     );
     if (budget === undefined) {
-      unreadable.push(`${card} is tier "${first.tier}", which ADR-024 decision 1 sets no budget for`);
+      unreadable.push(`${card} is tier "${first.tier}", which ${budgetAuthority} sets no budget for`);
     }
 
     const dispatched = dispatchedSec(card);
@@ -747,7 +770,7 @@ export function tierWindows(records) {
  * is the same condition an unknown tier and a silent seat already meet,
  * and it gets the same answer: no reading, the band UNREAD, exit 3.
  *
- * @param {{ cards: readonly CardMeter[], sinceSec: number | null, earlier?: readonly MeterRecord[] | undefined, later?: readonly MeterRecord[] | undefined, since?: string | undefined, problems?: readonly string[] }} opts
+ * @param {{ cards: readonly CardMeter[], sinceSec: number | null, earlier?: readonly MeterRecord[] | undefined, later?: readonly MeterRecord[] | undefined, since?: string | undefined, problems?: readonly string[], budgetAuthority?:string }} opts
  * @returns {Map<string, Reading>}
  */
 export function loopReadings({
@@ -757,6 +780,7 @@ export function loopReadings({
   later,
   since = "the newest Checkpoint: commit",
   problems = [],
+  budgetAuthority="ADR-024 decision 1",
 }) {
   /** @type {Map<string, Reading>} */
   const out = new Map();
@@ -788,9 +812,9 @@ export function loopReadings({
         `${METERS_PATH}, ${window.length} card(s) merged since ${since} — ${each}. ` +
         `The worst is ${worst.card} at ${fmt(share)}% of the ${worst.tier} tier's budget ` +
         (which === "cycle"
-          ? "(ADR-024 decision 1). The cycle is its `dispatch stamp` commit to the merge that " +
+          ? `(${budgetAuthority}). The cycle is its \`dispatch stamp\` commit to the merge that ` +
             "appended the reading, and it is a FLOOR: CI green is not in the tree"
-          : `(ADR-024 decision 1), summed over its seats: ${worst.quote}`),
+          : `(${budgetAuthority}), summed over its seats: ${worst.quote}`),
     };
   };
 
@@ -802,7 +826,7 @@ export function loopReadings({
   if (earlier !== undefined && later !== undefined) {
     const before = tierWindows(earlier);
     const now = tierWindows(later);
-    if (before.windows.length > 0 && now.windows.length > 0) {
+    if (before.unusable.length===0 && now.unusable.length===0 && before.windows.length > 0 && now.windows.length > 0) {
       const flags = softVerifierFlags(before.windows, now.windows);
       out.set("loop/soft-verifier", {
         value: flags.length,
@@ -864,6 +888,32 @@ export function metersFromTree(root = repoRoot) {
   return parseMeterRecords(readFileSync(abs, "utf8"));
 }
 
+/** Shared measurement math, independent of a working or committed reader.
+ * @param {string} rel @param {number} size @param {{warn:number,fail:number}} budget @param {string} [authority] @returns {Reading} */
+export function docHeadroomReading(rel,size,budget,authority="DOC_BUDGETS") {
+  const headroom=budget.warn-size;
+  return {value:(headroom*100)/budget.warn,derivation:
+    `wc -c ${rel} = ${size} bytes; ${authority} warn ${budget.warn} (fail ${budget.fail}); `+
+    `headroom ${headroom} bytes = ${((headroom*100)/budget.warn).toFixed(2)}% of the warn line`};
+}
+/** @param {{path:string,addedSec:number|null}[]} suggestions @param {number} now @returns {Map<string,Reading>} */
+export function suggestionReadings(suggestions,now) {
+  const ages=suggestions.filter(row=>row.addedSec!==null).map(row=>({path:row.path,days:(now/1000-/** @type {number} */(row.addedSec))/86400}));
+  const oldest=ages.reduce(/** @param {{path:string,days:number}|null} acc */(acc,row)=>acc===null||row.days>acc.days?row:acc,null);
+  return new Map([
+    ["triage/live-suggestions",{value:suggestions.length,derivation:`${suggestions.length} flat docs/tasks/T-*.md card(s) at status: suggested`}],
+    ["triage/oldest-suggestion-days",{value:oldest===null?0:oldest.days,derivation:oldest===null?
+      "no live suggestion on the board — the oldest age of an empty set is 0 by definition, not by absence":
+      `git log --diff-filter=A on ${oldest.path}: ${oldest.days.toFixed(1)} days old`}],
+  ]);
+}
+/** @param {string} checkpoint @param {{arrivals:string[],dispositions:string[]}} flow @returns {Reading} */
+export function suggestionFlowReading(checkpoint,flow) {
+  return {value:flow.arrivals.length-flow.dispositions.length,derivation:
+    `since the newest Checkpoint: commit ${checkpoint.slice(0,7)} — `+
+    `${flow.arrivals.length} suggestion card(s) added, ${flow.dispositions.length} dispositioned, net ${flow.arrivals.length-flow.dispositions.length}`};
+}
+
 /**
  * Every tree-authority band's reading, keyed by band id.
  *
@@ -881,47 +931,16 @@ export function readingsFromTree({ root = repoRoot, parseYaml, now = Date.now(),
   for (const [rel, b] of Object.entries(budgets)) {
     if (b === null) continue;
     const size = statSync(path.join(root, rel)).size;
-    const headroom = b.warn - size;
-    out.set(`docs-headroom/${rel}`, {
-      value: (headroom * 100) / b.warn,
-      derivation:
-        `wc -c ${rel} = ${size} bytes; DOC_BUDGETS warn ${b.warn} (fail ${b.fail}); ` +
-        `headroom ${headroom} bytes = ${((headroom * 100) / b.warn).toFixed(2)}% of the warn line`,
-    });
+    out.set(`docs-headroom/${rel}`,docHeadroomReading(rel,size,b));
   }
 
   const suggestions = liveSuggestions({ root, parseYaml });
-  out.set("triage/live-suggestions", {
-    value: suggestions.length,
-    derivation: `${suggestions.length} flat docs/tasks/T-*.md card(s) at status: suggested`,
-  });
-
-  const ages = suggestions
-    .filter((s) => s.addedSec !== null)
-    .map((s) => ({ path: s.path, days: (now / 1000 - /** @type {number} */ (s.addedSec)) / 86400 }));
-  const oldest = ages.reduce(
-    /** @param {{ path: string, days: number } | null} acc */
-    (acc, a) => (acc === null || a.days > acc.days ? a : acc),
-    /** @type {{ path: string, days: number } | null} */ (null),
-  );
-  out.set("triage/oldest-suggestion-days", {
-    value: oldest === null ? 0 : oldest.days,
-    derivation:
-      oldest === null
-        ? "no live suggestion on the board — the oldest age of an empty set is 0 by definition, not by absence"
-        : `git log --diff-filter=A on ${oldest.path}: ${oldest.days.toFixed(1)} days old`,
-  });
+  for(const [id,reading] of suggestionReadings(suggestions,now))out.set(id,reading);
 
   const cp = newestCheckpoint(root);
   if (cp !== null) {
     const flow = suggestionFlow(cp.hash, root);
-    const net = flow.arrivals.length - flow.dispositions.length;
-    out.set("triage/net-arrivals-per-window", {
-      value: net,
-      derivation:
-        `since the newest Checkpoint: commit ${cp.hash.slice(0, 7)} — ` +
-        `${flow.arrivals.length} suggestion card(s) added, ${flow.dispositions.length} dispositioned, net ${net}`,
-    });
+    out.set("triage/net-arrivals-per-window",suggestionFlowReading(cp.hash,flow));
   }
 
   // THE LOOP'S OWN BANDS (T-297). The readings are cut to the two
@@ -976,6 +995,7 @@ export function evaluateBand(band, reading) {
       why: `${band.authority.name} was not read this run${band.authority.marker === undefined ? "" : ` (wanted ${band.authority.marker})`}`,
     };
   }
+  if(!Number.isFinite(reading.value))return {band,state:"unread",reading:null,why:`${band.authority.name} reported a nonfinite reading`};
   const { drift, breach } = band;
   if (drift === null || breach === null) {
     return { band, state: "unread", reading, why: "the band has no thresholds to compare against" };
@@ -1092,7 +1112,7 @@ export function renderReport(results) {
  * on the board and does not file a second one.
  *
  * @param {BandResult} result
- * @param {{ id: string, ref: string, when: string }} stamp
+ * @param {{ id: string, ref: string, when: string, configurationPath?:string }} stamp
  * @returns {{ slug: string, title: string, body: string }}
  */
 export function findingCard(result, stamp) {
@@ -1126,7 +1146,7 @@ export function findingCard(result, stamp) {
     `Filed automatically at \`${stamp.ref}\`, ${stamp.when}. NO TIER OF THIS`,
     "SCRIPT ACTS ON ANYTHING — this card is the whole action, and the board",
     "decides what it is worth. If the band is wrong, TRIAGE tunes it:",
-    "`tools/e2e/scripts/health-bands.config.mjs` names the loop, and a",
+    `\`${stamp.configurationPath ?? "tools/e2e/scripts/health-bands.config.mjs"}\` names the loop, and a`,
     "dismissal is the evidence that moves a limit.",
     "",
     `- **metric** — ${b.metric}`,

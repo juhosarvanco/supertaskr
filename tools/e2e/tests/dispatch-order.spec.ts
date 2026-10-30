@@ -1,11 +1,27 @@
+const repoRoot = fixtureFor(import.meta.url);
+import { pathToFileURL } from "node:url";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
-import { repoRoot } from "../preflight";
-import { conventionsText } from "../scripts/docs-scan.mjs";
-import { render, unstampedLines, worktreePorcelain } from "../scripts/dispatch-brief.mjs";
+import { fixtureFor } from "../fixtures/test-project";
+import * as fixtureSubjectDefinition0 from "../scripts/docs-scan.mjs";
+void fixtureSubjectDefinition0;
+const {
+  conventionsText,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/docs-scan.mjs")).href) as typeof fixtureSubjectDefinition0;
+import * as fixtureSubjectDefinition1 from "../scripts/dispatch-brief.mjs";
+void fixtureSubjectDefinition1;
+const {
+  render,
+  unstampedLines,
+  worktreePorcelain,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/dispatch-brief.mjs")).href) as typeof fixtureSubjectDefinition1;
 import {
   PARSER_DIST,
+} from "../scripts/dispatch-order.mjs";
+import * as fixtureSubjectDefinition2 from "../scripts/dispatch-order.mjs";
+void fixtureSubjectDefinition2;
+const {
   boardFiles,
   dispatchContext,
   dispatchReport,
@@ -14,7 +30,7 @@ import {
   lanesFrom,
   listedCards,
   loadParser,
-} from "../scripts/dispatch-order.mjs";
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/dispatch-order.mjs")).href) as typeof fixtureSubjectDefinition2;
 
 /**
  * THE DISPATCH COMMAND (T-137) — no browser.
@@ -621,7 +637,7 @@ test("THE POSITIVE CONTROL: the filter changes what is SPELLED OUT and never wha
   }
 });
 
-test("...AND THE FILTER IS MEASURED ON THE REAL BOARD AT THIS REF, never on the fixture alone", async () => {
+test("the authored board compares identical data sections under the two view labels", async () => {
   // KILLED BY: the same mutants as the body above, and by a filter that
   // buys nothing on real input — a saving measured only on a board
   // chosen to fit is not evidence about the board this command runs on.
@@ -630,10 +646,17 @@ test("...AND THE FILTER IS MEASURED ON THE REAL BOARD AT THIS REF, never on the 
   // board the dispatcher is moving is `T-220`'s own failure at this same
   // seam, and a delta between two different boards is not a delta.
   const porcelain = worktreePorcelain(repoRoot);
-  const def = await dispatchContext({ porcelain });
-  const full = await dispatchContext({ porcelain, full: true });
-  const defBytes = Buffer.byteLength(render(dispatchReport(def)), "utf8");
-  const fullBytes = Buffer.byteLength(render(dispatchReport(full)), "utf8");
+  const at = "2026-10-29T00:00:00.000Z";
+  const def = await dispatchContext({ porcelain, at });
+  const full = await dispatchContext({ porcelain, full: true, at });
+  const dataBody = (ctx: Awaited<ReturnType<typeof dispatchContext>>) => {
+    const text = render(dispatchReport(ctx));
+    const anchor = "# THE LIVE LANES";
+    expect(text.split(anchor)).toHaveLength(2);
+    return text.slice(text.indexOf(anchor));
+  };
+  const defBytes = Buffer.byteLength(dataBody(def), "utf8");
+  const fullBytes = Buffer.byteLength(dataBody(full), "utf8");
   const fenced = full.order.fenced.length;
 
   disclose(

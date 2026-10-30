@@ -96,15 +96,17 @@ function git(root, args) {
 /** allRecords intentionally skips unreadable records. Check every physical
  * work-record input first, then derive the existing ledger without replacing it.
  * No native inventory helper that persists holds or takes locks is called.
- * @param {string} root @param {any} runs @param {any} native @param {string} taskId */
-function completeRecords(root, runs, native, taskId) {
+ * @param {string} root @param {any} runs @param {any} native @param {string} taskId @param {any} [ownOperation] @param {any} [ownDispatch] */
+function completeRecords(root, runs, native, taskId,ownOperation=null,ownDispatch=null) {
   const home = path.join(root, runs.RUNS_REL_PATH);
   const records = runs.allRecords(root);
   let count = 0;
   if (existsSync(home)) for (const work of readdirSync(home)) {
     const dir = path.join(home, work);
     if (!lstatSync(dir).isDirectory() || lstatSync(dir).isSymbolicLink()) refuse("preflight-ledger-unavailable");
-    for (const name of readdirSync(dir)) {
+    const files=readdirSync(dir);
+    if(work.startsWith("OP-") && (!/^OP-[0-9a-f]{64}$/.test(work) || files.length !== 1 || files[0] !== `${work}-a1.json`))refuse("preflight-ledger-unavailable");
+    for (const name of files) {
       if (work === "reservations" && !/^reservations-a\d+\.json$/.test(name)) continue;
       if (!name.endsWith(".json")) continue;
       let rec;
@@ -113,6 +115,23 @@ function completeRecords(root, runs, native, taskId) {
         if (!lstatSync(file).isFile() || lstatSync(file).isSymbolicLink()) refuse("preflight-ledger-unavailable");
         rec = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(readFileSync(file)));
       } catch { refuse("preflight-ledger-unavailable"); }
+      // Coordinator effects share canonical progress storage, but confer no
+      // worker or implementation admission. Every physical operation must pass
+      // its strict schema and exact filename; unknown inputs still refuse.
+      if (rec.recordKind === "operation" || rec.assignment?.kind === "operation") {
+        if (!runs.validOperationRecord(rec) || work !== rec.assignment.id || name !== `${rec.attempt}.json`) refuse("preflight-ledger-unavailable");
+        if (["failed","stopped"].includes(rec.state)) {
+          const ref = `refs/supertaskr/operations/${rec.assignment.id.slice(3)}`;
+          try { if (git(rec.resource, ["for-each-ref", "--format=%(refname)", ref]) !== "") refuse("preflight-ledger-unavailable"); }
+          catch { refuse("preflight-ledger-unavailable"); }
+        }
+        if (!runs.TERMINAL_STATES.includes(rec.state) && !(ownOperation !== null && rec.operation.kind === "qualified-delivery" &&
+            rec.attempt === ownOperation.attempt && rec.operation.digest === ownOperation.operation.digest &&
+            consumers.qualifier.qualifiedContent(rec) === consumers.qualifier.qualifiedContent(ownOperation)) &&
+            !(ownDispatch !== null && ["configured-dispatch","configured-verifier"].includes(rec.operation.kind) && rec.operation.kind === ownDispatch.operation.kind && consumers.qualifier.qualifiedContent(rec) === consumers.qualifier.qualifiedContent(ownDispatch))) refuse("preflight-operation-pending");
+        count += 1;
+        continue;
+      }
       if (rec.version !== runs.RECORD_VERSION || rec.attempt !== `${work}${name.slice(work.length, -5)}` ||
           !new RegExp(`^${work.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}-a[0-9]+\\.json$`).test(name) ||
           !runs.STATES.includes(rec.state) || rec.assignment?.id !== work || !["card", "consultation"].includes(rec.assignment.kind) ||
@@ -167,23 +186,68 @@ let consumers;
  * @param {any} input */
 export async function admissionPreflight(input) {
   const request = normalizeAdmissionPreflight(input);
-  let qualifier, parser, inert, policy, runs, native;
+  await loadQualifiedDeliveryPolicy();
+  return captureAdmission(request);
+}
+/** Load existing policy consumers before a synchronous delivery transaction.
+ * This does not admit an operation or change any admission boundary. */
+export async function loadQualifiedDeliveryPolicy(){
+  let qualifier, parser, inert, policy, runs, native, publication, durable;
   try {
     qualifier = await import("./qualified-reservation.mjs");
     parser = await import("../../../lib/parser/dist/pure.js");
     inert = await import("../../../lib/parser/dist/inert-spans.js");
   }
   catch { refuse("preflight-qualifier-unavailable"); }
-  try { policy = await import("./dispatch-brief.mjs"); runs = await import("./run-record.mjs"); native = await import("./native-codex.mjs"); }
+  try { policy = await import("./dispatch-brief.mjs"); runs = await import("./run-record.mjs"); native = await import("./native-codex.mjs"); publication = await import("./qualified-publication-process.mjs"); durable = await import("./durable-operation.mjs"); }
   catch { refuse("preflight-policy-unavailable"); }
-  consumers = { qualifier, parser, inert, policy, runs, native };
-  return captureAdmission(request);
+  consumers = { qualifier, parser, inert, policy, runs, native, publication, durable };
+}
+
+/** Strict original-ledger reading for the currently held qualified operation.
+ * Only its exact owned physical row may be pending; ordinary preflight retains
+ * its existing refusal of every pending operation. Current grant/pause/drift
+ * remains the same canonical integrator re-entry policy over retained bytes.
+ * A fixed publication child may redeem actual in-process OS ancestry proof;
+ * the canonical row/claims/policy are unchanged and ownership is never adopted.
+ * @param {string} root @param {any} source @param {any} [ownOperation] @param {any} [childProof] */
+export function qualifiedDeliveryPhasePolicy(root,source,ownOperation=null,childProof=null){
+ return deliveryPhasePolicy(root,source,ownOperation,childProof);
+}
+/** Read-only predecessor checks before a recovery transaction may publish a
+ * new owner. The exact stored row/claims and the same canonical current policy
+ * are required; a live or unobservable predecessor is never adopted here.
+ * @param {string} root @param {any} source @param {any} ownOperation */
+export function qualifiedDeliveryRecoveryPolicy(root,source,ownOperation){
+ if(!consumers)refuse("preflight-consumers-not-loaded");
+ const {runs,durable}=consumers,io=runs.defaultRunIo(),owner=ownOperation?.operation?.owner;
+ if(!runs.validOperationRecord(ownOperation)||consumers.qualifier.qualifiedContent(durable.readAcceptedOperation(root,ownOperation.operation.id))!==consumers.qualifier.qualifiedContent(ownOperation))refuse("preflight-operation-owner");
+ if(!(owner.pid===process.pid&&owner.identity===io.identity(process.pid))&&durable.operationOwnerAlive(owner,io))refuse("preflight-operation-owner");
+ return deliveryPhasePolicy(root,source,ownOperation,null,true);
+}
+/** The recovery entry above is read only and owns its own exact dead-owner
+ * proof. This private argument is never an exported admission option.
+ * @param {string} root @param {any} source @param {any} ownOperation @param {any} childProof @param {boolean} [recovery] */
+function deliveryPhasePolicy(root,source,ownOperation,childProof,recovery=false){
+ if(!consumers)refuse("preflight-consumers-not-loaded");const {runs,native}=consumers;
+ if(ownOperation !== null){
+  if(!runs.validOperationRecord(ownOperation) || ownOperation.operation.kind !== "qualified-delivery" || ownOperation.operation.request.coordinator.root !== realpathSync(root))refuse("preflight-operation-owner");
+  if(childProof===null&&!recovery){
+   if(ownOperation.operation.owner.pid !== process.pid || ownOperation.operation.owner.identity !== runs.defaultRunIo().identity(process.pid))refuse("preflight-operation-owner");
+  }else if(childProof!==null)consumers.publication.validatePublicationProcessProof(childProof,ownOperation);
+  for(const claim of ownOperation.operation.claims){
+   if(claim.file !== runs.reservationPath(root,claim.resource) || runs.readReservation(root,claim.resource)?.attempt !== ownOperation.attempt)refuse("preflight-operation-owner");
+   runs.assertOperationOwnership(root,{resource:claim.resource,attempt:ownOperation.attempt});
+  }
+ }
+ completeRecords(root,runs,native,source.assignment.id,ownOperation);
+ return runs.qualifiedPhasePolicy(root,source,"integrator","re-entry");
 }
 
 /** Synchronous recapture using already loaded dependencies. The native
  * consumer supplies reconciled worker evidence before selecting re-entry.
- * @param {any} input @param {boolean} [reconciled] @param {string|null} [resource] */
-function captureAdmission(input, reconciled = false, resource = null) {
+ * @param {any} input @param {boolean} [reconciled] @param {string|null} [resource] @param {object|null} [configured] @param {object|null} [ownContext] */
+function captureAdmission(input, reconciled = false, resource = null, configured = null, ownContext = null) {
   const request = normalizeAdmissionPreflight(input);
   if (!consumers) refuse("preflight-consumers-not-loaded");
   const { qualifier, parser, inert, policy, runs, native } = consumers;
@@ -207,8 +271,15 @@ function captureAdmission(input, reconciled = false, resource = null) {
     if (snapshot.bytes.length === 0 || !/^[0-9a-f]{40}$/.test(snapshot.task.blobId)) refuse("preflight-current-bytes-unavailable");
     if (canonical.fence.paths.some(/** @param {any} entry */ (entry) => !request.roles.includes(entry.role))) refuse("preflight-scope-role-missing");
     if (Object.hasOwn(request, "assertedFence") && qualifier.qualifiedContent(request.assertedFence) !== qualifier.qualifiedContent(canonical.fence)) refuse("preflight-scope-assertion-mismatch");
-    const state = policy.grantState(canonical.authorityRoot);
-    const records = completeRecords(canonical.authorityRoot, runs, native, request.taskId);
+    if (configured !== null && configuredPolicy === undefined) refuse("preflight-configured-context-not-loaded");
+    const schema = configured === null ? null : /** @type {NonNullable<typeof configuredPolicy>} */ (configuredPolicy).configuredDispatchSchema(configured);
+    const state = policy.grantState(canonical.authorityRoot, schema === null ? {} : { schemaText: schema.text });
+    if (ownContext !== null && (configured === null || configuredOperation === undefined || configuredVerifierOperation === undefined)) refuse("preflight-configured-operation-not-loaded");
+    const actualCapsule=ownContext===null?null:/** @type {NonNullable<typeof configuredPolicy>} */(configuredPolicy).verifyConfiguredDispatch(/** @type {object} */(configured));
+    const ownDispatch=ownContext===null?null:configuredVerifierOperation?.isConfiguredVerifierOperationContext(ownContext)?
+      configuredVerifierOperation.configuredVerifierOperationForAdmission(ownContext,canonical.authorityRoot,request,actualCapsule):
+      /** @type {NonNullable<typeof configuredOperation>} */(configuredOperation).configuredArmOperationForAdmission(ownContext,canonical.authorityRoot,request,actualCapsule);
+    const records = completeRecords(canonical.authorityRoot, runs, native, request.taskId, null, ownDispatch);
     const ledger = policy.admissionLedger(records, runs.TERMINAL_STATES);
     const a = request.admission;
     // These boundaries also depend on reconciled execution and worker facts.
@@ -277,9 +348,39 @@ function captureAdmission(input, reconciled = false, resource = null) {
  * @param {any} request @param {any} earlier @param {boolean} [reconciled] @param {string|null} [resource] */
 export function decisiveQualifiedAdmission(request, earlier, reconciled = false, resource = null) {
   const now = captureAdmission(request, reconciled, resource);
+  return decisiveAdmission(now, earlier);
+}
+/** @param {any} now @param {any} earlier */
+function decisiveAdmission(now, earlier) {
   if (earlier && consumers.qualifier.qualifiedContent({ grant: earlier.grant, receipt: earlier.receipt, scope: earlier.scope }) !==
       consumers.qualifier.qualifiedContent({ grant: now.grant, receipt: now.receipt, scope: now.scope })) refuse("preflight-decisive-drift");
   if (!now.permitted) refuse(now.refusals[0]?.code ?? "preflight-policy-refused");
   if (!now.grant.enforced || now.inputBytes("current").length === 0 || now.inputBytes("approved").length === 0) refuse("preflight-approved-bytes-unavailable");
   return now;
+}
+/** Only the strict configured entry preloads this dependency. The caller's
+ * data cannot supply METHOD bytes or another schema/TOOL path.
+ * @type {typeof import("./configured-dispatch.mjs")|undefined} */
+let configuredPolicy;
+/** @type {typeof import("./configured-dispatch-context.mjs")|undefined} */
+let configuredOperation;
+/** @type {typeof import("./configured-verifier-context.mjs")|undefined} */
+let configuredVerifierOperation;
+/** @param {any} input @param {object} handle @param {object|null} [ownContext] */
+export async function configuredAdmissionPreflight(input, handle, ownContext = null) {
+  if (!handle) refuse("preflight-configured-context-required");
+  const request = normalizeAdmissionPreflight(input);
+  await loadQualifiedDeliveryPolicy(); configuredPolicy ??= await import("./configured-dispatch.mjs");
+  if (ownContext !== null){
+    configuredPolicy.requireConfiguredOperationReaders(handle);
+    configuredOperation ??= await import("./configured-dispatch-context.mjs");
+    configuredVerifierOperation ??= await import("./configured-verifier-context.mjs");
+  }
+  return captureAdmission(request, false, null, handle, ownContext);
+}
+/** Already preloaded, synchronous, and called inside the existing transaction.
+ * @param {any} request @param {any} earlier @param {object} handle @param {boolean} [reconciled] @param {string|null} [resource] @param {object|null} [ownContext] */
+export function decisiveConfiguredAdmission(request, earlier, handle, reconciled = false, resource = null, ownContext = null) {
+  if (!handle) refuse("preflight-configured-context-required");
+  return decisiveAdmission(captureAdmission(request, reconciled, resource, handle, ownContext), earlier);
 }

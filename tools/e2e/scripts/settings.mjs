@@ -76,7 +76,7 @@
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { isMain } from "../../../cli/is-main.mjs";
 import { DOC_BUDGETS, repoRoot } from "./docs-scan.mjs";
 import { EXIT, loadProcess } from "./dispatch-brief.mjs";
 import { allBands } from "./health-bands.config.mjs";
@@ -150,15 +150,19 @@ export const REFERENCE_DOC = "docs/reference/15-settings.md";
 /** The command's own usage, rendered into the reference so it is never typed twice. */
 export const USAGE = [
   "usage: supertaskr settings                      list the profile and every switch",
-  "       supertaskr settings set <switch> <value> write one departure into the template",
+  "       supertaskr settings --working           inspect the explicit working editor view",
+  "       supertaskr settings role <role>         inspect the committed role default",
+  "       supertaskr settings set <switch> <value> edit one working root departure",
   "       supertaskr settings reference            print the reference chapter",
   "       supertaskr settings reference --write    write it to docs/reference/",
   "       supertaskr settings reference --check    exit 1 while the committed page is stale",
   "",
-  "  --root <path>  the project to read; defaults to the checkout this script sits in",
+  "  --root <path>  select PRODUCT; --at <exact commit> selects committed observations",
   "",
   "  Every switch is declared ONCE, in method/runtime/process-schema.yaml, and this",
-  "  command renders that file rather than restating it. Every row carries its LABEL —",
+  "  command renders that verified TOOL file rather than restating it. PRODUCT settings",
+  "  live in committed supertaskr.yaml; set edits its working copy for a later commit.",
+  "  Every row carries its LABEL —",
   "  operational, manual or declarative — and a declarative row is a RECORD rather than",
   "  a control, so `set` refuses one. exit codes: 0 clean · 1 found ·",
   "  2 called wrong · 3 could not run.",
@@ -306,7 +310,7 @@ export function settingsRows(input) {
  * THE LISTING — the profile, then every switch with its state, its
  * one-line explanation and its measured column.
  *
- * @param {{ loaded: import("./dispatch-brief.mjs").LoadedProcess, rows: readonly SettingsRow[] }} input
+ * @param {{ loaded: Pick<import("./dispatch-brief.mjs").LoadedProcess,"schema"|"settings">, rows: readonly SettingsRow[], declarationPath?:string }} input
  * @returns {string}
  */
 export function renderSettings(input) {
@@ -320,7 +324,7 @@ export function renderSettings(input) {
     `available: ${settings.available.join(", ")}`,
     `${String(rows.length)} switch(es), ${String(floors)} of them FLOOR (no profile turns them ` +
       `off), ${String(departures.length)} departure(s) from the profile`,
-    `declared once in ${PROCESS_SCHEMA}; this project's section is in ${RUNTIME_TEMPLATE}`,
+    `declared once in ${PROCESS_SCHEMA}; this project's section is in ${input.declarationPath ?? RUNTIME_TEMPLATE}`,
     "",
   ];
   for (const row of rows) {
@@ -753,7 +757,9 @@ function write(abs, text, err) {
  * @param {{ stdout?: (s: string) => void, stderr?: (s: string) => void, readings?: Map<string, { value: number, derivation: string }> }} [io]
  * @returns {number}
  */
-export function main(argv, io = {}) {
+// Explicit source/template compatibility for the representative fixture suite.
+// Installed PRODUCT commands never choose this adapter or fall back to it.
+export function sourceSettingsMain(argv, io = {}) {
   const out = io.stdout ?? ((/** @type {string} */ s) => process.stdout.write(`${s}\n`));
   const err = io.stderr ?? ((/** @type {string} */ s) => process.stderr.write(`${s}\n`));
   let root = repoRoot;
@@ -870,6 +876,10 @@ export function main(argv, io = {}) {
   return EXIT.USAGE;
 }
 
-if (process.argv[1] !== undefined && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  process.exitCode = main(process.argv.slice(2));
-}
+/** Product effects use committed root settings and verified TOOL. The legacy
+ * source/template adapter above remains only for explicit source fixtures.
+ * @param {string[]} argv */
+export async function main(argv) { return (await import("./configured-settings.mjs")).main(argv); }
+if (isMain(import.meta)) main(process.argv.slice(2)).then(code => { process.exitCode = code; }, error => {
+  console.error(`settings: cannot-run: ${error instanceof Error ? error.message : String(error)}`); process.exitCode = 3;
+});

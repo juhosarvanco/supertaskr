@@ -1,11 +1,13 @@
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+import { isComponentFilePath } from "@supertaskr/parser/pure";
 import {
   parseDetail,
   parseRollup,
   type ArchDetail,
   type ArchRollup,
 } from "@/lib/architecture/rollup";
-import { getShellState, subscribeShell } from "@/lib/watcher-store";
+import { consumerScopeAdmitted, getShellState, recordsContextKey, subscribeShell } from "@/lib/watcher-store";
 
 /**
  * WHERE THE MAP'S PICTURE COMES FROM (T-140-s1) — two commands, one
@@ -208,6 +210,33 @@ let inFlight: Promise<RollupState> | null = null;
  * file list for another's component.
  */
 let generation = 0;
+let graphSubscription: Promise<void> | null = null;
+let unlistenArchitecture: (() => void) | null = null;
+let subscriptionEpoch = 0;
+let lastGraphNotice = -1;
+
+function subscribeArchitecture(): Promise<void> {
+  if (graphSubscription !== null) return graphSubscription;
+  const epoch = subscriptionEpoch;
+  graphSubscription = listen<{scope: {seq: number}}>("architecture-changed", ({payload}) => {
+    if (epoch !== subscriptionEpoch || !consumerScopeAdmitted(payload) ||
+        !Number.isSafeInteger(payload?.scope?.seq) || payload.scope.seq <= lastGraphNotice) return;
+    lastGraphNotice = payload.scope.seq;
+    invalidateSource();
+  }).then((unlisten) => {
+    if (epoch !== subscriptionEpoch) unlisten();
+    else unlistenArchitecture = unlisten;
+  }).catch((error: unknown) => {
+    if (epoch === subscriptionEpoch) graphSubscription = null;
+    throw error;
+  });
+  return graphSubscription;
+}
+
+/** The pane's local selections and pulled slices belong to this source cut. */
+export function getRollupGeneration(): number {
+  return generation;
+}
 
 /**
  * Ask for the picture. Single-flight: a second call while one is out
@@ -230,8 +259,10 @@ export function loadRollup(): Promise<RollupState> {
   // `app/test/crescendo-dom.test.tsx` finds call sites by matching an
   // invoke that carries one, so a bare call would be invisible to the
   // count that guards this boundary (T-013's note, still true).
-  inFlight = invoke<unknown>("arch_rollup")
-    .then((payload) => (measuring === generation ? applyRollupPayload(payload) : state))
+  // Subscribe before the initial pull: a headless publication between the
+  // two cannot leave a resting pane permanently stale.
+  inFlight = subscribeArchitecture().then(() => invoke<unknown>("arch_rollup"))
+    .then((payload) => (measuring === generation && consumerScopeAdmitted(payload) ? applyRollupPayload(payload) : state))
     .catch(() =>
       measuring === generation ? set({ kind: "unavailable", reason: "unreadable" }) : state,
     )
@@ -280,6 +311,7 @@ export function loadDetail(target: string): Promise<DetailState> {
   const measuring = generation;
   const flight = invoke<unknown>("arch_detail", { target })
     .then((payload) => {
+      if (measuring !== generation || !consumerScopeAdmitted(payload)) return {kind:"unavailable", reason:"unreadable"} as const;
       const folded = parseDetailOutcome(payload);
       // A stale generation's answer is DROPPED rather than cached: it is
       // about the previous project.
@@ -290,7 +322,7 @@ export function loadDetail(target: string): Promise<DetailState> {
     })
     .catch((): DetailState => ({ kind: "unavailable", reason: "unreadable" }))
     .finally(() => {
-      detailInFlight.delete(target);
+      if (measuring === generation) detailInFlight.delete(target);
     });
   detailInFlight.set(target, flight);
   return flight;
@@ -307,12 +339,32 @@ export function loadDetail(target: string): Promise<DetailState> {
  * while the map is closed must still invalidate the answer, or the next
  * mount paints the previous project's component counts for one frame.
  */
-let measuredFor: string = getShellState().docs.projectDir;
+function sourceKey(): string {
+  const docs = getShellState().docs;
+  // Card/note edits change status paint but do not invalidate graph detail or
+  // reset the viewport. Registry changes do: the native join reads this intent.
+  return JSON.stringify([
+    recordsContextKey(docs),
+    [...docs.effective].filter(([path]) => isComponentFilePath(path)).sort(([a], [b]) => a.localeCompare(b)),
+    docs.failures.filter(({ path }) => isComponentFilePath(path)),
+    docs.skipped.filter(({ path }) => isComponentFilePath(path)),
+  ]);
+}
+
+let measuredFor = sourceKey();
+let observedIndexOutcome = getShellState().indexOutcome;
 
 function onProjectMaybeChanged(): void {
-  const projectDir = getShellState().docs.projectDir;
-  if (projectDir === measuredFor) return;
-  measuredFor = projectDir;
+  const key = sourceKey();
+  const outcome = getShellState().indexOutcome;
+  const acceptedIndex = outcome?.kind === "indexed" && outcome !== observedIndexOutcome;
+  observedIndexOutcome = outcome;
+  if (key === measuredFor && !acceptedIndex) return;
+  measuredFor = key;
+  invalidateSource();
+}
+
+function invalidateSource(): void {
   // The detail cache is dropped UNCONDITIONALLY, even when nothing has
   // been asked yet: it is cheap, and the one thing worse than an empty
   // cache is a populated one belonging to another project.
@@ -323,21 +375,27 @@ function onProjectMaybeChanged(): void {
   // pane's mount effect measures when it opens, against the new folder
   // (the `loadChurn` rule; a re-read here would cost a graph parse for a
   // pane nobody has looked at).
-  if (state.kind === "loading" && inFlight === null) return;
+  const wasAsked = state.kind !== "loading" || inFlight !== null;
   inFlight = null;
   set(LOADING);
-  void loadRollup();
+  if (wasAsked) void loadRollup();
 }
 
 subscribeShell(onProjectMaybeChanged);
 
 /** Test-only reset (the module-singleton convention). */
 export function __resetRollupForTests(): void {
+  subscriptionEpoch += 1;
+  unlistenArchitecture?.();
+  unlistenArchitecture = null;
+  graphSubscription = null;
+  lastGraphNotice = -1;
   state = LOADING;
   listeners.clear();
   inFlight = null;
   generation += 1;
   detailCache = new Map();
   detailInFlight.clear();
-  measuredFor = getShellState().docs.projectDir;
+  measuredFor = sourceKey();
+  observedIndexOutcome = getShellState().indexOutcome;
 }

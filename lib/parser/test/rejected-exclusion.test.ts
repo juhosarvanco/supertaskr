@@ -27,7 +27,8 @@ import {
  * isTaskFilePath rejecting nested names in the pure layer).
  */
 
-const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
+import { createExampleProject } from '../../../tools/e2e/fixtures/example-project.mjs';
+const repoRoot = createExampleProject(fileURLToPath(new URL('../../../', import.meta.url)));
 const fixture = (name: string): string =>
   fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url));
 
@@ -38,7 +39,7 @@ const issueTouches = (issue: ParseIssue, prefix: string): boolean => {
   return false;
 };
 
-describe('live tree — docs/tasks/rejected/ is excluded from the model (T-016)', () => {
+describe('representative tree — docs/tasks/rejected/ is excluded from the model (T-016)', () => {
   const rejectedDir = join(repoRoot, 'docs', 'tasks', 'rejected');
   const rejectedPrefix = rejectedDir + sep;
 

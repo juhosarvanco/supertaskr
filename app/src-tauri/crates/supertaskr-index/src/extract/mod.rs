@@ -12,6 +12,7 @@ use tree_sitter::Tree;
 
 use crate::graph::DepthSite;
 
+pub(crate) mod python;
 pub(crate) mod rust;
 pub(crate) mod ts;
 

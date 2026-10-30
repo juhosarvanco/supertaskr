@@ -1,0 +1,15 @@
+{
+  "name": "supertaskr",
+  "version": "0.1.0",
+  "description": "Supertaskr project development commands and method",
+  "type": "module",
+  "engines": { "node": ">=22.18" },
+  "bin": { "supertaskr": "supertaskr.mjs" },
+  "files": ["supertaskr.mjs", "dist/"],
+  "scripts": {
+    "prepack": "node build-package.mjs",
+    "postpack": "node build-package.mjs --clean"
+  },
+  "dependencies": { "yaml": "^2.8.0" },
+  "devDependencies": { "typescript": "^5.8.0" }
+}

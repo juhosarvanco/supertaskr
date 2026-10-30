@@ -3,6 +3,8 @@ import { emit, listen } from "@tauri-apps/api/event";
 import {
   applySnapshot,
   emptyState,
+  observationAdmitted,
+  sameObservationContext,
   type DocsModelState,
   type DocsSnapshotPayload,
 } from "./docs-model";
@@ -67,7 +69,22 @@ export const EMPTY_PROBE: PlanProbePayload = {
 export type ProjectStatusPayload =
   | { kind: "noProject" }
   | { kind: "noDocs"; projectDir: string; probe: PlanProbePayload }
+  | { kind: "unavailable"; message: string }
   | { kind: "open"; snapshot: DocsSnapshotPayload };
+
+export interface MessageScope {
+  seq: number;
+  projectDir: string | null;
+  selectionSequence: number;
+  contextSequence: number;
+  records?: DocsSnapshotPayload["records"] | null;
+}
+type ScopedPayload<T> = T & { scope?: MessageScope; genesisOffer?: string | null; attempt?: number | null; setupNotice?: SetupNotice | null };
+export interface SetupNotice { token: string; productDir: string; status: "unknown" | "refused" | "initialized"; code?: string | null; message: string }
+export interface SetupHereView {
+  expectedContext: {selectionSequence: number; contextSequence: number};
+  target: {kind: "selected"} | {kind: "offered"; token: string};
+}
 
 /** Mirror of Rust's `PickOutcome` (src-tauri/src/docs_watch.rs). */
 export type PickOutcomePayload =
@@ -110,7 +127,8 @@ export type PickOutcomePayload =
     };
 
 /** Mirror of Rust's `IndexOutcome` (src-tauri/src/index_cmd.rs) —
- * T-012's zero-argument index_repo command. Volatile stats live here,
+ * The path-free index_repo command. Managed views send only the native-issued
+ * selection/context pair; neither token selects a filesystem location. Volatile stats live here,
  * in session state, never in the committed graph (ADR-014). */
 export type IndexOutcomePayload =
   | { kind: "noProject" }
@@ -125,6 +143,8 @@ export type IndexOutcomePayload =
       graphBytes: number;
       durationMs: number;
       indexedAtMs: number;
+      recovered?: boolean;
+      cleanupWarning?: string;
     }
   | { kind: "error"; message: string };
 
@@ -299,12 +319,16 @@ export interface RejectedPick {
   path: string;
   message: string | null;
   probe: PlanProbePayload | null;
+  genesisOffer?: string;
+  offerContext?: SetupHereView["expectedContext"];
 }
 
 export interface ShellState {
   phase: ShellPhase;
   /** Launch-resolved project root when phase === "noDocs". */
   resolvedDir: string | null;
+  resolvedContext?: SetupHereView["expectedContext"];
+  setupNotice?: SetupNotice | null;
   /** What the launch-resolved root was probed for (T-026), when known. */
   resolvedProbe: PlanProbePayload | null;
   /** The genesis project's root when phase === "genesis" (T-026). */
@@ -383,6 +407,7 @@ interface SnapshotReading {
   projectDir: string;
   seq: number;
   generatedAtMs: number | null;
+  records?: DocsSnapshotPayload["records"];
 }
 
 /**
@@ -453,6 +478,7 @@ interface SnapshotReading {
  */
 function readingIsOvertaken(prev: DocsModelState, reading: SnapshotReading): boolean {
   if (prev.projectDir !== reading.projectDir) return false;
+  if (!sameObservationContext(prev.records, reading.records)) return false;
   if (reading.seq <= prev.seq) return true;
   if (reading.generatedAtMs === null || reading.generatedAtMs === 0) return false;
   return reading.generatedAtMs < prev.generatedAtMs;
@@ -468,6 +494,7 @@ export function reduceDocs(
   prev: DocsModelState,
   payload: DocsSnapshotPayload,
 ): DocsModelState {
+  if (!observationAdmitted(prev, payload)) return prev;
   if (payload.seq <= prev.seq) return prev; // stale/duplicate: identity
   // T-018-s6: AND A HIGHER SEQ IS NOT BY ITSELF A LATER READING. The
   // line above is the T-007 stale-drop invariant and it stays FIRST and
@@ -496,7 +523,7 @@ export function reduceDocs(
  * verbatim from T-007 — the "No plan in <folder>" card carries it as its
  * footnote, so redesigning the state lost none of what it said. */
 export const CONVENTION_HINT =
-  "an supertaskr project keeps its board in docs/tasks/, decisions in docs/decisions/";
+  "select a product to open its configured records home; legacy projects keep records in docs/tasks/ and docs/decisions/";
 
 /** One row of the "No plan in <folder>" checklist (T-026): a path the
  * front door looked for, and whether it is there. */
@@ -668,7 +695,7 @@ export function selectScreen(shell: ShellState): ScreenModel {
  */
 export function switchIsOvertaken(
   prev: DocsModelState,
-  outcome: Extract<PickOutcomePayload, { kind: "picked" } | { kind: "genesis" }>,
+  outcome: ScopedPayload<Extract<PickOutcomePayload, { kind: "picked" } | { kind: "genesis" }>>,
 ): boolean {
   // THE READING IS THE SNAPSHOT'S WHEN THERE IS ONE. Rust stamps a
   // carried snapshot with the switch's own seq, so the two are the same
@@ -682,11 +709,13 @@ export function switchIsOvertaken(
           projectDir: outcome.snapshot.projectDir,
           seq: outcome.snapshot.seq,
           generatedAtMs: outcome.snapshot.generatedAtMs,
+          records: outcome.snapshot.records,
         }
       : {
           projectDir: outcome.projectDir,
           seq: outcome.snapshot?.seq ?? outcome.seq,
           generatedAtMs: outcome.snapshot?.generatedAtMs ?? null,
+          records: outcome.snapshot?.records ?? outcome.scope?.records ?? undefined,
         };
   return readingIsOvertaken(prev, reading);
 }
@@ -700,8 +729,13 @@ export function switchIsOvertaken(
  */
 export function reducePickOutcome(
   prev: ShellState,
-  outcome: PickOutcomePayload,
+  outcome: ScopedPayload<PickOutcomePayload>,
 ): ShellState {
+  if (!scopeAdmitted(prev.docs, outcome.scope, outcome.kind === "picked" || outcome.kind === "genesis")) return prev;
+  if (outcome.kind === "genesis" && outcome.scope !== undefined &&
+      (outcome.scope.projectDir !== outcome.projectDir || outcome.scope.seq !== outcome.seq)) return prev;
+  if ((outcome.kind === "picked" || outcome.kind === "genesis") && outcome.snapshot?.records !== undefined &&
+      !observationAdmitted(prev.docs, outcome.snapshot)) return prev;
   switch (outcome.kind) {
     case "cancelled":
       return prev; // criterion 6: nothing changed, nothing to show
@@ -711,7 +745,11 @@ export function reducePickOutcome(
       // nothing changed.
       return prev;
     case "noDocs":
-      return { ...prev, rejectedPick: { path: outcome.path, message: null, probe: outcome.probe } };
+      return { ...prev, rejectedPick: { path: outcome.path, message: null, probe: outcome.probe,
+        ...(outcome.scope !== undefined && validOffer(outcome.genesisOffer) ? {
+          genesisOffer: outcome.genesisOffer, offerContext: contextPair(outcome.scope),
+        } : {}),
+      } };
     case "error":
       return {
         ...prev,
@@ -768,7 +806,9 @@ export function reducePickOutcome(
         // carries that tree. Rust stamps the snapshot with the switch's
         // own seq, so applying it advances the watermark to exactly the
         // value the other branch sets by hand — one stamp either way.
-        const snapshot = outcome.snapshot ?? null;
+        const snapshot = outcome.snapshot ?? (outcome.scope?.records == null ? null : {
+          seq: outcome.seq, projectDir: outcome.projectDir, generatedAtMs: 0, files: [], records: outcome.scope.records,
+        });
         docs =
           snapshot === null
             ? // T-064: `Math.max`, not an ASSIGNMENT. The watermark is
@@ -915,8 +955,8 @@ declare global {
      * and absent from the bundle (DEV).
      */
     __supertaskrShellHarness?: {
-      applyProjectStatus: (status: ProjectStatusPayload) => void;
-      applyPickOutcome: (outcome: PickOutcomePayload) => void;
+      applyProjectStatus: (status: ScopedPayload<ProjectStatusPayload>) => void;
+      applyPickOutcome: (outcome: ScopedPayload<PickOutcomePayload>) => void;
       /** T-050: `recordStartupFailure` itself — what the store's own
        * catch calls when `listen` or `invoke` rejects. Without it the
        * served bundle cannot reach a state the shipped app CAN reach
@@ -1025,8 +1065,34 @@ export function isTauriRuntime(): boolean {
 }
 
 function setShell(patch: Partial<ShellState>): void {
-  shell = { ...shell, ...patch };
+  commitShell({ ...shell, ...patch });
+}
+let indexAttempt = 0;
+function commitShell(next: ShellState): void {
+  if (recordsContextKey(next.docs) !== recordsContextKey(shell.docs)) {
+    indexAttempt += 1;
+    next = {...next, indexing: false, indexOutcome: null};
+  }
+  shell = next;
   for (const callback of listeners) callback();
+}
+
+/** Content revisions do not change the selected graph home. Selection,
+ * association and physical incarnation changes do, even for one PRODUCT. */
+export function recordsContextKey(docs: DocsModelState): string {
+  const records = docs.records;
+  return JSON.stringify([docs.projectDir, records?.selectionSequence, records?.contextSequence,
+    records?.recordsDir, records?.associationId, records?.rootIncarnation,
+    records?.docsIncarnation, records?.availability]);
+}
+
+export function consumerScopeAdmitted(value: unknown): boolean {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const scope = (value as {scope?: MessageScope}).scope;
+  try {
+    return scopeAdmitted(shell.docs, scope) && (scope === undefined ||
+      (scope.projectDir ?? "") === shell.docs.projectDir);
+  } catch { return false; }
 }
 
 /**
@@ -1083,7 +1149,12 @@ function applyDocsPayload(payload: DocsSnapshotPayload): void {
   // updates underneath (that IS the pipeline lighting up — criteria 3
   // and 4), while the screen stays where the interview is; the front
   // door's stale "no docs/ found" claim is what an emit replaces.
-  setShell({ docs: next, phase: shell.phase === "genesis" ? "genesis" : "open" });
+  const legacyNoDocs = next.records?.availability === "noDocs" && next.records.layout === "colocated";
+  setShell({
+    docs: next,
+    phase: shell.phase === "genesis" ? "genesis" : legacyNoDocs ? "noDocs" : "open",
+    ...(legacyNoDocs ? { resolvedDir: next.projectDir, resolvedProbe: EMPTY_PROBE, resolvedContext: contextPair(next.records!) } : {}),
+  });
   sendEcho(next);
 }
 
@@ -1100,7 +1171,34 @@ function sendEcho(next: DocsModelState): void {
   }
 }
 
-function applyProjectStatus(status: ProjectStatusPayload): void {
+function scopeAdmitted(prev: DocsModelState, scope?: MessageScope, allowAdvance = false): boolean {
+  if (scope === undefined) return prev.records === undefined;
+  if (!Number.isSafeInteger(scope.seq) || scope.seq < 0 ||
+      !Number.isSafeInteger(scope.selectionSequence) || !Number.isSafeInteger(scope.contextSequence) ||
+      scope.selectionSequence < 0 || scope.contextSequence < scope.selectionSequence || scope.contextSequence > scope.seq) return false;
+  const current = prev.records;
+  if (scope.records != null) {
+    if (scope.records.selectionSequence !== scope.selectionSequence || scope.records.contextSequence !== scope.contextSequence ||
+        scope.projectDir === null || !observationAdmitted(prev, {
+          seq: scope.seq, projectDir: scope.projectDir, generatedAtMs: 0, files: [], records: scope.records,
+        })) return false;
+  } else if (current !== undefined) return false;
+  if (current === undefined) return true;
+  if (!allowAdvance && (scope.selectionSequence !== current.selectionSequence || scope.contextSequence !== current.contextSequence)) return false;
+  return scope.selectionSequence >= current.selectionSequence &&
+    (scope.selectionSequence !== current.selectionSequence ||
+      (scope.projectDir === prev.projectDir && scope.contextSequence >= current.contextSequence));
+}
+
+function applyProjectStatus(status: ScopedPayload<ProjectStatusPayload>): void {
+  if (!scopeAdmitted(shell.docs, status.scope, status.kind === "open")) return;
+  if (status.scope !== undefined) {
+    if (status.kind === "noProject" && (status.scope.projectDir !== null || status.scope.records != null)) return;
+    if (status.kind === "noDocs" && status.scope.projectDir !== status.projectDir) return;
+    if (status.kind === "open" &&
+        (status.scope.projectDir !== status.snapshot.projectDir ||
+         !sameObservationContext(status.scope.records ?? undefined, status.snapshot.records))) return;
+  }
   // T-063: A STATUS PULL MUST NOT YANK AN INTERVIEW AWAY, and until this
   // card nothing had to say so, because `docs_snapshot` was only ever
   // pulled at startup — when the phase is `loading` or `browser` and
@@ -1122,10 +1220,14 @@ function applyProjectStatus(status: ProjectStatusPayload): void {
         phase: "noDocs",
         resolvedDir: status.projectDir,
         resolvedProbe: status.probe,
+        resolvedContext: status.scope === undefined ? undefined : contextPair(status.scope),
       });
       break;
     case "noProject":
       setShell({ phase: "noProject" });
+      break;
+    case "unavailable":
+      recordStartupFailure("snapshot", status.message);
       break;
   }
 }
@@ -1228,7 +1330,7 @@ async function runHandshake(attempt: number): Promise<void> {
 
   let status: ProjectStatusPayload;
   try {
-    status = await invoke<ProjectStatusPayload>("docs_snapshot");
+    status = await invoke<ScopedPayload<ProjectStatusPayload>>("docs_snapshot");
   } catch (err) {
     if (attempt === startupToken) recordStartupFailure("snapshot", err);
     return;
@@ -1390,85 +1492,85 @@ export async function pickProjectFolder(): Promise<void> {
   await runPicker("pick_project_folder");
 }
 
-/**
- * T-026: "Start an interview" (⌘N) — the genesis variant of the picker.
- * Zero arguments again: Rust opens the dialog, validates the choice, and
- * decides what it MEANS (a folder with no plan opens for genesis; one
- * that already has a plan opens as the normal project it is — there is
- * no overwrite path in this app).
- */
+/** New setup chooses its folders in native dialogs and creates explicit local history. */
 export async function pickGenesisFolder(): Promise<void> {
   await runPicker("pick_genesis_folder");
 }
 
-/**
- * T-026: "Start an interview here" — genesis in the folder the front door
- * is already naming, with no dialog. Still zero arguments: Rust knows
- * which folder that is (the user's own last dialog choice, or the open
- * project), so the path never crosses the boundary in either direction.
- */
-export async function startGenesisHere(): Promise<void> {
-  await runPicker("start_genesis_here");
+function contextPair(value: {selectionSequence: number; contextSequence: number}): SetupHereView["expectedContext"] {
+  return {selectionSequence: value.selectionSequence, contextSequence: value.contextSequence};
+}
+function validOffer(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0 && value.length <= 256 && !/[\x00-\x20\x7f]/.test(value);
+}
+function validPair(value: SetupHereView["expectedContext"] | undefined): value is SetupHereView["expectedContext"] {
+  return value !== undefined && Number.isSafeInteger(value.selectionSequence) && value.selectionSequence >= 0 &&
+    Number.isSafeInteger(value.contextSequence) && value.contextSequence >= value.selectionSequence;
+}
+/** Capture the rendered offer. Neither the path nor a later selection chooses the target. */
+export function createSetupHereView(value: ShellState): SetupHereView | null {
+  if (value.rejectedPick !== null) {
+    const pick = value.rejectedPick;
+    return pick.message === null && validOffer(pick.genesisOffer) && validPair(pick.offerContext)
+      ? {expectedContext: contextPair(pick.offerContext), target: {kind: "offered", token: pick.genesisOffer}}
+      : null;
+  }
+  return value.phase === "noDocs" && value.resolvedDir !== null && validPair(value.resolvedContext)
+    ? {expectedContext: contextPair(value.resolvedContext), target: {kind: "selected"}} : null;
+}
+export async function startGenesisHere(view: SetupHereView | null): Promise<void> {
+  if (view === null) return;
+  await runPicker("start_genesis_here", view);
+}
+export function dismissSetupNotice(token: string): void {
+  if (shell.setupNotice?.token === token) setShell({setupNotice: null});
+}
+function setupNotice(value: unknown): SetupNotice | null {
+  if (value === null || typeof value !== "object") return null;
+  const item = value as Partial<SetupNotice>;
+  return validOffer(item.token) && typeof item.productDir === "string" && item.productDir.length <= 32768 &&
+    typeof item.message === "string" && item.message.length > 0 && item.message.length <= 16384 &&
+    (item.code == null || typeof item.code === "string" && /^[A-Za-z0-9_.:-]{1,256}$/.test(item.code)) &&
+    (item.status === "unknown" || item.status === "refused" || item.status === "initialized")
+    ? {token: item.token, productDir: item.productDir, status: item.status, code: item.code, message: item.message} : null;
 }
 
-/**
- * The one picker pipeline behind all three commands: single-flight
- * webview-side (the Rust latch is the real gate — T-021), invoke, then
- * the pure `reducePickOutcome`. A snapshot that lands this way is echoed
- * exactly like a watcher push (T-003's round-trip contract) — and only a
- * snapshot is: a genesis switch onto a folder with no docs/ yet carries
- * no tree, so there is nothing for it to report and it echoes nothing.
- * One onto a folder that DOES have a docs/ carries that tree and echoes
- * it like any other snapshot (T-042 criterion 3; the echo is emitted by
- * `commitPickOutcome`, which is this function minus the `invoke`).
- */
-async function runPicker(command: string): Promise<void> {
-  // T-192: DELIBERATELY NOT BOUNDED, and the reason is recorded here
-  // because the sibling latch a few functions down IS bounded and the
-  // next reader will otherwise take this for the oversight it looks like.
-  //
-  // **THIS ONE `await` IS THREE RUST COMMANDS, AND THEY ARE NOT ALIKE.**
-  // `pick_project_folder` and `pick_genesis_folder` open a native dialog
-  // and await `rx.recv()`. **`start_genesis_here` OPENS NO DIALOG** — its
-  // own doc comment in `src-tauri/src/lib.rs` says so; it claims the
-  // flight guard, reads `genesis_target()` out of Rust's own memory, and
-  // awaits `spawn_blocking(apply_genesis_folder)`. That is `index_repo`'s
-  // shape wearing this latch, with nobody being asked anything.
-  //
-  // SO THE HUMAN-AT-A-DIALOG ARGUMENT COVERS TWO OF THE THREE AND MUST
-  // NOT BE STATED AS COVERING ALL THREE. It is true and it is not the
-  // load-bearing reason. **THE REASON THAT COVERS ALL THREE IS LATCH
-  // PARITY**: every one of them claims the SAME Rust latch —
-  // `begin_pick()` at three sites in `lib.rs` — and Rust's `PickInFlight`
-  // is the real gate (T-021), this flag only its webview mirror. A bound
-  // HERE releases the mirror while Rust still holds the original, so the
-  // next press reaches `begin_pick`, gets `Busy`, and `reducePickOutcome`
-  // maps `busy` to `prev` BY IDENTITY: a button that silently does
-  // nothing — the T-171/T-183 family this card exists to close. Bounding
-  // the webview half of a two-latch pair does not shorten the wait, it
-  // only desynchronises the pair.
-  //
-  // THE RESIDUAL, STATED RATHER THAN LEFT TO BE FOUND: because
-  // `start_genesis_here` really can never answer, its latch really can
-  // strand. That is an ACCEPTED residual, not a closed case — the repair
-  // available at this seat is worse than the defect, and the repair that
-  // is not (a Rust-side bound that releases `PickInFlight` with it) is a
-  // different change in a different language. Routed in the notes.
-  //
-  // AND HOW THE THIRD COMMAND WAS MISSED, because the next sweep should
-  // not repeat it: this card's own thesis is that the defect is decided
-  // per RUST COMMAND, and the first class sweep used the `await invoke(`
-  // CALL SITE as its unit — so all three counted once and the odd one
-  // hid behind the shared `await`. **A sweep whose unit is coarser than
-  // its thesis reports a closure it has not measured.**
+let pickerAttempt: object | null = null;
+// Correlation only. Native replies confirm this finite attempt; it grants no path authority.
+let setupAttemptSequence = 0;
+const setupAttemptPrefix = typeof crypto !== "undefined" ? crypto.getRandomValues(new Uint32Array(1))[0]! * 1048576 : 0;
+async function runPicker(command: "pick_project_folder" | "pick_genesis_folder" | "start_genesis_here", view?: SetupHereView): Promise<void> {
+  // Native dialogs wait for the user. The same native pick lease also covers
+  // bounded Init child cleanup; releasing only the UI half early would hide Busy.
   if (!isTauri || shell.picking) return;
+  if (command === "start_genesis_here" && (view === undefined || !validPair(view.expectedContext) ||
+      (view.target.kind === "offered" && !validOffer(view.target.token)))) return;
+  const attempt = {};
+  const correlation = setupAttemptPrefix + ++setupAttemptSequence;
+  if (!Number.isSafeInteger(correlation)) return;
+  const args = command === "pick_project_folder" ? undefined : command === "pick_genesis_folder" ? {attempt: correlation}
+    : {request: {...view!, expectedContext: contextPair(view!.expectedContext), attempt: correlation}};
+  pickerAttempt = attempt;
   setShell({ picking: true });
   try {
-    commitPickOutcome(await invoke<PickOutcomePayload>(command));
+    const outcome = await invoke<ScopedPayload<PickOutcomePayload>>(command, args);
+    if (pickerAttempt !== attempt) return;
+    if (command !== "pick_project_folder" && outcome.attempt !== correlation) {
+      throw new Error("setup response did not match the original attempt");
+    }
+    commitPickOutcome(outcome);
+    // This is an original setup receipt/uncertainty notice, separate from
+    // watcher scope and current readiness. It never advances docs seq or time.
+    const notice = setupNotice(outcome.setupNotice);
+    if (notice !== null && pickerAttempt === attempt) setShell({setupNotice: notice});
   } catch (err) {
-    setShell({ rejectedPick: { path: "", message: String(err), probe: null } });
+    if (pickerAttempt === attempt) {
+      try { applyProjectStatus(await invoke<ScopedPayload<ProjectStatusPayload>>("docs_snapshot")); }
+      catch { /* Keep unavailable reconciliation visible below. */ }
+      if (pickerAttempt === attempt) setShell({ rejectedPick: { path: "", message: `selection response unavailable: ${String(err)}`, probe: null } });
+    }
   } finally {
-    setShell({ picking: false });
+    if (pickerAttempt === attempt) { pickerAttempt = null; setShell({ picking: false }); }
   }
 }
 
@@ -1479,12 +1581,11 @@ async function runPicker(command: string): Promise<void> {
  * after `invoke` answers, and nothing before it. A harness with its own
  * copy of this would prove nothing about the shipped shell.
  */
-function commitPickOutcome(outcome: PickOutcomePayload): void {
+function commitPickOutcome(outcome: ScopedPayload<PickOutcomePayload>): void {
   const before = shell;
   const next = reducePickOutcome(before, outcome);
   if (next === before) return;
-  shell = next;
-  for (const callback of listeners) callback();
+  commitShell(next);
   // T-042 criterion 3: the echo reports what the frontend parsed out of a
   // snapshot, so it fires for a payload A REAL SNAPSHOT PRODUCED — read
   // from the outcome's own provenance, never from the seq. The seq guard
@@ -1545,8 +1646,7 @@ function commitPickOutcome(outcome: PickOutcomePayload): void {
 export function openGenesisBoard(): void {
   const next = openBoardFromGenesis(shell);
   if (next === shell) return;
-  shell = next;
-  for (const callback of listeners) callback();
+  commitShell(next);
 }
 
 /** Dismiss a rejected pick and return to whatever was open before. */
@@ -1565,8 +1665,15 @@ export function keepCurrentProject(): void {
  * loop-termination brake), which is why the outcome — not the file —
  * feeds the header hint.
  */
-export async function runIndexRepo(): Promise<void> {
+export interface IndexSelectionToken { selectionSequence: number; contextSequence: number }
+export function indexSelectionToken(docs: DocsModelState): IndexSelectionToken | undefined {
+  return docs.records === undefined ? undefined : {selectionSequence:docs.records.selectionSequence,contextSequence:docs.records.contextSequence};
+}
+export async function runIndexRepo(expectedSelection?: IndexSelectionToken): Promise<void> {
   if (!isTauri || shell.indexing) return;
+  const current = indexSelectionToken(shell.docs);
+  if (current?.selectionSequence !== expectedSelection?.selectionSequence || current?.contextSequence !== expectedSelection?.contextSequence) return;
+  const attempt = ++indexAttempt;
   setShell({ indexing: true });
   // T-192: THE BOUND. The race is written out here rather than imported,
   // and that is a component-boundary answer rather than a preference —
@@ -1587,7 +1694,7 @@ export async function runIndexRepo(): Promise<void> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     const outcome = await Promise.race([
-      invoke<IndexOutcomePayload>("index_repo"),
+      invoke<ScopedPayload<IndexOutcomePayload>>("index_repo", expectedSelection === undefined ? undefined : {expectedSelection}),
       new Promise<IndexOutcomePayload>((resolve) => {
         timer = setTimeout(
           () => resolve({ kind: "error", message: UNANSWERED_INDEX_MESSAGE }),
@@ -1595,17 +1702,17 @@ export async function runIndexRepo(): Promise<void> {
         );
       }),
     ]);
-    setShell({ indexOutcome: outcome });
+    if (attempt === indexAttempt && consumerScopeAdmitted(outcome)) setShell({ indexOutcome: outcome });
   } catch (err) {
     // A REJECTION IS NOT AN ABSENCE and still lands here unchanged, so a
     // refused index keeps reporting the refusal rather than the bound.
-    setShell({ indexOutcome: { kind: "error", message: String(err) } });
+    if (attempt === indexAttempt) setShell({ indexOutcome: { kind: "error", message: String(err) } });
   } finally {
     // Cleared on every exit — answered, unanswered or thrown. A dangling
     // fifteen-second timer per press would make the bound observable in a
     // way it should not be; the pending-timer count is asserted back to
     // its pre-call value in `startup-recovery.test.ts`.
     if (timer !== undefined) clearTimeout(timer);
-    setShell({ indexing: false });
+    if (attempt === indexAttempt) setShell({ indexing: false });
   }
 }

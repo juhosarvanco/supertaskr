@@ -498,7 +498,9 @@ fn t021_real_invokes_dialog_fs_opener_denied_app_allowed_remote_denied() {
     .expect("docs_snapshot must be allowed from the local origin")
     .deserialize::<serde_json::Value>()
     .expect("docs_snapshot answers JSON");
-    assert_eq!(status, json!({ "kind": "noProject" }));
+    assert_eq!(status, json!({ "kind": "noProject", "scope": {
+        "seq":0,"projectDir":null,"selectionSequence":0,"contextSequence":0,"records":null
+    } }));
 
     // (b) a core:default plugin command passes the ACL gate (any failure
     // is at worst an argument error, never a denial).
@@ -591,10 +593,9 @@ fn t021_real_invokes_dialog_fs_opener_denied_app_allowed_remote_denied() {
 /// un-gated locally and denied remotely" a demonstrated fact for THESE
 /// commands rather than an argument by analogy.
 ///
-/// Headless and spawn-free by construction: `WatchState` holds no
-/// project, so `genesis_start` returns `noProject` before it resolves a
-/// binary or materializes anything, and `genesis_send_turn` returns
-/// `noSession`. No child process exists in this test.
+/// Headless and spawn-free: no selected project or offered activation exists.
+/// Current managed commands return their scoped refusal before resolving a
+/// binary, repairing runtime files or materializing anything.
 #[test]
 fn t025_genesis_commands_are_locally_invokable_and_remotely_denied() {
     let mut context = mock_context(noop_assets());
@@ -603,7 +604,7 @@ fn t025_genesis_commands_are_locally_invokable_and_remotely_denied() {
 
     let (ctl, _ctl_rx) = mpsc::channel();
     let watch = WatchState::new(None, Arc::new(AtomicU64::new(0)), ctl);
-    let agent = crate::agent::AgentState::new(
+    let agent = crate::agent::AgentState::new_managed(
         crate::agent::runner::RunnerConfig::default(),
         |_event| {},
     );
@@ -614,10 +615,12 @@ fn t025_genesis_commands_are_locally_invokable_and_remotely_denied() {
             crate::genesis_start,
             crate::genesis_send_turn,
             crate::genesis_status,
+            crate::genesis_bank_replay,
             crate::genesis_cancel
         ])
         .manage(watch)
         .manage(agent)
+        .manage(crate::record_editor::RecordEditorState::default())
         .build(context)
         .expect("mock app builds with the shipped authority");
     let webview = tauri::WebviewWindowBuilder::new(&app, "main", Default::default())
@@ -631,20 +634,28 @@ fn t025_genesis_commands_are_locally_invokable_and_remotely_denied() {
             .expect("typed JSON payload")
     };
 
-    // Zero-argument, and the typed outcome comes back through the real
-    // handler and the real managed state.
-    assert_eq!(call("genesis_cancel", InvokeBody::default()), json!({ "kind": "idle" }));
-    assert_eq!(call("genesis_start", InvokeBody::default()), json!({ "kind": "noProject" }));
-    // The one command that takes a datum takes exactly one: the user's
-    // own text. No path, no binary, no flag, no adapter selector.
-    assert_eq!(
-        call("genesis_send_turn", InvokeBody::Json(json!({ "text": "hello" }))),
-        json!({ "kind": "noSession" })
-    );
-    let status = call("genesis_status", InvokeBody::default());
-    assert_eq!(status["phase"], json!("idle"));
-    assert_eq!(status["turn"], json!(0));
-    assert_eq!(status["methodVersion"], json!(crate::agent::kit::METHOD_SNAPSHOT_VERSION));
+    let context=json!({"selectionSequence":0,"contextSequence":0});
+    let identity=json!({"activation":1,"token":"not-offered","sessionId":"not-offered",
+        "originDigest":format!("sha256:{}","a".repeat(64)),"initiatingAttempt":1});
+    let inputs=[
+        ("genesis_cancel",json!({"request":{"expectedContext":context,"attempt":1,"identity":identity}}),"genesis-activation-changed"),
+        ("genesis_start",json!({"request":{"expectedContext":context,"attempt":2}}),"genesis-no-project"),
+        ("genesis_send_turn",json!({"request":{"expectedContext":context,"attempt":3,"identity":identity},"text":"hello"}),"genesis-no-project"),
+        ("genesis_status",json!({"request":{"expectedContext":context,"attempt":4}}),"genesis-no-project"),
+        ("genesis_bank_replay",json!({"request":{"expectedContext":context,"attempt":5,"identity":identity},"token":"unoffered"}),"genesis-no-project"),
+    ];
+    let mut sequence=0;let mut status=json!(null);
+    for (command,input,reason) in &inputs {
+        let response=call(command,InvokeBody::Json(input.clone()));
+        assert_eq!(response["selectionSequence"],0);assert_eq!(response["contextSequence"],0);
+        assert_eq!(response["attempt"],input["request"]["attempt"]);
+        assert_eq!(response["result"],json!({"kind":"error","message":reason}));
+        assert_eq!(response["identity"],if *command=="genesis_cancel" {identity.clone()} else {json!(null)});
+        let next=response["seq"].as_u64().expect("typed native sequence");assert!(next>sequence);sequence=next;
+        if *command=="genesis_status" {status=response;}
+        let legacy=get_ipc_response(&webview,invoke_request(command,local_origin(),InvokeBody::default())).expect_err("scope-less legacy IPC is no longer registered");
+        assert!(legacy.to_string().contains("request"));
+    }
     // The adapter table is unreachable: no command returns it, and the
     // status payload names no binary, argv, flag or permission mode.
     let rendered = status.to_string();
@@ -656,8 +667,8 @@ fn t025_genesis_commands_are_locally_invokable_and_remotely_denied() {
     }
 
     // And every one of them is denied from a remote origin.
-    for cmd in ["genesis_start", "genesis_send_turn", "genesis_status", "genesis_cancel"] {
-        let err = get_ipc_response(&webview, invoke_request(cmd, REMOTE_ORIGIN, InvokeBody::default()))
+    for (cmd,input,_) in &inputs {
+        let err = get_ipc_response(&webview, invoke_request(cmd, REMOTE_ORIGIN, InvokeBody::Json(input.clone())))
             .expect_err(&format!("{cmd} must be DENIED from a remote origin"));
         let msg = err.as_str().map(str::to_string).unwrap_or_else(|| err.to_string());
         assert!(
@@ -750,4 +761,132 @@ fn t021_authority_resolves_no_dialog_fs_opener_command_but_core_default_yes() {
 #[test]
 fn t021_grant_set_rendering_is_deterministic() {
     assert_eq!(grant_lines(&resolve_shipped()), grant_lines(&resolve_shipped()));
+}
+
+#[test]
+fn managed_genesis_ipc_requires_context_and_activation_before_legacy_split_access() {
+    use tauri::Manager;
+    use crate::agent::{self, runner::RunnerConfig};
+    let root = std::env::temp_dir().join(format!("supertaskr-genesis-ipc-{}-{}", std::process::id(), crate::docs_watch::now_ms()));
+    fs::create_dir(&root).unwrap(); let root = root.canonicalize().unwrap();
+    let product = root.join("product"); let records = root.join("records");
+    fs::create_dir_all(product.join(".supertaskr/genesis")).unwrap(); fs::create_dir_all(records.join("docs")).unwrap();
+    fs::write(product.join(".supertaskr/sessions.json"), "original-registry-capture").unwrap();
+    fs::write(product.join(".supertaskr/genesis/transcript.jsonl"), "original-transcript-capture\n").unwrap();
+    fs::write(records.join("docs/ROADMAP.md"), "# Original private record\n").unwrap();
+    fn git(root: &Path, args: &[&str]) {
+        let output = std::process::Command::new("git").arg("-C").arg(root)
+            .args(["-c","init.templateDir=","-c","core.hooksPath=/dev/null","-c","commit.gpgsign=false","-c","user.name=IPC fixture","-c","user.email=ipc@example.invalid"])
+            .args(args).output().unwrap();
+        assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    }
+    for home in [&product, &records] { git(home, &["init", "-q", "--initial-branch=main"]); }
+    fs::write(product.join("PRODUCT.txt"), "public fixture input\n").unwrap();
+    git(&product, &["add", "PRODUCT.txt"]); git(&product, &["commit", "-qm", "Initial public fixture"]);
+    let resolver = crate::workspace::WorkspaceResolver::new().unwrap();
+    let product_identity = resolver.measure_product_identity(&product, "HEAD").unwrap();
+    fs::write(records.join(crate::workspace::WORKSPACE_ASSOCIATION_REL_PATH), json!({"version":1,"projectId":"ipc-fixture","product":{
+        "objectFormat":product_identity.object_format,"rootCommits":product_identity.root_commits}}).to_string()).unwrap();
+    git(&records, &["add", "."]); git(&records, &["commit", "-qm", "Initial private fixture"]);
+    fs::write(product.join(crate::workspace::WORKSPACE_BINDING_REL_PATH), json!({"version":1,"projectId":"ipc-fixture","productRoot":product,"recordsRoot":records}).to_string()).unwrap();
+    assert_eq!(resolver.resolve_workspace(&product, crate::workspace::WorkspaceMode::Development, "HEAD").unwrap().layout(), crate::workspace::Layout::Split);
+    let (ctl, _receiver) = mpsc::channel();
+    let watch = WatchState::new(Some(product.clone()), Arc::new(AtomicU64::new(0)), ctl);
+    let (sink, events) = mpsc::channel();
+    let state = agent::AgentState::new_managed(RunnerConfig::default(), move |event| { let _ = sink.send(event); });
+    let app = mock_builder().manage(watch).manage(state).manage(crate::record_editor::RecordEditorState::default())
+        .invoke_handler(tauri::generate_handler![crate::genesis_start,crate::genesis_resume,crate::genesis_fresh,
+            crate::genesis_send_turn,crate::genesis_status,crate::genesis_transcript,crate::genesis_cancel,crate::genesis_kickoff,crate::genesis_bank_replay])
+        .build(mock_context(noop_assets())).unwrap();
+    let webview = tauri::WebviewWindowBuilder::new(&app, "main", Default::default()).build().unwrap();
+    fn files(at: &Path) -> BTreeMap<String, Vec<u8>> {
+        fn walk(root: &Path, at: &Path, out: &mut BTreeMap<String, Vec<u8>>) {
+            for entry in fs::read_dir(at).unwrap() { let entry = entry.unwrap(); let path = entry.path();
+                if path.is_dir() { walk(root, &path, out); } else { out.insert(path.strip_prefix(root).unwrap().to_string_lossy().into_owned(), fs::read(&path).unwrap()); }
+            }
+        }
+        let mut out = BTreeMap::new(); walk(at, at, &mut out); out
+    }
+    // Exercise malformed and dangling explicit binding markers. Argument
+    // decoding refuses the historical zero-context calls before any helper
+    // can read, repair, scaffold, spawn or select a replacement location.
+    for marker in ["not-json".into(), json!({"version":1,"projectId":"ipc-fixture","productRoot":product,"recordsRoot":root.join("missing-records")}).to_string(),
+        json!({"version":1,"projectId":"ipc-fixture","productRoot":product,"recordsRoot":records}).to_string()] {
+        fs::write(product.join(".supertaskr/workspace.json"), marker).unwrap();
+        let before_p = files(&product); let before_r = files(&records);
+        for command in ["genesis_start","genesis_resume","genesis_fresh","genesis_send_turn","genesis_status","genesis_transcript","genesis_cancel","genesis_kickoff","genesis_bank_replay"] {
+            let refused = get_ipc_response(&webview, invoke_request(command, local_origin(), InvokeBody::Json(json!({"text":"must not be captured"}))));
+            let error = refused.expect_err(command).to_string(); assert!(error.contains("request"), "{command}: {error}");
+        }
+        assert_eq!(files(&product), before_p); assert_eq!(files(&records), before_r); assert!(events.try_recv().is_err());
+    }
+    fs::remove_file(product.join(".supertaskr/workspace.json")).unwrap();
+    fs::remove_file(product.join(".supertaskr/sessions.json")).unwrap();
+    let response = get_ipc_response(&webview, invoke_request("genesis_status", local_origin(), InvokeBody::Json(json!({"request":{
+        "attempt":1,"expectedContext":{"selectionSequence":0,"contextSequence":0}}})))).expect("plain colocated scoped status remains available").deserialize::<serde_json::Value>().unwrap();
+    assert_eq!(response["result"]["kind"], "ready"); assert_eq!(response["result"]["value"]["status"]["projectDir"], product.to_string_lossy().as_ref());
+    app.state::<agent::AgentState>().reap_for_exit(); drop(webview); drop(app); fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn backup_ipc_registers_receipt_only_commands_without_opening_a_dialog_for_unknown_receipts() {
+    use tauri::Manager;
+    let mut context = mock_context(noop_assets());
+    *context.runtime_authority_mut() =
+        tauri::runtime_authority!(shipped_manifests(), resolve_shipped());
+    let (ctl, _rx) = mpsc::channel();
+    let app = mock_builder()
+        .plugin(tauri_plugin_dialog::init())
+        .invoke_handler(tauri::generate_handler![crate::record_backup_recoveries, crate::record_backup])
+        .manage(WatchState::new(None, Arc::new(AtomicU64::new(0)), ctl))
+        .manage(crate::record_editor::RecordEditorState::default())
+        .build(context).unwrap();
+    let webview = tauri::WebviewWindowBuilder::new(&app, "main", Default::default()).build().unwrap();
+    let call = |command: &str, body| get_ipc_response(&webview, invoke_request(command, local_origin(), InvokeBody::Json(body)))
+        .expect("real registered local backup command").deserialize::<serde_json::Value>().unwrap();
+    let discovery = call("record_backup_recoveries", json!({"attempt":7}));
+    assert_eq!(discovery["kind"], "backupError");
+    assert_eq!(discovery["operationKey"], "backup-recoveries");
+    assert_eq!(discovery["attempt"], 7);
+    assert_eq!(discovery["code"], "records-app-unavailable");
+    assert_eq!(discovery["unknown"], false);
+    let backup = call("record_backup", json!({"receiptToken":"unoffered", "expectedCommit":"a".repeat(40), "attempt":8}));
+    assert_eq!(backup["kind"], "backupError");
+    assert_eq!(backup["operationKey"], "unoffered");
+    assert_eq!(backup["attempt"], 8);
+    assert_eq!(backup["code"], "records-app-backup-receipt-changed");
+    assert_eq!(backup["unknown"], false);
+    assert!(backup["commit"].is_null());
+    for command in ["record_backup_recoveries", "record_backup"] {
+        let refusal = get_ipc_response(&webview, invoke_request(command, REMOTE_ORIGIN, InvokeBody::default()))
+            .expect_err("existing local-only authority also covers backup commands");
+        assert!(refusal.to_string().contains("not allowed"));
+    }
+    app.state::<crate::record_editor::RecordEditorState>().stop();
+}
+
+
+#[test]
+fn new_setup_ipc_requires_finite_attempt_and_rendered_here_target_without_expanding_grants() {
+    use tauri::Manager;
+    let mut context=mock_context(noop_assets());
+    *context.runtime_authority_mut()=tauri::runtime_authority!(shipped_manifests(),resolve_shipped());
+    let (ctl,_receiver)=mpsc::channel();
+    let app=mock_builder().manage(WatchState::new(None,Arc::new(AtomicU64::new(0)),ctl))
+        .manage(crate::genesis_setup::SetupState::default()).manage(crate::record_editor::RecordEditorState::default())
+        .invoke_handler(tauri::generate_handler![crate::pick_genesis_folder,crate::start_genesis_here])
+        .build(context).unwrap();
+    let webview=tauri::WebviewWindowBuilder::new(&app,"main",Default::default()).build().unwrap();
+    for (command,key,body) in [
+        ("pick_genesis_folder","attempt",json!({"attempt":0})),
+        ("start_genesis_here","request",json!({"request":{"attempt":1,"expectedContext":{"selectionSequence":0,"contextSequence":0},"target":{"kind":"selected"}}})),
+    ] {
+        let missing=get_ipc_response(&webview,invoke_request(command,local_origin(),InvokeBody::default())).expect_err("old zero-argument setup cannot select or scaffold").to_string();assert!(missing.contains(key),"{missing}");
+        let value=get_ipc_response(&webview,invoke_request(command,local_origin(),InvokeBody::Json(body.clone()))).expect("local finite validation runs before any dialog").deserialize::<serde_json::Value>().unwrap();
+        assert_eq!(value["kind"],"error");assert_eq!(value["scope"]["projectDir"],serde_json::Value::Null);
+        assert_eq!(value["attempt"],if command=="pick_genesis_folder" {0}else{1});
+        let remote=get_ipc_response(&webview,invoke_request(command,REMOTE_ORIGIN,InvokeBody::Json(body))).expect_err("remote cannot invoke setup").to_string();assert!(remote.contains("not allowed"),"{remote}");
+    }
+    let authority=get_ipc_response(&webview,invoke_request("start_genesis_here",local_origin(),InvokeBody::Json(json!({"request":{"attempt":2,"expectedContext":{"selectionSequence":0,"contextSequence":0},"target":{"kind":"selected"},"productRoot":"/untrusted"}})))).expect_err("no webview root authority").to_string();assert!(authority.contains("productRoot"));
+    assert!(app.state::<WatchState>().project_dir().is_none());drop(webview);drop(app);
 }

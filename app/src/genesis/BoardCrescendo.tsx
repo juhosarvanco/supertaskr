@@ -9,6 +9,7 @@ import {
   useInterviewUi,
 } from "./interview-source";
 import { BankedMark } from "./interview-turns";
+import {selectedBanking} from "./interview-model";
 
 /**
  * THE DECOMPOSITION CRESCENDO — the right half, once the plan has become
@@ -61,7 +62,7 @@ export function BoardCrescendo({
 }) {
   const genesis = useGenesisState();
   const ui = useInterviewUi();
-  const model = crescendo(docs, genesis.turns, interviewBusy(genesis, ui));
+  const model = crescendo(docs, genesis.turns, interviewBusy(genesis, ui),selectedBanking(docs,genesis));
   const elapsed = elapsedLabel(useGenesisElapsedMs());
   const { parsedTasks, taskFiles, failingTaskFiles } = model.readiness;
   const complete = model.completion.complete;
@@ -91,6 +92,8 @@ export function BoardCrescendo({
           {failingTaskFiles > 0 ? ` · ${failingTaskFiles} not parsing` : ""}
         </span>
       </header>
+
+      {!complete&&model.completion.blocker==="setupUninstalled"&&<p role="status" className="mx-6.5 mt-5">The plan is banked. Project installation is still pending.</p>}
 
       {complete && (
         <div

@@ -1,46 +1,64 @@
-import { execFileSync } from "node:child_process";
+const repoRoot = fixtureFor(import.meta.url);
+import { pathToFileURL } from "node:url";
+import { execFileSync, spawnSync } from "node:child_process";
+import { createRequire } from "node:module";
+import { createHash } from "node:crypto";
 import {
   copyFileSync,
+  cpSync,
+  realpathSync,
+  renameSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
   readdirSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { parse as parseYaml } from "yaml";
+import { WORKSPACE_BINDING_REL_PATH } from "../scripts/workspace.mjs";
 // THE LIBRARY ITSELF, BY THE SAME BUILT ENTRY THE COMMAND READS — so the
 // body below compares the surface against the module rather than against
 // the arm's re-export of it (T-300-s6). `brief.spec.ts` loads it the same
 // way for the arm.
 import * as parserPure from "../../../lib/parser/dist/pure.js";
-import { repoRoot } from "../preflight";
+import { fixtureFor } from "../fixtures/test-project";
+import { installOfflinePackage } from "../fixtures/offline-package";
 import {
   ARCHITECTURE_VERBS,
   EXIT,
   HARNESSES,
+  ROOT_SETTINGS_MARKER,
   VERBS,
+} from "../scripts/cli.mjs";
+import * as fixtureSubjectDefinition0 from "../scripts/cli.mjs";
+void fixtureSubjectDefinition0;
+const {
   bareDependencies,
-  buildCommandFor,
   conventionCommandsFor,
   findProjectRoot,
   installPlan,
-  main as cliMain,
+  main: cliMain,
   packageEscapes,
   packageRoot,
   planFor,
   requirementsFor,
   rootMismatch,
-} from "../scripts/cli.mjs";
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/cli.mjs")).href) as typeof fixtureSubjectDefinition0;
 import {
   ACKNOWLEDGE_PREFIX,
   MUTANT_KEYS,
   MUTANT_NEW,
   MUTANT_OLD,
+} from "../scripts/merge.mjs";
+import * as fixtureSubjectDefinition1 from "../scripts/merge.mjs";
+void fixtureSubjectDefinition1;
+const {
   bringsBuiltSources,
   drillSteps,
   failingBodies,
@@ -56,18 +74,24 @@ import {
   specRunner,
   stampDone,
   tailPlan,
-  main as mergeMain,
-} from "../scripts/merge.mjs";
-import {
+  main: mergeMain,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/merge.mjs")).href) as typeof fixtureSubjectDefinition1;
+import * as fixtureSubjectDefinition2 from "../scripts/undo.mjs";
+void fixtureSubjectDefinition2;
+const {
   forceVerdict,
   insideFence,
-  main as undoMain,
+  main: undoMain,
   mentionsCard,
   touchesTokens,
-} from "../scripts/undo.mjs";
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/undo.mjs")).href) as typeof fixtureSubjectDefinition2;
 import {
   PROCESS_SCHEMA,
   RUNTIME_TEMPLATE,
+} from "../scripts/dispatch-brief.mjs";
+import * as fixtureSubjectDefinition3 from "../scripts/dispatch-brief.mjs";
+void fixtureSubjectDefinition3;
+const {
   GrantStoreFinding,
   cardDrift,
   grantState,
@@ -76,21 +100,38 @@ import {
   parseProcessSchema,
   processSection,
   resolveProcess,
-} from "../scripts/dispatch-brief.mjs";
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/dispatch-brief.mjs")).href) as typeof fixtureSubjectDefinition3;
 import {
   REFERENCE_DOC,
+} from "../scripts/settings.mjs";
+import * as fixtureSubjectDefinition4 from "../scripts/settings.mjs";
+void fixtureSubjectDefinition4;
+const {
   bandUnits,
   editTemplate,
-  main as settingsMain,
+  // Source/template compatibility; installed configured effects are exercised
+  // separately in configured-settings.spec.ts without a board or template.
+  sourceSettingsMain: settingsMain,
   measuredFor,
   renderReference,
   setPlan,
   settingsRows,
   treeReadings,
   yamlScalar,
-} from "../scripts/settings.mjs";
-import { TIER_BUDGETS, fmt } from "../scripts/health-bands.mjs";
-import { conventionsText, docsReaders } from "../scripts/docs-scan.mjs";
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/settings.mjs")).href) as typeof fixtureSubjectDefinition4;
+import {
+  TIER_BUDGETS,
+} from "../scripts/health-bands.mjs";
+import * as fixtureSubjectDefinition5 from "../scripts/health-bands.mjs";
+void fixtureSubjectDefinition5;
+const {
+  fmt,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/health-bands.mjs")).href) as typeof fixtureSubjectDefinition5;
+import * as fixtureSubjectDefinition6 from "../scripts/docs-scan.mjs";
+void fixtureSubjectDefinition6;
+const {
+  docsReaders,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/docs-scan.mjs")).href) as typeof fixtureSubjectDefinition6;
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 
 /**
@@ -130,10 +171,9 @@ import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 /** The scratch trees this file builds, removed in a teardown that cannot red a body. */
 const FIXTURE = "cli.spec.ts";
 
-/** This project's conventions — the index spliced with its chapters (T-290) — read off
- *  this checkout at body time. */
-function conventions(): string {
-  return conventionsText(repoRoot);
+/** Product package command parity belongs to the public source contract. */
+function contributorContract(): string {
+  return readFileSync(path.join(repoRoot,"CONTRIBUTING.md"),"utf8");
 }
 
 /** The `run from <dir>/:` markers the "Build & test" section carries, in order. */
@@ -228,15 +268,18 @@ test("an unknown verb is refused with the whole verb list, and nothing is spawne
   for (const entry of VERBS) expect(said.join("\n")).toContain(entry.verb);
 });
 
-test("every verb that hands its target --root fronts a script whose own flags carry it", () => {
+test("every verb that hands its target --root reaches a script whose flags carry it", () => {
   for (const entry of VERBS) {
     if (entry.target.kind === "cargo") continue;
-    const source = readFileSync(
-      entry.target.kind === "project"
-        ? path.join(repoRoot, entry.target.file)
-        : path.join(packageRoot, "scripts", entry.target.file),
-      "utf8",
-    );
+    const target = entry.target.kind === "project"
+      ? path.join(repoRoot, entry.target.file)
+      : path.join(packageRoot, "scripts", entry.target.file);
+    let source = readFileSync(target, "utf8");
+    if (entry.verb === "health") {
+      // Follow the actual exported entry and unchanged argv into its parser.
+      expect(source).toMatch(/export\s+async\s+function\s+main\(argv\)\s*\{\s*return\s+\(await\s+import\("\.\/configured-health\.mjs"\)\)\.main\(argv\);\s*\}/);
+      source = readFileSync(path.join(path.dirname(target), "configured-health.mjs"), "utf8");
+    }
     const takesRoot = /"--root"/.test(source);
     expect(
       entry.rootFlag,
@@ -244,6 +287,37 @@ test("every verb that hands its target --root fronts a script whose own flags ca
         `${takesRoot ? "does" : "does not"} carry "--root"`,
     ).toBe(takesRoot);
   }
+});
+
+test("the delivery front preserves the shared selected-root prefix and its caller's positional action", () => {
+  const entry = VERBS.find(verb => verb.verb === "delivery"), args = ["local", "--operation", "exact-operation"];
+  expect(entry).toMatchObject({ rootFlag: true, packageHelp: true });
+  const plan = planFor({ entry: entry!, args, projectRoot: repoRoot });
+  expect(plan.argv.slice(1)).toEqual(["--root", repoRoot, ...args]);
+  let seen: string[] = [];
+  expect(cliMain(["delivery", ...args, "--root", repoRoot], { cwd: repoRoot, stdout: () => {}, stderr: () => {}, spawn: ((_file: string, argv: string[]) => { seen = argv; return { status: 0 }; }) as never })).toBe(0);
+  expect(seen.slice(1)).toEqual(["--root", repoRoot, ...args]);
+});
+
+test("legacy source fronts refuse configured and invalid selected contexts before child effects and label their help", () => {
+  const root = mkdtempSync(path.join(tmpdir(), "legacy-front-context-"));
+  const legacy = VERBS.filter(entry => entry.sourceCompatibility);
+  try {
+    expect(legacy.map(entry => entry.verb)).toEqual(expect.arrayContaining(["next", "brief", "arm"]));
+    let spawned = 0;
+    const said: string[] = [], io = { cwd: root, stdout: (text: string) => said.push(text), stderr: (text: string) => said.push(text), spawn: (() => { spawned++; return { status: 0, signal: null, error: undefined }; }) as never };
+    writeFileSync(path.join(root, ROOT_SETTINGS_MARKER), "Explicit configuration marker\n");
+    for (const entry of legacy) {
+      expect(cliMain(["--root", root, entry.verb], io), entry.verb).toBe(3);
+      expect(said.pop()).toContain("legacy source compatibility"); expect(spawned).toBe(0);
+      expect(cliMain(["--root", root, entry.verb, "--help"], io)).toBe(0); expect(said.pop()).toContain("configured/bound projects use supertaskr dispatch");
+    }
+    rmSync(path.join(root, ROOT_SETTINGS_MARKER)); mkdirSync(path.dirname(path.join(root, WORKSPACE_BINDING_REL_PATH)), { recursive: true });
+    symlinkSync(path.join(root, "absent-records-binding"), path.join(root, WORKSPACE_BINDING_REL_PATH));
+    for (const entry of legacy) { expect(cliMain(["--root", root, entry.verb], io)).toBe(3); expect(said.pop()).toContain("legacy source compatibility"); expect(spawned).toBe(0); }
+    rmSync(path.join(root, WORKSPACE_BINDING_REL_PATH));
+    expect(cliMain(["--root", root, "next"], io)).toBe(0); expect(spawned).toBe(1);
+  } finally { removeGitFixture(root, "legacy front context"); }
 });
 
 test("the verb set covers the seat's own arms and NAMES the C-02 verbs nothing fronts", () => {
@@ -287,41 +361,16 @@ test("the verb set covers the seat's own arms and NAMES the C-02 verbs nothing f
   }
 });
 
-test("each verb sourced from docs/CONVENTIONS.md quotes a command that document really carries", () => {
-  // Whitespace-normalised on both sides, because the document WRAPS: a
-  // command spanning two lines is the same command, and a body that
-  // compared raw bytes would be measuring the line width.
-  const flat = conventions().replace(/\s+/g, " ");
-  let checked = 0;
-  for (const entry of VERBS) {
-    // T-290: a verb's source names the CHAPTER its rule lives in now,
-    // and docs/CONVENTIONS.md is the index over those chapters. BOTH
-    // spellings name this project's conventions, and this body reads the
-    // SPLICED document either way — a filter that knew only the old one
-    // would have left the `checked` floor below to catch a body that had
-    // quietly stopped checking anything.
-    if (!/docs\/CONVENTIONS\.md|docs\/conventions\//.test(entry.source)) continue;
-    const quoted = [...entry.source.matchAll(/`([^`]+)`/g)].map((m) => (m[1] ?? "").replace(/\s+/g, " "));
-    expect(quoted.length, `${entry.verb}'s source quotes at least one command`).toBeGreaterThan(0);
-    for (const command of quoted) {
-      expect(
-        flat.includes(command),
-        `${entry.verb} cites \`${command}\`, which this project's conventions must carry`,
-      ).toBe(true);
-      checked += 1;
-    }
-  }
-  expect(checked, "this body really checked something").toBeGreaterThan(5);
-  // NOT VACUOUS: a command the document does not carry is caught.
-  expect(flat.includes("npm run definitely-not-a-command")).toBe(false);
-});
+// Actual selected project command-source provenance: dogfood/private-project.spec.ts.
 
-test("the front reads every command bullet docs/CONVENTIONS.md carries, and reads it verbatim", () => {
-  const md = conventions();
+
+test("the front reads every product command bullet CONTRIBUTING.md carries, and reads it verbatim", () => {
+  const md = contributorContract();
   const dirs = commandBulletDirs(md);
-  expect(dirs, "the four packages the document carries a command bullet for").toEqual([
+  expect(dirs, "the packages the document carries a command bullet for").toEqual([
     "lib/parser",
     "app",
+    "cli",
     "app/src-tauri",
     "tools/e2e",
   ]);
@@ -345,7 +394,8 @@ test("the front reads every command bullet docs/CONVENTIONS.md carries, and read
   const reworded = md.replace("`npx vitest run`", "`npx vitest run --silent`");
   expect(conventionCommandsFor(reworded, "lib/parser")).toContain("npx vitest run --silent");
   expect(conventionCommandsFor(reworded, "lib/parser")).not.toContain("npx vitest run");
-  const unbackticked = md.replace("`npm ci` ·\n  `npx vitest run`", "npm ci ·\n  `npx vitest run`");
+  const unbackticked = md.replace("`npm ci`", "npm ci");
+  expect(unbackticked).not.toBe(md);
   expect(
     conventionCommandsFor(unbackticked, "lib/parser"),
     "a command that lost its backticks ends the list where it stands",
@@ -353,7 +403,7 @@ test("the front reads every command bullet docs/CONVENTIONS.md carries, and read
 });
 
 
-test("a verb needing an install says which command builds it, and runs nothing", () => {
+test("a verb with missing TOOL dependencies names the package to restore and runs nothing", () => {
   const project = scratchProject();
   const emptyPackage = mkdtempSync(path.join(tmpdir(), "supertaskr-pkg-"));
   try {
@@ -361,22 +411,21 @@ test("a verb needing an install says which command builds it, and runs nothing",
     // is exactly the ninety-second-old worktree docs/CONVENTIONS.md
     // describes.
     mkdirSync(path.join(emptyPackage, "scripts"), { recursive: true });
-    for (const file of ["docs-gate.mjs", "docs-scan.mjs"]) {
+    for (const file of ["health-bands-run.mjs", "health-bands.mjs", "health-bands.config.mjs", "docs-scan.mjs"]) {
       copyFileSync(path.join(packageRoot, "scripts", file), path.join(emptyPackage, "scripts", file));
     }
-    const docsGate = VERBS.find((v) => v.verb === "docs-gate");
+    const docsGate = VERBS.find((v) => v.verb === "health");
     expect(docsGate, "the docs-gate verb is in the table").toBeDefined();
     const missing = requirementsFor(docsGate!, repoRoot, emptyPackage);
     const deps = missing.find((m) => m.id === "package-deps");
     expect(deps, "a script with a bare import and no node_modules is a requirement").toBeDefined();
     expect(
-      bareDependencies(path.join(packageRoot, "scripts", "docs-gate.mjs")),
+      bareDependencies(path.join(packageRoot, "scripts", "health-bands-run.mjs")),
       "and the requirement is DERIVED from the script's own imports",
     ).toContain("yaml");
-    expect(deps?.build, "the message carries the one command that builds it").toBe(
-      buildCommandFor("tools/e2e", repoRoot),
-    );
-    expect(deps?.build).toContain("npm ci");
+    expect(deps?.build, "the missing files belong to TOOL, not this project's setup").toContain("restore or reinstall this supertaskr package's declared runtime dependencies");
+    expect(deps?.build).toContain(emptyPackage);
+    expect(deps?.build).not.toContain("docs/CONVENTIONS.md");
 
     // THE POSITIVE CONTROL. The same verb, against the package as it
     // really is, owes nothing — so the sentence above is about the
@@ -413,7 +462,7 @@ test("a verb whose script resolves its own repository root is refused from an in
   try {
     for (const entry of VERBS) {
       const verdict = rootMismatch(entry, project);
-      if (entry.rootFlag || entry.target.kind === "cargo" || entry.target.kind === "project") {
+      if (entry.rootFlag || entry.stdioContext || entry.projectless || entry.target.kind === "cargo" || entry.target.kind === "project") {
         // A `project` target is RESOLVED against the project root, so it
         // cannot answer about the package's own tree and needs no refusal.
         expect(verdict, `${entry.verb} is told which project it is about`).toBeNull();
@@ -446,6 +495,10 @@ test("the project root is found by walking up, and its absence is said rather th
       const status = cliMain(["status"], { cwd: bare, stdout: (s) => said.push(s), stderr: (s) => said.push(s) });
       expect(status).toBe(EXIT.CANNOT_RUN);
       expect(said.join("\n")).toContain("no supertaskr project above");
+      expect(ROOT_SETTINGS_MARKER).toBe(parserPure.PROJECT_SETTINGS);
+      writeFileSync(path.join(bare,ROOT_SETTINGS_MARKER),"invalid: editor bytes\n");
+      const nested=path.join(bare,"nested");mkdirSync(nested);
+      expect(findProjectRoot(nested),"discovery recognizes configured PRODUCT; validation is the loader's job").toBe(bare);
     } finally {
       removeGitFixture(bare, FIXTURE);
     }
@@ -459,7 +512,7 @@ test("the installer targets Claude Code and Codex, and a third harness is one ad
   const two = installPlan({ harnesses: HARNESSES, skills: ["seat"] });
   expect(two.map((s) => s.to)).toEqual([
     path.join(".claude", "skills", "seat", "SKILL.md"),
-    path.join(".codex", "prompts", "seat.md"),
+    path.join(".agents", "skills", "seat", "SKILL.md"),
   ]);
   for (const step of two) expect(step.from).toBe(path.join("method", "skills", "seat", "SKILL.md"));
 
@@ -496,127 +549,124 @@ test("the docs gate sees the CLI package as a derived reader of docs/", () => {
   }
 });
 
-test("npx supertaskr runs out of a packed tarball installed into a project that is not this repository", () => {
+test("offline package installation refuses a missing runtime dependency declaration before provisioning", () => {
+  const root = mkdtempSync(path.join(tmpdir(), "supertaskr-undeclared-pack-"));
+  const source = path.join(root, "source"), project = path.join(root, "project"), packed = path.join(root, "packed");
+  for (const directory of [source, project, packed]) mkdirSync(directory);
+  try {
+    writeFileSync(path.join(source, "package.json"), JSON.stringify({ name: "supertaskr", version: "0.0.0" }));
+    const result = JSON.parse(execFileSync("npm", ["pack", "--offline", "--ignore-scripts", "--json", "--pack-destination", packed], { cwd: source, encoding: "utf8" }));
+    const before = readdirSync(packed);
+    expect(() => installOfflinePackage({ packageTarball: path.join(packed, result[0].filename), packDirectory: packed, project })).toThrow("offline-fixture-yaml-declaration-required");
+    expect(readdirSync(packed)).toEqual(before);
+    expect(readdirSync(project)).toEqual([]);
+  } finally { removeGitFixture(root, "offline undeclared package"); }
+});
+
+test("npx supertaskr runs out of an isolated standalone tarball with no checkout or dependency fallback", () => {
   test.setTimeout(300_000);
   const project = scratchProject();
   const packDir = mkdtempSync(path.join(tmpdir(), "supertaskr-pack-"));
+  const env = { ...process.env, NODE_PATH: "" };
   try {
-    writeFileSync(
-      path.join(project, "package.json"),
-      `${JSON.stringify({ name: "a-genesis-project", version: "0.0.0", private: true }, null, 2)}\n`,
-    );
-    // NOTHING IS PUBLISHED. The card says so: publishing is @human's
-    // (T-266), and the proof owed here is a LOCAL tarball.
-    const packed = execFileSync("npm", ["pack", "--pack-destination", packDir], {
-      cwd: packageRoot,
-      encoding: "utf8",
-    })
-      .trim()
-      .split("\n")
-      .at(-1);
-    expect(packed, "npm pack named a tarball").toBeTruthy();
-    execFileSync("npm", ["install", "--no-audit", "--no-fund", "--offline", path.join(packDir, String(packed))], {
-      cwd: project,
-      encoding: "utf8",
-    });
-    const shim = path.join(project, "node_modules", ".bin", "supertaskr");
-    expect(existsSync(shim), "the install links a `supertaskr` bin").toBe(true);
-
-    const help = execFileSync("npx", ["supertaskr", "--help"], { cwd: project, encoding: "utf8" });
-    expect(help, "npx supertaskr answers with its verbs").toContain("usage: supertaskr <verb>");
-    for (const entry of VERBS) expect(help).toContain(entry.verb);
-
-    // And an installed copy REFUSES the verbs whose scripts resolve their
-    // own root, naming the two roots — never a stack trace.
-    //
-    // THE EXAMPLE IS DERIVED, NOT TYPED (T-332). This body drove
-    // `docs-gate` by name, and that verb LEFT the class when it gained
-    // `--root <checkout>`: `rootMismatch` returns null for a verb that
-    // takes one, so the CLI stops refusing it on the root ground and
-    // gets one step further, to a dependency an installed copy has not
-    // got — still exit 3, still naming the project, and no longer this
-    // sentence. The CLASS is what this body is about, so the class is
-    // what it reads, off the registry's own `rootFlag`. A hand-picked
-    // example is the same staleness one card later.
-    //
-    // `target.kind === "script"` is the filter and not a convenience:
-    // `rootMismatch` returns null for `cargo` and `project` targets
-    // before it looks at anything else, so a verb of either kind never
-    // produces this refusal and would make the body red for a reason
-    // that is not its subject.
-    const rootless = VERBS.filter((v) => !v.rootFlag && v.target.kind === "script");
-    // A FLOOR FIRST: an empty class agrees with everything below it, and
-    // the day the last such verb goes this body must SAY so rather than
-    // pass quietly.
-    expect(
-      rootless.length,
-      "the registry still declares verbs whose script resolves its own root",
-    ).toBeGreaterThan(0);
-    const example = rootless[0]!;
-    // NO ARGUMENT IS PASSED, AND THAT IS READ OFF `rootMismatch` RATHER
-    // THAN ASSUMED: it is decided from the entry and the project root
-    // alone, before any argument is looked at, so a verb of this class
-    // refuses whatever it is handed.
-    let refusal = "";
+    writeFileSync(path.join(project, "package.json"), JSON.stringify({ name: "a-genesis-project", version: "0.0.0", private: true }));
+    const cliRoot = path.join(repoRoot, "cli");
+    const finderMetadata = path.join(repoRoot, "method", ".DS_Store"), metadata = Buffer.from([0xff, 0x00, 0xfe]);
+    expect(existsSync(finderMetadata)).toBe(false);
+    writeFileSync(finderMetadata, metadata);
+    const packed = JSON.parse(execFileSync("npm", ["pack", "--json", "--pack-destination", packDir], { cwd: cliRoot, encoding: "utf8", env }));
+    expect(readFileSync(finderMetadata)).toEqual(metadata);
+    expect(packed[0].name).toBe("supertaskr");
+    expect(packed[0].files.some((f: { path: string }) => f.path.includes(".claude/") || f.path.startsWith("docs/") || f.path.includes(".supertaskr/"))).toBe(false);
+    installOfflinePackage({ packageTarball: path.join(packDir, packed[0].filename), packDirectory: packDir, project, env });
+    const installed = path.join(project, "node_modules", "supertaskr");
+    const manifest = JSON.parse(readFileSync(path.join(installed, "package.json"), "utf8"));
+    expect(manifest.name).toBe("supertaskr"); expect(manifest).not.toHaveProperty("private");
+    expect(manifest.version).toBe(JSON.parse(readFileSync(path.join(cliRoot, "package.json"), "utf8")).version);
+    expect(manifest.dependencies).toEqual(JSON.parse(readFileSync(path.join(cliRoot, "package.json"), "utf8")).dependencies);
+    expect(realpathSync(installed).startsWith(realpathSync(project) + path.sep)).toBe(true);
+    expect(realpathSync(installed).startsWith(realpathSync(repoRoot) + path.sep)).toBe(false);
+    const bin = path.join(project, "node_modules", ".bin", "supertaskr");
+    expect(existsSync(bin)).toBe(true);
+    const run = (args: string[]) => spawnSync("npx", ["--no-install", "supertaskr", ...args], { cwd: project, encoding: "utf8", env });
+    const help = run(["--help"]); expect(help.status, help.stderr).toBe(0);
+    for (const entry of VERBS) expect(help.stdout).toContain(entry.verb);
+    const entry = path.join(installed, "dist/tools/e2e/scripts/brief.mjs");
+    expect(packageEscapes(entry, installed)).toEqual([]);
+    expect(packageEscapes(path.join(packageRoot, "scripts/brief.mjs"), packageRoot).length).toBeGreaterThan(0);
+    const resolver = createRequire(entry);
+    const yaml = resolver.resolve("yaml/package.json");
+    expect(realpathSync(yaml).startsWith(realpathSync(project) + path.sep)).toBe(true);
+    expect(bareDependencies(entry)).toContain("yaml");
+    expect(existsSync(path.join(installed, "dist/lib/parser/dist/pure.js"))).toBe(true);
+    expect(existsSync(path.join(installed, "dist/method/runtime/process-schema.yaml"))).toBe(true);
+    const tool = JSON.parse(readFileSync(path.join(installed, "dist/tool-manifest.json"), "utf8"));
+    expect(tool.method.files.some((file: {path:string}) => path.basename(file.path) === ".DS_Store")).toBe(false);
+    expect(packed[0].files.some((file: {path:string}) => path.basename(file.path) === ".DS_Store")).toBe(false);
+    expect(tool.version).toBe(2); expect(tool.package).toEqual({ name: manifest.name, version: manifest.version,
+      sha256: createHash("sha256").update(readFileSync(path.join(installed, "package.json"))).digest("hex"),
+      entrySha256: createHash("sha256").update(readFileSync(path.join(installed, "supertaskr.mjs"))).digest("hex") });
+    expect(tool.parser.version).toBe(JSON.parse(readFileSync(path.join(installed, "dist/lib/parser/package.json"), "utf8")).version);
+    expect(tool.parser.files.map((f: { path: string }) => f.path)).toEqual(expect.arrayContaining(["lib/parser/dist/pure.js", "lib/parser/dist/types.js"]));
+    expect(tool.runtime.files.map((f: { path: string }) => f.path)).toEqual(expect.arrayContaining([
+      "tools/e2e/scripts/records-check.mjs", "tools/e2e/scripts/gate-run.mjs", "cli/gate-token.mjs",
+    ]));
+    for (const file of [...tool.parser.files, ...tool.method.files, ...tool.runtime.files]) {
+      expect(file.path.startsWith("/") || file.path.split("/").includes("..")).toBe(false);
+      expect(createHash("sha256").update(readFileSync(path.join(installed, "dist", file.path))).digest("hex")).toBe(file.sha256);
+    }
+    expect(createHash("sha256").update(JSON.stringify(tool.method.files)).digest("hex")).toBe(tool.method.packHash);
+    expect(createHash("sha256").update(JSON.stringify(tool.runtime.files)).digest("hex")).toBe(tool.runtime.buildHash);
+    cpSync(path.join(installed, "dist/method"), path.join(project, "method"), { recursive: true });
+    cpSync(path.join(installed, "dist/method/docs-templates"), path.join(project, "docs"), { recursive: true });
+    // Status currently reads the project's declared lane conventions. General
+    // conventions-free/configured gate support is T-303, not this package fix.
+    for (const rel of ["docs/CONVENTIONS.md", ...readdirSync(path.join(repoRoot, "docs/conventions")).map((name) => `docs/conventions/${name}`)]) {
+      mkdirSync(path.dirname(path.join(project, rel)), { recursive: true });
+      copyFileSync(path.join(repoRoot, rel), path.join(project, rel));
+    }
+    mkdirSync(path.join(project, "docs/tasks"), { recursive: true });
+    writeFileSync(path.join(project, "docs/tasks/T-901-installed.md"), "---\nid: T-901\ntitle: INSTALLED PROJECT ONLY\nstatus: planned\n---\n");
+    writeFileSync(path.join(project, "docs/STATE.md"), "# State\n\n## INSTALLED PROJECT ONLY\n");
+    execFileSync("git", ["init", "-q", "--initial-branch=main"], { cwd: project, env });
+    execFileSync("git", ["add", "docs", "method", "package.json"], { cwd: project, env });
+    execFileSync("git", ["-c", "user.name=CLI fixture", "-c", "user.email=fixture@example.invalid", "commit", "-qm", "scratch project"], { cwd: project, env });
+    const status = run(["status", "--root", project]);
+    expect(status.status, status.stderr).toBe(0);
+    expect(status.stdout).toContain("INSTALLED PROJECT ONLY");
+    expect(status.stdout).toContain(`repository: ${project}`);
+    expect(status.stdout).toContain("flat task files: 1");
+    expect(status.stdout).not.toContain("T-354");
+    // Missing declared runtime dependencies must fail here, rather than
+    // silently finding this checkout's installed YAML or a sibling workspace.
+    const yamlRoot = path.dirname(yaml), hidden = path.join(project, "hidden-yaml");
+    renameSync(yamlRoot, hidden);
     try {
-      execFileSync("npx", ["supertaskr", example.verb], {
-        cwd: project,
-        encoding: "utf8",
-        stdio: "pipe",
-      });
-      throw new Error(`the installed copy should have refused ${example.verb}`);
-    } catch (err) {
-      const e = err as { status?: number; stderr?: string };
-      expect(e.status, "a refusal is exit 3, the house's CANNOT RUN").toBe(3);
-      refusal = String(e.stderr ?? "");
-    }
-    expect(refusal).toContain("REFUSED");
-    expect(refusal).toContain(project);
-
-    // AND THE VERB THAT *LEFT* THAT CLASS STILL RUNS NOTHING HERE
-    // (T-332's verifier). `docs-gate` gained `--root <checkout>` and its
-    // registry entry flipped to `rootFlag: true`, so `rootMismatch` stops
-    // refusing it on the root ground: from an installed copy the CLI now
-    // hands it THE USER'S PROJECT instead of declining. What keeps that
-    // safe is a SECOND refusal — `requirementsFor` will not run a script
-    // whose bare imports have no `node_modules` beside them — and until
-    // this assertion that second refusal was claimed in a comment and
-    // pinned by nothing. A verb that can be pointed at another tree and
-    // is no longer refused for the root reason must be refused for a
-    // reason something READS, or the day its dependency is vendored it
-    // starts answering about a stranger's repository with no body red.
-    //
-    // THE SUBJECT IS DERIVED, NOT TYPED, for the same reason the class
-    // above is: what is asserted is that EVERY verb the registry moved
-    // into the `--root` class is still refused from here, so the day a
-    // second verb joins it inherits the pin instead of needing one.
-    const rooted = VERBS.filter((v) => v.rootFlag && v.target.kind === "script");
-    // A FLOOR FIRST: an empty class agrees with everything below it.
-    expect(
-      rooted.length,
-      "the registry declares verbs whose script takes --root <checkout>",
-    ).toBeGreaterThan(0);
-    for (const entry of rooted) {
-      let cannot = "";
-      try {
-        execFileSync("npx", ["supertaskr", entry.verb], {
-          cwd: project,
-          encoding: "utf8",
-          stdio: "pipe",
-        });
-        throw new Error(`the installed copy RAN ${entry.verb} against a project that is not this repository`);
-      } catch (err) {
-        const e = err as { status?: number; stderr?: string };
-        expect(e.status, `${entry.verb} from an installed copy is exit 3, never an answer`).toBe(3);
-        cannot = String(e.stderr ?? "");
-      }
-      expect(cannot, `${entry.verb} says it CANNOT RUN`).toContain("CANNOT RUN");
-      expect(cannot, `${entry.verb} ran nothing at all`).toContain("Nothing was run.");
-    }
-  } finally {
-    removeGitFixture(project, FIXTURE);
-    removeGitFixture(packDir, FIXTURE);
-  }
+      const missing = run(["status", "--root", project]);
+      expect(missing.status, missing.stderr).toBe(3);
+      expect(missing.stderr).toContain("CANNOT RUN");
+      expect(missing.stderr).toContain("yaml");
+      expect(missing.stderr).not.toContain("ERR_MODULE_NOT_FOUND");
+    } finally { renameSync(hidden, yamlRoot); }
+    const recovered = run(["status", "--root", project]); expect(recovered.status, recovered.stderr).toBe(0);
+    // The finite records bridge binds its PRODUCT through its protocol rather
+    // than a root flag. This control targets genuinely unadapted script verbs.
+    const rootless = VERBS.filter((v) => !v.rootFlag && !v.stdioContext && !v.projectless && v.target.kind === "script");
+    expect(rootless.length).toBeGreaterThan(0);
+    const refused = run([rootless[0]!.verb]);
+    expect(refused.status).toBe(3); expect(refused.stderr).toContain("REFUSED"); expect(refused.stderr).toContain(project);
+    renameSync(path.join(project, "method/skills"), path.join(project, "project-skills-input"));
+    const install = run(["install", "--harness", "codex"]);
+    expect(install.status, install.stderr).toBe(0);
+    const codex = HARNESSES.find((h) => h.id === "codex")!;
+    expect(existsSync(path.join(project, codex.dir, codex.file("supertaskr-interview")))).toBe(true);
+    expect(readFileSync(path.join(project, codex.dir, codex.file("supertaskr-interview")), "utf8")).toBe(
+      readFileSync(path.join(installed, "dist/tools/e2e/dist/method/skills/supertaskr-interview/SKILL.md"), "utf8"));
+    // The installed expander consumes generated JS, since node_modules
+    // explicitly forbids Node's checkout-only TypeScript stripping route.
+    const expand = spawnSync(process.execPath, [path.join(installed, "dist/cli/expand-fence.mjs")], { input: JSON.stringify({ touches: ["src/"], id: "T-901" }), encoding: "utf8", env });
+    expect(expand.status, expand.stderr).toBe(0); expect(JSON.parse(expand.stdout).paths).toContain("src");
+  } finally { removeGitFixture(project, FIXTURE); removeGitFixture(packDir, FIXTURE); }
 });
 
 // ── undo ─────────────────────────────────────────────────────────────
@@ -648,6 +698,8 @@ function undoFixture(opts: {
     path.join(repoRoot, ".claude", "hooks", "expand-fence.mjs"),
     path.join(root, ".claude", "hooks", "expand-fence.mjs"),
   );
+  mkdirSync(path.join(root, "cli"), { recursive: true });
+  copyFileSync(path.join(repoRoot, "cli", "expand-fence.mjs"), path.join(root, "cli", "expand-fence.mjs"));
   mkdirSync(path.join(root, "lib", "parser", "src"), { recursive: true });
   copyFileSync(
     path.join(repoRoot, "lib", "parser", "src", "fence.ts"),
@@ -1172,32 +1224,10 @@ test("the installer refuses a destination it would clobber, and --force is the n
   }
 });
 
-test("every command the skills' own cards name is a verb this package exposes", () => {
-  // THE DERIVATION THE CRITERION ASKS FOR, and it replaces a list typed
-  // into this file: the verb set is read off T-241's and T-242's cards,
-  // which are where the skills' command lines live until the skills do.
-  const cards = readdirSync(path.join(repoRoot, "docs", "tasks"))
-    // The two PARENT cards only: a sub-card (T-241-s3-…) is a finding filed
-    // under the parent, not a skill card, and T-241's merge landed five of
-    // them — this body redded battery57 on 8bf42b0 by counting them.
-    .filter((n) => /^T-24[12]-(?!s\d+-)/.test(n))
-    .map((n) => readFileSync(path.join(repoRoot, "docs", "tasks", n), "utf8"))
-    // THE SPEC PART ONLY — the text before the card's implementation notes
-    // and verdicts. Those sections name whatever a lane and its verifier
-    // RAN (T-241's name the pack's own golden-check.mjs and
-    // host-command-check.mjs, which are the pack's scripts and not verbs
-    // this package owes); the criteria are where the skills' command
-    // lines live.
-    .map((c) => c.split(/\n## (?:Implementation notes|Verdicts)\b/)[0] ?? c);
-  expect(cards.length, "both skill cards were found, and no sub-card").toBe(2);
-  const quoted = cards.flatMap((c) => [...c.matchAll(/`([^`\n]+)`/g)].map((m) => m[1] ?? ""));
-  const commands = quoted.filter((q) => /\.mjs\b/.test(q));
-  expect(commands.length, "the cards really name commands").toBeGreaterThan(0);
-
-  // EXACT MEMBERSHIP, NEVER A SUBSTRING. A mutant that repointed the
-  // `evals` verb at `gate-run.mjs` survived a `toContain("run.mjs")`
-  // check, because one script's name is inside another's — the same
-  // class the verifier's R2 found in `undo`'s id matching.
+test("every shipped HOST command reaches an exact front target and arm", () => {
+  const contract = readFileSync(path.join(repoRoot, "method/skills/supertaskr-seat/references/host-commands.md"), "utf8");
+  const commands = [...contract.matchAll(/^    HOST> (node .*\.mjs.*)$/gm)].map(match => match[1]!);
+  expect(commands.length).toBeGreaterThan(5);
   const files = new Set(
     VERBS.flatMap((v) =>
       v.target.kind === "script" || v.target.kind === "project" ? [v.target.file] : [],
@@ -1217,7 +1247,7 @@ test("every command the skills' own cards name is a verb this package exposes", 
       files.has(script) || files.has(path.basename(script)),
       `${command} is reachable — some verb's target IS ${script}, exactly`,
     ).toBe(true);
-    const arm = /\s(--[a-z-]+)/.exec(command)?.[1];
+    const arm = /\s(--[a-z-]+)/.exec(command.split("$(")[0] ?? command)?.[1];
     if (arm !== undefined) expect(arms.has(arm), `and its arm ${arm} is reached`).toBe(true);
   }
   // NOT VACUOUS: a command no verb fronts is not silently reachable.

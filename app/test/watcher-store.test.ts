@@ -18,6 +18,7 @@ import {
   type DocsFilePayload,
   type DocsModelState,
   type DocsSnapshotPayload,
+  type RecordsObservation,
 } from "../src/lib/docs-model";
 
 // T-007 store-layer tests: the project-switch reset (a new project's
@@ -881,5 +882,108 @@ describe("outcomeCarriesSnapshot — provenance, not the seq", () => {
     for (const outcome of cases) {
       expect(outcomeCarriesSnapshot(outcome), `${outcome.kind} carries no tree`).toBe(false);
     }
+  });
+});
+
+// Native observation contexts are independent of PRODUCT pathname and clocks.
+describe("selected private records contexts", () => {
+  const records = (selectionSequence: number, contextSequence = selectionSequence, changes: Partial<RecordsObservation> = {}): RecordsObservation => ({
+    selectionSequence, contextSequence, layout: "split", recordsDir: "/private/records-one",
+    associationId: "project-one", rootIncarnation: "1:10", docsIncarnation: "1:11",
+    availability: "available", finding: null, contentRevision: `working-tree-observation:${contextSequence}`,
+    ...changes,
+  });
+  const observed = (seq: number, origin = records(10), changes: Partial<DocsSnapshotPayload> = {}): DocsSnapshotPayload => ({
+    ...payload(seq, "/product", projectAFiles()), records: origin, ...changes,
+  });
+  const selected = () => reduceDocs(emptyState(), observed(10));
+  const scope = (seq: number, origin: RecordsObservation, projectDir = "/product") => ({
+    seq, projectDir, selectionSequence: origin.selectionSequence, contextSequence: origin.contextSequence, records: origin,
+  });
+
+  it("retains PRODUCT identity while recording the actual private origin", () => {
+    const state = selected();
+    expect(state.projectDir).toBe("/product");
+    expect(state.records?.recordsDir).toBe("/private/records-one");
+    expect(state.effectiveOrigins?.get("docs/tasks/T-901-alpha.md")?.contentRevision).toBe("working-tree-observation:10");
+  });
+
+  it("rejects a precommit candidate and an inadmissible high sequence before changing the watermark", () => {
+    const previous = selected();
+    expect(reduceDocs(previous, observed(999, records(0)))).toBe(previous);
+    expect(reduceDocs(previous, observed(999, records(1000)))).toBe(previous);
+    expect(reduceDocs(previous, observed(999, records(10, 10, { recordsDir: "/foreign" })))).toBe(previous);
+    expect(previous.seq).toBe(10);
+  });
+
+  it("rejects retired A messages even when their sequence is higher than selected B", () => {
+    const a = selected();
+    const b = reduceDocs(a, observed(20, records(20), { projectDir: "/product-b" }));
+    expect(reduceDocs(b, observed(999))).toBe(b);
+    expect(b.seq).toBe(20);
+  });
+
+  it("admits the same PRODUCT changing R1 to R2 with older or equal timestamps", () => {
+    for (const generatedAtMs of [1, selected().generatedAtMs]) {
+      const previous = selected();
+      const next = reduceDocs(previous, observed(21, records(10, 20, { recordsDir: "/private/records-two", rootIncarnation: "1:20" }), {
+        generatedAtMs, files: [{ path: "docs/ROADMAP.md", content: BROKEN_ROADMAP }],
+      }));
+      expect(next.seq).toBe(21);
+      expect(next.records?.recordsDir).toBe("/private/records-two");
+      expect(next.model.tasks).toEqual([]);
+      expect(next.failures[0]?.showingLastGood).toBe(false);
+    }
+  });
+
+  it("keeps the B watch at S+1 when the B command response at S arrives later", () => {
+    const watch = reduceDocs(selected(), observed(21, records(20), { projectDir: "/product-b" }));
+    const previous = shell({ phase: "open", docs: watch });
+    const snapshot = observed(20, records(20), { projectDir: "/product-b" });
+    const result = reducePickOutcome(previous, { kind: "picked", snapshot, scope: scope(20, snapshot.records!, "/product-b") });
+    expect(result.docs).toBe(watch);
+    expect(result.docs.seq).toBe(21);
+  });
+
+  it("retains old bytes and their provenance separately from current unavailability", () => {
+    const previous = selected();
+    const next = reduceDocs(previous, observed(21, records(10, 20, { availability: "unavailable", finding: "records root gone", contentRevision: null }), { files: [] }));
+    expect(next.records?.availability).toBe("unavailable");
+    expect(next.contentOrigin).toBe(previous.contentOrigin);
+    expect(next.effective).toBe(previous.effective);
+    expect(next.seq).toBe(21);
+  });
+
+  it("preserves the original per-file revision of last-good parse fallback", () => {
+    const previous = selected();
+    const next = reduceDocs(previous, observed(11, records(10, 10, { contentRevision: "working-tree-observation:11" }), {
+      files: [{ path: "docs/ROADMAP.md", content: BROKEN_ROADMAP }],
+    }));
+    expect(next.failures[0]?.showingLastGood).toBe(true);
+    expect(next.effectiveOrigins?.get("docs/ROADMAP.md")?.contentRevision).toBe("working-tree-observation:10");
+  });
+
+  it("rejects snapshot-less foreign outcomes and old-attempt notices without altering state", () => {
+    const previous = shell({ phase: "open", docs: selected() });
+    const foreign = records(30);
+    expect(reducePickOutcome(previous, {
+      kind: "genesis", projectDir: "/foreign", seq: 999,
+      scope: scope(998, foreign, "/different"),
+    })).toBe(previous);
+    expect(reducePickOutcome(previous, {
+      kind: "error", path: "/old", message: "late old failure",
+      scope: scope(999, records(1), "/old"),
+    })).toBe(previous);
+    expect(previous.docs.seq).toBe(10);
+  });
+
+  it("admits a contextual docs-less legacy genesis switch without losing its watermark", () => {
+    const previous = shell({ phase: "open", docs: selected() });
+    const origin = records(20, 20, { layout: "colocated", recordsDir: "/legacy", availability: "noDocs", docsIncarnation: null, contentRevision: null });
+    const next = reducePickOutcome(previous, { kind: "genesis", projectDir: "/legacy", seq: 20, scope: scope(20, origin, "/legacy") });
+    expect(next.phase).toBe("genesis");
+    expect(next.docs.seq).toBe(20);
+    expect(next.docs.projectDir).toBe("/legacy");
+    expect(next.docs.records?.availability).toBe("noDocs");
   });
 });

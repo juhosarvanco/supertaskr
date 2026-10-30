@@ -57,7 +57,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use serde::Serialize;
 
 use super::adapter::{
-    self, is_executable_file, parse_major, validate_model, validate_session_id, AgentAdapter,
+    self, is_executable_file, validate_model, AgentAdapter,
 };
 
 // ---- caps (T-003's cap discipline, §4) --------------------------------
@@ -175,6 +175,12 @@ pub fn now_ms() -> u64 {
 
 // ---- typed failures (§6) ----------------------------------------------
 
+/// The fixed adapter that actually produced an authentication failure.
+/// Absent on historical Claude payloads to preserve their wire shape.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum AuthProvider { Claude, Codex }
+
 /// Every way a turn can fail, typed. `Cancelled` is deliberately NOT
 /// here: a cancel is an outcome, not an error.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
@@ -182,6 +188,8 @@ pub fn now_ms() -> u64 {
 pub enum TurnError {
     /// The child could not be started at all (ENOENT, EACCES, …).
     SpawnFailed { os: String },
+    /// The child did not receive the complete prompt on its owned stdin.
+    PromptInputFailed { os: String },
     /// No first stream line within the start timeout.
     StartTimeout,
     /// No stream line for the stall timeout, mid-turn.
@@ -216,7 +224,11 @@ pub enum TurnError {
     /// `result` line whose `subtype` still reads `"success"` while
     /// `is_error` is true and `api_error_status` is 401; the process
     /// exits 1 and writes nothing to stderr of its own.
-    AuthFailed { status: Option<u32>, message: String },
+    AuthFailed {
+        status: Option<u32>, message: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        provider: Option<AuthProvider>,
+    },
     /// T-029 (T-025-s1): the turn died because a tool it needed was
     /// REFUSED — `--allowedTools` too narrow, or a permission mode that
     /// declined. Named rather than relayed, so the screen can say which
@@ -305,6 +317,15 @@ pub struct Emitter {
 impl Emitter {
     pub fn new(sink: Arc<dyn Fn(RunEvent) + Send + Sync>, seq: Arc<AtomicU64>) -> Self {
         Self { sink, seq }
+    }
+    pub(crate) fn with_sink(&self, sink: Arc<dyn Fn(RunEvent) + Send + Sync>) -> Self {
+        Self { sink, seq: self.seq.clone() }
+    }
+    pub(crate) fn next_sequence(&self) -> u64 {
+        self.next()
+    }
+    pub(crate) fn forward(&self, event: RunEvent) {
+        (self.sink)(event);
     }
     fn next(&self) -> u64 {
         self.seq.fetch_add(1, Ordering::SeqCst) + 1
@@ -892,11 +913,12 @@ fn finish(
     login_path: Option<String>,
     adapter: &AgentAdapter,
 ) -> Result<ResolvedCli, ResolveError> {
+    if adapter.parse == adapter::ParseMode::CodexExecJsonV1 && version.is_none() {
+        return Err(ResolveError::Unsupported { found: "Codex version unavailable".into() });
+    }
     if let Some(line) = &version {
-        if let Some(major) = parse_major(line) {
-            if major < adapter.min_major {
-                return Err(ResolveError::Unsupported { found: line.clone() });
-            }
+        if adapter.version_supported(line) == Some(false) {
+            return Err(ResolveError::Unsupported { found: line.clone() });
         }
         // No leading number: cannot tell. Proceeding beats refusing on a
         // cosmetic banner change (a real flag mismatch fails loudly at
@@ -924,7 +946,8 @@ fn login_shell_probe(cfg: &RunnerConfig, adapter: &AgentAdapter) -> Option<(Path
     // webview or the filesystem supplied.
     let script = match adapter.binary {
         "claude" => "command -v claude && echo SUPERTASKR_LOGIN_PATH=$PATH",
-        _ => return which_on_path(adapter).map(|p| (p, None)),
+        "codex" => "command -v codex && echo SUPERTASKR_LOGIN_PATH=$PATH",
+        _ => return fallback_cli(adapter).map(|p| (p, None)),
     };
     let mut command = Command::new(login_shell());
     command
@@ -936,7 +959,7 @@ fn login_shell_probe(cfg: &RunnerConfig, adapter: &AgentAdapter) -> Option<(Path
         .stderr(Stdio::null());
     let output = run_with_timeout(command, cfg.probe_timeout)?;
     if !output.status_ok {
-        return which_on_path(adapter).map(|p| (p, None));
+        return fallback_cli(adapter).map(|p| (p, None));
     }
     let mut found: Option<PathBuf> = None;
     let mut login_path: Option<String> = None;
@@ -953,8 +976,23 @@ fn login_shell_probe(cfg: &RunnerConfig, adapter: &AgentAdapter) -> Option<(Path
     }
     match found {
         Some(path) => Some((path, login_path)),
-        None => which_on_path(adapter).map(|p| (p, login_path)),
+        None => fallback_cli(adapter).map(|p| (p, login_path)),
     }
+}
+
+/// Desktop Codex can be present without a shell shim. This fixed discovery
+/// candidate is checked by the same basename/absolute/executable gate and is
+/// reached only behind the existing real-CLI test-arm refusal. Registry paths
+/// remain observations and never select argv0.
+fn fallback_cli(adapter: &AgentAdapter) -> Option<PathBuf> {
+    which_on_path(adapter).or_else(|| {
+        #[cfg(target_os = "macos")]
+        if adapter.key == "codex" {
+            let candidate = PathBuf::from("/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex");
+            if validate_resolved_binary(&candidate, adapter).is_ok() { return Some(candidate); }
+        }
+        None
+    })
 }
 
 /// Plain PATH lookup over the APP'S OWN inherited `PATH` — the fallback
@@ -1308,6 +1346,15 @@ impl ChildHandle {
     }
 }
 
+/// Read-only continuation of the existing owned-group cleanup check. Callers
+/// retain ownership until this is false after terminating and reaping a child.
+pub(crate) fn child_group_has_members(handle: &ChildHandle) -> bool {
+    #[cfg(unix)]
+    { signals::group_has_members(handle.pid) }
+    #[cfg(not(unix))]
+    { let _ = handle; false }
+}
+
 /// What one grace poll actually did. Returned rather than logged so a
 /// test can assert the SHAPE of the kill, not just its aftermath.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -1571,6 +1618,8 @@ pub enum StreamLine {
     /// Not JSON at all. Real CLIs emit warnings; tolerated into the
     /// diagnostic ring rather than failing the turn.
     NotJson,
+    /// A recognized provider event violates its finite single-turn protocol.
+    ProtocolError(String),
 }
 
 /// Classify one stream line (`ParseMode::StreamJsonV1`).
@@ -1728,7 +1777,7 @@ fn as_status_u32(value: &serde_json::Value) -> Option<u32> {
 /// denial channels cannot apply it two slightly different ways — and so
 /// that the JOIN between them compares ids that went through the same
 /// transform on both sides.
-fn bounded_stream_string(raw: &str, max: usize) -> String {
+pub(super) fn bounded_stream_string(raw: &str, max: usize) -> String {
     crate::docs_watch::sanitize_for_log(&super::sessions::truncate_utf8(raw, max))
 }
 
@@ -1793,6 +1842,52 @@ fn denial_names<'a>(entries: impl IntoIterator<Item = &'a ResultDenial>) -> Vec<
 
 // ---- the turn ----------------------------------------------------------
 
+/// The writer must finish independently of whether any other holder closes the
+/// read end. Nonblocking writes and a finite poll interval make its stop/join
+/// independent of the process-group termination limit.
+#[cfg(unix)]
+pub(crate) fn write_prompt_interruptibly<W: Write + std::os::fd::AsRawFd>(
+    mut output: W,
+    bytes: &[u8],
+    stop: &AtomicBool,
+) -> std::io::Result<()> {
+    let fd = output.as_raw_fd();
+    // This thread owns the pipe's write end. Preserve other descriptor flags;
+    // use the platform definitions rather than assuming Linux/Darwin values.
+    let flags = unsafe { libc::fcntl(fd, libc::F_GETFL) };
+    if flags == -1 || unsafe { libc::fcntl(fd, libc::F_SETFL, flags | libc::O_NONBLOCK) } == -1 {
+        return Err(std::io::Error::last_os_error());
+    }
+    let mut sent = 0;
+    while sent < bytes.len() {
+        if stop.load(Ordering::SeqCst) {
+            return Err(std::io::Error::new(std::io::ErrorKind::Interrupted, "Prompt input stopped before complete delivery."));
+        }
+        match output.write(&bytes[sent..bytes.len().min(sent + 16 * 1024)]) {
+            Ok(0) => return Err(std::io::Error::new(std::io::ErrorKind::WriteZero, "Prompt input closed before complete delivery.")),
+            Ok(count) => sent += count,
+            Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
+            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                let mut waiting = libc::pollfd { fd, events: libc::POLLOUT, revents: 0 };
+                if unsafe { libc::poll(&mut waiting, 1, 5) } == -1 {
+                    let error = std::io::Error::last_os_error();
+                    if error.kind() != std::io::ErrorKind::Interrupted { return Err(error); }
+                }
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    Ok(())
+}
+#[cfg(not(unix))]
+pub(crate) fn write_prompt_interruptibly<W: Write>(
+    _output: W,
+    _bytes: &[u8],
+    _stop: &AtomicBool,
+) -> std::io::Result<()> {
+    Err(std::io::Error::new(std::io::ErrorKind::Unsupported, "Interruptible agent input is unavailable on this platform."))
+}
+
 /// Everything one turn needs. `prompt` is the ONLY caller-supplied text
 /// and it travels on stdin.
 pub struct TurnRequest {
@@ -1813,6 +1908,18 @@ pub struct TurnOutcome {
     pub truncated_relay: bool,
     pub error: Option<TurnError>,
     pub cancelled: bool,
+    pub usage: Option<TurnUsage>,
+}
+
+/// Actual provider-reported usage, never a configured estimate or an invented
+/// zero when the CLI did not report it. Existing Claude outcomes remain None.
+#[derive(Clone, Debug, serde::Deserialize, PartialEq, Eq)]
+pub struct TurnUsage {
+    pub input_tokens: u64,
+    pub cached_input_tokens: u64,
+    pub output_tokens: u64,
+    #[serde(default)]
+    pub reasoning_output_tokens: Option<u64>,
 }
 
 /// Run one turn to completion, relaying its stream as events.
@@ -1831,22 +1938,50 @@ pub fn run_turn(
     child_slot: &Mutex<Option<ChildHandle>>,
     cancel: &AtomicBool,
 ) -> TurnOutcome {
+    run_turn_with_model(cfg, adapter, cli, req, emitter, child_slot, cancel, None)
+}
+
+/// Managed callers already qualified the canonical committed role. Legacy
+/// embeddings retain their existing CLI-default behavior through run_turn.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn run_configured_turn(
+    cfg: &RunnerConfig, adapter: &AgentAdapter, cli: &ResolvedCli, req: &TurnRequest,
+    emitter: &Emitter, child_slot: &Mutex<Option<ChildHandle>>, cancel: &AtomicBool, model: &str,
+) -> TurnOutcome {
+    run_turn_with_model(cfg, adapter, cli, req, emitter, child_slot, cancel, Some(model))
+}
+
+#[allow(clippy::too_many_arguments)]
+fn run_turn_with_model(
+    cfg: &RunnerConfig, adapter: &AgentAdapter, cli: &ResolvedCli, req: &TurnRequest,
+    emitter: &Emitter, child_slot: &Mutex<Option<ChildHandle>>, cancel: &AtomicBool, model: Option<&str>,
+) -> TurnOutcome {
     let mut out = TurnOutcome::default();
+    #[cfg(not(unix))]
+    {
+        let _ = (cfg, adapter, cli, child_slot, cancel);
+        let error = TurnError::SpawnFailed { os: "Agent sessions require owned process groups on this platform.".into() };
+        out.error = Some(error.clone());
+        emitter.failed(req.turn, error);
+        return out;
+    }
 
     // T-039, THE SPAWN-SIDE GATE. Assembly is fallible, and a refusal
     // happens BEFORE anything is spawned: no child, no argv, no partial
     // state. This is the second boundary for an id read out of
     // `.supertaskr/sessions.json` (the first is `SessionEntry::resume_id`) and
     // the last one for any future caller.
-    let argv = match adapter.argv(req.resume.as_deref()) {
+    let argv = match model.map_or_else(|| adapter.argv(req.resume.as_deref()).map_err(|why| why.to_string()), |model| adapter.argv_for_model(req.resume.as_deref(), model)) {
         Ok(argv) => argv,
         Err(rejection) => {
             // T-029 (T-039-s3): the spawn-side gate's own envelope. Same
             // refusal, same escaped string, a name the webview can route
             // on — "start fresh" is the affordance this one wants, and it
             // is not the affordance a truncated stream line wants.
-            let error = TurnError::RejectedSessionId {
-                why: format!("refusing to resume: {rejection}"),
+            let error = if model.is_some() {
+                TurnError::SpawnFailed { os: format!("configured planner arguments refused: {rejection}") }
+            } else {
+                TurnError::RejectedSessionId { why: format!("refusing to resume: {rejection}") }
             };
             out.error = Some(error.clone());
             emitter.failed(req.turn, error);
@@ -1893,10 +2028,15 @@ pub fn run_turn(
 
     // The prompt goes in on stdin and stdin closes — never in argv, which
     // `ps` shows to every user on the box.
-    if let Some(mut stdin) = child.stdin.take() {
-        let _ = stdin.write_all(req.prompt.as_bytes());
-        // Dropping closes the pipe: the CLI sees EOF and starts.
-    }
+    // Inline method inputs can exceed the pipe buffer. The owned input writer
+    // must run beside the relay, so a CLI that never reads stdin still pays the
+    // existing startup deadline/cancellation and owned-group cleanup.
+    let input_stop = Arc::new(AtomicBool::new(false));
+    let input_writer = child.stdin.take().map(|stdin| {
+        let prompt = req.prompt.clone();
+        let stop = input_stop.clone();
+        std::thread::spawn(move || write_prompt_interruptibly(stdin, prompt.as_bytes(), &stop))
+    });
 
     let (line_tx, line_rx) = mpsc::channel::<LineMsg>();
     if let Some(stdout) = child.stdout.take() {
@@ -2011,6 +2151,7 @@ pub fn run_turn(
     let mut oversize = false;
     let mut last_line_at = Instant::now();
     let mut failure: Option<TurnError> = None;
+    let mut codex = super::codex::CodexStream::default();
 
     loop {
         if cancel.load(Ordering::SeqCst) {
@@ -2021,7 +2162,13 @@ pub fn run_turn(
             Ok(LineMsg::Line(line)) => {
                 last_line_at = Instant::now();
                 saw_any_line = true;
-                match classify_line(&line) {
+                let classified = match adapter.parse {
+                    adapter::ParseMode::StreamJsonV1 => classify_line(&line),
+                    adapter::ParseMode::CodexExecJsonV1 => codex.classify_line(&line),
+                };
+                out.usage = codex.usage.clone();
+                match classified {
+                    StreamLine::ProtocolError(why) => { failure = Some(TurnError::MalformedStream { why }); break; }
                     StreamLine::Init { session_id, model } => {
                         saw_json_anchor = true;
                         if let Some(id) = session_id {
@@ -2033,7 +2180,7 @@ pub fn run_turn(
                             // .native_session_id` stays None, the settle
                             // path writes no id to `.supertaskr/sessions.json`,
                             // and `send_turn` has nothing to resume from.
-                            if let Err(rejection) = validate_session_id(&id) {
+                            if let Err(rejection) = adapter.validate_session_id(&id) {
                                 // T-029 (T-039-s3): its OWN envelope, not
                                 // `MalformedStream`. The refusal string is
                                 // unchanged and already escaped; only what
@@ -2043,6 +2190,11 @@ pub fn run_turn(
                                         "the CLI's init line carried an unusable session id: {rejection}"
                                     ),
                                 });
+                                break;
+                            }
+                            if adapter.parse == adapter::ParseMode::CodexExecJsonV1 &&
+                                (req.resume.as_deref().is_some_and(|expected| expected != id) || out.native_session_id.as_deref().is_some_and(|prior| prior != id)) {
+                                failure = Some(TurnError::RejectedSessionId { why: "Codex reported a different thread from the exact original session".into() });
                                 break;
                             }
                             if out.native_session_id.as_deref() != Some(id.as_str()) {
@@ -2419,6 +2571,9 @@ pub fn run_turn(
     if cancel.load(Ordering::SeqCst) {
         out.cancelled = true;
     }
+    // EOF/failure/cancel ends prompt delivery. The writer cannot depend on
+    // group cleanup closing every possible reader before its join can finish.
+    input_stop.store(true, Ordering::SeqCst);
 
     // --- reap, then decide -------------------------------------------
     let status = if failure.is_some() || out.cancelled {
@@ -2440,12 +2595,23 @@ pub fn run_turn(
         let _ = child.wait();
         None
     } else {
+        // Stream EOF can precede prompt EOF if a descendant retains stdin.
+        // Keep the direct PID owned while applying the existing group cleanup
+        // policy, then join the writer before the turn's latch can be released.
+        if input_writer.as_ref().is_some_and(|writer| !writer.is_finished()) {
+            let _ = terminate_group_owning(&mut child, &handle, cfg.kill_grace);
+        }
         child.wait().ok()
     };
     // Whichever arm ran, this thread has now waited: publish it before
     // the slot is cleared, so an exit observer holding a clone stops
     // polling instead of racing the clear.
     handle.mark_reaped();
+    let input_failure = input_writer.and_then(|writer| match writer.join() {
+        Ok(Ok(())) => None,
+        Ok(Err(error)) => Some(TurnError::PromptInputFailed { os: error.to_string() }),
+        Err(_) => Some(TurnError::PromptInputFailed { os: "The owned prompt writer did not finish.".into() }),
+    });
     // The turn's child is gone; nothing must outlive it.
     *child_slot.lock().expect("child slot poisoned") = None;
 
@@ -2542,6 +2708,7 @@ pub fn run_turn(
                     .unwrap_or("the agent CLI could not authenticate");
                 return Some(TurnError::AuthFailed {
                     status: auth_status,
+                    provider: (adapter.parse == adapter::ParseMode::CodexExecJsonV1).then_some(AuthProvider::Codex),
                     message: crate::docs_watch::sanitize_for_log(&super::sessions::truncate_utf8(
                         message,
                         MAX_AUTH_MESSAGE_BYTES,
@@ -2589,7 +2756,7 @@ pub fn run_turn(
                     Some(TurnError::MalformedStream {
                         why: "no JSON stream lines at all".into(),
                     })
-                } else if req.resume.is_none() && out.native_session_id.is_none() {
+                } else if (req.resume.is_none() || adapter.parse == adapter::ParseMode::CodexExecJsonV1) && out.native_session_id.is_none() {
                     Some(TurnError::MalformedStream {
                         why: "no session init line in the stream".into(),
                     })
@@ -2611,7 +2778,7 @@ pub fn run_turn(
                 }
             }
         }
-    });
+    }).or(input_failure);
 
     match error {
         Some(error) => {
@@ -2748,6 +2915,59 @@ impl Ring {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(unix)]
+    #[test]
+    fn prompt_writer_stops_while_the_local_pipe_remains_open_and_unread() {
+        use std::os::fd::{AsRawFd, FromRawFd};
+        let mut descriptors = [-1; 2];
+        assert_eq!(unsafe { libc::pipe(descriptors.as_mut_ptr()) }, 0);
+        let input = unsafe { std::fs::File::from_raw_fd(descriptors[0]) };
+        let mut output = unsafe { std::fs::File::from_raw_fd(descriptors[1]) };
+        for fd in descriptors {
+            let flags = unsafe { libc::fcntl(fd, libc::F_GETFD) };
+            assert_ne!(flags, -1);
+            assert_ne!(unsafe { libc::fcntl(fd, libc::F_SETFD, flags | libc::FD_CLOEXEC) }, -1);
+        }
+        let fd = output.as_raw_fd();
+        let flags = unsafe { libc::fcntl(fd, libc::F_GETFL) };
+        assert_ne!(flags, -1);
+        assert_ne!(unsafe { libc::fcntl(fd, libc::F_SETFL, flags | libc::O_NONBLOCK) }, -1);
+        // Fill a local pipe before handing its write end to the production
+        // helper. No process or inherited descriptor is involved in this test.
+        loop {
+            match output.write(&[b'x'; 8192]) {
+                Ok(_) => {}
+                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => break,
+                other => panic!("could not fill local pipe: {other:?}"),
+            }
+        }
+        // The helper must set nonblocking itself, as for a new ChildStdin.
+        assert_ne!(unsafe { libc::fcntl(fd, libc::F_SETFL, flags) }, -1);
+        let stop = Arc::new(AtomicBool::new(false));
+        let writer_stop = stop.clone();
+        let (started_tx, started_rx) = mpsc::channel();
+        let (finished_tx, finished_rx) = mpsc::channel();
+        let writer = std::thread::spawn(move || {
+            started_tx.send(()).unwrap();
+            let result = write_prompt_interruptibly(output, &[b'p'; 65536], &writer_stop);
+            let _ = finished_tx.send(result);
+        });
+        started_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+        std::thread::sleep(Duration::from_millis(20));
+        let unfinished_before_stop = !writer.is_finished();
+        let stopping = Instant::now();
+        stop.store(true, Ordering::SeqCst);
+        let result = finished_rx.recv_timeout(Duration::from_secs(1));
+        let elapsed = stopping.elapsed();
+        // Always retire our local endpoints/thread before asserting. A broken
+        // blocking implementation therefore fails without leaving a test job.
+        drop(input);
+        writer.join().unwrap();
+        assert!(unfinished_before_stop, "the full unread pipe must keep delivery incomplete");
+        assert!(elapsed < Duration::from_secs(1), "writer shutdown took {elapsed:?}");
+        assert!(matches!(result, Ok(Err(error)) if error.kind() == std::io::ErrorKind::Interrupted), "stopping incomplete delivery must be reported");
+    }
 
     /// **THIS PIN IS ABOUT THE STRUCT, AND SINCE T-060 IT SAYS SO.**
     ///

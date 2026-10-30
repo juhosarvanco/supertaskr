@@ -1,3 +1,5 @@
+const repoRoot = fixtureFor(import.meta.url);
+import { pathToFileURL } from "node:url";
 import { execFileSync, spawnSync } from "node:child_process";
 import {
   chmodSync,
@@ -13,20 +15,37 @@ import {
 import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
-import { decide } from "../../../.claude/hooks/lane-fence.mjs";
+import * as fixtureSubjectDefinition0 from "../../../.claude/hooks/lane-fence.mjs";
+void fixtureSubjectDefinition0;
+const {
+  decide,
+} = await import(pathToFileURL(path.join(repoRoot, ".claude/hooks/lane-fence.mjs")).href) as typeof fixtureSubjectDefinition0;
 import { TOKEN_REL_PATH } from "../../../.claude/hooks/gate-token.mjs";
-import { repoRoot } from "../preflight";
+import { fixtureFor } from "../fixtures/test-project";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
-import { buildLaneFence, writeLaneFence } from "../scripts/lane-fence.mjs";
-import { conventionsFiles } from "../scripts/docs-scan.mjs";
+import * as fixtureSubjectDefinition1 from "../scripts/lane-fence.mjs";
+void fixtureSubjectDefinition1;
+const {
+  buildLaneFence,
+  writeLaneFence,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/lane-fence.mjs")).href) as typeof fixtureSubjectDefinition1;
+import * as fixtureSubjectDefinition2 from "../scripts/docs-scan.mjs";
+void fixtureSubjectDefinition2;
+const {
+  conventionsFiles,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/docs-scan.mjs")).href) as typeof fixtureSubjectDefinition2;
 import {
   LEDGER_REL_PATH,
+} from "../scripts/lane-lock.mjs";
+import * as fixtureSubjectDefinition3 from "../scripts/lane-lock.mjs";
+void fixtureSubjectDefinition3;
+const {
   applyLaneLock,
   laneLockPlan,
   laneLockStatus,
   readLedger,
   releaseLaneLock,
-} from "../scripts/lane-lock.mjs";
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/lane-lock.mjs")).href) as typeof fixtureSubjectDefinition3;
 
 /**
  * THE PHYSICAL FENCE LAYER (T-210) — no browser, no app.

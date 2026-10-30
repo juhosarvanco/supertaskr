@@ -1,5 +1,5 @@
 # T-020: the repo's one CI workflow — a thin invoker of the CONVENTIONS-
-# verbatim per-package commands (docs/CONVENTIONS.md "Build & test" is
+# verbatim per-package commands (CONTRIBUTING.md "Build & test" is
 # the one source of truth; tools/e2e/tests/workflow-parity.spec.ts pins
 # validity, command parity, SHA pins, and the xvfb boot step, so drift
 # between this file and CONVENTIONS fails the lane).
@@ -249,6 +249,9 @@ jobs:
         env:
           CI_PUSH_BEFORE: ${{ github.event.before }}
           CI_PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          # One sixteen-shard job still exhausted its 40m bound on a2a33e6e.
+          # Split further; preserve every owed spec and each existing limit.
+          E2E_SHARD_COUNT: 32
         run: node tools/e2e/scripts/ci-owed.mjs
 
   # ── THE LINTS AND THE TWO CURRENCY GATES ───────────────────────────
@@ -466,6 +469,7 @@ jobs:
             lib/parser/package-lock.json
             app/package-lock.json
             tools/e2e/package-lock.json
+            cli/package-lock.json
       - name: disk after the node toolchain and its npm cache
         run: |
           df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
@@ -504,6 +508,20 @@ jobs:
       - name: app build
         working-directory: app
         run: npm run build
+      # Package fixtures execute the real CLI builder and its declared dev deps.
+      - name: cli install
+        working-directory: cli
+        run: npm ci
+      - name: disk after the cli install
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+      # Native installed-service controls import these finite fixture helpers.
+      - name: e2e install
+        working-directory: tools/e2e
+        run: npm ci
+      - name: disk after the e2e install
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
       - name: cargo suite (both workspace crates; incl. the T-018 sentinel live tests)
         if: needs.owed.outputs.run-rust == 'true'
         working-directory: app/src-tauri
@@ -511,17 +529,8 @@ jobs:
       - name: disk after the cargo suite's target
         run: |
           df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
-      # THE GRAPH-CURRENCY GATE (T-054), placed immediately after the
-      # cargo suite: the suite is what builds the crate, and a stale
-      # graph is news before the audit spends a minute installing a
-      # tool. The `--root ../..` is part of the documented command, not a
-      # CI adaptation: without it the default root is the current
-      # directory and the check reports the graph MISSING and exits 1,
-      # which is a FALSE RED that reads exactly like staleness.
-      - name: graph currency (supertaskr-index index --check)
-        if: needs.owed.outputs.run-rust == 'true'
-        working-directory: app/src-tauri
-        run: cargo run -p supertaskr-index -- index --check --root ../..
+      # Committed private graph currency is an explicit bound dogfood check.
+      # Ordinary source-index determinism and fixture behavior run in cargo test.
       - name: install cargo-audit
         if: needs.owed.outputs.run-rust == 'true'
         working-directory: app/src-tauri
@@ -533,12 +542,6 @@ jobs:
         if: needs.owed.outputs.run-rust == 'true'
         working-directory: app/src-tauri
         run: cargo audit
-      - name: e2e install
-        working-directory: tools/e2e
-        run: npm ci
-      - name: disk after the e2e install
-        run: |
-          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
       # ---- xvfb tauri boot (LAST — the cargo cache above warms it) -----
       # WEBKIT_DISABLE_DMABUF_RENDERER: known webkit2gtk-in-headless-CI
       # rendering workaround; the check asserts startup lines, not pixels.
@@ -607,6 +610,7 @@ jobs:
             lib/parser/package-lock.json
             app/package-lock.json
             tools/e2e/package-lock.json
+            cli/package-lock.json
       - name: disk after the node toolchain and its npm cache
         run: |
           df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
@@ -637,6 +641,13 @@ jobs:
         working-directory: app
         run: npm ci
       - name: disk after the app install
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
+      # Package fixtures execute the real CLI builder and its declared dev deps.
+      - name: cli install
+        working-directory: cli
+        run: npm ci
+      - name: disk after the cli install
         run: |
           df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
       - name: e2e install

@@ -70,6 +70,24 @@ function files(root: string) {
   const home = path.join(root, ".supertaskr/runs/reservations"); return existsSync(home) ? readdirSync(home).sort() : [];
 }
 
+test("qualified detached initial heads require a finalized whole-set verifier preparation and cannot weaken ordinary acquisition", async () => {
+  const fx = fixture();
+  try {
+    const request: any = fx.request();
+    const control = await acquireQualifiedReservation(fx.product, request);
+    expect(control.reservation.scope.workers.every((worker: any) => worker.initialHead === undefined)).toBe(true);
+    await release(fx.product, control);
+    const checkout = request.workers[0].checkout;
+    put(checkout, "src/file", "candidate output\n"); const candidate = commit(checkout, "candidate differs from original authority base");
+    await expect(acquireQualifiedReservation(fx.product, request)).rejects.toThrow(/qualified-worker-base/);
+    request.workers[0].candidate = candidate;
+    await expect(acquireQualifiedReservation(fx.product, request)).rejects.toThrow(/qualified-schema/);
+    request.verification = { executorAttempt: "T-999-a40", preparationDigest: "0".repeat(64) };
+    await expect(acquireQualifiedReservation(fx.product, request)).rejects.toThrow(/qualified-verification-record/);
+    expect(files(fx.product).filter((file) => file.startsWith("qualified-"))).toEqual([]);
+  } finally { fx.cleanup(); }
+});
+
 test("qualified retained byte integrity refuses invalid UTF-8 through every public consumer", async () => {
   const fx = fixture();
   try {

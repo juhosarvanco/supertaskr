@@ -20,19 +20,20 @@ import type { ComponentRecord, TaskRecord } from '../src/types.js';
  * THE FENCE (T-134). A fence names PATHS; a slug is shorthand for a path
  * set; disjointness is computed over the EXPANDED sets.
  *
- * The live board is the fixture wherever it can be (`T-111-s3`: driven
- * from the live board's own tokens rather than a synthetic pair). Where
+ * The representative board is the fixture wherever it can be (`T-111-s3`: driven
+ * from the representative board's own tokens rather than a synthetic pair). Where
  * it cannot — the case that motivated the card is a card naming a code
  * path, and zero cards have ever named one — the fixture is built from
- * the live registry's own `paths:` so it is still this repository's data.
+ * the authored registry's `paths:` so the expansions are independent inputs.
  */
-const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
+import { createExampleProject } from '../../../tools/e2e/fixtures/example-project.mjs';
+const repoRoot = createExampleProject(fileURLToPath(new URL('../../../', import.meta.url)));
 const project = parseProject(repoRoot);
 const components = project.components ?? [];
 const board = new Map<string, TaskRecord>();
 for (const task of project.tasks) if (task.id !== undefined) board.set(task.id, task);
 
-/** A card off the live board, by id — never by filename glob. */
+/** A card off the representative board, by id — never by filename glob. */
 function card(id: string): TaskRecord {
   const found = board.get(id);
   if (found === undefined) throw new Error(`no live card declares id ${id}`);
@@ -222,6 +223,36 @@ describe('T-349 qualified pure planning fences', () => {
       expect(fence.usable, code).toBe(false);
       expect(issueCodes(fence)).toContain(code);
       expect(compareQualifiedFences(fence, fence, repositories).verdict).toBe('unusable');
+    }
+  });
+
+  it('preserves measured trailing-space identity bytes without aliasing a trimmed spelling', () => {
+    const roots: FenceRepositories = {
+      product: { filesystemRoot: '/workspace/new-code  ', gitCommonDirectory: '/objects/product.git  ' },
+      records: { filesystemRoot: '/workspace/new-notes  ', gitCommonDirectory: '/objects/records.git  ' },
+    };
+    const fence = qualified(['product::src/first.ts'], roots);
+    expect(fence.usable).toBe(true);
+    expect(fence.repositories).toEqual(roots);
+    expect(fence.paths[0]).toMatchObject({ filesystemRoot: roots.product.filesystemRoot, gitCommonDirectory: roots.product.gitCommonDirectory, domain: 'src/first.ts' });
+    expect(compareQualifiedFences(fence, qualified(['product::src/'], roots), roots).verdict).toBe('overlapping');
+    const changed = { ...roots, product: { ...roots.product, filesystemRoot: roots.product.filesystemRoot.trimEnd() } };
+    expect(compareQualifiedFences(fence, qualified(['product::src/first.ts'], changed), changed).verdict).toBe('unusable');
+    const nested = qualified(['product::src/first.ts'], { ...roots, records: { ...roots.records, filesystemRoot: `${roots.product.filesystemRoot}/private` } });
+    expect(issueCodes(nested)).toContain('nested-roots');
+  });
+
+  it('retains unsafe lexical identity refusals for each measured path field', () => {
+    const bad = ['relative/path', ' /absolute/path', '/workspace//code', '/workspace/./code', '/workspace/../code',
+      '/workspace/code/', '/workspace\\code', '/workspace/code\u0000', '/workspace/code\n', '/workspace/code\u0085'];
+    for (const field of ['filesystemRoot', 'gitCommonDirectory'] as const) {
+      for (const path of bad) {
+        const roots = { ...independentRoots, product: { ...independentRoots.product, [field]: path } };
+        const fence = qualified(['product::src/first.ts'], roots);
+        expect(fence.usable, `${field}: ${JSON.stringify(path)}`).toBe(false);
+        expect(issueCodes(fence)).toContain('noncanonical-identity');
+        expect(compareQualifiedFences(fence, fence, roots).verdict).toBe('unusable');
+      }
     }
   });
 
@@ -804,12 +835,12 @@ describe('T-221 — THE ONE CHARACTER THAT MAKES CONTAINMENT CONTAINMENT', () =>
    *
    * THE DOMAIN IS DERIVED, NOT TYPED. It is the fence a live `done` card
    * holds, and the adjacent sibling and the child are CONSTRUCTED from
-   * it — so the pair moves with this repository's own vocabulary instead
+   * it — so the pair moves with the authored project's vocabulary instead
    * of with a literal somebody has to remember. A construction cannot
    * drift out of step with the thing it is derived from; a transcription
    * can, and this file's own header says so about line numbers.
    */
-  const held = fenceOf('T-038'); // the live board's `touches: [tools/e2e/]`
+  const held = fenceOf('T-038'); // the representative board's `touches: [tools/e2e/]`
   const domain = held.paths[0] ?? '';
   /** A STRING prefix relationship that is NOT a path one. */
   const adjacent = `${domain}-helpers`;
@@ -824,7 +855,7 @@ describe('T-221 — THE ONE CHARACTER THAT MAKES CONTAINMENT CONTAINMENT', () =>
     );
   }
 
-  it('the fixture is this repository’s own data, and is shaped the way both pins assume', () => {
+  it('the fixture is authored representative data, and is shaped the way both pins assume', () => {
     // A COMPARISON IS EVIDENCE ONLY ONCE ITS EXPECTED SIDE IS ASSERTED
     // NON-EMPTY. A domain that came back `''` would make every pin below
     // pass for entirely the wrong reason: `''` is the repository root, and
@@ -919,7 +950,7 @@ describe('T-219 — CONTAINMENT IS HOLDING, so a fence that SWALLOWS the unfence
   /** A sibling whose name merely starts the same way. */
   const adjacent = `${entry}-archive`;
 
-  it('the fixtures are this repository’s own data, and are shaped the way every pin below assumes', () => {
+  it('the fixtures are authored representative data, and are shaped the way every pin below assumes', () => {
     // A COMPARISON IS EVIDENCE ONLY ONCE ITS EXPECTED SIDE IS ASSERTED
     // NON-EMPTY. An `entry` that came back `''` is the repository root,
     // which `sharedDomain` short-circuits on — every refusal below would
@@ -1072,7 +1103,7 @@ describe('T-219 — CONTAINMENT IS HOLDING, so a fence that SWALLOWS the unfence
   });
 
   it('and NO live registry slug swallows it, so the synthetic fixture above is the only way to reach it', () => {
-    // The other half of the same claim, censused over this repository's
+    // The other half of the same claim, censused over the authored project's
     // own registry rather than asserted: every slug the live components
     // declare expands to domains that hold nothing unfenceable, which is
     // why the branch above has zero live instances and is structural.
@@ -1384,7 +1415,7 @@ describe('T-219-s6 — an INTERIOR dot segment reserved a domain nothing could m
   });
 });
 
-describe('the live board, censused through the expansion', () => {
+describe('the representative board, censused through the expansion', () => {
   it('every token on every live card resolves, except the three on T-054 and one declared creation target', () => {
     // The census is a PROPERTY, not a tally: a count here would go stale
     // under the next merge exactly the way a line number does.

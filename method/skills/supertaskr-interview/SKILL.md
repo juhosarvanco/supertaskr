@@ -50,6 +50,14 @@ measure.
 
 ## 0. The scaffold - before any question
 
+The standalone seed below is the LEGACY COLOCATED route. If this
+folder carries a PRODUCT workspace binding or a RECORDS association,
+do not apply these seed destinations. Use the initialized scoped
+setup driver: it owns the initial local commits, PRODUCT adapters,
+committed settings and finite PRODUCT banks; the planner edits only
+RECORDS. The machine bank contract is carried below as source. A path
+or proposal does not grant access to another writable root.
+
 Write the seed files this file carries. A seed block opens with a
 line of 4 backticks followed by `supertaskr-seed` and the path that
 block lands at, relative to this folder, and ends at the next line
@@ -99,6 +107,134 @@ in the interview installs, moves or deletes anything under it.
 
 ## 2. The interview - the banks
 
+Initialized separated drivers also supply this finite PRODUCT bank
+contract. It is read-only method source, not a RECORDS seed:
+
+````supertaskr-source method/interview/genesis-product-proposal.md
+# Finite banks during separated genesis
+
+The human conversation stays plain text. The planner's actual working
+directory and edits stay in RECORDS. PRODUCT changes use the trusted setup
+driver's finite bank service; a prompt or proposal grants no filesystem
+authority. The service owns exact configuration parsing, paths, local
+commits and recovery. It does not publish.
+
+## RECORDS proposal for every confirmed bank
+
+The driver supplies a `supertaskr-bank-context-v1` JSON block with exact
+setup/session IDs, origin digest, current input revisions, validated
+settings and actual captured human answer references. Use that data;
+do not infer it from the human's prose. Human conversation remains plain
+text. A reference proves captured bytes and context, not the semantic
+correctness of your interpretation.
+
+After writing the finite artifacts named by the current banking-map row,
+write exactly `docs/plans/genesis-bank-proposal.json` in RECORDS:
+
+```json
+{
+  "version": 1,
+  "setupId": "<driver supplied>",
+  "sessionId": "<driver supplied>",
+  "originDigest": "sha256:<driver supplied 64 lowercase hex>",
+  "proposalId": "<one portable identifier for this bank>",
+  "stage": 0,
+  "expectedProductRevision": "<driver supplied full input commit>",
+  "expectedRecordsRevision": "<driver supplied full input commit>",
+  "answerRefs": [],
+  "records": [{"path": "docs/STATE.md"}]
+}
+```
+
+This is strict UTF-8 JSON: no duplicate or extra keys. Stage0 stamps the
+already initialized STATE and proposes the pre-Q1 continuation before
+asking Q1. It may use empty answerRefs. Stages1–8 use the actual driver
+references for the human confirmations or skips that support that bank.
+Updates and final approval notes still list the complete required stage
+set, including unchanged artifacts. Stage8 requires STATE, ARCHITECTURE,
+ROADMAP and at least one planned task. Preserve unchanged bytes and empty
+lifecycle fields; listing a file grants no additional editing authority.
+A STATE/ROADMAP-only final approval proposal cannot be banked. The
+backend alone derives INDEX; never list INDEX, runtime files, verdicts,
+completion evidence, source graphs or arbitrary PRODUCT paths.
+
+Each records row is exactly `{path}` or `{path,sha256}`. Prefer the
+path-only form: the backend measures and freezes exact observed bytes,
+mode and SHA256. A supplied sha256 must be exact; do not invent a hash
+or obtain extra tool permission to calculate it. The raw proposal and
+actual file captures are frozen together before effects. Paths remain
+relative to RECORDS and must belong to the finite stage; they grant no
+filesystem authority.
+
+Q1/Q5 also require the PRODUCT proposal below with the same proposalId,
+input revisions and relevant captured answerRefs. Other stages have no
+PRODUCT proposal. Decomposition creates only planned author data, with
+empty lifecycle placeholders. Use usable role-qualified path scopes such
+as `product::src/first.py` when no actual component registry is supplied;
+a component name in architecture prose is not a registry or path grant.
+
+A clarification or challenge without a confirmed bank writes no new
+proposal. Do not claim a save from a working-file observation. Only an
+exact accepted driver acknowledgement makes a separated bank durable;
+an unchanged historical receipt is not a new bank or proof that drafts
+are saved. Wait for that acknowledgement before treating the next bank's
+committed bases as current.
+
+## Additional finite PRODUCT proposal for Q1/Q5
+
+For a confirmed Q1 or Q5 bank, write the machine proposal to exactly
+`docs/plans/genesis-product-proposal.json` in RECORDS. The driver supplies
+the original setup/session IDs, origin digest, current PRODUCT/RECORDS
+input revisions, validated current settings and hashes of actual captured
+human messages. Use those exact values. Do not invent another project
+root, executable, profile, user Git identity or answer digest.
+
+The file is strict UTF-8 JSON with no duplicate/extra keys. Its common
+fields are:
+
+```json
+{
+  "version": 1,
+  "setupId": "<driver supplied>",
+  "sessionId": "<driver supplied>",
+  "originDigest": "sha256:<driver supplied 64 lowercase hex>",
+  "proposalId": "<one portable identifier for this bank>",
+  "bank": "identity",
+  "expectedProductRevision": "<driver supplied full input commit>",
+  "expectedRecordsRevision": "<driver supplied full input commit>",
+  "answerRefs": [{"turn": 2, "sha256": "<driver supplied 64 lowercase hex>"}],
+  "identity": {"projectName": "<banked name>", "oneLiner": "<banked one-liner>"}
+}
+```
+
+Q5 uses `"bank":"configuration"` and replaces `identity` with
+`settings`, the complete proposed canonical settings object based on the
+validated current object supplied by the driver. The canonical settings
+validator owns that shape. `names` is rename-keeper policy, not a project
+label. The blank method runtime template remains reusable TOOL input;
+configured project settings are committed at PRODUCT `supertaskr.yaml`.
+
+This first proposal is a working-source capture. expectedRecordsRevision
+names its INPUT base, not the impossible SHA of a future commit containing
+that same proposal. Preserve this base and exact proposal bytes until the
+driver acknowledges the bank. Keep ordinary RECORDS artifacts banked as
+the interview runs; do not commit the proposal ahead of the driver's
+capture. The driver reports a stale base rather than retargeting it.
+
+Actual typed-message bytes/hashes correlate the proposal with its original
+setup/session; they do not authenticate the model's interpretation of the
+prose. A skip may still bank a marked assumption under the interview's
+ordinary rule. The bank service validates finite data and current actual
+authority before effects; the proposal itself authorizes none.
+
+If a bank result is unknown, the driver retains its original operation ID
+and captured intent for replay. Do not change that submitted intent or
+request a fresh ID as a retry. A known zero-effect refusal may allow a new
+proposal after the original refusal is recorded. An earlier accepted
+receipt remains attached to the original bank even if current selection,
+files or history later change.
+````
+
 The block below is `method/interview/plan-interview.md` - the same
 bytes the app's own runner compiles in for exactly this, which is what
 makes the two lenses one interview. Its banking map is NORMATIVE: a
@@ -139,7 +275,7 @@ compared to what, measured how?" An interview is not a form.
 7. **First slice** — The smallest thing that could ship and teach
    something. Ruthless: milestone 1 should feel too small.
 
-## Output — incremental banking (v0.1.38; supersedes the one-pass rule)
+## Output — incremental banking (v0.1.41; supersedes the one-pass rule)
 
 Artifacts are written AS the interview runs, never in one pass at the
 end. Each stage banks into its artifacts the moment its answer is
@@ -148,9 +284,24 @@ any stage leaves every earlier stage on disk (succession rule). This
 table is normative — programs transcribe it as written (stage
 inference, kit packaging); a change here is a method version bump.
 
+The initialized driver resolves `roles.planner` from canonical committed
+PRODUCT settings before starting a planner. An unsupported harness, ambiguous
+model or missing explicit selection is unavailable; the account's default
+model is never substituted. The supported native adapter passes the exact
+normalized model as one value. Its original requested selection, configuration
+provenance and resolved executable observation stay with the session, separately
+from the model the child actually reports. Resume and later turns resolve the
+fixed installed CLI again and compare that original observation; stored paths
+never choose a program. A changed planner selection or executable requires a
+fresh session. Accepted banks may refresh current PRODUCT/RECORDS revisions and
+validated settings without retargeting the original planner. Historical split
+sessions missing this provenance refuse resume rather than acquiring today's
+selection by inference. Legacy unbound embeddings retain their existing model
+behavior. These checks claim neither model availability nor OS confinement.
+
 | Stage | Interview step | Banks into |
 |-------|----------------|------------|
-| 0 | scaffold (pre-Q1) | docs/ tree copied verbatim from docs-templates/ + empty docs/decisions/ docs/tasks/ docs/rooms/ + adapter files at project root + .gitignore carrying `.supertaskr/` + git init if absent + docs/STATE.md stamped (Updated, In progress = next stage) |
+| 0 | scaffold (pre-Q1) | initialized separated driver: explicit local initial PRODUCT and RECORDS commits, verified association, committed project settings, PRODUCT adapters/blank kit, RECORDS docs/ templates and empty docs/decisions/ docs/tasks/ docs/rooms/; planner stamps docs/STATE.md (Updated, In progress = next stage). Legacy colocated mode: docs/ tree copied verbatim from docs-templates/ + empty directories + root adapters + .gitignore carrying `.supertaskr/` + git init if absent |
 | 1 | Q1 problem & person | docs/NORTH_STAR.md § Vision + § Users |
 | 2 | Q2 success | docs/NORTH_STAR.md § Success criteria |
 | 3 | Q3 non-goals | docs/NORTH_STAR.md § Non-goals |
@@ -160,16 +311,26 @@ inference, kit packaging); a change here is a method version bump.
 | 7 | Q7 first slice | docs/ROADMAP.md § Backbone (ordered as the USER experiences the product) + § Milestones (milestone 1 goal) |
 | 8 | decomposition | docs/tasks/T-*.md (see decomposition.md; every task passes the dispatchability test) + docs/ARCHITECTURE.md first draft + docs/ROADMAP.md § Milestones (task list) + § Parked + docs/STATE.md § Next up |
 
-Banking Q1 also fills the adapter files' project name + one-liner at
-the project root (outside docs/, so not a stage-inference input).
+Banking Q1 also proposes the adapter project name + one-liner. In a
+separated workspace the planner writes the fixed machine proposal and
+the backend commits the finite PRODUCT adapter update; it does not write
+PRODUCT from the planner's RECORDS scope. Legacy colocated mode may fill
+the root adapters directly. Neither is a stage-inference input.
 Every bank additionally updates docs/STATE.md's In-progress line to
 name the NEXT stage — the resume hint; the artifacts stay ground
 truth (roles/planner.md, resume rule). docs/CONVENTIONS.md § Build &
 test is seeded at stage 5 alongside the stack decision (the exact
-commands the stack implies); gotchas accrue whenever one is decided.
+commands the stack implies); in separated mode Q5 also proposes canonical
+project settings through the same finite backend bank. The driver supplies
+the validated current settings and exact input revisions; unconfigured
+languages/suites/smoke/health/rename remain explicit until configured, with
+no guessed operation fallback. See interview/genesis-product-proposal.md.
+Gotchas accrue whenever one is decided.
 
-Then: cold-start test. A fresh session reads only docs/ and explains the
-project back. Gaps in its answer are gaps in the docs — fix and repeat.
+Then offer the optional cold-start test. A fresh session reads only RECORDS
+docs/ and explains the project back. When the person accepts the test,
+gaps in its answer are gaps in the docs — fix and repeat until a cold
+session passes. The offer does not gate or undo the completed board.
 ````
 
 ## 3. Stage 8 - decomposition
@@ -518,6 +679,15 @@ Verbatim from `method/adapters/AGENTS.md`.
 
 <One sentence: what this repo is.>
 
+For a PRODUCT with `.supertaskr/workspace.json`, first run
+`supertaskr workspace --root .` from PRODUCT. Every docs/ reference below
+then names a path relative to the verified RECORDS root in that result.
+An unavailable or refused association stops the records read; never fall
+back to PRODUCT/docs. The reported path grants no filesystem permission:
+the actual driver must supply the permitted records input or access.
+Only an affirmatively unbound legacy colocated project reads docs/ from
+its own root. Keep machine-local root locations out of this adapter.
+
 Before any work: read docs/STATE.md, then — once this project generates
 it — docs/INDEX.md. Those two are the whole standing read. Confirm your
 understanding of your task in one paragraph before touching anything.
@@ -530,14 +700,15 @@ is not their question). Reading a document is something a seat DOES, so
 the acting role's file is authoritative, and a brief that hands you this
 list unfiltered has not applied its own row 3.
 
-docs/INDEX.md is one GENERATED line per governing document — the
-question that document answers, and the section to open it at. It is
-regenerated by <the command that regenerates this project's behaviour
-census> and a gate reds while the committed index is stale, so it cannot
-go quietly out of date the way a hand-kept reading order does. The
-documents it indexes are governed by method/docs-protocol.md: rules and
-derive-pointers live in them; records live in task cards and
-docs/checkpoints/.
+docs/INDEX.md contains GENERATED document and section entries selected
+by this project's private validation profile. Question text appears only
+where that profile derives it. In a configured project, that profile selects
+the records checker; the selected records check/save service derives
+and saves INDEX with the private edit. Ordinary private work triggers
+no product census, suite, build or publication. An unbound legacy
+project uses the index command its own conventions declare. The verified
+METHOD docs protocol governs these documents: rules and derive-pointers
+live in them; records live in task cards and docs/checkpoints/.
 
 Everything else reaches a seat through its brief's CONTEXT PACK, which
 carries the rules that seat's own fence implicates. **When the pack did
@@ -562,6 +733,15 @@ Verbatim from `method/adapters/CLAUDE.md`.
 
 <One sentence: what this repo is.>
 
+For a PRODUCT with `.supertaskr/workspace.json`, first run
+`supertaskr workspace --root .` from PRODUCT. Every docs/ reference below
+then names a path relative to the verified RECORDS root in that result.
+An unavailable or refused association stops the records read; never fall
+back to PRODUCT/docs. The reported path grants no filesystem permission:
+the actual driver must supply the permitted records input or access.
+Only an affirmatively unbound legacy colocated project reads docs/ from
+its own root. Keep machine-local root locations out of this adapter.
+
 Before any work: read docs/STATE.md, then — once this project generates
 it — docs/INDEX.md. Those two are the whole standing read. Confirm your
 understanding of your task in one paragraph before touching anything.
@@ -574,14 +754,15 @@ is not their question). Reading a document is something a seat DOES, so
 the acting role's file is authoritative, and a brief that hands you this
 list unfiltered has not applied its own row 3.
 
-docs/INDEX.md is one GENERATED line per governing document — the
-question that document answers, and the section to open it at. It is
-regenerated by <the command that regenerates this project's behaviour
-census> and a gate reds while the committed index is stale, so it cannot
-go quietly out of date the way a hand-kept reading order does. The
-documents it indexes are governed by method/docs-protocol.md: rules and
-derive-pointers live in them; records live in task cards and
-docs/checkpoints/.
+docs/INDEX.md contains GENERATED document and section entries selected
+by this project's private validation profile. Question text appears only
+where that profile derives it. In a configured project, that profile selects
+the records checker; the selected records check/save service derives
+and saves INDEX with the private edit. Ordinary private work triggers
+no product census, suite, build or publication. An unbound legacy
+project uses the index command its own conventions declare. The verified
+METHOD docs protocol governs these documents: rules and derive-pointers
+live in them; records live in task cards and docs/checkpoints/.
 
 Everything else reaches a seat through its brief's CONTEXT PACK, which
 carries the rules that seat's own fence implicates. **When the pack did

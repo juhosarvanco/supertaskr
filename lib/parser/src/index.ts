@@ -139,3 +139,7 @@ export {
   type TaskDirectoryResult,
   type ParseProjectOptions,
 } from './project.js';
+export { PROJECT_SETTINGS, ProjectSettingsFinding, parseSettings, freezeSettings, missingSettings, settingsRelativePath,
+  normalizeDeliveryCiSelection, normalizeProjectPublication, isDeliveryBranchRef,
+  type ProjectSettings, type ConfiguredCommand, type ConfiguredSuite, type ProjectPublication, type DeliveryCiSelection } from './project-settings.js';
+export { blankInertSpans, type InertSpanResult } from './inert-spans.js';

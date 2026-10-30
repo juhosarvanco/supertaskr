@@ -1230,7 +1230,7 @@ function walkPolicyChecks() {
       "app/src-tauri/Cargo.lock",
       "app/src-tauri/Cargo.toml",
       "app/src-tauri/tauri.conf.json",
-      "docs/ROADMAP.md",
+      "docs/guide/README.md",
       "lib/parser/tsconfig.json",
       "method/runtime/supertaskr.yaml",
     ].map((rel) => [`CONTROL includes tracked text format ${rel}`, controlFiles.includes(rel)]),

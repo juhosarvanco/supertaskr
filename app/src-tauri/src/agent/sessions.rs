@@ -47,10 +47,11 @@ pub const TRANSCRIPT_TEXT_CAP: usize = 256 * 1024;
 pub struct SessionEntry {
     /// `"S1"`, `"S2"`, … — max existing + 1.
     pub id: String,
-    /// The adapter key (`"claude"`).
+    /// The original adapter key (`"claude"` or `"codex"`).
     pub agent: String,
     /// What the CLI's own init line reported. RECORDED TRUTH, not a
-    /// configured value — we never pass `--model`.
+    /// configured value; a configured planner's requested model lives in its
+    /// frozen genesis planner selection. Codex may report no observed model.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub model: Option<String>,
     /// The id the CLI's resume flag takes, captured from the stream.
@@ -93,6 +94,10 @@ pub struct SessionEntry {
     /// that loads a pack.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub skills: Vec<super::skills::SkillPack>,
+    /// Original native genesis session and physical homes, never inferred from
+    /// the currently selected association when reading an older registry.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub genesis: Option<super::context::GenesisSession>,
 }
 
 impl SessionEntry {
@@ -111,7 +116,10 @@ impl SessionEntry {
     pub fn resume_id(&self) -> Result<Option<&str>, SessionIdRejection> {
         match self.native_session_id.as_deref() {
             None => Ok(None),
-            Some(id) => validate_session_id(id).map(|()| Some(id)),
+            Some(id) => match self.agent.as_str() {
+                "codex" => super::adapter::CODEX_SEPARATED_PLANNER_V1.validate_session_id(id).map(|()| Some(id)),
+                _ => validate_session_id(id).map(|()| Some(id)),
+            },
         }
     }
 
@@ -183,6 +191,21 @@ fn rel_path(project_dir: &Path, rel: &str) -> PathBuf {
     path
 }
 
+/// Both read modes use the same persisted schema.
+fn parse_sessions(raw: &str) -> serde_json::Result<SessionsFile> {
+    serde_json::from_str(raw)
+}
+
+/// Managed observations never repair a corrupt registry or rename a runtime
+/// file. Start/write paths may retain the existing explicit repair behavior.
+pub(crate) fn load_read_only(project_dir: &Path) -> io::Result<SessionsFile> {
+    match fs::read_to_string(sessions_path(project_dir)) {
+        Ok(raw) => parse_sessions(&raw).map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error)),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(SessionsFile::default()),
+        Err(error) => Err(error),
+    }
+}
+
 /// Read the registry. A file that does not parse is RENAMED ASIDE to
 /// `sessions.json.corrupt` with a log line and a fresh registry is
 /// returned — losable by charter, never silently destroyed, never a
@@ -192,7 +215,7 @@ pub fn load(project_dir: &Path) -> SessionsFile {
     let Ok(raw) = fs::read_to_string(&path) else {
         return SessionsFile::default();
     };
-    match serde_json::from_str::<SessionsFile>(&raw) {
+    match parse_sessions(&raw) {
         Ok(parsed) => parsed,
         Err(err) => {
             let aside = path.with_extension("json.corrupt");
@@ -280,6 +303,8 @@ pub struct GenesisRecord {
     /// saved session is unusable" against "start fresh, there is nothing
     /// saved".
     pub session_id_rejected: Option<String>,
+    #[serde(skip_serializing)]
+    pub genesis: Option<super::context::GenesisSession>,
 }
 
 /// Read the one place. `None` = no interview was ever running here (or
@@ -287,11 +312,15 @@ pub struct GenesisRecord {
 pub fn genesis_record(project_dir: &Path) -> Option<GenesisRecord> {
     let file = load(project_dir);
     let entry = find_planner(&file)?;
+    Some(record_of(entry))
+}
+
+fn record_of(entry: &SessionEntry) -> GenesisRecord {
     let (native_session_id, session_id_rejected) = match entry.resume_id() {
         Ok(id) => (id.map(str::to_string), None),
         Err(rejection) => (None, Some(rejection.to_string())),
     };
-    Some(GenesisRecord {
+    GenesisRecord {
         registry_id: entry.id.clone(),
         turns: entry.turns,
         status: entry.status.clone(),
@@ -299,7 +328,56 @@ pub fn genesis_record(project_dir: &Path) -> Option<GenesisRecord> {
         native_session_id,
         model: entry.model_for_display(),
         session_id_rejected,
-    })
+        genesis: entry.genesis.clone(),
+    }
+}
+
+impl GenesisRecord {
+    pub(crate) fn matches_entry(&self, entry: &SessionEntry) -> bool { self == &record_of(entry) }
+}
+
+/// Select persisted provenance before interpreting a resumable native ID. A
+/// registry in shared PRODUCT runtime cannot resume RECORDS R1 as R2. Legacy
+/// omission is accepted only for an affirmatively colocated native context.
+pub(crate) fn genesis_record_for_context(
+    context: &super::context::GenesisContext,
+) -> io::Result<Option<GenesisRecord>> {
+    context.runtime_record(super::context::RuntimeRecord::Sessions, false)
+        .map_err(|code| io::Error::new(io::ErrorKind::PermissionDenied, code))?;
+    let file = load_read_only(&context.product)?;
+    Ok(file.sessions.iter().find(|entry| planner_matches_context(entry, context)).map(record_of))
+}
+fn planner_matches_context(entry: &SessionEntry, context: &super::context::GenesisContext) -> bool {
+    entry.roles.iter().any(|role| role == "planner") && entry.status != "dead" &&
+        entry.genesis.as_ref().map_or(!context.split(), |session| session.matches(context))
+}
+
+/// Install exactly one current planner for this physical project origin.
+/// Retire matching previous rows in the same atomic cache write as the new
+/// row; failed pre-init attempts cannot mask a later successful conversation.
+/// Other origins remain historical peers, never candidates for this write.
+pub(crate) fn install_current_genesis(
+    context: &super::context::GenesisContext, expected: &SessionsFile, entry: SessionEntry,
+) -> io::Result<()> {
+    let guard = || context.runtime_record(super::context::RuntimeRecord::Sessions, true)
+        .map_err(|code| io::Error::new(io::ErrorKind::PermissionDenied, code));
+    guard()?;
+    let mut file = load_read_only(&context.product)?;
+    if file.sessions != expected.sessions || !planner_matches_context(&entry, context) ||
+        entry.genesis.as_ref().is_none_or(|session| !session.matches(context)) ||
+        file.sessions.iter().any(|row| row.id == entry.id && !planner_matches_context(row, context)) {
+        return Err(io::Error::new(io::ErrorKind::WouldBlock, "genesis-registry-changed"));
+    }
+    for row in &mut file.sessions {
+        if row.id != entry.id && planner_matches_context(row, context) { row.status = "dead".into(); }
+    }
+    match file.sessions.iter_mut().find(|row| row.id == entry.id) {
+        Some(row) => *row = entry,
+        None => file.sessions.push(entry),
+    }
+    let json = serde_json::to_vec_pretty(&file).map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+    guard()?;
+    write_atomic(&sessions_path(&context.product), &json)
 }
 
 /// CAN WE GET BACK INTO AN INTERVIEW ON THIS FOLDER? (T-123, REBUILT.)
@@ -415,6 +493,10 @@ pub struct TranscriptLine {
     /// already skipped by the chat's own `turn >= 2` rule.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub machine: bool,
+    /// Byte correlation with the original native session, without exposing its
+    /// private Git/control locations to the webview.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub genesis: Option<super::context::TranscriptOrigin>,
 }
 
 /// Append one half-turn. Deltas are NEVER cached here — only the final
@@ -713,7 +795,27 @@ mod tests {
             // uses this fixture for the packless arm and a packed one
             // beside it — one fixture alone cannot see both.
             skills: vec![],
+            genesis: None,
         }
+    }
+
+    #[test]
+    fn observation_read_preserves_corrupt_runtime_and_reads_the_same_valid_schema() {
+        let tree = TempTree::new("observation-read");
+        assert!(load_read_only(&tree.0).unwrap().sessions.is_empty());
+        fs::create_dir_all(tree.0.join(".supertaskr")).unwrap();
+        let file = sessions_path(&tree.0);
+        let bytes = b"corrupt registry stays available for reconciliation\n";
+        fs::write(&file, bytes).unwrap();
+        assert_eq!(load_read_only(&tree.0).unwrap_err().kind(), io::ErrorKind::InvalidData);
+        assert_eq!(fs::read(&file).unwrap(), bytes);
+        assert!(!file.with_extension("json.corrupt").exists());
+        fs::remove_file(&file).unwrap();
+        upsert(&tree.0, entry("S1")).unwrap();
+        let written = fs::read(&file).unwrap();
+        assert_eq!(load_read_only(&tree.0).unwrap().sessions[0].id, "S1");
+        assert_eq!(fs::read(&file).unwrap(), written);
+        assert!(!file.with_extension("json.corrupt").exists());
     }
 
     /// **THE SCHEMA DOCUMENT ITSELF, COMPILED IN** — the same mechanism
@@ -880,7 +982,10 @@ mod tests {
 
         // (1) A PACK-LOADING GENESIS: the entry and the document agree
         // exactly, in both directions.
-        upsert(&t.0, SessionEntry { skills: vec![pack()], ..entry("S1") }).expect("upsert packed");
+        let genesis = json_example(SCHEMA_DOC, "method/runtime/sessions-schema.md")["sessions"][0]["genesis"].clone();
+        let provenance: super::super::context::GenesisSession = serde_json::from_value(genesis.clone()).expect("strict documented native session shape");
+        assert_eq!(serde_json::to_value(&provenance).unwrap(), genesis, "nested provenance keys must also survive exactly");
+        upsert(&t.0, SessionEntry { skills: vec![pack()], genesis: Some(provenance), ..entry("S1") }).expect("upsert packed");
         let raw = fs::read_to_string(sessions_path(&t.0)).expect("sessions.json");
         let value: serde_json::Value = serde_json::from_str(&raw).expect("parses");
         let session = &value["sessions"][0];
@@ -911,8 +1016,8 @@ mod tests {
         let (missing, extra) = against_the_schema(session, &schema);
         assert_eq!(
             missing,
-            vec!["skills".to_string()],
-            "a packless entry omits `skills` and NOTHING else the schema names"
+            vec!["genesis".to_string(), "skills".to_string()],
+            "a legacy packless entry omits only its two documented optional fields"
         );
         assert!(extra.is_empty(), "unexpected extra keys: {extra:?}");
 
@@ -956,6 +1061,8 @@ mod tests {
     fn the_written_transcript_matches_the_transcript_schema_field_for_field() {
         let schema = transcript_line_keys();
         let t = TempTree::new("transcript-schema");
+        let genesis: super::super::context::TranscriptOrigin = serde_json::from_value(
+            json_example(TRANSCRIPT_DOC, "method/runtime/transcript-schema.md")["genesis"].clone()).expect("strict documented line provenance");
 
         append_transcript(
             &t.0,
@@ -965,6 +1072,7 @@ mod tests {
                 text: "You are the planner.".into(),
                 at_ms: 7,
                 machine: true,
+                genesis: Some(genesis.clone()),
             },
         )
         .expect("machine-assembled line");
@@ -976,6 +1084,7 @@ mod tests {
                 text: "solo founders".into(),
                 at_ms: 9,
                 machine: false,
+                genesis: Some(genesis),
             },
         )
         .expect("typed line");
@@ -1232,6 +1341,7 @@ mod tests {
                 text: "hello".into(),
                 at_ms: 7,
                 machine: false,
+                genesis: None,
             },
         )
         .expect("user line");
@@ -1243,6 +1353,7 @@ mod tests {
                 text: "hi".into(),
                 at_ms: 9,
                 machine: false,
+                genesis: None,
             },
         )
         .expect("planner line");
@@ -1270,6 +1381,7 @@ mod tests {
                 text: huge,
                 at_ms: 11,
                 machine: false,
+                genesis: None,
             },
         )
         .expect("huge line");
@@ -1333,6 +1445,7 @@ mod tests {
                 text: format!("turn {turn} {}", "z".repeat(2_000)),
                 at_ms: turn as u64,
                 machine: false,
+                genesis: None,
             };
             content.push_str(&serde_json::to_string(&line).expect("encode"));
             content.push('\n');
@@ -1443,6 +1556,7 @@ mod tests {
                     text: format!("turn {turn}"),
                     at_ms: u64::from(turn),
                     machine: turn % 3 == 0,
+                    genesis: None,
                 },
             )
             .expect("append");

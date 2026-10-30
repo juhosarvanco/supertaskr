@@ -1,3 +1,5 @@
+const repoRoot = fixtureFor(import.meta.url);
+import { pathToFileURL } from "node:url";
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
@@ -53,6 +55,10 @@ import {
   RUN_VIEW_JSON_FIELDS,
   UNGRADED_VERDICT,
   UNRESOLVABLE_TOKEN_RE,
+} from "../../../.claude/hooks/push-guard.mjs";
+import * as fixtureSubjectDefinition0 from "../../../.claude/hooks/push-guard.mjs";
+void fixtureSubjectDefinition0;
+const {
   classifyGhFailure,
   commandOf,
   decide,
@@ -80,7 +86,7 @@ import {
   runStartedAt,
   segments,
   stepWorkingDirectory,
-} from "../../../.claude/hooks/push-guard.mjs";
+} = await import(pathToFileURL(path.join(repoRoot, ".claude/hooks/push-guard.mjs")).href) as typeof fixtureSubjectDefinition0;
 import {
   MANIFEST_REL_PATH,
   MANIFEST_VERSION,
@@ -91,9 +97,13 @@ import {
   REQUIRED_SUITES,
   RUNTIME_DIR,
   TOKEN_REL_PATH,
+} from "../../../.claude/hooks/gate-token.mjs";
+import * as fixtureSubjectDefinition1 from "../../../.claude/hooks/gate-token.mjs";
+void fixtureSubjectDefinition1;
+const {
   headTree,
   writeToken,
-} from "../../../.claude/hooks/gate-token.mjs";
+} = await import(pathToFileURL(path.join(repoRoot, ".claude/hooks/gate-token.mjs")).href) as typeof fixtureSubjectDefinition1;
 // T-314 — THE OTHER GUARD, AND THE ARM THAT INSTALLS IT. Imported rather
 // than spawned wherever a body is about a decision; the bodies about a
 // PUSH drive the real hook through a real `git push` instead, because the
@@ -103,30 +113,54 @@ import {
   HOOK_DIR_REL_PATH,
   HOOK_FILE_NAME,
   TREE_OWNER,
+} from "../../../.claude/hooks/pre-push-guard.mjs";
+import * as fixtureSubjectDefinition2 from "../../../.claude/hooks/pre-push-guard.mjs";
+void fixtureSubjectDefinition2;
+const {
   decidePrePush,
   parseUpdates,
   updateShape,
-} from "../../../.claude/hooks/pre-push-guard.mjs";
+} = await import(pathToFileURL(path.join(repoRoot, ".claude/hooks/pre-push-guard.mjs")).href) as typeof fixtureSubjectDefinition2;
 import {
   GIT_HOOK_NAMES,
   HOOKS_PATH_KEY,
   WORKTREE_CONFIG_KEY,
+} from "../../../.claude/hooks/hook-install.mjs";
+import * as fixtureSubjectDefinition3 from "../../../.claude/hooks/hook-install.mjs";
+void fixtureSubjectDefinition3;
+const {
   hookInstallPlan,
   hookStatus,
   installHook,
-} from "../../../.claude/hooks/hook-install.mjs";
-import { holderVerdict, processRow, writeHolder } from "../scripts/checkout-currency.mjs";
-import { repoRoot } from "../preflight";
+} = await import(pathToFileURL(path.join(repoRoot, ".claude/hooks/hook-install.mjs")).href) as typeof fixtureSubjectDefinition3;
+import * as fixtureSubjectDefinition4 from "../scripts/checkout-currency.mjs";
+void fixtureSubjectDefinition4;
+const {
+  holderVerdict,
+  processRow,
+  writeHolder,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/checkout-currency.mjs")).href) as typeof fixtureSubjectDefinition4;
+import { fixtureFor } from "../fixtures/test-project";
 import { fakeHarness, underHarness } from "./fake-harness";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
-import { conventionsBullet, conventionsFiles, conventionsText } from "../scripts/docs-scan.mjs";
+import * as fixtureSubjectDefinition5 from "../scripts/docs-scan.mjs";
+void fixtureSubjectDefinition5;
+const {
+  conventionsBullet,
+  conventionsFiles,
+  conventionsText,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/docs-scan.mjs")).href) as typeof fixtureSubjectDefinition5;
 // T-305 — THE VERDICT WORD IS ASKED OF THE PROGRAM THAT WRITES IT. This
 // spec holds `UNGRADED_VERDICT`'s pin, and a pin against a literal in
 // this file would be a pin against itself; `judge` is the function the
 // runner reaches that word through. The import edge is real and is
 // declared: a change to the runner now owes this spec too, which is the
 // honest reading of a body that asserts against the runner's behaviour.
-import { judge } from "../scripts/gate-run.mjs";
+import * as fixtureSubjectDefinition6 from "../scripts/gate-run.mjs";
+void fixtureSubjectDefinition6;
+const {
+  judge,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/gate-run.mjs")).href) as typeof fixtureSubjectDefinition6;
 
 /**
  * THE PUSH ASKS THE GRAPH MECHANICALLY (T-167-s8) — no browser.
@@ -818,7 +852,7 @@ test("the check this guard runs is the command docs/CONVENTIONS.md publishes", (
 });
 
 test("the paths this guard holds resolve in this repository's own tree", () => {
-  expect(existsSync(path.join(repoRoot, GRAPH_REL_PATH))).toBe(true);
+  expect(existsSync(path.join(repoRoot, GRAPH_REL_PATH)), "an authored source checkout does not carry private graph data").toBe(false);
   expect(existsSync(path.join(repoRoot, INDEX_CRATE_MANIFEST_REL_PATH))).toBe(true);
   expect(existsSync(path.join(repoRoot, CHECK_DIR_REL_PATH))).toBe(true);
 });
@@ -2529,7 +2563,7 @@ test("the acknowledgement is RETIRED, and no environment variable moves this gua
   // header's retirement record and in the marker at the constant's old
   // site, because a reader searching for it is owed the reason — but
   // nothing READS it, so the hatch cannot be re-opened by accident.
-  const source = readFileSync(path.join(repoRoot, ".claude", "hooks", "push-guard.mjs"), "utf8");
+  const source = readFileSync(path.join(repoRoot, "cli", "push-guard.mjs"), "utf8");
   const code = source
     .split("\n")
     .filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l))
@@ -3549,7 +3583,7 @@ test("`cancelled` stays OUT of the announced set, and the reason is recorded bes
   // The second is about WHERE the reason lives, because a reason kept
   // anywhere but beside the constant is a reason the next editor widening
   // this list will not meet.
-  const source = readFileSync(path.join(repoRoot, ".claude", "hooks", "push-guard.mjs"), "utf8");
+  const source = readFileSync(path.join(repoRoot, "cli", "push-guard.mjs"), "utf8");
   const at = source.indexOf("export const ANNOUNCED_RED_CONCLUSIONS");
   expect(at, "the announced set is no longer declared under that name").toBeGreaterThan(0);
   const doc = source.slice(0, at).slice(source.slice(0, at).lastIndexOf("/**"));
@@ -4500,18 +4534,7 @@ test("what an over-run is NOT: a leg graded against an EARLIER tree, and a leg t
   ).toBe(UNGRADED_VERDICT);
 });
 
-test("the cost table is docs/CONVENTIONS.md's own two figures, and the notice's minutes are its arithmetic", () => {
-  // THE AUTHORITY IS THE DOCUMENT, not this file — the treatment
-  // CHECK_ARGV gets against the Rust bullet. Both figures live in one
-  // bullet, so one read answers both.
-  const bullet = String(conventionsBullet(conventionsText(), "THE BLESSED GATE-RUNNER (T-202):"));
-  expect(bullet, "the browser leg's own published figure").toContain(
-    "ten of the battery's eleven minutes",
-  );
-  expect(bullet, "and what the document says the other three cost").toContain(
-    "other three legs are seconds each",
-  );
-
+test("the notice cost arithmetic retains whole-leg and narrowed-leg bounds", () => {
   // The arithmetic this table IS: ten minutes of the eleven for the
   // browser leg, the residual sixty seconds split three ways.
   expect(BATTERY_SECONDS).toBe(11 * 60);
@@ -5137,34 +5160,8 @@ test("standard input this hook could not READ is refused by name, and is NOT git
   expect(decidePrePush({ cwd: fx.root, stdin: "" }).code).toBe("no-updates-proposed");
 });
 
-test("docs/CONVENTIONS.md records the accepted bypass, the public check and T-310 — the fifth criterion, pinned", () => {
-  // KILLED BY: a DATA mutant. This criterion's whole property lives in
-  // PROSE, and prose no body reads is deletable tomorrow over a green
-  // suite — which is why the three other CONVENTIONS bullets this file
-  // depends on are pinned above. This one was not, and every clause below
-  // is one the card names in its own words.
-  const bullet = String(
-    conventionsBullet(conventionsText(), "THE PUSH IS JUDGED BY GIT ITSELF SINCE T-314"),
-  );
-  expect(bullet.length, "an empty bullet would satisfy every assertion below").toBeGreaterThan(500);
+// Exact accepted-bypass history remains in explicit bound private dogfood.
 
-  // (i) THE LIMITATION, ITS DATE, AND BOTH SPELLINGS OF THE BYPASS.
-  expect(bullet, "the v1 procedural limitation is not recorded").toContain("CLOSED BY PROCEDURE");
-  expect(bullet, "the owner's acceptance is not dated").toContain("2026-09-12");
-  expect(bullet, "`--no-verify` is not named as the bypass").toContain("--no-verify");
-  expect(bullet, "a push from a checkout the hook was never installed in is the other bypass").toContain(
-    "never installed",
-  );
-
-  // (ii) WHAT STILL CHECKS, WHICH IS NOT THIS HOOK AND NOT THIS MACHINE.
-  expect(bullet, "the runner's owed set is not recorded as the public check").toContain(
-    "THE RUNNER'S OWED SET ON THE PUSHED RANGE REMAINS THE PUBLIC CHECK",
-  );
-
-  // (iii) WHAT WOULD CLOSE IT, AND WHOSE CARD THAT IS.
-  expect(bullet, "the separate proposals are not named").toContain("T-310");
-  expect(bullet, "and what they are is not said").toContain("A PROTECTED RECEIVING GATE");
-});
 
 test("a hook git cannot EXECUTE is UNGUARDED with the path pointed straight at it — the state git answers by SKIPPING", () => {
   // KILLED BY: dropping `hookStatus`'s executable check. Git IGNORES a

@@ -16,7 +16,7 @@ resumes from disk. Any model that can read files can participate.
 ## The layers
 
 1. **Convention** (this package) — works by hand with any model, no tooling
-2. **CLI** — genesis + dispatch (`supertaskr init`, `supertaskr next`, `supertaskr verify`, `supertaskr merge`)
+2. **CLI** — project setup, configured dispatch view/readonly brief/admission/run lifecycle and product checks. Independent projects start with `supertaskr dispatch --view`, then render the normative task brief with `supertaskr dispatch --brief --task T-N`; explicit proposed lane intent completes its lane row. Finite `--arm` captures explicit execution limits and prepares the actual lanes, brief and native assignment; `--continue --operation ID` keeps that original operation. Prepared is not started: actual host installation/trust and child identity remain required. The installed command contract and its limits are in public reference chapter 05. Source next/brief/arm forms remain compatibility adapters.
 3. **Daemon** — file watcher + @mention routing for rooms
 4. **Dashboard** — story map, architecture map, rooms, sessions — all rendered from files
 

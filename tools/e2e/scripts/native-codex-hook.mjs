@@ -8,11 +8,11 @@
 
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import { findCheckoutRoot } from "../../../.claude/hooks/lane-fence.mjs";
+import { findCheckoutRoot } from "../../../cli/lane-fence.mjs";
 import { handleNativeEvent } from "./native-codex.mjs";
 
 /** @param {any} event @param {string} reason */
-function blockingOutput(event, reason) {
+export function blockingOutput(event, reason) {
   if (event?.hook_event_name === "PostToolUse") return { decision: "block", reason };
   if (event?.hook_event_name === "PreToolUse") {
     return {

@@ -5,7 +5,8 @@ import { describe, expect, it } from 'vitest';
 import { extractFrontmatter, parseTaskFile, splitSections, type TaskSections } from '../src/index.js';
 
 const FILE = 'docs/tasks/T-016-audit-log.md';
-const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
+import { createExampleProject } from '../../../tools/e2e/fixtures/example-project.mjs';
+const repoRoot = createExampleProject(fileURLToPath(new URL('../../../', import.meta.url)));
 
 /** The pre-T-055 splitter, retained only to prove live-fixture equivalence. */
 function splitSectionsBeforeInertPass(body: string): TaskSections {

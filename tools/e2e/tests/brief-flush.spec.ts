@@ -1,3 +1,5 @@
+const repoRoot = fixtureFor(import.meta.url);
+import { pathToFileURL } from "node:url";
 import { execFileSync, spawnSync } from "node:child_process";
 import {
   closeSync,
@@ -14,8 +16,15 @@ import {
 import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
-import { repoRoot } from "../preflight";
-import { EXIT, unstampedLines } from "../scripts/dispatch-brief.mjs";
+import { fixtureFor } from "../fixtures/test-project";
+import {
+  EXIT,
+} from "../scripts/dispatch-brief.mjs";
+import * as fixtureSubjectDefinition0 from "../scripts/dispatch-brief.mjs";
+void fixtureSubjectDefinition0;
+const {
+  unstampedLines,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/dispatch-brief.mjs")).href) as typeof fixtureSubjectDefinition0;
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 
 /**
@@ -636,6 +645,7 @@ const LIVE_ARMS: ReadonlyArray<{ label: string; args: string[]; format?: "worksp
   { label: "--task T-133 --state", args: ["--task", "T-133", "--state"] },
   { label: "--task T-133", args: ["--task", "T-133"] },
   { label: "--task T-133 --preflight", args: ["--task", "T-133", "--preflight"] },
+  { label: "--task T-133 --preflight --full", args: ["--task", "T-133", "--preflight", "--full"] },
   { label: "--state", args: ["--state"] },
   { label: "--card T-133", args: ["--card", "T-133"] },
   // Workspace inspection is a standalone read arm whose answer is JSON,
@@ -1483,6 +1493,8 @@ test("the reader that STOPS after one read gets a silent PREFIX, and the writer'
  * ── THE MEMBERS ──────────────────────────────────────────────────────
  * `brief.mjs` was the only one, and is fixed. It is asserted ABSENT from
  * the derived set, which is this card's regression pin.
+ * The configured health front now also sets process.exitCode and is
+ * absent; its former bounded-output exception no longer applies.
  *
  * ── THE NON-MEMBERS, EACH WITH THE SIZE IT WAS ARGUED ON ─────────────
  * All measured at `209e5d3` on this repository, stdout only, redirected
@@ -1503,7 +1515,6 @@ test("the reader that STOPS after one read gets a silent PREFIX, and the writer'
  *                        four. The suite's own output goes to a FILE
  *                        whose path is printed on stderr, which is what
  *                        keeps this bounded.
- *   health-bands-run.mjs 1,939 B (exit 3, bands awaiting keepers).
  *   lint-tokens.mjs        105 B clean, 125 B `--selftest`.
  *   token-scan.mjs       the two exits `lint-tokens.mjs` cannot
  *                        intercept, measured through that wrapper above.
@@ -1522,7 +1533,6 @@ const EXITS_AFTER_WRITING = [
   "capabilities.mjs",
   "docs-gate.mjs",
   "gate-run.mjs",
-  "health-bands-run.mjs",
   "lint-tokens.mjs",
   "orphan-drill.mjs",
   "tauri-boot-check.mjs",

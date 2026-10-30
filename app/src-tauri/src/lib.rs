@@ -53,6 +53,8 @@ pub mod dispatch;
 /// argument rests on.
 pub mod arch_cmd;
 mod index_cmd;
+mod record_editor;
+mod genesis_setup;
 
 /// T-021: the pinned webview ACL surface (test-only module — the pin
 /// itself is a cargo test; see src/acl_pin.rs for why it exists).
@@ -61,12 +63,10 @@ mod acl_pin;
 
 use std::env;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::AtomicU64;
-use std::sync::Arc;
 use tauri::{Emitter, Listener, Manager};
 use tauri_plugin_dialog::DialogExt;
 
-use agent::{AgentState, CancelOutcome, GenesisStatus, SendOutcome, StartOutcome};
+use agent::{AgentState, CancelOutcome, SendOutcome, StartOutcome};
 use arch_cmd::{DetailOutcome, RollupOutcome};
 use churn::{ChurnDisabled, ChurnOutcome};
 use docs_watch::{PickOutcome, ProjectStatus, WatchState};
@@ -164,8 +164,87 @@ fn startup_failed_line(payload: &str, recv_at_ms: u64) -> String {
 /// (see docs_watch::collect_docs_tree). Subsequent updates arrive as
 /// `docs-changed` events pushed by the watcher; both share one seq counter.
 #[tauri::command]
-fn docs_snapshot(state: tauri::State<'_, WatchState>) -> ProjectStatus {
-    docs_watch::project_status(&state)
+fn docs_snapshot(state: tauri::State<'_, WatchState>) -> docs_watch::ScopedOutcome<ProjectStatus> {
+    state.scoped_status(docs_watch::project_status(&state))
+}
+
+#[tauri::command]
+async fn record_recoveries(app: tauri::AppHandle, attempt: u64) -> record_editor::EditorOutcome {
+    let handle = app.clone();
+    tauri::async_runtime::spawn_blocking(move || record_editor::discover(&handle.state::<WatchState>(), &handle.state::<record_editor::RecordEditorState>(), attempt))
+        .await.unwrap_or_else(|_| record_editor::unavailable(&app.state::<record_editor::RecordEditorState>(), "recoveries", attempt))
+}
+
+#[tauri::command]
+async fn record_recover(app: tauri::AppHandle, recovery_token: String, attempt: u64) -> record_editor::EditorOutcome {
+    let handle = app.clone();
+    let key = recovery_token.clone();
+    tauri::async_runtime::spawn_blocking(move || record_editor::recover(&handle.state::<WatchState>(), &handle.state::<record_editor::RecordEditorState>(), &recovery_token, attempt))
+        .await.unwrap_or_else(|_| record_editor::unavailable(&app.state::<record_editor::RecordEditorState>(), &key, attempt))
+}
+
+#[tauri::command]
+async fn record_acknowledge(app: tauri::AppHandle, receipt_token: String, attempt: u64) -> bool {
+    tauri::async_runtime::spawn_blocking(move || record_editor::acknowledge(&app.state::<WatchState>(), &app.state::<record_editor::RecordEditorState>(), &receipt_token, attempt))
+        .await.unwrap_or(false)
+}
+
+#[tauri::command]
+async fn record_backup_recoveries<R: tauri::Runtime>(app: tauri::AppHandle<R>, attempt: u64) -> record_editor::BackupOutcome {
+    let handle = app.clone();
+    tauri::async_runtime::spawn_blocking(move || record_editor::discover_backups(&handle.state::<WatchState>(), &handle.state::<record_editor::RecordEditorState>(), attempt))
+        .await.unwrap_or_else(|_| record_editor::BackupOutcome::BackupError {
+            operation_key: "backup-recoveries".into(), attempt, commit: None,
+            code: "records-app-backup-worker".into(),
+            message: "Previous backups could not be read. Local records remain saved.".into(), unknown: false,
+        })
+}
+
+/// Only the offered receipt and displayed commit cross IPC. The destination
+/// is chosen by the native dialog inside the existing owned backup flight.
+#[tauri::command]
+async fn record_backup<R: tauri::Runtime>(app: tauri::AppHandle<R>, receipt_token: String, expected_commit: String, attempt: u64) -> record_editor::BackupOutcome {
+    let handle = app.clone();
+    let key = receipt_token.clone();
+    let displayed_commit = expected_commit.clone();
+    tauri::async_runtime::spawn_blocking(move || record_editor::backup_saved(
+        &handle.state::<WatchState>(), &handle.state::<record_editor::RecordEditorState>(),
+        &receipt_token, &expected_commit, attempt,
+        || handle.dialog().file().set_title("Choose a folder for private backups")
+            .blocking_pick_folder().and_then(|selected| selected.into_path().ok()),
+    )).await.unwrap_or_else(|_| record_editor::BackupOutcome::BackupError {
+        operation_key: key, attempt, commit: Some(displayed_commit),
+        code: "records-app-backup-worker".into(),
+        message: "The backup response is unavailable. Reconcile the original backup; local records remain saved.".into(), unknown: true,
+    })
+}
+
+#[tauri::command]
+async fn record_files(app: tauri::AppHandle, attempt: u64) -> record_editor::EditorOutcome {
+    let handle = app.clone();
+    tauri::async_runtime::spawn_blocking(move || record_editor::files(&handle.state::<WatchState>(), &handle.state::<record_editor::RecordEditorState>(), attempt))
+        .await.unwrap_or_else(|_| record_editor::unavailable(&app.state::<record_editor::RecordEditorState>(), "files", attempt))
+}
+
+#[tauri::command]
+async fn record_open(app: tauri::AppHandle, file_token: String, attempt: u64) -> record_editor::EditorOutcome {
+    let handle = app.clone();
+    let key = file_token.clone();
+    tauri::async_runtime::spawn_blocking(move || record_editor::open(&handle.state::<WatchState>(), &handle.state::<record_editor::RecordEditorState>(), &file_token, attempt))
+        .await.unwrap_or_else(|_| record_editor::unavailable(&app.state::<record_editor::RecordEditorState>(), &key, attempt))
+}
+
+#[tauri::command]
+async fn record_edit(app: tauri::AppHandle, buffer_id: String, attempt: u64, action: record_editor::EditorAction, content: String) -> record_editor::EditorOutcome {
+    let handle = app.clone();
+    let key = buffer_id.clone();
+    tauri::async_runtime::spawn_blocking(move || record_editor::run(&handle.state::<WatchState>(), &handle.state::<record_editor::RecordEditorState>(), &buffer_id, attempt, action, &content))
+        .await.unwrap_or_else(|_| record_editor::unavailable(&app.state::<record_editor::RecordEditorState>(), &key, attempt))
+}
+
+#[tauri::command]
+fn record_cancel(state: tauri::State<'_, record_editor::RecordEditorState>, operation_key: String, attempt: u64) -> bool {
+    state.cancel(&operation_key, attempt)
 }
 
 /// T-007: the folder picker. The webview NEVER supplies a path — invoking
@@ -183,7 +262,12 @@ fn docs_snapshot(state: tauri::State<'_, WatchState>) -> ProjectStatus {
 /// re-arm -> commit) and its Drop releases the latch on every path,
 /// including a panicked blocking task.
 #[tauri::command]
-async fn pick_project_folder(app: tauri::AppHandle) -> PickOutcome {
+async fn pick_project_folder(app: tauri::AppHandle) -> genesis_setup::PickReply {
+    let initial = app.state::<WatchState>().message_scope();
+    let outcome = pick_project_folder_inner(app.clone()).await;
+    app.state::<genesis_setup::SetupState>().reply(&app.state::<WatchState>(), genesis_setup::SetupResult { outcome, notice: None }, initial, None)
+}
+async fn pick_project_folder_inner(app: tauri::AppHandle) -> PickOutcome {
     let Some(flight) = app.state::<WatchState>().begin_pick() else {
         return PickOutcome::Busy; // a pick is already in flight
     };
@@ -228,108 +312,52 @@ async fn pick_project_folder(app: tauri::AppHandle) -> PickOutcome {
     })
 }
 
-/// T-026: the GENESIS picker — the zero-argument variant of the folder
-/// picker for "Start an interview" (⌘N). Same ADR-012 posture as
-/// `pick_project_folder`, command for command: the webview supplies no
-/// path, the native dialog opens in Rust, the choice is validated here
-/// (canonicalized; must be a plain, non-symlink directory — the T-003
-/// rule family applied to the root), and only a typed outcome comes back.
-///
-/// The difference is what a valid choice MEANS: a folder with no plan
-/// opens as a genesis project (watcher armed on T-018's root sentinel, so
-/// the interview's first `mkdir docs` lights the ordinary pipeline), while
-/// a folder that already holds one is never offered genesis — it opens as
-/// the normal project it is (`apply_genesis_folder` routes it). Cancelling
-/// or failing validation leaves the previously open project untouched.
+/// Explicit new-project setup. Native choices are the only source of roots;
+/// the installed Init service owns both local histories and durable recovery.
 #[tauri::command]
-async fn pick_genesis_folder(app: tauri::AppHandle) -> PickOutcome {
-    let Some(flight) = app.state::<WatchState>().begin_pick() else {
-        return PickOutcome::Busy; // a pick is already in flight
-    };
-
-    let (tx, mut rx) = tauri::async_runtime::channel::<Option<tauri_plugin_dialog::FilePath>>(1);
-    app.dialog()
-        .file()
-        .set_title("Start an interview in a folder")
-        .pick_folder(move |picked| {
-            let _ = tx.blocking_send(picked);
-        });
-    let picked = rx.recv().await.flatten();
-
-    let Some(file_path) = picked else {
-        return PickOutcome::Cancelled; // dialog dismissed; guard drops here
-    };
-    let path = match file_path.into_path() {
-        Ok(path) => path,
-        Err(err) => {
-            return PickOutcome::Error {
-                path: String::new(),
-                message: format!("dialog returned an unusable selection: {err}"),
-            }
-        }
-    };
-
-    let handle = app.clone();
-    tauri::async_runtime::spawn_blocking(move || {
-        let state = handle.state::<WatchState>();
-        docs_watch::apply_genesis_folder(&state, &path, flight)
-    })
-    .await
-    .unwrap_or_else(|err| PickOutcome::Error {
-        path: String::new(),
-        message: format!("picker task failed: {err}"),
-    })
+async fn pick_genesis_folder<R: tauri::Runtime>(app: tauri::AppHandle<R>, attempt: u64) -> genesis_setup::PickReply {
+    let initial=app.state::<WatchState>().message_scope();
+    let handle=app.clone();
+    let result=tauri::async_runtime::spawn_blocking(move || {
+        genesis_setup::new_setup(&handle.state::<WatchState>(),&handle.state::<genesis_setup::SetupState>(),&handle.state::<record_editor::RecordEditorState>(),attempt,
+            || handle.dialog().file().set_title("New local project — choose an empty code folder").blocking_pick_folder().and_then(|picked|picked.into_path().ok()),
+            || handle.dialog().file().set_title("Choose a separate empty folder for private notes").blocking_pick_folder().and_then(|picked|picked.into_path().ok()))
+    }).await.unwrap_or_else(|_| setup_worker_unavailable(attempt));
+    app.state::<genesis_setup::SetupState>().reply(&app.state::<WatchState>(),result,initial,Some(attempt))
 }
 
-/// T-026: "Start an interview here" — genesis in the folder the front
-/// door is already talking about, with NO dialog and, as always, no path
-/// from the webview (ADR-012). The target is Rust's own memory of the
-/// user's last dialog choice that turned out to have no `docs/`, falling
-/// back to the open project (the launch-resolved repo with no plan — the
-/// first-launch genesis entry). A webview that invokes this out of turn
-/// can therefore only re-open a folder the USER already chose, and the
-/// plan check in `apply_genesis_folder` still governs.
+/// Here consumes the exact rendered native offer or selected-context pair.
+/// It never reads a latest rejected target or accepts a webview root.
 #[tauri::command]
-async fn start_genesis_here(app: tauri::AppHandle) -> PickOutcome {
-    // Scoped so the State borrow never crosses the await below.
-    let claimed = {
-        let state = app.state::<WatchState>();
-        state.begin_pick().map(|flight| (flight, state.genesis_target()))
-    };
-    let Some((flight, target)) = claimed else {
-        return PickOutcome::Busy;
-    };
-    let Some(target) = target else {
-        // The guard drops here, releasing the latch.
-        return PickOutcome::Error {
-            path: String::new(),
-            message: "no folder to start an interview in - open a folder first".into(),
-        };
-    };
-
-    let handle = app.clone();
-    tauri::async_runtime::spawn_blocking(move || {
-        let state = handle.state::<WatchState>();
-        docs_watch::apply_genesis_folder(&state, &target, flight)
-    })
-    .await
-    .unwrap_or_else(|err| PickOutcome::Error {
-        path: String::new(),
-        message: format!("genesis task failed: {err}"),
-    })
+async fn start_genesis_here<R: tauri::Runtime>(app: tauri::AppHandle<R>, request: genesis_setup::HereRequest) -> genesis_setup::PickReply {
+    let initial=app.state::<WatchState>().message_scope();let attempt=request.attempt;
+    let handle=app.clone();
+    let result=tauri::async_runtime::spawn_blocking(move || genesis_setup::here_setup(
+        &handle.state::<WatchState>(),&handle.state::<genesis_setup::SetupState>(),&handle.state::<record_editor::RecordEditorState>(),request,
+        || handle.dialog().file().set_title("Choose a separate empty folder for private notes").blocking_pick_folder().and_then(|picked|picked.into_path().ok())))
+        .await.unwrap_or_else(|_| setup_worker_unavailable(attempt));
+    app.state::<genesis_setup::SetupState>().reply(&app.state::<WatchState>(),result,initial,Some(attempt))
+}
+fn setup_worker_unavailable(attempt:u64)->genesis_setup::SetupResult {
+    let message="The setup response is unavailable. Keep both original folders and choose the same code folder to reconcile setup.".to_string();
+    genesis_setup::SetupResult {outcome:PickOutcome::Error {path:String::new(),message:message.clone()},notice:Some(genesis_setup::SetupNotice {
+        token:format!("setup-unconfirmed-{}-{attempt}",std::process::id()),product_dir:String::new(),status:"unknown".into(),code:Some("genesis-setup-worker-unavailable".into()),message})}
 }
 
 /// T-012: run the indexer over the open project and write the committed
-/// graph (ADR-013/014/015). Zero-argument by construction (ADR-010/012
-/// pattern): the webview names no path — the project root comes from
+/// graph (ADR-013/014/015). The webview echoes native selection numbers
+/// and names no path — the project root comes from
 /// WatchState, the cache dir from the app's own cache path — and only
-/// counts and timestamps come back. Delivery of the new graph rides the
-/// docs watcher (the write lands inside watched docs/), so this command
-/// returns the volatile stats and the snapshot arrives on its own; an
-/// unchanged tree produces no write and no snapshot at all (the T-009
-/// loop-termination brake, pinned live in index_cmd tests).
+/// counts and timestamps come back. An admitted success refreshes the
+/// architecture readers; graph bytes never ride the docs snapshot. An
+/// unchanged tree produces no write (the T-009 loop-termination brake).
 #[tauri::command]
-async fn index_repo(app: tauri::AppHandle) -> IndexOutcome {
+async fn index_repo(app: tauri::AppHandle, expected_selection: Option<index_cmd::IndexSelectionToken>) -> docs_watch::ScopedOutcome<IndexOutcome> {
+    let scope = match index_cmd::capture_index_scope(&app.state::<WatchState>(), expected_selection.as_ref()) {
+        Ok(scope) => scope,
+        Err(refused) => return refused,
+    };
+    let requested_scope = scope.clone();
     // Cache location is the app's business, never the webview's; the
     // crate treats None as "no cache" (full parse) — degradation, not
     // failure.
@@ -344,12 +372,12 @@ async fn index_repo(app: tauri::AppHandle) -> IndexOutcome {
     let handle = app.clone();
     tauri::async_runtime::spawn_blocking(move || {
         let state = handle.state::<WatchState>();
-        index_cmd::run_index(&state, cache_dir)
+        index_cmd::run_index_for_scope(&state, &handle.state::<record_editor::RecordEditorState>(), cache_dir, requested_scope)
     })
     .await
-    .unwrap_or_else(|err| IndexOutcome::Error {
+    .unwrap_or_else(|err| docs_watch::ScopedOutcome { scope, outcome: IndexOutcome::Error {
         message: format!("index task failed: {err}"),
-    })
+    }})
 }
 
 /// T-140-s1: THE SIXTEENTH COMMAND — the map's resting payload.
@@ -372,16 +400,17 @@ async fn index_repo(app: tauri::AppHandle) -> IndexOutcome {
 /// Reading and parsing a graph is blocking fs + serde work, so it goes
 /// through `spawn_blocking` like `index_repo`.
 #[tauri::command]
-async fn arch_rollup(app: tauri::AppHandle) -> RollupOutcome {
+async fn arch_rollup(app: tauri::AppHandle) -> docs_watch::ScopedOutcome<RollupOutcome> {
+    let scope = app.state::<WatchState>().message_scope();
     let handle = app.clone();
     tauri::async_runtime::spawn_blocking(move || {
         let state = handle.state::<WatchState>();
-        arch_cmd::run_rollup(&state)
+        arch_cmd::run_rollup_scoped(&state)
     })
     .await
-    .unwrap_or_else(|err| RollupOutcome::Unreadable {
+    .unwrap_or_else(|err| docs_watch::ScopedOutcome {scope, outcome: RollupOutcome::Unreadable {
         message: format!("rollup task failed: {err}"),
-    })
+    }})
 }
 
 /// T-140-s1: THE SEVENTEENTH COMMAND — file-level detail for ONE thing
@@ -401,25 +430,26 @@ async fn arch_rollup(app: tauri::AppHandle) -> RollupOutcome {
 /// The argument is length-bounded before it is looked up, because a miss
 /// ECHOES the target back so the pane can say what it could not serve.
 #[tauri::command]
-async fn arch_detail(app: tauri::AppHandle, target: String) -> DetailOutcome {
+async fn arch_detail(app: tauri::AppHandle, target: String) -> docs_watch::ScopedOutcome<DetailOutcome> {
+    let scope = app.state::<WatchState>().message_scope();
     if !arch_cmd::target_within_bounds(&target) {
         // Refused without the echo: the answer is still the typed
         // refusal, so the pane's handling is one path rather than two.
-        return DetailOutcome::Answered {
+        return docs_watch::ScopedOutcome {scope, outcome: DetailOutcome::Answered {
             detail: supertaskr_index::rollup::Detail::Unknown {
                 target: String::new(),
             },
-        };
+        }};
     }
     let handle = app.clone();
     tauri::async_runtime::spawn_blocking(move || {
         let state = handle.state::<WatchState>();
-        arch_cmd::run_detail(&state, &target)
+        arch_cmd::run_detail_scoped(&state, &target)
     })
     .await
-    .unwrap_or_else(|err| DetailOutcome::Unreadable {
+    .unwrap_or_else(|err| docs_watch::ScopedOutcome {scope, outcome: DetailOutcome::Unreadable {
         message: format!("detail task failed: {err}"),
-    })
+    }})
 }
 
 /// T-013: the map's churn overlay data — commits per path over the last
@@ -668,99 +698,192 @@ async fn dispatch_brief(
     })
 }
 
-/// T-025 criterion 1: start the genesis interview. ZERO ARGUMENTS — the
-/// kickoff prompt is assembled Rust-side from the compiled-in method
-/// snapshot plus the open project from `WatchState`, never from the
-/// webview, and the adapter table is data inside the binary that no
-/// command returns.
-///
-/// `async` on purpose: the first-ever call may run the login-shell probe
-/// (§6, bounded at 10s), and Tauri runs synchronous commands on the main
-/// thread. Async commands with borrowed `State` must return `Result`; the
-/// `Err` arm is unreachable by construction — every failure is a typed
-/// outcome, which is the whole PickOutcome discipline.
-#[tauri::command]
-async fn genesis_start(
-    watch: tauri::State<'_, WatchState>,
-    agent: tauri::State<'_, AgentState>,
-) -> Result<StartOutcome, String> {
-    Ok(agent::start_genesis(&watch, &agent))
+/// The webview supplies native-issued context/activation correlation only.
+/// Paths, installed programs, adapters and prompts remain backend-owned.
+async fn managed_genesis_start<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    request: agent::managed::Request,
+    action: agent::managed::StartAction,
+) -> agent::managed::Reply<StartOutcome> {
+    let prepared = match agent::managed::prepare(&app.state::<WatchState>(), &request) {
+        Ok(prepared) => prepared,
+        Err(code) => {
+            return agent::managed::preparation_failed(&app.state::<AgentState>(), &request, code)
+        }
+    };
+    let original = request.clone();
+    let handle = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        agent::managed::start_prepared(
+            &handle.state::<WatchState>(),
+            &handle.state::<AgentState>(),
+            &handle.state::<record_editor::RecordEditorState>(),
+            request,
+            prepared,
+            action,
+        )
+    })
+    .await
+    .unwrap_or_else(|_| {
+        agent::managed::preparation_failed(
+            &app.state::<AgentState>(),
+            &original,
+            "genesis-worker-unavailable".into(),
+        )
+    })
 }
-
-/// T-025 criterion 1: the user's own typed answer — the ONLY
-/// webview-supplied datum in the whole runner. It is passed to the child
-/// as DATA on stdin (never an argv element, never interpolated into a
-/// shell line): argv is world-readable in `ps`, and an interview answer
-/// can carry a private product idea.
 #[tauri::command]
-async fn genesis_send_turn(
+async fn genesis_start<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    request: agent::managed::Request,
+) -> agent::managed::Reply<StartOutcome> {
+    managed_genesis_start(app, request, agent::managed::StartAction::Start).await
+}
+#[tauri::command]
+async fn genesis_resume<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    request: agent::managed::Request,
+) -> agent::managed::Reply<StartOutcome> {
+    managed_genesis_start(app, request, agent::managed::StartAction::Resume).await
+}
+#[tauri::command]
+async fn genesis_fresh<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    request: agent::managed::Request,
+) -> agent::managed::Reply<StartOutcome> {
+    managed_genesis_start(app, request, agent::managed::StartAction::Fresh).await
+}
+/// Human text is stdin data. A send needs the original offered activation.
+#[tauri::command]
+async fn genesis_send_turn<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    request: agent::managed::SessionRequest,
     text: String,
-    watch: tauri::State<'_, WatchState>,
+) -> agent::managed::Reply<SendOutcome> {
+    let original = request.request();
+    let prepared = match agent::managed::prepare(&app.state::<WatchState>(), &original) {
+        Ok(prepared) => prepared,
+        Err(code) => {
+            return agent::managed::send_failed(&app.state::<AgentState>(), &original, code)
+        }
+    };
+    let handle = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        agent::managed::send_prepared(
+            &handle.state::<WatchState>(),
+            &handle.state::<AgentState>(),
+            &handle.state::<record_editor::RecordEditorState>(),
+            request,
+            prepared,
+            text,
+        )
+    })
+    .await
+    .unwrap_or_else(|_| {
+        agent::managed::send_failed(
+            &app.state::<AgentState>(),
+            &original,
+            "genesis-worker-unavailable".into(),
+        )
+    })
+}
+#[tauri::command]
+async fn genesis_status<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    request: agent::managed::Request,
+) -> agent::managed::Reply<agent::managed::ReadOutcome<agent::managed::Status>> {
+    let prepared = match agent::managed::prepare(&app.state::<WatchState>(), &request) {
+        Ok(prepared) => prepared,
+        Err(code) => {
+            return agent::managed::read_failed(&app.state::<AgentState>(), &request, code)
+        }
+    };
+    let original = request.clone();
+    let handle = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        agent::managed::status_prepared(
+            &handle.state::<WatchState>(),
+            &handle.state::<AgentState>(),
+            request,
+            prepared,
+        )
+    })
+    .await
+    .unwrap_or_else(|_| {
+        agent::managed::read_failed(
+            &app.state::<AgentState>(),
+            &original,
+            "genesis-worker-unavailable".into(),
+        )
+    })
+}
+#[tauri::command]
+async fn genesis_bank_replay<R:tauri::Runtime>(
+    app:tauri::AppHandle<R>,request:agent::managed::SessionRequest,token:String,
+)->agent::managed::Reply<agent::managed::ReadOutcome<agent::banking::View>> {
+    let original=request.request();
+    let prepared=match agent::managed::prepare(&app.state::<WatchState>(),&original) {
+        Ok(prepared)=>prepared,Err(code)=>return agent::managed::read_failed(&app.state::<AgentState>(),&original,code),
+    };
+    let handle=app.clone();
+    tauri::async_runtime::spawn_blocking(move ||agent::managed::replay_bank_prepared(&handle.state::<WatchState>(),&handle.state::<AgentState>(),&handle.state::<record_editor::RecordEditorState>(),request,prepared,token))
+        .await.unwrap_or_else(|_|agent::managed::read_failed(&app.state::<AgentState>(),&original,"genesis-bank-worker-unavailable".into()))
+}
+#[tauri::command]
+fn genesis_cancel(
     agent: tauri::State<'_, AgentState>,
-) -> Result<SendOutcome, String> {
-    Ok(agent::send_turn(&watch, &agent, text))
+    request: agent::managed::SessionRequest,
+) -> agent::managed::Reply<agent::managed::ReadOutcome<CancelOutcome>> {
+    agent::managed::cancel_scoped(&agent, request)
 }
-
-/// T-025 criterion 3: the mount-time catch-up pull (the `docs_snapshot`
-/// precedent), so a pane that mounts late learns where the interview is
-/// without replaying events. Synchronous: it reads in-memory state only.
+/// Canonical nonrepairing, original-session-filtered bounded cache read.
 #[tauri::command]
-fn genesis_status(agent: tauri::State<'_, AgentState>) -> GenesisStatus {
-    agent::status(&agent)
+async fn genesis_transcript<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    request: agent::managed::Request,
+) -> agent::managed::Reply<agent::managed::ReadOutcome<Vec<agent::sessions::TranscriptLine>>> {
+    let prepared = match agent::managed::prepare(&app.state::<WatchState>(), &request) {
+        Ok(prepared) => prepared,
+        Err(code) => {
+            return agent::managed::read_failed(&app.state::<AgentState>(), &request, code)
+        }
+    };
+    let original = request.clone();
+    let handle = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        agent::managed::transcript_prepared(
+            &handle.state::<WatchState>(),
+            &handle.state::<AgentState>(),
+            request,
+            prepared,
+        )
+    })
+    .await
+    .unwrap_or_else(|_| {
+        agent::managed::read_failed(
+            &app.state::<AgentState>(),
+            &original,
+            "genesis-worker-unavailable".into(),
+        )
+    })
 }
-
-/// T-025 criterion 1: kill the current turn's process group. Answers
-/// immediately — SIGTERM goes out synchronously and the grace + SIGKILL
-/// escalation runs on its own thread, so this never holds the caller.
+/// Manual split banking awaits its finite backend route. An old unscoped call
+/// cannot materialize a PRODUCT/docs scaffold or receive another session's kit.
 #[tauri::command]
-fn genesis_cancel(agent: tauri::State<'_, AgentState>) -> CancelOutcome {
-    agent::cancel(&agent)
-}
-
-/// T-029 criterion 1: respawn the RECORDED native session. Zero
-/// arguments — the id is read Rust-side out of `.supertaskr/sessions.json`
-/// through its own gate, so no session id ever crosses the boundary in
-/// either direction. `async` for the same reason `genesis_start` is.
-#[tauri::command]
-async fn genesis_resume(
+fn genesis_kickoff(
     watch: tauri::State<'_, WatchState>,
-    agent: tauri::State<'_, AgentState>,
-) -> Result<StartOutcome, String> {
-    Ok(agent::resume_genesis(&watch, &agent))
-}
-
-/// T-029 criterion 3: continue with a FRESH session when the native one
-/// will not resume. Degraded, never dead — the old entry is marked dead
-/// and the new kickoff carries the method's resume rule.
-#[tauri::command]
-async fn genesis_fresh(
-    watch: tauri::State<'_, WatchState>,
-    agent: tauri::State<'_, AgentState>,
-) -> Result<StartOutcome, String> {
-    Ok(agent::fresh_genesis(&watch, &agent))
-}
-
-/// T-029 criteria 1–2: the chat's rehydration source. Reads the losable
-/// `.supertaskr/genesis/transcript.jsonl`; an empty answer means "render the
-/// banked-progress summary instead" and is never an error.
-#[tauri::command]
-fn genesis_transcript(watch: tauri::State<'_, WatchState>) -> Vec<agent::sessions::TranscriptLine> {
-    agent::transcript(&watch)
-}
-
-/// T-029 criterion 4: the hand-driven mode's copyable block (ADR-006's
-/// manual-interview instrument). Materializes the kit and returns the same
-/// assembled prompt the spawn would have used — one text, one source of
-/// truth, any model, any CLI.
-#[tauri::command]
-fn genesis_kickoff(watch: tauri::State<'_, WatchState>) -> agent::KickoffOutcome {
-    agent::kickoff(&watch)
+    request: agent::managed::Request,
+) -> Result<agent::KickoffOutcome, String> {
+    let prepared = agent::managed::prepare(&watch, &request)?;
+    agent::managed::kickoff_prepared(&watch, prepared)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .manage(record_editor::RecordEditorState::default())
+        .manage(genesis_setup::SetupState::default())
         .setup(|app| {
             // T-001 acceptance: log the resolved project folder on startup.
             // T-007: resolution may legitimately find nothing — say so
@@ -774,18 +897,22 @@ pub fn run() {
             }
 
             // T-003/T-007: shared seq counter + re-armable watcher thread.
-            let seq = Arc::new(AtomicU64::new(0));
             let emit_handle = app.handle().clone();
-            let ctl = docs_watch::spawn_watcher_thread(
-                seq.clone(),
-                project_dir.clone(),
+            let architecture_handle = app.handle().clone();
+            let watch = WatchState::start_with_architecture(
+                project_dir,
                 move |snapshot| {
                     if let Err(err) = emit_handle.emit("docs-changed", snapshot) {
                         eprintln!("[supertaskr] watch: emit failed: {err}");
                     }
                 },
+                move |change| {
+                    if let Err(err) = architecture_handle.emit("architecture-changed", change) {
+                        eprintln!("[supertaskr] architecture watch: emit failed: {err}");
+                    }
+                },
             );
-            app.manage(WatchState::new(project_dir, seq, ctl));
+            app.manage(watch);
 
             // T-025: the agent runner. Its one event channel is
             // `genesis-turn` (the `docs-changed` precedent); the webview
@@ -799,11 +926,17 @@ pub fn run() {
             // shell to hand it. Resolution is a probe or a typed
             // not-found.
             let agent_emit = app.handle().clone();
+            let banking_app = app.handle().clone();
+            let banking_emit = app.handle().clone();
             let agent_cfg = agent::runner::RunnerConfig::default();
-            app.manage(AgentState::new(agent_cfg, move |event| {
+            app.manage(AgentState::new_managed(agent_cfg, move |event| {
                 if let Err(err) = agent_emit.emit(agent::GENESIS_EVENT, event) {
                     eprintln!("[supertaskr] agent: emit failed: {err}");
                 }
+            }).with_banking(move |turn| {
+                agent::banking::finish(&banking_app.state::<AgentState>(),&banking_app.state::<record_editor::RecordEditorState>(),turn);
+            },move |event| {
+                if let Err(err)=banking_emit.emit(agent::GENESIS_EVENT,event) {eprintln!("[supertaskr] bank: emit failed: {err}");}
             }));
 
             // T-003: the frontend echoes each applied snapshot as a
@@ -848,6 +981,15 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             docs_snapshot,
+            record_files,
+            record_recoveries,
+            record_recover,
+            record_acknowledge,
+            record_backup_recoveries,
+            record_backup,
+            record_open,
+            record_edit,
+            record_cancel,
             pick_project_folder,
             pick_genesis_folder,
             start_genesis_here,
@@ -882,6 +1024,7 @@ pub fn run() {
             genesis_start,
             genesis_send_turn,
             genesis_status,
+            genesis_bank_replay,
             genesis_cancel,
             genesis_resume,
             genesis_fresh,
@@ -924,6 +1067,7 @@ pub fn run() {
                 tauri::RunEvent::ExitRequested { .. } | tauri::RunEvent::Exit
             ) {
                 app.state::<AgentState>().reap_for_exit();
+                app.state::<record_editor::RecordEditorState>().stop();
             }
         });
 }
@@ -1182,47 +1326,10 @@ mod tests {
     // drive `dispatch::fixtures`, the temp-directory tree C-15's own
     // bodies use.
 
-    /// The four method and docs sources the assembler reads, copied out of
-    /// this repository into a fixture so the fixture's brief is assembled
-    /// from the SAME documents a real dispatch would use.
-    ///
-    /// `brief.rs`'s own end-to-end body copies this set; the verifier role
-    /// file is the one addition, and it is what makes the role argument
-    /// observable rather than assumed.
+    /// The same authored project arrangement used by brief.rs, carrying
+    /// actual reusable method roles and no private project records.
     fn plant_the_brief_sources(root: &Path) {
-        let here = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("..")
-            .join("..")
-            .canonicalize()
-            .expect("the repository root is two directories above app/src-tauri");
-        for rel in [
-            "CLAUDE.md",
-            "docs/CONVENTIONS.md",
-            "method/roles/executor.md",
-            "method/roles/verifier.md",
-            "method/lane-protocol.md",
-            "method/tasks/TASK-FORMAT.md",
-        ] {
-            let dest = root.join(rel);
-            fs::create_dir_all(dest.parent().expect("a parent")).expect("dirs");
-            fs::copy(here.join(rel), &dest).expect("copy a source");
-        }
-        // Row 5 expands the card's `touches:` through the live component
-        // registry, so the registry travels with the fixture — the same
-        // set `brief.rs`'s own end-to-end body plants.
-        // AND THE CHAPTERS docs/CONVENTIONS.md POINTS AT (T-290): that
-        // document is an index over docs/conventions/, so planting it
-        // alone plants a project whose rules no row can read. The whole
-        // directory travels, never a list of chapter names, so a chapter
-        // added later cannot leave this fixture silently short.
-        for rel in ["docs/architecture/components", "docs/conventions"] {
-            let dest = root.join(rel);
-            fs::create_dir_all(&dest).expect("dirs");
-            for entry in fs::read_dir(here.join(rel)).expect("a planted directory") {
-                let entry = entry.expect("a file in it");
-                fs::copy(entry.path(), dest.join(entry.file_name())).expect("copy");
-            }
-        }
+        dispatch::fixtures::seed_example_project(root);
     }
 
     /// Write one card onto a fixture project's board.

@@ -1,8 +1,15 @@
+const repoRoot = fixtureFor(import.meta.url);
+import { pathToFileURL } from "node:url";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
-import { repoRoot } from "../preflight";
-import { liveTaskCards, trackedFiles } from "../scripts/docs-scan.mjs";
+import { fixtureFor } from "../fixtures/test-project";
+import * as fixtureSubjectDefinition0 from "../scripts/docs-scan.mjs";
+void fixtureSubjectDefinition0;
+const {
+  liveTaskCards,
+  trackedFiles,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/docs-scan.mjs")).href) as typeof fixtureSubjectDefinition0;
 import {
   ANY_PROVENANCE,
   ATTESTED_KEY,
@@ -10,6 +17,10 @@ import {
   CARD_STAMP,
   CENSUS_CLAIM,
   FINDING_VERDICTS,
+} from "../scripts/card-figures.mjs";
+import * as fixtureSubjectDefinition1 from "../scripts/card-figures.mjs";
+void fixtureSubjectDefinition1;
+const {
   auditCard,
   cardBody,
   cardReport,
@@ -18,8 +29,15 @@ import {
   fenceWeight,
   proseOnly,
   reproduces,
-} from "../scripts/card-figures.mjs";
-import { context, fieldList, unstampedLines, render } from "../scripts/dispatch-brief.mjs";
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/card-figures.mjs")).href) as typeof fixtureSubjectDefinition1;
+import * as fixtureSubjectDefinition2 from "../scripts/dispatch-brief.mjs";
+void fixtureSubjectDefinition2;
+const {
+  context,
+  fieldList,
+  unstampedLines,
+  render,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/dispatch-brief.mjs")).href) as typeof fixtureSubjectDefinition2;
 
 /**
  * THE CARD FIGURE LEDGER (T-150) — no browser, and NO SPAWN.
@@ -236,27 +254,14 @@ test("an unstamped bare number is NOT a finding — arm one is deliberately not 
 
 /* ── the measurement that chose arm two over arm one ────────────────── */
 
-test("the case for arm two is a RATIO and this body re-derives it", async () => {
-  let digitRuns = 0;
-  let censusClaims = 0;
-  for (const entry of liveTaskCards(repoRoot)) {
-    const prose = proseOnly(cardBody(entry.content));
-    digitRuns += (prose.match(/\d+(?:[.,]\d+)?/g) ?? []).length;
-    CENSUS_CLAIM.lastIndex = 0;
-    censusClaims += (prose.match(CENSUS_CLAIM) ?? []).length;
-  }
-  expect(digitRuns, "the corpus carries digit runs in bulk").toBeGreaterThan(1000);
-  expect(censusClaims, "and the census claim is not vacuous").toBeGreaterThan(0);
-  expect(
-    censusClaims * 100,
-    `census claims ${censusClaims} against digit runs ${digitRuns} — a bare-figure lint fires ` +
-      "orders of magnitude more often, which is the over-fire trap docs/CONVENTIONS.md names " +
-      "against itself under DOCS GATE",
-  ).toBeLessThan(digitRuns);
-  // A RELATION, NOT A TALLY (docs/CONVENTIONS.md: CITE THE SHAPE, NOT THE
-  // TALLY). Both counts move with every merge; the two orders of
-  // magnitude between them are the argument, and they are what a later
-  // hand proposing arm one has to overturn.
+test("authored numeric prose and a scoped census claim remain distinct inputs", () => {
+  const digits = "A plain example carries 45 files, 389 bytes and 12 outcomes.";
+  const census = T141_SENTENCE;
+  expect((proseOnly(digits).match(/\d+/g) ?? []).length).toBe(3);
+  CENSUS_CLAIM.lastIndex = 0;
+  expect(CENSUS_CLAIM.test(digits)).toBe(false);
+  CENSUS_CLAIM.lastIndex = 0;
+  expect(CENSUS_CLAIM.test(census)).toBe(true);
 });
 
 /* ── the provenance floor, which is IMPORTED and not re-implemented ─── */

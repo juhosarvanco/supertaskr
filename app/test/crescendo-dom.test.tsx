@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import ts from "typescript";
 import type { GenesisEvent } from "../src/lib/agent-store";
 import type { DocsSnapshotPayload } from "../src/lib/docs-model";
 
@@ -38,12 +39,13 @@ const ipc = vi.hoisted(() => ({
   listeners: new Map<string, (event: { payload: unknown }) => void>(),
 }));
 
-vi.mock("@tauri-apps/api/core", () => ({
-  invoke: (command: string) => {
+vi.mock("@tauri-apps/api/core", async () => {
+  const {setupFixtureReply} = await import("./fixtures/setup-ipc");
+  return {invoke: (command: string, args?: unknown) => {
     ipc.invoke(command);
-    return Promise.resolve(ipc.outcomes.get(command));
-  },
-}));
+    return Promise.resolve(ipc.outcomes.get(command)).then(value => setupFixtureReply(command,args,value));
+  }};
+});
 vi.mock("@tauri-apps/api/event", () => ({
   emit: () => Promise.resolve(),
   listen: (name: string, handler: (event: { payload: unknown }) => void) => {
@@ -491,16 +493,23 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
 
   const sourceOf = (relative: string): string => readFileSync(resolve("src", relative), "utf8");
 
-  /** Every `invoke<T>("name")` call site in the shipped frontend. */
+  /** Static invoke calls, including nested type arguments and untyped calls. */
   function frontendCommands(): string[] {
     const found = new Set<string>();
     for (const file of frontendFiles()) {
-      for (const m of sourceOf(file).matchAll(/invoke<[^>]*>\("([a-z_]+)"/g)) found.add(m[1]!);
+      const source = ts.createSourceFile(file, sourceOf(file), ts.ScriptTarget.Latest, true,
+        file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+      const visit = (node: ts.Node): void => {
+        if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === "invoke" &&
+            node.arguments[0] !== undefined && ts.isStringLiteral(node.arguments[0])) found.add(node.arguments[0].text);
+        ts.forEachChild(node, visit);
+      };
+      visit(source);
     }
     return [...found].sort();
   }
 
-  it("the frontend reaches exactly the fourteen commands it is allowed", () => {
+  it("the frontend reaches exactly the approved finite commands", () => {
     // The whole set, spelled out: a fifteenth would fail this line by
     // name, and so would a rename. `pick_project_folder` /
     // `pick_genesis_folder` / `start_genesis_here` go through one call
@@ -539,11 +548,15 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
     // serde refuses a third spelling for. The project root stays
     // `WatchState`'s, so ADR-012 is applied rather than reopened and
     // `acl_pin.rs` is a 0-file diff at its 92-grant `core:default` set.
+    // Record editing and optional backup use finite receipt/buffer doors.
+    // The reviewed backup commands accept native receipt tokens and exact
+    // displayed commits, with no webview root, path or program selector.
     expect(frontendCommands()).toEqual([
       "arch_detail",
       "arch_rollup",
       "dispatch_brief",
       "docs_snapshot",
+      "genesis_bank_replay",
       "genesis_cancel",
       "genesis_fresh",
       "genesis_kickoff",
@@ -553,11 +566,20 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
       "genesis_status",
       "genesis_transcript",
       "index_repo",
+      "record_acknowledge",
+      "record_backup",
+      "record_backup_recoveries",
+      "record_cancel",
+      "record_edit",
+      "record_files",
+      "record_open",
+      "record_recover",
+      "record_recoveries",
       "repo_churn",
     ]);
   });
 
-  it("Rust exposes exactly eighteen commands, and T-112-s1 added the brief assembler's door", () => {
+  it("Rust registers exactly the approved finite native commands", () => {
     const lib = readFileSync(resolve("src-tauri/src/lib.rs"), "utf8");
     const handler = /invoke_handler\(tauri::generate_handler!\[([\s\S]*?)\]\)/.exec(lib);
     expect(handler, "the handler list must be findable").not.toBeNull();
@@ -592,6 +614,7 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
       "dispatch_brief",
       "dispatch_lanes",
       "docs_snapshot",
+      "genesis_bank_replay",
       "genesis_cancel",
       "genesis_fresh",
       "genesis_kickoff",
@@ -603,6 +626,15 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
       "index_repo",
       "pick_genesis_folder",
       "pick_project_folder",
+      "record_acknowledge",
+      "record_backup",
+      "record_backup_recoveries",
+      "record_cancel",
+      "record_edit",
+      "record_files",
+      "record_open",
+      "record_recover",
+      "record_recoveries",
       "repo_churn",
       "start_genesis_here",
     ]);
@@ -781,6 +813,7 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
       "architecture",
       "components/board",
       "components/board/badges",
+      "components/records",
       "components/shell",
       "components/ui",
       "genesis",

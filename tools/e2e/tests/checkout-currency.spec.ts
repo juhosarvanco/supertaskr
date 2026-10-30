@@ -1,3 +1,5 @@
+const repoRoot = fixtureFor(import.meta.url);
+import { pathToFileURL } from "node:url";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import os from "node:os";
@@ -18,6 +20,10 @@ import {
   REPOSITORY_PROBE_REL_PATH,
   SETTINGS_REL_PATH,
   STALE_CLONE_LIMIT,
+} from "../scripts/checkout-currency.mjs";
+import * as fixtureSubjectDefinition0 from "../scripts/checkout-currency.mjs";
+void fixtureSubjectDefinition0;
+const {
   codexTaskIdentity,
   defaultVantage,
   exitFor,
@@ -42,11 +48,15 @@ import {
   sweep,
   worktreesOf,
   writeHolder,
-} from "../scripts/checkout-currency.mjs";
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/checkout-currency.mjs")).href) as typeof fixtureSubjectDefinition0;
 import { INDEX_CRATE_MANIFEST_REL_PATH } from "../../../.claude/hooks/push-guard.mjs";
 import { RUNTIME_DIR_IGNORE } from "../../../.claude/hooks/lane-fence.mjs";
-import { conventionsFiles } from "../scripts/docs-scan.mjs";
-import { repoRoot } from "../preflight";
+import * as fixtureSubjectDefinition1 from "../scripts/docs-scan.mjs";
+void fixtureSubjectDefinition1;
+const {
+  conventionsFiles,
+} = await import(pathToFileURL(path.join(repoRoot, "tools/e2e/scripts/docs-scan.mjs")).href) as typeof fixtureSubjectDefinition1;
+import { fixtureFor } from "../fixtures/test-project";
 import { NO_BACKGROUND_MAINTENANCE, removeGitFixture } from "./git-fixture";
 
 /**
@@ -2618,7 +2628,7 @@ test("the identity derivation is named in the artifact's own header, with the ha
   );
 
   const consumer = readFileSync(
-    path.join(repoRoot, ".claude", "hooks", "push-guard.mjs"),
+    path.join(repoRoot, "cli", "push-guard.mjs"),
     "utf8",
   );
   const pointerAnchor = "THE LIMITS ARE THE IDENTITY'S AND THEY ARE STATED WHERE IT IS DERIVED";

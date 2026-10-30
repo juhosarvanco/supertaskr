@@ -1,177 +1,37 @@
 #!/usr/bin/env node
 /**
- * THE DOCS GATE (T-084) — the hand-run half.
+ * Product documentation input gate. Derives source readers, root anchors and
+ * suites owed by the supplied changed paths; --census checks source accounting
+ * without judging a diff. npm run lint:docs uses that census mode in CI.
  *
- * THE ONE SPELLING, and it is the same string docs/CONVENTIONS.md's
- * DOCS GATE bullet prints (T-090; T-057 — a recipe in two places is two
- * chances to disagree, and these two disagreed):
+ * Private task/status validation, governing budgets, STATE/checkpoint history
+ * and derived INDEX currency belong to the explicitly selected records service.
+ * This command neither selects records nor reads those private inputs.
  *
- *   TREE=$(git merge-tree --write-tree <main tip> HEAD)   # read $? FIRST
- *   node tools/e2e/scripts/docs-gate.mjs $(git diff --name-only <main tip> "$TREE")
- *
- * Feed it the changed paths of the diff the RANGE RULE names — this
- * tool deliberately computes no range of its own, because a second
- * opinion about which two commits "the merge's diff" means is exactly
- * the failure docs/CONVENTIONS.md's range rule exists to prevent.
- *
- * NO `xargs`, AND THAT IS THE WHOLE OF WHY THE SPELLING CHANGED. This
- * header used to print `… | xargs node …/docs-gate.mjs`. A pipe through
- * `xargs` DESTROYS two of the four codes below, differently on each
- * platform, in the direction the codes exist to prevent (T-090's matrix,
- * measured at `9b03ae6` on Darwin 25.6.0 against `/usr/bin/xargs`): BSD
- * `xargs` never invokes the utility on EMPTY input, so a range command
- * that FAILED exits **0** — the gate never ran and the reader is told
- * nothing is owed — and it collapses EVERY nonzero utility exit to **1**,
- * so "called wrong" and "GATE COULD NOT RUN" both arrive as "has a
- * verdict". GNU `xargs` on CI's ubuntu runner breaks it the OTHER way
- * (1–125 map to 123). A MAPPING QUOTED WITHOUT ITS PLATFORM IS WRONG ON
- * ONE OF THEM — and so is the SILENCE: GNU runs this gate once on an
- * empty list, so the refusal below FIRES there and arrives as 123, where
- * BSD hides the same failed range at 0 (T-153-s6, CI 33260414204).
- * The `$(…)` form above has no such layer: the shell reports
- * this process's own status, and a FAILED range substitutes to nothing,
- * which is zero arguments, which is EXIT 2 below.
- *
- * The unquoted substitution splits on whitespace, so a tracked path
- * containing a space arrives as fragments. **THIS TREE HAS TWO SUCH
- * PATHS AND THIS PARAGRAPH SAID IT HAD NONE** (T-248, measured at
- * `d1603bb` by feeding this gate `$(git ls-files docs/)`): they are the
- * two `.dc.html` design handoffs under docs/design/, whose names carry
- * a space, and the head fragment of each is a real docs/ prefix. Derive
- * the set rather than trusting this sentence — `git ls-files | grep " "`
- * — because it is a fact about the tree and moves with it.
- * That failure direction is loud rather than silent, which is what kept
- * the wrong sentence cheap: a fragment under docs/ makes the gate
- * OVER-fire (the `docs` prefix covers `docs/my`), and a fragment that
- * leaves the repository is refused as called-wrong. **AND SINCE T-248 IT
- * IS LOUDER STILL**: the injection scan reads the FILE behind each docs
- * path, so a fragment that names no file is reported by name as one the
- * scan COULD NOT RUN on, which is how the sentence above was falsified.
- * QUOTING the substitution is the spelling that is not safe — one
- * argument holding the whole newline-joined list reads as a clean tree
- * (T-064-s7), which is why that shape is refused by name.
- *
- * `npm run lint:docs` from tools/e2e/ is the NAMED form and CI's step
- * (T-090). It runs the WHOLE-TREE half and judges NO
- * diff, because a workflow has no "merge's diff" to be handed and this
- * tool will not compute one. WHICH CHECKS THAT HALF IS, READ OFF `main`
- * BELOW RATHER THAN OFF THIS SENTENCE (T-142-s1): the closed list this
- * paragraph used to print named three and had already gone stale — the
- * ADR-019 byte budgets and the STATE-staleness check are in that half
- * too, and each of them can move `found`. Both incidents this gate was built for
- * (`9c64cd8`, `fede266`) live in the half CI now holds; the DIFF half is
- * still the integrator's hand run, and the bullet says so.
- *
- * THE NAME IS WIDER THAN THE MODE, AND THAT IS THE HAZARD (T-142-s1):
- * `lint:docs` sounds like the general question about this repository's
- * docs, and it is the one invocation that cannot answer it. The alias
- * cannot be renamed from inside this package — CI's step and
- * `workflow-parity.spec.ts`'s `CI_SEQUENCE` entry spell it too — so what
- * is fixed here is the OUTPUT: the mode's own verdict is the last thing
- * printed, and it names the half it did not answer.
- *
- * `node tools/e2e/scripts/docs-gate.mjs --census` prints the derivation
- * and judges no diff — the figures docs/CONVENTIONS.md used to carry as
- * digits, which went stale at their own named ref. Paths may be given
- * BESIDE it, in which case it prints the derivation and judges them too.
- *
- * It answers two questions and nothing else:
- *
- *   1. Which suites does this diff owe, because a body in them reads
- *      the paths under `docs/` that it changed? The reader set is
- *      DERIVED from the tree by docs-scan.mjs, never listed.
- *   2. Does any live task card carry frontmatter the parser will
- *      refuse — a block that will not parse, or a `status:` outside the
- *      vocabulary? That question is asked of the WHOLE tree, not only
- *      of the diff: a card broken three commits ago is still broken,
- *      and this gate is the first thing in the pipeline that names the
- *      FILE instead of an off-by-two in somebody else's assertion.
- *
- * EXIT CODES — the house contract, the same four `index --check` and
- * `boot:check` use, so "stale" and "could not tell you" are never the
- * same number:
- *   0  ran, and the question it was ASKED came back clean — WHICH IS NOT
- *      ONE QUESTION, and this line used to pretend it was (T-142-s1).
- *      GIVEN PATHS it means "the diff owes nothing": no changed path
- *      reaches a reader and every whole-tree check passed. GIVEN
- *      `--census` ALONE no diff was judged at all, so the 0 is the
- *      WHOLE-TREE half's answer and NEVER an owed-suite verdict — "I was
- *      not asked", not "nothing owed". The census mode SAYS so in its own
- *      last line, because a code cannot carry two meanings and this one
- *      was being read as the wrong one: a seat took a clean `--census`
- *      for a clean gate, pushed a `blocked_by:` naming a card that did
- *      not exist, and CI reddened in `lib/parser/test/smoke.test.ts` —
- *      which the DIFF form names BY NAME on that same tree.
- *   1  ran and FOUND something: suites are owed, or a card is illegal,
- *      or the root-anchor account disagrees with the tree, or several.
- *      Read the message — they are printed apart.
- *   2  called wrong: an unknown flag, NO PATHS AT ALL, or a path list
- *      this gate cannot read as paths in this repository. Same meaning
- *      `index --check` gives 2, and it is the code that keeps "I looked
- *      and nothing is owed" separate from "I could not tell what you
- *      asked about". Four shapes reach it, each measured arriving as a
- *      CLEAN GATE before it did (T-084-s6, T-064-s7, T-101-s3):
- *        - zero arguments — a range command that failed, or a
- *          `merge-tree` whose exit was eaten by a command substitution;
- *        - an argument that is empty or blank — the same failed range,
- *          QUOTED, which is a list of length ONE and so slips past the
- *          zero-argument guard;
- *        - an argument carrying newlines — a quoted substitution handing
- *          the whole list over as one blob;
- *        - a path that resolves OUTSIDE this repository — `../../docs/…`
- *          typed from tools/e2e/, where the two neighbouring commands in
- *          the same workflow are run.
- *      A `./`-prefixed or ABSOLUTE spelling is not in that list: it is
- *      normalised to its root-relative form and ANSWERED, because it
- *      names a file in this repository and the gate knows which.
- *   3  the gate COULD NOT RUN, so this run is not a claim about the
- *      tree at all. Every throw out of docs-scan.mjs lands here.
- *
- * `yaml` is imported here rather than in the scanner: the scanner stays
- * zero-dependency so it can move to CI's first step against a bare
- * checkout, and this wrapper is the one place a dependency is allowed.
- * It is the SAME package lib/parser depends on, so a block either
- * parses for both or for neither (T-057: one implementation, not two).
+ * Pass changed paths as separate arguments from the source checkout root.
+ * Empty, newline-joined, ambiguous and escaping path arguments refuse.
+ * Exit 0 clean, 1 findings/owed suites, 2 usage, 3 could not run.
+ * The advisory injection scan never changes that exit contract.
  */
 import { readFileSync, realpathSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { parse as parseYaml } from "yaml";
 import {
-  DOC_BUDGETS,
-  INDEX_DOC,
   ROOT_ANCHOR_LEDGER,
   docsGate,
-  docsIndexStale,
   docsReaders,
-  liveTaskCards,
   normalisePaths,
   packageRelativeSites,
   repoRoot,
   rootAnchoredFiles,
+  recordsContextSiteProblems,
   siteCensus,
-  staleStateRecords,
-  taskCardIssues,
-  taskStatuses,
   unaccountedRootAnchors,
   unlinkedFiles,
   unlinkedSites,
 } from "./docs-scan.mjs";
 
 const EXIT = Object.freeze({ CLEAN: 0, FOUND: 1, USAGE: 2, CANNOT_RUN: 3 });
-
-// DOC_BUDGETS MOVED TO `docs-scan.mjs` (T-156) and is imported above. The
-// gate reads the `fail` line; the health bands read the HEADROOM under
-// the `warn` line. A budget table written twice is two chances to
-// disagree (T-057), and that rule alone is now the whole reason it lives
-// there. THE SECOND HALF OF THIS COMMENT WAS RETIRED AT T-248 RATHER
-// THAN LEFT TO GO QUIETLY FALSE: it read "this file executes at import
-// by design, so the second reader could not import it from here", and
-// the CLI at the foot of this file is now GUARDED on being the entry
-// point, so importing this module runs nothing. The move stands on
-// T-057; it no longer stands on an import hazard, and a comment that
-// keeps arguing from a hazard the tree removed is the live-false-claim
-// shape this project spends cards on.
 
 const CENSUS_FLAG = "--census";
 
@@ -195,7 +55,7 @@ const CENSUS_FLAG = "--census";
  * pointed at another tree is a gate that can be made to answer 0 about a
  * tree nobody asked about — so a run under this flag SAYS SO twice, once
  * at the head of its output and once as the last line a reader meets,
- * names the two checks it cannot answer, and CANNOT be reached by
+ * names the source-account check it cannot answer, and CANNOT be reached by
  * accident: the default is this repository, `npm run lint:docs` passes
  * no flag, and CI's step passes no flag.
  */
@@ -209,8 +69,7 @@ const USAGE_LINE =
  *  tree — named in one place so the banner and the closing line cannot
  *  drift apart (T-057). */
 const FOREIGN_UNANSWERED =
-  "the root-anchor ACCOUNT (ROOT_ANCHOR_LEDGER argues THIS repository's files, one by one) " +
-  "and the governing-document BUDGETS (ADR-019's table names THIS repository's documents)";
+  "the root-anchor ACCOUNT (ROOT_ANCHOR_LEDGER argues THIS repository's files, one by one)";
 
 /** @param {string} root */
 function foreignRootBanner(root) {
@@ -218,7 +77,7 @@ function foreignRootBanner(root) {
     `docs-gate: ${ROOT_FLAG} ${root}\n` +
     "  THIS RUN IS ABOUT THAT TREE AND IS NOT A CLAIM ABOUT THIS REPOSITORY. Every\n" +
     "  line below is derived from the checkout named above.\n" +
-    `  TWO CHECKS ARE NOT ANSWERED HERE: ${FOREIGN_UNANSWERED}.`
+    `  THE CHECK NOT ANSWERED HERE: ${FOREIGN_UNANSWERED}.`
   );
 }
 
@@ -704,13 +563,12 @@ function main(argv) {
   // so the figures above bought a restructuring rather than a memo.
   const readers = docsReaders(root);
   const anchored = rootAnchoredFiles(root, readers);
+  const contextProblems = foreign ? [] : recordsContextSiteProblems(anchored);
   const unlinked = unlinkedFiles(root, anchored);
   const unaccounted = unaccountedRootAnchors(root, readers, anchored);
   const census = siteCensus(root);
   const climbing = packageRelativeSites(root);
   const climbingUnlinked = unlinkedSites(root, climbing);
-  const statuses = taskStatuses(root);
-  const issues = taskCardIssues(liveTaskCards(root), { statuses, parseYaml });
   const gate = docsGate(paths, readers);
 
   // WHAT THE GATE DECIDED YOUR QUESTION WAS, printed whenever it is not
@@ -727,8 +585,7 @@ function main(argv) {
 
   console.log(
     `docs-gate: ${readers.length} derived docs readers across ` +
-      `${new Set(readers.map((r) => r.suite)).size} suites; ` +
-      `${issues.length} frontmatter issue(s) in the live tree`,
+      `${new Set(readers.map((r) => r.suite)).size} suites`,
   );
   for (const r of readers) {
     console.log(
@@ -770,6 +627,15 @@ function main(argv) {
 
   let found = 0;
 
+  for (const entry of ROOT_ANCHOR_LEDGER.filter(entry => entry.scope === "private-context-unadapted")) {
+    console.log(`  unqualified records context  ${entry.file}  ${entry.reads}`);
+  }
+  if (contextProblems.length > 0) {
+    console.error("\ndocs-gate: the exact unadapted records-context account is stale:");
+    for (const problem of contextProblems) console.error(`  ${problem}`);
+    found += contextProblems.length;
+  }
+
   // THE ACCOUNT AND THE TREE MUST AGREE. An unargued root-anchored file
   // in a suite that is not universally owed is the ROOT-ANCHORED shape
   // whose answer could be short — the package-relative half is the
@@ -777,7 +643,7 @@ function main(argv) {
   // it is news here as well as in the lane, because the lane is not what
   // an integrator runs at a merge.
   //
-  // IT IS ONE OF THE TWO CHECKS A `--root` RUN CANNOT ANSWER (T-332),
+  // IT IS THE SOURCE-SPECIFIC CHECK A `--root` RUN CANNOT ANSWER,
   // and it is skipped BY NAME rather than answered wrongly: the ledger
   // is a list of THIS repository's files, argued file by file, so
   // comparing it against another tree reports every entry missing and
@@ -868,113 +734,7 @@ function main(argv) {
     }
   }
 
-  if (issues.length > 0) {
-    console.error(`\ndocs-gate: ${issues.length} task card(s) the parser will refuse:`);
-    for (const issue of issues) console.error(`  ${issue.message}`);
-    found += issues.length;
-  } else {
-    console.log(`docs-gate: every live task card's frontmatter parses, with a legal status.`);
-  }
-
-  // ADR-019: the governing-document budget tripwire — whole-tree, like
-  // the frontmatter half above. Loud in both directions once a
-  // document's compaction has landed; silent about documents still
-  // awaiting theirs.
-  //
-  // THE SECOND CHECK A `--root` RUN CANNOT ANSWER (T-332), skipped by
-  // name for the reason the root-anchor account is: the table is a list
-  // of THIS repository's documents at THIS repository's landed sizes,
-  // and a tree that does not carry them would `statSync`-throw its way
-  // to exit 3 — "the gate could not run" — over a question that was
-  // never about that tree. Behaviour against the real root is unmoved,
-  // the throw included: a governed document that VANISHES from this
-  // repository is still exit 3 here, and that is the right answer.
-  const gated = /** @type {[string, { landed: number, warn: number, fail: number }][]} */ (
-    foreign ? [] : Object.entries(DOC_BUDGETS).filter(([, b]) => b !== null)
-  );
-  let breaches = 0;
-  for (const [rel, b] of gated) {
-    const size = statSync(path.join(root, rel)).size;
-    if (size > b.fail) {
-      console.error(
-        `\ndocs-gate: ${rel} is OVER BUDGET — ${size} bytes against its ${b.fail}-byte fail line ` +
-          "(ADR-019: records belong in docs/checkpoints/ and cards, never here; " +
-          "raise the line only by ADR addendum with a measured reason).",
-      );
-      breaches += 1;
-    } else if (size > b.warn) {
-      console.error(
-        `docs-gate: budget WARN — ${rel} is ${size} bytes against its ${b.warn}-byte warn line ` +
-          `(fail at ${b.fail}; ADR-019).`,
-      );
-    }
-  }
-  found += breaches;
-  if (breaches === 0 && gated.length > 0) {
-    console.log(
-      `docs-gate: governing-document budgets hold — ${gated.length} gated, ` +
-        `${Object.keys(DOC_BUDGETS).length - gated.length} awaiting their compaction landing (ADR-019).`,
-    );
-  }
-
-  // ADR-019 §Records, PROMOTED from ritual to gate after the ritual
-  // slipped twice in its first two checkpoints (records written, STATE
-  // never regenerated — the 2026-08-29 addendum). A checkpoint record
-  // whose CREATING commit is newer than docs/STATE.md's last commit is
-  // step 1 without step 2.
-  //
-  // IT USED TO READ THE RECORD'S LATEST TOUCH, AND AN APPEND IS NEITHER
-  // STEP (T-143-s5, disposition B, ruled 2026-09-14). Records are
-  // append-only rather than write-once, so an amendment to a record that
-  // was checkpointed CORRECTLY — record and regenerated STATE in one
-  // commit — used to move it past STATE and report a slip that had not
-  // happened. The original slip is untouched: a record CREATED without
-  // its STATE regeneration still reds here, by name.
-  //
-  // THE DERIVATION MOVED TO `docs-scan.mjs` (T-203) AND ONLY THE REPORT
-  // IS LEFT HERE. It acquired a second reader — the push guard's cheap
-  // checks, which ask it at the moment the rule actually fired twice in
-  // one night, AFTER the commit that broke it — and a rule written twice
-  // is two chances to disagree (T-057). The mid-ritual and tie behaviour
-  // is stated at `staleStateRecords` and is unchanged for every input.
-  const staleAgainst = staleStateRecords(root);
-  if (staleAgainst.length > 0) {
-    console.error(
-      `\ndocs-gate: docs/STATE.md is STALE against ${staleAgainst.length} newer checkpoint ` +
-        "record(s) — the record was CREATED and STATE was never regenerated beside it " +
-        "(docs-protocol.md rule 4; the integrator's step 2). An APPEND to an " +
-        "already-checkpointed record is not this finding (T-143-s5):",
-    );
-    for (const r of staleAgainst) console.error(`  ${r}`);
-    found += staleAgainst.length;
-  }
-
-  // T-293, ADR-024 decision 2: THE STANDING READ'S INDEX, AND IT IS THE
-  // SAME SHAPE AS THE TWO CHECKS ABOVE — a derived document that has
-  // fallen behind the source it is derived from. Every line of
-  // docs/INDEX.md is a function of the four governing documents' own
-  // openers, so a stale committed index is a sentence a seat reads
-  // standing that its document has stopped saying. WHOLE-TREE, like the
-  // frontmatter, budget and STATE halves: the index goes stale from a
-  // document this diff need not have touched, and a check that only ran
-  // when the diff named docs/INDEX.md would only ever fire on the fix.
-  //
-  // THE DERIVATION IS `docs-scan.mjs`'s AND ONLY THE REPORT IS HERE, for
-  // the reason `staleStateRecords` gives twenty lines above: it has two
-  // readers — this gate and `capabilities.mjs --check`, which is the
-  // command that regenerates it — and a rule written twice is two
-  // chances to disagree (T-057).
-  const indexStale = docsIndexStale(root);
-  if (indexStale !== null) {
-    console.error(
-      `\ndocs-gate: ${INDEX_DOC} is STALE against the documents it indexes — ` +
-        `${indexStale.committed === null ? "it is not committed at all" : `committed ${Buffer.byteLength(indexStale.committed)} bytes`}, ` +
-        `a fresh generation is ${Buffer.byteLength(indexStale.fresh)} bytes ` +
-        "(ADR-024 decision 2: it is GENERATED — run `npm run capabilities` from tools/e2e/, " +
-        "the same command that regenerates the census, and commit what it wrote).",
-    );
-    found += 1;
-  }
+  console.log("docs-gate: product source checks only; private validation requires a selected records service.");
 
   // THE CENSUS'S VERDICT IS THE LAST WORD, AND IT NAMES THE HALF IT DID
   // NOT ANSWER (T-142-s1). It used to print in the MIDDLE of this
@@ -1002,7 +762,7 @@ function main(argv) {
         `${EXIT.CLEAN} here means "I was not asked", never "nothing owed".\n` +
         "  This mode is what `npm run lint:docs` from tools/e2e runs, and what CI's step runs.\n" +
         "  For the owed-suite verdict, hand this same script the RANGE RULE's own changed\n" +
-        "  paths — the DOCS GATE bullet in docs/CONVENTIONS.md prints the one spelling.",
+        "  paths — CONTRIBUTING.md names the source checks and their package directories.",
     );
   }
 

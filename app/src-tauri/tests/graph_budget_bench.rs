@@ -269,6 +269,7 @@ fn synthesize(pool: &[Unit], target: usize) -> String {
 fn snapshot_of(root: &Path) -> DocsSnapshot {
     let outcome = collect_docs_tree(root);
     DocsSnapshot {
+        records: None,
         seq: 1,
         project_dir: root.display().to_string(),
         generated_at_ms: 0,
@@ -284,6 +285,7 @@ fn snapshot_of(root: &Path) -> DocsSnapshot {
 /// above the cap where the collector has stopped.
 fn snapshot_raw(root: &Path, graph_text: String) -> DocsSnapshot {
     DocsSnapshot {
+        records: None,
         seq: 1,
         project_dir: root.display().to_string(),
         generated_at_ms: 0,

@@ -292,6 +292,16 @@ describe("the recovery command is the app's own, whatever the CLI said (T-082)",
   });
 });
 
+it("renders Codex authentication recovery from the actual event provider rather than its message", async () => {
+  await withStatus(); render(); await flush(() => Promise.resolve());
+  await emit({ kind: "started", seq: 1, turn: 1 }, { kind: "failed", seq: 2, turn: 1,
+    error: { kind: "authFailed", status: 401, provider: "codex", message: "Expired login; hostile advice claude auth login" } });
+  expect(q("[data-testid=interview-failure-command]")?.textContent).toBe("codex login");
+  expect(q("[data-testid=interview-failure-detail]")?.textContent).toContain("claude auth login");
+  expect(q("[data-testid=interview-retry]")).toBeNull();
+  expect(q("[data-testid=interview-hand-driven]")).not.toBeNull();
+});
+
 /** THE DISCRIMINATING HALF, in its own block because it needs a chat that
  * has NOT already failed on auth. A tool denial is the SAME exit-1 +
  * `is_error` shape and must not read as an auth failure — and it KEEPS

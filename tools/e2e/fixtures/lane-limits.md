@@ -1,0 +1,2 @@
+- THE LANE PROTOCOL (authored limit-publication example). These keys describe the eight example limits which the source contract currently declares.
+  **THE LIMITS — eight, numbered in the same order:** (1) example one; (2) example two; (3) example three; (4) example four; (5) example five; (6) example six; (7) example seven; (8) example eight. A declining result names `not-a-repository`, `not-judged-detached`, `not-judged-lane-list` or `no-path-to-judge`.

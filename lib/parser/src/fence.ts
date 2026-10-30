@@ -833,9 +833,10 @@ export interface QualifiedFenceComparison {
 const FENCE_ROLES: readonly FenceRepositoryRole[] = ['product', 'records'];
 const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f-\u009f]/;
 
-/** Lexical validation of claimed canonical measurements, never realpath or Git I/O. */
+/** Lexical validation of claimed canonical measurements, never realpath or Git
+ * I/O. Spaces are filesystem bytes; measured roots are never trimmed. */
 function canonicalAbsolute(path: unknown): path is string {
-  if (typeof path !== 'string' || CONTROL_CHARACTERS.test(path) || path.trim() !== path) return false;
+  if (typeof path !== 'string' || CONTROL_CHARACTERS.test(path)) return false;
   if (!/^(?:\/|[A-Za-z]:\/)/.test(path) || path.includes('\\')) return false;
   const tail = path.replace(/^(?:\/|[A-Za-z]:\/)/, '');
   return tail === '' || !tail.split('/').some((segment) => segment === '' || segment === '.' || segment === '..');

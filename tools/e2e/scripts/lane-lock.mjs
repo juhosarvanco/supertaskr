@@ -1,6 +1,6 @@
 import { chmodSync, existsSync, lstatSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { armRuntimeDir } from "../../../.claude/hooks/gate-token.mjs";
+import { armRuntimeDir } from "../../../cli/gate-token.mjs";
 import {
   LANE_BRANCH_RE,
   RUNTIME_DIR_IGNORE,
@@ -8,7 +8,7 @@ import {
   readHeadRef,
   readManifest,
   within,
-} from "../../../.claude/hooks/lane-fence.mjs";
+} from "../../../cli/lane-fence.mjs";
 import { EXIT } from "./dispatch-brief.mjs";
 import { trackedFiles } from "./docs-scan.mjs";
 

@@ -74,10 +74,10 @@ function git(cwd: string, args: string[]): string {
   return result.stdout.trim();
 }
 
-function bench(stem: string): NativeBench {
+function bench(stem: string, leaf = "lane"): NativeBench {
   const dir = realpathSync(mkdtempSync(path.join(os.tmpdir(), `t315-${stem}-`)));
   const root = path.join(dir, "seat");
-  const lane = path.join(dir, "lane");
+  const lane = path.join(dir, leaf);
   const scratch = path.join(dir, "scratch");
   mkdirSync(root, { recursive: true });
   mkdirSync(lane, { recursive: true });
@@ -488,7 +488,7 @@ function startNative(
 test("the project hook is portable and synchronously covers the native identity, tool, stop and interrupt events", () => {
   // KILLED BY: a machine-specific bootstrap path, an asynchronous checker,
   // or omission of one lifecycle event that the bridge depends on.
-  const text = readFileSync(path.join(repoRoot, ".codex", "hooks.json"), "utf8");
+  const text = readFileSync(path.join(repoRoot, ".codex", "supertaskr-product-hooks.json"), "utf8");
   const config = JSON.parse(text);
   expect(text).not.toContain("/Users/");
   expect(text).toContain("$(git rev-parse --show-toplevel)/tools/e2e/scripts/native-codex-hook.mjs");
@@ -509,6 +509,22 @@ test("the project hook is portable and synchronously covers the native identity,
   } finally {
     rmSync(empty, { recursive: true, force: true });
   }
+});
+
+test("native admission preserves a legal trailing-space Git root and refuses a nested resource", () => {
+  const b = bench("root-path-bytes", "lane ");
+  try {
+    const bound = startNative(b);
+    expect(bound.resource).toBe(b.lane);
+    expect(bound.assignment.cwd).toBe(b.lane);
+    const nested = path.join(b.lane, "nested");
+    mkdirSync(nested);
+    const wrong = structuredClone(bound);
+    wrong.resource = nested;
+    wrong.assignment.resource = nested;
+    wrong.assignment.cwd = nested;
+    expect(() => prepareNativeRecord(wrong, { at: AT })).toThrow(/exact Git root/);
+  } finally { b.cleanup(); }
 });
 
 test("exact callback plus completed identity probe bind one attempt, and parent session/cwd/task labels cannot route a worker event", () => {
@@ -1906,7 +1922,7 @@ test("published writer admissions reconstruct detached preparation only from mat
 
 
 test("native record and public launch disclose every callback registered by the unchanged portable hook for both profiles", () => {
-  const registered=Object.keys(JSON.parse(readFileSync(path.join(repoRoot,".codex","hooks.json"),"utf8")).hooks).sort();
+  const registered=Object.keys(JSON.parse(readFileSync(path.join(repoRoot,".codex","supertaskr-product-hooks.json"),"utf8")).hooks).sort();
   expect(registered.length).toBeGreaterThan(0);
   expect(registered).toContain("Interrupt");
   for(const profile of ["writer-resource","packet-only"]){
