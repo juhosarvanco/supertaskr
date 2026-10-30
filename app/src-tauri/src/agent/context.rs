@@ -47,6 +47,18 @@ pub struct SessionOrigin {
     docs: Option<DirectoryIdentity>,
     runtime: Option<DirectoryIdentity>,
 }
+/// Exact original accepted setup facts. Current bank bases are deliberately
+/// separate: legitimate PRODUCT or RECORDS commits do not rewrite this receipt.
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct InitializationReceipt {
+    pub operation_id: String,
+    pub request_digest: String,
+    pub receipt_digest: String,
+    pub project_id: String,
+    pub product_revision: String,
+    pub records_revision: String,
+}
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct GenesisSession {
@@ -54,6 +66,8 @@ pub struct GenesisSession {
     pub origin: SessionOrigin,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub planner: Option<super::planner::PlannerSession>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub setup: Option<InitializationReceipt>,
 }
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -74,6 +88,7 @@ pub struct PreparedContext {
 }
 #[derive(Clone, Debug)]
 pub(crate) struct InitializedSetup {
+    pub original: InitializationReceipt,
     pub setup_id: String,
     pub request_digest: String,
     pub receipt_digest: String,
@@ -178,6 +193,7 @@ impl GenesisSession {
             ),
             origin: context.origin.clone(),
             planner: None,
+            setup: None,
         }
     }
     pub fn matches(&self, context: &GenesisContext) -> bool {
@@ -310,12 +326,15 @@ fn admit_initialization(product: &Path, records: &Path, origin: &SessionOrigin, 
     let setup_id = string(&value["receipt"]["operationId"])?;
     let request_digest = string(&value["receipt"]["requestDigest"])?;
     let receipt_digest = string(&value["receipt"]["receiptDigest"])?;
+    let original_product_revision = string(&value["receipt"]["product"]["commit"])?;
+    let original_records_revision = string(&value["receipt"]["records"]["commit"])?;
     let product_revision = string(&current["productRevision"])?;
     let records_revision = string(&current["recordsRevision"])?;
     let digest = |text: &str| text.strip_prefix("sha256:").is_some_and(|hex| hex.len() == 64 && hex.bytes().all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase()));
     let oid = |text: &str| [40, 64].contains(&text.len()) && text.bytes().all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase());
     if !session_id_valid(&setup_id) || !digest(&request_digest) || !digest(&receipt_digest)
         || !oid(&product_revision) || !oid(&records_revision)
+        || !oid(&original_product_revision) || !oid(&original_records_revision)
         || value["receipt"]["status"] != "initialized"
         || value["receipt"]["projectId"].as_str() != origin.association_id.as_deref()
         || value["receipt"]["product"]["root"].as_str().map(Path::new) != Some(product)
@@ -333,7 +352,10 @@ fn admit_initialization(product: &Path, records: &Path, origin: &SessionOrigin, 
     verify_original_paths(product, records, origin)?;
     let planner = super::planner::Decision::from_observation(value)?;
     let pristine_seed = value["planning"]["pristineSeed"].as_bool().ok_or("genesis-initialization-response-unavailable")?;
-    Ok(InitializedSetup { setup_id, request_digest, receipt_digest, product_revision, records_revision, settings: value["settings"].clone(), planner, pristine_seed })
+    let original = InitializationReceipt { operation_id: setup_id.clone(), request_digest: request_digest.clone(),
+        receipt_digest: receipt_digest.clone(), project_id: origin.association_id.clone().ok_or("genesis-initialization-response-unavailable")?,
+        product_revision: original_product_revision, records_revision: original_records_revision };
+    Ok(InitializedSetup { original, setup_id, request_digest, receipt_digest, product_revision, records_revision, settings: value["settings"].clone(), planner, pristine_seed })
 }
 
 fn verify_original_paths(product: &Path, records: &Path, origin: &SessionOrigin) -> Result<(), String> {
@@ -657,7 +679,7 @@ mod tests {
         serde_json::json!({"status":"current","installation":{"runtimeKit":"verified"},"planning":{"pristineSeed":false},
             "receipt":{"status":"initialized","operationId":"init-controlled-wire","projectId":origin.association_id,
                 "requestDigest":format!("sha256:{}","a".repeat(64)),"receiptDigest":format!("sha256:{}","b".repeat(64)),
-                "product":{"root":product_root},"records":{"root":records_root}},
+                "product":{"root":product_root,"commit":product.selected_commit},"records":{"root":records_root,"commit":records.selected_commit}},
             "current":{"productRevision":product.selected_commit,"recordsRevision":records.selected_commit,
                 "product":repository(&origin.product,&product),"records":repository(&origin.records,&records),
                 "association":{"projectId":origin.association_id},"docs":origin.docs,"runtime":origin.runtime},

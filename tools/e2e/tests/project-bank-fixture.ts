@@ -12,22 +12,27 @@ import {captureExactCommitPlan} from "../scripts/record-write.mjs";
 import {createRecordChecker,checkedRecordWriteSet,verifyInstalledRecordTool} from "../scripts/records-check.mjs";
 import {prepareGenesisInitialization} from "../scripts/genesis-init-plan.mjs";
 import {operationDigest,operationWork} from "../scripts/operation-record.mjs";
-import {sha} from "./private-record-fixture";
+import {sha,privateGit} from "./private-record-fixture";
 import {createGenesisProposalReader,GENESIS_PRODUCT_PROPOSAL} from "../scripts/genesis-proposal.mjs";
 import {validateProjectSettingsText} from "../scripts/project-settings.mjs";
-export function bankSchemaFixture(){
+export function bankSchemaFixture(advanceRecordsBeforeBank=false){
  const f=genesisFixture();
  try{
   const init=withGenesisIdentity(()=>prepareGenesisInitialization(genesisInput(f)));
   const receipt=executeProjectInitialization(f.product,init.request,{authorize(){verifyInstalledRecordTool(f.toolHandle);return true;}});
+  if(advanceRecordsBeforeBank){
+   mkdirSync(path.join(f.records,"docs/rooms"),{recursive:true});writeFileSync(path.join(f.records,"docs/rooms/ordinary-note.md"),"# Ordinary private note after setup\n");
+   privateGit(f.records,["add","docs/rooms/ordinary-note.md"]);privateGit(f.records,["commit","-qm","Ordinary private note after setup"]);
+  }
   const inspected=inspectProjectInitialization({productRoot:f.product,tool:f.toolHandle}),current=inspected.current;
+  const setup={operationId:receipt.operationId,requestDigest:receipt.requestDigest,receiptDigest:receipt.receiptDigest,projectId:receipt.projectId,productRevision:receipt.product.commit,recordsRevision:receipt.records.commit};
   const original=(repo:any)=>({root:repo.identities[0],gitDirectory:repo.identities[1],commonDirectory:repo.identities[2]});
   const origin={version:1,layout:"split",associationId:receipt.projectId,product:original(current.product),records:original(current.records),docs:current.docs,runtime:current.runtime};
   const context={setupId:receipt.operationId,sessionId:"genesis-authored-bank-session",originDigest:operationDigest(origin),productRevision:current.productRevision,recordsRevision:current.recordsRevision};
   const executable=path.join(f.dir,"authored-planner");writeFileSync(executable,"Authored original executable metadata; this file is not launched.\n");const exe=statSync(executable);
   if(inspected.planner.status!=="ready")throw Error("fixture needs a qualified configured planner");
   const planner={selection:inspected.planner.selection,provenance:inspected.planner.provenance,executable:{path:executable,target:executable,device:String(exe.dev),inode:String(exe.ino),mode:exe.mode,bytes:exe.size,sha256:`sha256:${sha("Authored original executable metadata; this file is not launched.\n")}`,version:"2.1.226 (Claude Code)",loginPathDigest:null}};
-  const registry={sessions:[{id:"S1",agent:"claude",created:new Date().toISOString(),turns:1,tasks:[],roles:["planner"],status:"idle",genesis:{id:context.sessionId,origin,planner}}]};
+  const registry={sessions:[{id:"S1",agent:"claude",created:new Date().toISOString(),turns:1,tasks:[],roles:["planner"],status:"idle",genesis:{id:context.sessionId,origin,planner,setup}}]};
   const registryPath=path.join(f.product,".supertaskr/sessions.json"),transcriptPath=path.join(f.product,".supertaskr/genesis/transcript.jsonl");
   writeFileSync(registryPath,JSON.stringify(registry));writeFileSync(transcriptPath,"");
   const runtime=(file:string,source:string)=>{const stat=statSync(file);return {path:file,device:String(stat.dev),inode:String(stat.ino),fileMode:stat.mode&0o777,byteLength:Buffer.byteLength(source),sha256:sha(source)};};
@@ -46,7 +51,7 @@ export function bankSchemaFixture(){
   const operationId="bank-schema-fixture",message=`Bank project scaffold continuation\n\nsupertaskr-project-bank: ${operationId}/records\n`;
   const plan=withGenesisIdentity(()=>captureExactCommitPlan(f.records,context.recordsRevision,writes,{identity:captureOperationCommitIdentity(f.product),message}));
   const request={version:1,kind:"project-bank",operationId,tool:f.toolHandle,
-   setup:{operationId:receipt.operationId,requestDigest:receipt.requestDigest,receiptDigest:receipt.receiptDigest,projectId:receipt.projectId,productRevision:receipt.product.commit,recordsRevision:receipt.records.commit},
+   setup,
    session:{registryId:"S1",sessionId:context.sessionId,origin,originDigest:context.originDigest,planner},
    input:{productRevision:context.productRevision,recordsRevision:context.recordsRevision,productRepository:current.product,recordsRepository:current.records,docsIdentity:current.docs,runtimeIdentity:current.runtime,settingsProvenance:inspected.settingsProvenance,
     registryCapture:{...runtime(registryPath,JSON.stringify(registry)),base64:Buffer.from(JSON.stringify(registry)).toString("base64")},transcriptCapture:{...runtime(transcriptPath,""),lines:[]},previousBank:null},

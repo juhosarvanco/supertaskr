@@ -60,6 +60,14 @@ loses nothing about the project.
             "sha256":"sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
             "version":"2.1.226 (Claude Code)","loginPathDigest":null
           }
+        },
+        "setup": {
+          "operationId":"init-example",
+          "requestDigest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "receiptDigest":"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "projectId":"example-project",
+          "productRevision":"cccccccccccccccccccccccccccccccccccccccc",
+          "recordsRevision":"dddddddddddddddddddddddddddddddddddddddd"
         }
       }
     }
@@ -106,6 +114,14 @@ loses nothing about the project.
   dependency closure. This optional value is absent in older records; a split
   planner cannot resume one by assigning the current model. Legacy unbound
   embedding records retain their existing behavior.
+- `genesis.setup` is the original typed accepted initialization receipt captured
+  by a qualified split Start: operation, request/receipt digests, project identity
+  and both initial commits. Later accepted banks or ordinary private saves update
+  current proposal bases separately; they never rewrite this original reference.
+  It is correlation data, not proof by itself: the bank constructor must observe
+  the actual canonical initialization operation and its exact acceptance. Older
+  sessions omit it and cannot acquire banking provenance from current selection.
+  Legacy unbound sessions may still omit it. Resume preserves the original value.
 - **WHICH KEYS AN ENTRY MAY LACK, because an example shows a full one
   and says nothing about the ordinary partial ones.** Four, each absent
   for the same reason — there was nothing to record: `skills` when no

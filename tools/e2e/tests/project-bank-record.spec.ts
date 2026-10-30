@@ -54,3 +54,18 @@ test("Q1 data binds actual human captures and exact PRODUCT adapter commit to th
  row.operation.acceptance=null;row.operation.progress.product.stage="ref-accepted";row.operation.progress.product.acceptance={commit:p.commit,tree:p.tree,ref:p.targetRef,previousRevision:p.expectedRevision,attribution:"exact"};
  row.operation.acceptance={records:row.operation.progress.records.acceptance,product:row.operation.progress.product.acceptance,attribution:"exact"};expect(validProjectBankRecord(row)).toBe(true);
 });
+
+
+test("stage-zero data keeps the original typed setup after a legitimate records advance and refuses missing or relabeled provenance",()=>{
+ const later=bankSchemaFixture(true);
+ try{
+  expect(later.request.input.recordsRevision).not.toBe(later.request.setup.recordsRevision);
+  expect(validProjectBankRequest(later.request)).toBe(true);
+  for(const mutate of [(g:any)=>{delete g.setup;},(g:any)=>{g.setup.recordsRevision=later.request.input.recordsRevision;}]){
+   const request=structuredClone(later.request),registry=JSON.parse(Buffer.from(request.input.registryCapture.base64,"base64").toString());
+   mutate(registry.sessions[0].genesis);const bytes=Buffer.from(JSON.stringify(registry));
+   request.input.registryCapture.base64=bytes.toString("base64");request.input.registryCapture.byteLength=bytes.length;request.input.registryCapture.sha256=createHash("sha256").update(bytes).digest("hex");
+   expect(validProjectBankRequest(request)).toBe(false);
+  }
+ }finally{later.cleanup();}
+});

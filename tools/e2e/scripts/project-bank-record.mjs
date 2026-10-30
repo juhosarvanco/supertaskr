@@ -133,7 +133,7 @@ export function validProjectBankRequest(request){
   const registry=json(Buffer.from(r.input.registryCapture.base64,"base64"));if(!shape(registry,["sessions"])||!Array.isArray(registry.sessions))return false;
   const rows=registry.sessions.filter((/** @type {any} */ row)=>row?.status!=="dead"&&Array.isArray(row?.roles)&&row.roles.includes("planner")&&same(row?.genesis?.origin,r.session.origin));
   if(rows.length!==1||rows[0].id!==r.session.registryId||rows[0].agent!=="claude"||rows[0].status!=="idle"||!Number.isSafeInteger(rows[0].turns)||rows[0].turns<1||
-   !shape(rows[0].genesis,["id","origin","planner"])||rows[0].genesis.id!==r.session.sessionId||!same(rows[0].genesis.planner,r.session.planner))return false;
+   !shape(rows[0].genesis,["id","origin","planner","setup"])||rows[0].genesis.id!==r.session.sessionId||!same(rows[0].genesis.planner,r.session.planner)||!same(rows[0].genesis.setup,r.setup))return false;
   const context={setupId:r.setup.operationId,sessionId:r.session.sessionId,originDigest:r.session.originDigest,productRevision:r.input.productRevision,recordsRevision:r.input.recordsRevision};
   if(!shape(r.bank,["stage","proposalCapture","productProposalCapture","answers","validation"])||!Number.isInteger(r.bank.stage)||r.bank.stage<0||r.bank.stage>8||!Array.isArray(r.bank.answers))return false;
   const captured=r.bank.proposalCapture;
@@ -167,7 +167,7 @@ export function validProjectBankRequest(request){
   if(!same(ordinary.map((/** @type {any} */ w)=>({path:w.path,mode:w.mode,base64:w.base64})).sort((/** @type {any} */ a,/** @type {any} */ b)=>a.path<b.path?-1:1),expected.sort((/** @type {any} */ a,/** @type {any} */ b)=>a.path<b.path?-1:1))||
    writes.filter((/** @type {any} */ w)=>w.derived).some((/** @type {any} */ w)=>w.path!=="docs/INDEX.md"||w.mode!=="100644"))return false;
   const prior=r.input.previousBank;
-  if(r.bank.stage===0){if(prior!==null||r.input.recordsRevision!==r.setup.recordsRevision)return false;}
+  if(r.bank.stage===0){if(prior!==null)return false;} // Current lineage/stage authority is proved by the constructor, not commit equality.
   else if(!shape(prior,["operationId","requestDigest","receiptDigest","stage","recordsCommit","productCommit"])||!identifier(prior.operationId)||prior.operationId===r.operationId||
    ![prior.requestDigest,prior.receiptDigest].every(digest)||prior.stage!==r.bank.stage-1||!oid(prior.recordsCommit,notes.objectFormat)||!(prior.productCommit===null||oid(prior.productCommit,p.objectFormat)))return false;
   const validation=r.bank.validation;if(!shape(validation,["current","prospective"])||validation.prospective!==null&&r.bank.stage!==5)return false;

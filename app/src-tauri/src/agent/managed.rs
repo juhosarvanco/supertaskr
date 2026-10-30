@@ -559,6 +559,7 @@ pub fn start_prepared(
                 session.planner.as_ref().ok_or("genesis-planner-provenance-required")?.verify(&setup.planner, &cli)?;
             } else {
                 session.planner = Some(super::planner::PlannerSession::capture(&setup.planner, &cli)?);
+                session.setup = Some(setup.original.clone());
             }
         }
         let active = activate(agent, &prepared, session, setup, request.attempt);
@@ -1287,6 +1288,7 @@ echo '{"type":"result","subtype":"success","is_error":false,"num_turns":1,"resul
         fx.pick(&fx.a);
         let context=GenesisContext::capture(&fx.watch,None).unwrap(); assert!(context.split());
         let initial_revision=git(&fx.a,&["rev-parse","HEAD"]);
+        let initial_records_revision=git(&fx.b,&["rev-parse","HEAD"]);
         let wire = || {
             let current=GenesisContext::capture(&fx.watch,None).unwrap();
             let origin=serde_json::to_value(&current.origin).unwrap();
@@ -1300,7 +1302,7 @@ echo '{"type":"result","subtype":"success","is_error":false,"num_turns":1,"resul
             serde_json::json!({"status":"current","installation":{"runtimeKit":"verified"},"planning":{"pristineSeed":true},
                 "receipt":{"status":"initialized","operationId":"init-controlled-model","projectId":"configured-planner-fixture",
                     "requestDigest":format!("sha256:{}","a".repeat(64)),"receiptDigest":format!("sha256:{}","b".repeat(64)),
-                    "product":{"root":fx.a},"records":{"root":fx.b}},
+                    "product":{"root":fx.a,"commit":initial_revision},"records":{"root":fx.b,"commit":initial_records_revision}},
                 "current":{"productRevision":revision,"recordsRevision":git(&fx.b,&["rev-parse","HEAD"]),"product":repository("product"),"records":repository("records"),
                     "association":{"projectId":"configured-planner-fixture"},"docs":origin["docs"],"runtime":origin["runtime"]},
                 "settings":{"version":1,"languages":[]},"settingsProvenance":{"kind":"committed","productRoot":fx.a,"productRevision":revision,
@@ -1341,6 +1343,10 @@ echo '{"type":"result","subtype":"success","is_error":false,"num_turns":1,"resul
         let started=fx.start(5,StartAction::Start); assert!(matches!(started.result,StartOutcome::Started {..}),"{started:?}"); fx.idle();
         let first=sessions::genesis_record_for_context(&context).unwrap().unwrap();
         let planner=first.genesis.as_ref().unwrap().planner.as_ref().unwrap();
+        let original_setup=first.genesis.as_ref().unwrap().setup.as_ref().unwrap();
+        assert_eq!(original_setup.operation_id,"init-controlled-model");
+        assert_eq!(original_setup.product_revision,initial_revision);
+        assert_eq!(original_setup.records_revision,initial_records_revision);
         assert_eq!(planner.selection.model,"claude-opus-5"); assert_eq!(first.model.as_deref(),Some("fixture-model"));
         assert_eq!(planner.provenance.product_revision,initial_revision);
         assert_eq!(fs::read_to_string(fx.home.join("cwd")).unwrap().trim(),fx.b.to_str().unwrap());
@@ -1361,6 +1367,8 @@ echo '{"type":"result","subtype":"success","is_error":false,"num_turns":1,"resul
         let resumed=resume(7);assert!(matches!(resumed.result,StartOutcome::Started {..}),"{resumed:?}");fx.wait(||!cold.running.load(Ordering::SeqCst));
         let args=fs::read_to_string(fx.home.join("args")).unwrap();assert!(args.contains("--resume\nmanaged-session\n"));assert!(args.contains("--model\nclaude-opus-5\n"));assert!(!args.lines().any(|s|s=="subagent"));
         let current=sessions::genesis_record_for_context(&context).unwrap().unwrap();assert_eq!(current.genesis.as_ref().unwrap().planner.as_ref().unwrap(),planner);
+        assert_eq!(current.genesis.as_ref().unwrap().setup.as_ref(),Some(original_setup),"cold resume retains original setup, not current later revisions");
+        assert_ne!(original_setup.records_revision,git(&fx.b,&["rev-parse","HEAD"]));
         let registry=fx.a.join(sessions::SESSIONS_REL);let transcript=fx.a.join(sessions::TRANSCRIPT_REL);let stable_registry=fs::read(&registry).unwrap();let stable_transcript=fs::read(&transcript).unwrap();let stable_prompt=fs::read(fx.home.join("prompt")).unwrap();
         let mut changed=wire();changed["planner"]["selection"]["model"]="claude-sonnet-5".into();changed["planner"]["selection"]["requested"]="claude-sonnet-5@subagent".into();fs::write(&observation,changed.to_string()).unwrap();
         assert!(matches!(resume(8).result,StartOutcome::Error {ref message} if message=="genesis-original-planner-changed"));
