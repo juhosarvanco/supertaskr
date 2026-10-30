@@ -43,7 +43,7 @@ function projectionFixture(from: string) {
   }
   return { repo, base, authority, worker, raw, cleanup: () => removeGitFixture(dir, "ordinary projection T-355") };
 }
-function fixture(colocated = false, change = "mixed",context:{review?:string,settings?:string,foundation?:boolean,productFiles?:Record<string,string>,recordsFiles?:Record<string,string>}={}) {
+function fixture(colocated = false, change = "mixed",context:{review?:string,settings?:string,foundation?:boolean,productFiles?:Record<string,string>,recordsFiles?:Record<string,string>,candidateProductFiles?:Record<string,string>,candidateRecordsFiles?:Record<string,string>}={}) {
   const dir = realpathSync(mkdtempSync(path.join(os.tmpdir(), "verification-T-355-")));
   const product = path.join(dir, "product"), records = colocated ? product : path.join(dir, "records");
   for (const root of new Set([product, records])) {
@@ -108,7 +108,7 @@ function fixture(colocated = false, change = "mixed",context:{review?:string,set
     cleanup: () => removeGitFixture(dir, "qualified native T-355") };
 }
 
-export async function reviewed(colocated = false, change = "mixed",context:{review?:string,settings?:string,foundation?:boolean,productFiles?:Record<string,string>,recordsFiles?:Record<string,string>}={}) {
+export async function reviewed(colocated = false, change = "mixed",context:{review?:string,settings?:string,foundation?:boolean,productFiles?:Record<string,string>,recordsFiles?:Record<string,string>,candidateProductFiles?:Record<string,string>,candidateRecordsFiles?:Record<string,string>}={}) {
   const fx = fixture(colocated, change,context);
   const started: any = await startRun(fx.product, { assignment: fx.selected() });
   fx.bind(started.record.attempt);
@@ -118,6 +118,8 @@ export async function reviewed(colocated = false, change = "mixed",context:{revi
     // Legitimate registry output must not recapture or expand authority.
     put(fx.recordsWorker, "docs/architecture/components/C-01-owned.md", '---\nid: C-01\nname: Changed registry output\npaths: ["product::src/**"]\ntouch_slugs: [owned]\n---\n');
   }
+  for(const [file,text] of Object.entries(context.candidateProductFiles??{}))put(fx.productWorker,file,text);
+  for(const [file,text] of Object.entries(context.candidateRecordsFiles??{}))put(fx.recordsWorker,file,text);
   for (const root of new Set([fx.productWorker, fx.recordsWorker])) {
     if (git(root, ["status", "--porcelain"])) commit(root);
   }
