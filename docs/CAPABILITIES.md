@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1761 at least behaviours** — 1757 extracted sentences + 4 at least named-not-extracted (listed at the end) — across 107 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1762 at least behaviours** — 1758 extracted sentences + 4 at least named-not-extracted (listed at the end) — across 107 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -1332,6 +1332,7 @@ Census: **1761 at least behaviours** — 1757 extracted sentences + 4 at least n
 
 ## product-isolation
 
+- source CI selector and its spawned adapter run with only the owed job's parser dependencies
 - ordinary capability and skill entrypoints avoid private reads and writes with absent and defective private records
 - product census and interview freshness failures remain active without private records
 - the ordinary product docs gate keeps reader, owed-suite and root-anchor failures without reading private records
