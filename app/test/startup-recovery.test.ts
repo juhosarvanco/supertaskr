@@ -76,8 +76,11 @@ const ipc = vi.hoisted(() => ({
   indexRejects: null as null | Error,
 }));
 
-vi.mock("@tauri-apps/api/core", () => ({
-  invoke: (command: string) => {
+vi.mock("@tauri-apps/api/core", async () => {
+  const { setupFixtureReply } = await import("./fixtures/setup-ipc");
+  return { invoke: (command: string, args?: unknown) => {
+    const reply = (value: unknown) => command === "pick_genesis_folder" || command === "start_genesis_here"
+      ? setupFixtureReply(command, args, value) : value;
     if (command === "docs_snapshot") {
       ipc.invokeCalls += 1;
       if (ipc.invokeRejects) {
@@ -102,7 +105,7 @@ vi.mock("@tauri-apps/api/core", () => ({
     if (ipc.parked.has(command)) {
       // No `resolve` is ever called unless a body reaches for `release`.
       return new Promise((resolve) => {
-        ipc.release = resolve;
+        ipc.release = value => resolve(reply(value));
       });
     }
     if (command === "index_repo") {
@@ -110,9 +113,9 @@ vi.mock("@tauri-apps/api/core", () => ({
         ? Promise.reject(ipc.indexRejects)
         : Promise.resolve(ipc.indexOutcome);
     }
-    return Promise.resolve(ipc.pickOutcome);
-  },
-}));
+    return Promise.resolve(reply(ipc.pickOutcome));
+  }};
+});
 vi.mock("@tauri-apps/api/event", () => ({
   emit: (name: string, payload: unknown) => {
     ipc.emits.push({ name, payload });
