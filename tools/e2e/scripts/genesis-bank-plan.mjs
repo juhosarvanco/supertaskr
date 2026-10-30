@@ -20,6 +20,9 @@ import { loadProjectSettings, resolveProjectRole, validateProjectSettingsText } 
 import { createRecordChecker, checkedRecordWriteSet, requireInstalledRuntimeAssets, verifyInstalledRecordTool } from "./records-check.mjs";
 import { captureExactCommitPlan, safeOperationWorkingPath } from "./record-write.mjs";
 import {captureRawCommittedInputs} from "./records.mjs";
+import {observeConfiguredArmStamp} from "./configured-dispatch-operation.mjs";
+import * as pairedOperations from "./project-bank-operation.mjs";
+import * as exactWrites from "./record-write.mjs";
 const prepared = new WeakMap();
 const SETTINGS = ["version", "roles", "session_policy", "process", "suites", "smoke", "guard_class", "bands", "names", "languages", "publication", "tier_budgets", "records"];
 export class GenesisBankPreparationFinding extends Error {
@@ -616,16 +619,18 @@ export function assertPreparedGenesisBank(request) {
     return true;
 }
 
-/** The first code-empty dispatch baseline is an observed initialization and
- * completed bank history, never a GREEN suite with missing test files.
- * Reuse the canonical session and exact bank witnesses; this grants no effect.
- * @param {{productRoot:string,tool:any,taskId:string}} input */
-export function captureCompletedGenesisForDispatch(input) {
-    if (!shape(input, ["productRoot", "tool", "taskId"]) || typeof input.productRoot !== "string" || !/^T-\d+(?:-s\d+)?$/.test(input.taskId))
-        refuse("genesis-dispatch-baseline-request");
+/** One canonical completed-history/product-shape owner for installation and
+ * dispatch. A bank receipt alone cannot qualify an implementation-bearing tree.
+ * The optional original cut is private to the actual owned-stamp reader below.
+ * @param {{productRoot:string,tool:any}} input @param {{recordsRevision?:string,productRevision?:string,ownedWorking?:boolean}|undefined} [projection] */
+function completedGenesisContext(input,projection) {
     requireInstalledRuntimeAssets(input.tool, ["genesis-bank-plan", "project-bank-operation", "project-bank-record", "genesis-init-inspect", "project-init-operation", "project-settings"]
         .map(name => `tools/e2e/scripts/${name}.mjs`));
-    const inspected = inspectProjectInitialization({ productRoot: input.productRoot, tool: input.tool }), current = inspected.current;
+    const observed = inspectProjectInitialization({ productRoot: input.productRoot, tool: input.tool }), observedCurrent = observed.current;
+    const current = {...observedCurrent,...(projection?.recordsRevision===undefined?{}:{recordsRevision:projection.recordsRevision}),...(projection?.productRevision===undefined?{}:{productRevision:projection.productRevision})};
+    const originalSettings=projection?.productRevision===undefined?null:loadProjectSettings({productRoot:current.product.root,productRevision:current.productRevision,tool:input.tool});
+    if(originalSettings!==null&&originalSettings.status!=="ready")refuse("genesis-install-original-settings");
+    const inspected=originalSettings?.status==="ready"?{...observed,current,settings:originalSettings.settings,settingsProvenance:originalSettings.provenance}:observed;
     const original = observeProjectInitialization(current.product.root, inspected.receipt.operationId);
     if (original?.status !== "initialized" || !same(original.receipt, inspected.receipt)) refuse("genesis-dispatch-baseline-setup");
     const setup = setupReference(inspected.receipt), origin = sessionOrigin(current);
@@ -641,7 +646,7 @@ export function captureCompletedGenesisForDispatch(input) {
     const latestProduct = history.history.find((/** @type {any} */ row) => row.operation.request.plans.product !== null);
     if (!latestProduct || current.productRevision !== latestProduct.operation.request.plans.product.commit)
         refuse("genesis-dispatch-baseline-product-changed");
-    if (scalar(current.product.root, ["status", "--porcelain=v1", "--untracked-files=all"]) !== "")
+    if (projection?.ownedWorking!==true&&scalar(current.product.root, ["status", "--porcelain=v1", "--untracked-files=all"]) !== "")
         refuse("genesis-dispatch-baseline-product-dirty");
     // Only exact accepted init/identity/config files are code-empty. Future
     // installer assets need their own accepted finite producer receipt.
@@ -660,6 +665,35 @@ export function captureCompletedGenesisForDispatch(input) {
         const file = expected.get(entry.path);
         return !file || file.mode !== entry.mode || blob(current.product.root, entry).toString("base64") !== file.base64;
     })) refuse("genesis-dispatch-baseline-product-changed");
+    const again = inspectProjectInitialization({productRoot:current.product.root,tool:input.tool});
+    if(!same(again.current,observedCurrent)||!same(readPlain(registry.capture.path,1024*1024).capture,registry.capture))refuse("genesis-dispatch-baseline-current-changed");
+    verifyInstalledRecordTool(input.tool);
+    return {inspected,current,observedCurrent,registry,setup,history,decomposition,actual};
+}
+/** Completed original setup/banks for the finite installer, still explicitly
+ * non-GREEN. The installer adds only its separately accepted exact asset plan.
+ * @param {{productRoot:string,tool:any}} input */
+export function captureCompletedGenesisForInstallation(input) {
+    if(!shape(input,["productRoot","tool"])||typeof input.productRoot!=="string")refuse("genesis-install-baseline-request");
+    const {inspected,current,setup,history,actual}=completedGenesisContext(input);
+    return freeze({kind:"initialized-code-empty",setup,bank8:history.ownBank,latestBank:history.latestBank,
+      revisions:{product:current.productRevision,records:current.recordsRevision},configuration:inspected.settingsProvenance,
+      productFiles:actual.map(entry=>({path:entry.path,mode:entry.mode,sha256:sha(blob(current.product.root,entry))})),qualifiedSuiteBaseline:false});
+}
+
+/** The first code-empty dispatch baseline is an observed initialization and
+ * completed bank history, never a GREEN suite with missing test files.
+ * Reuse the canonical session and exact bank witnesses; this grants no effect.
+ * @param {{productRoot:string,tool:any,taskId:string}} input */
+export function captureCompletedGenesisForDispatch(input) {
+    if (!shape(input, ["productRoot", "tool", "taskId"]) || typeof input.productRoot !== "string" || !/^T-\d+(?:-s\d+)?$/.test(input.taskId))
+        refuse("genesis-dispatch-baseline-request");
+    return completedGenesisDispatchProof(input);
+}
+/** Shared exact original card/history owner. Only the retained-stamp reader
+ * below may supply an earlier RECORDS cut. @param {{productRoot:string,tool:any,taskId:string}} input @param {{recordsRevision?:string}|undefined} [projection] */
+function completedGenesisDispatchProof(input,projection) {
+    const { inspected, current, observedCurrent, registry, setup, history, decomposition, actual } = completedGenesisContext(input,projection);
     const cards = tree(current.records.root, current.recordsRevision).filter(entry => /^docs\/tasks\/[^/]+\.md$/.test(entry.path)).map(entry => ({ entry,
         bytes: blob(current.records.root, entry) })).filter(row => parseTaskFile(text(row.bytes), row.entry.path).task?.id === input.taskId);
     if (cards.length !== 1) refuse("genesis-dispatch-baseline-task");
@@ -669,7 +703,7 @@ export function captureCompletedGenesisForDispatch(input) {
     if (!planned || planned.mode !== card.entry.mode || planned.base64 !== card.bytes.toString("base64") || parseTaskFile(text(card.bytes), card.entry.path).task?.status !== "planned")
         refuse("genesis-dispatch-baseline-task-changed");
     const currentAgain = inspectProjectInitialization({ productRoot: current.product.root, tool: input.tool });
-    if (!same(currentAgain.current, current) || !same(readPlain(registry.capture.path, 1024 * 1024).capture, registry.capture))
+    if (!same(currentAgain.current, observedCurrent) || !same(readPlain(registry.capture.path, 1024 * 1024).capture, registry.capture))
         refuse("genesis-dispatch-baseline-current-changed");
     verifyInstalledRecordTool(input.tool);
     return freeze({ kind: "initialized-code-empty", setup, bank8: history.ownBank, latestBank: history.latestBank,
@@ -677,6 +711,58 @@ export function captureCompletedGenesisForDispatch(input) {
         card: { path: card.entry.path, blobId: card.entry.oid, sha256: sha(card.bytes) },
         productFiles: actual.map(entry => ({ path: entry.path, mode: entry.mode, sha256: sha(blob(current.product.root, entry)) })),
         qualifiedSuiteBaseline: false });
+}
+
+/** Read the original code-empty baseline through this operation's actual
+ * accepted mechanical stamp. No caller-provided cut, result or policy waiver.
+ * This is read-only and grants no current admission, reservation or lane effect.
+ * @param {{productRoot:string,operationId:string,tool:any}} input */
+export function captureOriginalCompletedGenesisForDispatch(input) {
+    if(!shape(input,["productRoot","operationId","tool"])||typeof input.productRoot!=="string"||typeof input.operationId!=="string")refuse("genesis-original-baseline-request");
+    requireInstalledRuntimeAssets(input.tool,["configured-dispatch-operation","configured-dispatch-record","genesis-bank-plan"].map(name=>`tools/e2e/scripts/${name}.mjs`));
+    const root=realpathSync(input.productRoot),rec=readAcceptedOperation(root,input.operationId),r=rec?.operation.request;
+    if(rec?.operation.kind!=="configured-dispatch"||rec.resource!==root||r?.baseline?.kind!=="initialized-code-empty"||!same(r.tool,input.tool))refuse("genesis-original-baseline-operation");
+    const stamped=observeConfiguredArmStamp(root,input.operationId);
+    if(stamped.status!=="stamped"||!same(stamped.stamp,rec.operation.progress.stamp.acceptance)||
+      scalar(root,["rev-parse","HEAD"])!==r.selection.revisions.product||scalar(r.repositories.records.root,["rev-parse","HEAD"])!==r.stamp.commit)refuse("genesis-original-baseline-stamp");
+    const proof=completedGenesisDispatchProof({productRoot:root,tool:input.tool,taskId:r.taskId},{recordsRevision:r.selection.revisions.records});
+    if(!same(proof,r.baseline)||!same(readAcceptedOperation(root,input.operationId),rec)||!same(observeConfiguredArmStamp(root,input.operationId),stamped)||
+      scalar(root,["rev-parse","HEAD"])!==r.selection.revisions.product||scalar(r.repositories.records.root,["rev-parse","HEAD"])!==r.stamp.commit)refuse("genesis-original-baseline-changed");
+    verifyInstalledRecordTool(input.tool);return proof;
+}
+
+/** The same original baseline during the finite installer's captured partial
+ * writes. Both selectors and phase allowances come from the actual strict OP;
+ * a serialized baseline, matching path or caller boolean supplies no allowance.
+ * Shared exact-write mechanics and the actual paired effect observer are owned
+ * by the installer core. Missing composition fails closed until it is present.
+ * @param {{productRoot:string,operationId:string,tool:any}} input */
+export function captureOriginalCompletedGenesisForInstallation(input) {
+    if(!shape(input,["productRoot","operationId","tool"])||typeof input.productRoot!=="string"||typeof input.operationId!=="string")refuse("genesis-install-original-request");
+    requireInstalledRuntimeAssets(input.tool,["project-install-record","project-bank-operation","record-write","genesis-bank-plan"].map(name=>`tools/e2e/scripts/${name}.mjs`));
+    const observer=/** @type {any} */(pairedOperations).observeProjectInstallation,consumer=/** @type {any} */(exactWrites).assertExactWriteConsumer;
+    if(typeof observer!=="function"||typeof consumer!=="function")refuse("genesis-install-original-observer-unavailable");
+    const root=realpathSync(input.productRoot),rec=readAcceptedOperation(root,input.operationId),r=rec?.operation.request;
+    if(rec?.operation.kind!=="project-install"||rec.resource!==root||!same(r?.tool,input.tool)||r?.baseline?.kind!=="initialized-code-empty")refuse("genesis-install-original-operation");
+    const observation=observer(root,input.operationId);
+    if(!same(observation?.record,rec)||!observation.effects||!shape(observation.effects,["records","product","metadata"]))refuse("genesis-install-original-observation");
+    const verifyCut=()=>{
+      for(const role of ["product","records"]){const repo=r.input[`${role}Repository`],plan=r.plans[role],progress=rec.operation.progress[role],effect=observation.effects[role];
+        if(!same(captureOperationRepository(repo.root,r.input[`${role}Revision`],{forEffect:false}),repo)||scalar(repo.root,["symbolic-ref","HEAD"])!==plan.targetRef||scalar(repo.root,["rev-parse","HEAD"])!==(effect?.commit??r.input[`${role}Revision`]))refuse("genesis-install-original-cut-changed");
+        consumer(plan,{accepted:effect!==null,partial:["consumer-prepare","files-prepared"].includes(progress.stage)});
+        const owned=new Set(plan.writes.map((/** @type {any} */ write)=>write.path));
+        for(const row of text(git(repo.root,["status","--porcelain=v1","-z","--untracked-files=all"])).split("\0").filter(Boolean))if(!/^[ MAD?]{2} /.test(row)||!owned.has(row.slice(3)))refuse("genesis-install-original-foreign-working");
+      }
+    };
+    verifyCut();
+    const {inspected,current,setup,history,actual}=completedGenesisContext({productRoot:root,tool:input.tool},{productRevision:r.input.productRevision,recordsRevision:r.input.recordsRevision,ownedWorking:true});
+    if(!same(current.docs,r.input.docsIdentity)||!same(current.runtime,r.input.runtimeIdentity))refuse("genesis-install-original-context-changed");
+    const proof=freeze({kind:"initialized-code-empty",setup,bank8:history.ownBank,latestBank:history.latestBank,
+      revisions:{product:current.productRevision,records:current.recordsRevision},configuration:inspected.settingsProvenance,
+      productFiles:actual.map(entry=>({path:entry.path,mode:entry.mode,sha256:sha(blob(current.product.root,entry))})),qualifiedSuiteBaseline:false});
+    verifyCut();
+    if(!same(proof,r.baseline)||!same(readAcceptedOperation(root,input.operationId),rec)||!same(observer(root,input.operationId),observation))refuse("genesis-install-original-changed");
+    verifyCut();verifyInstalledRecordTool(input.tool);return proof;
 }
 
 

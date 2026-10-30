@@ -107,7 +107,10 @@ export function validQualifiedIntegrationPlan(plan){
    !shape(v,["status","captureDigest","candidateDigest","tree","modeled","unmodeled","retained","procedural","indexDerivation"])||v.status!=="proposed-validation"||!digest(v.captureDigest)||!sha(v.candidateDigest)||v.tree!==r.tree||
    ![v.modeled,v.unmodeled,v.retained,v.procedural].every(Array.isArray)||!same(v.modeled.slice().sort(),r.writes.filter((/** @type {any} */ w)=>ordinaryRecordTextPath(w.path)).map((/** @type {any} */ w)=>w.path).sort())||
    !same(v.unmodeled.slice().sort(),r.writes.filter((/** @type {any} */ w)=>!ordinaryRecordTextPath(w.path)&&w.path!=="docs/INDEX.md").map((/** @type {any} */ w)=>w.path).sort()))return false;
-  if(v.indexDerivation!==null&&(!shape(v.indexDerivation,["path","mode","base64","owed"])||v.indexDerivation.path!=="docs/INDEX.md"||!["100644","100755"].includes(v.indexDerivation.mode)||!encoded(v.indexDerivation.base64)||v.indexDerivation.owed!=="coordinator completion"))return false;
+  if(v.indexDerivation!==null){const index=v.indexDerivation;
+   if(!shape(index,["path","mode","base64","owed"])||index.path!=="docs/INDEX.md"||!["100644","100755"].includes(index.mode)||!encoded(index.base64)||!["coordinator completion","planned integration"].includes(index.owed))return false;
+   if(index.owed==="planned integration"&&(p.grade.status!=="owed"||r.identity===null||!r.writes.some((/** @type {any} */ w)=>same(w,{path:index.path,operation:"write",mode:index.mode,base64:index.base64}))))return false;
+  }
   operationPayload(plan);return true;
  }catch{return false;}
 }

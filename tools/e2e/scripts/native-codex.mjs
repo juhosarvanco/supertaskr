@@ -837,6 +837,17 @@ function nativeEmergencyHoldPath(root, attempt) {
 
 /** @param {string} file @param {unknown} value @param {() => void} [beforePublish] */
 export function atomicJson(file, value, beforePublish) {
+  atomicNativeString(file, () => `${JSON.stringify(value, null, 2)}\n`, beforePublish);
+}
+/** Exact UTF-8 content through the same durable visibility boundary. Callers
+ * retain their own finite path/ownership/preimage policy before publication.
+ * @param {string} file @param {string} text @param {() => void} [beforePublish] */
+export function atomicNativeText(file, text, beforePublish) {
+  if (typeof text !== "string") throw new NativeCodexFinding("NATIVE_TEXT", "native-codex: text bytes are required");
+  atomicNativeString(file, () => text, beforePublish);
+}
+/** @param {string} file @param {() => string} bytes @param {() => void} [beforePublish] */
+function atomicNativeString(file, bytes, beforePublish) {
   durableNativeDirectory(path.dirname(file));
   const temp = `${file}.${process.pid}.${Date.now()}.${nativeTransactionSerial++}.tmp`;
   durabilityBoundary("before-temp-create", "atomic-json", file, { temp });
@@ -845,7 +856,7 @@ export function atomicJson(file, value, beforePublish) {
   try {
     durabilityBoundary("temp-create", "atomic-json", file, { temp });
     durabilityBoundary("before-write", "atomic-json", file, { temp });
-    writeFileSync(fd, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+    writeFileSync(fd, bytes(), "utf8");
     durabilityBoundary("write", "atomic-json", file, { temp });
     durabilityBoundary("before-file-fsync", "atomic-json", file, { temp });
     fsyncSync(fd);

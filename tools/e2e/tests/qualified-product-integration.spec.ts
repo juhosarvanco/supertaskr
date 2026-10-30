@@ -20,6 +20,21 @@ test("planned PRODUCT foundation uses actual finalized configured readings and p
   const proposal=await planOwner.captureQualifiedIntegrationPlan(f.product,f.input,{tool:f.tool}),plan=planOwner.qualifiedIntegrationPlanData(proposal),planned=plan.roles.find((r:any)=>r.role==="product");
   expect(planned.grade.status).toBe("owed");expect(planned.expectedRevision).not.toBe(planned.originalBase);expect(planned.commit).not.toBe(product.actualOutput.commit);
   expect(plan.recordsValidation.unmodeled).toEqual([]);expect(plan.source.configuredDispatch.digest).toBe(f.source.source.capsuleDigest);
+  const scratch=await import(f.module("qualified-integration-scratch"));
+  expect(()=>scratch.captureQualifiedPlannedPolicy(structuredClone(proposal),{tool:f.tool})).toThrow("QUALIFIED_INTEGRATION_PROPOSAL_REQUIRED");
+  expect(()=>scratch.captureQualifiedPlannedPolicy(proposal,{tool:structuredClone(f.tool)})).toThrow("QUALIFIED_INTEGRATION_PROPOSAL_REQUIRED");
+  const delivered=scratch.captureQualifiedPlannedPolicy(proposal,{tool:f.tool});
+  expect(delivered.kind).toBe("planned-delivered-policy");expect(delivered.source.product).toEqual({commit:planned.commit,tree:planned.tree});
+  expect(delivered.configuration.productRoot).toBe(f.product);expect(delivered.configuration.productRevision).toBe(planned.commit);
+  expect(delivered.configuration.configDigest).toBe(plan.configuration.configDigest);expect(delivered.findings.blocking).toEqual([]);
+  expect(delivered.index.path).toBe("docs/INDEX.md");expect(delivered.index.mode).toBe("100644");
+  const plannedRecords=plan.roles.find((r:any)=>r.role==="records");
+  expect(plan.recordsValidation.indexDerivation.owed).toBe("planned integration");
+  expect(plannedRecords.writes.find((w:any)=>w.path==="docs/INDEX.md")).toEqual({path:delivered.index.path,operation:"write",mode:delivered.index.mode,base64:delivered.index.base64});
+  const {digest:deliveredDigest,...deliveredBody}=delivered;expect(deliveredDigest).toBe(operations.operationDigest(deliveredBody));
+  // A second independent scratch has different physical paths/incarnations.
+  // Canonical complete result content, including history/debt/INDEX, agrees.
+  expect(scratch.captureQualifiedPlannedPolicy(proposal,{tool:f.tool})).toEqual(delivered);
   // Definition-only metadata below deliberately has no authentic publication
   // constructor or executable worker. It is never persisted or run, and the
   // registered public request reader must continue to refuse this new route.
@@ -61,5 +76,14 @@ test("planned PRODUCT foundation uses actual finalized configured readings and p
   const workerObserved=structuredClone(progress);workerObserved.launches[0].workerResult={kind:"thread-exited",threadId:1,exit:0,finishedAt:launch.result.observedAt,artifact:progress.observations[0].artifact,rowDigest:operations.operationDigest("no actual row")};
   expect(definition.validQualifiedIntegrationProgress(workerObserved,plan,execution)).toBe(false); // cannot also claim this artifact is unaccepted
   expect(snapshot()).toEqual(before);expect(records.readAcceptedOperation(f.product,f.input.operationId)).toBeNull();
+  // A legitimate advanced P configuration changes the delivered renderer,
+  // while original review/grade policy stays frozen. Its different canonical
+  // INDEX cannot be accepted as future debt or a nominal ready result.
+  const settings=JSON.parse(privateGit(f.product,["show","HEAD:supertaskr.yaml"]));settings.records.validation.indexInputs.push("docs/NORTH_STAR.md");
+  putPrivate(f.product,"supertaskr.yaml",JSON.stringify(settings));privateGit(f.product,["add","supertaskr.yaml"]);privateGit(f.product,["commit","-qm","Actual future private index configuration"]);
+  const incompatible={...structuredClone(f.input),operationId:"profile-index-incompatible"};incompatible.targets.product.expectedRevision=privateGit(f.product,["rev-parse","HEAD"]);
+  const beforeIncompatible=snapshot(),future=await planOwner.captureQualifiedIntegrationPlan(f.product,incompatible,{tool:f.tool});
+  expect(()=>scratch.captureQualifiedPlannedPolicy(future,{tool:f.tool})).toThrow("QUALIFIED_INTEGRATION_DELIVERED_INDEX_PENDING");
+  expect(snapshot()).toEqual(beforeIncompatible);expect(records.readAcceptedOperation(f.product,incompatible.operationId)).toBeNull();
  }finally{f.cleanup();}
 });

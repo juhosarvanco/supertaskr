@@ -5,6 +5,7 @@ import {parse} from "yaml";
 import {captureConfiguredGatePolicy,createConfiguredGateRunner} from "../scripts/gate-run.mjs";
 import {validQualifiedConfiguredGateCapture,validQualifiedConfiguredSuiteCapture,validQualifiedConfiguredGrade,assertQualifiedConfiguredGrade,validQualifiedConfiguredAuthorityGrades} from "../scripts/qualified-configured-grades.mjs";
 import {operationDigest} from "../scripts/operation-record.mjs";
+import {TOKEN_REL_PATH} from "../../../cli/gate-token.mjs";
 import {loadInstalledRecordTool} from "../scripts/records-check.mjs";
 import {privateRecordFixture,fixtureProjectSettings,putPrivate,privateGit,sha} from "./private-record-fixture";
 
@@ -31,6 +32,10 @@ test("actual original whole-suite metadata cannot be replaced by current same-ID
  const f=fixture();try{
   const before=readFileSync(path.join(f.product,".git/index")),runner=createConfiguredGateRunner({productRoot:f.product,productRevision:f.candidate,policy:f.policy}),result=runner.run(f.policy.required),grade=reading(result);
   expect(grade.bodies).toBe(4);expect(result.capture.complete).toBe(true);
+  const token=path.join(f.product,TOKEN_REL_PATH),tokenBefore=readFileSync(token);
+  const fabricated=createConfiguredGateRunner({productRoot:f.product,productRevision:f.candidate,policy:f.policy},{version:1,kind:"planned-integration-grade"});
+  expect(()=>fabricated.run(["python"])).toThrow("QUALIFIED_INTEGRATION_GRADE_AUTHORITY_REQUIRED");
+  expect(readFileSync(token)).toEqual(tokenBefore);
   expect(validQualifiedConfiguredGateCapture(result.capture,f.policy,grade)).toBe(true);expect(validQualifiedConfiguredGrade(grade,f.policy)).toBe(true);
   expect(await assertQualifiedConfiguredGrade(grade,f.policy,{tool:f.tool})).toMatchObject({policyDigest:f.policy.digest,commit:f.candidate,tree:grade.tree,exit:0});
   const unrelatedCommand={...grade,command:"an unrelated command label"};expect(validQualifiedConfiguredGrade(unrelatedCommand,f.policy)).toBe(false);

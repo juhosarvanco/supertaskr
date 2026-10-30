@@ -10486,7 +10486,21 @@ export function cardDrift(approved, current) {
     // A KEY THE CEREMONY WRITES IS MECHANICAL WHETHER IT WAS THERE OR
     // NOT: `tier:` is written by the arm and left out by the author, so
     // the card the owner approved commonly has no line to change.
-    if (MECHANICAL_FIELDS.includes(key)) drift.push(line);
+    // TASK-FORMAT initializes independent review at dispatch. Use the
+    // canonical YAML scalar meaning; quoted "null" is not an empty value.
+    // Review stays outside MECHANICAL_FIELDS, so no existing claim may be
+    // removed, downgraded or otherwise replaced under this exception.
+    let initialIndependent = false;
+    if (key === "review") {
+      try {
+        const oldReview = processPure.extractFrontmatter(approved, "approved-card.md");
+        const newReview = processPure.extractFrontmatter(current, "current-card.md");
+        const oldValue = oldReview.data?.review;
+        initialIndependent = oldReview.issues.length === 0 && newReview.issues.length === 0 &&
+          (oldValue === undefined || oldValue === null || oldValue === "") && newReview.data?.review === "independent";
+      } catch { /* Unavailable or unreadable scalar evidence remains substantive. */ }
+    }
+    if (MECHANICAL_FIELDS.includes(key) || initialIndependent) drift.push(line);
     else substantive.push(line);
   }
   /** The card's prose, with the frontmatter block and its fence removed. */

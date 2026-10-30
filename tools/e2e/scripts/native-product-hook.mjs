@@ -13,6 +13,10 @@ import { blockingOutput } from "./native-codex-hook.mjs";
 
 export const NATIVE_PRODUCT_HOOK_ENTRY="tools/e2e/scripts/native-product-hook.mjs";
 export const NATIVE_PRODUCT_HOOK_INPUT_LIMIT=16*1024*1024;
+const RUNTIME=[NATIVE_PRODUCT_HOOK_ENTRY,...["native-codex-hook","native-codex","qualified-native","qualified-verification","qualified-reservation","qualified-admission","configured-dispatch"].map(name=>`tools/e2e/scripts/${name}.mjs`)];
+/** The installer and actual callback qualify one canonical native closure.
+ * This grants neither installation nor trust/registration. @param {any} tool */
+export function requireNativeProductHookTool(tool){return requireInstalledRuntimeAssets(tool,RUNTIME);}
 /** Canonical native callback coverage, not a host observation or an installer.
  * The consumer must retain actual host identity and ordinary user trust.
  */
@@ -37,7 +41,7 @@ export function main(argv){
  /** @type {any} */let event=null;
  try{
   const expected=fixed(argv);event=eventInput();
-  const tool=loadInstalledRecordTool();requireInstalledRuntimeAssets(tool,[NATIVE_PRODUCT_HOOK_ENTRY,...["native-codex-hook","native-codex","qualified-native","qualified-verification","qualified-reservation","qualified-admission","configured-dispatch"].map(name=>`tools/e2e/scripts/${name}.mjs`)]);
+  const tool=loadInstalledRecordTool();requireNativeProductHookTool(tool);
   if(tool.manifestDigest!==expected.tool)refuse("native-product-hook-tool");
   const head=execFileSync("git",["--no-replace-objects","-C",expected.root,"rev-parse","--verify","HEAD"],{encoding:"utf8",stdio:["ignore","pipe","pipe"],env:{...process.env,GIT_NO_LAZY_FETCH:"1",GIT_OPTIONAL_LOCKS:"0"}}).replace(/\n$/,"");
   if(operationDigest(captureOperationRepository(expected.root,head,{forEffect:false}))!==expected.origin)refuse("native-product-hook-origin");

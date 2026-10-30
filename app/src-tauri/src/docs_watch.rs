@@ -66,6 +66,11 @@ use crate::agent::sessions::GenesisReachability;
 /// criterion 1.
 pub const DEBOUNCE: Duration = Duration::from_millis(250);
 
+// Test rendezvous backstop, shared by collection and owned watcher cessation.
+// A cleanup acknowledgement includes queued work and the notifier's drop.
+#[cfg(test)]
+const TEST_SILENCE_BACKSTOP: Duration = Duration::from_secs(120);
+
 const DOCS_DIR: &str = "docs";
 /// The paths `PlanProbe` is about, spelled ONCE because since T-064 they
 /// are spent by TWO readings of the same folder: `probe_plan` joins them
@@ -595,7 +600,7 @@ impl WatchState {
     pub(crate) fn stop_for_test(&self) {
         let (ack, stopped) = mpsc::channel();
         if self.ctl.send(WatchCtl::Stop { ack }).is_ok() {
-            stopped.recv_timeout(Duration::from_secs(2)).expect("owned watcher stopped");
+            stopped.recv_timeout(TEST_SILENCE_BACKSTOP).expect("owned watcher stopped");
         }
     }
 
@@ -2220,7 +2225,7 @@ mod tests {
     /// (4.29-4.49 s measured across six runs at 1-minute loads of 10.69
     /// to 22.50 on ten cores). No run that is working reaches it; the
     /// only thing that does is a watcher that has stopped emitting.
-    const SILENCE_BACKSTOP: Duration = Duration::from_secs(120);
+    const SILENCE_BACKSTOP: Duration = TEST_SILENCE_BACKSTOP;
 
     /// Wait for the emit whose snapshot satisfies `want`, across however
     /// many emits the backend delivers.

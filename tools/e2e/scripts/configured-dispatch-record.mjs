@@ -143,6 +143,18 @@ const instant=value=>typeof value==="string"&&/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.
 /** @param {any} request */
 export function configuredArmStampIntent(request){return {commit:request.stamp.commit,tree:request.stamp.tree,ref:request.targetRefs.records,previousRevision:request.selection.revisions.records,
  correlationRef:`refs/supertaskr/configured-dispatch/${operationWork(request.operationId).slice(3)}/records`};}
+/** One fixed coordinator runtime location, never a caller-provided brief path.
+ * @param {any} request */
+export function configuredArmBriefPath(request){return path.join(request.selection.authorityRoot,".supertaskr","briefs",`${operationWork(request.operationId)}.md`);}
+/** @param {any} brief @param {any} request */
+function validOwnedBrief(brief,request){
+ if(!shape(brief,["stage","path","text","sha256","identity"])||!["captured","written"].includes(brief.stage)||brief.path!==configuredArmBriefPath(request)||
+  typeof brief.text!=="string"||!brief.text||Buffer.byteLength(brief.text)>4*1024*1024||brief.sha256!==hash(brief.text))return false;
+ if(brief.stage==="captured")return brief.identity===null;
+ const i=brief.identity;
+ return shape(i,["path","device","inode","mode","byteLength","sha256"])&&i.path===brief.path&&[i.device,i.inode].every(v=>typeof v==="string"&&/^[0-9]{1,64}$/.test(v))&&
+  i.mode===0o600&&i.byteLength===Buffer.byteLength(brief.text)&&i.sha256===brief.sha256;
+}
 /** Canonical OP record branch. Every pending/unknown stage remains discoverable
  * and blocks ordinary foreign admission even after its own claims are handed
  * to the existing qualified set acquisition. No child or grant lives here.
@@ -184,11 +196,16 @@ export function validConfiguredDispatchRecord(rec){
    const i=l.identity;return !shape(i,["filesystemRoot","gitCommonDirectory","gitDirectory","device","inode"])||i.filesystemRoot!==requested.checkout||
     i.gitCommonDirectory!==r.repositories[l.role].commonDir||!absolute(i.gitDirectory)||![i.device,i.inode].every(v=>typeof v==="string"&&/^[0-9]{1,64}$/.test(v));
   }))return false;
-  if(!shape(h,["stage","source","native"])||!["held","releasing","ready","native-prepared"].includes(h.stage))return false;
+  // Older held metadata has no brief field. It grants no native handoff and
+  // remains readable as an original fact; every new handoff requires the
+  // explicit measured brief below.
+  if(!(shape(h,["stage","source","native"])&&h.stage==="held"||shape(h,["stage","source","native","brief"]))||!["held","releasing","ready","native-prepared"].includes(h.stage))return false;
+  const brief=h.brief??null;
+  if(brief!==null&&(!validOwnedBrief(brief,r)||s.acceptance===null||p.lanes.some((/** @type {any} */ l)=>l.stage!=="created")))return false;
   if(h.stage==="held"){
    if(h.source!==null||h.native!==null||op.claims.some((/** @type {any} */ c)=>c.releasedAt!==null))return false;
   }else{
-   if(s.acceptance===null||p.lanes.some((/** @type {any} */ l)=>l.stage!=="created")||!validConfiguredArmStampedSource(r,h.source))return false;
+   if(s.acceptance===null||p.lanes.some((/** @type {any} */ l)=>l.stage!=="created")||brief?.stage!=="written"||!validConfiguredArmStampedSource(r,h.source))return false;
    if(["ready","native-prepared"].includes(h.stage)&&op.claims.some((/** @type {any} */ c)=>c.releasedAt===null))return false;
    if(h.stage!=="native-prepared"){if(h.native!==null)return false;}
    else if(!shape(h.native,["attempt","assignmentDigest","permissionDigest"])||h.native.attempt!==r.expectedAttempt||!digest(h.native.assignmentDigest)||!sha(h.native.permissionDigest))return false;

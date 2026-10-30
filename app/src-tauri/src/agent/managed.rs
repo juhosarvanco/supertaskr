@@ -1267,7 +1267,10 @@ if [ -f "$SUPERTASKR_MANAGED_DUMP/fail-first" ]; then /bin/rm "$SUPERTASKR_MANAG
 /bin/pwd > "$SUPERTASKR_MANAGED_DUMP/cwd"
 echo '{"type":"system","subtype":"init","session_id":"managed-session","model":"fixture-model"}'
 : > "$SUPERTASKR_MANAGED_DUMP/ready"
-while [ -f "$SUPERTASKR_MANAGED_DUMP/hold" ]; do /bin/sleep 0.01; done
+while [ -f "$SUPERTASKR_MANAGED_DUMP/hold" ]; do
+  echo '{"type":"system","subtype":"status","status":"waiting_for_fixture_release"}'
+  /bin/sleep 0.05
+done
 echo '{"type":"result","subtype":"success","is_error":false,"num_turns":1,"result":"Original planner answer."}'
 "##).unwrap();
             fs::set_permissions(&script, fs::Permissions::from_mode(0o700)).unwrap();
@@ -1576,6 +1579,9 @@ process.stdout.write(JSON.stringify({{version:1,requestId:q.requestId,ok:true,re
         assert!(
             matches!(transcript_prepared(&fx.watch, &fx.agent, request, prepared).result, ReadOutcome::Ready { value } if value.is_empty())
         );
+        assert!(fx.agent.running.load(Ordering::SeqCst),
+            "the controlled held child must remain live during navigation: {:?}",
+            fx.agent.inner.lock().unwrap().last_error);
         fs::remove_file(fx.home.join("hold")).unwrap();
         fx.idle();
         assert!(!fx.b.join(sessions::SESSIONS_REL).exists());

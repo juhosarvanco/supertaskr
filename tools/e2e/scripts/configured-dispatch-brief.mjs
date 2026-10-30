@@ -11,6 +11,10 @@ import { verifyConfiguredDispatchViewSelection } from "./configured-dispatch-vie
 import { captureCommittedInputs, captureTaskSnapshot } from "./records.mjs";
 import { loadProjectSettings } from "./project-settings.mjs";
 import { configuredAdmissionPreflight } from "./qualified-admission.mjs";
+import { captureConfiguredArmOperationContext } from "./configured-dispatch-context.mjs";
+import { observeConfiguredArmLanes } from "./configured-dispatch-operation.mjs";
+import { readAcceptedOperation } from "./durable-operation.mjs";
+import { operationContent } from "./operation-record.mjs";
 import { allRecords, readQualifiedReservations, TERMINAL_STATES } from "./run-record.mjs";
 import { listInstalledMethodAssets, listInstalledRuntimeAssets, readInstalledMethodAssets, readInstalledRuntimeAssets, requireInstalledRuntimeAssets } from "./records-check.mjs";
 import { conventionsTextFromSource } from "./docs-scan.mjs";
@@ -67,6 +71,30 @@ export function proposedLanes(intent, capsule, scope) {
  * creation command is executed here.
  * @param {any} selected @param {{tool:any,taskId:string,role?:string,laneIntent?:any}} options */
 export async function configuredDispatchBrief(selected, options) {
+  return assembleConfiguredBrief(selected, options, null);
+}
+/** Actual held-lane brief from one current backend-owned OP. No caller may
+ * supply a readiness result, measured worker, baseline or original rule bytes.
+ * @param {string} root @param {string} operationId @param {{tool:any}} configuration */
+export async function configuredDispatchOwnedBrief(root, operationId, configuration) {
+  if (!configuration || Object.keys(configuration).join() !== "tool") refuse("configured-brief-options", "Unsupported owned brief selector");
+  requireInstalledRuntimeAssets(configuration.tool, ["tools/e2e/scripts/configured-dispatch-operation.mjs", "tools/e2e/scripts/configured-dispatch-context.mjs"]);
+  const rec = readAcceptedOperation(root, operationId);
+  if (rec?.operation.kind !== "configured-dispatch" || rec.operation.progress.handoff.stage !== "held") refuse("configured-brief-operation", "A held configured dispatch operation is required");
+  const request = rec.operation.request, progress = rec.operation.progress;
+  if (request.baseline.kind === "initialized-code-empty") refuse("configured-brief-initial-baseline-recheck-unavailable", "Original completed-genesis requalification is not yet composed");
+  const context = captureConfiguredArmOperationContext(root, operationId, configuration), lanes = observeConfiguredArmLanes(root, operationId);
+  if (progress.baseline.stage !== "complete" || request.baseline.kind === "required-original-suites" && progress.baseline.capture?.complete !== true) refuse("configured-brief-baseline", "Original baseline is not complete");
+  const selected = { ...request.selection, revisions: { ...request.selection.revisions, records: request.stamp.commit } };
+  const result = await assembleConfiguredBrief(selected, { tool: configuration.tool, taskId: request.taskId, role: "executor" }, { context, rec, lanes });
+  observeConfiguredArmLanes(root, operationId);
+  if (operationContent(readAcceptedOperation(root, operationId)) !== operationContent(rec)) refuse("configured-brief-operation-changed", "Owned operation changed during brief derivation");
+  return result;
+}
+/** One canonical row derivation for proposed and acknowledged lanes.
+ * @param {any} selected @param {{tool:any,taskId:string,role?:string,laneIntent?:any}} options
+ * @param {{context:object,rec:any,lanes:any[]}|null} owned */
+async function assembleConfiguredBrief(selected, options, owned) {
   if (!options || Object.keys(options).some(key => !["tool", "taskId", "role", "laneIntent"].includes(key))) refuse("configured-brief-options", "Unsupported brief selector");
   const role = options.role ?? "executor";
   if (!["executor", "verifier"].includes(role)) refuse("configured-brief-role", "This full brief currently supports executor and verifier");
@@ -99,7 +127,8 @@ export async function configuredDispatchBrief(selected, options) {
   const unknown = runs.filter(rec => rec.assignment.kind === "card" && !rec.native?.qualified && (!TERMINAL_STATES.includes(rec.state) || rec.reservation.releasedAt === null));
   const scopeRoles = [...new Set(context.scope.paths.map((/** @type {any} */ entry) => entry.role))];
   const preview = await configuredAdmissionPreflight({ version: 1, ...selection, taskId: options.taskId, roles: scopeRoles,
-    admission: { boundary: "lane-cut", role, kind: "explicit", parent: "", evidence: "", scope: "product-change", attempt: null } }, handle);
+    admission: { boundary: "lane-cut", role, kind: "explicit", parent: "", evidence: "", scope: "product-change", attempt: null } }, handle, owned?.context ?? null);
+  if (owned && !preview.permitted) findings.push(`Current owned admission refuses: ${preview.refusals.map((/** @type {any} */ row) => row.code).join(", ")}`);
   const declarations = declaredStandingGates(conventions), disciplines = namedDisciplines(conventions, [...declarations.gates.map(row => row.name), ...declarations.named]);
   /** @type {Map<string,(row:import("./dispatch-brief.mjs").ContractRow)=>import("./dispatch-brief.mjs").Rec[]>} */
   const derivers = new Map([
@@ -124,7 +153,8 @@ export async function configuredDispatchBrief(selected, options) {
       }
       return result;
     }],
-    ["the lane", () => lanes.length ? [value(`PROPOSED ONLY — no lane created: ${JSON.stringify(lanes)}`, pprov(`backend task-bound lane intent; exact paired bases P=${selection.revisions.product}, R=${selection.revisions.records}`)),
+    ["the lane", () => owned ? [value(`ACTUAL RETAINED LANES ${owned.rec.operation.id}: ${JSON.stringify(owned.lanes.map((row, i) => ({ ...row, branch: owned.rec.operation.request.lanes[i].branch, base: owned.rec.operation.request.lanes[i].base })))}`, live),
+      value(`lane rules: ${numberedStep(method.get("method/lane-protocol.md") ?? "", 1)}`, tprov("method/lane-protocol.md rule one"))] : lanes.length ? [value(`PROPOSED ONLY — no lane created: ${JSON.stringify(lanes)}`, pprov(`backend task-bound lane intent; exact paired bases P=${selection.revisions.product}, R=${selection.revisions.records}`)),
       value(`lane rules: ${numberedStep(method.get("method/lane-protocol.md") ?? "", 1)}`, tprov("method/lane-protocol.md rule one"))] : missing("No explicit task-bound lane intent or retained qualified lane was selected; no create command invented")],
     ["the fence", () => {
       const result = [value(`touches VERBATIM: ${JSON.stringify(snapshot.task.fields.touches)}; qualified ${JSON.stringify(context.scope.paths)}; digest ${capsule.scopeDigest}`, rprov("actual card + canonical qualified expansion"))];
@@ -135,7 +165,12 @@ export async function configuredDispatchBrief(selected, options) {
     }],
     ["setup", () => {
       const build = authored(section(conventions, "## Build & test"));
-      return build ? [value(`Selected setup/build ordering: ${flat(build)}`, rprov("CONVENTIONS Build & test")), value("First-card outputs may be absent planned work. No baseline command executed or GREEN claimed by this brief.", pprov("original configured commands and absent-output distinction"))] : missing("Selected RECORDS CONVENTIONS has no authored setup/build ordering");
+      const actual = owned?.rec.operation.progress.baseline.capture;
+      const baseline = owned ? owned.rec.operation.request.baseline.kind === "initialized-code-empty" ?
+        "Completed setup and actual bank0–8: initialized code-empty baseline; qualified suite baseline is explicitly false, never GREEN" :
+        `Original actual complete baseline: ${JSON.stringify({ policy: actual.policy, candidate: actual.candidate, required: actual.required, whole: actual.whole, complete: actual.complete, suites: actual.suites.map((/** @type {any} */ suite) => ({ id: suite.definition.id, verdict: suite.verdict, definitionDigest: suite.definitionDigest, outputDigest: suite.outputDigest, transcriptDigest: suite.transcriptDigest })) })}` :
+        "First-card outputs may be absent planned work. No baseline command executed or GREEN claimed by this brief.";
+      return build ? [value(`Selected setup/build ordering: ${flat(build)}`, rprov("CONVENTIONS Build & test")), value(baseline, pprov("original configured commands and absent-output distinction"))] : missing("Selected RECORDS CONVENTIONS has no authored setup/build ordering");
     }],
     ["commands", () => [value(`Required original suites VERBATIM: ${JSON.stringify(capsule.gatePolicy.suites)}`, pprov(`supertaskr.yaml; policy ${capsule.gatePolicy.digest}`)),
       value(`Smoke VERBATIM: ${JSON.stringify(loaded.settings.smoke)}${loaded.settings.smoke === null ? " — unconfigured, cannot run smoke" : ""}`, pprov("supertaskr.yaml smoke"))]],
@@ -176,7 +211,7 @@ export async function configuredDispatchBrief(selected, options) {
     catch (error) { return missing(`${key}: ${error instanceof Error ? error.message : String(error)}`); }
   }]));
   const assembled = assembleContractRowSet({ rows, contract, roleRel, derivers: safeDerivers, provenance: tprov, findings }); findings.push(...assembled.orphaned);
-  const recs = [note("THE CONFIGURED DISPATCH BRIEF — READ ONLY, NOT ARMED"), value(`PRODUCT ${root} at ${selection.revisions.product}; RECORDS ${capsule.receipt.recordsRoot} at ${selection.revisions.records}; capsule ${capsule.digest}`, rprov("paired original constructor selection")),
+  const recs = [note(owned ? "THE CONFIGURED DISPATCH BRIEF — ACTUAL OWNED LANES, NATIVE NOT PREPARED" : "THE CONFIGURED DISPATCH BRIEF — READ ONLY, NOT ARMED"), value(`PRODUCT ${root} at ${selection.revisions.product}; RECORDS ${capsule.receipt.recordsRoot} at ${selection.revisions.records}; capsule ${capsule.digest}`, rprov("paired original constructor selection")),
     value(`contract: ${contract.rel}; role ${roleRel}; TOOL ${tool.manifestDigest}; METHOD ${tool.methodVersion}`, tprov("normative table membership")), blank(), ...assembled.recs,
     note("THE CONTEXT PACK — cited rules only; never read full CONVENTIONS because this pack is quiet")];
   const runtimePaths = listInstalledRuntimeAssets(tool).map(row => row.path).filter(file => file.endsWith(".mjs") && GATE_SOURCE_DIRS.some(dir => file.startsWith(dir)));

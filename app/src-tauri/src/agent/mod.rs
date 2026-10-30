@@ -1544,6 +1544,12 @@ mod tests {
     /// attribute alone, because `lib.rs` carries a `#[cfg(test)] mod
     /// acl_pin;` at line 15 and cutting there would hide the file.
     fn production_half(source: &str) -> &str {
+        // An inner attribute makes the entire physical file test-only even
+        // if a future parent module declaration loses its outer attribute.
+        // Match the actual leading compiler attribute, never a quoted marker.
+        if source.starts_with("#![cfg(test)]\n") || source.starts_with("#![cfg(all(test, unix))]\n") {
+            return "";
+        }
         ["\n#[cfg(test)]\nmod tests {", "\n#[cfg(all(test, unix))]\nmod tests {"]
             .iter().filter_map(|marker| source.find(marker)).min().map_or(source, |at| &source[..at])
     }

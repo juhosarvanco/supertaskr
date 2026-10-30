@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1832 at least behaviours** — 1828 extracted sentences + 4 at least named-not-extracted (listed at the end) — across 125 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1840 at least behaviours** — 1836 extracted sentences + 4 at least named-not-extracted (listed at the end) — across 127 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -581,6 +581,9 @@ Census: **1832 at least behaviours** — 1828 extracted sentences + 4 at least n
 ## configured-dispatch-operation
 
 - actual captured dispatch OP retains real metadata claims and only its opaque same-owner context can re-enter current approval
+- protected actual private stamp retains the original approval and owns only canonical lifecycle plus INDEX bytes
+- canonical review initialization admits only an empty independent dispatch claim and rejects weaker or changed claims
+- actual configured lane creation preserves foreign destinations and reuses only its retained physical branch
 
 ## configured-dispatch-view
 
@@ -1296,6 +1299,10 @@ Census: **1832 at least behaviours** — 1828 extracted sentences + 4 at least n
 - the real version producer stages both valid anchors together and preserves unrelated staging and modes
 - a version anchor symlink refuses before writing either the product or the foreign target
 
+## native-atomic-text
+
+- native text publication retains exact Markdown bytes and the JSON publication boundary
+
 ## native-codex
 
 - the project hook is portable and synchronously covers the native identity, tool, stop and interrupt events
@@ -1456,6 +1463,11 @@ Census: **1832 at least behaviours** — 1828 extracted sentences + 4 at least n
 - proven product acceptance is recorded before a current continuation policy can refuse private initialization
 - read-only initialization discovery proves the original receipt without persisting or releasing missing bookkeeping
 
+## project-install-assets
+
+- actual installed asset plan carries full native skill packs and portable original-TOOL hook bytes without installing or trusting them
+- asset preparation qualifies the actual native callback closure before offering installation
+
 ## project-role
 
 - shared role normalization preserves one exact model/vehicle without selecting an effect harness
@@ -1489,6 +1501,8 @@ Census: **1832 at least behaviours** — 1828 extracted sentences + 4 at least n
 - ordinary TOOL validation requires its loaded records-finding owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded source-suite-derivation owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded configured-dispatch-grade owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded qualified-integration-grade owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded qualified-integration-process owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded operation-ref owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded qualified-delivery-record owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded qualified-integration-record owner even when the omitted file remains present

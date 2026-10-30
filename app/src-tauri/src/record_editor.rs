@@ -23,6 +23,8 @@ pub use recovery::{acknowledge, discover, recover};
 mod backup;
 pub use backup::{backup_saved, discover_backups, BackupOutcome};
 mod initialization;
+mod codex_host;
+pub(crate) use codex_host::{observe_codex_host, CodexHostObservation};
 #[cfg(all(test, unix))]
 mod init_actor_env_tests;
 pub(crate) use initialization::{invoke_initialization_operation, invoke_owned_bank_operation, InitializationFailure, InitializationOperation, SelectedInitializationDirectory};

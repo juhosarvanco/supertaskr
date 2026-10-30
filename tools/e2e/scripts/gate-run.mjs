@@ -204,6 +204,7 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { assertConfiguredDispatchGradeAuthority } from "./configured-dispatch-grade.mjs";
+import { assertQualifiedIntegrationGradeAuthority } from "./qualified-integration-grade.mjs";
 import {
   closeSync,
   existsSync,
@@ -1174,7 +1175,8 @@ export function createConfiguredGateRunner(options, executionAuthority) {
     return status.stdout.length > 0;
   }
   function assertCandidate() {
-    if (executionAuthority !== undefined) assertConfiguredDispatchGradeAuthority(executionAuthority, {productRoot:root,commit:productRevision,tree:candidateTree,policy:metadata});
+    if (/** @type {any} */ (executionAuthority)?.kind === "planned-integration-grade") assertQualifiedIntegrationGradeAuthority(/** @type {object} */ (executionAuthority), {productRoot:root,commit:productRevision,tree:candidateTree,policy:metadata});
+    else if (executionAuthority !== undefined) assertConfiguredDispatchGradeAuthority(executionAuthority, {productRoot:root,commit:productRevision,tree:candidateTree,policy:metadata});
     assertConfiguredGateOrigin(configuration);
     if (currentRef(root) !== productRevision || currentTree(root) !== candidateTree || !candidateTree) configuredFinding("gate-product-context-changed", "The selected candidate HEAD/tree is unavailable or changed before grading");
     if (policy && candidateHasChanges()) configuredFinding("gate-candidate-dirty", "Original-policy grading requires the exact clean candidate before and after each suite");

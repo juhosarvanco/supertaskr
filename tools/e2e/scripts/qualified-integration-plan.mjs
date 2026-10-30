@@ -18,7 +18,7 @@ import {captureOperationCommitIdentity} from "./project-init-operation.mjs";
 import {loadProjectSettings} from "./project-settings.mjs";
 import {createRecordChecker,checkedRecordWriteSet,requireInstalledRuntimeAssets,verifyInstalledRecordTool} from "./records-check.mjs";
 import {ordinaryRecordTextPath} from "./records-validation.mjs";
-const plans=new WeakMap(),MAX_BLOB=32*1024*1024;
+const plans=new WeakMap(),planTools=new WeakMap(),MAX_BLOB=32*1024*1024;
 /** @param {string} code @returns {never} */
 function refuse(code){throw new QualifiedDeliveryFinding(code);}
 /** @param {any} v @param {string[]} fields */
@@ -158,14 +158,33 @@ export async function captureQualifiedIntegrationPlan(coordinatorRoot,input,conf
  if(!evaluation.accepted)refuse("QUALIFIED_INTEGRATION_RECORD_CHECK_PENDING");const checked=checkedRecordWriteSet(evaluation);
  const derived=checked.writes.find((/** @type {any} */ w)=>w.derived&&w.path==="docs/INDEX.md"),index=records.writes.find(w=>w.path==="docs/INDEX.md"),expectedIndex=derived?.bytes??checked.baseline.find((/** @type {any} */ w)=>w.path==="docs/INDEX.md")?.bytes;
  if(index&&(index.operation!=="write"||!expectedIndex||index.base64!==Buffer.from(expectedIndex).toString("base64")))refuse("QUALIFIED_INTEGRATION_INDEX_PENDING");
+ // A PRODUCT delivery must present the exact canonical private INDEX before
+ // publication. Generate only the canonical checker-owned write, preserving
+ // the original reviewed authority and private-only completion behavior.
+ const integrateIndex=result.find(v=>v.role==="product")?.grade.status==="owed"&&derived!==undefined;
+ if(integrateIndex){
+  const writes=[...records.writes];if(!index)writes.push({path:derived.path,operation:"write",mode:derived.mode,base64:Buffer.from(derived.bytes).toString("base64")});
+  writes.sort((a,b)=>a.path<b.path?-1:a.path>b.path?1:0);
+  const root=records.repository.root,identity=records.identity??captureOperationCommitIdentity(root),message=`Integrate ${authority.taskId} reviewed output\n\nsupertaskr-delivery-integration: ${input.operationId}/records\n`;
+  assertExactRecordTransformations(root,writes.map(w=>w.path));assertExactRecordTransformations(root,writes.map(w=>w.path),records.expectedRevision);
+  const exact=captureExactCommitPlan(root,records.expectedRevision,writes,{identity,message});
+  Object.assign(records,{identity,message,writes,mergePolicyDigest:mergePolicy(root,writes.map(w=>w.path)),...exact,grade:{status:"owed",kind:"canonical-private-record-validation",commit:exact.commit,tree:exact.tree}});
+ }
  const origins={docs:directory(path.join(r.repository.filesystemRoot,"docs")),runtime:directory(path.join(coordinatorRoot,".supertaskr"))};
  const contract=authority.frozenAuthority.preparation.card;if(!runs.qualifiedProtocolDrift(contract.text,text(bytes(r.repository.filesystemRoot,tree(r.repository.filesystemRoot,records.expectedRevision).get(contract.path)))))refuse("QUALIFIED_INTEGRATION_CONTRACT_CHANGED");
  const body={version:1,kind:"qualified-integration-plan",operationId:input.operationId,authority,tool,origins,source:{attempt:source.attempt,permissionDigest:source.permission.digest,configuredDispatch:source.native.qualified.origins.configuredDispatch??null},configuration:settings.provenance,targets:input.targets,roles:result,
-  recordsValidation:{status:"proposed-validation",captureDigest:evaluation.captureDigest,candidateDigest:evaluation.candidateDigest,tree:records.tree,modeled:modeled.map(w=>w.path),unmodeled,retained:evaluation.retained,procedural:evaluation.procedural,indexDerivation:derived?{path:derived.path,mode:derived.mode,base64:Buffer.from(derived.bytes).toString("base64"),owed:"coordinator completion"}:null}};
+  recordsValidation:{status:"proposed-validation",captureDigest:evaluation.captureDigest,candidateDigest:evaluation.candidateDigest,tree:records.tree,modeled:modeled.map(w=>w.path),unmodeled,retained:evaluation.retained,procedural:evaluation.procedural,indexDerivation:derived?{path:derived.path,mode:derived.mode,base64:Buffer.from(derived.bytes).toString("base64"),owed:integrateIndex?"planned integration":"coordinator completion"}:null}};
  verifyInstalledRecordTool(tool);if((await captureQualifiedDeliveryAuthority(coordinatorRoot,{executorAttempt:input.executorAttempt,verifierAttempt:input.verifierAttempt})).authorityDigest!==authority.authorityDigest)refuse("QUALIFIED_INTEGRATION_SOURCE_CHANGED");
  for(const role of result)if(!same(captureOperationRepository(role.repository.root,role.expectedRevision,{forEffect:false}),role.repository)||line(role.repository.root,["rev-parse",role.targetRef])!==role.expectedRevision)refuse("QUALIFIED_INTEGRATION_CONTEXT_CHANGED");
  for(const origin of Object.values(origins))if(!same(directory(origin.path),origin))refuse("QUALIFIED_INTEGRATION_ORIGIN_CHANGED");
- const plan=freeze(operationPayload(body)),summary=freeze({version:1,kind:"qualified-integration-proposal",operationId:input.operationId,digest:operationDigest(plan),roles:result.map(v=>({role:v.role,commit:v.commit,tree:v.tree,grade:v.grade.status})),authority:"proposal only; no grade, landing or delivery authority"});plans.set(summary,plan);return summary;
+ const plan=freeze(operationPayload(body)),summary=freeze({version:1,kind:"qualified-integration-proposal",operationId:input.operationId,digest:operationDigest(plan),roles:result.map(v=>({role:v.role,commit:v.commit,tree:v.tree,grade:v.grade.status})),authority:"proposal only; no grade, landing or delivery authority"});plans.set(summary,plan);planTools.set(summary,tool);return summary;
 }
 /** @param {any} proposal */
 export function qualifiedIntegrationPlanData(proposal){const plan=plans.get(proposal);if(!plan)refuse("QUALIFIED_INTEGRATION_PROPOSAL_REQUIRED");return structuredClone(plan);}
+/** The next backend constructor must use the actual plan and original TOOL,
+ * not a deserialized plan or a caller's policy/settings assertion.
+ * @param {any} proposal @param {any} tool */
+export function preparedQualifiedIntegrationPlan(proposal,tool){
+ if(planTools.get(proposal)!==tool)refuse("QUALIFIED_INTEGRATION_PROPOSAL_REQUIRED");
+ verifyInstalledRecordTool(tool);return qualifiedIntegrationPlanData(proposal);
+}

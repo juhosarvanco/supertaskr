@@ -90,18 +90,23 @@ function runtimeCapture(value,expected,transcript){
 }
 /** @param {any} value */
 function workSnapshot(value){return value?.present===false?shape(value,["present"]):shape(value,["present","mode","base64"])&&value.present===true&&["100644","100755"].includes(value.mode)&&base64(value.base64);}
-/** @param {any} plan @param {any} request @param {string} role */
-export function validProjectBankPlan(plan,request,role){
+/** Existing bank API keeps its exact family; the paired commit mechanics do
+ * not confer either bank or installation policy. @param {any} plan @param {any} request @param {string} role */
+export function validProjectBankPlan(plan,request,role){return validPairedProjectPlan(plan,request,role,"project-bank");}
+/** Strict data mechanics shared by the two finite project producers only.
+ * @param {any} plan @param {any} request @param {string} role @param {"project-bank"|"project-install"} family */
+export function validPairedProjectPlan(plan,request,role,family){
  try{
+  if(!["project-bank","project-install"].includes(family)||request.kind!==family||!ROLES.includes(role))return false;
   const repo=request.input[`${role}Repository`],revision=request.input[`${role}Revision`];
   if(!shape(plan,["repository","targetRef","expectedRevision","writes","tree","working","commit","commitBase64","message"])||!same(plan.repository,repo)||!repository(repo)||
    !oid(revision,repo.objectFormat)||plan.expectedRevision!==revision||!isDeliveryBranchRef(plan.targetRef)||!oid(plan.tree,repo.objectFormat)||!oid(plan.commit,repo.objectFormat)||
-   !base64(plan.commitBase64)||typeof plan.message!=="string"||plan.message.includes("\0")||!plan.message.endsWith(`\n\nsupertaskr-project-bank: ${request.operationId}/${role}\n`))return false;
+   !base64(plan.commitBase64)||typeof plan.message!=="string"||plan.message.includes("\0")||!plan.message.endsWith(`\n\nsupertaskr-${family}: ${request.operationId}/${role}\n`))return false;
   const raw=Buffer.from(plan.commitBase64,"base64"),source=new TextDecoder("utf-8",{fatal:true}).decode(raw),separator=source.indexOf("\n\n"),headers=source.slice(0,separator).split("\n");
   if(separator<0||headers.length!==4||headers[0]!==`tree ${plan.tree}`||headers[1]!==`parent ${revision}`||
    !/^author [^\x00\r\n<>]+ <[^\x00\r\n<>]+> -?[0-9]+ [+-][0-9]{4}$/.test(headers[2]??"")||!/^committer [^\x00\r\n<>]+ <[^\x00\r\n<>]+> -?[0-9]+ [+-][0-9]{4}$/.test(headers[3]??"")||
    source.slice(separator+2)!==plan.message||createHash(repo.objectFormat).update(`commit ${raw.length}\0`).update(raw).digest("hex")!==plan.commit)return false;
-  if(role==="product"&&!plan.message.includes(`\nsupertaskr-records-bank: ${request.plans.records.commit}\n`))return false;
+  if(role==="product"&&!plan.message.includes(`\nsupertaskr-records-${family==="project-bank"?"bank":"install"}: ${request.plans.records.commit}\n`))return false;
   if(!Array.isArray(plan.writes)||!plan.writes.length||plan.writes.length>516||plan.writes.some((/** @type {any} */ w)=>!shape(w,["operation","path","mode","base64","derived"])||!["add","edit"].includes(w.operation)||!relative(w.path)||!["100644","100755"].includes(w.mode)||!base64(w.base64)||typeof w.derived!=="boolean")||
    new Set(plan.writes.map((/** @type {any} */ w)=>w.path)).size!==plan.writes.length||!shape(plan.working,["preimages","index"])||!Array.isArray(plan.working.preimages)||
    plan.working.preimages.some((/** @type {any} */ p)=>!shape(p,["path","work"])||!relative(p.path)||!workSnapshot(p.work))||
@@ -111,6 +116,7 @@ export function validProjectBankPlan(plan,request,role){
    index.resultDigest===operationDigest(index.resultBase64)&&typeof index.lockToken==="string"&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(index.lockToken);
  }catch{return false;}
 }
+export {repository as validProjectRepository,tool as validProjectTool,directory as validProjectDirectory,settingsProvenance as validProjectSettingsProvenance};
 /** @param {any} request */
 export function validProjectBankRequest(request){
  try{

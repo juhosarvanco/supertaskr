@@ -1,3 +1,5 @@
+#![cfg(all(test, unix))]
+
 use super::*;
 use crate::agent::{self, banking, managed, runner, AgentState, StartOutcome};
 use std::os::unix::fs::PermissionsExt;

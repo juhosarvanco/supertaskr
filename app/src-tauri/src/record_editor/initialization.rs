@@ -64,6 +64,19 @@ pub(crate) enum InitializationOperation {
     Banks {
         product: SelectedInitializationDirectory,
     },
+    Installation {
+        product: SelectedInitializationDirectory,
+    },
+    Install {
+        product: SelectedInitializationDirectory,
+        operation_id: String,
+        expected_product_revision: String,
+        expected_records_revision: String,
+    },
+    InstallReplay {
+        product: SelectedInitializationDirectory,
+        operation_id: String,
+    },
     Bank {
         product: SelectedInitializationDirectory,
         operation_id: String,
@@ -93,6 +106,9 @@ impl InitializationOperation {
             Self::Discover { product }
             | Self::Inspect { product }
             | Self::Banks { product }
+            | Self::Installation { product }
+            | Self::Install { product, .. }
+            | Self::InstallReplay { product, .. }
             | Self::Bank { product, .. }
             | Self::BankReplay { product, .. }
             | Self::Replay { product, .. }
@@ -113,6 +129,22 @@ impl InitializationOperation {
             Self::Discover { .. } => request["operation"] = json!("discover"),
             Self::Inspect { .. } => request["operation"] = json!("inspect"),
             Self::Banks { .. } => request["operation"] = json!("banks"),
+            Self::Installation { .. } => request["operation"] = json!("installation"),
+            Self::Install {
+                operation_id,
+                expected_product_revision,
+                expected_records_revision,
+                ..
+            } => {
+                request["operation"] = json!("install");
+                request["operationId"] = json!(operation_id);
+                request["expectedProductRevision"] = json!(expected_product_revision);
+                request["expectedRecordsRevision"] = json!(expected_records_revision);
+            }
+            Self::InstallReplay { operation_id, .. } => {
+                request["operation"] = json!("install-replay");
+                request["operationId"] = json!(operation_id);
+            }
             Self::BankReplay { operation_id, .. } => {
                 request["operation"] = json!("bank-replay");
                 request["operationId"] = json!(operation_id);
@@ -210,7 +242,9 @@ fn invoke_initialization(
     let validate = || operation.verify().and_then(|_| validate_native_selection());
     let historical = matches!(
         operation,
-        InitializationOperation::Replay { .. } | InitializationOperation::BankReplay { .. }
+        InitializationOperation::Replay { .. }
+            | InitializationOperation::BankReplay { .. }
+            | InitializationOperation::InstallReplay { .. }
     );
     validate().map_err(|code| InitializationFailure::selection(code, historical))?;
     let attempt = state.next();
@@ -360,6 +394,26 @@ process.stdout.write(JSON.stringify({{version:1,requestId:q.requestId,ok:true,re
                     operation_id: "original-bank".into(),
                 },
             ),
+            (
+                "installation",
+                InitializationOperation::Installation { product: p.clone() },
+            ),
+            (
+                "install",
+                InitializationOperation::Install {
+                    product: p.clone(),
+                    operation_id: "original-install".into(),
+                    expected_product_revision: "d".repeat(40),
+                    expected_records_revision: "e".repeat(40),
+                },
+            ),
+            (
+                "install-replay",
+                InitializationOperation::InstallReplay {
+                    product: p.clone(),
+                    operation_id: "original-install".into(),
+                },
+            ),
         ] {
             let answer = invoke_initialization_operation(&state, &operation, &|| Ok(())).unwrap();
             assert_eq!(answer["operation"], name);
@@ -369,10 +423,14 @@ process.stdout.write(JSON.stringify({{version:1,requestId:q.requestId,ok:true,re
             .lines()
             .map(|line| serde_json::from_str(line).unwrap())
             .collect();
-        assert_eq!(requests.len(), 4);
+        assert_eq!(requests.len(), 7);
         assert_eq!(requests[2]["sessionId"], "original-session");
         assert_eq!(requests[2]["expectedProductRevision"], "b".repeat(40));
         assert_eq!(requests[2]["expectedRecordsRevision"], "c".repeat(40));
+        assert_eq!(requests[5]["operationId"], "original-install");
+        assert_eq!(requests[5]["expectedProductRevision"], "d".repeat(40));
+        assert_eq!(requests[5]["expectedRecordsRevision"], "e".repeat(40));
+        assert_eq!(requests[6]["operationId"], "original-install");
         for request in &requests[1..] {
             assert_eq!(request["productRoot"], json!(p.path()));
             assert!(request.get("recordsRoot").is_none());
@@ -380,11 +438,13 @@ process.stdout.write(JSON.stringify({{version:1,requestId:q.requestId,ok:true,re
                 assert!(request.get(forbidden).is_none());
             }
         }
-        assert_eq!(
-            requests[3].as_object().unwrap().len(),
-            5,
-            "replay carries the original ID without fresh inputs"
-        );
+        for index in [3, 6] {
+            assert_eq!(
+                requests[index].as_object().unwrap().len(),
+                5,
+                "replay carries the original ID without fresh inputs"
+            );
+        }
         let refusal = invoke_initialization_operation(
             &state,
             &InitializationOperation::BankReplay {
@@ -397,6 +457,20 @@ process.stdout.write(JSON.stringify({{version:1,requestId:q.requestId,ok:true,re
         assert!(
             refusal.unknown,
             "failed prevalidation must retain the original bank ID"
+        );
+        assert_eq!(std::fs::read_to_string(&calls).unwrap(), first);
+        let refused = invoke_initialization_operation(
+            &state,
+            &InitializationOperation::InstallReplay {
+                product: p.clone(),
+                operation_id: "original-install".into(),
+            },
+            &|| Err("native-selection-changed".into()),
+        )
+        .unwrap_err();
+        assert!(
+            refused.unknown,
+            "prelaunch install replay refusal cannot retire the original operation"
         );
         assert_eq!(std::fs::read_to_string(&calls).unwrap(), first);
         std::fs::rename(&records, home.join("original-records")).unwrap();
