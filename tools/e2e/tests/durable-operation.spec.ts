@@ -49,13 +49,13 @@ test("ordinary accepted operation persists exact commit/ref correlation without 
   try {
     const input = f.request("note-one"), beforeProduct = git(f.product, ["rev-parse", "HEAD"]);
     const beforeIndex = readFileSync(path.join(f.records, ".git/index")), beforeWork = readFileSync(path.join(f.records, "note.md"));
-    let checked = 0;
+    const checked: string[] = [];
     const result = executeAcceptedOperation(f.product, input, { authorize(context) {
-      checked += 1; expect(context.request.acceptedTree).toBe(input.acceptedTree);
+      checked.push(context.phase); expect(context.request.acceptedTree).toBe(input.acceptedTree);
       expect(git(f.records, ["rev-parse", "HEAD"])).toBe(f.base);
       return true;
     } });
-    expect(checked).toBe(2); expect(result.status).toBe("accepted");
+    expect(checked).toEqual(["objects", "objects", "ref"]); expect(result.status).toBe("accepted");
     expect(git(f.records, ["rev-parse", "HEAD"])).toBe(result.commit);
     expect(git(f.records, ["rev-parse", `${result.commit}^{tree}`])).toBe(input.acceptedTree);
     expect(git(f.records, ["rev-parse", `${result.commit}^`])).toBe(f.base);
@@ -151,8 +151,8 @@ test("ordinary preparation holds the same reservation through materialization an
   const f = fixture();
   try {
     const input = f.request("prepared"), checkpoints: string[] = [];
-    const result = withAcceptedOperation(f.product, input, { authorize() {
-      expect(readReservation(f.product, f.records)?.role).toBe("records-save"); checkpoints.push("policy"); return true;
+    const result = withAcceptedOperation(f.product, input, { authorize(context) {
+      expect(readReservation(f.product, f.records)?.role).toBe("records-save"); checkpoints.push(`policy:${context.phase}`); return true;
     } }, (context) => {
       checkpoints.push("prepare");
       expect(readReservation(f.product, f.records)?.attempt).toBe(readAcceptedOperation(f.product, input.operationId).attempt);
@@ -161,7 +161,7 @@ test("ordinary preparation holds the same reservation through materialization an
       writeFileSync(path.join(f.records, "note.md"), "accepted private note\n");
       expect(() => executeAcceptedOperation(f.product, f.request("competing"), { authorize() { return true; } })).toThrow(/OPERATION_RESOURCE_RESERVED/);
     });
-    expect(checkpoints).toEqual(["policy", "policy", "prepare", "policy"]);
+    expect(checkpoints).toEqual(["policy:objects", "policy:objects", "policy:working", "prepare", "policy:ref"]);
     expect(readReservation(f.product, f.records)).toBeNull();
     expect(withAcceptedOperation(f.product, input, { authorize() { throw Error("unexpected historical policy"); } }, () => {
       throw Error("unexpected historical materialization");
