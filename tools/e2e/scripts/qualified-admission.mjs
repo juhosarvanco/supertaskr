@@ -7,7 +7,6 @@ import path from "node:path";
 import { captureCommittedInputs, captureTaskSnapshot } from "./records.mjs";
 import { normalizeContextRequest } from "./records-context.mjs";
 import { resolveWorkspace } from "./workspace.mjs";
-import {validatePublicationProcessProof} from "./qualified-publication-process.mjs";
 
 export class AdmissionPreflightFinding extends Error {
   /** @param {string} code */
@@ -192,16 +191,16 @@ export async function admissionPreflight(input) {
 /** Load existing policy consumers before a synchronous delivery transaction.
  * This does not admit an operation or change any admission boundary. */
 export async function loadQualifiedDeliveryPolicy(){
-  let qualifier, parser, inert, policy, runs, native;
+  let qualifier, parser, inert, policy, runs, native, publication;
   try {
     qualifier = await import("./qualified-reservation.mjs");
     parser = await import("../../../lib/parser/dist/pure.js");
     inert = await import("../../../lib/parser/dist/inert-spans.js");
   }
   catch { refuse("preflight-qualifier-unavailable"); }
-  try { policy = await import("./dispatch-brief.mjs"); runs = await import("./run-record.mjs"); native = await import("./native-codex.mjs"); }
+  try { policy = await import("./dispatch-brief.mjs"); runs = await import("./run-record.mjs"); native = await import("./native-codex.mjs"); publication = await import("./qualified-publication-process.mjs"); }
   catch { refuse("preflight-policy-unavailable"); }
-  consumers = { qualifier, parser, inert, policy, runs, native };
+  consumers = { qualifier, parser, inert, policy, runs, native, publication };
 }
 
 /** Strict original-ledger reading for the currently held qualified operation.
@@ -217,7 +216,7 @@ export function qualifiedDeliveryPhasePolicy(root,source,ownOperation=null,child
   if(!runs.validOperationRecord(ownOperation) || ownOperation.operation.kind !== "qualified-delivery" || ownOperation.operation.request.coordinator.root !== realpathSync(root))refuse("preflight-operation-owner");
   if(childProof===null){
    if(ownOperation.operation.owner.pid !== process.pid || ownOperation.operation.owner.identity !== runs.defaultRunIo().identity(process.pid))refuse("preflight-operation-owner");
-  }else validatePublicationProcessProof(childProof,ownOperation);
+  }else consumers.publication.validatePublicationProcessProof(childProof,ownOperation);
   for(const claim of ownOperation.operation.claims){
    if(claim.file !== runs.reservationPath(root,claim.resource) || runs.readReservation(root,claim.resource)?.attempt !== ownOperation.attempt)refuse("preflight-operation-owner");
    runs.assertOperationOwnership(root,{resource:claim.resource,attempt:ownOperation.attempt});

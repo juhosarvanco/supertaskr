@@ -134,7 +134,7 @@ for (const [owner,importer] of [["operation-ref","durable-operation"],["qualifie
     const f=privateRecordFixture();try{
       const original=readFileSync(f.manifestPath,"utf8"),member=`tools/e2e/scripts/${owner}.mjs`;
       expect(loadInstalledRecordTool(f.manifestPath).package.name).toBe("supertaskr");
-      expect(readFileSync(path.join(f.tool,`dist/tools/e2e/scripts/${importer}.mjs`),"utf8")).toContain(`from "./${owner}.mjs"`);
+      expect(readFileSync(path.join(f.tool,`dist/tools/e2e/scripts/${importer}.mjs`),"utf8")).toContain(owner==="qualified-publication-process"?`import("./${owner}.mjs")`:`from "./${owner}.mjs"`);
       const manifest=JSON.parse(original);expect(manifest.runtime.files.some((entry:any)=>entry.path===member)).toBe(true);
       manifest.runtime.files=manifest.runtime.files.filter((entry:any)=>entry.path!==member);manifest.runtime.buildHash=sha(JSON.stringify(manifest.runtime.files));
       putPrivate(f.tool,"dist/tool-manifest.json",JSON.stringify(manifest));expect(readFileSync(path.join(f.tool,"dist",member),"utf8").length).toBeGreaterThan(0);
