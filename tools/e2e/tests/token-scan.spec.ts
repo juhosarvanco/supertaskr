@@ -726,7 +726,7 @@ test("the CONTROL corpus check for the kit's runtime template is named from the 
     "utf8",
   );
   expect(
-    scanner.includes(`"docs/ROADMAP.md",`),
+    scanner.includes(`"docs/guide/README.md",`),
     "the tracked-text-format list has changed shape, so the absence below proves nothing",
   ).toBe(true);
   expect(

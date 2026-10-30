@@ -1408,7 +1408,7 @@ test("the owed set is derived ON THE RUNNER, and its answer is what gates every 
   expect(
     owedJobProblems(jobs.find((j) => j.id === OWED_JOB)),
     "T-294 criterion 1: the workflow derives the owed set from the pushed range with " +
-      "`gate-run.mjs --owed-set --range <base>..<tip>` and runs the suites it names",
+      "`source-ci-owed.mjs --owed-set --range <base>..<tip>` and runs the suites it names",
   ).toEqual([]);
 
   // AND THE SPELLING IS THE CRITERION'S, taken from the program that
@@ -1418,11 +1418,11 @@ test("the owed set is derived ON THE RUNNER, and its answer is what gates every 
   // took out of this file once, in the other direction.
   const argv = owedSetArgv("BASE..TIP", "/tree");
   expect(argv[0], "it asks the ONE program that owns the derivation").toMatch(
-    /(^|\/)gate-run\.mjs$/,
+    /(^|\/)source-ci-owed\.mjs$/,
   );
   expect(
     argv.slice(1),
-    "`gate-run.mjs --owed-set --range <base>..<tip>`, the criterion's own spelling",
+    "`source-ci-owed.mjs --owed-set --range <base>..<tip>`, the explicit source-CI adapter spelling",
   ).toEqual(["--owed-set", "--range", "BASE..TIP", "--tree", "/tree"]);
 });
 

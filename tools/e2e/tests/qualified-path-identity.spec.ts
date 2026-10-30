@@ -11,7 +11,7 @@ test("actual installed qualified capture and worker measurement preserve real ro
     const product = path.join(f.dir, "new-code  "); renameSync(f.product, product);
     const bindingFile = path.join(product, ".supertaskr/workspace.json"), binding = JSON.parse(readFileSync(bindingFile, "utf8"));
     putPrivate(product, ".supertaskr/workspace.json", JSON.stringify({ ...binding, productRoot: product }));
-    putPrivate(f.records, "docs/tasks/T-910-first.md", "---\nid: T-910\ntitle: Actual padded project root\nfeature: F-01\nmilestone: 1\npriority: 1\nsize: M\nstatus: planned\ntouches: [product::src/first.ts]\n---\n\n## Acceptance criteria\n\n- WHEN planned THE first source file SHALL retain its actual repository identity.\n");
+    putPrivate(f.records, "docs/tasks/T-910-first.md", "---\nid: T-910\ntitle: Actual padded project root\nfeature: F-01\nmilestone: 1\npriority: 1\nsize: M\nstatus: planned\ntouches: [\n  product::src/first.ts\n]\n---\n\n## Acceptance criteria\n\n- WHEN planned THE first source file SHALL retain its actual repository identity.\n");
     privateGit(f.records, ["add", "docs/tasks/T-910-first.md"]); privateGit(f.records, ["commit", "-qm", "Authored first-file scope"]);
     const tool = loadInstalledRecordTool(f.manifestPath); expect(tool.package.name).toBe("supertaskr");
     const installed = await import(pathToFileURL(path.join(f.tool, "dist/tools/e2e/scripts/qualified-reservation.mjs")).href);

@@ -23,7 +23,7 @@ function fixture() {
   putPrivate(f.product, "cheap/test_cheap.py", "import unittest\nclass Cheap(unittest.TestCase):\n    def test_one(self): self.assertTrue(True)\n");
   putPrivate(f.product, "supertaskr.yaml", JSON.stringify(settings)); privateGit(f.product, ["add", ".gitignore", "pyproject.toml", "checks", "cheap", "supertaskr.yaml"]); privateGit(f.product, ["commit", "-qm", "Original configured product"]);
   const product = privateGit(f.product, ["rev-parse", "HEAD"]), cardPath = "docs/tasks/T-900-configured.md";
-  const card = "---\nid: T-900\ntitle: Configured dispatch example\nfeature: F-01\nmilestone: 1\npriority: 1\nsize: M\nstatus: building\ntier: standard\nbuilder: gpt-6.1-terra@fresh\ntouches: [product::hello.py, records::notes.txt]\n---\n\n## Acceptance criteria\n\n- WHEN requested THE configured example SHALL use its original context.\n";
+  const card = "---\nid: T-900\ntitle: Configured dispatch example\nfeature: F-01\nmilestone: 1\npriority: 1\nsize: M\nstatus: building\ntier: standard\nbuilder: gpt-6.1-terra@fresh\ntouches: [\n  product::hello.py,\n  records::notes.txt\n]\n---\n\n## Acceptance criteria\n\n- WHEN requested THE configured example SHALL use its original context.\n";
   putPrivate(f.records, cardPath, card); putPrivate(f.records, "notes.txt", "Original selected records example.\n"); privateGit(f.records, ["add", "."]); privateGit(f.records, ["commit", "-qm", "Original configured private card"]);
   const records = privateGit(f.records, ["rev-parse", "HEAD"]), selection = { authorityRoot: f.product, projectId: "external-python", revisions: { product, records }, taskId: "T-900", legacyTokenMap: {} };
   const canonical = captureQualifiedInputs(selection), handle = captureConfiguredDispatch({ ...selection, tool });
