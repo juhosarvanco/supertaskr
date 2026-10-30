@@ -15,6 +15,9 @@ test("raw commit parent/tree/message/OID disagreement refuses rather than accept
  const request=structuredClone(f.request),plan=request.plans.records;let raw=Buffer.from(plan.commitBase64!,"base64").toString("utf8");raw=raw.replace(`parent ${plan.expectedRevision}`,`parent ${"f".repeat(40)}`);
  plan.commitBase64=Buffer.from(raw).toString("base64");plan.commit=createHash("sha1").update(`commit ${Buffer.byteLength(raw)}\0`).update(raw).digest("hex");expect(validProjectBankRequest(request)).toBe(false);
  const message=structuredClone(f.request);message.plans.records.message+="unplanned suffix";expect(validProjectBankRequest(message)).toBe(false);
+ const uppercase=structuredClone(f.request),legacy=uppercase.plans.records;legacy.message=legacy.message.replace("supertaskr-project-bank","Supertaskr-Project-Bank");
+ const legacyRaw=Buffer.from(legacy.commitBase64!,"base64").toString("utf8").replace("supertaskr-project-bank","Supertaskr-Project-Bank");legacy.commitBase64=Buffer.from(legacyRaw).toString("base64");legacy.commit=createHash("sha1").update(`commit ${Buffer.byteLength(legacyRaw)}\0`).update(legacyRaw).digest("hex");
+ expect(validProjectBankRequest(uppercase),"new bank history has no uppercase legacy trailer mode").toBe(false);
 });
 test("request data cannot add paths, weaken typed source provenance, impersonate successor roots or turn null PRODUCT into an effect",()=>{
  for(const change of [(r:any)=>r.extra="unrecognized",(r:any)=>r.setup.operationId=r.operationId,(r:any)=>r.setup.productRevision="f".repeat(64),(r:any)=>r.input.docsIdentity.inode="999",(r:any)=>r.session.originDigest=`sha256:${"f".repeat(64)}`,

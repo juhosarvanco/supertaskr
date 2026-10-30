@@ -96,12 +96,12 @@ export function validProjectBankPlan(plan,request,role){
   const repo=request.input[`${role}Repository`],revision=request.input[`${role}Revision`];
   if(!shape(plan,["repository","targetRef","expectedRevision","writes","tree","working","commit","commitBase64","message"])||!same(plan.repository,repo)||!repository(repo)||
    !oid(revision,repo.objectFormat)||plan.expectedRevision!==revision||!isDeliveryBranchRef(plan.targetRef)||!oid(plan.tree,repo.objectFormat)||!oid(plan.commit,repo.objectFormat)||
-   !base64(plan.commitBase64)||typeof plan.message!=="string"||plan.message.includes("\0")||!plan.message.endsWith(`\n\nSupertaskr-Project-Bank: ${request.operationId}/${role}\n`))return false;
+   !base64(plan.commitBase64)||typeof plan.message!=="string"||plan.message.includes("\0")||!plan.message.endsWith(`\n\nsupertaskr-project-bank: ${request.operationId}/${role}\n`))return false;
   const raw=Buffer.from(plan.commitBase64,"base64"),source=new TextDecoder("utf-8",{fatal:true}).decode(raw),separator=source.indexOf("\n\n"),headers=source.slice(0,separator).split("\n");
   if(separator<0||headers.length!==4||headers[0]!==`tree ${plan.tree}`||headers[1]!==`parent ${revision}`||
    !/^author [^\x00\r\n<>]+ <[^\x00\r\n<>]+> -?[0-9]+ [+-][0-9]{4}$/.test(headers[2]??"")||!/^committer [^\x00\r\n<>]+ <[^\x00\r\n<>]+> -?[0-9]+ [+-][0-9]{4}$/.test(headers[3]??"")||
    source.slice(separator+2)!==plan.message||createHash(repo.objectFormat).update(`commit ${raw.length}\0`).update(raw).digest("hex")!==plan.commit)return false;
-  if(role==="product"&&!plan.message.includes(`\nSupertaskr-Records-Bank: ${request.plans.records.commit}\n`))return false;
+  if(role==="product"&&!plan.message.includes(`\nsupertaskr-records-bank: ${request.plans.records.commit}\n`))return false;
   if(!Array.isArray(plan.writes)||!plan.writes.length||plan.writes.length>516||plan.writes.some((/** @type {any} */ w)=>!shape(w,["operation","path","mode","base64","derived"])||!["add","edit"].includes(w.operation)||!relative(w.path)||!["100644","100755"].includes(w.mode)||!base64(w.base64)||typeof w.derived!=="boolean")||
    new Set(plan.writes.map((/** @type {any} */ w)=>w.path)).size!==plan.writes.length||!shape(plan.working,["preimages","index"])||!Array.isArray(plan.working.preimages)||
    plan.working.preimages.some((/** @type {any} */ p)=>!shape(p,["path","work"])||!relative(p.path)||!workSnapshot(p.work))||

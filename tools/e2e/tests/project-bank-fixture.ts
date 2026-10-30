@@ -43,7 +43,7 @@ export function bankSchemaFixture(){
   const accepted=checkedRecordWriteSet(checked);
   const derived=accepted.writes.map((write:any)=>({operation:write.operation,path:write.path,mode:write.mode,base64:Buffer.from(write.bytes).toString("base64"),derived:write.derived}));
   const writes=[...derived,{operation:"add",path:GENESIS_BANK_PROPOSAL,mode:"100644",base64:bytes.toString("base64"),derived:false}];
-  const operationId="bank-schema-fixture",message=`Bank project scaffold continuation\n\nSupertaskr-Project-Bank: ${operationId}/records\n`;
+  const operationId="bank-schema-fixture",message=`Bank project scaffold continuation\n\nsupertaskr-project-bank: ${operationId}/records\n`;
   const plan=withGenesisIdentity(()=>captureExactCommitPlan(f.records,context.recordsRevision,writes,{identity:captureOperationCommitIdentity(f.product),message}));
   const request={version:1,kind:"project-bank",operationId,tool:f.toolHandle,
    setup:{operationId:receipt.operationId,requestDigest:receipt.requestDigest,receiptDigest:receipt.receiptDigest,projectId:receipt.projectId,productRevision:receipt.product.commit,recordsRevision:receipt.records.commit},
@@ -88,10 +88,10 @@ export function q1BankSchemaRequest(f:ReturnType<typeof bankSchemaFixture>):any{
  const checked=checker.evaluate(baseline,files.map(file=>({operation:"edit",path:file.path,type:"blob",mode:file.mode,bytes:file.bytes})));if(!checked.accepted)throw Error(JSON.stringify(checked.blocking));
  const accepted=checkedRecordWriteSet(checked),derived=accepted.writes.map((write:any)=>({operation:write.operation,path:write.path,mode:write.mode,base64:Buffer.from(write.bytes).toString("base64"),derived:write.derived}));
  const writes=[...derived,{operation:"add",path:GENESIS_BANK_PROPOSAL,mode:"100644",base64:bytes.toString("base64"),derived:false},{operation:"add",path:GENESIS_PRODUCT_PROPOSAL,mode:"100644",base64:productBytes.toString("base64"),derived:false}];
- const message=`Bank project identity\n\nSupertaskr-Project-Bank: ${operationId}/records\n`;
+ const message=`Bank project identity\n\nsupertaskr-project-bank: ${operationId}/records\n`;
  const r=withGenesisIdentity(()=>captureExactCommitPlan(f.records,context.recordsRevision,writes,{identity:captureOperationCommitIdentity(f.product),message}));
  const pWrites=["AGENTS.md","CLAUDE.md"].map(file=>({operation:"edit",path:file,mode:"100644",base64:readFileSync(path.join(f.product,file),"utf8").replace("<project name>",productProposal.identity.projectName).replace("<One sentence: what this repo is.>",text),derived:false})).map(file=>({...file,base64:Buffer.from(file.base64).toString("base64")}));
- const pMessage=`Configure project identity\nSupertaskr-Records-Bank: ${r.commit}\n\nSupertaskr-Project-Bank: ${operationId}/product\n`;
+ const pMessage=`Configure project identity\nsupertaskr-records-bank: ${r.commit}\n\nsupertaskr-project-bank: ${operationId}/product\n`;
  const p=withGenesisIdentity(()=>captureExactCommitPlan(f.product,context.productRevision,pWrites,{identity:captureOperationCommitIdentity(f.product),message:pMessage}));
  request.operationId=operationId;request.bank={stage:1,proposalCapture:captured,productProposalCapture:productCapture,answers:captured.answers,validation:{current:{profile:checker.profile,captureDigest:baseline.digest,candidateDigest:checked.candidateDigest,writeSetDigest:operationDigest(derived)},prospective:null}} as any;
  request.input.registryCapture={path:registryPath,device:String(rs.dev),inode:String(rs.ino),fileMode:rs.mode&0o777,byteLength:Buffer.byteLength(registryText),sha256:sha(registryText),base64:Buffer.from(registryText).toString("base64")};
