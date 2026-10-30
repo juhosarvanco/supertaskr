@@ -48,6 +48,7 @@ function fixture(colocated = false, change = "mixed",context:{review?:string,set
   const product = path.join(dir, "product"), records = colocated ? product : path.join(dir, "records");
   for (const root of new Set([product, records])) {
     mkdirSync(root); git(root, ["init", "-q", "--initial-branch=main"]);
+    git(root,["config","user.name","Qualified fixture"]);git(root,["config","user.email","fixture.invalid"]);
     put(root, "src/file", "product base\n"); put(root, "rules/file", "records base\n");
     put(root, ".gitignore", ".supertaskr/\n*.ignored\n"); commit(root);
   }

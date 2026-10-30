@@ -23,7 +23,9 @@ if (!process.argv.includes("--clean")) {
   const copy = (from, to) => {
     const target = path.join(stage, to);
     mkdirSync(path.dirname(target), { recursive: true });
-    cpSync(path.join(source, from), target, { recursive: true });
+    // Finder metadata is not a METHOD text asset. Preserve it in the working
+    // checkout while keeping it out of the installed manifest and package.
+    cpSync(path.join(source, from), target, { recursive: true, filter: file => path.basename(file) !== ".DS_Store" });
   };
   for (const file of readdirSync(path.join(source, "tools/e2e/scripts"))) {
     if (file.endsWith(".mjs")) copy(`tools/e2e/scripts/${file}`, `tools/e2e/scripts/${file}`);

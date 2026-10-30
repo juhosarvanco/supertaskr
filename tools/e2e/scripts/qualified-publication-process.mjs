@@ -68,7 +68,25 @@ export function capturePublicationProcessProof(rec,mode){
 export function validatePublicationProcessProof(proof,rec){
  const old=proofs.get(proof);if(!old||operationContent(actual(rec,old.mode))!==operationContent(old))refuse("QUALIFIED_PUBLICATION_CHILD_PROOF_REQUIRED");return true;
 }
+/** Exact scoped fetch exclusions prevent Git 2.56's URL-push tracking writes.
+ * The identity mappings make negative matching exact even when a user's
+ * positive fetch mapping is a wildcard. These values never reach a config file.
+ * @param {any} request */
+export function publicationPushConfiguration(request){
+ const s=request.route.publication,key=`remote.${s.destination.name}.fetch`,refs=[s.destination.ref,s.correlationRef];
+ return [...refs.map(ref=>({key,value:`${ref}:${ref}`})),...refs.map(ref=>({key,value:`^${ref}`}))];
+}
+/** Git's exported command-configuration protocol quotes keys/values separately.
+ * @param {any} request */
+export function publicationPushParameters(request){
+ /** @param {string} value */
+ const quote=value=>`'${value.replace(/['!]/g,ch=>`'\\${ch}'`)}'`;
+ return publicationPushConfiguration(request).map(({key,value})=>`${quote(key)}=${quote(value)}`).join(" ");
+}
+/** Correspondence only; actual owned-process proof is separately mandatory.
+ * @param {any} request @param {unknown} parameters */
+export function assertPublicationPushParameters(request,parameters){if(parameters!==publicationPushParameters(request))refuse("QUALIFIED_PUBLICATION_CONFIGURATION_CHANGED");return true;}
 /** The only actual push argv. No force, lease, no-verify, caller program,
  * remote/ref expansion or mutable default refspec participates.
  * @param {any} request */
-export function publicationPushArguments(request){const s=request.route.publication;return ["--no-replace-objects","-C",request.coordinator.root,"push","--atomic",s.destination.url,`${s.commit}:${s.destination.ref}`,`${s.commit}:${s.correlationRef}`];}
+export function publicationPushArguments(request){const s=request.route.publication;return ["--no-replace-objects",...publicationPushConfiguration(request).flatMap(({key,value})=>["-c",`${key}=${value}`]),"-C",request.coordinator.root,"push","--atomic",s.destination.url,`${s.commit}:${s.destination.ref}`,`${s.commit}:${s.correlationRef}`];}

@@ -23,6 +23,15 @@ test("finite bank capture preserves original human bytes and detaches files/prop
  const changed=captureGenesisBankProposal({...f.input,bytes:Buffer.from(JSON.stringify(f.proposal,null,2))});expect(changed.proposal.proposalId).toBe(captured.proposal.proposalId);expect(sameGenesisBankProposal(captured,changed)).toBe(false);
  const before=JSON.stringify(captured);f.input.bytes.fill(0);f.files[0]!.bytes.fill(0);f.proposal.records[0]!.path="/changed";expect(JSON.stringify(captured)).toBe(before);
 });
+test("path-only declarations freeze backend-observed hashes without adding fields or weakening supplied hashes",()=>{
+ const f=fixture(),proposal={...f.proposal,records:f.proposal.records.map(({path})=>({path}))},bytes=Buffer.from(JSON.stringify(proposal));
+ const capture=captureGenesisBankProposal({...f.input,bytes});expect(capture.sourceBase64).toBe(bytes.toString("base64"));expect(capture.proposal).toEqual(proposal);
+ for(const file of f.files)expect(capture.records.find((row:any)=>row.path===file.path)).toMatchObject({sha256:hash(file.bytes),base64:file.bytes.toString("base64")});
+ const changed=captureGenesisBankProposal({...f.input,bytes,files:f.files.map((file,i)=>i===0?{...file,bytes:Buffer.from("# A different actual draft\n")}:file)});
+ expect(changed.digest).not.toBe(capture.digest);expect(changed.records[1].sha256).not.toBe(capture.records[1].sha256);
+ expect(()=>captureGenesisBankProposal({...f.input,bytes:Buffer.from(JSON.stringify({...proposal,records:[{...proposal.records[0],content:"not a byte authority"},proposal.records[1]]}))})).toThrow("genesis-bank-path");
+ const supplied={...proposal,records:proposal.records.map(row=>({...row,sha256:"f".repeat(64)}))};expect(()=>captureGenesisBankProposal({...f.input,bytes:Buffer.from(JSON.stringify(supplied))})).toThrow("genesis-bank-file-changed");
+});
 test("every approved stage has its finite positive and cannot omit STATE or its own required output",()=>{
  for(let stage=0;stage<=8;stage++){const f=fixture(stage);expect(captureGenesisBankProposal(f.input).proposal.stage).toBe(stage);
   f.proposal.records=f.proposal.records.filter(row=>row.path!=="docs/STATE.md");expect(()=>parseGenesisBankProposal({bytes:encoded(f).bytes,context})).toThrow(stage===0?"genesis-bank-records":"genesis-bank-required-output");}

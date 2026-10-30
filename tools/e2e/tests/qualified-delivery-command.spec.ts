@@ -11,6 +11,7 @@ import {privateRecordFixture,fixtureProjectSettings,FIXTURE_ENV,sha} from "./pri
 import {reviewed,writeVerdict,git} from "./qualified-delivery-fixture";
 import {removeGitFixture} from "./git-fixture";
 import {sourceOnlyCheckout} from "../fixtures/source-only";
+import {installOfflinePackage} from "../fixtures/offline-package";
 
 const SOURCE = path.resolve(import.meta.dirname,"../../..");
 test("delivery help and finite syntax work in a cold entry copy without operation owners or TOOL and errors expose no paths",()=>{
@@ -47,7 +48,8 @@ test("normally packed public delivery front guards private completion and replay
     const env={...FIXTURE_ENV,NODE_PATH:"",CARGO_TARGET_DIR:path.join(SOURCE,"app/src-tauri/target")};
     const packed=JSON.parse(execFileSync("npm",["pack","--json","--pack-destination",f.installation.dir],{cwd:path.join(sourceRoot,"cli"),encoding:"utf8",env}));
     const prefix=path.join(f.installation.dir,"normally-installed");
-    execFileSync("npm",["install","--offline","--no-audit","--no-fund","--prefix",prefix,path.join(f.installation.dir,packed[0].filename)],{stdio:"pipe",env});
+    mkdirSync(prefix);
+    installOfflinePackage({packageTarball:path.join(f.installation.dir,packed[0].filename),packDirectory:f.installation.dir,project:prefix,env});
     const installed=path.join(prefix,"node_modules/supertaskr"),entry=path.join(installed,"supertaskr.mjs"),manifestPath=path.join(installed,"dist/tool-manifest.json");
     const run=(...args:string[])=>spawnSync(process.execPath,[entry,"delivery",...args,"--root",f.product],{cwd:f.product,env,encoding:"utf8",maxBuffer:4*1024*1024});
     const help=spawnSync(process.execPath,[entry,"delivery","--help"],{cwd:f.installation.dir,env,encoding:"utf8"});expect(help.status,help.stderr).toBe(0);expect(help.stdout).toContain("Interrupted steps use the same command");

@@ -3174,11 +3174,11 @@ test("FIXTURE: a restructured section fails loudly, never with an empty expectat
   ).toThrow(/no non-empty "## Build & test" section/);
 
   // The bullets still there, but no longer marked `run from <dir>/:`.
-  // (`\s+`, not a literal space: one of the four markers wraps across a
+  // (`\s+`, not a literal space: a marker can wrap across a
   // line in the raw file, which is why the parser normalizes first.)
   const unmarked = md.replace(/run from\s+([A-Za-z0-9._/-]+)\/:/g, "run in $1 like so —");
   const { steps, problems } = deriveExpectedSteps(unmarked);
-  expect(problems.join("\n")).toContain("no longer carries exactly the four");
+  expect(problems.join("\n")).toContain("no longer carries exactly the expected");
   // Every command the spec claims is now missing from the doc — one
   // complaint each, not silence — and nothing derived from a doc command
   // survives into the expectation. Asserted against the spec's OWN

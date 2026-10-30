@@ -11,14 +11,15 @@ import { parseTaskFile, parseComponentFile, expandQualifiedFence, blankInertSpan
 import { idSlotKey } from "../../../lib/parser/dist/id-slot.js";
 import { inspectProjectInitialization } from "./genesis-init-inspect.mjs";
 import { observeProjectInitialization, captureOperationCommitIdentity } from "./project-init-operation.mjs";
-import { listAcceptedOperations, readAcceptedOperation } from "./durable-operation.mjs";
+import { listAcceptedOperations, readAcceptedOperation, captureOperationRepository } from "./durable-operation.mjs";
 import { operationContent, operationDigest, operationPayload, operationWork } from "./operation-record.mjs";
 import { validProjectBankRequest, validProjectBankRecord } from "./project-bank-record.mjs";
-import { parseGenesisBankProposal, captureGenesisBankProposal, assertGenesisPlannedTask, GENESIS_BANK_PROPOSAL } from "./genesis-bank-proposal.mjs";
+import { parseGenesisBankProposal, captureGenesisBankProposal, assertGenesisPlannedTask, genesisBankRecordPath, GENESIS_BANK_PROPOSAL } from "./genesis-bank-proposal.mjs";
 import { createGenesisProposalReader, GENESIS_PRODUCT_PROPOSAL } from "./genesis-proposal.mjs";
 import { loadProjectSettings, resolveProjectRole, validateProjectSettingsText } from "./project-settings.mjs";
 import { createRecordChecker, checkedRecordWriteSet, requireInstalledRuntimeAssets, verifyInstalledRecordTool } from "./records-check.mjs";
 import { captureExactCommitPlan, safeOperationWorkingPath } from "./record-write.mjs";
+import {captureRawCommittedInputs} from "./records.mjs";
 const prepared = new WeakMap();
 const SETTINGS = ["version", "roles", "session_policy", "process", "suites", "smoke", "guard_class", "bands", "names", "languages", "publication", "tier_budgets", "records"];
 export class GenesisBankPreparationFinding extends Error {
@@ -213,7 +214,13 @@ function bankWitness(rec, current) {
         if (scalar(root, ["rev-parse", "--verify", corr]) !== plan.commit || !git(root, ["cat-file", "commit", plan.commit]).equals(Buffer.from(plan.commitBase64, "base64")))
             refuse("genesis-bank-history-witness");
     }
-    return { operationId: op.id, requestDigest: op.digest, receiptDigest: operationDigest({ status: "banked", operationId: op.id, stage: op.request.bank.stage, mode: op.request.bank.mode, completedStage: op.request.bank.completedStage, requestDigest: op.digest, records: op.acceptance.records, product: op.acceptance.product }), stage: op.request.bank.stage, completedStage: op.request.bank.completedStage, recordsCommit: op.acceptance.records.commit, productCommit: op.acceptance.product?.commit ?? null };
+    return { operationId: op.id, requestDigest: op.digest, receiptDigest: acceptedBankReceipt(rec).receiptDigest, stage: op.request.bank.stage, completedStage: op.request.bank.completedStage, recordsCommit: op.acceptance.records.commit, productCommit: op.acceptance.product?.commit ?? null };
+}
+/** Packaging only, after the caller proves the existing exact bank witness.
+ * @param {any} rec */
+function acceptedBankReceipt(rec){
+ const op=rec.operation,body={status:"banked",operationId:op.id,stage:op.request.bank.stage,mode:op.request.bank.mode,completedStage:op.request.bank.completedStage,requestDigest:op.digest,records:op.acceptance.records,product:op.acceptance.product};
+ return freeze({...body,receiptDigest:operationDigest(body)});
 }
 /** Pure chronology over separately verified receipts. This returns data only;
  * it cannot establish a witness, selected context, bank ownership or write grant.
@@ -397,13 +404,83 @@ function fillAdapter(initial, base, identity) {
         refuse("genesis-bank-adapter-changed");
     return Buffer.from(prefix + identity.projectName + middle + identity.oneLiner + suffix);
 }
+/** @param {any} input */
+function assertBankInput(input){
+ if(!shape(input,["productRoot","operationId","sessionId","originDigest","expectedProductRevision","expectedRecordsRevision","tool"])||
+  ![input.operationId,input.sessionId].every(v=>typeof v==="string"&&/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(v))||typeof input.productRoot!=="string"||!/^sha256:[0-9a-f]{64}$/.test(input.originDigest))refuse("genesis-bank-request");
+}
+/** Question-only turns may retain the already accepted proposal. This proves
+ * a historical unchanged result, never a new bank or all-drafts-saved claim.
+ * Every source/index byte in the finite output families is measured against
+ * current committed inputs; Git's stat-cache/ignore flags are insufficient.
+ * @param {{productRoot:string,operationId:string,sessionId:string,originDigest:string,expectedProductRevision:string,expectedRecordsRevision:string,tool:any}} input */
+export function unchangedGenesisBank(input){
+ assertBankInput(input);requireInstalledRuntimeAssets(input.tool,["genesis-bank-plan","genesis-bank-proposal","records"].map(name=>`tools/e2e/scripts/${name}.mjs`));
+ const inspected=inspectProjectInitialization({productRoot:input.productRoot,tool:input.tool}),current=inspected.current;
+ if(current.productRevision!==input.expectedProductRevision||current.recordsRevision!==input.expectedRecordsRevision)refuse("genesis-bank-current-cut-changed");
+ const registry=readPlain(path.join(current.product.root,".supertaskr/sessions.json"),1024*1024),session=selectedSession(input,inspected,json(registry.bytes));
+ const rows=listAcceptedOperations(current.product.root),prior=previousBank(rows,session,setupReference(inspected.receipt),current,0);
+ if(prior.latestBank===null)return null;
+ const latest=rows.find(row=>row.operation.id===prior.latestBank.operationId),r=latest.operation.request;
+ const source=readPlain(safeOperationWorkingPath(current.records.root,GENESIS_BANK_PROPOSAL),256*1024);
+ if(source.mode!=="100644"||source.bytes.toString("base64")!==r.bank.proposalCapture.sourceBase64)return null;
+ const productProposal=prior.history.find((/** @type {any} */ row)=>row.operation.request.bank.productProposalCapture!==null)?.operation.request.bank.productProposalCapture;
+ if(productProposal){const source=readPlain(safeOperationWorkingPath(current.records.root,GENESIS_PRODUCT_PROPOSAL),256*1024);if(source.mode!=="100644"||source.bytes.toString("base64")!==productProposal.sourceBase64)return null;}
+ else{try{lstatSync(path.join(current.records.root,GENESIS_PRODUCT_PROPOSAL));return null;}catch(error){if(/** @type {any} */(error).code!=="ENOENT")refuse("genesis-bank-file-unavailable");}}
+ for(const role of ["product","records"])if(!same(captureOperationRepository(current[role].root,current[`${role}Revision`]),current[role]))refuse("genesis-bank-origin-changed");
+ const committed=captureRawCommittedInputs({productRoot:current.product.root,productRevision:current.productRevision,recordsRevision:current.recordsRevision});
+ const captures=[],inventories=[];
+ for(const role of /** @type {("product"|"records")[]} */ (["product","records"])){
+  const root=current[role].root;
+  const relevant=(/** @type {string} */ file)=>role==="product"?["AGENTS.md","CLAUDE.md","supertaskr.yaml"].includes(file):["docs/INDEX.md",GENESIS_BANK_PROPOSAL,GENESIS_PRODUCT_PROPOSAL].includes(file)||Array.from({length:9},(_,stage)=>stage).some(stage=>genesisBankRecordPath(stage,file));
+  const paths=role==="product"?["AGENTS.md","CLAUDE.md","supertaskr.yaml"]:["docs/INDEX.md","docs/STATE.md","docs/NORTH_STAR.md","docs/CONVENTIONS.md","docs/ROADMAP.md","docs/ARCHITECTURE.md","docs/tasks","docs/decisions",GENESIS_BANK_PROPOSAL,GENESIS_PRODUCT_PROPOSAL];
+  for(const flags of [["--others","--exclude-standard"],["--others","--ignored","--exclude-standard"]]){const args=["ls-files","-z",...flags,"--",...paths],bytes=git(root,args);if(bytes.toString("utf8").split("\0").some(file=>file&&relevant(file)))return null;inventories.push({root,args,bytes});}
+  const args=["ls-files","-v","-z","--",...paths],bytes=git(root,args);if(bytes.toString("utf8").split("\0").some(row=>row&&relevant(row.slice(2))&&!row.startsWith("H ")))return null;inventories.push({root,args,bytes});
+  const entries=committed.entries(role).filter(entry=>relevant(entry.relativePath));
+  if(entries.some(entry=>entry.type!=="blob"||!["100644","100755"].includes(entry.mode)))return null;
+  const index=new Map();for(const row of git(root,["ls-files","--stage","-z","--",...paths]).toString("utf8").split("\0").filter(Boolean)){
+   const match=/^([0-9]+) ([0-9a-f]+) ([0-3])\t([\s\S]+)$/.exec(row);if(!match)refuse("genesis-bank-index-unavailable");const file=/** @type {string} */(match[4]);if(!relevant(file))continue;
+   if(match[3]!=="0"||index.has(file))return null;index.set(file,{mode:match[1],oid:match[2]});
+  }
+  if(index.size!==entries.length||entries.some(entry=>!same(index.get(entry.relativePath),{mode:entry.mode,oid:entry.oid})))return null;
+  for(const entry of committed.readMany(role,entries.map(entry=>entry.relativePath))){const source=readPlain(safeOperationWorkingPath(root,entry.path),4*1024*1024);if(source.mode!==entry.mode||!source.bytes.equals(entry.bytes))return null;captures.push(source.capture);}
+  captures.push(readPlain(path.join(current[role].gitDir,"index"),32*1024*1024).capture);
+ }
+ const after=inspectProjectInitialization({productRoot:input.productRoot,tool:input.tool});if(!same(after.current,current)||!same(after.receipt,inspected.receipt)||!same(readPlain(registry.capture.path,1024*1024).capture,registry.capture))refuse("genesis-bank-current-cut-changed");
+ for(const capture of captures)if(!same(readPlain(capture.path,32*1024*1024).capture,capture))refuse("genesis-bank-working-changed");
+ for(const inventory of inventories)if(!git(inventory.root,inventory.args).equals(inventory.bytes))refuse("genesis-bank-working-changed");
+ if(!same(previousBank(listAcceptedOperations(current.product.root),session,setupReference(inspected.receipt),current,0).latestBank,prior.latestBank))refuse("genesis-bank-operation-history-changed");
+ verifyInstalledRecordTool(input.tool);return freeze({status:"unchanged",receipt:acceptedBankReceipt(latest)});
+}
+/** Current read qualification is separate from historical accepted facts and
+ * grants no write authority. Reuse the exact bank/session witness owner; no
+ * timestamps, working-document heuristics or second progress ledger.
+ * @param {{productRoot:string,tool:any}} input */
+export function inspectCurrentGenesisBankHistory(input){
+ if(!shape(input,["productRoot","tool"])||typeof input.productRoot!=="string")refuse("genesis-bank-history-request");
+ requireInstalledRuntimeAssets(input.tool,["genesis-bank-plan","genesis-init-inspect","project-bank-record"].map(name=>`tools/e2e/scripts/${name}.mjs`));
+ const inspected=inspectProjectInitialization(input),current=inspected.current;
+ const registry=readPlain(path.join(current.product.root,".supertaskr/sessions.json"),1024*1024),data=json(registry.bytes),origin=sessionOrigin(current);
+ if(!shape(data,["sessions"])||!Array.isArray(data.sessions))refuse("genesis-bank-session-origin");
+ const rows=data.sessions.filter((/** @type {any} */ row)=>row?.status!=="dead"&&Array.isArray(row?.roles)&&row.roles.includes("planner")&&same(row?.genesis?.origin,origin));
+ if(rows.length!==1)refuse("genesis-bank-session-ambiguous");
+ const session=selectedSession({sessionId:rows[0].genesis?.id,originDigest:operationDigest(origin),tool:input.tool},inspected,data);
+ const prior=previousBank(listAcceptedOperations(current.product.root),session,setupReference(inspected.receipt),current,0);
+ const banks=prior.history.map((/** @type {any} */ row)=>({receipt:acceptedBankReceipt(row),
+  paths:row.operation.request.plans.records.writes.map((/** @type {any} */ write)=>write.path).filter((/** @type {string} */ file)=>file!==GENESIS_BANK_PROPOSAL&&file!==GENESIS_PRODUCT_PROPOSAL),
+  turn:Math.max(1,...row.operation.request.bank.proposalCapture.proposal.answerRefs.map((/** @type {any} */ ref)=>ref.turn))}));
+ const after=inspectProjectInitialization(input);
+ if(!same(after,inspected)||!same(readPlain(registry.capture.path,1024*1024).capture,registry.capture)||
+  !same(previousBank(listAcceptedOperations(current.product.root),session,setupReference(inspected.receipt),current,0).latestBank,prior.latestBank))refuse("genesis-bank-current-cut-changed");
+ verifyInstalledRecordTool(input.tool);
+ return freeze({status:"current",setupId:inspected.receipt.operationId,sessionId:session.sessionId,originDigest:session.originDigest,
+  productRevision:current.productRevision,recordsRevision:current.recordsRevision,completedStage:prior.latestBank?.completedStage??null,banks});
+}
 /** Backend-only fixed request. TOOL is an opaque installed handle; proposal
  * bytes, filesystem roots and typed answers are never accepted through stdin.
  * @param {{productRoot:string,operationId:string,sessionId:string,originDigest:string,expectedProductRevision:string,expectedRecordsRevision:string,tool:any}} input */
 export function prepareGenesisBank(input) {
-    if (!shape(input, ["productRoot", "operationId", "sessionId", "originDigest", "expectedProductRevision", "expectedRecordsRevision", "tool"]) ||
-        ![input.operationId, input.sessionId].every(v => typeof v === "string" && /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(v)) || typeof input.productRoot !== "string" || !/^sha256:[0-9a-f]{64}$/.test(input.originDigest))
-        refuse("genesis-bank-request");
+    assertBankInput(input);
     requireInstalledRuntimeAssets(input.tool, ["genesis-bank-plan", "project-bank-record", "genesis-bank-proposal", "genesis-proposal", "genesis-init-inspect", "project-init-operation", "project-settings", "record-write"].map(name => `tools/e2e/scripts/${name}.mjs`));
     const inspected = inspectProjectInitialization({ productRoot: input.productRoot, tool: input.tool }), current = inspected.current;
     if (input.expectedProductRevision !== current.productRevision || input.expectedRecordsRevision !== current.recordsRevision)
@@ -537,6 +614,69 @@ export function assertPreparedGenesisBank(request) {
         refuse("genesis-bank-preparation-required");
     verifyInstalledRecordTool(facts.tool);
     return true;
+}
+
+/** The first code-empty dispatch baseline is an observed initialization and
+ * completed bank history, never a GREEN suite with missing test files.
+ * Reuse the canonical session and exact bank witnesses; this grants no effect.
+ * @param {{productRoot:string,tool:any,taskId:string}} input */
+export function captureCompletedGenesisForDispatch(input) {
+    if (!shape(input, ["productRoot", "tool", "taskId"]) || typeof input.productRoot !== "string" || !/^T-\d+(?:-s\d+)?$/.test(input.taskId))
+        refuse("genesis-dispatch-baseline-request");
+    requireInstalledRuntimeAssets(input.tool, ["genesis-bank-plan", "project-bank-operation", "project-bank-record", "genesis-init-inspect", "project-init-operation", "project-settings"]
+        .map(name => `tools/e2e/scripts/${name}.mjs`));
+    const inspected = inspectProjectInitialization({ productRoot: input.productRoot, tool: input.tool }), current = inspected.current;
+    const original = observeProjectInitialization(current.product.root, inspected.receipt.operationId);
+    if (original?.status !== "initialized" || !same(original.receipt, inspected.receipt)) refuse("genesis-dispatch-baseline-setup");
+    const setup = setupReference(inspected.receipt), origin = sessionOrigin(current);
+    const registry = readPlain(path.join(current.product.root, ".supertaskr/sessions.json"), 1024 * 1024), parsed = json(registry.bytes);
+    const matching = parsed?.sessions?.filter((/** @type {any} */ row) => row?.status !== "dead" && Array.isArray(row.roles) && row.roles.includes("planner") && same(row.genesis?.origin, origin));
+    if (!Array.isArray(matching) || matching.length !== 1) refuse("genesis-bank-session-ambiguous");
+    const session = selectedSession({ sessionId: matching[0].genesis?.id, originDigest: operationDigest(origin), tool: input.tool }, inspected, parsed);
+    const history = previousBank(listAcceptedOperations(current.product.root), session, setup, current, 8);
+    if (history.completedStage !== 8 || history.ownBank?.stage !== 8 || history.latestBank?.completedStage !== 8)
+        refuse("genesis-dispatch-baseline-incomplete");
+    const decomposition = history.history.find((/** @type {any} */ row) => row.operation.request.bank.stage === 8);
+    if (!decomposition) refuse("genesis-dispatch-baseline-incomplete");
+    const latestProduct = history.history.find((/** @type {any} */ row) => row.operation.request.plans.product !== null);
+    if (!latestProduct || current.productRevision !== latestProduct.operation.request.plans.product.commit)
+        refuse("genesis-dispatch-baseline-product-changed");
+    if (scalar(current.product.root, ["status", "--porcelain=v1", "--untracked-files=all"]) !== "")
+        refuse("genesis-dispatch-baseline-product-dirty");
+    // Only exact accepted init/identity/config files are code-empty. Future
+    // installer assets need their own accepted finite producer receipt.
+    const expected = new Map(original.record.operation.request.plans.product.files.map((/** @type {any} */ file) => [file.path, file]));
+    if ([...expected.keys()].sort().join("\0") !== [".gitignore", "AGENTS.md", "CLAUDE.md", "supertaskr.yaml"].sort().join("\0"))
+        refuse("genesis-dispatch-baseline-product-shape");
+    for (const row of [...history.history].reverse()) {
+        const plan = row.operation.request.plans.product;
+        if (plan !== null) for (const file of plan.writes) {
+            if (!expected.has(file.path) || !["add", "edit"].includes(file.operation)) refuse("genesis-dispatch-baseline-product-shape");
+            expected.set(file.path, file);
+        }
+    }
+    const actual = tree(current.product.root, current.productRevision);
+    if (actual.length !== expected.size || actual.some(entry => {
+        const file = expected.get(entry.path);
+        return !file || file.mode !== entry.mode || blob(current.product.root, entry).toString("base64") !== file.base64;
+    })) refuse("genesis-dispatch-baseline-product-changed");
+    const cards = tree(current.records.root, current.recordsRevision).filter(entry => /^docs\/tasks\/[^/]+\.md$/.test(entry.path)).map(entry => ({ entry,
+        bytes: blob(current.records.root, entry) })).filter(row => parseTaskFile(text(row.bytes), row.entry.path).task?.id === input.taskId);
+    if (cards.length !== 1) refuse("genesis-dispatch-baseline-task");
+    const card = cards[0];
+    if (!card) refuse("genesis-dispatch-baseline-task");
+    const planned = decomposition.operation.request.plans.records.writes.find((/** @type {any} */ file) => file.path === card.entry.path);
+    if (!planned || planned.mode !== card.entry.mode || planned.base64 !== card.bytes.toString("base64") || parseTaskFile(text(card.bytes), card.entry.path).task?.status !== "planned")
+        refuse("genesis-dispatch-baseline-task-changed");
+    const currentAgain = inspectProjectInitialization({ productRoot: current.product.root, tool: input.tool });
+    if (!same(currentAgain.current, current) || !same(readPlain(registry.capture.path, 1024 * 1024).capture, registry.capture))
+        refuse("genesis-dispatch-baseline-current-changed");
+    verifyInstalledRecordTool(input.tool);
+    return freeze({ kind: "initialized-code-empty", setup, bank8: history.ownBank, latestBank: history.latestBank,
+        revisions: { product: current.productRevision, records: current.recordsRevision }, configuration: inspected.settingsProvenance,
+        card: { path: card.entry.path, blobId: card.entry.oid, sha256: sha(card.bytes) },
+        productFiles: actual.map(entry => ({ path: entry.path, mode: entry.mode, sha256: sha(blob(current.product.root, entry)) })),
+        qualifiedSuiteBaseline: false });
 }
 
 

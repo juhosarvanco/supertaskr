@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1816 at least behaviours** — 1812 extracted sentences + 4 at least named-not-extracted (listed at the end) — across 118 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1827 at least behaviours** — 1823 extracted sentences + 4 at least named-not-extracted (listed at the end) — across 122 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -494,6 +494,7 @@ Census: **1816 at least behaviours** — 1812 extracted sentences + 4 at least n
 - the project root is found by walking up, and its absence is said rather than guessed
 - the installer targets Claude Code and Codex, and a third harness is one adapter entry
 - the docs gate sees the CLI package as a derived reader of docs/
+- offline package installation refuses a missing runtime dependency declaration before provisioning
 - npx supertaskr runs out of an isolated standalone tarball with no checkout or dependency fallback
 - undo refuses while a later merge stands on the card's fence, and names it
 - undo names the revert it would run when nothing has landed on the fence since
@@ -559,6 +560,11 @@ Census: **1816 at least behaviours** — 1812 extracted sentences + 4 at least n
 - pending acquisition faults and a genuinely consumed raw sidecar retain quarantine and refuse selected publication
 - pre-lock exact replay preserves later state and acquisition receipt races fail even when exact lock release also fails
 - atomic publication and explicit retry classify before rename after rename directory sync release and response loss honestly
+
+## configured-dispatch-arm
+
+- configured lane constructor freezes original private stamp, exact absent destinations and owed original baseline without product effects
+- arm planning requires its actual installed producer member and refuses unapproved contract drift before any private or lane effect
 
 ## configured-dispatch-brief
 
@@ -649,6 +655,11 @@ Census: **1816 at least behaviours** — 1812 extracted sentences + 4 at least n
 - tree history refuses incomplete cuts and a held physical-origin verifier rejects copied-history replacement
 - tree reader membership is required even when the omitted runtime file remains present
 - installed health executes selected committed tree readers and keeps private prose edits out of product effects
+
+## configured-verification
+
+- installed external configured preparation seals the original TOOL verifier role and cold strict start consumes it
+- configured dispatch requires both actual native preparation owners even when omitted files remain present
 
 ## crescendo
 
@@ -762,6 +773,7 @@ Census: **1816 at least behaviours** — 1812 extracted sentences + 4 at least n
 
 ## durable-operation
 
+- raw publication lookup rejects a real foreign failed operation before any Git read
 - ordinary accepted operation persists exact commit/ref correlation without a worker or product/index/worktree effect
 - accepted commit before result recovers in a new process after a later legitimate save advances the branch
 - durable intent alone has no acceptance and restart reuses the exact intended commit
@@ -903,6 +915,7 @@ Census: **1816 at least behaviours** — 1812 extracted sentences + 4 at least n
 ## genesis-bank-proposal
 
 - finite bank capture preserves original human bytes and detaches files/proposal while changed same-ID spelling stays distinct
+- path-only declarations freeze backend-observed hashes without adding fields or weakening supplied hashes
 - every approved stage has its finite positive and cannot omit STATE or its own required output
 - original context and independently captured answer references cannot be replaced with claimed proposal text
 - roots, runtime, derived index, verdict/evidence and source graph files never become bank outputs
@@ -912,6 +925,10 @@ Census: **1816 at least behaviours** — 1812 extracted sentences + 4 at least n
 - empty reserved template sections remain valid author data and restoring a populated body permits the original planned capture
 - a task instantiated from the actual verified installed METHOD template is valid planned author data
 - optional Gotchas is finite CONVENTIONS author data at every stage while the constructor owns its field boundaries
+
+## genesis-completed-dispatch
+
+- actual sequential banks0 through8 establish an exact code-empty dispatch baseline without claiming suite GREEN
 
 ## genesis-init-command
 
@@ -1011,6 +1028,7 @@ Census: **1816 at least behaviours** — 1812 extracted sentences + 4 at least n
 ## hook-git-context
 
 - hook routing preserves a fresh legal trailing-space root and leaves an independent checkout outside
+- command config and copied environment capabilities cannot bypass the ordinary hook routing audit
 
 ## identifier-rename
 
@@ -1742,8 +1760,13 @@ Census: **1816 at least behaviours** — 1812 extracted sentences + 4 at least n
 - unmodeled private and PRODUCT-owed work refuse before an operation, claim or selected-repository object effect
 - revoked current policy after private capture prevents actual objects and restores the same captured operation
 
+## qualified-product-integration
+
+- planned PRODUCT foundation uses actual finalized configured readings and preserves advanced target bytes without effects
+
 ## qualified-publication-context
 
+- publication command configuration admits only the exact paired tracking exclusions
 - full publication context freezes actual reviewed output existing destination exact CI and installed guard without writing
 - full route is immutable before local effects and changed publication policy refuses file publish without upgrading the original
 - an existing legacy local delivery cannot acquire publication selection after its effects

@@ -159,8 +159,23 @@ pub fn preparation_failed(
     reply(agent, request, None, StartOutcome::Error { message: code })
 }
 
+fn bank_context(active: &Activation, answer: Option<(u32, &str)>) -> String {
+    let Some(setup) = &active.setup else { return String::new(); };
+    let refs = answer.map(|(turn, digest)| serde_json::json!([{"turn":turn,"sha256":digest}]))
+        .unwrap_or_else(|| serde_json::json!([]));
+    let context = serde_json::json!({"version":1,"setupId":setup.setup_id,
+        "sessionId":active.session.id,"originDigest":active.context.fingerprint(),
+        "expectedProductRevision":setup.product_revision,"expectedRecordsRevision":setup.records_revision,
+        "settings":setup.settings,"answerRefs":refs});
+    format!("\n<supertaskr-bank-context-v1>\n{context}\n</supertaskr-bank-context-v1>\n")
+}
 fn inline_prompt(active: &Activation, continuation: bool) -> String {
-    let mut prompt = String::from("You are the planner in an initialized separated workspace. Your actual working directory is RECORDS; every docs/ path is relative to it. The driver owns all PRODUCT changes and Git banking. Do not invoke shell/Git, claim an unacknowledged bank is committed, or infer access from a path. The canonical public kit follows inline; its names are logical inputs, not filesystem grants. Human turns stay plain text.\n");
+    let mut prompt = String::from("You are the planner in an initialized separated workspace. Your actual working directory is RECORDS; every docs/ path is relative to it. The driver owns all PRODUCT changes and Git banking. Never invoke Git, commit/push, claim an unacknowledged bank is committed, or infer access from a path. The canonical public kit follows inline; its names are logical inputs, not filesystem grants. Human turns stay plain text.\n");
+    if active.session.planner.as_ref().is_some_and(|planner| planner.selection.harness == "codex") {
+        prompt.push_str("Use the file inspection/edit tools already provided by your Codex driver within RECORDS; native file edit/apply_patch is appropriate. This prompt grants no additional shell, tool or directory access. Do not write PRODUCT.\n");
+    } else {
+        prompt.push_str("Do not invoke shell tools. Use the existing RECORDS read/write/edit tools; no additional permission is granted.\n");
+    }
     if continuation {
         prompt.push_str(
             "Continue the banked interview from RECORDS; do not repeat already banked questions.\n",
@@ -171,6 +186,7 @@ fn inline_prompt(active: &Activation, continuation: bool) -> String {
             setup.setup_id, active.session.id, active.context.fingerprint(), setup.product_revision, setup.records_revision,
             setup.request_digest, setup.receipt_digest, setup.settings));
     }
+    prompt.push_str(&bank_context(active, None));
     for file in kit::KIT_FILES {
         prompt.push_str(&format!(
             "\n--- BEGIN CANONICAL KIT {} ---\n{}\n--- END CANONICAL KIT {} ---\n",
@@ -892,8 +908,8 @@ pub fn send_prepared(
         }
         let digest = super::skills::sha256_hex(text.as_bytes());
         let prompt = if let Some(setup) = &active.setup {
-            format!("Original setup: {}. Session: {}. Origin: {}. PRODUCT input: {}. RECORDS input: {}. Validated committed project settings: {}. Human answer reference: turn={}, sha256={}, bytes={}. This digest correlates actual captured text; it does not authenticate an interpretation.\n--- HUMAN ANSWER ---\n{}",
-                setup.setup_id, active.session.id, active.context.fingerprint(), setup.product_revision, setup.records_revision, setup.settings, turn, digest, text.len(), text)
+            format!("Original setup: {}. Session: {}. Origin: {}. PRODUCT input: {}. RECORDS input: {}. Validated committed project settings: {}. Human answer reference: turn={}, sha256={}, bytes={}. This digest correlates actual captured text; it does not authenticate an interpretation.{}\n--- HUMAN ANSWER ---\n{}",
+                setup.setup_id, active.session.id, active.context.fingerprint(), setup.product_revision, setup.records_revision, setup.settings, turn, digest, text.len(), bank_context(&active, Some((turn, &digest))), text)
         } else {
             text.clone()
         };
@@ -1400,6 +1416,19 @@ process.stdout.write(JSON.stringify({{version:1,requestId:q.requestId,ok:true,re
         assert_eq!(first.model.as_deref(),if codex { None } else { Some("fixture-model") });
         assert_eq!(first.native_session_id.as_deref(),Some(native_id));
         assert_eq!(planner.provenance.product_revision,initial_revision);
+        let machine = |prompt: &str| -> serde_json::Value {
+            serde_json::from_str(prompt.split_once("<supertaskr-bank-context-v1>\n").unwrap().1
+                .split_once("\n</supertaskr-bank-context-v1>").unwrap().0).unwrap()
+        };
+        let kickoff = fs::read_to_string(fx.home.join("prompt")).unwrap();
+        let initial_context = machine(&kickoff);
+        assert_eq!(initial_context["setupId"],"init-controlled-model");
+        assert_eq!(initial_context["sessionId"],first.genesis.as_ref().unwrap().id);
+        assert_eq!(initial_context["originDigest"],context.fingerprint());
+        assert_eq!(initial_context["expectedProductRevision"],initial_revision);
+        assert_eq!(initial_context["expectedRecordsRevision"],initial_records_revision);
+        assert_eq!(initial_context["answerRefs"],serde_json::json!([]));
+        assert!(kickoff.contains(if codex { "native file edit/apply_patch" } else { "Do not invoke shell tools" }));
         assert_eq!(fs::read_to_string(fx.home.join("cwd")).unwrap().trim(),fx.b.to_str().unwrap());
         assert!(fs::read_to_string(fx.home.join("args")).unwrap().contains(&format!("--model\n{model}\n")));
         assert_eq!(fs::read_dir(fx.a.join("docs")).unwrap().count(),0,"no PRODUCT scaffold from split planner");
@@ -1416,6 +1445,10 @@ process.stdout.write(JSON.stringify({{version:1,requestId:q.requestId,ok:true,re
         assert!(matches!(sent.result,super::super::SendOutcome::Accepted {..}),"{sent:?}");fx.idle();
         let prompt=fs::read_to_string(fx.home.join("prompt")).unwrap();assert!(prompt.contains(&git(&fx.a,&["rev-parse","HEAD"])));assert!(prompt.contains(&git(&fx.b,&["rev-parse","HEAD"])));
         assert!(prompt.ends_with("Original typed answer\n"));
+        let answer_context = machine(&prompt);
+        assert_eq!(answer_context["expectedProductRevision"],git(&fx.a,&["rev-parse","HEAD"]));
+        assert_eq!(answer_context["expectedRecordsRevision"],git(&fx.b,&["rev-parse","HEAD"]));
+        assert_eq!(answer_context["answerRefs"],serde_json::json!([{"turn":2,"sha256":super::super::skills::sha256_hex(b"Original typed answer\n")} ]));
         assert!(fs::read_to_string(fx.home.join("args")).unwrap().contains(&format!("--model\n{model}\n")), "future Q5 choice never retargets the original provider/model");
 
         let cold=AgentState::new_managed(fx.agent.cfg.clone(),|_|{});

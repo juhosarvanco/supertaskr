@@ -1,4 +1,5 @@
-import { execFileSync, spawnSync } from "node:child_process";
+import childProcess, { execFileSync, spawnSync } from "node:child_process";
+import {syncBuiltinESMExports} from "node:module";
 import { createHash } from "node:crypto";
 import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
@@ -44,6 +45,26 @@ function runChild(root: string, input: any, boundary?: string) {
     }});process.stdout.write(JSON.stringify(result));
   `], { encoding: "utf8", env: ENV });
 }
+
+test("raw publication lookup rejects a real foreign failed operation before any Git read",()=>{
+ const f=fixture(),originalExec=childProcess.execFileSync,previous=process.env.GIT_CONFIG_PARAMETERS,calls:string[]=[];
+ try{
+  const input=f.request("foreign-known-zero-effect");
+  expect(()=>executeAcceptedOperation(f.product,input,{authorize(){return false;}})).toThrow(/OPERATION_POLICY_REFUSED/);
+  const file=acceptedOperationPath(f.product,input.operationId),before=readFileSync(file),refs=git(f.records,["for-each-ref","--format=%(refname) %(objectname)"]),index=readFileSync(path.join(f.records,".git/index"));
+  childProcess.execFileSync=((...args:any[])=>{calls.push(String(args[0]));return (originalExec as any)(...args);}) as typeof originalExec;syncBuiltinESMExports();
+  process.env.GIT_CONFIG_PARAMETERS="'remote.selected.fetch'='^refs/heads/main'";
+  expect(()=>readAcceptedOperation(f.product,input.operationId,"qualified-delivery")).toThrow(/OPERATION_RECORD/);expect(calls).toEqual([]);
+  if(previous===undefined)delete process.env.GIT_CONFIG_PARAMETERS;else process.env.GIT_CONFIG_PARAMETERS=previous;
+  expect(readAcceptedOperation(f.product,input.operationId).state).toBe("failed");expect(calls).toContain("git");
+  childProcess.execFileSync=originalExec;syncBuiltinESMExports();
+  expect(readFileSync(file)).toEqual(before);expect(git(f.records,["for-each-ref","--format=%(refname) %(objectname)"])).toBe(refs);expect(readFileSync(path.join(f.records,".git/index"))).toEqual(index);
+ }finally{
+  childProcess.execFileSync=originalExec;syncBuiltinESMExports();
+  if(previous===undefined)delete process.env.GIT_CONFIG_PARAMETERS;else process.env.GIT_CONFIG_PARAMETERS=previous;
+  f.cleanup();
+ }
+});
 
 test("ordinary accepted operation persists exact commit/ref correlation without a worker or product/index/worktree effect", () => {
   const f = fixture();

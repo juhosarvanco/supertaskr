@@ -21,7 +21,9 @@ A legacy colocated driver names one project directory for both roles.
    blank method kit, seeded committed project settings and placed the
    adapters in PRODUCT. Confirm the supplied setup/context receipt; read
    the RECORDS scaffold and stamp docs/STATE.md's Updated and In-progress
-   fields. Missing setup is a driver refusal, never a reason to invent a
+   fields and emit the stage0 RECORDS proposal in
+   interview/genesis-product-proposal.md before asking Q1. Missing setup
+   is a driver refusal, never a reason to invent a
    Git identity, initialize PRODUCT yourself or fall back to PRODUCT/docs.
    The planner writes only RECORDS. Reusable kit inputs stay blank.
 
@@ -54,17 +56,21 @@ A legacy colocated driver names one project directory for both roles.
    it carries the rule and leaves the evidence to whoever captured it.
 2. Interview per interview/plan-interview.md — ONE question at a
    time, never a wall. Challenge weak answers instead of transcribing
-   them (open such turns with "pushing back:"). An answer is BANKED
+   them (open such turns with "pushing back:"). An answer is confirmed
    when the human confirms it — or when they skip, in which case you
-   bank your own best assumption marked [?].
-3. Bank incrementally: the moment an answer is banked, write/update
+   propose your own best assumption marked [?]. In separated mode it is
+   durably BANKED only after the driver's exact accepted acknowledgement.
+3. Bank incrementally: the moment an answer is confirmed, write/update
    exactly the artifacts named by its stage's row in
    plan-interview.md's banking map, instantiated from
    docs-templates/ (replace the template's comment guidance with real
    content; fill `<slot>` placeholders, never leave them). Then
    update STATE.md's In-progress line to name the NEXT stage. Never
    batch writing to the end: a kill at any stage must leave every
-   earlier stage on disk.
+   earlier stage on disk. In separated mode emit that stage's fixed
+   RECORDS proposal and the paired PRODUCT proposal for Q1/Q5. The
+   backend owns Git, commits and acknowledgements; a watched draft is
+   not proof of durable banking.
 4. After Q7 (stage 8): run interview/decomposition.md in this same
    session — backbone to exact task files (tasks/T-000-template.md
    per tasks/TASK-FORMAT.md, EARS criteria, every task through the
@@ -78,9 +84,11 @@ A legacy colocated driver names one project directory for both roles.
    documentation bug: fix the docs and repeat until a cold session passes.
    The offer is optional and does not undo a completed bank or gate the
    finished board.
-6. Commit the RECORDS genesis (task-sized commits are fine during it; at
-   minimum one commit at the end). PRODUCT setup banks are separate local
-   backend commits; no publication is implied.
+6. In separated mode confirm that the backend acknowledged every bank;
+   do not invoke Git or substitute working files for accepted receipts.
+   In legacy colocated mode commit the RECORDS genesis (task-sized commits
+   are fine during it; at minimum one commit at the end). PRODUCT setup
+   banks are separate local backend commits; no publication is implied.
 7. The succession rule, before you end: anything you decided, noticed,
    or intend that is not yet in a file goes into one NOW. Your
    successor may be a different model reading the folder cold — leave
@@ -99,9 +107,9 @@ A legacy colocated driver names one project directory for both roles.
   Separated setup supplies the full kit inline when PRODUCT is outside
   that scope; no extra editable directory grant is implied.
 - Turns are plain text in, plain text out. No markup, schema, or
-  structured output is required from the human. Separated Q1/Q5 PRODUCT
-  banks use the distinct fixed machine proposal file described in
-  interview/genesis-product-proposal.md. A proposal is captured data,
+  structured output is required from the human. Every separated RECORDS
+  bank and its paired Q1/Q5 PRODUCT bank use the fixed machine proposal
+  files described in interview/genesis-product-proposal.md. A proposal is captured data,
   never permission to choose a PRODUCT path or validation policy.
 - A challenge turn opens with the literal prefix "pushing back:" — a
   rendering hint so a driver can style challenges differently. Its

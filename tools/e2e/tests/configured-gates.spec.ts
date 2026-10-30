@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { expect, test } from "@playwright/test";
 import { countUnittest, judge, validateSuite } from "../scripts/gate-run.mjs";
 import { judgeToken, writeToken } from "../../../cli/gate-token.mjs";
+import { installOfflinePackage } from "../fixtures/offline-package";
 
 test("real verbose unittest output accounts for independent methods, skipped bodies and failed summaries",()=>{
   const root=mkdtempSync(path.join(tmpdir(),"configured-python-counter-"));
@@ -113,7 +114,7 @@ test("an offline isolated tarball grades Python without checkout, NODE_PATH or s
     // Ignore lifecycle scripts here so postpack cannot remove that stage.
     const packed=JSON.parse(execFileSync("npm",["pack","--ignore-scripts","--json","--pack-destination",pack],{cwd:source.packageRoot,encoding:"utf8",env}));
     putPrivate(product,"package.json",JSON.stringify({name:"python-tool-fixture",version:"0.0.0",private:true}));
-    execFileSync("npm",["install","--offline","--ignore-scripts","--no-audit","--no-fund",path.join(pack,packed[0].filename)],{cwd:product,encoding:"utf8",env});
+    installOfflinePackage({packageTarball:path.join(pack,packed[0].filename),packDirectory:pack,project:product,env,ignoreScripts:true});
     const installed=path.join(product,"node_modules/supertaskr"),runtime=path.join(installed,"dist"),url=(name:string)=>pathToFileURL(path.join(runtime,"tools/e2e/scripts",name+".mjs")).href;
     expect(realpathSync(installed).startsWith(realpathSync(product)+path.sep)).toBe(true);
     expect(packageEscapes(path.join(runtime,"tools/e2e/scripts/gate-run.mjs"),installed)).toEqual([]);

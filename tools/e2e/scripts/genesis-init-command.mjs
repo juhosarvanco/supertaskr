@@ -9,7 +9,7 @@ import { parseDocument } from "yaml";
 import { prepareGenesisInitialization } from "./genesis-init-plan.mjs";
 import { discoverProjectInitializations, inspectOriginalProjectPlanner, inspectProjectInitialization } from "./genesis-init-inspect.mjs";
 import { executeProjectInitialization, replayProjectInitialization } from "./project-init-operation.mjs";
-import {prepareGenesisBank} from "./genesis-bank-plan.mjs";
+import {prepareGenesisBank,unchangedGenesisBank,inspectCurrentGenesisBankHistory} from "./genesis-bank-plan.mjs";
 import {executeProjectBank,replayProjectBank} from "./project-bank-operation.mjs";
 import {discoverGenesisBanks} from "./genesis-bank-inspect.mjs";
 import { readAcceptedOperation } from "./durable-operation.mjs";
@@ -90,7 +90,13 @@ export function executeInitializationProtocol(input, installation = {}) {
     // the original immutable plan against the currently installed exact TOOL.
     const authorize = (/** @type {any} */ context) => operationContent(currentTool()) === operationContent(context.request.tool);
     let result;
-    if(request.operation==="banks")result=discoverGenesisBanks(request.productRoot);
+    if(request.operation==="banks"){
+      result=discoverGenesisBanks(request.productRoot);
+      // Original receipts remain available even when current policy/TOOL or
+      // session readiness cannot qualify progress. Failure is explicit data.
+      try{result={...result,current:inspectCurrentGenesisBankHistory({productRoot:request.productRoot,tool:currentTool()})};}
+      catch(error){result={...result,current:{status:"unavailable",code:errorEnvelope(request,error).error.code}};}
+    }
     else if(request.operation==="bank-replay")result=replayProjectBank(request.productRoot,request.operationId,{get tool(){return currentTool();},authorize});
     else if(request.operation==="bank"){
       const prior=readAcceptedOperation(request.productRoot,request.operationId);
@@ -99,8 +105,9 @@ export function executeInitializationProtocol(input, installation = {}) {
         if(prior.operation.kind!=="project-bank"||original.session.sessionId!==request.sessionId||original.session.originDigest!==request.originDigest||original.input.productRevision!==request.expectedProductRevision||original.input.recordsRevision!==request.expectedRecordsRevision)refuse("genesis-bank-operation-changed");
         result=replayProjectBank(request.productRoot,request.operationId,{get tool(){return currentTool();},authorize});
       }else{
-        const prepared=prepareGenesisBank({productRoot:request.productRoot,operationId:request.operationId,sessionId:request.sessionId,originDigest:request.originDigest,expectedProductRevision:request.expectedProductRevision,expectedRecordsRevision:request.expectedRecordsRevision,tool:currentTool()});
-        result=executeProjectBank(request.productRoot,prepared.request,{tool:currentTool(),authorize});
+        const input={productRoot:request.productRoot,operationId:request.operationId,sessionId:request.sessionId,originDigest:request.originDigest,expectedProductRevision:request.expectedProductRevision,expectedRecordsRevision:request.expectedRecordsRevision,tool:currentTool()};
+        result=unchangedGenesisBank(input);
+        if(result===null){const prepared=prepareGenesisBank(input);result=executeProjectBank(request.productRoot,prepared.request,{tool:currentTool(),authorize});}
       }
     }
     else if (request.operation === "discover") result = discoverProjectInitializations(request.productRoot);

@@ -33,6 +33,7 @@ function data(value) { return freezeSettings(structuredClone(value)); }
 /** @param {any} tool */
 function verifyTool(tool) {
   requireInstalledRuntimeAssets(tool, ["tools/e2e/scripts/configured-dispatch.mjs", "tools/e2e/scripts/qualified-reservation.mjs",
+    "tools/e2e/scripts/qualified-native.mjs", "tools/e2e/scripts/qualified-verification.mjs",
     "tools/e2e/scripts/records.mjs", "tools/e2e/scripts/workspace.mjs", "tools/e2e/scripts/gate-run.mjs", "tools/e2e/scripts/project-settings.mjs", "tools/e2e/scripts/project-runtime.mjs", "tools/e2e/scripts/dispatch-brief.mjs"]);
 }
 /** Exact original P/R revisions and delivered binding only. Card model stamps
@@ -145,15 +146,25 @@ export function configuredDispatchStartCapsule(handle, root, assignment, preview
 }
 /** @param {any} capsule @param {any} assignment */
 function rolePolicy(capsule, assignment) {
-  const role = capsule.roles[assignment.role];
+  return nativeRole(capsule, assignment.role, { model: assignment.model });
+}
+/** @param {any} capsule @param {string} roleName @param {{model:any}|null} [expected] */
+function nativeRole(capsule, roleName, expected = null) {
+  const role = capsule.roles[roleName];
   if (!role) refuse("configured-dispatch-start-model", "Original configured role is unavailable");
   const qualified = /^codex\/(gpt-[A-Za-z0-9][A-Za-z0-9._-]*)$/.exec(role.model);
   const model = qualified?.[1] ?? (/^gpt-[A-Za-z0-9][A-Za-z0-9._-]*$/.test(role.model) ? role.model : null);
   if (model === null) refuse("configured-dispatch-harness-unsupported", "Native Codex requires one explicit gpt model or codex/gpt model spelling; no account or harness default is selected");
-  if (assignment.model !== model) refuse("configured-dispatch-start-model", "Requested model differs from the original committed role choice");
+  if (expected !== null && expected.model !== model) refuse("configured-dispatch-start-model", "Requested model differs from the original committed role choice");
   const vehicle = role.vehicle ?? capsule.sessionPolicy.default;
   if (!["fresh", "subagent"].includes(vehicle)) refuse("configured-dispatch-vehicle-unsupported", "This native adapter supports fresh/subagent launches; an original resume/session request cannot select a new or newest child");
-  return data({ role: assignment.role, requested: role.requested, model, harness: "codex-desktop-native", vehicle, sessionPolicy: capsule.sessionPolicy });
+  return data({ role: roleName, requested: role.requested, model, harness: "codex-desktop-native", vehicle, sessionPolicy: capsule.sessionPolicy });
+}
+/** Finite original native launch datum for the backend arm constructor. No
+ * caller model/default or named/latest session can replace the canonical role.
+ * @param {object} handle @param {string} role */
+export function configuredDispatchNativeRole(handle, role) {
+  return nativeRole(verifyConfiguredDispatch(handle), role);
 }
 /** Canonical classifier, actual configured guard owners and original source.
  * No generic XS keeper answer is invented from a whole-suite green.
@@ -208,4 +219,16 @@ export function configuredDispatchBriefContext(handle) {
  * supplied by record metadata. @param {object} handle */
 export function configuredDispatchSchema(handle) {
   verifyConfiguredDispatch(handle); return data(/** @type {NonNullable<ReturnType<typeof captured.get>>} */ (captured.get(handle)).schema);
+}
+/** Fixed original verifier role; the caller selects no path or role bytes.
+ * @param {object} handle */
+export function configuredDispatchVerifierRole(handle) {
+  verifyConfiguredDispatch(handle);
+  const { tool } = /** @type {NonNullable<ReturnType<typeof captured.get>>} */ (captured.get(handle));
+  const asset = readInstalledMethodAsset(tool, "method/roles/verifier.md");
+  verifyConfiguredDispatch(handle);
+  return data({ role: { text: asset.text, digest: asset.sha256 }, source: {
+    kind: "installed-method", path: "method/roles/verifier.md", sha256: asset.sha256,
+    tool: { manifestDigest: tool.manifestDigest, methodDigest: tool.methodDigest, methodVersion: tool.methodVersion },
+  } });
 }

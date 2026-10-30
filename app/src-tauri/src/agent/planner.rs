@@ -343,6 +343,29 @@ echo '{"type":"result","subtype":"success","is_error":false,"num_turns":1,"resul
         }
     }
     #[test]
+    fn large_plain_executable_is_fully_hashed_and_a_same_size_edit_refuses_original_resume() {
+        use std::io::{Seek,SeekFrom,Write};
+        let f=Fixture::new();
+        let mut file=fs::OpenOptions::new().write(true).truncate(true).open(&f.cli.path).unwrap();
+        let block:Vec<u8>=(0..65_536).map(|n|(n%251) as u8).collect();
+        for _ in 0..4096 {file.write_all(&block).unwrap();}
+        file.sync_all().unwrap();drop(file);
+        let expected=std::process::Command::new("node").args(["--input-type=module","-e",
+            "import{createHash}from'node:crypto';import{createReadStream}from'node:fs';const hash=createHash('sha256');for await(const part of createReadStream(process.argv[1]))hash.update(part);process.stdout.write('sha256:'+hash.digest('hex'));"
+        ]).arg(&f.cli.path).output().unwrap();
+        assert!(expected.status.success(),"{}",String::from_utf8_lossy(&expected.stderr));
+        let started=Instant::now();
+        let session=PlannerSession::capture(&decision(),&f.cli).expect("full 256MiB executable capture within the unchanged ten-second bound");
+        eprintln!("large original executable: bytes={} captured_ms={}",session.executable.bytes,started.elapsed().as_millis());
+        assert_eq!(session.executable.bytes,268_435_456);
+        assert_eq!(session.executable.sha256,String::from_utf8(expected.stdout).unwrap());
+        let mut file=fs::OpenOptions::new().write(true).open(&f.cli.path).unwrap();
+        file.seek(SeekFrom::End(-1)).unwrap();file.write_all(&[255]).unwrap();file.sync_all().unwrap();drop(file);
+        let started=Instant::now();
+        assert_eq!(session.verify_executable(&f.cli).unwrap_err(),"genesis-original-planner-changed");
+        eprintln!("large same-size changed executable: refused_ms={}",started.elapsed().as_millis());
+    }
+    #[test]
     fn original_executable_model_and_source_remain_frozen_across_cold_session_data(
     ) {
         let f = Fixture::new();

@@ -642,7 +642,7 @@ export async function startGenesisListener(): Promise<void> {
       if (selectedGenesisContext()) {
         const accepted = admission.event(event.payload as ScopedGenesisEvent);
         applyManagedEvents(accepted.events);
-        if (accepted.reconcile) reconcileManaged();
+        if (accepted.reconcile) reconcileManaged(accepted.newEvidence === true);
       } else if (!("identity" in event.payload)) setState(reduceGenesisEvent(state, event.payload));
     });
     if (contextSubscription === null) {
@@ -702,7 +702,11 @@ function offeredSession(): void {
       ...(admission.identity ? {cancelView:view} : {}) });
   }
 }
-function reconcileManaged(): void {
+function reconcileManaged(newEvidence = false): void {
+  // A late, correlated native event can arrive after a bounded poll burst.
+  // Renew that finite read budget only for new evidence; it cannot admit an
+  // event, retry a model/effect command or select another session by itself.
+  if (newEvidence) reconcileTries = 0;
   if (reconcileTimer !== null || reconcileTries >= 120 || !admission.context) return;
   reconcileTimer = setTimeout(() => {
     reconcileTimer = null; reconcileTries++;
@@ -761,17 +765,14 @@ async function managedTurn<T extends StartOutcomePayload | SendOutcomePayload>(
  * only an absence, and the only honest repair is to stop waiting.
  *
  * WHERE THE NUMBER COMES FROM, so it is derived rather than picked.
- * These commands do not wait for the turn — the runner spawns it on a
- * thread and answers as soon as it is accepted. The one bounded blocking
- * step inside a command's own body is the login-shell CLI probe, which
- * `genesis_start`'s doc comment in `src-tauri/src/lib.rs` names and
- * which `AgentConfig`'s `probe_timeout` in `src-tauri/src/agent/
- * runner.rs` sets to ten seconds; everything else is in-memory state or
- * local filesystem work. Thirty seconds is three times that one bounded
- * step, and it is also the runner's own longest single deadline
- * (`start_timeout`) — so this side never gives up before the Rust side
- * has had its full budget for anything it bounds. A healthy command
- * answers in milliseconds and never comes near it.
+ * These commands answer after startup rather than the whole model turn.
+ * The original thirty-second value was three times the ten-second login-
+ * shell probe and matched the runner's startup deadline. Managed setup now
+ * also verifies installed services and original context before spawn; that
+ * work can outlast this renderer wait. Expiry therefore retains the original
+ * pending attempt and asks scoped status instead of declaring native failure
+ * or permitting another turn. A new matching native event may renew a finite
+ * status-read burst, without changing either deadline or retrying effects.
  *
  * IT IS DELIBERATELY GENEROUS. The failure it converts is INFINITE, so
  * the cost of being too slow is one waiting user and the cost of being

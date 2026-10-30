@@ -5,6 +5,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import path from "node:path";
+import { validConfiguredDispatchCapsule } from "../../../cli/configured-native-reader.mjs";
 import * as runs from "./run-record.mjs";
 import { activeNativeHolds, atomicJson, collectNativeWorkspace, NativeCodexFinding, nativeIgnoredSnapshot,
   nativePathAllowed, nativeSha256, parseNativeRawDiff, withNativeTransaction } from "./native-codex.mjs";
@@ -14,12 +15,48 @@ import { validateQualifiedNative, collectQualifiedNativeRun } from "./qualified-
 /** @type {any} */ let verdicts;
 /** @type {any} */ let taskParser;
 /** @type {any} */ let inert;
+/** Loaded only for an actual configured retained executor or its new effects.
+ * @type {typeof import("./configured-dispatch.mjs")|undefined} */
+let configured;
 /** @param {string} code @returns {never} */
 function refuse(code) { throw new NativeCodexFinding(code, `${code}: complete qualified review refused`); }
 /** @param {any} value */
 export function qualifiedReviewDigest(value) { return nativeSha256(runs.qualifiedValidation().qualifiedContent(value)); }
 /** @param {any} a @param {any} b */
 function equal(a, b) { return runs.qualifiedValidation().qualifiedContent(a) === runs.qualifiedValidation().qualifiedContent(b); }
+/** Structural original role provenance is part of the retained preparation,
+ * not a current TOOL requirement on historical evidence reads.
+ * @param {any} source @param {any} authority */
+export function validateQualifiedRoleSource(source, authority) {
+  const capsule = source.native?.qualified?.origins?.configuredDispatch;
+  if (capsule === undefined) {
+    if (authority.roleSource !== undefined) refuse("QUALIFIED_REVIEW_ROLE_SOURCE");
+    return;
+  }
+  const supplied = authority.roleSource, tool = capsule.configuration?.tool;
+  if (!validConfiguredDispatchCapsule(capsule) || !supplied || !tool || !equal(supplied, { kind: "installed-method", path: "method/roles/verifier.md",
+    sha256: authority.role?.digest, tool: { manifestDigest: tool.manifestDigest, methodDigest: tool.methodDigest, methodVersion: tool.methodVersion } }) ||
+    typeof authority.role?.text !== "string" || authority.role.digest !== nativeSha256(authority.role.text) ||
+    !/^[0-9a-f]{64}$/.test(supplied.sha256)) refuse("QUALIFIED_REVIEW_ROLE_SOURCE");
+}
+/** Only an authentic original-source constructor may supply the current
+ * verified METHOD asset at a new preparation/seal/admission effect.
+ * @param {any} source @param {any} authority @param {object|undefined} handle */
+function verifyConfiguredRole(source, authority, handle) {
+  validateQualifiedRoleSource(source, authority);
+  if (source.native?.qualified?.origins?.configuredDispatch === undefined) return;
+  if (configured === undefined || handle === undefined ||
+      !equal(configured.verifyConfiguredDispatch(handle), source.native.qualified.origins.configuredDispatch)) refuse("QUALIFIED_REVIEW_CONFIGURED_REQUIRED");
+  const actual = configured.configuredDispatchVerifierRole(handle);
+  if (!equal(authority.role, actual.role) || !equal(authority.roleSource, actual.source)) refuse("QUALIFIED_REVIEW_ROLE_CHANGED");
+}
+/** No caller mode flag: presence is read from the actual retained source.
+ * @param {string} root @param {any} source */
+async function originalConfiguredSource(root, source) {
+  if (source.native?.qualified?.origins?.configuredDispatch === undefined) return undefined;
+  configured ??= await import("./configured-dispatch.mjs");
+  return (await configured.captureConfiguredDispatchForRun(root, source.attempt)).handle;
+}
 /** Validate reported identities before they can enter a Git argument. Qualified
  * review currently supports SHA-1 repositories, as its bench inspector requires.
  * @param {unknown} value @param {string} [objectFormat] @returns {string} */
@@ -78,6 +115,7 @@ async function load() {
   verdicts ??= await import("./merge.mjs");
   taskParser ??= await import("../../../lib/parser/dist/pure.js");
   inert ??= await import("../../../lib/parser/dist/inert-spans.js");
+  configured ??= await import("./configured-dispatch.mjs");
 }
 /** Preload only canonical parsing/review consumers for read-only retained
  * evidence readers. No native transaction, acquisition or progress is made. */
@@ -187,6 +225,7 @@ async function prepareQualifiedVerificationImpl(root, opts) {
   const assignment = structuredClone(opts.assignment);
   await load();
   const before = /** @type {any} */ (runs.readRecord(root, opts.attempt)), io = opts.io ?? runs.defaultRunIo();
+  const handle = await originalConfiguredSource(root, before);
   const declaration = qualifiedBenchAssignmentInputs(root, before, assignment, opts.candidate);
   // Complete asynchronous policy loading/observation before the synchronous
   // authority decision. The decision recaptures current policy and identities.
@@ -195,23 +234,26 @@ async function prepareQualifiedVerificationImpl(root, opts) {
     revisions: before.assignment.qualified.revisions, taskId: before.assignment.id,
     roles: before.assignment.qualified.workers.map((/** @type {any} */ w) => w.role), legacyTokenMap: before.assignment.qualified.legacyTokenMap,
     admission: { boundary: "child-start", role: "verifier", kind: "explicit", parent: "", evidence: "", scope: "product-change", attempt: null } };
-  const earlier = await policy.admissionPreflight(request);
+  const earlier = handle === undefined ? await policy.admissionPreflight(request) : await policy.configuredAdmissionPreflight(request, handle);
   return withNativeTransaction(root, { operation: "qualified-verification-prepare", ...(opts.transaction ?? {}) }, () => {
     const source = /** @type {any} */ (runs.readRecord(root, opts.attempt)), q = finalized(root, source, io);
     if (!equal(assignment, opts.assignment)) refuse("QUALIFIED_REVIEW_INPUT_CHANGED");
     if (source.assignmentDigest !== before.assignmentDigest || !equal(source.native.qualified.collection, before.native.qualified.collection)) refuse("QUALIFIED_REVIEW_PREPARATION_DRIFT");
-    policy.decisiveQualifiedAdmission(request, earlier, false, declaration.resource);
+    if (handle === undefined) policy.decisiveQualifiedAdmission(request, earlier, false, declaration.resource);
+    else policy.decisiveConfiguredAdmission(request, earlier, handle, false, declaration.resource);
     qualifiedBenchAssignmentInputs(root, source, opts.assignment, opts.candidate);
     const receipt = q.reservation.scope.receipt;
     const raw = /** @type {Buffer} */ (git(receipt.recordsRoot, ["show", `${q.reservation.scope.revisions.records}:${receipt.cardPath}`], true)).toString("utf8");
     if (git(receipt.recordsRoot, ["rev-parse", `${q.reservation.scope.revisions.records}:${receipt.cardPath}`]) !== receipt.cardBlobId) refuse("QUALIFIED_REVIEW_PRIVATE_AUTHORITY");
-    const role = /** @type {Buffer} */ (git(q.reservation.scope.fence.repositories.product.filesystemRoot,
+    const method = handle === undefined ? null : /** @type {NonNullable<typeof configured>} */ (configured).configuredDispatchVerifierRole(handle);
+    const role = method?.role.text ?? /** @type {Buffer} */ (git(q.reservation.scope.fence.repositories.product.filesystemRoot,
       ["show", `${q.reservation.scope.revisions.product}:method/roles/verifier.md`], true)).toString("utf8");
     const authority = /** @type {any} */ ({ version: 1, executorAttempt: source.attempt, sourceIdentity: q.identity, taskId: source.assignment.id,
       projectId: q.reservation.scope.projectId, revisions: q.reservation.scope.revisions, candidates: runs.qualifiedValidation().qualifiedImplementationCandidates(q.reservation.scope, q.collection.candidates),
       receipt, fence: q.reservation.scope.fence, workers: structuredClone(opts.assignment.qualified.workers),
       ignoredOutputs: [...q.origins.launch.ignoredOutputs], card: { path: receipt.cardPath, text: raw, digest: nativeSha256(raw) },
-      role: { text: role, digest: nativeSha256(role) }, tier: reviewTier(raw, receipt.cardPath) });
+      role: { text: role, digest: nativeSha256(role) }, ...(method === null ? {} : { roleSource: method.source }), tier: reviewTier(raw, receipt.cardPath) });
+    verifyConfiguredRole(source, authority, handle);
     const benches = inspectQualifiedBenches(authority); authority.benches = benches;
     const digest = qualifiedReviewDigest(authority);
     const entries = source.native.qualifiedPreparations ?? [];
@@ -233,6 +275,7 @@ export function readQualifiedPreparation(root, executorAttempt, digest) {
   const source = runs.readRecord(root, executorAttempt);
   const entries = (source.native?.qualifiedPreparations ?? []).filter((/** @type {any} */ p) => p.digest === digest);
   if (entries.length !== 1 || entries[0].digest !== qualifiedReviewDigest(entries[0].authority)) refuse("QUALIFIED_REVIEW_PREPARATION_CHANGED");
+  validateQualifiedRoleSource(source, entries[0].authority);
   return { source, entry: entries[0] };
 }
 /** Seal the saved phase-one return, original ground, private contract and the
@@ -240,12 +283,14 @@ export function readQualifiedPreparation(root, executorAttempt, digest) {
  * @param {string} root @param {any} opts */
 export async function sealQualifiedVerification(root, opts) {
   await load();
+  const handle = await originalConfiguredSource(root, runs.readRecord(root, opts.executorAttempt));
   const attack = readFileSync(opts.attackSetFile, "utf8");
   if (!attack.trim()) refuse("QUALIFIED_REVIEW_ATTACK_SET_EMPTY");
   return withNativeTransaction(root, { operation: "qualified-verification-seal" }, () => {
     if (readFileSync(opts.attackSetFile, "utf8") !== attack) refuse("QUALIFIED_REVIEW_ATTACK_SET_CHANGED");
     const { source, entry } = readQualifiedPreparation(root, opts.executorAttempt, opts.preparationDigest), a = entry.authority;
     finalized(root, source, opts.io ?? runs.defaultRunIo());
+    verifyConfiguredRole(source, a, handle);
     if (entry.consumedBy !== null || entry.seal !== null) refuse("QUALIFIED_REVIEW_SEAL_ALREADY_ISSUED");
     runs.qualifiedPhasePolicy(root, source, "verifier", "child-start");
     inspectQualifiedBenches(a);
@@ -274,11 +319,12 @@ export async function sealQualifiedVerification(root, opts) {
 }
 /** Validate consumption independently inside admission. No prepared promise
  * or earlier policy answer can authorize this decision.
- * @param {string} root @param {any} a */
-export function qualifiedVerifierAdmission(root, a) {
+ * @param {string} root @param {any} a @param {object|undefined} [configuredHandle] */
+export function qualifiedVerifierAdmission(root, a, configuredHandle) {
   const v = a.qualified.verification;
   const { source, entry } = readQualifiedPreparation(root, v.executorAttempt, v.preparationDigest);
   finalized(root, source, runs.defaultRunIo());
+  verifyConfiguredRole(source, entry.authority, configuredHandle);
   qualifiedBenchAssignmentInputs(root, source, a, JSON.stringify(entry.authority.candidates));
   if (entry.seal === null || entry.seal.digest !== qualifiedReviewDigest({ inputs: entry.seal.inputs, document: entry.seal.document }) ||
       !equal(entry.seal.inputs.candidates, entry.authority.candidates) || entry.seal.inputs.preparationDigest !== entry.digest) refuse("QUALIFIED_REVIEW_SEAL_CHANGED");

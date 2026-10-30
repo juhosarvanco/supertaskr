@@ -8,7 +8,7 @@ import path from "node:path";
 import * as runs from "./run-record.mjs";
 import { NativeCodexFinding, activeNativeHolds, addNativeHold, collectNativeWorkspace, explicitResourceProblem,
   nativeFinalGate, nativeIgnoredSnapshot, nativePathAllowed, nativeSha256, readNativeRecord, withNativeTransaction } from "./native-codex.mjs";
-import { qualifiedVerifierAdmission, qualifiedReviewPolicy, validateQualifiedReview, collectQualifiedReviewEvidence } from "./qualified-verification.mjs";
+import { qualifiedVerifierAdmission, qualifiedReviewPolicy, validateQualifiedReview, collectQualifiedReviewEvidence, loadQualifiedReviewConsumers } from "./qualified-verification.mjs";
 import { validConfiguredDispatchCapsule } from "../../../cli/configured-native-reader.mjs";
 
 /** Loaded only for explicitly qualified calls.
@@ -135,13 +135,14 @@ async function startQualifiedNativeRunImpl(root, opts) {
   if (realpathSync(root) !== realpathSync(input.authorityRoot)) refuse("QUALIFIED_AUTHORITY_HOME");
   await runs.loadQualifiedReservations();
   await preloadAdmission();
+  if (a.qualified.verification !== undefined) await loadQualifiedReviewConsumers();
   if (opts.configuredDispatch !== undefined) configuredDispatch ??= await import("./configured-dispatch.mjs");
   const earlier = opts.configuredDispatch === undefined ? await admission().admissionPreflight(input) : await admission().configuredAdmissionPreflight(input, opts.configuredDispatch);
   // Testable boundary: the actual transaction's acquisition hook can change
   // inputs here; the decisive recapture below must detect that change.
   return withNativeTransaction(root, { operation: "qualified-run-start", ...(opts.transaction ?? {}) }, () => {
     if (!equal(a, opts.assignment)) refuse("QUALIFIED_ADMISSION_INPUT_CHANGED");
-    const prepared = a.qualified.verification === undefined ? null : qualifiedVerifierAdmission(root, a);
+    const prepared = a.qualified.verification === undefined ? null : qualifiedVerifierAdmission(root, a, opts.configuredDispatch);
     if (prepared?.entry.consumedBy != null) {
       const prior = runs.readRecord(root, prepared.entry.consumedBy);
       if (prior.assignmentDigest !== runs.sha256(JSON.stringify(a)) || prior.native?.qualified?.verification?.digest !== prepared.entry.digest) refuse("QUALIFIED_PREPARATION_CONSUMED");

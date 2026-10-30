@@ -2,16 +2,17 @@
  * exact owned launch and canonical current policy; never adopts an owner. */
 import {execFileSync} from "node:child_process";
 import {readFileSync} from "node:fs";
+import {fileURLToPath} from "node:url";
 import {isMain} from "../../../cli/is-main.mjs";
 import {judgeToken,readToken} from "../../../cli/gate-token.mjs";
 import {holderVerdict} from "./checkout-currency.mjs";
-import {listAcceptedOperations} from "./durable-operation.mjs";
+import {listAcceptedOperations,readAcceptedOperation} from "./durable-operation.mjs";
 import {operationContent,operationDigest} from "./operation-record.mjs";
 import {loadInstalledRecordTool,createRecordChecker,requireInstalledRuntimeAssets} from "./records-check.mjs";
 import {loadConfiguredGateConfiguration} from "./gate-run.mjs";
 import {loadQualifiedDeliveryPolicy} from "./qualified-admission.mjs";
 import {assertQualifiedDeliveryContinuation,observeQualifiedLocalDelivery} from "./qualified-delivery-operation.mjs";
-import {capturePublicationProcessProof,publicationPushArguments} from "./qualified-publication-process.mjs";
+import {capturePublicationProcessProof,publicationProcess,publicationPushArguments,assertPublicationPushParameters} from "./qualified-publication-process.mjs";
 /** @param {string} code @returns {never} */
 function refuse(code){throw Object.assign(new Error(`${code}: protected publication refused`),{code});}
 /** @param {any} v @param {string[]} fields */
@@ -45,8 +46,32 @@ export function readQualifiedPublicationGate(rec,tool){
  if(seat.state==="held")refuse("holder-live-elsewhere");
  return {tokenDigest:operationDigest("token" in read?read.token:null),context:configuration.context,tree:s.tree};
 }
+/** A lookup hint from the existing owned wrapper command is not authority.
+ * The same existing process-proof constructor must then verify every process,
+ * executable, group, row and exact Git argv before config can be normalized.
+ * This branch does not invoke Git, load current policy or adopt ownership.
+ * @param {string} root */
+function qualifyPublicationRouting(root){
+ if(process.env.NODE_OPTIONS||process.env.NODE_PATH)refuse("QUALIFIED_PUBLICATION_NODE_ROUTING");
+ const self=publicationProcess(process.pid),hook=publicationProcess(self.ppid),gitParent=publicationProcess(hook.ppid),wrapper=publicationProcess(gitParent.ppid);
+ const prefix=[wrapper.program,fileURLToPath(new URL("./qualified-publication-launch.mjs",import.meta.url)),"--root",root,"--operation"].join(" ")+" ";
+ if(!wrapper.command.startsWith(prefix))refuse("QUALIFIED_PUBLICATION_LAUNCH_REQUIRED");
+ const id=/^([A-Za-z0-9][A-Za-z0-9._-]{0,127}) --token launch-[0-9a-f-]{36}$/.exec(wrapper.command.slice(prefix.length))?.[1];
+ if(!id)refuse("QUALIFIED_PUBLICATION_LAUNCH_REQUIRED");
+ const rec=readAcceptedOperation(root,id,"qualified-delivery");
+ if(!rec||rec.operation.kind!=="qualified-delivery"||rec.operation.request.coordinator.root!==root||rec.state!=="unknown"||rec.operation.request.route.name!=="protected-atomic-push-v1")refuse("QUALIFIED_PUBLICATION_CONFIGURATION_CHANGED");
+ assertPublicationPushParameters(rec.operation.request,process.env.GIT_CONFIG_PARAMETERS);
+ capturePublicationProcessProof(rec,"pre-push");
+ const tool=loadInstalledRecordTool();
+ requireInstalledRuntimeAssets(tool,["tools/e2e/scripts/qualified-publication-hook.mjs","tools/e2e/scripts/qualified-publication-process.mjs","tools/e2e/scripts/durable-operation.mjs","tools/e2e/scripts/operation-record.mjs","cli/hook-git-context.mjs","cli/configured-gate-reader.mjs","tools/e2e/scripts/product-hook.mjs"]);
+ if(operationContent(tool)!==operationContent(rec.operation.request.route.publication.tool))refuse("QUALIFIED_PUBLICATION_CONFIGURATION_CHANGED");
+ // Re-read both original row and existing live process proof after TOOL reads.
+ const current=readAcceptedOperation(root,id,"qualified-delivery");if(operationContent(current)!==operationContent(rec))refuse("QUALIFIED_PUBLICATION_CONFIGURATION_CHANGED");capturePublicationProcessProof(current,"pre-push");
+ return {status:"routing-qualified"};
+}
 /** @param {string} root @param {"pre-tool"|"pre-push"} mode @param {any} input */
 export async function decideQualifiedPublicationHook(root,mode,input){
+ if(mode==="pre-push"&&shape(input,["mode","routing"])&&input.mode===mode&&input.routing===true)return qualifyPublicationRouting(root);
  const rows=listAcceptedOperations(root).filter((/** @type {any} */ rec)=>rec.operation.kind==="qualified-delivery"&&rec.state!=="finished"&&rec.operation.request.coordinator.root===root&&rec.operation.request.route.publicationOwed);
  if(!rows.length)return {status:"ordinary"};
  if(process.env.NODE_OPTIONS||process.env.NODE_PATH)refuse("QUALIFIED_PUBLICATION_NODE_ROUTING");

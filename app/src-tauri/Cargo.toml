@@ -65,3 +65,10 @@ tauri = { version = "2", features = ["test"] }
 [features]
 # Test-only historical private provenance; never enabled by ordinary CI.
 private-dogfood = []
+
+# Large installed planner binaries must still be fully fingerprinted within
+# the existing ten-second verification bound in a debug desktop build. Keep
+# only this existing hashing dependency optimized; all provenance checks and
+# deadline/size limits remain identical to release behavior.
+[profile.dev.package.sha2]
+opt-level = 3

@@ -29,8 +29,10 @@ function validIdentity(identity: GenesisIdentity): boolean {
 }
 interface Pending {
   attempt: number; expectedIdentity: GenesisIdentity | null; events: ScopedGenesisEvent[]; bytes: number; unknown: boolean;
+  // Bounded correlation evidence only; never the reducer's sequence/clock.
+  evidence: Map<string, number>;
 }
-export interface GenesisAdmissionResult { admitted: boolean; events: GenesisEvent[]; reconcile: boolean }
+export interface GenesisAdmissionResult { admitted: boolean; events: GenesisEvent[]; reconcile: boolean; newEvidence?: boolean }
 const refused = (): GenesisAdmissionResult => ({ admitted: false, events: [], reconcile: false });
 
 /** This gate runs before the existing event reducer and its sequence/clock.
@@ -52,7 +54,7 @@ export class GenesisAdmission {
   }
   begin(attempt: number, expectedIdentity: GenesisIdentity | null = null): boolean {
     if (!this.context || !finite(attempt) || this.pending || expectedIdentity && !sameGenesisIdentity(expectedIdentity, this.identity)) return false;
-    this.pending = { attempt, expectedIdentity, events: [], bytes: 0, unknown: false };
+    this.pending = { attempt, expectedIdentity, events: [], bytes: 0, unknown: false, evidence: new Map() };
     return true;
   }
   uncertain(attempt: number): void {
@@ -65,7 +67,13 @@ export class GenesisAdmission {
     const source = this.pending && !this.pending.expectedIdentity ? this.context : this.eventContext ?? this.context;
     if (!value || !finite(value.attempt) || !sameGenesisContext(source, value) || !validIdentity(value.identity) || !value.event || !finite(value.event.seq)) return refused();
     if (this.pending?.attempt === value.attempt) {
-      if (this.pending.unknown) return { ...refused(), reconcile: true };
+      if (this.pending.expectedIdentity && !sameGenesisIdentity(this.pending.expectedIdentity, value.identity)) return refused();
+      const key = JSON.stringify([value.identity.activation,value.identity.token,value.identity.sessionId,value.identity.originDigest,value.identity.initiatingAttempt]);
+      const previous = this.pending.evidence.get(key) ?? 0;
+      const fresh = value.event.seq > previous;
+      const bounded = this.pending.evidence.has(key) || this.pending.evidence.size < GENESIS_EARLY_EVENT_LIMIT;
+      if (fresh && bounded) this.pending.evidence.set(key, value.event.seq);
+      if (this.pending.unknown) return fresh && bounded ? { ...refused(), reconcile: true, newEvidence: true } : refused();
       // UTF-8 bytes, not UTF-16 units, bound the retained wire payload.
       const bytes = new TextEncoder().encode(JSON.stringify(value)).byteLength;
       if (this.pending.events.length >= GENESIS_EARLY_EVENT_LIMIT || this.pending.bytes + bytes > GENESIS_EARLY_BYTE_LIMIT) {

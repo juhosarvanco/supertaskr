@@ -17,7 +17,7 @@ import {loadConfiguredGateConfiguration} from "../scripts/gate-run.mjs";
 import {privateRecordFixture,fixtureProjectSettings} from "./private-record-fixture";
 import {reviewed,writeVerdict,git} from "./qualified-delivery-fixture";
 import {publishQualifiedDelivery,observeQualifiedPublication} from "../scripts/qualified-publication-operation.mjs";
-import {publicationLaunchAlive} from "../scripts/qualified-publication-process.mjs";
+import {publicationLaunchAlive,publicationPushArguments,publicationPushParameters,assertPublicationPushParameters} from "../scripts/qualified-publication-process.mjs";
 import {reconcileQualifiedDeliveryCi} from "../scripts/qualified-ci-operation.mjs";
 import {captureQualifiedCompletionProposal} from "../scripts/qualified-delivery-completion.mjs";
 import {completeQualifiedRecordsDelivery} from "../scripts/qualified-completion-operation.mjs";
@@ -25,6 +25,13 @@ import {completeQualifiedRecordsDelivery} from "../scripts/qualified-completion-
 // Real two-root finalized runs and owned check/push recovery exceed the
 // browser harness's 30s default; keep the existing focused acceptance budget.
 test.setTimeout(180_000);
+
+test("publication command configuration admits only the exact paired tracking exclusions",()=>{
+ const request={route:{publication:{destination:{name:"selected",ref:"refs/heads/main"},correlationRef:"refs/supertaskr/deliveries/original/publication"}}};
+ const exact="'remote.selected.fetch'='refs/heads/main:refs/heads/main' 'remote.selected.fetch'='refs/supertaskr/deliveries/original/publication:refs/supertaskr/deliveries/original/publication' 'remote.selected.fetch'='^refs/heads/main' 'remote.selected.fetch'='^refs/supertaskr/deliveries/original/publication'";
+ expect(publicationPushParameters(request)).toBe(exact);expect(assertPublicationPushParameters(request,exact)).toBe(true);
+ for(const changed of [undefined,exact.replace("^refs/heads/main","^refs/heads/other"),exact+" 'core.hooksPath'='/somewhere'",exact.split(" ").slice(1).join(" ")])expect(()=>assertPublicationPushParameters(request,changed)).toThrow(/QUALIFIED_PUBLICATION_CONFIGURATION_CHANGED/);
+});
 
 async function fixture(installHook=true,actualSuite=false){
  const installation=privateRecordFixture(),settings=parse(fixtureProjectSettings(installation));
@@ -90,6 +97,10 @@ test("an existing legacy local delivery cannot acquire publication selection aft
 });
 test("owned full publication runs actual configured checks and mandatory guards before exact atomic branch and correlation acceptance",async()=>{
  const f=await fixture(true,true);try{
+  // Both normal heads and the correlation namespace have declared tracking
+  // mappings. Publication must not change either, including on Git 2.56.
+  git(f.product,["config","--add","remote.publish-existing.fetch","+refs/supertaskr/*:refs/remotes/publish-existing/supertaskr/*"]);
+  const userConfig=readFileSync(path.join(f.product,".git/config"));
   const request=input(f,"actual-owned-publication");await executeQualifiedPublicationLocalDelivery(f.product,request,{tool:f.tool});
   const before=readAcceptedOperation(f.product,request.operationId),s=before.operation.request.route.publication,index=readFileSync(path.join(f.product,".git/index"));
   const configuration=loadConfiguredGateConfiguration({productRoot:f.product,productRevision:s.commit,tool:f.tool}),checker=createRecordChecker({profile:configuration.settings.records.validation,tool:f.tool});
@@ -104,6 +115,9 @@ test("owned full publication runs actual configured checks and mandatory guards 
    expect(git(f.receiver,["rev-parse",s.destination.ref])).toBe(s.destination.expectedOld);expect(git(f.receiver,["for-each-ref","--format=%(refname)",s.correlationRef])).toBe("");
    const harness=spawnSync(process.execPath,[s.hook.entry,"--root",f.product,"--mode","pre-tool"],{cwd:f.product,input:JSON.stringify({tool_name:"Bash",cwd:f.product,tool_input:{command:`git push publish-existing ${s.commit}:${s.destination.ref}`}}),encoding:"utf8"});
    expect(harness.status,harness.stderr).toBe(2);expect(harness.stderr).toContain("QUALIFIED_PUBLICATION_COMMAND_CHANGED");
+   for(const args of [publicationPushArguments(before.operation.request),["-c","remote.publish-existing.fetch=^refs/heads/other",...publicationPushArguments(before.operation.request)]]){
+    const unowned=spawnSync("git",args,{encoding:"utf8"});expect(unowned.status,unowned.stderr).not.toBe(0);expect(unowned.stderr).toMatch(/QUALIFIED_PUBLICATION_(?:LAUNCH_REQUIRED|PROCESS_UNKNOWN)/);
+   }
   }});expect(manualChecked).toBe(true);
   expect(result).toMatchObject({status:"published",ci:"pending",recordsCompletion:"pending",publication:{commit:s.commit,tree:s.tree,ref:s.destination.ref,previousRevision:s.destination.expectedOld,correlationRef:s.correlationRef,attribution:"exact"}});
   expect(git(f.receiver,["rev-parse",s.destination.ref])).toBe(s.commit);expect(git(f.receiver,["rev-parse",s.correlationRef])).toBe(s.commit);
@@ -111,6 +125,9 @@ test("owned full publication runs actual configured checks and mandatory guards 
   const row=readAcceptedOperation(f.product,request.operationId);expect(validOperationRecord(row)).toBe(true);expect(row.operation.publication.phase).toBe("published");expect(row.operation.publication.launches.map((l:any)=>l.stage)).toEqual(["checks","push"]);expect(row.operation.publication.launches.every((l:any)=>l.result.kind==="exited"&&l.result.exit===0)).toBe(true);
   expect(JSON.stringify(row.operation.request)).toBe(JSON.stringify(before.operation.request));expect(row.state).toBe("unknown");expect(row.operation.claims.every((c:any)=>c.releasedAt===null)).toBe(true);
   expect(git(f.product,["for-each-ref","--format=%(refname) %(objectname)"])).toBe(refs);expect(git(f.records,["for-each-ref","--format=%(refname) %(objectname)"])).toBe(rrefs);expect(readFileSync(path.join(f.product,".git/index"))).toEqual(index);
+  expect(readFileSync(path.join(f.product,".git/config"))).toEqual(userConfig);
+  const ended=spawnSync(process.execPath,[s.hook.entry,"--root",f.product,"--mode","pre-push","--",s.destination.url,s.destination.url],{cwd:f.product,env:{...process.env,GIT_CONFIG_PARAMETERS:publicationPushParameters(before.operation.request)},input:`${s.commit} ${s.commit} ${s.destination.ref} ${s.destination.expectedOld}\n${s.commit} ${s.commit} ${s.correlationRef} ${"0".repeat(40)}\n`,encoding:"utf8"});
+  expect(ended.status,ended.stderr).not.toBe(0);expect(ended.stderr).toMatch(/QUALIFIED_PUBLICATION_(?:LAUNCH_REQUIRED|PROCESS_UNKNOWN)/);expect(git(f.product,["for-each-ref","--format=%(refname) %(objectname)"])).toBe(refs);
   git(f.product,["remote","set-url","publish-existing",f.other]);expect(await publishQualifiedDelivery(f.product,request.operationId,{tool:null})).toEqual(result);expect(readFileSync(path.join(f.product,".supertaskr/publication-suite-count"),"utf8")).toBe("1");
  }finally{f.cleanup();}
 });

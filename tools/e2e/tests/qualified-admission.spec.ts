@@ -40,6 +40,7 @@ function fixture(colocated = false, format: "sha1" | "sha256" = "sha1", recordsF
   const product = path.join(dir, "product"), records = colocated ? product : path.join(dir, "records");
   for (const root of new Set([product, records])) {
     mkdirSync(root); git(root, ["init", "-q", "--initial-branch=main", `--object-format=${root === product ? format : recordsFormat}`]);
+    git(root,["config","user.name","Preflight fixture"]);git(root,["config","user.email","fixture@example.invalid"]);
     put(root, "src/file", "product input\n"); put(root, "rules/file", "records input\n");
     commit(root);
   }

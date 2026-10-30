@@ -6,7 +6,7 @@ import { privateRecordFixture, SOURCE, FIXTURE_ENV, sha } from "./private-record
 /** Actual source TOOL bytes in an isolated installed-layout ordinary fixture. */
 export function genesisFixture(omit?: string) {
   const base = privateRecordFixture(), dist = path.join(base.tool, "dist");
-  cpSync(path.join(SOURCE, "method"), path.join(dist, "method"), { recursive: true });
+  cpSync(path.join(SOURCE, "method"), path.join(dist, "method"), { recursive: true, filter: file => path.basename(file) !== ".DS_Store" });
   const files: { path: string; sha256: string }[] = [];
   const walk = (relative: string) => {
     for (const member of readdirSync(path.join(dist, relative), { withFileTypes: true })) {

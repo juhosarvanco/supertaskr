@@ -28,6 +28,7 @@ import { WORKSPACE_BINDING_REL_PATH } from "../scripts/workspace.mjs";
 // way for the arm.
 import * as parserPure from "../../../lib/parser/dist/pure.js";
 import { fixtureFor } from "../fixtures/test-project";
+import { installOfflinePackage } from "../fixtures/offline-package";
 import {
   ARCHITECTURE_VERBS,
   EXIT,
@@ -548,6 +549,20 @@ test("the docs gate sees the CLI package as a derived reader of docs/", () => {
   }
 });
 
+test("offline package installation refuses a missing runtime dependency declaration before provisioning", () => {
+  const root = mkdtempSync(path.join(tmpdir(), "supertaskr-undeclared-pack-"));
+  const source = path.join(root, "source"), project = path.join(root, "project"), packed = path.join(root, "packed");
+  for (const directory of [source, project, packed]) mkdirSync(directory);
+  try {
+    writeFileSync(path.join(source, "package.json"), JSON.stringify({ name: "supertaskr", version: "0.0.0" }));
+    const result = JSON.parse(execFileSync("npm", ["pack", "--offline", "--ignore-scripts", "--json", "--pack-destination", packed], { cwd: source, encoding: "utf8" }));
+    const before = readdirSync(packed);
+    expect(() => installOfflinePackage({ packageTarball: path.join(packed, result[0].filename), packDirectory: packed, project })).toThrow("offline-fixture-yaml-declaration-required");
+    expect(readdirSync(packed)).toEqual(before);
+    expect(readdirSync(project)).toEqual([]);
+  } finally { removeGitFixture(root, "offline undeclared package"); }
+});
+
 test("npx supertaskr runs out of an isolated standalone tarball with no checkout or dependency fallback", () => {
   test.setTimeout(300_000);
   const project = scratchProject();
@@ -556,14 +571,19 @@ test("npx supertaskr runs out of an isolated standalone tarball with no checkout
   try {
     writeFileSync(path.join(project, "package.json"), JSON.stringify({ name: "a-genesis-project", version: "0.0.0", private: true }));
     const cliRoot = path.join(repoRoot, "cli");
+    const finderMetadata = path.join(repoRoot, "method", ".DS_Store"), metadata = Buffer.from([0xff, 0x00, 0xfe]);
+    expect(existsSync(finderMetadata)).toBe(false);
+    writeFileSync(finderMetadata, metadata);
     const packed = JSON.parse(execFileSync("npm", ["pack", "--json", "--pack-destination", packDir], { cwd: cliRoot, encoding: "utf8", env }));
+    expect(readFileSync(finderMetadata)).toEqual(metadata);
     expect(packed[0].name).toBe("supertaskr");
     expect(packed[0].files.some((f: { path: string }) => f.path.includes(".claude/") || f.path.startsWith("docs/") || f.path.includes(".supertaskr/"))).toBe(false);
-    execFileSync("npm", ["install", "--no-audit", "--no-fund", "--offline", path.join(packDir, packed[0].filename)], { cwd: project, encoding: "utf8", env });
+    installOfflinePackage({ packageTarball: path.join(packDir, packed[0].filename), packDirectory: packDir, project, env });
     const installed = path.join(project, "node_modules", "supertaskr");
     const manifest = JSON.parse(readFileSync(path.join(installed, "package.json"), "utf8"));
     expect(manifest.name).toBe("supertaskr"); expect(manifest).not.toHaveProperty("private");
     expect(manifest.version).toBe(JSON.parse(readFileSync(path.join(cliRoot, "package.json"), "utf8")).version);
+    expect(manifest.dependencies).toEqual(JSON.parse(readFileSync(path.join(cliRoot, "package.json"), "utf8")).dependencies);
     expect(realpathSync(installed).startsWith(realpathSync(project) + path.sep)).toBe(true);
     expect(realpathSync(installed).startsWith(realpathSync(repoRoot) + path.sep)).toBe(false);
     const bin = path.join(project, "node_modules", ".bin", "supertaskr");
@@ -581,6 +601,8 @@ test("npx supertaskr runs out of an isolated standalone tarball with no checkout
     expect(existsSync(path.join(installed, "dist/lib/parser/dist/pure.js"))).toBe(true);
     expect(existsSync(path.join(installed, "dist/method/runtime/process-schema.yaml"))).toBe(true);
     const tool = JSON.parse(readFileSync(path.join(installed, "dist/tool-manifest.json"), "utf8"));
+    expect(tool.method.files.some((file: {path:string}) => path.basename(file.path) === ".DS_Store")).toBe(false);
+    expect(packed[0].files.some((file: {path:string}) => path.basename(file.path) === ".DS_Store")).toBe(false);
     expect(tool.version).toBe(2); expect(tool.package).toEqual({ name: manifest.name, version: manifest.version,
       sha256: createHash("sha256").update(readFileSync(path.join(installed, "package.json"))).digest("hex"),
       entrySha256: createHash("sha256").update(readFileSync(path.join(installed, "supertaskr.mjs"))).digest("hex") });

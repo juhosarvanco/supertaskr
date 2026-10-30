@@ -43,7 +43,7 @@ export function readConfiguredLaneIntent(file) {
   catch { refuse("configured-brief-lane-intent", "Lane intent must be readable UTF-8 JSON"); }
 }
 /** @param {any} intent @param {any} capsule @param {any} scope */
-function proposedLanes(intent, capsule, scope) {
+export function proposedLanes(intent, capsule, scope) {
   if (!shape(intent, ["version", "taskId", "lanes"]) || intent.version !== 1 || intent.taskId !== capsule.task.id || !Array.isArray(intent.lanes) || !intent.lanes.length) refuse("configured-brief-lane-intent", "Lane intent must name this exact task and its explicit writer destinations");
   const roles = [...new Set(scope.paths.map((/** @type {any} */ entry) => entry.role))].sort();
   if (intent.lanes.map((/** @type {any} */ row) => row?.role).sort().join("\0") !== roles.join("\0")) refuse("configured-brief-lane-intent", "Lane destinations must match the original qualified writer roles exactly");

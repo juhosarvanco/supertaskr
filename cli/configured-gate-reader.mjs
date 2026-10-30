@@ -5,10 +5,12 @@ import { realpathSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validGateContext } from "./gate-token.mjs";
-import {auditHookGitContext} from "./hook-git-context.mjs";
+import {auditHookGitContext,captureOwnedPublicationHookEnvironment} from "./hook-git-context.mjs";
 
 const POLICY_ENTRY = fileURLToPath(new URL("../tools/e2e/scripts/gate-policy.mjs", import.meta.url));
 const PUBLICATION_ENTRY = fileURLToPath(new URL("../tools/e2e/scripts/qualified-publication-hook.mjs", import.meta.url));
+/** @param {string} root @param {string} cwd @param {"pre-tool"|"pre-push"} mode */
+function auditConfiguredHookContext(root,cwd,mode){return auditHookGitContext(root,cwd,mode,captureOwnedPublicationHookEnvironment(root,cwd,mode));}
 /** @param {string} root */
 export function configuredHeadRevision(root) {
   const result = spawnSync("git", ["-C", root, "rev-parse", "--verify", "HEAD^{commit}"], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
@@ -47,7 +49,7 @@ export function createConfiguredGateReader(options) {
   /** @param {string} cwd @returns {{status:"refused",code:string,detail:string}|{status:"outside"}|{status:"selected",root:string}} */
   function scope(cwd) {
     try {
-      const audited=auditHookGitContext(expected,cwd,"pre-push");if(audited.status==="outside")return {status:"outside"};
+      const audited=auditConfiguredHookContext(expected,cwd,"pre-push");if(audited.status==="outside")return {status:"outside"};
       const env=audited.env;
       const root = realpathSync(expected), top = gitPath(root, ["--show-toplevel"],env), common = gitPath(root, ["--path-format=absolute", "--git-common-dir"],env), gitDir = gitPath(root, ["--absolute-git-dir"],env);
       if (top !== root) return refused("hook-product-root-invalid", "The bound PRODUCT must be the exact Git worktree root");
@@ -77,7 +79,7 @@ export function createConfiguredGateReader(options) {
     if (selected.status !== "selected" || selected.root !== root) return selected.status === "refused" ? selected : refused("hook-product-outside", "This token does not belong to the bound PRODUCT family");
     try {
       const result = spawnSync(process.execPath, [POLICY_ENTRY, "--root", root, "--at", revision, ...(range === undefined ? [] : ["--range", range])], {
-        cwd: root, env:auditHookGitContext(expected,root,"pre-push").env, encoding: "utf8", timeout: 30_000, maxBuffer: 32 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"],
+        cwd: root, env:auditConfiguredHookContext(expected,root,"pre-push").env, encoding: "utf8", timeout: 30_000, maxBuffer: 32 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"],
       });
       if (result.error || result.signal) return refused("hook-gate-policy-unavailable", result.error?.message ?? "The fixed TOOL helper did not finish");
       const value = JSON.parse(result.stdout);
@@ -109,7 +111,7 @@ export function createConfiguredGateReader(options) {
    * @param {string} root @param {any} request */
   function publication(root,request){
     try{
-      const audited=auditHookGitContext(expected,root,request.mode);
+      const audited=auditConfiguredHookContext(expected,root,request.mode);
       if(audited.status!=="selected"||audited.root!==root)return {verdict:"block",code:"hook-product-outside",reason:"The publication reader has no selected PRODUCT"};
       const result=spawnSync(process.execPath,[PUBLICATION_ENTRY,"--root",root,"--mode",request.mode],{cwd:root,env:audited.env,input:JSON.stringify(request),encoding:"utf8",timeout:60_000,maxBuffer:1024*1024,stdio:["pipe","pipe","pipe"]});
       if(result.error||result.signal||result.status!==0)throw new Error("The fixed publication reader did not finish");

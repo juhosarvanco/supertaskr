@@ -95,7 +95,7 @@ export function parseGenesisBankProposal(input){
     proposal.expectedProductRevision!==context.productRevision||proposal.expectedRecordsRevision!==context.recordsRevision)refuse("genesis-bank-proposal-context");
  if(!Array.isArray(proposal.records)||proposal.records.length===0||proposal.records.length>512)refuse("genesis-bank-records");
  const seen=new Set();for(const file of proposal.records){
-  if(!shape(file,["path","sha256"])||typeof file.path!=="string"||!genesisBankRecordPath(proposal.stage,file.path)||!hex(file.sha256)||seen.has(file.path))refuse("genesis-bank-path");seen.add(file.path);
+  if((!shape(file,["path"])&&!shape(file,["path","sha256"]))||typeof file.path!=="string"||!genesisBankRecordPath(proposal.stage,file.path)||Object.hasOwn(file,"sha256")&&!hex(file.sha256)||seen.has(file.path))refuse("genesis-bank-path");seen.add(file.path);
  }
  const required=proposal.stage===0?["docs/STATE.md"]:[1,2,3,4,6].includes(proposal.stage)?["docs/STATE.md","docs/NORTH_STAR.md"]:
   proposal.stage===5?["docs/STATE.md","docs/CONVENTIONS.md","docs/decisions/001-stack.md"]:
@@ -122,9 +122,10 @@ export function captureGenesisBankProposal(input){
   if(!shape(file,["path","mode","bytes"])||!(file.bytes instanceof Uint8Array)||!["100644","100755"].includes(file.mode)||files.has(file.path))refuse("genesis-bank-file-set");
   total+=file.bytes.byteLength;if(total>GENESIS_BANK_CAPTURE_LIMIT)refuse("genesis-bank-capture-limit");
   const expected=proposal.records.find((/** @type {any} */ row)=>row.path===file.path);
-  if(!expected||hash(file.bytes)!==expected.sha256)refuse("genesis-bank-file-changed");
+  const observedHash=hash(file.bytes);
+  if(!expected||Object.hasOwn(expected,"sha256")&&observedHash!==expected.sha256)refuse("genesis-bank-file-changed");
   const source=text(file.bytes);if(source.includes("\0"))refuse("genesis-bank-text");assertGenesisPlannedTask(file.path,source);
-  files.set(file.path,{path:file.path,mode:file.mode,base64:Buffer.from(file.bytes).toString("base64"),sha256:expected.sha256});
+  files.set(file.path,{path:file.path,mode:file.mode,base64:Buffer.from(file.bytes).toString("base64"),sha256:observedHash});
  }
  const content={version:1,kind:"genesis-records-proposal",context:structuredClone(input.context),proposal,answers,
   records:[...files.values()].sort((a,b)=>a.path<b.path?-1:1),sourceBase64:Buffer.from(input.bytes).toString("base64"),sourceSha256:hash(input.bytes)};

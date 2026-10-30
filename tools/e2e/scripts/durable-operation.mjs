@@ -129,13 +129,16 @@ function request(input) {
 /** @param {string} coordinatorRoot @param {string} operationId */
 export function acceptedOperationPath(coordinatorRoot, operationId) { return recordPath(coordinatorRoot, `${operationWork(operationId)}-a1`); }
 /** Read a strict first-class record. A corrupt record never becomes a new save.
- * @param {string} coordinatorRoot @param {string} operationId @returns {any|null} */
-export function readAcceptedOperation(coordinatorRoot, operationId) {
+ * A backend kind filter rejects a foreign row before kind-specific Git reads.
+ * It grants no routing, admission or effect authority.
+ * @param {string} coordinatorRoot @param {string} operationId @param {"qualified-delivery"} [expectedKind] @returns {any|null} */
+export function readAcceptedOperation(coordinatorRoot, operationId, expectedKind) {
   const file = acceptedOperationPath(coordinatorRoot, operationId);
   if (!existsSync(file)) return null;
   try {
     if (!lstatSync(file).isFile() || lstatSync(file).isSymbolicLink()) refuse("OPERATION_RECORD");
     const rec = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(readFileSync(file)));
+    if(expectedKind!==undefined&&rec?.operation?.kind!==expectedKind)refuse("OPERATION_RECORD");
     if (!validOperationRecord(rec) || ["failed","stopped"].includes(rec.state) && readRef(rec.resource, `refs/supertaskr/operations/${operationWork(rec.operation.id).slice(3)}`) !== null) refuse("OPERATION_RECORD");
     return rec;
   } catch { refuse("OPERATION_RECORD"); }

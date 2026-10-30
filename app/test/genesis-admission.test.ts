@@ -44,6 +44,16 @@ describe("managed genesis admission before sequence/time", () => {
     expect(g.status(reply(30), 10)).toMatchObject({ admitted: true, reconcile: false, events: [] }); expect(g.awaiting).toBe(false);
     expect(g.event(event(1)).admitted).toBe(true);
   });
+  it("uncertain evidence is bounded per activation and never admits or poisons another activation's sequence",()=>{
+    const g=gate();g.begin(10);g.event(event(2));g.uncertain(10);
+    expect(g.event(event(2))).toMatchObject({admitted:false,reconcile:false});
+    const foreign={...identity,token:"unconfirmed-other"};expect(g.event(event(99999,10,foreign))).toMatchObject({admitted:false,reconcile:true,newEvidence:true});
+    expect(g.event(event(3))).toMatchObject({admitted:false,events:[],reconcile:true,newEvidence:true});
+    expect(g.identity).toBeNull();expect(g.event(event(3))).toMatchObject({admitted:false,reconcile:false});
+    expect(g.status(reply(30),10).admitted).toBe(true);expect(g.begin(20,identity)).toBe(true);g.uncertain(20);
+    expect(g.event(event(999999,20,foreign))).toMatchObject({admitted:false,reconcile:false});
+    expect(g.event(event(4,20))).toMatchObject({admitted:false,reconcile:true,newEvidence:true});
+  });
   it("count overflow and UTF8 byte overflow discard buffer and require actual scoped history", () => {
     const g = gate(); g.begin(10);
     for (let i = 0; i < GENESIS_EARLY_EVENT_LIMIT; i++) expect(g.event(event(i + 1)).reconcile).toBe(false);

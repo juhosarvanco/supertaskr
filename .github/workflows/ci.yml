@@ -249,6 +249,9 @@ jobs:
         env:
           CI_PUSH_BEFORE: ${{ github.event.before }}
           CI_PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          # The expanded integration suite exceeded a four-shard job's 40m
+          # bound. Use the existing splitter; preserve all owed specs and limits.
+          E2E_SHARD_COUNT: 8
         run: node tools/e2e/scripts/ci-owed.mjs
 
   # ── THE LINTS AND THE TWO CURRENCY GATES ───────────────────────────

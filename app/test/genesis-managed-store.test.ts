@@ -79,6 +79,33 @@ describe("actual store managed IPC composition",()=>{
     emit(a,original.attempt,native,{kind:"completed",seq:5,turn:1,text:"Recovered",truncatedRelay:false});
     release(response(original,native,{kind:"started",turn:1},3));await Promise.resolve();expect(store.getGenesisState()).toMatchObject({phase:"idle",seq:5,turns:[{text:"Recovered"}]});
   });
+  it("new matching terminal evidence renews an exhausted bounded status burst without admitting events or retrying effects",async()=>{
+    vi.useFakeTimers();let original:any;let ready=false;let pulls=0;
+    ipc.invoke.mockImplementation((command,{request})=>{
+      if(command==="genesis_start"){
+        original=request;emit(a,request.attempt,identity(request.attempt),{kind:"started",turn:1,seq:2});
+        return new Promise(()=>{});
+      }
+      if(command==="genesis_status"){
+        pulls++;const native=identity(original.attempt);
+        return Promise.resolve(response(request,ready?native:null,ready?{kind:"ready",value:{status:{...idle,turn:1},record:null,starting:false,eventAttempt:original.attempt,eventContext:a}}:{kind:"error",message:"genesis-selection-busy"},ready?5:3));
+      }
+      return Promise.resolve(response(request,null,{kind:"ready",value:[{turn:1,role:"planner",text:"Actual settled transcript",atMs:1}]},6));
+    });
+    const pending=store.startGenesis(store.getGenesisState().view);await vi.advanceTimersByTimeAsync(store.COMMAND_ANSWER_BOUND_MS);expect(await pending).toBeNull();
+    await vi.advanceTimersByTimeAsync(60_000);expect(pulls).toBe(120);expect(store.getGenesisState()).toMatchObject({preparing:true,seq:1,turns:[],lastEventAtMs:null});
+    const native=identity(original.attempt);
+    emit(b,original.attempt,native,{kind:"completed",seq:99999,turn:1,text:"Foreign scope",truncatedRelay:false});
+    emit(a,original.attempt+1,native,{kind:"completed",seq:99998,turn:1,text:"Foreign attempt",truncatedRelay:false});
+    emit(a,original.attempt,native,{kind:"started",seq:2,turn:1});
+    await vi.advanceTimersByTimeAsync(1_000);expect(pulls).toBe(120);expect(store.getGenesisState().seq).toBe(1);
+    ready=true;emit(a,original.attempt,native,{kind:"completed",seq:4,turn:1,text:"Not yet admitted",truncatedRelay:false});
+    expect(store.getGenesisState()).toMatchObject({preparing:true,seq:1,turns:[],lastEventAtMs:null});
+    // A duplicate cannot create a second renewal or become transcript authority.
+    emit(a,original.attempt,native,{kind:"completed",seq:4,turn:1,text:"Not yet admitted",truncatedRelay:false});
+    await vi.advanceTimersByTimeAsync(500);expect(pulls).toBe(121);expect(store.getGenesisState()).toMatchObject({preparing:false,phase:"idle",sending:false,seq:5,sessionId:"session-a",turns:[],rehydrated:[{text:"Actual settled transcript"}]});
+    await vi.advanceTimersByTimeAsync(60_000);expect(pulls).toBe(121);expect(ipc.invoke.mock.calls.filter(([command])=>command==="genesis_start")).toHaveLength(1);
+  });
   it("late transcript from retired A cannot populate B and does not move event sequence",async()=>{
     let release!:(value:unknown)=>void;let original:any;
     ipc.invoke.mockImplementationOnce((_command,{request})=>{original=request;return new Promise(resolve=>{release=resolve;});});

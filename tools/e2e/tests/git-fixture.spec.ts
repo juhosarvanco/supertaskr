@@ -251,6 +251,39 @@ function quietGitBody(body: ts.Node): boolean {
   });
 }
 
+/** A named factory must actually create and return its protected parent.
+ * The returned object may add fields, but cannot replace inherited cleanup.
+ */
+function inheritsFixtureCleanup(source: string, factoryName: string, parentName: string, parentModule: string): boolean {
+  if (!callsFixtureHelper(source, parentName, parentModule)) return false;
+  const tree = ts.createSourceFile("factory.ts", source, ts.ScriptTarget.Latest, true);
+  const factory = tree.statements.find(node => ts.isFunctionDeclaration(node) && node.name?.text === factoryName) as ts.FunctionDeclaration | undefined;
+  if (!factory?.body) return false;
+  let parentLocal: string | undefined;
+  for (const statement of tree.statements) {
+    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier) || statement.moduleSpecifier.text !== parentModule) continue;
+    const bindings = statement.importClause?.namedBindings;
+    if (bindings && ts.isNamedImports(bindings)) for (const binding of bindings.elements) if ((binding.propertyName ?? binding.name).text === parentName) parentLocal = binding.name.text;
+  }
+  const bases: string[] = [], returns: ts.Expression[] = [];
+  const visit = (node: ts.Node) => {
+    if (ts.isFunctionLike(node)) return;
+    if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer) {
+      const initializer = ts.isAwaitExpression(node.initializer) ? node.initializer.expression : node.initializer;
+      if (ts.isCallExpression(initializer) && ts.isIdentifier(initializer.expression) && initializer.expression.text === parentLocal) bases.push(node.name.text);
+    }
+    if (ts.isReturnStatement(node) && node.expression) returns.push(node.expression);
+    ts.forEachChild(node, visit);
+  };
+  visit(factory.body);
+  if (bases.length !== 1 || returns.length === 0) return false;
+  return returns.every(value => ts.isObjectLiteralExpression(value) && value.properties.length > 0 && value.properties.every((property, index) => {
+    if (index === 0) return ts.isSpreadAssignment(property) && ts.isIdentifier(property.expression) && property.expression.text === bases[0];
+    if (!ts.isPropertyAssignment(property) && !ts.isShorthandPropertyAssignment(property)) return false;
+    return (ts.isIdentifier(property.name) || ts.isStringLiteral(property.name)) && property.name.text !== "cleanup";
+  }));
+}
+
 test("every spec that commits into a fixture it removes carries the protection, and the census saying so is DERIVED", () => {
   // KILLED BY: dropping the config or the teardown from any spec in the
   // class, and by a NEW spec joining the class without either. This is
@@ -297,6 +330,27 @@ test("every spec that commits into a fixture it removes carries the protection, 
   expect(hasRawGitCall(imported + 'privateGit(root,["commit"]); execFileSync("git",["commit"]);')).toBe(true);
   expect(quietGitBody(ts.createSourceFile("mixed.ts", 'execFileSync("git",[...NO_BACKGROUND_MAINTENANCE,"commit"]);execFileSync("git",["commit"]);', ts.ScriptTarget.Latest, true))).toBe(false);
   expect(quietGitBody(ts.createSourceFile("comment.ts", '// ...NO_BACKGROUND_MAINTENANCE\nexecFileSync("git",["commit"]);', ts.ScriptTarget.Latest, true))).toBe(false);
+  const delegatedFactory = 'import {privateRecordFixture as parent} from "./private-record-fixture";export function fixture(){const base=parent();return {...base, extra:1};}';
+  expect(inheritsFixtureCleanup(delegatedFactory, "fixture", "privateRecordFixture", "./private-record-fixture")).toBe(true);
+  expect(inheritsFixtureCleanup(delegatedFactory.replace("function fixture", "async function fixture").replace("base=parent()", "base=await parent()"), "fixture", "privateRecordFixture", "./private-record-fixture")).toBe(true);
+  for (const changed of [
+    delegatedFactory.replace("extra:1", "cleanup:()=>{}"),
+    delegatedFactory.replace("extra:1", "...other"),
+    delegatedFactory.replace("extra:1", '["cleanup"]:()=>{}'),
+    delegatedFactory.replace("return {...base, extra:1}", "return {...other, extra:1}"),
+    delegatedFactory.replace("const base=parent()", "const base=unprotected()"),
+  ]) expect(inheritsFixtureCleanup(changed, "fixture", "privateRecordFixture", "./private-record-fixture")).toBe(false);
+  const inheritedFactories = [
+    { name: "genesisFixture", module: "./genesis-init-fixture", parent: "privateRecordFixture", parentModule: "./private-record-fixture" },
+    { name: "bankSchemaFixture", module: "./project-bank-fixture", parent: "genesisFixture", parentModule: "./genesis-init-fixture" },
+    { name: "completedGenesisFixture", module: "./genesis-completed-fixture", parent: "bankSchemaFixture", parentModule: "./project-bank-fixture" },
+    { name: "configuredVerificationFixture", module: "./configured-verification-fixture", parent: "privateRecordFixture", parentModule: "./private-record-fixture" },
+    { name: "configuredDeliveryFixture", module: "./configured-delivery-fixture", parent: "configuredVerificationFixture", parentModule: "./configured-verification-fixture" },
+  ];
+  for (const factory of inheritedFactories) {
+    const source = readFileSync(path.join(dir, factory.module + ".ts"), "utf8");
+    expect(inheritsFixtureCleanup(source, factory.name, factory.parent, factory.parentModule), `${factory.name} must return the actual protected parent without replacing cleanup`).toBe(true);
+  }
   expect(
     inClass.length,
     "the census is EMPTY, so every assertion below is vacuous — the walk found no " +
@@ -319,12 +373,7 @@ test("every spec that commits into a fixture it removes carries the protection, 
         `NO_BACKGROUND_MAINTENANCE into its git calls, so its commits detach a ` +
         `writer into the tree its teardown is about to walk (T-178)`,
     ).toBe(true);
-    const delegatedCleanup = source.includes(".cleanup()") && (callsFixtureHelper(source, "privateRecordFixture", "./private-record-fixture") || callsFixtureHelper(source, "genesisFixture", "./genesis-init-fixture"));
-    if (callsFixtureHelper(source, "genesisFixture", "./genesis-init-fixture")) {
-      const factory = readFileSync(path.join(dir, "genesis-init-fixture.ts"), "utf8");
-      expect(callsFixtureHelper(factory, "privateRecordFixture", "./private-record-fixture")).toBe(true);
-      expect(factory).toContain("return { ...base,"); expect(factory).not.toContain("cleanup:");
-    }
+    const delegatedCleanup = source.includes(".cleanup()") && (callsFixtureHelper(source, "privateRecordFixture", "./private-record-fixture") || inheritedFactories.some(factory => callsFixtureHelper(source, factory.name, factory.module)));
     expect(
       delegatedCleanup || source.includes("removeGitFixture("),
       `${file} commits into a fixture it removes and never CALLS ` +

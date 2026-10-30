@@ -5,11 +5,14 @@ use std::sync::{mpsc, Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use notify_debouncer_mini::{
-    new_debouncer, notify::RecursiveMode, DebounceEventResult, DebouncedEvent, Debouncer,
+    new_debouncer_opt, notify::RecursiveMode, DebounceEventResult, DebouncedEvent, Debouncer,
 };
 use serde::Serialize;
+#[cfg(test)]
+use notify_debouncer_mini::new_debouncer;
 
 mod observation;
+mod content_events;
 use observation::{ManagedSelection, SelectionGate, SharedSelection};
 pub use observation::{MessageScope, RecordsObservation, ScopedOutcome};
 
@@ -1793,7 +1796,8 @@ fn run_watcher(
     sink: impl Fn(&DocsSnapshot),
     architecture_sink: impl Fn(&ArchitectureChange),
 ) {
-    let mut debouncer = match new_debouncer(DEBOUNCE, move |res: DebounceEventResult| {
+    let config = notify_debouncer_mini::Config::default().with_timeout(DEBOUNCE);
+    let mut debouncer = match new_debouncer_opt::<_, content_events::ContentWatcher>(config, move |res: DebounceEventResult| {
         let _ = fs_tx.send(WatchCtl::Fs(res));
     }) {
         Ok(d) => d,
