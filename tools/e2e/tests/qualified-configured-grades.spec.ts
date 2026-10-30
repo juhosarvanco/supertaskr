@@ -55,10 +55,11 @@ test("actual RED stays failed and a byte-consistent contradictory reporter count
   expect(validQualifiedConfiguredGrade(contradictory,f.policy)).toBe(true);await expect(assertQualifiedConfiguredGrade(contradictory,f.policy,{tool:f.tool})).rejects.toMatchObject({code:"QUALIFIED_CONFIGURED_GRADE_OUTPUT_CHANGED"});
   // Deliberately data-only authority shape: no finalized source is claimed.
   const source={native:{qualified:{origins:{configuredDispatch:{gatePolicy:f.policy}}}}};
-  const authority={frozenAuthority:{preparation:{workers:[{role:"product",checkout:f.product}]}},roles:[{role:"product",implementationChanges:[{path:"checks/test_actual.py"}],outputChanges:[],candidateGrades:[green],actualOutputGrades:[red]}]};
+  const authority={frozenAuthority:{preparation:{workers:[{role:"product",checkout:f.product}]},review:{grades:[green],actualOutputGrades:[red]}},roles:[{role:"product",candidate:green.commit,actualOutput:{commit:red.commit,tree:red.tree},implementationChanges:[{path:"checks/test_actual.py"}],outputChanges:[],candidateGrades:[green],actualOutputGrades:[red]}]};
   expect(validQualifiedConfiguredAuthorityGrades(authority,source)).toBe(true);
   expect(validQualifiedConfiguredAuthorityGrades({...authority,roles:[{...authority.roles[0],actualOutputGrades:[{...red,configuredGate:undefined}]}]},source)).toBe(false);
-  expect(validQualifiedConfiguredAuthorityGrades({...authority,frozenAuthority:{preparation:{workers:[{role:"product",checkout:path.join(f.dir,"different-checkout")} ]}}},source)).toBe(false);
+  expect(validQualifiedConfiguredAuthorityGrades({...authority,roles:[{...authority.roles[0],candidate:red.commit}]},source)).toBe(false);
+  expect(validQualifiedConfiguredAuthorityGrades({...authority,frozenAuthority:{...authority.frozenAuthority,preparation:{workers:[{role:"product",checkout:path.join(f.dir,"different-checkout")} ]}}},source)).toBe(false);
   expect(validQualifiedConfiguredAuthorityGrades({roles:[{role:"product",implementationChanges:[],outputChanges:[],candidateGrades:[],actualOutputGrades:[]}]},source)).toBe(true);
  }finally{f.cleanup();}
 });

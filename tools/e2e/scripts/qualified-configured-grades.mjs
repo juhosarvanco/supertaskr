@@ -73,7 +73,10 @@ export function validQualifiedConfiguredAuthorityGrades(authority,source){
   if(!product||!Array.isArray(product.implementationChanges)||!Array.isArray(product.outputChanges))return false;
   if(!product.implementationChanges.length&&!product.outputChanges.length)return true;
   const workers=authority.frozenAuthority.preparation.workers.filter((/** @type {any} */ w)=>w.role==="product");
-  if(workers.length!==1)return false;
+  const review=authority.frozenAuthority.review;
+  if(workers.length!==1||!same(product.candidateGrades,review.grades.filter((/** @type {any} */ g)=>g.role==="product"))||
+   !same(product.actualOutputGrades,review.actualOutputGrades.filter((/** @type {any} */ g)=>g.role==="product"))||
+   product.candidateGrades[0]?.commit!==product.candidate||product.actualOutputGrades[0]?.commit!==product.actualOutput.commit||product.actualOutputGrades[0]?.tree!==product.actualOutput.tree)return false;
   return [product.candidateGrades,product.actualOutputGrades].every(rows=>Array.isArray(rows)&&rows.length===1&&rows.every(row=>
    validQualifiedConfiguredGrade(row,capsule.gatePolicy)&&row.configuredGate.candidate.productRoot===workers[0].checkout));
  }catch{return false;}
