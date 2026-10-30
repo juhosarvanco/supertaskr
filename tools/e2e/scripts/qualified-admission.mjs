@@ -128,7 +128,7 @@ function completeRecords(root, runs, native, taskId,ownOperation=null,ownDispatc
         if (!runs.TERMINAL_STATES.includes(rec.state) && !(ownOperation !== null && rec.operation.kind === "qualified-delivery" &&
             rec.attempt === ownOperation.attempt && rec.operation.digest === ownOperation.operation.digest &&
             consumers.qualifier.qualifiedContent(rec) === consumers.qualifier.qualifiedContent(ownOperation)) &&
-            !(ownDispatch !== null && rec.operation.kind === "configured-dispatch" && consumers.qualifier.qualifiedContent(rec) === consumers.qualifier.qualifiedContent(ownDispatch))) refuse("preflight-operation-pending");
+            !(ownDispatch !== null && ["configured-dispatch","configured-verifier"].includes(rec.operation.kind) && rec.operation.kind === ownDispatch.operation.kind && consumers.qualifier.qualifiedContent(rec) === consumers.qualifier.qualifiedContent(ownDispatch))) refuse("preflight-operation-pending");
         count += 1;
         continue;
       }
@@ -274,9 +274,11 @@ function captureAdmission(input, reconciled = false, resource = null, configured
     if (configured !== null && configuredPolicy === undefined) refuse("preflight-configured-context-not-loaded");
     const schema = configured === null ? null : /** @type {NonNullable<typeof configuredPolicy>} */ (configuredPolicy).configuredDispatchSchema(configured);
     const state = policy.grantState(canonical.authorityRoot, schema === null ? {} : { schemaText: schema.text });
-    if (ownContext !== null && (configured === null || configuredOperation === undefined)) refuse("preflight-configured-operation-not-loaded");
-    const ownDispatch = ownContext === null ? null : /** @type {NonNullable<typeof configuredOperation>} */ (configuredOperation).configuredArmOperationForAdmission(ownContext, canonical.authorityRoot, request,
-      /** @type {NonNullable<typeof configuredPolicy>} */ (configuredPolicy).verifyConfiguredDispatch(/** @type {object} */ (configured)));
+    if (ownContext !== null && (configured === null || configuredOperation === undefined || configuredVerifierOperation === undefined)) refuse("preflight-configured-operation-not-loaded");
+    const actualCapsule=ownContext===null?null:/** @type {NonNullable<typeof configuredPolicy>} */(configuredPolicy).verifyConfiguredDispatch(/** @type {object} */(configured));
+    const ownDispatch=ownContext===null?null:configuredVerifierOperation?.isConfiguredVerifierOperationContext(ownContext)?
+      configuredVerifierOperation.configuredVerifierOperationForAdmission(ownContext,canonical.authorityRoot,request,actualCapsule):
+      /** @type {NonNullable<typeof configuredOperation>} */(configuredOperation).configuredArmOperationForAdmission(ownContext,canonical.authorityRoot,request,actualCapsule);
     const records = completeRecords(canonical.authorityRoot, runs, native, request.taskId, null, ownDispatch);
     const ledger = policy.admissionLedger(records, runs.TERMINAL_STATES);
     const a = request.admission;
@@ -362,12 +364,18 @@ function decisiveAdmission(now, earlier) {
 let configuredPolicy;
 /** @type {typeof import("./configured-dispatch-context.mjs")|undefined} */
 let configuredOperation;
+/** @type {typeof import("./configured-verifier-context.mjs")|undefined} */
+let configuredVerifierOperation;
 /** @param {any} input @param {object} handle @param {object|null} [ownContext] */
 export async function configuredAdmissionPreflight(input, handle, ownContext = null) {
   if (!handle) refuse("preflight-configured-context-required");
   const request = normalizeAdmissionPreflight(input);
   await loadQualifiedDeliveryPolicy(); configuredPolicy ??= await import("./configured-dispatch.mjs");
-  if (ownContext !== null) configuredOperation ??= await import("./configured-dispatch-context.mjs");
+  if (ownContext !== null){
+    configuredPolicy.requireConfiguredOperationReaders(handle);
+    configuredOperation ??= await import("./configured-dispatch-context.mjs");
+    configuredVerifierOperation ??= await import("./configured-verifier-context.mjs");
+  }
   return captureAdmission(request, false, null, handle, ownContext);
 }
 /** Already preloaded, synchronous, and called inside the existing transaction.

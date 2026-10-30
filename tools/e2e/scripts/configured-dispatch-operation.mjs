@@ -6,7 +6,7 @@ import { existsSync, lstatSync, readdirSync, rmdirSync, realpathSync, readFileSy
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
-import { preparedConfiguredArmContext, configuredArmRepository } from "./configured-dispatch-arm.mjs";
+import { preparedConfiguredArmContext, configuredArmRepository, captureConfiguredLaneDestination } from "./configured-dispatch-arm.mjs";
 import { captureConfiguredDispatch, createConfiguredDispatchGateRunner } from "./configured-dispatch.mjs";
 import { captureCompletedGenesisForDispatch, captureOriginalCompletedGenesisForDispatch } from "./genesis-bank-plan.mjs";
 import { captureConfiguredArmOperationContext, captureConfiguredArmRecoveryContext } from "./configured-dispatch-context.mjs";
@@ -19,6 +19,7 @@ import { assertOperationOwnership, readReservation, takeReservation, releaseRese
 import { acceptedOperationPath, readAcceptedOperation, captureOperationRepository, operationOwnerAlive } from "./durable-operation.mjs";
 import { operationContent, operationDigest, operationWork, validOperationRecord } from "./operation-record.mjs";
 import { requireInstalledRuntimeAssets } from "./records-check.mjs";
+import { assertExternalParent } from "./qualified-external-path.mjs";
 import { captureExactWritePlan, prepareExactWriteTree, materializeExactWrites, releaseDeadExactWriteLock, assertExactRecordTransformations, safeOperationWorkingPath, snapshotRecordFile, intendedRecordFile } from "./record-write.mjs";
 
 /** @param {string} code @returns {never} */
@@ -29,13 +30,13 @@ const same=(a,b)=>operationContent(a)===operationContent(b);
 function git(root,args){try{return execFileSync("git",["--no-replace-objects","-C",root,...args],{encoding:"utf8",stdio:["ignore","pipe","pipe"],maxBuffer:32*1024*1024,env:{...process.env,GIT_NO_LAZY_FETCH:"1",GIT_OPTIONAL_LOCKS:"0"}}).replace(/\n$/,"");}catch{refuse("configured-arm-git");}}
 /** @param {any} request @param {any} tool */
 function original(request,tool){
- requireInstalledRuntimeAssets(tool,["configured-dispatch-operation","configured-dispatch-context","configured-dispatch-record","configured-dispatch-arm"].map(name=>`tools/e2e/scripts/${name}.mjs`));
+ requireInstalledRuntimeAssets(tool,["configured-dispatch-operation","configured-dispatch-context","configured-dispatch-record","configured-dispatch-arm","qualified-external-path"].map(name=>`tools/e2e/scripts/${name}.mjs`));
  for(const role of ["product","records"]){const repository=request.repositories[role];
   if(!same(configuredArmRepository(repository.root,request.selection.revisions[role],tool),repository)||git(repository.root,["rev-parse","HEAD"])!==request.selection.revisions[role]||git(repository.root,["symbolic-ref","HEAD"])!==request.targetRefs[role])refuse("configured-arm-original-changed");
  }
  if(git(request.selection.authorityRoot,["status","--porcelain=v1","--untracked-files=all"])!=="")refuse("configured-arm-product-dirty");
- for(const lane of request.lanes){const stat=lstatSync(lane.parent.path,{bigint:true});
-  if(realpathSync(lane.parent.path)!==lane.parent.path||!stat.isDirectory()||stat.isSymbolicLink()||String(stat.dev)!==lane.parent.device||String(stat.ino)!==lane.parent.inode||existsSync(lane.checkout)||git(request.repositories[lane.role].root,["for-each-ref","--format=%(refname)",lane.branch])!=="")refuse("configured-arm-lane-changed");
+ for(const lane of request.lanes){
+  if(!same(captureConfiguredLaneDestination(lane.checkout,Object.values(request.repositories).flatMap((/** @type {any} */ repo)=>repo.identities)),lane.parent)||git(request.repositories[lane.role].root,["for-each-ref","--format=%(refname)",lane.branch])!=="")refuse("configured-arm-lane-changed");
  }
  const plan=captureExactWritePlan(request.repositories.records.root,request.selection.revisions.records,request.stamp.writes);
  if(plan.tree!==request.stamp.tree||!same(plan.working.preimages,request.stamp.working.preimages)||plan.working.index.previousDigest!==request.stamp.working.index.previousDigest||plan.working.index.resultDigest!==request.stamp.working.index.resultDigest)refuse("configured-arm-original-working-changed");
@@ -123,6 +124,7 @@ function admissionInput(r,stamped=false){return {version:1,...r.selection,revisi
  * finite lane, brief and handoff producers. No caller policy callback.
  * @param {any} rec @param {any} tool @param {object} handle @param {object} context @param {any} [earlier] */
 function currentArm(rec,tool,handle,context,earlier=null){
+ requireInstalledRuntimeAssets(tool,["tools/e2e/scripts/qualified-external-path.mjs"]);
  const r=rec.operation.request,p=rec.operation.progress,root=rec.resource,input=admissionInput(r,true);
  if(p.handoff.stage==="ready")input.admission.boundary="child-start";
    if(r.baseline.kind==="initialized-code-empty"&&!same(captureOriginalCompletedGenesisForDispatch({productRoot:root,operationId:r.operationId,tool}),r.baseline))refuse("configured-arm-initial-baseline-changed");
@@ -137,8 +139,8 @@ function currentArm(rec,tool,handle,context,earlier=null){
    assertExactRecordTransformations(r.repositories.records.root,r.stamp.writes.map((/** @type {any} */ w)=>w.path));
    for(const write of r.stamp.writes)if(!same(snapshotRecordFile(safeOperationWorkingPath(r.repositories.records.root,write.path)),intendedRecordFile(write)))refuse("configured-arm-stamp-working-changed");
    for(let i=0;i<r.lanes.length;i++){
-    const lane=r.lanes[i],progress=p.lanes[i],stat=lstatSync(lane.parent.path,{bigint:true});
-    if(!stat.isDirectory()||stat.isSymbolicLink()||realpathSync(lane.parent.path)!==lane.parent.path||String(stat.dev)!==lane.parent.device||String(stat.ino)!==lane.parent.inode)refuse("configured-arm-parent-changed");
+    const lane=r.lanes[i],progress=p.lanes[i];
+    assertExternalParent(lane.parent,Object.values(r.repositories).flatMap((/** @type {any} */ repo)=>repo.identities));
     if(progress.stage==="created")measuredLane(r,lane,progress);
     else if(progress.stage==="creating")refuse("configured-arm-lane-create-unknown");
     else {
@@ -302,6 +304,9 @@ function measuredBrief(root,plan){
   return identity;
  }finally{closeSync(fd);}
 }
+/** Shared bounded literal runtime artifact mechanics; policy/paths remain at
+ * actual configured owners. No overwrite or permission is granted. */
+export {briefNamespace as configuredTextNamespace,measuredBrief as measureConfiguredTextArtifact};
 /** Actual retained brief fact only. No current grant, successor TOOL, worker
  * launch or native admission is inferred from this original file observation.
  * @param {string} root @param {string} operationId */

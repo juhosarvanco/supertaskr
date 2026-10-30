@@ -150,7 +150,11 @@ This is strict UTF-8 JSON: no duplicate or extra keys. Stage0 stamps the
 already initialized STATE and proposes the pre-Q1 continuation before
 asking Q1. It may use empty answerRefs. Stages1–8 use the actual driver
 references for the human confirmations or skips that support that bank.
-List every intended artifact from that stage, including STATE. The
+Updates and final approval notes still list the complete required stage
+set, including unchanged artifacts. Stage8 requires STATE, ARCHITECTURE,
+ROADMAP and at least one planned task. Preserve unchanged bytes and empty
+lifecycle fields; listing a file grants no additional editing authority.
+A STATE/ROADMAP-only final approval proposal cannot be banked. The
 backend alone derives INDEX; never list INDEX, runtime files, verdicts,
 completion evidence, source graphs or arbitrary PRODUCT paths.
 

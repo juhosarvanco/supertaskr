@@ -168,15 +168,18 @@ export function configuredArmStampIntent(request){return {commit:request.stamp.c
 /** One fixed coordinator runtime location, never a caller-provided brief path.
  * @param {any} request */
 export function configuredArmBriefPath(request){return path.join(request.selection.authorityRoot,".supertaskr","briefs",`${operationWork(request.operationId)}.md`);}
-/** @param {any} brief @param {any} request */
-function validOwnedBrief(brief,request){
- if(!shape(brief,["stage","path","text","sha256","identity"])||!["captured","written"].includes(brief.stage)||brief.path!==configuredArmBriefPath(request)||
+/** Shared literal runtime-artifact shape only; actual physical publication and
+ * owned-operation policy remain separate. @param {any} brief @param {string} expectedPath */
+export function validConfiguredTextArtifact(brief,expectedPath){
+ if(!shape(brief,["stage","path","text","sha256","identity"])||!["captured","written"].includes(brief.stage)||brief.path!==expectedPath||
   typeof brief.text!=="string"||!brief.text||Buffer.byteLength(brief.text)>4*1024*1024||brief.sha256!==hash(brief.text))return false;
  if(brief.stage==="captured")return brief.identity===null;
  const i=brief.identity;
  return shape(i,["path","device","inode","mode","byteLength","sha256"])&&i.path===brief.path&&[i.device,i.inode].every(v=>typeof v==="string"&&/^[0-9]{1,64}$/.test(v))&&
   i.mode===0o600&&i.byteLength===Buffer.byteLength(brief.text)&&i.sha256===brief.sha256;
 }
+/** @param {any} brief @param {any} request */
+function validOwnedBrief(brief,request){return validConfiguredTextArtifact(brief,configuredArmBriefPath(request));}
 /** Exact assignment data mapping only. It grants no start or own-OP context;
  * the live backend must parse it canonically and join actual retained facts.
  * @param {any} request @param {any} handoff */

@@ -9,7 +9,7 @@
 
 What this app does, one sentence per behaviour the e2e suite runs.
 
-Census: **1855 at least behaviours** — 1851 extracted sentences + 4 at least named-not-extracted (listed at the end) — across 130 spec files. Cross-check against the runner's own `Running N tests` header.
+Census: **1861 at least behaviours** — 1857 extracted sentences + 4 at least named-not-extracted (listed at the end) — across 133 spec files. Cross-check against the runner's own `Running N tests` header.
 
 ## accelerators
 
@@ -676,6 +676,14 @@ Census: **1855 at least behaviours** — 1851 extracted sentences + 4 at least n
 
 - installed external configured preparation seals the original TOOL verifier role and cold strict start consumes it
 - configured dispatch requires both actual native preparation owners even when omitted files remain present
+
+## configured-verifier-benches
+
+- actual configured verifier creates only its detached complete benches and retains the canonical phase-one preparation
+
+## configured-verifier-operation
+
+- actual verifier OP owns only its captured claims and opaque exact source context preserves current approval
 
 ## configured-verifier-plan
 
@@ -1542,6 +1550,7 @@ Census: **1855 at least behaviours** — 1851 extracted sentences + 4 at least n
 - ordinary TOOL validation requires its loaded rename-scan owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded project-bank-record owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded configured-dispatch-record owner even when the omitted file remains present
+- ordinary TOOL validation requires its loaded configured-verifier-record owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded genesis-bank-proposal owner even when the omitted file remains present
 - ordinary TOOL validation requires its loaded genesis-proposal owner even when the omitted file remains present
 - ordinary TOOL validation requires the actually imported hook routing audit when its omitted file remains present
@@ -1753,6 +1762,11 @@ Census: **1855 at least behaviours** — 1851 extracted sentences + 4 at least n
 - delivery authority captures actual final whole-output facts and real changed roots without filesystem effects
 - delivery authority refuses legacy-finished, changed collected candidates and foreign actual-output grade links
 - delivery authority retains real accepted RED output and every correction as owed rather than grading a future corrected integration
+
+## qualified-external-path
+
+- external parent observation walks actual repository and Git-store ancestor identities without creating a namespace
+- a replaced external parent does not satisfy the original captured directory
 
 ## qualified-github-ci
 
@@ -2043,6 +2057,7 @@ Census: **1855 at least behaviours** — 1851 extracted sentences + 4 at least n
 - a synchronous repository observation returns detached facts and cannot retain caller mutations
 - the uncached exit audit refuses a newly active hook before an observation can return
 - effect and observation modes remain distinct and failed generic captures create no allowance
+- strict facts may serve a read-only observation while the exit audit remains strict
 - async nested and exceptional reads leave no open repository observation
 - cached reads still immediately refuse inherited Git routing
 - repository metadata keeps exact linked-worktree paths containing a newline

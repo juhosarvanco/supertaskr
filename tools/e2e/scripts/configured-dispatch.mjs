@@ -229,6 +229,13 @@ export function configuredDispatchBriefContext(handle) {
 export function configuredDispatchSchema(handle) {
   verifyConfiguredDispatch(handle); return data(/** @type {NonNullable<ReturnType<typeof captured.get>>} */ (captured.get(handle)).schema);
 }
+/** Fixed context readers only, before any lazy own-operation discriminator
+ * executes. Neither wire data nor retained metadata selects a module path.
+ * @param {object} handle */
+export function requireConfiguredOperationReaders(handle){
+  verifyConfiguredDispatch(handle);const state=/** @type {NonNullable<ReturnType<typeof captured.get>>} */(captured.get(handle));
+  requireInstalledRuntimeAssets(state.tool,["configured-dispatch-context","configured-dispatch-record","configured-verifier-context","configured-verifier-record"].map(name=>`tools/e2e/scripts/${name}.mjs`));
+}
 /** Fixed original verifier role; the caller selects no path or role bytes.
  * @param {object} handle */
 export function configuredDispatchVerifierRole(handle) {

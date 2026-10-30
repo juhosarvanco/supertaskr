@@ -14,6 +14,8 @@ test("actual captured dispatch OP retains real metadata claims and only its opaq
   const before=()=>[f.product,f.records].map(root=>({head:privateGit(root,["rev-parse","HEAD"]),refs:privateGit(root,["show-ref"]),index:readFileSync(path.join(root,".git/index")).toString("base64")}));
   const original=before();
   await expect(owner.beginConfiguredArmOperation(structuredClone(proposal),{tool:f.tool})).rejects.toMatchObject({code:"configured-arm-plan-required"});
+  symlinkSync(path.join(f.dir,"absent-foreign-destination"),data.lanes[0].checkout);
+  await expect(owner.beginConfiguredArmOperation(proposal,{tool:f.tool})).rejects.toMatchObject({code:"configured-arm-destination-exists"});expect(lstatSync(data.lanes[0].checkout).isSymbolicLink()).toBe(true);expect(durable.readAcceptedOperation(f.product,f.request.operationId)).toBeNull();expect(before()).toEqual(original);rmSync(data.lanes[0].checkout);
   const started=await owner.beginConfiguredArmOperation(proposal,{tool:f.tool}),rec=durable.readAcceptedOperation(f.product,f.request.operationId);
   expect(started.started).toBe(false);expect(rec.operation.kind).toBe("configured-dispatch");expect(schema.validConfiguredDispatchRecord(rec)).toBe(true);expect(runs.validOperationRecord(rec)).toBe(true);
   expect(rec.operation.progress).toMatchObject({baseline:{stage:"captured",capture:null},stamp:{stage:"captured",intent:null,acceptance:null},handoff:{stage:"held",source:null,native:null}});

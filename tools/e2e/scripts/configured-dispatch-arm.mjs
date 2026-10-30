@@ -3,7 +3,7 @@
  * will consume this exact handle; no grade/program/policy comes from a caller. */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { lstatSync, realpathSync } from "node:fs";
+import { lstatSync } from "node:fs";
 import path from "node:path";
 import { parseTaskFile, selectTaskSchedule, extractFrontmatter, compareQualifiedFences } from "../../../lib/parser/dist/pure.js";
 import { captureCurrentConfiguredDispatchViewSelection, verifyConfiguredDispatchViewSelection } from "./configured-dispatch-view.mjs";
@@ -23,6 +23,7 @@ import { captureExactCommitPlan, assertExactRecordTransformations } from "./reco
 import { captureCompletedGenesisForDispatch } from "./genesis-bank-plan.mjs";
 import { validConfiguredArmRequest, validConfiguredArmExecution } from "./configured-dispatch-record.mjs";
 import { nextAttemptId, readQualifiedReservations, allRecords, TERMINAL_STATES } from "./run-record.mjs";
+import { captureExternalParent } from "./qualified-external-path.mjs";
 
 const plans = new WeakMap();
 export class ConfiguredArmFinding extends Error {
@@ -44,18 +45,13 @@ function git(root, args) {
   catch { refuse("configured-arm-git"); }
 }
 /** Plain parent identity for one exact new destination, preserving path bytes.
- * @param {string} file */
-function absentDestination(file) {
+ * @param {string} file @param {{path:string,device:string,inode:string}[]} excludedDirectories */
+function absentDestination(file,excludedDirectories) {
   const parent = path.dirname(file);
-  let stat;
-  try {
-    if (realpathSync(parent) !== parent) refuse("configured-arm-parent");
-    stat = lstatSync(parent, { bigint: true });
-    if (!stat.isDirectory() || stat.isSymbolicLink()) refuse("configured-arm-parent");
-  } catch { refuse("configured-arm-parent"); }
+  const observed = captureExternalParent(parent,excludedDirectories);
   try { lstatSync(file); refuse("configured-arm-destination-exists"); }
   catch (error) { if (/** @type {any} */ (error).code !== "ENOENT") throw error; }
-  return { path: parent, device: String(stat.dev), inode: String(stat.ino) };
+  return observed;
 }
 /** Shared measured absent destination, not a lane creation permission. */
 export { absentDestination as captureConfiguredLaneDestination };
@@ -106,7 +102,7 @@ export async function captureConfiguredArmPlan(productRoot, request, configurati
   if (request.execution !== undefined && !validConfiguredArmExecution(request.execution)) refuse("configured-arm-execution");
   const execution = request.execution === undefined ? null : { ...request.execution };
   const tool = configuration.tool;
-  requireInstalledRuntimeAssets(tool, ["configured-dispatch-arm", "configured-dispatch-record", "configured-dispatch", "configured-dispatch-brief", "qualified-native", "qualified-admission", "record-write", "genesis-bank-plan"]
+  requireInstalledRuntimeAssets(tool, ["configured-dispatch-arm", "configured-dispatch-record", "configured-dispatch", "configured-dispatch-brief", "qualified-native", "qualified-admission", "record-write", "genesis-bank-plan", "qualified-external-path"]
     .map(name => `tools/e2e/scripts/${name}.mjs`));
   const selected = captureCurrentConfiguredDispatchViewSelection(productRoot);
   if (typeof selected.projectId !== "string") refuse("configured-arm-project-identity");
@@ -121,7 +117,7 @@ export async function captureConfiguredArmPlan(productRoot, request, configurati
   const lanes = proposedLanes(laneIntent, capsule, context.scope).map((/** @type {any} */ lane) => {
     const repositoryRoot = lane.role === "product" ? root : capsule.receipt.recordsRoot;
     if (git(repositoryRoot, ["for-each-ref", "--format=%(refname)", lane.branch]) !== "") refuse("configured-arm-branch-exists");
-    return { role: lane.role, checkout: lane.checkout, branch: lane.branch, base: lane.base, parent: absentDestination(lane.checkout) };
+    return { role: lane.role, checkout: lane.checkout, branch: lane.branch, base: lane.base, parent: absentDestination(lane.checkout,Object.values(capsule.origins).flatMap((/** @type {any} */ repo)=>repo.identities)) };
   });
   const claims = await readQualifiedReservations(root);
   if (claims.some(claim => compareQualifiedFences(context.scope, claim.scope.fence, context.scope.repositories).verdict !== "disjoint") || allRecords(root).some(rec => rec.assignment.kind === "card" && !rec.native?.qualified && (!TERMINAL_STATES.includes(rec.state) || rec.reservation.releasedAt === null))) refuse("configured-arm-writer-held");
@@ -164,7 +160,7 @@ export async function captureConfiguredArmPlan(productRoot, request, configurati
   const finalAdmission = await configuredAdmissionPreflight(admissionRequest, handle);
   if (!finalAdmission.permitted || !same(finalAdmission.grant, admission.grant) || !same(finalAdmission.receipt, admission.receipt)) refuse("configured-arm-approval-changed");
   for (const lane of lanes) {
-    if (!same(absentDestination(lane.checkout), lane.parent) || git(lane.role === "product" ? root : repositories.records.root, ["for-each-ref", "--format=%(refname)", lane.branch]) !== "") refuse("configured-arm-lane-changed");
+    if (!same(absentDestination(lane.checkout,Object.values(repositories).flatMap(repo=>repo.identities)), lane.parent) || git(lane.role === "product" ? root : repositories.records.root, ["for-each-ref", "--format=%(refname)", lane.branch]) !== "") refuse("configured-arm-lane-changed");
   }
   if ((await readQualifiedReservations(root)).some(claim => compareQualifiedFences(context.scope, claim.scope.fence, context.scope.repositories).verdict !== "disjoint")) refuse("configured-arm-writer-held");
   verifyConfiguredDispatch(handle); verifyConfiguredDispatchViewSelection(selected); verifyInstalledRecordTool(tool);

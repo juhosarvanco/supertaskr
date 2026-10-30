@@ -41,6 +41,24 @@ test("effect and observation modes remain distinct and failed generic captures c
  }finally{f.cleanup();}
 });
 
+test("strict facts may serve a read-only observation while the exit audit remains strict",()=>{
+ const f=privateRecordFixture();try{
+  const base=privateGit(f.product,["rev-parse","HEAD"]),original=captureOperationRepository(f.product,base),hook=path.join(f.product,".git/hooks/pre-push");
+  expect(withOperationRepositoryObservation(()=>{
+   captureOperationRepository(f.product,base);
+   const read=captureOperationRepository(f.product,base,{forEffect:false});read.identities[0]!.inode="caller-copy";
+   return captureOperationRepository(f.product,base,{forEffect:false});
+  })).toEqual(original);
+  let observed=false;
+  expect(()=>withOperationRepositoryObservation(()=>{
+   captureOperationRepository(f.product,base);
+   writeFileSync(hook,"#!/bin/sh\nexit 0\n",{mode:0o700});chmodSync(hook,0o700);
+   expect(captureOperationRepository(f.product,base,{forEffect:false})).toEqual(original);observed=true;
+  })).toThrow("OPERATION_ACTIVE_HOOK");
+  expect(observed).toBe(true);expect(existsSync(hook)).toBe(true);
+ }finally{f.cleanup();}
+});
+
 test("async nested and exceptional reads leave no open repository observation",()=>{
  const f=privateRecordFixture();try{
   const base=privateGit(f.product,["rev-parse","HEAD"]),original=captureOperationRepository(f.product,base);let invoked=false;

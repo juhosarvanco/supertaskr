@@ -6,6 +6,7 @@ import {validProjectBankRecord} from "./project-bank-record.mjs";
 import {validProjectInitializationRecord} from "./project-init-record.mjs";
 import {validQualifiedDeliveryRecord} from "./qualified-delivery-record.mjs";
 import {validConfiguredDispatchRecord} from "./configured-dispatch-record.mjs";
+import {validConfiguredVerifierRecord} from "./configured-verifier-record.mjs";
 import {validPrivateBackupRecord} from "./private-backup-record.mjs";
 
 /** @param {any} value @returns {string} */
@@ -55,6 +56,7 @@ export function validOperationRecord(rec) {
   if(rec?.operation?.kind === "project-init") return validProjectInitializationRecord(rec);
   if(rec?.operation?.kind === "qualified-delivery") return validQualifiedDeliveryRecord(rec);
   if(rec?.operation?.kind === "configured-dispatch") return validConfiguredDispatchRecord(rec);
+  if(rec?.operation?.kind === "configured-verifier") return validConfiguredVerifierRecord(rec);
   if(rec?.operation?.kind === "private-backup") return validPrivateBackupRecord(rec);
   if (!shape(rec, ["version", "recordKind", "attempt", "state", "assignment", "assignmentDigest", "writer", "resource",
     "reservation", "execution", "admission", "operation", "events"]) || rec.version !== 1 || rec.recordKind !== "operation" ||

@@ -29,7 +29,7 @@ const same=(a,b)=>operationContent(a)===operationContent(b);
 function git(root,args){try{return execFileSync("git",["--no-replace-objects","-C",root,...args],{encoding:"utf8",maxBuffer:32*1024*1024,stdio:["ignore","pipe","pipe"],env:{...process.env,GIT_NO_LAZY_FETCH:"1",GIT_OPTIONAL_LOCKS:"0"}}).replace(/\n$/,"");}catch{refuse("configured-verifier-git");}}
 /** The actual new producer and canonical dependencies must belong to TOOL.
  * @param {any} tool */
-function verifyTool(tool){requireInstalledRuntimeAssets(tool,["configured-verifier-plan","configured-verifier-record","qualified-verification","configured-dispatch","configured-dispatch-arm","qualified-admission","qualified-native","qualified-reservation","run-record","durable-operation"].map(name=>`tools/e2e/scripts/${name}.mjs`));}
+function verifyTool(tool){requireInstalledRuntimeAssets(tool,["configured-verifier-plan","configured-verifier-record","qualified-verification","configured-dispatch","configured-dispatch-arm","qualified-admission","qualified-native","qualified-reservation","run-record","durable-operation","qualified-external-path"].map(name=>`tools/e2e/scripts/${name}.mjs`));}
 /** @param {string} root @param {any} capsule @param {any} tool */
 function currentCut(root,capsule,tool){
  const homes={product:root,records:capsule.receipt.recordsRoot};
@@ -41,6 +41,8 @@ function currentCut(root,capsule,tool){
  }
  return {revisions,repositories,refs};
 }
+/** Same backend current-cut owner for the later operation context. */
+export {currentCut as configuredVerifierCurrentCut};
 /** @param {string} productRoot @param {{operationId:string,executorAttempt:string,native:{sessionId:string,coordinatorTurnId:string},execution:{effort:string,deadline:string,budget:string},benches:{role:string,checkout:string}[]}} selectors @param {{tool:any}} configuration */
 export async function captureConfiguredVerifierPlan(productRoot,selectors,configuration){
  if(!shape(configuration,["tool"])||!shape(selectors,["operationId","executorAttempt","native","execution","benches"])||typeof selectors.operationId!=="string"||!/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(selectors.operationId)||
@@ -56,7 +58,8 @@ export async function captureConfiguredVerifierPlan(productRoot,selectors,config
  const role=configuredDispatchNativeRole(handle,"verifier"),current=currentCut(root,capsule,tool);
  const declared=[...chosen.benches].sort((a,b)=>a.role.localeCompare(b.role));
  if(!same(declared.map(row=>row.role),executor.requiredBenchRoles))refuse("configured-verifier-complete-benches");
- const benches=declared.map(row=>({role:row.role,checkout:row.checkout,base:capsule.selection.revisions[row.role],candidate:executor.candidates[row.role],parent:captureConfiguredLaneDestination(row.checkout)}));
+ const excluded=Object.values(capsule.origins).flatMap((/** @type {any} */ repo)=>repo.identities);
+ const benches=declared.map(row=>({role:row.role,checkout:row.checkout,base:capsule.selection.revisions[row.role],candidate:executor.candidates[row.role],parent:captureConfiguredLaneDestination(row.checkout,excluded)}));
  const input={version:1,...capsule.selection,roles:executor.request.workers.map((/** @type {any} */ row)=>row.role),admission:{boundary:"child-start",role:"verifier",kind:"explicit",parent:"",evidence:"",scope:"product-change",attempt:null}};
  const admission=await configuredAdmissionPreflight(input,handle);if(!admission.permitted)refuse(admission.refusals[0]?.code??"configured-verifier-current-refusal");
  const request=data({version:1,kind:"configured-verifier",operationId:chosen.operationId,taskId:capsule.task.id,tool,capsule,executor,current,benches,role,execution:chosen.execution,
@@ -64,7 +67,7 @@ export async function captureConfiguredVerifierPlan(productRoot,selectors,config
   expectedAttempt:nextAttemptId(root,capsule.task.id),artifacts:configuredVerifierArtifactPaths(root,chosen.operationId),admission:{grant:admission.grant,receipt:admission.receipt}});
  const problem=configuredVerifierRequestProblem(request);if(problem!==null)refuse(`configured-verifier-request-contract-${problem}`);
  if(!same(await readQualifiedVerifierInputs(root,chosen.executorAttempt),executor)||!same(verifyConfiguredDispatch(handle),capsule)||!same(currentCut(root,capsule,tool),current))refuse("configured-verifier-source-changed");
- for(const bench of benches)if(!same(captureConfiguredLaneDestination(bench.checkout),bench.parent))refuse("configured-verifier-destination-changed");
+ for(const bench of benches)if(!same(captureConfiguredLaneDestination(bench.checkout,excluded),bench.parent))refuse("configured-verifier-destination-changed");
  const again=await configuredAdmissionPreflight(input,handle);if(!again.permitted||!same(again.grant,admission.grant)||!same(again.receipt,admission.receipt))refuse("configured-verifier-current-refusal");
  verifyTool(tool);const proposal=Object.freeze({version:1,kind:"configured-verifier-plan",operationId:request.operationId,request,authority:"readonly plan; no bench/preparation/seal/native permission"});plans.set(proposal,{root,request,selectors:chosen,tool});return proposal;
 }

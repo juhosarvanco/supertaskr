@@ -48,14 +48,17 @@ test("configured lane constructor freezes original private stamp, exact absent d
 test("arm planning requires its actual installed producer member and refuses unapproved contract drift before any private or lane effect",async()=>{
   test.setTimeout(240_000);const f=await fixture();
   try{
-    const manifestPath=path.join(f.installed.runtimeRoot,"tool-manifest.json"),original=readFileSync(manifestPath,"utf8"),manifest=JSON.parse(original),member="tools/e2e/scripts/configured-dispatch-arm.mjs";
-    const {createHash}=await import("node:crypto");manifest.runtime.files=manifest.runtime.files.filter((row:any)=>row.path!==member);
-    manifest.runtime.buildHash=createHash("sha256").update(JSON.stringify(manifest.runtime.files)).digest("hex");
-    try{
-      putPrivate(f.installed.runtimeRoot,"tool-manifest.json",JSON.stringify(manifest));expect(existsSync(path.join(f.installed.runtimeRoot,member))).toBe(true);
-      const omitted=f.checks.loadInstalledRecordTool();
-      await expect(f.arm.captureConfiguredArmPlan(f.product,f.request,{tool:omitted})).rejects.toMatchObject({code:"records-tool-runtime-member-required"});
-    }finally{putPrivate(f.installed.runtimeRoot,"tool-manifest.json",original);}
+    const manifestPath=path.join(f.installed.runtimeRoot,"tool-manifest.json"),original=readFileSync(manifestPath,"utf8");
+    const {createHash}=await import("node:crypto");
+    for(const member of ["configured-dispatch-arm","qualified-external-path"].map(name=>`tools/e2e/scripts/${name}.mjs`)){
+      const manifest=JSON.parse(original);manifest.runtime.files=manifest.runtime.files.filter((row:any)=>row.path!==member);
+      manifest.runtime.buildHash=createHash("sha256").update(JSON.stringify(manifest.runtime.files)).digest("hex");
+      try{
+        putPrivate(f.installed.runtimeRoot,"tool-manifest.json",JSON.stringify(manifest));expect(existsSync(path.join(f.installed.runtimeRoot,member))).toBe(true);
+        const omitted=f.checks.loadInstalledRecordTool();
+        await expect(f.arm.captureConfiguredArmPlan(f.product,f.request,{tool:omitted})).rejects.toMatchObject({code:"records-tool-runtime-member-required"});
+      }finally{putPrivate(f.installed.runtimeRoot,"tool-manifest.json",original);}
+    }
     const restored=f.checks.loadInstalledRecordTool(),proposal=await f.arm.captureConfiguredArmPlan(f.product,f.request,{tool:restored});
     expect(f.arm.configuredArmPlanData(proposal).taskId).toBe("T-900");
     const old=readFileSync(path.join(f.records,f.cardPath),"utf8");

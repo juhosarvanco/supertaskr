@@ -31,7 +31,9 @@ test("configured verifier constructor derives complete actual finalized source a
   }finally{putPrivate(f.installed.runtimeRoot,"tool-manifest.json",manifestBytes);}
   expect((await owner.preparedConfiguredVerifierContext(proposal,f.toolHandle)).request).toEqual(data);
   expect(snapshot()).toEqual(before);expect(readFileSync(sourceFile)).toEqual(source);expect(durable.readAcceptedOperation(f.product,selectors.operationId)).toBeNull();for(const bench of data.benches)expect(existsSync(bench.checkout)).toBe(false);for(const file of Object.values(data.artifacts))expect(existsSync(file as string)).toBe(false);
-  await f.review.prepareQualifiedVerification(f.product,{attempt:f.attempt,assignment:f.verifier,candidate:JSON.stringify(f.candidates)});
+  const prepared=await f.review.prepareQualifiedVerification(f.product,{attempt:f.attempt,assignment:f.verifier,candidate:JSON.stringify(f.candidates)}),preparedBytes=readFileSync(sourceFile);
+  const observed=await f.review.captureQualifiedVerifierPreparation(f.product,{executorAttempt:f.attempt,assignment:f.verifier});expect(observed).toEqual({authority:prepared.preparation.authority,digest:prepared.preparation.digest});expect(readFileSync(sourceFile)).toEqual(preparedBytes);
+  const changed=structuredClone(f.verifier);changed.qualified.workers[0].candidate="0".repeat(40);await expect(f.review.captureQualifiedVerifierPreparation(f.product,{executorAttempt:f.attempt,assignment:changed})).rejects.toMatchObject({code:"QUALIFIED_REVIEW_CANDIDATE_SET"});expect(readFileSync(sourceFile)).toEqual(preparedBytes);
   await expect(owner.captureConfiguredVerifierPlan(f.product,selectors,{tool:f.toolHandle})).rejects.toMatchObject({code:"configured-verifier-existing-preparation"});
  }finally{f.cleanup();}
 });

@@ -62,7 +62,11 @@ export function captureOperationRepository(repositoryRoot, base, options = {}) {
   if(scope===null)return captureRepository(repositoryRoot,base,options);
   checkOperationEnvironment();
   const forEffect=options.forEffect!==false,key=JSON.stringify([repositoryRoot,base,forEffect]);
-  const prior=scope.entries.get(key);if(prior!==undefined)return structuredClone(prior.value);
+  // An identical strict generic capture can also supply read-only facts. The
+  // exit audit stays strict; a read-only capture can never supply an effect
+  // capture, and separately qualified hook captures never enter this cache.
+  const prior=scope.entries.get(key)??(!forEffect?scope.entries.get(JSON.stringify([repositoryRoot,base,true])):undefined);
+  if(prior!==undefined)return structuredClone(prior.value);
   if(scope.entries.size>=256)refuse("OPERATION_OBSERVATION_LIMIT");
   const value=captureRepository(repositoryRoot,base,{forEffect});
   scope.entries.set(key,{root:repositoryRoot,base,forEffect,value:structuredClone(value)});
