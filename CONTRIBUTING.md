@@ -9,7 +9,8 @@ the e2e runner owns a separate port through `SUPERTASKR_E2E_PORT`.
 ## Build & test
 
 Build lib/parser first, then install app and tools/e2e. Node 22.18 or later,
-the Rust toolchain and platform Tauri prerequisites are required. The e2e
+the Rust toolchain and platform Tauri prerequisites are required. Native tests exercise installed services through finite helpers in tools/e2e,
+so install its dependencies before running cargo test. The e2e
 package is an independent test harness. The standalone distributable lives
 under cli; no registry publication is part of contribution checks.
 

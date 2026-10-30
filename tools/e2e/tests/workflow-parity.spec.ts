@@ -308,7 +308,7 @@ type Correspondence =
 
 /**
  * Every expected run step, in the order ci.yml runs them (plan §7: token
- * lint → parser → app → cargo test → cargo audit → e2e → xvfb boot).
+ * lint → parser → app → e2e dependency install → cargo test → cargo audit → e2e → xvfb boot).
  * ORDER is a fact about the one CI job, so it lives here; the command
  * STRINGS are read out of CONVENTIONS.
  */
@@ -347,6 +347,8 @@ const CI_SEQUENCE: Correspondence[] = [
   { kind: "verbatim", dir: "app", cmd: "npm ci" },
   { kind: "verbatim", dir: "app", cmd: "npm run build" },
   { kind: "verbatim", dir: "app", cmd: "npm test" },
+  // Native installed-service controls import the finite e2e fixture helpers.
+  { kind: "verbatim", dir: "tools/e2e", cmd: "npm ci" },
   { kind: "verbatim", dir: "app/src-tauri", cmd: "cargo test" },
   {
     kind: "ci-only",
@@ -362,7 +364,6 @@ const CI_SEQUENCE: Correspondence[] = [
       "binary is the happy path. A dev tool, never a repo dep (T-009-s3).",
   },
   { kind: "verbatim", dir: "app/src-tauri", cmd: "cargo audit" },
-  { kind: "verbatim", dir: "tools/e2e", cmd: "npm ci" },
   // THE DOCS GATE (T-090), immediately after tools/e2e's install — the
   // earliest slot its own dependency allows. It CANNOT hold the token
   // lint's bare-checkout position: `token-scan.mjs` is zero-dependency

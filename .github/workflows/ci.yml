@@ -504,6 +504,13 @@ jobs:
       - name: app build
         working-directory: app
         run: npm run build
+      # Native installed-service controls import these finite fixture helpers.
+      - name: e2e install
+        working-directory: tools/e2e
+        run: npm ci
+      - name: disk after the e2e install
+        run: |
+          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
       - name: cargo suite (both workspace crates; incl. the T-018 sentinel live tests)
         if: needs.owed.outputs.run-rust == 'true'
         working-directory: app/src-tauri
@@ -524,12 +531,6 @@ jobs:
         if: needs.owed.outputs.run-rust == 'true'
         working-directory: app/src-tauri
         run: cargo audit
-      - name: e2e install
-        working-directory: tools/e2e
-        run: npm ci
-      - name: disk after the e2e install
-        run: |
-          df -Pk / | awk 'NR==2 { print "free on /: " $4 " KiB" }'
       # ---- xvfb tauri boot (LAST — the cargo cache above warms it) -----
       # WEBKIT_DISABLE_DMABUF_RENDERER: known webkit2gtk-in-headless-CI
       # rendering workaround; the check asserts startup lines, not pixels.
