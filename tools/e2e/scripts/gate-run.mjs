@@ -1085,7 +1085,7 @@ function assertConfiguredGateOrigin(configuration) {
 export function loadConfiguredGateConfiguration(options) {
   if (!options || Object.keys(options).some((key) => !["productRoot", "productRevision", "tool"].includes(key))) configuredFinding("gate-configuration-request", "Only PRODUCT root/revision and constructor TOOL context are accepted");
   const tool = options.tool ?? loadInstalledRecordTool();
-  requireInstalledRuntimeAssets(tool, ["tools/e2e/scripts/gate-run.mjs", "tools/e2e/scripts/gate-policy.mjs", "tools/e2e/scripts/source-ci-contract.mjs", "tools/e2e/scripts/durable-operation.mjs", "cli/gate-token.mjs", "cli/is-main.mjs"]);
+  requireInstalledRuntimeAssets(tool, ["tools/e2e/scripts/gate-run.mjs", "tools/e2e/scripts/source-suite-derivation.mjs", "tools/e2e/scripts/gate-policy.mjs", "tools/e2e/scripts/source-ci-contract.mjs", "tools/e2e/scripts/durable-operation.mjs", "cli/gate-token.mjs", "cli/is-main.mjs"]);
   const original = captureOperationRepository(options.productRoot, options.productRevision, { forEffect: false });
   const loaded = loadProjectSettings({ productRoot: options.productRoot, productRevision: options.productRevision, tool });
   if (loaded.status !== "ready") configuredFinding(loaded.code, loaded.diagnostics.join("; "));
