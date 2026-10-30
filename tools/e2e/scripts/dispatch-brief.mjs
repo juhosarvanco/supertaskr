@@ -3779,6 +3779,59 @@ function hostName() {
   return name === "" ? "unknown-host" : name;
 }
 
+/** Shared row assembly frame. Callers read rows with contractRows from their
+ * actual normative METHOD source, and provide program-owned derivers. This is
+ * pure presentation and confers no assignment, admission or effect authority.
+ * Missing and orphaned labels are both reported; no positional fallback.
+ * @param {{rows:ContractRow[],contract:ContractSource,roleRel:string,
+ * derivers:Map<string,(row:ContractRow)=>Rec[]>,provenance:(via:string)=>Prov,findings:string[]}} input
+ */
+export function assembleContractRowSet(input) {
+  const { rows, contract, roleRel: ownRel, derivers, provenance, findings } = input;
+  const substituted = contract.own ? [] : roleSpecificRows(contract.md);
+  /** @type {Rec[]} */ const recs = [];
+  for (const row of rows) {
+    recs.push(value(`ROW ${row.n} — ${row.label}`, provenance(`${contract.rel} contract row ${row.n}`)));
+    recs.push(
+      value(`  assembled from: ${row.source}`, provenance(`${contract.rel} row ${row.n}, column three`)),
+    );
+    if (substituted.includes(row.n)) {
+      recs.push(
+        value(
+          `  role-specific: this row is read against ${ownRel}, and every "this role file" in the ` +
+            "source above means that file",
+          provenance(`${contract.rel}, its ${JSON.stringify(ROLE_SPECIFIC_PHRASE)} sentence`),
+        ),
+      );
+    }
+    const deriver = derivers.get(row.key);
+    if (deriver === undefined) {
+      recs.push(
+        value(
+          `  NOT DERIVED — assemble this row by hand from the source above`,
+          provenance(`${contract.rel} row ${row.n}`),
+        ),
+      );
+      findings.push(
+        `contract row ${row.n} (${row.label}) has no deriver, so this command cannot assemble ` +
+          `the whole brief. Its source is: ${row.source}`,
+      );
+      recs.push(blank());
+      continue;
+    }
+    for (const rec of deriver(row)) {
+      recs.push(rec.kind === "value" ? value(`  ${rec.text}`, rec.prov) : rec);
+    }
+    recs.push(blank());
+  }
+  const labels = new Set(rows.map(row => row.key));
+  const orphaned = [...derivers.keys()].filter(key => !labels.has(key)).map(key =>
+    `this command derives a row labelled ${JSON.stringify(key)} and the contract table no ` +
+      "longer carries it — a deriver with no row is a second row set, which is the defect the " +
+      "row set is read for.");
+  return { recs, orphaned };
+}
+
 /**
  * ARM ONE — the brief's rows, each derived from the source its own row
  * names. The row set comes off the role file; this function binds
@@ -3814,40 +3867,10 @@ export function assembleBrief(ctx) {
     );
   }
   recs.push(blank());
-  for (const row of rows) {
-    recs.push(value(`ROW ${row.n} — ${row.label}`, tree(ctx, `${contract.rel} contract row ${row.n}`)));
-    recs.push(
-      value(`  assembled from: ${row.source}`, tree(ctx, `${contract.rel} row ${row.n}, column three`)),
-    );
-    if (substituted.includes(row.n)) {
-      recs.push(
-        value(
-          `  role-specific: this row is read against ${ownRel}, and every "this role file" in the ` +
-            "source above means that file",
-          tree(ctx, `${contract.rel}, its ${JSON.stringify(ROLE_SPECIFIC_PHRASE)} sentence`),
-        ),
-      );
-    }
-    const deriver = DERIVERS.get(row.key);
-    if (deriver === undefined) {
-      recs.push(
-        value(
-          `  NOT DERIVED — assemble this row by hand from the source above`,
-          tree(ctx, `${contract.rel} row ${row.n}`),
-        ),
-      );
-      ctx.findings.push(
-        `contract row ${row.n} (${row.label}) has no deriver, so this command cannot assemble ` +
-          `the whole brief. Its source is: ${row.source}`,
-      );
-      recs.push(blank());
-      continue;
-    }
-    for (const rec of deriver(ctx, row)) {
-      recs.push(rec.kind === "value" ? value(`  ${rec.text}`, rec.prov) : rec);
-    }
-    recs.push(blank());
-  }
+  const assembled = assembleContractRowSet({ rows, contract, roleRel: ownRel,
+    derivers: new Map([...DERIVERS].map(([key, derive]) => [key, row => derive(ctx, row)])),
+    provenance: via => tree(ctx, via), findings: ctx.findings });
+  recs.push(...assembled.recs);
   // THE PACK, AFTER THE ROWS AND OUTSIDE THEM (T-254). The contract table
   // is normative and a fourteenth row is a method version bump; the pack
   // is what the rows' own sources add up to for THIS card, so it sits
@@ -3858,15 +3881,7 @@ export function assembleBrief(ctx) {
   // row is a method version bump, while what the project's loop is SET
   // to is a fact about the project rather than a row of the contract.
   for (const rec of processRecs(ctx)) recs.push(rec);
-  const labels = new Set(rows.map((r) => r.key));
-  for (const key of DERIVERS.keys()) {
-    if (labels.has(key)) continue;
-    ctx.findings.push(
-      `this command derives a row labelled ${JSON.stringify(key)} and the contract table no ` +
-        "longer carries it — a deriver with no row is a second row set, which is the defect the " +
-        "row set is read for.",
-    );
-  }
+  ctx.findings.push(...assembled.orphaned);
   return { recs, findings: ctx.findings, rows };
 }
 
