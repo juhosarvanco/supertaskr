@@ -180,6 +180,14 @@ export function configuredDispatchEffectContext(handle, assignment) {
   const capsule = verifyConfiguredDispatch(handle), state = /** @type {NonNullable<ReturnType<typeof captured.get>>} */ (captured.get(handle));
   return data({ capsule, role: rolePolicy(capsule, assignment), verification: tierPolicy(state, capsule), schema: { text: state.schema.text, sha256: state.schema.sha256 } });
 }
+/** Original committed scope/guard/tier observations for a dispatch view.
+ * No native vehicle, lane or permission is selected by this read.
+ * @param {object} handle */
+export function configuredDispatchViewContext(handle) {
+  const capsule = verifyConfiguredDispatch(handle), state = /** @type {NonNullable<ReturnType<typeof captured.get>>} */ (captured.get(handle));
+  const verification = tierPolicy(state, capsule), paths = state.fence.paths.filter((/** @type {any} */ entry) => entry.role === "product").map((/** @type {any} */ entry) => entry.domain);
+  return data({ capsule, scope: state.fence, verification, guards: paths.length ? /** @type {NonNullable<typeof state.runtime>} */ (state.runtime).classify(paths) : [] });
+}
 /** Fixed read-only helpers use this verified METHOD datum, never a schema path
  * supplied by record metadata. @param {object} handle */
 export function configuredDispatchSchema(handle) {

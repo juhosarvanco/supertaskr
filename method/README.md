@@ -16,7 +16,7 @@ resumes from disk. Any model that can read files can participate.
 ## The layers
 
 1. **Convention** (this package) — works by hand with any model, no tooling
-2. **CLI** — project setup, configured admission/run lifecycle and product checks. Independent projects use `supertaskr dispatch`; the installed command contract and its explicit limits are in public reference chapter 05. Source next/brief/arm forms remain compatibility adapters.
+2. **CLI** — project setup, configured dispatch view/admission/run lifecycle and product checks. Independent projects start with `supertaskr dispatch --view`; the installed command contract and its explicit limits are in public reference chapter 05. Source next/brief/arm forms remain compatibility adapters.
 3. **Daemon** — file watcher + @mention routing for rooms
 4. **Dashboard** — story map, architecture map, rooms, sessions — all rendered from files
 

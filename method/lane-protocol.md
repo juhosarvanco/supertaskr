@@ -3,11 +3,12 @@
 A lane is the isolated place one task gets built. One task, one branch,
 one worktree, one session — and the integration branch is none of them.
 
-The installed independent-project entry is `supertaskr dispatch`: configured
-approval preflight, qualified native start and the retained run lifecycle.
+The installed independent-project entry is `supertaskr dispatch`: start with
+`--view` for the committed selected board and verified METHOD, then use
+configured approval preflight, qualified native start and the retained lifecycle.
 Public reference chapter 05 owns its supported forms and explicit limits.
-Generic next/brief/lane creation and generic XS keeper ownership remain
-required adapters; source checkout command forms describe legacy
+The full generic brief, automatic lane creation and generic XS keeper ownership
+remain required adapters; source checkout command forms describe legacy
 compatibility. These lane rules continue to constrain the supported route.
 
 **The names below are placeholders.** A project spells them once, in its

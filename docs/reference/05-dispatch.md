@@ -8,10 +8,30 @@ the installed TOOL. It preserves the original product/records revisions,
 card overrides, configured models, vehicles, process and suite policy.
 
 ```
+supertaskr dispatch --root <PRODUCT> --view
+supertaskr dispatch --root <PRODUCT> --view --task T-N --full
 supertaskr dispatch --root <PRODUCT> --admission-preflight <request.json>
 supertaskr dispatch --root <PRODUCT> --run start --assignment <assignment.json>
 supertaskr dispatch --root <PRODUCT> --run bind --attempt <attempt> --session <native-id>
 ```
+
+The first view captures the current exact committed PRODUCT and selected
+RECORDS cuts through the delivered binding, checks both cuts and origins
+again before returning, and prints them. Dirty editor bytes cannot replace
+those committed inputs. An optional `--view <selection.json>` reproduces
+explicit original cuts; the file carries `authorityRoot`, `projectId`,
+`revisions: { product, records }` and explicit `legacyTokenMap`.
+
+The view derives scheduling, missing blockers, pending room questions,
+qualified scope, configured guard classes/tier, roles and process from
+their canonical readers. Current acquired sets and approval/pause are
+separate live observations. A fresh project with no grant says awaiting
+approval. Unknown legacy writer scope and unavailable configuration refuse;
+no missing input becomes an empty green. Verified installed METHOD openings
+are carried by default; `--full` carries their full words with whitespace
+normalized. The view writes no lane, reservation, grant or product artifact.
+Completed cards are counted as board history, shown individually with `--full`
+or an explicit task selector, and never re-admitted against current models or tiers.
 
 Start prepares the existing qualified reservation and run record. The native
 launcher then supplies the real child identity; `started: false` remains
@@ -30,8 +50,9 @@ understated tiers and unavailable generic XS keeper ownership cannot start.
 The source compatibility commands next, brief, card, preflight, fence, seat,
 arm, push-check, undo and merge refuse configured or explicitly bound project
 contexts at the installed front. The sections below describe that legacy
-source adapter. Generic next/brief/lane creation remains a required adapter;
-the configured lifecycle above does not establish the full project loop.
+source adapter. The installed view replaces the legacy first-view spelling.
+Automatic lane creation and the full generic brief remain required adapters;
+the configured view/lifecycle does not establish the full project loop.
 
 ## Legacy source adapter
 

@@ -12,6 +12,7 @@ import { readAssignment, readRecord, runPlan, startConfiguredRun, VERB_DIALS } f
 
 const BRIEF_ENTRY = fileURLToPath(new URL("./brief.mjs", import.meta.url));
 const USAGE = ["supertaskr dispatch [--root <PRODUCT>] --run <operation> <run flags>",
+  "  --view [selection.json] [--task T-N] [--full] reads the committed selected board and installed METHOD",
   "  --run start --assignment <file> uses exact committed PRODUCT/RECORDS/TOOL",
   "  --admission-preflight <file> reads the same configured context without effects",
   ...Object.entries(VERB_DIALS).map(([verb, flags]) => `  --run ${verb} flags: ${flags.map(flag => `--${flag}`).join(" ")}`),
@@ -26,25 +27,35 @@ function commandTool() {
 /** Same canonical lifecycle dials, strict finite tokenization. Parsing never
  * adds a program/policy path or guesses a missing selector. @param {string[]} argv */
 function parse(argv) {
-  const known = new Set(["root", "run", "admission-preflight", ...Object.values(VERB_DIALS).flat()]);
+  const known = new Set(["root", "run", "view", "task", "full", "admission-preflight", ...Object.values(VERB_DIALS).flat()]);
   /** @type {Record<string,string>} */ const options = {};
-  let replace = false;
+  let replace = false, full = false;
   for (let i = 0; i < argv.length; i++) {
     const token = argv[i];
     if (!token?.startsWith("--") || !known.has(token.slice(2))) refuse("configured-dispatch-action-unsupported", "This action is not supported by the configured dispatch entry");
     const key = token.slice(2);
     if (key === "replace") { if (replace) refuse("configured-dispatch-usage", "Duplicate --replace"); replace = true; continue; }
+    if (key === "full") { if (full) refuse("configured-dispatch-usage", "Duplicate --full"); full = true; continue; }
     if (Object.hasOwn(options, key)) refuse("configured-dispatch-usage", `Duplicate --${key}`);
+    if (key === "view" && (argv[i + 1] === undefined || argv[i + 1]?.startsWith("--"))) { options.view = ""; continue; }
     const value = argv[++i]; if (value === undefined || value.startsWith("--")) refuse("configured-dispatch-usage", `--${key} requires one value`);
     options[key] = value;
   }
-  return { options, replace };
+  return { options, replace, full };
 }
 /** @param {string[]} argv */
 export async function main(argv) {
   if (argv.length === 1 && ["--help", "-h"].includes(/** @type {string} */ (argv[0]))) { process.stdout.write(USAGE + "\n"); return 0; }
   try {
-    const { options, replace } = parse(argv), root = realpathSync(options.root ?? process.cwd());
+    const { options, replace, full } = parse(argv), root = realpathSync(options.root ?? process.cwd());
+    if (options.view !== undefined) {
+      if (replace || Object.keys(options).some(key => !["root", "view", "task"].includes(key))) refuse("configured-dispatch-usage", "View accepts only --root, optional selection file, --task and --full");
+      const tool = commandTool(), view = await import("./configured-dispatch-view.mjs");
+      const selected = options.view === "" ? view.captureCurrentConfiguredDispatchViewSelection(root) : view.readConfiguredDispatchViewSelection(options.view, root);
+      const result = await view.configuredDispatchView(selected, { tool, ...(options.task === undefined ? {} : { taskId: options.task }), full });
+      process.stdout.write(result.text); return result.code;
+    }
+    if (full || options.task !== undefined) refuse("configured-dispatch-usage", "--task and --full require --view");
     if (options["admission-preflight"] !== undefined) {
       if (replace || Object.keys(options).some(key => !["root", "admission-preflight"].includes(key))) refuse("configured-dispatch-usage", "Preflight accepts only --root and its request file");
       const tool = commandTool(), request = readAdmissionPreflightRequest(options["admission-preflight"]);

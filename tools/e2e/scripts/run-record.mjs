@@ -194,6 +194,14 @@ function qualifiedReservations(root) {
   });
 }
 
+/** Read-only display snapshot of the same actual acquired sets acquisition
+ * validates. Orphan/malformed publications remain holds/refusals, not silence.
+ * @param {string} root */
+export async function readQualifiedReservations(root) {
+  await loadQualifiedReservations();
+  return structuredClone(qualifiedReservations(root));
+}
+
 /** Complete publication shares the native callback/start transaction. This
  * API reserves data only; native launch still requires its existing admission.
  * @param {string} root @param {any} request @param {{at?: string, pid?: number, host?: string}} [options] */

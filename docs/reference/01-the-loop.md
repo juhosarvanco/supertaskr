@@ -121,7 +121,8 @@ Actor: the architect with the human.
 
 - The queue is derived, never maintained: priorities live on the cards,
   and "what is startable now" is one command
-  (`brief.mjs --dispatch --full`).
+  (`supertaskr dispatch --view --full` in an installed independent project;
+  chapter 05 distinguishes the legacy source adapter).
 - A question that measurement cannot settle becomes a room in
   docs/rooms/, with @-routing to whoever must rule. A settled question
   becomes a numbered decision record in docs/decisions/.

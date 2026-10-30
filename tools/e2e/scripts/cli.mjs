@@ -620,9 +620,9 @@ export const VERBS = /** @type {readonly VerbEntry[]} */ (Object.freeze([
     source: "Portable private backup inspection and restore; original authority is not imported",
   }),
   Object.freeze({
-    verb: "dispatch", summary: "strict configured admission and retained native run lifecycle",
+    verb: "dispatch", summary: "configured board view, strict admission and retained native run lifecycle",
     target: { kind: "script", file: "configured-dispatch-command.mjs", args: [] }, rootFlag: true, packageHelp: true,
-    usage: "supertaskr dispatch --run <operation> <run flags> | --admission-preflight <request-file>",
+    usage: "supertaskr dispatch --view [selection.json] [--task T-N] [--full] | --run <operation> <run flags> | --admission-preflight <request-file>",
     source: "Original committed PRODUCT/RECORDS/TOOL; fixed configured dispatch entry",
   }),
   Object.freeze({
